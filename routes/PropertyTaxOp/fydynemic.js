@@ -78,7 +78,7 @@ const propertyTaxOpFormJson = () => {
                     },
                     "notificationIssuedBy": {
                         "key": "notificationIssuedBy",
-                        "label": "The adopted notification was issued by?",
+                        "label": "The adopted notification was issued by ULB? (Yes = ULB, No = STATE)",
                         "displayPriority": "1.3",
                         "yearData": [
                             {
@@ -538,9 +538,9 @@ const propertyTaxOpFormJson = () => {
                         ],
                         "info": ""
                     },
-                    "userChargesDmnd": {
-                        "key": "userChargesDmnd",
-                        "label": "User Charges Demand Details(Demand figure for each type of user charge collected along with property tax)",
+                    "userChargesDmndWater": {
+                        "key": "userChargesDmndWater",
+                        "label": "User Charges Demand Details - Water Charges",
                         "displayPriority": "3.2",
                         "yearData": [
                             {
@@ -552,7 +552,7 @@ const propertyTaxOpFormJson = () => {
                                 "min": "",
                                 "max": 9999999,
                                 "required": true,
-                                "type": "userChargesDmnd",
+                                "type": "userChargesDmndWater",
                                 "year": "63735a5bd44534713673c1ca",
                                 "code": [],
                                 "readonly": false,
@@ -569,7 +569,7 @@ const propertyTaxOpFormJson = () => {
                                 "min": "",
                                 "max": 9999999,
                                 "required": true,
-                                "type": "userChargesDmnd",
+                                "type": "userChargesDmndWater",
                                 "year": "607697074dff55e6c0be33ba",
                                 "code": [],
                                 "readonly": false,
@@ -586,7 +586,7 @@ const propertyTaxOpFormJson = () => {
                                 "min": "",
                                 "max": 9999999,
                                 "required": true,
-                                "type": "userChargesDmnd",
+                                "type": "userChargesDmndWater",
                                 "year": "606aadac4dff55e6c075c507",
                                 "code": [],
                                 "readonly": false,
@@ -603,7 +603,7 @@ const propertyTaxOpFormJson = () => {
                                 "min": "",
                                 "max": 9999999,
                                 "required": true,
-                                "type": "userChargesDmnd",
+                                "type": "userChargesDmndWater",
                                 "year": "606aaf854dff55e6c075d219",
                                 "code": [],
                                 "readonly": false,
@@ -620,7 +620,7 @@ const propertyTaxOpFormJson = () => {
                                 "min": "",
                                 "max": 9999999,
                                 "required": true,
-                                "type": "userChargesDmnd",
+                                "type": "userChargesDmndWater",
                                 "year": "606aafb14dff55e6c075d3ae",
                                 "code": [],
                                 "readonly": false,
@@ -629,7 +629,286 @@ const propertyTaxOpFormJson = () => {
                                 "placeHolder": ""
                             }
                         ],
-                        "info": "For example,Water tax, Sanitation tax, etc."
+                        "info": ""
+                    },
+                    "userChargesDmndSewerage": {
+                        "key": "userChargesDmndSewerage",
+                        "label": "User Charges Demand Details - Sewerage charges",
+                        "displayPriority": "3.3",
+                        "yearData": [
+                            {
+                                "label": "FY 2018-19",
+                                "key": "FY2018-19",
+                                "postion": "0",
+                                "value": "",
+                                "file": "",
+                                "min": "",
+                                "max": 9999999,
+                                "required": true,
+                                "type": "userChargesDmndSewerage",
+                                "year": "63735a5bd44534713673c1ca",
+                                "code": [],
+                                "readonly": false,
+                                "formFieldType": "number",
+                                "bottomText": "",
+                                "placeHolder": ""
+                            },
+                            {
+                                "label": "FY 2019-20",
+                                "key": "FY2019-20",
+                                "postion": "1",
+                                "value": "",
+                                "file": "",
+                                "min": "",
+                                "max": 9999999,
+                                "required": true,
+                                "type": "userChargesDmndSewerage",
+                                "year": "607697074dff55e6c0be33ba",
+                                "code": [],
+                                "readonly": false,
+                                "formFieldType": "number",
+                                "bottomText": "",
+                                "placeHolder": ""
+                            },
+                            {
+                                "label": "FY 2020-21",
+                                "key": "FY2020-21",
+                                "postion": "2",
+                                "value": "",
+                                "file": "",
+                                "min": "",
+                                "max": 9999999,
+                                "required": true,
+                                "type": "userChargesDmndSewerage",
+                                "year": "606aadac4dff55e6c075c507",
+                                "code": [],
+                                "readonly": false,
+                                "formFieldType": "number",
+                                "bottomText": "",
+                                "placeHolder": ""
+                            },
+                            {
+                                "label": "FY 2021-22",
+                                "key": "FY2021-22",
+                                "postion": "3",
+                                "value": "",
+                                "file": "",
+                                "min": "",
+                                "max": 9999999,
+                                "required": true,
+                                "type": "userChargesDmndSewerage",
+                                "year": "606aaf854dff55e6c075d219",
+                                "code": [],
+                                "readonly": false,
+                                "formFieldType": "number",
+                                "bottomText": "",
+                                "placeHolder": ""
+                            },
+                            {
+                                "label": "FY 2022-23",
+                                "key": "FY2022-23",
+                                "postion": "4",
+                                "value": "",
+                                "file": "",
+                                "min": "",
+                                "max": 9999999,
+                                "required": true,
+                                "type": "userChargesDmndSewerage",
+                                "year": "606aafb14dff55e6c075d3ae",
+                                "code": [],
+                                "readonly": false,
+                                "formFieldType": "number",
+                                "bottomText": "",
+                                "placeHolder": ""
+                            }
+                        ],
+                        "info": ""
+                    },
+                    "userChargesDmndSWM": {
+                        "key": "userChargesDmndSWM",
+                        "label": "User Charges Demand Details - Solidwaste Management Charges",
+                        "displayPriority": "3.5",
+                        "yearData": [
+                            {
+                                "label": "FY 2018-19",
+                                "key": "FY2018-19",
+                                "postion": "0",
+                                "value": "",
+                                "file": "",
+                                "min": "",
+                                "max": 9999999,
+                                "required": true,
+                                "type": "userChargesDmndSWM",
+                                "year": "63735a5bd44534713673c1ca",
+                                "code": [],
+                                "readonly": false,
+                                "formFieldType": "number",
+                                "bottomText": "",
+                                "placeHolder": ""
+                            },
+                            {
+                                "label": "FY 2019-20",
+                                "key": "FY2019-20",
+                                "postion": "1",
+                                "value": "",
+                                "file": "",
+                                "min": "",
+                                "max": 9999999,
+                                "required": true,
+                                "type": "userChargesDmndSWM",
+                                "year": "607697074dff55e6c0be33ba",
+                                "code": [],
+                                "readonly": false,
+                                "formFieldType": "number",
+                                "bottomText": "",
+                                "placeHolder": ""
+                            },
+                            {
+                                "label": "FY 2020-21",
+                                "key": "FY2020-21",
+                                "postion": "2",
+                                "value": "",
+                                "file": "",
+                                "min": "",
+                                "max": 9999999,
+                                "required": true,
+                                "type": "userChargesDmndSWM",
+                                "year": "606aadac4dff55e6c075c507",
+                                "code": [],
+                                "readonly": false,
+                                "formFieldType": "number",
+                                "bottomText": "",
+                                "placeHolder": ""
+                            },
+                            {
+                                "label": "FY 2021-22",
+                                "key": "FY2021-22",
+                                "postion": "3",
+                                "value": "",
+                                "file": "",
+                                "min": "",
+                                "max": 9999999,
+                                "required": true,
+                                "type": "userChargesDmndSWM",
+                                "year": "606aaf854dff55e6c075d219",
+                                "code": [],
+                                "readonly": false,
+                                "formFieldType": "number",
+                                "bottomText": "",
+                                "placeHolder": ""
+                            },
+                            {
+                                "label": "FY 2022-23",
+                                "key": "FY2022-23",
+                                "postion": "4",
+                                "value": "",
+                                "file": "",
+                                "min": "",
+                                "max": 9999999,
+                                "required": true,
+                                "type": "userChargesDmndSWM",
+                                "year": "606aafb14dff55e6c075d3ae",
+                                "code": [],
+                                "readonly": false,
+                                "formFieldType": "number",
+                                "bottomText": "",
+                                "placeHolder": ""
+                            }
+                        ],
+                        "info": ""
+                    },
+                    "userChargesDmndDrainage": {
+                        "key": "userChargesDmndDrainage",
+                        "label": "User Charges Demand Details - Drainage Charges",
+                        "displayPriority": "3.5",
+                        "yearData": [
+                            {
+                                "label": "FY 2018-19",
+                                "key": "FY2018-19",
+                                "postion": "0",
+                                "value": "",
+                                "file": "",
+                                "min": "",
+                                "max": 9999999,
+                                "required": true,
+                                "type": "userChargesDmndDrainage",
+                                "year": "63735a5bd44534713673c1ca",
+                                "code": [],
+                                "readonly": false,
+                                "formFieldType": "number",
+                                "bottomText": "",
+                                "placeHolder": ""
+                            },
+                            {
+                                "label": "FY 2019-20",
+                                "key": "FY2019-20",
+                                "postion": "1",
+                                "value": "",
+                                "file": "",
+                                "min": "",
+                                "max": 9999999,
+                                "required": true,
+                                "type": "userChargesDmndDrainage",
+                                "year": "607697074dff55e6c0be33ba",
+                                "code": [],
+                                "readonly": false,
+                                "formFieldType": "number",
+                                "bottomText": "",
+                                "placeHolder": ""
+                            },
+                            {
+                                "label": "FY 2020-21",
+                                "key": "FY2020-21",
+                                "postion": "2",
+                                "value": "",
+                                "file": "",
+                                "min": "",
+                                "max": 9999999,
+                                "required": true,
+                                "type": "userChargesDmndDrainage",
+                                "year": "606aadac4dff55e6c075c507",
+                                "code": [],
+                                "readonly": false,
+                                "formFieldType": "number",
+                                "bottomText": "",
+                                "placeHolder": ""
+                            },
+                            {
+                                "label": "FY 2021-22",
+                                "key": "FY2021-22",
+                                "postion": "3",
+                                "value": "",
+                                "file": "",
+                                "min": "",
+                                "max": 9999999,
+                                "required": true,
+                                "type": "userChargesDmndDrainage",
+                                "year": "606aaf854dff55e6c075d219",
+                                "code": [],
+                                "readonly": false,
+                                "formFieldType": "number",
+                                "bottomText": "",
+                                "placeHolder": ""
+                            },
+                            {
+                                "label": "FY 2022-23",
+                                "key": "FY2022-23",
+                                "postion": "4",
+                                "value": "",
+                                "file": "",
+                                "min": "",
+                                "max": 9999999,
+                                "required": true,
+                                "type": "userChargesDmndDrainage",
+                                "year": "606aafb14dff55e6c075d3ae",
+                                "code": [],
+                                "readonly": false,
+                                "formFieldType": "number",
+                                "bottomText": "",
+                                "placeHolder": ""
+                            }
+                        ],
+                        "info": ""
                     },
                     "collectIncludingCess": {
                         "key": "collectIncludingCess",
@@ -913,7 +1192,7 @@ const propertyTaxOpFormJson = () => {
                     "cessCollect": {
                         "key": "cessCollect",
                         "label": "Cess Collection Details(Collection figure for each type of cess collected)(INR Lakh)",
-                        "displayPriority": "4.3",
+                        "displayPriority": "4.4",
                         "yearData": [
                             {
                                 "label": "FY 2018-19",
@@ -1002,6 +1281,378 @@ const propertyTaxOpFormJson = () => {
                             }
                         ],
                         "info": "For example, Tree cess, Library cess etc"
+                    },
+                    "userChargesColWater": {
+                        "key": "userChargesColWater",
+                        "label": "User Charges Collection Details - Water Charges",
+                        "displayPriority": "4.5",
+                        "yearData": [
+                            {
+                                "label": "FY 2018-19",
+                                "key": "FY2018-19",
+                                "postion": "0",
+                                "value": "",
+                                "file": "",
+                                "min": "",
+                                "max": 9999999,
+                                "required": true,
+                                "type": "userChargesColWater",
+                                "year": "63735a5bd44534713673c1ca",
+                                "code": [],
+                                "readonly": false,
+                                "formFieldType": "number",
+                                "bottomText": "",
+                                "placeHolder": ""
+                            },
+                            {
+                                "label": "FY 2019-20",
+                                "key": "FY2019-20",
+                                "postion": "1",
+                                "value": "",
+                                "file": "",
+                                "min": "",
+                                "max": 9999999,
+                                "required": true,
+                                "type": "userChargesColWater",
+                                "year": "607697074dff55e6c0be33ba",
+                                "code": [],
+                                "readonly": false,
+                                "formFieldType": "number",
+                                "bottomText": "",
+                                "placeHolder": ""
+                            },
+                            {
+                                "label": "FY 2020-21",
+                                "key": "FY2020-21",
+                                "postion": "2",
+                                "value": "",
+                                "file": "",
+                                "min": "",
+                                "max": 9999999,
+                                "required": true,
+                                "type": "userChargesColWater",
+                                "year": "606aadac4dff55e6c075c507",
+                                "code": [],
+                                "readonly": false,
+                                "formFieldType": "number",
+                                "bottomText": "",
+                                "placeHolder": ""
+                            },
+                            {
+                                "label": "FY 2021-22",
+                                "key": "FY2021-22",
+                                "postion": "3",
+                                "value": "",
+                                "file": "",
+                                "min": "",
+                                "max": 9999999,
+                                "required": true,
+                                "type": "userChargesColWater",
+                                "year": "606aaf854dff55e6c075d219",
+                                "code": [],
+                                "readonly": false,
+                                "formFieldType": "number",
+                                "bottomText": "",
+                                "placeHolder": ""
+                            },
+                            {
+                                "label": "FY 2022-23",
+                                "key": "FY2022-23",
+                                "postion": "4",
+                                "value": "",
+                                "file": "",
+                                "min": "",
+                                "max": 9999999,
+                                "required": true,
+                                "type": "userChargesColWater",
+                                "year": "606aafb14dff55e6c075d3ae",
+                                "code": [],
+                                "readonly": false,
+                                "formFieldType": "number",
+                                "bottomText": "",
+                                "placeHolder": ""
+                            }
+                        ],
+                        "info": ""
+                    },
+                    "userChargesColSewerage": {
+                        "key": "userChargesColSewerage",
+                        "label": "User Charges Collection Details - Sewerage charges",
+                        "displayPriority": "4.6",
+                        "yearData": [
+                            {
+                                "label": "FY 2018-19",
+                                "key": "FY2018-19",
+                                "postion": "0",
+                                "value": "",
+                                "file": "",
+                                "min": "",
+                                "max": 9999999,
+                                "required": true,
+                                "type": "userChargesColSewerage",
+                                "year": "63735a5bd44534713673c1ca",
+                                "code": [],
+                                "readonly": false,
+                                "formFieldType": "number",
+                                "bottomText": "",
+                                "placeHolder": ""
+                            },
+                            {
+                                "label": "FY 2019-20",
+                                "key": "FY2019-20",
+                                "postion": "1",
+                                "value": "",
+                                "file": "",
+                                "min": "",
+                                "max": 9999999,
+                                "required": true,
+                                "type": "userChargesColSewerage",
+                                "year": "607697074dff55e6c0be33ba",
+                                "code": [],
+                                "readonly": false,
+                                "formFieldType": "number",
+                                "bottomText": "",
+                                "placeHolder": ""
+                            },
+                            {
+                                "label": "FY 2020-21",
+                                "key": "FY2020-21",
+                                "postion": "2",
+                                "value": "",
+                                "file": "",
+                                "min": "",
+                                "max": 9999999,
+                                "required": true,
+                                "type": "userChargesColSewerage",
+                                "year": "606aadac4dff55e6c075c507",
+                                "code": [],
+                                "readonly": false,
+                                "formFieldType": "number",
+                                "bottomText": "",
+                                "placeHolder": ""
+                            },
+                            {
+                                "label": "FY 2021-22",
+                                "key": "FY2021-22",
+                                "postion": "3",
+                                "value": "",
+                                "file": "",
+                                "min": "",
+                                "max": 9999999,
+                                "required": true,
+                                "type": "userChargesColSewerage",
+                                "year": "606aaf854dff55e6c075d219",
+                                "code": [],
+                                "readonly": false,
+                                "formFieldType": "number",
+                                "bottomText": "",
+                                "placeHolder": ""
+                            },
+                            {
+                                "label": "FY 2022-23",
+                                "key": "FY2022-23",
+                                "postion": "4",
+                                "value": "",
+                                "file": "",
+                                "min": "",
+                                "max": 9999999,
+                                "required": true,
+                                "type": "userChargesColSewerage",
+                                "year": "606aafb14dff55e6c075d3ae",
+                                "code": [],
+                                "readonly": false,
+                                "formFieldType": "number",
+                                "bottomText": "",
+                                "placeHolder": ""
+                            }
+                        ],
+                        "info": ""
+                    },
+                    "userChargesColSWM": {
+                        "key": "userChargesColSWM",
+                        "label": "User Charges Collection Details - Solidwaste Management Charges",
+                        "displayPriority": "4.7",
+                        "yearData": [
+                            {
+                                "label": "FY 2018-19",
+                                "key": "FY2018-19",
+                                "postion": "0",
+                                "value": "",
+                                "file": "",
+                                "min": "",
+                                "max": 9999999,
+                                "required": true,
+                                "type": "userChargesColSWM",
+                                "year": "63735a5bd44534713673c1ca",
+                                "code": [],
+                                "readonly": false,
+                                "formFieldType": "number",
+                                "bottomText": "",
+                                "placeHolder": ""
+                            },
+                            {
+                                "label": "FY 2019-20",
+                                "key": "FY2019-20",
+                                "postion": "1",
+                                "value": "",
+                                "file": "",
+                                "min": "",
+                                "max": 9999999,
+                                "required": true,
+                                "type": "userChargesColSWM",
+                                "year": "607697074dff55e6c0be33ba",
+                                "code": [],
+                                "readonly": false,
+                                "formFieldType": "number",
+                                "bottomText": "",
+                                "placeHolder": ""
+                            },
+                            {
+                                "label": "FY 2020-21",
+                                "key": "FY2020-21",
+                                "postion": "2",
+                                "value": "",
+                                "file": "",
+                                "min": "",
+                                "max": 9999999,
+                                "required": true,
+                                "type": "userChargesColSWM",
+                                "year": "606aadac4dff55e6c075c507",
+                                "code": [],
+                                "readonly": false,
+                                "formFieldType": "number",
+                                "bottomText": "",
+                                "placeHolder": ""
+                            },
+                            {
+                                "label": "FY 2021-22",
+                                "key": "FY2021-22",
+                                "postion": "3",
+                                "value": "",
+                                "file": "",
+                                "min": "",
+                                "max": 9999999,
+                                "required": true,
+                                "type": "userChargesColSWM",
+                                "year": "606aaf854dff55e6c075d219",
+                                "code": [],
+                                "readonly": false,
+                                "formFieldType": "number",
+                                "bottomText": "",
+                                "placeHolder": ""
+                            },
+                            {
+                                "label": "FY 2022-23",
+                                "key": "FY2022-23",
+                                "postion": "4",
+                                "value": "",
+                                "file": "",
+                                "min": "",
+                                "max": 9999999,
+                                "required": true,
+                                "type": "userChargesColSWM",
+                                "year": "606aafb14dff55e6c075d3ae",
+                                "code": [],
+                                "readonly": false,
+                                "formFieldType": "number",
+                                "bottomText": "",
+                                "placeHolder": ""
+                            }
+                        ],
+                        "info": ""
+                    },
+                    "userChargesColDrainage": {
+                        "key": "userChargesColDrainage",
+                        "label": "User Charges Collection Details - Drainage Charges",
+                        "displayPriority": "4.8",
+                        "yearData": [
+                            {
+                                "label": "FY 2018-19",
+                                "key": "FY2018-19",
+                                "postion": "0",
+                                "value": "",
+                                "file": "",
+                                "min": "",
+                                "max": 9999999,
+                                "required": true,
+                                "type": "userChargesColDrainage",
+                                "year": "63735a5bd44534713673c1ca",
+                                "code": [],
+                                "readonly": false,
+                                "formFieldType": "number",
+                                "bottomText": "",
+                                "placeHolder": ""
+                            },
+                            {
+                                "label": "FY 2019-20",
+                                "key": "FY2019-20",
+                                "postion": "1",
+                                "value": "",
+                                "file": "",
+                                "min": "",
+                                "max": 9999999,
+                                "required": true,
+                                "type": "userChargesColDrainage",
+                                "year": "607697074dff55e6c0be33ba",
+                                "code": [],
+                                "readonly": false,
+                                "formFieldType": "number",
+                                "bottomText": "",
+                                "placeHolder": ""
+                            },
+                            {
+                                "label": "FY 2020-21",
+                                "key": "FY2020-21",
+                                "postion": "2",
+                                "value": "",
+                                "file": "",
+                                "min": "",
+                                "max": 9999999,
+                                "required": true,
+                                "type": "userChargesColDrainage",
+                                "year": "606aadac4dff55e6c075c507",
+                                "code": [],
+                                "readonly": false,
+                                "formFieldType": "number",
+                                "bottomText": "",
+                                "placeHolder": ""
+                            },
+                            {
+                                "label": "FY 2021-22",
+                                "key": "FY2021-22",
+                                "postion": "3",
+                                "value": "",
+                                "file": "",
+                                "min": "",
+                                "max": 9999999,
+                                "required": true,
+                                "type": "userChargesColDrainage",
+                                "year": "606aaf854dff55e6c075d219",
+                                "code": [],
+                                "readonly": false,
+                                "formFieldType": "number",
+                                "bottomText": "",
+                                "placeHolder": ""
+                            },
+                            {
+                                "label": "FY 2022-23",
+                                "key": "FY2022-23",
+                                "postion": "4",
+                                "value": "",
+                                "file": "",
+                                "min": "",
+                                "max": 9999999,
+                                "required": true,
+                                "type": "userChargesColDrainage",
+                                "year": "606aafb14dff55e6c075d3ae",
+                                "code": [],
+                                "readonly": false,
+                                "formFieldType": "number",
+                                "bottomText": "",
+                                "placeHolder": ""
+                            }
+                        ],
+                        "info": ""
                     },
                     "totalMappedPropertiesUlb": {
                         "key": "totalMappedPropertiesUlb",
@@ -3235,10 +3886,39 @@ const propertyTaxOpFormJson = () => {
                         ],
                         "info": "Properties that includes homes, townhouses, apartments and any other property that has been designated for people to live"
                     },
+                    "otherValuePropertyType": {
+                        "key": "otherValuePropertyType",
+                        "label": "Property type",
+                        "displayPriority": "11.1",
+                        "yearData": [
+                            {
+                                "label": "FY 2018-19",
+                                "key": "FY2018-19",
+                                "postion": "0",
+                                "value": "",
+                                "file": "",
+                                "min": "",
+                                "max": 9999999,
+                                "required": true,
+                                "type": "otherValuePropertyType",
+                                "year": "63735a5bd44534713673c1ca",
+                                "code": [],
+                                "readonly": false,
+                                "formFieldType": "number",
+                                "bottomText": "",
+                                "placeHolder": ""
+                            },
+                            {},
+                            {},
+                            {},
+                            {}
+                        ],
+                        "info": ""
+                    },
                     "otherValuePropertyTaxDm": {
                         "key": "otherValuePropertyTaxDm",
                         "label": "Value of Property Tax Demanded(INR Lakhs)",
-                        "displayPriority": "11.1",
+                        "displayPriority": "11.2",
                         "yearData": [
                             {
                                 "label": "FY 2018-19",
@@ -3331,7 +4011,7 @@ const propertyTaxOpFormJson = () => {
                     "otherNoPropertyTaxDm": {
                         "key": "otherNoPropertyTaxDm",
                         "label": "Number of Properties from which Property Tax Demanded",
-                        "displayPriority": "11.2",
+                        "displayPriority": "11.3",
                         "yearData": [
                             {
                                 "label": "FY 2018-19",
@@ -3424,7 +4104,7 @@ const propertyTaxOpFormJson = () => {
                     "otherValuePropertyTaxCollected": {
                         "key": "otherValuePropertyTaxCollected",
                         "label": "Value of Property Tax Collected(INR Lakhs)",
-                        "displayPriority": "11.3",
+                        "displayPriority": "11.4",
                         "yearData": [
                             {
                                 "label": "FY 2018-19",
@@ -3517,7 +4197,7 @@ const propertyTaxOpFormJson = () => {
                     "otherNoPropertyTaxCollected": {
                         "key": "otherNoPropertyTaxCollected",
                         "label": "Number of Properties from which Property Tax Collected",
-                        "displayPriority": "11.4",
+                        "displayPriority": "11.5",
                         "yearData": [
                             {
                                 "label": "FY 2018-19",
@@ -4106,7 +4786,7 @@ const propertyTaxOpFormJson = () => {
                     },
                     "propertyTaxCollectionBookCurrentArCol": {
                         "key": "propertyTaxCollectionBookCurrentArCol",
-                        "label": "Arrear Demand",
+                        "label": "Arrear Collections",
                         "displayPriority": "13.4",
                         "yearData": [
                             {
@@ -5932,10 +6612,39 @@ const propertyTaxOpFormJson = () => {
                         ],
                         "info": ""
                     },
+                    "othersValueWaterType": {
+                        "key": "othersValueWaterType",
+                        "label": "Property type",
+                        "displayPriority": "20.1",
+                        "yearData": [
+                            {
+                                "label": "FY 2018-19",
+                                "key": "FY2018-19",
+                                "postion": "0",
+                                "value": "",
+                                "file": "",
+                                "min": "",
+                                "max": 9999999,
+                                "required": true,
+                                "type": "othersValueWaterType",
+                                "year": "63735a5bd44534713673c1ca",
+                                "code": [],
+                                "readonly": false,
+                                "formFieldType": "number",
+                                "bottomText": "",
+                                "placeHolder": ""
+                            },
+                            {},
+                            {},
+                            {},
+                            {}
+                        ],
+                        "info": ""
+                    },
                     "othersValueWaterChrgDm": {
                         "key": "othersValueWaterChrgDm",
                         "label": "Value of Water charges Demanded(INR Lakhs)",
-                        "displayPriority": "20.1",
+                        "displayPriority": "20.2",
                         "yearData": [
                             {
                                 "label": "FY 2018-19",
@@ -6028,7 +6737,7 @@ const propertyTaxOpFormJson = () => {
                     "othersNoWaterChrgDm": {
                         "key": "othersNoWaterChrgDm",
                         "label": "Number of households/properties from which water charges was demanded",
-                        "displayPriority": "20.2",
+                        "displayPriority": "20.3",
                         "yearData": [
                             {
                                 "label": "FY 2018-19",
@@ -6121,7 +6830,7 @@ const propertyTaxOpFormJson = () => {
                     "othersValueWaterChrgCollected": {
                         "key": "othersValueWaterChrgCollected",
                         "label": "Value of water charges collected from household/properties(INR Lakh)",
-                        "displayPriority": "20.3",
+                        "displayPriority": "20.4",
                         "yearData": [
                             {
                                 "label": "FY 2018-19",
@@ -6214,7 +6923,7 @@ const propertyTaxOpFormJson = () => {
                     "othersNoWaterChrgCollected": {
                         "key": "othersNoWaterChrgCollected",
                         "label": "Number of household/properties from which water charges was collected",
-                        "displayPriority": "20.4",
+                        "displayPriority": "20.5",
                         "yearData": [
                             {
                                 "label": "FY 2018-19",
@@ -8568,10 +9277,39 @@ const propertyTaxOpFormJson = () => {
                         ],
                         "info": ""
                     },
+                    "otherValueSewerageType": {
+                        "key": "otherValueSewerageType",
+                        "label": "Property type",
+                        "displayPriority": "30.1",
+                        "yearData": [
+                            {
+                                "label": "FY 2018-19",
+                                "key": "FY2018-19",
+                                "postion": "0",
+                                "value": "",
+                                "file": "",
+                                "min": "",
+                                "max": 9999999,
+                                "required": true,
+                                "type": "otherValueSewerageType",
+                                "year": "63735a5bd44534713673c1ca",
+                                "code": [],
+                                "readonly": false,
+                                "formFieldType": "number",
+                                "bottomText": "",
+                                "placeHolder": ""
+                            },
+                            {},
+                            {},
+                            {},
+                            {}
+                        ],
+                        "info": ""
+                    },
                     "otherValueSewerageTaxDm": {
                         "key": "otherValueSewerageTaxDm",
                         "label": "Value of Sewerage charges Demanded(INR Lakhs)",
-                        "displayPriority": "30.1",
+                        "displayPriority": "30.2",
                         "yearData": [
                             {
                                 "label": "FY 2018-19",
@@ -8664,7 +9402,7 @@ const propertyTaxOpFormJson = () => {
                     "otherNoSewerageTaxDm": {
                         "key": "otherNoSewerageTaxDm",
                         "label": "Number of households/properties from which sewerage charges was demanded",
-                        "displayPriority": "30.2",
+                        "displayPriority": "30.3",
                         "yearData": [
                             {
                                 "label": "FY 2018-19",
@@ -8757,7 +9495,7 @@ const propertyTaxOpFormJson = () => {
                     "otherValueSewerageTaxCollected": {
                         "key": "otherValueSewerageTaxCollected",
                         "label": "Value of sewerage charges collected from household/properties(INR Lakh)",
-                        "displayPriority": "30.3",
+                        "displayPriority": "30.4",
                         "yearData": [
                             {
                                 "label": "FY 2018-19",
@@ -8850,7 +9588,7 @@ const propertyTaxOpFormJson = () => {
                     "otherNoSewerageTaxCollected": {
                         "key": "otherNoSewerageTaxCollected",
                         "label": "Number of household/properties from which sewerage charges was collected",
-                        "displayPriority": "30.4",
+                        "displayPriority": "30.5",
                         "yearData": [
                             {
                                 "label": "FY 2018-19",
@@ -9253,7 +9991,7 @@ const propertyTaxOpFormJson = () => {
                     },
                     "sewerageCollectionBookCurrentArCol": {
                         "key": "sewerageCollectionBookCurrentArCol",
-                        "label": "Arrear Demand",
+                        "label": "Arrear Collections",
                         "displayPriority": "32.4",
                         "yearData": [
                             {
@@ -9697,6 +10435,8 @@ const propertyTaxOpFormJson = () => {
     }
 }
 
+
+
 function getInputKeysByType(formType, type, label, dataSource = null, position, required = true, mn = false, info = "") {
     let maximum = 9999999999
     let min = 0
@@ -9748,6 +10488,15 @@ let financialYearTableHeader = {
     "4.1": [
         "",
         "Property Tax Collection Details (Amount in INR Lakhs)",
+        "2018-19",
+        "2019-20",
+        "2020-21",
+        "2021-22",
+        "2022-23"
+    ],
+    "3.1": [
+        "",
+        "Do you collect any user charges along with Property Tax?",
         "2018-19",
         "2019-20",
         "2020-21",
@@ -9826,6 +10575,15 @@ let financialYearTableHeader = {
         "2021-22",
         "2022-23"
     ],
+    "12.3": [
+        "",
+        "Property Tax Valuation Details- Property Tax Rate Card",
+        "",
+        "",
+        "",
+        "",
+        ""
+    ],
     "13.1": [
         "",
         "Extract of Demand Collection Book",
@@ -9892,11 +10650,11 @@ let financialYearTableHeader = {
     "21.1": [
         "",
         "Water Charges Tariff Details- Water Charges Tariff Sheet",
-        "2018-19",
-        "2019-20",
-        "2020-21",
-        "2021-22",
-        "2022-23"
+        "",
+        "",
+        "",
+        "",
+        ""
     ],
     "22.1": [
         "",
@@ -9970,6 +10728,15 @@ let financialYearTableHeader = {
         "2021-22",
         "2022-23"
     ],
+    "31.1": [
+        "",
+        "Sewerage Charges Tariff Details- Sewerage Charges Tariff Sheet",
+        "",
+        "",
+        "",
+        "",
+        ""
+    ],
     "32.1": [
         "",
         "Extract of Demand Collection Book",
@@ -9981,16 +10748,43 @@ let financialYearTableHeader = {
     ],
     "33.1": [
         "",
-        "Working of the O&M Cost- Sewerage Service",
+        "Sewerage Charges: Cost of Service Delivery Details",
         "2018-19",
         "2019-20",
         "2020-21",
         "2021-22",
         "2022-23"
+    ],
+    "34.1": [
+        "",
+        "Working of the O&M Cost- Sewerage Service",
+        "",
+        "",
+        "",
+        "",
+        ""
+    ],
+    "35.1": [
+        "",
+        "Notes",
+        "",
+        "",
+        "",
+        "",
+        ""
     ]
 }
 
+let specialHeaders = {
+    "6.1": "Property Tax Demand and Collection Figures by Property Type (Amount in INR Lakhs)",
+    "14.1": "Water Charges Details",
+    "24.1": "Sewerage Charges Details",
+    "27.1": "Sewerage Charges Details by household/property type"
+}
+
 module.exports.financialYearTableHeader = financialYearTableHeader
+module.exports.specialHeaders = specialHeaders
+
 // module.exports.jsonObject = jsonObject
 module.exports.propertyTaxOpFormJson = propertyTaxOpFormJson;
 module.exports.getInputKeysByType = getInputKeysByType;
