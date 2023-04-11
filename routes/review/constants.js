@@ -30,7 +30,7 @@ let ulbFilterKeys = {
     limit: 'limit',
     skip: 'skip',
     ulbName: 'ulbName',
-    ulbCode: 'ulbCode',
+    // ulbCode: 'ulbCode',
     censusCode: 'censusCode',
     ulbType: 'ulbType',
     UA: 'UA',

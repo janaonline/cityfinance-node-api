@@ -1,10 +1,12 @@
 const ObjectId = require("mongoose").Types.ObjectId;
-module.exports.mapFilter = async (obj) => {
+module.exports.mapFilter = async (obj,ignorableKeys=[]) => {
+    console.log("ignorableKeys :::",ignorableKeys)
     return new Promise((resolve, reject) => {
         let filter = {};
         try {
 
             for (key in obj) {
+                if(ignorableKeys.includes(key)){continue}
                 if (obj[key] != 'null' && (obj[key] || typeof obj[key] == "boolean")) {
                     if (obj[key].length == 24 && ObjectId.isValid(obj[key])) {
                         filter[key] = ObjectId(obj[key]);
@@ -44,7 +46,6 @@ module.exports.mapFilterNew = async(obj) => {
     return new Promise((resolve, reject) => {
         let filter = {};
         try {
-
             for (key in obj) {
                 if (obj[key] != 'null' && (obj[key] || typeof obj[key] == "boolean")) {
                     if (obj[key].length == 24 && ObjectId.isValid(obj[key])) {
@@ -58,7 +59,6 @@ module.exports.mapFilterNew = async(obj) => {
                     else if (typeof obj[key] == "string" && obj[key] == "false" && key != "user") {
                         filter[key] = false;
                     }
-                    
                     else if (key == "status") {
                         filter[key] = obj[key];
                     }
@@ -68,6 +68,7 @@ module.exports.mapFilterNew = async(obj) => {
                     else {
                         filter[key] = obj[key];
                     }
+
                 }
             }
             resolve(filter);
