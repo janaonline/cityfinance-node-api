@@ -65,3 +65,13 @@ module.exports.FolderName = {
     'IndicatorForWaterSupply': "indicators_wss",
 
 }
+
+module.exports.FRFormStatus = {
+
+    'Not_Started': 'Not Started',
+    'In_Progress': 'In Progress',
+    'Under_Review_By_MoHUA': 'Under Review By MoHUA',
+    'Approved_By_MoHUA': 'Approved By MoHUA',
+    'Rejected_By_MoHUA': 'Returned By MoHUA',
+
+}
