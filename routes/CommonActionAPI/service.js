@@ -1934,6 +1934,7 @@ async function handleArrOfObjects(question,flattedForm){
                             formObj[jsonKey] = obj[keys][questionObj.valueKey]
                         }
                         questionObj =  await handleDbValues(questionObj,formObj,order) 
+                        
                         if(questionObj.isQuestionDisabled !== true){
                             questionObj.isQuestionDisabled = handleDisableFields({disableFields})
                             if(Object.keys(customDisableFields).includes(keys)){
@@ -2249,8 +2250,9 @@ function handledateCase(question,obj,flattedForm){
     try{
         
         let mainKey = question.shortKey
-        flattedForm[mainKey] = typeof flattedForm[mainKey] == "string"  ? new Date(flattedForm[mainKey]) : flattedForm[mainKey]
-        if(flattedForm[mainKey] === undefined){
+        console.log("flattedForm[mainKey] :: ",flattedForm[mainKey])
+        // console.log("flattedForm[mainKey] ::: ",flattedForm[mainKey].toISOString())
+        if(flattedForm[mainKey] === undefined || flattedForm[mainKey] === null){
             flattedForm[mainKey] = ""
         }
         else{
