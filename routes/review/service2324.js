@@ -8,7 +8,7 @@ const Service = require('../../service');
 const STATUS_LIST = require('../../util/newStatusList');
 const { MASTER_STATUS, MASTER_STATUS_ID } = require('../../util/FormNames');
 const { canTakeActionOrViewOnlyMasterForm } = require('../../routes/CommonActionAPI/service')
-const { ulbColumnNames, stateColumnNames, annualAccountKeys, ulbFilterKeys } = require("./constants")
+const { ulbColumnNames, stateColumnNames, annualAccountKeys, ulbFilterKeys,projectionQueryUlb1,projectionQueryUlb2 } = require("./constants")
 const { checkForUndefinedVaribales } = require("../../routes/CommonActionAPI/service");
 const List = require('../../util/15thFCstatus')
 const { AggregationServices } = require("../CommonActionAPI/service")
@@ -84,6 +84,11 @@ class GetQuery {
       }
       // stage1 match for ulb 
       query.push(matchObj)
+
+      //addRole 
+      query.push(this.service.addFields("$formType",this.params.formType))
+      query.push(this.service.addFields("$role",this.params.loggedInUserRole))
+
       //stage 2 look up for states
       query.push(this.service.getCommonLookupObj("states", "state", "_id", "state"))
       query.push(this.service.getUnwindObj("$state"))
@@ -96,13 +101,16 @@ class GetQuery {
       query.push(stateMatchObj)
       //stage 4 match form query
       let formQuery = FormQuery(this.service, this.params.dbCollectionName, this.design_year)
-      query.concat(formQuery)
+      query = [...query,...formQuery]
       //stage 5 UA lookup
       query.push(this.service.getCommonLookupObj("uas","UA","_id","UA"))
       query.push(this.service.getUnwindObj("$UA",true))
       //stage 6  ulbtypes 
       query.push(this.service.getCommonLookupObj("ulbtypes","ulbType","_id","ulbType"))
       query.push(this.service.getUnwindObj("$ulbType"))
+      //stage 7 projectQueries
+      query.push(projectionQueryUlb1(this.params.dbCollectionName))
+      query.push(projectionQueryUlb2(this.params.isFormOptional,this.params.filledQueryExpression))
       return query
     }
     catch (err) {
@@ -115,7 +123,7 @@ class GetQuery {
 async function queryMaker(params) {
   try {
     let service = AggregationServices
-    const { collectionName: formName, formType: userRole, isFormOptional, state, design_year, csv, skip, limit, newFilter: filter, dbCollectionName, folderName } = params
+    const { collectionName: formName, formType: userRole, isFormOptional, state, design_year, csv, skip, limit, newFilter: filter, dbCollectionName, folderName,loggedInUserRole } = params
     let queryService = new GetQuery(service, params)
     let filledQueryExpression = {}
     if (isFormOptional) {
@@ -167,6 +175,7 @@ module.exports.get = async (req, res) => {
     if (req.decoded.role === "STATE") {
       state = req.decoded.state
     }
+    
     console.log("state :::: ",state)
     let getQuery = req.query.getQuery == 'true'
     if (!design_year || !form) {
@@ -191,7 +200,7 @@ module.exports.get = async (req, res) => {
       Object.assign(newFilter, { formData: "" });
     }
     let folderName = formTab?.folderName;
-    let params = { collectionName, formType, isFormOptional, state, design_year, csv, skip, limit, newFilter, dbCollectionName, folderName }
+    let params = { collectionName, formType, isFormOptional, state, design_year, csv, skip, limit, newFilter, dbCollectionName, folderName,loggedInUserRole }
     let query = computeQuery(params);
     const demoQuery = await queryMaker(params)
     if (getQuery) return res.json({

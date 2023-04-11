@@ -77,7 +77,7 @@ module.exports.projectionQueryUlb1 = (dbCollectionName)=>{
       population: "$population",
       state_id: "$state._id",
       stateName: "$state.name",
-      canTakeAction :"",
+      canTakeAction :handleActions(),
       populationType: {
         $cond: {
           if: { $eq: ["$isMillionPlus", "Yes"] },
@@ -182,9 +182,9 @@ function handleActions(){
         "default":false
       }
     }
-    cond["$switch"]["branches"].push(switchCaseService.formTypeUlbCase())
-    cond["$switch"]["branches"].push(switchCaseService.formTypeStateCase())
-    return ConvolverNode
+    cond["$switch"]["branches"] = cond["$switch"]["branches"].concat(switchCaseService.formTypeUlbCase())
+    cond["$switch"]["branches"] = cond["$switch"]["branches"].concat(switchCaseService.formTypeStateCase())
+    return cond
   }
   catch(err){
     consle.log("error in handleActions :::: ",err.message)
