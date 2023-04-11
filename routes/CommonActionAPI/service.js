@@ -2143,6 +2143,9 @@ async function handleConsentCase(question,obj,flattedForm,mainKey){
             question['value'] = answer['_id']
             obj['textValue'] = answer['name']
             obj['value'] = answer['_id']
+            if(question.isQuestionDisabled !== true){
+                question.isQuestionDisabled = handleDisableFields(flattedForm)
+            }
         }
     }
     catch(err){
