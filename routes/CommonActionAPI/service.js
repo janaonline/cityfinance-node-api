@@ -22,7 +22,8 @@ const {modelPath} = require('../../util/masterFunctions')
 const Response = require("../../service").response;
 const {saveCurrentStatus, saveFormHistory, saveStatusHistory} = require('../../util/masterFunctions');
 const CurrentStatus = require('../../models/CurrentStatus');
-const {MASTER_STATUS_ID} = require("../../util/FormNames")
+const {MASTER_STATUS_ID, FORM_LEVEL_SHORTKEY, FORMIDs} =  require('../../util/FormNames');
+
 var ignorableKeys = ["actionTakenByRole","actionTakenBy","ulb","design_year"]
 let groupedQuestions = {
     "location":['lat','long']
@@ -115,7 +116,8 @@ var customkeys = {
         "type":"waterSupply_type",
         "unit": "waterSupply_unit",
         "actualDisable":"actualDisable",
-        "targetDisable":"targetDisable"
+        "targetDisable":"targetDisable",
+        "range":"range"
     },
     "solidWaste_tableView":{
         "question": "solidWaste_question",
@@ -125,6 +127,7 @@ var customkeys = {
         "type":"solidWaste_type",
         "unit": "solidWaste_unit",
         "actualDisable":"actualDisable",
+        "range":"range",
         "targetDisable":"targetDisable"
     },
     "sanitation_tableView":{
@@ -135,7 +138,8 @@ var customkeys = {
         "unit": "sanitation_unit",
         "type":"sanitation_type",
         "actualDisable":"actualDisable",
-        "targetDisable":"targetDisable"
+        "targetDisable":"targetDisable",
+        "range":"range"
     },
     "stormWater_tableView":{
         "question": "stormWater_question",
@@ -145,7 +149,8 @@ var customkeys = {
         "unit": "stormWater_unit",
         "type":"stormWater_type",
         "actualDisable":"actualDisable",
-        "targetDisable":"targetDisable"
+        "targetDisable":"targetDisable",
+        "range":"range"
     },
     "projectDetails_tableView_addButton":{
         "cost": 'cost',
@@ -1172,9 +1177,6 @@ class AggregationServices {
             return obj
         }
     }
-
-
-
     /**
      * 
      * @param {*} field 
@@ -1211,7 +1213,6 @@ class AggregationServices {
                 else: 0
             }
         }
-
     }
     static getCommonSortArrObj(arr, sortBy) {
         return {
@@ -1302,7 +1303,6 @@ class AggregationServices {
             console.log("error in addMultipleFields :: ", err.message)
         }
     }
-
     static addConvertedAmount(field, fieldName, type) {
         let obj = {
             "$addFields": {}
@@ -1641,13 +1641,13 @@ class PayloadManager{
     async handleDateValues(){
         try{
             let answer = this.objects['answer'][0]['value']
-            if(!answer ){ // check if the date object is array because mform returns array if if empty
-                answer = new Date().toISOString() // static code because of issue in mform json
+            if(!answer || Array.isArray(answer)){
+                answer = "" // static code because of issue in mform json
             }
-            this.value = new Date(answer)
-            if(Array.isArray(answer)){
-                this.value = ""
+            else{
+                answer = new Date(answer)
             }
+            this.value = answer
             return this.value
         }
         catch(err){
@@ -1934,6 +1934,7 @@ async function handleArrOfObjects(question,flattedForm){
                             formObj[jsonKey] = obj[keys][questionObj.valueKey]
                         }
                         questionObj =  await handleDbValues(questionObj,formObj,order) 
+                        
                         if(questionObj.isQuestionDisabled !== true){
                             questionObj.isQuestionDisabled = handleDisableFields({disableFields})
                             if(Object.keys(customDisableFields).includes(keys)){
@@ -2091,9 +2092,8 @@ const handleNumericCase = async(question,obj,flattedForm,mainKey)=>{
                 value = ""
             }
             else{
-                value = flattedForm[key]
+                value = flattedForm[key].toString()
             }
-            console.log("flattedForm[key] :: ",flattedForm[key])
             question['modelValue'] = value
             question['value'] = value
             obj['textValue'] = value
@@ -2105,7 +2105,7 @@ const handleNumericCase = async(question,obj,flattedForm,mainKey)=>{
                 value = ""
             }
             else{
-                value = flattedForm[key]
+                value = flattedForm[key].toString()
             }
             question['modelValue'] = value
             question['value'] = value
@@ -2143,6 +2143,9 @@ async function handleConsentCase(question,obj,flattedForm,mainKey){
             question['value'] = answer['_id']
             obj['textValue'] = answer['name']
             obj['value'] = answer['_id']
+            if(question.isQuestionDisabled !== true){
+                question.isQuestionDisabled = handleDisableFields(flattedForm)
+            }
         }
     }
     catch(err){
@@ -2250,11 +2253,14 @@ function handledateCase(question,obj,flattedForm){
     try{
         
         let mainKey = question.shortKey
-        flattedForm[mainKey] = typeof flattedForm[mainKey] == "string"  ? new Date(flattedForm[mainKey]) : flattedForm[mainKey]
-        if(flattedForm[mainKey] === undefined){
+        console.log("flattedForm[mainKey] :: ",flattedForm[mainKey])
+        // console.log("flattedForm[mainKey] ::: ",flattedForm[mainKey].toISOString())
+        if(flattedForm[mainKey] === undefined || flattedForm[mainKey] === null){
             flattedForm[mainKey] = ""
         }
-        flattedForm[mainKey] = new Date(flattedForm[mainKey]).toISOString().split("T")[0]
+        else{
+            flattedForm[mainKey] = new Date(flattedForm[mainKey]).toISOString().split("T")[0]
+        }
         question['modelValue'] = flattedForm[mainKey]
         question['value'] = flattedForm[mainKey]
         obj['textValue'] = flattedForm[mainKey]
@@ -2506,7 +2512,7 @@ async function takeActionOnForms(params, res) {
     for (let form of formData) {
       let bodyData = {
         formId,
-        recordId: ObjectId(form._id),
+        recordId: form._id,
         data: form,
       };
       /* Saving the form history of the user. */
@@ -2617,7 +2623,7 @@ async function takeActionOnForms(params, res) {
         if (multi) {
           let [response] = responses;
         /* Getting the short keys from the short keys array and separating them into an array of arrays based on tab and questions */
-          let shortKeysResponse = getSeparatedShortKeys({shortKeys});
+          let shortKeysResponse = await getSeparatedShortKeys({shortKeys});
           /* Saving the status of the form for questions */
           for (let shortKey of shortKeysResponse["inner"]) {
             let params = {
@@ -2660,19 +2666,29 @@ async function takeActionOnForms(params, res) {
         } else {
           let rejectStatusAllTab = 0;
           //gets tabs array
-          let { outer: tabLevelShortKeys } = getSeparatedShortKeys({shortKeys});
+          let { outer: tabLevelShortKeys } = await getSeparatedShortKeys({shortKeys});
           let tabShortKeyObj = {},
             tabShortKeyResponse = {};
           for (let tab of tabLevelShortKeys) {
             tabShortKeyObj[tab] = 0;
           }
-          const separator = ".";
+          let separator = ".";
+          const tabSeparator = "_";
+          const tabRegex = /^tab_/g;
+          
           for (let response of responses) {
+            if (response.shortKey.match(tabRegex)){
+                separator =  tabSeparator
+            }
             let splitedArrayTab =
               response.shortKey.split(separator).length > 1
                 ? response.shortKey.split(separator)[0]
                 : "";
-
+            if(separator === tabSeparator){
+                splitedArrayTab = response.shortKey.split(separator).length > 1
+                ? response.shortKey.split(separator)[1]
+                : "";
+            }
             if (
               splitedArrayTab !== "" &&
               [
@@ -2682,11 +2698,11 @@ async function takeActionOnForms(params, res) {
             ) {
               tabShortKeyObj[splitedArrayTab] = tabShortKeyObj[
                 splitedArrayTab
-              ]++;
+              ]+1;
             }
-            //storing response of tabs if questions are not provided
-            if (tabShortKeyObj[response.shortKey]) {
-              tabShortKeyResponse[response.shortKey] = response;
+          //storing response of tabs if questions are not provided
+            if (separator === tabSeparator) {
+              tabShortKeyResponse[splitedArrayTab] = response;
               continue;
             }
             let params = {
@@ -2752,18 +2768,21 @@ async function takeActionOnForms(params, res) {
           }
           //form level status  updation
           if (rejectStatusAllTab) {
+            let response = {}
+
             response.status =
               actionTakenByRole === "MoHUA"
                 ? MASTER_STATUS["Rejected by MoHUA"]
                 : MASTER_STATUS["Rejected by State"];
             let updatedFormCurrentStatus = await updateFormCurrentStatus(
               model,
-              formId,
+              form._id,
               response
             );
             if (updatedFormCurrentStatus !== 1)
               throw "Action failed to update form current Status!";
           } else {
+            let response = {}
             response.status =
               actionTakenByRole === "MoHUA"
                 ? MASTER_STATUS["Approved by MoHUA"]
@@ -2872,13 +2891,14 @@ module.exports.getMasterAction = async (req, res) => {
         ulb,
         design_year: design_year,
       };
+      
 
       const model = require(`../../models/${path}`);
       const form = await model.findOne(condition,{_id:1}).lean();
       if (!form) {
         return Response.BadRequest(res, {}, "No Form Found!");
       }
-      const currentStatusResponse = await CurrentStatus.find({recordId: form._id}).lean()
+      let currentStatusResponse = await CurrentStatus.find({recordId: form._id}).lean()
       if(!currentStatusResponse || !currentStatusResponse.length){
         return Response.BadRequest(res, {}, "No Response Found!");
       }
@@ -2890,34 +2910,98 @@ module.exports.getMasterAction = async (req, res) => {
     //   Object.assign(form, {
     //     canTakenAction: canTakenActionMaster(params),
     //   });
-
+      for(let status of currentStatusResponse){
+        status['statusId'] = status['status'];
+        status['status'] = MASTER_STATUS_ID[parseInt(status['status'])]
+      }
+      if(formId === FORMIDs['AnnualAccount']){
+        currentStatusResponse = appendKeysForAA(currentStatusResponse);
+        currentStatusResponse = groupByKey(currentStatusResponse, "actionTakenByRole")
+      }
       return Response.OK(res, currentStatusResponse);
     } catch (error) {
         return Response.BadRequest(res, {}, error.message);
 
     }
 }
+const groupByKey = (list, key) => list.reduce((hash, obj) => ({ ...hash, [obj[key]]: (hash[obj[key]] || []).concat(obj) }), {})
 
+function appendKeysForAA(currentStatusResponse) {
+    const shortKeysToAppend = {
+        "unAudited.bal_sheet": [
+            "unAudited.bal_sheet.assets",
+            "unAudited.bal_sheet.f_assets",
+            "unAudited.bal_sheet.s_grant",
+            "unAudited.bal_sheet.c_grant",
+        ],
+        "audited.bal_sheet": [
+            "audited.bal_sheet.assets",
+            "audited.bal_sheet.f_assets",
+            "audited.bal_sheet.s_grant",
+            "audited.bal_sheet.c_grant",
+        ],
+        "unAudited.inc_exp": ["unAudited.inc_exp.revenue", "unAudited.inc_exp.expense"],
+        "audited.inc_exp": ["audited.inc_exp.revenue", "audited.inc_exp.expense"],
+    };
+    currentStatusResponse = appendStatus(currentStatusResponse, shortKeysToAppend);
+    return currentStatusResponse;
+}
+
+function appendStatus(statusResponse, shortKeysObj) {
+    try {
+        let shortKeysArray = Object.keys(shortKeysObj);
+      
+        for (let status of statusResponse) {
+          if (shortKeysArray.includes(status.shortKey)) {
+            for (let key of shortKeysObj[status.shortKey]) {
+              status["shortKey"] = key;
+              statusResponse.push(status);
+            }
+          }
+        }
+      
+        return statusResponse;
+        
+    } catch (error) {
+        throw("status key Not appended")
+    }
+}
 
 async function getSeparatedShortKeys(params) {
-  const { shortKeys } = params;
-  const First_Index = 0;
-  let output = {
-    outer: [],
-    inner: [],
-  };
-  const separator = ".";
-  for (let shortKey of shortKeys) {
-    let splitedArray = shortKey.split[separator];
-    let splitedArrayLength = splitedArray.length - 1;
-    if (Array.isArray(splitedArray) && splitedArrayLength) {
-      splitedArray[First_Index] === splitedArray[splitedArrayLength]
-        ? output["inner"].push(shortKey)
-        : output["outer"].push(shortKey);
+    try {
+      const { shortKeys } = params;
+      const First_Index = 0;
+      let output = {
+        outer: [],
+        inner: [],
+      };
+      let separator = ".";
+      const tabSeparator = "_";
+      const tabRegex = /^tab_/g;
+      for (let shortKey of shortKeys) {
+        if (shortKey.match(tabRegex)) {
+          separator = tabSeparator;
+        }
+        let splitedArray = shortKey.split(separator);
+        let splitedArrayLength = splitedArray.length - 1;
+        if (Array.isArray(splitedArray) && splitedArrayLength) {
+          separator === tabSeparator
+            ? output["outer"].push(splitedArray[splitedArrayLength])
+            : output["inner"].push(splitedArray[splitedArrayLength]);
+          //push tab name in outer array
+          separator !== tabSeparator
+            ? output["outer"].push(splitedArray[splitedArrayLength - 1])
+            : "";
+        }
+      }
+      if (output["outer"].length) {
+        output["outer"] = Array.from(new Set(output["outer"]));
+      }
+      return output;
+    } catch (error) {
+      throw `getSeparatedShortKeys :: ${error.message} `;
     }
-  }
-
-  return output;
+  
 }
 
 
@@ -2934,7 +3018,6 @@ const handleChildValues = async(childObj,item,req)=>{
             if(Object.keys(arrFields).includes(item.shortKey)  && !Array.isArray(childObj[item.shortKey])){
                 var arrKey = arrFields[item.shortKey].split(".")[0]
                 if(!Object.keys(childObj).includes(arrKey)){
-                    
                     try{
                         childObj[arrKey] = [...childObj[arrKey]]
                     }
@@ -3011,15 +3094,15 @@ async function nestedObjectParser(data,req){
                 Object.assign(result,pointer)
             }
             else{
-                if(shortKey === "location" && item.answer.length == 0){ // code static due to some issues in frontend remove it after discussion with mform team in frontend
-                    item.answer = [
-                        {
-                            "label":"",
-                            "textValue":"",
-                            "value":"0,0"
-                        }
-                    ]
-                }
+                // if(shortKey === "location" && item.answer.length == 0){ // code static due to some issues in frontend remove it after discussion with mform team in frontend
+                //     item.answer = [
+                //         {
+                //             "label":"",
+                //             "textValue":"",
+                //             "value":"0,0"
+                //         }
+                //     ]
+                // }
                 let value = await decideValues(temp,shortKey,item,req)
                 await keys.forEach((key, index) => {
                         if (!pointer.hasOwnProperty(key)) {

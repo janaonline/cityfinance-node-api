@@ -37,6 +37,11 @@ module.exports.changePayload = async(req,res,next)=>{
     }
     catch(err){
         console.log("error in changePayload :::: ",err.message)
+        let message = ["demo","staging"].includes(process.env.ENV) ? err.message : "Something went wrong"
+        return res.status(400).json({
+            "message":message,
+            "success":false
+        })
     }
 }
 
@@ -54,8 +59,9 @@ module.exports.changeResponse = async(req,res,next) =>{
               "language":[],
               "status":MASTER_STATUS_ID[parseInt(req.form.currentFormStatus)] || "Not Started",
               "canTakeAction":req?.form?.canTakeAction ? req?.form?.canTakeAction :true,
-              "deadLineMsg":"As per 15th FC Operational Guidelines, for receiving grants ULBs should submit their AFS on or before 15th of May"
-              
+              "deadLineMsg":"As per 15th FC Operational Guidelines, for receiving grants ULBs should submit their AFS on or before 15th of May",
+              "statusId": req?.form?.currentFormStatus
+
             }
           ]
         if(!req.form){
@@ -70,7 +76,6 @@ module.exports.changeResponse = async(req,res,next) =>{
         let form = {...req.form}
         let {name,role} = req.decoded
         let latestYear = !outDatedYears.includes(year)
-        console.log("latestYear :: ",latestYear)
         if(latestYear){
             let jsonFormId = req?.query?.formId
             if(!jsonFormId){

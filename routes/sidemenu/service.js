@@ -25,7 +25,8 @@ const PTFR = require('../../models/PropertyTaxFloorRate')
 const GTC_STATE = require('../../models/GrantTransferCertificate')
 const ActionPlan = require('../../models/ActionPlans')
 const WaterRejuvenation = require('../../models/WaterRejenuvation&Recycling')
-const USER_TYPES = require('../../util/userTypes')
+const USER_TYPES = require('../../util/userTypes');
+const { years } = require('../../service/years');
 const ticks = {
     "green": "../../../assets/form-icon/checked.svg",
     "red": "../../../assets/form-icon/cancel.svg"
@@ -217,6 +218,7 @@ module.exports.get = catchAsync(async (req, res) => {
         tooltip: "",
         image: "",
         background_image:"",
+        cardSequence: "",
         color:{
             color_1:"",
             color_2:""
@@ -396,33 +398,13 @@ tempData = sortByPosition(tempData);
 
 //creating card Data
 if(role=="ULB"){
-    data.forEach(el => {
-        if(el.name.toLowerCase() != 'overview'  &&  el.name.toLowerCase() != 'resources' ){
-            cardObj.image = el?.icon;
-            cardObj.key = el?.collectionName;
-            cardObj.label = el?.name;
-            cardObj.title = el?.cardLabel;
-            cardObj.message = el?.cardMessage;
-            cardObj.tooltip = el?.tooltip;
-            cardObj.link = el?.url;
-            cardObj.background_image = el?.background_image;
-            cardObj.color = el?.color;
-            cardArr.push(cardObj)
-            cardObj =     {
-                label: "",
-                key: "",
-                link: "",
-                title: "",
-                message: '',
-                tooltip: "",
-                image: "",
-                background_image:"",
-                color:{},
-              }
-        }
-        
-    
-    })
+  const ignoreCardsList = ['overview','resources'];
+  // if(years['2022-23'] === year){
+  cardArr = getCards(data, cardObj, ignoreCardsList);
+  // }
+  cardArr.sort((a,b)=>{
+    return a?.cardSequence - b?.cardSequence
+  })
 }   
 
     return res.status(200).json({
@@ -442,7 +424,7 @@ module.exports.list = catchAsync(async (req,res) => {
         isForm: true,
         isActive: true,
     }
-    let data = await Sidemenu.find(condition).select({name:1, _id:1, collectionName:1, path:1, url:1, optional: 1, folderName:1});
+    let data = await Sidemenu.find(condition).select({name:1, _id:1, collectionName:1, path:1, url:1, optional: 1, folderName:1, formId:1});
     
     data = data.filter((value, index, self) =>
   index === self.findIndex((t) => (
@@ -516,6 +498,40 @@ const sortByPosition = (data) => {
 };
 const groupByKey = (list, key) => list.reduce((hash, obj) => ({ ...hash, [obj[key]]: (hash[obj[key]] || []).concat(obj) }), {})
 
+
+function getCards(data, cardObj, ignoreCardsList) {
+  let cardArr = [];
+  data.forEach(el => {
+    if (!ignoreCardsList.includes(el.name.toLowerCase())) {
+      cardObj.image = el?.icon;
+      cardObj.key = el?.collectionName;
+      cardObj.label = el?.name;
+      cardObj.title = el?.cardLabel;
+      cardObj.message = el?.cardMessage;
+      cardObj.tooltip = el?.tooltip;
+      cardObj.link = el?.url;
+      cardObj.background_image = el?.background_image;
+      cardObj.color = el?.color;
+      cardObj.cardSequence = el?.cardSequence
+      cardArr.push(cardObj);
+      cardObj = {
+        label: "",
+        key: "",
+        link: "",
+        title: "",
+        message: '',
+        tooltip: "",
+        image: "",
+        background_image: "",
+        color: {},
+        cardSequence: ""
+      };
+    }
+
+
+  });
+  return cardArr;
+}
 
 function getGTCFinalForm(formArray){
     let formData = "";

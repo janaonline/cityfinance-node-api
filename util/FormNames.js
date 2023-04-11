@@ -73,7 +73,7 @@ module.exports.FORM_LEVEL = {
 
 module.exports.MODEL_PATH = {
     1: "OdfFormCollection",
-    2: "GfcFromCollection",
+    2: "GfcFormCollection",
     3: "PropertyTaxOp",
     5: "AnnualAccounts",
     6: "TwentyEightSlbsForm",

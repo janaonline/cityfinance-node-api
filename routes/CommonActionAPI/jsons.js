@@ -175,16 +175,12 @@ let DurProjectJson = {
         "resource_urls": [],
         "label": "3",
         "shortKey": "startDate",
+        "max":new Date().toISOString().slice(0,10),
         "viewSequence": "23",
         "child": [],
         "parent": [],
         "required": true,
         "validation": [
-            {
-                "_id": "24",
-                "error_msg": "",
-                "value": ""
-            },
             {
                 "error_msg": "",
                 "_id": "1"
@@ -193,7 +189,7 @@ let DurProjectJson = {
         "restrictions": [],
         "input_type": "14",
         "weightage": [],
-        "value": "2023-03-15",
+        "value": "",
         "acceptableType": "",
         "acceptableFileType": "",
         "type": "14",
@@ -207,13 +203,13 @@ let DurProjectJson = {
             "name": " 2"
         },
         "forParentValue": 2,
-        "modelValue": "2023-03-15",
+        "modelValue": "",
         "isSelectValue": false,
-        "previousValue": "2023-03-15",
+        "previousValue": "",
         "selectedValue": [
             {
                 "label": "",
-                "textValue": "2023-03-15",
+                "textValue": "",
                 "value": ""
             }
         ],
@@ -250,16 +246,11 @@ let DurProjectJson = {
                 "error_msg": "",
                 "_id": "1"
             },
-            {
-                "_id": "24",
-                "error_msg": "",
-                "value": ""
-            }
         ],
         "restrictions": [],
         "input_type": "14",
         "weightage": [],
-        "value": "2023-03-20",
+        "value": "",
         "acceptableType": "",
         "acceptableFileType": "",
         "type": "14",
@@ -273,13 +264,13 @@ let DurProjectJson = {
             "name": " 2"
         },
         "forParentValue": 2,
-        "modelValue": "2023-03-20",
+        "modelValue": "",
         "isSelectValue": false,
-        "previousValue": "2023-03-20",
+        "previousValue": "",
         "selectedValue": [
             {
                 "label": "",
-                "textValue": "2023-03-20",
+                "textValue": "",
                 "value": ""
             }
         ],
