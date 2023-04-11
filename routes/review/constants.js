@@ -131,21 +131,60 @@ module.exports.projectionQueryUlb2 = (isFormOptional,filledQueryExpression)=>{
     },
   }
 }
-function handleActions(str){
+
+
+class actionCaseSwitchCase{
+  formTypeUlbCase(){
+    return [{
+      "case":{
+      "$and":[
+        {"$eq":["$formType","ULB"]},
+        {"$eq":["$role","STATE"]},
+        {"$eq":["$formData.currentFormStatus",3]}
+      ]
+    },
+    "then":true,
+    },
+    {
+      "case":{
+        "$and":[
+          {"$eq":["$formType","ULB"]},
+          {"$eq":["$role","MoHUA"]},
+          {"$eq":["$formData.currentFormStatus",4]}
+        ]
+      },
+      "then":true
+    }]
+  }
+  formTypeStateCase(){
+    return [
+    {
+      "case":{
+        "$and":[
+          {"$eq":["$formType","STATE"]},
+          {"$eq":["$role","MoHUA"]},
+          {"$eq":["$formData.currentFormStatus",4]}
+        ]
+      },
+      "then":true
+    }]
+
+  }
+}
+
+
+function handleActions(){
   try{
+    let switchCaseService = new actionCaseSwitchCase()
     let cond = {
       "$switch":{
-        "branches":[
-          {"case":{
-            "$and":[
-              {"$eq":["$role":""]}
-            ]
-          },
-          "then":""
-          }
-        ]
+        "branches":[],
+        "default":false
       }
     }
+    cond["$switch"]["branches"].push(switchCaseService.formTypeUlbCase())
+    cond["$switch"]["branches"].push(switchCaseService.formTypeStateCase())
+    return ConvolverNode
   }
   catch(err){
     consle.log("error in handleActions :::: ",err.message)
