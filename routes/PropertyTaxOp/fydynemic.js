@@ -3,8 +3,8 @@ const { years } = require("../../service/years")
 const propertyTaxOpFormJson = () => {
     return {
         "_id": null,
-        "ulb": null,
-        "design_year": null,
+        "ulb": "5fa24660072dab780a6f141e",
+        "design_year": "606aafb14dff55e6c075d3ae",
         "isDraft": null,
         "tabs": [
             {
@@ -323,10 +323,39 @@ const propertyTaxOpFormJson = () => {
                         ],
                         "info": "including cess like library cess, tree cess etc , other taxes like water tax, sanitation tax etc and user charges like water charges, sewerage charges etc demanded along with property tax"
                     },
+                    "taxTypeDemandType": {
+                        "key": "taxTypeDemandType",
+                        "label": "Other Tax Demand Type",
+                        "displayPriority": "2.3",
+                        "yearData": [
+                            {
+                                "label": "FY 2018-19",
+                                "key": "FY2018-19",
+                                "postion": "0",
+                                "value": "",
+                                "file": "",
+                                "min": "",
+                                "max": "",
+                                "required": true,
+                                "type": "taxTypeDemandType",
+                                "year": "63735a5bd44534713673c1ca",
+                                "code": [],
+                                "readonly": false,
+                                "formFieldType": "text",
+                                "bottomText": "",
+                                "placeHolder": ""
+                            },
+                            {},
+                            {},
+                            {},
+                            {}
+                        ],
+                        "info": "For example,Water tax, Sanitation tax, etc."
+                    },
                     "taxTypeDemand": {
                         "key": "taxTypeDemand",
                         "label": "Other Tax Demand  Details(Demand figure for each type of tax other than property tax collected)",
-                        "displayPriority": "2.3",
+                        "displayPriority": "2.4",
                         "yearData": [
                             {
                                 "label": "FY 2018-19",
@@ -416,10 +445,39 @@ const propertyTaxOpFormJson = () => {
                         ],
                         "info": "For example,Water tax, Sanitation tax, etc."
                     },
+                    "cessDemandType": {
+                        "key": "cessDemandType",
+                        "label": "Cess Demand Type",
+                        "displayPriority": "2.5",
+                        "yearData": [
+                            {
+                                "label": "FY 2018-19",
+                                "key": "FY2018-19",
+                                "postion": "0",
+                                "value": "",
+                                "file": "",
+                                "min": "",
+                                "max": "",
+                                "required": true,
+                                "type": "cessDemandType",
+                                "year": "63735a5bd44534713673c1ca",
+                                "code": [],
+                                "readonly": false,
+                                "formFieldType": "text",
+                                "bottomText": "",
+                                "placeHolder": ""
+                            },
+                            {},
+                            {},
+                            {},
+                            {}
+                        ],
+                        "info": "For example,Water tax, Sanitation tax, etc."
+                    },
                     "cessDemand": {
                         "key": "cessDemand",
                         "label": "Cess Demand Details(Demand figure for each type of cess collected)",
-                        "displayPriority": "2.4",
+                        "displayPriority": "2.6",
                         "yearData": [
                             {
                                 "label": "FY 2018-19",
@@ -1096,10 +1154,39 @@ const propertyTaxOpFormJson = () => {
                         ],
                         "info": "including cess like library cess, tree cess etc , other taxes like water tax, sanitation tax etc and user charges like water charges, sewearge charges etc demanded along with property tax"
                     },
+                    "taxTypeCollectionType": {
+                        "key": "taxTypeCollectionType",
+                        "label": "Other Tax Collections type",
+                        "displayPriority": "4.3",
+                        "yearData": [
+                            {
+                                "label": "FY 2018-19",
+                                "key": "FY2018-19",
+                                "postion": "0",
+                                "value": "",
+                                "file": "",
+                                "min": "",
+                                "max": "",
+                                "required": true,
+                                "type": "taxTypeCollectionType",
+                                "year": "63735a5bd44534713673c1ca",
+                                "code": [],
+                                "readonly": false,
+                                "formFieldType": "text",
+                                "bottomText": "",
+                                "placeHolder": ""
+                            },
+                            {},
+                            {},
+                            {},
+                            {}
+                        ],
+                        "info": "For example,Water taxes, Sanitation taxes, etc."
+                    },
                     "taxTypeCollection": {
                         "key": "taxTypeCollection",
                         "label": "Other Tax Collections Details(Collection figure for each type of tax other than property tax collected)(INR Lakh)",
-                        "displayPriority": "4.3",
+                        "displayPriority": "4.4",
                         "yearData": [
                             {
                                 "label": "FY 2018-19",
@@ -1189,10 +1276,39 @@ const propertyTaxOpFormJson = () => {
                         ],
                         "info": "For example,Water taxes, Sanitation taxes, etc."
                     },
+                    "cessCollectType": {
+                        "key": "cessCollectType",
+                        "label": "Cess Collection type",
+                        "displayPriority": "4.5",
+                        "yearData": [
+                            {
+                                "label": "FY 2018-19",
+                                "key": "FY2018-19",
+                                "postion": "0",
+                                "value": "",
+                                "file": "",
+                                "min": "",
+                                "max": "",
+                                "required": true,
+                                "type": "cessCollectType",
+                                "year": "63735a5bd44534713673c1ca",
+                                "code": [],
+                                "readonly": false,
+                                "formFieldType": "text",
+                                "bottomText": "",
+                                "placeHolder": ""
+                            },
+                            {},
+                            {},
+                            {},
+                            {}
+                        ],
+                        "info": "For example, Tree cess, Library cess etc"
+                    },
                     "cessCollect": {
                         "key": "cessCollect",
                         "label": "Cess Collection Details(Collection figure for each type of cess collected)(INR Lakh)",
-                        "displayPriority": "4.4",
+                        "displayPriority": "4.6",
                         "yearData": [
                             {
                                 "label": "FY 2018-19",
@@ -1285,7 +1401,7 @@ const propertyTaxOpFormJson = () => {
                     "userChargesColWater": {
                         "key": "userChargesColWater",
                         "label": "User Charges Collection Details - Water Charges",
-                        "displayPriority": "4.5",
+                        "displayPriority": "4.7",
                         "yearData": [
                             {
                                 "label": "FY 2018-19",
@@ -1378,7 +1494,7 @@ const propertyTaxOpFormJson = () => {
                     "userChargesColSewerage": {
                         "key": "userChargesColSewerage",
                         "label": "User Charges Collection Details - Sewerage charges",
-                        "displayPriority": "4.6",
+                        "displayPriority": "4.8",
                         "yearData": [
                             {
                                 "label": "FY 2018-19",
@@ -1471,7 +1587,7 @@ const propertyTaxOpFormJson = () => {
                     "userChargesColSWM": {
                         "key": "userChargesColSWM",
                         "label": "User Charges Collection Details - Solidwaste Management Charges",
-                        "displayPriority": "4.7",
+                        "displayPriority": "4.9",
                         "yearData": [
                             {
                                 "label": "FY 2018-19",
@@ -1564,7 +1680,7 @@ const propertyTaxOpFormJson = () => {
                     "userChargesColDrainage": {
                         "key": "userChargesColDrainage",
                         "label": "User Charges Collection Details - Drainage Charges",
-                        "displayPriority": "4.8",
+                        "displayPriority": "4.10",
                         "yearData": [
                             {
                                 "label": "FY 2018-19",
@@ -10393,9 +10509,9 @@ const propertyTaxOpFormJson = () => {
                         ],
                         "info": ""
                     },
-                    "notes": {
-                        "key": "notes",
-                        "label": "Notes",
+                    "signedPdf": {
+                        "key": "signedPdf",
+                        "label": "Upload signed PDF",
                         "displayPriority": "35.1",
                         "yearData": [
                             {
@@ -10410,7 +10526,7 @@ const propertyTaxOpFormJson = () => {
                                 "min": "",
                                 "max": 9999999,
                                 "required": true,
-                                "type": "notes",
+                                "type": "signedPdf",
                                 "year": "63735a5bd44534713673c1ca",
                                 "code": [],
                                 "readonly": false,
@@ -10779,6 +10895,7 @@ let specialHeaders = {
     "6.1": "Property Tax Demand and Collection Figures by Property Type (Amount in INR Lakhs)",
     "14.1": "Water Charges Details",
     "24.1": "Sewerage Charges Details",
+    "17.1": "Water Charges Demand and Collection Details by Household/Property type",
     "27.1": "Sewerage Charges Details by household/property type"
 }
 
