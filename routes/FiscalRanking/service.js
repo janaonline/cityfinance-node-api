@@ -2844,7 +2844,7 @@ module.exports.FRUlbFinancialData = async (req, res) => {
       csvCols,
       removeEscapesFromArr: [],
       labelObj: FRShortKeyObj,
-      percentCompletionArr: [],
+      // percentCompletionArr: [],
       FRKeyWithDate: [],
       FRKeyWithFile: []
 
@@ -2883,36 +2883,36 @@ module.exports.FROverAllUlbData = async (req, res) => {
       "designationOftNodalOfficer",
       "otherUpload",
     ];
-    let percentCompletionArr = [
-      "population11",
-      "populationFr",
-      "webLink",
-      "nameCmsnr",
-      "auditorName",
-      "nameOfNodalOfficer",
-      "designationOftNodalOfficer",
-      "email",
-      "mobile",
-      "waterSupply",
-      "sanitationService",
-      "propertyWaterTax",
-      "propertySanitationTax",
-      "FR_auditAnnualReport_2021-22",
-      "FR_auditAnnualReport_2020-21",
-      "FR_auditAnnualReport_2019-20",
-      "FR_webUrlAnnual_2021-22",
-      "FR_registerGis_2021-22",
-      "FR_accountStwre_2021-22",
-      "FR_accountStwreProof_2021-22",
-      "FR_appAnnualBudget_2023-24",
-      "FR_appAnnualBudget_2022-23",
-      "FR_appAnnualBudget_2021-22",
-      "FR_appAnnualBudget_2020-21",
-      "FR_auditedAnnualFySt_2021-22",
-      "FR_auditedAnnualFySt_2020-21",
-      "FR_auditedAnnualFySt_2019-20",
-      "FR_auditedAnnualFySt_2018-19",
-    ];
+    // let percentCompletionArr = [
+    //   "population11",
+    //   "populationFr",
+    //   "webLink",
+    //   "nameCmsnr",
+    //   "auditorName",
+    //   "nameOfNodalOfficer",
+    //   "designationOftNodalOfficer",
+    //   "email",
+    //   "mobile",
+    //   "waterSupply",
+    //   "sanitationService",
+    //   "propertyWaterTax",
+    //   "propertySanitationTax",
+    //   "FR_auditAnnualReport_2021-22",
+    //   "FR_auditAnnualReport_2020-21",
+    //   "FR_auditAnnualReport_2019-20",
+    //   "FR_webUrlAnnual_2021-22",
+    //   "FR_registerGis_2021-22",
+    //   "FR_accountStwre_2021-22",
+    //   "FR_accountStwreProof_2021-22",
+    //   "FR_appAnnualBudget_2023-24",
+    //   "FR_appAnnualBudget_2022-23",
+    //   "FR_appAnnualBudget_2021-22",
+    //   "FR_appAnnualBudget_2020-21",
+    //   "FR_auditedAnnualFySt_2021-22",
+    //   "FR_auditedAnnualFySt_2020-21",
+    //   "FR_auditedAnnualFySt_2019-20",
+    //   "FR_auditedAnnualFySt_2018-19",
+    // ];
     let csv2 = createCsv({
       query,
       res,
@@ -2922,7 +2922,6 @@ module.exports.FROverAllUlbData = async (req, res) => {
       csvCols,
       removeEscapesFromArr,
       labelObj: {},
-      percentCompletionArr,
       FRKeyWithDate:["FR_auditAnnualReport_2021-22","FR_auditAnnualReport_2020-21", "FR_auditAnnualReport_2019-20"],
       FRKeyWithFile: ["FR_accountStwreProof_2021-22","FR_appAnnualBudget_2020-21","FR_appAnnualBudget_2021-22","FR_appAnnualBudget_2022-23",
         "FR_appAnnualBudget_2023-24","FR_auditedAnnualFySt_2018-19","FR_auditedAnnualFySt_2019-20","FR_auditedAnnualFySt_2020-21","FR_auditedAnnualFySt_2021-22",
@@ -3084,7 +3083,6 @@ function createCsv(params) {
       csvCols,
       removeEscapesFromArr,
       labelObj,
-      percentCompletionArr,
       FRKeyWithDate,
       FRKeyWithFile
     } = params;
@@ -3132,15 +3130,11 @@ function createCsv(params) {
           if (key.split("_")[0] !== "FR") {
             if (document[key]) {
               /* A destructuring assignment.FR case in Fiscal Mapper */
-              ({ FRFlag, str2 } = FRFinancialCsvCase(
+               FRFinancialCsvCase(
                 key,
                 document,
-                FRFlag,
-                str2,
-                str,
-                totalownOwnRevenueAreaLabel,
                 labelObj
-              ));
+              );
               // if (key === "formStatus") {
               //   let { status, actionTakenByRole, isDraft } = document[key];
               //   document[key] = calculateStatusForFiscalRankingForms(
@@ -3186,10 +3180,10 @@ function createCsv(params) {
         //   str = str2.join(",");
         // }
         res.write("\ufeff"+ str + "\r\n");
-        if (FRFlag) {
-          res.write("\ufeff" + str2 + "\r\n");
-          FRFlag = false;
-        }
+        // if (FRFlag) {
+        //   res.write("\ufeff" + str2 + "\r\n");
+        //   FRFlag = false;
+        // }
       } catch (err) {
         console.log("error in writeCsv :: ", err.message);
       }
@@ -3239,26 +3233,24 @@ function completionPercent( document, FRCompletionNumber) {
 function FRFinancialCsvCase(
   key,
   document,
-  FRFlag,
-  str2,
-  str,
-  totalownOwnRevenueAreaLabel,
   labelObj
 ) {
   if (key === "indicator") {
-    if (document[key] === "totalOwnRevenueArea") {
-      FRFlag = true;
-      str2 = str;
-      str2 += `${totalownOwnRevenueAreaLabel}, ${
-        document["fy_21_22_cash"] ?? ""
-      }`;
-    }
+  //  if (document[key] === "totalOwnRevenueArea") {
+      // FRFlag = true;
+      // str2 = str;
+      // str2 += `${totalownOwnRevenueAreaLabel}, ${
+        // document["fy_21_22_cash"] ?? ""
+    //   // }`;
+    // }
     document[key] = removeEscapeChars(labelObj[document[key]]);
     // if(!labelObj[document[key]]){
     //   console.log(document["indicator"])
     // }
   }
-  return { FRFlag, str2 };
+  // return { FRFlag, 
+  //   // str2 
+  // };
 }
 
 /**
@@ -3304,6 +3296,7 @@ function computeQuery(params) {
     output["FRUlbFinancialData"] = [
       {
         $match: {
+          // ulb: ObjectId("5fa24662072dab780a6f15c9"),
           type: {
             $in: indicatorArr,
           },
@@ -3455,7 +3448,6 @@ function computeQuery(params) {
           indicator: "$type",
           amount: "$value",
           designYear: "$fiscalrankings.design_year.year",
-          fy_21_22_cash: "$fiscalrankings.fy_21_22_cash.value",
           displayPriority: 1,
         },
       },
