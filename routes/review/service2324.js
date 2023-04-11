@@ -79,8 +79,8 @@ class GetQuery {
       let matchObj = {
         "$match": { "access_2223": true }
       }
-      if (this.params.newFilter['state'] && this.params.newFilter['state'] === '') {
-        matchObj["$match"]['state'] = this.params.filter['state']
+      if (this.params.state && this.params.state === '') {
+        matchObj["$match"]['state'] = ObjectId(this.params.state)
       }
       // stage1 match for ulb 
       query.push(matchObj)
@@ -167,6 +167,7 @@ module.exports.get = async (req, res) => {
     if (req.decoded.role === "STATE") {
       state = req.decoded.state
     }
+    console.log("state :::: ",state)
     let getQuery = req.query.getQuery == 'true'
     if (!design_year || !form) {
       return res.status(400).json({
@@ -185,7 +186,7 @@ module.exports.get = async (req, res) => {
     }
     let isFormOptional = formTab.optional
     // const model = require(`../../models/${path}`)
-    let newFilter = await Service.mapFilterNew(filter);
+    let newFilter = await Service.mapFilterNew(filter,['formData.currentFormStatus']);
     if (Number(req.query.status) === MASTER_STATUS['Not Started']) {// to apply not started filter
       Object.assign(newFilter, { formData: "" });
     }
@@ -816,12 +817,16 @@ function censusCodeCondition(item, form) {
 }
 function manageFilters(formType, givenFilter, req, formTab) {
   let filter = { ...givenFilter }
+  let removeFromFilters = ['design_year','formId','skip','limit']
   try {
     if (formType === "ULB") {
       Object.keys(req.query).forEach((item) => {
+        if(removeFromFilters.includes(item)) {return}
         if (Object.keys(ulbFilterKeys).includes(item)) {
           filter[ulbFilterKeys[item]] = req.query[item] === "null" ? '' : req.query[item]
-          if (ulbFilterKeys[item] === "formData.currentFormStatus"); req.query[item] != 'null' ? Number(req.query.status) : ""
+          if (ulbFilterKeys[item] === "formData.currentFormStatus") {
+            filter[ulbFilterKeys[item]] = req.query[item] != 'null' ? Number(req.query.status) : ""
+          }
           filter = censusCodeCondition(item, filter)
         }
       })
