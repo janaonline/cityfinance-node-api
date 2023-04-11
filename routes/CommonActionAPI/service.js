@@ -2238,7 +2238,9 @@ function handledateCase(question,obj,flattedForm){
         if(flattedForm[mainKey] === undefined){
             flattedForm[mainKey] = ""
         }
-        flattedForm[mainKey] = new Date(flattedForm[mainKey]).toISOString().split("T")[0]
+        else{
+            flattedForm[mainKey] = new Date(flattedForm[mainKey]).toISOString().split("T")[0]
+        }
         question['modelValue'] = flattedForm[mainKey]
         question['value'] = flattedForm[mainKey]
         obj['textValue'] = flattedForm[mainKey]
