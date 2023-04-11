@@ -218,6 +218,7 @@ module.exports.get = catchAsync(async (req, res) => {
         tooltip: "",
         image: "",
         background_image:"",
+        cardSequence: "",
         color:{
             color_1:"",
             color_2:""
@@ -398,15 +399,12 @@ tempData = sortByPosition(tempData);
 //creating card Data
 if(role=="ULB"){
   const ignoreCardsList = ['overview','resources'];
-  // if(years['2022-23'] !== year){
-    cardArr = getCards(data, cardObj, ignoreCardsList);
-    cardArr = cardArr.slice(4)
-  // }else{
-  //   cardArr = getCards(data, cardObj, ignoreCardsList);
-  //   cardArr.sort((a,b)=>{
-  //     return a?.cardSequence - b?.cardSequence
-  //   })
+  // if(years['2022-23'] === year){
+  cardArr = getCards(data, cardObj, ignoreCardsList);
   // }
+  cardArr.sort((a,b)=>{
+    return a?.cardSequence - b?.cardSequence
+  })
 }   
 
     return res.status(200).json({
@@ -426,7 +424,7 @@ module.exports.list = catchAsync(async (req,res) => {
         isForm: true,
         isActive: true,
     }
-    let data = await Sidemenu.find(condition).select({name:1, _id:1, collectionName:1, path:1, url:1, optional: 1, folderName:1});
+    let data = await Sidemenu.find(condition).select({name:1, _id:1, collectionName:1, path:1, url:1, optional: 1, folderName:1, formId:1});
     
     data = data.filter((value, index, self) =>
   index === self.findIndex((t) => (
@@ -514,6 +512,7 @@ function getCards(data, cardObj, ignoreCardsList) {
       cardObj.link = el?.url;
       cardObj.background_image = el?.background_image;
       cardObj.color = el?.color;
+      cardObj.cardSequence = el?.cardSequence
       cardArr.push(cardObj);
       cardObj = {
         label: "",
@@ -525,6 +524,7 @@ function getCards(data, cardObj, ignoreCardsList) {
         image: "",
         background_image: "",
         color: {},
+        cardSequence: ""
       };
     }
 

@@ -160,7 +160,7 @@ module.exports.get = async (req, res) => {
         el['cantakeAction'] = false;
       } else {
         // el['formStatus'] = calculateStatus(el.formData.status, el.formData.actionTakenByRole, el.formData.isDraft, formType);
-        let params = {status: el.formData.currentStatus, userRole: loggedInUserRole}
+        let params = {status: el.formData.currentFormStatus, userRole: loggedInUserRole}
         el['cantakeAction'] = req.decoded.role === "ADMIN" ? false : canTakeActionOrViewOnlyMasterForm(params);
         el['formStatus'] = MASTER_STATUS_ID[el.formData.currentFormStatus]
       }
