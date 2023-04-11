@@ -2924,19 +2924,19 @@ const groupByKey = (list, key) => list.reduce((hash, obj) => ({ ...hash, [obj[ke
 function appendKeysForAA(currentStatusResponse) {
     const shortKeysToAppend = {
         "unAudited.bal_sheet": [
-            "unAudited.assets",
-            "unAudited.f_assets",
-            "unAudited.s_grant",
-            "unAudited.c_grant",
+            "unAudited.bal_sheet.assets",
+            "unAudited.bal_sheet.f_assets",
+            "unAudited.bal_sheet.s_grant",
+            "unAudited.bal_sheet.c_grant",
         ],
         "audited.bal_sheet": [
-            "audited.assets",
-            "audited.f_assets",
-            "audited.s_grant",
-            "audited.c_grant",
+            "audited.bal_sheet.assets",
+            "audited.bal_sheet.f_assets",
+            "audited.bal_sheet.s_grant",
+            "audited.bal_sheet.c_grant",
         ],
-        "unAudited.inc_exp": ["unAudited.revenue", "unAudited.expense"],
-        "audited.inc_exp": ["audited.revenue", "audited.expense"],
+        "unAudited.inc_exp": ["unAudited.inc_exp.revenue", "unAudited.inc_exp.expense"],
+        "audited.inc_exp": ["audited.inc_exp.revenue", "audited.inc_exp.expense"],
     };
     currentStatusResponse = appendStatus(currentStatusResponse, shortKeysToAppend);
     return currentStatusResponse;
