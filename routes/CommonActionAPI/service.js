@@ -1630,7 +1630,7 @@ class PayloadManager{
     async handleDateValues(){
         try{
             let answer = this.objects['answer'][0]['value']
-            if(!answer){
+            if(!answer || Array.isArray(answer)){
                 answer = "" // static code because of issue in mform json
             }
             else{
