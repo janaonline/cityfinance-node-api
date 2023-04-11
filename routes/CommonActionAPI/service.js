@@ -1641,13 +1641,13 @@ class PayloadManager{
     async handleDateValues(){
         try{
             let answer = this.objects['answer'][0]['value']
-            if(!answer ){ // check if the date object is array because mform returns array if if empty
-                answer = new Date().toISOString() // static code because of issue in mform json
+            if(!answer){
+                answer = "" // static code because of issue in mform json
             }
-            this.value = new Date(answer)
-            if(Array.isArray(answer)){
-                this.value = ""
+            else{
+                answer = new Date(answer)
             }
+            this.value = answer
             return this.value
         }
         catch(err){
