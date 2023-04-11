@@ -1631,9 +1631,12 @@ class PayloadManager{
         try{
             let answer = this.objects['answer'][0]['value']
             if(!answer){
-                answer = new Date().toISOString() // static code because of issue in mform json
+                answer = "" // static code because of issue in mform json
             }
-            this.value = new Date(answer)
+            else{
+                answer = new Date(answer)
+            }
+            this.value = answer
             return this.value
         }
         catch(err){
