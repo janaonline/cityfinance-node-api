@@ -412,7 +412,7 @@ let arr = [
   },
   {
     key: 'totalOwnRevenue',
-    label: 'TOTAL OWN REVENUE',
+    label: 'TOTAL OWN REVENUE RECEIPTS - ACTUAL (sum of 1 to 3)',
     codes: [],
     years: [ '2018-19', '2019-20', '2020-21', '2021-22' ],
     formFieldType: 'number',
@@ -531,7 +531,7 @@ let arr = [
     input: 'number'
   },
   {
-    key: 'totalOMCaptlExpWaterSupply',
+    key: 'totalCaptlExpWaterSupply',
     label: 'O&M expense on Water Supply',
     codes: [],
     years: [ '2018-19', '2019-20', '2020-21', '2021-22' ],
@@ -750,7 +750,7 @@ const FRTypeShortKey = [
   'sewerageTax',
   'totalRcptSanitation',
   'totalRecBudgetEst',
-  'totalOwnRevenues',
+  'totalOwnRevenue',
   'propertyTax',
   'waterTax',
   'taxRevenue',
@@ -822,6 +822,7 @@ const FRTypeShortKey = [
   'registerGisProof',
   'accountStwre',
   'fy_21_22_online',
+  'fy_21_22_cash',
   'property_tax_register',
   'paying_property_tax',
   "RcptBudget",
