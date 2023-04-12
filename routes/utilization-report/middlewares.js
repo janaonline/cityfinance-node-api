@@ -44,7 +44,7 @@ module.exports.changeGetApiForm = async (req,res,next)=>{
             }
             if(!jsonFormId){
                 response.message = "formId is required"
-                repsonse.success = false
+                response.success = false
                 return res.json(response)
             }
             let formStatus = false
@@ -55,7 +55,7 @@ module.exports.changeGetApiForm = async (req,res,next)=>{
             flattedForm.disableFields = formStatus
             flattedForm['name_'] = flattedForm['name']
             let keysToBeDeleted = ["_id","createdAt","modifiedAt","actionTakenByRole","actionTakenBy","ulb","design_year"]
-            flattedForm['grantPosition.closingBal'] = +form.grantPosition.unUtilizedPrevYr + (+form.grantPosition.receivedDuringYr) -(+form.grantPosition.expDuringYr)
+            // flattedForm['grantPosition.closingBal'] = +form.grantPosition.unUtilizedPrevYr + (+form.grantPosition.receivedDuringYr) -(+form.grantPosition.expDuringYr)
             obj = await mutuateGetPayload(obj, flattedForm,keysToBeDeleted,role)
             obj[0].isDraft = form.isDraft
             responseData[0]['language'] = obj
