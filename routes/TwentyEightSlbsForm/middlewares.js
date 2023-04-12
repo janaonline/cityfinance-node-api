@@ -39,7 +39,7 @@ module.exports.changeApiGetForm = async(req,res)=>{
             }
             let formStatus = false
             if(form){
-                formStatus = decideDisabledFields(form,"ULB")
+                formStatus = decideDisabledFields(form,req.decoded.role)
             }
             let flattedForm = getFlatObj(req.form)
             flattedForm.disableFields = formStatus
