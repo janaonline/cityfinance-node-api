@@ -2948,7 +2948,9 @@ function filterStatusResponse(statuses, formStatus){
 
 function getCurrentStatus(key,statuses){
     if (key === "ULB"){
-        return [];
+        return statuses.filter(el=>{
+            return (el.status<=3 && el.status>1);
+        });
     }else if (key ==='STATE'){
         return statuses.filter(el=>{
             return (el.status<6 && el.status>3);
