@@ -44,6 +44,11 @@ module.exports.changeRequestBody = async (req,res,next)=>{
   }
   catch(err){
     console.log("error in changeRequestBody ::::: ",err.message)
+    let message = ["demo","staging"].includes(process.env.ENV) ? err.message : "Something went wrong"
+    return res.status(400).json({
+        "message":message,
+        "success":false
+    })
   }
 }
 
@@ -108,7 +113,8 @@ module.exports.changeFormGetStructure = async (req, res, next) => {
         "formId": req.query.formId,
         "language":[],
         "canTakeAction":false,
-        "status":MASTER_STATUS_ID[parseInt(req?.form?.currentFormStatus)] || "Not Started"
+        "status":MASTER_STATUS_ID[parseInt(req?.form?.currentFormStatus)] || "Not Started",
+        "statusId": req?.form?.currentFormStatus
       }
     ]
     let keysToBeDeleted = ["_id","createdAt","modifiedAt","actionTakenByRole","actionTakenBy","ulb","design_year","isDraft"]

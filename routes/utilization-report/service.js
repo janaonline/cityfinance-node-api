@@ -1442,9 +1442,6 @@ module.exports.getProjects = catchAsync(async(req,res,next)=>{
     }
     if(projectObj){
       formStatus = decideDisabledFields(projectObj,"ULB")
-      if(projectObj.status === ""){
-          formStatus = MASTER_STATUS_ID[projectObj.currentFormStatus]  
-      }
       projectObj.disableFields = formStatus
     }
     let formJson = await FormsJson.findOne({"formId":formId}).lean()

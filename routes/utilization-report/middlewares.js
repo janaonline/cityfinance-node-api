@@ -55,6 +55,7 @@ module.exports.changeGetApiForm = async (req,res,next)=>{
             flattedForm.disableFields = formStatus
             flattedForm['name_'] = flattedForm['name']
             let keysToBeDeleted = ["_id","createdAt","modifiedAt","actionTakenByRole","actionTakenBy","ulb","design_year"]
+            flattedForm['grantPosition.closingBal'] = +form.grantPosition.unUtilizedPrevYr + (+form.grantPosition.receivedDuringYr) -(+form.grantPosition.expDuringYr)
             obj = await mutuateGetPayload(obj, flattedForm,keysToBeDeleted,role)
             obj[0].isDraft = form.isDraft
             responseData[0]['language'] = obj
@@ -94,5 +95,10 @@ module.exports.changePayloadFormat = async(req,res,next)=>{
     }
     catch(err){
         console.log("error in changePayloadFormat ::: ",err.message)
+        let message = ["demo","staging"].includes(process.env.ENV) ? err.message : "Something went wrong"
+        return res.status(400).json({
+            "message":message,
+            "success":false
+        })
     }
 }

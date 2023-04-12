@@ -7,7 +7,7 @@ const Service = require('../../service');
 const { FormNames } = require('../../util/FormNames');
 const User = require('../../models/User');
 const { checkUndefinedValidations } = require('../../routes/FiscalRanking/service');
-const { propertyTaxOpFormJson, financialYearTableHeader } = require('./fydynemic')
+const { propertyTaxOpFormJson, financialYearTableHeader, specialHeaders } = require('./fydynemic')
 const { isEmptyObj, isReadOnly } = require('../../util/helper');
 
 module.exports.getForm = async (req, res) => {
@@ -472,7 +472,7 @@ exports.getView = async function (req, res, next) {
                 }
             }
         }
-        return res.status(200).json({ status: true, message: "Success fetched data!", data: { ...fyDynemic, financialYearTableHeader } });
+        return res.status(200).json({ status: true, message: "Success fetched data!", data: { ...fyDynemic, financialYearTableHeader, specialHeaders } });
     } catch (error) {
         console.log("err", error);
         return res.status(400).json({ status: false, message: "Something error wrong!" });

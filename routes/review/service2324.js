@@ -39,7 +39,7 @@ module.exports.get = async (req, res) => {
     //    formId --> sidemenu collection --> e.g Annual Accounts --> _id = formId
     let total;
     let design_year = req.query.design_year;
-    let form = req.query.formId
+    let form = Number(req.query.formId)
     if (!design_year || !form) {
       return res.status(400).json({
         success: false,
@@ -50,7 +50,7 @@ module.exports.get = async (req, res) => {
     let limit = req.query.limit ? parseInt(req.query.limit) : 10
     let csv = req.query.csv == "true"
     let keys;
-    let formTab = await Sidemenu.findOne({ _id: ObjectId(form) }).lean();
+    let formTab = await Sidemenu.findOne({ formId: form }).lean();
     if (loggedInUserRole == "STATE") {
       delete ulbColumnNames['stateName']
     }
@@ -160,7 +160,7 @@ module.exports.get = async (req, res) => {
         el['cantakeAction'] = false;
       } else {
         // el['formStatus'] = calculateStatus(el.formData.status, el.formData.actionTakenByRole, el.formData.isDraft, formType);
-        let params = {status: el.formData.currentStatus, userRole: loggedInUserRole}
+        let params = {status: el.formData.currentFormStatus, userRole: loggedInUserRole}
         el['cantakeAction'] = req.decoded.role === "ADMIN" ? false : canTakeActionOrViewOnlyMasterForm(params);
         el['formStatus'] = MASTER_STATUS_ID[el.formData.currentFormStatus]
       }

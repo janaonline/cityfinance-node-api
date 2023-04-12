@@ -22,7 +22,7 @@ module.exports.saveCurrentStatus = (params) => {
       const { body, session } = params;
       if (body.recordId) {
         let currentStatus = await CurrentStatus.findOneAndUpdate(
-          { recordId: body.recordId, shortKey: body.shortKey },
+          { recordId: body.recordId, shortKey: body.shortKey , actionTakenByRole: body.actionTakenByRole},
           { $set: body },
           { upsert: true,
             //  session
