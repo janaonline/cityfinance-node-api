@@ -44,7 +44,7 @@ module.exports.changeGetApiForm = async (req,res,next)=>{
             }
             if(!jsonFormId){
                 response.message = "formId is required"
-                repsonse.success = false
+                response.success = false
                 return res.json(response)
             }
             let formStatus = false
