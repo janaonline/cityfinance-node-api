@@ -2894,11 +2894,12 @@ module.exports.getMasterAction = async (req, res) => {
       
 
       const model = require(`../../models/${path}`);
-      const form = await model.findOne(condition,{_id:1}).lean();
+      const form = await model.findOne(condition,{_id:1, currentFormStatus:1}).lean();
       if (!form) {
         return Response.BadRequest(res, {}, "No Form Found!");
       }
       let currentStatusResponse = await CurrentStatus.find({recordId: form._id}).lean()
+      const currentFormStatus = form.currentFormStatus;
       if(!currentStatusResponse || !currentStatusResponse.length){
         return Response.BadRequest(res, {}, "No Response Found!");
       }
@@ -2910,6 +2911,7 @@ module.exports.getMasterAction = async (req, res) => {
     //   Object.assign(form, {
     //     canTakenAction: canTakenActionMaster(params),
     //   });
+    currentStatusResponse = filterStatusResponse(currentStatusResponse, currentFormStatus);
       for(let status of currentStatusResponse){
         status['statusId'] = status['status'];
         status['status'] = MASTER_STATUS_ID[parseInt(status['status'])]
@@ -2925,6 +2927,40 @@ module.exports.getMasterAction = async (req, res) => {
     }
 }
 const groupByKey = (list, key) => list.reduce((hash, obj) => ({ ...hash, [obj[key]]: (hash[obj[key]] || []).concat(obj) }), {})
+
+function filterStatusResponse(statuses, formStatus){
+    
+    const STATUS_RESPONSE = {
+        ULB: [1,2,3],
+        STATE: [4,5],
+        MoHUA: [6,7]
+    }
+    
+    for( let key in STATUS_RESPONSE){
+
+        if(STATUS_RESPONSE[key].includes(formStatus)){
+           return getCurrentStatus(key,statuses);
+        }
+
+    }
+    
+}
+
+function getCurrentStatus(key,statuses){
+    if (key === "ULB"){
+        return [];
+    }else if (key ==='STATE'){
+        return statuses.filter(el=>{
+            return (el.status<6 && el.status>3);
+        })
+    }else if(key === "MoHUA"){
+        return statuses.filter(el=>{
+            return el.status>3 ;
+        })
+    }
+
+    return statuses;
+}
 
 function appendKeysForAA(currentStatusResponse) {
     const shortKeysToAppend = {
