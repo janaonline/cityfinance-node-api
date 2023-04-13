@@ -1888,6 +1888,9 @@ async function handleRangeIfExists(questionObj,formObj){
                 obj.maxRange = formObj.range.split("-")[1]++
                 obj.hint = formObj.range
             }
+            if(formObj.unit !== "%"){
+                obj.allowDecimal = false
+            }
         }
         return {...obj}
     }
