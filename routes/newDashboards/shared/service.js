@@ -132,22 +132,25 @@ const peopleInformation = async (req, res) => {
 
 const moneyInformation = async (req, res) => {
   try {
-    const type = (req.query.type || req.headers.type).toLowerCase();
-
+    let type = (req.query.type || req.headers.type);
+    let message = "Success"
     if (!type) return Response.BadRequest(res, {}, "No Type Provided");
+    type = type.toLowerCase();
     let data, ulbId;
     switch (type) {
       case "ulb":
         ulbId = [ObjectId(req.query.ulb)];
+        let ulbResponse = await Ulb.findOne({_id:ulbId},{isActive:1})
+        message = ulbResponse.isActive ? "" :"This ULB has been denotified"
         break;
       case "state":
-        ulbId = await Ulb.find({ state: ObjectId(req.query.state) })
+        ulbId = await Ulb.find({ state: ObjectId(req.query.state),isActive:true })
           .select({ _id: 1 })
           .lean();
         ulbId = ulbId.map((value) => value._id);
         break;
       case "national":
-        ulbId = await Ulb.find().select({ _id: 1 }).lean();
+        ulbId = await Ulb.find({isActive:true}).select({ _id: 1 }).lean();
         ulbId = ulbId.map((value) => value._id);
         break;
       default:
@@ -202,17 +205,16 @@ const moneyInformation = async (req, res) => {
     }
 
     ])
-    console.log(ownRevenue)
     let revenue = data.find(el => el._id == 'Revenue') ;
     let assets = data.find(el => el._id == 'Asset') ;
     
     let taxRevenueObj = {
       _id: 'TaxRevenue',
-      amount: revenue.amount - ownRevenue[0].amount
+      amount: revenue?.amount - ownRevenue[0]?.amount
     }
     let grantObj = {
       _id: 'Grant',
-      amount: revenue.totalGrant
+      amount: revenue?.totalGrant
     }
     let balanceSheet = {
       _id: 'BalanceSheetSize',
@@ -220,8 +222,10 @@ const moneyInformation = async (req, res) => {
     }
   
 data.push(ownRevenue[0],taxRevenueObj, grantObj, balanceSheet )
-    return Response.OK(res, data);
+
+    return Response.OK(res, data,message);
   } catch (err) {
+    console.log(err)
     console.error(err.message);
     return Response.BadRequest(res, {}, err.message);
   }

@@ -690,7 +690,7 @@ exports.stateDashRevenueTabs = async (
   sortBy = "top",
   code
 ) => {
-  let ulbIds = await Ulb.find({ state: stateId }).select("_id").lean();
+  let ulbIds = await Ulb.find({ state: stateId,isActive:true }).select("_id").lean();
   let matchObj = {
     financialYear,
     ulb: { $in: ulbIds.map((value) => value._id) },
@@ -1119,6 +1119,7 @@ exports.getGroupedUlbsByPopulation = (stateId) => {
     pipeline.push({
       $match: {
         state: ObjectId(stateId),
+        isActive:true,
       },
     });
   }
@@ -1204,7 +1205,7 @@ exports.getGroupedUlbsByPopulation = (stateId) => {
 exports.getFYsWithSpecificationPipeline = async (state, city) => {
   let pipeline = [];
   if (state) {
-    let ulbs = await Ulb.find({ state: ObjectId(state) }).select("_id");
+    let ulbs = await Ulb.find({ state: ObjectId(state) ,isActive:true}).select("_id");
     ulbs = ulbs.map((each) => each._id);
     pipeline.push({
       $match: {
@@ -3340,7 +3341,7 @@ exports.stateDashAvgsPipeline = async (
   if (financialYear) matchObj.financialYear = financialYear;
   if (which == "ulbTypeAvg" || which == "populationAvg") {
     if (stateId) {
-      let ulbs = await Ulb.find({ state: stateId }).select("_id");
+      let ulbs = await Ulb.find({ state: stateId ,isActive:true }).select("_id");
       matchObj.ulb = { $in: ulbs.map((each) => each._id) };
     }
   }
