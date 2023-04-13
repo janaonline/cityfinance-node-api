@@ -2870,7 +2870,7 @@ module.exports.getMasterAction = async (req, res) => {
         status['status'] = MASTER_STATUS_ID[parseInt(status['status'])]
       }
       if(formId === FORMIDs['AnnualAccount']){
-        currentStatusResponse = appendKeysForAA(currentStatusResponse);
+        // currentStatusResponse = appendKeysForAA(currentStatusResponse);
         currentStatusResponse = groupByKey(currentStatusResponse, "actionTakenByRole")
       }
       return Response.OK(res, currentStatusResponse);
