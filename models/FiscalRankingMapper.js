@@ -38,8 +38,8 @@ const fiscalRankingMapperSchema = new Schema(
             },
         },
         displayPriority: { type: String, default: null },
-        createdAt: { type: Date, default: Date.now() },
-        modifiedAt: { type: Date, default: Date.now() },
+        // createdAt: { type: Date, default: Date.now() },
+        // modifiedAt: { type: Date, default: Date.now() },
     },
     { timestamp: { createdAt: "createdAt", updatedAt: "modifiedAt" } }
 );
