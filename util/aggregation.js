@@ -29,19 +29,24 @@ exports.nationalDashRevenuePipeline = (
     },
   ];
   // if (stateId) pipeline[0]["$match"]["ulb"] = { $in: ulbs };
+  pipeline.push({
+    $lookup: {
+      from: "ulbs",
+      localField: "ulb",
+      foreignField: "_id",
+      as: "ulb",
+    }
+  })
   pipeline.push(
-    {
-      $lookup: {
-        from: "ulbs",
-        localField: "ulb",
-        foreignField: "_id",
-        as: "ulb",
-      },
-    },
     {
       $unwind: "$ulb",
     }
   );
+  pipeline.push({
+    "$match":{
+      "ulb.isActive":true
+    }
+  })
   if (type == "totalRevenue") {
     if (formType == "populationCategory") {
       pipeline.push(

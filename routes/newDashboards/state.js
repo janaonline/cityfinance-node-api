@@ -1679,6 +1679,7 @@ const serviceLevelBenchmark = catchAsync(async (req, res) => {
     {
       $match: {
         "ulb.state": ObjectId(stateId),
+        "ulb.isActive":true
       },
     },
     {
