@@ -1441,7 +1441,7 @@ module.exports.getProjects = catchAsync(async(req,res,next)=>{
       return res.json(response)
     }
     if(projectObj){
-      formStatus = decideDisabledFields(projectObj,"ULB")
+      formStatus = decideDisabledFields(projectObj,req.decoded.role)
       projectObj.disableFields = formStatus
     }
     let formJson = await FormsJson.findOne({"formId":formId}).lean()

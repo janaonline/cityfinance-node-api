@@ -1899,6 +1899,9 @@ async function handleRangeIfExists(questionObj,formObj){
                 obj.maxRange = formObj.range.split("-")[1]++
                 obj.hint = formObj.range
             }
+            if(formObj.unit !== "%"){
+                obj.allowDecimal = false
+            }
         }
         return {...obj}
     }
@@ -2875,13 +2878,12 @@ async function saveStatus(params) {
       return  error.message; 
     }
 }
-
-module.exports.getMasterAction = async (req, res) => {
+const getMasterAction = async (req, res) => {
     try {
       let { decoded: userData, body: bodyData } = req;
 
       let { role } = userData;
-      let { formId, ulb, design_year } = bodyData;
+      let { formId, ulb, design_year , flag} = bodyData;
 
       if (!formId || !ulb || !design_year) {
         return Response.BadRequest(res, {}, "All fields are mandatory");
@@ -2894,11 +2896,12 @@ module.exports.getMasterAction = async (req, res) => {
       
 
       const model = require(`../../models/${path}`);
-      const form = await model.findOne(condition,{_id:1}).lean();
+      const form = await model.findOne(condition,{_id:1, currentFormStatus:1}).lean();
       if (!form) {
         return Response.BadRequest(res, {}, "No Form Found!");
       }
       let currentStatusResponse = await CurrentStatus.find({recordId: form._id}).lean()
+      const currentFormStatus = form.currentFormStatus;
       if(!currentStatusResponse || !currentStatusResponse.length){
         return Response.BadRequest(res, {}, "No Response Found!");
       }
@@ -2910,13 +2913,17 @@ module.exports.getMasterAction = async (req, res) => {
     //   Object.assign(form, {
     //     canTakenAction: canTakenActionMaster(params),
     //   });
+    currentStatusResponse = filterStatusResponse(currentStatusResponse, currentFormStatus);
       for(let status of currentStatusResponse){
         status['statusId'] = status['status'];
         status['status'] = MASTER_STATUS_ID[parseInt(status['status'])]
       }
       if(formId === FORMIDs['AnnualAccount']){
-        currentStatusResponse = appendKeysForAA(currentStatusResponse);
+        // currentStatusResponse = appendKeysForAA(currentStatusResponse);
         currentStatusResponse = groupByKey(currentStatusResponse, "actionTakenByRole")
+      }
+      if(flag){
+        return currentStatusResponse;
       }
       return Response.OK(res, currentStatusResponse);
     } catch (error) {
@@ -2924,7 +2931,44 @@ module.exports.getMasterAction = async (req, res) => {
 
     }
 }
+module.exports.getMasterAction = getMasterAction
 const groupByKey = (list, key) => list.reduce((hash, obj) => ({ ...hash, [obj[key]]: (hash[obj[key]] || []).concat(obj) }), {})
+
+function filterStatusResponse(statuses, formStatus){
+    
+    const STATUS_RESPONSE = {
+        ULB: [MASTER_STATUS['Not Started'],MASTER_STATUS["In Progress"],MASTER_STATUS["Under Review by State"]],
+        STATE: [MASTER_STATUS["Under Review by MoHUA"],MASTER_STATUS["Rejected by State"]],
+       MoHUA: [MASTER_STATUS['Approved by MoHUA'],MASTER_STATUS["Rejected by MoHUA"]]
+    }
+    
+    for( let key in STATUS_RESPONSE){
+
+        if(STATUS_RESPONSE[key].includes(formStatus)){
+           return getCurrentStatus(key,statuses);
+        }
+
+    }
+    
+}
+
+function getCurrentStatus(key,statuses){
+    if (key === "ULB"){
+        return statuses.filter(el=>{
+            return (el.status<=3 && el.status>1);
+        });
+    }else if (key ==='STATE'){
+        return statuses.filter(el=>{
+            return (el.status<6 && el.status>3);
+        })
+    }else if(key === "MoHUA"){
+        return statuses.filter(el=>{
+            return el.status>3 ;
+        })
+    }
+
+    return statuses;
+}
 
 function appendKeysForAA(currentStatusResponse) {
     const shortKeysToAppend = {
@@ -3145,7 +3189,7 @@ module.exports.decideDisabledFields = (form,formType)=>{
         formStatus = MASTER_STATUS_ID[parseInt(form.currentFormStatus)] || "Not Started"
     }
     let allowedStatuses = [StatusList.Rejected_By_MoHUA,StatusList.Rejected_By_State,StatusList.In_Progress,StatusList.Not_Started]
-    if(allowedStatuses.includes(formStatus)){
+    if(allowedStatuses.includes(formStatus) && formType === "ULB"){
         return false 
     }
     else{

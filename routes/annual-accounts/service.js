@@ -23,7 +23,7 @@ const STATUS_LIST = require('../../util/newStatusList')
 const LineItem = require('../../models/LineItem')
 const { groupByKey } = require('../../util/group_list_by_key')
 const ExcelJS = require("exceljs");
-const { canTakenAction, canTakenActionMaster } = require('../CommonActionAPI/service')
+const { canTakenAction, canTakenActionMaster, getMasterAction } = require('../CommonActionAPI/service')
 const fs = require("fs");
 const Service = require('../../service');
 const { FormNames, YEAR_CONSTANTS,  MASTER_STATUS, FORMIDs, FORM_LEVEL, FORM_LEVEL_SHORTKEY } = require('../../util/FormNames');
@@ -1905,6 +1905,13 @@ exports.getAccounts = async (req, res,next) => {
         formType: "ULB",
         loggedInUser: role,
       };
+      let bodyParams  = {
+        ulb,
+        design_year : YEAR_CONSTANTS["23_24"],
+        formId: FORMIDs['AnnualAccount'],
+        flag: true
+      }
+      annualAccountData = await addActionKeys(annualAccountData, bodyParams, res, role, req);
       Object.assign(annualAccountData, {
         canTakeAction: canTakenActionMaster(params),
       });
@@ -1945,10 +1952,97 @@ exports.getAccounts = async (req, res,next) => {
     return Response.BadRequest(res, {}, err.message);
   }
 };
+
+async function addActionKeys(annualAccountData, body, res, role, req){
+  try {
+    const MoHUAResponse =  "MoHUA";
+    const FIRST_INDEX = 0;
+    // let {data:{data: statusResponses}} = await axios.post(
+    //   `https://${host}/api/v1/common-action/getMasterAction`,
+    //      body,
+    //   { headers: { "x-access-token": token } }
+    // );
+    req.body = body;
+    let statusResponses = await getMasterAction(req, res);
+    annualAccountData  = JSON.parse(JSON.stringify(annualAccountData))
+    if (Object.keys(statusResponses).length > 1  && statusResponses.hasOwnProperty(MoHUAResponse)){
+
+      annualAccountData = addCanTakeActionKeys(annualAccountData,statusResponses[MoHUAResponse], role )
+    }else{
+      annualAccountData = addCanTakeActionKeys(annualAccountData,statusResponses[Object.keys(statusResponses)[FIRST_INDEX]], role )
+    }
+    return annualAccountData;
+  } catch (error) {
+    return Response.BadRequest(res, {}, error.message);
+  }
+}
+
+function addCanTakeActionKeys(annualAccountData, statuses, role){
+  try {
+    const tabRegex = /^tab_/g;
+    const keyArray = ["audited", "unAudited"];
+    const provisionalKey = "provisional_data";
+    let separator = ".";
+      const tabSeparator = "_";
+
+    let tabShortKeys = statuses.map(el=>{
+        if (el.shortKey.match(tabRegex)) {
+          separator = tabSeparator;
+        }
+        let splittedArray = el.shortKey.split(separator)
+        el.shortKey = splittedArray[splittedArray.length - 1];
+        return el;
+    })
+    
+    let data = JSON.parse(JSON.stringify(annualAccountData));
+
+    appendKeys(keyArray, data, provisionalKey, tabShortKeys, role);
+    
+    return data;
+  } catch (error) {
+     throw `addActionKeys:: ${error.message}`;
+  }
+}
 const TAB_OBJ = {
   audited: 'audited',
   unAudited: 'unAudited'
 }
+function appendKeys(keyArray, data, provisionalKey, tabShortKeys, role) {
+  for (let key of keyArray) {
+    let statusData = tabShortKeys.find(el => {
+      return el.shortKey === key;
+    });
+    if (statusData) {
+      let params = {
+        status: statusData.statusId,
+        formType: "ULB",
+        loggedInUser: role,
+      };
+      data[key]['canTakeAction'] = canTakenActionMaster(params);
+      data[key]['statusId'] = statusData['statusId'];
+      data[key]['status'] = statusData['status'];
+      continue;
+    }
+    let tabData = data[key][provisionalKey];
+    for (let entity in tabData) {
+      let statusData = tabShortKeys.find(el => {
+        return el.shortKey === entity;
+      });
+      if (statusData) {
+        let params = {
+          status: statusData.statusId,
+          formType: "ULB",
+          loggedInUser: role,
+        };
+        tabData[entity]['canTakeAction'] = canTakenActionMaster(params);
+        tabData[entity]['statusId'] = statusData['statusId'];
+        tabData[entity]['status'] = statusData['status'];
+
+      }
+    }
+  }
+}
+
 function filterTabShortKeys(req, shortKeys) {
   try {
     const separator = ".";
