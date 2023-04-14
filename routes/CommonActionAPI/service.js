@@ -2314,6 +2314,8 @@ async function deleteExtraKeys(question){
 function manageDisabledQues(question,flattedForm){
     try{
         let actionKeys = ['statusId','status','canTakeAction']
+        let allowedStatuses = [StatusList.Rejected_By_MoHUA,StatusList.Rejected_By_State,StatusList.In_Progress,StatusList.Not_Started]
+        let formType = flattedForm?.role
         let getValue = question.inputType === "11" ? 2 :1
         let mainKey = question.shortKey.split(".").slice(0,question.shortKey.split(".").length - getValue).join(".")
         actionKeys.forEach((item)=>{
@@ -2321,8 +2323,14 @@ function manageDisabledQues(question,flattedForm){
             let included = Object.keys(flattedForm).includes(key)
             if(included){
                 question[item] = flattedForm[key]
-                if(item === "canTakeAction"){
-                    question['isQuestionDisabled'] = !flattedForm[key]
+                if(item === "status"){
+                    if(allowedStatuses.includes(flattedForm[key]) && formType === "ULB"){
+                        question['isQuestionDisabled'] = false
+                    }
+                    else{
+                        question['isQuestionDisabled'] = true
+                    }
+                    
                 }
             }
         })
@@ -2342,7 +2350,6 @@ async function mutuateGetPayload(jsonFormat, flattedForm, keysToBeDeleted,role) 
         // if(flattedForm.actionTakenByRole == userTypes.ulb){
         roleWiseJson(obj[0],role)
         // }
-        console.log("flattedForm ::: ",flattedForm)
         obj[0] = await appendExtraKeys(keysToBeDeleted, obj[0], flattedForm)
         await deleteKeys(flattedForm, keysToBeDeleted)
         for (let key in obj) {
