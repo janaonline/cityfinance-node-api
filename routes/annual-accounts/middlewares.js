@@ -96,6 +96,7 @@ module.exports.changeResponse = async(req,res,next) =>{
             responseData[0]['language'] = mutatedJson
             if(Object.keys(form).length > 0){
                 let flattedForm = getFlatObj(form)
+                flattedForm['form_type'] = "annual"
                 mutatedJson =  await mutuateGetPayload(obj, flattedForm,keysToBeDeleted,role)
                 responseData[0]['language'] = mutatedJson
                 if(mutatedJson[0].isDraft === ""){
@@ -108,8 +109,6 @@ module.exports.changeResponse = async(req,res,next) =>{
                 return res.status(200).json(response)
             }
             response.data = responseData
-            
-            console.log("repsonse :: ",response)
             return res.status(200).json(response);
             
         }

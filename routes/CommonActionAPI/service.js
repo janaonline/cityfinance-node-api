@@ -2311,6 +2311,29 @@ async function deleteExtraKeys(question){
     }
 }
 
+function manageDisabledQues(question,flattedForm){
+    try{
+        let actionKeys = ['statusId','status','canTakeAction']
+        let getValue = question.inputType === "11" ? 2 :1
+        let mainKey = question.shortKey.split(".").slice(0,question.shortKey.split(".").length - getValue).join(".")
+        actionKeys.forEach((item)=>{
+            let key = mainKey+"."+item
+            let included = Object.keys(flattedForm).includes(key)
+            if(included){
+                question[item] = flattedForm[key]
+                if(item === "canTakeAction"){
+                    question['isQuestionDisabled'] = flattedForm[key]
+                }
+            }
+        })
+        // console.log("question ::: shortKey ",question.shortKey)
+    }
+    catch(err){
+        console.log("error in manageDisabledQues :::: ",err.message)
+        return question
+    }
+}
+
 async function mutuateGetPayload(jsonFormat, flattedForm, keysToBeDeleted,role) {
     try {
         // console.log(">>>>>>>>>> obj ::: ",jsonFormat)
@@ -2319,11 +2342,12 @@ async function mutuateGetPayload(jsonFormat, flattedForm, keysToBeDeleted,role) 
         // if(flattedForm.actionTakenByRole == userTypes.ulb){
         roleWiseJson(obj[0],role)
         // }
+        console.log("flattedForm ::: ",flattedForm)
         obj[0] = await appendExtraKeys(keysToBeDeleted, obj[0], flattedForm)
         await deleteKeys(flattedForm, keysToBeDeleted)
         for (let key in obj) {
             let questions = obj[key].question
-            if (questions) {
+            if (questions){
                 for (let question of questions) {    
                     let answer = []
                     let obj = { ...answerObj }
@@ -2332,7 +2356,8 @@ async function mutuateGetPayload(jsonFormat, flattedForm, keysToBeDeleted,role) 
                     await handleValues(question,obj,flattedForm)
                     answer.push(obj)
                     question['selectedValue'] = answer
-                   await deleteExtraKeys(question)
+                    await manageDisabledQues(question,flattedForm)
+                    await deleteExtraKeys(question)
                 }
                 let modifiedKeys = Object.keys(modifiedShortKeys)
                 let modifiedObjects =  questions.filter(item => modifiedKeys.includes(item.shortKey))
