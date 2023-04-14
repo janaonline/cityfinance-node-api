@@ -2322,7 +2322,7 @@ function manageDisabledQues(question,flattedForm){
             if(included){
                 question[item] = flattedForm[key]
                 if(item === "canTakeAction"){
-                    question['isQuestionDisabled'] = flattedForm[key]
+                    question['isQuestionDisabled'] = !flattedForm[key]
                 }
             }
         })
