@@ -95,8 +95,11 @@ module.exports.changeResponse = async(req,res,next) =>{
             mutatedJson[0].prevStatus = req.obj?.url || ""
             responseData[0]['language'] = mutatedJson
             if(Object.keys(form).length > 0){
+                
                 let flattedForm = getFlatObj(form)
                 flattedForm['form_type'] = "annual"
+                flattedForm['isDraft'] = form.isDraft
+                flattedForm['role'] = req.decoded.role
                 mutatedJson =  await mutuateGetPayload(obj, flattedForm,keysToBeDeleted,role)
                 responseData[0]['language'] = mutatedJson
                 if(mutatedJson[0].isDraft === ""){
