@@ -2324,7 +2324,7 @@ async function updateQueryForFiscalRanking(
           payload["file"] = years.file;
           payload["status"] = years.status;
           payload["modelName"] = years.modelName;
-          payload["displayPriority"] = dynamicObj.displayPriority;
+          payload["displayPriority"] = dynamicObj.position;
         } else {
           payload["status"] = years.status;
         }
