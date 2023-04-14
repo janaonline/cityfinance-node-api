@@ -713,6 +713,11 @@ exports.stateDashRevenueTabs = async (
       $unwind: "$ulb",
     },
     {
+      $match:{
+        "ulb.isActive":true
+      }
+    },
+    {
       $lookup: {
         from: "lineitems",
         localField: "lineItem",
@@ -1267,6 +1272,11 @@ exports.getStateWiseDataAvailPipeline = (financialYear) => {
       $unwind: "$ulb",
     },
     {
+      $match:{
+        "ulb.isActive":true
+      }
+    },
+    {
       $lookup: {
         from: "states",
         localField: "ulb.state",
@@ -1331,6 +1341,11 @@ exports.nationalDashExpensePipeline = (
     },
     {
       $unwind: "$ulb",
+    },
+    {
+      "$match":{
+        "ulb.isActive":true
+      }
     }
   );
   if (type == "totalExpenditure") {
@@ -2304,6 +2319,11 @@ exports.nationalDashOwnRevenuePipeline = (
     },
     {
       $unwind: "$ulb",
+    },
+    {
+      "$match":{
+        "ulb.isActive":true
+      }
     }
   );
   if (type == "totalOwnRevenue") {
@@ -2984,6 +3004,11 @@ exports.nationalDashCapexpensePipeline = async (
     },
     {
       $unwind: "$ulb",
+    },
+    {
+      "$match":{
+        "ulb.isActive":true
+      }
     },
     {
       $group: {

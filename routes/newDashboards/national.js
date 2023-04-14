@@ -23,7 +23,7 @@ exports.dataAvailabilityState = async (req, res) => {
     let filterCondition = {},
       ulbLedgers;
     filterCondition['isActive'] = true
-    if (stateId) filterCondition["state"] = stateId;
+    if (stateId) {filterCondition["state"] = stateId};
 
     let ulbs = Ulb.find(filterCondition)
       .populate("ulbType", "name")
