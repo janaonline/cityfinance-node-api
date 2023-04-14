@@ -2878,13 +2878,12 @@ async function saveStatus(params) {
       return  error.message; 
     }
 }
-
-module.exports.getMasterAction = async (req, res) => {
+const getMasterAction = async (req, res) => {
     try {
       let { decoded: userData, body: bodyData } = req;
 
       let { role } = userData;
-      let { formId, ulb, design_year } = bodyData;
+      let { formId, ulb, design_year , flag} = bodyData;
 
       if (!formId || !ulb || !design_year) {
         return Response.BadRequest(res, {}, "All fields are mandatory");
@@ -2923,12 +2922,16 @@ module.exports.getMasterAction = async (req, res) => {
         // currentStatusResponse = appendKeysForAA(currentStatusResponse);
         currentStatusResponse = groupByKey(currentStatusResponse, "actionTakenByRole")
       }
+      if(flag){
+        return currentStatusResponse;
+      }
       return Response.OK(res, currentStatusResponse);
     } catch (error) {
         return Response.BadRequest(res, {}, error.message);
 
     }
 }
+module.exports.getMasterAction = getMasterAction
 const groupByKey = (list, key) => list.reduce((hash, obj) => ({ ...hash, [obj[key]]: (hash[obj[key]] || []).concat(obj) }), {})
 
 function filterStatusResponse(statuses, formStatus){
