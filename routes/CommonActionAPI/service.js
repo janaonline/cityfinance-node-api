@@ -2937,9 +2937,9 @@ const groupByKey = (list, key) => list.reduce((hash, obj) => ({ ...hash, [obj[ke
 function filterStatusResponse(statuses, formStatus){
     
     const STATUS_RESPONSE = {
-        ULB: [1,2,3],
-        STATE: [4,5],
-        MoHUA: [6,7]
+        ULB: [MASTER_STATUS['Not Started'],MASTER_STATUS["In Progress"],MASTER_STATUS["Under Review by State"]],
+        STATE: [MASTER_STATUS["Under Review by MoHUA"],MASTER_STATUS["Rejected by State"]],
+       MoHUA: [MASTER_STATUS['Approved by MoHUA'],MASTER_STATUS["Rejected by MoHUA"]]
     }
     
     for( let key in STATUS_RESPONSE){
