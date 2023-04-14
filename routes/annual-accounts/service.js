@@ -2010,6 +2010,20 @@ const TAB_OBJ = {
 }
 function appendKeys(keyArray, data, provisionalKey, tabShortKeys, role) {
   for (let key of keyArray) {
+    let statusData = tabShortKeys.find(el => {
+      return el.shortKey === key;
+    });
+    if (statusData) {
+      let params = {
+        status: statusData.statusId,
+        formType: "ULB",
+        loggedInUser: role,
+      };
+      data[key]['canTakeAction'] = canTakenActionMaster(params);
+      data[key]['statusId'] = statusData['statusId'];
+      data[key]['status'] = statusData['status'];
+      continue;
+    }
     let tabData = data[key][provisionalKey];
     for (let entity in tabData) {
       let statusData = tabShortKeys.find(el => {
@@ -2026,20 +2040,6 @@ function appendKeys(keyArray, data, provisionalKey, tabShortKeys, role) {
         tabData[entity]['status'] = statusData['status'];
 
       }
-    }
-    let statusData = tabShortKeys.find(el => {
-      return el.shortKey === key;
-    });
-    if (statusData) {
-      let params = {
-        status: statusData.statusId,
-        formType: "ULB",
-        loggedInUser: role,
-      };
-      data[key]['canTakeAction'] = canTakenActionMaster(params);
-      data[key]['statusId'] = statusData['statusId'];
-      data[key]['status'] = statusData['status'];
-
     }
   }
 }
