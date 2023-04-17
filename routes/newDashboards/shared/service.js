@@ -15,6 +15,7 @@ let filterType = ["Town Panchayat", "Municipality", "Municipal Corporation"];
 
 const peopleInformation = async (req, res) => {
   try {
+    let message = ""
     const type = (req.query.type || req.headers.type).toLowerCase();
     if (!type) return Response.BadRequest(res, {}, "No Type Provided");
     let data;
@@ -27,6 +28,7 @@ const peopleInformation = async (req, res) => {
           .populate("state")
           .populate("UA")
           .lean();
+          message = data.isActive ? "" :"This ULB has been denotified"
         let ledgerData = await UlbLedger.aggregate([
           {
             $match: {
@@ -51,7 +53,9 @@ const peopleInformation = async (req, res) => {
         break;
       case "state":
         data = await Ulb.aggregate([
-          { $match: { state: ObjectId(req.query.state) || null } },
+          { $match: { state: ObjectId(req.query.state) || null,
+            isActive:true
+          } },
           {
             $lookup: {
               from: "ulbtypes",
@@ -123,7 +127,7 @@ const peopleInformation = async (req, res) => {
         });
         break;
     }
-    return Response.OK(res, data || data[0]);
+    return Response.OK(res, data || data[0],message);
   } catch (err) {
     console.error(err.message);
     return Response.BadRequest(res, {}, err.message);
