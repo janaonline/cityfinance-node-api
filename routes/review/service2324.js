@@ -361,10 +361,15 @@ module.exports.get = async (req, res) => {
   }
 const computeQuery = (params) => {
   const {collectionName:formName, formType:userRole, isFormOptional, state, design_year, csv, skip, limit, newFilter:filter, dbCollectionName, folderName} = params
-    let filledQueryExpression = {}
+    let filledQueryExpression = {};
+    let filledProvisionalExpression = {}, filledAuditedExpression = {};
     if (isFormOptional) {
       // if form is optional check if the deciding condition is true or false
       filledQueryExpression = getFilledQueryExpression(formName, filledQueryExpression); 
+      if(formName === CollectionNames.annual){
+      ( {filledProvisionalExpression, filledAuditedExpression} = getFilledQueryExpression(formName, filledQueryExpression)); 
+      
+      }
     }
     let dY = "$design_year";
     let designYearField = "design_year"
@@ -568,10 +573,10 @@ const computeQuery = (params) => {
         //   query = createDynamicQuery(formName, query, userRole, csv);
         // }
     
-        // if (formName == CollectionNames.annual) {
-        //   delete query[query.length - 2]['$project']['filled']
-        //   Object.assign(query[query.length - 2]['$project'], { filled_provisional: filledProvisionalExpression, filled_audited: filledAuditedExpression })
-        // }
+        if (formName == CollectionNames.annual) {
+          delete query[query.length - 2]['$project']['filled']
+          Object.assign(query[query.length - 2]['$project'], { filled_provisional: filledProvisionalExpression, filled_audited: filledAuditedExpression })
+        }
         let filterApplied = Object.keys(filter).length > 0
         if (filterApplied) {
           if (filter.sbCode) {
@@ -726,6 +731,7 @@ const computeQuery = (params) => {
   }
 
 function getFilledQueryExpression(formName, filledQueryExpression) {
+  let filledAuditedExpression = {}, filledProvisionalExpression = {}
     switch (formName) {
         case CollectionNames.slb:
             filledQueryExpression = {
@@ -769,6 +775,7 @@ function getFilledQueryExpression(formName, filledQueryExpression) {
                     else: STATUS_LIST.Not_Submitted,
                 },
             };
+            return {filledProvisionalExpression, filledAuditedExpression}
             break;
         case CollectionNames.sfc:
             filledQueryExpression = {
