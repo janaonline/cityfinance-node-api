@@ -133,7 +133,7 @@ const peopleInformation = async (req, res) => {
 const moneyInformation = async (req, res) => {
   try {
     let type = (req.query.type || req.headers.type);
-    let message = "Success"
+    let message = ""
     if (!type) return Response.BadRequest(res, {}, "No Type Provided");
     type = type.toLowerCase();
     let data, ulbId;
