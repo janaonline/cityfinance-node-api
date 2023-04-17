@@ -2655,6 +2655,8 @@ module.exports.actionTakenByMoHua = catchAsync(async (req, res) => {
     }
     const session = await mongoose.startSession();
     await session.startTransaction();
+    let params = {isDraft,role,formId}
+    await createHistory(params)
     let calculationsTabWise = await calculateAndUpdateStatusForMappers(
       session,
       actions,
@@ -2672,9 +2674,7 @@ module.exports.actionTakenByMoHua = catchAsync(async (req, res) => {
       userId,
       role,
       isDraft
-    );
-    let params = {isDraft,role,formId}
-    await createHistory(params)
+    ); 
     if (feedBackResp.success) {
       response.success = true;
       response.message = "Details submitted successfully";
@@ -2782,6 +2782,8 @@ module.exports.createForm = catchAsync(async (req, res) => {
       response.message = validation.message;
       return res.status(500).json(response);
     }
+    let params = {isDraft,role,formId}
+    await createHistory(params)
     let calculationsTabWise = await calculateAndUpdateStatusForMappers(
       session,
       actions,
@@ -2791,8 +2793,6 @@ module.exports.createForm = catchAsync(async (req, res) => {
       true,
       isDraft
     );
-    let params = {isDraft,role,formId}
-    await createHistory(params)
     response.success = true;
     response.formId = formId;
     response.message = "Form submitted successfully";
