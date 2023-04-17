@@ -2889,11 +2889,16 @@ const getMasterAction = async (req, res) => {
         return Response.BadRequest(res, {}, "All fields are mandatory");
       }
       let path = modelPath(formId);
-      let condition = {
-        ulb,
-        design_year: design_year,
-      };
+      let designYearField = "design_year";
       
+        
+        if(formId === FORMIDs['dur']){
+            designYearField = "designYear"   
+        }
+        let condition = {
+            ulb,
+            [designYearField]: design_year,
+          }; 
 
       const model = require(`../../models/${path}`);
       const form = await model.findOne(condition,{_id:1, currentFormStatus:1}).lean();
