@@ -1,6 +1,6 @@
 const Ulb = require('../../models/Ulb')
 const State = require('../../models/State');
-const {CollectionNames} = List = require('../../util/15thFCstatus')
+const CollectionNames  = require('../../util/collectionName')
 const Response = require("../../service").response;
 const Sidemenu = require('../../models/Sidemenu');
 const ObjectId = require("mongoose").Types.ObjectId;
@@ -8,7 +8,7 @@ const Service = require('../../service');
 const STATUS_LIST = require('../../util/newStatusList');
 const { MASTER_STATUS , MASTER_STATUS_ID} = require('../../util/FormNames');
 const  { canTakeActionOrViewOnlyMasterForm} = require('../../routes/CommonActionAPI/service')
-// const List = require('../../util/15thFCstatus')
+const List = require('../../util/15thFCstatus')
 
 
 module.exports.get = async (req, res) => {
@@ -143,9 +143,9 @@ module.exports.get = async (req, res) => {
   
     // if csv - then no skip and limit, else with skip and limit
     let data = formType == "ULB" ? Ulb.aggregate(query[0]).allowDiskUse(true) : State.aggregate(query[0]).allowDiskUse(true)
-    if(skip === 0){
+    // if(skip === 0){
       total = formType == "ULB" ? Ulb.aggregate(query[1]).allowDiskUse(true) : State.aggregate(query[1]).allowDiskUse(true);
-    }
+    // }
     
     let allData = await Promise.all([data, total]);
     data = allData[0]
