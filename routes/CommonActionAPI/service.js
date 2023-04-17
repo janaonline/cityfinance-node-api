@@ -2478,10 +2478,16 @@ module.exports.masterAction =  async (req, res) => {
         return Response.BadRequest(res, {}, "All fields are mandatory")
       }
       let path = modelPath(formId);
-      let condition = {
-        ulb: {$in: ulbs},
-        design_year: design_year,
-      };
+      let designYearField = "design_year";
+      
+        
+        if(formId === FORMIDs['dur']){
+            designYearField = "designYear"   
+        }
+        let condition = {
+            ulbs,
+            [designYearField]: design_year,
+          }; 
 
       const model = require(`../../models/${path}`);
       const formData = await model.find(condition).lean();
