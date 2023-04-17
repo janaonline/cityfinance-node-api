@@ -61,6 +61,7 @@ module.exports.changeGetApiForm = async (req,res,next)=>{
             obj[0].isDraft = form.isDraft
             responseData[0]['language'] = obj
             response.success = true
+            responseData[0]['isQuestionDisabled'] = formStatus
             response.data = responseData
             response.message = 'Form Questionare!'
             return res.status(200).json(response)
