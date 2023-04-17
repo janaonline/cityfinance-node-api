@@ -3058,7 +3058,7 @@ module.exports.decideDisabledFields = (form,formType)=>{
     if(form.status == ""){
         formStatus = MASTER_STATUS_ID[parseInt(form.currentFormStatus)] || "Not Started"
     }
-    let allowedStatuses = [StatusList.Rejected_By_MoHUA,StatusList.Rejected_By_State,StatusList.In_Progress,StatusList.Not_Started]
+    let allowedStatuses = [StatusList.Rejected_By_MoHUA,StatusList.Rejected_By_State,StatusList.STATE_REJECTED,StatusList.In_Progress,StatusList.Not_Started]
     if(allowedStatuses.includes(formStatus) && formType === "ULB"){
         return false 
     }
