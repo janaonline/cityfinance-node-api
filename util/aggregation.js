@@ -1279,8 +1279,8 @@ exports.getStateWiseDataAvailPipeline = (financialYear) => {
       $unwind: "$ulb",
     },
     {
-      $match: {
-        "ulb.isActive": true
+      $match:{
+        "ulb.isActive":true
       }
     },
     {
@@ -1295,42 +1295,21 @@ exports.getStateWiseDataAvailPipeline = (financialYear) => {
       $unwind: "$state",
     },
     {
-      "$group": {
-        "_id": {
-          "$first": "$state.name"
-        },
-        "stateId": {
-          "$first": "$state._id"
-        },
-        "code": {
-          "$first": "$state.code"
-        },
-        count: { $addToSet: "$ulb._id" }
-      }
+      $group: {
+        _id: "$ulb._id",
+        state: { $first: "$state.name" },
+        stateId: { $first: "$state._id" },
+        code: { $first: "$state.code" },
+      },
     },
     {
-      $project: {
-        _id: 1,
-        state: 1,
-        count: { $size: "$count" }
-      }
+      $group: {
+        _id: "$state",
+        count: { $sum: 1 },
+        stateId: { $first: "$stateId" },
+        code: { $first: "$code" },
+      },
     },
-    // {
-    //   $group: {
-    //     _id: "$ulb._id",
-    //     state: { $first: "$state.name" },
-    //     stateId: { $first: "$state._id" },
-    //     code: { $first: "$state.code" },
-    //   },
-    // },
-    // {
-    //   $group: {
-    //     _id: "$state",
-    //     count: { $sum: 1 },
-    //     stateId: { $first: "$stateId" },
-    //     code: { $first: "$code" },
-    //   },
-    // },
     {
       $addFields: {
         percentage: 0,
