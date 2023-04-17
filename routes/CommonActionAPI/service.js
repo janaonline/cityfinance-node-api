@@ -2517,7 +2517,7 @@ module.exports.masterAction =  async (req, res) => {
             designYearField = "designYear"   
         }
         let condition = {
-            ulbs,
+            ulb: {$in:ulbs},
             [designYearField]: design_year,
           }; 
 
