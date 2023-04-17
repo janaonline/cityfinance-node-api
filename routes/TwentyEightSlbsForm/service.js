@@ -7,7 +7,7 @@ const {groupByKey} = require('../../util/group_list_by_key')
 const SLB = require('../../models/XVFcGrantForm')
 const {canTakenAction, calculateStatus} = require('../CommonActionAPI/service')
 const Service = require('../../service');
-const {FormNames, YEAR_CONSTANTS} = require('../../util/FormNames');
+const {FormNames, YEAR_CONSTANTS, MASTER_STATUS_ID} = require('../../util/FormNames');
 const User = require('../../models/User');
 const MasterForm = require('../../models/MasterForm')
 const StatusList = require('../../util/newStatusList')
@@ -452,6 +452,9 @@ module.exports.getForm = async (req, res,next) => {
             formData.isDraft,
             "ULB"
           );
+          if(!formData.status){
+            slb28FormStatus = MASTER_STATUS_ID[formData.currentFormStatus]
+          }
           if(ulbData.access_2122){
           let slbData = await SLB.findOne({
             ulb: ObjectId(data.ulb),
@@ -555,6 +558,7 @@ module.exports.getForm = async (req, res,next) => {
                 StatusList.Not_Started,
                 StatusList.In_Progress,
                 StatusList.Rejected_By_State,
+                StatusList.STATE_REJECTED,
                 StatusList.Rejected_By_MoHUA,
               ].includes(slb28FormStatus)
             ) {
