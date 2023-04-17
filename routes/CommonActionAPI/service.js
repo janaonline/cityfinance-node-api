@@ -23,7 +23,7 @@ const Response = require("../../service").response;
 const {saveCurrentStatus, saveFormHistory, saveStatusHistory} = require('../../util/masterFunctions');
 const CurrentStatus = require('../../models/CurrentStatus');
 const {MASTER_STATUS_ID, FORM_LEVEL_SHORTKEY, FORMIDs} =  require('../../util/FormNames');
-
+var allowedStatuses = [StatusList.Rejected_By_MoHUA,StatusList.Rejected_By_State,StatusList.In_Progress,StatusList.Not_Started]
 var ignorableKeys = ["actionTakenByRole","actionTakenBy","ulb","design_year"]
 let groupedQuestions = {
     "location":['lat','long']
@@ -2314,7 +2314,7 @@ async function deleteExtraKeys(question){
 function manageDisabledQues(question,flattedForm){
     try{
         let actionKeys = ['statusId','status','canTakeAction']
-        let allowedStatuses = [StatusList.Rejected_By_MoHUA,StatusList.Rejected_By_State,StatusList.In_Progress,StatusList.Not_Started]
+        // let allowedStatuses = [StatusList.Rejected_By_MoHUA,StatusList.Rejected_By_State,StatusList.In_Progress,StatusList.Not_Started]
         let formType = flattedForm?.role
         let getValue = question.inputType === "11" ? 2 :1
         let mainKey = question.shortKey.split(".").slice(0,question.shortKey.split(".").length - getValue).join(".")
@@ -3220,7 +3220,7 @@ module.exports.decideDisabledFields = (form,formType)=>{
     if(form.status == ""){
         formStatus = MASTER_STATUS_ID[parseInt(form.currentFormStatus)] || "Not Started"
     }
-    let allowedStatuses = [StatusList.Rejected_By_MoHUA,StatusList.Rejected_By_State,StatusList.In_Progress,StatusList.Not_Started]
+    
     if(allowedStatuses.includes(formStatus) && formType === "ULB"){
         return false 
     }

@@ -60,7 +60,7 @@ module.exports.changeResponse = async(req,res,next) =>{
               "status":MASTER_STATUS_ID[parseInt(req.form.currentFormStatus)] || "Not Started",
               "canTakeAction":req?.form?.canTakeAction ? req?.form?.canTakeAction :true,
               "deadLineMsg":"As per 15th FC Operational Guidelines, for receiving grants ULBs should submit their AFS on or before 15th of May",
-              "statusId": req?.form?.currentFormStatus
+              "statusId": req?.form?.currentFormStatus ?  req?.form?.currentFormStatus  : null
 
             }
           ]
