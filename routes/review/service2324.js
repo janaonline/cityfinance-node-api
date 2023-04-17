@@ -1,6 +1,6 @@
 const Ulb = require('../../models/Ulb')
 const State = require('../../models/State');
-const {CollectionNames} = List = require('../../util/15thFCstatus')
+const CollectionNames  = require('../../util/collectionName')
 const Response = require("../../service").response;
 const Sidemenu = require('../../models/Sidemenu');
 const ObjectId = require("mongoose").Types.ObjectId;
@@ -8,7 +8,7 @@ const Service = require('../../service');
 const STATUS_LIST = require('../../util/newStatusList');
 const { MASTER_STATUS , MASTER_STATUS_ID} = require('../../util/FormNames');
 const  { canTakeActionOrViewOnlyMasterForm} = require('../../routes/CommonActionAPI/service')
-// const List = require('../../util/15thFCstatus')
+const List = require('../../util/15thFCstatus')
 
 
 module.exports.get = async (req, res) => {
