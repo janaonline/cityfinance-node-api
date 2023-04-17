@@ -143,9 +143,9 @@ module.exports.get = async (req, res) => {
   
     // if csv - then no skip and limit, else with skip and limit
     let data = formType == "ULB" ? Ulb.aggregate(query[0]).allowDiskUse(true) : State.aggregate(query[0]).allowDiskUse(true)
-    if(skip === 0){
+    // if(skip === 0){
       total = formType == "ULB" ? Ulb.aggregate(query[1]).allowDiskUse(true) : State.aggregate(query[1]).allowDiskUse(true);
-    }
+    // }
     
     let allData = await Promise.all([data, total]);
     data = allData[0]
