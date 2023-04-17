@@ -6,6 +6,8 @@ const FiscalRanking = require("../../models/FiscalRanking");
 const FiscalRankingMapper = require("../../models/FiscalRankingMapper");
 const { FRTypeShortKey } = require('./formjson')
 const UlbLedger = require("../../models/UlbLedger");
+const {FORMIDs} = require("../../util/FormNames");
+const {saveFormHistory} = require("../../util/masterFunctions");
 const FeedBackFiscalRanking = require("../../models/FeedbackFiscalRanking");
 const TwentyEightSlbsForm = require("../../models/TwentyEightSlbsForm");
 const Ulb = require("../../models/Ulb");
@@ -2671,6 +2673,8 @@ module.exports.actionTakenByMoHua = catchAsync(async (req, res) => {
       role,
       isDraft
     );
+    let params = {isDraft,role,formId}
+    await createHistory(params)
     if (feedBackResp.success) {
       response.success = true;
       response.message = "Details submitted successfully";
@@ -2787,6 +2791,8 @@ module.exports.createForm = catchAsync(async (req, res) => {
       true,
       isDraft
     );
+    let params = {isDraft,role,formId}
+    await createHistory(params)
     response.success = true;
     response.formId = formId;
     response.message = "Form submitted successfully";
@@ -3216,6 +3222,31 @@ function completionPercent( document, FRCompletionNumber) {
 
   return  ((completionPercent / totalMandatoryFields) * 100 ).toFixed();
 }
+
+
+async function createHistory(params){
+  try{
+    let {isDraft,role,formId} = params
+    if(!isDraft || role === userTypes.mohua){
+      let data = await FiscalRanking.find({"_id":ObjectId(formId)}).lean()
+      let mapperData  = await FiscalRankingMapper.find({"fiscal_ranking":ObjectId(formId)})
+      data[0]['fiscalMapperData'] = mapperData
+      let body = {
+        "formId":FORMIDs['fiscalRanking'],
+        "recordId":formId,
+        "data":data
+      }
+      let historyParams = {
+        body
+      }
+      await saveFormHistory(historyParams)
+    } 
+  }
+  catch(err){
+    console.log("error in createHistory ::: ",err.message)
+  }
+}
+
 
 /**
  * If the key is "indicator", then if the document[key] is "totalOwnRevenueArea", then set FRFlag to
