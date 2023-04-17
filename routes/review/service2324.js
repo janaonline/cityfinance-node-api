@@ -9,6 +9,7 @@ const STATUS_LIST = require('../../util/newStatusList');
 const { MASTER_STATUS , MASTER_STATUS_ID} = require('../../util/FormNames');
 const  { canTakeActionOrViewOnlyMasterForm} = require('../../routes/CommonActionAPI/service')
 const List = require('../../util/15thFCstatus')
+const MASTERSTATUS = require('../../models/MasterStatus')
 
 
 module.exports.get = async (req, res) => {
@@ -344,12 +345,14 @@ module.exports.get = async (req, res) => {
       if(el.formData || el.formData === "" ) delete el.formData;
   
     })
+    const  ulbFormStatus = await MASTERSTATUS.find({},{statusId:1, status:1}).lean()
+
     return res.status(200).json({
       success: true,
       data: data,
       total: total,
       columnNames: formType == 'ULB' ? ulbColumnNames : stateColumnNames,
-      statusList: formType == 'ULB' ? List.ulbFormStatus : List.stateFormStatus,
+      statusList: formType == 'ULB' ? ulbFormStatus : List.stateFormStatus,
       ulbType: formType == 'ULB' ? List.ulbType : {},
       populationType: formType == 'ULB' ? List.populationType : {},
       title: formType == 'ULB' ? 'Review Grant Application' : 'Review State Forms'
