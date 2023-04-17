@@ -48,6 +48,7 @@ module.exports.changeApiGetForm = async(req,res)=>{
             obj = await mutuateGetPayload(obj, flattedForm,keysToBeDeleted,role)
             responseData[0]['language'] = obj
             responseData[0]['language'][0]['isDraft'] =  req?.form?.isDraft
+            responseData[0]['isQuestionDisabled'] = formStatus
             response.success = true
             responseData[0]["statusId"]= req?.form?.currentFormStatus 
             responseData[0]["status"]=MASTER_STATUS_ID[req?.form?.currentFormStatus] || "Not Started",
