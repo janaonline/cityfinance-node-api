@@ -55,8 +55,9 @@ module.exports.FORMIDs = {
     "GFC":2,
     "PTO":3,
     "AnnualAccount": 5,
+    'dur':4,
     "twentyEightSlb": 6,
-    'dur':4
+    "fiscalRanking":9
 }
 
 module.exports.FORM_LEVEL_SHORTKEY = {
