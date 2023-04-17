@@ -2513,7 +2513,7 @@ module.exports.masterAction =  async (req, res) => {
       let designYearField = "design_year";
       
         
-        if(formId === FORMIDs['dur']){
+        if(Number(formId) === FORMIDs['dur']){
             designYearField = "designYear"   
         }
         let condition = {
