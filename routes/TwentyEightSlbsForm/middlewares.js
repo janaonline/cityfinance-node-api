@@ -49,10 +49,10 @@ module.exports.changeApiGetForm = async(req,res)=>{
             responseData[0]['language'] = obj
             responseData[0]['language'][0]['isDraft'] =  req?.form?.isDraft
             response.success = true
+            responseData[0]["statusId"]= req?.form?.currentFormStatus 
+            responseData[0]["status"]=MASTER_STATUS_ID[req?.form?.currentFormStatus] || "Not Started",
             response.data = responseData
             response.message = 'Form Questionare!'
-            response["status"]=MASTER_STATUS_ID[req?.form?.currentFormStatus] || "Not Started",
-            response["statusId"]= req?.form?.currentFormStatus 
             return res.status(200).json(response)
         }
         else{
