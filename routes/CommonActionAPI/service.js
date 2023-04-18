@@ -1109,10 +1109,10 @@ module.exports.canTakeActionOrViewOnlyMasterForm = (params)=> {
         case status == MASTER_STATUS['Under Review by State'] && (userRole == 'MoHUA' || userRole == 'ADMIN'):
             return false;
             break;
-        case status == MASTER_STATUS['Rejected by State']:
+        case status == MASTER_STATUS['Returned by State']:
             return false;
             break;
-        case status == MASTER_STATUS['Rejected by MoHUA']:
+        case status == MASTER_STATUS['Returned by MoHUA']:
             return false;
             break;
         case status == MASTER_STATUS['Under Review by MoHUA'] && userRole == 'STATE':
@@ -2628,8 +2628,8 @@ async function takeActionOnForms(params, res) {
             saveStatusResponse = await saveStatus(params);
             if (
               [
-                MASTER_STATUS["Rejected by MoHUA"],
-                MASTER_STATUS["Rejected by State"],
+                MASTER_STATUS["Returned by MoHUA"],
+                MASTER_STATUS["Returned by State"],
               ].includes(response.status)
             ) {
               rejectStatusCount++;
@@ -2638,8 +2638,8 @@ async function takeActionOnForms(params, res) {
           if (rejectStatusCount) {
             response.status =
               actionTakenByRole === "MoHUA"
-                ? MASTER_STATUS["Rejected by MoHUA"]
-                : MASTER_STATUS["Rejected by State"];
+                ? MASTER_STATUS["Returned by MoHUA"]
+                : MASTER_STATUS["Returned by State"];
             let updatedFormCurrentStatus = await updateFormCurrentStatus(
               model,
               form._id,
@@ -2735,8 +2735,8 @@ async function takeActionOnForms(params, res) {
             if (
               splitedArrayTab !== "" &&
               [
-                MASTER_STATUS["Rejected by MoHUA"],
-                MASTER_STATUS["Rejected by State"],
+                MASTER_STATUS["Returned by MoHUA"],
+                MASTER_STATUS["Returned by State"],
               ].includes(response.status)
             ) {
               tabShortKeyObj[splitedArrayTab] = tabShortKeyObj[
@@ -2768,8 +2768,8 @@ async function takeActionOnForms(params, res) {
             if (
               response &&
               [
-                MASTER_STATUS["Rejected by MoHUA"],
-                MASTER_STATUS["Rejected by State"],
+                MASTER_STATUS["Returned by MoHUA"],
+                MASTER_STATUS["Returned by State"],
               ].includes(response.status)
             ) {
               rejectStatusAllTab++;
@@ -2780,8 +2780,8 @@ async function takeActionOnForms(params, res) {
               if (tabShortKeyObj[obj]) {
                 status =
                   actionTakenByRole === "MoHUA"
-                    ? MASTER_STATUS["Rejected by MoHUA"]
-                    : MASTER_STATUS["Rejected by State"];
+                    ? MASTER_STATUS["Returned by MoHUA"]
+                    : MASTER_STATUS["Returned by State"];
                 rejectStatusAllTab++;
               } else {
                 status =
@@ -2815,8 +2815,8 @@ async function takeActionOnForms(params, res) {
 
             response.status =
               actionTakenByRole === "MoHUA"
-                ? MASTER_STATUS["Rejected by MoHUA"]
-                : MASTER_STATUS["Rejected by State"];
+                ? MASTER_STATUS["Returned by MoHUA"]
+                : MASTER_STATUS["Returned by State"];
             let updatedFormCurrentStatus = await updateFormCurrentStatus(
               model,
               form._id,

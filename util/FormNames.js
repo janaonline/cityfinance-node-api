@@ -35,9 +35,9 @@ module.exports.MASTER_STATUS = {
     "In Progress": 2,
     "Under Review by State": 3,
     "Under Review by MoHUA": 4,
-    "Rejected by State": 5,
+    "Returned by State": 5,
     "Approved by MoHUA": 6,
-    "Rejected by MoHUA":7
+    "Returned by MoHUA":7
 }
 
 module.exports.MASTER_STATUS_ID = {
@@ -45,9 +45,9 @@ module.exports.MASTER_STATUS_ID = {
   2: "In Progress",
   3: "Under Review by State",
   4: "Under Review by MoHUA",
-  5: "Rejected by State",
+  5: "Returned by State",
   6: "Approved by MoHUA",
-  7: "Rejected by MoHUA",
+  7: "Returned by MoHUA",
 };
 
 module.exports.FORMIDs = {
