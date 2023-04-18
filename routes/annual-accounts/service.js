@@ -516,8 +516,8 @@ exports.createUpdate = async (req, res) => {
           [
             MASTER_STATUS["Not Started"],
             MASTER_STATUS["In Progress"],
-            MASTER_STATUS["Rejected by State"],
-            MASTER_STATUS["Rejected by MoHUA"],
+            MASTER_STATUS["Returned by State"],
+            MASTER_STATUS["Returned by MoHUA"],
           ].includes(formCurrentStatus.status)
         ) {
           let formSubmit;
