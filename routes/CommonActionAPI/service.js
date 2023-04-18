@@ -23,7 +23,7 @@ const Response = require("../../service").response;
 const {saveCurrentStatus, saveFormHistory, saveStatusHistory} = require('../../util/masterFunctions');
 const CurrentStatus = require('../../models/CurrentStatus');
 const {MASTER_STATUS_ID, FORM_LEVEL_SHORTKEY, FORMIDs} =  require('../../util/FormNames');
-var allowedStatuses = [StatusList.Rejected_By_MoHUA,StatusList.Rejected_By_State,StatusList.In_Progress,StatusList.Not_Started]
+var allowedStatuses = [StatusList.Rejected_By_MoHUA,StatusList.STATE_REJECTED,StatusList.Rejected_By_State,StatusList.In_Progress,StatusList.Not_Started]
 var ignorableKeys = ["actionTakenByRole","actionTakenBy","ulb","design_year"]
 let groupedQuestions = {
     "location":['lat','long']
