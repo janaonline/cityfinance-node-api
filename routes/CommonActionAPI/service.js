@@ -60,11 +60,12 @@ var arrFields = {
     "sanitation_tableView":"data.sanitation",
     "solidWaste_tableView":"data.solid waste",
     "stormWater_tableView":"data.storm water",
+    "transrantdetail_tableview_addbutton":"projects",
 
 }
 
 var categoryTable = {}
-var specialCases = ['projectDetails_tableView_addButton','waterSupply_tableView','solidWaste_tableView','stormWater_tableView','sanitation_tableView']
+var specialCases = ['projectDetails_tableView_addButton','waterSupply_tableView','solidWaste_tableView','stormWater_tableView','sanitation_tableView',"transrantdetail_tableview_addbutton"]
 var annualRadioButtons = { // if there are any label changes for radio button in frontend please update here
     "Yes":true,
     "No":false,
@@ -79,6 +80,48 @@ const customDisableFields = {
     "target_1":"targetDisable"
 }
 var customkeys = {
+    "basic":{
+        "design_year":"design_year",
+        "ulbType":"ulbType",
+        "grantType":"grantType",
+        "installmentType":"installmentType"
+    },
+    "statedetails":{
+        "totalMpc":"totalMpc",
+        "totalNmpc":"totalNmpc",
+        "totalElectedMpc":"totalElectedMpc",
+        "totalElectedNmpc":"totalElectedNmpc",
+    },
+    "recgrandtetail":{
+        "recAmount":"recAmount",
+        "receiptDate":"receiptDate",
+    },
+    "sfcDetail":{
+        "recomAvail":"recomAvail",
+        "grantDistribute":"grantDistribute",
+        "sfcNotification":"sfcNotification",
+        "sfcNotificationCopy":"sfcNotificationCopy"
+    },
+    "propertyTaxDetails":{
+        "propertyTaxNotif":"propertyTaxNotif",
+        "propertyTaxNotifCopy":"propertyTaxNotifCopy"
+    },
+    "pfmsDetails":{
+        "accountLinked":"accountLinked",
+    },
+    "projectDetail":{
+        "projectUndtkn":"projectUndtkn"
+    },
+    "transrantdetail_tableview_addbutton":{
+        "transAmount":"transAmount",
+        "transDate":"transDate",
+        "transDelay":"transDelay",
+        "daysDelay":"daysDelay",
+        "interest":"interest",
+        "intTransfer":"intTransfer",
+        "totalTransAmount":"totalTransAmount",
+        "totalIntTransfer":"totalIntTransfer",
+    },
     "general":{
         "ulbName":"ulbName",
         "grantType":"grantType"
