@@ -17,7 +17,7 @@ module.exports = (req, res) => {
 
         if (req.query.state) {
             let state = req.query.state;
-            let query = { "state": ObjectId(state) }
+            let query = { "state": ObjectId(state),isActive:true }
             try {
                 let count = await Ulb.count(query).exec();
                 rslv(count)

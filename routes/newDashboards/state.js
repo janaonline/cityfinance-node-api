@@ -352,7 +352,7 @@ let ulbIdArr = ulb;
   let ulbIDs = [],
     AllULBs = [];
 
-  AllULBs = await Ulb.find({ state: ObjectId(state) })
+  AllULBs = await Ulb.find({ state: ObjectId(state),isActive:true })
     .select("_id")
     .lean();
   AllULBs = AllULBs.map((each) => {
@@ -1679,6 +1679,7 @@ const serviceLevelBenchmark = catchAsync(async (req, res) => {
     {
       $match: {
         "ulb.state": ObjectId(stateId),
+        "ulb.isActive":true
       },
     },
     {
