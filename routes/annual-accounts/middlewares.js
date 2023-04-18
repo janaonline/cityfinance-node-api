@@ -1,5 +1,5 @@
 
-const {payloadParser,nestedObjectParser,getFlatObj,mutateJson,mutuateGetPayload} = require("../CommonActionAPI/service");
+const {payloadParser,nestedObjectParser,getFlatObj,mutateJson,mutuateGetPayload,decideDisabledFields} = require("../CommonActionAPI/service");
 const {years} = require("../../service/years")
 let outDatedYears = ["2018-19","2019-20","2021-22","2022-23"]
 const {getKeyByValue} = require("../../util/masterFunctions")
@@ -51,6 +51,7 @@ module.exports.changeResponse = async(req,res,next) =>{
         "data":[],
         "message":""
     }
+    let formStatus = false
     try{
         let responseData = [
             {
@@ -60,7 +61,8 @@ module.exports.changeResponse = async(req,res,next) =>{
               "status":MASTER_STATUS_ID[parseInt(req.form.currentFormStatus)] || "Not Started",
               "canTakeAction":req?.form?.canTakeAction ? req?.form?.canTakeAction :false,
               "deadLineMsg":"As per 15th FC Operational Guidelines, for receiving grants ULBs should submit their AFS on or before 15th of May",
-              "statusId": req?.form?.currentFormStatus ?  req?.form?.currentFormStatus  : null
+              "statusId": req?.form?.currentFormStatus ?  req?.form?.currentFormStatus  : null,
+              "isQuestionDisabled":formStatus
 
             }
           ]
@@ -90,6 +92,10 @@ module.exports.changeResponse = async(req,res,next) =>{
             if(mutatedJson[0].isDraft === ""){
                 mutatedJson[0].isDraft = true
             }
+            
+            if(form){
+                formStatus = decideDisabledFields(form,req.decoded.role)
+            }
             response.message = 'Form Questionare!'
             response.success = true
             mutatedJson[0].prevStatus = req.obj?.url || ""
@@ -101,6 +107,7 @@ module.exports.changeResponse = async(req,res,next) =>{
                 flattedForm['role'] = req.decoded.role
                 mutatedJson =  await mutuateGetPayload(obj, flattedForm,keysToBeDeleted,role)
                 responseData[0]['language'] = mutatedJson
+                responseData[0]['isQuestionDisabled'] = formStatus
                 if(mutatedJson[0].isDraft === ""){
                     mutatedJson[0].isDraft = true
                 }
