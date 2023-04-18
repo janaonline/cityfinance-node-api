@@ -5,7 +5,7 @@ const Response = require("../../../service").response;
 const ObjectId = require("mongoose").Types.ObjectId;
 const State = require("../../../models/State");
 const OwnRevenueObjectIDs = [
-   ObjectId("5dd10c2485c951b54ec1d74b"),
+ObjectId("5dd10c2485c951b54ec1d74b"),
 ObjectId("5dd10c2685c951b54ec1d762"),
 ObjectId("5dd10c2485c951b54ec1d74a"),
 ObjectId("5dd10c2885c951b54ec1d77e"),
@@ -28,7 +28,7 @@ const peopleInformation = async (req, res) => {
           .populate("state")
           .populate("UA")
           .lean();
-          message = data.isActive ? "" :"This ULB has been denotified"
+          message = data?.isActive ? "" :"This ULB has been denotified"
         let ledgerData = await UlbLedger.aggregate([
           {
             $match: {
