@@ -413,7 +413,7 @@ module.exports.getForm = async (req, res,next) => {
             console.log("keyName ::: ",keyName)
             let msg = userRole === "ULB" ? `Your ${messages[keyName]} Year's SLBs for Water Supply and Sanitation form status is - ${
               status ? status : "Not Submitted"
-            }. Kindly submit form at - <a href =https://${host}/ulbform/ulbform-overview target="_blank">Click here</a> in order to submit form`: `Dear User, The ${ulbData.name} has not yet filled Previous Year's SLBs for Water Supply and Sanitation form. You will be able to mark your response once STATE approves previous year's form.`
+            }. Kindly submit form at - <a href =https://${host}/ulbform/ulbform-overview target="_blank">Click here</a> in order to submit form`: `Dear User, The ${ulbData.name} has not yet filled ${messages[keyName]} Year's SLBs for Water Supply and Sanitation form. You will be able to mark your response once STATE approves ${messages[keyName]} year's form.`
             req.json = {
                 status: true,
                 show: true,
