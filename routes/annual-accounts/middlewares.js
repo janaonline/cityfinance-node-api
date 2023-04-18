@@ -58,7 +58,7 @@ module.exports.changeResponse = async(req,res,next) =>{
               "formId": req.query.formId,
               "language":[],
               "status":MASTER_STATUS_ID[parseInt(req.form.currentFormStatus)] || "Not Started",
-              "canTakeAction":req?.form?.canTakeAction ? req?.form?.canTakeAction :true,
+              "canTakeAction":req?.form?.canTakeAction ? req?.form?.canTakeAction :false,
               "deadLineMsg":"As per 15th FC Operational Guidelines, for receiving grants ULBs should submit their AFS on or before 15th of May",
               "statusId": req?.form?.currentFormStatus ?  req?.form?.currentFormStatus  : null
 
@@ -95,7 +95,6 @@ module.exports.changeResponse = async(req,res,next) =>{
             mutatedJson[0].prevStatus = req.obj?.url || ""
             responseData[0]['language'] = mutatedJson
             if(Object.keys(form).length > 0){
-                
                 let flattedForm = getFlatObj(form)
                 flattedForm['form_type'] = "annual"
                 flattedForm['isDraft'] = form.isDraft
@@ -117,7 +116,6 @@ module.exports.changeResponse = async(req,res,next) =>{
         }
         else{
             if(Object.keys(form).length){
-
                 return res.status(200).json(req.form);
             }
             else{

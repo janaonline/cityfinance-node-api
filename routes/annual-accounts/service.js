@@ -26,7 +26,7 @@ const ExcelJS = require("exceljs");
 const { canTakenAction, canTakenActionMaster, getMasterAction } = require('../CommonActionAPI/service')
 const fs = require("fs");
 const Service = require('../../service');
-const { FormNames, YEAR_CONSTANTS,  MASTER_STATUS, FORMIDs, FORM_LEVEL, FORM_LEVEL_SHORTKEY } = require('../../util/FormNames');
+const { FormNames, YEAR_CONSTANTS,  MASTER_STATUS, FORMIDs, FORM_LEVEL, FORM_LEVEL_SHORTKEY, MASTER_STATUS_ID } = require('../../util/FormNames');
 const {BackendHeaderHost, FrontendHeaderHost} = require('../../util/envUrl');
 const {saveCurrentStatus, saveFormHistory, saveStatusHistory, getShortKeys} = require('../../util/masterFunctions');
 const CurrentStatus = require("../../models/CurrentStatus");
@@ -1817,6 +1817,9 @@ exports.getAccounts = async (req, res,next) => {
     let status = '';
     if (prevStatus) {
       status = calculateStatus(prevStatus.status, prevStatus.actionTakenByRole, prevStatus.isDraft, "ULB")
+      if(!prevStatus.status){
+        status = MASTER_STATUS_ID[prevStatus.currentFormStatus]
+      }
     }
     let annualAccountData = {}
     
