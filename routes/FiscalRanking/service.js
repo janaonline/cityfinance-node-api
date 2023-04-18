@@ -2986,6 +2986,7 @@ async function columnsForCSV(params) {
       "Copy of Audited Annual Financial Statements preferably in English FY 2019-20",
       "Copy of Audited Annual Financial Statements preferably in English FY 2018-19",
       "Any other information that you would like to provide us?",
+      "Upload Signed Copy"
     ];
     output["dbCols"] = [
       "stateName",
@@ -3035,6 +3036,7 @@ async function columnsForCSV(params) {
       "FR_auditedAnnualFySt_2019-20",
       "FR_auditedAnnualFySt_2018-19",
       "otherUpload",
+      "signedCopyOfFile"
     ];
     output["FRShortKeyObj"] = {};
   } else if (FRUlbFinancialData) {
@@ -3092,8 +3094,6 @@ function createCsv(params) {
     // if(!csvCols.length){
     //   csvCols = Object.values(cols)
     // }
-    let totalownOwnRevenueAreaLabel =
-      "Own Revenue collection amount for FY 2021-22 - by Cash/Cheque/DD";
     let cursor = moongose
       .model(modelName)
       .aggregate(query)
@@ -3179,6 +3179,7 @@ function createCsv(params) {
         //   str2.splice(9, 1, `${percent}%`);
         //   str = str2.join(",");
         // }
+        str.trim()
         res.write("\ufeff"+ str + "\r\n");
         // if (FRFlag) {
         //   res.write("\ufeff" + str2 + "\r\n");
@@ -3201,7 +3202,7 @@ function createCsv(params) {
 
 function completionPercent( document, FRCompletionNumber) {
   let completionPercent = 0;
-  const totalMandatoryFields = 28;
+  const totalMandatoryFields = 29;
   const [objOfMandatoryFields] =  document;
 
   for( let field in objOfMandatoryFields){
@@ -3534,6 +3535,7 @@ function computeQuery(params) {
                 propertySanitationTax: 1,
                 fy_21_22_cash: 1,
                 otherUpload: 1,
+                signedCopyOfFile: 1,
                 arrayOfMandatoryField: [
                   {
                     population11: "$population11.value",
@@ -3551,6 +3553,7 @@ function computeQuery(params) {
                     propertyWaterTax: "$propertyWaterTax.value",
                     propertySanitationTax: "$propertySanitationTax.value",
                     fy_21_22_cash: "$fy_21_22_cash.value",
+                    signedCopyOfFile: "$signedCopyOfFile.url"
                   },
                 ],
               },
@@ -3770,6 +3773,9 @@ function computeQuery(params) {
             $ifNull: ["$fiscalrankings.fy_21_22_cash.value", ""],
           },
           otherUpload: { $ifNull: ["$fiscalrankings.otherUpload.url", ""] },
+          signedCopyOfFile: {
+            $ifNull: ["$fiscalrankings.signedCopyOfFile.url", ""],
+          },
           fiscalrankingmappers: 1,
           arrayOfMandatoryField: "$fiscalrankings.arrayOfMandatoryField",
           completionPercentFR: {
