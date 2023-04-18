@@ -2024,6 +2024,7 @@ function appendKeys(keyArray, data, provisionalKey, tabShortKeys, role) {
       data[key]['canTakeAction'] = canTakenActionMaster(params);
       data[key]['statusId'] = statusData['statusId'];
       data[key]['status'] = statusData['status'];
+      data[key]['rejectReason'] = statusData['rejectReason'];
       continue;
     }
     let tabData = data[key][provisionalKey];
@@ -2040,6 +2041,7 @@ function appendKeys(keyArray, data, provisionalKey, tabShortKeys, role) {
         tabData[entity]['canTakeAction'] = canTakenActionMaster(params);
         tabData[entity]['statusId'] = statusData['statusId'];
         tabData[entity]['status'] = statusData['status'];
+        tabData[entity]['rejectReason'] = statusData['rejectReason'];
 
       }
     }
