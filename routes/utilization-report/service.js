@@ -1526,6 +1526,7 @@ async function updateForNextForms(design_year,ulb,utiData){
           FORM_STATUS.In_Progress,
           FORM_STATUS.Rejected_By_MoHUA,
           FORM_STATUS.Rejected_By_State,
+          FORM_STATUS.STATE_REJECTED,
         ].includes(utilFormStatus)
       ) {
         /* calculate closing balance and opening balance for 22-23 form */

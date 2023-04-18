@@ -2316,11 +2316,13 @@ function manageDisabledQues(question,flattedForm){
         let actionKeys = ['statusId','status','canTakeAction','rejectReason']
         // let allowedStatuses = [StatusList.Rejected_By_MoHUA,StatusList.Rejected_By_State,StatusList.In_Progress,StatusList.Not_Started]
         let formType = flattedForm?.role
+        // console.log("flattedForm ::: ",flattedForm)
         let getValue = question.inputType === "11" ? 2 :1
         let mainKey = question.shortKey.split(".").slice(0,question.shortKey.split(".").length - getValue).join(".")
         actionKeys.forEach((item)=>{
             let key = mainKey+"."+item
-            let included = Object.keys(flattedForm).includes(key)
+            let keyItem = question.shortKey + "." + item
+            let included = Object.keys(flattedForm).includes(key) || Object.keys(flattedForm).includes(keyItem)
             if(included){
                 question[item] = flattedForm[key]
                 if(item === "status"){
