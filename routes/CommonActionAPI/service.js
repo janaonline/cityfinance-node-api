@@ -2313,7 +2313,7 @@ async function deleteExtraKeys(question){
 
 function manageDisabledQues(question,flattedForm){
     try{
-        let actionKeys = ['statusId','status','canTakeAction']
+        let actionKeys = ['statusId','status','canTakeAction','rejectReason']
         // let allowedStatuses = [StatusList.Rejected_By_MoHUA,StatusList.Rejected_By_State,StatusList.In_Progress,StatusList.Not_Started]
         let formType = flattedForm?.role
         let getValue = question.inputType === "11" ? 2 :1
