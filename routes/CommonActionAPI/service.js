@@ -2068,6 +2068,7 @@ function handleArrayFields(shortKey,flattedForm,childQuestionData){
 async function appendvalues(childQuestionData,flattedForm,shortKey,question){
     try{
         let arrKeys = Object.keys(arrFields)
+        console.log("arrKeys :: ",arrKeys)
        if(!arrKeys.includes(shortKey)){
         for(let arr of childQuestionData){
             for(let obj of arr){

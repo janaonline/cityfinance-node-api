@@ -3,9 +3,10 @@ const GrantTransferCertificate = require('../../models/GrantTransferCertificate'
 const StateGTCCertificate = require('../../models/StateGTCertificate');
 const ObjectId = require("mongoose").Types.ObjectId;
 const Ulb = require('../../models/Ulb')
-const {checkForUndefinedVaribales} = require("../../routes/CommonActionAPI/service")
+const {checkForUndefinedVaribales,mutuateGetPayload,getFlatObj} = require("../../routes/CommonActionAPI/service")
 const {getKeyByValue} = require("../../util/masterFunctions");
 const { years } = require('../../service/years');
+const GtcInstallmentForm = require("../../models/GtcInstallmentForm")
 const FormsJson = require("../../models/FormsJson");
 let gtcYears = ["2018-19","2019-20","2021-22","2022-23"]
 let GtcFormTypes = [
@@ -580,17 +581,68 @@ const checkFormPreviousForms = async(design_year,state)=>{
     return validator;
 }
 
+const getManipulatedJson = async(params)=>{
+    let keysToBeDeleted = ["_id","createdAt","modifiedAt","actionTakenByRole","actionTakenBy","ulb","design_year"]
+    try{
+        let grantsWithUlbTypes =  {
+            "million_tied":{ulbType:"MPC",grantType:"Tied"},
+            "nonmillion_untied":{ulbType:"NPMC",grantType:"Untied"},
+            "nonmillion_tied" :{ulbType:"NPMC",grantType:"Tied"}
+        }
+        let {installment,type,design_year,formJson} = params
+        let gtcForm = await GrantTransferCertificate.findOne({
+                design_year,
+                installment,
+                type
+            }).lean()
+        let installmentForm = await GtcInstallmentForm.findOne({
+            gtcForm:gtcForm?._id,
+            type,
+            installment,
+            design_year
+        })
+        let form = await GtcInstallmentForm().toJSON()
+        // form.ulbType = grantsWithUlbTypes[type].ulbType
+        form.ulbType = "MPC"
+        form.grantType =   grantsWithUlbTypes[type].grantType
+        let questionData = formJson.data
+        let flattedForm = await getFlatObj(form)
+        let questionJson = await mutuateGetPayload(questionData,flattedForm,keysToBeDeleted,"ULB")
+        // console.log("form.ulbType :: ",form.ulbType)
+        return questionJson
+    }
+    catch(err){
+        console.log("error in getManipulatedJson ::: ",err.message)
+    }
+}
+
 const getJson = async(state,design_year)=>{
     try{
-        let stateObj = await State.findOne({_id:ObjectId(state)}).lean()
-        let form = await FormsJson.findOne({
-            "formId":11.1
+        let ulb = await Ulb.findOne({
+            "state":ObjectId(state),
+            "isMillionPlus":"Yes"
+        },{isMillionPlus : 1})
+        let stateIsMillion = ulb.isMillionPlus === "Yes" ? true : false
+        let forms = await FormsJson.find({
+            "formId":{"$in":[11.1,7]}
         }).lean()
-        let basicEmptyStructure = form.data
+        let basicEmptyStructure = forms.find(item => item.formId === 11.1).data
+        let formJson = forms.find(item => item.formId === 7)
+        if(!stateIsMillion){
+            stateIsMillion =  basicEmptyStructure.filter( item => item.type != "million_tied")
+        }
         let returnableJson = []
-        for(let corousel of basicEmptyStructure){
-            console.log("corousel ::",corousel)
-            break
+        for(let carousel of basicEmptyStructure){
+            for(let question of carousel.questions){
+                let params = {
+                    "installment": question.installment,
+                    "type":question.type,
+                    "design_year":question.year,
+                    "formJson":formJson
+                }
+                question.questionresponse = await getManipulatedJson(params)
+            }
+            
         }
     }
     catch(err){
@@ -605,11 +657,7 @@ module.exports.getInstallmentForm = async(req,res,next)=>{
         errors:[]
     }
     try{
-        let mformObject = {
-            "_id": req?.form?._id ,
-            "formId": req.query.formId,
-            "language":[],
-          }
+        
         let responseData = []
         let {design_year,state,formType} = req.query
         let validator = await checkForUndefinedVaribales({
@@ -627,7 +675,7 @@ module.exports.getInstallmentForm = async(req,res,next)=>{
             response.message = formValidator.message
             return res.json(response)
         }
-        await getJson()
+        await getJson(state,design_year)
 
     }
     catch(err){
