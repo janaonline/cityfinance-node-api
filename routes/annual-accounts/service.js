@@ -1986,12 +1986,11 @@ function addCanTakeActionKeys(annualAccountData, statuses, role){
     const keyArray = ["audited", "unAudited"];
     const provisionalKey = "provisional_data";
     let separator = ".";
-      const tabSeparator = "_";
+    const dotSeparator = "."
+    const tabSeparator = "_";
 
     let tabShortKeys = statuses.map(el=>{
-        if (el.shortKey.match(tabRegex)) {
-          separator = tabSeparator;
-        }
+        separator = el.shortKey.match(tabRegex) ?  tabSeparator : dotSeparator;
         let splittedArray = el.shortKey.split(separator)
         el.shortKey = splittedArray[splittedArray.length - 1];
         return el;
