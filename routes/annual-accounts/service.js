@@ -2043,11 +2043,48 @@ function appendKeys(keyArray, data, provisionalKey, tabShortKeys, role) {
         tabData[entity]['status'] = statusData['status'];
         tabData[entity]['rejectReason'] = statusData['rejectReason'];
 
+        if(["bal_sheet","inc_exp"].includes(entity)){
+          tabData = addExtraKeysToNumericFields(statusData,tabData, params);
+        }
       }
     }
   }
 }
 
+
+function addExtraKeysToNumericFields(statusData,tabData, params){
+  
+  const shortKeysToAppend = {
+    "bal_sheet": [
+        "assets",
+        "f_assets",
+        "s_grant",
+        "c_grant",
+    ],
+    "inc_exp": ["revenue", "expense"],
+  };
+  
+  for(let key in shortKeysToAppend){
+    if(statusData?.shortKey === key){
+      for(let entity of shortKeysToAppend[key]){
+        tabData[entity] = {
+              canTakeAction: false,
+              statusId: 0,
+              status: "",
+              rejectReason : "",
+              value: tabData[entity]
+            };
+        tabData[entity]['canTakeAction'] = canTakenActionMaster(params);
+        tabData[entity]['statusId'] = statusData['statusId'];
+        tabData[entity]['status'] = statusData['status'];
+        tabData[entity]['rejectReason'] = statusData['rejectReason'];
+
+      }
+    }
+  }
+
+  return tabData;
+}
 function filterTabShortKeys(req, shortKeys) {
   try {
     const separator = ".";
