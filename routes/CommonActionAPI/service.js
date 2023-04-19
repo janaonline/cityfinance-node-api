@@ -2091,12 +2091,14 @@ const handleNumericCase = async(question,obj,flattedForm,mainKey)=>{
         // console.log("question ",question.shortKey)
         if(mainKey){
             let key = mainKey + "."+question.shortKey
-            if(flattedForm[key]  == undefined){
+            if(flattedForm[key]  == undefined &&  flattedForm[key+".value"] == undefined){
                 value = ""
             }
             else{
-                value = flattedForm[key].toString()
+                value = !flattedForm[key] ? flattedForm[key+".value"] : flattedForm[key]
+                value = value.toString()
             }
+            
             question['modelValue'] = value
             question['value'] = value
             obj['textValue'] = value
@@ -2104,11 +2106,12 @@ const handleNumericCase = async(question,obj,flattedForm,mainKey)=>{
         }
         else{
             let key = question.shortKey
-            if(flattedForm[key]  == undefined){
+            if(flattedForm[key]  == undefined && flattedForm[key+".value"] == undefined){
                 value = ""
             }
             else{
-                value = flattedForm[key].toString()
+                value = !flattedForm[key] ? flattedForm[key+".value"] : flattedForm[key]
+                value = value.toString()
             }
             question['modelValue'] = value
             question['value'] = value
@@ -2323,6 +2326,7 @@ function manageDisabledQues(question,flattedForm){
             let key = mainKey+"."+item
             let keyItem = question.shortKey + "." + item
             let included = Object.keys(flattedForm).includes(key) || Object.keys(flattedForm).includes(keyItem)
+            key = Object.keys(flattedForm).includes(key) ? key :keyItem
             if(included){
                 question[item] = flattedForm[key]
                 if(item === "status"){
