@@ -4,7 +4,7 @@ module.exports = {
     'Under_Review_By_State': 'Under Review By State',
     'Approved_By_State': 'Approved By State',
     'Under_Review_By_MoHUA': 'Under Review By MoHUA',
-    'Rejected_By_State': 'Returned By State',
+    'Rejected_By_State': 'Returned by State',
     "STATE_REJECTED":"Rejected by State",
     'Approved_By_MoHUA': 'Approved By MoHUA',
     'Rejected_By_MoHUA': 'Returned By MoHUA',
