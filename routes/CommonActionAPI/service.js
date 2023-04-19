@@ -60,12 +60,12 @@ var arrFields = {
     "sanitation_tableView":"data.sanitation",
     "solidWaste_tableView":"data.solid waste",
     "stormWater_tableView":"data.storm water",
-    "transrantdetail_tableview_addbutton":"projects",
+    "transferGrantdetail_tableview_addbutton":"transferGrantdetail",
 
 }
 
 var categoryTable = {}
-var specialCases = ['projectDetails_tableView_addButton','waterSupply_tableView','solidWaste_tableView','stormWater_tableView','sanitation_tableView',"transrantdetail_tableview_addbutton"]
+var specialCases = ['projectDetails_tableView_addButton','waterSupply_tableView','solidWaste_tableView','stormWater_tableView','sanitation_tableView',"transferGrantdetail_tableview_addbutton"]
 var annualRadioButtons = { // if there are any label changes for radio button in frontend please update here
     "Yes":true,
     "No":false,
@@ -112,7 +112,7 @@ var customkeys = {
     "projectDetail":{
         "projectUndtkn":"projectUndtkn"
     },
-    "transrantdetail_tableview_addbutton":{
+    "transferGrantdetail_tableview_addbutton":{
         "transAmount":"transAmount",
         "transDate":"transDate",
         "transDelay":"transDelay",

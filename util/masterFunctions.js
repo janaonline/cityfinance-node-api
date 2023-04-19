@@ -4,6 +4,31 @@ const StatusHistory = require("../models/StatusHistory");
 const FORMJSON  = require('../models/FormsJson');
 const { MODEL_PATH } = require("../util/FormNames");
 
+module.exports.radioSchema = ()=>{
+  return {
+      type:String,
+      enum:["Yes","No",null],
+      default:null,
+      required:true,
+  }
+}
+module.exports.pdfSchema = ()=>{
+  return {
+      url: {type: String},
+      name: {type: String},
+  }
+}
+module.exports.limitValidationSchema = (keyName,min,max,mandatory=false)=>{
+  return {
+      type:Number,
+      default:null,
+      min:min,
+      max:[max,`${keyName} must not be greater than ${max}`],
+      required : mandatory,
+  }
+}
+
+
 module.exports.saveFormHistory = (params) => {
   return new Promise(async (resolve, reject) => {
     try {

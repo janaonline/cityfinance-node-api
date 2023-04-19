@@ -3,7 +3,18 @@ const GrantTransferCertificate = require('../../models/GrantTransferCertificate'
 const StateGTCCertificate = require('../../models/StateGTCertificate');
 const ObjectId = require("mongoose").Types.ObjectId;
 const Ulb = require('../../models/Ulb')
-
+const {checkForUndefinedVaribales} = require("../../routes/CommonActionAPI/service")
+const {getKeyByValue} = require("../../util/masterFunctions");
+const { years } = require('../../service/years');
+let gtcYears = ["2018-19","2019-20","2021-22","2022-23"]
+let GtcFormTypes = [
+    "nonmillion_untied",
+    "million_tied",
+    "nonmillion_tied"
+]
+let alerts = {
+    "prevForm":"Your previous year's GTC form is not complete. Click here to access previous year form."
+}
 function response(form, res, successMsg, errMsg) {
     if (form) {
         return res.status(200).json({
@@ -542,6 +553,64 @@ module.exports.OldFileDeFuncFiles = async (req, res) => {
         number: arr.length,
         total: documnetcounter
     });
+}
+
+const checkFormPreviousForms = async(design_year,state)=>{
+    let validator = {
+        valid:true,
+        "message":""
+    }
+    try{
+         let year = parseInt(getKeyByValue(years,design_year))
+         let prevYearName = (year-1).toString() + "-" +`${year.toString().slice(-2)}`
+         let yearId = ObjectId(years[prevYearName])
+         let gtcForms = await GrantTransferCertificate.find({
+            "design_year":yearId,
+            "state":ObjectId(state),
+            "file.url":{"$exists":true}
+         }).countDocuments()
+         let latestYear = !outDatedYears.includes(year)
+         console.log("latestYear :: ",latestYear)
+        console.log("gtcForms ::: ",gtcForms)
+         
+    }
+    catch(err){
+        console.log("error in checkFormPreviousForms ::",err.message)
+    }
+}
+
+
+module.exports.getInstallmentForm = async(req,res,next)=>{
+    let response = {
+        success:false,
+        message:"",
+        data:[],
+        errors:[]
+    }
+    try{
+        let mformObject = {
+            "_id": req?.form?._id ,
+            "formId": req.query.formId,
+            "language":[],
+          }
+        let responseData = []
+        let {design_year,state,formType} = req.query
+        let validator = await checkForUndefinedVaribales({
+            "design year":design_year,
+            "state":state,
+            "form type":formType
+        })
+        let countTocheck = years['2023-24'] === design_year ? 8 : 5
+        if(!validator.valid) { 
+            response.message = validator.message
+            return res.json(response)
+        }
+        await checkFormPreviousForms(design_year,state)
+        
+    }
+    catch(err){
+        console.log("error in getInstallmentForm ::: ",err.message)
+    }
 }
 
 function doRequest(url) {
