@@ -6,11 +6,6 @@ const {radioSchema,pdfSchema,limitValidationSchema} = require("../util/masterFun
 
 const installmentFormSchema = new Schema(
     {
-        state: {
-            type: Schema.Types.ObjectId,
-            ref: 'State',
-            required: [true, "state is required"]
-        },
         gtcForm : {
             type:Schema.Types.ObjectId,
             ref : "GrantTransferCertificate",
@@ -27,13 +22,12 @@ const installmentFormSchema = new Schema(
         },
         year : {
             type:String,
-            enum:["2022-2023","2023-2024"],
+            enum:["2022-23","2023-24"],
             required:[true,"year must be  2022-2023 / 2023-2024"]
         },
         design_year : {type:Schema.Types.ObjectId,ref:"Year"},
-        financialYear: { type: Schema.Types.ObjectId, ref: "Year" },
         state: { type: Schema.Types.ObjectId, ref: "State",required:[true,"State id is required"] },
-        transGrantdetail:{type:Schema.Types.ObjectId,ref:"TransferGrantDetailForm",default:null},
+        transferGrantdetail:{type:Schema.Types.ObjectId,ref:"TransferGrantDetailForm",default:null},
         ulbType:{
             type:String,
             enum:["MPC","NMPC",null],
@@ -44,13 +38,12 @@ const installmentFormSchema = new Schema(
             type:String,
             enum:["Tied","Untied",null],
             default:null,
-            required:[true,"ulbType is required "]
+            required:[true,"grantType is required "]
         },
-        installmentType:{
-            type:String,
-            enum:["1st Installment","2nd Installment",null],
+        installment:{
+            type:Number,
             default:null,
-            required:[true,"installmentType is required "]
+            required:[true,"installment is required "]
         },
         totalMpc:limitValidationSchema("totalMpc",0,1000),
         totalNmpc:limitValidationSchema("totalNmpc",0,1000),

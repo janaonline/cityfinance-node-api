@@ -6,6 +6,7 @@ const Ulb = require('../../models/Ulb')
 const {checkForUndefinedVaribales} = require("../../routes/CommonActionAPI/service")
 const {getKeyByValue} = require("../../util/masterFunctions");
 const { years } = require('../../service/years');
+const FormsJson = require("../../models/FormsJson");
 let gtcYears = ["2018-19","2019-20","2021-22","2022-23"]
 let GtcFormTypes = [
     "nonmillion_untied",
@@ -13,7 +14,7 @@ let GtcFormTypes = [
     "nonmillion_tied"
 ]
 let alerts = {
-    "prevForm":"Your previous year's GTC form is not complete. Click here to access previous year form."
+    "prevForm":"Your previous year's GTC form is not complete. <a href=https://democityfinance.dhwaniris.in/upload-annual-accounts target=\"_blank\">Click Here!</a> to access previous year form."
 }
 function response(form, res, successMsg, errMsg) {
     if (form) {
@@ -564,22 +565,38 @@ const checkFormPreviousForms = async(design_year,state)=>{
          let year = parseInt(getKeyByValue(years,design_year))
          let prevYearName = (year-1).toString() + "-" +`${year.toString().slice(-2)}`
          let yearId = ObjectId(years[prevYearName])
-         let gtcForms = await GrantTransferCertificate.find({
+         let gtcFormsLength = await GrantTransferCertificate.find({
             "design_year":yearId,
-            "state":ObjectId(state),
-            "file.url":{"$exists":true}
+            "state":ObjectId(state),            
          }).countDocuments()
-         let latestYear = !outDatedYears.includes(year)
-         console.log("latestYear :: ",latestYear)
-        console.log("gtcForms ::: ",gtcForms)
-         
+        if(gtcFormsLength < 8){
+            validator.valid = false
+            validator.message = alerts['prevForm']
+        }
     }
     catch(err){
         console.log("error in checkFormPreviousForms ::",err.message)
     }
+    return validator;
 }
 
-
+const getJson = async(state,design_year)=>{
+    try{
+        let stateObj = await State.findOne({_id:ObjectId(state)}).lean()
+        let form = await FormsJson.findOne({
+            "formId":11.1
+        }).lean()
+        let basicEmptyStructure = form.data
+        let returnableJson = []
+        for(let corousel of basicEmptyStructure){
+            console.log("corousel ::",corousel)
+            break
+        }
+    }
+    catch(err){
+        console.log("error in getForms ::: ",err.message)
+    }
+}
 module.exports.getInstallmentForm = async(req,res,next)=>{
     let response = {
         success:false,
@@ -605,12 +622,18 @@ module.exports.getInstallmentForm = async(req,res,next)=>{
             response.message = validator.message
             return res.json(response)
         }
-        await checkFormPreviousForms(design_year,state)
-        
+        let formValidator = await checkFormPreviousForms(design_year,state)
+        if(!formValidator.valid){
+            response.message = formValidator.message
+            return res.json(response)
+        }
+        await getJson()
+
     }
     catch(err){
         console.log("error in getInstallmentForm ::: ",err.message)
     }
+    return res.json(response)
 }
 
 function doRequest(url) {
