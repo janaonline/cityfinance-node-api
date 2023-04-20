@@ -3672,7 +3672,25 @@ function computeQuery(params) {
                       ],
                     },
                     then: "$file.url",
-                    else: null,
+                    else: {
+                      "$cond": {
+                          "if": {
+                              "$and": [
+                                  {
+                                      "$eq": [
+                                          "$type",
+                                          "auditedAnnualFySt"
+                                      ]
+                                  },
+                                  {
+                                    "$eq": ["$modelName","ULBLedger"]
+                                   }
+                              ]
+                          },
+                          "then": "Already Uploaded on Cityfinance",
+                          "else": null
+                      }
+                  },
                   },
                 },
                 modelName: 1,
