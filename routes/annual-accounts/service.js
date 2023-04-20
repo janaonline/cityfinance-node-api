@@ -519,13 +519,13 @@ exports.createUpdate = async (req, res) => {
           [
             MASTER_STATUS["Not Started"],
             MASTER_STATUS["In Progress"],
-            MASTER_STATUS["Returned by State"],
-            MASTER_STATUS["Returned by MoHUA"],
+            MASTER_STATUS["Returned By State"],
+            MASTER_STATUS["Returned By MoHUA"],
           ].includes(formCurrentStatus.status)
         ) {
           let formSubmit;
           formData["ulbSubmit"] =
-            formBodyStatus === MASTER_STATUS["Under Review by State"]
+            formBodyStatus === MASTER_STATUS["Under Review By State"]
               ? new Date()
               : "";
           if (formData2324) {
@@ -605,7 +605,7 @@ exports.createUpdate = async (req, res) => {
               let currentStatusData = {
                 formId: masterFormId,
                 recordId: ObjectId(formSubmit._id),
-                status: MASTER_STATUS["Under Review by State"],
+                status: MASTER_STATUS["Under Review By State"],
                 level: FORM_LEVEL["tab"],
                 shortKey,
                 rejectReason: "",
@@ -635,8 +635,8 @@ exports.createUpdate = async (req, res) => {
         } else if (
           [
             MASTER_STATUS["Approved by MoHUA"],
-            MASTER_STATUS["Under Review by MoHUA"],
-            MASTER_STATUS["Under Review by State"],
+            MASTER_STATUS["Under Review By MoHUA"],
+            MASTER_STATUS["Under Review By State"],
           ].includes(formCurrentStatus.status)
         ) {
           return res.status(200).json({
@@ -811,16 +811,16 @@ exports.createUpdate = async (req, res) => {
 
 async function filterApprovedShortKeys(shortKeys, recordId, formStatus){
   let statuses , statusesShortKeys;
-  if(formStatus === MASTER_STATUS['Returned by State']){
+  if(formStatus === MASTER_STATUS['Returned By State']){
     // statuses = statuses.filter(el=>{
       //   return el.actionTakenByRole === "STATE" && el.status !== MASTER_STATUS['Under Review by MoHUA'] 
       // })
-      statuses = await CurrentStatus.find({recordId,actionTakenByRole: "STATE", status: MASTER_STATUS['Returned by State']}).lean();
-  }else if(formStatus === MASTER_STATUS['Returned by MoHUA']){
+      statuses = await CurrentStatus.find({recordId,actionTakenByRole: "STATE", status: MASTER_STATUS['Returned By State']}).lean();
+  }else if(formStatus === MASTER_STATUS['Returned By MoHUA']){
     // statuses = statuses.filter(el =>{
     //   return el.actionTakenByRole === "MoHUA" && el.status !== MASTER_STATUS['Approved by MoHUA'] 
     // })
-    statuses = await CurrentStatus.find({recordId,actionTakenByRole: "MoHUA", status: MASTER_STATUS['Returned by MoHUA']}).lean();
+    statuses = await CurrentStatus.find({recordId,actionTakenByRole: "MoHUA", status: MASTER_STATUS['Returned By MoHUA']}).lean();
 
   }
   statusesShortKeys = statuses.map(status=>{
@@ -848,10 +848,10 @@ async function filterApprovedShortKeys(shortKeys, recordId, formStatus){
 async function updateStateCurrentStatus(notApprovedShortKeys, recordId, formCurrentStatus){
   try {
     let role, status;
-    status =  MASTER_STATUS['Under Review by State']
-    if(formCurrentStatus ===  MASTER_STATUS['Returned by State']){
+    status =  MASTER_STATUS['Under Review By State']
+    if(formCurrentStatus ===  MASTER_STATUS['Returned By State']){
       role = "STATE";
-    }else if (formCurrentStatus ===  MASTER_STATUS['Returned by MoHUA']){
+    }else if (formCurrentStatus ===  MASTER_STATUS['Returned By MoHUA']){
       role = "MoHUA";
       // status =  MASTER_STATUS['']
     }
@@ -863,7 +863,7 @@ async function updateStateCurrentStatus(notApprovedShortKeys, recordId, formCurr
       $set:{
         status
       }
-    }).lean();
+    });
     return;
 
   } catch (error) {
