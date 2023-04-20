@@ -30,7 +30,7 @@ const { FormNames, YEAR_CONSTANTS,  MASTER_STATUS, FORMIDs, FORM_LEVEL, FORM_LEV
 const {BackendHeaderHost, FrontendHeaderHost} = require('../../util/envUrl');
 const {saveCurrentStatus, saveFormHistory, saveStatusHistory, getShortKeys} = require('../../util/masterFunctions');
 const CurrentStatus = require("../../models/CurrentStatus");
-
+const {getSeparatedShortKeys} = require('../../routes/CommonActionAPI/service')
 var https = require('https');
 var request = require('request')
 
@@ -506,9 +506,12 @@ exports.createUpdate = async (req, res) => {
             status: MASTER_STATUS["Not Started"],
           };
         } else {
-          formCurrentStatus = await CurrentStatus.findOne({
-            recordId: formData2324._id,
-          }).lean();
+          // formCurrentStatus = await CurrentStatus.findOne({
+            // recordId: formData2324._id,
+          // }).lean();
+          formCurrentStatus = {
+            status:  formData2324.currentFormStatus
+          };
         }
 
         if (
@@ -554,7 +557,10 @@ exports.createUpdate = async (req, res) => {
           }
           //filter shortKeys based on Tab selection
           shortKeys = filterTabShortKeys(req, shortKeys);
-
+          let notApprovedShortKeys = await filterApprovedShortKeys(shortKeys, formData2324._id, formCurrentStatus['status']);
+          if(Array.isArray(notApprovedShortKeys) && notApprovedShortKeys.length){
+            await updateStateCurrentStatus(notApprovedShortKeys,formData2324._id, formCurrentStatus['status'])
+          }
           if (formBodyStatus === MASTER_STATUS["In Progress"]) {
             for (let shortKey of shortKeys) {
               if (TAB_OBJ[shortKey]) {
@@ -578,6 +584,7 @@ exports.createUpdate = async (req, res) => {
             }
             // await session.commitTransaction();
             return Response.OK(res, {}, "Form Submitted");
+
           } else if (
             formBodyStatus === MASTER_STATUS["Under Review by State"]
           ) {
@@ -802,6 +809,69 @@ exports.createUpdate = async (req, res) => {
   }
 };
 
+async function filterApprovedShortKeys(shortKeys, recordId, formStatus){
+  let statuses , statusesShortKeys;
+  if(formStatus === MASTER_STATUS['Returned by State']){
+    // statuses = statuses.filter(el=>{
+      //   return el.actionTakenByRole === "STATE" && el.status !== MASTER_STATUS['Under Review by MoHUA'] 
+      // })
+      statuses = await CurrentStatus.find({recordId,actionTakenByRole: "STATE", status: MASTER_STATUS['Returned by State']}).lean();
+  }else if(formStatus === MASTER_STATUS['Returned by MoHUA']){
+    // statuses = statuses.filter(el =>{
+    //   return el.actionTakenByRole === "MoHUA" && el.status !== MASTER_STATUS['Approved by MoHUA'] 
+    // })
+    statuses = await CurrentStatus.find({recordId,actionTakenByRole: "MoHUA", status: MASTER_STATUS['Returned by MoHUA']}).lean();
+
+  }
+  statusesShortKeys = statuses.map(status=>{
+    return status.shortKey;
+  });
+  // statusesShortKeys = await getSeparatedShortKeys({shortKeys:statusesShortKeys});
+  // shortKeys = shortKeys.filter(el=> {
+  //   let statusObj = statusesShortKeys['outer'].find( statusShortKey=> {
+  //     return el === statusShortKey
+  //   });
+  //   if(!statusObj){
+  //     statusObj = statusesShortKeys['inner'].find( statusShortKey=> {
+  //       return el === statusShortKey
+  //     });
+  //   }
+  //   if(statusObj){
+  //     return el;
+  //   }
+
+  // })
+  return statusesShortKeys;
+}
+
+
+async function updateStateCurrentStatus(notApprovedShortKeys, recordId, formCurrentStatus){
+  try {
+    let role, status;
+    status =  MASTER_STATUS['Under Review by State']
+    if(formCurrentStatus ===  MASTER_STATUS['Returned by State']){
+      role = "STATE";
+    }else if (formCurrentStatus ===  MASTER_STATUS['Returned by MoHUA']){
+      role = "MoHUA";
+      // status =  MASTER_STATUS['']
+    }
+    const statuses  = await CurrentStatus.updateMany({
+      recordId,
+      shortKey: {$in: notApprovedShortKeys},
+      actionTakenByRole: role
+    },{
+      $set:{
+        status
+      }
+    }).lean();
+    return;
+
+  } catch (error) {
+    throw( `updateStateCurrentStatus :: ${error.message}`)
+  }
+
+
+}
 exports.datasetDownload = catchAsync(async (req, res) => {
   let data = [], columns = [], rows = [];
   data = Array.isArray(req.body) ? req.body : []
