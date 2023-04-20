@@ -863,7 +863,7 @@ async function updateStateCurrentStatus(notApprovedShortKeys, recordId, formCurr
       $set:{
         status
       }
-    }).lean();
+    });
     return;
 
   } catch (error) {
