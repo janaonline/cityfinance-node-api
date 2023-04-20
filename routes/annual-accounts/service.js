@@ -586,7 +586,7 @@ exports.createUpdate = async (req, res) => {
             return Response.OK(res, {}, "Form Submitted");
 
           } else if (
-            formBodyStatus === MASTER_STATUS["Under Review by State"]
+            formBodyStatus === MASTER_STATUS["Under Review By State"]
           ) {
             let bodyData = {
               formId: masterFormId,
@@ -634,7 +634,7 @@ exports.createUpdate = async (req, res) => {
           }
         } else if (
           [
-            MASTER_STATUS["Approved by MoHUA"],
+            MASTER_STATUS["Approved By MoHUA"],
             MASTER_STATUS["Under Review By MoHUA"],
             MASTER_STATUS["Under Review By State"],
           ].includes(formCurrentStatus.status)
