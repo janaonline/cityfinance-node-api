@@ -33,21 +33,21 @@ module.exports.ULB_ACCESSIBLE_YEARS = {
 module.exports.MASTER_STATUS = {
     "Not Started": 1,
     "In Progress": 2,
-    "Under Review by State": 3,
-    "Under Review by MoHUA": 4,
-    "Returned by State": 5,
-    "Approved by MoHUA": 6,
-    "Returned by MoHUA":7
+    "Under Review By State": 3,
+    "Under Review By MoHUA": 4,
+    "Returned By State": 5,
+    "Approved By MoHUA": 6,
+    "Returned By MoHUA":7
 }
 
 module.exports.MASTER_STATUS_ID = {
   1: "Not Started",
   2: "In Progress",
-  3: "Under Review by State",
-  4: "Under Review by MoHUA",
-  5: "Returned by State",
-  6: "Approved by MoHUA",
-  7: "Returned by MoHUA",
+  3: "Under Review By State",
+  4: "Under Review By MoHUA",
+  5: "Returned By State",
+  6: "Approved By MoHUA",
+  7: "Returned By MoHUA",
 };
 
 module.exports.FORMIDs = {

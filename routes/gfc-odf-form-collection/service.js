@@ -149,14 +149,14 @@ module.exports.createOrUpdateForm = async (req, res) => {
             [
               MASTER_STATUS["Not Started"],
               MASTER_STATUS["In Progress"],
-              MASTER_STATUS["Returned by State"],
-              MASTER_STATUS["Returned by MoHUA"],
+              MASTER_STATUS["Returned By State"],
+              MASTER_STATUS["Returned By MoHUA"],
             ].includes(formCurrentStatus.status)
           ) {
             let formSubmit;
 
             savedBody["ulbSubmit"] =
-              formBodyStatus === MASTER_STATUS["Under Review by State"]
+              formBodyStatus === MASTER_STATUS["Under Review By State"]
                 ? new Date()
                 : "";
             formData["ulbSubmit"] = savedBody["ulbSubmit"];
@@ -198,7 +198,7 @@ module.exports.createOrUpdateForm = async (req, res) => {
               // await session.commitTransaction();
               return Response.OK(res, {}, "Form Submitted");
             } else if (
-              formBodyStatus === MASTER_STATUS["Under Review by State"]
+              formBodyStatus === MASTER_STATUS["Under Review By State"]
             ) {
               let bodyData = {
                 formId: masterFormId,
@@ -213,7 +213,7 @@ module.exports.createOrUpdateForm = async (req, res) => {
               let currentStatusData = {
                 formId: masterFormId,
                 recordId: ObjectId(formSubmit._id),
-                status: MASTER_STATUS["Under Review by State"],
+                status: MASTER_STATUS["Under Review By State"],
                 level: FORM_LEVEL["form"],
                 shortKey: "form_level",
                 rejectReason: "",
@@ -240,9 +240,9 @@ module.exports.createOrUpdateForm = async (req, res) => {
             }
           } else if (
             ![
-              MASTER_STATUS["Approved by MoHUA"],
-              MASTER_STATUS["Under Review by MoHUA"],
-              MASTER_STATUS["Under Review by State"],
+              MASTER_STATUS["Approved By MoHUA"],
+              MASTER_STATUS["Under Review By MoHUA"],
+              MASTER_STATUS["Under Review By State"],
             ].includes(formCurrentStatus.status)
           ) {
             return res.status(200).json({
