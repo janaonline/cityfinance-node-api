@@ -2987,8 +2987,8 @@ function filterStatusResponse(statuses, formStatus){
     
     const STATUS_RESPONSE = {
         ULB: [MASTER_STATUS['Not Started'],MASTER_STATUS["In Progress"],MASTER_STATUS["Under Review by State"]],
-        STATE: [MASTER_STATUS["Under Review by MoHUA"],MASTER_STATUS["Rejected by State"]],
-       MoHUA: [MASTER_STATUS['Approved by MoHUA'],MASTER_STATUS["Rejected by MoHUA"]]
+        STATE: [MASTER_STATUS["Under Review by MoHUA"],MASTER_STATUS["Returned by State"]],
+       MoHUA: [MASTER_STATUS['Approved by MoHUA'],MASTER_STATUS["Returned by MoHUA"]]
     }
     
     for( let key in STATUS_RESPONSE){
@@ -3070,11 +3070,14 @@ async function getSeparatedShortKeys(params) {
       };
       let separator = ".";
       const tabSeparator = "_";
+      const dotSeparator = "."
       const tabRegex = /^tab_/g;
       for (let shortKey of shortKeys) {
-        if (shortKey.match(tabRegex)) {
-          separator = tabSeparator;
-        }
+        // if (shortKey.match(tabRegex)) {
+        //   separator = tabSeparator;
+        // };
+        separator = shortKey.match(tabRegex) ?  tabSeparator : dotSeparator;
+
         let splitedArray = shortKey.split(separator);
         let splitedArrayLength = splitedArray.length - 1;
         if (Array.isArray(splitedArray) && splitedArrayLength) {
@@ -3097,6 +3100,7 @@ async function getSeparatedShortKeys(params) {
   
 }
 
+module.exports.getSeparatedShortKeys = getSeparatedShortKeys
 
 function reverseKeyValues(originalObj){
     return  Object.entries(originalObj).reduce((acc, [key, value]) => {
