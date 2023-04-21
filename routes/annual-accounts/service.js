@@ -557,7 +557,10 @@ exports.createUpdate = async (req, res) => {
           }
           //filter shortKeys based on Tab selection
           shortKeys = filterTabShortKeys(req, shortKeys);
-          let notApprovedShortKeys = await filterApprovedShortKeys(shortKeys, formData2324._id, formCurrentStatus['status']);
+          let notApprovedShortKeys;
+          if(formData2324 ){
+          notApprovedShortKeys = await filterApprovedShortKeys(shortKeys, formData2324._id, formCurrentStatus['status']);
+          }
           if(Array.isArray(notApprovedShortKeys) && notApprovedShortKeys.length){
             await updateStateCurrentStatus(notApprovedShortKeys,formData2324._id, formCurrentStatus['status'])
           }
