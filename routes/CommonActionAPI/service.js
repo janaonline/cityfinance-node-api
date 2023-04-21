@@ -1186,7 +1186,8 @@ class AggregationServices {
         return {
             "$dateToString": {
                 "date": field,
-                "format": this.dateFormat
+                "format": this.dateFormat,
+                "timezone" : "Asia/Kolkata"
             }
         }
     }
