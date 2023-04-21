@@ -3,25 +3,41 @@ const CurrentStatus = require("../models/CurrentStatus");
 const StatusHistory = require("../models/StatusHistory");
 const FORMJSON  = require('../models/FormsJson');
 const { MODEL_PATH } = require("../util/FormNames");
-
-module.exports.radioSchema = ()=>{
-  return {
-      type:String,
-      enum:["Yes","No",null],
-      default:null,
-      required:true,
+const getLabels = (formName)=>{
+  try{
+    switch (formName){
+      case "GtcInstallmentForm":
+        const {grantInstallmentLabels} = require("./labels")
+        return grantInstallmentLabels
+        break
+      default:
+        false
+        break
+    }
+  }
+  catch(err){
+    console.log("error in getLabels ::: ",err.message)
   }
 }
-module.exports.pdfSchema = ()=>{
+
+module.exports.radioSchema = (key,formName)=>{
+  let labels = getLabels(formName)
+  let keyName = labels && labels[key] ? labels[key] : key
   return {
-      url: {type: String},
-      name: {type: String},
+      type:String,
+      enum:["Yes","No"],
+      required:[true,`${keyName} is required`],
+  }
+}
+module.exports.pdfSchema = (required = false)=>{
+  return {
+      url: {type: String,required:required},
+      name: {type: String,required:required},
   }
 }
 module.exports.limitValidationSchema = (keyName,min,max,mandatory=false)=>{
   return {
       type:Number,
-      default:null,
       min:min,
       max:[max,`${keyName} must not be greater than ${max}`],
       required : mandatory,

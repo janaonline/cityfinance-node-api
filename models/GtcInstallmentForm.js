@@ -3,7 +3,9 @@ const mongoose = require('mongoose');
 const { Schema } = mongoose;
 const Year = require("./Year")
 const {radioSchema,pdfSchema,limitValidationSchema} = require("../util/masterFunctions")
-
+const TransferGrantDetailForm = require("./TransferGrantDetailForm")
+const {grantInstallmentLabels} = require("../util/labels")
+const mongooseLeanVirtuals = require('mongoose-lean-virtuals');
 const installmentFormSchema = new Schema(
     {
         gtcForm : {
@@ -27,44 +29,50 @@ const installmentFormSchema = new Schema(
         },
         design_year : {type:Schema.Types.ObjectId,ref:"Year"},
         state: { type: Schema.Types.ObjectId, ref: "State",required:[true,"State id is required"] },
-        transferGrantdetail:{type:Schema.Types.ObjectId,ref:"TransferGrantDetailForm",default:null},
+        transferGrantdetail:[{type:Schema.Types.ObjectId,ref:"TransferGrantDetailForm",default:null}],
         ulbType:{
             type:String,
-            enum:["MPC","NMPC",null],
-            default:null,
+            enum:["MPC","NMPC"],
+            
             required:[true,"ulbType is required "]
         },
         grantType:{
             type:String,
-            enum:["Tied","Untied",null],
-            default:null,
+            enum:["Tied","Untied"],
+            
             required:[true,"grantType is required "]
         },
         installment:{
             type:Number,
-            default:null,
+            
             required:[true,"installment is required "]
         },
         totalMpc:limitValidationSchema("totalMpc",0,1000),
-        totalNmpc:limitValidationSchema("totalNmpc",0,1000),
+        totalNmpc:limitValidationSchema("totalNmpc",0,1000,true),
         totalElectedMpc:limitValidationSchema("totalElectedMpc",0,1000),
-        totalElectedNmpc:limitValidationSchema("totalElectedNmpc",0,1000),
-        recAmount:limitValidationSchema("recAmount",1,9999),
+        totalElectedNmpc:limitValidationSchema("totalElectedNmpc",0,1000,true),
+        recAmount:limitValidationSchema("recAmount",1,9999,true),
         receiptDate:{
             type:Date,
-            default:null,
-            max:new Date().toISOString().split("T")[0]
+            max:[new Date().toISOString().split("T")[0],`${grantInstallmentLabels['receiptDate']} should not be greater than the present date`]
         },
-        recomAvail:radioSchema(),
-        grantDistribute:radioSchema(),
-        sfcNotificationCopy:pdfSchema(),
-        projectUndtkn:radioSchema(),
-        propertyTaxNotif:radioSchema(),
-        propertyTaxNotifCopy:pdfSchema(),
-        accountLinked:radioSchema(),
-        uploadFile:radioSchema(),
+        recomAvail:radioSchema("recomAvail","GtcInstallmentForm"),
+        grantDistribute:radioSchema("grantDistribute","GtcInstallmentForm"),
+        sfcNotificationCopy:pdfSchema(true),
+        projectUndtkn:radioSchema("projectUndtkn","GtcInstallmentForm"),
+        propertyTaxNotif:radioSchema("propertyTaxNotif","GtcInstallmentForm"),
+        propertyTaxNotifCopy:pdfSchema(true),
+        accountLinked:radioSchema("accountLinked","GtcInstallmentForm"),
+        uploadFile:pdfSchema(true),
+        totalTransAmount:limitValidationSchema("totalTransAmount",1,9999),
+        totalIntTransfer:limitValidationSchema("totalIntTransfer",0,9999),
 
     },
     { timestamp: { createdAt: "createdAt", updatedAt: "modifiedAt" } }
 );
+
+installmentFormSchema.plugin(mongooseLeanVirtuals)
+installmentFormSchema.virtual("modelName").get(function(){
+    return "GtcInstallmentForm"
+})
 module.exports = mongoose.model("GtcInstallmentForm", installmentFormSchema);

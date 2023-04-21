@@ -51,7 +51,10 @@ var consentCases = {
     "1":true,
     "2":false
 }
-
+var radioButtons = {
+    "1":"Yes",
+    "2":"No"
+}
 var arrFields = {
     "waterManagement_tableView":"categoryWiseData_wm",
     "solidWasteManagement_tableView":"categoryWiseData_swm",
@@ -81,7 +84,7 @@ const customDisableFields = {
 }
 var customkeys = {
     "basic":{
-        "design_year":"design_year",
+        "year":"year",
         "ulbType":"ulbType",
         "grantType":"grantType",
         "installmentType":"installmentType"
@@ -119,8 +122,8 @@ var customkeys = {
         "daysDelay":"daysDelay",
         "interest":"interest",
         "intTransfer":"intTransfer",
-        "totalTransAmount":"totalTransAmount",
-        "totalIntTransfer":"totalIntTransfer",
+        // "totalTransAmount":"totalTransAmount",
+        // "totalIntTransfer":"totalIntTransfer",
     },
     "general":{
         "ulbName":"ulbName",
@@ -233,7 +236,8 @@ var inputType = {
     "2": "textValue",
     "3": "value",
     "11": ["value", "label"],
-    "14":"value"
+    "14":"value",
+    "5":"value"
 }
 
 const calculateStatus = (status, actionTakenByRole, isDraft, formType) => {
@@ -1530,7 +1534,7 @@ function traverseAndFlatten(currentNode, target, flattenedKey) {
                 
             // }
             }
-            var value = currentNode[key];
+            var value = currentNode[key] === null ? "" : currentNode[key]
             if (typeof value === "object" && !Array.isArray(value) && !ignorableKeys.includes(key)) {
                 traverseAndFlatten(value, target, newKey);
             } else {
@@ -1617,6 +1621,7 @@ class PayloadManager{
     async handleRadioButtons(){
         try{
             let label =  this.objects['answer'][0]['label']
+            this.value = radioButtons[this.value.value] != undefined ? radioButtons[this.value.value] : radioButtons[this.value]
             if(Object.keys(customBtnsWithFormID).includes(this.formId.toString())){
                 let radioButtonObj = customBtnsWithFormID[this.formId.toString()]
                 this.value = radioButtonObj[label]
@@ -1923,8 +1928,6 @@ async function handleDbValues(questionObj,formObj,order){
                     'answer' : [answer]
                 }
             }
-            
-        
         }
         
         return {...questionObj}
@@ -1936,6 +1939,7 @@ async function handleDbValues(questionObj,formObj,order){
 async function handleRangeIfExists(questionObj,formObj){
     try{
         let obj = {...questionObj}
+        // get range if saved in database
         if(formObj.range){
             if(["Nos./Year","%","lpcd","Hours/day"].includes(formObj.unit)){
                 obj.minRange = formObj.range.split("-")[0]++
@@ -1945,6 +1949,18 @@ async function handleRangeIfExists(questionObj,formObj){
             if(formObj.unit !== "%"){
                 obj.allowDecimal = false
             }
+        }
+        // get range from models if exists
+        else if(formObj.modelName){
+            let schema = moongose.model(formObj.modelName).schema.obj[questionObj.shortKey]          
+            if(schema){
+                obj.minRange = Array.isArray(schema?.min) ? schema.min[0] : schema.min
+                obj.maxRange = Array.isArray(schema?.max) ? schema.max[0] : schema.max
+                if(obj.minRange != undefined  && obj.maxRange != undefined ){
+                    obj.hint = obj?.minRange.toString() + "-"+ obj?.maxRange.toString()
+                }
+            }
+            // console.log("question.dbKey",questionObj.shortKey)
         }
         return {...obj}
     }
@@ -1980,13 +1996,12 @@ async function handleArrOfObjects(question,flattedForm){
                             formObj[jsonKey] = obj[keys][questionObj.valueKey]
                         }
                         questionObj =  await handleDbValues(questionObj,formObj,order) 
-                        
                         if(questionObj.isQuestionDisabled !== true){
                             questionObj.isQuestionDisabled = handleDisableFields({disableFields})
                             if(Object.keys(customDisableFields).includes(keys)){
                                 questionObj.isQuestionDisabled = obj[customDisableFields[keys]]
                             }
-                        }  
+                        }
                         questionObj.forParentValue = index
                         let modifiedObj  = await handleRangeIfExists({...questionObj},obj)
                         nested_arr.push({...modifiedObj})
@@ -2032,7 +2047,7 @@ function handleDisableFields(flattedForm){
     }
 }
 
-function handleArrayFields(shortKey,flattedForm,childQuestionData){
+async function handleArrayFields(shortKey,flattedForm,childQuestionData){
     try{
         let valKey = arrFields[shortKey]
         let answerObjects = flattedForm[valKey]
@@ -2040,14 +2055,19 @@ function handleArrayFields(shortKey,flattedForm,childQuestionData){
         for(let index in answerObjects){
             let questionArr = childQuestionData[index]
             for(let arrIndex in questionArr){
-                let formObj = createCustomizedKeys(answerObjects[index],keysMapper)
+                let formObj = await createCustomizedKeys(answerObjects[index],keysMapper)
                 let question = questionArr[arrIndex]
                 if(question.isQuestionDisabled !== true){
-                    question.isQuestionDisabled = handleDisableFields(flattedForm)
+                    question.isQuestionDisabled = await handleDisableFields(flattedForm)
                 }
                 let answer = { label: '', textValue: '', value: '' }
                 handleValues(question,answer,formObj)
                 question.selectedValue = [answer]
+                let modifiedObj =await handleRangeIfExists(question,flattedForm)
+                question.minRange = modifiedObj.minRange ? modifiedObj.minRange : question.minRange
+                question.maxRange = modifiedObj.maxRange  ? modifiedObj.maxRange : question.maxRange
+                question.hint = modifiedObj.hint || ""
+                question.visibility = flattedForm.fieldsTohide && flattedForm.fieldsTohide.includes(question.shortKey) ? false : question.visibilty 
                 try{
                     question.answer['answer'] = [answer]
                 }
@@ -2068,8 +2088,8 @@ function handleArrayFields(shortKey,flattedForm,childQuestionData){
 async function appendvalues(childQuestionData,flattedForm,shortKey,question){
     try{
         let arrKeys = Object.keys(arrFields)
-        console.log("arrKeys :: ",arrKeys)
        if(!arrKeys.includes(shortKey)){
+        // handle array of objects childrens
         for(let arr of childQuestionData){
             for(let obj of arr){
                 let questionKeys = Object.keys(customkeys[shortKey])
@@ -2084,6 +2104,11 @@ async function appendvalues(childQuestionData,flattedForm,shortKey,question){
                         obj.answer = {
                             answer : [answer]
                         }
+                        let modifiedObj ={...await handleRangeIfExists(obj,flattedForm)}
+                        obj.minRange = modifiedObj.minRange ? modifiedObj.minRange  : obj.minRange
+                        obj.maxRange = modifiedObj.maxRange ? modifiedObj.maxRange : obj.minRange
+                        obj.hint = modifiedObj.hint || ""
+                        obj.visibility = flattedForm.fieldsTohide && flattedForm.fieldsTohide.includes(obj.shortKey) ? false : obj.visibilty
                     }
                 }
             }
@@ -2095,9 +2120,7 @@ async function appendvalues(childQuestionData,flattedForm,shortKey,question){
         if(specialCases.includes(shortKey)){
             childQuestionData = await handleArrOfObjects(question,flattedForm)
         }
-       
-        
-        return childQuestionData
+        return [...childQuestionData]
     }
     catch(err){
         console.log("error in appendValues :::: ",err.message)
@@ -2300,7 +2323,6 @@ function handledateCase(question,obj,flattedForm){
     try{
         
         let mainKey = question.shortKey
-        console.log("flattedForm[mainKey] :: ",flattedForm[mainKey])
         // console.log("flattedForm[mainKey] ::: ",flattedForm[mainKey].toISOString())
         if(flattedForm[mainKey] === undefined || flattedForm[mainKey] === null){
             flattedForm[mainKey] = ""
@@ -2336,7 +2358,6 @@ function handleFileCase(question,obj,flattedForm){
         obj['textValue'] = flattedForm[url]
         question['modelValue'] = flattedForm[url]
         question['value'] = flattedForm[url]
-        // console.log("question ::: ",question)
     }
     catch(err){
         console.log("error in handleObjectCase :: ",err.message)
