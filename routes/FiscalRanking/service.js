@@ -3109,6 +3109,7 @@ function createCsv(params) {
         let str = "";
         let str2 = "";
         let FRFlag = false;
+        const ignoreZero = 0;
         const completionKey = "completionPercentFR";
         const mandatoryFieldsKey = "arrayOfMandatoryField";
         if(Array.isArray(document[mandatoryFieldsKey]) && document[mandatoryFieldsKey]){
@@ -3128,7 +3129,7 @@ function createCsv(params) {
           }
           
           if (key.split("_")[0] !== "FR") {
-            if (document[key]) {
+            if (document[key] === ignoreZero || document[key]) {
               /* A destructuring assignment.FR case in Fiscal Mapper */
                FRFinancialCsvCase(
                 key,
