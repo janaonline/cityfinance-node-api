@@ -823,9 +823,11 @@ async function filterApprovedShortKeys(shortKeys, recordId, formStatus){
     statuses = await CurrentStatus.find({recordId,actionTakenByRole: "MoHUA", status: MASTER_STATUS['Returned By MoHUA']}).lean();
 
   }
-  statusesShortKeys = statuses.map(status=>{
-    return status.shortKey;
-  });
+  if(Array.isArray(statuses) && statuses.length){
+    statusesShortKeys = statuses.map(status=>{
+      return status.shortKey;
+    });
+  }
   // statusesShortKeys = await getSeparatedShortKeys({shortKeys:statusesShortKeys});
   // shortKeys = shortKeys.filter(el=> {
   //   let statusObj = statusesShortKeys['outer'].find( statusShortKey=> {
