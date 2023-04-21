@@ -6,6 +6,8 @@ const FiscalRanking = require("../../models/FiscalRanking");
 const FiscalRankingMapper = require("../../models/FiscalRankingMapper");
 const { FRTypeShortKey } = require('./formjson')
 const UlbLedger = require("../../models/UlbLedger");
+const {FORMIDs} = require("../../util/FormNames");
+const {saveFormHistory} = require("../../util/masterFunctions");
 const FeedBackFiscalRanking = require("../../models/FeedbackFiscalRanking");
 const TwentyEightSlbsForm = require("../../models/TwentyEightSlbsForm");
 const Ulb = require("../../models/Ulb");
@@ -2324,7 +2326,7 @@ async function updateQueryForFiscalRanking(
           payload["file"] = years.file;
           payload["status"] = years.status;
           payload["modelName"] = years.modelName;
-          payload["displayPriority"] = dynamicObj.displayPriority;
+          payload["displayPriority"] = dynamicObj.position;
         } else {
           payload["status"] = years.status;
         }
@@ -2653,6 +2655,8 @@ module.exports.actionTakenByMoHua = catchAsync(async (req, res) => {
     }
     const session = await mongoose.startSession();
     await session.startTransaction();
+    let params = {isDraft,role,formId}
+    await createHistory(params)
     let calculationsTabWise = await calculateAndUpdateStatusForMappers(
       session,
       actions,
@@ -2670,7 +2674,7 @@ module.exports.actionTakenByMoHua = catchAsync(async (req, res) => {
       userId,
       role,
       isDraft
-    );
+    ); 
     if (feedBackResp.success) {
       response.success = true;
       response.message = "Details submitted successfully";
@@ -2778,6 +2782,8 @@ module.exports.createForm = catchAsync(async (req, res) => {
       response.message = validation.message;
       return res.status(500).json(response);
     }
+    let params = {isDraft,role,formId}
+    await createHistory(params)
     let calculationsTabWise = await calculateAndUpdateStatusForMappers(
       session,
       actions,
@@ -2787,6 +2793,14 @@ module.exports.createForm = catchAsync(async (req, res) => {
       true,
       isDraft
     );
+    if(!isDraft){
+      await FiscalRanking.findOneAndUpdate({
+        ulb: ObjectId(req.body.ulbId),
+        design_year: ObjectId(req.body.design_year),
+      },{
+        submittedDate:new Date()
+      })
+    }
     response.success = true;
     response.formId = formId;
     response.message = "Form submitted successfully";
@@ -2986,6 +3000,7 @@ async function columnsForCSV(params) {
       "Copy of Audited Annual Financial Statements preferably in English FY 2019-20",
       "Copy of Audited Annual Financial Statements preferably in English FY 2018-19",
       "Any other information that you would like to provide us?",
+      "Upload Signed Copy"
     ];
     output["dbCols"] = [
       "stateName",
@@ -3035,6 +3050,7 @@ async function columnsForCSV(params) {
       "FR_auditedAnnualFySt_2019-20",
       "FR_auditedAnnualFySt_2018-19",
       "otherUpload",
+      "signedCopyOfFile"
     ];
     output["FRShortKeyObj"] = {};
   } else if (FRUlbFinancialData) {
@@ -3092,8 +3108,6 @@ function createCsv(params) {
     // if(!csvCols.length){
     //   csvCols = Object.values(cols)
     // }
-    let totalownOwnRevenueAreaLabel =
-      "Own Revenue collection amount for FY 2021-22 - by Cash/Cheque/DD";
     let cursor = moongose
       .model(modelName)
       .aggregate(query)
@@ -3109,6 +3123,7 @@ function createCsv(params) {
         let str = "";
         let str2 = "";
         let FRFlag = false;
+        const ignoreZero = 0;
         const completionKey = "completionPercentFR";
         const mandatoryFieldsKey = "arrayOfMandatoryField";
         if(Array.isArray(document[mandatoryFieldsKey]) && document[mandatoryFieldsKey]){
@@ -3128,7 +3143,7 @@ function createCsv(params) {
           }
           
           if (key.split("_")[0] !== "FR") {
-            if (document[key]) {
+            if (document[key] === ignoreZero || document[key]) {
               /* A destructuring assignment.FR case in Fiscal Mapper */
                FRFinancialCsvCase(
                 key,
@@ -3179,6 +3194,7 @@ function createCsv(params) {
         //   str2.splice(9, 1, `${percent}%`);
         //   str = str2.join(",");
         // }
+        str.trim()
         res.write("\ufeff"+ str + "\r\n");
         // if (FRFlag) {
         //   res.write("\ufeff" + str2 + "\r\n");
@@ -3201,7 +3217,7 @@ function createCsv(params) {
 
 function completionPercent( document, FRCompletionNumber) {
   let completionPercent = 0;
-  const totalMandatoryFields = 28;
+  const totalMandatoryFields = 29;
   const [objOfMandatoryFields] =  document;
 
   for( let field in objOfMandatoryFields){
@@ -3216,6 +3232,31 @@ function completionPercent( document, FRCompletionNumber) {
 
   return  ((completionPercent / totalMandatoryFields) * 100 ).toFixed();
 }
+
+
+async function createHistory(params){
+  try{
+    let {isDraft,role,formId} = params
+    if(!isDraft || role === userTypes.mohua){
+      let data = await FiscalRanking.find({"_id":ObjectId(formId)}).lean()
+      let mapperData  = await FiscalRankingMapper.find({"fiscal_ranking":ObjectId(formId)})
+      data[0]['fiscalMapperData'] = mapperData
+      let body = {
+        "formId":FORMIDs['fiscalRanking'],
+        "recordId":formId,
+        "data":data
+      }
+      let historyParams = {
+        body
+      }
+      await saveFormHistory(historyParams)
+    } 
+  }
+  catch(err){
+    console.log("error in createHistory ::: ",err.message)
+  }
+}
+
 
 /**
  * If the key is "indicator", then if the document[key] is "totalOwnRevenueArea", then set FRFlag to
@@ -3534,6 +3575,7 @@ function computeQuery(params) {
                 propertySanitationTax: 1,
                 fy_21_22_cash: 1,
                 otherUpload: 1,
+                signedCopyOfFile: 1,
                 arrayOfMandatoryField: [
                   {
                     population11: "$population11.value",
@@ -3551,6 +3593,7 @@ function computeQuery(params) {
                     propertyWaterTax: "$propertyWaterTax.value",
                     propertySanitationTax: "$propertySanitationTax.value",
                     fy_21_22_cash: "$fy_21_22_cash.value",
+                    signedCopyOfFile: "$signedCopyOfFile.url"
                   },
                 ],
               },
@@ -3638,7 +3681,25 @@ function computeQuery(params) {
                       ],
                     },
                     then: "$file.url",
-                    else: null,
+                    else: {
+                      "$cond": {
+                          "if": {
+                              "$and": [
+                                  {
+                                      "$eq": [
+                                          "$type",
+                                          "auditedAnnualFySt"
+                                      ]
+                                  },
+                                  {
+                                    "$eq": ["$modelName","ULBLedger"]
+                                   }
+                              ]
+                          },
+                          "then": "Already Uploaded on Cityfinance",
+                          "else": null
+                      }
+                  },
                   },
                 },
                 modelName: 1,
@@ -3770,6 +3831,9 @@ function computeQuery(params) {
             $ifNull: ["$fiscalrankings.fy_21_22_cash.value", ""],
           },
           otherUpload: { $ifNull: ["$fiscalrankings.otherUpload.url", ""] },
+          signedCopyOfFile: {
+            $ifNull: ["$fiscalrankings.signedCopyOfFile.url", ""],
+          },
           fiscalrankingmappers: 1,
           arrayOfMandatoryField: "$fiscalrankings.arrayOfMandatoryField",
           completionPercentFR: {
