@@ -950,13 +950,20 @@ async function createHistory(params){
     try{
         let {isDraft,currentFormStatus,gtcFormId} = params
         if(!isDraft && currentFormStatus === 7){
-            let payload = {}
+            let payload = {
+                "recordId":gtcFormId
+            }
             let gtcForm = await GTC.findOne({
-                "_id":gtcFormId
-            })
+                "_id":gtcFormId,
+            }).lean()
             if(gtcForm != null){
                 payload['gtcForm'] = gtcForm
             }
+            payload['installmentForm'] = {}
+            let installmentForm = await GtcInstallmentForm.findOne({
+                "gtcForm" : gtcForm._id
+            }).lean().populate("transferGrantdetail").lean()
+            payload['installmentForm']  = installmentForm
         }
     }
     catch(err){
