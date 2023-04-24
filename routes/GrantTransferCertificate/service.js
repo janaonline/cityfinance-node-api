@@ -4,7 +4,7 @@ const StateGTCCertificate = require('../../models/StateGTCertificate');
 const ObjectId = require("mongoose").Types.ObjectId;
 const Ulb = require('../../models/Ulb')
 const {checkForUndefinedVaribales,mutuateGetPayload,getFlatObj} = require("../../routes/CommonActionAPI/service")
-const {getKeyByValue} = require("../../util/masterFunctions");
+const {getKeyByValue,saveFormHistory} = require("../../util/masterFunctions");
 const { years } = require('../../service/years');
 const GtcInstallmentForm = require("../../models/GtcInstallmentForm")
 const TransferGrantDetailForm = require("../../models/TransferGrantDetailForm")
@@ -851,7 +851,6 @@ async function handleInstallmentForm(params){
             "totalIntTransfer":totalIntTransfer,
             "totalTransAmount":totalTransAmount
         })
-        // console.log("grantDetailIds ::: ",grantDetailIds)
         validator.valid = true
         validator.message = ""
     }
@@ -895,7 +894,7 @@ module.exports.createOrUpdateInstallmentForm = async(req,res)=>{
         "errors":[]
     }
     try{
-        let {installment,type,isDraft,status,financialYear,year,state,currentFormStatus} = req.body
+        let {installment,type,isDraft,status,financialYear,year,state,statusId:currentFormStatus} = req.body
         let params = {
             "installment id":installment,
             "year id ":year,
@@ -930,6 +929,7 @@ module.exports.createOrUpdateInstallmentForm = async(req,res)=>{
             response.errors = installmentFormValidator.errors
             return res.status(405).json(response)
         }
+        await createHistory({isDraft,currentFormStatus,gtcFormId})
         response.success = true
         response.message = "Success"
         return res.status(200).json(response)
@@ -949,21 +949,21 @@ module.exports.createOrUpdateInstallmentForm = async(req,res)=>{
 async function createHistory(params){
     try{
         let {isDraft,currentFormStatus,gtcFormId} = params
-        if(!isDraft && currentFormStatus === 7){
+        if(!isDraft || currentFormStatus === 7){
             let payload = {
-                "recordId":gtcFormId
+                "recordId":gtcFormId,
+                "data":[]
             }
-            let gtcForm = await GTC.findOne({
+            let gtcForm = await GrantTransferCertificate.findOne({
                 "_id":gtcFormId,
             }).lean()
-            if(gtcForm != null){
-                payload['gtcForm'] = gtcForm
-            }
-            payload['installmentForm'] = {}
+            gtcForm['installmentForm'] = {}
             let installmentForm = await GtcInstallmentForm.findOne({
                 "gtcForm" : gtcForm._id
-            }).lean().populate("transferGrantdetail").lean()
-            payload['installmentForm']  = installmentForm
+            }).populate("transferGrantdetail").lean()
+            gtcForm['installmentForm']  = installmentForm
+            payload['data'] = [gtcForm]
+            await saveFormHistory({body:payload})
         }
     }
     catch(err){

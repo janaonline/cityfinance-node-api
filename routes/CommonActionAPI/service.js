@@ -2519,7 +2519,7 @@ function checkForUndefinedVaribales(obj) {
     }
     try {
         for (let key in obj) {
-            if (!obj[key]) {
+            if (obj[key] === undefined) {
                 console.log(validator[key])
                 validator.valid = false
                 validator.message = `${key} is required`
