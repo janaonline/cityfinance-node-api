@@ -832,8 +832,8 @@ async function handleInstallmentForm(params){
             formType:type,
             state:ObjectId(state)
         },payload,{upsert:true,new:true,runValidators: true})
-        let totalTransAmount = transferDetail.reduce((result,value) => parseFloat(result) + parseFloat(value.transAmount) ,0)
-        let totalIntTransfer = transferDetail.reduce((result,value) => parseFloat(result) + parseFloat(value.intTransfer) ,0)
+        let totalTransAmount = transferGrantData.reduce((result,value) => parseFloat(result) + parseFloat(value.transAmount) ,0)
+        let totalIntTransfer = transferGrantData.reduce((result,value) => parseFloat(result) + parseFloat(value.intTransfer) ,0)
         transferGrantData = await appendFormId(transferGrantData,gtcInstallment)
         //delete Previous data
         await TransferGrantDetailForm.deleteMany({
@@ -936,7 +936,9 @@ module.exports.createOrUpdateInstallmentForm = async(req,res)=>{
 
     }
     catch(err){
-        console.log("error in createInstallmentForm :::: ",err.message)
+        console.log("error in createInstallmentForm :::: ",err)
+        response.success = false
+        response.message = "Something went wrong"
         if(["demo","staging"].includes(process.env.ENV)){
             response.message = err.message
         }
@@ -946,9 +948,15 @@ module.exports.createOrUpdateInstallmentForm = async(req,res)=>{
 
 async function createHistory(params){
     try{
-        let {isDraft,currentFormStatus} = params
+        let {isDraft,currentFormStatus,gtcFormId} = params
         if(!isDraft && currentFormStatus === 7){
-            let gtcForm = await GTC.findOne()
+            let payload = {}
+            let gtcForm = await GTC.findOne({
+                "_id":gtcFormId
+            })
+            if(gtcForm != null){
+                payload['gtcForm'] = gtcForm
+            }
         }
     }
     catch(err){
