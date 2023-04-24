@@ -2097,7 +2097,7 @@ const handleNumericCase = async(question,obj,flattedForm,mainKey)=>{
             }
             else{
                 value = !flattedForm[key] ? flattedForm[key+".value"] : flattedForm[key]
-                value = value  ? value.toString() : ""
+                value = value !== undefined  ? value.toString() : ""
             }
             
             question['modelValue'] = value
@@ -2112,7 +2112,7 @@ const handleNumericCase = async(question,obj,flattedForm,mainKey)=>{
             }
             else{
                 value = !flattedForm[key] ? flattedForm[key+".value"] : flattedForm[key]
-                value = value  ? value.toString() : ""
+                value = value !== undefined  ? value.toString() : ""
             }
             question['modelValue'] = value
             question['value'] = value
