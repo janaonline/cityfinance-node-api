@@ -100,6 +100,10 @@ exports.saveWaterRejenuvation = async (req, res) => {
     condition["design_year"] = data.design_year;
     condition["state"] = data.state;
 
+    if(data.state && data.design_year === YEAR_CONSTANTS['23_24'] ){
+      const submittedForm = await WaterRejenuvation.findOne(condition).lean();
+      
+    }
     if (data.state && data.design_year) {
       const submittedForm = await WaterRejenuvation.findOne(condition);
       if (
