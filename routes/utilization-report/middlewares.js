@@ -17,7 +17,7 @@ module.exports.changeGetApiForm = async (req,res,next)=>{
         let year = getKeyByValue(years,yearId)
         let form = {...req.form}
         let {name,role} = req.decoded
-        form['ulbName'] = name
+        // form['ulbName'] = name
         delete form['projects']
         let latestYear = !outDatedYears.includes(year)
         let jsonFormId = req.query.formId || 0
@@ -54,6 +54,7 @@ module.exports.changeGetApiForm = async (req,res,next)=>{
             }
             let flattedForm = await getFlatObj(form)
             flattedForm.disableFields = formStatus
+            console.log("form ::: ",form.ulbName)
             flattedForm['name_'] = flattedForm['name']
             let keysToBeDeleted = ["_id","createdAt","modifiedAt","actionTakenByRole","actionTakenBy","ulb","design_year"]
             flattedForm['grantPosition.closingBal'] = +form.grantPosition.unUtilizedPrevYr + (+form.grantPosition.receivedDuringYr) -(+form.grantPosition.expDuringYr)
