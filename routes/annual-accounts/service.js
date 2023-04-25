@@ -2084,7 +2084,24 @@ const TAB_OBJ = {
   audited: 'audited',
   unAudited: 'unAudited'
 }
+const TAB_RESPONSE = {
+  BOTH_NO : 2,
+  AUDITED_YES: 8,
+  UNAUDITED_YES: 7,
+  AUDITED_UNAUDITED_YES: 13
+}
 function appendKeys(keyArray, data, provisionalKey, tabShortKeys, role) {
+  let totalKeys = tabShortKeys?.length ;
+  let continueFlagAudited = false, continueFlagUnaudited = false;
+  if(totalKeys === TAB_RESPONSE['BOTH_NO']){
+    continueFlagAudited = true;
+    continueFlagUnaudited = true;
+  }else if( totalKeys === TAB_RESPONSE['AUDITED_YES']){
+    continueFlagUnaudited = true;
+  }else if(totalKeys === TAB_RESPONSE['UNAUDITED_YES']){
+    continueFlagUnaudited = true;
+  }else if(totalKeys === TAB_RESPONSE['AUDITED_UNAUDITED_YES']){
+  }
   for (let key of keyArray) {
     let statusData = tabShortKeys.find(el => {
       return el.shortKey === key;
@@ -2100,9 +2117,15 @@ function appendKeys(keyArray, data, provisionalKey, tabShortKeys, role) {
       data[key]['status'] = statusData['status'];
       data[key]['rejectReason'] = statusData['rejectReason'];
       // if(statusData.statusId)
-      continue;
+      if (continueFlagUnaudited && statusData.shortKey === keyArray[1]){
+        continue;
+      }
+      if(continueFlagAudited && statusData.shortKey === keyArray[0]){
+        continue;
+      }
     }
     let tabData = data[key][provisionalKey];
+    
     for (let entity in tabData) {
       let statusData = tabShortKeys.find(el => {
         return el.shortKey === entity;
