@@ -2669,7 +2669,8 @@ async function takeActionOnForms(params, res) {
       } else if (form_level === FORM_LEVEL["tab"]) {
         if (multi) {
           let [response] = responses;
-        /* Getting the short keys from the short keys array and separating them into an array of arrays based on tab and questions */
+          response['status'] =  Number(response['status']);
+          /* Getting the short keys from the short keys array and separating them into an array of arrays based on tab and questions */
           let shortKeysResponse = await getSeparatedShortKeys({shortKeys});
           /* Saving the status of the form for questions */
           for (let shortKey of shortKeysResponse["inner"]) {
@@ -2725,6 +2726,7 @@ async function takeActionOnForms(params, res) {
           const tabRegex = /^tab_/g;
           
           for (let response of responses) {
+            response['status'] =  Number(response['status']);
             separator = response.shortKey.match(tabRegex) ?  tabSeparator : dotSeparator;
             let splitedArrayTab =
               response.shortKey.split(separator).length > 1
