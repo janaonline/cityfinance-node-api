@@ -2722,12 +2722,11 @@ async function takeActionOnForms(params, res) {
           }
           let separator = ".";
           const tabSeparator = "_";
+          const dotSeparator = "."
           const tabRegex = /^tab_/g;
           
           for (let response of responses) {
-            if (response.shortKey.match(tabRegex)){
-                separator =  tabSeparator
-            }
+            separator = response.shortKey.match(tabRegex) ?  tabSeparator : dotSeparator;
             let splitedArrayTab =
               response.shortKey.split(separator).length > 1
                 ? response.shortKey.split(separator)[0]

@@ -2099,7 +2099,8 @@ function appendKeys(keyArray, data, provisionalKey, tabShortKeys, role) {
       data[key]['statusId'] = statusData['statusId'];
       data[key]['status'] = statusData['status'];
       data[key]['rejectReason'] = statusData['rejectReason'];
-      continue;
+      // if(statusData.statusId)
+      // continue;
     }
     let tabData = data[key][provisionalKey];
     for (let entity in tabData) {
