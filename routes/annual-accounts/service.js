@@ -1989,6 +1989,7 @@ exports.getAccounts = async (req, res,next) => {
         formId: FORMIDs['AnnualAccount'],
         flag: true
       }
+      // let formLevelCanTakeAction = canTakenActionMaster(params);
       annualAccountData = await addActionKeys(annualAccountData, bodyParams, res, role, req);
       Object.assign(annualAccountData, {
         canTakeAction: canTakenActionMaster(params),
@@ -2091,6 +2092,13 @@ const TAB_RESPONSE = {
   AUDITED_UNAUDITED_YES: 13
 }
 function appendKeys(keyArray, data, provisionalKey, tabShortKeys, role) {
+  let params = {
+    status: data.currentFormStatus,
+    formType: "ULB",
+    loggedInUser: role,
+  };
+  let formLevelCanTakeAction = canTakenActionMaster(params);
+
   let totalKeys = tabShortKeys?.length ;
   let continueFlagAudited = false, continueFlagUnaudited = false;
   if(totalKeys === TAB_RESPONSE['BOTH_NO']){
@@ -2112,7 +2120,7 @@ function appendKeys(keyArray, data, provisionalKey, tabShortKeys, role) {
         formType: "ULB",
         loggedInUser: role,
       };
-      data[key]['canTakeAction'] = canTakenActionMaster(params);
+      data[key]['canTakeAction'] = !formLevelCanTakeAction ? formLevelCanTakeAction :  canTakenActionMaster(params);
       data[key]['statusId'] = statusData['statusId'];
       data[key]['status'] = statusData['status'];
       data[key]['rejectReason'] = statusData['rejectReason'];
@@ -2136,7 +2144,7 @@ function appendKeys(keyArray, data, provisionalKey, tabShortKeys, role) {
           formType: "ULB",
           loggedInUser: role,
         };
-        tabData[entity]['canTakeAction'] = canTakenActionMaster(params);
+        tabData[entity]['canTakeAction'] = !formLevelCanTakeAction ? formLevelCanTakeAction :  canTakenActionMaster(params);
         tabData[entity]['statusId'] = statusData['statusId'];
         tabData[entity]['status'] = statusData['status'];
         tabData[entity]['rejectReason'] = statusData['rejectReason'];
