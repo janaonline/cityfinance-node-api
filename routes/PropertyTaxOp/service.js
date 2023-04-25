@@ -261,6 +261,7 @@ module.exports.createOrUpdate = async (req, res) => {
         })
     }
 }
+
 async function checkIfFormIdExistsOrNot(ulbId, design_year, isDraft, role, userId) {
     return new Promise(async (resolve, reject) => {
         try {
@@ -309,20 +310,14 @@ async function checkIfFormIdExistsOrNot(ulbId, design_year, isDraft, role, userI
 async function calculateAndUpdateStatusForMappers(tabs, ulbId, formId, year, updateForm, isDraft) {
     try {
         let conditionalObj = {}
-        let ignorablevariables = ["guidanceNotes"]
-        const fiscalRankingKeys = ["ownRevDetails", "webLink", "totalOwnRevenueArea", "signedCopyOfFile", "otherUpload"]
         for (var tab of tabs) {
             conditionalObj[tab._id.toString()] = {}
-            let key = tab.id
             let obj = tab.data
             let temp = {
                 "comment": tab.feedback.comment,
                 "status": []
             }
             for (var k in tab.data) {
-                if (ignorablevariables.includes(k) || obj[k].status === "") {
-                    continue
-                }
                 if (obj[k].yearData) {
                     let yearArr = obj[k].yearData
                     let dynamicObj = obj[k]
@@ -334,14 +329,7 @@ async function calculateAndUpdateStatusForMappers(tabs, ulbId, formId, year, upd
                         }
                     })
                     temp["status"].push(status)
-                    await updateQueryForPropertyTaxOp(yearArr, ulbId, formId, fiscalRankingKeys, updateForm, dynamicObj)
-                } else {
-                    if (key === priorTabsForFiscalRanking["basicUlbDetails"] || key === priorTabsForFiscalRanking['conInfo'] || fiscalRankingKeys.includes(k)) {
-                        let statueses = getStatusesFromObject(tab.data, "status", ["population11"])
-                        let finalStatus = statueses.every(item => item === "APPROVED")
-                        temp['status'].push(finalStatus)
-                        await updatePropertyTaxOpForm(tab.data, ulbId, formId, year, updateForm, isDraft)
-                    }
+                    await updateQueryForPropertyTaxOp(yearArr, ulbId, formId, updateForm, dynamicObj)
                 }
                 conditionalObj[tab._id.toString()] = (temp)
             }
@@ -360,30 +348,32 @@ async function calculateAndUpdateStatusForMappers(tabs, ulbId, formId, year, upd
         throw err
     }
 }
-async function updatePropertyTaxOpForm(obj, ulbId, formId, year, updateForm, isDraft) {
-    try {
-        let filter = { "_id": ObjectId(formId) }
-        let payload = {}
-        for (let key in obj) {
-            if (updateForm) {
-                payload[`${key}.value`] = obj[key].value
-                payload[`${key}.status`] = obj[key].status
-            } else {
-                let status = null
-                if (obj[key].status) {
-                    status = obj[key].status
-                }
-                payload[`${key}.status`] = status
-            }
-        }
-        await PropertyTaxOp.findOneAndUpdate(filter, payload)
-    }
-    catch (err) {
-        console.log("Error in updatePropertyTaxOp ::: ", err)
-        throw err
-    }
-}
-async function updateQueryForPropertyTaxOp(yearData, ulbId, formId, mainFormContent, updateForm, dynamicObj) {
+
+// async function updatePropertyTaxOpForm(obj, ulbId, formId, year, updateForm, isDraft) {
+//     try {
+//         let filter = { "_id": ObjectId(formId) }
+//         let payload = {}
+//         for (let key in obj) {
+//             if (updateForm) {
+//                 payload[`${key}.value`] = obj[key].value
+//                 payload[`${key}.status`] = obj[key].status
+//             } else {
+//                 let status = null
+//                 if (obj[key].status) {
+//                     status = obj[key].status
+//                 }
+//                 payload[`${key}.status`] = status
+//             }
+//         }
+//         await PropertyTaxOp.findOneAndUpdate(filter, payload)
+//     }
+//     catch (err) {
+//         console.log("Error in updatePropertyTaxOp ::: ", err)
+//         throw err
+//     }
+// }
+
+async function updateQueryForPropertyTaxOp(yearData, ulbId, formId, updateForm, dynamicObj) {
     try {
         for (var years of yearData) {
             let upsert = false
@@ -405,19 +395,7 @@ async function updateQueryForPropertyTaxOp(yearData, ulbId, formId, mainFormCont
                 } else {
                     payload["status"] = years.status
                 }
-                let up = await PropertyTaxOpMapper.findOneAndUpdate(filter, payload, { "upsert": upsert })
-            } else if (mainFormContent.includes(years.key)) {
-                let payload = {}
-                let filter = {
-                    "_id": ObjectId(formId),
-                }
-                if (updateForm) {
-                    payload[`${years.key}.value`] = years.value
-                }
-                else {
-                    payload[`${years.key}.status`] = years.status
-                }
-                await PropertyTaxOpMapper.findOneAndUpdate(filter, payload)
+                await PropertyTaxOpMapper.findOneAndUpdate(filter, payload, { "upsert": upsert })
             }
         }
     } catch (err) {
