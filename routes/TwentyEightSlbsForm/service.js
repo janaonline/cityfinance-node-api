@@ -385,6 +385,7 @@ module.exports.getForm = async (req, res,next) => {
         }
         /* Checking if the host is empty, if it is, it will set the host to the req.headers.host. */
         host = host !== "" ? host : req.headers.host;
+        let keyName = getKeyByValue(years,data.design_year)
         if(ulbData.access_2122){
         if (masterFormData) {
           isDraft = !masterFormData.isSubmit
@@ -401,7 +402,7 @@ module.exports.getForm = async (req, res,next) => {
           console.log("status ::::: ",status)
           /* Checking the status of the form. If the status is not in the list of statuses, it will
             return a message. */
-          let keyName = getKeyByValue(years,data.design_year)
+          
           console.log("keyName ::: ",keyName)
           if (
             ![
