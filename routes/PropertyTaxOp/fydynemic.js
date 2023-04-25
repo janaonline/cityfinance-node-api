@@ -9689,11 +9689,11 @@ const propertyTaxOpFormJson = () => {
             "2022-23"
           ]
         },
-        "specialHeaders": {
-          "2.5": "Property Tax Demand and Collection Details by Property Type (including cess, other tax charges, excluding user charges if any)",
-          "5.13": "Water Charges Demand and Collection Details by Household/Property type",
-          "6.13": "Sewerage Charges Details by household/property type"
-        }
+        // "specialHeaders": {
+        //   "2.5": "Property Tax Demand and Collection Details by Property Type (including cess, other tax charges, excluding user charges if any)",
+        //   "5.13": "Water Charges Demand and Collection Details by Household/Property type",
+        //   "6.13": "Sewerage Charges Details by household/property type"
+        // }
       }
 }
 
@@ -10038,12 +10038,10 @@ let financialYearTableHeader = {
 }
 
 let specialHeaders = {
-    "6.1": "Property Tax Demand and Collection Figures by Property Type (Amount in INR Lakhs)",
-    "14.1": "Water Charges Details",
-    "24.1": "Sewerage Charges Details",
-    "17.1": "Water Charges Demand and Collection Details by Household/Property type",
-    "27.1": "Sewerage Charges Details by household/property type"
-}
+    "2.5": "Property Tax Demand and Collection Details by Property Type (including cess, other tax charges, excluding user charges if any)",
+    "5.13": "Water Charges Demand and Collection Details by Household/Property type",
+    "6.13": "Sewerage Charges Details by household/property type"
+  }
 
 module.exports.financialYearTableHeader = financialYearTableHeader
 module.exports.specialHeaders = specialHeaders
