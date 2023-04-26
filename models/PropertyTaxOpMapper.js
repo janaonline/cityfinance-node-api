@@ -19,6 +19,7 @@ const propertyTaxOpMapper = new Schema(
             type: Schema.Types.ObjectId,
             ref:"PropertyMapperChildData"
         }],
+        replicaCount:{type:Number},
         type: {
             type: String,
             enum: {
