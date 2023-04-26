@@ -116,7 +116,25 @@ const validationJson = {
         "fields":["collectIncludingCess"],
         "sequence":["1.13"],
         "message":"Number of properties that paid online should be less than or equal to total number of properties from which property tax was collected."
-    }
+    },
+    "waterChrgDm":{
+        "logic": "sum",
+        "fields": [
+            "cuWaterChrgDm",
+            "arWaterChrgDm"
+        ],
+        "sequence": ['5.6','5.7'],
+        "message":"Sum of current and arrears should be equal to total water charges demand."
+    },
+    "waterChrgCol":{
+        "logic": "sum",
+        "fields": [
+            "arWaterChrgCol",
+            "cuWaterChrgCol"
+        ],
+        "sequence": ['5.9','5.10'],
+        "message":"Sum of current and arrears should be equal to total water charges collection."
+    },
 }
 exports.checkValidation = async function (req, res, next) {
     try {
