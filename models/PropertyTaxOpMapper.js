@@ -17,7 +17,7 @@ const propertyTaxOpMapper = new Schema(
         isActive: { type: Boolean, default: 1 },
         child:[{
             type: Schema.Types.ObjectId,
-            ref:"PropertyMapperChildValue"
+            ref:"PropertyMapperChildData"
         }],
         type: {
             type: String,
@@ -148,8 +148,6 @@ const propertyTaxOpMapper = new Schema(
             url: { type: String }
         },
         displayPriority: { type: Number, default: null },
-        createdAt: { type: Date, default: Date.now() },
-        modifiedAt: { type: Date, default: Date.now() },
     },
     { timestamp: { createdAt: "createdAt", updatedAt: "modifiedAt" } }
 );

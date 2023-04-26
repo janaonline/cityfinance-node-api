@@ -9,6 +9,12 @@ const User = require('../../models/User');
 const { checkUndefinedValidations } = require('../../routes/FiscalRanking/service');
 const { propertyTaxOpFormJson, financialYearTableHeader, specialHeaders } = require('./fydynemic')
 const { isEmptyObj, isReadOnly } = require('../../util/helper');
+const PropertyMapperChildData = require("../../models/PropertyTaxMapperChild");
+const { years } = require('../../service/years');
+
+const getKeyByValue = (object, value)=>{
+    return Object.keys(object).find(key => object[key] === value);
+  }
 
 module.exports.getForm = async (req, res) => {
     try {
@@ -307,6 +313,99 @@ async function checkIfFormIdExistsOrNot(ulbId, design_year, isDraft, role, userI
         }
     })
 }
+
+async function updateMapperModelWithChildValues(params){
+    try{
+        let {dynamicObj,formId,ulbId,updateForm,updatedIds} = params
+        let filter = {
+            "ulb": ObjectId(ulbId),
+            "ptoId": ObjectId(formId),
+            "type": dynamicObj.key
+        }
+        let payload = { ...filter }
+        if (updateForm) {
+            upsert = true
+            payload['status'] = dynamicObj.status
+            payload['displayPriority'] = dynamicObj.position
+            payload['child'] = updatedIds
+        } 
+        // else {
+            // payload["status"] = dynamicObj.status
+        // }
+        await PropertyTaxOpMapper.findOneAndUpdate(filter, payload, { "upsert": upsert })
+
+    }
+    catch(err){
+        console.log("error in updateMapperModelWithChildValues ::: ",err.message)
+    }
+}
+
+async function updateChildrenMapper(params){
+    let {ulbId,formId,yearData,updateForm,dynamicObj} = params
+    let ids = []
+    try{
+        for (var years of yearData) {
+            let upsert = false
+            console.log("years: :: ",years.type)
+            if (years.year) {
+                let filter = {
+                    "year": ObjectId(years.year),
+                    "ulb": ObjectId(ulbId),
+                    "ptoId": ObjectId(formId),
+                    "type": years.type,
+                    "replicaCount":years.replicaCount
+                }
+                let payload = { ...filter }
+                if (updateForm) {
+                    upsert = true
+                    payload['value'] = years.value
+                    payload['date'] = years.date
+                    payload['file'] = years.file
+                    payload['status'] = years.status
+                    console.log("years :: ",years.replicaCount)
+                    payload["replicaCount"] = years.replicaCount
+                    // payload['displayPriority'] = dynamicObj.position
+                } else {
+                    payload["status"] = years.status
+                }
+                let updatedItem = await PropertyMapperChildData.findOneAndUpdate(filter, payload, { "upsert": upsert,new:true })
+                if(updatedItem){
+                    ids.push(updatedItem._id)
+                }
+                // console.log("updatedItem :: ",updatedItem._id)
+            }
+        }
+        return ids
+    }
+    catch(err){
+        console.log("error in updateChildrenMapper ::: ",err.message)
+    }
+
+}
+
+async function handleChildrenData(params){
+    let ids = []
+    try{
+        let {inputElement,ulbId,formId,updateForm,dynamicObj} = params
+        if(inputElement?.child){
+            let updIds = []
+            for(let obj of inputElement.child){
+                let yearData = obj.yearData
+                let updatedIds = await updateChildrenMapper({yearData,ulbId,formId,updateForm,dynamicObj})
+                updIds = updIds.concat(updatedIds,ids)
+            }
+            params["updatedIds"] = updIds
+            await updateMapperModelWithChildValues(params)
+            return updIds
+        }
+    }
+    catch(err){
+        console.log("error in handleChildrenData ::: ",err.message)
+    }
+    return ids
+}
+
+
 async function calculateAndUpdateStatusForMappers(tabs, ulbId, formId, year, updateForm, isDraft) {
     try {
         let conditionalObj = {}
@@ -318,9 +417,10 @@ async function calculateAndUpdateStatusForMappers(tabs, ulbId, formId, year, upd
                 "status": []
             }
             for (var k in tab.data) {
+                let dynamicObj = obj[k]
+                let updatedIds = await handleChildrenData({inputElement:{...tab.data[k]},formId,ulbId,updateForm,dynamicObj})
                 if (obj[k].yearData) {
                     let yearArr = obj[k].yearData
-                    let dynamicObj = obj[k]
                     let status = yearArr.every((item) => {
                         if (Object.keys(item).length) {
                             return item.status === "APPROVED"
@@ -329,7 +429,7 @@ async function calculateAndUpdateStatusForMappers(tabs, ulbId, formId, year, upd
                         }
                     })
                     temp["status"].push(status)
-                    await updateQueryForPropertyTaxOp(yearArr, ulbId, formId, updateForm, dynamicObj)
+                    await updateQueryForPropertyTaxOp(yearArr, ulbId, formId, updateForm, dynamicObj,updatedIds)
                 }
                 conditionalObj[tab._id.toString()] = (temp)
             }
@@ -373,7 +473,9 @@ async function calculateAndUpdateStatusForMappers(tabs, ulbId, formId, year, upd
 //     }
 // }
 
-async function updateQueryForPropertyTaxOp(yearData, ulbId, formId, updateForm, dynamicObj) {
+async function updateQueryForPropertyTaxOp(yearData, ulbId, formId, updateForm, dynamicObj,updatedIds) {
+    // console.log("years.type ::: ",dynamicObj.key)
+    // console.log("updatedIds before :: ",updatedIds)
     try {
         for (var years of yearData) {
             let upsert = false
@@ -392,6 +494,7 @@ async function updateQueryForPropertyTaxOp(yearData, ulbId, formId, updateForm, 
                     payload['file'] = years.file
                     payload['status'] = years.status
                     payload['displayPriority'] = dynamicObj.position
+                    payload['child'] = updatedIds
                 } else {
                     payload["status"] = years.status
                 }
@@ -405,6 +508,77 @@ async function updateQueryForPropertyTaxOp(yearData, ulbId, formId, updateForm, 
     }
 }
 
+function createChildObjectsYearData(params){
+    let {childs} = params
+    let yearData = []
+    let yearJson =  {
+        "key": "FY",
+        "value": "11",
+        "originalValue": "",
+        "year": "",
+        "type": "",
+        "_id": null,
+        "code": [],
+        "date": null,
+        "formFieldType": "number",
+        "status": null,
+        "bottomText": "",
+        "label": "FY",
+        "position": "0",
+        "readonly": false
+      }
+    try{
+        for(let child of childs){
+            let yearName = getKeyByValue(years,child?.year.toString())
+            let json = {...yearJson}
+            json['key'] = json['key']+yearName
+            json['label'] = json['label'] + " " + yearName
+            json['value'] = child.value
+            json['year'] = child.year
+            json['type'] = child.type
+            json['file'] = child.file
+            yearData.push(json)
+        }
+    }
+    catch(err){
+        console.log("error in createChildObjectsYearData ::: ",err.message)
+    }
+    return yearData
+}
+
+async function appendChildValues(params){
+    let {element,ptoMaper,isDraft} = params
+    try{  
+        if(element?.child && ptoMaper){
+            let childElement = ptoMaper.find(item => item.type === element.key)
+            for(let key of childElement.child){
+                console.log("childElement.replicaCount ::: ",childElement.child.replicaCount)
+                let childs = childElement.child.filter(item => item.replicaCount === childElement.replicaCount)
+                let mainObject = {
+                    "key": element.key,
+                    "value": "",
+                    "_id": null,
+                    "replicaCount": childElement.replicaCount,
+                    "label": element.label,
+                    "formFieldType": element.formFieldType,
+                    "readonly": true,
+                }
+                let currentYearData  = await createChildObjectsYearData({
+                    childs:childs,
+                    isDraft:isDraft
+                })
+                console.log("childs :: ",childs)
+                mainObject['child'] = currentYearData
+                console.log("mainObject ::: ",mainObject)
+            }
+            element.child.push(element.key)
+        }
+    }
+    catch(err){
+        console.log("error in appendChildValues ::: ",err.message)
+    }
+}
+
 exports.getView = async function (req, res, next) {
     try {
         let condition = {};
@@ -415,7 +589,7 @@ exports.getView = async function (req, res, next) {
         let ptoData = await PropertyTaxOp.findOne(condition, { history: 0 }).lean();
         let ptoMaper = null;
         if (ptoData) {
-            ptoMaper = await PropertyTaxOpMapper.find({ ulb: ObjectId(req.query.ulb), ptoId: ObjectId(ptoData._id) }).lean();
+            ptoMaper = await PropertyTaxOpMapper.find({ ulb: ObjectId(req.query.ulb), ptoId: ObjectId(ptoData._id) }).populate("child").lean();
         }
         let fyDynemic = await propertyTaxOpFormJson();
         if (ptoData) {
@@ -428,6 +602,15 @@ exports.getView = async function (req, res, next) {
                         let { data } = fyDynemic[k][0];
                         for (let el in data) {
                             let { yearData, mData } = data[el];
+                            let childParams = {
+                                element:data[el],
+                                ptoMaper:ptoMaper,
+                                isDraft:isDraft
+                            }
+                            appendChildValues(childParams)
+                            // if(el === "otherValuePropertyType"){
+                            //     console.log("data :::::: ",data[el])
+                            // }
                             if (Array.isArray(yearData) && ptoMaper) {
                                 for (const pf of yearData) {
                                     if (!isEmptyObj(pf)) {
