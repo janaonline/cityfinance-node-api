@@ -2655,7 +2655,7 @@ async function takeActionOnForms(params, res) {
           } else {
             response.status =
               actionTakenByRole === "MoHUA"
-                ? MASTER_STATUS["Approved By MoHUA"]
+                ? MASTER_STATUS["Submission Acknowledged By MoHUA"]
                 : MASTER_STATUS["Under Review By MoHUA"];
             let updatedFormCurrentStatus = await updateFormCurrentStatus(
               model,
@@ -2791,7 +2791,7 @@ async function takeActionOnForms(params, res) {
               } else {
                 status =
                   actionTakenByRole === "MoHUA"
-                    ? MASTER_STATUS["Approved By MoHUA"]
+                    ? MASTER_STATUS["Submission Acknowledged By MoHUA"]
                     : MASTER_STATUS["Under Review By MoHUA"];
               }
               response = {
@@ -2833,7 +2833,7 @@ async function takeActionOnForms(params, res) {
             let response = {}
             response.status =
               actionTakenByRole === "MoHUA"
-                ? MASTER_STATUS["Approved By MoHUA"]
+                ? MASTER_STATUS["Submission Acknowledged By MoHUA"]
                 : MASTER_STATUS["Under Review By MoHUA"];
             let updatedFormCurrentStatus = await updateFormCurrentStatus(
               model,
