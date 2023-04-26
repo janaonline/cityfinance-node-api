@@ -853,7 +853,7 @@ async function filterApprovedShortKeys(shortKeys, recordId, formStatus){
 async function updateStateCurrentStatus(notApprovedShortKeys, recordId, formCurrentStatus){
   try {
     let role, status;
-    status =  MASTER_STATUS['Under Review By State']
+    status =  MASTER_STATUS['No Status'];
     if(formCurrentStatus ===  MASTER_STATUS['Returned By State']){
       role = "STATE";
     }else if (formCurrentStatus ===  MASTER_STATUS['Returned By MoHUA']){
