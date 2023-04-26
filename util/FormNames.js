@@ -31,6 +31,7 @@ module.exports.ULB_ACCESSIBLE_YEARS = {
 
 
 module.exports.MASTER_STATUS = {
+    "No Status": -1,
     "Not Started": 1,
     "In Progress": 2,
     "Under Review By State": 3,
@@ -41,6 +42,7 @@ module.exports.MASTER_STATUS = {
 }
 
 module.exports.MASTER_STATUS_ID = {
+  "-1" : "No Status",
   1: "Not Started",
   2: "In Progress",
   3: "Under Review By State",
