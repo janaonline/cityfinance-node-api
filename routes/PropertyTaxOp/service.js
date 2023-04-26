@@ -11,13 +11,7 @@ const { propertyTaxOpFormJson, financialYearTableHeader, specialHeaders } = requ
 const { isEmptyObj, isReadOnly } = require('../../util/helper');
 const PropertyMapperChildData = require("../../models/PropertyTaxMapperChild");
 const { years } = require('../../service/years');
-const validationJson = {
-    "noOfPropertiesPaidOnline":{"logic":"ltequal","fields":"insValuePropertyTaxDm","sequence":"totalPropertiesTaxDmCollected"},
-    "insValuePropertyTaxCollected":{"logic":"ltequal","fields":"insValuePropertyTaxDm","sequence":"2.21"},
-    "insNoPropertyTaxCollected":{"logic":"ltequal","fields":"insValuePropertyTaxDm","sequence":"2.22"},
-    "otherValuePropertyTaxCollected":{"logic":"ltequal","fields":"insValuePropertyTaxDm","sequence":"2.26"},
 
-}
 const getKeyByValue = (object, value)=>{
     return Object.keys(object).find(key => object[key] === value);
   }
