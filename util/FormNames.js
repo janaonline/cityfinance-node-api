@@ -37,7 +37,7 @@ module.exports.MASTER_STATUS = {
     "Under Review By State": 3,
     "Under Review By MoHUA": 4,
     "Returned By State": 5,
-    "Approved By MoHUA": 6,
+    "Submission Acknowledged By MoHUA": 6,
     "Returned By MoHUA":7
 }
 
@@ -48,7 +48,7 @@ module.exports.MASTER_STATUS_ID = {
   3: "Under Review By State",
   4: "Under Review By MoHUA",
   5: "Returned By State",
-  6: "Approved By MoHUA",
+  6: "Submission Acknowledged By MoHUA",
   7: "Returned By MoHUA",
 };
 

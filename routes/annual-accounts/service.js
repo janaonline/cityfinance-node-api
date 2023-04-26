@@ -637,7 +637,7 @@ exports.createUpdate = async (req, res) => {
           }
         } else if (
           [
-            MASTER_STATUS["Approved By MoHUA"],
+            MASTER_STATUS["Submission Acknowledged By MoHUA"],
             MASTER_STATUS["Under Review By MoHUA"],
             MASTER_STATUS["Under Review By State"],
           ].includes(formCurrentStatus.status)
