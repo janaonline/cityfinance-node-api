@@ -1121,7 +1121,7 @@ module.exports.canTakeActionOrViewOnlyMasterForm = (params)=> {
         case status == MASTER_STATUS['Under Review By MoHUA'] && userRole == 'MoHUA':
             return true;
             break;
-        case status == MASTER_STATUS['Approved By MoHUA']:
+        case status == MASTER_STATUS['Submission Acknowledged By MoHUA']:
             return false;
             break;
 
@@ -2656,7 +2656,7 @@ async function takeActionOnForms(params, res) {
           } else {
             response.status =
               actionTakenByRole === "MoHUA"
-                ? MASTER_STATUS["Approved By MoHUA"]
+                ? MASTER_STATUS["Submission Acknowledged By MoHUA"]
                 : MASTER_STATUS["Under Review By MoHUA"];
             let updatedFormCurrentStatus = await updateFormCurrentStatus(
               model,
@@ -2792,7 +2792,7 @@ async function takeActionOnForms(params, res) {
               } else {
                 status =
                   actionTakenByRole === "MoHUA"
-                    ? MASTER_STATUS["Approved By MoHUA"]
+                    ? MASTER_STATUS["Submission Acknowledged By MoHUA"]
                     : MASTER_STATUS["Under Review By MoHUA"];
               }
               response = {
@@ -2834,7 +2834,7 @@ async function takeActionOnForms(params, res) {
             let response = {}
             response.status =
               actionTakenByRole === "MoHUA"
-                ? MASTER_STATUS["Approved By MoHUA"]
+                ? MASTER_STATUS["Submission Acknowledged By MoHUA"]
                 : MASTER_STATUS["Under Review By MoHUA"];
             let updatedFormCurrentStatus = await updateFormCurrentStatus(
               model,
@@ -2994,7 +2994,7 @@ function filterStatusResponse(statuses, formStatus){
     const STATUS_RESPONSE = {
         ULB: [MASTER_STATUS['Not Started'],MASTER_STATUS["In Progress"],MASTER_STATUS["Under Review By State"]],
         STATE: [MASTER_STATUS["Under Review By MoHUA"],MASTER_STATUS["Returned By State"]],
-       MoHUA: [MASTER_STATUS['Approved By MoHUA'],MASTER_STATUS["Returned By MoHUA"]]
+       MoHUA: [MASTER_STATUS['Submission Acknowledged By MoHUA'],MASTER_STATUS["Returned By MoHUA"]]
     }
     
     for( let key in STATUS_RESPONSE){
@@ -3029,7 +3029,7 @@ function filterStatusResponseTab(statuses, formStatus){
     const STATUS_RESPONSE = {
         ULB: [MASTER_STATUS['Not Started'],MASTER_STATUS["In Progress"],MASTER_STATUS["Under Review By State"]],
         STATE: [MASTER_STATUS["Under Review By MoHUA"],MASTER_STATUS["Returned By State"]],
-       MoHUA: [MASTER_STATUS['Approved By MoHUA'],MASTER_STATUS["Returned By MoHUA"]]
+       MoHUA: [MASTER_STATUS['Submission Acknowledged By MoHUA'],MASTER_STATUS["Returned By MoHUA"]]
     }
     
     for( let key in STATUS_RESPONSE){
@@ -3054,7 +3054,7 @@ function getCurrentStatusTab(key,statuses){
         return filterStatusForTab(statuses);
     }else if (key ==='STATE'){
         statuses =  statuses.filter(el=>{
-            return (el.status< MASTER_STATUS['Approved By MoHUA'] && el.status>MASTER_STATUS['Under Review By State']);
+            return (el.status< MASTER_STATUS['Submission Acknowledged By MoHUA'] && el.status>MASTER_STATUS['Under Review By State']);
         })
         return filterStatusForTab(statuses);
 
