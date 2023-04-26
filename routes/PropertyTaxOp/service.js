@@ -11,13 +11,7 @@ const { propertyTaxOpFormJson, financialYearTableHeader, specialHeaders } = requ
 const { isEmptyObj, isReadOnly } = require('../../util/helper');
 const PropertyMapperChildData = require("../../models/PropertyTaxMapperChild");
 const { years } = require('../../service/years');
-const validationJson = {
-    "noOfPropertiesPaidOnline":{"logic":"ltequal","fields":"insValuePropertyTaxDm","sequence":"totalPropertiesTaxDmCollected"},
-    "insValuePropertyTaxCollected":{"logic":"ltequal","fields":"insValuePropertyTaxDm","sequence":"2.21"},
-    "insNoPropertyTaxCollected":{"logic":"ltequal","fields":"insValuePropertyTaxDm","sequence":"2.22"},
-    "otherValuePropertyTaxCollected":{"logic":"ltequal","fields":"insValuePropertyTaxDm","sequence":"2.26"},
 
-}
 const getKeyByValue = (object, value)=>{
     return Object.keys(object).find(key => object[key] === value);
   }
@@ -323,6 +317,7 @@ async function checkIfFormIdExistsOrNot(ulbId, design_year, isDraft, role, userI
 async function updateMapperModelWithChildValues(params){
     try{
         let {dynamicObj,formId,ulbId,updateForm,updatedIds,replicaCount} = params
+        console.log("replicaCount :: ",replicaCount)
         let filter = {
             "ulb": ObjectId(ulbId),
             "ptoId": ObjectId(formId),
@@ -576,6 +571,7 @@ async function createFullChildObj(params){
                 childObject.value = yearData[0].textValue
                 childObject.key = key
                 childObject.yearData = yearData
+                childObject.readonly = true
                 childs.push(childObject)
             }
         }
@@ -604,6 +600,7 @@ async function appendChildValues(params){
                 replicaCount:childElement.replicaCount
             }
             let child = await createFullChildObj(params)
+            element.replicaCount = childElement.replicaCount
             element.child = child
             // console.log("element ::: ",element)
             // element.child.push(element.key)

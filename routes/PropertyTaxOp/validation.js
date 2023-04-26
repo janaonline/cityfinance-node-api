@@ -1,4 +1,141 @@
 const { propertyTaxOpFormJson } = require('./fydynemic')
+const validationJson = {
+    "noOfPropertiesPaidOnline": {
+        "logic": "ltequal", "fields": ["insValuePropertyTaxDm"], "sequence": ["2.4"],
+        "message": " Number of properties that paid online should be less than or equal to total number of properties from which property tax was collected."
+    },
+    "insValuePropertyTaxCollected": { "logic": "ltequal", "fields": ["insValuePropertyTaxDm"], "sequence": ["2.21"],
+    "message":"Value of property tax collected should be less that or equal to value of property tax demanded."
+    },
+    "insNoPropertyTaxCollected": { "logic": "ltequal", "fields": ["insValuePropertyTaxDm"], "sequence": ["2.22"],
+    "message":"Number of properties from which property tax is collected should be less that or equal to number of properties from which property tax is demanded."
+    },
+    "otherValuePropertyTaxCollected": { "logic": "ltequal", "fields": ["insValuePropertyTaxDm"], "sequence": ["2.26"],
+    "message":"Value of property tax collected should be less that or equal to value of property tax demanded."
+    },
+    "totalPropertiesTaxDm": {
+        "logic": "sum", 
+        "fields": [
+            'totalMappedPropertiesUlb',
+            'resNoPropertyTaxDm',
+            'indNoPropertyTaxDm',
+            'govNoPropertyTaxDm',
+            'insNoPropertyTaxDm',
+            'otherNoPropertyTaxDm'
+        ], 
+        "sequence": ['2.6', '2.1', '2.14', '2.18', '2.22', '2.27'],
+        "message":"Value of property tax collected should be less that or equal to value of property tax demanded."
+    },
+    "totalPropertiesTaxDmCollected": {
+        "logic": "sum",
+        "fields": [
+            'totalPropertiesTax',
+            'resNoPropertyTaxCollected',
+            'comNoPropertyTaxCollected',
+            'indNoPropertyTaxCollected',
+            'insNoPropertyTaxCollected',
+            'otherNoPropertyTaxCollected'
+        ],
+        "sequence": ['2.8', '2.12', '2.16', '2.2', '2.24', '2.29'],
+        "message":"Sum should be equal to total number of properties from which property tax is demanded"
+    },
+    "resValuePropertyTaxCollected": {
+        "logic": "ltequal",
+        "fields": ["resValuePropertyTaxDm"],
+        "sequence": ['2.5'],
+        "message":"Value of property tax collected should be less that or equal to value of property tax demanded."
+    },
+    "resNoPropertyTaxCollected":{
+        "logic":"ltequal",
+        "fields":["resNoPropertyTaxDm"],
+        "sequence":["2.6"],
+        "message":" Number of properties from which property tax is collected should be less that or equal to number of properties from which property tax is demanded."
+    },
+    "comValuePropertyTaxCollected":{
+        "logic":"ltequal",
+        "fields":["comValuePropertyTaxDm"],
+        "sequence":["2.9"],
+        "message":"Value of property tax collected should be less that or equal to value of property tax demanded."
+    },
+    "comNoPropertyTaxCollected":{
+        "logic":"ltequal",
+        "fields":["totalMappedPropertiesUlb"],
+        "sequence":["2.10"],
+        "message":"Value of property tax collected should be less that or equal to value of property tax demanded."
+    },
+    "indValuePropertyTaxCollected":{
+        "logic":"ltequal",
+        "fields":["indValuePropertyTaxDm"],
+        "sequence":["2.13"],
+        "message":"Value of property tax collected should be less that or equal to value of property tax demanded."
+    },
+    "indNoPropertyTaxCollected":{
+        "logic":"ltequal",
+        "fields":["indNoPropertyTaxDm"],
+        "sequence":["2.14"],
+        "message":"Number of properties from which property tax is collected should be less that or equal to number of properties from which property tax is demanded."
+    },
+    "govValuePropertyTaxCollected":{
+        "logic":"ltequal",
+        "fields":["govNoPropertyTaxDm"],
+        "sequence":["2.18"],
+        "message":"Number of properties from which property tax is collected should be less that or equal to number of properties from which property tax is demanded."
+    },
+    "insValuePropertyTaxCollected":{
+        "logic":"ltequal",
+        "fields":["insValuePropertyTaxDm"],
+        "sequence":["2.21"],
+        "message":"Value of property tax collected should be less that or equal to value of property tax demanded."
+    },
+    "insNoPropertyTaxCollected":{
+        "logic":"ltequal",
+        "fields":["insNoPropertyTaxDm"],
+        "sequence":["2.22"],
+        "message":"Number of properties from which property tax is collected should be less that or equal to number of properties from which property tax is demanded."
+    },
+    "otherValuePropertyTaxCollected":{
+        "logic":"ltequal",
+        "fields":["otherValuePropertyTaxDm"],
+        "sequence":["2.26"],
+        "message":"Value of property tax collected should be less that or equal to value of property tax demanded"
+    },
+    "otherNoPropertyTaxCollected":{
+        "logic":"ltequal",
+        "fields":["otherNoPropertyTaxCollected"],
+        "sequence":["2.29"],
+        "message":"Number of properties from which property tax is collected should be less that or equal to number of properties from which property tax is demanded."
+    },
+    "noOfPropertiesPaidOnline":{
+        "logic":"ltequal",
+        "fields":["totalPropertiesTaxDmCollected"],
+        "sequence":["2.4"],
+        "message":"Number of properties that paid online should be less than or equal to total number of properties from which property tax was collected."
+    },
+    "totalCollectionOnline":{
+        "logic":"ltequal",
+        "fields":["collectIncludingCess"],
+        "sequence":["1.13"],
+        "message":"Number of properties that paid online should be less than or equal to total number of properties from which property tax was collected."
+    },
+    "waterChrgDm":{
+        "logic": "sum",
+        "fields": [
+            "cuWaterChrgDm",
+            "arWaterChrgDm"
+        ],
+        "sequence": ['5.6','5.7'],
+        "message":"Sum of current and arrears should be equal to total water charges demand."
+    },
+    "waterChrgCol":{
+        "logic": "sum",
+        "fields": [
+            "arWaterChrgCol",
+            "cuWaterChrgCol"
+        ],
+        "sequence": ['5.9','5.10'],
+        "message":"Sum of current and arrears should be equal to total water charges collection."
+    },
+}
 exports.checkValidation = async function (req, res, next) {
     try {
         const { actions, isDraft } = req.body;
