@@ -2087,8 +2087,8 @@ const TAB_OBJ = {
 }
 const TAB_RESPONSE = {
   BOTH_NO : 2,
-  AUDITED_YES: 8,
-  UNAUDITED_YES: 7,
+  AUDITED_YES: [8,7],
+  UNAUDITED_YES: [7,6],
   AUDITED_UNAUDITED_YES: 13
 }
 function appendKeys(keyArray, data, provisionalKey, tabShortKeys, role) {
@@ -2104,10 +2104,10 @@ function appendKeys(keyArray, data, provisionalKey, tabShortKeys, role) {
   if(totalKeys === TAB_RESPONSE['BOTH_NO']){
     continueFlagAudited = true;
     continueFlagUnaudited = true;
-  }else if( totalKeys === TAB_RESPONSE['AUDITED_YES']){
+  }else if(TAB_RESPONSE['AUDITED_YES'].includes(totalKeys) && tabShortKeys.find(el=>  el.shortKey === "auditor_report") ){
     continueFlagUnaudited = true;
-  }else if(totalKeys === TAB_RESPONSE['UNAUDITED_YES']){
-    continueFlagUnaudited = true;
+  }else if( TAB_RESPONSE['UNAUDITED_YES'].includes(totalKeys)){
+    continueFlagAudited = true;
   }else if(totalKeys === TAB_RESPONSE['AUDITED_UNAUDITED_YES']){
   }
   for (let key of keyArray) {
