@@ -316,7 +316,7 @@ async function checkIfFormIdExistsOrNot(ulbId, design_year, isDraft, role, userI
 
 async function updateMapperModelWithChildValues(params){
     try{
-        let {dynamicObj,formId,ulbId,updateForm,updatedIds} = params
+        let {dynamicObj,formId,ulbId,updateForm,updatedIds,replicaCount} = params
         let filter = {
             "ulb": ObjectId(ulbId),
             "ptoId": ObjectId(formId),
@@ -328,6 +328,7 @@ async function updateMapperModelWithChildValues(params){
             payload['status'] = dynamicObj.status
             payload['displayPriority'] = dynamicObj.position
             payload['child'] = updatedIds
+            payload['replicaCount'] = replicaCount
         } 
         // else {
             // payload["status"] = dynamicObj.status
@@ -341,19 +342,18 @@ async function updateMapperModelWithChildValues(params){
 }
 
 async function updateChildrenMapper(params){
-    let {ulbId,formId,yearData,updateForm,dynamicObj} = params
+    let {ulbId,formId,yearData,updateForm,dynamicObj,textValue} = params
     let ids = []
     try{
         for (var years of yearData) {
             let upsert = false
-            console.log("years: :: ",years.type)
             if (years.year) {
                 let filter = {
                     "year": ObjectId(years.year),
                     "ulb": ObjectId(ulbId),
                     "ptoId": ObjectId(formId),
                     "type": years.type,
-                    "replicaCount":years.replicaCount
+                    "replicaNumber":years.replicaNumber
                 }
                 let payload = { ...filter }
                 if (updateForm) {
@@ -362,8 +362,8 @@ async function updateChildrenMapper(params){
                     payload['date'] = years.date
                     payload['file'] = years.file
                     payload['status'] = years.status
-                    console.log("years :: ",years.replicaCount)
-                    payload["replicaCount"] = years.replicaCount
+                    payload["replicaNumber"] = years.replicaNumber
+                    payload['textValue'] = textValue
                     // payload['displayPriority'] = dynamicObj.position
                 } else {
                     payload["status"] = years.status
@@ -391,10 +391,12 @@ async function handleChildrenData(params){
             let updIds = []
             for(let obj of inputElement.child){
                 let yearData = obj.yearData
-                let updatedIds = await updateChildrenMapper({yearData,ulbId,formId,updateForm,dynamicObj})
+                let textValue = obj.value
+                let updatedIds = await updateChildrenMapper({yearData,ulbId,formId,updateForm,dynamicObj,textValue})
                 updIds = updIds.concat(updatedIds,ids)
             }
             params["updatedIds"] = updIds
+            params['replicaCount'] = inputElement.replicaCount
             await updateMapperModelWithChildValues(params)
             return updIds
         }
@@ -474,8 +476,6 @@ async function calculateAndUpdateStatusForMappers(tabs, ulbId, formId, year, upd
 // }
 
 async function updateQueryForPropertyTaxOp(yearData, ulbId, formId, updateForm, dynamicObj,updatedIds) {
-    // console.log("years.type ::: ",dynamicObj.key)
-    // console.log("updatedIds before :: ",updatedIds)
     try {
         for (var years of yearData) {
             let upsert = false
@@ -537,6 +537,8 @@ function createChildObjectsYearData(params){
             json['year'] = child.year
             json['type'] = child.type
             json['file'] = child.file
+            json['textValue'] = child.textValue
+            json['replicaNumber'] = child.replicaNumber ? child.replicaNumber : child.replicaCount
             yearData.push(json)
         }
     }
@@ -546,37 +548,65 @@ function createChildObjectsYearData(params){
     return yearData
 }
 
+async function createFullChildObj(params){
+    let {element,yearData,replicaCount} = params
+    let childs = []
+    let copiedFromKeys = Array.from(new Set(yearData.map((item => item.type))))
+    try{
+        let sampleJson = {
+            "key": element.key,
+            "value": "",
+            "_id": null,
+            "label": element.label,
+            "formFieldType": element.formFieldType,
+            "readonly": true,
+        }
+        for(let i = 1; i<=replicaCount ; i++){
+            let replicatedYear = yearData.filter(item => item.replicaNumber === i )
+            for(let key of copiedFromKeys){
+                let childObject = {...sampleJson}
+                childObject.replicaNumber = i
+                let yearData =  replicatedYear.filter(item =>item.type === key )
+                childObject.value = yearData[0].textValue
+                childObject.key = key
+                childObject.yearData = yearData
+                childs.push(childObject)
+            }
+        }
+    }
+    catch(err){
+        console.log("error in createFullChildObj ::: ",err.message)
+    }
+    return childs
+}
+
 async function appendChildValues(params){
     let {element,ptoMaper,isDraft} = params
     try{  
         if(element?.child && ptoMaper){
             let childElement = ptoMaper.find(item => item.type === element.key)
+            let yearData = []
             for(let key of childElement.child){
-                console.log("childElement.replicaCount ::: ",childElement.child.replicaCount)
-                let childs = childElement.child.filter(item => item.replicaCount === childElement.replicaCount)
-                let mainObject = {
-                    "key": element.key,
-                    "value": "",
-                    "_id": null,
-                    "replicaCount": childElement.replicaCount,
-                    "label": element.label,
-                    "formFieldType": element.formFieldType,
-                    "readonly": true,
-                }
-                let currentYearData  = await createChildObjectsYearData({
-                    childs:childs,
+                yearData   = await createChildObjectsYearData({
+                    childs:childElement.child,
                     isDraft:isDraft
-                })
-                console.log("childs :: ",childs)
-                mainObject['child'] = currentYearData
-                console.log("mainObject ::: ",mainObject)
+                })  
             }
-            element.child.push(element.key)
+            let params = {
+                yearData : yearData,
+                element:element,
+                replicaCount:childElement.replicaCount
+            }
+            let child = await createFullChildObj(params)
+            element.child = child
+            // console.log("element ::: ",element)
+            // element.child.push(element.key)
         }
     }
     catch(err){
         console.log("error in appendChildValues ::: ",err.message)
     }
+    return element
 }
 
 exports.getView = async function (req, res, next) {
@@ -607,10 +637,7 @@ exports.getView = async function (req, res, next) {
                                 ptoMaper:ptoMaper,
                                 isDraft:isDraft
                             }
-                            appendChildValues(childParams)
-                            // if(el === "otherValuePropertyType"){
-                            //     console.log("data :::::: ",data[el])
-                            // }
+                            data[el] = await appendChildValues(childParams)
                             if (Array.isArray(yearData) && ptoMaper) {
                                 for (const pf of yearData) {
                                     if (!isEmptyObj(pf)) {

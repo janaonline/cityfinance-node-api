@@ -15,7 +15,8 @@ const PropertyMapperChildData = new Schema(
             },
         },
         isActive: { type: Boolean, default: 1 },
-        replicaCount:{type:Number},
+        replicaNumber:{type:Number},
+        textValue:{type:String},
         type: {
             type: String,
             enum: {
