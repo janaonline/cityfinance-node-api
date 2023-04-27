@@ -11,6 +11,7 @@ const { propertyTaxOpFormJson, financialYearTableHeader, specialHeaders } = requ
 const { isEmptyObj, isReadOnly } = require('../../util/helper');
 const PropertyMapperChildData = require("../../models/PropertyTaxMapperChild");
 const { years } = require('../../service/years');
+const {validationJson} = require("./validation")
 
 const getKeyByValue = (object, value)=>{
     return Object.keys(object).find(key => object[key] === value);
@@ -409,6 +410,124 @@ async function handleChildrenData(params){
 }
 
 
+function yearWiseValues(yearData){
+    try{
+        let sumObj = {}
+        for(let yearObj of yearData){
+            if(yearObj.year){
+                let yearName = getKeyByValue(years,yearObj.year)
+                try{
+                    sumObj[yearName].push(yearObj.value ? parseFloat(yearObj.value) : 0 )
+                }
+                catch(err){
+                    sumObj[yearName] = [parseFloat(yearObj.value ? parseFloat(yearObj.value) : 0)]
+                }
+            }
+        }
+        sumObj = Object.entries(sumObj).reduce((result, [key, value]) => ({
+                ...result, 
+                [key]: value.reduce((total, item) => total + item, 0)}) 
+                , 
+            {})
+        return sumObj
+    }
+    catch(err){
+        console.log("error in getYearWiseKeys :::: ",err.message)
+    }
+}
+
+function getYearDataSumForValidations(keysToFind,data){
+    let sumObj = {}
+    try{
+        for(let keyName of keysToFind){
+            if(data[keyName]){
+                for(let yearObj of data[keyName].yearData){
+                    if(yearObj.year){
+                        let yearName = getKeyByValue(years,yearObj.year)
+                        try{
+                            sumObj[yearName].push(yearObj.value ? parseFloat(yearObj.value) : 0 )
+                        }
+                        catch(err){
+                            sumObj[yearName] = [parseFloat(yearObj.value ? parseFloat(yearObj.value) : 0)]
+                        }
+                    }
+                }
+            }
+        }  
+        sumObj = Object.entries(sumObj).reduce((result, [key, value]) => ({
+                ...result, 
+                [key]: value.reduce((total, item) => total + item, 0)}) 
+                , 
+            {})
+        return sumObj
+    }
+    catch(err){
+        console.log("error in getYearDataForValidations ::: ",err.message)
+    }
+}
+
+function compareValues(params){
+    let validator = {
+        "valid":true,
+        "message":"",
+        "errors":[]
+    }
+    try{
+        let {sumOfrefVal,sumOfCurrentKey,logic,message} = params
+        for(let key in sumOfrefVal){
+            if(logic === "ltequal"){
+                if(sumOfCurrentKey[key] > sumOfrefVal[key] ){
+                   validator.valid = false
+                   validator.errors.push(message) 
+                   validator.message = message
+                }
+            }
+            else if(logic === "sum"){
+                if(sumOfCurrentKey[key] != sumOfrefVal[key] ){
+                    validator.valid = false
+                    validator.message = message
+                    validator.errors.push(message) 
+                 }
+            }
+        }
+    }
+    catch(err){
+        console.log("error in compareValues :::")
+    }
+    return validator
+}
+
+async function handleNonSubmissionValidation(params){
+    let errors = {
+        valid:true,
+        message:"",
+        errors:[]
+    }
+    try{
+        let  {dynamicObj,yearArr,data} = params
+        let validatorKeys = Object.keys(validationJson)
+        if(validatorKeys.includes(dynamicObj.key)){
+            let keysToFind = validationJson[dynamicObj.key].fields
+            let sumOfrefVal = await getYearDataSumForValidations(keysToFind,data)
+            let sumOfCurrentKey = await yearWiseValues(dynamicObj.yearData)
+            let valueParams = {
+                sumOfrefVal,
+                sumOfCurrentKey,
+                logic:validationJson[dynamicObj.key].logic,
+                message:validationJson[dynamicObj.key].message
+            }
+            let compareValidator = compareValues(valueParams)
+            if(!compareValidator.valid){
+                return compareValidator
+            }
+        }
+    }
+    catch(err){
+        console.log("error in handleNonSubmissionValidation :: :",err.message)
+    }
+    return errors
+}
+
 async function calculateAndUpdateStatusForMappers(tabs, ulbId, formId, year, updateForm, isDraft) {
     try {
         let conditionalObj = {}
@@ -432,6 +551,17 @@ async function calculateAndUpdateStatusForMappers(tabs, ulbId, formId, year, upd
                         }
                     })
                     temp["status"].push(status)
+                    let params = {
+                        dynamicObj,
+                        yearArr,
+                        data:tab.data
+                    }
+                    if(!isDraft){
+                        let validation = await handleNonSubmissionValidation(params)
+                        if(!validation.valid){
+                            throw {message:validation.message} 
+                        }
+                    }
                     await updateQueryForPropertyTaxOp(yearArr, ulbId, formId, updateForm, dynamicObj,updatedIds)
                 }
                 conditionalObj[tab._id.toString()] = (temp)
@@ -510,7 +640,7 @@ async function updateQueryForPropertyTaxOp(yearData, ulbId, formId, updateForm, 
 }
 
 function createChildObjectsYearData(params){
-    let {childs} = params
+    let {childs,isDraft,status} = params
     let yearData = []
     let yearJson =  {
         "key": "FY",
@@ -539,6 +669,7 @@ function createChildObjectsYearData(params){
             json['type'] = child.type
             json['file'] = child.file
             json['textValue'] = child.textValue
+            json['readonly'] = isReadOnly({isDraft,status})
             json['replicaNumber'] = child.replicaNumber ? child.replicaNumber : child.replicaCount
             yearData.push(json)
         }
@@ -583,7 +714,7 @@ async function createFullChildObj(params){
 }
 
 async function appendChildValues(params){
-    let {element,ptoMaper,isDraft} = params
+    let {element,ptoMaper,isDraft,status} = params
     try{  
         if(element?.child && ptoMaper){
             let childElement = ptoMaper.find(item => item.type === element.key)
@@ -591,7 +722,8 @@ async function appendChildValues(params){
             for(let key of childElement.child){
                 yearData   = await createChildObjectsYearData({
                     childs:childElement.child,
-                    isDraft:isDraft
+                    isDraft:isDraft,
+                    status:status
                 })  
             }
             let params = {
@@ -602,8 +734,6 @@ async function appendChildValues(params){
             let child = await createFullChildObj(params)
             element.replicaCount = childElement.replicaCount
             element.child = child
-            // console.log("element ::: ",element)
-            // element.child.push(element.key)
         }
     }
     catch(err){
@@ -638,7 +768,8 @@ exports.getView = async function (req, res, next) {
                             let childParams = {
                                 element:data[el],
                                 ptoMaper:ptoMaper,
-                                isDraft:isDraft
+                                isDraft:isDraft,
+                                status:status
                             }
                             data[el] = await appendChildValues(childParams)
                             if (Array.isArray(yearData) && ptoMaper) {
