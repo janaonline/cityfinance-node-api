@@ -573,6 +573,8 @@ exports.createUpdate = async (req, res) => {
                  let splittedArray = el.split(tabSeparator)
                  el = splittedArray[splittedArray.length - 1];
                  return el;
+               }else{
+                return el;
                }
           })
           }
