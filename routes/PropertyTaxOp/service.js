@@ -520,7 +520,6 @@ function getYearDataSumForValidations(keysToFind,data){
                             yearData:childs.yearData,
                             sumObj:sumObj
                         })
-                        // console.log("sumObj ::: ",sumObj)
                     }
                 }
             }

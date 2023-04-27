@@ -11,7 +11,7 @@ const validationJson = {
             },
             {   
                 "logic": "sum", 
-                "fields": ["dmdexcludingCess","taxTypeDemandAmount","cessDemandAmount"], 
+                "fields": ["dmdexcludingCess","taxTypeDemand","cessDemandAmount"], 
                 "sequence": ["1.8","1.9","1.10"],
                 "message": "Sum should be equal to total proprety tax demand."
             },
