@@ -274,7 +274,6 @@ async function createHistory(params){
             let mapperForm = await PropertyTaxOpMapper.find({ ptoId: ObjectId(formId) }).populate("child").lean();
             ptoForm[0]['ptoMapperData'] = mapperForm
             payload['data'] = ptoForm
-            console.log("payload ::: ",payload)
             await saveFormHistory({
                 body:payload
             })
