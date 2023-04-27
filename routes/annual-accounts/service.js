@@ -562,7 +562,8 @@ exports.createUpdate = async (req, res) => {
           notApprovedShortKeys = await filterApprovedShortKeys(shortKeys, formData2324._id, formCurrentStatus['status']);
           }
           if(Array.isArray(notApprovedShortKeys) && notApprovedShortKeys.length){
-            await updateStateCurrentStatus(notApprovedShortKeys,formData2324._id, formCurrentStatus['status'])
+            await updateStateCurrentStatus(notApprovedShortKeys,formData2324._id, formCurrentStatus['status']);
+            shortKeys = notApprovedShortKeys
           }
           if (formBodyStatus === MASTER_STATUS["In Progress"]) {
             for (let shortKey of shortKeys) {
