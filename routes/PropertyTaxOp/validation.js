@@ -35,7 +35,7 @@ const validationJson = {
             {   
                 "logic": "ltequal", 
                 "fields": ["dmdIncludingCess"], 
-                "sequence": ["1.13"],
+                "sequence": ["1.5"],
                 "message": "Total property tax collection including cess, other taxes, AND excluding user charges should be less than or equal to total property tax demand."
             },
     ],
