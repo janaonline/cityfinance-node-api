@@ -11,6 +11,7 @@ const { propertyTaxOpFormJson, financialYearTableHeader, specialHeaders } = requ
 const { isEmptyObj, isReadOnly } = require('../../util/helper');
 const PropertyMapperChildData = require("../../models/PropertyTaxMapperChild");
 const { years } = require('../../service/years');
+const {saveFormHistory} = require("../../util/masterFunctions")
 const {validationJson} = require("./validation")
 
 const getKeyByValue = (object, value)=>{
@@ -263,15 +264,20 @@ async function removeIsDraft(params){
 
 async function createHistory(params){
     try{
-        let { ulbId, actions, design_year, isDraft,formId } = params
-        if(isDraft == false && currentFormStatus=== 7){
+        let { ulbId, actions, design_year, isDraft,formId,currentFormStatus } = params
+        if(isDraft == false || currentFormStatus ===7){
             let payload = {
                 "recordId":formId,
                 "data":[]
             }
             let ptoForm = await PropertyTaxOp.find({"_id":formId}).lean()
-            let mapperForm = PropertyTaxOpMapper.find({ ptoId: ObjectId(formId) }).populate("child").lean();
+            let mapperForm = await PropertyTaxOpMapper.find({ ptoId: ObjectId(formId) }).populate("child").lean();
             ptoForm[0]['ptoMapperData'] = mapperForm
+            payload['data'] = ptoForm
+            console.log("payload ::: ",payload)
+            await saveFormHistory({
+                body:payload
+            })
         }
 
     }
@@ -292,6 +298,10 @@ module.exports.createOrUpdate = async (req, res) => {
         response.success = true
         response.formId = formId
         response.message = "Form submitted successfully"
+        let params = {...req.body}
+        params['formId'] = formId
+        params['currentFormStatus'] = 1
+        await createHistory(params)
         return res.status(200).json(response)
     } catch (error) {
         await removeIsDraft(req.body)
@@ -665,12 +675,12 @@ async function calculateAndUpdateStatusForMappers(tabs, ulbId, formId, year, upd
                         yearArr,
                         data:tab.data
                     }
-                    if(!isDraft){
-                        let validation = await handleNonSubmissionValidation(params)
-                        if(!validation.valid){
-                            throw {message:validation.message} 
-                        }
-                    }
+                    // if(!isDraft){
+                    //     let validation = await handleNonSubmissionValidation(params)
+                    //     if(!validation.valid){
+                    //         throw {message:validation.message} 
+                    //     }
+                    // }
                     await updateQueryForPropertyTaxOp(yearArr, ulbId, formId, updateForm, dynamicObj,updatedIds)
                 }
                 conditionalObj[tab._id.toString()] = (temp)
