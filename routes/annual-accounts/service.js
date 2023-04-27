@@ -573,6 +573,8 @@ exports.createUpdate = async (req, res) => {
                  let splittedArray = el.split(tabSeparator)
                  el = splittedArray[splittedArray.length - 1];
                  return el;
+               }else{
+                return el;
                }
           })
           }
@@ -591,6 +593,8 @@ exports.createUpdate = async (req, res) => {
                   let splittedArray = el.shortKey.split(tabSeparator)
                   el = splittedArray[splittedArray.length - 1];
                   return el;
+                }else{
+                  return el.shortKey;
                 }
            })
           }
@@ -2181,7 +2185,7 @@ function appendKeys(keyArray, data, provisionalKey, tabShortKeys, role) {
         tabData[entity]['rejectReason'] = statusData['rejectReason'];
 
         if(["bal_sheet","inc_exp"].includes(entity)){
-          tabData = addExtraKeysToNumericFields(statusData,tabData, params);
+          tabData = addExtraKeysToNumericFields(statusData,tabData, params, formLevelCanTakeAction);
         }
       }
     }
@@ -2189,7 +2193,7 @@ function appendKeys(keyArray, data, provisionalKey, tabShortKeys, role) {
 }
 
 
-function addExtraKeysToNumericFields(statusData,tabData, params){
+function addExtraKeysToNumericFields(statusData,tabData, params,formLevelCanTakeAction){
   
   const shortKeysToAppend = {
     "bal_sheet": [
@@ -2211,7 +2215,7 @@ function addExtraKeysToNumericFields(statusData,tabData, params){
               rejectReason : "",
               value: tabData[entity]
             };
-        tabData[entity]['canTakeAction'] = canTakenActionMaster(params);
+        tabData[entity]['canTakeAction'] = !formLevelCanTakeAction ? formLevelCanTakeAction : canTakenActionMaster(params);
         tabData[entity]['statusId'] = statusData['statusId'];
         tabData[entity]['status'] = statusData['status'];
         tabData[entity]['rejectReason'] = statusData['rejectReason'];
