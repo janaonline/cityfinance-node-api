@@ -126,15 +126,36 @@ const validationJson = {
         "sequence": ['5.6','5.7'],
         "message":"Sum of current and arrears should be equal to total water charges demand."
     },
-    "waterChrgCol":{
+    "waterChrgConnectionDm":{
         "logic": "sum",
         "fields": [
-            "arWaterChrgCol",
-            "cuWaterChrgCol"
+            'resNoWaterChrgDm',
+            'comNoWaterChrgDm',
+            'indNoWaterChrgDm',
+            'othersNoWaterChrgDm'
         ],
-        "sequence": ['5.9','5.10'],
-        "message":"Sum of current and arrears should be equal to total water charges collection."
+        "sequence": [ '5.14', '5.18', '5.22', '5.27' ],
+        "message":"The sum should be equal to total number of connections from which water charges was demanded"
     },
+    "waterChrgConnectionCol":{
+        "logic": "sum",
+        "fields": [
+            'entityWaterCharges',
+            'resNoWaterChrgCollected',
+            'indNoWaterChrgCollected',
+            'othersNoWaterChrgCollected'
+        ],
+        "sequence": [ '5.16', '5.2', '5.24', '5.29' ],
+        "message":"Total collections made via online channel should be less than or equal to total property tax collections."
+    },
+    "resValueWaterChrgCollected":{
+        "logic": "ltequal",
+        "fields": [
+            "resValueWaterChrgDm"
+        ],
+        "sequence": [ '5.13' ],
+        "message":"Value of water charges collected should be less that or equal to value of water charges demanded."
+    }
 }
 exports.checkValidation = async function (req, res, next) {
     try {
@@ -215,3 +236,5 @@ const getVavidationObject = (sortKey, byData) => {
         }
     })
 }
+
+module.exports.validationJson = validationJson
