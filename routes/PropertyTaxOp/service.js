@@ -250,7 +250,7 @@ function
 //// New year
 async function removeIsDraft(params){
     try{
-        let { ulbId, design_year } = req.body
+        let { ulbId, design_year } = params
         let condition = { ulb: ObjectId(ulbId), design_year: ObjectId(design_year) };
         await PropertyTaxOp.findOneAndUpdate(condition,{
             "isDraft":true
@@ -258,6 +258,25 @@ async function removeIsDraft(params){
     }
     catch(err){
         console.log("error in removeIsDraft :::: ",err.message)
+    }
+}
+
+async function createHistory(params){
+    try{
+        let { ulbId, actions, design_year, isDraft,formId } = params
+        if(isDraft == false && currentFormStatus=== 7){
+            let payload = {
+                "recordId":formId,
+                "data":[]
+            }
+            let ptoForm = await PropertyTaxOp.find({"_id":formId}).lean()
+            let mapperForm = PropertyTaxOpMapper.find({ ptoId: ObjectId(formId) }).populate("child").lean();
+            ptoForm[0]['ptoMapperData'] = mapperForm
+        }
+
+    }
+    catch(err){
+        console.log("error in createHistory ::: ",err.message)
     }
 }
 
@@ -282,6 +301,7 @@ module.exports.createOrUpdate = async (req, res) => {
         })
     }
 }
+
 
 async function checkIfFormIdExistsOrNot(ulbId, design_year, isDraft, role, userId) {
     return new Promise(async (resolve, reject) => {
