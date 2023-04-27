@@ -674,12 +674,12 @@ async function calculateAndUpdateStatusForMappers(tabs, ulbId, formId, year, upd
                         yearArr,
                         data:tab.data
                     }
-                    // if(!isDraft){
-                    //     let validation = await handleNonSubmissionValidation(params)
-                    //     if(!validation.valid){
-                    //         throw {message:validation.message} 
-                    //     }
-                    // }
+                    if(!isDraft){
+                        let validation = await handleNonSubmissionValidation(params)
+                        if(!validation.valid){
+                            throw {message:validation.message} 
+                        }
+                    }
                     await updateQueryForPropertyTaxOp(yearArr, ulbId, formId, updateForm, dynamicObj,updatedIds)
                 }
                 conditionalObj[tab._id.toString()] = (temp)
