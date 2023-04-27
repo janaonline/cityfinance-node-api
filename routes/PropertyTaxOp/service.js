@@ -248,9 +248,22 @@ function
     return result;
 }
 //// New year
+async function removeIsDraft(params){
+    try{
+        let { ulbId, design_year } = req.body
+        let condition = { ulb: ObjectId(ulbId), design_year: ObjectId(design_year) };
+        await PropertyTaxOp.findOneAndUpdate(condition,{
+            "isDraft":true
+        }).lean();
+    }
+    catch(err){
+        console.log("error in removeIsDraft :::: ",err.message)
+    }
+}
+
 module.exports.createOrUpdate = async (req, res) => {
-    try {
         let { ulbId, actions, design_year, isDraft } = req.body
+    try {
         let { role, _id: userId } = req.decoded
         let response = {}
         let formIdValidations = await checkIfFormIdExistsOrNot(ulbId, design_year, isDraft, role, userId);
@@ -262,6 +275,7 @@ module.exports.createOrUpdate = async (req, res) => {
         response.message = "Form submitted successfully"
         return res.status(200).json(response)
     } catch (error) {
+        await removeIsDraft(req.body)
         return res.status(400).json({
             status: false,
             message: error.message
