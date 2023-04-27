@@ -591,6 +591,8 @@ exports.createUpdate = async (req, res) => {
                   let splittedArray = el.shortKey.split(tabSeparator)
                   el = splittedArray[splittedArray.length - 1];
                   return el;
+                }else{
+                  return el.shortKey;
                 }
            })
           }
