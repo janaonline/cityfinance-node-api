@@ -248,9 +248,41 @@ function
     return result;
 }
 //// New year
+async function removeIsDraft(params){
+    try{
+        let { ulbId, design_year } = params
+        let condition = { ulb: ObjectId(ulbId), design_year: ObjectId(design_year) };
+        await PropertyTaxOp.findOneAndUpdate(condition,{
+            "isDraft":true
+        }).lean();
+    }
+    catch(err){
+        console.log("error in removeIsDraft :::: ",err.message)
+    }
+}
+
+async function createHistory(params){
+    try{
+        let { ulbId, actions, design_year, isDraft,formId } = params
+        if(isDraft == false && currentFormStatus=== 7){
+            let payload = {
+                "recordId":formId,
+                "data":[]
+            }
+            let ptoForm = await PropertyTaxOp.find({"_id":formId}).lean()
+            let mapperForm = PropertyTaxOpMapper.find({ ptoId: ObjectId(formId) }).populate("child").lean();
+            ptoForm[0]['ptoMapperData'] = mapperForm
+        }
+
+    }
+    catch(err){
+        console.log("error in createHistory ::: ",err.message)
+    }
+}
+
 module.exports.createOrUpdate = async (req, res) => {
-    try {
         let { ulbId, actions, design_year, isDraft } = req.body
+    try {
         let { role, _id: userId } = req.decoded
         let response = {}
         let formIdValidations = await checkIfFormIdExistsOrNot(ulbId, design_year, isDraft, role, userId);
@@ -262,12 +294,14 @@ module.exports.createOrUpdate = async (req, res) => {
         response.message = "Form submitted successfully"
         return res.status(200).json(response)
     } catch (error) {
+        await removeIsDraft(req.body)
         return res.status(400).json({
             status: false,
             message: error.message
         })
     }
 }
+
 
 async function checkIfFormIdExistsOrNot(ulbId, design_year, isDraft, role, userId) {
     return new Promise(async (resolve, reject) => {
@@ -436,20 +470,48 @@ function yearWiseValues(yearData){
     }
 }
 
+function getSumByYear(params){
+    let {yearData,sumObj} = params
+    try{
+        for(let yearObj of yearData){
+            if(yearObj.year){
+                let yearName = getKeyByValue(years,yearObj.year)
+                try{
+                    sumObj[yearName].push(yearObj.value ? parseFloat(yearObj.value) : 0 )
+                }
+                catch(err){
+                    sumObj[yearName] = [parseFloat(yearObj.value ? parseFloat(yearObj.value) : 0)]
+                }
+            }
+        }
+    }
+    catch(err){
+        console.log("error in getSumByYear ::: ",err.message)
+    }
+    // return sumObj
+}
+
+
+
 function getYearDataSumForValidations(keysToFind,data){
     let sumObj = {}
     try{
         for(let keyName of keysToFind){
             if(data[keyName]){
-                for(let yearObj of data[keyName].yearData){
-                    if(yearObj.year){
-                        let yearName = getKeyByValue(years,yearObj.year)
-                        try{
-                            sumObj[yearName].push(yearObj.value ? parseFloat(yearObj.value) : 0 )
-                        }
-                        catch(err){
-                            sumObj[yearName] = [parseFloat(yearObj.value ? parseFloat(yearObj.value) : 0)]
-                        }
+                if(!data[keyName].child ||  data[keyName].child.length === 0){
+                    getSumByYear({
+                        yearData:data[keyName].yearData,
+                        sumObj
+                    })
+                }
+                else{
+                    // console.log("child case::::",keyName)
+                    for(let childs of data[keyName].child){
+                        getSumByYear({
+                            yearData:childs.yearData,
+                            sumObj:sumObj
+                        })
+                        // console.log("sumObj ::: ",sumObj)
                     }
                 }
             }
@@ -490,11 +552,42 @@ function compareValues(params){
                  }
             }
         }
+        
     }
     catch(err){
         console.log("error in compareValues :::")
     }
     return validator
+}
+
+async function handleMultipleValidations(params){
+    let {data,validatorArray,dynamicObj} = params
+    let valid = {
+        "valid":true,
+        "errors":"",
+        "message":""
+    }
+    try{
+        for(let validationObj of validatorArray){
+            let keysToFind = validationObj.fields
+            let sumOfrefVal = await getYearDataSumForValidations(keysToFind,data)
+            let sumOfCurrentKey = await yearWiseValues(dynamicObj.yearData)
+            let valueParams = {
+                sumOfrefVal,
+                sumOfCurrentKey,
+                logic:validationObj.logic,
+                message:validationObj.message
+            }
+            let compareValidator = compareValues(valueParams)
+            if(!compareValidator.valid){
+                return compareValidator
+            }
+        }
+    }
+    catch(err){
+        console.log("error in handleMultipleValidations ::: ",err.message)
+    }
+    return valid
 }
 
 async function handleNonSubmissionValidation(params){
@@ -508,18 +601,34 @@ async function handleNonSubmissionValidation(params){
         let validatorKeys = Object.keys(validationJson)
         if(validatorKeys.includes(dynamicObj.key)){
             let keysToFind = validationJson[dynamicObj.key].fields
-            let sumOfrefVal = await getYearDataSumForValidations(keysToFind,data)
-            let sumOfCurrentKey = await yearWiseValues(dynamicObj.yearData)
-            let valueParams = {
-                sumOfrefVal,
-                sumOfCurrentKey,
-                logic:validationJson[dynamicObj.key].logic,
-                message:validationJson[dynamicObj.key].message
+            let logicType = validationJson[dynamicObj.key].logic
+           if(logicType === "multiple"){
+                let validatorArray = validationJson[dynamicObj.key].multipleValidations
+                let childValidationParams = {
+                    data,
+                    validatorArray:validatorArray,
+                    dynamicObj
+                }
+                let childValid = await  handleMultipleValidations(childValidationParams)
+                if(!childValid.valid){
+                    return childValid
+                }   
+           }
+            else{
+                let sumOfrefVal = await getYearDataSumForValidations(keysToFind,data)
+                let sumOfCurrentKey = await yearWiseValues(dynamicObj.yearData)
+                let valueParams = {
+                    sumOfrefVal,
+                    sumOfCurrentKey,
+                    logic:validationJson[dynamicObj.key].logic,
+                    message:validationJson[dynamicObj.key].message
+                }
+                let compareValidator = compareValues(valueParams)
+                if(!compareValidator.valid){
+                    return compareValidator
+                }
             }
-            let compareValidator = compareValues(valueParams)
-            if(!compareValidator.valid){
-                return compareValidator
-            }
+            
         }
     }
     catch(err){
