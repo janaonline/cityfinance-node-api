@@ -563,7 +563,18 @@ exports.createUpdate = async (req, res) => {
           }
           if(Array.isArray(notApprovedShortKeys) && notApprovedShortKeys.length){
             await updateStateCurrentStatus(notApprovedShortKeys,formData2324._id, formCurrentStatus['status']);
-            shortKeys = notApprovedShortKeys
+            const tabRegex = /^tab_/g;
+            // let separator = ".";
+            // const dotSeparator = "."
+            const tabSeparator = "_";
+        
+            shortKeys = notApprovedShortKeys.map(el=>{
+               if(el.match(tabRegex)) {
+                 let splittedArray = el.split(tabSeparator)
+                 el = splittedArray[splittedArray.length - 1];
+                 return el;
+               }
+          })
           }
           if (formBodyStatus === MASTER_STATUS["In Progress"]) {
             for (let shortKey of shortKeys) {
