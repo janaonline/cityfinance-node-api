@@ -1,5 +1,45 @@
 const { propertyTaxOpFormJson } = require('./fydynemic')
 const validationJson = {
+    "dmdIncludingCess":{
+        "logic": "multiple", 
+        "multipleValidations":[
+            {   
+                "logic": "sum", 
+                "fields": ["cdmdIncludingCess","admdIncludingCess"], 
+                "sequence": ["1.6","1.7"],
+                "message": "Sum of current and arrears should be equal to total property tax demand."
+            },
+            {   
+                "logic": "sum", 
+                "fields": ["dmdexcludingCess","taxTypeDemandAmount","cessDemandAmount"], 
+                "sequence": ["1.8","1.9","1.10"],
+                "message": "Sum should be equal to total proprety tax demand."
+            },
+    ],
+    },
+    "collectIncludingCess":{
+        "logic": "multiple", 
+        "multipleValidations":[
+            {
+            "logic":"sum",
+            "fields":["collectExcludingCess","taxTypeCollection","cessCollectAmount"],
+            "sequence": ["1.16","1.17","1.18"],
+            "message":"Sum should be equal to total property tax collection."
+            },
+            {   
+                "logic": "sum", 
+                "fields": ["cuCollectIncludingCess","admdIncludingCess"], 
+                "sequence": ["1.14","1.15"],
+                "message": "Sum of current and arrears should be equal to total property tax collection"
+            },
+    ],
+    },
+    "collectExcludingCess":{
+        "logic": "ltequal", 
+        "fields": ["dmdexcludingCess"], 
+        "sequence": ["1.8"],
+        "message": "Total property tax collection exlluding cess, other taxes, and user charges should be less than or equal to total property tax demand."
+    },
     "noOfPropertiesPaidOnline": {
         "logic": "ltequal", "fields": ["insValuePropertyTaxDm"], "sequence": ["2.4"],
         "message": " Number of properties that paid online should be less than or equal to total number of properties from which property tax was collected."
