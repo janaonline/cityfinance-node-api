@@ -32,6 +32,12 @@ const validationJson = {
                 "sequence": ["1.14","1.15"],
                 "message": "Sum of current and arrears should be equal to total property tax collection"
             },
+            {   
+                "logic": "ltequal", 
+                "fields": ["dmdIncludingCess"], 
+                "sequence": ["1.13"],
+                "message": "Total property tax collection including cess, other taxes, AND excluding user charges should be less than or equal to total property tax demand."
+            },
     ],
     },
     "collectExcludingCess":{
