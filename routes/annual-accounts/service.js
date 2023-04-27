@@ -576,11 +576,15 @@ exports.createUpdate = async (req, res) => {
                }
           })
           }
-          const currentULBStatusesInProgress =  await CurrentStatus.find({
-            recordId: formData2324._id,
-             actionTakenByRole: "ULB",
-             status:  MASTER_STATUS['In Progress']
-            }).lean();
+          let currentULBStatusesInProgress
+          if(formData2324){
+             currentULBStatusesInProgress =  await CurrentStatus.find({
+              recordId: formData2324._id,
+               actionTakenByRole: "ULB",
+               status:  MASTER_STATUS['In Progress']
+              }).lean();
+
+          }
           if(Array.isArray(currentULBStatusesInProgress) && currentULBStatusesInProgress.length){
             shortKeys = currentULBStatusesInProgress.map(el=>{
                 if(el.shortKey.match(tabRegex)) {
