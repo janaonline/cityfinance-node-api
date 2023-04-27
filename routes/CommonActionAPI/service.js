@@ -2671,10 +2671,27 @@ async function takeActionOnForms(params, res) {
         if (multi) {
           let [response] = responses;
           response['status'] =  Number(response['status']);
+                 
           /* Getting the short keys from the short keys array and separating them into an array of arrays based on tab and questions */
-          let shortKeysResponse = await getSeparatedShortKeys({shortKeys});
+          let currentStatusShortKeys = await CurrentStatus.find({
+            recordId: form._id,
+            actionTakenByRole,
+          },{
+            shortKey:1,
+            _id: 0
+          }).lean()
+          if(Array.isArray(currentStatusShortKeys) && !currentStatusShortKeys.length){
+            currentStatusShortKeys = await CurrentStatus.find({
+                recordId: form._id,
+                actionTakenByRole: "ULB",
+              },{
+                shortKey:1,
+                _id: 0
+              }).lean()
+          }
+          currentStatusShortKeys = currentStatusShortKeys.map(el=> el.shortKey)
           /* Saving the status of the form for questions */
-          for (let shortKey of shortKeysResponse["inner"]) {
+          for (let shortKey of currentStatusShortKeys) {
             let params = {
               formId,
               form,
@@ -2689,21 +2706,21 @@ async function takeActionOnForms(params, res) {
             saveStatusResponse = await saveStatus(params);
           }
             /* Saving the status of the form for tabs */
-          for (let shortKey of shortKeysResponse["outer"]) {
-            shortKey = `tab_${shortKey}`;
-            let params = {
-              formId,
-              form,
-              response,
-              form_level,
-              actionTakenByRole,
-              actionTakenBy,
-              multi,
-              shortKey,
-              res,
-            };
-            saveStatusResponse = await saveStatus(params);
-          }
+        //   for (let shortKey of shortKeysResponse["outer"]) {
+        //     shortKey = `tab_${shortKey}`;
+        //     let params = {
+        //       formId,
+        //       form,
+        //       response,
+        //       form_level,
+        //       actionTakenByRole,
+        //       actionTakenBy,
+        //       multi,
+        //       shortKey,
+        //       res,
+        //     };
+        //     saveStatusResponse = await saveStatus(params);
+        //   }
           //Updating form Level status
           let updatedFormCurrentStatus = await updateFormCurrentStatus(
             model,
@@ -2902,7 +2919,9 @@ async function saveStatus(params) {
             actionTakenBy: ObjectId(actionTakenBy),
           };
         
-          (multi && form_level === FORM_LEVEL["question"]) ? currentStatusData["shortKey"] = shortKey : ""
+          (multi && [FORM_LEVEL["question"] ,FORM_LEVEL['tab']].includes(form_level)) ? currentStatusData["shortKey"] = shortKey : "";
+        //   (multi && form_level === FORM_LEVEL["tab"]) ? currentStatusData["shortKey"] = shortKey : "";
+
           let currentStatus = await saveCurrentStatus({ body: currentStatusData });
           
           let statusHistory = {
@@ -2912,7 +2931,7 @@ async function saveStatus(params) {
             data: currentStatusData,
           };
         
-          (multi && form_level === FORM_LEVEL["question"]) ? statusHistory["shortKey"] = shortKey  : ""
+          (multi && [FORM_LEVEL["question"], FORM_LEVEL['tab']].includes(form_level)) ? statusHistory["shortKey"] = shortKey  : ""
 
           let statusHistoryData = await saveStatusHistory({ body: statusHistory });
           if (currentStatus === 1 && statusHistoryData === 1){
