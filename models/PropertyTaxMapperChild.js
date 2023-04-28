@@ -74,6 +74,7 @@ const PropertyMapperChildData = new Schema(
                     "totalCollectionOnline",
                     "propertyTaxValuationDetails",
                     "notificationWaterCharges",
+                    "taxTypeDemandChild",
                     "entityWaterCharges",
                     "entityNameWaterCharges",
                     "notificationWaterChargesFile",
