@@ -385,6 +385,7 @@ module.exports.getForm = async (req, res,next) => {
         }
         /* Checking if the host is empty, if it is, it will set the host to the req.headers.host. */
         host = host !== "" ? host : req.headers.host;
+        let keyName = getKeyByValue(years,data.design_year)
         if(ulbData.access_2122){
         if (masterFormData) {
           isDraft = !masterFormData.isSubmit
@@ -401,7 +402,7 @@ module.exports.getForm = async (req, res,next) => {
           console.log("status ::::: ",status)
           /* Checking the status of the form. If the status is not in the list of statuses, it will
             return a message. */
-          let keyName = getKeyByValue(years,data.design_year)
+          
           console.log("keyName ::: ",keyName)
           if (
             ![
@@ -431,7 +432,9 @@ module.exports.getForm = async (req, res,next) => {
           req.json = {
               status: true,
               show: true,
-              message:  userRole === "ULB" ? `Your Previous Year's SLBs for Water Supply and Sanitation form status is - "Not Submitted". Kindly submit form at - <a href =https://${host}/ulbform/ulbform-overview target="_blank">Click here</a> in order to submit form` : `Dear User, The ${ulbData.name} has not yet filled Previous Year's SLBs for Water Supply and Sanitation form. You will be able to mark your response once STATE approves previous year's form.` ,
+              message:  userRole === "ULB" ? 
+              `Your ${messages[keyName]} Year's SLBs for Water Supply and Sanitation form status is - "Not Submitted". Kindly submit form at - <a href =https://${host}/ulbform/ulbform-overview target="_blank">Click here</a> in order to submit form` : 
+              `Dear User, The ${ulbData.name} has not yet filled ${messages[keyName]} Year's SLBs for Water Supply and Sanitation form. You will be able to mark your response once STATE approves previous year's form.` ,
             }
            next()
            return

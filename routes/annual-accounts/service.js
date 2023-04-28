@@ -152,6 +152,7 @@ var request = require('request')
 
 // }
 
+const tabRegex = /^tab_/g;
 
 const time = () => {
   var dt = new Date();
@@ -558,12 +559,46 @@ exports.createUpdate = async (req, res) => {
           //filter shortKeys based on Tab selection
           shortKeys = filterTabShortKeys(req, shortKeys);
           let notApprovedShortKeys;
+          const tabSeparator = "_";
           if(formData2324 ){
           notApprovedShortKeys = await filterApprovedShortKeys(shortKeys, formData2324._id, formCurrentStatus['status']);
           }
           if(Array.isArray(notApprovedShortKeys) && notApprovedShortKeys.length){
-            await updateStateCurrentStatus(notApprovedShortKeys,formData2324._id, formCurrentStatus['status'])
+            await updateStateCurrentStatus(notApprovedShortKeys,formData2324._id, formCurrentStatus['status']);
+            // let separator = ".";
+            // const dotSeparator = "."
+        
+            shortKeys = notApprovedShortKeys.map(el=>{
+               if(el.match(tabRegex)) {
+                 let splittedArray = el.split(tabSeparator)
+                 el = splittedArray[splittedArray.length - 1];
+                 return el;
+               }else{
+                return el;
+               }
+          })
           }
+          let currentULBStatusesInProgress
+          if(formData2324){
+             currentULBStatusesInProgress =  await CurrentStatus.find({
+              recordId: formData2324._id,
+               actionTakenByRole: "ULB",
+               status:  MASTER_STATUS['In Progress']
+              }).lean();
+
+          }
+          if(Array.isArray(currentULBStatusesInProgress) && currentULBStatusesInProgress.length){
+            shortKeys = currentULBStatusesInProgress.map(el=>{
+                if(el.shortKey.match(tabRegex)) {
+                  let splittedArray = el.shortKey.split(tabSeparator)
+                  el = splittedArray[splittedArray.length - 1];
+                  return el;
+                }else{
+                  return el.shortKey;
+                }
+           })
+          }
+            
           if (formBodyStatus === MASTER_STATUS["In Progress"]) {
             for (let shortKey of shortKeys) {
               if (TAB_OBJ[shortKey]) {
@@ -637,7 +672,7 @@ exports.createUpdate = async (req, res) => {
           }
         } else if (
           [
-            MASTER_STATUS["Approved By MoHUA"],
+            MASTER_STATUS["Submission Acknowledged By MoHUA"],
             MASTER_STATUS["Under Review By MoHUA"],
             MASTER_STATUS["Under Review By State"],
           ].includes(formCurrentStatus.status)
@@ -853,7 +888,7 @@ async function filterApprovedShortKeys(shortKeys, recordId, formStatus){
 async function updateStateCurrentStatus(notApprovedShortKeys, recordId, formCurrentStatus){
   try {
     let role, status;
-    status =  MASTER_STATUS['Under Review By State']
+    status =  MASTER_STATUS['No Status'];
     if(formCurrentStatus ===  MASTER_STATUS['Returned By State']){
       role = "STATE";
     }else if (formCurrentStatus ===  MASTER_STATUS['Returned By MoHUA']){
@@ -1989,6 +2024,7 @@ exports.getAccounts = async (req, res,next) => {
         formId: FORMIDs['AnnualAccount'],
         flag: true
       }
+      // let formLevelCanTakeAction = canTakenActionMaster(params);
       annualAccountData = await addActionKeys(annualAccountData, bodyParams, res, role, req);
       Object.assign(annualAccountData, {
         canTakeAction: canTakenActionMaster(params),
@@ -2084,7 +2120,31 @@ const TAB_OBJ = {
   audited: 'audited',
   unAudited: 'unAudited'
 }
+const TAB_RESPONSE = {
+  BOTH_NO : 2,
+  AUDITED_YES: [8,7],
+  UNAUDITED_YES: [7,6],
+  AUDITED_UNAUDITED_YES: 13
+}
 function appendKeys(keyArray, data, provisionalKey, tabShortKeys, role) {
+  let params = {
+    status: data.currentFormStatus,
+    formType: "ULB",
+    loggedInUser: role,
+  };
+  let formLevelCanTakeAction = canTakenActionMaster(params);
+
+  let totalKeys = tabShortKeys?.length ;
+  let continueFlagAudited = false, continueFlagUnaudited = false;
+  if(totalKeys === TAB_RESPONSE['BOTH_NO']){
+    continueFlagAudited = true;
+    continueFlagUnaudited = true;
+  }else if(TAB_RESPONSE['AUDITED_YES'].includes(totalKeys) && tabShortKeys.find(el=>  el.shortKey === "auditor_report") ){
+    continueFlagUnaudited = true;
+  }else if( TAB_RESPONSE['UNAUDITED_YES'].includes(totalKeys)){
+    continueFlagAudited = true;
+  }else if(totalKeys === TAB_RESPONSE['AUDITED_UNAUDITED_YES']){
+  }
   for (let key of keyArray) {
     let statusData = tabShortKeys.find(el => {
       return el.shortKey === key;
@@ -2095,13 +2155,20 @@ function appendKeys(keyArray, data, provisionalKey, tabShortKeys, role) {
         formType: "ULB",
         loggedInUser: role,
       };
-      data[key]['canTakeAction'] = canTakenActionMaster(params);
+      data[key]['canTakeAction'] = !formLevelCanTakeAction ? formLevelCanTakeAction :  canTakenActionMaster(params);
       data[key]['statusId'] = statusData['statusId'];
       data[key]['status'] = statusData['status'];
       data[key]['rejectReason'] = statusData['rejectReason'];
-      continue;
+      // if(statusData.statusId)
+      if (continueFlagUnaudited && statusData.shortKey === keyArray[1]){
+        continue;
+      }
+      if(continueFlagAudited && statusData.shortKey === keyArray[0]){
+        continue;
+      }
     }
     let tabData = data[key][provisionalKey];
+    
     for (let entity in tabData) {
       let statusData = tabShortKeys.find(el => {
         return el.shortKey === entity;
@@ -2112,13 +2179,13 @@ function appendKeys(keyArray, data, provisionalKey, tabShortKeys, role) {
           formType: "ULB",
           loggedInUser: role,
         };
-        tabData[entity]['canTakeAction'] = canTakenActionMaster(params);
+        tabData[entity]['canTakeAction'] = !formLevelCanTakeAction ? formLevelCanTakeAction :  canTakenActionMaster(params);
         tabData[entity]['statusId'] = statusData['statusId'];
         tabData[entity]['status'] = statusData['status'];
         tabData[entity]['rejectReason'] = statusData['rejectReason'];
 
         if(["bal_sheet","inc_exp"].includes(entity)){
-          tabData = addExtraKeysToNumericFields(statusData,tabData, params);
+          tabData = addExtraKeysToNumericFields(statusData,tabData, params, formLevelCanTakeAction);
         }
       }
     }
@@ -2126,7 +2193,7 @@ function appendKeys(keyArray, data, provisionalKey, tabShortKeys, role) {
 }
 
 
-function addExtraKeysToNumericFields(statusData,tabData, params){
+function addExtraKeysToNumericFields(statusData,tabData, params,formLevelCanTakeAction){
   
   const shortKeysToAppend = {
     "bal_sheet": [
@@ -2148,7 +2215,7 @@ function addExtraKeysToNumericFields(statusData,tabData, params){
               rejectReason : "",
               value: tabData[entity]
             };
-        tabData[entity]['canTakeAction'] = canTakenActionMaster(params);
+        tabData[entity]['canTakeAction'] = !formLevelCanTakeAction ? formLevelCanTakeAction : canTakenActionMaster(params);
         tabData[entity]['statusId'] = statusData['statusId'];
         tabData[entity]['status'] = statusData['status'];
         tabData[entity]['rejectReason'] = statusData['rejectReason'];

@@ -1121,7 +1121,7 @@ module.exports.canTakeActionOrViewOnlyMasterForm = (params)=> {
         case status == MASTER_STATUS['Under Review By MoHUA'] && userRole == 'MoHUA':
             return true;
             break;
-        case status == MASTER_STATUS['Approved By MoHUA']:
+        case status == MASTER_STATUS['Submission Acknowledged By MoHUA']:
             return false;
             break;
 
@@ -1186,7 +1186,8 @@ class AggregationServices {
         return {
             "$dateToString": {
                 "date": field,
-                "format": this.dateFormat
+                "format": this.dateFormat,
+                "timezone" : "Asia/Kolkata"
             }
         }
     }
@@ -2095,8 +2096,8 @@ const handleNumericCase = async(question,obj,flattedForm,mainKey)=>{
                 value = ""
             }
             else{
-                value = !flattedForm[key] ? flattedForm[key+".value"] : flattedForm[key]
-                value = value.toString()
+                value = flattedForm[key] === undefined ? flattedForm[key+".value"] : flattedForm[key]
+                value = value !== undefined  ? value.toString() : ""
             }
             
             question['modelValue'] = value
@@ -2110,8 +2111,8 @@ const handleNumericCase = async(question,obj,flattedForm,mainKey)=>{
                 value = ""
             }
             else{
-                value = !flattedForm[key] ? flattedForm[key+".value"] : flattedForm[key]
-                value = value.toString()
+                value = flattedForm[key] === undefined ? flattedForm[key+".value"] : flattedForm[key]
+                value = value !== undefined  ? value.toString() : ""
             }
             question['modelValue'] = value
             question['value'] = value
@@ -2655,7 +2656,7 @@ async function takeActionOnForms(params, res) {
           } else {
             response.status =
               actionTakenByRole === "MoHUA"
-                ? MASTER_STATUS["Approved By MoHUA"]
+                ? MASTER_STATUS["Submission Acknowledged By MoHUA"]
                 : MASTER_STATUS["Under Review By MoHUA"];
             let updatedFormCurrentStatus = await updateFormCurrentStatus(
               model,
@@ -2669,10 +2670,28 @@ async function takeActionOnForms(params, res) {
       } else if (form_level === FORM_LEVEL["tab"]) {
         if (multi) {
           let [response] = responses;
-        /* Getting the short keys from the short keys array and separating them into an array of arrays based on tab and questions */
-          let shortKeysResponse = await getSeparatedShortKeys({shortKeys});
+          response['status'] =  Number(response['status']);
+                 
+          /* Getting the short keys from the short keys array and separating them into an array of arrays based on tab and questions */
+          let currentStatusShortKeys = await CurrentStatus.find({
+            recordId: form._id,
+            actionTakenByRole,
+          },{
+            shortKey:1,
+            _id: 0
+          }).lean()
+          if(Array.isArray(currentStatusShortKeys) && !currentStatusShortKeys.length){
+            currentStatusShortKeys = await CurrentStatus.find({
+                recordId: form._id,
+                actionTakenByRole: "ULB",
+              },{
+                shortKey:1,
+                _id: 0
+              }).lean()
+          }
+          currentStatusShortKeys = currentStatusShortKeys.map(el=> el.shortKey)
           /* Saving the status of the form for questions */
-          for (let shortKey of shortKeysResponse["inner"]) {
+          for (let shortKey of currentStatusShortKeys) {
             let params = {
               formId,
               form,
@@ -2687,21 +2706,21 @@ async function takeActionOnForms(params, res) {
             saveStatusResponse = await saveStatus(params);
           }
             /* Saving the status of the form for tabs */
-          for (let shortKey of shortKeysResponse["outer"]) {
-            shortKey = `tab_${shortKey}`;
-            let params = {
-              formId,
-              form,
-              response,
-              form_level,
-              actionTakenByRole,
-              actionTakenBy,
-              multi,
-              shortKey,
-              res,
-            };
-            saveStatusResponse = await saveStatus(params);
-          }
+        //   for (let shortKey of shortKeysResponse["outer"]) {
+        //     shortKey = `tab_${shortKey}`;
+        //     let params = {
+        //       formId,
+        //       form,
+        //       response,
+        //       form_level,
+        //       actionTakenByRole,
+        //       actionTakenBy,
+        //       multi,
+        //       shortKey,
+        //       res,
+        //     };
+        //     saveStatusResponse = await saveStatus(params);
+        //   }
           //Updating form Level status
           let updatedFormCurrentStatus = await updateFormCurrentStatus(
             model,
@@ -2721,12 +2740,12 @@ async function takeActionOnForms(params, res) {
           }
           let separator = ".";
           const tabSeparator = "_";
+          const dotSeparator = "."
           const tabRegex = /^tab_/g;
           
           for (let response of responses) {
-            if (response.shortKey.match(tabRegex)){
-                separator =  tabSeparator
-            }
+            response['status'] =  Number(response['status']);
+            separator = response.shortKey.match(tabRegex) ?  tabSeparator : dotSeparator;
             let splitedArrayTab =
               response.shortKey.split(separator).length > 1
                 ? response.shortKey.split(separator)[0]
@@ -2790,7 +2809,7 @@ async function takeActionOnForms(params, res) {
               } else {
                 status =
                   actionTakenByRole === "MoHUA"
-                    ? MASTER_STATUS["Approved By MoHUA"]
+                    ? MASTER_STATUS["Submission Acknowledged By MoHUA"]
                     : MASTER_STATUS["Under Review By MoHUA"];
               }
               response = {
@@ -2832,7 +2851,7 @@ async function takeActionOnForms(params, res) {
             let response = {}
             response.status =
               actionTakenByRole === "MoHUA"
-                ? MASTER_STATUS["Approved By MoHUA"]
+                ? MASTER_STATUS["Submission Acknowledged By MoHUA"]
                 : MASTER_STATUS["Under Review By MoHUA"];
             let updatedFormCurrentStatus = await updateFormCurrentStatus(
               model,
@@ -2900,7 +2919,9 @@ async function saveStatus(params) {
             actionTakenBy: ObjectId(actionTakenBy),
           };
         
-          (multi && form_level === FORM_LEVEL["question"]) ? currentStatusData["shortKey"] = shortKey : ""
+          (multi && [FORM_LEVEL["question"] ,FORM_LEVEL['tab']].includes(form_level)) ? currentStatusData["shortKey"] = shortKey : "";
+        //   (multi && form_level === FORM_LEVEL["tab"]) ? currentStatusData["shortKey"] = shortKey : "";
+
           let currentStatus = await saveCurrentStatus({ body: currentStatusData });
           
           let statusHistory = {
@@ -2910,7 +2931,7 @@ async function saveStatus(params) {
             data: currentStatusData,
           };
         
-          (multi && form_level === FORM_LEVEL["question"]) ? statusHistory["shortKey"] = shortKey  : ""
+          (multi && [FORM_LEVEL["question"], FORM_LEVEL['tab']].includes(form_level)) ? statusHistory["shortKey"] = shortKey  : ""
 
           let statusHistoryData = await saveStatusHistory({ body: statusHistory });
           if (currentStatus === 1 && statusHistoryData === 1){
@@ -2992,7 +3013,7 @@ function filterStatusResponse(statuses, formStatus){
     const STATUS_RESPONSE = {
         ULB: [MASTER_STATUS['Not Started'],MASTER_STATUS["In Progress"],MASTER_STATUS["Under Review By State"]],
         STATE: [MASTER_STATUS["Under Review By MoHUA"],MASTER_STATUS["Returned By State"]],
-       MoHUA: [MASTER_STATUS['Approved By MoHUA'],MASTER_STATUS["Returned By MoHUA"]]
+       MoHUA: [MASTER_STATUS['Submission Acknowledged By MoHUA'],MASTER_STATUS["Returned By MoHUA"]]
     }
     
     for( let key in STATUS_RESPONSE){
@@ -3027,7 +3048,7 @@ function filterStatusResponseTab(statuses, formStatus){
     const STATUS_RESPONSE = {
         ULB: [MASTER_STATUS['Not Started'],MASTER_STATUS["In Progress"],MASTER_STATUS["Under Review By State"]],
         STATE: [MASTER_STATUS["Under Review By MoHUA"],MASTER_STATUS["Returned By State"]],
-       MoHUA: [MASTER_STATUS['Approved By MoHUA'],MASTER_STATUS["Returned By MoHUA"]]
+       MoHUA: [MASTER_STATUS['Submission Acknowledged By MoHUA'],MASTER_STATUS["Returned By MoHUA"]]
     }
     
     for( let key in STATUS_RESPONSE){
@@ -3052,7 +3073,7 @@ function getCurrentStatusTab(key,statuses){
         return filterStatusForTab(statuses);
     }else if (key ==='STATE'){
         statuses =  statuses.filter(el=>{
-            return (el.status< MASTER_STATUS['Approved By MoHUA'] && el.status>MASTER_STATUS['Under Review By State']);
+            return (el.status< MASTER_STATUS['Submission Acknowledged By MoHUA'] && el.status>MASTER_STATUS['Under Review By State']);
         })
         return filterStatusForTab(statuses);
 

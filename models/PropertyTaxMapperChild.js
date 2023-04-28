@@ -1,5 +1,5 @@
 require("./dbConnect");
-const propertyTaxOpMapper = new Schema(
+const PropertyMapperChildData = new Schema(
     {
         ptoId: { type: Schema.Types.ObjectId, ref: "PropertyTaxOp", required: true },
         ulb: { type: Schema.Types.ObjectId, ref: "Ulb", required: true },
@@ -15,11 +15,8 @@ const propertyTaxOpMapper = new Schema(
             },
         },
         isActive: { type: Boolean, default: 1 },
-        child:[{
-            type: Schema.Types.ObjectId,
-            ref:"PropertyMapperChildData"
-        }],
-        replicaCount:{type:Number},
+        replicaNumber:{type:Number},
+        textValue:{type:String},
         type: {
             type: String,
             enum: {
@@ -152,6 +149,6 @@ const propertyTaxOpMapper = new Schema(
     },
     { timestamp: { createdAt: "createdAt", updatedAt: "modifiedAt" } }
 );
-module.exports = mongoose.model("PropertyTaxOpMapper", propertyTaxOpMapper);
+module.exports = mongoose.model("PropertyMapperChildData", PropertyMapperChildData);
 
 

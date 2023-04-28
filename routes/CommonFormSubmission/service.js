@@ -147,7 +147,7 @@ module.exports.createAndUpdateFormMaster = async (params) => {
             }
           } else if (
             [
-              MASTER_STATUS["Approved By MoHUA"],
+              MASTER_STATUS["Submission Acknowledged By MoHUA"],
               MASTER_STATUS["Under Review By MoHUA"],
               MASTER_STATUS["Under Review By State"],
             ].includes(formCurrentStatus.status)
@@ -318,7 +318,7 @@ module.exports.createAndUpdateFormMaster = async (params) => {
             }
           } else if (
             [
-              MASTER_STATUS["Approved By MoHUA"],
+              MASTER_STATUS["Submission Acknowledged By MoHUA"],
               MASTER_STATUS["Under Review By MoHUA"],
               MASTER_STATUS["Under Review By State"],
             ].includes(formCurrentStatus.status)
