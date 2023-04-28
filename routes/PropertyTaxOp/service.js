@@ -658,6 +658,7 @@ async function calculateAndUpdateStatusForMappers(tabs, ulbId, formId, year, upd
             }
             for (var k in tab.data) {
                 let dynamicObj = obj[k]
+                let yearArr = obj[k].yearData
                 let params = {
                     dynamicObj,
                     yearArr,
@@ -671,7 +672,7 @@ async function calculateAndUpdateStatusForMappers(tabs, ulbId, formId, year, upd
                 }
                 let updatedIds = await handleChildrenData({inputElement:{...tab.data[k]},formId,ulbId,updateForm,dynamicObj})
                 if (obj[k].yearData) {
-                    let yearArr = obj[k].yearData
+                    
                     let status = yearArr.every((item) => {
                         if (Object.keys(item).length) {
                             return item.status === "APPROVED"
@@ -695,6 +696,7 @@ async function calculateAndUpdateStatusForMappers(tabs, ulbId, formId, year, upd
         }
         return conditionalObj
     } catch (err) {
+        console.log(err)
         console.log("error in calculatAndUpdateStatusForMappers :: ", err.message)
         throw err
     }
@@ -781,7 +783,7 @@ function createChildObjectsYearData(params){
             let yearName = getKeyByValue(years,child?.year.toString())
             let json = {...yearJson}
             json['key'] = json['key']+yearName
-            json['label'] = json['label'] + " " + yearName
+            json['label'] = child.label ? child.label :json['label'] + " " + yearName
             json['value'] = child.value
             json['year'] = child.year
             json['type'] = child.type
@@ -807,7 +809,6 @@ async function createFullChildObj(params){
             "key": element.key,
             "value": "",
             "_id": null,
-            "label": element.label,
             "formFieldType": element.formFieldType,
             "readonly": true,
         }
@@ -840,6 +841,7 @@ async function appendChildValues(params){
             let childElement = ptoMaper.find(item => item.type === element.key)
             if(childElement && childElement.child){
                 let yearData = []
+                // console.log("childElement.key :: ",childElement.type)
                 for(let key of childElement.child){
                     yearData   = await createChildObjectsYearData({
                         childs:childElement.child,
@@ -869,7 +871,7 @@ exports.getView = async function (req, res, next) {
     try {
         let condition = {};
         if (!req.query.ulb && !req.query.design_year) {
-            return res.status(400).json({ status: false, message: "Something error wrong!" });
+            return res.status(400).json({ status: false, message: "Something went wrong!" });
         }
         condition = { ulb: ObjectId(req.query.ulb), design_year: ObjectId(req.query.design_year) };
         let ptoData = await PropertyTaxOp.findOne(condition, { history: 0 }).lean();
