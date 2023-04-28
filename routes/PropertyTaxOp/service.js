@@ -818,8 +818,8 @@ async function createFullChildObj(params){
                 childObject.replicaNumber = i
                 let yearData =  replicatedYear.filter(item =>item.type === key )
                 childObject.value = yearData[0].textValue
-                childObject.label = yearData[0].label
-                childObject.position = yearData[0].displayPriority
+                childObject.label = yearData[0]?.label
+                childObject.position = yearData[0]?.displayPriority
                 childObject.key = key
                 childObject.yearData = yearData
                 childObject.readonly = true
