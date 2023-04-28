@@ -836,27 +836,30 @@ async function createFullChildObj(params){
 async function appendChildValues(params){
     let {element,ptoMaper,isDraft,status} = params
     try{  
-        if(element?.child && ptoMaper){
+        if(element.child && ptoMaper){
             let childElement = ptoMaper.find(item => item.type === element.key)
-            let yearData = []
-            for(let key of childElement.child){
-                yearData   = await createChildObjectsYearData({
-                    childs:childElement.child,
-                    isDraft:isDraft,
-                    status:status
-                })  
+            if(childElement && childElement.child){
+                let yearData = []
+                for(let key of childElement.child){
+                    yearData   = await createChildObjectsYearData({
+                        childs:childElement.child,
+                        isDraft:isDraft,
+                        status:status
+                    })  
+                }
+                let params = {
+                    yearData : yearData,
+                    element:element,
+                    replicaCount:childElement.replicaCount
+                }
+                let child = await createFullChildObj(params)
+                element.replicaCount = childElement.replicaCount
+                element.child = child
             }
-            let params = {
-                yearData : yearData,
-                element:element,
-                replicaCount:childElement.replicaCount
-            }
-            let child = await createFullChildObj(params)
-            element.replicaCount = childElement.replicaCount
-            element.child = child
         }
     }
     catch(err){
+        console.log(err)
         console.log("error in appendChildValues ::: ",err.message)
     }
     return element
