@@ -59,7 +59,11 @@ module.exports.FORMIDs = {
     "AnnualAccount": 5,
     'dur':4,
     "twentyEightSlb": 6,
-    "fiscalRanking":9
+    "fiscalRanking":9,
+    "GTC_STATE": 10,
+    "GTC_ULB": 11,
+    "waterRej":12,
+    
 }
 
 module.exports.FORM_LEVEL_SHORTKEY = {
