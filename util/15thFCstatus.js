@@ -44,7 +44,7 @@ module.exports.ModelNames = {
     odf: "OdfFormCollection",
     gfc: "GfcFormCollection",
     slb: "XVFcGrantULBForm",
-    waterRej : "WaterRejenuvation&Recycling"
+    waterRej : "WaterRejenuvationRecycling"
 }
 
 module.exports.CollectionNames = {

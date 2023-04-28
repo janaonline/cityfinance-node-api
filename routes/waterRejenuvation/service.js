@@ -10,8 +10,9 @@ const {BackendHeaderHost, FrontendHeaderHost} = require('../../util/envUrl')
 const {canTakenAction} = require('../CommonActionAPI/service');
 const StateMasterForm = require('../../models/StateMasterForm')
 const { YEAR_CONSTANTS } = require("../../util/FormNames");
-const IndicatorLineItem = require('../../models/indicatorLineItems')
-
+const IndicatorLineItem = require('../../models/indicatorLineItems');
+const { ModelNames } = require("../../util/15thFCstatus");
+const {createAndUpdateFormMasterState} =  require('../../routes/CommonFormSubmissionState/service')
 
 function response(form, res, successMsg ,errMsg){
   if(form){
@@ -54,12 +55,13 @@ exports.saveWaterRejenuvation = async (req, res) => {
     formData = {...data};
     let indicatorCondition = {type: "water supply"};
     let lineItems = await IndicatorLineItem.find(indicatorCondition).lean();
+    let currentMasterFormStatus = req.body['status']
 
     let uaData = JSON.parse(JSON.stringify(formData['uaData']));
     const slbIndicatorObj = {};
     for(let lineItem of lineItems){
       let [min, max] =  lineItem['range'].split('-');
-      slbIndicatorObj[lineItem['_id']] = {
+      slbIndicatorObj[lineItem['lineItemId']] = {
         min: Number(min),
         max: Number(max)
       }
@@ -101,7 +103,15 @@ exports.saveWaterRejenuvation = async (req, res) => {
     condition["state"] = data.state;
 
     if(data.state && data.design_year === YEAR_CONSTANTS['23_24'] ){
-      const submittedForm = await WaterRejenuvation.findOne(condition).lean();
+      formData.status = currentMasterFormStatus
+      let params = {
+        modelName: ModelNames['waterRej'],
+        formData,
+        res,
+        actionTakenByRole,
+        actionTakenBy
+      };
+      return await createAndUpdateFormMasterState(params);
       
     }
     if (data.state && data.design_year) {
