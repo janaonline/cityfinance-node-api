@@ -10430,36 +10430,6 @@ let financialYearTableHeader = {
       "info": ""
     }
   ],
-  "5.1": [
-    {
-      "label": "",
-      "info": ""
-    },
-    {
-      "label": "Water Charges Details",
-      "info": ""
-    },
-    {
-      "label": "",
-      "info": ""
-    },
-    {
-      "label": "",
-      "info": ""
-    },
-    {
-      "label": "",
-      "info": ""
-    },
-    {
-      "label": "",
-      "info": ""
-    },
-    {
-      "label": "",
-      "info": ""
-    }
-  ],
   "5.5": [
     {
       "label": "",
