@@ -164,10 +164,3 @@ const propertyTaxOpMapper = new Schema(
 module.exports = mongoose.model("PropertyTaxOpMapper", propertyTaxOpMapper);
 
 
-// let arr=[]
-// let tabs = data.tabs[0].data;
-// for(let k in tabs){
-//       arr.push(tabs[k].key)  
-// }
-// console.log("arr",arr)
-
