@@ -361,7 +361,6 @@ async function checkIfFormIdExistsOrNot(ulbId, design_year, isDraft, role, userI
 async function updateMapperModelWithChildValues(params){
     try{
         let {dynamicObj,formId,ulbId,updateForm,updatedIds,replicaCount} = params
-        console.log("replicaCount :: ",replicaCount)
         let filter = {
             "ulb": ObjectId(ulbId),
             "ptoId": ObjectId(formId),
@@ -374,6 +373,7 @@ async function updateMapperModelWithChildValues(params){
             payload['displayPriority'] = dynamicObj.position
             payload['child'] = updatedIds
             payload['replicaCount'] = replicaCount
+            payload['type'] = dynamicObj.key
         } 
         // else {
             // payload["status"] = dynamicObj.status
