@@ -4698,7 +4698,7 @@ const propertyTaxOpFormJson = () => {
                    "type": "notificationWaterCharges",
                    "year": "63735a5bd44534713673c1ca",
                    "code": [],
-                   "readonly": false,
+                   "readonly": true,
                    "formFieldType": "radio-toggle",
                    "bottomText": "",
                    "placeHolder": ""
@@ -7385,7 +7385,7 @@ const propertyTaxOpFormJson = () => {
                    "type": "doesColSewerageCharges",
                    "year": "63735a5bd44534713673c1ca",
                    "code": [],
-                   "readonly": false,
+                   "readonly": true,
                    "formFieldType": "radio-toggle",
                    "bottomText": "",
                    "placeHolder": ""
