@@ -409,7 +409,8 @@ async function updateChildrenMapper(params){
                     payload['status'] = years.status
                     payload["replicaNumber"] = years.replicaNumber
                     payload['textValue'] = textValue
-                    // payload['displayPriority'] = dynamicObj.position
+                    payload['label'] = years.label
+                    payload['displayPriority'] = years.position
                 } else {
                     payload["status"] = years.status
                 }
@@ -657,6 +658,17 @@ async function calculateAndUpdateStatusForMappers(tabs, ulbId, formId, year, upd
             }
             for (var k in tab.data) {
                 let dynamicObj = obj[k]
+                let params = {
+                    dynamicObj,
+                    yearArr,
+                    data:tab.data
+                }
+                if(!isDraft){
+                    let validation = await handleNonSubmissionValidation(params)
+                    if(!validation.valid){
+                        throw {message:validation.message} 
+                    }
+                }
                 let updatedIds = await handleChildrenData({inputElement:{...tab.data[k]},formId,ulbId,updateForm,dynamicObj})
                 if (obj[k].yearData) {
                     let yearArr = obj[k].yearData
@@ -668,17 +680,6 @@ async function calculateAndUpdateStatusForMappers(tabs, ulbId, formId, year, upd
                         }
                     })
                     temp["status"].push(status)
-                    let params = {
-                        dynamicObj,
-                        yearArr,
-                        data:tab.data
-                    }
-                    if(!isDraft){
-                        let validation = await handleNonSubmissionValidation(params)
-                        if(!validation.valid){
-                            throw {message:validation.message} 
-                        }
-                    }
                     await updateQueryForPropertyTaxOp(yearArr, ulbId, formId, updateForm, dynamicObj,updatedIds)
                 }
                 conditionalObj[tab._id.toString()] = (temp)
@@ -817,6 +818,8 @@ async function createFullChildObj(params){
                 childObject.replicaNumber = i
                 let yearData =  replicatedYear.filter(item =>item.type === key )
                 childObject.value = yearData[0].textValue
+                childObject.label = yearData[0]?.label
+                childObject.position = yearData[0]?.displayPriority
                 childObject.key = key
                 childObject.yearData = yearData
                 childObject.readonly = true

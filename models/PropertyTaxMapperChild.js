@@ -5,7 +5,8 @@ const PropertyMapperChildData = new Schema(
         ulb: { type: Schema.Types.ObjectId, ref: "Ulb", required: true },
         year: { type: Schema.Types.ObjectId, ref: "Year", required: true },
         value: { type: Schema.Types.Mixed, default: null },
-        date: { type: Date, default: null }, // audit date
+        date: { type: Date, default: null }, // audit date,
+        label:{type:String},
         status: {
             type: String,
             default: "PENDING",
@@ -145,7 +146,7 @@ const PropertyMapperChildData = new Schema(
             name: { type: String },
             url: { type: String }
         },
-        displayPriority: { type: Number, default: null },
+        displayPriority: { type: String, default: null },
     },
     { timestamp: { createdAt: "createdAt", updatedAt: "modifiedAt" } }
 );
