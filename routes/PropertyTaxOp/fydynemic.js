@@ -4636,7 +4636,7 @@ const propertyTaxOpFormJson = () => {
                 "label": "FY 2018-19",
                 "key": "FY2018-19",
                 "postion": "0",
-                "value": "https://democityfinance.s3.ap-south-1.amazonaws.com/ULB/2022-23/property-tax/sample-files/Sample%20format%20for%20property%20tax%20rate%20card_d46809df-9ad9-48c0-9177-e7699109fa5c.xlsx",
+                "value": `https://democityfinance.s3.ap-south-1.amazonaws.com/ULB/2022-23/property-tax/sample-files/Sample%20format%20for%20property%20tax%20rate%20card_d46809df-9ad9-48c0-9177-e7699109fa5c.xlsx`,
                 "file": "",
                 "min": "",
                 "max": "",
