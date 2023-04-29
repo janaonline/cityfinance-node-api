@@ -10161,6 +10161,7 @@ function getInputKeysByType(formType, type, label, dataSource = null, position, 
   return obj
 }
 
+
 let financialYearTableHeader = {
    "1.5": [
      {
@@ -10529,7 +10530,7 @@ let financialYearTableHeader = {
      },
      {
        "label": "Residential households/properties",
-       "info": "Properties that includes homes, townhouses, apartments and any other property that has been designated for people to live."
+       "info": ""
      },
      {
        "label": "2018-19",
@@ -10559,7 +10560,7 @@ let financialYearTableHeader = {
      },
      {
        "label": "Commercial households/properties",
-       "info": "This category includes properties like shops, shopping malls, offices, etc."
+       "info": ""
      },
      {
        "label": "2018-19",
@@ -10589,7 +10590,7 @@ let financialYearTableHeader = {
      },
      {
        "label": "Industrial households/properties",
-       "info": "Properties which has been designed to support different business and industrial operations."
+       "info": ""
      },
      {
        "label": "2018-19",
@@ -10829,7 +10830,7 @@ let financialYearTableHeader = {
      },
      {
        "label": "Residential households/properties",
-       "info": "Properties that includes homes, townhouses, apartments and any other property that has been designated for people to live."
+       "info": ""
      },
      {
        "label": "2018-19",
@@ -10859,7 +10860,7 @@ let financialYearTableHeader = {
      },
      {
        "label": "Commercial Properties households/properties",
-       "info": "This category includes properties like shops, shopping malls, offices, etc."
+       "info": ""
      },
      {
        "label": "2018-19",
@@ -10889,7 +10890,7 @@ let financialYearTableHeader = {
      },
      {
        "label": "Industrial Properties households/properties",
-       "info": "Properties which has been designed to support different business and industrial operations."
+       "info": ""
      },
      {
        "label": "2018-19",
@@ -11035,10 +11036,6 @@ let financialYearTableHeader = {
  }
 
 let specialHeaders = {
-   "7": {
-     "label": "Download and Upload Signed PDF",
-     "info": ""
-   },
    "1.1": {
      "label": "Property Tax Details",
      "info": ""
@@ -11073,6 +11070,10 @@ let specialHeaders = {
    },
    "6.13": {
      "label": "Sewerage Charges Details by household/property type",
+     "info": ""
+   },
+   "7.1": {
+     "label": "Download and Upload Signed PDF",
      "info": ""
    }
  }
@@ -11634,7 +11635,6 @@ let skipLogicDependencies = {
      }
    }
  }
-
 module.exports.financialYearTableHeader = financialYearTableHeader
 module.exports.specialHeaders = specialHeaders
 
