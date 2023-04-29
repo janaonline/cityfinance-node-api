@@ -760,27 +760,13 @@ async function updateQueryForPropertyTaxOp(yearData, ulbId, formId, updateForm, 
 }
 
 function createChildObjectsYearData(params){
-    let {childs,isDraft,status} = params
+    let {childs,isDraft,status,childCopyFrom} = params
     let yearData = []
-    let yearJson =  {
-        "key": "FY",
-        "value": "11",
-        "originalValue": "",
-        "year": "",
-        "type": "",
-        "_id": null,
-        "code": [],
-        "date": null,
-        "formFieldType": "number",
-        "status": null,
-        "bottomText": "",
-        "label": "FY",
-        "position": "0",
-        "readonly": false
-      }
     try{
         for(let child of childs){
             let yearName = getKeyByValue(years,child?.year.toString())
+            let copiedFrom = childCopyFrom.find(item => item.key === child.type)
+            let yearJson = copiedFrom.yearData.find(yearItem => yearItem.year === child.year.toString())
             let json = {...yearJson}
             json['key'] = json['key']+yearName
             json['label'] = child.label ? child.label :json['label'] + " " + yearName
@@ -846,7 +832,8 @@ async function appendChildValues(params){
                     yearData   = await createChildObjectsYearData({
                         childs:childElement.child,
                         isDraft:isDraft,
-                        status:status
+                        status:status,
+                        childCopyFrom:element.copyChildFrom
                     })  
                 }
                 let params = {
