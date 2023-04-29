@@ -4710,7 +4710,7 @@ const propertyTaxOpFormJson = () => {
                 "formFieldType": "radio-toggle",
                 "bottomText": "",
                 "placeHolder": ""
-              },
+              },  
               {},
               {},
               {},
