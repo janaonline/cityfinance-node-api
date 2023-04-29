@@ -930,8 +930,8 @@ const propertyTaxOpFormJson = () => {
                 "label": "Water charges"
               },
               {
-                "id": "Sewerage charges",
-                "label": "Sewerage charges"
+                "id": "Sewerage /Sanitation charges",
+                "label": "Sewerage /Sanitation charges"
               },
               {
                 "id": "Solid-waste management charges",
