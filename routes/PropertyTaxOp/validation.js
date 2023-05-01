@@ -21,7 +21,7 @@ const validationJson = {
                 "fields": [
                     "dmdexcludingCess",
                     "taxTypeDemand",
-                    "cessDemandAmount"
+                    "cessDemand"
                 ],
                 "sequence": [
                     "1.8",
@@ -53,7 +53,7 @@ const validationJson = {
                 "fields": [
                     "collectExcludingCess",
                     "taxTypeCollection",
-                    "cessCollectAmount"
+                    "cessCollect"
                 ],
                 "sequence": [
                     "1.16",
