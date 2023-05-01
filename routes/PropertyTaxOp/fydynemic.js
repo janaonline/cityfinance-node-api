@@ -10167,847 +10167,847 @@ function getInputKeysByType(formType, type, label, dataSource = null, position, 
 
 
 let financialYearTableHeader = {
-   "1.5": [
-     {
-       "label": "",
-       "info": ""
-     },
-     {
-       "label": "Property Tax Demand Details (Amount in INR Lakhs)",
-       "info": ""
-     },
-     {
-       "label": "2018-19",
-       "info": ""
-     },
-     {
-       "label": "2019-20",
-       "info": ""
-     },
-     {
-       "label": "2020-21",
-       "info": ""
-     },
-     {
-       "label": "2021-22",
-       "info": ""
-     },
-     {
-       "label": "2022-23",
-       "info": ""
-     }
-   ],
-   "1.13": [
-     {
-       "label": "",
-       "info": ""
-     },
-     {
-       "label": "Property Tax Collection Details (Amount in INR Lakhs)",
-       "info": ""
-     },
-     {
-       "label": "2018-19",
-       "info": ""
-     },
-     {
-       "label": "2019-20",
-       "info": ""
-     },
-     {
-       "label": "2020-21",
-       "info": ""
-     },
-     {
-       "label": "2021-22",
-       "info": ""
-     },
-     {
-       "label": "2022-23",
-       "info": ""
-     }
-   ],
-   "2.1": [
-     {
-       "label": "",
-       "info": ""
-     },
-     {
-       "label": "Details",
-       "info": ""
-     },
-     {
-       "label": "2018-19",
-       "info": ""
-     },
-     {
-       "label": "2019-20",
-       "info": ""
-     },
-     {
-       "label": "2020-21",
-       "info": ""
-     },
-     {
-       "label": "2021-22",
-       "info": ""
-     },
-     {
-       "label": "2022-23",
-       "info": ""
-     }
-   ],
-   "2.5": [
-     {
-       "label": "",
-       "info": ""
-     },
-     {
-       "label": "Residential Properties",
-       "info": ""
-     },
-     {
-       "label": "2018-19",
-       "info": ""
-     },
-     {
-       "label": "2019-20",
-       "info": ""
-     },
-     {
-       "label": "2020-21",
-       "info": ""
-     },
-     {
-       "label": "2021-22",
-       "info": ""
-     },
-     {
-       "label": "2022-23",
-       "info": ""
-     }
-   ],
-   "2.9": [
-     {
-       "label": "",
-       "info": ""
-     },
-     {
-       "label": "Commercial Properties",
-       "info": ""
-     },
-     {
-       "label": "2018-19",
-       "info": ""
-     },
-     {
-       "label": "2019-20",
-       "info": ""
-     },
-     {
-       "label": "2020-21",
-       "info": ""
-     },
-     {
-       "label": "2021-22",
-       "info": ""
-     },
-     {
-       "label": "2022-23",
-       "info": ""
-     }
-   ],
-   "2.13": [
-     {
-       "label": "",
-       "info": ""
-     },
-     {
-       "label": "Industrial Properties",
-       "info": ""
-     },
-     {
-       "label": "2018-19",
-       "info": ""
-     },
-     {
-       "label": "2019-20",
-       "info": ""
-     },
-     {
-       "label": "2020-21",
-       "info": ""
-     },
-     {
-       "label": "2021-22",
-       "info": ""
-     },
-     {
-       "label": "2022-23",
-       "info": ""
-     }
-   ],
-   "2.17": [
-     {
-       "label": "",
-       "info": ""
-     },
-     {
-       "label": "Government Properties",
-       "info": ""
-     },
-     {
-       "label": "2018-19",
-       "info": ""
-     },
-     {
-       "label": "2019-20",
-       "info": ""
-     },
-     {
-       "label": "2020-21",
-       "info": ""
-     },
-     {
-       "label": "2021-22",
-       "info": ""
-     },
-     {
-       "label": "2022-23",
-       "info": ""
-     }
-   ],
-   "2.21": [
-     {
-       "label": "",
-       "info": ""
-     },
-     {
-       "label": "Institutional Properties",
-       "info": ""
-     },
-     {
-       "label": "2018-19",
-       "info": ""
-     },
-     {
-       "label": "2019-20",
-       "info": ""
-     },
-     {
-       "label": "2020-21",
-       "info": ""
-     },
-     {
-       "label": "2021-22",
-       "info": ""
-     },
-     {
-       "label": "2022-23",
-       "info": ""
-     }
-   ],
-   "2.25": [
-     {
-       "label": "",
-       "info": ""
-     },
-     {
-       "label": "Other Properties",
-       "info": ""
-     },
-     {
-       "label": "2018-19",
-       "info": ""
-     },
-     {
-       "label": "2019-20",
-       "info": ""
-     },
-     {
-       "label": "2020-21",
-       "info": ""
-     },
-     {
-       "label": "2021-22",
-       "info": ""
-     },
-     {
-       "label": "2022-23",
-       "info": ""
-     }
-   ],
-   "3.1": [
-     {
-       "label": "",
-       "info": ""
-     },
-     {
-       "label": "Details",
-       "info": ""
-     },
-     {
-       "label": "2018-19",
-       "info": ""
-     },
-     {
-       "label": "2019-20",
-       "info": ""
-     },
-     {
-       "label": "2020-21",
-       "info": ""
-     },
-     {
-       "label": "2021-22",
-       "info": ""
-     },
-     {
-       "label": "2022-23",
-       "info": ""
-     }
-   ],
-   "5.5": [
-     {
-       "label": "",
-       "info": ""
-     },
-     {
-       "label": "Water Charges Demand and Collection Details",
-       "info": ""
-     },
-     {
-       "label": "2018-19",
-       "info": ""
-     },
-     {
-       "label": "2019-20",
-       "info": ""
-     },
-     {
-       "label": "2020-21",
-       "info": ""
-     },
-     {
-       "label": "2021-22",
-       "info": ""
-     },
-     {
-       "label": "2022-23",
-       "info": ""
-     }
-   ],
-   "5.11": [
-     {
-       "label": "",
-       "info": ""
-     },
-     {
-       "label": "Water Connection Details",
-       "info": ""
-     },
-     {
-       "label": "2018-19",
-       "info": ""
-     },
-     {
-       "label": "2019-20",
-       "info": ""
-     },
-     {
-       "label": "2020-21",
-       "info": ""
-     },
-     {
-       "label": "2021-22",
-       "info": ""
-     },
-     {
-       "label": "2022-23",
-       "info": ""
-     }
-   ],
-   "5.13": [
-     {
-       "label": "",
-       "info": ""
-     },
-     {
-       "label": "Residential households/properties",
-       "info": ""
-     },
-     {
-       "label": "2018-19",
-       "info": ""
-     },
-     {
-       "label": "2019-20",
-       "info": ""
-     },
-     {
-       "label": "2020-21",
-       "info": ""
-     },
-     {
-       "label": "2021-22",
-       "info": ""
-     },
-     {
-       "label": "2022-23",
-       "info": ""
-     }
-   ],
-   "5.17": [
-     {
-       "label": "",
-       "info": ""
-     },
-     {
-       "label": "Commercial households/properties",
-       "info": ""
-     },
-     {
-       "label": "2018-19",
-       "info": ""
-     },
-     {
-       "label": "2019-20",
-       "info": ""
-     },
-     {
-       "label": "2020-21",
-       "info": ""
-     },
-     {
-       "label": "2021-22",
-       "info": ""
-     },
-     {
-       "label": "2022-23",
-       "info": ""
-     }
-   ],
-   "5.21": [
-     {
-       "label": "",
-       "info": ""
-     },
-     {
-       "label": "Industrial households/properties",
-       "info": ""
-     },
-     {
-       "label": "2018-19",
-       "info": ""
-     },
-     {
-       "label": "2019-20",
-       "info": ""
-     },
-     {
-       "label": "2020-21",
-       "info": ""
-     },
-     {
-       "label": "2021-22",
-       "info": ""
-     },
-     {
-       "label": "2022-23",
-       "info": ""
-     }
-   ],
-   "5.25": [
-     {
-       "label": "",
-       "info": ""
-     },
-     {
-       "label": "Other households/properties(any other connection type)",
-       "info": ""
-     },
-     {
-       "label": "2018-19",
-       "info": ""
-     },
-     {
-       "label": "2019-20",
-       "info": ""
-     },
-     {
-       "label": "2020-21",
-       "info": ""
-     },
-     {
-       "label": "2021-22",
-       "info": ""
-     },
-     {
-       "label": "2022-23",
-       "info": ""
-     }
-   ],
-   "5.30": [
-     {
-       "label": "",
-       "info": ""
-     },
-     {
-       "label": "Water Charges Tariff Details",
-       "info": ""
-     },
-     {
-       "label": "",
-       "info": ""
-     },
-     {
-       "label": "",
-       "info": ""
-     },
-     {
-       "label": "",
-       "info": ""
-     },
-     {
-       "label": "",
-       "info": ""
-     },
-     {
-       "label": "",
-       "info": ""
-     }
-   ],
-   "5.31": [
-     {
-       "label": "",
-       "info": ""
-     },
-     {
-       "label": "Water Charges: Cost of Service Delivery Details",
-       "info": ""
-     },
-     {
-       "label": "",
-       "info": ""
-     },
-     {
-       "label": "",
-       "info": ""
-     },
-     {
-       "label": "",
-       "info": ""
-     },
-     {
-       "label": "",
-       "info": ""
-     },
-     {
-       "label": "",
-       "info": ""
-     }
-   ],
-   "5.32": [
-     {
-       "label": "",
-       "info": ""
-     },
-     {
-       "label": "Working of the O&M Cost- Water Service",
-       "info": ""
-     },
-     {
-       "label": "",
-       "info": ""
-     },
-     {
-       "label": "",
-       "info": ""
-     },
-     {
-       "label": "",
-       "info": ""
-     },
-     {
-       "label": "",
-       "info": ""
-     },
-     {
-       "label": "",
-       "info": ""
-     }
-   ],
-   "6.5": [
-     {
-       "label": "",
-       "info": ""
-     },
-     {
-       "label": "Sewerage Charges Demand and Collection Details",
-       "info": ""
-     },
-     {
-       "label": "2018-19",
-       "info": ""
-     },
-     {
-       "label": "2019-20",
-       "info": ""
-     },
-     {
-       "label": "2020-21",
-       "info": ""
-     },
-     {
-       "label": "2021-22",
-       "info": ""
-     },
-     {
-       "label": "2022-23",
-       "info": ""
-     }
-   ],
-   "6.11": [
-     {
-       "label": "",
-       "info": ""
-     },
-     {
-       "label": "Sewerage Connection Details",
-       "info": ""
-     },
-     {
-       "label": "2018-19",
-       "info": ""
-     },
-     {
-       "label": "2019-20",
-       "info": ""
-     },
-     {
-       "label": "2020-21",
-       "info": ""
-     },
-     {
-       "label": "2021-22",
-       "info": ""
-     },
-     {
-       "label": "2022-23",
-       "info": ""
-     }
-   ],
-   "6.13": [
-     {
-       "label": "",
-       "info": ""
-     },
-     {
-       "label": "Residential households/properties",
-       "info": ""
-     },
-     {
-       "label": "2018-19",
-       "info": ""
-     },
-     {
-       "label": "2019-20",
-       "info": ""
-     },
-     {
-       "label": "2020-21",
-       "info": ""
-     },
-     {
-       "label": "2021-22",
-       "info": ""
-     },
-     {
-       "label": "2022-23",
-       "info": ""
-     }
-   ],
-   "6.17": [
-     {
-       "label": "",
-       "info": ""
-     },
-     {
-       "label": "Commercial Properties households/properties",
-       "info": ""
-     },
-     {
-       "label": "2018-19",
-       "info": ""
-     },
-     {
-       "label": "2019-20",
-       "info": ""
-     },
-     {
-       "label": "2020-21",
-       "info": ""
-     },
-     {
-       "label": "2021-22",
-       "info": ""
-     },
-     {
-       "label": "2022-23",
-       "info": ""
-     }
-   ],
-   "6.21": [
-     {
-       "label": "",
-       "info": ""
-     },
-     {
-       "label": "Industrial Properties households/properties",
-       "info": ""
-     },
-     {
-       "label": "2018-19",
-       "info": ""
-     },
-     {
-       "label": "2019-20",
-       "info": ""
-     },
-     {
-       "label": "2020-21",
-       "info": ""
-     },
-     {
-       "label": "2021-22",
-       "info": ""
-     },
-     {
-       "label": "2022-23",
-       "info": ""
-     }
-   ],
-   "6.25": [
-     {
-       "label": "",
-       "info": ""
-     },
-     {
-       "label": "Other Properties households/properties",
-       "info": ""
-     },
-     {
-       "label": "2018-19",
-       "info": ""
-     },
-     {
-       "label": "2019-20",
-       "info": ""
-     },
-     {
-       "label": "2020-21",
-       "info": ""
-     },
-     {
-       "label": "2021-22",
-       "info": ""
-     },
-     {
-       "label": "2022-23",
-       "info": ""
-     }
-   ],
-   "6.30": [
-     {
-       "label": "",
-       "info": ""
-     },
-     {
-       "label": "Sewerage Charges Tariff Details",
-       "info": ""
-     },
-     {
-       "label": "",
-       "info": ""
-     },
-     {
-       "label": "",
-       "info": ""
-     },
-     {
-       "label": "",
-       "info": ""
-     },
-     {
-       "label": "",
-       "info": ""
-     },
-     {
-       "label": "",
-       "info": ""
-     }
-   ],
-   "6.31": [
-     {
-       "label": "",
-       "info": ""
-     },
-     {
-       "label": "Sewerage Charges: Cost of Service Delivery Details",
-       "info": ""
-     },
-     {
-       "label": "2018-19",
-       "info": ""
-     },
-     {
-       "label": "2019-20",
-       "info": ""
-     },
-     {
-       "label": "2020-21",
-       "info": ""
-     },
-     {
-       "label": "2021-22",
-       "info": ""
-     },
-     {
-       "label": "2022-23",
-       "info": ""
-     }
-   ],
-   "6.32": [
-     {
-       "label": "",
-       "info": ""
-     },
-     {
-       "label": "Working of the O&M Cost- Sewerage Service",
-       "info": ""
-     },
-     {
-       "label": "2018-19",
-       "info": ""
-     },
-     {
-       "label": "2019-20",
-       "info": ""
-     },
-     {
-       "label": "2020-21",
-       "info": ""
-     },
-     {
-       "label": "2021-22",
-       "info": ""
-     },
-     {
-       "label": "2022-23",
-       "info": ""
-     }
-   ]
- }
+  "1.5": [
+    {
+      "label": "",
+      "info": ""
+    },
+    {
+      "label": "Property Tax Demand Details (Amount in INR Lakhs)",
+      "info": ""
+    },
+    {
+      "label": "2018-19",
+      "info": ""
+    },
+    {
+      "label": "2019-20",
+      "info": ""
+    },
+    {
+      "label": "2020-21",
+      "info": ""
+    },
+    {
+      "label": "2021-22",
+      "info": ""
+    },
+    {
+      "label": "2022-23",
+      "info": ""
+    }
+  ],
+  "1.13": [
+    {
+      "label": "",
+      "info": ""
+    },
+    {
+      "label": "Property Tax Collection Details (Amount in INR Lakhs)",
+      "info": ""
+    },
+    {
+      "label": "2018-19",
+      "info": ""
+    },
+    {
+      "label": "2019-20",
+      "info": ""
+    },
+    {
+      "label": "2020-21",
+      "info": ""
+    },
+    {
+      "label": "2021-22",
+      "info": ""
+    },
+    {
+      "label": "2022-23",
+      "info": ""
+    }
+  ],
+  "2.1": [
+    {
+      "label": "",
+      "info": ""
+    },
+    {
+      "label": "Details",
+      "info": ""
+    },
+    {
+      "label": "2018-19",
+      "info": ""
+    },
+    {
+      "label": "2019-20",
+      "info": ""
+    },
+    {
+      "label": "2020-21",
+      "info": ""
+    },
+    {
+      "label": "2021-22",
+      "info": ""
+    },
+    {
+      "label": "2022-23",
+      "info": ""
+    }
+  ],
+  "2.5": [
+    {
+      "label": "",
+      "info": ""
+    },
+    {
+      "label": "Residential Properties",
+      "info": ""
+    },
+    {
+      "label": "2018-19",
+      "info": ""
+    },
+    {
+      "label": "2019-20",
+      "info": ""
+    },
+    {
+      "label": "2020-21",
+      "info": ""
+    },
+    {
+      "label": "2021-22",
+      "info": ""
+    },
+    {
+      "label": "2022-23",
+      "info": ""
+    }
+  ],
+  "2.9": [
+    {
+      "label": "",
+      "info": ""
+    },
+    {
+      "label": "Commercial Properties",
+      "info": ""
+    },
+    {
+      "label": "2018-19",
+      "info": ""
+    },
+    {
+      "label": "2019-20",
+      "info": ""
+    },
+    {
+      "label": "2020-21",
+      "info": ""
+    },
+    {
+      "label": "2021-22",
+      "info": ""
+    },
+    {
+      "label": "2022-23",
+      "info": ""
+    }
+  ],
+  "2.13": [
+    {
+      "label": "",
+      "info": ""
+    },
+    {
+      "label": "Industrial Properties",
+      "info": ""
+    },
+    {
+      "label": "2018-19",
+      "info": ""
+    },
+    {
+      "label": "2019-20",
+      "info": ""
+    },
+    {
+      "label": "2020-21",
+      "info": ""
+    },
+    {
+      "label": "2021-22",
+      "info": ""
+    },
+    {
+      "label": "2022-23",
+      "info": ""
+    }
+  ],
+  "2.17": [
+    {
+      "label": "",
+      "info": ""
+    },
+    {
+      "label": "Government Properties",
+      "info": ""
+    },
+    {
+      "label": "2018-19",
+      "info": ""
+    },
+    {
+      "label": "2019-20",
+      "info": ""
+    },
+    {
+      "label": "2020-21",
+      "info": ""
+    },
+    {
+      "label": "2021-22",
+      "info": ""
+    },
+    {
+      "label": "2022-23",
+      "info": ""
+    }
+  ],
+  "2.21": [
+    {
+      "label": "",
+      "info": ""
+    },
+    {
+      "label": "Institutional Properties",
+      "info": ""
+    },
+    {
+      "label": "2018-19",
+      "info": ""
+    },
+    {
+      "label": "2019-20",
+      "info": ""
+    },
+    {
+      "label": "2020-21",
+      "info": ""
+    },
+    {
+      "label": "2021-22",
+      "info": ""
+    },
+    {
+      "label": "2022-23",
+      "info": ""
+    }
+  ],
+  "2.25": [
+    {
+      "label": "",
+      "info": ""
+    },
+    {
+      "label": "Other Properties",
+      "info": ""
+    },
+    {
+      "label": "2018-19",
+      "info": ""
+    },
+    {
+      "label": "2019-20",
+      "info": ""
+    },
+    {
+      "label": "2020-21",
+      "info": ""
+    },
+    {
+      "label": "2021-22",
+      "info": ""
+    },
+    {
+      "label": "2022-23",
+      "info": ""
+    }
+  ],
+  "3.1": [
+    {
+      "label": "",
+      "info": ""
+    },
+    {
+      "label": "Details",
+      "info": ""
+    },
+    {
+      "label": "2018-19",
+      "info": ""
+    },
+    {
+      "label": "2019-20",
+      "info": ""
+    },
+    {
+      "label": "2020-21",
+      "info": ""
+    },
+    {
+      "label": "2021-22",
+      "info": ""
+    },
+    {
+      "label": "2022-23",
+      "info": ""
+    }
+  ],
+  "5.5": [
+    {
+      "label": "",
+      "info": ""
+    },
+    {
+      "label": "Water Charges Demand and Collection Details",
+      "info": ""
+    },
+    {
+      "label": "2018-19",
+      "info": ""
+    },
+    {
+      "label": "2019-20",
+      "info": ""
+    },
+    {
+      "label": "2020-21",
+      "info": ""
+    },
+    {
+      "label": "2021-22",
+      "info": ""
+    },
+    {
+      "label": "2022-23",
+      "info": ""
+    }
+  ],
+  "5.11": [
+    {
+      "label": "",
+      "info": ""
+    },
+    {
+      "label": "Water Connection Details",
+      "info": ""
+    },
+    {
+      "label": "2018-19",
+      "info": ""
+    },
+    {
+      "label": "2019-20",
+      "info": ""
+    },
+    {
+      "label": "2020-21",
+      "info": ""
+    },
+    {
+      "label": "2021-22",
+      "info": ""
+    },
+    {
+      "label": "2022-23",
+      "info": ""
+    }
+  ],
+  "5.13": [
+    {
+      "label": "",
+      "info": ""
+    },
+    {
+      "label": "Residential households/properties",
+      "info": ""
+    },
+    {
+      "label": "2018-19",
+      "info": ""
+    },
+    {
+      "label": "2019-20",
+      "info": ""
+    },
+    {
+      "label": "2020-21",
+      "info": ""
+    },
+    {
+      "label": "2021-22",
+      "info": ""
+    },
+    {
+      "label": "2022-23",
+      "info": ""
+    }
+  ],
+  "5.17": [
+    {
+      "label": "",
+      "info": ""
+    },
+    {
+      "label": "Commercial households/properties",
+      "info": ""
+    },
+    {
+      "label": "2018-19",
+      "info": ""
+    },
+    {
+      "label": "2019-20",
+      "info": ""
+    },
+    {
+      "label": "2020-21",
+      "info": ""
+    },
+    {
+      "label": "2021-22",
+      "info": ""
+    },
+    {
+      "label": "2022-23",
+      "info": ""
+    }
+  ],
+  "5.21": [
+    {
+      "label": "",
+      "info": ""
+    },
+    {
+      "label": "Industrial households/properties",
+      "info": ""
+    },
+    {
+      "label": "2018-19",
+      "info": ""
+    },
+    {
+      "label": "2019-20",
+      "info": ""
+    },
+    {
+      "label": "2020-21",
+      "info": ""
+    },
+    {
+      "label": "2021-22",
+      "info": ""
+    },
+    {
+      "label": "2022-23",
+      "info": ""
+    }
+  ],
+  "5.25": [
+    {
+      "label": "",
+      "info": ""
+    },
+    {
+      "label": "Other households/properties(any other connection type)",
+      "info": ""
+    },
+    {
+      "label": "2018-19",
+      "info": ""
+    },
+    {
+      "label": "2019-20",
+      "info": ""
+    },
+    {
+      "label": "2020-21",
+      "info": ""
+    },
+    {
+      "label": "2021-22",
+      "info": ""
+    },
+    {
+      "label": "2022-23",
+      "info": ""
+    }
+  ],
+  "5.30": [
+    {
+      "label": "",
+      "info": ""
+    },
+    {
+      "label": "Water Charges Tariff Details",
+      "info": ""
+    },
+    {
+      "label": "",
+      "info": ""
+    },
+    {
+      "label": "",
+      "info": ""
+    },
+    {
+      "label": "",
+      "info": ""
+    },
+    {
+      "label": "",
+      "info": ""
+    },
+    {
+      "label": "",
+      "info": ""
+    }
+  ],
+  "5.31": [
+    {
+      "label": "",
+      "info": ""
+    },
+    {
+      "label": "Water Charges: Cost of Service Delivery Details",
+      "info": ""
+    },
+    {
+      "label": "",
+      "info": ""
+    },
+    {
+      "label": "",
+      "info": ""
+    },
+    {
+      "label": "",
+      "info": ""
+    },
+    {
+      "label": "",
+      "info": ""
+    },
+    {
+      "label": "",
+      "info": ""
+    }
+  ],
+  "5.32": [
+    {
+      "label": "",
+      "info": ""
+    },
+    {
+      "label": "Working of the O&M Cost- Water Service",
+      "info": ""
+    },
+    {
+      "label": "",
+      "info": ""
+    },
+    {
+      "label": "",
+      "info": ""
+    },
+    {
+      "label": "",
+      "info": ""
+    },
+    {
+      "label": "",
+      "info": ""
+    },
+    {
+      "label": "",
+      "info": ""
+    }
+  ],
+  "6.5": [
+    {
+      "label": "",
+      "info": ""
+    },
+    {
+      "label": "Sewerage Charges Demand and Collection Details",
+      "info": ""
+    },
+    {
+      "label": "2018-19",
+      "info": ""
+    },
+    {
+      "label": "2019-20",
+      "info": ""
+    },
+    {
+      "label": "2020-21",
+      "info": ""
+    },
+    {
+      "label": "2021-22",
+      "info": ""
+    },
+    {
+      "label": "2022-23",
+      "info": ""
+    }
+  ],
+  "6.11": [
+    {
+      "label": "",
+      "info": ""
+    },
+    {
+      "label": "Sewerage Connection Details",
+      "info": ""
+    },
+    {
+      "label": "2018-19",
+      "info": ""
+    },
+    {
+      "label": "2019-20",
+      "info": ""
+    },
+    {
+      "label": "2020-21",
+      "info": ""
+    },
+    {
+      "label": "2021-22",
+      "info": ""
+    },
+    {
+      "label": "2022-23",
+      "info": ""
+    }
+  ],
+  "6.13": [
+    {
+      "label": "",
+      "info": ""
+    },
+    {
+      "label": "Residential households/properties",
+      "info": ""
+    },
+    {
+      "label": "2018-19",
+      "info": ""
+    },
+    {
+      "label": "2019-20",
+      "info": ""
+    },
+    {
+      "label": "2020-21",
+      "info": ""
+    },
+    {
+      "label": "2021-22",
+      "info": ""
+    },
+    {
+      "label": "2022-23",
+      "info": ""
+    }
+  ],
+  "6.17": [
+    {
+      "label": "",
+      "info": ""
+    },
+    {
+      "label": "Commercial households/properties",
+      "info": ""
+    },
+    {
+      "label": "2018-19",
+      "info": ""
+    },
+    {
+      "label": "2019-20",
+      "info": ""
+    },
+    {
+      "label": "2020-21",
+      "info": ""
+    },
+    {
+      "label": "2021-22",
+      "info": ""
+    },
+    {
+      "label": "2022-23",
+      "info": ""
+    }
+  ],
+  "6.21": [
+    {
+      "label": "",
+      "info": ""
+    },
+    {
+      "label": "Industrial households/properties",
+      "info": ""
+    },
+    {
+      "label": "2018-19",
+      "info": ""
+    },
+    {
+      "label": "2019-20",
+      "info": ""
+    },
+    {
+      "label": "2020-21",
+      "info": ""
+    },
+    {
+      "label": "2021-22",
+      "info": ""
+    },
+    {
+      "label": "2022-23",
+      "info": ""
+    }
+  ],
+  "6.25": [
+    {
+      "label": "",
+      "info": ""
+    },
+    {
+      "label": "Other households/properties(any other connection type)",
+      "info": ""
+    },
+    {
+      "label": "2018-19",
+      "info": ""
+    },
+    {
+      "label": "2019-20",
+      "info": ""
+    },
+    {
+      "label": "2020-21",
+      "info": ""
+    },
+    {
+      "label": "2021-22",
+      "info": ""
+    },
+    {
+      "label": "2022-23",
+      "info": ""
+    }
+  ],
+  "6.30": [
+    {
+      "label": "",
+      "info": ""
+    },
+    {
+      "label": "Sewerage Charges Tariff Details",
+      "info": ""
+    },
+    {
+      "label": "",
+      "info": ""
+    },
+    {
+      "label": "",
+      "info": ""
+    },
+    {
+      "label": "",
+      "info": ""
+    },
+    {
+      "label": "",
+      "info": ""
+    },
+    {
+      "label": "",
+      "info": ""
+    }
+  ],
+  "6.31": [
+    {
+      "label": "",
+      "info": ""
+    },
+    {
+      "label": "Sewerage Charges: Cost of Service Delivery Details",
+      "info": ""
+    },
+    {
+      "label": "2018-19",
+      "info": ""
+    },
+    {
+      "label": "2019-20",
+      "info": ""
+    },
+    {
+      "label": "2020-21",
+      "info": ""
+    },
+    {
+      "label": "2021-22",
+      "info": ""
+    },
+    {
+      "label": "2022-23",
+      "info": ""
+    }
+  ],
+  "6.32": [
+    {
+      "label": "",
+      "info": ""
+    },
+    {
+      "label": "Working of the O&M Cost- Sewerage Service",
+      "info": ""
+    },
+    {
+      "label": "2018-19",
+      "info": ""
+    },
+    {
+      "label": "2019-20",
+      "info": ""
+    },
+    {
+      "label": "2020-21",
+      "info": ""
+    },
+    {
+      "label": "2021-22",
+      "info": ""
+    },
+    {
+      "label": "2022-23",
+      "info": ""
+    }
+  ]
+}
 
 let specialHeaders = {
    "1.1": {
