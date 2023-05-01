@@ -193,6 +193,7 @@ const findStatusAndTooltipMaster = (params)=>{
     let {formData, formId,loggedInUserRole, viewFor} = params;
     let status = formData.currentFormStatus
     let tooltip = calculateStatusMaster(status);
+    console.log("tooltip: :: ",tooltip)
     let tick = calculateTick(tooltip, loggedInUserRole, viewFor)
 
     return {

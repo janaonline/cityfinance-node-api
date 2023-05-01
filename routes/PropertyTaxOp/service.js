@@ -4,7 +4,7 @@ const { response } = require('../../util/response');
 const ObjectId = require('mongoose').Types.ObjectId
 const { canTakenAction } = require('../CommonActionAPI/service')
 const Service = require('../../service');
-const { FormNames } = require('../../util/FormNames');
+const { FormNames, MASTER_STATUS_ID } = require('../../util/FormNames');
 const User = require('../../models/User');
 const { checkUndefinedValidations } = require('../../routes/FiscalRanking/service');
 const { propertyTaxOpFormJson, financialYearTableHeader, specialHeaders,skipLogicDependencies } = require('./fydynemic')
@@ -12,7 +12,8 @@ const { isEmptyObj, isReadOnly } = require('../../util/helper');
 const PropertyMapperChildData = require("../../models/PropertyTaxMapperChild");
 const { years } = require('../../service/years');
 const {saveFormHistory} = require("../../util/masterFunctions")
-const {validationJson} = require("./validation")
+const {validationJson} = require("./validation");
+const MasterStatus = require('../../models/MasterStatus');
 
 const getKeyByValue = (object, value)=>{
     return Object.keys(object).find(key => object[key] === value);
@@ -286,11 +287,11 @@ async function createHistory(params){
 }
 
 module.exports.createOrUpdate = async (req, res) => {
-        let { ulbId, actions, design_year, isDraft } = req.body
+        let { ulbId, actions, design_year, isDraft,currentFormStatus } = req.body
     try {
         let { role, _id: userId } = req.decoded
         let response = {}
-        let formIdValidations = await checkIfFormIdExistsOrNot(ulbId, design_year, isDraft, role, userId);
+        let formIdValidations = await checkIfFormIdExistsOrNot(ulbId, design_year, isDraft, role, userId,currentFormStatus);
         let formId = formIdValidations.formId;
         await checkUndefinedValidations({ "ulb": ulbId, "formId": formId, "actions": actions, "design_year": design_year });
         await calculateAndUpdateStatusForMappers(actions, ulbId, formId, design_year, true, isDraft)
@@ -299,7 +300,6 @@ module.exports.createOrUpdate = async (req, res) => {
         response.message = "Form submitted successfully"
         let params = {...req.body}
         params['formId'] = formId
-        params['currentFormStatus'] = 1
         await createHistory(params)
         return res.status(200).json(response)
     } catch (error) {
@@ -312,7 +312,7 @@ module.exports.createOrUpdate = async (req, res) => {
 }
 
 
-async function checkIfFormIdExistsOrNot(ulbId, design_year, isDraft, role, userId) {
+async function checkIfFormIdExistsOrNot(ulbId, design_year, isDraft, role, userId,currentFormStatus) {
     return new Promise(async (resolve, reject) => {
         try {
             let validation = { message: "", valid: true, formId: null }
@@ -326,6 +326,7 @@ async function checkIfFormIdExistsOrNot(ulbId, design_year, isDraft, role, userI
                         actionTakenByRole: role,
                         actionTakenBy: userId,
                         status: "PENDING",
+                        currentFormStatus:currentFormStatus,
                         isDraft
                     }
                 )
@@ -334,7 +335,7 @@ async function checkIfFormIdExistsOrNot(ulbId, design_year, isDraft, role, userI
                 validation.valid = true
                 validation.formId = form._id
             } else {
-                let form = await PropertyTaxOp.findOneAndUpdate(condition, { "isDraft": isDraft })
+                let form = await PropertyTaxOp.findOneAndUpdate(condition, { "isDraft": isDraft ,currentFormStatus:currentFormStatus })
                 if (form) {
                     validation.message = "form exists"
                     validation.valid = true
@@ -866,7 +867,7 @@ exports.getView = async function (req, res, next) {
         if (ptoData) {
             ptoMaper = await PropertyTaxOpMapper.find({ ulb: ObjectId(req.query.ulb), ptoId: ObjectId(ptoData._id) }).populate("child").lean();
         }
-        let fyDynemic = await propertyTaxOpFormJson();
+        let fyDynemic = {...await propertyTaxOpFormJson()};
         if (ptoData) {
             const { isDraft, status } = ptoData;
             for (let sortKey in fyDynemic) {
@@ -905,6 +906,11 @@ exports.getView = async function (req, res, next) {
                     }
                 }
             }
+            fyDynemic['isDraft'] = ptoData.isDraft || true
+            fyDynemic['ulb'] = ptoData.ulb  || req.query.ulb
+            fyDynemic['design_year'] = ptoData.design_year || req.query.design_year
+            fyDynemic['currentFormStatus'] = ptoData.currentFormStatus || 1
+            fyDynemic['statusText'] = MASTER_STATUS_ID[ptoData.currentFormStatus] || MASTER_STATUS_ID[1]
         }
         return res.status(200).json({ status: true, message: "Success fetched data!", data: { ...fyDynemic, financialYearTableHeader, specialHeaders ,skipLogicDependencies } });
     } catch (error) {
