@@ -67,7 +67,7 @@ const validationJson = {
                 "logic": "sum",
                 "fields": [
                     "cuCollectIncludingCess",
-                    "admdIncludingCess"
+                    "arCollectIncludingCess"
                 ],
                 "sequence": [
                     "1.14",
