@@ -1,12 +1,12 @@
 const { years } = require("../../service/years")
-const {apiUrls} = require("../CommonActionAPI/service")
+const { apiUrls } = require("../CommonActionAPI/service")
 const propertyTaxOpFormJson = () => {
   return {
-   "_id": null,
-   "ulb": "5fa24660072dab780a6f141e",
-   "design_year": "606aafb14dff55e6c075d3ae",
-   "isDraft": null,
-   "tabs": [
+    "_id": null,
+    "ulb": "5fa24660072dab780a6f141e",
+    "design_year": "606aafb14dff55e6c075d3ae",
+    "isDraft": null,
+    "tabs": [
       {
         "_id": "63e4cdf74d1e781623cac3f8",
         "key": "financialInformation",
@@ -10131,7 +10131,7 @@ const propertyTaxOpFormJson = () => {
         }
       }
     ]
- }
+  }
 }
 
 
@@ -10977,80 +10977,67 @@ let financialYearTableHeader = {
       "info": ""
     }
   ],
-  "6.32": [
-    {
-      "label": "",
-      "info": ""
-    },
-    {
-      "label": "Working of the O&M Cost- Sewerage Service",
-      "info": ""
-    },
-    {
-      "label": "2018-19",
-      "info": ""
-    },
-    {
-      "label": "2019-20",
-      "info": ""
-    },
-    {
-      "label": "2020-21",
-      "info": ""
-    },
-    {
-      "label": "2021-22",
-      "info": ""
-    },
-    {
-      "label": "2022-23",
-      "info": ""
-    }
+  '6.32': [
+
+    { label: '', info: '' },
+
+    { label: 'Working of the O&M Cost- Sewerage Service', info: '' },
+
+    { label: '', info: '' },
+
+    { label: '', info: '' },
+
+    { label: '', info: '' },
+
+    { label: '', info: '' },
+
+    { label: '', info: '' }
+
   ]
 }
 
 let specialHeaders = {
-   "1.1": {
-     "label": "Property Tax Details",
-     "info": ""
-   },
-   "2.1": {
-     "label": "Property Register Details",
-     "info": ""
-   },
-   "2.5": {
-     "label": "Property Tax Demand and Collection Details by Property Type (including cess, other tax charges, excluding user charges if any)",
-     "info": ""
-   },
-   "3.1": {
-     "label": "Property Tax Collection Details by Mode of payment (including cess, other tax charges, excluding user charges if any)",
-     "info": ""
-   },
-   "4.1": {
-     "label": "Property Tax Valuation Details",
-     "info": ""
-   },
-   "5.1": {
-     "label": "Water Charges Details",
-     "info": ""
-   },
-   "5.13": {
-     "label": "Water Charges Demand and Collection Details by Household/Property type",
-     "info": ""
-   },
-   "6.1": {
-     "label": "Sewerage Charges Details",
-     "info": ""
-   },
-   "6.13": {
-     "label": "Sewerage Charges Details by household/property type",
-     "info": ""
-   },
-   "7.1": {
-     "label": "Download and Upload Signed PDF",
-     "info": ""
-   }
- }
+  "1.1": {
+    "label": "Property Tax Details",
+    "info": ""
+  },
+  "2.1": {
+    "label": "Property Register Details",
+    "info": ""
+  },
+  "2.5": {
+    "label": "Property Tax Demand and Collection Details by Property Type (including cess, other tax charges, excluding user charges if any)",
+    "info": ""
+  },
+  "3.1": {
+    "label": "Property Tax Collection Details by Mode of payment (including cess, other tax charges, excluding user charges if any)",
+    "info": ""
+  },
+  "4.1": {
+    "label": "Property Tax Valuation Details",
+    "info": ""
+  },
+  "5.1": {
+    "label": "Water Charges Details",
+    "info": ""
+  },
+  "5.13": {
+    "label": "Water Charges Demand and Collection Details by Household/Property type",
+    "info": ""
+  },
+  "6.1": {
+    "label": "Sewerage Charges Details",
+    "info": ""
+  },
+  "6.13": {
+    "label": "Sewerage Charges Details by household/property type",
+    "info": ""
+  },
+  "7.1": {
+    "label": "Download and Upload Signed PDF",
+    "info": ""
+  }
+}
 let skipLogicDependencies = {
   "data.doesUserChargesDmnd.yearData.0": {
     "skippable": {
