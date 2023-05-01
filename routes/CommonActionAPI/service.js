@@ -23,7 +23,7 @@ const Response = require("../../service").response;
 const {saveCurrentStatus, saveFormHistory, saveStatusHistory} = require('../../util/masterFunctions');
 const CurrentStatus = require('../../models/CurrentStatus');
 const {MASTER_STATUS_ID, FORM_LEVEL_SHORTKEY, FORMIDs} =  require('../../util/FormNames');
-
+var allowedStatuses = [StatusList.Rejected_By_MoHUA,StatusList.STATE_REJECTED,StatusList.Rejected_By_State,StatusList.In_Progress,StatusList.Not_Started]
 var ignorableKeys = ["actionTakenByRole","actionTakenBy","ulb","design_year"]
 let groupedQuestions = {
     "location":['lat','long']
@@ -358,13 +358,13 @@ module.exports.canTakenActionMaster = (params) => {
   switch (formType) {
     case "ULB":
       if (loggedInUser == "STATE") {
-        if (status === MASTER_STATUS["Under Review by State"]) {
+        if (status === MASTER_STATUS["Under Review By State"]) {
           return true;
         } else {
           return false;
         }
       } else if (loggedInUser == "MoHUA") {
-        if (status === MASTER_STATUS["Under Review by MoHUA"]) {
+        if (status === MASTER_STATUS["Under Review By MoHUA"]) {
           return true;
         } else {
           return false;
@@ -376,7 +376,7 @@ module.exports.canTakenActionMaster = (params) => {
 
     case "STATE":
       if (loggedInUser == "MoHUA") {
-        if (status === MASTER_STATUS["Under Review by MoHUA"]) {
+        if (status === MASTER_STATUS["Under Review By MoHUA"]) {
           return true;
         } else {
           return false;
@@ -1099,29 +1099,29 @@ module.exports.canTakeActionOrViewOnlyMasterForm = (params)=> {
         case status == MASTER_STATUS['In Progress']:
             return false;
             break;
-        case status == MASTER_STATUS['Under Review by State'] && userRole == 'STATE':
+        case status == MASTER_STATUS['Under Review By State'] && userRole == 'STATE':
             return true;
             break;
-        case status == MASTER_STATUS['Under Review by MoHUA'] && adminLevel && (userRole == 'MoHUA' || userRole == 'ADMIN'):
+        case status == MASTER_STATUS['Under Review By MoHUA'] && adminLevel && (userRole == 'MoHUA' || userRole == 'ADMIN'):
             console.log("adminglevel ::: ", adminLevel)
             return true
             break;
-        case status == MASTER_STATUS['Under Review by State'] && (userRole == 'MoHUA' || userRole == 'ADMIN'):
+        case status == MASTER_STATUS['Under Review By State'] && (userRole == 'MoHUA' || userRole == 'ADMIN'):
             return false;
             break;
-        case status == MASTER_STATUS['Rejected by State']:
+        case status == MASTER_STATUS['Returned By State']:
             return false;
             break;
-        case status == MASTER_STATUS['Rejected by MoHUA']:
+        case status == MASTER_STATUS['Returned By MoHUA']:
             return false;
             break;
-        case status == MASTER_STATUS['Under Review by MoHUA'] && userRole == 'STATE':
+        case status == MASTER_STATUS['Under Review By MoHUA'] && userRole == 'STATE':
             return false;
             break;
-        case status == MASTER_STATUS['Under Review by MoHUA'] && userRole == 'MoHUA':
+        case status == MASTER_STATUS['Under Review By MoHUA'] && userRole == 'MoHUA':
             return true;
             break;
-        case status == MASTER_STATUS['Approved by MoHUA']:
+        case status == MASTER_STATUS['Submission Acknowledged By MoHUA']:
             return false;
             break;
 
@@ -2092,12 +2092,14 @@ const handleNumericCase = async(question,obj,flattedForm,mainKey)=>{
         // console.log("question ",question.shortKey)
         if(mainKey){
             let key = mainKey + "."+question.shortKey
-            if(flattedForm[key]  == undefined){
+            if(flattedForm[key]  == undefined &&  flattedForm[key+".value"] == undefined){
                 value = ""
             }
             else{
-                value = flattedForm[key].toString()
+                value = flattedForm[key] === undefined ? flattedForm[key+".value"] : flattedForm[key]
+                value = value !== undefined  ? value.toString() : ""
             }
+            
             question['modelValue'] = value
             question['value'] = value
             obj['textValue'] = value
@@ -2105,11 +2107,12 @@ const handleNumericCase = async(question,obj,flattedForm,mainKey)=>{
         }
         else{
             let key = question.shortKey
-            if(flattedForm[key]  == undefined){
+            if(flattedForm[key]  == undefined && flattedForm[key+".value"] == undefined){
                 value = ""
             }
             else{
-                value = flattedForm[key].toString()
+                value = flattedForm[key] === undefined ? flattedForm[key+".value"] : flattedForm[key]
+                value = value !== undefined  ? value.toString() : ""
             }
             question['modelValue'] = value
             question['value'] = value
@@ -2312,6 +2315,40 @@ async function deleteExtraKeys(question){
     }
 }
 
+function manageDisabledQues(question,flattedForm){
+    try{
+        let actionKeys = ['statusId','status','canTakeAction','rejectReason']
+        // let allowedStatuses = [StatusList.Rejected_By_MoHUA,StatusList.Rejected_By_State,StatusList.In_Progress,StatusList.Not_Started]
+        let formType = flattedForm?.role
+        // console.log("flattedForm ::: ",flattedForm)
+        let getValue = question.inputType === "11" ? 2 :1
+        let mainKey = question.shortKey.split(".").slice(0,question.shortKey.split(".").length - getValue).join(".")
+        actionKeys.forEach((item)=>{
+            let key = mainKey+"."+item
+            let keyItem = question.shortKey + "." + item
+            let included = Object.keys(flattedForm).includes(key) || Object.keys(flattedForm).includes(keyItem)
+            key = Object.keys(flattedForm).includes(key) ? key :keyItem
+            if(included){
+                question[item] = flattedForm[key]
+                if(item === "status"){
+                    if(allowedStatuses.includes(flattedForm[key]) && formType === "ULB"){
+                        question['isQuestionDisabled'] = false
+                    }
+                    else{
+                        question['isQuestionDisabled'] = true
+                    }
+                    
+                }
+            }
+        })
+        // console.log("question ::: shortKey ",question.shortKey)
+    }
+    catch(err){
+        console.log("error in manageDisabledQues :::: ",err.message)
+        return question
+    }
+}
+
 async function mutuateGetPayload(jsonFormat, flattedForm, keysToBeDeleted,role) {
     try {
         // console.log(">>>>>>>>>> obj ::: ",jsonFormat)
@@ -2324,7 +2361,7 @@ async function mutuateGetPayload(jsonFormat, flattedForm, keysToBeDeleted,role) 
         await deleteKeys(flattedForm, keysToBeDeleted)
         for (let key in obj) {
             let questions = obj[key].question
-            if (questions) {
+            if (questions){
                 for (let question of questions) {    
                     let answer = []
                     let obj = { ...answerObj }
@@ -2333,7 +2370,8 @@ async function mutuateGetPayload(jsonFormat, flattedForm, keysToBeDeleted,role) 
                     await handleValues(question,obj,flattedForm)
                     answer.push(obj)
                     question['selectedValue'] = answer
-                   await deleteExtraKeys(question)
+                    await manageDisabledQues(question,flattedForm)
+                    await deleteExtraKeys(question)
                 }
                 let modifiedKeys = Object.keys(modifiedShortKeys)
                 let modifiedObjects =  questions.filter(item => modifiedKeys.includes(item.shortKey))
@@ -2479,10 +2517,16 @@ module.exports.masterAction =  async (req, res) => {
         return Response.BadRequest(res, {}, "All fields are mandatory")
       }
       let path = modelPath(formId);
-      let condition = {
-        ulb: {$in: ulbs},
-        design_year: design_year,
-      };
+      let designYearField = "design_year";
+      
+        
+        if(Number(formId) === FORMIDs['dur']){
+            designYearField = "designYear"   
+        }
+        let condition = {
+            ulb: {$in:ulbs},
+            [designYearField]: design_year,
+          }; 
 
       const model = require(`../../models/${path}`);
       const formData = await model.find(condition).lean();
@@ -2589,8 +2633,8 @@ async function takeActionOnForms(params, res) {
             saveStatusResponse = await saveStatus(params);
             if (
               [
-                MASTER_STATUS["Rejected by MoHUA"],
-                MASTER_STATUS["Rejected by State"],
+                MASTER_STATUS["Returned By MoHUA"],
+                MASTER_STATUS["Returned By State"],
               ].includes(response.status)
             ) {
               rejectStatusCount++;
@@ -2599,8 +2643,8 @@ async function takeActionOnForms(params, res) {
           if (rejectStatusCount) {
             response.status =
               actionTakenByRole === "MoHUA"
-                ? MASTER_STATUS["Rejected by MoHUA"]
-                : MASTER_STATUS["Rejected by State"];
+                ? MASTER_STATUS["Returned By MoHUA"]
+                : MASTER_STATUS["Returned By State"];
             let updatedFormCurrentStatus = await updateFormCurrentStatus(
               model,
               form._id,
@@ -2612,8 +2656,8 @@ async function takeActionOnForms(params, res) {
           } else {
             response.status =
               actionTakenByRole === "MoHUA"
-                ? MASTER_STATUS["Approved by MoHUA"]
-                : MASTER_STATUS["Under Review by MoHUA"];
+                ? MASTER_STATUS["Submission Acknowledged By MoHUA"]
+                : MASTER_STATUS["Under Review By MoHUA"];
             let updatedFormCurrentStatus = await updateFormCurrentStatus(
               model,
               form._id,
@@ -2626,10 +2670,28 @@ async function takeActionOnForms(params, res) {
       } else if (form_level === FORM_LEVEL["tab"]) {
         if (multi) {
           let [response] = responses;
-        /* Getting the short keys from the short keys array and separating them into an array of arrays based on tab and questions */
-          let shortKeysResponse = await getSeparatedShortKeys({shortKeys});
+          response['status'] =  Number(response['status']);
+                 
+          /* Getting the short keys from the short keys array and separating them into an array of arrays based on tab and questions */
+          let currentStatusShortKeys = await CurrentStatus.find({
+            recordId: form._id,
+            actionTakenByRole,
+          },{
+            shortKey:1,
+            _id: 0
+          }).lean()
+          if(Array.isArray(currentStatusShortKeys) && !currentStatusShortKeys.length){
+            currentStatusShortKeys = await CurrentStatus.find({
+                recordId: form._id,
+                actionTakenByRole: "ULB",
+              },{
+                shortKey:1,
+                _id: 0
+              }).lean()
+          }
+          currentStatusShortKeys = currentStatusShortKeys.map(el=> el.shortKey)
           /* Saving the status of the form for questions */
-          for (let shortKey of shortKeysResponse["inner"]) {
+          for (let shortKey of currentStatusShortKeys) {
             let params = {
               formId,
               form,
@@ -2644,21 +2706,21 @@ async function takeActionOnForms(params, res) {
             saveStatusResponse = await saveStatus(params);
           }
             /* Saving the status of the form for tabs */
-          for (let shortKey of shortKeysResponse["outer"]) {
-            shortKey = `tab_${shortKey}`;
-            let params = {
-              formId,
-              form,
-              response,
-              form_level,
-              actionTakenByRole,
-              actionTakenBy,
-              multi,
-              shortKey,
-              res,
-            };
-            saveStatusResponse = await saveStatus(params);
-          }
+        //   for (let shortKey of shortKeysResponse["outer"]) {
+        //     shortKey = `tab_${shortKey}`;
+        //     let params = {
+        //       formId,
+        //       form,
+        //       response,
+        //       form_level,
+        //       actionTakenByRole,
+        //       actionTakenBy,
+        //       multi,
+        //       shortKey,
+        //       res,
+        //     };
+        //     saveStatusResponse = await saveStatus(params);
+        //   }
           //Updating form Level status
           let updatedFormCurrentStatus = await updateFormCurrentStatus(
             model,
@@ -2678,12 +2740,12 @@ async function takeActionOnForms(params, res) {
           }
           let separator = ".";
           const tabSeparator = "_";
+          const dotSeparator = "."
           const tabRegex = /^tab_/g;
           
           for (let response of responses) {
-            if (response.shortKey.match(tabRegex)){
-                separator =  tabSeparator
-            }
+            response['status'] =  Number(response['status']);
+            separator = response.shortKey.match(tabRegex) ?  tabSeparator : dotSeparator;
             let splitedArrayTab =
               response.shortKey.split(separator).length > 1
                 ? response.shortKey.split(separator)[0]
@@ -2696,8 +2758,8 @@ async function takeActionOnForms(params, res) {
             if (
               splitedArrayTab !== "" &&
               [
-                MASTER_STATUS["Rejected by MoHUA"],
-                MASTER_STATUS["Rejected by State"],
+                MASTER_STATUS["Returned By MoHUA"],
+                MASTER_STATUS["Returned By State"],
               ].includes(response.status)
             ) {
               tabShortKeyObj[splitedArrayTab] = tabShortKeyObj[
@@ -2729,8 +2791,8 @@ async function takeActionOnForms(params, res) {
             if (
               response &&
               [
-                MASTER_STATUS["Rejected by MoHUA"],
-                MASTER_STATUS["Rejected by State"],
+                MASTER_STATUS["Returned By MoHUA"],
+                MASTER_STATUS["Returned By State"],
               ].includes(response.status)
             ) {
               rejectStatusAllTab++;
@@ -2741,14 +2803,14 @@ async function takeActionOnForms(params, res) {
               if (tabShortKeyObj[obj]) {
                 status =
                   actionTakenByRole === "MoHUA"
-                    ? MASTER_STATUS["Rejected by MoHUA"]
-                    : MASTER_STATUS["Rejected by State"];
+                    ? MASTER_STATUS["Returned By MoHUA"]
+                    : MASTER_STATUS["Returned By State"];
                 rejectStatusAllTab++;
               } else {
                 status =
                   actionTakenByRole === "MoHUA"
-                    ? MASTER_STATUS["Approved by MoHUA"]
-                    : MASTER_STATUS["Under Review by MoHUA"];
+                    ? MASTER_STATUS["Submission Acknowledged By MoHUA"]
+                    : MASTER_STATUS["Under Review By MoHUA"];
               }
               response = {
                 status,
@@ -2776,8 +2838,8 @@ async function takeActionOnForms(params, res) {
 
             response.status =
               actionTakenByRole === "MoHUA"
-                ? MASTER_STATUS["Rejected by MoHUA"]
-                : MASTER_STATUS["Rejected by State"];
+                ? MASTER_STATUS["Returned By MoHUA"]
+                : MASTER_STATUS["Returned By State"];
             let updatedFormCurrentStatus = await updateFormCurrentStatus(
               model,
               form._id,
@@ -2789,8 +2851,8 @@ async function takeActionOnForms(params, res) {
             let response = {}
             response.status =
               actionTakenByRole === "MoHUA"
-                ? MASTER_STATUS["Approved by MoHUA"]
-                : MASTER_STATUS["Under Review by MoHUA"];
+                ? MASTER_STATUS["Submission Acknowledged By MoHUA"]
+                : MASTER_STATUS["Under Review By MoHUA"];
             let updatedFormCurrentStatus = await updateFormCurrentStatus(
               model,
               form._id,
@@ -2857,7 +2919,9 @@ async function saveStatus(params) {
             actionTakenBy: ObjectId(actionTakenBy),
           };
         
-          (multi && form_level === FORM_LEVEL["question"]) ? currentStatusData["shortKey"] = shortKey : ""
+          (multi && [FORM_LEVEL["question"] ,FORM_LEVEL['tab']].includes(form_level)) ? currentStatusData["shortKey"] = shortKey : "";
+        //   (multi && form_level === FORM_LEVEL["tab"]) ? currentStatusData["shortKey"] = shortKey : "";
+
           let currentStatus = await saveCurrentStatus({ body: currentStatusData });
           
           let statusHistory = {
@@ -2867,7 +2931,7 @@ async function saveStatus(params) {
             data: currentStatusData,
           };
         
-          (multi && form_level === FORM_LEVEL["question"]) ? statusHistory["shortKey"] = shortKey  : ""
+          (multi && [FORM_LEVEL["question"], FORM_LEVEL['tab']].includes(form_level)) ? statusHistory["shortKey"] = shortKey  : ""
 
           let statusHistoryData = await saveStatusHistory({ body: statusHistory });
           if (currentStatus === 1 && statusHistoryData === 1){
@@ -2890,11 +2954,16 @@ const getMasterAction = async (req, res) => {
         return Response.BadRequest(res, {}, "All fields are mandatory");
       }
       let path = modelPath(formId);
-      let condition = {
-        ulb,
-        design_year: design_year,
-      };
+      let designYearField = "design_year";
       
+        
+        if(formId === FORMIDs['dur']){
+            designYearField = "designYear"   
+        }
+        let condition = {
+            ulb,
+            [designYearField]: design_year,
+          }; 
 
       const model = require(`../../models/${path}`);
       const form = await model.findOne(condition,{_id:1, currentFormStatus:1}).lean();
@@ -2914,7 +2983,11 @@ const getMasterAction = async (req, res) => {
     //   Object.assign(form, {
     //     canTakenAction: canTakenActionMaster(params),
     //   });
-    currentStatusResponse = filterStatusResponse(currentStatusResponse, currentFormStatus);
+      if(formId === FORMIDs['AnnualAccount']){
+        currentStatusResponse = filterStatusResponseTab(currentStatusResponse, currentFormStatus);
+      }else{
+          currentStatusResponse = filterStatusResponse(currentStatusResponse, currentFormStatus);
+      }
       for(let status of currentStatusResponse){
         status['statusId'] = status['status'];
         status['status'] = MASTER_STATUS_ID[parseInt(status['status'])]
@@ -2938,9 +3011,9 @@ const groupByKey = (list, key) => list.reduce((hash, obj) => ({ ...hash, [obj[ke
 function filterStatusResponse(statuses, formStatus){
     
     const STATUS_RESPONSE = {
-        ULB: [MASTER_STATUS['Not Started'],MASTER_STATUS["In Progress"],MASTER_STATUS["Under Review by State"]],
-        STATE: [MASTER_STATUS["Under Review by MoHUA"],MASTER_STATUS["Rejected by State"]],
-       MoHUA: [MASTER_STATUS['Approved by MoHUA'],MASTER_STATUS["Rejected by MoHUA"]]
+        ULB: [MASTER_STATUS['Not Started'],MASTER_STATUS["In Progress"],MASTER_STATUS["Under Review By State"]],
+        STATE: [MASTER_STATUS["Under Review By MoHUA"],MASTER_STATUS["Returned By State"]],
+       MoHUA: [MASTER_STATUS['Submission Acknowledged By MoHUA'],MASTER_STATUS["Returned By MoHUA"]]
     }
     
     for( let key in STATUS_RESPONSE){
@@ -2969,6 +3042,71 @@ function getCurrentStatus(key,statuses){
     }
 
     return statuses;
+}
+
+function filterStatusResponseTab(statuses, formStatus){
+    const STATUS_RESPONSE = {
+        ULB: [MASTER_STATUS['Not Started'],MASTER_STATUS["In Progress"],MASTER_STATUS["Under Review By State"]],
+        STATE: [MASTER_STATUS["Under Review By MoHUA"],MASTER_STATUS["Returned By State"]],
+       MoHUA: [MASTER_STATUS['Submission Acknowledged By MoHUA'],MASTER_STATUS["Returned By MoHUA"]]
+    }
+    
+    for( let key in STATUS_RESPONSE){
+
+        if(STATUS_RESPONSE[key].includes(formStatus)){
+           return getCurrentStatusTab(key,statuses);
+        }
+
+    }
+}
+const ROLE_PRIORITY ={
+    "ULB":1,
+    "STATE":2,
+    "MoHUA":3
+}
+function getCurrentStatusTab(key,statuses){
+    if (key === "ULB"){
+        statuses = statuses.filter(el=>{
+            return (el.status<= MASTER_STATUS['Under Review By State'] && el.status>MASTER_STATUS["Not Started"]);
+        });
+        
+        return filterStatusForTab(statuses);
+    }else if (key ==='STATE'){
+        statuses =  statuses.filter(el=>{
+            return (el.status< MASTER_STATUS['Submission Acknowledged By MoHUA'] && el.status>MASTER_STATUS['Under Review By State']);
+        })
+        return filterStatusForTab(statuses);
+
+    }else if(key === "MoHUA"){
+        statuses = statuses.filter(el=>{
+            return el.status> MASTER_STATUS['Under Review By State'] ;
+        })
+        return filterStatusForTab(statuses);
+
+    }
+
+    return statuses;
+}
+function filterStatusForTab(statuses) {
+    let output = []
+    statuses.forEach((el) => {
+        let idx;
+        let statusObj = output.find(entity => {
+            return entity.shortKey === el.shortKey;
+        });
+        if (statusObj) {
+            idx = output.findIndex(entity => {
+                return entity.shortKey === el.shortKey;
+            });
+        }
+        if (statusObj && ROLE_PRIORITY[statusObj.actionTakenByRole] < ROLE_PRIORITY[el.actionTakenByRole]) {
+            output.splice(idx, 1);
+            output.push(el);
+        } else if (!statusObj) {
+            output.push(el);
+        }
+    });
+    return output;
 }
 
 function appendKeysForAA(currentStatusResponse) {
@@ -3022,11 +3160,14 @@ async function getSeparatedShortKeys(params) {
       };
       let separator = ".";
       const tabSeparator = "_";
+      const dotSeparator = "."
       const tabRegex = /^tab_/g;
       for (let shortKey of shortKeys) {
-        if (shortKey.match(tabRegex)) {
-          separator = tabSeparator;
-        }
+        // if (shortKey.match(tabRegex)) {
+        //   separator = tabSeparator;
+        // };
+        separator = shortKey.match(tabRegex) ?  tabSeparator : dotSeparator;
+
         let splitedArray = shortKey.split(separator);
         let splitedArrayLength = splitedArray.length - 1;
         if (Array.isArray(splitedArray) && splitedArrayLength) {
@@ -3049,6 +3190,7 @@ async function getSeparatedShortKeys(params) {
   
 }
 
+module.exports.getSeparatedShortKeys = getSeparatedShortKeys
 
 function reverseKeyValues(originalObj){
     return  Object.entries(originalObj).reduce((acc, [key, value]) => {
@@ -3189,7 +3331,6 @@ module.exports.decideDisabledFields = (form,formType)=>{
     if(form.status == ""){
         formStatus = MASTER_STATUS_ID[parseInt(form.currentFormStatus)] || "Not Started"
     }
-    let allowedStatuses = [StatusList.Rejected_By_MoHUA,StatusList.Rejected_By_State,StatusList.In_Progress,StatusList.Not_Started]
     if(allowedStatuses.includes(formStatus) && formType === "ULB"){
         return false 
     }

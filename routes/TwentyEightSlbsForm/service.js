@@ -7,7 +7,7 @@ const {groupByKey} = require('../../util/group_list_by_key')
 const SLB = require('../../models/XVFcGrantForm')
 const {canTakenAction, calculateStatus} = require('../CommonActionAPI/service')
 const Service = require('../../service');
-const {FormNames, YEAR_CONSTANTS} = require('../../util/FormNames');
+const {FormNames, YEAR_CONSTANTS, MASTER_STATUS_ID} = require('../../util/FormNames');
 const User = require('../../models/User');
 const MasterForm = require('../../models/MasterForm')
 const StatusList = require('../../util/newStatusList')
@@ -385,6 +385,7 @@ module.exports.getForm = async (req, res,next) => {
         }
         /* Checking if the host is empty, if it is, it will set the host to the req.headers.host. */
         host = host !== "" ? host : req.headers.host;
+        let keyName = getKeyByValue(years,data.design_year)
         if(ulbData.access_2122){
         if (masterFormData) {
           isDraft = !masterFormData.isSubmit
@@ -401,7 +402,7 @@ module.exports.getForm = async (req, res,next) => {
           console.log("status ::::: ",status)
           /* Checking the status of the form. If the status is not in the list of statuses, it will
             return a message. */
-          let keyName = getKeyByValue(years,data.design_year)
+          
           console.log("keyName ::: ",keyName)
           if (
             ![
@@ -413,7 +414,7 @@ module.exports.getForm = async (req, res,next) => {
             console.log("keyName ::: ",keyName)
             let msg = userRole === "ULB" ? `Your ${messages[keyName]} Year's SLBs for Water Supply and Sanitation form status is - ${
               status ? status : "Not Submitted"
-            }. Kindly submit form at - <a href =https://${host}/ulbform/ulbform-overview target="_blank">Click here</a> in order to submit form`: `Dear User, The ${ulbData.name} has not yet filled Previous Year's SLBs for Water Supply and Sanitation form. You will be able to mark your response once STATE approves previous year's form.`
+            }. Kindly submit form at - <a href =https://${host}/ulbform/ulbform-overview target="_blank">Click here</a> in order to submit form`: `Dear User, The ${ulbData.name} has not yet filled ${messages[keyName]} Year's SLBs for Water Supply and Sanitation form. You will be able to mark your response once STATE approves ${messages[keyName]} year's form.`
             req.json = {
                 status: true,
                 show: true,
@@ -431,7 +432,9 @@ module.exports.getForm = async (req, res,next) => {
           req.json = {
               status: true,
               show: true,
-              message:  userRole === "ULB" ? `Your Previous Year's SLBs for Water Supply and Sanitation form status is - "Not Submitted". Kindly submit form at - <a href =https://${host}/ulbform/ulbform-overview target="_blank">Click here</a> in order to submit form` : `Dear User, The ${ulbData.name} has not yet filled Previous Year's SLBs for Water Supply and Sanitation form. You will be able to mark your response once STATE approves previous year's form.` ,
+              message:  userRole === "ULB" ? 
+              `Your ${messages[keyName]} Year's SLBs for Water Supply and Sanitation form status is - "Not Submitted". Kindly submit form at - <a href =https://${host}/ulbform/ulbform-overview target="_blank">Click here</a> in order to submit form` : 
+              `Dear User, The ${ulbData.name} has not yet filled ${messages[keyName]} Year's SLBs for Water Supply and Sanitation form. You will be able to mark your response once STATE approves previous year's form.` ,
             }
            next()
            return
@@ -452,6 +455,9 @@ module.exports.getForm = async (req, res,next) => {
             formData.isDraft,
             "ULB"
           );
+          if(!formData.status){
+            slb28FormStatus = MASTER_STATUS_ID[formData.currentFormStatus]
+          }
           if(ulbData.access_2122){
           let slbData = await SLB.findOne({
             ulb: ObjectId(data.ulb),
@@ -533,7 +539,7 @@ module.exports.getForm = async (req, res,next) => {
         }
         }
         if (formData.design_year.toString() === YEAR_CONSTANTS["23_24"]) {
-          let params = { modelName: ModelNames['twentyEightSlbs'], currentFormStatus:formData.currentFormStatus ,formType: "ULB", actionTakenByRole:formData.actionTakenByRole} ;
+          let params = { modelName: ModelNames['twentyEightSlbs'], currentFormStatus:formData.currentFormStatus ,formType: "ULB", actionTakenByRole:userRole} ;
           let canTakeActionOnMasterForm =  await getMasterForm(params);
           Object.assign(formData, canTakeActionOnMasterForm);
         }else{
@@ -555,6 +561,7 @@ module.exports.getForm = async (req, res,next) => {
                 StatusList.Not_Started,
                 StatusList.In_Progress,
                 StatusList.Rejected_By_State,
+                StatusList.STATE_REJECTED,
                 StatusList.Rejected_By_MoHUA,
               ].includes(slb28FormStatus)
             ) {

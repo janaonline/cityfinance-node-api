@@ -73,6 +73,9 @@ const PropertyTaxOpSchema = new Schema(
                 message: "ERROR: STATUS BE EITHER 'PENDING'/ 'APPROVED' / 'REJECTED'",
             }
         }, 
+        currentFormStatus:{
+            type:Number
+        },
         ulbSubmit:{type: Date},
         responseFile_state:pdfSchema(),
         responseFile_mohua:pdfSchema(),
