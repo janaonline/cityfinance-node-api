@@ -667,12 +667,12 @@ async function calculateAndUpdateStatusForMappers(tabs, ulbId, formId, year, upd
                     yearArr,
                     data:tab.data
                 }
-                if(!isDraft){
-                    let validation = await handleNonSubmissionValidation(params)
-                    if(!validation.valid){
-                        throw {message:validation.message} 
-                    }
-                }
+                // if(!isDraft){
+                //     let validation = await handleNonSubmissionValidation(params)
+                //     if(!validation.valid){
+                //         throw {message:validation.message} 
+                //     }
+                // }
                 let updatedIds = await handleChildrenData({inputElement:{...tab.data[k]},formId,ulbId,updateForm,dynamicObj})
                 if (obj[k].yearData) {
                     
