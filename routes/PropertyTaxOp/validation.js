@@ -151,7 +151,7 @@ const validationJson = {
             "2.22",
             "2.27"
         ],
-        "message": "Value of property tax collected should be less that or equal to value of property tax demanded.",
+        "message": "Sum should be equal to total number of properties from which property tax is demanded",
         "displayNumber": "2.3"
     },
     "totalPropertiesTaxDmCollected": {
