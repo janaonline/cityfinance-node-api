@@ -777,6 +777,7 @@ function createChildObjectsYearData(params){
             json['year'] = child.year
             json['type'] = child.type
             json['file'] = child.file
+            json['displayPriority'] = child.displayPriority
             json['textValue'] = child.textValue
             json['readonly'] = isReadOnly({isDraft,status})
             json['replicaNumber'] = child.replicaNumber ? child.replicaNumber : child.replicaCount
@@ -790,7 +791,7 @@ function createChildObjectsYearData(params){
 }
 
 async function createFullChildObj(params){
-    let {element,yearData,replicaCount} = params
+    let {element,yearData,replicaCount,childCopyFrom} = params
     let childs = []
     let copiedFromKeys = Array.from(new Set(yearData.map((item => item.type))))
     try{
@@ -804,16 +805,20 @@ async function createFullChildObj(params){
         for(let i = 1; i<=replicaCount ; i++){
             let replicatedYear = yearData.filter(item => item.replicaNumber === i )
             for(let key of copiedFromKeys){
-                let childObject = {...sampleJson}
+                let copiedFrom = childCopyFrom.find(item => item.key === key)
+                let childObject = {...copiedFrom}
                 childObject.replicaNumber = i
                 let yearData =  replicatedYear.filter(item =>item.type === key )
+                // console.log("replicatedYear ::: ",yearData)
                 childObject.value = yearData[0].textValue
                 childObject.label = yearData[0]?.label
                 childObject.position = yearData[0]?.displayPriority
                 childObject.key = key
                 childObject.yearData = yearData
                 childObject.readonly = true
+                // console.log("childObject ::: ",childObject)
                 childs.push(childObject)
+
             }
         }
     }
@@ -842,7 +847,8 @@ async function appendChildValues(params){
                 let params = {
                     yearData : yearData,
                     element:element,
-                    replicaCount:childElement.replicaCount
+                    replicaCount:childElement.replicaCount,
+                    childCopyFrom:element.copyChildFrom
                 }
                 let child = await createFullChildObj(params)
                 element.replicaCount = childElement.replicaCount
