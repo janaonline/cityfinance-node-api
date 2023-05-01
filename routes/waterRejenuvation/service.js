@@ -278,7 +278,7 @@ exports.getWaterRejenuvation = async (req, res) => {
     }).lean();
     const data2324Query = WaterRejenuvation.findOne({
       state: ObjectId(state),
-      design_year,
+      design_year: ObjectId(YEAR_CONSTANTS['23_24']),
     }).lean();
 
     const stateMasterFormDataQuery = StateMasterForm.findOne({
