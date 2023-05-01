@@ -11052,563 +11052,570 @@ let specialHeaders = {
    }
  }
 let skipLogicDependencies = {
-   "data.doesUserChargesDmnd.yearData.0": {
-     "userChargesDmnd": {
-       "value": "Yes",
-       "years": [
-         0
-       ]
-     },
-     "userChargesCollection": {
-       "value": "Yes",
-       "years": [
-         0
-       ]
-     }
-   },
-   "data.notificationWaterCharges.yearData.0": {
-     "entityWaterCharges": {
-       "value": "Yes",
-       "years": [
-         0
-       ]
-     },
-     "notificationWaterChargesFile": {
-       "value": "Yes",
-       "years": [
-         0
-       ]
-     },
-     "waterChrgDm": {
-       "value": "Yes",
-       "years": [
-         0,
-         1,
-         2,
-         3,
-         4
-       ]
-     },
-     "cuWaterChrgDm": {
-       "value": "Yes",
-       "years": [
-         0,
-         1,
-         2,
-         3,
-         4
-       ]
-     },
-     "arWaterChrgDm": {
-       "value": "Yes",
-       "years": [
-         0,
-         1,
-         2,
-         3,
-         4
-       ]
-     },
-     "waterChrgCol": {
-       "value": "Yes",
-       "years": [
-         0,
-         1,
-         2,
-         3,
-         4
-       ]
-     },
-     "cuWaterChrgCol": {
-       "value": "Yes",
-       "years": [
-         0,
-         1,
-         2,
-         3,
-         4
-       ]
-     },
-     "arWaterChrgCol": {
-       "value": "Yes",
-       "years": [
-         0,
-         1,
-         2,
-         3,
-         4
-       ]
-     },
-     "waterChrgConnectionDm": {
-       "value": "Yes",
-       "years": [
-         0,
-         1,
-         2,
-         3,
-         4
-       ]
-     },
-     "waterChrgConnectionCol": {
-       "value": "Yes",
-       "years": [
-         0,
-         1,
-         2,
-         3,
-         4
-       ]
-     },
-     "resValueWaterChrgDm": {
-       "value": "Yes",
-       "years": [
-         0,
-         1,
-         2,
-         3,
-         4
-       ]
-     },
-     "resNoWaterChrgDm": {
-       "value": "Yes",
-       "years": [
-         0,
-         1,
-         2,
-         3,
-         4
-       ]
-     },
-     "resValueWaterChrgCollected": {
-       "value": "Yes",
-       "years": [
-         0,
-         1,
-         2,
-         3,
-         4
-       ]
-     },
-     "resNoWaterChrgCollected": {
-       "value": "Yes",
-       "years": [
-         0,
-         1,
-         2,
-         3,
-         4
-       ]
-     },
-     "comValueWaterChrgDm": {
-       "value": "Yes",
-       "years": [
-         0,
-         1,
-         2,
-         3,
-         4
-       ]
-     },
-     "comNoWaterChrgDm": {
-       "value": "Yes",
-       "years": [
-         0,
-         1,
-         2,
-         3,
-         4
-       ]
-     },
-     "comValueWaterChrgCollected": {
-       "value": "Yes",
-       "years": [
-         0,
-         1,
-         2,
-         3,
-         4
-       ]
-     },
-     "comNoWaterChrgCollected": {
-       "value": "Yes",
-       "years": [
-         0,
-         1,
-         2,
-         3,
-         4
-       ]
-     },
-     "indValueWaterChrgDm": {
-       "value": "Yes",
-       "years": [
-         0,
-         1,
-         2,
-         3,
-         4
-       ]
-     },
-     "indNoWaterChrgDm": {
-       "value": "Yes",
-       "years": [
-         0,
-         1,
-         2,
-         3,
-         4
-       ]
-     },
-     "indValueWaterChrgCollected": {
-       "value": "Yes",
-       "years": [
-         0,
-         1,
-         2,
-         3,
-         4
-       ]
-     },
-     "indNoWaterChrgCollected": {
-       "value": "Yes",
-       "years": [
-         0,
-         1,
-         2,
-         3,
-         4
-       ]
-     },
-     "othersValueWaterType": {
-       "value": "Yes",
-       "years": [
-         0,
-         1,
-         2,
-         3,
-         4
-       ]
-     },
-     "undefined": {
-       "value": "Yes",
-       "years": [
-         0,
-         1,
-         2,
-         3,
-         4
-       ]
-     },
-     "waterChrgTariffDetails": {
-       "value": "Yes",
-       "years": [
-         0,
-         1,
-         2,
-         3,
-         4
-       ]
-     },
-     "omCostDeleveryWater": {
-       "value": "Yes",
-       "years": [
-         0,
-         1,
-         2,
-         3,
-         4
-       ]
-     },
-     "omCostWaterService": {
-       "value": "Yes",
-       "years": [
-         0,
-         1,
-         2,
-         3,
-         4
-       ]
-     }
-   },
-   "data.entityWaterCharges.yearData.0": {
-     "entityNameWaterCharges": {
-       "value": [
-         "State Department",
-         "Parastatal Agency",
-         "Others"
-       ],
-       "years": [
-         0
-       ]
-     }
-   },
-   "data.doesColSewerageCharges.yearData.0": {
-     "entitySewerageCharges": {
-       "value": "Yes",
-       "years": [
-         0
-       ]
-     },
-     "copyGazetteNotificationSewerage": {
-       "value": "Yes",
-       "years": [
-         0
-       ]
-     },
-     "totalSewergeChrgDm": {
-       "value": "Yes",
-       "years": [
-         0,
-         1,
-         2,
-         3,
-         4
-       ]
-     },
-     "curSewergeChrgDm": {
-       "value": "Yes",
-       "years": [
-         0,
-         1,
-         2,
-         3,
-         4
-       ]
-     },
-     "arrSewergeChrgDm": {
-       "value": "Yes",
-       "years": [
-         0,
-         1,
-         2,
-         3,
-         4
-       ]
-     },
-     "totalSewergeChrgCol": {
-       "value": "Yes",
-       "years": [
-         0,
-         1,
-         2,
-         3,
-         4
-       ]
-     },
-     "curSewergeChrgCol": {
-       "value": "Yes",
-       "years": [
-         0,
-         1,
-         2,
-         3,
-         4
-       ]
-     },
-     "arrSewergeChrgCol": {
-       "value": "Yes",
-       "years": [
-         0,
-         1,
-         2,
-         3,
-         4
-       ]
-     },
-     "totalSewergeConnectionDm": {
-       "value": "Yes",
-       "years": [
-         0,
-         1,
-         2,
-         3,
-         4
-       ]
-     },
-     "totalSewergeConnectionCol": {
-       "value": "Yes",
-       "years": [
-         0,
-         1,
-         2,
-         3,
-         4
-       ]
-     },
-     "resValueSewerageTaxDm": {
-       "value": "Yes",
-       "years": [
-         0,
-         1,
-         2,
-         3,
-         4
-       ]
-     },
-     "resNoSewerageTaxDm": {
-       "value": "Yes",
-       "years": [
-         0,
-         1,
-         2,
-         3,
-         4
-       ]
-     },
-     "resValueSewerageTaxCollected": {
-       "value": "Yes",
-       "years": [
-         0,
-         1,
-         2,
-         3,
-         4
-       ]
-     },
-     "resNoSewerageTaxCollected": {
-       "value": "Yes",
-       "years": [
-         0,
-         1,
-         2,
-         3,
-         4
-       ]
-     },
-     "comValueSewerageTaxDm": {
-       "value": "Yes",
-       "years": [
-         0,
-         1,
-         2,
-         3,
-         4
-       ]
-     },
-     "comNoSewerageTaxDm": {
-       "value": "Yes",
-       "years": [
-         0,
-         1,
-         2,
-         3,
-         4
-       ]
-     },
-     "comValueSewerageTaxCollected": {
-       "value": "Yes",
-       "years": [
-         0,
-         1,
-         2,
-         3,
-         4
-       ]
-     },
-     "comNoSewerageTaxCollected": {
-       "value": "Yes",
-       "years": [
-         0,
-         1,
-         2,
-         3,
-         4
-       ]
-     },
-     "indValueSewerageTaxDm": {
-       "value": "Yes",
-       "years": [
-         0,
-         1,
-         2,
-         3,
-         4
-       ]
-     },
-     "indNoSewerageTaxDm": {
-       "value": "Yes",
-       "years": [
-         0,
-         1,
-         2,
-         3,
-         4
-       ]
-     },
-     "indValueSewerageTaxCollected": {
-       "value": "Yes",
-       "years": [
-         0,
-         1,
-         2,
-         3,
-         4
-       ]
-     },
-     "indNoSewerageTaxCollected": {
-       "value": "Yes",
-       "years": [
-         0,
-         1,
-         2,
-         3,
-         4
-       ]
-     },
-     "otherValueSewerageType": {
-       "value": "Yes",
-       "years": [
-         0,
-         1,
-         2,
-         3,
-         4
-       ]
-     },
-     "sewerageChrgTarrifSheet": {
-       "value": "Yes",
-       "years": [
-         0,
-         1,
-         2,
-         3,
-         4
-       ]
-     },
-     "omCostDeleverySewerage": {
-       "value": "Yes",
-       "years": [
-         0,
-         1,
-         2,
-         3,
-         4
-       ]
-     },
-     "omCostSewerageService": {
-       "value": "Yes",
-       "years": [
-         0,
-         1,
-         2,
-         3,
-         4
-       ]
-     }
-   },
-   "data.entitySewerageCharges.yearData.0": {
-     "entityNaSewerageCharges": {
-       "value": [
-         "State Department",
-         "Parastatal Agency",
-         "Others"
-       ],
-       "years": [
-         0
-       ]
-     }
-   }
- }
+  "data.doesUserChargesDmnd.yearData.0": {
+    "skippable": {
+      "userChargesDmnd": {
+        "value": "Yes",
+        "years": [
+          0
+        ]
+      },
+      "userChargesCollection": {
+        "value": "Yes",
+        "years": [
+          0
+        ]
+      }
+    }
+  },
+  "data.notificationWaterCharges.yearData.0": {
+    "skippable": {
+      "entityWaterCharges": {
+        "value": "Yes",
+        "years": [
+          0
+        ]
+      },
+      "notificationWaterChargesFile": {
+        "value": "Yes",
+        "years": [
+          0
+        ]
+      },
+      "waterChrgDm": {
+        "value": "Yes",
+        "years": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ]
+      },
+      "cuWaterChrgDm": {
+        "value": "Yes",
+        "years": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ]
+      },
+      "arWaterChrgDm": {
+        "value": "Yes",
+        "years": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ]
+      },
+      "waterChrgCol": {
+        "value": "Yes",
+        "years": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ]
+      },
+      "cuWaterChrgCol": {
+        "value": "Yes",
+        "years": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ]
+      },
+      "arWaterChrgCol": {
+        "value": "Yes",
+        "years": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ]
+      },
+      "waterChrgConnectionDm": {
+        "value": "Yes",
+        "years": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ]
+      },
+      "waterChrgConnectionCol": {
+        "value": "Yes",
+        "years": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ]
+      },
+      "resValueWaterChrgDm": {
+        "value": "Yes",
+        "years": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ]
+      },
+      "resNoWaterChrgDm": {
+        "value": "Yes",
+        "years": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ]
+      },
+      "resValueWaterChrgCollected": {
+        "value": "Yes",
+        "years": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ]
+      },
+      "resNoWaterChrgCollected": {
+        "value": "Yes",
+        "years": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ]
+      },
+      "comValueWaterChrgDm": {
+        "value": "Yes",
+        "years": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ]
+      },
+      "comNoWaterChrgDm": {
+        "value": "Yes",
+        "years": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ]
+      },
+      "comValueWaterChrgCollected": {
+        "value": "Yes",
+        "years": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ]
+      },
+      "comNoWaterChrgCollected": {
+        "value": "Yes",
+        "years": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ]
+      },
+      "indValueWaterChrgDm": {
+        "value": "Yes",
+        "years": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ]
+      },
+      "indNoWaterChrgDm": {
+        "value": "Yes",
+        "years": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ]
+      },
+      "indValueWaterChrgCollected": {
+        "value": "Yes",
+        "years": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ]
+      },
+      "indNoWaterChrgCollected": {
+        "value": "Yes",
+        "years": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ]
+      },
+      "othersValueWaterType": {
+        "value": "Yes",
+        "years": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ]
+      },
+      "waterChrgTariffDetails": {
+        "value": "Yes",
+        "years": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ]
+      },
+      "omCostDeleveryWater": {
+        "value": "Yes",
+        "years": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ]
+      },
+      "omCostWaterService": {
+        "value": "Yes",
+        "years": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ]
+      }
+    }
+  },
+  "data.entityWaterCharges.yearData.0": {
+    "skippable": {
+      "entityNameWaterCharges": {
+        "value": [
+          "State Department",
+          "Parastatal Agency",
+          "Others"
+        ],
+        "years": [
+          0
+        ]
+      }
+    }
+  },
+  "data.doesColSewerageCharges.yearData.0": {
+    "updatables": [
+      {
+        "on": "No",
+        "target": "data.entitySewerageCharges.yearData.0",
+        "value": ""
+      }
+    ],
+    "skippable": {
+      "entitySewerageCharges": {
+        "value": "Yes",
+        "years": [
+          0
+        ]
+      },
+      "copyGazetteNotificationSewerage": {
+        "value": "Yes",
+        "years": [
+          0
+        ]
+      },
+      "totalSewergeChrgDm": {
+        "value": "Yes",
+        "years": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ]
+      },
+      "curSewergeChrgDm": {
+        "value": "Yes",
+        "years": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ]
+      },
+      "arrSewergeChrgDm": {
+        "value": "Yes",
+        "years": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ]
+      },
+      "totalSewergeChrgCol": {
+        "value": "Yes",
+        "years": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ]
+      },
+      "curSewergeChrgCol": {
+        "value": "Yes",
+        "years": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ]
+      },
+      "arrSewergeChrgCol": {
+        "value": "Yes",
+        "years": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ]
+      },
+      "totalSewergeConnectionDm": {
+        "value": "Yes",
+        "years": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ]
+      },
+      "totalSewergeConnectionCol": {
+        "value": "Yes",
+        "years": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ]
+      },
+      "resValueSewerageTaxDm": {
+        "value": "Yes",
+        "years": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ]
+      },
+      "resNoSewerageTaxDm": {
+        "value": "Yes",
+        "years": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ]
+      },
+      "resValueSewerageTaxCollected": {
+        "value": "Yes",
+        "years": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ]
+      },
+      "resNoSewerageTaxCollected": {
+        "value": "Yes",
+        "years": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ]
+      },
+      "comValueSewerageTaxDm": {
+        "value": "Yes",
+        "years": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ]
+      },
+      "comNoSewerageTaxDm": {
+        "value": "Yes",
+        "years": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ]
+      },
+      "comValueSewerageTaxCollected": {
+        "value": "Yes",
+        "years": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ]
+      },
+      "comNoSewerageTaxCollected": {
+        "value": "Yes",
+        "years": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ]
+      },
+      "indValueSewerageTaxDm": {
+        "value": "Yes",
+        "years": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ]
+      },
+      "indNoSewerageTaxDm": {
+        "value": "Yes",
+        "years": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ]
+      },
+      "indValueSewerageTaxCollected": {
+        "value": "Yes",
+        "years": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ]
+      },
+      "indNoSewerageTaxCollected": {
+        "value": "Yes",
+        "years": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ]
+      },
+      "otherValueSewerageType": {
+        "value": "Yes",
+        "years": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ]
+      },
+      "sewerageChrgTarrifSheet": {
+        "value": "Yes",
+        "years": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ]
+      },
+      "omCostDeleverySewerage": {
+        "value": "Yes",
+        "years": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ]
+      },
+      "omCostSewerageService": {
+        "value": "Yes",
+        "years": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ]
+      }
+    }
+  },
+  "data.entitySewerageCharges.yearData.0": {
+    "skippable": {
+      "entityNaSewerageCharges": {
+        "value": [
+          "State Department",
+          "Parastatal Agency",
+          "Others"
+        ],
+        "years": [
+          0
+        ]
+      }
+    }
+  }
+}
 module.exports.financialYearTableHeader = financialYearTableHeader
 module.exports.specialHeaders = specialHeaders
 
