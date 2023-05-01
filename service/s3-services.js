@@ -130,8 +130,8 @@ function initBackupBucket() {
 async function generateSignedUrl(data, _cb) {
     return new Promise((resolve, reject) => {
         var file_name = data.file_name;
-        let { custom } = data;
-
+        let { custom,strictName } = data;
+        strictName = strictName === "true"
         let fileNameWithoutExt = file_name.substring(0, file_name.lastIndexOf("."));
         var file_extension = file_name.substring(file_name.lastIndexOf("."));
 
@@ -144,10 +144,11 @@ async function generateSignedUrl(data, _cb) {
 
         date = date.split(":").join("-");
         date = date.split(", ").join("_");
-        var file_alias = custom
+
+        var file_alias = custom || custom === ""
             ? fileNameWithoutExt + "_" + date + file_extension
             : fileNameWithoutExt + "_" + uuid.v4() + file_extension;
-
+        file_alias = strictName ? fileNameWithoutExt + file_extension : file_alias
         var params = {
             Bucket: BUCKETNAME,
             Key: data?.folder ? data?.folder + '/' + file_alias : file_alias,

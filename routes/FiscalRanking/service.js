@@ -2793,6 +2793,14 @@ module.exports.createForm = catchAsync(async (req, res) => {
       true,
       isDraft
     );
+    if(!isDraft){
+      await FiscalRanking.findOneAndUpdate({
+        ulb: ObjectId(req.body.ulbId),
+        design_year: ObjectId(req.body.design_year),
+      },{
+        submittedDate:new Date()
+      })
+    }
     response.success = true;
     response.formId = formId;
     response.message = "Form submitted successfully";

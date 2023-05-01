@@ -47,6 +47,14 @@ let FormModelMapping_Master = {
   "PropertyTaxOp" : ObjectId("63ff31d63ae39326f4b2f464")
 }
 
+let FormModelMapping_Master_23_24 = {
+  "PropertyTaxOp" : ObjectId("642aaf2c3e05d72a8df4b646"),
+  "TwentyEightSlbsForm" : ObjectId("63ff31d63ae39326f4b2f46e"),
+  "UtilizationReport" : ObjectId("63ff31d63ae39326f4b2f462"),
+  "AnnualAccounts" : ObjectId("63ff31d63ae39326f4b2f460"),
+ 
+  }
+
 let FormModelMapping_State = {
     "GrantTransferCertificate": ObjectId("62c552c52954384b44b3c386"),
     "PropertyTaxFloorRate": ObjectId("62c5534e2954384b44b3c38a"),
@@ -193,6 +201,7 @@ const findStatusAndTooltipMaster = (params)=>{
     let {formData, formId,loggedInUserRole, viewFor} = params;
     let status = formData.currentFormStatus
     let tooltip = calculateStatusMaster(status);
+    console.log("tooltip: :: ",tooltip)
     let tick = calculateTick(tooltip, loggedInUserRole, viewFor)
 
     return {
@@ -262,7 +271,7 @@ module.exports.get = catchAsync(async (req, res) => {
             let formData = await el.findOne(condition).lean()
             if (formData) {
               if(formData[designYearCond].toString() === YEAR_CONSTANTS['23_24']){
-                output.push(findStatusAndTooltipMaster({formData,formId: FormModelMapping_Master[el['modelName']], loggedInUserRole: user.role, viewFor: role}))
+                output.push(findStatusAndTooltipMaster({formData,formId: FormModelMapping_Master_23_24[el['modelName']], loggedInUserRole: user.role, viewFor: role}))
               }else{
                 output.push(findStatusAndTooltip(formData, FormModelMapping[el['modelName']] , el['modelName'], user.role, role))
              }
@@ -357,7 +366,9 @@ module.exports.get = catchAsync(async (req, res) => {
 
             if(i === 0){//first entry
                 entity.prevUrl = null;
-                entity.nextUrl = `../${tempData[i+1].url}`;
+                if(tempData[i+1]){
+                  entity.nextUrl = `../${tempData[i+1].url}`;
+                }
             } else if(i === (tempData.length-1)){//last entry
                 entity.prevUrl =  `../${tempData[i-1].url}`;
                 entity.nextUrl = null;
