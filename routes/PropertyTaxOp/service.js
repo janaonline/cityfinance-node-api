@@ -586,7 +586,8 @@ async function handleMultipleValidations(params){
                 sumOfrefVal,
                 sumOfCurrentKey,
                 logic:validationObj.logic,
-                message:`${validationObj.displayNumber} - ${validationObj.message} `
+                // message:`${validationObj.displayNumber} - ${validationObj.message} `
+                message:validationObj.message
             }
             let compareValidator = compareValues(valueParams)
             if(!compareValidator.valid){
@@ -631,7 +632,8 @@ async function handleNonSubmissionValidation(params){
                     sumOfrefVal,
                     sumOfCurrentKey,
                     logic:validationJson[dynamicObj.key].logic,
-                    message:`${validationJson[dynamicObj.key].displayNumber} - ${validationJson[dynamicObj.key].message} `
+                    // message:`${validationJson[dynamicObj.key].displayNumber} - ${validationJson[dynamicObj.key].message} `
+                    message:validationJson[dynamicObj.key].message
                 }
                 let compareValidator = compareValues(valueParams)
                 if(!compareValidator.valid){
