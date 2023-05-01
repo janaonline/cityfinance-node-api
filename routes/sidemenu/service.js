@@ -366,7 +366,9 @@ module.exports.get = catchAsync(async (req, res) => {
 
             if(i === 0){//first entry
                 entity.prevUrl = null;
-                entity.nextUrl = `../${tempData[i+1].url}`;
+                if(tempData[i+1]){
+                  entity.nextUrl = `../${tempData[i+1].url}`;
+                }
             } else if(i === (tempData.length-1)){//last entry
                 entity.prevUrl =  `../${tempData[i-1].url}`;
                 entity.nextUrl = null;
