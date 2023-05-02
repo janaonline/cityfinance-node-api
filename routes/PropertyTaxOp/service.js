@@ -601,6 +601,42 @@ async function handleMultipleValidations(params){
     return valid
 }
 
+
+async function handleInternalValidations(params){
+    let errors = {
+        valid:true,
+        message:"",
+        errors:[]
+    }
+    try{
+        let {dynamicObj} = params
+        let childElements = dynamicObj.child || []
+        let preparedJsonData = childElements.reduce((result,currentValue)=> ({...result, [currentValue.key]:currentValue} ) ,{})
+        for(let child of childElements){
+            if(Object.keys(validationJson).includes(child.key)){
+                let keysToFind = validationJson[child.key].fields
+                let sumOfrefVal = await getYearDataSumForValidations(keysToFind,preparedJsonData)
+                let sumOfCurrentKey = await yearWiseValues(child.yearData)
+                let valueParams = {
+                    sumOfrefVal,
+                    sumOfCurrentKey,
+                    logic:validationJson[child.key].logic,
+                    // message:`${validatidynamicObjonJson[dynamicObj.key].displayNumber} - ${validationJson[dynamicObj.key].message} `
+                    message:validationJson[child.key].message
+                }                
+                let compareValidator = compareValues(valueParams)
+                if(!compareValidator.valid){
+                    return compareValidator
+                }
+            }
+        }
+    }
+    catch(err){
+        console.log("error in handleInternalValidations :::: ",err.message)
+    }
+    return errors
+}
+
 async function handleNonSubmissionValidation(params){
     let errors = {
         valid:true,
@@ -610,6 +646,10 @@ async function handleNonSubmissionValidation(params){
     try{
         let  {dynamicObj,yearArr,data} = params
         let validatorKeys = Object.keys(validationJson)
+        let childrenValid = await handleInternalValidations({dynamicObj})
+        if(!childrenValid.valid){
+            return childrenValid
+        }
         if(validatorKeys.includes(dynamicObj.key)){
             let keysToFind = validationJson[dynamicObj.key].fields
             let logicType = validationJson[dynamicObj.key].logic
@@ -640,7 +680,6 @@ async function handleNonSubmissionValidation(params){
                     return compareValidator
                 }
             }
-            
         }
     }
     catch(err){
@@ -795,13 +834,6 @@ async function createFullChildObj(params){
     let childs = []
     let copiedFromKeys = Array.from(new Set(yearData.map((item => item.type))))
     try{
-        let sampleJson = {
-            "key": element.key,
-            "value": "",
-            "_id": null,
-            "formFieldType": element.formFieldType,
-            "readonly": true,
-        }
         for(let i = 1; i<=replicaCount ; i++){
             let replicatedYear = yearData.filter(item => item.replicaNumber === i )
             for(let key of copiedFromKeys){
@@ -809,14 +841,12 @@ async function createFullChildObj(params){
                 let childObject = {...copiedFrom}
                 childObject.replicaNumber = i
                 let yearData =  replicatedYear.filter(item =>item.type === key )
-                // console.log("replicatedYear ::: ",yearData)
                 childObject.value = yearData[0].textValue
                 childObject.label = yearData[0]?.label
                 childObject.position = yearData[0]?.displayPriority
                 childObject.key = key
                 childObject.yearData = yearData
                 childObject.readonly = true
-                // console.log("childObject ::: ",childObject)
                 childs.push(childObject)
 
             }
@@ -914,12 +944,12 @@ exports.getView = async function (req, res, next) {
                     }
                 }
             }
-            fyDynemic['isDraft'] = ptoData.isDraft || true
-            fyDynemic['ulb'] = ptoData.ulb  || req.query.ulb
-            fyDynemic['design_year'] = ptoData.design_year || req.query.design_year
-            fyDynemic['currentFormStatus'] = ptoData.currentFormStatus || 1
-            fyDynemic['statusText'] = MASTER_STATUS_ID[ptoData.currentFormStatus] || MASTER_STATUS_ID[1]
         }
+        fyDynemic['isDraft'] = ptoData?.isDraft || true
+        fyDynemic['ulb'] = ptoData?.ulb  || req.query.ulb
+        fyDynemic['design_year'] = ptoData?.design_year || req.query.design_year
+        fyDynemic['currentFormStatus'] = ptoData?.currentFormStatus || 1
+        fyDynemic['statusText'] = MASTER_STATUS_ID[ptoData?.currentFormStatus] || MASTER_STATUS_ID[1]
         return res.status(200).json({ status: true, message: "Success fetched data!", data: { ...fyDynemic, financialYearTableHeader, specialHeaders ,skipLogicDependencies } });
     } catch (error) {
         console.log("err", error);

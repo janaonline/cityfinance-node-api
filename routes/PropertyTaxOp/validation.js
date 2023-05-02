@@ -123,16 +123,6 @@ const validationJson = {
         "message": "Number of properties from which property tax is collected should be less that or equal to number of properties from which property tax is demanded.",
         "displayNumber": "2.24"
     },
-    "otherValuePropertyTaxCollected": {
-        "logic": "ltequal",
-        "fields": [
-            "otherValuePropertyTaxDm"
-        ],
-        "sequence": [
-            "2.26"
-        ],
-        "message": "Value of property tax collected should be less that or equal to value of property tax demanded"
-    },
     "totalPropertiesTaxDm": {
         "logic": "sum",
         "fields": [
@@ -252,16 +242,6 @@ const validationJson = {
         "message": "Number of properties from which property tax is collected should be less that or equal to number of properties from which property tax is demanded.",
         "displayNumber": "2.19"
     },
-    "otherNoPropertyTaxCollected": {
-        "logic": "ltequal",
-        "fields": [
-            "otherNoPropertyTaxCollected"
-        ],
-        "sequence": [
-            "2.29"
-        ],
-        "message": "Number of properties from which property tax is collected should be less that or equal to number of properties from which property tax is demanded."
-    },
     "totalCollectionOnline": {
         "logic": "ltequal",
         "fields": [
@@ -330,6 +310,26 @@ const validationJson = {
         ],
         "message": "Value of water charges collected should be less that or equal to value of water charges demanded.",
         "displayNumber": "5.15"
+    },
+    'otherValuePropertyTaxCollected':{
+        "logic": "ltequal",
+        "fields": [
+            "otherValuePropertyTaxDm"
+        ],
+        "sequence": [
+            "2.26"
+        ],
+        "message": " Value of property tax collected should be less that or equal to value of property tax demanded." 
+    },
+    "otherNoPropertyTaxCollected":{
+        "logic":"ltequal",
+        "fields":[
+            "otherNoPropertyTaxDm"
+        ],
+        "sequence":[
+            "2.29"
+        ],
+        "message":"Number of properties from which property tax is collected should be less that or equal to number of properties from which property tax is demanded."
     }
 }
 exports.checkValidation = async function (req, res, next) {
