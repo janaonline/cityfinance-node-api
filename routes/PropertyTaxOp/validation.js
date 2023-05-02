@@ -164,16 +164,16 @@ const validationJson = {
     "totalPropertiesTaxDm": {
         "logic": "sum",
         "fields": [
-            "totalMappedPropertiesUlb",
-            "resNoPropertyTaxDm",
-            "indNoPropertyTaxDm",
-            "govNoPropertyTaxDm",
-            "insNoPropertyTaxDm",
+            'resNoPropertyTaxDm',
+            'comNoPropertyTaxDm',
+            'indNoPropertyTaxDm',
+            'govNoPropertyTaxDm',
+            'insNoPropertyTaxDm',
             "otherNoPropertyTaxDm"
         ],
         "sequence": [
             "2.6",
-            "2.1",
+            "2.10",
             "2.14",
             "2.18",
             "2.22",
@@ -239,7 +239,7 @@ const validationJson = {
     "comNoPropertyTaxCollected": {
         "logic": "ltequal",
         "fields": [
-            "totalMappedPropertiesUlb"
+            "comNoPropertyTaxDm"
         ],
         "sequence": [
             "2.10"
@@ -362,7 +362,7 @@ const validationJson = {
     "otherNoPropertyTaxCollected":{
         "logic":"ltequal",
         "fields":[
-            "otherNoPropertyTaxDm"
+            "otherNoPropertyTaxCollected"
         ],
         "sequence":[
             "2.29"
