@@ -255,7 +255,8 @@ async function removeIsDraft(params){
         let { ulbId, design_year } = params
         let condition = { ulb: ObjectId(ulbId), design_year: ObjectId(design_year) };
         await PropertyTaxOp.findOneAndUpdate(condition,{
-            "isDraft":true
+            "isDraft":true,
+            "currentFormStatus":1
         }).lean();
     }
     catch(err){
