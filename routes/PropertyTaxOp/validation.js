@@ -1,4 +1,42 @@
 const { propertyTaxOpFormJson } = require('./fydynemic')
+const keysWithChild = {
+    // "taxTypeDemand": [
+    //   "taxTypeDemandChild"
+    // ],
+    // "cessDemand": [
+    //   "cessDemandChild"
+    // ],
+    // "userChargesDmnd": [
+    //   "userChargesDmndChild"
+    // ],
+    // "taxTypeCollection": [
+    //   "taxTypeCollectionChild"
+    // ],
+    // "cessCollect": [
+    //   "cessCollectChild"
+    // ],
+    // "userChargesCollection": [
+    //   "userChargesCollectionChild"
+    // ],
+    "otherValuePropertyType": [
+      "otherValuePropertyTaxDm",
+      "otherNoPropertyTaxDm",
+      "otherValuePropertyTaxCollected",
+      "otherNoPropertyTaxCollected"
+    ],
+    "othersValueWaterType": [
+      "otherValueWaterTaxDm",
+      "othersNoWaterChrgDm",
+      "othersValueWaterChrgCollected",
+      "othersNoWaterChrgCollected"
+    ],
+    "otherValueSewerageType": [
+      "otherValueSewerageTaxDm",
+      "otherNoSewerageTaxDm",
+      "otherValueSewerageTaxCollected",
+      "otherNoSewerageTaxCollected"
+    ]
+  }
 const validationJson = {
     "dmdIncludingCess": {
         "logic": "multiple",
@@ -126,16 +164,16 @@ const validationJson = {
     "totalPropertiesTaxDm": {
         "logic": "sum",
         "fields": [
-            "totalMappedPropertiesUlb",
-            "resNoPropertyTaxDm",
-            "indNoPropertyTaxDm",
-            "govNoPropertyTaxDm",
-            "insNoPropertyTaxDm",
+            'resNoPropertyTaxDm',
+            'comNoPropertyTaxDm',
+            'indNoPropertyTaxDm',
+            'govNoPropertyTaxDm',
+            'insNoPropertyTaxDm',
             "otherNoPropertyTaxDm"
         ],
         "sequence": [
             "2.6",
-            "2.1",
+            "2.10",
             "2.14",
             "2.18",
             "2.22",
@@ -147,18 +185,18 @@ const validationJson = {
     "totalPropertiesTaxDmCollected": {
         "logic": "sum",
         "fields": [
-            "totalPropertiesTax",
-            "resNoPropertyTaxCollected",
-            "comNoPropertyTaxCollected",
-            "indNoPropertyTaxCollected",
-            "insNoPropertyTaxCollected",
+            'resNoPropertyTaxCollected',
+            'comNoPropertyTaxCollected',
+            'indNoPropertyTaxCollected',
+            'govNoPropertyTaxCollected',
+            'insNoPropertyTaxCollected',
             "otherNoPropertyTaxCollected"
         ],
         "sequence": [
             "2.8",
             "2.12",
             "2.16",
-            "2.2",
+            "2.20",
             "2.24",
             "2.29"
         ],
@@ -201,7 +239,7 @@ const validationJson = {
     "comNoPropertyTaxCollected": {
         "logic": "ltequal",
         "fields": [
-            "totalMappedPropertiesUlb"
+            "comNoPropertyTaxDm"
         ],
         "sequence": [
             "2.10"
@@ -287,13 +325,13 @@ const validationJson = {
         "logic": "sum",
         "fields": [
             "entityWaterCharges",
-            "resNoWaterChrgCollected",
+            "comNoWaterChrgCollected",
             "indNoWaterChrgCollected",
             "othersNoWaterChrgCollected"
         ],
         "sequence": [
             "5.16",
-            "5.2",
+            "5.20",
             "5.24",
             "5.29"
         ],
@@ -324,7 +362,7 @@ const validationJson = {
     "otherNoPropertyTaxCollected":{
         "logic":"ltequal",
         "fields":[
-            "otherNoPropertyTaxDm"
+            "otherNoPropertyTaxCollected"
         ],
         "sequence":[
             "2.29"
@@ -413,3 +451,4 @@ const getVavidationObject = (sortKey, byData) => {
 }
 
 module.exports.validationJson = validationJson
+module.exports.keysWithChild = keysWithChild

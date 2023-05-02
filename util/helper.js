@@ -45,8 +45,8 @@ function Helper() {
     this.isEmptyObj = (obj) => {
         return Object.keys(obj).length == 0 && obj.constructor === Object
     }
-    this.isReadOnly = ({ isDraft, status }) => {
-        return !isDraft && status !== "REJECTED" ? true : false;
+    this.isReadOnly = ({ isDraft, status ,currentFormStatus }) => {
+        return ![1, 2, 5, 7].includes(currentFormStatus)
     }
 }
 module.exports = new Helper();
