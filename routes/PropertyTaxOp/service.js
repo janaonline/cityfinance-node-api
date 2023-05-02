@@ -12,7 +12,7 @@ const { isEmptyObj, isReadOnly } = require('../../util/helper');
 const PropertyMapperChildData = require("../../models/PropertyTaxMapperChild");
 const { years } = require('../../service/years');
 const {saveFormHistory} = require("../../util/masterFunctions")
-const {validationJson} = require("./validation");
+const {validationJson, keysWithChild} = require("./validation");
 const MasterStatus = require('../../models/MasterStatus');
 
 const getKeyByValue = (object, value)=>{
@@ -483,6 +483,7 @@ function yearWiseValues(yearData){
 
 function getSumByYear(params){
     let {yearData,sumObj} = params
+    // console.log("yearData ::: ",yearData)
     try{
         for(let yearObj of yearData){
             if(yearObj.year){
@@ -503,21 +504,79 @@ function getSumByYear(params){
 }
 
 
+function mergeChildObjectsYearData(childObjects){
+    try{
+        let yearData = []
+        let sumObj = {}
+        for(let childs of childObjects){
+            yearData = childs.yearData
+            getSumByYear({
+                yearData:childs.yearData,
+                sumObj
+            })
+        }
+        sumObj = Object.entries(sumObj).reduce((result, [key, value]) => ({
+                ...result, 
+                [key]: value.reduce((total, item) => total + item, 0)}) 
+                , 
+            {})
+        // console.log("sumObj :: ",sumObj)
+        yearData.forEach((item)=>{
+            item.value = sumObj[getKeyByValue(years,item.year.toString())] || ""
+        })
+        return yearData
+    }
+    catch(err){
+        console.log("error in mergeChildObjectsYearData ::: ",err.message)
+    }
+}
 
-function getYearDataSumForValidations(keysToFind,data){
+function assignChildToMainKeys(data){
+    let seperatedObject = {...data}
+    try{
+        for(let key of Object.keys(keysWithChild)){
+            let element = {...seperatedObject[key]}
+            if(element.child){
+                for(let childElement of keysWithChild[key]){
+                    let filteredChildren = element.child.filter(item => item.key === childElement)
+                    let yearData = [...mergeChildObjectsYearData(filteredChildren)]
+                    seperatedObject[childElement] = {
+                            "key": childElement,
+                            "label": "",
+                            "required": true,
+                            yearData : yearData
+                    }
+                }
+            }
+        }
+    }
+    catch(err){
+        console.log("error in assignChildToMainKeys ::: ",err.message)
+    }
+    return seperatedObject
+}
+
+
+function getYearDataSumForValidations(keysToFind,payload){
     let sumObj = {}
+    let data = {...payload}
     try{
         for(let keyName of keysToFind){
             if(data[keyName]){
                 if(!data[keyName].child ||  data[keyName].child.length === 0){
+                    // console.log("22222  start 22222222222")
+                    // console.log("keyname :::::::",keyName)
+                    // console.log("data[keyName].yearData :::: ",data[keyName].yearData)
                     getSumByYear({
                         yearData:data[keyName].yearData,
                         sumObj
                     })
+                    // console.log("22222222 end 22222222")
                 }
                 else{
                     // console.log("child case::::",keyName)
                     for(let childs of data[keyName].child){
+                        console.log("3333333333333333333")
                         getSumByYear({
                             yearData:childs.yearData,
                             sumObj:sumObj
@@ -676,6 +735,7 @@ async function handleNonSubmissionValidation(params){
                     message:validationJson[dynamicObj.key].message
                 }
                 let compareValidator = compareValues(valueParams)
+                // console.log("compareValidator :: ",compareValidator)
                 if(!compareValidator.valid){
                     return compareValidator
                 }
@@ -693,18 +753,19 @@ async function calculateAndUpdateStatusForMappers(tabs, ulbId, formId, year, upd
         let conditionalObj = {}
         for (var tab of tabs) {
             conditionalObj[tab._id.toString()] = {}
-            let obj = tab.data
+            let obj = JSON.parse(JSON.stringify(tab.data))
             let temp = {
                 "comment": tab.feedback.comment,
                 "status": []
             }
+            let seperatedValues =  assignChildToMainKeys(obj)
             for (var k in tab.data) {
                 let dynamicObj = obj[k]
                 let yearArr = obj[k].yearData
                 let params = {
                     dynamicObj,
                     yearArr,
-                    data:tab.data
+                    data:seperatedValues
                 }
                 if(!isDraft){
                     let validation = await handleNonSubmissionValidation(params)
@@ -714,7 +775,6 @@ async function calculateAndUpdateStatusForMappers(tabs, ulbId, formId, year, upd
                 }
                 let updatedIds = await handleChildrenData({inputElement:{...tab.data[k]},formId,ulbId,updateForm,dynamicObj})
                 if (obj[k].yearData) {
-                    
                     let status = yearArr.every((item) => {
                         if (Object.keys(item).length) {
                             return item.status === "APPROVED"
