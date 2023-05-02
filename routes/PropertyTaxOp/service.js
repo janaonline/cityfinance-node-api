@@ -576,7 +576,6 @@ function getYearDataSumForValidations(keysToFind,payload){
                 else{
                     // console.log("child case::::",keyName)
                     for(let childs of data[keyName].child){
-                        console.log("3333333333333333333")
                         getSumByYear({
                             yearData:childs.yearData,
                             sumObj:sumObj
@@ -734,8 +733,12 @@ async function handleNonSubmissionValidation(params){
                     // message:`${validationJson[dynamicObj.key].displayNumber} - ${validationJson[dynamicObj.key].message} `
                     message:validationJson[dynamicObj.key].message
                 }
+                // console.log("----------------------------------------------")
+                // console.log("sumOfrefVal ::: ",sumOfrefVal,"keystoFind ::: ",keysToFind)
+                // console.log("sumOfCurrentKey :::: ",sumOfCurrentKey,"keysToFind:::",keysToFind)
                 let compareValidator = compareValues(valueParams)
-                // console.log("compareValidator :: ",compareValidator)
+                console.log("compareValidator ::q ",compareValidator)
+                // console.log("-----------------------------------------------")
                 if(!compareValidator.valid){
                     return compareValidator
                 }
@@ -862,7 +865,7 @@ async function updateQueryForPropertyTaxOp(yearData, ulbId, formId, updateForm, 
 }
 
 function createChildObjectsYearData(params){
-    let {childs,isDraft,status,childCopyFrom} = params
+    let {childs,isDraft,currentFormStatus,childCopyFrom} = params
     let yearData = []
     try{
         for(let child of childs){
@@ -878,7 +881,7 @@ function createChildObjectsYearData(params){
             json['file'] = child.file
             json['displayPriority'] = child.displayPriority
             json['textValue'] = child.textValue
-            json['readonly'] = isReadOnly({isDraft,status})
+            json['readonly'] = isReadOnly({isDraft,currentFormStatus})
             json['replicaNumber'] = child.replicaNumber ? child.replicaNumber : child.replicaCount
             yearData.push(json)
         }
@@ -919,7 +922,7 @@ async function createFullChildObj(params){
 }
 
 async function appendChildValues(params){
-    let {element,ptoMaper,isDraft,status} = params
+    let {element,ptoMaper,isDraft,currentFormStatus} = params
     try{  
         if(element.child && ptoMaper){
             let childElement = ptoMaper.find(item => item.type === element.key)
@@ -930,7 +933,7 @@ async function appendChildValues(params){
                     yearData   = await createChildObjectsYearData({
                         childs:childElement.child,
                         isDraft:isDraft,
-                        status:status,
+                        currentFormStatus:currentFormStatus,
                         childCopyFrom:element.copyChildFrom
                     })  
                 }
@@ -980,7 +983,7 @@ exports.getView = async function (req, res, next) {
                                 element:data[el],
                                 ptoMaper:ptoMaper,
                                 isDraft:isDraft,
-                                status:status
+                                currentFormStatus:currentFormStatus
                             }
                             data[el] = await appendChildValues(childParams)
                             if (Array.isArray(yearData) && ptoMaper) {
@@ -990,7 +993,7 @@ exports.getView = async function (req, res, next) {
                                         if (d) {
                                             pf.file ? (pf.file = d ? d.file : "") : d.date ? (pf.date = d ? d.date : "") : (pf.value = d ? d.value : "");
                                         }
-                                        pf.readonly = isReadOnly({ isDraft, status })
+                                        pf.readonly = isReadOnly({ isDraft, status,ptoData })
                                     }
                                 }
                             } else if (Array.isArray(mData) && ptoData.length) {
