@@ -1,4 +1,42 @@
 const { propertyTaxOpFormJson } = require('./fydynemic')
+const keysWithChild = {
+    // "taxTypeDemand": [
+    //   "taxTypeDemandChild"
+    // ],
+    // "cessDemand": [
+    //   "cessDemandChild"
+    // ],
+    // "userChargesDmnd": [
+    //   "userChargesDmndChild"
+    // ],
+    // "taxTypeCollection": [
+    //   "taxTypeCollectionChild"
+    // ],
+    // "cessCollect": [
+    //   "cessCollectChild"
+    // ],
+    // "userChargesCollection": [
+    //   "userChargesCollectionChild"
+    // ],
+    "otherValuePropertyType": [
+      "otherValuePropertyTaxDm",
+      "otherNoPropertyTaxDm",
+      "otherValuePropertyTaxCollected",
+      "otherNoPropertyTaxCollected"
+    ],
+    "othersValueWaterType": [
+      "otherValueWaterTaxDm",
+      "othersNoWaterChrgDm",
+      "othersValueWaterChrgCollected",
+      "othersNoWaterChrgCollected"
+    ],
+    "otherValueSewerageType": [
+      "otherValueSewerageTaxDm",
+      "otherNoSewerageTaxDm",
+      "otherValueSewerageTaxCollected",
+      "otherNoSewerageTaxCollected"
+    ]
+  }
 const validationJson = {
     "dmdIncludingCess": {
         "logic": "multiple",
@@ -413,3 +451,4 @@ const getVavidationObject = (sortKey, byData) => {
 }
 
 module.exports.validationJson = validationJson
+module.exports.keysWithChild = keysWithChild
