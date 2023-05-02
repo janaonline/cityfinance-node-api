@@ -993,7 +993,7 @@ exports.getView = async function (req, res, next) {
                                         if (d) {
                                             pf.file ? (pf.file = d ? d.file : "") : d.date ? (pf.date = d ? d.date : "") : (pf.value = d ? d.value : "");
                                         }
-                                        pf.readonly = isReadOnly({ isDraft, status,ptoData })
+                                        pf.readonly = isReadOnly({ isDraft, currentFormStatus,ptoData })
                                     }
                                 }
                             } else if (Array.isArray(mData) && ptoData.length) {
