@@ -325,13 +325,13 @@ const validationJson = {
         "logic": "sum",
         "fields": [
             "entityWaterCharges",
-            "resNoWaterChrgCollected",
+            "comNoWaterChrgCollected",
             "indNoWaterChrgCollected",
             "othersNoWaterChrgCollected"
         ],
         "sequence": [
             "5.16",
-            "5.2",
+            "5.20",
             "5.24",
             "5.29"
         ],
