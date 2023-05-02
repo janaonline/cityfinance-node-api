@@ -682,8 +682,11 @@ async function handleInternalValidations(params){
                     logic:validationJson[child.key].logic,
                     // message:`${validatidynamicObjonJson[dynamicObj.key].displayNumber} - ${validationJson[dynamicObj.key].message} `
                     message:validationJson[child.key].message
-                }                
+                }        
+                // console.log("sumOfrefVal ::: ",sumOfrefVal ,"keysToFind :: ",keysToFind)   
+                // console.log("sumOfCurrentKey ::: ",sumOfCurrentKey,"keysToFind :: ",keysToFind)     
                 let compareValidator = compareValues(valueParams)
+                // console.log("compareValidator ::: ",compareValidator)
                 if(!compareValidator.valid){
                     return compareValidator
                 }
@@ -738,7 +741,7 @@ async function handleNonSubmissionValidation(params){
                 // console.log("sumOfrefVal ::: ",sumOfrefVal,"keystoFind ::: ",keysToFind)
                 // console.log("sumOfCurrentKey :::: ",sumOfCurrentKey,"keysToFind:::",keysToFind)
                 let compareValidator = compareValues(valueParams)
-                console.log("compareValidator ::q ",compareValidator)
+                // console.log("compareValidator ::q ",compareValidator)
                 // console.log("-----------------------------------------------")
                 if(!compareValidator.valid){
                     return compareValidator
