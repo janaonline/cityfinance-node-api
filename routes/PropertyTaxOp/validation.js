@@ -272,12 +272,23 @@ const validationJson = {
     "govValuePropertyTaxCollected": {
         "logic": "ltequal",
         "fields": [
+            "govValuePropertyTaxDm"
+        ],
+        "sequence": [
+            "2.17"
+        ],
+        "message": "Number of properties from which property tax is collected should be less that or equal to number of properties from which property tax is demanded.",
+        "displayNumber": "2.19"
+    },
+    "govNoPropertyTaxCollected":{
+        "logic": "ltequal",
+        "fields": [
             "govNoPropertyTaxDm"
         ],
         "sequence": [
             "2.18"
         ],
-        "message": "Number of properties from which property tax is collected should be less that or equal to number of properties from which property tax is demanded.",
+        "message": "NNumber of properties from which property tax is collected should be less that or equal to number of properties from which property tax is demanded.",
         "displayNumber": "2.19"
     },
     "totalCollectionOnline": {

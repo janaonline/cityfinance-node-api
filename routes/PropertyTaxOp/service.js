@@ -737,12 +737,12 @@ async function handleNonSubmissionValidation(params){
                     // message:`${validationJson[dynamicObj.key].displayNumber} - ${validationJson[dynamicObj.key].message} `
                     message:validationJson[dynamicObj.key].message
                 }
-                // console.log("----------------------------------------------")
-                // console.log("sumOfrefVal ::: ",sumOfrefVal,"keystoFind ::: ",keysToFind)
-                // console.log("sumOfCurrentKey :::: ",sumOfCurrentKey,"keysToFind:::",keysToFind)
+                console.log("----------------------------------------------")
+                console.log("sumOfrefVal ::: ",sumOfrefVal,"keystoFind ::: ",keysToFind)
+                console.log("sumOfCurrentKey :::: ",sumOfCurrentKey,"keysToFind:::",keysToFind)
                 let compareValidator = compareValues(valueParams)
-                // console.log("compareValidator ::q ",compareValidator)
-                // console.log("-----------------------------------------------")
+                console.log("compareValidator ::q ",compareValidator)
+                console.log("-----------------------------------------------")
                 if(!compareValidator.valid){
                     return compareValidator
                 }
