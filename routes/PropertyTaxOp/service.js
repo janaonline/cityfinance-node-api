@@ -970,7 +970,7 @@ exports.getView = async function (req, res, next) {
         }
         let fyDynemic = {...await propertyTaxOpFormJson()};
         if (ptoData) {
-            const { isDraft, status } = ptoData;
+            const { isDraft, status,currentFormStatus } = ptoData;
             for (let sortKey in fyDynemic) {
                 if (sortKey !== "tabs" && ptoData) {
                     fyDynemic[sortKey] = ptoData[sortKey];
