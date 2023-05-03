@@ -21,7 +21,8 @@ const IndicatorsSchema = new Schema(
     modifiedAt: { type: Date, default: Date.now() },
     createdAt: { type: Date, default: Date.now() },
     isActive: { type: Boolean, default: 1 },
-    mapperKey: {type: String, default:""}
+    mapperKey: {type: String, default:""},
+    lineItemId: {type: Number}
   },
   { timestamp: { createdAt: "createdAt", updatedAt: "modifiedAt" } }
 );
