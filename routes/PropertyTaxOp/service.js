@@ -641,12 +641,14 @@ async function handleMultipleValidations(params){
             let keysToFind = validationObj.fields
             let sumOfrefVal = await getYearDataSumForValidations(keysToFind,data)
             let sumOfCurrentKey = await yearWiseValues(dynamicObj.yearData)
+            let errorMessage = await createErrorMessage(validationObj[child.key],dynamicObj)
             let valueParams = {
                 sumOfrefVal,
                 sumOfCurrentKey,
                 logic:validationObj.logic,
                 // message:`${validationObj.displayNumber} - ${validationObj.message} `
-                message:validationObj.message
+                // message:validationObj.message
+                message : errorMessage
             }
             let compareValidator = compareValues(valueParams)
             if(!compareValidator.valid){
@@ -676,12 +678,13 @@ async function handleInternalValidations(params){
                 let keysToFind = validationJson[child.key].fields
                 let sumOfrefVal = await getYearDataSumForValidations(keysToFind,preparedJsonData)
                 let sumOfCurrentKey = await yearWiseValues(child.yearData)
+                let errorMessage = await createErrorMessage(validationJson[child.key],preparedJsonData[child.key])
                 let valueParams = {
                     sumOfrefVal,
                     sumOfCurrentKey,
                     logic:validationJson[child.key].logic,
                     // message:`${validatidynamicObjonJson[dynamicObj.key].displayNumber} - ${validationJson[dynamicObj.key].message} `
-                    message:validationJson[child.key].message
+                    message:errorMessage
                 }        
                 // console.log("sumOfrefVal ::: ",sumOfrefVal ,"keysToFind :: ",keysToFind)   
                 // console.log("sumOfCurrentKey ::: ",sumOfCurrentKey,"keysToFind :: ",keysToFind)     
@@ -697,6 +700,22 @@ async function handleInternalValidations(params){
         console.log("error in handleInternalValidations :::: ",err.message)
     }
     return errors
+}
+
+function createErrorMessage(validationObj,dynamicObj){
+    let message = validationObj.message
+    try{
+        if(validationObj.logic === "sum"){
+            message += `\n Sum of ${validationObj.sequence.join(",")} is not equal to ${dynamicObj.position}` 
+        }
+        else if(validationObj.logic === "ltequal"){
+            message += `\n ${dynamicObj.position} should be lesser than or equalTo ${validationObj.sequence[0]}` 
+        } 
+    }
+    catch(err){
+        console.log("error in createErrorMessage :::: ",err.message)
+    }
+    return message
 }
 
 async function handleNonSubmissionValidation(params){
@@ -730,12 +749,13 @@ async function handleNonSubmissionValidation(params){
             else{
                 let sumOfrefVal = await getYearDataSumForValidations(keysToFind,data)
                 let sumOfCurrentKey = await yearWiseValues(dynamicObj.yearData)
+                let errorMessage = await createErrorMessage(validationJson[dynamicObj.key],dynamicObj)
                 let valueParams = {
                     sumOfrefVal,
                     sumOfCurrentKey,
                     logic:validationJson[dynamicObj.key].logic,
                     // message:`${validationJson[dynamicObj.key].displayNumber} - ${validationJson[dynamicObj.key].message} `
-                    message:validationJson[dynamicObj.key].message
+                    message:errorMessage
                 }
                 console.log("----------------------------------------------")
                 console.log("sumOfrefVal ::: ",sumOfrefVal,"keystoFind ::: ",keysToFind)
