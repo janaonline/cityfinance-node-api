@@ -2,7 +2,7 @@ const PropertyTaxOp = require('../../models/PropertyTaxOp')
 const PropertyTaxOpMapper = require('../../models/PropertyTaxOpMapper')
 const { response } = require('../../util/response');
 const ObjectId = require('mongoose').Types.ObjectId
-const { canTakenAction } = require('../CommonActionAPI/service')
+const { canTakenAction , canTakenActionMaster} = require('../CommonActionAPI/service')
 const Service = require('../../service');
 const { FormNames, MASTER_STATUS_ID } = require('../../util/FormNames');
 const User = require('../../models/User');
@@ -1017,6 +1017,16 @@ exports.getView = async function (req, res, next) {
         fyDynemic['design_year'] = ptoData?.design_year || req.query.design_year
         fyDynemic['statusId'] = ptoData?.currentFormStatus || 1
         fyDynemic['status'] = MASTER_STATUS_ID[ptoData?.currentFormStatus] || MASTER_STATUS_ID[1]
+        let params = {
+            status: ptoData.currentFormStatus,
+            formType: "ULB",
+            loggedInUser: req?.decoded?.role,
+          };
+        Object.assign(fyDynemic, {
+            canTakeAction: canTakenActionMaster(params),
+          }
+          );
+
         return res.status(200).json({ status: true, message: "Success fetched data!", data: { ...fyDynemic, financialYearTableHeader, specialHeaders ,skipLogicDependencies } });
     } catch (error) {
         console.log("err", error);
