@@ -335,7 +335,7 @@ const validationJson = {
     "waterChrgConnectionCol": {
         "logic": "sum",
         "fields": [
-            "entityWaterCharges",
+            "resNoWaterChrgCollected",
             "comNoWaterChrgCollected",
             "indNoWaterChrgCollected",
             "othersNoWaterChrgCollected"
