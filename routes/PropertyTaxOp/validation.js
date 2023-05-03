@@ -299,7 +299,7 @@ const validationJson = {
         "sequence": [
             "1.13"
         ],
-        "message": "Number of properties that paid online should be less than or equal to total number of properties from which property tax was collected.",
+        "message": "Total collections made via online channel should be less than or equal to total property tax collections.",
         "displayNumber": "3.2"
     },
     "waterChrgDm": {
