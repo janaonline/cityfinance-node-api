@@ -2177,9 +2177,9 @@ async function appendKeys(keyArray, data, provisionalKey, tabShortKeys, role, st
       data[key]['status'] = statusData['status'];
       data[key]['rejectReason'] = statusData['rejectReason'];
       if(stateStatusData){
-        data[key]['rejectReason_mohua'] = stateStatusData['rejectReason']
+        data[key]['rejectReason_state'] = stateStatusData['rejectReason']
       }else{
-        data[key]['rejectReason_mohua'] = ""
+        data[key]['rejectReason_state'] = ""
       }
       // if(statusData.statusId)
       if (continueFlagUnaudited && statusData.shortKey === keyArray[1]){
@@ -2212,9 +2212,9 @@ async function appendKeys(keyArray, data, provisionalKey, tabShortKeys, role, st
         tabData[entity]['status'] = statusData['status'];
         tabData[entity]['rejectReason'] = statusData['rejectReason'];
         if(stateStatusData){
-          data[key]['rejectReason_mohua'] = stateStatusData['rejectReason']
+          data[key]['rejectReason_state'] = stateStatusData['rejectReason']
         }else{
-        data[key]['rejectReason_mohua'] = ""
+        data[key]['rejectReason_state'] = ""
         }
         if(["bal_sheet","inc_exp"].includes(entity)){
           tabData = addExtraKeysToNumericFields(statusData,tabData, params, formLevelCanTakeAction);
