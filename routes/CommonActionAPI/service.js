@@ -1899,9 +1899,7 @@ async function handleGroupedQuestions(questionObj,formObj){
         answerObj.textValue = value
         answerObj.value = value
         question.selectedValue  = [answerObj]
-        question.answer = {
-            answer:[answerObj]
-        }
+        question.answer = {...question.answer,answer:[answer]}
         return question
     }
     catch(err){
@@ -1924,9 +1922,7 @@ async function handleDbValues(questionObj,formObj,order){
                 questionObj.answer['answer'] =[answer]
             }
             catch(err){
-                questionObj.answer = {
-                    'answer' : [answer]
-                }
+                question.answer = {...question.answer,answer:[answer]}
             }
         }
         
@@ -2072,9 +2068,7 @@ async function handleArrayFields(shortKey,flattedForm,childQuestionData){
                     question.answer['answer'] = [answer]
                 }
                 catch(err){
-                    question.answer = {
-                        'answer' : [answer]
-                    }
+                    question.answer = {...question.answer,answer:[answer]}
                 }
             }
         }
@@ -2101,9 +2095,7 @@ async function appendvalues(childQuestionData,flattedForm,shortKey,question){
                         if(obj.isQuestionDisabled !== true){
                             obj.isQuestionDisabled = handleDisableFields(flattedForm)
                         }
-                        obj.answer = {
-                            answer : [answer]
-                        }
+                        obj.answer = {...obj.answer,...answer}
                         let modifiedObj ={...await handleRangeIfExists(obj,flattedForm)}
                         obj.minRange = modifiedObj.minRange ? modifiedObj.minRange  : obj.minRange
                         obj.maxRange = modifiedObj.maxRange ? modifiedObj.maxRange : obj.minRange
