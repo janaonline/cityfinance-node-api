@@ -47,7 +47,12 @@ function Helper() {
         return Object.keys(obj).length == 0 && obj.constructor === Object
     }
     this.isReadOnly = ({ isDraft, status ,currentFormStatus ,role }) => {
-        return ![1, 2, 5, 7].includes(currentFormStatus) && role !== userTypes.ulb
+        if([1, 2, 5, 7].includes(currentFormStatus) && role === userTypes.ulb){
+            return false
+        }
+        else{
+           return true
+        }
     }
 }
 module.exports = new Helper();
