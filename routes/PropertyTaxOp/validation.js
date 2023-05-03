@@ -315,6 +315,19 @@ const validationJson = {
         "message": "Sum of current and arrears should be equal to total water charges demand.",
         "displayNumber": "5.5"
     },
+    "waterChrgCol":{
+        "logic": "sum",
+        "fields": [
+            "cuWaterChrgCol",
+            "arWaterChrgCol",
+        ],
+        "sequence": [
+            "5.9",
+            "5.10",
+        ],
+        "message": "Sum of current and arrears should be equal to total water charges collection.",
+        "displayNumber": "5.8"
+    },
     "waterChrgConnectionDm": {
         "logic": "sum",
         "fields": [
@@ -348,19 +361,6 @@ const validationJson = {
         ],
         "message": "The sum should be equal to total number of connections from which water charges was collected.",
         "displayNumber": "5.12"
-    },
-    "waterChrgCol":{
-        "logic": "sum",
-        "fields": [
-            "cuWaterChrgCol",
-            "arWaterChrgCol",
-        ],
-        "sequence": [
-            "5.9",
-            "5.10",
-        ],
-        "message": "Sum of current and arrears should be equal to total water charges collection.",
-        "displayNumber": "5.8"
     },
     "resValueWaterChrgCollected": {
         "logic": "ltequal",
