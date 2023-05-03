@@ -869,7 +869,7 @@ async function updateQueryForPropertyTaxOp(yearData, ulbId, formId, updateForm, 
 }
 
 function createChildObjectsYearData(params){
-    let {childs,isDraft,currentFormStatus,childCopyFrom} = params
+    let {childs,isDraft,currentFormStatus,childCopyFrom,role} = params
     let yearData = []
     try{
         for(let child of childs){
@@ -885,7 +885,7 @@ function createChildObjectsYearData(params){
             json['file'] = child.file
             json['displayPriority'] = child.displayPriority
             json['textValue'] = child.textValue
-            json['readonly'] = isReadOnly({isDraft,currentFormStatus})
+            json['readonly'] = isReadOnly({isDraft,currentFormStatus,role})
             json['replicaNumber'] = child.replicaNumber ? child.replicaNumber : child.replicaCount
             yearData.push(json)
         }
@@ -926,7 +926,7 @@ async function createFullChildObj(params){
 }
 
 async function appendChildValues(params){
-    let {element,ptoMaper,isDraft,currentFormStatus} = params
+    let {element,ptoMaper,isDraft,currentFormStatus,role} = params
     try{  
         if(element.child && ptoMaper){
             let childElement = ptoMaper.find(item => item.type === element.key)
@@ -938,7 +938,8 @@ async function appendChildValues(params){
                         childs:childElement.child,
                         isDraft:isDraft,
                         currentFormStatus:currentFormStatus,
-                        childCopyFrom:element.copyChildFrom
+                        childCopyFrom:element.copyChildFrom,
+                        role:role
                     })  
                 }
                 let params = {
@@ -963,6 +964,7 @@ async function appendChildValues(params){
 exports.getView = async function (req, res, next) {
     try {
         let condition = {};
+        let {role} = req.decoded
         if (!req.query.ulb && !req.query.design_year) {
             return res.status(400).json({ status: false, message: "Something went wrong!" });
         }
@@ -987,7 +989,8 @@ exports.getView = async function (req, res, next) {
                                 element:data[el],
                                 ptoMaper:ptoMaper,
                                 isDraft:isDraft,
-                                currentFormStatus:currentFormStatus
+                                currentFormStatus:currentFormStatus,
+                                role
                             }
                             data[el] = await appendChildValues(childParams)
                             if (Array.isArray(yearData) && ptoMaper) {
@@ -997,7 +1000,7 @@ exports.getView = async function (req, res, next) {
                                         if (d) {
                                             pf.file ? (pf.file = d ? d.file : "") : d.date ? (pf.date = d ? d.date : "") : (pf.value = d ? d.value : "");
                                         }
-                                        pf.readonly = isReadOnly({ isDraft, currentFormStatus,ptoData })
+                                        pf.readonly = isReadOnly({ isDraft, currentFormStatus,role,ptoData })
                                     }
                                 }
                             } else if (Array.isArray(mData) && ptoData.length) {
@@ -1018,7 +1021,7 @@ exports.getView = async function (req, res, next) {
         fyDynemic['statusId'] = ptoData?.currentFormStatus || 1
         fyDynemic['status'] = MASTER_STATUS_ID[ptoData?.currentFormStatus] || MASTER_STATUS_ID[1]
         let params = {
-            status: ptoData.currentFormStatus,
+            status: ptoData?.currentFormStatus,
             formType: "ULB",
             loggedInUser: req?.decoded?.role,
           };
