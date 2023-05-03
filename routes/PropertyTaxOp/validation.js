@@ -346,7 +346,7 @@ const validationJson = {
             "5.24",
             "5.29"
         ],
-        "message": "Total collections made via online channel should be less than or equal to total property tax collections.",
+        "message": "The sum should be equal to total number of connections from which water charges was collected.",
         "displayNumber": "5.12"
     },
     "resValueWaterChrgCollected": {
