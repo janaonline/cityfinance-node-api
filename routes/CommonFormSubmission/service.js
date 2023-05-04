@@ -424,11 +424,12 @@ async function saveStatusAndHistory(params){
   let {formBodyStatus,actionTakenBy,actionTakenByRole,formSubmit} = params
   let masterFormId = FORMIDs['PTO']
   try{
+    console.log("formBodyStatu ",formBodyStatus === MASTER_STATUS["In Progress"])
     if (formBodyStatus === MASTER_STATUS["In Progress"]) {
-
+      console.log("masterFormId ::: ",masterFormId)
       let currentStatusData = {
         formId: masterFormId,
-        recordId: ObjectId(formSubmit._id),
+        recordId: ObjectId(formSubmit[0]._id),
         status: MASTER_STATUS["In Progress"],
         level: FORM_LEVEL["form"],
         shortKey: "form_level",
