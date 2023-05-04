@@ -14,6 +14,7 @@ const { years } = require('../../service/years');
 const {saveFormHistory} = require("../../util/masterFunctions")
 const {validationJson, keysWithChild} = require("./validation");
 const MasterStatus = require('../../models/MasterStatus');
+const {saveStatusAndHistory} = require("../CommonFormSubmission/service")
 
 const getKeyByValue = (object, value)=>{
     return Object.keys(object).find(key => object[key] === value);
@@ -267,19 +268,24 @@ async function removeIsDraft(params){
 async function createHistory(params){
     try{
         let { ulbId, actions, design_year, isDraft,formId,currentFormStatus } = params
-        if(isDraft == false || currentFormStatus ===7){
-            let payload = {
+        let {role,_id} = params.decoded 
+        let payload = {
                 "recordId":formId,
                 "data":[]
             }
-            let ptoForm = await PropertyTaxOp.find({"_id":formId}).lean()
-            let mapperForm = await PropertyTaxOpMapper.find({ ptoId: ObjectId(formId) }).populate("child").lean();
-            ptoForm[0]['ptoMapperData'] = mapperForm
-            payload['data'] = ptoForm
-            await saveFormHistory({
-                body:payload
-            })
+        let ptoForm = await PropertyTaxOp.find({"_id":formId}).lean()
+        let mapperForm = await PropertyTaxOpMapper.find({ ptoId: ObjectId(formId) }).populate("child").lean();
+        ptoForm[0]['ptoMapperData'] = mapperForm
+        payload['data'] = ptoForm
+        let historyParams = {
+            masterFormId:formId,
+            formBodyStatus : currentFormStatus,
+            formSubmit:ptoForm,
+            actionTakenByRole:role,
+            actionTakenBy:_id,
+            bodyData:ptoForm
         }
+        await saveStatusAndHistory(historyParams)
 
     }
     catch(err){
@@ -294,16 +300,19 @@ module.exports.createOrUpdate = async (req, res) => {
         let response = {}
         let formIdValidations = await checkIfFormIdExistsOrNot(ulbId, design_year, isDraft, role, userId,currentFormStatus);
         let formId = formIdValidations.formId;
+        let params = {...req.body}
+        params['formId'] = formId
+        params['decoded'] = req.decoded
+        await createHistory(params)
         await checkUndefinedValidations({ "ulb": ulbId, "formId": formId, "actions": actions, "design_year": design_year });
         await calculateAndUpdateStatusForMappers(actions, ulbId, formId, design_year, true, isDraft)
         response.success = true
         response.formId = formId
         response.message = "Form submitted successfully"
-        let params = {...req.body}
-        params['formId'] = formId
-        await createHistory(params)
+        // await createHistory(params)
         return res.status(200).json(response)
     } catch (error) {
+        console.log(error)
         await removeIsDraft(req.body)
         return res.status(400).json({
             status: false,

@@ -415,3 +415,78 @@ function checkForCalculations(reports){
   }
   return validator
 }
+
+async function saveStatusAndHistory(params){
+  let validation = {
+    "message":"",
+    "valid":true
+  }
+  let {formBodyStatus,actionTakenBy,actionTakenByRole,formSubmit} = params
+  let masterFormId = FORMIDs['PTO']
+  try{
+    if (formBodyStatus === MASTER_STATUS["In Progress"]) {
+
+      let currentStatusData = {
+        formId: masterFormId,
+        recordId: ObjectId(formSubmit._id),
+        status: MASTER_STATUS["In Progress"],
+        level: FORM_LEVEL["form"],
+        shortKey: "form_level",
+        rejectReason: "",
+        responseFile: "",
+        actionTakenByRole: actionTakenByRole,
+        actionTakenBy: ObjectId(actionTakenBy),
+      };
+      await saveCurrentStatus({
+        body: currentStatusData,
+        // session
+      });
+      // return Response.OK(res, {}, "Form Submitted");
+    } else if (
+      formBodyStatus === MASTER_STATUS["Under Review By State"]
+    ) {
+      let bodyData = {
+        formId: masterFormId,
+        recordId: ObjectId(formSubmit._id),
+        data: formSubmit,
+      };
+      await saveFormHistory({
+        body: bodyData,
+      });
+
+      let currentStatusData = {
+        formId: masterFormId,
+        recordId: ObjectId(formSubmit._id),
+        status: MASTER_STATUS["Under Review By State"],
+        level: FORM_LEVEL["form"],
+        shortKey: "form_level",
+        rejectReason: "",
+        responseFile: "",
+        actionTakenByRole: actionTakenByRole,
+        actionTakenBy: ObjectId(actionTakenBy),
+      };
+      await saveCurrentStatus({
+        body: currentStatusData,
+        // session
+      });
+
+      let statusHistory = {
+        formId: masterFormId,
+        recordId: ObjectId(formSubmit._id),
+        shortKey: "form_level",
+        data: currentStatusData,
+      };
+      await saveStatusHistory({
+        body: statusHistory,
+      });
+    }
+  }
+  catch(err){
+    validation.message = err.message
+    validation.valid = false
+    console.log("error in saveStatusAndHistory :::: ",err.message)
+  }
+  return validation
+}
+
+module.exports.saveStatusAndHistory = saveStatusAndHistory
