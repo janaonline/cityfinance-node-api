@@ -602,14 +602,14 @@ function compareValues(params){
         let {sumOfrefVal,sumOfCurrentKey,logic,message} = params
         for(let key in sumOfrefVal){
             if(logic === "ltequal"){
-                if(sumOfCurrentKey[key] > sumOfrefVal[key] ){
+                if(sumOfCurrentKey[key].toFixed(2) > sumOfrefVal[key].toFixed(2) ){
                    validator.valid = false
                    validator.errors.push(message) 
                    validator.message = message
                 }
             }
             else if(logic === "sum"){
-                if(sumOfCurrentKey[key] != sumOfrefVal[key] ){
+                if(sumOfCurrentKey[key].toFixed(2) != sumOfrefVal[key].toFixed(2) ){
                     validator.valid = false
                     validator.message = message
                     validator.errors.push(message) 
