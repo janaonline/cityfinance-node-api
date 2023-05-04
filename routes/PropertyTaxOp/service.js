@@ -565,17 +565,12 @@ function getYearDataSumForValidations(keysToFind,payload){
         for(let keyName of keysToFind){
             if(data[keyName]){
                 if(!data[keyName].child ||  data[keyName].child.length === 0){
-                    // console.log("22222  start 22222222222")
-                    // console.log("keyname :::::::",keyName)
-                    // console.log("data[keyName].yearData :::: ",data[keyName].yearData)
                     getSumByYear({
                         yearData:data[keyName].yearData,
                         sumObj
                     })
-                    // console.log("22222222 end 22222222")
                 }
                 else{
-                    // console.log("child case::::",keyName)
                     for(let childs of data[keyName].child){
                         getSumByYear({
                             yearData:childs.yearData,
@@ -641,7 +636,7 @@ async function handleMultipleValidations(params){
             let keysToFind = validationObj.fields
             let sumOfrefVal = await getYearDataSumForValidations(keysToFind,data)
             let sumOfCurrentKey = await yearWiseValues(dynamicObj.yearData)
-            let errorMessage = await createErrorMessage(validationObj[child.key],dynamicObj)
+            let errorMessage = await createErrorMessage(validationObj,dynamicObj)
             let valueParams = {
                 sumOfrefVal,
                 sumOfCurrentKey,
@@ -689,7 +684,7 @@ async function handleInternalValidations(params){
                 // console.log("sumOfrefVal ::: ",sumOfrefVal ,"keysToFind :: ",keysToFind)   
                 // console.log("sumOfCurrentKey ::: ",sumOfCurrentKey,"keysToFind :: ",keysToFind)     
                 let compareValidator = compareValues(valueParams)
-                // console.log("compareValidator ::: ",compareValidator)
+                // console.log("compareValidator  11::: ",compareValidator)
                 if(!compareValidator.valid){
                     return compareValidator
                 }
@@ -757,12 +752,12 @@ async function handleNonSubmissionValidation(params){
                     // message:`${validationJson[dynamicObj.key].displayNumber} - ${validationJson[dynamicObj.key].message} `
                     message:errorMessage
                 }
-                console.log("----------------------------------------------")
-                console.log("sumOfrefVal ::: ",sumOfrefVal,"keystoFind ::: ",keysToFind)
-                console.log("sumOfCurrentKey :::: ",sumOfCurrentKey,"keysToFind:::",keysToFind)
+                // console.log("----------------------------------------------")
+                // console.log("sumOfrefVal ::: ",sumOfrefVal,"keystoFind ::: ",keysToFind)
+                // console.log("sumOfCurrentKey :::: ",sumOfCurrentKey,"keysToFind:::",keysToFind)
                 let compareValidator = compareValues(valueParams)
-                console.log("compareValidator ::q ",compareValidator)
-                console.log("-----------------------------------------------")
+                // console.log("compareValidator ::q ",compareValidator)
+                // console.log("-----------------------------------------------")
                 if(!compareValidator.valid){
                     return compareValidator
                 }
