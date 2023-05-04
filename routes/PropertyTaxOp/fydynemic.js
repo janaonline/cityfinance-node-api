@@ -92,11 +92,11 @@ const propertyTaxOpFormJson = () => {
                 "file": "",
                 "options": [
                   {
-                    "id": "ulb",
+                    "id": "ULB",
                     "label": "ULB"
                   },
                   {
-                    "id": "state",
+                    "id": "State",
                     "label": "State"
                   }
                 ],
@@ -10683,7 +10683,7 @@ let financialYearTableHeader = {
       "info": ""
     },
     {
-      "label": "Water Charges Demand and Collection Details",
+      "label": "Water Charges Demand and Collection Details (Amount in INR lakhs)",
       "info": ""
     },
     {
@@ -10953,7 +10953,7 @@ let financialYearTableHeader = {
       "info": ""
     },
     {
-      "label": "Sewerage Charges Demand and Collection Details",
+      "label": "Sewerage Charges Demand and Collection Details (Amount in INR lakhs)",
       "info": ""
     },
     {
