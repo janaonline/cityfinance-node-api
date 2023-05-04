@@ -148,7 +148,7 @@ const propertyTaxOpMapper = new Schema(
             name: { type: String },
             url: { type: String }
         },
-        displayPriority: { type: Number, default: null },
+        displayPriority: { type: String, default: null },
     },
     { timestamp: { createdAt: "createdAt", updatedAt: "modifiedAt" } }
 );
