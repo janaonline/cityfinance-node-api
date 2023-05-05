@@ -66,20 +66,24 @@ exports.saveWaterRejenuvation = async (req, res) => {
         max: Number(max)
       }
     }
-    
-    for(let ua of uaData){
-      let serviceLevelIndicatorsOfUA = ua['serviceLevelIndicators'];
-      for(let indicator of serviceLevelIndicatorsOfUA){
-        if(
-          !(slbIndicatorObj[indicator['indicator']]['min'] <= indicator['existing']) ||
-          !(slbIndicatorObj[indicator['indicator']]['max'] >= indicator['existing']) ||
-          !(slbIndicatorObj[indicator['indicator']]['min'] <= indicator['after']) ||
-          !(slbIndicatorObj[indicator['indicator']]['max'] >= indicator['after']) 
-          ){
-            return res.status(400).json({
-              status: false,
-              message: `Validation failed for ${indicator['name']}` ,
-            });
+    if(req.body.design_year === YEAR_CONSTANTS['23_24']){
+      for(let ua of uaData){
+        let serviceLevelIndicatorsOfUA = ua['serviceLevelIndicators'];
+        for(let indicator of serviceLevelIndicatorsOfUA){
+          if(indicator['bypassValidation'] || req.body.isDraft){
+            continue;
+          }
+          if(
+            !(slbIndicatorObj[indicator['indicator']]['min'] <= indicator['existing']) ||
+            !(slbIndicatorObj[indicator['indicator']]['max'] >= indicator['existing']) ||
+            !(slbIndicatorObj[indicator['indicator']]['min'] <= indicator['after']) ||
+            !(slbIndicatorObj[indicator['indicator']]['max'] >= indicator['after']) 
+            ){
+              return res.status(400).json({
+                status: false,
+                message: `Validation failed for ${indicator['name']}` ,
+              });
+          }
         }
       }
     }
