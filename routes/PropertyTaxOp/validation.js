@@ -66,7 +66,7 @@ const validationJson = {
                     "1.9",
                     "1.10"
                 ],
-                "message": "Sum should be equal to total proprety tax demand.",
+                "message": "Sum should be equal to total property tax demand.",
                 "displayNumber": "1.5"
             }
         ],
