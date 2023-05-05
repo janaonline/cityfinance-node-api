@@ -283,7 +283,9 @@ async function createHistory(params){
             formSubmit:ptoForm,
             actionTakenByRole:role,
             actionTakenBy:_id,
-            bodyData:ptoForm
+            bodyData:ptoForm,
+            formType:"PTO"
+
         }
         console.log("working ::: ",role)
         await saveStatusAndHistory(historyParams)
