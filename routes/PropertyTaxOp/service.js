@@ -612,10 +612,14 @@ function compareValues(params){
     }
     try{
         let {sumOfrefVal,sumOfCurrentKey,logic,message} = params
+        // console.log(">>>>>>>>>>>>>>>>>>1")
         for(let key in sumOfrefVal){
+            // console.log(">>>>>>>>>>>>>>>>>>2")
             let refVal = parseFloat(sumOfrefVal[key].toFixed(2))
             let currenVal = parseFloat(sumOfCurrentKey[key].toFixed(2))
             if(logic === "ltequal"){
+                // console.log("currenVal ::: ",currenVal)
+                // console.log("refVal :::: ",refVal)
                 if(currenVal > refVal ){
                    validator.valid = false
                    validator.errors.push(message) 
@@ -656,6 +660,7 @@ async function handleMultipleValidations(params){
             let toCheckValidation = await checkIfFieldsAreNotEmpty(validationParams)
             // console.log("toCheckValidation :: ",toCheckValidation)
             if(toCheckValidation.checkForValidations){
+                
                 let sumOfrefVal = await getYearDataSumForValidations(keysToFind,data)
                 let sumOfCurrentKey = await yearWiseValues(dynamicObj.yearData)
                 let errorMessage = await createErrorMessage(validationObj,dynamicObj)
@@ -668,9 +673,9 @@ async function handleMultipleValidations(params){
                     message : errorMessage
                 }
                 let compareValidator = compareValues(valueParams)
-                console.log("sumOfrefVal :: ",sumOfrefVal)
-                console.log("sumOfCurrentKey :: ",sumOfCurrentKey)
-                console.log("compareValidator :::: ",compareValidator)
+                // console.log("sumOfrefVal :: ",sumOfrefVal)
+                // console.log("sumOfCurrentKey :: ",sumOfCurrentKey)
+                // console.log("compareValidator :::: ",compareValidator)
                 if(!compareValidator.valid){
                     return compareValidator
                 }
@@ -714,10 +719,14 @@ async function handleInternalValidations(params){
                     // message:`${validatidynamicObjonJson[dynamicObj.key].displayNumber} - ${validationJson[dynamicObj.key].message} `
                     message:errorMessage
                 }        
-                console.log("sumOfrefVal ::: ",sumOfrefVal ,"keysToFind :: ",keysToFind)   
-                console.log("sumOfCurrentKey ::: ",sumOfCurrentKey,"keysToFind :: ",keysToFind)     
                 let compareValidator = compareValues(valueParams)
-                console.log("compareValidator  11::: ",compareValidator)
+                // if(keysToFind.includes("othersValueWaterChrgDm")){
+                    // console.log("othersValueWaterChrgDm :::: ",preparedJsonData)
+                    // console.log("sumOfrefVal ::: ",sumOfrefVal ,"keysToFind :: ",keysToFind)   
+                    // console.log("sumOfCurrentKey ::: ",sumOfCurrentKey,"keysToFind :: ",keysToFind)     
+                    // console.log("compareValidator  11::: ",compareValidator)
+
+                // }
                 if(!compareValidator.valid){
                     return compareValidator
                 }
@@ -737,7 +746,7 @@ function createErrorMessage(validationObj,dynamicObj){
             message += `\n Sum of ${validationObj.sequence.join(",")} is not equal to ${dynamicObj.position}` 
         }
         else if(validationObj.logic === "ltequal"){
-            message += `\n ${dynamicObj.position} should be lesser than or equalTo ${validationObj.sequence[0]}` 
+            message += `\n ${dynamicObj.position} should be lesser than or equal to ${validationObj.sequence[0]}` 
         } 
     }
     catch(err){
