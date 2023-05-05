@@ -448,7 +448,7 @@ async function saveStatusAndHistory(params){
     ) {
       let bodyData = {
         formId: masterFormId,
-        recordId: ObjectId(formSubmit._id),
+        recordId: ObjectId(formSubmit[0]._id),
         data: formSubmit,
       };
       await saveFormHistory({
@@ -457,7 +457,7 @@ async function saveStatusAndHistory(params){
 
       let currentStatusData = {
         formId: masterFormId,
-        recordId: ObjectId(formSubmit._id),
+        recordId: ObjectId(formSubmit[0]._id),
         status: MASTER_STATUS["Under Review By State"],
         level: FORM_LEVEL["form"],
         shortKey: "form_level",
@@ -473,7 +473,7 @@ async function saveStatusAndHistory(params){
 
       let statusHistory = {
         formId: masterFormId,
-        recordId: ObjectId(formSubmit._id),
+        recordId: ObjectId(formSubmit[0]._id),
         shortKey: "form_level",
         data: currentStatusData,
       };
