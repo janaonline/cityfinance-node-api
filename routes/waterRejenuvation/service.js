@@ -573,6 +573,9 @@ function getDisabledProjects(uaArray, data2223) {
           //set project isDisable key = true
           if (project) {
             Object.assign(project, { isDisable: true });
+            if(category === "serviceLevelIndicators"){
+              Object.assign(project, {bypassValidation: true});
+            }
           }
         }
       }
