@@ -373,6 +373,17 @@ const validationJson = {
         "message": "Value of water charges collected should be less that or equal to value of water charges demanded.",
         "displayNumber": "5.15"
     },
+    "resNoWaterChrgCollected":{
+        "logic": "ltequal",
+        "fields": [
+            "resNoWaterChrgDm"
+        ],
+        "sequence": [
+            "5.14"
+        ],
+        "message": "Number of households/properties from which water charges was collected should be less that or equal to number of households/properties from which water charges was demanded.",
+        "displayNumber": "5.16"
+    },
     'otherValuePropertyTaxCollected':{
         "logic": "ltequal",
         "fields": [
