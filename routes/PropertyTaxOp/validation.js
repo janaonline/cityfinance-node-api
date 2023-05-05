@@ -66,7 +66,7 @@ const validationJson = {
                     "1.9",
                     "1.10"
                 ],
-                "message": "Sum should be equal to total proprety tax demand.",
+                "message": "Sum should be equal to total property tax demand.",
                 "displayNumber": "1.5"
             }
         ],
@@ -372,6 +372,83 @@ const validationJson = {
         ],
         "message": "Value of water charges collected should be less that or equal to value of water charges demanded.",
         "displayNumber": "5.15"
+    },
+    "comValueWaterChrgCollected":{
+        "logic": "ltequal",
+        "fields": [
+            "comValueWaterChrgDm"
+        ],
+        "sequence": [
+            "5.17"
+        ],
+        "message": " Value of water charges collected should be less that or equal to value of water charges demanded.",
+        "displayNumber": "5.19"
+    },
+    "comNoWaterChrgCollected":{
+        "logic": "ltequal",
+        "fields": [
+            "comNoWaterChrgDm"
+        ],
+        "sequence": [
+            "5.18"
+        ],
+        "message": "Number of households/properties from which water charges was collected should be less that or equal to number of households/properties from which water charges was demanded.",
+        "displayNumber": "5.20"
+    },
+    "indValueWaterChrgCollected":{
+        "logic": "ltequal",
+        "fields": [
+            "indValueWaterChrgDm"
+        ],
+        "sequence": [
+            "5.21"
+        ],
+        "message": "Value of water charges collected should be less that or equal to value of water charges demanded.",
+        "displayNumber": "5.20"
+    },
+    "indNoWaterChrgCollected":{
+        "logic": "ltequal",
+        "fields": [
+            "indNoWaterChrgDm"
+        ],
+        "sequence": [
+            "5.22"
+        ],
+        "message": "Number of households/properties from which water charges was collected should be less that or equal to number of households/properties from which water charges was demanded.",
+        "displayNumber": "5.24"
+    },
+    "othersValueWaterChrgCollected":{
+        "logic": "ltequal",
+        "fields": [
+            "othersValueWaterChrgDm"
+        ],
+        "sequence": [
+            "5.26"
+        ],
+        "message": " Value of water charges collected should be less that or equal to value of water charges demanded",
+        "displayNumber": "5.28"
+    },
+    "othersNoWaterChrgCollected":{
+        "logic": "ltequal",
+        "fields": [
+            "othersNoWaterChrgDm"
+        ],
+        "sequence": [
+            "5.27"
+        ],
+        "message": "  Number of households/properties from which water charges was collected should be less that or equal to number of households/properties from which water charges was demanded.",
+        "displayNumber": "5.29"
+    },
+    "resNoWaterChrgCollected":{
+        "logic": "ltequal",
+        "fields": [
+            "resNoWaterChrgDm"
+        ],
+        "sequence": [
+            "5.14"
+        ],
+        "message": "Number of households/properties from which water charges was collected should be less that or equal to number of households/properties from which water charges was demanded.",
+        "displayNumber": "5.16"
     },
     'otherValuePropertyTaxCollected':{
         "logic": "ltequal",
