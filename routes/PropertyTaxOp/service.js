@@ -613,15 +613,17 @@ function compareValues(params){
     try{
         let {sumOfrefVal,sumOfCurrentKey,logic,message} = params
         for(let key in sumOfrefVal){
+            let refVal = parseFloat(sumOfrefVal[key].toFixed(2))
+            let currenVal = parseFloat(sumOfCurrentKey[key].toFixed(2))
             if(logic === "ltequal"){
-                if(sumOfCurrentKey[key].toFixed(2) > sumOfrefVal[key].toFixed(2) ){
+                if(currenVal > refVal ){
                    validator.valid = false
                    validator.errors.push(message) 
                    validator.message = message
                 }
             }
             else if(logic === "sum"){
-                if(sumOfCurrentKey[key].toFixed(2) != sumOfrefVal[key].toFixed(2) ){
+                if(currenVal != refVal ){
                     validator.valid = false
                     validator.message = message
                     validator.errors.push(message) 
@@ -666,6 +668,9 @@ async function handleMultipleValidations(params){
                     message : errorMessage
                 }
                 let compareValidator = compareValues(valueParams)
+                console.log("sumOfrefVal :: ",sumOfrefVal)
+                console.log("sumOfCurrentKey :: ",sumOfCurrentKey)
+                console.log("compareValidator :::: ",compareValidator)
                 if(!compareValidator.valid){
                     return compareValidator
                 }
@@ -709,10 +714,10 @@ async function handleInternalValidations(params){
                     // message:`${validatidynamicObjonJson[dynamicObj.key].displayNumber} - ${validationJson[dynamicObj.key].message} `
                     message:errorMessage
                 }        
-                // console.log("sumOfrefVal ::: ",sumOfrefVal ,"keysToFind :: ",keysToFind)   
-                // console.log("sumOfCurrentKey ::: ",sumOfCurrentKey,"keysToFind :: ",keysToFind)     
+                console.log("sumOfrefVal ::: ",sumOfrefVal ,"keysToFind :: ",keysToFind)   
+                console.log("sumOfCurrentKey ::: ",sumOfCurrentKey,"keysToFind :: ",keysToFind)     
                 let compareValidator = compareValues(valueParams)
-                // console.log("compareValidator  11::: ",compareValidator)
+                console.log("compareValidator  11::: ",compareValidator)
                 if(!compareValidator.valid){
                     return compareValidator
                 }
