@@ -29,6 +29,7 @@ exports.readById = async (req, res) => {
   try {
     const dashboardHeaders = await DashboardHeaders.find({
       dashboard: ObjectId(id),
+      isActive: true
     });
     if (!dashboardHeaders) {
       return res.status(400).json({ msg: "No DashboardHeaders Found" });
