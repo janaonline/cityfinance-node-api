@@ -1337,7 +1337,7 @@ function getIndicator(displayPriority) {
             let priority = parseFloat(+priorNumber)
             if (priority >= rangeA && priority <= rangeB) {
                 if (headers[range]) {
-                    return headers[range].sort(",").join("")
+                    return headers[range].split(",").join("")
                 }
             }
         }
