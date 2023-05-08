@@ -215,6 +215,7 @@ module.exports.createOrUpdateForm = async (req, res) => {
                     return response(updatedForm, res, "Form updated.", "Form not updated.")
                 }
             }
+            
             if (submittedForm.status === "APPROVED" && submittedForm.actionTakenByRole !== "ULB"
                 && submittedForm.isDraft === false) {
                 return res.status(200).json({
