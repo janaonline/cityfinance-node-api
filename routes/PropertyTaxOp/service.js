@@ -1148,6 +1148,8 @@ function sortPosition(itemA, itemB) {
 
 }
 
+
+
 function getLabelName(type) {
     try {
         let indicators = {
@@ -1256,7 +1258,7 @@ function getLabelName(type) {
             omCostSewerageService: 'Please provide the working sheet for O&M cost calculation',
             signedPdf: 'Upload Signed PDF'
         }
-        let labelName = indicators[type] ? indicators[type].replaceAll(",", "") : ""
+        let labelName = indicators[type] ? indicators[type].split(",").join("") : ""
         return labelName
     }
     catch (err) {
@@ -1302,7 +1304,7 @@ function getSubHeaders(displayPriority) {
             let priority = parseFloat(+priorNumber)
             if (priority >= rangeA && priority <= rangeB) {
                 if (subHeaders[range]) {
-                    return subHeaders[range].replaceAll(",", "") || ""
+                    return subHeaders[range].split(",").join("") || ""
                 }
                 else{
                     return ","
