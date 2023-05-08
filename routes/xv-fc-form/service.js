@@ -1093,6 +1093,7 @@ module.exports.create = catchAsync(async (req, res) => {
                   FORM_STATUS.In_Progress,
                   FORM_STATUS.Rejected_By_MoHUA,
                   FORM_STATUS.Rejected_By_State,
+                  FORM_STATUS.STATE_REJECTED
                 ].includes(slb28FormStatus)
               ) {
                 slb28Form["data"].forEach((element) => {
@@ -4864,6 +4865,7 @@ async function update28SlbForms(ulbData){
             FORM_STATUS.In_Progress,
             FORM_STATUS.Rejected_By_MoHUA,
             FORM_STATUS.Rejected_By_State,
+            FORM_STATUS.STATE_REJECTED,
           ].includes(slb28FormStatus)
         ) {
           slb28Form["data"].forEach((element) => {

@@ -120,9 +120,12 @@ const dataAvailability = async (req, res, reuseOption) => {
 if(from == 'slb'){
 year = "year"
 }
-    let stateUlbs = await Ulb.find(
-      stateId && ObjectId.isValid(stateId) ? { state: ObjectId(stateId) } : {}
-    )
+  let ulbCondition = {}
+  ulbCondition['isActive'] = true
+  if(stateId && ObjectId.isValid(stateId)){
+    ulbCondition['state'] = ObjectId(stateId)
+  }
+    let stateUlbs = await Ulb.find(ulbCondition)
       .select({ _id: 1 })
       .lean();
 

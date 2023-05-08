@@ -468,7 +468,7 @@ const getColumnWiseData = (key, obj, isDraft, dataSource = "") => {
           false
         ),
         ...obj,
-        readonly: false,
+        readonly: getReadOnly(obj.status, isDraft),
       };
     case "nameOfNodalOfficer":
       return {
@@ -3111,6 +3111,7 @@ function createCsv(params) {
     let cursor = moongose
       .model(modelName)
       .aggregate(query)
+      .allowDiskUse(true)
       .cursor({ batchSize: 500 })
       .addCursorFlag("noCursorTimeout", true)
       .exec();

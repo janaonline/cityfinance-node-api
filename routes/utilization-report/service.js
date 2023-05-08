@@ -952,9 +952,7 @@ module.exports.read2223 = catchAsync(async (req, res,next) => {
   prevYearVal = Number(prevYearVal[0]) - 1 + "-" + (Number(prevYearVal[1]) - 1);
   let currentDesignYear = getKeyByValue(years,design_year)
   prevYear = await Year.findOne({ year: prevYearVal }).lean()
-  console.log("before ::: ",)
   let prevData = await getDataSet(ulb,prevYear,design_year);
-  console.log("prevData ::: ",prevData)
   let isDraft = prevData && Object.keys(prevData).includes("isSubmit") ? !prevData.isSubmit : prevData?.isDraft
   //check if prevyear util report is atleast approved by state
   // let prevUtilStatus = calculateStatus(prevUtilReport.status, prevUtilReport.actionTakenByRole, prevUtilReport.isDraft, "ULB")
@@ -1053,6 +1051,7 @@ module.exports.read2223 = catchAsync(async (req, res,next) => {
       //new  implementation
       typeof(fetchedData?.grantPosition.closingBal) === "number" ? fetchedData.grantPosition.closingBal = Number(Number(fetchedData?.grantPosition.closingBal).toFixed(2)) : ""
     }
+    fetchedData['ulbName']  = ulbData.name
     req.form = fetchedData
     Object.assign(req.form,obj)
     next()
@@ -1070,6 +1069,7 @@ module.exports.read2223 = catchAsync(async (req, res,next) => {
     sampleData['url'] = obj['url']
     sampleData['action'] = obj['action']
     sampleData['canTakeAction'] = false;
+    sampleData['ulbName']  = ulbData.name
     // Object.assign(sampleData,obj )
     req.form = sampleData
     next()
@@ -1526,6 +1526,7 @@ async function updateForNextForms(design_year,ulb,utiData){
           FORM_STATUS.In_Progress,
           FORM_STATUS.Rejected_By_MoHUA,
           FORM_STATUS.Rejected_By_State,
+          FORM_STATUS.STATE_REJECTED,
         ].includes(utilFormStatus)
       ) {
         /* calculate closing balance and opening balance for 22-23 form */

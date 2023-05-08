@@ -10,8 +10,9 @@ const {BackendHeaderHost, FrontendHeaderHost} = require('../../util/envUrl')
 const {canTakenAction} = require('../CommonActionAPI/service');
 const StateMasterForm = require('../../models/StateMasterForm')
 const { YEAR_CONSTANTS } = require("../../util/FormNames");
-const IndicatorLineItem = require('../../models/indicatorLineItems')
-
+const IndicatorLineItem = require('../../models/indicatorLineItems');
+const { ModelNames } = require("../../util/15thFCstatus");
+const {createAndUpdateFormMasterState} =  require('../../routes/CommonFormSubmissionState/service')
 
 function response(form, res, successMsg ,errMsg){
   if(form){
@@ -54,30 +55,35 @@ exports.saveWaterRejenuvation = async (req, res) => {
     formData = {...data};
     let indicatorCondition = {type: "water supply"};
     let lineItems = await IndicatorLineItem.find(indicatorCondition).lean();
+    let currentMasterFormStatus = req.body['status']
 
     let uaData = JSON.parse(JSON.stringify(formData['uaData']));
     const slbIndicatorObj = {};
     for(let lineItem of lineItems){
       let [min, max] =  lineItem['range'].split('-');
-      slbIndicatorObj[lineItem['_id']] = {
+      slbIndicatorObj[lineItem['lineItemId']] = {
         min: Number(min),
         max: Number(max)
       }
     }
-    
-    for(let ua of uaData){
-      let serviceLevelIndicatorsOfUA = ua['serviceLevelIndicators'];
-      for(let indicator of serviceLevelIndicatorsOfUA){
-        if(
-          !(slbIndicatorObj[indicator['indicator']]['min'] <= indicator['existing']) ||
-          !(slbIndicatorObj[indicator['indicator']]['max'] >= indicator['existing']) ||
-          !(slbIndicatorObj[indicator['indicator']]['min'] <= indicator['after']) ||
-          !(slbIndicatorObj[indicator['indicator']]['max'] >= indicator['after']) 
-          ){
-            return res.status(400).json({
-              status: false,
-              message: `Validation failed for ${indicator['name']}` ,
-            });
+    if(req.body.design_year === YEAR_CONSTANTS['23_24']){
+      for(let ua of uaData){
+        let serviceLevelIndicatorsOfUA = ua['serviceLevelIndicators'];
+        for(let indicator of serviceLevelIndicatorsOfUA){
+          if(indicator['bypassValidation'] || req.body.isDraft){
+            continue;
+          }
+          if(
+            !(slbIndicatorObj[indicator['indicator']]['min'] <= indicator['existing']) ||
+            !(slbIndicatorObj[indicator['indicator']]['max'] >= indicator['existing']) ||
+            !(slbIndicatorObj[indicator['indicator']]['min'] <= indicator['after']) ||
+            !(slbIndicatorObj[indicator['indicator']]['max'] >= indicator['after']) 
+            ){
+              return res.status(400).json({
+                status: false,
+                message: `Validation failed for ${indicator['name']}` ,
+              });
+          }
         }
       }
     }
@@ -100,6 +106,18 @@ exports.saveWaterRejenuvation = async (req, res) => {
     condition["design_year"] = data.design_year;
     condition["state"] = data.state;
 
+    if(data.state && data.design_year === YEAR_CONSTANTS['23_24'] ){
+      formData.status = currentMasterFormStatus
+      let params = {
+        modelName: ModelNames['waterRej'],
+        formData,
+        res,
+        actionTakenByRole,
+        actionTakenBy
+      };
+      return await createAndUpdateFormMasterState(params);
+      
+    }
     if (data.state && data.design_year) {
       const submittedForm = await WaterRejenuvation.findOne(condition);
       if (
@@ -260,25 +278,51 @@ exports.getWaterRejenuvation = async (req, res) => {
     }
     const data2223Query = WaterRejenuvation.findOne({
       state: ObjectId(state),
-      design_year,
+      design_year: ObjectId(YEAR_CONSTANTS['22_23']),
+    }).lean();
+    const data2324Query = WaterRejenuvation.findOne({
+      state: ObjectId(state),
+      design_year: ObjectId(YEAR_CONSTANTS['23_24']),
     }).lean();
 
     const stateMasterFormDataQuery = StateMasterForm.findOne({
       state,
       design_year: ObjectId(year2122Id._id)
     }).lean()
-    const [ data2122, data2223, stateMasterFormData] = await Promise.all([
+    const [ data2122, data2223, data2324,stateMasterFormData] = await Promise.all([
       data2122Query,
       data2223Query,
+      data2324Query,
       stateMasterFormDataQuery
     ]);
-
+    let uaArray;
+    if (design_year === YEAR_CONSTANTS["23_24"]) {
+      if (data2324) {
+        Object.assign(data2324, {
+          canTakeAction: canTakenAction(
+            data2324["status"],
+            data2324["actionTakenByRole"],
+            data2324["isDraft"],
+            "STATE",
+            role
+          ),
+        });
+        return Response.OK(res, data2324, "Success");
+      }
+      if (data2223) {
+        uaArray = getDisabledProjects(uaArray, data2223);
+      } else {
+        return res.status(400).json({
+          status: true,
+          message: `Your Previous Year's form status is - Not Submitted. Kindly submit form for previous year at - <a href =https://${host}/stateform/dashboard target="_blank">Click here</a> in order to submit form`,
+        });
+      }
+    }
     if(data2223){
       Object.assign(data2223, {canTakeAction: canTakenAction(data2223['status'], data2223['actionTakenByRole'], data2223['isDraft'], "STATE",role ) })
       return Response.OK(res, data2223, "Success");
 
     }
-    let uaArray;
     if (stateMasterFormData) {
       if(stateMasterFormData.isSubmit === true){
 
@@ -519,3 +563,28 @@ module.exports.updateIndicatorId = async(  req, res)=>{
     })
   }
 }
+function getDisabledProjects(uaArray, data2223) {
+  uaArray = data2223.uaData;
+  for (let i = 0; i < uaArray.length; i++) {
+    let ua = uaArray[i];
+    //an entry of ua
+    for (let category in ua) {
+      //category in ua
+      if (category === "waterBodies" ||
+        category === "reuseWater" ||
+        category === "serviceLevelIndicators") {
+        for (let project of ua[category]) {
+          //set project isDisable key = true
+          if (project) {
+            Object.assign(project, { isDisable: true });
+            if(category === "serviceLevelIndicators"){
+              Object.assign(project, {bypassValidation: true});
+            }
+          }
+        }
+      }
+    }
+  }
+  return uaArray;
+}
+

@@ -156,17 +156,17 @@ module.exports.access = catchAsync(async function (req, res) {
                 userData = await User.findOne({ _id: ObjectId(entity_id) }).lean();
                 let profileVerified = userData.isVerified2223;
                 let STATE_arr = await years.map(returnYearUrl, { "type": "stateUrl", "role": "state", "verified": profileVerified })
-                if(process.env.ENV != "demo"){
-                    STATE_arr = STATE_arr.filter(item => item?.year != '2023-24')
-                }
+                // if(process.env.ENV != "demo"){
+                //     STATE_arr = STATE_arr.filter(item => item?.year != '2023-24')
+                // }
                 arr = STATE_arr
                 break;
             case "MoHUA":
                 case "ADMIN":
-                if(process.env.ENV != "demo"){ 
+                // if(process.env.ENV != "demo"){ 
                     
-                    MoHUA_arr = MoHUA_arr.filter(item => item?.year != '2023-24')
-                }
+                //     MoHUA_arr = MoHUA_arr.filter(item => item?.year != '2023-24')
+                // }
                 arr = MoHUA_arr
                 break;
 

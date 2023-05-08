@@ -1,6 +1,6 @@
 const Ulb = require('../../models/Ulb')
 const State = require('../../models/State');
-const {CollectionNames} = List = require('../../util/15thFCstatus')
+const CollectionNames  = require('../../util/collectionName')
 const Response = require("../../service").response;
 const Sidemenu = require('../../models/Sidemenu');
 const ObjectId = require("mongoose").Types.ObjectId;
@@ -8,7 +8,9 @@ const Service = require('../../service');
 const STATUS_LIST = require('../../util/newStatusList');
 const { MASTER_STATUS , MASTER_STATUS_ID} = require('../../util/FormNames');
 const  { canTakeActionOrViewOnlyMasterForm} = require('../../routes/CommonActionAPI/service')
-// const List = require('../../util/15thFCstatus')
+const List = require('../../util/15thFCstatus')
+const MASTERSTATUS = require('../../models/MasterStatus');
+const { years } = require('../../service/years');
 
 
 module.exports.get = async (req, res) => {
@@ -143,9 +145,9 @@ module.exports.get = async (req, res) => {
   
     // if csv - then no skip and limit, else with skip and limit
     let data = formType == "ULB" ? Ulb.aggregate(query[0]).allowDiskUse(true) : State.aggregate(query[0]).allowDiskUse(true)
-    if(skip === 0){
+    // if(skip === 0){
       total = formType == "ULB" ? Ulb.aggregate(query[1]).allowDiskUse(true) : State.aggregate(query[1]).allowDiskUse(true);
-    }
+    // }
     
     let allData = await Promise.all([data, total]);
     data = allData[0]
@@ -344,12 +346,14 @@ module.exports.get = async (req, res) => {
       if(el.formData || el.formData === "" ) delete el.formData;
   
     })
+    const  ulbFormStatus = await MASTERSTATUS.find({},{statusId:1, status:1}).lean()
+
     return res.status(200).json({
       success: true,
       data: data,
       total: total,
       columnNames: formType == 'ULB' ? ulbColumnNames : stateColumnNames,
-      statusList: formType == 'ULB' ? List.ulbFormStatus : List.stateFormStatus,
+      statusList: formType == 'ULB' ? ulbFormStatus : List.stateFormStatus,
       ulbType: formType == 'ULB' ? List.ulbType : {},
       populationType: formType == 'ULB' ? List.populationType : {},
       title: formType == 'ULB' ? 'Review Grant Application' : 'Review State Forms'
@@ -361,10 +365,15 @@ module.exports.get = async (req, res) => {
   }
 const computeQuery = (params) => {
   const {collectionName:formName, formType:userRole, isFormOptional, state, design_year, csv, skip, limit, newFilter:filter, dbCollectionName, folderName} = params
-    let filledQueryExpression = {}
+    let filledQueryExpression = {};
+    let filledProvisionalExpression = {}, filledAuditedExpression = {};
     if (isFormOptional) {
       // if form is optional check if the deciding condition is true or false
-      filledQueryExpression = getFilledQueryExpression(formName, filledQueryExpression); 
+      filledQueryExpression = getFilledQueryExpression(formName, filledQueryExpression,design_year); 
+      if(formName === CollectionNames.annual){
+      ( {filledProvisionalExpression, filledAuditedExpression} = getFilledQueryExpression(formName, filledQueryExpression,design_year)); 
+      
+      }
     }
     let dY = "$design_year";
     let designYearField = "design_year"
@@ -568,10 +577,10 @@ const computeQuery = (params) => {
         //   query = createDynamicQuery(formName, query, userRole, csv);
         // }
     
-        // if (formName == CollectionNames.annual) {
-        //   delete query[query.length - 2]['$project']['filled']
-        //   Object.assign(query[query.length - 2]['$project'], { filled_provisional: filledProvisionalExpression, filled_audited: filledAuditedExpression })
-        // }
+        if (formName == CollectionNames.annual) {
+          delete query[query.length - 2]['$project']['filled']
+          Object.assign(query[query.length - 2]['$project'], { filled_provisional: filledProvisionalExpression, filled_audited: filledAuditedExpression })
+        }
         let filterApplied = Object.keys(filter).length > 0
         if (filterApplied) {
           if (filter.sbCode) {
@@ -725,7 +734,8 @@ const computeQuery = (params) => {
 
   }
 
-function getFilledQueryExpression(formName, filledQueryExpression) {
+function getFilledQueryExpression(formName, filledQueryExpression,design_year) {
+  let filledAuditedExpression = {}, filledProvisionalExpression = {}
     switch (formName) {
         case CollectionNames.slb:
             filledQueryExpression = {
@@ -746,13 +756,17 @@ function getFilledQueryExpression(formName, filledQueryExpression) {
             };
             break;
         case CollectionNames.propTaxUlb:
-            filledQueryExpression = {
-                $cond: {
-                    if: { $eq: [`$formData.toCollect`, "Yes"] },
-                    then: STATUS_LIST.Submitted,
-                    else: STATUS_LIST.Not_Submitted,
-                },
-            };
+          filledQueryExpression = {
+            $cond: {
+                if: { $eq: [`$formData.toCollect`, "Yes"] },
+                then: STATUS_LIST.Submitted,
+                else: STATUS_LIST.Not_Submitted,
+            },
+        };
+          if (design_year === years['2023-24']){
+            filledQueryExpression = STATUS_LIST.Submitted
+          }
+            
             break;
         case CollectionNames.annual:
             filledProvisionalExpression = {
@@ -769,6 +783,7 @@ function getFilledQueryExpression(formName, filledQueryExpression) {
                     else: STATUS_LIST.Not_Submitted,
                 },
             };
+            return {filledProvisionalExpression, filledAuditedExpression}
             break;
         case CollectionNames.sfc:
             filledQueryExpression = {

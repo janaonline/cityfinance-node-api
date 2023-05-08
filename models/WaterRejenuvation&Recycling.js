@@ -3,7 +3,7 @@ require("./dbConnect");
 const statusType = () => {
   return {
     type: String,
-    enum: ["APPROVED", "REJECTED", "PENDING"],
+    enum: ["APPROVED", "REJECTED", "PENDING", ""],
     default: "PENDING",
   };
 };
@@ -82,6 +82,9 @@ const projectDetails = () => {
       type: Number
     },
     isDisable:{
+      type: Boolean
+    },
+    bypassValidation:{
       type: Boolean
     }
   };
@@ -212,6 +215,9 @@ const WaterRejenuvationRecyclingPlansSchema = mongoose.Schema({
     enum: ["ULB", "MoHUA", "STATE"],
     required: true,
   },
+  currentFormStatus: {
+    type: Number
+  }
 });
 
 WaterRejenuvationRecyclingPlansSchema.index(

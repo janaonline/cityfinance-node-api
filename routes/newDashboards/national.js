@@ -22,7 +22,8 @@ exports.dataAvailabilityState = async (req, res) => {
     if (!financialYear) throw { message: "financial year is missing." };
     let filterCondition = {},
       ulbLedgers;
-    if (stateId) filterCondition["state"] = stateId;
+    filterCondition['isActive'] = true
+    if (stateId) {filterCondition["state"] = stateId};
 
     let ulbs = Ulb.find(filterCondition)
       .populate("ulbType", "name")
@@ -1480,7 +1481,11 @@ exports.nationalDashCapexpense = async (req, res) => {
     } = require("../../util/aggregation");
     let responsePayload = { data: null };
     const HashTable = new Map();
-    let ulbs = Ulb.find(stateId ? { state: stateId } : {})
+    let stateCondition =  {isActive:true}
+    if(stateId){
+      stateCondition['state']=stateId
+    }
+    let ulbs = Ulb.find()
       .select({
         _id: 1,
         population: 1,
@@ -1674,6 +1679,11 @@ exports.getStatewiseDataAvail = async (req, res) => {
     if (!financialYear) throw { message: "Financial Year is missing" };
     let response = { success: true, data: null };
     let ulbsStateWise = Ulb.aggregate([
+      {
+        $match:{
+          "isActive":true
+        }
+      },
       {
         $group: {
           _id: "$state",

@@ -17,7 +17,7 @@ module.exports.changeGetApiForm = async (req,res,next)=>{
         let year = getKeyByValue(years,yearId)
         let form = {...req.form}
         let {name,role} = req.decoded
-        form['ulbName'] = name
+        // form['ulbName'] = name
         delete form['projects']
         let latestYear = !outDatedYears.includes(year)
         let jsonFormId = req.query.formId || 0
@@ -31,7 +31,8 @@ module.exports.changeGetApiForm = async (req,res,next)=>{
               "language":[],
               "canTakeAction":form?.canTakeAction || false,
               "isDraft":form.isDraft !== undefined ? form.isDraft : true,
-              "status":MASTER_STATUS_ID[parseInt(form.currentFormStatus)] || "Not Started"
+              "status":MASTER_STATUS_ID[parseInt(form.currentFormStatus)] || "Not Started",
+              "statusId":form.currentFormStatus
             }
           ]
         if(latestYear){
@@ -53,6 +54,7 @@ module.exports.changeGetApiForm = async (req,res,next)=>{
             }
             let flattedForm = await getFlatObj(form)
             flattedForm.disableFields = formStatus
+            console.log("form ::: ",form.ulbName)
             flattedForm['name_'] = flattedForm['name']
             let keysToBeDeleted = ["_id","createdAt","modifiedAt","actionTakenByRole","actionTakenBy","ulb","design_year"]
             flattedForm['grantPosition.closingBal'] = +form.grantPosition.unUtilizedPrevYr + (+form.grantPosition.receivedDuringYr) -(+form.grantPosition.expDuringYr)
@@ -60,6 +62,7 @@ module.exports.changeGetApiForm = async (req,res,next)=>{
             obj[0].isDraft = form.isDraft
             responseData[0]['language'] = obj
             response.success = true
+            responseData[0]['isQuestionDisabled'] = formStatus
             response.data = responseData
             response.message = 'Form Questionare!'
             return res.status(200).json(response)
