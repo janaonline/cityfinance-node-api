@@ -468,7 +468,7 @@ const getColumnWiseData = (key, obj, isDraft, dataSource = "") => {
           false
         ),
         ...obj,
-        readonly: false,
+        readonly: getReadOnly(obj.status, isDraft),
       };
     case "nameOfNodalOfficer":
       return {

@@ -8,6 +8,7 @@ const fiscalRankingFormJson = () => {
                 "key": "totalRecActual",
                 "label": "Total Receipts (Actual)",
                 "displayPriority": "20",
+                "required": true,
                 "yearData": [
                     {
                         "label": "FY 2018-19",
@@ -84,6 +85,7 @@ const fiscalRankingFormJson = () => {
                 "key": "totalRcptWaterSupply",
                 "label": "Total Receipts (Actual) for Water Supply",
                 "displayPriority": "21",
+                "required": true,
                 "yearData": [
                     {
                         "label": "FY 2018-19",
@@ -160,6 +162,7 @@ const fiscalRankingFormJson = () => {
                 "key": "sewerageTax",
                 "label": "Sewerage tax",
                 "displayPriority": "1.4",
+                "required": true,
                 "yearData": [
                     {
                         "label": "FY 2018-19",
@@ -236,6 +239,7 @@ const fiscalRankingFormJson = () => {
                 "key": "totalRcptSanitation",
                 "label": "Total Receipts (Actual) for Sanitation/Sewerage",
                 "displayPriority": "22",
+                "required": true,
                 "yearData": [
                     {
                         "label": "FY 2018-19",
@@ -312,6 +316,7 @@ const fiscalRankingFormJson = () => {
                 "key": "RcptBudget",
                 "label": "Total Receipts (Budget Estimate)",
                 "displayPriority": "23",
+                "required": true,
                 "yearData": [
                     {
                         "label": "FY 2018-19",
@@ -388,6 +393,7 @@ const fiscalRankingFormJson = () => {
                 "key": "propertyTax",
                 "label": "Property Tax",
                 "displayPriority": "1.1",
+                "required": true,
                 "yearData": [
                     {
                         "label": "FY 2018-19",
@@ -464,6 +470,7 @@ const fiscalRankingFormJson = () => {
                 "key": "waterTax",
                 "label": "Water tax",
                 "displayPriority": "1.2",
+                "required": true,
                 "yearData": [
                     {
                         "label": "FY 2018-19",
@@ -626,6 +633,7 @@ const fiscalRankingFormJson = () => {
                 "key": "drainageTax",
                 "label": "Drainage tax",
                 "displayPriority": "1.3",
+                "required": true,
                 "yearData": [
                     {
                         "label": "FY 2018-19",
@@ -702,6 +710,7 @@ const fiscalRankingFormJson = () => {
                 "key": "profTax",
                 "label": "Professional tax",
                 "displayPriority": "1.5",
+                "required": true,
                 "yearData": [
                     {
                         "label": "FY 2018-19",
@@ -778,6 +787,7 @@ const fiscalRankingFormJson = () => {
                 "key": "entertainTax",
                 "label": "Entertainment tax",
                 "displayPriority": "1.6",
+                "required": true,
                 "yearData": [
                     {
                         "label": "FY 2018-19",
@@ -854,6 +864,7 @@ const fiscalRankingFormJson = () => {
                 "key": "advTax",
                 "label": "Advertisement tax",
                 "displayPriority": "1.7",
+                "required": true,
                 "yearData": [
                     {
                         "label": "FY 2018-19",
@@ -930,6 +941,7 @@ const fiscalRankingFormJson = () => {
                 "key": "otherTaxRev",
                 "label": "All other tax revenues (combined)",
                 "displayPriority": "1.8",
+                "required": true,
                 "yearData": [
                     {
                         "label": "FY 2018-19",
@@ -1088,6 +1100,7 @@ const fiscalRankingFormJson = () => {
                 "key": "waterSupplyFee",
                 "label": "Fees & user charges from Water supply",
                 "displayPriority": "2.1",
+                "required": true,
                 "yearData": [
                     {
                         "label": "FY 2018-19",
@@ -1164,6 +1177,7 @@ const fiscalRankingFormJson = () => {
                 "key": "sanitationFee",
                 "label": "Fees & user charges from Sanitation / Sewerage", 
                 "displayPriority": "2.2",
+                "required": true,
                 "yearData": [
                     {
                         "label": "FY 2018-19",
@@ -1240,6 +1254,7 @@ const fiscalRankingFormJson = () => {
                 "key": "garbageFee",
                 "label": "Fees & user charges from Garbage collection / Solid waste management",
                 "displayPriority": "2.3",
+                "required": true,
                 "yearData": [
                     {
                         "label": "FY 2018-19",
@@ -1316,6 +1331,7 @@ const fiscalRankingFormJson = () => {
                 "key": "otherFee",
                 "label": "All other fees & user charges (combined)",
                 "displayPriority": "2.4",
+                "required": true,
                 "yearData": [
                     {
                         "label": "FY 2018-19",
@@ -1392,6 +1408,7 @@ const fiscalRankingFormJson = () => {
                 "key": "rentInc",
                 "label": "Rental Income from Municipal Properties",
                 "displayPriority": "3",
+                "required": true,
                 "yearData": [
                     {
                         "label": "FY 2018-19",
@@ -1548,6 +1565,7 @@ const fiscalRankingFormJson = () => {
                 "key": "octroiCompensation",
                 "label": "Compensation in lieu of Octroi",
                 "displayPriority": "4.1",
+                "required": true,
                 "yearData": [
                     {
                         "label": "FY 2018-19",
@@ -1624,6 +1642,7 @@ const fiscalRankingFormJson = () => {
                 "key": "otherCompensation",
                 "label": "All other assigned revenues & compensation (combined)",
                 "displayPriority": "4.2",
+                "required": true,
                 "yearData": [
                     {
                         "label": "FY 2018-19",
@@ -1863,6 +1882,7 @@ const fiscalRankingFormJson = () => {
                 "key": "faLandBuild",
                 "label": "Land & Buildings",
                 "displayPriority": "17.1",
+                "required": true,
                 "yearData": [
                     {
                         "label": "FY 2018-19",
@@ -1939,6 +1959,7 @@ const fiscalRankingFormJson = () => {
                 "key": "faOther",
                 "label": "Other Fixed Assets",
                 "displayPriority": "17.2",
+                "required": true,
                 "yearData": [
                     {
                         "label": "FY 2018-19",
@@ -2015,6 +2036,7 @@ const fiscalRankingFormJson = () => {
                 "key": "debtOs",
                 "label": "Total Debt outstanding",
                 "displayPriority": "18",
+                "required": true,
                 "yearData": [
                     {
                         "label": "FY 2018-19",
@@ -2171,6 +2193,7 @@ const fiscalRankingFormJson = () => {
                 "key": "incmLandSale",
                 "label": "Income from Sale of Land",
                 "displayPriority": "19.1",
+                "required": true,
                 "yearData": [
                     {
                         "label": "FY 2018-19",
@@ -2247,6 +2270,7 @@ const fiscalRankingFormJson = () => {
                 "key": "incmOtherAssets",
                 "label": "Income from Sale of Other Assets",
                 "displayPriority": "19.2",
+                "required": true,
                 "yearData": [
                     {
                         "label": "FY 2018-19",
@@ -2404,6 +2428,7 @@ const fiscalRankingFormJson = () => {
                 "key": "cfcGrant",
                 "label": "Central Finance Commission (CFC) grants",
                 "displayPriority": "5.11",
+                "required": true,
                 "yearData": [
                     {
                         "label": "FY 2018-19",
@@ -2480,6 +2505,7 @@ const fiscalRankingFormJson = () => {
                 "key": "cssGrant",
                 "label": "Centrally Sponsored Schemes (CSS) grants", 
                 "displayPriority": "5.12",
+                "required": true,
                 "yearData": [
                     {
                         "label": "FY2018-19",
@@ -2556,6 +2582,7 @@ const fiscalRankingFormJson = () => {
                 "key": "centralscheme",
                 "label": "Central sector scheme grants",
                 "displayPriority": "5.13",
+                "required": true,
                 "yearData": [
                     {
                         "label": "FY 2018-19",
@@ -2632,6 +2659,7 @@ const fiscalRankingFormJson = () => {
                 "key": "centralTransfer",
                 "label": "Other central transfers (combined)",
                 "displayPriority": "5.14",
+                "required": true,
                 "yearData": [
                     {
                         "label": "FY 2018-19",
@@ -2789,6 +2817,7 @@ const fiscalRankingFormJson = () => {
                 "key": "sfcGrant",
                 "label": "State Finance Commission (SFC) grants",
                 "displayPriority": "5.21",
+                "required": true,
                 "yearData": [
                     {
                         "label": "FY 2018-19",
@@ -2865,6 +2894,7 @@ const fiscalRankingFormJson = () => {
                 "key": "stateScheme",
                 "label": "Transfers under State schemes",
                 "displayPriority": "5.22",
+                "required": true,
                 "yearData": [
                     {
                         "label": "FY 2018-19",
@@ -2941,6 +2971,7 @@ const fiscalRankingFormJson = () => {
                 "key": "otherStateTrans",
                 "label": "Other state transfers (combined)",
                 "displayPriority": "5.23",
+                "required": true,
                 "yearData": [
                     {
                         "label": "FY 2018-19",
@@ -3017,6 +3048,7 @@ const fiscalRankingFormJson = () => {
                 "key": "otherGrant",
                 "label": "All other revenue grants, contributions & subsidies (combined)",
                 "displayPriority": "5.3",
+                "required": true,
                 "yearData": [
                     {
                         "label": "FY 2018-19",
@@ -3093,6 +3125,7 @@ const fiscalRankingFormJson = () => {
                 "key": "otherIncome",
                 "label": "Other income (incl. Sale & Hire charges, Income from Investments, Interest earned, etc.)",
                 "displayPriority": "6",
+                "required": true,
                 "yearData": [
                     {
                         "label": "FY 2018-19",
@@ -3418,6 +3451,7 @@ const fiscalRankingFormJson = () => {
                 "key": "categoryA",
                 "label": "Towards category A",
                 "displayPriority": "8.1",
+                "required": true,
                 "yearData": [
                     {
                         "label": "FY 2018-19",
@@ -3494,6 +3528,7 @@ const fiscalRankingFormJson = () => {
                 "key": "categoryB",
                 "label": "Towards category B",
                 "displayPriority": "8.2",
+                "required": true,
                 "yearData": [
                     {
                         "label": "FY 2018-19",
@@ -3570,6 +3605,7 @@ const fiscalRankingFormJson = () => {
                 "key": "categoryC",
                 "label": "Towards category C",
                 "displayPriority": "8.3",
+                "required": true,
                 "yearData": [
                     {
                         "label": "FY 2018-19",
@@ -3646,6 +3682,7 @@ const fiscalRankingFormJson = () => {
                 "key": "otherEstExpense",
                 "label": "Other establishment expenses (combined)",
                 "displayPriority": "8.4",
+                "required": true,
                 "yearData": [
                     {
                         "label": "FY 2018-19",
@@ -3722,6 +3759,7 @@ const fiscalRankingFormJson = () => {
                 "key": "adminExpense",
                 "label": "Administrative Expenses",
                 "displayPriority": "9",
+                "required": true,
                 "yearData": [
                     {
                         "label": "FY 2018-19",
@@ -3886,6 +3924,7 @@ const fiscalRankingFormJson = () => {
                 "key": "CaptExpOther",
                 "label": "Other Capital Expenditure (combined)",
                 "displayPriority": "16.3",
+                "required": true,
                 "yearData": [
                     {
                         "label": "FY 2018-19",
@@ -4043,6 +4082,7 @@ const fiscalRankingFormJson = () => {
                 "key": "omExpOther",
                 "label": "All other O&M expenses (combined)",
                 "displayPriority": "10.3",
+                "required": true,
                 "yearData": [
                     {
                         "label": "FY 2018-19",
@@ -4119,6 +4159,7 @@ const fiscalRankingFormJson = () => {
                 "key": "totalCaptlExpWaterSupply",
                 "label": "O&M expense on Water Supply",
                 "displayPriority": "10.1",
+                "required": true,
                 "yearData": [
                     {
                         "label": "FY 2018-19",
@@ -4194,6 +4235,7 @@ const fiscalRankingFormJson = () => {
                 "key": "totalOMCaptlExpSanitation",
                 "label": "O&M expense on Sanitation / Sewerage",
                 "displayPriority": "10.2",
+                "required": true,
                 "yearData": [
                     {
                         "label": "FY 2018-19",
@@ -4269,6 +4311,7 @@ const fiscalRankingFormJson = () => {
                 "key": "finExpense",
                 "label": "Interest & Finance Expenses",
                 "displayPriority": "11",
+                "required": true,
                 "yearData": [
                     {
                         "label": "FY 2018-19",
@@ -4345,6 +4388,7 @@ const fiscalRankingFormJson = () => {
                 "key": "misExpense",
                 "label": "Depreciation, Provisions & Write off, Miscellaneous Expenses",
                 "displayPriority": "12",
+                "required": true,
                 "yearData": [
                     {
                         "label": "FY 2018-19",
@@ -4421,6 +4465,7 @@ const fiscalRankingFormJson = () => {
                 "key": "otherExpense",
                 "label": "Other expenses (incl. Programme Expenses, Revenue Grants, Contributions & Subsidies)",
                 "displayPriority": "13",
+                "required": true,
                 "yearData": [
                     {
                         "label": "FY 2018-19",
@@ -4678,6 +4723,7 @@ const fiscalRankingFormJson = () => {
                 "key": "CaptlExpWaterSupply",
                 "label": "Capital Expenditure for Water Supply",
                 "displayPriority": "16.1",
+                "required": true,
                 "yearData": [
                     {
                         "label": "FY 2018-19",
@@ -4754,6 +4800,7 @@ const fiscalRankingFormJson = () => {
                 "key": "CaptlExpSanitation",
                 "label": "Capital Expenditure for Sanitation/Sewerage",
                 "displayPriority": "16.2",
+                "required": true,
                 "yearData": [
                     {
                         "label": "FY 2018-19",
@@ -4830,6 +4877,7 @@ const fiscalRankingFormJson = () => {
                 "key": "auditAnnualReport",
                 "label": "Date of Audit Report for audited annual accounts",
                 "displayPriority": "24",
+                "required": true,
                 "yearData": [
                     {},
                     {
@@ -4892,6 +4940,7 @@ const fiscalRankingFormJson = () => {
                 "key": "totalOwnRevenueArea",
                 "label": "Total Own Revenue Arrears as on 31st March 2022",
                 "displayPriority": "25",
+                "required": true,
                 "yearData": [
                     {},
                     {},
@@ -4919,6 +4968,7 @@ const fiscalRankingFormJson = () => {
                 "key": "webUrlAnnual",
                 "label": "ULB website URL link where Audited Accounts are available",
                 "displayPriority": "26",
+                "required": true,
                 "yearData": [
                     {},
                     {},
@@ -4947,6 +4997,7 @@ const fiscalRankingFormJson = () => {
                 "key": "registerGis",
                 "label": "Is the property tax register GIS-based?",
                 "displayPriority": "27",
+                "required": true,
                 "yearData": [
                     {
                         "label": "FY 2021-22",
@@ -4972,6 +5023,7 @@ const fiscalRankingFormJson = () => {
                 "key": "registerGisProof",
                 "label": "Please upload proof",
                 "displayPriority": "27.1",
+                "required": true,
                 "yearData": [
                     {},
                     {},
@@ -5039,6 +5091,7 @@ const fiscalRankingFormJson = () => {
                 "key": "accountStwreProof",
                 "label": "Please upload proof",
                 "displayPriority": "28.1",
+                "required": true,
                 "yearData": [
                     {},
                     {},
@@ -5292,6 +5345,7 @@ const fiscalRankingFormJson = () => {
                 key: 'appAnnualBudget',
                 label: 'Copy of Approved Annual Budget preferably in English',
                 displayPriority: "35",
+                "required": true,
                 yearData: [
                     {
                         label: 'FY 2020-21',
@@ -5379,6 +5433,7 @@ const fiscalRankingFormJson = () => {
                 key: 'auditedAnnualFySt',
                 label: 'Copy of Audited Annual Financial Statements preferably in English',
                 displayPriority: "36",
+                "required": true,
                 yearData: [
                     {
                         label: 'FY 2018-19',
