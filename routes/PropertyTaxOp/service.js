@@ -2,23 +2,23 @@ const PropertyTaxOp = require('../../models/PropertyTaxOp')
 const PropertyTaxOpMapper = require('../../models/PropertyTaxOpMapper')
 const { response } = require('../../util/response');
 const ObjectId = require('mongoose').Types.ObjectId
-const { canTakenAction , canTakenActionMaster} = require('../CommonActionAPI/service')
+const { canTakenAction, canTakenActionMaster } = require('../CommonActionAPI/service')
 const Service = require('../../service');
 const { FormNames, MASTER_STATUS_ID } = require('../../util/FormNames');
 const User = require('../../models/User');
 const { checkUndefinedValidations } = require('../../routes/FiscalRanking/service');
-const { propertyTaxOpFormJson, financialYearTableHeader, specialHeaders,skipLogicDependencies } = require('./fydynemic')
+const { propertyTaxOpFormJson, skippableKeys, financialYearTableHeader, specialHeaders, skipLogicDependencies } = require('./fydynemic')
 const { isEmptyObj, isReadOnly } = require('../../util/helper');
 const PropertyMapperChildData = require("../../models/PropertyTaxMapperChild");
 const { years } = require('../../service/years');
-const {saveFormHistory} = require("../../util/masterFunctions")
-const {validationJson, keysWithChild} = require("./validation");
+const { saveFormHistory } = require("../../util/masterFunctions")
+const { validationJson, keysWithChild } = require("./validation");
 const MasterStatus = require('../../models/MasterStatus');
-const {saveStatusAndHistory} = require("../CommonFormSubmission/service")
+const { saveStatusAndHistory } = require("../CommonFormSubmission/service")
 
-const getKeyByValue = (object, value)=>{
+const getKeyByValue = (object, value) => {
     return Object.keys(object).find(key => object[key] === value);
-  }
+}
 
 module.exports.getForm = async (req, res) => {
     try {
@@ -215,6 +215,7 @@ module.exports.createOrUpdateForm = async (req, res) => {
                     return response(updatedForm, res, "Form updated.", "Form not updated.")
                 }
             }
+            
             if (submittedForm.status === "APPROVED" && submittedForm.actionTakenByRole !== "ULB"
                 && submittedForm.isDraft === false) {
                 return res.status(200).json({
@@ -251,59 +252,59 @@ function
     return result;
 }
 //// New year
-async function removeIsDraft(params){
-    try{
+async function removeIsDraft(params) {
+    try {
         let { ulbId, design_year } = params
         let condition = { ulb: ObjectId(ulbId), design_year: ObjectId(design_year) };
-        await PropertyTaxOp.findOneAndUpdate(condition,{
-            "isDraft":true,
-            "currentFormStatus":1
+        await PropertyTaxOp.findOneAndUpdate(condition, {
+            "isDraft": true,
+            "currentFormStatus": 1
         }).lean();
     }
-    catch(err){
-        console.log("error in removeIsDraft :::: ",err.message)
+    catch (err) {
+        console.log("error in removeIsDraft :::: ", err.message)
     }
 }
 
-async function createHistory(params){
-    try{
-        let { ulbId, actions, design_year, isDraft,formId,currentFormStatus } = params
-        let {role,_id} = params.decoded 
+async function createHistory(params) {
+    try {
+        let { ulbId, actions, design_year, isDraft, formId, currentFormStatus } = params
+        let { role, _id } = params.decoded
         let payload = {
-                "recordId":formId,
-                "data":[]
-            }
-        let ptoForm = await PropertyTaxOp.find({"_id":formId}).lean()
+            "recordId": formId,
+            "data": []
+        }
+        let ptoForm = await PropertyTaxOp.find({ "_id": formId }).lean()
         let mapperForm = await PropertyTaxOpMapper.find({ ptoId: ObjectId(formId) }).populate("child").lean();
         ptoForm[0]['ptoMapperData'] = mapperForm
         payload['data'] = ptoForm
         let historyParams = {
-            masterFormId:formId,
-            formBodyStatus : currentFormStatus,
-            formSubmit:ptoForm,
-            actionTakenByRole:role,
-            actionTakenBy:_id,
-            bodyData:ptoForm,
-            formType:"PTO"
+            masterFormId: formId,
+            formBodyStatus: currentFormStatus,
+            formSubmit: ptoForm,
+            actionTakenByRole: role,
+            actionTakenBy: _id,
+            bodyData: ptoForm,
+            formType: "PTO"
 
         }
-        console.log("working ::: ",role)
+        console.log("working ::: ", role)
         await saveStatusAndHistory(historyParams)
 
     }
-    catch(err){
-        console.log("error in createHistory ::: ",err.message)
+    catch (err) {
+        console.log("error in createHistory ::: ", err.message)
     }
 }
 
 module.exports.createOrUpdate = async (req, res) => {
-        let { ulbId, actions, design_year, isDraft,currentFormStatus } = req.body
+    let { ulbId, actions, design_year, isDraft, currentFormStatus } = req.body
     try {
         let { role, _id: userId } = req.decoded
         let response = {}
-        let formIdValidations = await checkIfFormIdExistsOrNot(ulbId, design_year, isDraft, role, userId,currentFormStatus);
+        let formIdValidations = await checkIfFormIdExistsOrNot(ulbId, design_year, isDraft, role, userId, currentFormStatus);
         let formId = formIdValidations.formId;
-        let params = {...req.body}
+        let params = { ...req.body }
         params['formId'] = formId
         params['decoded'] = req.decoded
         await createHistory(params)
@@ -325,7 +326,7 @@ module.exports.createOrUpdate = async (req, res) => {
 }
 
 
-async function checkIfFormIdExistsOrNot(ulbId, design_year, isDraft, role, userId,currentFormStatus) {
+async function checkIfFormIdExistsOrNot(ulbId, design_year, isDraft, role, userId, currentFormStatus) {
     return new Promise(async (resolve, reject) => {
         try {
             let validation = { message: "", valid: true, formId: null }
@@ -339,7 +340,7 @@ async function checkIfFormIdExistsOrNot(ulbId, design_year, isDraft, role, userI
                         actionTakenByRole: role,
                         actionTakenBy: userId,
                         status: "PENDING",
-                        currentFormStatus:currentFormStatus,
+                        currentFormStatus: currentFormStatus,
                         isDraft
                     }
                 )
@@ -348,7 +349,7 @@ async function checkIfFormIdExistsOrNot(ulbId, design_year, isDraft, role, userI
                 validation.valid = true
                 validation.formId = form._id
             } else {
-                let form = await PropertyTaxOp.findOneAndUpdate(condition, { "isDraft": isDraft ,currentFormStatus:currentFormStatus })
+                let form = await PropertyTaxOp.findOneAndUpdate(condition, { "isDraft": isDraft, currentFormStatus: currentFormStatus })
                 if (form) {
                     validation.message = "form exists"
                     validation.valid = true
@@ -372,9 +373,9 @@ async function checkIfFormIdExistsOrNot(ulbId, design_year, isDraft, role, userI
     })
 }
 
-async function updateMapperModelWithChildValues(params){
-    try{
-        let {dynamicObj,formId,ulbId,updateForm,updatedIds,replicaCount} = params
+async function updateMapperModelWithChildValues(params) {
+    try {
+        let { dynamicObj, formId, ulbId, updateForm, updatedIds, replicaCount } = params
         let filter = {
             "ulb": ObjectId(ulbId),
             "ptoId": ObjectId(formId),
@@ -388,22 +389,22 @@ async function updateMapperModelWithChildValues(params){
             payload['child'] = updatedIds
             payload['replicaCount'] = replicaCount
             payload['type'] = dynamicObj.key
-        } 
+        }
         // else {
-            // payload["status"] = dynamicObj.status
+        // payload["status"] = dynamicObj.status
         // }
         await PropertyTaxOpMapper.findOneAndUpdate(filter, payload, { "upsert": upsert })
 
     }
-    catch(err){
-        console.log("error in updateMapperModelWithChildValues ::: ",err.message)
+    catch (err) {
+        console.log("error in updateMapperModelWithChildValues ::: ", err.message)
     }
 }
 
-async function updateChildrenMapper(params){
-    let {ulbId,formId,yearData,updateForm,dynamicObj,textValue} = params
+async function updateChildrenMapper(params) {
+    let { ulbId, formId, yearData, updateForm, dynamicObj, textValue } = params
     let ids = []
-    try{
+    try {
         for (var years of yearData) {
             let upsert = false
             if (years.year) {
@@ -412,7 +413,7 @@ async function updateChildrenMapper(params){
                     "ulb": ObjectId(ulbId),
                     "ptoId": ObjectId(formId),
                     "type": years.type,
-                    "replicaNumber":years.replicaNumber
+                    "replicaNumber": years.replicaNumber
                 }
                 let payload = { ...filter }
                 if (updateForm) {
@@ -428,8 +429,8 @@ async function updateChildrenMapper(params){
                 } else {
                     payload["status"] = years.status
                 }
-                let updatedItem = await PropertyMapperChildData.findOneAndUpdate(filter, payload, { "upsert": upsert,new:true })
-                if(updatedItem){
+                let updatedItem = await PropertyMapperChildData.findOneAndUpdate(filter, payload, { "upsert": upsert, new: true })
+                if (updatedItem) {
                     ids.push(updatedItem._id)
                 }
                 // console.log("updatedItem :: ",updatedItem._id)
@@ -437,23 +438,23 @@ async function updateChildrenMapper(params){
         }
         return ids
     }
-    catch(err){
-        console.log("error in updateChildrenMapper ::: ",err.message)
+    catch (err) {
+        console.log("error in updateChildrenMapper ::: ", err.message)
     }
 
 }
 
-async function handleChildrenData(params){
+async function handleChildrenData(params) {
     let ids = []
-    try{
-        let {inputElement,ulbId,formId,updateForm,dynamicObj} = params
-        if(inputElement?.child){
+    try {
+        let { inputElement, ulbId, formId, updateForm, dynamicObj } = params
+        if (inputElement?.child) {
             let updIds = []
-            for(let obj of inputElement.child){
+            for (let obj of inputElement.child) {
                 let yearData = obj.yearData
                 let textValue = obj.value
-                let updatedIds = await updateChildrenMapper({yearData,ulbId,formId,updateForm,dynamicObj,textValue})
-                updIds = updIds.concat(updatedIds,ids)
+                let updatedIds = await updateChildrenMapper({ yearData, ulbId, formId, updateForm, dynamicObj, textValue })
+                updIds = updIds.concat(updatedIds, ids)
             }
             params["updatedIds"] = updIds
             params['replicaCount'] = inputElement.replicaCount
@@ -461,249 +462,252 @@ async function handleChildrenData(params){
             return updIds
         }
     }
-    catch(err){
-        console.log("error in handleChildrenData ::: ",err.message)
+    catch (err) {
+        console.log("error in handleChildrenData ::: ", err.message)
     }
     return ids
 }
 
 
-function yearWiseValues(yearData){
-    try{
+function yearWiseValues(yearData) {
+    try {
         let sumObj = {}
-        for(let yearObj of yearData){
-            if(yearObj.year){
-                let yearName = getKeyByValue(years,yearObj.year)
-                try{
-                    sumObj[yearName].push(yearObj.value ? parseFloat(yearObj.value) : 0 )
+        for (let yearObj of yearData) {
+            if (yearObj.year) {
+                let yearName = getKeyByValue(years, yearObj.year)
+                try {
+                    sumObj[yearName].push(yearObj.value ? parseFloat(yearObj.value) : 0)
                 }
-                catch(err){
+                catch (err) {
                     sumObj[yearName] = [parseFloat(yearObj.value ? parseFloat(yearObj.value) : 0)]
                 }
             }
         }
         sumObj = Object.entries(sumObj).reduce((result, [key, value]) => ({
-                ...result, 
-                [key]: value.reduce((total, item) => total + item, 0)}) 
-                , 
+            ...result,
+            [key]: value.reduce((total, item) => total + item, 0)
+        })
+            ,
             {})
         return sumObj
     }
-    catch(err){
-        console.log("error in getYearWiseKeys :::: ",err.message)
+    catch (err) {
+        console.log("error in getYearWiseKeys :::: ", err.message)
     }
 }
 
-function getSumByYear(params){
-    let {yearData,sumObj} = params
+function getSumByYear(params) {
+    let { yearData, sumObj } = params
     // console.log("yearData ::: ",yearData)
-    try{
-        for(let yearObj of yearData){
-            if(yearObj.year){
-                let yearName = getKeyByValue(years,yearObj.year)
-                try{
-                    sumObj[yearName].push(yearObj.value ? parseFloat(yearObj.value) : 0 )
+    try {
+        for (let yearObj of yearData) {
+            if (yearObj.year) {
+                let yearName = getKeyByValue(years, yearObj.year)
+                try {
+                    sumObj[yearName].push(yearObj.value ? parseFloat(yearObj.value) : 0)
                 }
-                catch(err){
+                catch (err) {
                     sumObj[yearName] = [parseFloat(yearObj.value ? parseFloat(yearObj.value) : 0)]
                 }
             }
         }
     }
-    catch(err){
-        console.log("error in getSumByYear ::: ",err.message)
+    catch (err) {
+        console.log("error in getSumByYear ::: ", err.message)
     }
     // return sumObj
 }
 
 
-function mergeChildObjectsYearData(childObjects){
-    try{
+function mergeChildObjectsYearData(childObjects) {
+    try {
         let yearData = []
         let sumObj = {}
-        for(let childs of childObjects){
+        for (let childs of childObjects) {
             yearData = childs.yearData
             getSumByYear({
-                yearData:childs.yearData,
+                yearData: childs.yearData,
                 sumObj
             })
         }
         sumObj = Object.entries(sumObj).reduce((result, [key, value]) => ({
-                ...result, 
-                [key]: value.reduce((total, item) => total + item, 0)}) 
-                , 
+            ...result,
+            [key]: value.reduce((total, item) => total + item, 0)
+        })
+            ,
             {})
         // console.log("sumObj :: ",sumObj)
-        yearData.forEach((item)=>{
-            item.value = sumObj[getKeyByValue(years,item.year.toString())] || ""
+        yearData.forEach((item) => {
+            item.value = sumObj[getKeyByValue(years, item.year.toString())] || ""
         })
         return yearData
     }
-    catch(err){
-        console.log("error in mergeChildObjectsYearData ::: ",err.message)
+    catch (err) {
+        console.log("error in mergeChildObjectsYearData ::: ", err.message)
     }
 }
 
-function assignChildToMainKeys(data){
-    let seperatedObject = {...data}
-    try{
-        for(let key of Object.keys(keysWithChild)){
-            let element = {...seperatedObject[key]}
-            if(element.child){
-                for(let childElement of keysWithChild[key]){
+function assignChildToMainKeys(data) {
+    let seperatedObject = { ...data }
+    try {
+        for (let key of Object.keys(keysWithChild)) {
+            let element = { ...seperatedObject[key] }
+            if (element.child) {
+                for (let childElement of keysWithChild[key]) {
                     let filteredChildren = element.child.filter(item => item.key === childElement)
                     let yearData = [...mergeChildObjectsYearData(filteredChildren)]
                     seperatedObject[childElement] = {
-                            "key": childElement,
-                            "label": "",
-                            "required": true,
-                            yearData : yearData
+                        "key": childElement,
+                        "label": "",
+                        "required": true,
+                        yearData: yearData
                     }
                 }
             }
         }
     }
-    catch(err){
-        console.log("error in assignChildToMainKeys ::: ",err.message)
+    catch (err) {
+        console.log("error in assignChildToMainKeys ::: ", err.message)
     }
     return seperatedObject
 }
 
 
-function getYearDataSumForValidations(keysToFind,payload){
+function getYearDataSumForValidations(keysToFind, payload) {
     let sumObj = {}
-    let data = {...payload}
-    try{
-        for(let keyName of keysToFind){
-            if(data[keyName]){
-                if(!data[keyName].child ||  data[keyName].child.length === 0){
+    let data = { ...payload }
+    try {
+        for (let keyName of keysToFind) {
+            if (data[keyName]) {
+                if (!data[keyName].child || data[keyName].child.length === 0) {
                     getSumByYear({
-                        yearData:data[keyName].yearData,
+                        yearData: data[keyName].yearData,
                         sumObj
                     })
                 }
-                else{
-                    for(let childs of data[keyName].child){
+                else {
+                    for (let childs of data[keyName].child) {
                         getSumByYear({
-                            yearData:childs.yearData,
-                            sumObj:sumObj
+                            yearData: childs.yearData,
+                            sumObj: sumObj
                         })
                     }
                 }
             }
-        }  
+        }
         sumObj = Object.entries(sumObj).reduce((result, [key, value]) => ({
-                ...result, 
-                [key]: value.reduce((total, item) => total + item, 0)}) 
-                , 
+            ...result,
+            [key]: value.reduce((total, item) => total + item, 0)
+        })
+            ,
             {})
         return sumObj
     }
-    catch(err){
-        console.log("error in getYearDataForValidations ::: ",err.message)
+    catch (err) {
+        console.log("error in getYearDataForValidations ::: ", err.message)
     }
 }
 
-function compareValues(params){
+function compareValues(params) {
     let validator = {
-        "valid":true,
-        "message":"",
-        "errors":[]
+        "valid": true,
+        "message": "",
+        "errors": []
     }
-    try{
-        let {sumOfrefVal,sumOfCurrentKey,logic,message} = params
+    try {
+        let { sumOfrefVal, sumOfCurrentKey, logic, message } = params
         // console.log(">>>>>>>>>>>>>>>>>>1")
-        for(let key in sumOfrefVal){
+        for (let key in sumOfrefVal) {
             // console.log(">>>>>>>>>>>>>>>>>>2")
             let refVal = parseFloat(sumOfrefVal[key].toFixed(2))
             let currenVal = parseFloat(sumOfCurrentKey[key].toFixed(2))
-            if(logic === "ltequal"){
+            if (logic === "ltequal") {
                 // console.log("currenVal ::: ",currenVal)
                 // console.log("refVal :::: ",refVal)
-                if(currenVal > refVal ){
-                   validator.valid = false
-                   validator.errors.push(message) 
-                   validator.message = message
+                if (currenVal > refVal) {
+                    validator.valid = false
+                    validator.errors.push(message)
+                    validator.message = message
                 }
             }
-            else if(logic === "sum"){
-                if(currenVal != refVal ){
+            else if (logic === "sum") {
+                if (currenVal != refVal) {
                     validator.valid = false
                     validator.message = message
-                    validator.errors.push(message) 
-                 }
+                    validator.errors.push(message)
+                }
             }
         }
-        
+
     }
-    catch(err){
+    catch (err) {
         console.log("error in compareValues :::")
     }
     return validator
 }
 
-async function handleMultipleValidations(params){
-    let {data,validatorArray,dynamicObj} = params
+async function handleMultipleValidations(params) {
+    let { data, validatorArray, dynamicObj } = params
     let valid = {
-        "valid":true,
-        "errors":"",
-        "message":""
+        "valid": true,
+        "errors": "",
+        "message": ""
     }
-    try{
-        for(let validationObj of validatorArray){
+    try {
+        for (let validationObj of validatorArray) {
             let keysToFind = validationObj.fields
             let validationParams = {
-                keysToFind:keysToFind,
-                dynamicObj:dynamicObj,
-                data:data
+                keysToFind: keysToFind,
+                dynamicObj: dynamicObj,
+                data: data
             }
             let toCheckValidation = await checkIfFieldsAreNotEmpty(validationParams)
             // console.log("toCheckValidation :: ",toCheckValidation)
-            if(toCheckValidation.checkForValidations){
-                
-                let sumOfrefVal = await getYearDataSumForValidations(keysToFind,data)
+            if (toCheckValidation.checkForValidations) {
+
+                let sumOfrefVal = await getYearDataSumForValidations(keysToFind, data)
                 let sumOfCurrentKey = await yearWiseValues(dynamicObj.yearData)
-                let errorMessage = await createErrorMessage(validationObj,dynamicObj)
+                let errorMessage = await createErrorMessage(validationObj, dynamicObj)
                 let valueParams = {
                     sumOfrefVal,
                     sumOfCurrentKey,
-                    logic:validationObj.logic,
+                    logic: validationObj.logic,
                     // message:`${validationObj.displayNumber} - ${validationObj.message} `
                     // message:validationObj.message
-                    message : errorMessage
+                    message: errorMessage
                 }
                 let compareValidator = compareValues(valueParams)
                 // console.log("sumOfrefVal :: ",sumOfrefVal)
                 // console.log("sumOfCurrentKey :: ",sumOfCurrentKey)
                 // console.log("compareValidator :::: ",compareValidator)
-                if(!compareValidator.valid){
+                if (!compareValidator.valid) {
                     return compareValidator
                 }
             }
-            
+
         }
     }
-    catch(err){
-        console.log("error in handleMultipleValidations ::: ",err.message)
+    catch (err) {
+        console.log("error in handleMultipleValidations ::: ", err.message)
     }
     return valid
 }
 
 
-async function handleInternalValidations(params){
+async function handleInternalValidations(params) {
     let errors = {
-        valid:true,
-        message:"",
-        errors:[]
+        valid: true,
+        message: "",
+        errors: []
     }
-    try{
-        let {dynamicObj} = params
+    try {
+        let { dynamicObj } = params
         let childElements = dynamicObj.child || []
-        let preparedJsonData = childElements.reduce((result,currentValue)=> ({...result, [currentValue.key]:currentValue} ) ,{})
-        for(let child of childElements){
-            if(Object.keys(validationJson).includes(child.key)){
+        let preparedJsonData = childElements.reduce((result, currentValue) => ({ ...result, [currentValue.key]: currentValue }), {})
+        for (let child of childElements) {
+            if (Object.keys(validationJson).includes(child.key)) {
                 let keysToFind = validationJson[child.key].fields
-                let sumOfrefVal = await getYearDataSumForValidations(keysToFind,preparedJsonData)
+                let sumOfrefVal = await getYearDataSumForValidations(keysToFind, preparedJsonData)
                 let sumOfCurrentKey = await yearWiseValues(child.yearData)
                 // let validationParams = {
                 //     keysToFind:keysToFind,
@@ -711,61 +715,61 @@ async function handleInternalValidations(params){
                 //     data:preparedJsonData
                 // }
                 // let toCheckValidation = await checkIfFieldsAreNotEmpty(validationParams)
-                let errorMessage = await createErrorMessage(validationJson[child.key],preparedJsonData[child.key])
+                let errorMessage = await createErrorMessage(validationJson[child.key], preparedJsonData[child.key])
                 let valueParams = {
                     sumOfrefVal,
                     sumOfCurrentKey,
-                    logic:validationJson[child.key].logic,
+                    logic: validationJson[child.key].logic,
                     // message:`${validatidynamicObjonJson[dynamicObj.key].displayNumber} - ${validationJson[dynamicObj.key].message} `
-                    message:errorMessage
-                }        
+                    message: errorMessage
+                }
                 let compareValidator = compareValues(valueParams)
                 // if(keysToFind.includes("othersValueWaterChrgDm")){
-                    // console.log("othersValueWaterChrgDm :::: ",preparedJsonData)
-                    // console.log("sumOfrefVal ::: ",sumOfrefVal ,"keysToFind :: ",keysToFind)   
-                    // console.log("sumOfCurrentKey ::: ",sumOfCurrentKey,"keysToFind :: ",keysToFind)     
-                    // console.log("compareValidator  11::: ",compareValidator)
+                // console.log("othersValueWaterChrgDm :::: ",preparedJsonData)
+                // console.log("sumOfrefVal ::: ",sumOfrefVal ,"keysToFind :: ",keysToFind)   
+                // console.log("sumOfCurrentKey ::: ",sumOfCurrentKey,"keysToFind :: ",keysToFind)     
+                // console.log("compareValidator  11::: ",compareValidator)
 
                 // }
-                if(!compareValidator.valid){
+                if (!compareValidator.valid) {
                     return compareValidator
                 }
             }
         }
     }
-    catch(err){
-        console.log("error in handleInternalValidations :::: ",err.message)
+    catch (err) {
+        console.log("error in handleInternalValidations :::: ", err.message)
     }
     return errors
 }
 
-function createErrorMessage(validationObj,dynamicObj){
+function createErrorMessage(validationObj, dynamicObj) {
     let message = validationObj.message
-    try{
-        if(validationObj.logic === "sum"){
-            message += `\n Sum of ${validationObj.sequence.join(",")} is not equal to ${dynamicObj.position}` 
+    try {
+        if (validationObj.logic === "sum") {
+            message += `\n Sum of ${validationObj.sequence.join(",")} is not equal to ${dynamicObj.position}`
         }
-        else if(validationObj.logic === "ltequal"){
-            message += `\n ${dynamicObj.position} should be lesser than or equal to ${validationObj.sequence[0]}` 
-        } 
+        else if (validationObj.logic === "ltequal") {
+            message += `\n ${dynamicObj.position} should be lesser than or equal to ${validationObj.sequence[0]}`
+        }
     }
-    catch(err){
-        console.log("error in createErrorMessage :::: ",err.message)
+    catch (err) {
+        console.log("error in createErrorMessage :::: ", err.message)
     }
     return message
 }
 
-function checkIfFieldsAreNotEmpty(params){
+function checkIfFieldsAreNotEmpty(params) {
     let validator = {
-        "emptyFields" : [],
-        "checkForValidations":true
+        "emptyFields": [],
+        "checkForValidations": true
     }
-    try{
-        let {keysToFind,dynamicObj,data} = params
+    try {
+        let { keysToFind, dynamicObj, data } = params
         keysToFind = keysToFind || []
-        if(dynamicObj.required){
-            for(let key of keysToFind){
-                if(data[key]){
+        if (dynamicObj.required) {
+            for (let key of keysToFind) {
+                if (data[key]) {
                     let yearData = data[key].yearData
                     valid = !yearData.every(item => item.value === "")
                     validator.emptyFields.push(valid)
@@ -774,78 +778,78 @@ function checkIfFieldsAreNotEmpty(params){
             validator.checkForValidations = validator.emptyFields.some(item => item === true)
         }
     }
-    catch(err){
-        console.log("error in checkIfFieldsAreNotEmpty ::: ",err.message)
+    catch (err) {
+        console.log("error in checkIfFieldsAreNotEmpty ::: ", err.message)
     }
     return validator
 }
 
 
-async function handleNonSubmissionValidation(params){
+async function handleNonSubmissionValidation(params) {
     let errors = {
-        valid:true,
-        message:"",
-        errors:[]
+        valid: true,
+        message: "",
+        errors: []
     }
-    try{
-        let  {dynamicObj,yearArr,data} = params
+    try {
+        let { dynamicObj, yearArr, data } = params
         let validatorKeys = Object.keys(validationJson)
-        let childrenValid = await handleInternalValidations({dynamicObj})
-        if(!childrenValid.valid){
+        let childrenValid = await handleInternalValidations({ dynamicObj })
+        if (!childrenValid.valid) {
             return childrenValid
         }
-        if(validatorKeys.includes(dynamicObj.key)){
+        if (validatorKeys.includes(dynamicObj.key)) {
             let keysToFind = validationJson[dynamicObj.key].fields
             let logicType = validationJson[dynamicObj.key].logic
             // console.log("")
-           if(logicType === "multiple"){
+            if (logicType === "multiple") {
                 let validatorArray = validationJson[dynamicObj.key].multipleValidations
                 let childValidationParams = {
                     data,
-                    validatorArray:validatorArray,
+                    validatorArray: validatorArray,
                     dynamicObj
                 }
-                let childValid = await  handleMultipleValidations(childValidationParams)
-                if(!childValid.valid){
+                let childValid = await handleMultipleValidations(childValidationParams)
+                if (!childValid.valid) {
                     return childValid
-                }   
-           }
-            else{
+                }
+            }
+            else {
                 let validationParams = {
-                    keysToFind:keysToFind,
-                    dynamicObj:dynamicObj,
-                    data:data
+                    keysToFind: keysToFind,
+                    dynamicObj: dynamicObj,
+                    data: data
                 }
                 let toCheckValidation = await checkIfFieldsAreNotEmpty(validationParams)
-               
+
                 // console.log("----------------------------------------------")
                 // console.log("sumOfrefVal ::: ",sumOfrefVal,"keystoFind ::: ",keysToFind)
                 // console.log("sumOfCurrentKey :::: ",sumOfCurrentKey,"keysToFind:::",keysToFind)
-                if(toCheckValidation.checkForValidations){
-                    
-                    let sumOfrefVal = await getYearDataSumForValidations(keysToFind,data)
+                if (toCheckValidation.checkForValidations) {
+
+                    let sumOfrefVal = await getYearDataSumForValidations(keysToFind, data)
                     let sumOfCurrentKey = await yearWiseValues(dynamicObj.yearData)
-                    let errorMessage = await createErrorMessage(validationJson[dynamicObj.key],dynamicObj)
+                    let errorMessage = await createErrorMessage(validationJson[dynamicObj.key], dynamicObj)
                     let valueParams = {
                         sumOfrefVal,
                         sumOfCurrentKey,
-                        logic:validationJson[dynamicObj.key].logic,
+                        logic: validationJson[dynamicObj.key].logic,
                         // message:`${validationJson[dynamicObj.key].displayNumber} - ${validationJson[dynamicObj.key].message} `
-                        message:errorMessage
+                        message: errorMessage
                     }
                     let compareValidator = compareValues(valueParams)
                     // console.log("compareValidator ::q ",compareValidator)
                     // console.log("-----------------------------------------------")
-                    if(!compareValidator.valid){
+                    if (!compareValidator.valid) {
                         return compareValidator
                     }
                 }
-                
+
             }
         }
     }
-    catch(err){
-        console.log("error in handleNonSubmissionValidation :: :",err.message)
+    catch (err) {
+        console.log("error in handleNonSubmissionValidation :: :", err.message)
     }
     return errors
 }
@@ -860,22 +864,22 @@ async function calculateAndUpdateStatusForMappers(tabs, ulbId, formId, year, upd
                 "comment": tab.feedback.comment,
                 "status": []
             }
-            let seperatedValues =  assignChildToMainKeys(obj)
+            let seperatedValues = assignChildToMainKeys(obj)
             for (var k in tab.data) {
                 let dynamicObj = obj[k]
                 let yearArr = obj[k].yearData
                 let params = {
                     dynamicObj,
                     yearArr,
-                    data:seperatedValues
+                    data: seperatedValues
                 }
-                if(!isDraft){
+                if (!isDraft) {
                     let validation = await handleNonSubmissionValidation(params)
-                    if(!validation.valid){
-                        throw {message:validation.message} 
+                    if (!validation.valid) {
+                        throw { message: validation.message }
                     }
                 }
-                let updatedIds = await handleChildrenData({inputElement:{...tab.data[k]},formId,ulbId,updateForm,dynamicObj})
+                let updatedIds = await handleChildrenData({ inputElement: { ...tab.data[k] }, formId, ulbId, updateForm, dynamicObj })
                 if (obj[k].yearData) {
                     let status = yearArr.every((item) => {
                         if (Object.keys(item).length) {
@@ -885,7 +889,7 @@ async function calculateAndUpdateStatusForMappers(tabs, ulbId, formId, year, upd
                         }
                     })
                     temp["status"].push(status)
-                    await updateQueryForPropertyTaxOp(yearArr, ulbId, formId, updateForm, dynamicObj,updatedIds)
+                    await updateQueryForPropertyTaxOp(yearArr, ulbId, formId, updateForm, dynamicObj, updatedIds)
                 }
                 conditionalObj[tab._id.toString()] = (temp)
             }
@@ -930,7 +934,7 @@ async function calculateAndUpdateStatusForMappers(tabs, ulbId, formId, year, upd
 //     }
 // }
 
-async function updateQueryForPropertyTaxOp(yearData, ulbId, formId, updateForm, dynamicObj,updatedIds) {
+async function updateQueryForPropertyTaxOp(yearData, ulbId, formId, updateForm, dynamicObj, updatedIds) {
     try {
         for (var years of yearData) {
             let upsert = false
@@ -963,46 +967,46 @@ async function updateQueryForPropertyTaxOp(yearData, ulbId, formId, updateForm, 
     }
 }
 
-function createChildObjectsYearData(params){
-    let {childs,isDraft,currentFormStatus,childCopyFrom,role} = params
+function createChildObjectsYearData(params) {
+    let { childs, isDraft, currentFormStatus, childCopyFrom, role } = params
     let yearData = []
-    try{
-        for(let child of childs){
-            let yearName = getKeyByValue(years,child?.year.toString())
+    try {
+        for (let child of childs) {
+            let yearName = getKeyByValue(years, child?.year.toString())
             let copiedFrom = childCopyFrom.find(item => item.key === child.type)
             let yearJson = copiedFrom.yearData.find(yearItem => yearItem.year === child.year.toString())
-            let json = {...yearJson}
-            json['key'] = json['key']+yearName
-            json['label'] = child.label ? child.label :json['label'] + " " + yearName
+            let json = { ...yearJson }
+            json['key'] = json['key'] + yearName
+            json['label'] = child.label ? child.label : json['label'] + " " + yearName
             json['value'] = child.value
             json['year'] = child.year
             json['type'] = child.type
             json['file'] = child.file
             json['displayPriority'] = child.displayPriority
             json['textValue'] = child.textValue
-            json['readonly'] = isReadOnly({isDraft,currentFormStatus,role})
+            json['readonly'] = isReadOnly({ isDraft, currentFormStatus, role })
             json['replicaNumber'] = child.replicaNumber ? child.replicaNumber : child.replicaCount
             yearData.push(json)
         }
     }
-    catch(err){
-        console.log("error in createChildObjectsYearData ::: ",err.message)
+    catch (err) {
+        console.log("error in createChildObjectsYearData ::: ", err.message)
     }
     return yearData
 }
 
-async function createFullChildObj(params){
-    let {element,yearData,replicaCount,childCopyFrom} = params
+async function createFullChildObj(params) {
+    let { element, yearData, replicaCount, childCopyFrom } = params
     let childs = []
     let copiedFromKeys = Array.from(new Set(yearData.map((item => item.type))))
-    try{
-        for(let i = 1; i<=replicaCount ; i++){
-            let replicatedYear = yearData.filter(item => item.replicaNumber === i )
-            for(let key of copiedFromKeys){
+    try {
+        for (let i = 1; i <= replicaCount; i++) {
+            let replicatedYear = yearData.filter(item => item.replicaNumber === i)
+            for (let key of copiedFromKeys) {
                 let copiedFrom = childCopyFrom.find(item => item.key === key)
-                let childObject = {...copiedFrom}
+                let childObject = { ...copiedFrom }
                 childObject.replicaNumber = i
-                let yearData =  replicatedYear.filter(item =>item.type === key )
+                let yearData = replicatedYear.filter(item => item.type === key)
                 childObject.value = yearData[0].textValue
                 childObject.label = yearData[0]?.label
                 childObject.position = yearData[0]?.displayPriority
@@ -1014,34 +1018,34 @@ async function createFullChildObj(params){
             }
         }
     }
-    catch(err){
-        console.log("error in createFullChildObj ::: ",err.message)
+    catch (err) {
+        console.log("error in createFullChildObj ::: ", err.message)
     }
     return childs
 }
 
-async function appendChildValues(params){
-    let {element,ptoMaper,isDraft,currentFormStatus,role} = params
-    try{  
-        if(element.child && ptoMaper){
+async function appendChildValues(params) {
+    let { element, ptoMaper, isDraft, currentFormStatus, role } = params
+    try {
+        if (element.child && ptoMaper) {
             let childElement = ptoMaper.find(item => item.type === element.key)
-            if(childElement && childElement.child){
+            if (childElement && childElement.child) {
                 let yearData = []
                 // console.log("childElement.key :: ",childElement.type)
-                for(let key of childElement.child){
-                    yearData   = await createChildObjectsYearData({
-                        childs:childElement.child,
-                        isDraft:isDraft,
-                        currentFormStatus:currentFormStatus,
-                        childCopyFrom:element.copyChildFrom,
-                        role:role
-                    })  
+                for (let key of childElement.child) {
+                    yearData = await createChildObjectsYearData({
+                        childs: childElement.child,
+                        isDraft: isDraft,
+                        currentFormStatus: currentFormStatus,
+                        childCopyFrom: element.copyChildFrom,
+                        role: role
+                    })
                 }
                 let params = {
-                    yearData : yearData,
-                    element:element,
-                    replicaCount:childElement.replicaCount,
-                    childCopyFrom:element.copyChildFrom
+                    yearData: yearData,
+                    element: element,
+                    replicaCount: childElement.replicaCount,
+                    childCopyFrom: element.copyChildFrom
                 }
                 let child = await createFullChildObj(params)
                 element.replicaCount = childElement.replicaCount
@@ -1049,9 +1053,9 @@ async function appendChildValues(params){
             }
         }
     }
-    catch(err){
+    catch (err) {
         console.log(err)
-        console.log("error in appendChildValues ::: ",err.message)
+        console.log("error in appendChildValues ::: ", err.message)
     }
     return element
 }
@@ -1059,7 +1063,7 @@ async function appendChildValues(params){
 exports.getView = async function (req, res, next) {
     try {
         let condition = {};
-        let {role} = req.decoded
+        let { role } = req.decoded
         if (!req.query.ulb && !req.query.design_year) {
             return res.status(400).json({ status: false, message: "Something went wrong!" });
         }
@@ -1069,9 +1073,9 @@ exports.getView = async function (req, res, next) {
         if (ptoData) {
             ptoMaper = await PropertyTaxOpMapper.find({ ulb: ObjectId(req.query.ulb), ptoId: ObjectId(ptoData._id) }).populate("child").lean();
         }
-        let fyDynemic = {...await propertyTaxOpFormJson()};
+        let fyDynemic = { ...await propertyTaxOpFormJson() };
         if (ptoData) {
-            const { isDraft, status,currentFormStatus } = ptoData;
+            const { isDraft, status, currentFormStatus } = ptoData;
             for (let sortKey in fyDynemic) {
                 if (sortKey !== "tabs" && ptoData) {
                     fyDynemic[sortKey] = ptoData[sortKey];
@@ -1081,10 +1085,10 @@ exports.getView = async function (req, res, next) {
                         for (let el in data) {
                             let { yearData, mData } = data[el];
                             let childParams = {
-                                element:data[el],
-                                ptoMaper:ptoMaper,
-                                isDraft:isDraft,
-                                currentFormStatus:currentFormStatus,
+                                element: data[el],
+                                ptoMaper: ptoMaper,
+                                isDraft: isDraft,
+                                currentFormStatus: currentFormStatus,
                                 role
                             }
                             data[el] = await appendChildValues(childParams)
@@ -1095,7 +1099,7 @@ exports.getView = async function (req, res, next) {
                                         if (d) {
                                             pf.file ? (pf.file = d ? d.file : "") : d.date ? (pf.date = d ? d.date : "") : (pf.value = d ? d.value : "");
                                         }
-                                        pf.readonly = isReadOnly({ isDraft, currentFormStatus,role,ptoData })
+                                        pf.readonly = isReadOnly({ isDraft, currentFormStatus, role, ptoData })
                                     }
                                 }
                             } else if (Array.isArray(mData) && ptoData.length) {
@@ -1111,7 +1115,7 @@ exports.getView = async function (req, res, next) {
             }
         }
         fyDynemic['isDraft'] = ptoData?.isDraft || true
-        fyDynemic['ulb'] = ptoData?.ulb  || req.query.ulb
+        fyDynemic['ulb'] = ptoData?.ulb || req.query.ulb
         fyDynemic['design_year'] = ptoData?.design_year || req.query.design_year
         fyDynemic['statusId'] = ptoData?.currentFormStatus || 1
         fyDynemic['status'] = MASTER_STATUS_ID[ptoData?.currentFormStatus] || MASTER_STATUS_ID[1]
@@ -1119,15 +1123,370 @@ exports.getView = async function (req, res, next) {
             status: ptoData?.currentFormStatus,
             formType: "ULB",
             loggedInUser: req?.decoded?.role,
-          };
+        };
         Object.assign(fyDynemic, {
             canTakeAction: canTakenActionMaster(params),
-          }
-          );
+        }
+        );
 
-        return res.status(200).json({ status: true, message: "Success fetched data!", data: { ...fyDynemic, financialYearTableHeader, specialHeaders ,skipLogicDependencies } });
+        return res.status(200).json({ status: true, message: "Success fetched data!", data: { ...fyDynemic, financialYearTableHeader, specialHeaders, skipLogicDependencies } });
     } catch (error) {
         console.log("err", error);
         return res.status(400).json({ status: false, message: "Something error wrong!" });
     }
+}
+
+function sortPosition(itemA, itemB) {
+    itemA.displayPriority = itemA.displayPriority.toString()
+    itemB.displayPriority = itemB.displayPriority.toString()
+    const [integerA, decimalA] = itemA.displayPriority.split('.').map(i => +i);
+    const [integerB, decimalB] = itemB.displayPriority.split('.').map(i => +i);
+    if (integerA != integerB) {
+        return integerA > integerB ? 1 : (integerB > integerA ? -1 : 0);;
+    }
+    return decimalA > decimalB ? 1 : (decimalB > decimalA ? -1 : 0);;
+
+}
+
+function getLabelName(type) {
+    try {
+        let indicators = {
+            notificationPropertyTax: 'Has the ULB adopted notification for charging property tax?',
+            notificationAdoptionDate: 'What was the notification adoption date?',
+            notificationIssuedBy: 'The adopted notification was issued by?',
+            notificationFile: 'Upload a copy of the notification',
+            dmdIncludingCess: 'Total property tax demand (including cess, other taxes, AND excluding user charges if user charges are collected with property tax)',
+            cdmdIncludingCess: 'Current property tax demand (including cess, other taxes, AND excluding user charges if user charges are collected with property tax)',
+            admdIncludingCess: 'Arrear property tax demand (including cess, other taxes, AND excluding user charges if user charges are collected with property tax)',
+            dmdexcludingCess: 'Total property tax demand (excluding cess, other taxes, user charges if any)',
+            taxTypeDemand: 'Other tax demand (Demand figure for each type of tax other than property tax collected)',
+            cessDemand: 'Cess demand (Demand figure for each type of cess collected)',
+            doesUserChargesDmnd: 'Do you collect any user charges along with Property Tax?',
+            userChargesDmnd: 'User charges demand (Demand figure for each type of user charge collected along with property tax)',
+            collectIncludingCess: 'Total property tax collection (including cess, other taxes, AND excluding user charges if user charges are collected with property tax)',
+            cuCollectIncludingCess: 'Current property tax collection (including cess, other taxes, AND excluding user charges if user charges are collected with property tax)',
+            arCollectIncludingCess: 'Arrear property tax collection (including cess, other taxes, AND excluding user charges if user charges are collected with property tax)',
+            collectExcludingCess: 'Total property tax collection (excluding cess,other taxes, user charges if any)',
+            taxTypeCollection: 'Other tax collections (Collection figure for each type of tax other than property tax collected)',
+            cessCollect: 'Cess collection (Collection figure for each type of cess collected)',
+            userChargesCollection: 'User charges collection (Collection figure for each type of user charge collected along with property tax)',
+            totalMappedPropertiesUlb: 'Total number of properties mapped in the ULB (including properties exempted from paying property tax)',
+            totalPropertiesTax: 'Total number of properties exempted from paying property tax',
+            totalPropertiesTaxDm: 'Total number of properties from which property tax was demanded',
+            totalPropertiesTaxDmCollected: 'Total number of properties from which property tax was collected',
+            resValuePropertyTaxDm: 'Value of property tax demanded (INR lakhs)',
+            resNoPropertyTaxDm: 'Number of properties from which property tax was demanded',
+            resValuePropertyTaxCollected: 'Value of property tax collected (INR lakhs)',
+            resNoPropertyTaxCollected: 'Number of properties from which property tax was collected',
+            comValuePropertyTaxDm: 'Value of property tax demanded (INR lakhs)',
+            comNoPropertyTaxDm: 'Number of properties from which property tax was demanded',
+            comValuePropertyTaxCollected: 'Value of property tax collected (INR lakhs)',
+            comNoPropertyTaxCollected: 'Number of properties from which property tax was collected',
+            indValuePropertyTaxDm: 'Value of property tax demanded (INR lakhs)',
+            indNoPropertyTaxDm: 'Number of properties from which property tax was demanded',
+            indValuePropertyTaxCollected: 'Value of property tax collected (INR lakhs)',
+            indNoPropertyTaxCollected: 'Number of properties from which property tax was collected',
+            govValuePropertyTaxDm: 'Value of property tax demanded (INR lakhs)',
+            govNoPropertyTaxDm: 'Number of properties from which property tax was demanded',
+            govValuePropertyTaxCollected: 'Value of property tax collected (INR lakhs)',
+            govNoPropertyTaxCollected: 'Number of properties from which property tax was collected',
+            insValuePropertyTaxDm: 'Value of property tax demanded (INR lakhs)',
+            insNoPropertyTaxDm: 'Number of properties from which property tax was demanded',
+            insValuePropertyTaxCollected: 'Value of property tax collected (INR lakhs)',
+            insNoPropertyTaxCollected: 'Number of properties from which property tax was collected',
+            otherValuePropertyType: 'Property Type',
+            noOfPropertiesPaidOnline: 'Number of properties that paid online (through website or mobile application)',
+            totalCollectionOnline: 'Total collections made via online channel i.e. through website or mobile application (INR lakhs)',
+            propertyTaxValuationDetails: 'Please submit the property tax rate card',
+            notificationWaterCharges: 'Are water charges being collected in the ULB?',
+            entityWaterCharges: 'Which entity is collecting the water charges?',
+            entityNameWaterCharges: 'Please fill the name of entity',
+            notificationWaterChargesFile: 'Upload a copy of gazette notification that notifies water charges',
+            waterChrgDm: 'Total water charges demand',
+            cuWaterChrgDm: 'Current water charges demand',
+            arWaterChrgDm: 'Arrear water charges demand',
+            waterChrgCol: 'Total water charges collection',
+            cuWaterChrgCol: 'Current water charges collection',
+            arWaterChrgCol: 'Arrear water charges collection',
+            waterChrgConnectionDm: 'Total Number of connections from which water charges was demanded',
+            waterChrgConnectionCol: 'Total Number of connections from which water charges were collected',
+            resValueWaterChrgDm: 'Value of water charges demanded (INR lakhs)',
+            resNoWaterChrgDm: 'Number of Households/properties from which water charges was demanded',
+            resValueWaterChrgCollected: 'Value of water charges collected from Households/properties (INR lakhs)',
+            resNoWaterChrgCollected: 'Number of Households/properties from which water charges was collected',
+            comValueWaterChrgDm: 'Value of water charges demanded (INR lakhs)',
+            comNoWaterChrgDm: 'Number of Households/properties from which water charges was demanded',
+            comValueWaterChrgCollected: 'Value of water charges collected from Households/properties (INR lakhs)',
+            comNoWaterChrgCollected: 'Number of Households/properties from which water charges was collected',
+            indValueWaterChrgDm: 'Value of water charges demanded (INR lakhs)',
+            indNoWaterChrgDm: 'Number of Households/properties from which water charges was demanded',
+            indValueWaterChrgCollected: 'Value of water charges collected from Households/properties (INR lakhs)',
+            indNoWaterChrgCollected: 'Number of Households/properties from which water charges was collected',
+            othersValueWaterType: 'Property Type',
+            waterChrgTariffDetails: 'Please provide the water tariff sheet',
+            omCostDeleveryWater: 'What is the O&M cost of service delivery for water? (INR lakhs)',
+            omCostWaterService: 'Please provide the working sheet for O&M cost calculation',
+            doesColSewerageCharges: 'Are sewerage charges being collected in the ULB?',
+            entitySewerageCharges: 'Which entity is collecting the sewerage charges?',
+            entityNaSewerageCharges: 'Please fill the name of the entity',
+            copyGazetteNotificationSewerage: 'Upload a copy of gazette notification that notifies collection of sewerage charges',
+            totalSewergeChrgDm: 'Total sewerage charges demand',
+            curSewergeChrgDm: 'Current sewerage charges demand',
+            arrSewergeChrgDm: 'Arrear sewerage charges demand',
+            totalSewergeChrgCol: 'Total sewerage charges collection',
+            curSewergeChrgCol: 'Current sewerage charges collection',
+            arrSewergeChrgCol: 'Arrear sewerage charges collection',
+            totalSewergeConnectionDm: 'Total number of connections from which sewerage charges was demanded',
+            totalSewergeConnectionCol: 'Total number of connections from which sewerage charges were collected',
+            resValueSewerageTaxDm: 'Value of sewerage charges demanded (INR lakhs)',
+            resNoSewerageTaxDm: 'Number of Households/properties from which sewerage charges was demanded',
+            resValueSewerageTaxCollected: 'Value of sewerage charges collected from Households/properties (INR lakhs)',
+            resNoSewerageTaxCollected: 'Number of Households/properties from which sewerage charges was collected',
+            comValueSewerageTaxDm: 'Value of sewerage charges demanded (INR lakhs)',
+            comNoSewerageTaxDm: 'Number of Households/properties from which sewerage charges was demanded',
+            comValueSewerageTaxCollected: 'Value of sewerage charges collected from Households/properties (INR lakhs)',
+            comNoSewerageTaxCollected: 'Number of Households/properties from which sewerage charges was collected',
+            indValueSewerageTaxDm: 'Value of sewerage charges demanded (INR lakhs)',
+            indNoSewerageTaxDm: 'Number of Households/properties from which sewerage charges was demanded',
+            indValueSewerageTaxCollected: 'Value of sewerage charges collected from Households/properties (INR lakhs)',
+            indNoSewerageTaxCollected: 'Number of Households/properties from which sewerage charges was collected',
+            otherValueSewerageType: 'Property Type',
+            sewerageChrgTarrifSheet: 'Please provide the sewerage tariff sheet',
+            omCostDeleverySewerage: 'What is the O&M cost of service delivery for sewerage ?(INR lakhs)',
+            omCostSewerageService: 'Please provide the working sheet for O&M cost calculation',
+            signedPdf: 'Upload Signed PDF'
+        }
+        let labelName = indicators[type] ? indicators[type].replaceAll(",", "") : ""
+        return labelName
+    }
+    catch (err) {
+        console.log("Err :::", err)
+        return "NA"
+    }
+}
+
+function getSubHeaders(displayPriority) {
+    try {
+        let subHeaders = {
+            "1.05-1.12": "Property Tax Demand Details (Amount in INR Lakhs)",
+            "1.13-1.18": "Property Tax Collection Details (Amount in INR Lakhs)",
+            "2.50-2.80": "Property Tax Demand and Collection Details by Property Type (including cess, other tax charges, excluding user charges if any)",
+            "2.90-2.12": "Commercial Properties",
+            "2.13-2.16": "Industrial Properties",
+            "2.17-2.20": "Government Properties",
+            "2.21-2.24": "Institutional Properties",
+            "2.25-2.29": "Other Properties",
+            "5.05-5.10": "Water Charges Demand and Collection Details (Amount in INR lakhs)",
+            "5.11-5.12": "Water Connection Details",
+            "5.13-5.20": "Water Charges Demand and Collection Details by Household/Property type",
+            "5.21-5.24": "Industrial households/properties",
+            "5.25-5.29": "Other households/properties(any other connection type)",
+            "5.30-5.30": "Water Charges Tariff Details",
+            "5.31-5.31": "Water Charges: Cost of Service Delivery Details",
+            "5.32-5.32": "Working of the O&M Cost- Water Service",
+            "6.05-6.10": "Sewerage Charges Demand and Collection Details (Amount in INR lakhs)",
+            "6.11-6.12": "Sewerage Connection Details",
+            "6.13-6.16": "Sewerage Charges Details by household/property type",
+            "6.17-6.20": "Commercial households/properties",
+            "6.21-6.24": "Industrial households/properties",
+            "6.25-6.29": "Other households/properties(any other connection type)",
+            "6.30-6.30": "Sewerage Charges Tariff Details",
+            "6.31-6.31": "Sewerage Charges: Cost of Service Delivery Details",
+            "6.32-6.32": "Working of the O&M Cost- Sewerage Service"
+        }
+        for (let range in subHeaders) {
+            let [integerA, integerB] = range.split("-")
+            let [rangeA, rangeB] = [integerA, integerB].map(range => parseFloat(+range))
+            let dpIntegerArr = displayPriority.split(".")
+            let priorNumber = dpIntegerArr[1].length === 2 ? displayPriority : dpIntegerArr[0] + "." + "0" + dpIntegerArr[1]
+            let priority = parseFloat(+priorNumber)
+            if (priority >= rangeA && priority <= rangeB) {
+                if (subHeaders[range]) {
+                    return subHeaders[range].replaceAll(",", "") || ""
+                }
+                else{
+                    return ","
+                }
+            }
+        }
+    }
+    catch (err) {
+    console.log("error in getSubheades :: ", err.message)
+}
+    return ","
+}
+
+function getIndicator(displayPriority) {
+    try {
+        let headers = {
+            "1.01-1.18": "Property Tax Details",
+            "2.01-2.29": "Property Register Details",
+            "3.01-3.02": "Property Tax Collection Details by Mode of payment (including cess, other tax charges, excluding user charges if any)",
+            "4.01-4.01": "Property Tax Valuation Details",
+            "5.01-5.04": "Water Charges Details",
+            "6.01-6.04": "Sewerage Charges Details",
+
+        }
+        for (let range in headers) {
+            let [integerA, integerB] = range.split("-")
+            let [rangeA, rangeB] = [integerA, integerB].map(range => parseFloat(+range))
+            let dpIntegerArr = displayPriority.split(".")
+            let priorNumber = dpIntegerArr[1].length === 2 ? displayPriority : dpIntegerArr[0] + "." + "0" + dpIntegerArr[1]
+            let priority = parseFloat(+priorNumber)
+            if (priority >= rangeA && priority <= rangeB) {
+                if (headers[range]) {
+                    return headers[range].replaceAll(",", "")
+                }
+            }
+        }
+    }
+    catch (err) {
+        console.log("error in getIndicators :: ", err.message)
+    }
+    return ""
+}
+
+const getStringValue = (result, ipValue = false) => {
+    let writableStr = ""
+    try {
+        let dataYear = result?.year
+        // console.log(">>>",getSubHeaders(result.displayPriority).replace(",", ""))
+        let indicatorHead = getIndicator(result.displayPriority).replace(",", "")
+        let indicatorSubHead = getSubHeaders(result.displayPriority).replace(",", "")
+        let indicatorNumber = result.displayPriority
+        let value = result.value
+        let file = result?.file?.url
+        let date = result?.date ? result.date.toISOString() : null
+        writableStr += dataYear ? getKeyByValue(years, result?.year.toString()) + "," : " " + ","
+        writableStr += indicatorHead + ","
+        writableStr += indicatorSubHead + ","
+        writableStr += indicatorNumber + ","
+        writableStr += ipValue ? result.textValue + "," : "NA" + ","
+        writableStr += getLabelName(result.type) + ","
+        let assignedValue = value || file || date || " "
+        writableStr += assignedValue ? assignedValue.toString() : " " + ","
+        writableStr += "\r\n"
+    }
+    catch (err) {
+        console.log("error in getStringValue ::: ", err)
+    }
+    return writableStr
+}
+
+const createDataStructureForCsv = (ulbs, results, res) => {
+    try {
+        let updatedDatas = {}
+        for (let ulb of ulbs) {
+            let filteredResults = results.filter(item => item.ptoId.ulb._id.toString() === ulb.toString())
+            let sortedResults = filteredResults.sort(sortPosition)
+            for (let result of sortedResults) {
+                let writableStr = result.ptoId.ulb.state.name + "," + result.ptoId.ulb.name + "," + result.ptoId.ulb.natureOfUlb + "," + result.ptoId.ulb.code + "," + result.ptoId.ulb.censusCode + "," + MASTER_STATUS_ID[result.ptoId.currentFormStatus] + "," + getKeyByValue(years, result.ptoId.design_year.toString()) + ","
+                writableStr += getStringValue(result)
+                if (!canShow(result.type, results, updatedDatas)) continue;
+                if (result.child && result.child.length) {
+                    res.write(writableStr)
+                    for (let child of result.child) {
+                        child.displayPriority = result.displayPriority + "." + child.replicaNumber
+                        writableStr = result.ptoId.ulb.state.name + "," + result.ptoId.ulb.name + "," + result.ptoId.ulb.natureOfUlb + "," + result.ptoId.ulb.code + "," + result.ptoId.ulb.censusCode + "," + MASTER_STATUS_ID[result.ptoId.currentFormStatus] + "," + getKeyByValue(years, result.ptoId.design_year.toString()) + ","
+                        writableStr += getStringValue(child, true)
+                    }
+                }
+                res.write(writableStr)
+            }
+        }
+
+        res.end()
+    }
+    catch (err) {
+        console.log("error in createDataStructureForCsv ::: ", err)
+        res.json({
+            "success": false,
+            "message": "something went wrong"
+        })
+    }
+}
+
+const canShow = (key, results, updatedDatas) => {
+    try {
+        if (Object.keys(skippableKeys).includes(key)) {
+            let elementToFind = skippableKeys[key]
+            let element = {}
+            if (updatedDatas[elementToFind]) {
+                element = results.find(item => item.type === elementToFind)
+            }
+            updatedDatas[element] = element
+            return element.value === "Yes"
+        }
+    }
+    catch (err) {
+        console.log(err)
+        console.log("error in canSHow ::: ", err.message)
+    }
+    return true
+}
+module.exports.getCsvForPropertyTaxMapper = async (req, res) => {
+    let response = {
+        "success": true,
+        "message": "",
+        "query": []
+    }
+    let status = 200
+    try {
+        let { getQuery } = req.query
+        let csvCols = ["State Name",
+            "ULB Name",
+            "ULB Nature",
+            "City Finance Code",
+            "Census Code",
+            "Overall Form Status",
+            "Design Year",
+            "Data Year",
+            "Indicator Head ",
+            "Indicator sub head",
+            "Indicator number",
+            "Input Value",
+            "Indicator",
+            "Value| Amount"]
+        getQuery = getQuery === "true"
+        let design_year = ObjectId(years['2023-24'])
+        if (getQuery) {
+            response.query = getQuery
+            return response
+        }
+        let ptoFormResults = await PropertyTaxOp.find({
+            design_year: design_year
+        }, { _id: 1, ulb: 1 }).lean()
+        let ulbNames = ptoFormResults.map(item => item.ulb)
+        let mapperData = await PropertyTaxOpMapper.find({
+            "ptoId": { $in: ptoFormResults.map(item => item._id) }
+        }).populate("child").populate({
+            "path": "ptoId",
+            "populate": {
+                "path": "ulb",
+                "populate": {
+                    "path": "state",
+                    "model": "State"
+                }
+            }
+        }).lean()
+        let filename = "propertyTax.csv"
+        res.setHeader("Content-disposition", "attachment; filename=" + filename);
+        res.writeHead(200, { "Content-Type": "text/csv;charset=utf-8,%EF%BB%BF" });
+        res.write("\ufeff" + `${csvCols.join(",").toString()}` + "\r\n");
+        let str = ""
+        res.write("\ufeff" + str + "\r\n");
+        // cursor.on()
+        await createDataStructureForCsv(ulbNames, mapperData, res)
+        // res.end()
+        // console.log("mapperData :: ",mapperData)
+        response.success = true
+        // response.data = dbResults
+        response.message = "Code working"
+    }
+    catch (err) {
+        response.success = true
+        status = 400
+        console.log("error in getCsvForPropertyTaxMapper ::::: ", err.message)
+    }
+    // return res.status(status).json(response)
 }

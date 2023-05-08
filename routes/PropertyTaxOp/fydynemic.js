@@ -11833,6 +11833,17 @@ let skipLogicDependencies = {
     }
   }
 }
+function getSkippableKeys(skipLogics) {
+  const results = {};
+  Object.entries(skipLogics).forEach(([key, value]) => {
+      Object.keys(value.skippable).forEach(itemKey => {
+          results[itemKey] = key.split('.')[1];
+      })
+  })
+  return results;
+
+}
+module.exports.skippableKeys = getSkippableKeys(skipLogicDependencies)
 module.exports.financialYearTableHeader = financialYearTableHeader
 module.exports.specialHeaders = specialHeaders
 
