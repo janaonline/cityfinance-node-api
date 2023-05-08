@@ -83,6 +83,9 @@ const projectDetails = () => {
     },
     isDisable:{
       type: Boolean
+    },
+    bypassValidation:{
+      type: Boolean
     }
   };
 };

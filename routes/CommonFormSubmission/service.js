@@ -415,3 +415,79 @@ function checkForCalculations(reports){
   }
   return validator
 }
+
+async function saveStatusAndHistory(params){
+  let validation = {
+    "message":"",
+    "valid":true
+  }
+  let {formBodyStatus,actionTakenBy,actionTakenByRole,formSubmit,formType} = params
+  let masterFormId = FORMIDs[formType]
+  try{
+    console.log("formBodyStatu ",formBodyStatus === MASTER_STATUS["In Progress"])
+    if (formBodyStatus === MASTER_STATUS["In Progress"]) {
+      console.log("masterFormId ::: ",masterFormId)
+      let currentStatusData = {
+        formId: masterFormId,
+        recordId: ObjectId(formSubmit[0]._id),
+        status: MASTER_STATUS["In Progress"],
+        level: FORM_LEVEL["form"],
+        shortKey: "form_level",
+        rejectReason: "",
+        responseFile: "",
+        actionTakenByRole: actionTakenByRole,
+        actionTakenBy: ObjectId(actionTakenBy),
+      };
+      await saveCurrentStatus({
+        body: currentStatusData,
+        // session
+      });
+      // return Response.OK(res, {}, "Form Submitted");
+    } else if (
+      formBodyStatus === MASTER_STATUS["Under Review By State"]
+    ) {
+      let bodyData = {
+        formId: masterFormId,
+        recordId: ObjectId(formSubmit[0]._id),
+        data: formSubmit,
+      };
+      await saveFormHistory({
+        body: bodyData,
+      });
+
+      let currentStatusData = {
+        formId: masterFormId,
+        recordId: ObjectId(formSubmit[0]._id),
+        status: MASTER_STATUS["Under Review By State"],
+        level: FORM_LEVEL["form"],
+        shortKey: "form_level",
+        rejectReason: "",
+        responseFile: "",
+        actionTakenByRole: actionTakenByRole,
+        actionTakenBy: ObjectId(actionTakenBy),
+      };
+      await saveCurrentStatus({
+        body: currentStatusData,
+        // session
+      });
+
+      let statusHistory = {
+        formId: masterFormId,
+        recordId: ObjectId(formSubmit[0]._id),
+        shortKey: "form_level",
+        data: currentStatusData,
+      };
+      await saveStatusHistory({
+        body: statusHistory,
+      });
+    }
+  }
+  catch(err){
+    validation.message = err.message
+    validation.valid = false
+    console.log("error in saveStatusAndHistory :::: ",err.message)
+  }
+  return validation
+}
+
+module.exports.saveStatusAndHistory = saveStatusAndHistory

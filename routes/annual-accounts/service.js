@@ -2078,12 +2078,18 @@ async function addActionKeys(annualAccountData, body, res, role, req){
     // );
     req.body = body;
     let statusResponses = await getMasterAction(req, res);
+    let stateResponse =  await CurrentStatus.find(
+      {
+      recordId: ObjectId(annualAccountData._id),
+      actionTakenByRole: "STATE"
+    }).lean();
+    
     annualAccountData  = JSON.parse(JSON.stringify(annualAccountData))
     if (Object.keys(statusResponses).length > 1  && statusResponses.hasOwnProperty(MoHUAResponse)){
 
-      annualAccountData = addCanTakeActionKeys(annualAccountData,statusResponses[MoHUAResponse], role )
+      annualAccountData = await addCanTakeActionKeys(annualAccountData, statusResponses[MoHUAResponse], role , stateResponse)
     }else{
-      annualAccountData = addCanTakeActionKeys(annualAccountData,statusResponses[Object.keys(statusResponses)[FIRST_INDEX]], role )
+      annualAccountData = await addCanTakeActionKeys(annualAccountData, statusResponses[Object.keys(statusResponses)[FIRST_INDEX]], role ,stateResponse)
     }
     return annualAccountData;
   } catch (error) {
@@ -2091,7 +2097,7 @@ async function addActionKeys(annualAccountData, body, res, role, req){
   }
 }
 
-function addCanTakeActionKeys(annualAccountData, statuses, role){
+async function addCanTakeActionKeys(annualAccountData, statuses, role, stateResponse){
   try {
     const tabRegex = /^tab_/g;
     const keyArray = ["audited", "unAudited"];
@@ -2106,10 +2112,14 @@ function addCanTakeActionKeys(annualAccountData, statuses, role){
         el.shortKey = splittedArray[splittedArray.length - 1];
         return el;
     })
-    
+    stateResponse = stateResponse.map(el=>{
+      separator = el.shortKey.match(tabRegex) ?  tabSeparator : dotSeparator;
+      let splittedArray = el.shortKey.split(separator)
+      el.shortKey = splittedArray[splittedArray.length - 1];
+      return el;
+  })
     let data = JSON.parse(JSON.stringify(annualAccountData));
-
-    appendKeys(keyArray, data, provisionalKey, tabShortKeys, role);
+    await appendKeys(keyArray, data, provisionalKey, tabShortKeys, role, stateResponse);
     
     return data;
   } catch (error) {
@@ -2126,13 +2136,14 @@ const TAB_RESPONSE = {
   UNAUDITED_YES: [7,6],
   AUDITED_UNAUDITED_YES: 13
 }
-function appendKeys(keyArray, data, provisionalKey, tabShortKeys, role) {
+async function appendKeys(keyArray, data, provisionalKey, tabShortKeys, role, stateResponses) {
   let params = {
     status: data.currentFormStatus,
     formType: "ULB",
     loggedInUser: role,
   };
   let formLevelCanTakeAction = canTakenActionMaster(params);
+  stateResponses =  filterStateStatuses(stateResponses, tabShortKeys)
 
   let totalKeys = tabShortKeys?.length ;
   let continueFlagAudited = false, continueFlagUnaudited = false;
@@ -2149,16 +2160,27 @@ function appendKeys(keyArray, data, provisionalKey, tabShortKeys, role) {
     let statusData = tabShortKeys.find(el => {
       return el.shortKey === key;
     });
+    let stateStatusData;
     if (statusData) {
       let params = {
         status: statusData.statusId,
         formType: "ULB",
         loggedInUser: role,
       };
+      if(Array.isArray(stateResponses) && stateResponses.length){
+        stateStatusData = stateResponses.find(el => {
+          return el.shortKey === key;
+        });
+      }
       data[key]['canTakeAction'] = !formLevelCanTakeAction ? formLevelCanTakeAction :  canTakenActionMaster(params);
       data[key]['statusId'] = statusData['statusId'];
       data[key]['status'] = statusData['status'];
       data[key]['rejectReason'] = statusData['rejectReason'];
+      if(stateStatusData){
+        data[key]['rejectReason_state'] = stateStatusData['rejectReason']
+      }else{
+        data[key]['rejectReason_state'] = ""
+      }
       // if(statusData.statusId)
       if (continueFlagUnaudited && statusData.shortKey === keyArray[1]){
         continue;
@@ -2173,17 +2195,27 @@ function appendKeys(keyArray, data, provisionalKey, tabShortKeys, role) {
       let statusData = tabShortKeys.find(el => {
         return el.shortKey === entity;
       });
+      let stateStatusData;
       if (statusData) {
         let params = {
           status: statusData.statusId,
           formType: "ULB",
           loggedInUser: role,
         };
+        if(Array.isArray(stateResponses) && stateResponses.length){
+          stateStatusData = stateResponses.find(el => {
+            return el.shortKey === key;
+          });
+        }
         tabData[entity]['canTakeAction'] = !formLevelCanTakeAction ? formLevelCanTakeAction :  canTakenActionMaster(params);
         tabData[entity]['statusId'] = statusData['statusId'];
         tabData[entity]['status'] = statusData['status'];
         tabData[entity]['rejectReason'] = statusData['rejectReason'];
-
+        if(stateStatusData){
+          data[key]['rejectReason_state'] = stateStatusData['rejectReason']
+        }else{
+        data[key]['rejectReason_state'] = ""
+        }
         if(["bal_sheet","inc_exp"].includes(entity)){
           tabData = addExtraKeysToNumericFields(statusData,tabData, params, formLevelCanTakeAction);
         }
@@ -2192,6 +2224,18 @@ function appendKeys(keyArray, data, provisionalKey, tabShortKeys, role) {
   }
 }
 
+
+function filterStateStatuses(stateResponses, shortKeyData){
+  try {
+    if(shortKeyData.find(el=> el.actionTakenByRole === "MoHUA")){
+      return stateResponses;
+    }else{
+      return [];
+    }
+  } catch (error) {
+    throw(`filterStateStatuses:: ${error.message}`)
+  }
+}
 
 function addExtraKeysToNumericFields(statusData,tabData, params,formLevelCanTakeAction){
   

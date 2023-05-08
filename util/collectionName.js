@@ -13,7 +13,8 @@ module.exports = {
     "state_action_plan" :"ActionPlan",
     "state_grant_alloc" : "GrantAllocation",
     "state_grant_claim" : "GrantClaim",
-    "28SLB": "TwentyEightSlbsForm"
+    "28SLB": "TwentyEightSlbsForm",
+    "waterRej": "WaterRejenuvationRecycling"
 
 
 } 
