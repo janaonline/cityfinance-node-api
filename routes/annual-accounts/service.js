@@ -2204,7 +2204,7 @@ async function appendKeys(keyArray, data, provisionalKey, tabShortKeys, role, st
         };
         if(Array.isArray(stateResponses) && stateResponses.length){
           stateStatusData = stateResponses.find(el => {
-            return el.shortKey === key;
+            return el.shortKey === entity;
           });
         }
         tabData[entity]['canTakeAction'] = !formLevelCanTakeAction ? formLevelCanTakeAction :  canTakenActionMaster(params);
@@ -2212,9 +2212,9 @@ async function appendKeys(keyArray, data, provisionalKey, tabShortKeys, role, st
         tabData[entity]['status'] = statusData['status'];
         tabData[entity]['rejectReason'] = statusData['rejectReason'];
         if(stateStatusData){
-          data[key]['rejectReason_state'] = stateStatusData['rejectReason']
+          tabData[entity]['rejectReason_state'] = stateStatusData['rejectReason']
         }else{
-        data[key]['rejectReason_state'] = ""
+          tabData[entity]['rejectReason_state'] = ""
         }
         if(["bal_sheet","inc_exp"].includes(entity)){
           tabData = addExtraKeysToNumericFields(statusData,tabData, params, formLevelCanTakeAction);
