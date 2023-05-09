@@ -1393,6 +1393,7 @@ const createDataStructureForCsv = (ulbs, results, res) => {
                         writableStr = result.ptoId.ulb.state.name + "," + result.ptoId.ulb.name + "," + result.ptoId.ulb.natureOfUlb + "," + result.ptoId.ulb.code + "," + result.ptoId.ulb.censusCode + "," + MASTER_STATUS_ID[result.ptoId.currentFormStatus] + "," + getKeyByValue(years, result.ptoId.design_year.toString()) + ","
                         writableStr += getStringValue(child, true)
                         res.write(writableStr)
+                        writableStr = ""
                     }
                 }
                 res.write(writableStr)
