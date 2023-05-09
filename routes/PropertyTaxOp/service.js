@@ -1381,8 +1381,8 @@ const createDataStructureForCsv = (ulbs, results, res) => {
         for (let ulb of ulbs) {
             let filteredResults = results.filter(item => item.ptoId.ulb._id.toString() === ulb.toString())
             let sortedResults = filteredResults.sort(sortPosition)
-            let censusCode = result.ptoId.ulb.censusCode != null ? result.ptoId.ulb.censusCode : result.ptoId.ulb.sbCode 
             for (let result of sortedResults) {
+                let censusCode = result.ptoId.ulb.censusCode != null ? result.ptoId.ulb.censusCode : result.ptoId.ulb.sbCode 
                 let writableStr = result.ptoId.ulb.state.name + "," + result.ptoId.ulb.name + "," + result.ptoId.ulb.natureOfUlb + "," + result.ptoId.ulb.code + "," + censusCode + "," + MASTER_STATUS_ID[result.ptoId.currentFormStatus] + "," + getKeyByValue(years, result.ptoId.design_year.toString()) + ","
                 writableStr += getStringValue(result)
                 if (!canShow(result.type, sortedResults, updatedDatas,result.ptoId.ulb._id)) continue;
