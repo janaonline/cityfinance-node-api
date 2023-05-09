@@ -3364,7 +3364,7 @@ const fiscalRankingFormJson = () => {
             },
             "totalOwnRevenue": {
                 "key": "totalOwnRevenue",
-                "label": "TOTAL OWN REVENUE",
+                "label": "TOTAL OWN REVENUE RECEIPTS - ACTUAL (sum of 1 to 3)",
                 "displayPriority": "7.1",
                 "calculatedFrom": [
                     "1",
