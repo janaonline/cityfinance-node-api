@@ -2,10 +2,10 @@
   "name": "test",
   "version": "1.0.0",
   "description": "test project",
-  "main": "app.js",
+  "main": "server.js",
   "scripts": {
-    "dev": "nodemon app.js",
-    "start": "node app"
+    "dev": "nodemon server.js",
+    "start": "node server"
   },
   "dependencies": {
     "adm-zip": "^0.5.1",
