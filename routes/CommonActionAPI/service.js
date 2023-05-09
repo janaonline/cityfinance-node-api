@@ -3106,7 +3106,18 @@ function filterStatusForTab(statuses) {
             output.push(el);
         }
     });
+    if(output.find(el=> el.actionTakenByRole === "MoHUA")){
+        let stateStatusResponse = appendStateStatus(statuses);
+        if(Array.isArray(stateStatusResponse) && stateStatusResponse.length){
+            output = [...output, ...stateStatusResponse]
+        }
+    }
     return output;
+}
+function appendStateStatus(statuses){
+     return statuses.filter(el=>{
+        return el.actionTakenByRole === "STATE"
+    });
 }
 
 function appendKeysForAA(currentStatusResponse) {
