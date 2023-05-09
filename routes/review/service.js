@@ -2517,7 +2517,7 @@ const computeQuery = (formName, userRole, isFormOptional, state, design_year, cs
       }
       //dynamic query based on condition
       if (csv) {
-        query = createDynamicQuery(formName, query, userRole, csv);
+        query = createDynamicQuery(formName, query, userRole, csv,design_year);
       }
 
 
@@ -2631,7 +2631,7 @@ const computeQuery = (formName, userRole, isFormOptional, state, design_year, cs
         },
       ];
 
-      query_s = createDynamicQuery(formName, query_s, userRole, csv);
+      query_s = createDynamicQuery(formName, query_s, userRole, csv,design_year);
       /* Checking if the user role is STATE and the folder name is IndicatorForWaterSupply. */
       if( folderName === List['FolderName']['IndicatorForWaterSupply'] ){
         let startIndex = query_s.findIndex((el)=>{
