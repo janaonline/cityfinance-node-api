@@ -1384,7 +1384,7 @@ const createDataStructureForCsv = (ulbs, results, res) => {
             for (let result of sortedResults) {
                 let writableStr = result.ptoId.ulb.state.name + "," + result.ptoId.ulb.name + "," + result.ptoId.ulb.natureOfUlb + "," + result.ptoId.ulb.code + "," + result.ptoId.ulb.censusCode + "," + MASTER_STATUS_ID[result.ptoId.currentFormStatus] + "," + getKeyByValue(years, result.ptoId.design_year.toString()) + ","
                 writableStr += getStringValue(result)
-                if (!canShow(result.type, results, updatedDatas)) continue;
+                if (!canShow(result.type, sortedResults, updatedDatas,result.ptoId.ulb._id)) continue;
                 if (result.child && result.child.length) {
                     res.write(writableStr)
                     for (let child of result.child) {
@@ -1408,15 +1408,21 @@ const createDataStructureForCsv = (ulbs, results, res) => {
     }
 }
 
-const canShow = (key, results, updatedDatas) => {
+const canShow = (key, results, updatedDatas,ulb) => {
     try {
         if (Object.keys(skippableKeys).includes(key)) {
             let elementToFind = skippableKeys[key]
             let element = {}
-            if (updatedDatas[elementToFind]) {
+            let keyName = elementToFind + "_" + ulb
+            // console.log("elementsToFind :::",elementToFind)
+            if (!updatedDatas[keyName]) {
                 element = results.find(item => item.type === elementToFind)
+                
+                updatedDatas[keyName] = element
             }
-            updatedDatas[element] = element
+            else{
+                element = updatedDatas[keyName]
+            }
             return element.value === "Yes"
         }
     }
