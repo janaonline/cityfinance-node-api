@@ -29,6 +29,9 @@ const PropertyMapperChildData = new Schema(
     },
     { timestamp: { createdAt: "createdAt", updatedAt: "modifiedAt" } }
 );
+PropertyMapperChildData.index(
+    { ptoId: 1 }
+)
 module.exports = mongoose.model("PropertyMapperChildData", PropertyMapperChildData);
 
 
