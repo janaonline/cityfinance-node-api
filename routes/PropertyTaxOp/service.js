@@ -7,7 +7,7 @@ const Service = require('../../service');
 const { FormNames, MASTER_STATUS_ID } = require('../../util/FormNames');
 const User = require('../../models/User');
 const { checkUndefinedValidations } = require('../../routes/FiscalRanking/service');
-const { propertyTaxOpFormJson, skippableKeys, financialYearTableHeader, specialHeaders, skipLogicDependencies } = require('./fydynemic')
+const { propertyTaxOpFormJson, skippableKeys, financialYearTableHeader, specialHeaders, skipLogicDependencies,childKeys } = require('./fydynemic')
 const { isEmptyObj, isReadOnly } = require('../../util/helper');
 const PropertyMapperChildData = require("../../models/PropertyTaxMapperChild");
 const { years } = require('../../service/years');
@@ -1408,6 +1408,20 @@ const getStringValue = (result, ipValue = false) => {
     return writableStr
 }
 
+const decideDisplayPriority = (index,type,dp,replicaNumber,parentType)=>{
+    try{
+        // console.log("type ::: ",type)
+        
+       if(childKeys[type]){
+        return childKeys[type] + "." + replicaNumber
+       }
+    }
+    catch(err){
+        console.log("error in decideDisplayPriority")
+    }
+    return dp + "." + replicaNumber
+}
+
 const createDataStructureForCsv = (ulbs, results, res) => {
     try {
         let updatedDatas = {}
@@ -1425,14 +1439,20 @@ const createDataStructureForCsv = (ulbs, results, res) => {
                 if (result.child && result.child.length) {
                     res.write(writableStr)
                     for (let child of result.child) {
-                        child.displayPriority = result.displayPriority + "." + child.replicaNumber
+                        let number = decideDisplayPriority(0,child.type,result.displayPriority,child.replicaNumber,result.type)
+                        child.displayPriority = number
+                        
+                        let censusCode = result.ptoId.ulb.censusCode != null ? result.ptoId.ulb.censusCode : result.ptoId.ulb.sbCode 
                         writableStr = result.ptoId.ulb.state.name + "," + result.ptoId.ulb.name + "," + result.ptoId.ulb.natureOfUlb + "," + result.ptoId.ulb.code + "," + result.ptoId.ulb.censusCode + "," + status + "," + getKeyByValue(years, result.ptoId.design_year.toString()) + ","
-                        STATUS_ID[result.ptoId.currentFormStatus] || ""
-                let censusCode = resul
+                        censusCode || ""
                         child.textValue = child.textValue ? child.textValue : modifiedTextValue
                         writableStr += getStringValue(child, true)
                         res.write(writableStr)
+                        if(result.displayPriority === "5.25"){
+                            console.log(writableStr)
+                        }
                         writableStr = ""
+                        
                     }
                 }
                 res.write(writableStr)
