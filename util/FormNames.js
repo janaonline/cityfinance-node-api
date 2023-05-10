@@ -86,3 +86,9 @@ module.exports.MODEL_PATH = {
     6: "TwentyEightSlbsForm",
     4: "UtilizationReport"
 }
+
+module.exports.USER_ROLE = {
+    "MoHUA": "MoHUA",
+    "STATE": "STATE",
+    "ULB": "ULB"
+}
