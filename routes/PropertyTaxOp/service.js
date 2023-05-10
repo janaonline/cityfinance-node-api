@@ -1267,17 +1267,44 @@ function getLabelName(type) {
     }
 }
 
+function getTextValues(displayPriority){
+    try{
+        let subHeaders = {
+            "2.50-2.80":"Residential Properties",
+            "2.90-2.12": "Commercial Properties",
+            "2.13-2.16": "Industrial Properties",
+            "2.17-2.20": "Government Properties",
+            "2.21-2.24": "Institutional Properties",
+            "2.25-2.29": "Other Properties",
+        }
+        for (let range in subHeaders) {
+            let [integerA, integerB] = range.split("-")
+            let [rangeA, rangeB] = [integerA, integerB].map(range => parseFloat(+range))
+            let dpIntegerArr = displayPriority.split(".")
+            let priorNumber = dpIntegerArr[1].length === 2 ? displayPriority : dpIntegerArr[0] + "." + "0" + dpIntegerArr[1]
+            let priority = parseFloat(+priorNumber)
+            if (priority >= rangeA && priority <= rangeB) {
+                if (subHeaders[range]) {
+                    return subHeaders[range].split(",").join("") || ""
+                }
+                else{
+                    return ","
+                }
+            }
+        }
+    }
+    catch(err){
+        console.log("error in getIpValues :::: ",err.message)
+    }
+}
+
+
 function getSubHeaders(displayPriority) {
     try {
         let subHeaders = {
             "1.05-1.12": "Property Tax Demand Details (Amount in INR Lakhs)",
             "1.13-1.18": "Property Tax Collection Details (Amount in INR Lakhs)",
             "2.50-2.80": "Property Tax Demand and Collection Details by Property Type (including cess, other tax charges, excluding user charges if any)",
-            "2.90-2.12": "Commercial Properties",
-            "2.13-2.16": "Industrial Properties",
-            "2.17-2.20": "Government Properties",
-            "2.21-2.24": "Institutional Properties",
-            "2.25-2.29": "Other Properties",
             "5.05-5.10": "Water Charges Demand and Collection Details (Amount in INR lakhs)",
             "5.11-5.12": "Water Connection Details",
             "5.13-5.20": "Water Charges Demand and Collection Details by Household/Property type",
@@ -1327,7 +1354,6 @@ function getIndicator(displayPriority) {
             "4.01-4.01": "Property Tax Valuation Details",
             "5.01-5.04": "Water Charges Details",
             "6.01-6.04": "Sewerage Charges Details",
-
         }
         for (let range in headers) {
             let [integerA, integerB] = range.split("-")
@@ -1358,7 +1384,7 @@ const getStringValue = (result, ipValue = false) => {
         let indicatorNumber = result.displayPriority
         let value = result.value
         let file = result?.file?.url
-        let date = result?.date ? result.date.toISOString() : null
+        let date = result?.date ? result.date.toLocaleString('en-GB', { timeZone: 'Asia/Kolkata' }) : null
         writableStr += dataYear ? getKeyByValue(years, result?.year.toString()) + "," : " " + ","
         writableStr += indicatorHead + ","
         writableStr += indicatorSubHead + ","
@@ -1382,16 +1408,19 @@ const createDataStructureForCsv = (ulbs, results, res) => {
             let filteredResults = results.filter(item => item.ptoId.ulb._id.toString() === ulb.toString())
             let sortedResults = filteredResults.sort(sortPosition)
             for (let result of sortedResults) {
+                let status = MASTER_STATUS_ID[result.ptoId.currentFormStatus] || ""
                 let censusCode = result.ptoId.ulb.censusCode != null ? result.ptoId.ulb.censusCode : result.ptoId.ulb.sbCode 
-                let writableStr = result.ptoId.ulb.state.name + "," + result.ptoId.ulb.name + "," + result.ptoId.ulb.natureOfUlb + "," + result.ptoId.ulb.code + "," + censusCode + "," + MASTER_STATUS_ID[result.ptoId.currentFormStatus] + "," + getKeyByValue(years, result.ptoId.design_year.toString()) + ","
+                let writableStr = result.ptoId.ulb.state.name + "," + result.ptoId.ulb.name + "," + result.ptoId.ulb.natureOfUlb + "," + result.ptoId.ulb.code + "," + censusCode + "," + status + "," + getKeyByValue(years, result.ptoId.design_year.toString()) + ","
                 writableStr += getStringValue(result)
                 if (!canShow(result.type, sortedResults, updatedDatas,result.ptoId.ulb._id)) continue;
                 if (result.child && result.child.length) {
                     res.write(writableStr)
                     for (let child of result.child) {
                         child.displayPriority = result.displayPriority + "." + child.replicaNumber
-                        writableStr = result.ptoId.ulb.state.name + "," + result.ptoId.ulb.name + "," + result.ptoId.ulb.natureOfUlb + "," + result.ptoId.ulb.code + "," + result.ptoId.ulb.censusCode + "," + MASTER_STATUS_ID[result.ptoId.currentFormStatus] + "," + getKeyByValue(years, result.ptoId.design_year.toString()) + ","
+                        writableStr = result.ptoId.ulb.state.name + "," + result.ptoId.ulb.name + "," + result.ptoId.ulb.natureOfUlb + "," + result.ptoId.ulb.code + "," + result.ptoId.ulb.censusCode + "," + status + "," + getKeyByValue(years, result.ptoId.design_year.toString()) + ","
                         writableStr += getStringValue(child, true)
+                        res.write(writableStr)
+                        writableStr = ""
                     }
                 }
                 res.write(writableStr)
@@ -1485,6 +1514,7 @@ module.exports.getCsvForPropertyTaxMapper = async (req, res) => {
         let str = ""
         res.write("\ufeff" + str + "\r\n");
         // cursor.on()
+        console.log("mapperData ::: ",ptoFormResults)
         await createDataStructureForCsv(ulbNames, mapperData, res)
         // res.end()
         // console.log("mapperData :: ",mapperData)
