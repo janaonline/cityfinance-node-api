@@ -1358,7 +1358,7 @@ const getStringValue = (result, ipValue = false) => {
         let indicatorNumber = result.displayPriority
         let value = result.value
         let file = result?.file?.url
-        let date = result?.date ? result.date.toISOString() : null
+        let date = result?.date ? result.date.toLocaleString('en-GB', { timeZone: 'Asia/Kolkata' }) : null
         writableStr += dataYear ? getKeyByValue(years, result?.year.toString()) + "," : " " + ","
         writableStr += indicatorHead + ","
         writableStr += indicatorSubHead + ","
