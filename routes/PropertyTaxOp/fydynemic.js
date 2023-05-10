@@ -11841,12 +11841,33 @@ function getSkippableKeys(skipLogics) {
       })
   })
   return results;
-
 }
+
+let childKeys = {
+  taxTypeDemandChild: '1.9',
+  cessDemandChild: '1.10',
+  userChargesDmndChild: '1.12',
+  taxTypeCollectionChild: '1.17',
+  cessCollectChild: '1.18',
+  userChargesCollectionChild: '1.19',
+  otherValuePropertyTaxDm: '2.26',
+  otherNoPropertyTaxDm: '2.27',
+  otherValuePropertyTaxCollected: '2.28',
+  otherNoPropertyTaxCollected: '2.29',
+  otherValueWaterTaxDm: '5.26',
+  othersNoWaterChrgDm: '5.27',
+  othersValueWaterChrgCollected: '5.28',
+  othersNoWaterChrgCollected: '5.29',
+  otherValueSewerageTaxDm: '6.26',
+  otherNoSewerageTaxDm: '6.27',
+  otherValueSewerageTaxCollected: '6.28',
+  otherNoSewerageTaxCollected: '6.29'
+}
+
 module.exports.skippableKeys = getSkippableKeys(skipLogicDependencies)
 module.exports.financialYearTableHeader = financialYearTableHeader
 module.exports.specialHeaders = specialHeaders
-
+module.exports.childKeys = childKeys
 // module.exports.jsonObject = jsonObject
 module.exports.propertyTaxOpFormJson = propertyTaxOpFormJson;
 module.exports.getInputKeysByType = getInputKeysByType;
