@@ -1419,7 +1419,6 @@ const createDataStructureForCsv = (ulbs, results, res) => {
                 let censusCode = result.ptoId.ulb.censusCode != null ? result.ptoId.ulb.censusCode : result.ptoId.ulb.sbCode 
                 let writableStr = result.ptoId.ulb.state.name + "," + result.ptoId.ulb.name + "," + result.ptoId.ulb.natureOfUlb + "," + result.ptoId.ulb.code + "," + censusCode + "," + status + "," + getKeyByValue(years, result.ptoId.design_year.toString()) + ","
                 let modifiedTextValue = getTextValues(result.displayPriority).replace(",")
-
                 result.textValue = modifiedTextValue ? modifiedTextValue : " "
                 writableStr += getStringValue(result,true)
                 if (!canShow(result.type, sortedResults, updatedDatas,result.ptoId.ulb._id)) continue;
@@ -1428,7 +1427,8 @@ const createDataStructureForCsv = (ulbs, results, res) => {
                     for (let child of result.child) {
                         child.displayPriority = result.displayPriority + "." + child.replicaNumber
                         writableStr = result.ptoId.ulb.state.name + "," + result.ptoId.ulb.name + "," + result.ptoId.ulb.natureOfUlb + "," + result.ptoId.ulb.code + "," + result.ptoId.ulb.censusCode + "," + status + "," + getKeyByValue(years, result.ptoId.design_year.toString()) + ","
-                        
+                        STATUS_ID[result.ptoId.currentFormStatus] || ""
+                let censusCode = resul
                         child.textValue = child.textValue ? child.textValue : modifiedTextValue
                         writableStr += getStringValue(child, true)
                         res.write(writableStr)
