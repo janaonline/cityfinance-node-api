@@ -576,7 +576,7 @@ function getDisabledProjects(uaArray, data2223) {
         for (let project of ua[category]) {
           //set project isDisable key = true
           if (project) {
-            Object.assign(project, { isDisable: true });
+            Object.assign(project, { isDisable: true ,dprCompletion:"", dprPreparation:"", workCompletion:""});
             if(category === "serviceLevelIndicators"){
               Object.assign(project, {bypassValidation: true});
             }
