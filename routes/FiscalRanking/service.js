@@ -1075,7 +1075,7 @@ exports.getView = async function (req, res, next) {
     console.log("err", error);
     return res
       .status(400)
-      .json({ status: false, message: "Something error wrong!" });
+      .json({ status: false, message: "Something went wrong!" });
   }
 };
 
@@ -2350,6 +2350,7 @@ async function updateQueryForFiscalRanking(
           payload["displayPriority"] = dynamicObj.position;
         } else {
           payload["status"] = years.status;
+          payload["rejectReason"] = years?.rejectReason
         }
         let up = await FiscalRankingMapper.findOneAndUpdate(filter, payload, {
           upsert: upsert,
@@ -2411,6 +2412,7 @@ async function updateFiscalRankingForm(
           status = obj[key].status;
         }
         payload[`${key}.status`] = status;
+        payload[`${key}.rejectReason`] = obj[key]?.rejectReason;
       }
     }
     // console.log("payload",payload);process.exit()
