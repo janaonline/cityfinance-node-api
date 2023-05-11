@@ -1183,6 +1183,7 @@ function getLabelName(type) {
             totalPropertiesTaxDm: 'Total number of properties from which property tax was demanded',
             totalPropertiesTaxDmCollected: 'Total number of properties from which property tax was collected',
             resValuePropertyTaxDm: 'Value of property tax demanded (INR lakhs)',
+            othersValueWaterChrgDm:"Value of water charges demanded (INR lakhs",
             resNoPropertyTaxDm: 'Number of properties from which property tax was demanded',
             resValuePropertyTaxCollected: 'Value of property tax collected (INR lakhs)',
             resNoPropertyTaxCollected: 'Number of properties from which property tax was collected',
