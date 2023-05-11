@@ -1434,8 +1434,8 @@ const createDataStructureForCsv = (ulbs, results, res) => {
                 let writableStr = result.ptoId.ulb.state.name + "," + result.ptoId.ulb.name + "," + result.ptoId.ulb.natureOfUlb + "," + result.ptoId.ulb.code + "," + censusCode + "," + status + "," + getKeyByValue(years, result.ptoId.design_year.toString()) + ","
                 let modifiedTextValue = getTextValues(result.displayPriority).replace(",")
                 result.textValue = modifiedTextValue ? modifiedTextValue : " "
-                writableStr += getStringValue(result,true)
                 if (!canShow(result.type, sortedResults, updatedDatas,result.ptoId.ulb._id)) continue;
+                writableStr += getStringValue(result,true)
                 if (result.child && result.child.length) {
                     res.write(writableStr)
                     for (let child of result.child) {
@@ -1469,6 +1469,7 @@ const createDataStructureForCsv = (ulbs, results, res) => {
 
 const canShow = (key, results, updatedDatas,ulb) => {
     try {
+        
         if (Object.keys(skippableKeys).includes(key)) {
             let elementToFind = skippableKeys[key]
             let element = {}
@@ -1482,7 +1483,11 @@ const canShow = (key, results, updatedDatas,ulb) => {
             else{
                 element = updatedDatas[keyName]
             }
-            return element.value === "Yes"
+            let show = element.value === "Yes" 
+            if(["entityNameWaterCharges","entityNaSewerageCharges".includes(key)]){
+                show = element.value !== "ULB"
+            }
+            return show
         }
     }
     catch (err) {
