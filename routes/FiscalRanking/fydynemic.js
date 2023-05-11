@@ -6101,7 +6101,9 @@ const fiscalRankingFormJson = () => {
                         formFieldType: "file",
                         year: years['2020-21'],
                         bottomText: 'Maximum Size  5MB (pdf files only)',
-                        placeHolder: ''
+                        placeHolder: '',
+                        status:"",
+                        rejectReason:""
                     },
                     {
                         label: 'FY 2021-22',
@@ -6121,7 +6123,9 @@ const fiscalRankingFormJson = () => {
                         formFieldType: "file",
                         year: years["2021-22"],
                         bottomText: 'Maximum Size  5MB (pdf files only) ',
-                        placeHolder: ''
+                        placeHolder: '',
+                        status:"",
+                        rejectReason:""
                     },
                     {
                         label: 'FY 2022-23',
@@ -6141,7 +6145,9 @@ const fiscalRankingFormJson = () => {
                         readonly: false,
                         year: "606aafb14dff55e6c075d3ae",
                         bottomText: 'Maximum Size  5MB (pdf files only) ',
-                        placeHolder: ''
+                        placeHolder: '',
+                        status:"",
+                        rejectReason:""
                     },
                     {
                         label: 'FY 2023-24',
@@ -6161,7 +6167,9 @@ const fiscalRankingFormJson = () => {
                         readonly: false,
                         year: years['2023-24'],
                         bottomText: 'Maximum Size  5MB (pdf files only) ',
-                        placeHolder: ''
+                        placeHolder: '',
+                        status:"",
+                        rejectReason:""
                     }
                 ]
             },
@@ -6189,7 +6197,9 @@ const fiscalRankingFormJson = () => {
                         readonly: false,
                         formFieldType: "file",
                         bottomText: `Maximum Size  5MB (pdf files only) `,
-                        placeHolder: ''
+                        placeHolder: '',
+                        status:"",
+                        rejectReason:""
                     },
                     {
                         label: 'FY 2019-20',
@@ -6209,7 +6219,9 @@ const fiscalRankingFormJson = () => {
                         readonly: false,
                         formFieldType: "file",
                         bottomText: `Maximum Size  5MB (pdf files only)`,
-                        placeHolder: ''
+                        placeHolder: '',
+                        status:"",
+                        rejectReason:""
                     },
                     {
                         label: 'FY 2020-21',
@@ -6229,7 +6241,9 @@ const fiscalRankingFormJson = () => {
                         formFieldType: "file",
                         year: years['2020-21'],
                         bottomText: 'Maximum Size  5MB (pdf files only) ',
-                        placeHolder: ''
+                        placeHolder: '',
+                        status:"",
+                        rejectReason:""
                     },
                     {
                         label: 'FY 2021-22',
@@ -6249,7 +6263,9 @@ const fiscalRankingFormJson = () => {
                         formFieldType: "file",
                         year: years["2021-22"],
                         bottomText: 'Maximum Size  5MB (pdf files only) ',
-                        placeHolder: ''
+                        placeHolder: '',
+                        status:"",
+                        rejectReason:""
                     }
                 ]
             },
