@@ -1311,7 +1311,7 @@ function getSubHeaders(displayPriority) {
         let subHeaders = {
             "1.05-1.12": "Property Tax Demand Details (Amount in INR Lakhs)",
             "1.13-1.18": "Property Tax Collection Details (Amount in INR Lakhs)",
-            "2.50-2.80": "Property Tax Demand and Collection Details by Property Type (including cess, other tax charges, excluding user charges if any)",
+            "2.05-2.08": "Property Tax Demand and Collection Details by Property Type (including cess, other tax charges, excluding user charges if any)",
             "5.05-5.10": "Water Charges Demand and Collection Details (Amount in INR lakhs)",
             "5.11-5.12": "Water Connection Details",
             "5.13-5.20": "Water Charges Demand and Collection Details by Household/Property type",
@@ -1391,7 +1391,7 @@ const getStringValue = (result, ipValue = false) => {
         let indicatorNumber = JSON.stringify(result.displayPriority)
         let value = result.value
         let file = result?.file?.url
-        let date = result?.date ? result.date.toLocaleString('en-GB', { timeZone: 'Asia/Kolkata' }) : null
+        let date = result?.date ? result.date.toLocaleString('en-GB', { timeZone: 'Asia/Kolkata' }).split(",")[0] : null
         writableStr += dataYear ? getKeyByValue(years, result?.year.toString()) + "," : " " + ","
         writableStr += indicatorHead + ","
         writableStr += indicatorSubHead + ","
