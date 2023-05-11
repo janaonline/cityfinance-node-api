@@ -1949,13 +1949,7 @@ function getColumns() {
     ulbName: "ULB Name",
     stateName: "State Name",
     censusCode: "Census/SB Code",
-    ulbType: "ULB Type",
-    populationType: "Population Type",
-    UA: "UA",
-    formStatus: "Form Status",
-    filled: "Filled Status",
-    filled_audited: "Audited Filled Status",
-    filled_provisional: "Provisional Filled Status",
+    formStatus: "Status",
     cantakeAction: "Action",
     populationCategory:"Population Category"
   };
