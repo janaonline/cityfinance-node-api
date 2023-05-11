@@ -898,6 +898,7 @@ exports.getView = async function (req, res, next) {
                   pf["file"] = singleFydata.file;
                   pf["status"] = singleFydata.status;
                   pf["modelName"] = singleFydata.modelName;
+                  pf['rejectReason'] = singleFydata.rejectReason
                   if (subData[key].calculatedFrom === undefined) {
                     pf["required"] =
                       singleFydata.status && singleFydata.status == "NA"
@@ -987,6 +988,7 @@ exports.getView = async function (req, res, next) {
                     pf["modelName"] = singleFydata
                       ? singleFydata.modelName
                       : "";
+                    pf["rejectReason"] = singleFydata ?  singleFydata.rejectReason : ""
                     if (subData[key].calculatedFrom === undefined) {
                       pf["readonly"] =
                         singleFydata && singleFydata.status == "NA"
