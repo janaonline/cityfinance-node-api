@@ -7,7 +7,7 @@ const Service = require('../../service');
 const { FormNames, MASTER_STATUS_ID } = require('../../util/FormNames');
 const User = require('../../models/User');
 const { checkUndefinedValidations } = require('../../routes/FiscalRanking/service');
-const { propertyTaxOpFormJson, skippableKeys, financialYearTableHeader, specialHeaders, skipLogicDependencies } = require('./fydynemic')
+const { propertyTaxOpFormJson, skippableKeys, financialYearTableHeader, specialHeaders, skipLogicDependencies,childKeys } = require('./fydynemic')
 const { isEmptyObj, isReadOnly } = require('../../util/helper');
 const PropertyMapperChildData = require("../../models/PropertyTaxMapperChild");
 const { years } = require('../../service/years');
@@ -1269,9 +1269,10 @@ function getLabelName(type) {
 
 function getTextValues(displayPriority){
     try{
+        
         let subHeaders = {
-            "2.50-2.80":"Residential Properties",
-            "2.90-2.12": "Commercial Properties",
+            "2.05-2.08":"Residential Properties",
+            "2.09-2.12": "Commercial Properties",
             "2.13-2.16": "Industrial Properties",
             "2.17-2.20": "Government Properties",
             "2.21-2.24": "Institutional Properties",
@@ -1283,7 +1284,11 @@ function getTextValues(displayPriority){
             let dpIntegerArr = displayPriority.split(".")
             let priorNumber = dpIntegerArr[1].length === 2 ? displayPriority : dpIntegerArr[0] + "." + "0" + dpIntegerArr[1]
             let priority = parseFloat(+priorNumber)
+            // if(displayPriority === "2.5"){
+            //     console.log("displayPriority :: ",priority)
+            // }
             if (priority >= rangeA && priority <= rangeB) {
+                // console.log("subHeaders[range] ::: ",subHeaders[range])
                 if (subHeaders[range]) {
                     return subHeaders[range].split(",").join("") || ""
                 }
@@ -1295,7 +1300,9 @@ function getTextValues(displayPriority){
     }
     catch(err){
         console.log("error in getIpValues :::: ",err.message)
+        return "NA"
     }
+    return ""
 }
 
 
@@ -1381,7 +1388,7 @@ const getStringValue = (result, ipValue = false) => {
         // console.log(">>>",getSubHeaders(result.displayPriority).replace(",", ""))
         let indicatorHead = getIndicator(result.displayPriority).replace(",", "")
         let indicatorSubHead = getSubHeaders(result.displayPriority).replace(",", "")
-        let indicatorNumber = result.displayPriority
+        let indicatorNumber = JSON.stringify(result.displayPriority)
         let value = result.value
         let file = result?.file?.url
         let date = result?.date ? result.date.toLocaleString('en-GB', { timeZone: 'Asia/Kolkata' }) : null
@@ -1392,13 +1399,27 @@ const getStringValue = (result, ipValue = false) => {
         writableStr += ipValue ? result.textValue + "," : "NA" + ","
         writableStr += getLabelName(result.type) + ","
         let assignedValue = value || file || date || " "
-        writableStr += assignedValue ? assignedValue.toString() : " " + ","
+        writableStr += assignedValue ? `${assignedValue}` : "" + ","
         writableStr += "\r\n"
     }
     catch (err) {
         console.log("error in getStringValue ::: ", err)
     }
     return writableStr
+}
+
+const decideDisplayPriority = (index,type,dp,replicaNumber,parentType)=>{
+    try{
+        // console.log("type ::: ",type)
+        
+       if(childKeys[type]){
+        return childKeys[type] + "." + replicaNumber
+       }
+    }
+    catch(err){
+        console.log("error in decideDisplayPriority")
+    }
+    return dp + "." + replicaNumber
 }
 
 const createDataStructureForCsv = (ulbs, results, res) => {
@@ -1411,16 +1432,24 @@ const createDataStructureForCsv = (ulbs, results, res) => {
                 let status = MASTER_STATUS_ID[result.ptoId.currentFormStatus] || ""
                 let censusCode = result.ptoId.ulb.censusCode != null ? result.ptoId.ulb.censusCode : result.ptoId.ulb.sbCode 
                 let writableStr = result.ptoId.ulb.state.name + "," + result.ptoId.ulb.name + "," + result.ptoId.ulb.natureOfUlb + "," + result.ptoId.ulb.code + "," + censusCode + "," + status + "," + getKeyByValue(years, result.ptoId.design_year.toString()) + ","
-                writableStr += getStringValue(result)
+                let modifiedTextValue = getTextValues(result.displayPriority).replace(",")
+                result.textValue = modifiedTextValue ? modifiedTextValue : " "
+                writableStr += getStringValue(result,true)
                 if (!canShow(result.type, sortedResults, updatedDatas,result.ptoId.ulb._id)) continue;
                 if (result.child && result.child.length) {
                     res.write(writableStr)
                     for (let child of result.child) {
-                        child.displayPriority = result.displayPriority + "." + child.replicaNumber
+                        let number = decideDisplayPriority(0,child.type,result.displayPriority,child.replicaNumber,result.type)
+                        child.displayPriority = number
+                        
+                        let censusCode = result.ptoId.ulb.censusCode != null ? result.ptoId.ulb.censusCode : result.ptoId.ulb.sbCode 
                         writableStr = result.ptoId.ulb.state.name + "," + result.ptoId.ulb.name + "," + result.ptoId.ulb.natureOfUlb + "," + result.ptoId.ulb.code + "," + result.ptoId.ulb.censusCode + "," + status + "," + getKeyByValue(years, result.ptoId.design_year.toString()) + ","
+                        censusCode || ""
+                        child.textValue = child.textValue ? child.textValue : modifiedTextValue
                         writableStr += getStringValue(child, true)
                         res.write(writableStr)
                         writableStr = ""
+                        
                     }
                 }
                 res.write(writableStr)
@@ -1514,7 +1543,7 @@ module.exports.getCsvForPropertyTaxMapper = async (req, res) => {
         let str = ""
         res.write("\ufeff" + str + "\r\n");
         // cursor.on()
-        console.log("mapperData ::: ",ptoFormResults)
+        // console.log("mapperData ::: ",ptoFormResults)
         await createDataStructureForCsv(ulbNames, mapperData, res)
         // res.end()
         // console.log("mapperData :: ",mapperData)
