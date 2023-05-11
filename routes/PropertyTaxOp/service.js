@@ -1300,6 +1300,9 @@ function getTextValues(displayPriority){
             "5.13-5.16" :"Residential households/properties",
             "5.17-5.20":"Commercial households/properties",
             "5.21-5.24" :"Industrial households/properties",
+            "6.13-6.16" :"Residential households/properties",
+            "6.17-6.20":"Commercial households/properties",
+            "6.21-6.24" :"Industrial households/properties",
         }
         for (let range in subHeaders) {
             let [integerA, integerB] = range.split("-")
