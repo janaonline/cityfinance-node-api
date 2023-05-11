@@ -3,7 +3,8 @@ module.exports.notRequiredValidations = ['caMembershipNo', 'population11', 'othe
 
 const fiscalRankingFormJson = () => {
     return {
-        "totalRecActual": {
+        financialInformation:{
+            "totalRecActual": {
               "key": "totalRecActual",
               "label": "Total Receipts (Actual)",
               "displayPriority": "20",
@@ -6052,7 +6053,7 @@ const fiscalRankingFormJson = () => {
                 }
               ]
             }
-        ,
+          },
         uploadFyDoc: {
             guidanceNotes: {
                 key: 'guidanceNotes',
