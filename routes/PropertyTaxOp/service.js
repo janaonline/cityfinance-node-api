@@ -1162,16 +1162,22 @@ function getLabelName(type) {
             admdIncludingCess: 'Arrear property tax demand (including cess, other taxes, AND excluding user charges if user charges are collected with property tax)',
             dmdexcludingCess: 'Total property tax demand (excluding cess, other taxes, user charges if any)',
             taxTypeDemand: 'Other tax demand (Demand figure for each type of tax other than property tax collected)',
+            taxTypeDemandChild: 'Other tax demand (Demand figure for each type of tax other than property tax collected)',
             cessDemand: 'Cess demand (Demand figure for each type of cess collected)',
+            cessDemandChild: 'Cess demand (Demand figure for each type of cess collected)',
             doesUserChargesDmnd: 'Do you collect any user charges along with Property Tax?',
             userChargesDmnd: 'User charges demand (Demand figure for each type of user charge collected along with property tax)',
+            userChargesDmndChild: 'User charges demand (Demand figure for each type of user charge collected along with property tax)',
             collectIncludingCess: 'Total property tax collection (including cess, other taxes, AND excluding user charges if user charges are collected with property tax)',
             cuCollectIncludingCess: 'Current property tax collection (including cess, other taxes, AND excluding user charges if user charges are collected with property tax)',
             arCollectIncludingCess: 'Arrear property tax collection (including cess, other taxes, AND excluding user charges if user charges are collected with property tax)',
             collectExcludingCess: 'Total property tax collection (excluding cess,other taxes, user charges if any)',
             taxTypeCollection: 'Other tax collections (Collection figure for each type of tax other than property tax collected)',
+            taxTypeCollectionChild: 'Other tax collections (Collection figure for each type of tax other than property tax collected)',
             cessCollect: 'Cess collection (Collection figure for each type of cess collected)',
+            cessCollectChild: 'Cess collection (Collection figure for each type of cess collected)',
             userChargesCollection: 'User charges collection (Collection figure for each type of user charge collected along with property tax)',
+            userChargesCollectionChild: 'Cess collection (Collection figure for each type of cess collected)',
             totalMappedPropertiesUlb: 'Total number of properties mapped in the ULB (including properties exempted from paying property tax)',
             totalPropertiesTax: 'Total number of properties exempted from paying property tax',
             totalPropertiesTaxDm: 'Total number of properties from which property tax was demanded',
@@ -1197,6 +1203,10 @@ function getLabelName(type) {
             insValuePropertyTaxCollected: 'Value of property tax collected (INR lakhs)',
             insNoPropertyTaxCollected: 'Number of properties from which property tax was collected',
             otherValuePropertyType: 'Property Type',
+            otherValuePropertyTaxDm: 'Value of property tax demanded (INR lakhs)',
+            otherNoPropertyTaxDm: 'Number of properties from which property tax was demanded',
+            otherValuePropertyTaxCollected: 'Value of property tax collected (INR lakhs)',
+            otherNoPropertyTaxCollected: 'Number of properties from which property tax was collected',
             noOfPropertiesPaidOnline: 'Number of properties that paid online (through website or mobile application)',
             totalCollectionOnline: 'Total collections made via online channel i.e. through website or mobile application (INR lakhs)',
             propertyTaxValuationDetails: 'Please submit the property tax rate card',
@@ -1225,6 +1235,10 @@ function getLabelName(type) {
             indValueWaterChrgCollected: 'Value of water charges collected from Households/properties (INR lakhs)',
             indNoWaterChrgCollected: 'Number of Households/properties from which water charges was collected',
             othersValueWaterType: 'Property Type',
+            otherValueWaterTaxDm: 'Value of water tax demanded (INR lakhs)',
+            othersNoWaterChrgDm: 'Number of Households/properties from which water charges was demanded',
+            othersValueWaterChrgCollected: 'Value of water charges collected from Households/properties (INR lakhs)',
+            othersNoWaterChrgCollected: 'Number of Households/properties from which water charges was collected',
             waterChrgTariffDetails: 'Please provide the water tariff sheet',
             omCostDeleveryWater: 'What is the O&M cost of service delivery for water? (INR lakhs)',
             omCostWaterService: 'Please provide the working sheet for O&M cost calculation',
@@ -1253,11 +1267,16 @@ function getLabelName(type) {
             indValueSewerageTaxCollected: 'Value of sewerage charges collected from Households/properties (INR lakhs)',
             indNoSewerageTaxCollected: 'Number of Households/properties from which sewerage charges was collected',
             otherValueSewerageType: 'Property Type',
+            otherValueSewerageTaxDm: 'Value of sewerage charges demanded (INR lakhs)',
+            otherNoSewerageTaxDm: 'Number of Households/properties from which sewerage charges was demanded',
+            otherValueSewerageTaxCollected: 'Value of sewerage charges collected from Households/properties (INR lakhs)',
+            otherNoSewerageTaxCollected: 'Number of Households/properties from which sewerage charges was collected',
             sewerageChrgTarrifSheet: 'Please provide the sewerage tariff sheet',
             omCostDeleverySewerage: 'What is the O&M cost of service delivery for sewerage ?(INR lakhs)',
             omCostSewerageService: 'Please provide the working sheet for O&M cost calculation',
             signedPdf: 'Upload Signed PDF'
-        }
+          }
+          
         let labelName = indicators[type] ? indicators[type].split(",").join("") : ""
         return labelName
     }
@@ -1277,6 +1296,10 @@ function getTextValues(displayPriority){
             "2.17-2.20": "Government Properties",
             "2.21-2.24": "Institutional Properties",
             "2.25-2.29": "Other Properties",
+            "5.13-5.16" :"Residential households/properties",
+            "5.17-5.20":"Commercial households/properties",
+            "5.21-5.24" :"Industrial households/properties",
+            "5.25-5.29": "Other households/properties(any other connection type)",
         }
         for (let range in subHeaders) {
             let [integerA, integerB] = range.split("-")
@@ -1399,6 +1422,7 @@ const getStringValue = (result,parentDp, ipValue = false) => {
         writableStr += indicatorNumber + ","
         writableStr += ipValue ? result.textValue + "," : "NA" + ","
         writableStr += getLabelName(result.type) + ","
+        // console.log("parentDp ::: ",parentDp)
         let assignedValue = value || file || date || " "
         writableStr += assignedValue ? `${assignedValue}` : "" + ","
         writableStr += "\r\n"
@@ -1412,7 +1436,6 @@ const getStringValue = (result,parentDp, ipValue = false) => {
 const decideDisplayPriority = (index,type,dp,replicaNumber,parentType)=>{
     try{
         // console.log("type ::: ",type)
-        
        if(childKeys[type]){
         return childKeys[type] + "." + replicaNumber
        }
@@ -1448,7 +1471,6 @@ const createDataStructureForCsv = (ulbs, results, res) => {
                         censusCode || ""
                         child.textValue = child.textValue ? child.textValue : modifiedTextValue
                         writableStr += getStringValue(child,result.displayPriority,true)
-                        
                         res.write(writableStr)
                         writableStr = ""
                         
