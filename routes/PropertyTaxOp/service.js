@@ -1448,9 +1448,6 @@ const createDataStructureForCsv = (ulbs, results, res) => {
                         child.textValue = child.textValue ? child.textValue : modifiedTextValue
                         writableStr += getStringValue(child, true)
                         res.write(writableStr)
-                        if(result.displayPriority === "5.25"){
-                            console.log(writableStr)
-                        }
                         writableStr = ""
                         
                     }

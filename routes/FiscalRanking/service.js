@@ -1611,6 +1611,7 @@ function getProjectionQueries(
         state_id: "$state._id",
         stateName: "$state.name",
         populationType: getPopulationCondition(),
+        populationCategory:"$population",
 
         formData: { $ifNull: [`$${collectionName}`, ""] },
       },
@@ -1956,6 +1957,7 @@ function getColumns() {
     filled_audited: "Audited Filled Status",
     filled_provisional: "Provisional Filled Status",
     action: "Action",
+    populationCategory:"Population Category"
   };
 }
 
@@ -1967,16 +1969,19 @@ function getColumns() {
  * @param {*} role:String
  * @returns a json object with message and validation
  */
-function checkValidRequest(formId, stateId, role) {
+function checkValidRequest(stateId, role) {
   let validation = {
     valid: false,
     message: "",
   };
   try {
-    if (formId === undefined || formId === "") {
-      validation.valid = false;
-      validation.message = "Form id is required";
+    if (role === userTypes.mohua) {
+      validation.valid = true;
     }
+    // if (formId === undefined || formId === "") {
+    //   validation.valid = false;
+    //   validation.message = "Form id is required";
+    // }
     if (role === userTypes.state) {
       if (stateId === "" || stateId === undefined) {
         validation.valid = false;
@@ -1985,9 +1990,7 @@ function checkValidRequest(formId, stateId, role) {
         validation.valid = true;
       }
     }
-    if (role === userTypes.mohua) {
-      validation.valid = true;
-    }
+    
     if (role === userTypes.ulb) {
       validation.message = "Not allowed";
     }
@@ -2084,7 +2087,7 @@ module.exports.getFRforms = catchAsync(async (req, res) => {
       response.message = "Year parameter is required";
       return res.status(500).json(response);
     }
-    let validation = checkValidRequest(formId, stateId, role);
+    let validation = checkValidRequest(stateId, role);
     console.log(validation);
     if (!validation.valid) {
       response.message = validation.message;
