@@ -1386,7 +1386,7 @@ function getIndicator(displayPriority) {
             "3.01-3.02": "Property Tax Collection Details by Mode of payment (including cess, other tax charges, excluding user charges if any)",
             "4.01-4.01": "Property Tax Valuation Details",
             "5.01-5.32": "Water Charges Details",
-            "6.01-6.30": "Sewerage Charges Details",
+            "6.01-6.32": "Sewerage Charges Details",
         }
         for (let range in headers) {
             let [integerA, integerB] = range.split("-")
