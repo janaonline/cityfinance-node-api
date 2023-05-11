@@ -693,6 +693,7 @@ exports.getView = async function (req, res, next) {
       };
       data["fyData"] = fyData;
       viewOne = data;
+      
       // console.log("viewOne ::: ",viewOne.population11)
     } else {
       viewOne = {
@@ -742,6 +743,7 @@ exports.getView = async function (req, res, next) {
         },
         fyData: [],
         isDraft: null,
+        currentFormStatus : 1
       };
     }
 
@@ -1068,6 +1070,7 @@ exports.getView = async function (req, res, next) {
         : req.query.design_year,
       isDraft: viewOne.isDraft,
       tabs: modifiedTabs,
+      currentFormStatus:viewOne.currentFormStatus,
       financialYearTableHeader,
     };
     return res
