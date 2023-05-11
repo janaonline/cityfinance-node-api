@@ -417,7 +417,7 @@ const getColumnWiseData = (key, obj, isDraft, dataSource = "") => {
         ),
         ...obj,
         readonly: getReadOnly(obj.status, isDraft),
-        rejectReason:"",
+        // rejectReason:"",
       };
     case "population11":
       return {
@@ -430,7 +430,7 @@ const getColumnWiseData = (key, obj, isDraft, dataSource = "") => {
         ),
         ...obj,
         readonly: true,
-        rejectReason:"",
+        // rejectReason:"",
       };
     case "webLink":
       return {
@@ -443,7 +443,7 @@ const getColumnWiseData = (key, obj, isDraft, dataSource = "") => {
         ),
         ...obj,
         readonly: getReadOnly(obj.status, isDraft),
-        rejectReason:"",
+        // rejectReason:"",
       };
     case "nameCmsnr":
       return {
@@ -456,14 +456,14 @@ const getColumnWiseData = (key, obj, isDraft, dataSource = "") => {
         ),
         ...obj,
         readonly: getReadOnly(obj.status, isDraft),
-        rejectReason:"",
+        // rejectReason:"",
       };
     case "auditorName":
       return {
         ...getInputKeysByType("text", "", "Auditor Name", dataSource, "7"),
         ...obj,
         readonly: getReadOnly(obj.status, isDraft),
-        rejectReason:"",
+        // rejectReason:"",
       };
     case "caMembershipNo":
       return {
@@ -477,7 +477,7 @@ const getColumnWiseData = (key, obj, isDraft, dataSource = "") => {
         ),
         ...obj,
         readonly: getReadOnly(obj.status, isDraft),
-        rejectReason:"",
+        // rejectReason:"",
       };
     case "nameOfNodalOfficer":
       return {
@@ -490,7 +490,7 @@ const getColumnWiseData = (key, obj, isDraft, dataSource = "") => {
         ),
         ...obj,
         readonly: getReadOnly(obj.status, isDraft),
-        rejectReason:"",
+        // rejectReason:"",
       };
     case "designationOftNodalOfficer":
       return {
@@ -503,7 +503,7 @@ const getColumnWiseData = (key, obj, isDraft, dataSource = "") => {
         ),
         ...obj,
         readonly: getReadOnly(obj.status, isDraft),
-        rejectReason:"",
+        // rejectReason:"",
       };
     case "email":
       return {
@@ -516,7 +516,7 @@ const getColumnWiseData = (key, obj, isDraft, dataSource = "") => {
         ),
         ...obj,
         readonly: getReadOnly(obj.status, isDraft),
-        rejectReason:"",
+        // rejectReason:"",
       };
     case "mobile":
       return {
@@ -531,7 +531,7 @@ const getColumnWiseData = (key, obj, isDraft, dataSource = "") => {
         ),
         ...obj,
         readonly: getReadOnly(obj.status, isDraft),
-        rejectReason:"",
+        // rejectReason:"",
       };
     case "waterSupply":
       return {
@@ -544,7 +544,7 @@ const getColumnWiseData = (key, obj, isDraft, dataSource = "") => {
         ),
         ...obj,
         readonly: getReadOnly(obj.status, isDraft),
-        rejectReason:"",
+        // rejectReason:"",
       };
     case "sanitationService":
       return {
@@ -557,7 +557,7 @@ const getColumnWiseData = (key, obj, isDraft, dataSource = "") => {
         ),
         ...obj,
         readonly: getReadOnly(obj.status, isDraft),
-        rejectReason:"",
+        // rejectReason:"",
       };
     case "propertyWaterTax":
       return {
@@ -573,7 +573,7 @@ const getColumnWiseData = (key, obj, isDraft, dataSource = "") => {
         ),
         ...obj,
         readonly: getReadOnly(obj.status, isDraft),
-        rejectReason:"",
+        // rejectReason:"",
       };
     case "propertySanitationTax":
       return {
@@ -589,7 +589,7 @@ const getColumnWiseData = (key, obj, isDraft, dataSource = "") => {
         ),
         ...obj,
         readonly: getReadOnly(obj.status, isDraft),
-        rejectReason:"",
+        // rejectReason:"",
       };
     default:
     // code block
