@@ -2512,8 +2512,27 @@ async function calculateAndUpdateStatusForMappers(
           ) {
             let statueses = getStatusesFromObject(tab.data, "status", [
               "population11",
+              "ownRevDetails",
+              "webLink",
+              "totalOwnRevenueArea",
+              "signedCopyOfFile",
+              "fy_21_22_online",
+              "fy_21_22_cash",
+              "propertySanitationTax",
+              "propertyWaterTax",
+              "sanitationService",
+              "waterSupply",
+              "webUrlAnnual",
+              "caMembershipNo",
+              "auditorName",
+              "mobile",
+              "email",
+              "designationOftNodalOfficer",
+              "nameOfNodalOfficer",
+              "nameCmsnr",
+              "populationFr"
             ]);
-
+            console.log("statueses :::: ",statueses)
             let finalStatus = statueses.every((item) => item === "APPROVED");
             temp["status"].push(finalStatus);
             await updateFiscalRankingForm(
