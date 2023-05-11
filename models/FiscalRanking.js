@@ -30,6 +30,8 @@ const enumYesNo = {
             message: "ERROR: STATUS BE EITHER 'PENDING'/ 'APPROVED' / 'REJECTED'",
         },
     },
+    rejectReason:{type:String,default:""}
+
 }
 
 const fiscalRankingSchema = new Schema(
