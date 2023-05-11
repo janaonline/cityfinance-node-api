@@ -1311,9 +1311,9 @@ function getSubHeaders(displayPriority) {
         let subHeaders = {
             "1.05-1.12": "Property Tax Demand Details (Amount in INR Lakhs)",
             "1.13-1.18": "Property Tax Collection Details (Amount in INR Lakhs)",
-            "2.05-2.08": "Property Tax Demand and Collection Details by Property Type (including cess, other tax charges, excluding user charges if any)",
-            "5.05-5.10": "Water Charges Demand and Collection Details (Amount in INR lakhs)",
-            "5.11-5.12": "Water Connection Details",
+            "2.05-3.00": "Property Tax Demand and Collection Details by Property Type (including cess, other tax charges, excluding user charges if any)",
+            "5.05-5.09": "Water Charges Demand and Collection Details (Amount in INR lakhs)",
+            "5.10-5.12": "Water Connection Details",
             "5.13-5.20": "Water Charges Demand and Collection Details by Household/Property type",
             "5.21-5.24": "Industrial households/properties",
             "5.25-5.29": "Other households/properties(any other connection type)",
@@ -1359,8 +1359,8 @@ function getIndicator(displayPriority) {
             "2.01-2.29": "Property Register Details",
             "3.01-3.02": "Property Tax Collection Details by Mode of payment (including cess, other tax charges, excluding user charges if any)",
             "4.01-4.01": "Property Tax Valuation Details",
-            "5.01-5.04": "Water Charges Details",
-            "6.01-6.04": "Sewerage Charges Details",
+            "5.01-5.32": "Water Charges Details",
+            "6.01-6.30": "Sewerage Charges Details",
         }
         for (let range in headers) {
             let [integerA, integerB] = range.split("-")
@@ -1381,13 +1381,14 @@ function getIndicator(displayPriority) {
     return ""
 }
 
-const getStringValue = (result, ipValue = false) => {
+const getStringValue = (result,parentDp, ipValue = false) => {
     let writableStr = ""
     try {
         let dataYear = result?.year
+        let indicatorDpNumber = parentDp ? parentDp : result.displayPriority
         // console.log(">>>",getSubHeaders(result.displayPriority).replace(",", ""))
-        let indicatorHead = getIndicator(result.displayPriority).replace(",", "")
-        let indicatorSubHead = getSubHeaders(result.displayPriority).replace(",", "")
+        let indicatorHead = getIndicator(indicatorDpNumber).replace(",", "")
+        let indicatorSubHead = getSubHeaders(indicatorDpNumber).replace(",", "")
         let indicatorNumber = JSON.stringify(result.displayPriority)
         let value = result.value
         let file = result?.file?.url
@@ -1435,7 +1436,7 @@ const createDataStructureForCsv = (ulbs, results, res) => {
                 let modifiedTextValue = getTextValues(result.displayPriority).replace(",")
                 result.textValue = modifiedTextValue ? modifiedTextValue : " "
                 if (!canShow(result.type, sortedResults, updatedDatas,result.ptoId.ulb._id)) continue;
-                writableStr += getStringValue(result,true)
+                writableStr += getStringValue(result,false,true)
                 if (result.child && result.child.length) {
                     res.write(writableStr)
                     for (let child of result.child) {
@@ -1446,7 +1447,7 @@ const createDataStructureForCsv = (ulbs, results, res) => {
                         writableStr = result.ptoId.ulb.state.name + "," + result.ptoId.ulb.name + "," + result.ptoId.ulb.natureOfUlb + "," + result.ptoId.ulb.code + "," + result.ptoId.ulb.censusCode + "," + status + "," + getKeyByValue(years, result.ptoId.design_year.toString()) + ","
                         censusCode || ""
                         child.textValue = child.textValue ? child.textValue : modifiedTextValue
-                        writableStr += getStringValue(child, true)
+                        writableStr += getStringValue(child,result.displayPriority,true)
                         res.write(writableStr)
                         writableStr = ""
                         
