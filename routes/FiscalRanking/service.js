@@ -2505,34 +2505,18 @@ async function calculateAndUpdateStatusForMappers(
             financialInfo
           );
         } else {
+          console.log("key ::: ",key)
           if (
+            
             key === priorTabsForFiscalRanking["basicUlbDetails"] ||
             key === priorTabsForFiscalRanking["conInfo"] ||
             fiscalRankingKeys.includes(k)
           ) {
             let statueses = getStatusesFromObject(tab.data, "status", [
               "population11",
-              "ownRevDetails",
-              "webLink",
-              "totalOwnRevenueArea",
-              "signedCopyOfFile",
-              "fy_21_22_online",
-              "fy_21_22_cash",
-              "propertySanitationTax",
-              "propertyWaterTax",
-              "sanitationService",
-              "waterSupply",
-              "webUrlAnnual",
-              "caMembershipNo",
-              "auditorName",
-              "mobile",
-              "email",
-              "designationOftNodalOfficer",
-              "nameOfNodalOfficer",
-              "nameCmsnr",
               "populationFr"
             ]);
-            console.log("statueses :::: ",statueses)
+            console.log("statuses ::: ",statueses)
             let finalStatus = statueses.every((item) => item === "APPROVED");
             temp["status"].push(finalStatus);
             await updateFiscalRankingForm(
@@ -2742,7 +2726,8 @@ async function checkIfFormIdExistsOrNot(
   design_year,
   isDraft,
   role,
-  userId
+  userId,
+  currentFormStatus
 ) {
   let validation = {
     message: "",
@@ -2762,6 +2747,7 @@ async function checkIfFormIdExistsOrNot(
         actionTakenByRole: role,
         actionTakenBy: userId,
         status: "PENDING",
+        currentFormStatus:currentFormStatus,
         isDraft,
       });
       form.save();
@@ -2771,6 +2757,7 @@ async function checkIfFormIdExistsOrNot(
     } else {
       let form = await FiscalRanking.findOneAndUpdate(condition, {
         isDraft: isDraft,
+        currentFormStatus:currentFormStatus
       });
       if (form) {
         validation.message = "form exists";
@@ -2801,7 +2788,7 @@ module.exports.createForm = catchAsync(async (req, res) => {
   const session = await mongoose.startSession();
   await session.startTransaction();
   try {
-    let { ulbId, formId, actions, design_year, isDraft } = req.body;
+    let { ulbId, formId, actions, design_year, isDraft ,currentFormStatus } = req.body;
     let { role, _id: userId } = req.decoded;
     let formIdValidations = await checkIfFormIdExistsOrNot(
       formId,
@@ -2809,7 +2796,8 @@ module.exports.createForm = catchAsync(async (req, res) => {
       design_year,
       isDraft,
       role,
-      userId
+      userId,
+      currentFormStatus
     );
     if (!formIdValidations.valid) {
       response.message = formIdValidations.message;
@@ -2861,6 +2849,7 @@ module.exports.createForm = catchAsync(async (req, res) => {
       {
         $set: {
           isDraft: true,
+          currentFormStatus:2
         },
       }
     );
