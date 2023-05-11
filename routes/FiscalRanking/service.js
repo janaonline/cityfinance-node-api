@@ -414,6 +414,7 @@ const getColumnWiseData = (key, obj, isDraft, dataSource = "") => {
         ),
         ...obj,
         readonly: getReadOnly(obj.status, isDraft),
+        rejectReason:"",
       };
     case "population11":
       return {
@@ -426,6 +427,7 @@ const getColumnWiseData = (key, obj, isDraft, dataSource = "") => {
         ),
         ...obj,
         readonly: true,
+        rejectReason:"",
       };
     case "webLink":
       return {
@@ -438,6 +440,7 @@ const getColumnWiseData = (key, obj, isDraft, dataSource = "") => {
         ),
         ...obj,
         readonly: getReadOnly(obj.status, isDraft),
+        rejectReason:"",
       };
     case "nameCmsnr":
       return {
@@ -450,12 +453,14 @@ const getColumnWiseData = (key, obj, isDraft, dataSource = "") => {
         ),
         ...obj,
         readonly: getReadOnly(obj.status, isDraft),
+        rejectReason:"",
       };
     case "auditorName":
       return {
         ...getInputKeysByType("text", "", "Auditor Name", dataSource, "7"),
         ...obj,
         readonly: getReadOnly(obj.status, isDraft),
+        rejectReason:"",
       };
     case "caMembershipNo":
       return {
@@ -469,6 +474,7 @@ const getColumnWiseData = (key, obj, isDraft, dataSource = "") => {
         ),
         ...obj,
         readonly: getReadOnly(obj.status, isDraft),
+        rejectReason:"",
       };
     case "nameOfNodalOfficer":
       return {
@@ -481,6 +487,7 @@ const getColumnWiseData = (key, obj, isDraft, dataSource = "") => {
         ),
         ...obj,
         readonly: getReadOnly(obj.status, isDraft),
+        rejectReason:"",
       };
     case "designationOftNodalOfficer":
       return {
@@ -493,6 +500,7 @@ const getColumnWiseData = (key, obj, isDraft, dataSource = "") => {
         ),
         ...obj,
         readonly: getReadOnly(obj.status, isDraft),
+        rejectReason:"",
       };
     case "email":
       return {
@@ -505,6 +513,7 @@ const getColumnWiseData = (key, obj, isDraft, dataSource = "") => {
         ),
         ...obj,
         readonly: getReadOnly(obj.status, isDraft),
+        rejectReason:"",
       };
     case "mobile":
       return {
@@ -519,6 +528,7 @@ const getColumnWiseData = (key, obj, isDraft, dataSource = "") => {
         ),
         ...obj,
         readonly: getReadOnly(obj.status, isDraft),
+        rejectReason:"",
       };
     case "waterSupply":
       return {
@@ -531,6 +541,7 @@ const getColumnWiseData = (key, obj, isDraft, dataSource = "") => {
         ),
         ...obj,
         readonly: getReadOnly(obj.status, isDraft),
+        rejectReason:"",
       };
     case "sanitationService":
       return {
@@ -543,6 +554,7 @@ const getColumnWiseData = (key, obj, isDraft, dataSource = "") => {
         ),
         ...obj,
         readonly: getReadOnly(obj.status, isDraft),
+        rejectReason:"",
       };
     case "propertyWaterTax":
       return {
@@ -558,6 +570,7 @@ const getColumnWiseData = (key, obj, isDraft, dataSource = "") => {
         ),
         ...obj,
         readonly: getReadOnly(obj.status, isDraft),
+        rejectReason:"",
       };
     case "propertySanitationTax":
       return {
@@ -573,6 +586,7 @@ const getColumnWiseData = (key, obj, isDraft, dataSource = "") => {
         ),
         ...obj,
         readonly: getReadOnly(obj.status, isDraft),
+        rejectReason:"",
       };
     default:
     // code block
@@ -685,36 +699,42 @@ exports.getView = async function (req, res, next) {
           readonly: true,
           status: ulbPData?.population > 0 ? "NA" : "PENDING",
           modelName: ulbPData?.population > 0 ? "TwentyEightSlbForm" : "",
+          rejectReason:"",
         },
         populationFr: {
           value: twEightSlbs ? twEightSlbs?.population : "",
           readonly: false,
           status: "PENDING",
           modelName: twEightSlbs?.population > 0 ? "Ulb" : "",
+          rejectReason:"",
         },
         fy_21_22_cash: {
           year: null,
           type: null,
           value: null,
           status: "PENDING",
+          rejectReason:"",
         },
         signedCopyOfFile: {
           name: null,
           url: null,
           required: true,
           status: "PENDING",
+          rejectReason:"",
         },
         otherUpload: {
           name: null,
           url: null,
           required: false, // IMPORTANT :: if changed inform frotend
           status: "PENDING",
+          rejectReason:"",
         },
         fy_21_22_online: {
           type: null,
           value: null,
           year: null,
           status: "PENDING",
+          rejectReason:"",
         },
         fyData: [],
         isDraft: null,
