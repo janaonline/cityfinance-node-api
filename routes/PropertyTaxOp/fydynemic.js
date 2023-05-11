@@ -92,11 +92,11 @@ const propertyTaxOpFormJson = () => {
                 "file": "",
                 "options": [
                   {
-                    "id": "ulb",
+                    "id": "ULB",
                     "label": "ULB"
                   },
                   {
-                    "id": "state",
+                    "id": "State",
                     "label": "State"
                   }
                 ],
@@ -6968,8 +6968,8 @@ const propertyTaxOpFormJson = () => {
             "replicaCount": 0,
             "copyChildFrom": [
               {
-                "key": "otherValueWaterTaxDm",
-                "label": "Value of water tax demanded (INR lakhs)",
+                "key": "othersValueWaterChrgDm",
+                "label": "Value of water charges demanded (INR lakhs)",
                 "required": true,
                 "displayPriority": "5.26",
                 "yearData": [
@@ -6984,7 +6984,7 @@ const propertyTaxOpFormJson = () => {
                     "min": 0,
                     "max": 9999999,
                     "required": true,
-                    "type": "otherValueWaterTaxDm",
+                    "type": "othersValueWaterChrgDm",
                     "year": "63735a5bd44534713673c1ca",
                     "code": [],
                     "readonly": false,
@@ -7003,7 +7003,7 @@ const propertyTaxOpFormJson = () => {
                     "min": 0,
                     "max": 9999999,
                     "required": true,
-                    "type": "otherValueWaterTaxDm",
+                    "type": "othersValueWaterChrgDm",
                     "year": "607697074dff55e6c0be33ba",
                     "code": [],
                     "readonly": false,
@@ -7022,7 +7022,7 @@ const propertyTaxOpFormJson = () => {
                     "min": 0,
                     "max": 9999999,
                     "required": true,
-                    "type": "otherValueWaterTaxDm",
+                    "type": "othersValueWaterChrgDm",
                     "year": "606aadac4dff55e6c075c507",
                     "code": [],
                     "readonly": false,
@@ -7041,7 +7041,7 @@ const propertyTaxOpFormJson = () => {
                     "min": 0,
                     "max": 9999999,
                     "required": true,
-                    "type": "otherValueWaterTaxDm",
+                    "type": "othersValueWaterChrgDm",
                     "year": "606aaf854dff55e6c075d219",
                     "code": [],
                     "readonly": false,
@@ -7060,7 +7060,7 @@ const propertyTaxOpFormJson = () => {
                     "min": 0,
                     "max": 9999999,
                     "required": true,
-                    "type": "otherValueWaterTaxDm",
+                    "type": "othersValueWaterChrgDm",
                     "year": "606aafb14dff55e6c075d3ae",
                     "code": [],
                     "readonly": false,
@@ -10683,7 +10683,7 @@ let financialYearTableHeader = {
       "info": ""
     },
     {
-      "label": "Water Charges Demand and Collection Details",
+      "label": "Water Charges Demand and Collection Details (Amount in INR lakhs)",
       "info": ""
     },
     {
@@ -10953,7 +10953,7 @@ let financialYearTableHeader = {
       "info": ""
     },
     {
-      "label": "Sewerage Charges Demand and Collection Details",
+      "label": "Sewerage Charges Demand and Collection Details (Amount in INR lakhs)",
       "info": ""
     },
     {
@@ -11833,9 +11833,41 @@ let skipLogicDependencies = {
     }
   }
 }
+function getSkippableKeys(skipLogics) {
+  const results = {};
+  Object.entries(skipLogics).forEach(([key, value]) => {
+      Object.keys(value.skippable).forEach(itemKey => {
+          results[itemKey] = key.split('.')[1];
+      })
+  })
+  return results;
+}
+
+let childKeys = {
+  taxTypeDemandChild: '1.9',
+  cessDemandChild: '1.10',
+  userChargesDmndChild: '1.12',
+  taxTypeCollectionChild: '1.17',
+  cessCollectChild: '1.18',
+  userChargesCollectionChild: '1.19',
+  otherValuePropertyTaxDm: '2.26',
+  otherNoPropertyTaxDm: '2.27',
+  otherValuePropertyTaxCollected: '2.28',
+  otherNoPropertyTaxCollected: '2.29',
+  otherValueWaterTaxDm: '5.26',
+  othersNoWaterChrgDm: '5.27',
+  othersValueWaterChrgCollected: '5.28',
+  othersNoWaterChrgCollected: '5.29',
+  otherValueSewerageTaxDm: '6.26',
+  otherNoSewerageTaxDm: '6.27',
+  otherValueSewerageTaxCollected: '6.28',
+  otherNoSewerageTaxCollected: '6.29'
+}
+
+module.exports.skippableKeys = getSkippableKeys(skipLogicDependencies)
 module.exports.financialYearTableHeader = financialYearTableHeader
 module.exports.specialHeaders = specialHeaders
-
+module.exports.childKeys = childKeys
 // module.exports.jsonObject = jsonObject
 module.exports.propertyTaxOpFormJson = propertyTaxOpFormJson;
 module.exports.getInputKeysByType = getInputKeysByType;

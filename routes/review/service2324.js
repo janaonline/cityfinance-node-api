@@ -9,7 +9,8 @@ const STATUS_LIST = require('../../util/newStatusList');
 const { MASTER_STATUS , MASTER_STATUS_ID} = require('../../util/FormNames');
 const  { canTakeActionOrViewOnlyMasterForm} = require('../../routes/CommonActionAPI/service')
 const List = require('../../util/15thFCstatus')
-const MASTERSTATUS = require('../../models/MasterStatus')
+const MASTERSTATUS = require('../../models/MasterStatus');
+const { years } = require('../../service/years');
 
 
 module.exports.get = async (req, res) => {
@@ -368,9 +369,9 @@ const computeQuery = (params) => {
     let filledProvisionalExpression = {}, filledAuditedExpression = {};
     if (isFormOptional) {
       // if form is optional check if the deciding condition is true or false
-      filledQueryExpression = getFilledQueryExpression(formName, filledQueryExpression); 
+      filledQueryExpression = getFilledQueryExpression(formName, filledQueryExpression,design_year); 
       if(formName === CollectionNames.annual){
-      ( {filledProvisionalExpression, filledAuditedExpression} = getFilledQueryExpression(formName, filledQueryExpression)); 
+      ( {filledProvisionalExpression, filledAuditedExpression} = getFilledQueryExpression(formName, filledQueryExpression,design_year)); 
       
       }
     }
@@ -733,7 +734,7 @@ const computeQuery = (params) => {
 
   }
 
-function getFilledQueryExpression(formName, filledQueryExpression) {
+function getFilledQueryExpression(formName, filledQueryExpression,design_year) {
   let filledAuditedExpression = {}, filledProvisionalExpression = {}
     switch (formName) {
         case CollectionNames.slb:
@@ -755,13 +756,17 @@ function getFilledQueryExpression(formName, filledQueryExpression) {
             };
             break;
         case CollectionNames.propTaxUlb:
-            filledQueryExpression = {
-                $cond: {
-                    if: { $eq: [`$formData.toCollect`, "Yes"] },
-                    then: STATUS_LIST.Submitted,
-                    else: STATUS_LIST.Not_Submitted,
-                },
-            };
+          filledQueryExpression = {
+            $cond: {
+                if: { $eq: [`$formData.toCollect`, "Yes"] },
+                then: STATUS_LIST.Submitted,
+                else: STATUS_LIST.Not_Submitted,
+            },
+        };
+          if (design_year === years['2023-24']){
+            filledQueryExpression = STATUS_LIST.Submitted
+          }
+            
             break;
         case CollectionNames.annual:
             filledProvisionalExpression = {

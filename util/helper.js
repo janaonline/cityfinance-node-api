@@ -1,3 +1,4 @@
+const userTypes = require("./userTypes")
 function Helper() {
     this.isKeyValueMatched = function (obj, key, val) {
         let res = false
@@ -45,8 +46,13 @@ function Helper() {
     this.isEmptyObj = (obj) => {
         return Object.keys(obj).length == 0 && obj.constructor === Object
     }
-    this.isReadOnly = ({ isDraft, status ,currentFormStatus }) => {
-        return ![1, 2, 5, 7].includes(currentFormStatus)
+    this.isReadOnly = ({ isDraft, status ,currentFormStatus ,role }) => {
+        if([1, 2, 5, 7].includes(currentFormStatus) && role === userTypes.ulb){
+            return false
+        }
+        else{
+           return true
+        }
     }
 }
 module.exports = new Helper();
