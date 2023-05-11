@@ -1956,7 +1956,7 @@ function getColumns() {
     filled: "Filled Status",
     filled_audited: "Audited Filled Status",
     filled_provisional: "Provisional Filled Status",
-    action: "Action",
+    cantakeAction: "Action",
     populationCategory:"Population Category"
   };
 }
