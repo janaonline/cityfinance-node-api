@@ -6,8 +6,8 @@ const FiscalRanking = require("../../models/FiscalRanking");
 const FiscalRankingMapper = require("../../models/FiscalRankingMapper");
 const { FRTypeShortKey } = require('./formjson')
 const UlbLedger = require("../../models/UlbLedger");
-const {FORMIDs} = require("../../util/FormNames");
-const {saveFormHistory} = require("../../util/masterFunctions");
+const {FORMIDs, MASTER_STATUS, FORM_LEVEL,} = require("../../util/FormNames");
+const {saveCurrentStatus, saveFormHistory, saveStatusHistory} = require("../../util/masterFunctions");
 const FeedBackFiscalRanking = require("../../models/FeedbackFiscalRanking");
 const TwentyEightSlbsForm = require("../../models/TwentyEightSlbsForm");
 const Ulb = require("../../models/Ulb");
@@ -2637,7 +2637,7 @@ module.exports.actionTakenByMoHua = catchAsync(async (req, res) => {
     message: "",
   };
   try {
-    let { ulbId, formId, actions, design_year, isDraft } = req.body;
+    let { ulbId, formId, actions, design_year, isDraft, status:formBodyStatus } = req.body;
     let { role, _id: userId } = req.decoded;
     let validation = await checkUndefinedValidations({
       ulb: ulbId,
@@ -2655,7 +2655,8 @@ module.exports.actionTakenByMoHua = catchAsync(async (req, res) => {
     }
     const session = await mongoose.startSession();
     await session.startTransaction();
-    let params = {isDraft,role,formId}
+    let masterFormId = FORMIDs['fiscalRanking'];
+    let params = {isDraft,role,userId,formId,masterFormId, formBodyStatus}
     await createHistory(params)
     let calculationsTabWise = await calculateAndUpdateStatusForMappers(
       session,
@@ -2698,7 +2699,8 @@ async function checkIfFormIdExistsOrNot(
   design_year,
   isDraft,
   role,
-  userId
+  userId,
+  formBodyStatus
 ) {
   let validation = {
     message: "",
@@ -2719,6 +2721,7 @@ async function checkIfFormIdExistsOrNot(
         actionTakenBy: userId,
         status: "PENDING",
         isDraft,
+        currentFormStatus: formBodyStatus
       });
       form.save();
       validation.message = "form created";
@@ -2727,6 +2730,7 @@ async function checkIfFormIdExistsOrNot(
     } else {
       let form = await FiscalRanking.findOneAndUpdate(condition, {
         isDraft: isDraft,
+        currentFormStatus: formBodyStatus
       });
       if (form) {
         validation.message = "form exists";
@@ -2757,7 +2761,7 @@ module.exports.createForm = catchAsync(async (req, res) => {
   const session = await mongoose.startSession();
   await session.startTransaction();
   try {
-    let { ulbId, formId, actions, design_year, isDraft } = req.body;
+    let { ulbId, formId, actions, design_year, isDraft,status:formBodyStatus } = req.body;
     let { role, _id: userId } = req.decoded;
     let formIdValidations = await checkIfFormIdExistsOrNot(
       formId,
@@ -2765,7 +2769,8 @@ module.exports.createForm = catchAsync(async (req, res) => {
       design_year,
       isDraft,
       role,
-      userId
+      userId,
+      formBodyStatus
     );
     if (!formIdValidations.valid) {
       response.message = formIdValidations.message;
@@ -2782,7 +2787,8 @@ module.exports.createForm = catchAsync(async (req, res) => {
       response.message = validation.message;
       return res.status(500).json(response);
     }
-    let params = {isDraft,role,formId}
+    let masterFormId = FORMIDs['fiscalRanking'];
+    let params = {isDraft,role,userId,formId,masterFormId, formBodyStatus}
     await createHistory(params)
     let calculationsTabWise = await calculateAndUpdateStatusForMappers(
       session,
@@ -3236,21 +3242,84 @@ function completionPercent( document, FRCompletionNumber) {
 
 async function createHistory(params){
   try{
-    let {isDraft,role,formId} = params
-    if(!isDraft || role === userTypes.mohua){
-      let data = await FiscalRanking.find({"_id":ObjectId(formId)}).lean()
-      let mapperData  = await FiscalRankingMapper.find({"fiscal_ranking":ObjectId(formId)})
+    let {isDraft,role:actionTakenByRole,userId:actionTakenBy,formId,masterFormId,formBodyStatus} = params
+    // if(!isDraft || role === userTypes.mohua){
+      // let data = await FiscalRanking.find({"_id":ObjectId(formId)}).lean()
+      // let mapperData  = await FiscalRankingMapper.find({"fiscal_ranking":ObjectId(formId)})
+      // data[0]['fiscalMapperData'] = mapperData
+      // let body = {
+      //   "formId":FORMIDs['fiscalRanking'],
+      //   "recordId":formId,
+      //   "data":data
+      // }
+      // let historyParams = {
+      //   body
+      // }
+      // await saveFormHistory(historyParams)
+    // } 
+    if (formBodyStatus === MASTER_STATUS["In Progress"]) {
+      
+      let currentStatusData = {
+        formId: masterFormId,
+        recordId: formId,
+        status: MASTER_STATUS["In Progress"],
+        level: FORM_LEVEL["form"],
+        shortKey: "form_level",
+        rejectReason: "",
+        responseFile: "",
+        actionTakenByRole: actionTakenByRole,
+        actionTakenBy: ObjectId(actionTakenBy),
+      };
+      await saveCurrentStatus({ body: currentStatusData, 
+        // session
+       });
+
+      // await session.commitTransaction();
+      // return Response.OK(res, {}, "Form Submitted");
+    } else if (
+      formBodyStatus === MASTER_STATUS["Under Review By MoHUA"]
+    ) {
+      let data = await FiscalRanking.find({"_id":formId}).lean()
+      let mapperData  = await FiscalRankingMapper.find({"fiscal_ranking":formId})
       data[0]['fiscalMapperData'] = mapperData
-      let body = {
-        "formId":FORMIDs['fiscalRanking'],
-        "recordId":formId,
-        "data":data
-      }
-      let historyParams = {
-        body
-      }
-      await saveFormHistory(historyParams)
-    } 
+      let bodyData = {
+        formId: masterFormId,
+        recordId: formId,
+        data: data,
+      };
+      /* Saving the form history of the user. */
+      await saveFormHistory({ body: bodyData , 
+        // session
+      });
+
+      let currentStatusData = {
+        formId: masterFormId,
+        recordId: formId,
+        status: MASTER_STATUS["Under Review By MoHUA"],
+        level: FORM_LEVEL["form"],
+        shortKey: "form_level",
+        rejectReason: "",
+        responseFile: "",
+        actionTakenByRole: actionTakenByRole,
+        actionTakenBy: ObjectId(actionTakenBy),
+      };
+      await saveCurrentStatus({ body: currentStatusData , 
+        // session
+      });
+
+      let statusHistory = {
+        formId: masterFormId,
+        recordId: formId,
+        shortKey: "form_level",
+        data: currentStatusData,
+      };
+      await saveStatusHistory({ body: statusHistory ,
+        //  session 
+        });
+      
+      // await session.commitTransaction();
+      // return Response.OK(res, {}, "Form Submitted");
+    }
   }
   catch(err){
     console.log("error in createHistory ::: ",err.message)
