@@ -830,6 +830,8 @@ exports.getView = async function (req, res, next) {
                 } else {
                   pf["value"] = singleFydata ? singleFydata.value : "";
                 }
+                pf["status"] = singleFydata.status
+                pf["rejectReason"] = singleFydata.rejectReason
                 pf["modelName"] = singleFydata ? singleFydata.modelName : "";
                 pf["status"] = singleFydata.status;
                 if (subData[key].calculatedFrom === undefined) {
@@ -1970,7 +1972,7 @@ function getColumns() {
     censusCode: "Census/SB Code",
     formStatus: "Status",
     cantakeAction: "Action",
-    populationCategory:"Population Category"
+    apopulationCategory:"Population Category"
   };
 }
 
@@ -2672,7 +2674,7 @@ module.exports.actionTakenByMoHua = catchAsync(async (req, res) => {
     const session = await mongoose.startSession();
     await session.startTransaction();
     let params = {isDraft,role,formId}
-    await createHistory(params)
+    // await createHistory(params)
     let calculationsTabWise = await calculateAndUpdateStatusForMappers(
       session,
       actions,

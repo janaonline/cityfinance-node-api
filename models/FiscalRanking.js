@@ -39,36 +39,44 @@ const fiscalRankingSchema = new Schema(
         population11: {
             value: { type: Number},
             status: statusSchema(),
-            dataSource:modelSchema()
+            dataSource:modelSchema(),
+            rejectReason:{type:String,default:""}
         },
         populationFr: {
             value: { type: Number, default: null},
             status: statusSchema(),
-            dataSource:modelSchema()
+            dataSource:modelSchema(),
+            rejectReason:{type:String,default:""}
         },
         webLink: {
             value : { type: String, default: null},
-            status: statusSchema()
+            status: statusSchema(),
+            rejectReason:{type:String,default:""}
         },
         nameCmsnr: {
             value : {type:String,default:null},
-            status:statusSchema()
+            status:statusSchema(),
+            rejectReason:{type:String,default:""}
         },
         nameOfNodalOfficer: {
             value:{ type: String, default: null },
-            status:statusSchema()
+            status:statusSchema(),
+            rejectReason:{type:String,default:""}
         },
         designationOftNodalOfficer: {
             value: { type: String, default: null },
-            status:statusSchema()
+            status:statusSchema(),
+            rejectReason:{type:String,default:""}
         },
         auditorName:{
             status:statusSchema(),
             value: { type: String, default: null },
+            rejectReason:{type:String,default:""}
         },
         caMembershipNo:{
             status:statusSchema(),
             value: { type: String, default: null },
+            rejectReason:{type:String,default:""}
         },
         email: {
             status:statusSchema(),
@@ -77,18 +85,22 @@ const fiscalRankingSchema = new Schema(
                 trim: true,
                 lowercase: true
             },
+            rejectReason:{type:String,default:""}
         },
         mobile: {
             status:statusSchema(),
-            value:{ type: String, default: null }
+            value:{ type: String, default: null },
+            rejectReason:{type:String,default:""}
         },
         auditorName:{
             status:statusSchema(),
-            value:{ type: String}
+            value:{ type: String},
+            rejectReason:{type:String,default:""}
         },
         caMembershipNo:{
             status:statusSchema(),
-            value:{type:String}
+            value:{type:String},
+            rejectReason:{type:String,default:""}
         },
         webUrlAnnual: {
             status: {
@@ -99,7 +111,8 @@ const fiscalRankingSchema = new Schema(
                 },
             },
             year: { type: Schema.Types.ObjectId, ref: "Year", default: null },
-            value: { type: String, default: null }
+            value: { type: String, default: null },
+            rejectReason:{type:String,default:""}
         },
         ownRevDetails: {
             status: {
@@ -110,7 +123,8 @@ const fiscalRankingSchema = new Schema(
                 },
             },
             year: { type: Schema.Types.ObjectId, ref: "Year", default: null },
-            value: { type: String, default: null }
+            value: { type: String, default: null },
+            rejectReason:{type:String,default:""}
         },
         waterSupply: enumYesNo,
         sanitationService: enumYesNo,
@@ -137,6 +151,7 @@ const fiscalRankingSchema = new Schema(
                 },
             },
             year: { type: Schema.Types.ObjectId, ref: "Year", default: null },
+            rejectReason:{type:String,default:""}
         },
         fy_21_22_online: {
             type: {
@@ -156,6 +171,7 @@ const fiscalRankingSchema = new Schema(
                     message: "ERROR: STATUS BE EITHER 'PENDING'/ 'APPROVED' / 'REJECTED'",
                 },
             },
+            rejectReason:{type:String,default:""},
             year: { type: Schema.Types.ObjectId, ref: "Year", default: null },
         },
         // totalOwnRevenueArea: numberOfQuestion1,
@@ -171,7 +187,8 @@ const fiscalRankingSchema = new Schema(
                     values: ["PENDING", "APPROVED", "REJECTED"],
                     message: "ERROR: STATUS BE EITHER 'PENDING'/ 'APPROVED' / 'REJECTED'",
                 },
-            }
+            },
+            rejectReason:{type:String,default:""}
         },
         otherUpload:{
             name: { type: String },
@@ -182,7 +199,8 @@ const fiscalRankingSchema = new Schema(
                     values: ["PENDING", "APPROVED", "REJECTED"],
                     message: "ERROR: STATUS BE EITHER 'PENDING'/ 'APPROVED' / 'REJECTED'",
                 },
-            }
+            },
+            rejectReason:{type:String,default:""}
         },
         status: {
             type: String,
