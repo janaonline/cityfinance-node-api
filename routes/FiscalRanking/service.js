@@ -804,7 +804,6 @@ exports.getView = async function (req, res, next) {
     });
     for (let sortKey in fyDynemic) {
       let subData = fyDynemic[sortKey];
-
       // console.log("subData  >>>> 1::: ",subData)
       for (let key in subData) {
         let calculationField = subData[key].calculatedFrom ? true : false;
