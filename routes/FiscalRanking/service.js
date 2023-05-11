@@ -391,7 +391,10 @@ function assignCalculatedValues(fyDynemic, viewONe) {
 }
 
 /* A function which is used to get the data from the database. */
-const getReadOnly = (status, isDraft) => {
+const getReadOnly = (status, isDraft,role) => {
+  if(role === "MoHUA"){
+    return true
+  }
   if (status === "REJECTED" || isDraft) {
     return false;
   } else if (status === "PENDING" && isDraft == null) {
@@ -649,6 +652,7 @@ async function getPreviousYearValues(pf, ulbData) {
 exports.getView = async function (req, res, next) {
   try {
     let condition = {};
+    let {role} = req.decoded
     if (req.query.ulb && req.query.design_year) {
       condition = {
         ulb: ObjectId(req.query.ulb),
@@ -760,7 +764,6 @@ exports.getView = async function (req, res, next) {
       "auditorName",
       "caMembershipNo",
     ];
-    console.log(viewOne.po);
     for (let index = 0; index < keys.length; index++) {
       if (viewOne.hasOwnProperty(keys[index])) {
         let obj = viewOne[keys[index]];
@@ -838,7 +841,7 @@ exports.getView = async function (req, res, next) {
                   pf["readonly"] =
                     singleFydata.status && singleFydata.status == "NA"
                       ? true
-                      : getReadOnly(singleFydata.status, viewOne.isDraft);
+                      : getReadOnly(singleFydata.status, viewOne.isDraft,role);
                 } else {
                   pf["readonly"] = true;
                 }
@@ -903,7 +906,7 @@ exports.getView = async function (req, res, next) {
                     pf["readonly"] =
                       singleFydata.status && singleFydata.status == "NA"
                         ? true
-                        : getReadOnly(singleFydata.status, viewOne.isDraft);
+                        : getReadOnly(singleFydata.status, viewOne.isDraft,role);
                   } else {
                     pf["readonly"] = true;
                   }
@@ -988,7 +991,7 @@ exports.getView = async function (req, res, next) {
                       pf["readonly"] =
                         singleFydata && singleFydata.status == "NA"
                           ? true
-                          : getReadOnly(singleFydata.status, viewOne.isDraft);
+                          : getReadOnly(singleFydata.status, viewOne.isDraft,role);
                     } else {
                       pf["readonly"] = true;
                     }
@@ -2467,7 +2470,7 @@ async function calculateAndUpdateStatusForMappers(
       let key = tab.id;
       let obj = tab.data;
       let temp = {
-        comment: tab.feedback.comment,
+        comment: tab?.feedback?.comment,
         status: [],
       };
       for (var k in tab.data) {
