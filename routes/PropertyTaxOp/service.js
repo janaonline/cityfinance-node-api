@@ -1448,9 +1448,6 @@ const createDataStructureForCsv = (ulbs, results, res) => {
                         child.textValue = child.textValue ? child.textValue : modifiedTextValue
                         writableStr += getStringValue(child, true)
                         res.write(writableStr)
-                        if(result.displayPriority === "5.25"){
-                            console.log(writableStr)
-                        }
                         writableStr = ""
                         
                     }
@@ -1486,10 +1483,11 @@ const canShow = (key, results, updatedDatas,ulb) => {
             else{
                 element = updatedDatas[keyName]
             }
-            if(key === "entityNameWaterCharges"){
-                console.log(element.value === "Yes")
+            let show = element.value === "Yes" 
+            if(["entityNameWaterCharges","entityNaSewerageCharges".includes(key)]){
+                show = element.value !== "ULB"
             }
-            return element.value === "Yes"
+            return show
         }
     }
     catch (err) {
