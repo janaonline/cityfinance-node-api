@@ -44,6 +44,9 @@ const fiscalRankingSchema = new Schema(
             dataSource:modelSchema(),
             rejectReason:{type:String,default:""}
         },
+        currentFormStatus:{
+            type:Number,
+        },
         populationFr: {
             value: { type: Number, default: null},
             status: statusSchema(),
