@@ -6429,8 +6429,35 @@ let financialYearTableHeader = {
     24: ['', 'SECTION E: Self-reported Details for Fiscal Governance Parameters', '2021-22', '2020-21', '2019-20', '2018-19'],
 }
 
+const statusList = {
+  1:  "Not Started",
+  2:  "In Progress",
+  8 : "Verification Not Started",
+  9 : "Verification In Progress", 
+  10:  "Returned by PMU",
+  11 : "Submission Acknowledged by PMU"
+}
+const statusTracker = {
+  "NS":1,
+  "IP":2,
+  "VNS":8,
+  "VIP":9,
+  "RBP":10,
+  "SAP":11
+}
+
+const questionLevelStatus = {
+  "1":"APPROVED",
+  "2":"PENDING",
+  "3":"REJECTED",
+  // "4":"NA"
+}
+
 module.exports.financialYearTableHeader = financialYearTableHeader
 module.exports.jsonObject = jsonObject
+module.exports.statusList = statusList
+module.exports.statusTracker = statusTracker
+module.exports.questionLevelStatus = questionLevelStatus
 module.exports.fiscalRankingTabs = fiscalRankingTabs;
 module.exports.fiscalRankingFormJson = fiscalRankingFormJson;
 module.exports.getInputKeysByType = getInputKeysByType;
