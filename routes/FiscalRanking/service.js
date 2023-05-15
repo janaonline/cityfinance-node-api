@@ -2890,7 +2890,6 @@ module.exports.createForm = catchAsync(async (req, res) => {
       response.message = formIdValidations.message;
       return res.status(500).json(response);
     }
-
     let validation = await checkUndefinedValidations({
       ulb: ulbId,
       actions: actions,
