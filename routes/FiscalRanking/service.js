@@ -2777,7 +2777,7 @@ module.exports.actionTakenByMoHua = catchAsync(async (req, res) => {
     const session = await mongoose.startSession();
     await session.startTransaction();
     let masterFormId = FORMIDs['fiscalRanking'];
-    let params = {isDraft,role,userId,formId,masterFormId, currentFormStatus}
+    let params = {isDraft,role,userId,formId,masterFormId, formBodyStatus:currentFormStatus}
     await createHistory(params)
     let calculationsTabWise = await calculateAndUpdateStatusForMappers(
       session,
@@ -2920,7 +2920,7 @@ module.exports.createForm = catchAsync(async (req, res) => {
       return res.status(500).json(response);
     }
     let masterFormId = FORMIDs['fiscalRanking'];
-    let params = {isDraft,role,userId,formId,masterFormId, currentFormStatus}
+    let params = {isDraft,role,userId,formId,masterFormId, formBodyStatus:currentFormStatus}
     await createHistory(params)
     let calculationsTabWise = await calculateAndUpdateStatusForMappers(
       session,
