@@ -7,7 +7,7 @@ const Service = require('../../service');
 const { FormNames, MASTER_STATUS_ID } = require('../../util/FormNames');
 const User = require('../../models/User');
 const { checkUndefinedValidations } = require('../../routes/FiscalRanking/service');
-const { propertyTaxOpFormJson, skippableKeys, financialYearTableHeader, specialHeaders, skipLogicDependencies,childKeys } = require('./fydynemic')
+const { propertyTaxOpFormJson, skippableKeys, financialYearTableHeader, specialHeaders, skipLogicDependencies, childKeys } = require('./fydynemic')
 const { isEmptyObj, isReadOnly } = require('../../util/helper');
 const PropertyMapperChildData = require("../../models/PropertyTaxMapperChild");
 const { years } = require('../../service/years');
@@ -1139,7 +1139,7 @@ exports.getView = async function (req, res, next) {
 function sortPosition(itemA, itemB) {
     itemA.displayPriority = itemA.displayPriority.toString()
     itemB.displayPriority = itemB.displayPriority.toString()
-    console.log("itemA ::: ",itemA)
+    console.log("itemA ::: ", itemA)
     const [integerA, decimalA] = itemA.displayPriority.split('.').map(i => +i);
     const [integerB, decimalB] = itemB.displayPriority.split('.').map(i => +i);
     if (integerA != integerB) {
@@ -1184,7 +1184,7 @@ function getLabelName(type) {
             totalPropertiesTaxDm: 'Total number of properties from which property tax was demanded',
             totalPropertiesTaxDmCollected: 'Total number of properties from which property tax was collected',
             resValuePropertyTaxDm: 'Value of property tax demanded (INR lakhs)',
-            othersValueWaterChrgDm:"Value of water charges demanded (INR lakhs",
+            othersValueWaterChrgDm: "Value of water charges demanded (INR lakhs",
             resNoPropertyTaxDm: 'Number of properties from which property tax was demanded',
             resValuePropertyTaxCollected: 'Value of property tax collected (INR lakhs)',
             resNoPropertyTaxCollected: 'Number of properties from which property tax was collected',
@@ -1277,8 +1277,8 @@ function getLabelName(type) {
             omCostDeleverySewerage: 'What is the O&M cost of service delivery for sewerage ?(INR lakhs)',
             omCostSewerageService: 'Please provide the working sheet for O&M cost calculation',
             signedPdf: 'Upload Signed PDF'
-          }
-          
+        }
+
         let labelName = indicators[type] ? indicators[type].split(",").join("") : ""
         return labelName
     }
@@ -1288,22 +1288,22 @@ function getLabelName(type) {
     }
 }
 
-function getTextValues(displayPriority){
-    try{
-        
+function getTextValues(displayPriority) {
+    try {
+
         let subHeaders = {
-            "2.05-2.08":"Residential Properties",
+            "2.05-2.08": "Residential Properties",
             "2.09-2.12": "Commercial Properties",
             "2.13-2.16": "Industrial Properties",
             "2.17-2.20": "Government Properties",
             "2.21-2.24": "Institutional Properties",
             "2.25-2.29": "Other Properties",
-            "5.13-5.16" :"Residential households/properties",
-            "5.17-5.20":"Commercial households/properties",
-            "5.21-5.24" :"Industrial households/properties",
-            "6.13-6.16" :"Residential households/properties",
-            "6.17-6.20":"Commercial households/properties",
-            "6.21-6.24" :"Industrial households/properties",
+            "5.13-5.16": "Residential households/properties",
+            "5.17-5.20": "Commercial households/properties",
+            "5.21-5.24": "Industrial households/properties",
+            "6.13-6.16": "Residential households/properties",
+            "6.17-6.20": "Commercial households/properties",
+            "6.21-6.24": "Industrial households/properties",
         }
         for (let range in subHeaders) {
             let [integerA, integerB] = range.split("-")
@@ -1319,14 +1319,14 @@ function getTextValues(displayPriority){
                 if (subHeaders[range]) {
                     return subHeaders[range].split(",").join("") || ""
                 }
-                else{
+                else {
                     return ","
                 }
             }
         }
     }
-    catch(err){
-        console.log("error in getIpValues :::: ",err.message)
+    catch (err) {
+        console.log("error in getIpValues :::: ", err.message)
         return "NA"
     }
     return ""
@@ -1401,18 +1401,18 @@ function getIndicator(displayPriority) {
                 }
             }
         }
-    }
-    catch (err) {
+    } catch (err) {
+        console.log(err)
         console.log("error in getIndicators :: ", err.message)
     }
     return ""
 }
 
-const getStringValue = (result,parentDp, ipValue = false) => {
+const getStringValue = (result, parentDp, ipValue = false) => {
     let writableStr = ""
     try {
         let dataYear = result?.year
-        let indicatorDpNumber = parentDp ? parentDp : result.displayPriority
+        let indicatorDpNumber = parentDp ? result.displayPriority : result.displayPriority
         // console.log(">>>",getSubHeaders(result.displayPriority).replace(",", ""))
         let indicatorHead = getIndicator(indicatorDpNumber).replace(",", "")
         let indicatorSubHead = getSubHeaders(indicatorDpNumber).replace(",", "")
@@ -1430,21 +1430,20 @@ const getStringValue = (result,parentDp, ipValue = false) => {
         let assignedValue = value || file || date || " "
         writableStr += assignedValue ? `${assignedValue}` : "" + ","
         writableStr += "\r\n"
-    }
-    catch (err) {
-        console.log("error in getStringValue ::: ", err)
+    } catch (err) {
+        console.log("error in getStringValue ::: ", err);
     }
     return writableStr
 }
 
-const decideDisplayPriority = (index,type,dp,replicaNumber,parentType)=>{
-    try{
+const decideDisplayPriority = (index, type, dp, replicaNumber, parentType) => {
+    try {
         // console.log("type ::: ",type)
-       if(childKeys[type]){
-        return childKeys[type] + "." + replicaNumber
-       }
+        if (childKeys[type]) {
+            return childKeys[type] + "." + replicaNumber
+        }
     }
-    catch(err){
+    catch (err) {
         console.log("error in decideDisplayPriority")
     }
     return dp + "." + replicaNumber
@@ -1458,26 +1457,26 @@ const createDataStructureForCsv = (ulbs, results, res) => {
             let sortedResults = filteredResults.sort(sortPosition)
             for (let result of sortedResults) {
                 let status = MASTER_STATUS_ID[result.ptoId.currentFormStatus] || ""
-                let censusCode = result.ptoId.ulb.censusCode != null ? result.ptoId.ulb.censusCode : result.ptoId.ulb.sbCode 
+                let censusCode = result.ptoId.ulb.censusCode != null ? result.ptoId.ulb.censusCode : result.ptoId.ulb.sbCode
                 let writableStr = result.ptoId.ulb.state.name + "," + result.ptoId.ulb.name + "," + result.ptoId.ulb.natureOfUlb + "," + result.ptoId.ulb.code + "," + censusCode + "," + status + "," + getKeyByValue(years, result.ptoId.design_year.toString()) + ","
                 let modifiedTextValue = getTextValues(result.displayPriority).replace(",")
                 result.textValue = modifiedTextValue ? modifiedTextValue : " "
-                if (!canShow(result.type, sortedResults, updatedDatas,result.ptoId.ulb._id)) continue;
-                writableStr += getStringValue(result,false,true)
-                
+                if (!canShow(result.type, sortedResults, updatedDatas, result.ptoId.ulb._id)) continue;
+                writableStr += getStringValue(result, false, true)
+
                 if (result.child && result.child.length) {
                     res.write(writableStr)
                     for (let child of result.child) {
-                        let number = decideDisplayPriority(0,child.type,result.displayPriority,child.replicaNumber,result.type)
+                        let number = decideDisplayPriority(0, child.type, result.displayPriority, child.replicaNumber, result.type)
                         child.displayPriority = number
-                        let censusCode = result.ptoId.ulb.censusCode != null ? result.ptoId.ulb.censusCode : result.ptoId.ulb.sbCode 
+                        let censusCode = result.ptoId.ulb.censusCode != null ? result.ptoId.ulb.censusCode : result.ptoId.ulb.sbCode
                         writableStr = result.ptoId.ulb.state.name + "," + result.ptoId.ulb.name + "," + result.ptoId.ulb.natureOfUlb + "," + result.ptoId.ulb.code + "," + result.ptoId.ulb.censusCode + "," + status + "," + getKeyByValue(years, result.ptoId.design_year.toString()) + ","
                         censusCode || ""
                         child.textValue = child.textValue ? child.textValue : modifiedTextValue
-                        writableStr += getStringValue(child,result.displayPriority,true)
+                        writableStr += getStringValue(child, result.displayPriority, true)
                         res.write(writableStr)
                         writableStr = ""
-                        
+
                     }
                 }
                 res.write(writableStr)
@@ -1496,7 +1495,7 @@ const createDataStructureForCsv = (ulbs, results, res) => {
 
 const canShow = (key, results, updatedDatas, ulb) => {
     try {
-        
+
         if (Object.keys(skippableKeys).includes(key)) {
             let elementToFind = skippableKeys[key]
             let element = {}
@@ -1510,8 +1509,8 @@ const canShow = (key, results, updatedDatas, ulb) => {
             else {
                 element = updatedDatas[keyName]
             }
-            let show = element.value === "Yes" 
-            if(["entityNameWaterCharges","entityNaSewerageCharges".includes(key)]){
+            let show = element.value === "Yes"
+            if (["entityNameWaterCharges", "entityNaSewerageCharges".includes(key)]) {
                 show = element.value !== "ULB"
             }
             return show
@@ -1661,7 +1660,7 @@ module.exports.getCsvForPropertyTaxMapper = async (req, res) => {
             .cursor({ batchSize: 100 })
             .addCursorFlag("noCursorTimeout", true)
             .exec();
-            
+
         cursor.on("data", (el) => {
             let updatedDatas = {}
             let filteredResults = el.propertytaxopmapper;
@@ -1692,8 +1691,8 @@ module.exports.getCsvForPropertyTaxMapper = async (req, res) => {
         });
         response.success = true
         response.message = "Code working";
-    }
-    catch (err) {
+    } catch (err) {
+        console.log("err", err)
         response.success = true
         status = 400
         console.log("error in getCsvForPropertyTaxMapper ::::: ", err.message)
