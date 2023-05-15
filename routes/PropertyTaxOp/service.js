@@ -1139,7 +1139,6 @@ exports.getView = async function (req, res, next) {
 function sortPosition(itemA, itemB) {
     itemA.displayPriority = itemA.displayPriority.toString()
     itemB.displayPriority = itemB.displayPriority.toString()
-    console.log("itemA ::: ", itemA)
     const [integerA, decimalA] = itemA.displayPriority.split('.').map(i => +i);
     const [integerB, decimalB] = itemB.displayPriority.split('.').map(i => +i);
     if (integerA != integerB) {
@@ -1460,7 +1459,6 @@ const canShow = (key, results, updatedDatas, ulb) => {
             // console.log("elementsToFind :::",elementToFind)
             if (!updatedDatas[keyName]) {
                 element = results.find(item => item.type === elementToFind)
-
                 updatedDatas[keyName] = element
             }
             else {
