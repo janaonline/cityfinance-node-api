@@ -1572,7 +1572,7 @@ module.exports.getCsvForPropertyTaxMapper = async (req, res) => {
             .cursor({ batchSize: 100 })
             .addCursorFlag("noCursorTimeout", true)
             .exec();
-            
+
         cursor.on("data", (el) => {
             let updatedDatas = {}
             let filteredResults = el.propertytaxopmapper;
@@ -1603,13 +1603,14 @@ module.exports.getCsvForPropertyTaxMapper = async (req, res) => {
         });
         response.success = true
         response.message = "Code working";
-    }
-    catch (err) {
+    } catch (err) {
         response.success = true
         status = 400
         console.log("error in getCsvForPropertyTaxMapper ::::: ", err.message)
     }
 }
+
+
 
 
 
