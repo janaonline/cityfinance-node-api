@@ -1625,6 +1625,7 @@ module.exports = {
   grantClaimAcknowledgement,
   gtcSubmission,
   ulbFormSubmitted,
+  CfrFormRejected,
   stateUlbFormTrigger
 
 };
