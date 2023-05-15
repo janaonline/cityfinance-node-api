@@ -215,7 +215,7 @@ module.exports.createOrUpdateForm = async (req, res) => {
                     return response(updatedForm, res, "Form updated.", "Form not updated.")
                 }
             }
-            
+
             if (submittedForm.status === "APPROVED" && submittedForm.actionTakenByRole !== "ULB"
                 && submittedForm.isDraft === false) {
                 return res.status(200).json({
@@ -1306,15 +1306,15 @@ function getSubHeaders(displayPriority) {
                 if (subHeaders[range]) {
                     return subHeaders[range].split(",").join("") || ""
                 }
-                else{
+                else {
                     return ","
                 }
             }
         }
     }
     catch (err) {
-    console.log("error in getSubheades :: ", err.message)
-}
+        console.log("error in getSubheades :: ", err.message)
+    }
     return ","
 }
 
@@ -1382,10 +1382,10 @@ const createDataStructureForCsv = (ulbs, results, res) => {
             let filteredResults = results.filter(item => item.ptoId.ulb._id.toString() === ulb.toString())
             let sortedResults = filteredResults.sort(sortPosition)
             for (let result of sortedResults) {
-                let censusCode = result.ptoId.ulb.censusCode != null ? result.ptoId.ulb.censusCode : result.ptoId.ulb.sbCode 
+                let censusCode = result.ptoId.ulb.censusCode != null ? result.ptoId.ulb.censusCode : result.ptoId.ulb.sbCode
                 let writableStr = result.ptoId.ulb.state.name + "," + result.ptoId.ulb.name + "," + result.ptoId.ulb.natureOfUlb + "," + result.ptoId.ulb.code + "," + censusCode + "," + MASTER_STATUS_ID[result.ptoId.currentFormStatus] + "," + getKeyByValue(years, result.ptoId.design_year.toString()) + ","
                 writableStr += getStringValue(result)
-                if (!canShow(result.type, sortedResults, updatedDatas,result.ptoId.ulb._id)) continue;
+                if (!canShow(result.type, sortedResults, updatedDatas, result.ptoId.ulb._id)) continue;
                 if (result.child && result.child.length) {
                     res.write(writableStr)
                     for (let child of result.child) {
@@ -1399,7 +1399,6 @@ const createDataStructureForCsv = (ulbs, results, res) => {
                 res.write(writableStr)
             }
         }
-
         res.end()
     }
     catch (err) {
@@ -1411,7 +1410,7 @@ const createDataStructureForCsv = (ulbs, results, res) => {
     }
 }
 
-const canShow = (key, results, updatedDatas,ulb) => {
+const canShow = (key, results, updatedDatas, ulb) => {
     try {
         if (Object.keys(skippableKeys).includes(key)) {
             let elementToFind = skippableKeys[key]
@@ -1420,10 +1419,10 @@ const canShow = (key, results, updatedDatas,ulb) => {
             // console.log("elementsToFind :::",elementToFind)
             if (!updatedDatas[keyName]) {
                 element = results.find(item => item.type === elementToFind)
-                
+
                 updatedDatas[keyName] = element
             }
-            else{
+            else {
                 element = updatedDatas[keyName]
             }
             return element.value === "Yes"
@@ -1435,6 +1434,70 @@ const canShow = (key, results, updatedDatas,ulb) => {
     }
     return true
 }
+// module.exports.getCsvForPropertyTaxMapper = async (req, res) => {
+//     let response = {
+//         "success": true,
+//         "message": "",
+//         "query": []
+//     }
+//     let status = 200
+//     try {
+//         let { getQuery } = req.query
+//         let csvCols = ["State Name",
+//             "ULB Name",
+//             "ULB Nature",
+//             "City Finance Code",
+//             "Census Code",
+//             "Overall Form Status",
+//             "Design Year",
+//             "Data Year",
+//             "Indicator Head ",
+//             "Indicator sub head",
+//             "Indicator number",
+//             "Input Value",
+//             "Indicator",
+//             "Value| Amount"]
+//         getQuery = getQuery === "true"
+//         let design_year = ObjectId(years['2023-24'])
+//         if (getQuery) {
+//             response.query = getQuery
+//             return response
+//         }
+//         let ptoFormResults = await PropertyTaxOp.find({
+//             design_year: design_year
+//         }, { _id: 1, ulb: 1 }).lean()
+
+//         let ulbNames = ptoFormResults.map(item => item.ulb)
+//         let mapperData = await PropertyTaxOpMapper.find({
+//             "ptoId": { $in: ptoFormResults.map(item => item._id) }
+//         }).populate("child").populate({
+//             "path": "ptoId",
+//             "populate": {
+//                 "path": "ulb",
+//                 "populate": {
+//                     "path": "state",
+//                     "model": "State"
+//                 }
+//             }
+//         }).lean();
+
+//         let filename = "propertyTax.csv"
+//         res.setHeader("Content-disposition", "attachment; filename=" + filename);
+//         res.writeHead(200, { "Content-Type": "text/csv;charset=utf-8,%EF%BB%BF" });
+//         res.write("\ufeff" + `${csvCols.join(",").toString()}` + "\r\n");
+//         let str = ""
+//         res.write("\ufeff" + str + "\r\n");
+//         await createDataStructureForCsv(ulbNames, mapperData, res)
+//         response.success = true
+//         response.message = "Code working";
+//     }
+//     catch (err) {
+//         response.success = true
+//         status = 400
+//         console.log("error in getCsvForPropertyTaxMapper ::::: ", err.message)
+//     }
+// }
+
 module.exports.getCsvForPropertyTaxMapper = async (req, res) => {
     let response = {
         "success": true,
@@ -1464,40 +1527,91 @@ module.exports.getCsvForPropertyTaxMapper = async (req, res) => {
             response.query = getQuery
             return response
         }
-        let ptoFormResults = await PropertyTaxOp.find({
-            design_year: design_year
-        }, { _id: 1, ulb: 1 }).lean()
-        let ulbNames = ptoFormResults.map(item => item.ulb)
-        let mapperData = await PropertyTaxOpMapper.find({
-            "ptoId": { $in: ptoFormResults.map(item => item._id) }
-        }).populate("child").populate({
-            "path": "ptoId",
-            "populate": {
-                "path": "ulb",
-                "populate": {
-                    "path": "state",
-                    "model": "State"
-                }
-            }
-        }).lean()
         let filename = "propertyTax.csv"
         res.setHeader("Content-disposition", "attachment; filename=" + filename);
         res.writeHead(200, { "Content-Type": "text/csv;charset=utf-8,%EF%BB%BF" });
         res.write("\ufeff" + `${csvCols.join(",").toString()}` + "\r\n");
-        let str = ""
-        res.write("\ufeff" + str + "\r\n");
-        // cursor.on()
-        await createDataStructureForCsv(ulbNames, mapperData, res)
-        // res.end()
-        // console.log("mapperData :: ",mapperData)
+
+        let cursor = await PropertyTaxOp.aggregate([
+            { $match: { "design_year": design_year } },
+            {
+                $lookup: {
+                    from: "propertytaxopmappers",
+                    localField: "_id",
+                    foreignField: "ptoId",
+                    as: "propertytaxopmapper"
+                }
+            },
+            {
+                $lookup: {
+                    from: "propertymapperchilddatas",
+                    localField: "_id",
+                    foreignField: "ptoId",
+                    as: "propertymapperchilddata"
+                }
+            },
+            {
+                $lookup: {
+                    from: "ulbs",
+                    localField: "ulb",
+                    foreignField: "_id",
+                    as: "ulb"
+                }
+            },
+            { $unwind: "$ulb" },
+            {
+                $lookup: {
+                    from: "states",
+                    localField: "ulb.state",
+                    foreignField: "_id",
+                    as: "state"
+                }
+            },
+            { $unwind: "$state" },
+        ]).allowDiskUse(true)
+            .cursor({ batchSize: 100 })
+            .addCursorFlag("noCursorTimeout", true)
+            .exec();
+            
+        cursor.on("data", (el) => {
+            let updatedDatas = {}
+            let filteredResults = el.propertytaxopmapper;
+            let sortedResults = filteredResults.sort(sortPosition)
+            for (let result of sortedResults) {
+                let censusCode = el.ulb.censusCode != null ? el.ulb.censusCode : el.ulb.sbCode
+                let writableStr = el.state.name + "," + el.ulb.name + "," + el.ulb.natureOfUlb + "," + el.ulb.code + "," + censusCode + "," + MASTER_STATUS_ID[el.currentFormStatus] + "," + getKeyByValue(years, el.design_year.toString()) + ","
+                writableStr += getStringValue(result)
+                if (!canShow(result.type, sortedResults, updatedDatas, el.ulb._id)) continue;
+                if (result.child && result.child.length) {
+                    res.write(writableStr)
+                    for (let childId of result.child) {
+                        let child = el?.propertymapperchilddata?.length > 0 ? el?.propertymapperchilddata.find(e => e._id.toString() == childId.toString()) : null
+                        if (child) {
+                            child.displayPriority = result.displayPriority + "." + child.replicaNumber
+                            writableStr = el.state.name + "," + el.ulb.name + "," + el.ulb.natureOfUlb + "," + el.ulb.code + "," + el.ulb.censusCode + "," + MASTER_STATUS_ID[el.currentFormStatus] + "," + getKeyByValue(years, el.design_year.toString()) + ","
+                            writableStr += getStringValue(child, true)
+                            res.write(writableStr)
+                            writableStr = ""
+                        }
+                    }
+                }
+                res.write(writableStr)
+            }
+        });
+        cursor.on("end", function (el) {
+            res.end();
+        });
         response.success = true
-        // response.data = dbResults
-        response.message = "Code working"
+        response.message = "Code working";
     }
     catch (err) {
         response.success = true
         status = 400
         console.log("error in getCsvForPropertyTaxMapper ::::: ", err.message)
     }
-    // return res.status(status).json(response)
 }
+
+
+
+
+

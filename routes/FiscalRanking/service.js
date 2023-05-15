@@ -6,8 +6,8 @@ const FiscalRanking = require("../../models/FiscalRanking");
 const FiscalRankingMapper = require("../../models/FiscalRankingMapper");
 const { FRTypeShortKey } = require('./formjson')
 const UlbLedger = require("../../models/UlbLedger");
-const {FORMIDs} = require("../../util/FormNames");
-const {saveFormHistory} = require("../../util/masterFunctions");
+const { FORMIDs } = require("../../util/FormNames");
+const { saveFormHistory } = require("../../util/masterFunctions");
 const FeedBackFiscalRanking = require("../../models/FeedbackFiscalRanking");
 const TwentyEightSlbsForm = require("../../models/TwentyEightSlbsForm");
 const Ulb = require("../../models/Ulb");
@@ -28,7 +28,7 @@ const {
   getKeyByValue,
   AggregationServices
 } = require("../CommonActionAPI/service");
-const {FRFormStatus} = require('../../util/15thFCstatus')
+const { FRFormStatus } = require('../../util/15thFCstatus')
 const Sidemenu = require("../../models/Sidemenu");
 const {
   fiscalRankingFormJson,
@@ -2655,7 +2655,7 @@ module.exports.actionTakenByMoHua = catchAsync(async (req, res) => {
     }
     const session = await mongoose.startSession();
     await session.startTransaction();
-    let params = {isDraft,role,formId}
+    let params = { isDraft, role, formId }
     await createHistory(params)
     let calculationsTabWise = await calculateAndUpdateStatusForMappers(
       session,
@@ -2674,7 +2674,7 @@ module.exports.actionTakenByMoHua = catchAsync(async (req, res) => {
       userId,
       role,
       isDraft
-    ); 
+    );
     if (feedBackResp.success) {
       response.success = true;
       response.message = "Details submitted successfully";
@@ -2782,7 +2782,7 @@ module.exports.createForm = catchAsync(async (req, res) => {
       response.message = validation.message;
       return res.status(500).json(response);
     }
-    let params = {isDraft,role,formId}
+    let params = { isDraft, role, formId }
     await createHistory(params)
     let calculationsTabWise = await calculateAndUpdateStatusForMappers(
       session,
@@ -2793,12 +2793,12 @@ module.exports.createForm = catchAsync(async (req, res) => {
       true,
       isDraft
     );
-    if(!isDraft){
+    if (!isDraft) {
       await FiscalRanking.findOneAndUpdate({
         ulb: ObjectId(req.body.ulbId),
         design_year: ObjectId(req.body.design_year),
-      },{
-        submittedDate:new Date()
+      }, {
+        submittedDate: new Date()
       })
     }
     response.success = true;
@@ -2936,12 +2936,12 @@ module.exports.FROverAllUlbData = async (req, res) => {
       csvCols,
       removeEscapesFromArr,
       labelObj: {},
-      FRKeyWithDate:["FR_auditAnnualReport_2021-22","FR_auditAnnualReport_2020-21", "FR_auditAnnualReport_2019-20"],
-      FRKeyWithFile: ["FR_accountStwreProof_2021-22","FR_appAnnualBudget_2020-21","FR_appAnnualBudget_2021-22","FR_appAnnualBudget_2022-23",
-        "FR_appAnnualBudget_2023-24","FR_auditedAnnualFySt_2018-19","FR_auditedAnnualFySt_2019-20","FR_auditedAnnualFySt_2020-21","FR_auditedAnnualFySt_2021-22",
+      FRKeyWithDate: ["FR_auditAnnualReport_2021-22", "FR_auditAnnualReport_2020-21", "FR_auditAnnualReport_2019-20"],
+      FRKeyWithFile: ["FR_accountStwreProof_2021-22", "FR_appAnnualBudget_2020-21", "FR_appAnnualBudget_2021-22", "FR_appAnnualBudget_2022-23",
+        "FR_appAnnualBudget_2023-24", "FR_auditedAnnualFySt_2018-19", "FR_auditedAnnualFySt_2019-20", "FR_auditedAnnualFySt_2020-21", "FR_auditedAnnualFySt_2021-22",
         "FR_registerGisProof_2021-22",
 
-        ]
+      ]
     });
   } catch (error) {
     return Response.BadRequest(res, {}, error.message);
@@ -3117,7 +3117,7 @@ function createCsv(params) {
       .exec();
     res.setHeader("Content-disposition", "attachment; filename=" + filename);
     res.writeHead(200, { "Content-Type": "text/csv;charset=utf-8,%EF%BB%BF" });
-    res.write("\ufeff"+ `${csvCols.join(",").toString()}` + "\r\n");
+    res.write("\ufeff" + `${csvCols.join(",").toString()}` + "\r\n");
     // res.write();
     cursor.on("data", (document) => {
       try {
@@ -3127,8 +3127,8 @@ function createCsv(params) {
         const ignoreZero = 0;
         const completionKey = "completionPercentFR";
         const mandatoryFieldsKey = "arrayOfMandatoryField";
-        if(Array.isArray(document[mandatoryFieldsKey]) && document[mandatoryFieldsKey]){
-          document["completionPercent"]= completionPercent( document[mandatoryFieldsKey], document[completionKey]);
+        if (Array.isArray(document[mandatoryFieldsKey]) && document[mandatoryFieldsKey]) {
+          document["completionPercent"] = completionPercent(document[mandatoryFieldsKey], document[completionKey]);
         }
         for (let key of dbCols) {
           /* *
@@ -3142,11 +3142,11 @@ function createCsv(params) {
           if (removeEscapesFromArr.includes(key)) {
             document[key] = removeEscapeChars(document[key]);
           }
-          
+
           if (key.split("_")[0] !== "FR") {
             if (document[key] === ignoreZero || document[key]) {
               /* A destructuring assignment.FR case in Fiscal Mapper */
-               FRFinancialCsvCase(
+              FRFinancialCsvCase(
                 key,
                 document,
                 labelObj
@@ -3171,15 +3171,15 @@ function createCsv(params) {
             ].find((el) => key === el.key);
             if (fiscalrankingmappersDocument) {
               let FRMapperKey = "value"
-              if(FRKeyWithDate.length>0 && FRKeyWithDate.includes(key)){
+              if (FRKeyWithDate.length > 0 && FRKeyWithDate.includes(key)) {
                 FRMapperKey = "date"
-              }else if(FRKeyWithFile.length>0 && FRKeyWithFile.includes(key)){
+              } else if (FRKeyWithFile.length > 0 && FRKeyWithFile.includes(key)) {
                 FRMapperKey = "file"
               }
-              if(fiscalrankingmappersDocument[FRMapperKey]){
+              if (fiscalrankingmappersDocument[FRMapperKey]) {
                 str += fiscalrankingmappersDocument[FRMapperKey] + ",";
-              }else{
-              str += " " + ",";
+              } else {
+                str += " " + ",";
               }
             } else {
               str += " " + ",";
@@ -3196,7 +3196,7 @@ function createCsv(params) {
         //   str = str2.join(",");
         // }
         str.trim()
-        res.write("\ufeff"+ str + "\r\n");
+        res.write("\ufeff" + str + "\r\n");
         // if (FRFlag) {
         //   res.write("\ufeff" + str2 + "\r\n");
         //   FRFlag = false;
@@ -3216,45 +3216,45 @@ function createCsv(params) {
   }
 }
 
-function completionPercent( document, FRCompletionNumber) {
+function completionPercent(document, FRCompletionNumber) {
   let completionPercent = 0;
   const totalMandatoryFields = 29;
-  const [objOfMandatoryFields] =  document;
+  const [objOfMandatoryFields] = document;
 
-  for( let field in objOfMandatoryFields){
-    if(objOfMandatoryFields[field]){
+  for (let field in objOfMandatoryFields) {
+    if (objOfMandatoryFields[field]) {
       completionPercent++;
     }
   }
 
-  if(FRCompletionNumber){
+  if (FRCompletionNumber) {
     completionPercent = completionPercent + FRCompletionNumber
   }
 
-  return  ((completionPercent / totalMandatoryFields) * 100 ).toFixed();
+  return ((completionPercent / totalMandatoryFields) * 100).toFixed();
 }
 
 
-async function createHistory(params){
-  try{
-    let {isDraft,role,formId} = params
-    if(!isDraft || role === userTypes.mohua){
-      let data = await FiscalRanking.find({"_id":ObjectId(formId)}).lean()
-      let mapperData  = await FiscalRankingMapper.find({"fiscal_ranking":ObjectId(formId)})
+async function createHistory(params) {
+  try {
+    let { isDraft, role, formId } = params
+    if (!isDraft || role === userTypes.mohua) {
+      let data = await FiscalRanking.find({ "_id": ObjectId(formId) }).lean()
+      let mapperData = await FiscalRankingMapper.find({ "fiscal_ranking": ObjectId(formId) })
       data[0]['fiscalMapperData'] = mapperData
       let body = {
-        "formId":FORMIDs['fiscalRanking'],
-        "recordId":formId,
-        "data":data
+        "formId": FORMIDs['fiscalRanking'],
+        "recordId": formId,
+        "data": data
       }
       let historyParams = {
         body
       }
       await saveFormHistory(historyParams)
-    } 
+    }
   }
-  catch(err){
-    console.log("error in createHistory ::: ",err.message)
+  catch (err) {
+    console.log("error in createHistory ::: ", err.message)
   }
 }
 
@@ -3278,11 +3278,11 @@ function FRFinancialCsvCase(
   labelObj
 ) {
   if (key === "indicator") {
-  //  if (document[key] === "totalOwnRevenueArea") {
-      // FRFlag = true;
-      // str2 = str;
-      // str2 += `${totalownOwnRevenueAreaLabel}, ${
-        // document["fy_21_22_cash"] ?? ""
+    //  if (document[key] === "totalOwnRevenueArea") {
+    // FRFlag = true;
+    // str2 = str;
+    // str2 += `${totalownOwnRevenueAreaLabel}, ${
+    // document["fy_21_22_cash"] ?? ""
     //   // }`;
     // }
     document[key] = removeEscapeChars(labelObj[document[key]]);
@@ -3684,23 +3684,23 @@ function computeQuery(params) {
                     then: "$file.url",
                     else: {
                       "$cond": {
-                          "if": {
-                              "$and": [
-                                  {
-                                      "$eq": [
-                                          "$type",
-                                          "auditedAnnualFySt"
-                                      ]
-                                  },
-                                  {
-                                    "$eq": ["$modelName","ULBLedger"]
-                                   }
+                        "if": {
+                          "$and": [
+                            {
+                              "$eq": [
+                                "$type",
+                                "auditedAnnualFySt"
                               ]
-                          },
-                          "then": "Already Uploaded on Cityfinance",
-                          "else": null
+                            },
+                            {
+                              "$eq": ["$modelName", "ULBLedger"]
+                            }
+                          ]
+                        },
+                        "then": "Already Uploaded on Cityfinance",
+                        "else": null
                       }
-                  },
+                    },
                   },
                 },
                 modelName: 1,
