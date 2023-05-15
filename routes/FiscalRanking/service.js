@@ -2743,6 +2743,7 @@ module.exports.actionTakenByMoHua = catchAsync(async (req, res) => {
   };
   try {
     let { ulbId, formId, actions, design_year, isDraft,currentFormStatus } = req.body;
+    console.log("currentFormStatus :: ",currentFormStatus)
     let { role, _id: userId } = req.decoded;
     let validation = await checkUndefinedValidations({
       ulb: ulbId,
