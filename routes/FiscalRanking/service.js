@@ -770,18 +770,19 @@ exports.getView = async function (req, res, next) {
       "paid_property_tax",
       "auditorName",
       "caMembershipNo",
+      "signedCopyOfFile",
+      "otherUpload",
     ];
     for (let index = 0; index < keys.length; index++) {
       if (viewOne.hasOwnProperty(keys[index])) {
         let obj = viewOne[keys[index]];
-
         viewOne[keys[index]] = getColumnWiseData(
           keys[index],
           obj,
           viewOne.isDraft,
           "",
           role,
-          data.currentFormStatus
+          data?.currentFormStatus
         );
       } else {
         viewOne[keys[index]] = getColumnWiseData(
@@ -2518,7 +2519,6 @@ async function calculateAndUpdateStatusForMappers(
           );
         } else {
           if (
-            
             key === priorTabsForFiscalRanking["basicUlbDetails"] ||
             key === priorTabsForFiscalRanking["conInfo"] ||
             fiscalRankingKeys.includes(k)

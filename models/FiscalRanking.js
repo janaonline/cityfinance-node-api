@@ -180,6 +180,7 @@ const fiscalRankingSchema = new Schema(
                 type: String,
                 enum: {
                     values: ["PENDING", "APPROVED", "REJECTED"],
+                    default:"PENDING",
                     message: "ERROR: STATUS BE EITHER 'PENDING'/ 'APPROVED' / 'REJECTED'",
                 },
             },
@@ -192,6 +193,7 @@ const fiscalRankingSchema = new Schema(
                 type: String,
                 enum: {
                     values: ["PENDING", "APPROVED", "REJECTED"],
+                    default:"PENDING",
                     message: "ERROR: STATUS BE EITHER 'PENDING'/ 'APPROVED' / 'REJECTED'",
                 },
             },
