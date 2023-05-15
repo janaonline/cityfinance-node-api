@@ -1408,14 +1408,8 @@ const createDataStructureForCsv = (ulbs, results, res) => {
             let filteredResults = results.filter(item => item.ptoId.ulb._id.toString() === ulb.toString())
             let sortedResults = filteredResults.sort(sortPosition)
             for (let result of sortedResults) {
-<<<<<<< HEAD
                 let censusCode = result.ptoId.ulb.censusCode != null ? result.ptoId.ulb.censusCode : result.ptoId.ulb.sbCode
                 let writableStr = result.ptoId.ulb.state.name + "," + result.ptoId.ulb.name + "," + result.ptoId.ulb.natureOfUlb + "," + result.ptoId.ulb.code + "," + censusCode + "," + MASTER_STATUS_ID[result.ptoId.currentFormStatus] + "," + getKeyByValue(years, result.ptoId.design_year.toString()) + ","
-=======
-                let status = MASTER_STATUS_ID[result.ptoId.currentFormStatus] || ""
-                let censusCode = result.ptoId.ulb.censusCode != null ? result.ptoId.ulb.censusCode : result.ptoId.ulb.sbCode 
-                let writableStr = result.ptoId.ulb.state.name + "," + result.ptoId.ulb.name + "," + result.ptoId.ulb.natureOfUlb + "," + result.ptoId.ulb.code + "," + censusCode + "," + status + "," + getKeyByValue(years, result.ptoId.design_year.toString()) + ","
->>>>>>> aeab7b8fae64aab55a48756bfece6d80a6bb1a6b
                 writableStr += getStringValue(result)
                 if (!canShow(result.type, sortedResults, updatedDatas, result.ptoId.ulb._id)) continue;
                 if (result.child && result.child.length) {
