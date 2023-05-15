@@ -2837,7 +2837,6 @@ async function checkIfFormIdExistsOrNot(
         actionTakenByRole: role,
         actionTakenBy: userId,
         status: "PENDING",
-        currentFormStatus:currentFormStatus,
         isDraft,
         currentFormStatus: formBodyStatus
       });
@@ -2867,6 +2866,7 @@ async function checkIfFormIdExistsOrNot(
       validation.message = "form for this ulb and design year already exists";
     }
     validation.valid = false;
+    console.log(err)
     console.log("error in checkIfFormIdExistsornot ::: ", err.message);
   }
   return validation;
@@ -2879,7 +2879,7 @@ module.exports.createForm = catchAsync(async (req, res) => {
   const session = await mongoose.startSession();
   await session.startTransaction();
   try {
-    let { ulbId, formId, actions, design_year, isDraft,status:formBodyStatus } = req.body;
+    let { ulbId, formId, actions, design_year, isDraft,status:currentFormStatus } = req.body;
     let { role, _id: userId } = req.decoded;
     let formIdValidations = await checkIfFormIdExistsOrNot(
       formId,
@@ -2888,7 +2888,7 @@ module.exports.createForm = catchAsync(async (req, res) => {
       isDraft,
       role,
       userId,
-      formBodyStatus
+      currentFormStatus
     );
     if (!formIdValidations.valid) {
       response.message = formIdValidations.message;
@@ -2906,8 +2906,8 @@ module.exports.createForm = catchAsync(async (req, res) => {
       return res.status(500).json(response);
     }
     let masterFormId = FORMIDs['fiscalRanking'];
-    let params = {isDraft,role,userId,formId,masterFormId, formBodyStatus}
-    await createHistory(params)
+    let params = {isDraft,role,userId,formId,masterFormId, currentFormStatus}
+    // await createHistory(params)
     let calculationsTabWise = await calculateAndUpdateStatusForMappers(
       session,
       actions,
