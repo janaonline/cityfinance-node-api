@@ -16,6 +16,10 @@ const fiscalRankingMapperSchema = new Schema(
                 message: "ERROR: STATUS BE EITHER 'PENDING'/ 'APPROVED' / 'REJECTED'",
             },
         },
+        rejectReason :{
+            type:String,
+            default:""
+        },
         isActive: { type: Boolean, default: 1 },
         modelName: modelSchema(),
         type: {

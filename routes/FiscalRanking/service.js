@@ -21,6 +21,7 @@ const {
 const userTypes = require("../../util/userTypes");
 const { dateFormatter } = require("../../util/dateformatter");
 // const converter = require('json-2-csv');
+
 const {
   calculateKeys,
   canTakeActionOrViewOnly,
@@ -39,6 +40,9 @@ const {
   jsonObject,
   fiscalRankingTabs,
   notRequiredValidations,
+  statusList,
+  statusTracker,
+  questionLevelStatus
 } = require("./fydynemic");
 const catchAsync = require("../../util/catchAsync");
 const State = require("../../models/State");
@@ -392,17 +396,26 @@ function assignCalculatedValues(fyDynemic, viewONe) {
 }
 
 /* A function which is used to get the data from the database. */
-const getReadOnly = (status, isDraft) => {
-  if (status === "REJECTED" || isDraft) {
-    return false;
-  } else if (status === "PENDING" && isDraft == null) {
-    return false;
-  } else {
-    return true;
+const getReadOnly = (status, isDraft,role,questionStatus) => {
+  let allowedMainLevelStatus = [statusTracker.IP,statusTracker.NS,statusTracker.RBP]
+  let allowedQuestionLevelStatus = [questionLevelStatus['3']]
+  let specialCases = [statusTracker.RBP,questionLevelStatus['1']]
+  if(status === undefined && questionStatus === undefined){
+    return false
   }
+  if(role === "MoHUA"){
+    return true
+  }
+  if(!allowedMainLevelStatus.includes(status) && !allowedQuestionLevelStatus.includes(questionStatus)){
+    return true
+  }
+  if(specialCases.includes(status) && specialCases.includes(questionStatus)){
+    return true
+  }
+  return false
 };
 
-const getColumnWiseData = (key, obj, isDraft, dataSource = "") => {
+const getColumnWiseData = (key, obj, isDraft, dataSource = "",role,formStatus) => {
   switch (key) {
     case "populationFr":
       return {
@@ -414,7 +427,8 @@ const getColumnWiseData = (key, obj, isDraft, dataSource = "") => {
           "4"
         ),
         ...obj,
-        readonly: getReadOnly(obj.status, isDraft),
+        readonly: getReadOnly(formStatus, isDraft,role,obj.status),
+        // rejectReason:"",
       };
     case "population11":
       return {
@@ -427,6 +441,7 @@ const getColumnWiseData = (key, obj, isDraft, dataSource = "") => {
         ),
         ...obj,
         readonly: true,
+        // rejectReason:"",
       };
     case "webLink":
       return {
@@ -438,7 +453,8 @@ const getColumnWiseData = (key, obj, isDraft, dataSource = "") => {
           "5"
         ),
         ...obj,
-        readonly: getReadOnly(obj.status, isDraft),
+        readonly: getReadOnly(formStatus, isDraft,role,obj.status),
+        // rejectReason:"",
       };
     case "nameCmsnr":
       return {
@@ -450,13 +466,21 @@ const getColumnWiseData = (key, obj, isDraft, dataSource = "") => {
           "6"
         ),
         ...obj,
-        readonly: getReadOnly(obj.status, isDraft),
+        readonly: getReadOnly(formStatus, isDraft,role,obj.status),
+        // rejectReason:"",
       };
     case "auditorName":
+      console.log({
+        ...getInputKeysByType("text", "", "Auditor Name", dataSource, "7"),
+        ...obj,
+        readonly: getReadOnly(formStatus, isDraft,role,obj.status),
+        // rejectReason:"",
+      })
       return {
         ...getInputKeysByType("text", "", "Auditor Name", dataSource, "7"),
         ...obj,
-        readonly: getReadOnly(obj.status, isDraft),
+        readonly: getReadOnly(formStatus, isDraft,role,obj.status),
+        // rejectReason:"",
       };
     case "caMembershipNo":
       return {
@@ -469,7 +493,8 @@ const getColumnWiseData = (key, obj, isDraft, dataSource = "") => {
           false
         ),
         ...obj,
-        readonly: getReadOnly(obj.status, isDraft),
+        readonly: getReadOnly(formStatus, isDraft,role,obj.status),
+        // rejectReason:"",
       };
     case "nameOfNodalOfficer":
       return {
@@ -481,7 +506,8 @@ const getColumnWiseData = (key, obj, isDraft, dataSource = "") => {
           "1"
         ),
         ...obj,
-        readonly: getReadOnly(obj.status, isDraft),
+        readonly: getReadOnly(formStatus, isDraft,role,obj.status),
+        // rejectReason:"",
       };
     case "designationOftNodalOfficer":
       return {
@@ -493,7 +519,8 @@ const getColumnWiseData = (key, obj, isDraft, dataSource = "") => {
           "2"
         ),
         ...obj,
-        readonly: getReadOnly(obj.status, isDraft),
+        readonly: getReadOnly(formStatus, isDraft,role,obj.status),
+        // rejectReason:"",
       };
     case "email":
       return {
@@ -505,7 +532,8 @@ const getColumnWiseData = (key, obj, isDraft, dataSource = "") => {
           "3"
         ),
         ...obj,
-        readonly: getReadOnly(obj.status, isDraft),
+        readonly: getReadOnly(formStatus, isDraft,role,obj.status),
+        // rejectReason:"",
       };
     case "mobile":
       return {
@@ -519,7 +547,8 @@ const getColumnWiseData = (key, obj, isDraft, dataSource = "") => {
           true
         ),
         ...obj,
-        readonly: getReadOnly(obj.status, isDraft),
+        readonly: getReadOnly(formStatus, isDraft,role,obj.status),
+        // rejectReason:"",
       };
     case "waterSupply":
       return {
@@ -531,7 +560,8 @@ const getColumnWiseData = (key, obj, isDraft, dataSource = "") => {
           "9"
         ),
         ...obj,
-        readonly: getReadOnly(obj.status, isDraft),
+        readonly: getReadOnly(formStatus, isDraft,role,obj.status),
+        // rejectReason:"",
       };
     case "sanitationService":
       return {
@@ -543,7 +573,8 @@ const getColumnWiseData = (key, obj, isDraft, dataSource = "") => {
           "10"
         ),
         ...obj,
-        readonly: getReadOnly(obj.status, isDraft),
+        readonly: getReadOnly(formStatus, isDraft,role,obj.status),
+        // rejectReason:"",
       };
     case "propertyWaterTax":
       return {
@@ -558,7 +589,8 @@ const getColumnWiseData = (key, obj, isDraft, dataSource = "") => {
           "Tax revenue levied for provision of water supply services."
         ),
         ...obj,
-        readonly: getReadOnly(obj.status, isDraft),
+        readonly: getReadOnly(formStatus, isDraft,role,obj.status),
+        // rejectReason:"",
       };
     case "propertySanitationTax":
       return {
@@ -573,7 +605,8 @@ const getColumnWiseData = (key, obj, isDraft, dataSource = "") => {
           "Tax revenue levied for provision of sanitation & sewerage service delivery."
         ),
         ...obj,
-        readonly: getReadOnly(obj.status, isDraft),
+        readonly: getReadOnly(formStatus, isDraft,role,obj.status),
+        // rejectReason:"",
       };
     default:
     // code block
@@ -636,6 +669,7 @@ async function getPreviousYearValues(pf, ulbData) {
 exports.getView = async function (req, res, next) {
   try {
     let condition = {};
+    let {role} = req.decoded
     if (req.query.ulb && req.query.design_year) {
       condition = {
         ulb: ObjectId(req.query.ulb),
@@ -656,7 +690,7 @@ exports.getView = async function (req, res, next) {
       fyData = await FiscalRankingMapper.find({
         fiscal_ranking: data._id,
       }).lean();
-      data["populationFr"] = {
+      data["populationFr"] = {...data.populationFr,
         value: data.populationFr.value
           ? data.populationFr.value
           : twEightSlbs
@@ -665,7 +699,7 @@ exports.getView = async function (req, res, next) {
         readonly: false,
         modelName: twEightSlbs?.population > 0 ? "TwentyEightSlbForm" : "",
       };
-      data["population11"] = {
+      data["population11"] = {...data.population11,
         value: data.population11.value
           ? data.population11.value
           : ulbPData
@@ -676,7 +710,6 @@ exports.getView = async function (req, res, next) {
       };
       data["fyData"] = fyData;
       viewOne = data;
-      // console.log("viewOne ::: ",viewOne.population11)
     } else {
       viewOne = {
         ulb: null,
@@ -686,39 +719,53 @@ exports.getView = async function (req, res, next) {
           readonly: true,
           status: ulbPData?.population > 0 ? "NA" : "PENDING",
           modelName: ulbPData?.population > 0 ? "TwentyEightSlbForm" : "",
+          rejectReason:"",
         },
         populationFr: {
           value: twEightSlbs ? twEightSlbs?.population : "",
           readonly: false,
           status: "PENDING",
           modelName: twEightSlbs?.population > 0 ? "Ulb" : "",
+          rejectReason:"",
         },
         fy_21_22_cash: {
           year: null,
           type: null,
           value: null,
           status: "PENDING",
+          rejectReason:"",
         },
         signedCopyOfFile: {
           name: null,
           url: null,
           required: true,
           status: "PENDING",
+          rejectReason:"",
         },
         otherUpload: {
           name: null,
           url: null,
           required: false, // IMPORTANT :: if changed inform frotend
           status: "PENDING",
+          rejectReason:"",
         },
         fy_21_22_online: {
           type: null,
           value: null,
           year: null,
           status: "PENDING",
+          rejectReason:"",
+        },
+        auditorName:{
+          type: null,
+          value: null,
+          year: null,
+          status: "PENDING",
+          rejectReason:"",
         },
         fyData: [],
         isDraft: null,
+        currentFormStatus : 1
       };
     }
 
@@ -740,17 +787,19 @@ exports.getView = async function (req, res, next) {
       "paid_property_tax",
       "auditorName",
       "caMembershipNo",
+      "signedCopyOfFile",
+      "otherUpload",
     ];
-    console.log(viewOne.po);
     for (let index = 0; index < keys.length; index++) {
       if (viewOne.hasOwnProperty(keys[index])) {
         let obj = viewOne[keys[index]];
-
         viewOne[keys[index]] = getColumnWiseData(
           keys[index],
           obj,
           viewOne.isDraft,
-          ""
+          "",
+          role,
+          data?.currentFormStatus
         );
       } else {
         viewOne[keys[index]] = getColumnWiseData(
@@ -760,7 +809,9 @@ exports.getView = async function (req, res, next) {
             status: "PENDING",
           },
           null,
-          ""
+          "",
+          role,
+          data?.currentFormStatus
         );
       }
     }
@@ -785,7 +836,6 @@ exports.getView = async function (req, res, next) {
     });
     for (let sortKey in fyDynemic) {
       let subData = fyDynemic[sortKey];
-
       // console.log("subData  >>>> 1::: ",subData)
       for (let key in subData) {
         let calculationField = subData[key].calculatedFrom ? true : false;
@@ -812,13 +862,15 @@ exports.getView = async function (req, res, next) {
                 } else {
                   pf["value"] = singleFydata ? singleFydata.value : "";
                 }
+                pf["status"] = singleFydata.status
+                pf["rejectReason"] = singleFydata.rejectReason
                 pf["modelName"] = singleFydata ? singleFydata.modelName : "";
                 pf["status"] = singleFydata.status;
                 if (subData[key].calculatedFrom === undefined) {
                   pf["readonly"] =
                     singleFydata.status && singleFydata.status == "NA"
                       ? true
-                      : getReadOnly(singleFydata.status, viewOne.isDraft);
+                      : getReadOnly(data?.currentFormStatus, viewOne.isDraft,role,singleFydata.status);
                 } else {
                   pf["readonly"] = true;
                 }
@@ -875,6 +927,7 @@ exports.getView = async function (req, res, next) {
                   pf["file"] = singleFydata.file;
                   pf["status"] = singleFydata.status;
                   pf["modelName"] = singleFydata.modelName;
+                  pf['rejectReason'] = singleFydata.rejectReason
                   if (subData[key].calculatedFrom === undefined) {
                     pf["required"] =
                       singleFydata.status && singleFydata.status == "NA"
@@ -883,7 +936,7 @@ exports.getView = async function (req, res, next) {
                     pf["readonly"] =
                       singleFydata.status && singleFydata.status == "NA"
                         ? true
-                        : getReadOnly(singleFydata.status, viewOne.isDraft);
+                        : getReadOnly(data?.currentFormStatus, viewOne.isDraft,role,singleFydata.status);
                   } else {
                     pf["readonly"] = true;
                   }
@@ -964,11 +1017,12 @@ exports.getView = async function (req, res, next) {
                     pf["modelName"] = singleFydata
                       ? singleFydata.modelName
                       : "";
+                    pf["rejectReason"] = singleFydata ?  singleFydata.rejectReason : ""
                     if (subData[key].calculatedFrom === undefined) {
                       pf["readonly"] =
                         singleFydata && singleFydata.status == "NA"
                           ? true
-                          : getReadOnly(singleFydata.status, viewOne.isDraft);
+                          : getReadOnly(data?.currentFormStatus, viewOne.isDraft,role,singleFydata.status);
                     } else {
                       pf["readonly"] = true;
                     }
@@ -1043,6 +1097,7 @@ exports.getView = async function (req, res, next) {
         : req.query.design_year,
       isDraft: viewOne.isDraft,
       tabs: modifiedTabs,
+      currentFormStatus:viewOne.currentFormStatus,
       financialYearTableHeader,
     };
     return res
@@ -1052,7 +1107,7 @@ exports.getView = async function (req, res, next) {
     console.log("err", error);
     return res
       .status(400)
-      .json({ status: false, message: "Something error wrong!" });
+      .json({ status: false, message: "Something went wrong!" });
   }
 };
 
@@ -1991,7 +2046,7 @@ function getColumns() {
     censusCode: "Census/SB Code",
     formStatus: "Status",
     cantakeAction: "Action",
-    populationCategory:"Population Category"
+    apopulationCategory:"Population Category"
   };
 }
 
@@ -2377,6 +2432,7 @@ async function updateQueryForFiscalRanking(
           payload["displayPriority"] = dynamicObj.position;
         } else {
           payload["status"] = years.status;
+          payload["rejectReason"] = years?.rejectReason
         }
         let up = await FiscalRankingMapper.findOneAndUpdate(filter, payload, {
           upsert: upsert,
@@ -2438,6 +2494,7 @@ async function updateFiscalRankingForm(
           status = obj[key].status;
         }
         payload[`${key}.status`] = status;
+        payload[`${key}.rejectReason`] = obj[key]?.rejectReason;
       }
     }
     // console.log("payload",payload);process.exit()
@@ -2497,7 +2554,7 @@ async function calculateAndUpdateStatusForMappers(
       let key = tab.id;
       let obj = tab.data;
       let temp = {
-        comment: tab.feedback.comment,
+        comment: tab?.feedback?.comment,
         status: [],
       };
       for (var k in tab.data) {
@@ -2535,8 +2592,8 @@ async function calculateAndUpdateStatusForMappers(
           ) {
             let statueses = getStatusesFromObject(tab.data, "status", [
               "population11",
+              "populationFr"
             ]);
-
             let finalStatus = statueses.every((item) => item === "APPROVED");
             temp["status"].push(finalStatus);
             await updateFiscalRankingForm(
@@ -2612,7 +2669,7 @@ async function saveFeedbacksAndForm(
   design_year,
   userId,
   role,
-  isDraft
+  formStatus
 ) {
   let validator = {
     success: true,
@@ -2623,49 +2680,15 @@ async function saveFeedbacksAndForm(
   let payloadForForm = {
     actionTakenBy: ObjectId(userId),
     actionTakenByRole: role,
+    currentFormStatus:formStatus,
   };
   let filterForForm = {
-    _id: ObjectId(formId),
+    // _id: ObjectId(formId),
+    ulb:ObjectId(ulbId),
+    design_year:ObjectId(design_year)
+
   };
   try {
-    for (var calc in calculatedStatus) {
-      let filter = {
-        ulb: ObjectId(ulbId),
-        fiscal_ranking: ObjectId(formId),
-        design_year: ObjectId(design_year),
-        tab: calc,
-      };
-      let payload = {
-        ulb: ObjectId(ulbId),
-        fiscal_ranking: ObjectId(formId),
-        design_year: ObjectId(design_year),
-        status:
-          calculatedStatus[calc].status == false ||
-            calculatedStatus[calc].status == "NA"
-            ? "REJECTED"
-            : "APPROVED",
-        tab: calc,
-        comment: calculatedStatus[calc].comment,
-      };
-
-      let feedBack = await FeedBackFiscalRanking.findOneAndUpdate(
-        filter,
-        payload,
-        { upsert: true }
-      );
-      delete filter.tab;
-      filter["_id"] = filter["fiscal_ranking"];
-      delete filter.fiscal_ranking;
-      mainStatus_arr.push(calculatedStatus[calc].status);
-    }
-
-    if (!isDraft) {
-      calc = mainStatus_arr.every((item) => item == true);
-      status = calc ? "APPROVED" : "REJECTED";
-      payloadForForm["status"] = status;
-    } else {
-      payloadForForm["status"] = "PENDING";
-    }
     let updateForm = await FiscalRanking.findOneAndUpdate(
       filterForForm,
       payloadForForm
@@ -2679,6 +2702,17 @@ async function saveFeedbacksAndForm(
   return validator;
 }
 
+const decideOverAllStatus = (statusObject)=>{
+  try{
+    let isFormApproved = Object.values(statusObject).every(item => item === true)
+    return isFormApproved ? 11 : 10
+  }
+  catch(err){
+    console.log("error in decideOverAllStatus :: ",err.message)
+  }
+  return 9
+}
+
 module.exports.actionTakenByMoHua = catchAsync(async (req, res) => {
   const response = {
     success: false,
@@ -2689,7 +2723,6 @@ module.exports.actionTakenByMoHua = catchAsync(async (req, res) => {
     let { role, _id: userId } = req.decoded;
     let validation = await checkUndefinedValidations({
       ulb: ulbId,
-      formId: formId,
       actions: actions,
       design_year: design_year,
     });
@@ -2714,7 +2747,10 @@ module.exports.actionTakenByMoHua = catchAsync(async (req, res) => {
       design_year,
       false,
       isDraft
-    );
+    );    let formStatus = currentFormStatus
+    if(currentFormStatus != 9){
+      formStatus = await  decideOverAllStatus(calculationsTabWise)
+    }
     let feedBackResp = await saveFeedbacksAndForm(
       calculationsTabWise,
       ulbId,
@@ -2722,7 +2758,7 @@ module.exports.actionTakenByMoHua = catchAsync(async (req, res) => {
       design_year,
       userId,
       role,
-      isDraft
+      formStatus
     ); 
     if (feedBackResp.success) {
       response.success = true;
@@ -2768,6 +2804,7 @@ async function checkIfFormIdExistsOrNot(
         actionTakenByRole: role,
         actionTakenBy: userId,
         status: "PENDING",
+        currentFormStatus:currentFormStatus,
         isDraft,
         currentFormStatus: formBodyStatus
       });
@@ -2871,6 +2908,7 @@ module.exports.createForm = catchAsync(async (req, res) => {
       {
         $set: {
           isDraft: true,
+          currentFormStatus:2
         },
       }
     );
