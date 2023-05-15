@@ -6,7 +6,7 @@ const FiscalRanking = require("../../models/FiscalRanking");
 const FiscalRankingMapper = require("../../models/FiscalRankingMapper");
 const { FRTypeShortKey } = require('./formjson')
 const UlbLedger = require("../../models/UlbLedger");
-const {FORMIDs, MASTER_STATUS, FORM_LEVEL,} = require("../../util/FormNames");
+const {FORMIDs, MASTER_STATUS, FORM_LEVEL,POPULATION_TYPE} = require("../../util/FormNames");
 const {saveCurrentStatus, saveFormHistory, saveStatusHistory} = require("../../util/masterFunctions");
 const FeedBackFiscalRanking = require("../../models/FeedbackFiscalRanking");
 const TwentyEightSlbsForm = require("../../models/TwentyEightSlbsForm");
@@ -26,7 +26,8 @@ const {
   canTakeActionOrViewOnly,
   calculateStatusForFiscalRankingForms,
   getKeyByValue,
-  AggregationServices
+  AggregationServices,
+  canTakeActionOrViewOnlyMasterForm
 } = require("../CommonActionAPI/service");
 const {FRFormStatus} = require('../../util/15thFCstatus')
 const Sidemenu = require("../../models/Sidemenu");
@@ -1545,9 +1546,32 @@ function getPopulationCondition() {
   try {
     let obj = {
       $cond: {
-        if: { $eq: ["$isMillionPlus", "Yes"] },
-        then: "Million Plus",
-        else: "Non Million",
+        if: {
+          $gt: ["$population", 4000000],
+        },
+        then: "4Mn+",
+        else: {
+          $cond: {
+            if: {
+              $lt: ["$population", 100000],
+            },
+            then: "<100K",
+            else: {
+              $cond: {
+                if: {
+                  $and: [
+                    { $gte: ["$population", 100000] },
+                    {
+                      $lt: ["$population", 1000000],
+                    },
+                  ],
+                },
+                then: "100K to 1M",
+                else: "1M to 4M",
+              },
+            },
+          },
+        },
       },
     };
     return obj;
@@ -1784,6 +1808,8 @@ function getFormQuery(queryArr, collectionName, design_year, csv) {
           status: 1,
           actionTakenByRole: 1,
           isDraft: 1,
+          currentFormStatus:1,
+          modifiedAt:1
         },
       });
     }
@@ -1854,7 +1880,8 @@ function getAggregateQuery(
   limit,
   newFilter,
   csv,
-  stateId = null
+  stateId = null,
+  sort
 ) {
   let query = [];
   try {
@@ -1906,7 +1933,14 @@ function getAggregateQuery(
       getProjectionQueries(query, collectionName, skip, limit, newFilter, csv);
     }
     // stage 7 sort by formData
-    query.push({ $sort: { formData: -1 } });
+    let sortObj ={
+      "formData.modifiedAt": -1,
+    }
+    if(sort){
+      let splitSort = sort.split('_');
+      sortObj[splitSort[0]] = Number(splitSort[1])
+    }
+    query.push({ $sort: sortObj });
   } catch (err) {
     console.log("error in getAggregateQuery :::: ", err);
   }
@@ -1925,10 +1959,11 @@ function searchQueries(req) {
     filter["censusCode"] =
       req.query.censusCode != "null" ? req.query.censusCode : "";
     filter["populationType"] =
-      req.query.populationType != "null" ? req.query.populationType : "";
+      req.query.populationType != "null" ? POPULATION_TYPE[req.query.populationType] : "";
     filter["ulbType"] = req.query.ulbType != "null" ? req.query.ulbType : "";
     filter["UA"] = req.query.UA != "null" ? req.query.UA : "";
-    filter["status"] = req.query.status != "null" ? req.query.status : "";
+    // filter["status"] = req.query.status != "null" ? req.query.status : "";
+    filter['formData.currentFormStatus'] = req.query.status != 'null' ? Number(req.query.status) : ""
     filter["filled_audited"] =
       req.query.filled1 != "null" ? req.query.filled1 : "";
     filter["filled_provisional"] =
@@ -1938,7 +1973,12 @@ function searchQueries(req) {
   }
   return filter;
 }
+function populationTypeFilter(populationType){
+  let filterObj = {
 
+  }
+
+}
 /**
  * Function that returns dynamic column name for tables in the frontend
  * @returns a javascript object with column names
@@ -2007,18 +2047,23 @@ function updateActions(data, role, formType) {
         el["formStatus"] = "Not Started";
         el["cantakeAction"] = false;
       } else {
-        el["formStatus"] = calculateStatusForFiscalRankingForms(
-          el.formData.status,
-          el.formData.actionTakenByRole,
-          el.formData.isDraft,
-          formType
-        );
-        el["cantakeAction"] =
-          role === "ADMIN" || role === userTypes.state
-            ? false
-            : canTakeActionOrViewOnly(el, role, true);
+        let params = {status: el.formData.currentFormStatus, userRole: role}
+        el['cantakeAction'] = role === "ADMIN" || role === userTypes.state ? false : canTakeActionOrViewOnlyMasterForm(params);
+        el['formStatus'] = MASTER_STATUS_ID[el.formData.currentFormStatus]
+      
+        // el["formStatus"] = calculateStatusForFiscalRankingForms(
+        //   el.formData.status,
+        //   el.formData.actionTakenByRole,
+        //   el.formData.isDraft,
+        //   formType
+        // );
+        // el["cantakeAction"] =
+        //   role === "ADMIN" || role === userTypes.state
+        //     ? false
+        //     : canTakeActionOrViewOnly(el, role, true);
       }
       return el;
+      // el['formStatus'] = calculateStatus(el.formData.status, el.formData.actionTakenByRole, el.formData.isDraft, formType);
     });
   } catch (err) {
     console.log("error in updateActions ::: ", err.message);
@@ -2060,6 +2105,7 @@ module.exports.getFRforms = catchAsync(async (req, res) => {
     let aggregateQuery = {};
     let skip = req.query.skip || 0;
     let limit = req.query.limit || 10;
+    let sort = req?.query?.sort
     let { role } = req.decoded;
     let {
       design_year: year,
@@ -2091,6 +2137,10 @@ module.exports.getFRforms = catchAsync(async (req, res) => {
     let keys = calculateKeys(searchFilters["status"], role);
     Object.assign(searchFilters, keys);
     let newFilter = await Service.mapFilterNew(searchFilters);
+    if (Number(req.query.status) === MASTER_STATUS['Not Started']) {// to apply not started filter
+      Object.assign(newFilter, { formData: "" });
+      delete newFilter['formData.currentFormStatus']
+    }  
     // Code that will get the dynamic names when sidemenu is implemented
     //let formTab = await Sidemenu.findOne({ _id: ObjectId(formId) }).lean();
     // get dynamic path and collection name
@@ -2106,7 +2156,8 @@ module.exports.getFRforms = catchAsync(async (req, res) => {
       limit,
       newFilter,
       csv,
-      stateId
+      stateId,
+      sort
     );
     if (getQuery == "true")
       return res.status(200).json({
@@ -3274,7 +3325,7 @@ async function createHistory(params){
       // await session.commitTransaction();
       // return Response.OK(res, {}, "Form Submitted");
     } else if (
-      formBodyStatus === MASTER_STATUS["Under Review By MoHUA"]
+      formBodyStatus === MASTER_STATUS["Verification Not Started"]
     ) {
       let data = await FiscalRanking.find({"_id":formId}).lean()
       let mapperData  = await FiscalRankingMapper.find({"fiscal_ranking":formId})
@@ -3292,7 +3343,7 @@ async function createHistory(params){
       let currentStatusData = {
         formId: masterFormId,
         recordId: formId,
-        status: MASTER_STATUS["Under Review By MoHUA"],
+        status: MASTER_STATUS["Verification Not Started"],
         level: FORM_LEVEL["form"],
         shortKey: "form_level",
         rejectReason: "",
