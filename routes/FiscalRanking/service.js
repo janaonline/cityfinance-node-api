@@ -793,6 +793,7 @@ exports.getView = async function (req, res, next) {
     for (let index = 0; index < keys.length; index++) {
       if (viewOne.hasOwnProperty(keys[index])) {
         let obj = viewOne[keys[index]];
+        console.log("obj :: ",obj)
         viewOne[keys[index]] = getColumnWiseData(
           keys[index],
           obj,
@@ -801,6 +802,7 @@ exports.getView = async function (req, res, next) {
           role,
           data?.currentFormStatus
         );
+        console.log(viewOne[keys[index]])
       } else {
         viewOne[keys[index]] = getColumnWiseData(
           keys[index],
@@ -847,6 +849,7 @@ exports.getView = async function (req, res, next) {
             pf,
             fyDynemic: subData,
           };
+          pf['readonly'] =  getReadOnly(data?.currentFormStatus, viewOne.isDraft,role,"PENDING");
           if (pf?.code?.length > 0) {
             pf["status"] = null;
             pf["modelName"] = "";
@@ -1065,9 +1068,6 @@ exports.getView = async function (req, res, next) {
                   pf["modelName"] = "ULBLedger";
                   // console.log(">>>>>>>>>>>> ",pf['value'])
                 }
-              }
-              else{
-                pf['readonly'] =  getReadOnly(data?.currentFormStatus, viewOne.isDraft,role,"PENDING");
               }
             }
           }
