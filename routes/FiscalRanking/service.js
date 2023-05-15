@@ -399,11 +399,11 @@ const getReadOnly = (status, isDraft,role,questionStatus) => {
   let allowedMainLevelStatus = [statusTracker.IP,statusTracker.NS,statusTracker.RBP]
   let allowedQuestionLevelStatus = [questionLevelStatus['3']]
   let specialCases = [statusTracker.RBP,questionLevelStatus['1']]
-  if(status === undefined && questionStatus === undefined){
-    return false
-  }
-  if(role === "MoHUA"){
+  if(role !== "ULB"){
     return true
+  }
+  if(status === undefined || questionStatus === undefined){
+    return false
   }
   if(!allowedMainLevelStatus.includes(status) && !allowedQuestionLevelStatus.includes(questionStatus)){
     return true
@@ -866,13 +866,11 @@ exports.getView = async function (req, res, next) {
                 pf["modelName"] = singleFydata ? singleFydata.modelName : "";
                 pf["status"] = singleFydata.status;
                 if (subData[key].calculatedFrom === undefined) {
-                  pf["readonly"] =
-                    singleFydata.status && singleFydata.status == "NA"
-                      ? true
-                      : getReadOnly(data?.currentFormStatus, viewOne.isDraft,role,singleFydata.status);
+                  pf["readonly"] =  getReadOnly(data?.currentFormStatus, viewOne.isDraft,role,singleFydata.status);
                 } else {
                   pf["readonly"] = true;
                 }
+                
               } else {
                 let ulbFyAmount = await getUlbLedgerDataFilter({
                   code: pf.code,
@@ -886,13 +884,14 @@ exports.getView = async function (req, res, next) {
                 // subData[key]["modelName"] = ulbFyAmount > 0 ? "ULBLedger" : "FiscalRanking"
                 pf["modelName"] = ulbFyAmount > 0 ? "ULBLedger" : "";
                 if (subData[key].calculatedFrom === undefined) {
-                  pf["readonly"] = ulbFyAmount > 0 ? true : false;
+                  pf["readonly"] = ulbFyAmount > 0 ? true : getReadOnly(data?.currentFormStatus, viewOne.isDraft,role,singleFydata.status);
                 } else {
                   pf["readonly"] = true;
                 }
+                console.log(">>>>>.readOnly ulb ::",pf['readonly'])
               }
             } else {
-              if (viewOne.isDraft == null) {
+              if ([1,2].includes(viewOne.currentFormStatus) === null) {
                 let ulbFyAmount = await getUlbLedgerDataFilter({
                   code: pf.code,
                   year: pf.year,
@@ -903,8 +902,9 @@ exports.getView = async function (req, res, next) {
                 pf["status"] = ulbFyAmount ? "NA" : "PENDING";
                 // subData[key]["modelName"] = ulbFyAmount > 0 ? "ULBLedger" : "FiscalRanking"
                 pf["modelName"] = ulbFyAmount > 0 ? "ULBLedger" : "";
+                console.log("ulbFyAmount ::: ",ulbFyAmount)
                 if (subData[key].calculatedFrom === undefined) {
-                  pf["readonly"] = ulbFyAmount > 0 ? true : false;
+                  pf["readonly"] = ulbFyAmount > 0 ? true : getReadOnly(data?.currentFormStatus, viewOne.isDraft,role,singleFydata.status);
                 } else {
                   pf["readonly"] = true;
                 }
@@ -932,13 +932,11 @@ exports.getView = async function (req, res, next) {
                       singleFydata.status && singleFydata.status == "NA"
                         ? false
                         : true;
-                    pf["readonly"] =
-                      singleFydata.status && singleFydata.status == "NA"
-                        ? true
-                        : getReadOnly(data?.currentFormStatus, viewOne.isDraft,role,singleFydata.status);
+                    pf["readonly"] = getReadOnly(data?.currentFormStatus, viewOne.isDraft,role,singleFydata?.status);
                   } else {
                     pf["readonly"] = true;
                   }
+                  
                 } else {
                   if (
                     subData[key]?.key !== "appAnnualBudget" &&
@@ -964,6 +962,7 @@ exports.getView = async function (req, res, next) {
                     } else {
                       pf["readonly"] = true;
                     }
+                    
                   }
                 }
               } else {
@@ -984,7 +983,7 @@ exports.getView = async function (req, res, next) {
                     ] = `Available on Cityfinance - <a href ="https://cityfinance.in/resources-dashboard/data-sets/income_statement ">View here</a>`;
                   }
                   if (subData[key].calculatedFrom === undefined) {
-                    pf["readonly"] = chekFile ? true : false;
+                    pf["readonly"] = chekFile ? true : getReadOnly(data?.currentFormStatus, viewOne.isDraft,role,"PENDING");
                     pf["required"] = chekFile ? false : true;
                   } else {
                     pf["readonly"] = true;
@@ -1018,10 +1017,7 @@ exports.getView = async function (req, res, next) {
                       : "";
                     pf["rejectReason"] = singleFydata ?  singleFydata.rejectReason : ""
                     if (subData[key].calculatedFrom === undefined) {
-                      pf["readonly"] =
-                        singleFydata && singleFydata.status == "NA"
-                          ? true
-                          : getReadOnly(data?.currentFormStatus, viewOne.isDraft,role,singleFydata.status);
+                      pf["readonly"] = getReadOnly(data?.currentFormStatus, viewOne.isDraft,role,singleFydata.status);
                     } else {
                       pf["readonly"] = true;
                     }
@@ -1068,6 +1064,9 @@ exports.getView = async function (req, res, next) {
                   pf["modelName"] = "ULBLedger";
                   // console.log(">>>>>>>>>>>> ",pf['value'])
                 }
+              }
+              else{
+                pf['readonly'] =  getReadOnly(data?.currentFormStatus, viewOne.isDraft,role,"PENDING");
               }
             }
           }
