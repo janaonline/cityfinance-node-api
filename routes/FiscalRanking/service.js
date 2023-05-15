@@ -399,6 +399,9 @@ const getReadOnly = (status, isDraft,role,questionStatus) => {
   let allowedMainLevelStatus = [statusTracker.IP,statusTracker.NS,statusTracker.RBP]
   let allowedQuestionLevelStatus = [questionLevelStatus['3']]
   let specialCases = [statusTracker.RBP,questionLevelStatus['1']]
+  if(status === undefined && questionStatus === undefined){
+    return false
+  }
   if(role === "MoHUA"){
     return true
   }
@@ -466,6 +469,12 @@ const getColumnWiseData = (key, obj, isDraft, dataSource = "",role,formStatus) =
         // rejectReason:"",
       };
     case "auditorName":
+      console.log({
+        ...getInputKeysByType("text", "", "Auditor Name", dataSource, "7"),
+        ...obj,
+        readonly: getReadOnly(formStatus, isDraft,role,obj.status),
+        // rejectReason:"",
+      })
       return {
         ...getInputKeysByType("text", "", "Auditor Name", dataSource, "7"),
         ...obj,
@@ -740,6 +749,13 @@ exports.getView = async function (req, res, next) {
           rejectReason:"",
         },
         fy_21_22_online: {
+          type: null,
+          value: null,
+          year: null,
+          status: "PENDING",
+          rejectReason:"",
+        },
+        auditorName:{
           type: null,
           value: null,
           year: null,
