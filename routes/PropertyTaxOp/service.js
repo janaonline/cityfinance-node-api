@@ -1449,49 +1449,6 @@ const decideDisplayPriority = (index, type, dp, replicaNumber, parentType) => {
     return dp + "." + replicaNumber
 }
 
-const createDataStructureForCsv = (ulbs, results, res) => {
-    try {
-        let updatedDatas = {}
-        for (let ulb of ulbs) {
-            let filteredResults = results.filter(item => item.ptoId.ulb._id.toString() === ulb.toString())
-            let sortedResults = filteredResults.sort(sortPosition)
-            for (let result of sortedResults) {
-                let status = MASTER_STATUS_ID[result.ptoId.currentFormStatus] || ""
-                let censusCode = result.ptoId.ulb.censusCode != null ? result.ptoId.ulb.censusCode : result.ptoId.ulb.sbCode
-                let writableStr = result.ptoId.ulb.state.name + "," + result.ptoId.ulb.name + "," + result.ptoId.ulb.natureOfUlb + "," + result.ptoId.ulb.code + "," + censusCode + "," + status + "," + getKeyByValue(years, result.ptoId.design_year.toString()) + ","
-                let modifiedTextValue = getTextValues(result.displayPriority).replace(",")
-                result.textValue = modifiedTextValue ? modifiedTextValue : " "
-                if (!canShow(result.type, sortedResults, updatedDatas, result.ptoId.ulb._id)) continue;
-                writableStr += getStringValue(result, false, true)
-
-                if (result.child && result.child.length) {
-                    res.write(writableStr)
-                    for (let child of result.child) {
-                        let number = decideDisplayPriority(0, child.type, result.displayPriority, child.replicaNumber, result.type)
-                        child.displayPriority = number
-                        let censusCode = result.ptoId.ulb.censusCode != null ? result.ptoId.ulb.censusCode : result.ptoId.ulb.sbCode
-                        writableStr = result.ptoId.ulb.state.name + "," + result.ptoId.ulb.name + "," + result.ptoId.ulb.natureOfUlb + "," + result.ptoId.ulb.code + "," + result.ptoId.ulb.censusCode + "," + status + "," + getKeyByValue(years, result.ptoId.design_year.toString()) + ","
-                        censusCode || ""
-                        child.textValue = child.textValue ? child.textValue : modifiedTextValue
-                        writableStr += getStringValue(child, result.displayPriority, true)
-                        res.write(writableStr)
-                        writableStr = ""
-
-                    }
-                }
-                res.write(writableStr)
-            }
-        }
-        res.end()
-    }
-    catch (err) {
-        console.log("error in createDataStructureForCsv ::: ", err)
-        res.json({
-            "success": false,
-            "message": "something went wrong"
-        })
-    }
-}
 
 const canShow = (key, results, updatedDatas, ulb) => {
     try {
@@ -1586,6 +1543,51 @@ const canShow = (key, results, updatedDatas, ulb) => {
 //     }
 // }
 
+const createDataStructureForCsv = (ulbs, results, res) => {
+    try {
+        let updatedDatas = {}
+        for (let ulb of ulbs) {
+            let filteredResults = results.filter(item => item.ptoId.ulb._id.toString() === ulb.toString())
+            let sortedResults = filteredResults.sort(sortPosition)
+            for (let result of sortedResults) {
+                let status = MASTER_STATUS_ID[result.ptoId.currentFormStatus] || ""
+                let censusCode = result.ptoId.ulb.censusCode != null ? result.ptoId.ulb.censusCode : result.ptoId.ulb.sbCode
+                let writableStr = result.ptoId.ulb.state.name + "," + result.ptoId.ulb.name + "," + result.ptoId.ulb.natureOfUlb + "," + result.ptoId.ulb.code + "," + censusCode + "," + status + "," + getKeyByValue(years, result.ptoId.design_year.toString()) + ","
+                let modifiedTextValue = getTextValues(result.displayPriority).replace(",")
+                result.textValue = modifiedTextValue ? modifiedTextValue : " "
+                if (!canShow(result.type, sortedResults, updatedDatas, result.ptoId.ulb._id)) continue;
+                writableStr += getStringValue(result, false, true)
+
+                if (result.child && result.child.length) {
+                    res.write(writableStr)
+                    for (let child of result.child) {
+                        let number = decideDisplayPriority(0, child.type, result.displayPriority, child.replicaNumber, result.type)
+                        child.displayPriority = number
+                        let censusCode = result.ptoId.ulb.censusCode != null ? result.ptoId.ulb.censusCode : result.ptoId.ulb.sbCode
+                        writableStr = result.ptoId.ulb.state.name + "," + result.ptoId.ulb.name + "," + result.ptoId.ulb.natureOfUlb + "," + result.ptoId.ulb.code + "," + result.ptoId.ulb.censusCode + "," + status + "," + getKeyByValue(years, result.ptoId.design_year.toString()) + ","
+                        censusCode || ""
+                        child.textValue = child.textValue ? child.textValue : modifiedTextValue
+                        writableStr += getStringValue(child, result.displayPriority, true)
+                        res.write(writableStr)
+                        writableStr = ""
+
+                    }
+                }
+                res.write(writableStr)
+            }
+        }
+        res.end()
+    }
+    catch (err) {
+        console.log("error in createDataStructureForCsv ::: ", err)
+        res.json({
+            "success": false,
+            "message": "something went wrong"
+        })
+    }
+}
+
+
 module.exports.getCsvForPropertyTaxMapper = async (req, res) => {
     let response = {
         "success": true,
@@ -1668,15 +1670,23 @@ module.exports.getCsvForPropertyTaxMapper = async (req, res) => {
             for (let result of sortedResults) {
                 let censusCode = el.ulb.censusCode != null ? el.ulb.censusCode : el.ulb.sbCode
                 let writableStr = el.state.name + "," + el.ulb.name + "," + el.ulb.natureOfUlb + "," + el.ulb.code + "," + censusCode + "," + MASTER_STATUS_ID[el.currentFormStatus] + "," + getKeyByValue(years, el.design_year.toString()) + ","
-                writableStr += getStringValue(result)
+                let modifiedTextValue = getTextValues(result.displayPriority).replace(",")
+                result.textValue = modifiedTextValue ? modifiedTextValue : " "
                 if (!canShow(result.type, sortedResults, updatedDatas, el.ulb._id)) continue;
+                writableStr += getStringValue(result, false, true)
                 if (result.child && result.child.length) {
+                    let status = MASTER_STATUS_ID[el.currentFormStatus] || ""
                     res.write(writableStr)
                     for (let childId of result.child) {
                         let child = el?.propertymapperchilddata?.length > 0 ? el?.propertymapperchilddata.find(e => e._id.toString() == childId.toString()) : null
+                        let number = decideDisplayPriority(0, child.type, result.displayPriority, child.replicaNumber, result.type)
+                        child.displayPriority = number
                         if (child) {
                             child.displayPriority = result.displayPriority + "." + child.replicaNumber
-                            writableStr = el.state.name + "," + el.ulb.name + "," + el.ulb.natureOfUlb + "," + el.ulb.code + "," + el.ulb.censusCode + "," + MASTER_STATUS_ID[el.currentFormStatus] + "," + getKeyByValue(years, el.design_year.toString()) + ","
+                            // writableStr = el.state.name + "," + el.ulb.name + "," + el.ulb.natureOfUlb + "," + el.ulb.code + "," + el.ulb.censusCode + "," + MASTER_STATUS_ID[el.currentFormStatus] + "," + getKeyByValue(years, el.design_year.toString()) + ","
+                            writableStr = el.state.name + "," + el.ulb.name + "," + el.ulb.natureOfUlb + "," + el.ulb.code + "," + el.ulb.censusCode + "," + status + "," + getKeyByValue(years, el.design_year.toString()) + ","
+                         censusCode || ""
+                            child.textValue = child.textValue ? child.textValue : modifiedTextValue
                             writableStr += getStringValue(child, true)
                             res.write(writableStr)
                             writableStr = ""
