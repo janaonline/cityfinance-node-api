@@ -12,6 +12,7 @@ const FeedBackFiscalRanking = require("../../models/FeedbackFiscalRanking");
 const TwentyEightSlbsForm = require("../../models/TwentyEightSlbsForm");
 const Ulb = require("../../models/Ulb");
 const Service = require("../../service");
+const Users = require("../../models/User");
 const FiscalRankingArray = require("./formjson").arr;
 const {
   csvColsFr,
@@ -2690,12 +2691,18 @@ const decideOverAllStatus = (statusObject)=>{
   return 9
 }
 
-module.exports.sendEmailToUlb = (ulbName)=>{
+const sendEmailToUlb = async (ulbId)=>{
   try{
-    
+    let userInf = await Users.findOne({
+      "ulb":ObjectId(ulbId),
+      "role":"ULB"
+    }).populate("ulb")
+    let emailAddress = [userInf.email]
+    let ulbName = userInf.name
     let ulbTemplate = Service.emailTemplate.CfrFormRejected(
         ulbName,
     );
+    console.log("emailAddress ::: ",emailAddress)
     let mailOptions = {
         Destination: {
             /* required */
@@ -2720,10 +2727,13 @@ module.exports.sendEmailToUlb = (ulbName)=>{
         ReplyToAddresses: [process.env.EMAIL],
 
     };
+   await Service.sendEmail(mailOptions);
+   console.log("email Sent")
   }
   catch(err){
     console.log("error in sendEmailToUlb ::: ",err.message)
   }
+
 }
 
 module.exports.actionTakenByMoHua = catchAsync(async (req, res) => {
@@ -2761,8 +2771,13 @@ module.exports.actionTakenByMoHua = catchAsync(async (req, res) => {
       isDraft
     );    
     let formStatus = currentFormStatus
+    console.log("currentFormStatus :: ",currentFormStatus)
     if(currentFormStatus != 9){
       formStatus = await  decideOverAllStatus(calculationsTabWise)
+      console.log("formStatus :: ",formStatus)
+      if(formStatus === 10){
+        await sendEmailToUlb(ulbId)
+      }
       
     }
     let feedBackResp = await saveFeedbacksAndForm(
