@@ -607,6 +607,32 @@ const getColumnWiseData = (key, obj, isDraft, dataSource = "",role,formStatus) =
         readonly: getReadOnly(formStatus, isDraft,role,obj.status),
         // rejectReason:"",
       };
+      case "signedCopyOfFile":
+      return {
+        ...statusObj(
+          "",
+          "file",
+          "",
+          dataSource,
+          "0"
+        ),
+        ...obj,
+        readonly: getReadOnly(formStatus, isDraft,role,obj.status),
+        // rejectReason:"",
+      };
+      case "otherUpload":
+      return {
+        ...statusObj(
+          "",
+          "file",
+          "",
+          dataSource,
+          "0"
+        ),
+        ...obj,
+        readonly: getReadOnly(formStatus, isDraft,role,obj.status),
+        // rejectReason:"",
+      };
     default:
     // code block
   }
@@ -790,9 +816,10 @@ exports.getView = async function (req, res, next) {
       "otherUpload",
     ];
     for (let index = 0; index < keys.length; index++) {
+      console.log("condtion ::: ",viewOne.hasOwnProperty(keys[index]))
+      console.log("index ::: ",keys[index])
       if (viewOne.hasOwnProperty(keys[index])) {
         let obj = viewOne[keys[index]];
-        console.log("obj :: ",obj)
         viewOne[keys[index]] = getColumnWiseData(
           keys[index],
           obj,
@@ -801,7 +828,9 @@ exports.getView = async function (req, res, next) {
           role,
           data?.currentFormStatus
         );
-        console.log(viewOne[keys[index]])
+        // getReadOnly(formStatus, isDraft,role,obj.status),
+        viewOne['readonly'] = getReadOnly(data?.currentFormStatus,viewOne.isDraft,role)
+
       } else {
         viewOne[keys[index]] = getColumnWiseData(
           keys[index],
@@ -950,7 +979,7 @@ exports.getView = async function (req, res, next) {
                         (el) => el?.year_id.toString() === pf?.year.toString()
                       )
                       : false;
-                    pf["status"] = chekFile ? "NA" : "PENDING";
+                    pf["status"] = chekFile ? singleFydata.status : "PENDING";
                     pf["modelName"] = chekFile ? "ULBLedger" : "";
                     console.log("chekFile :: ", chekFile);
                     if (chekFile) {
@@ -2514,9 +2543,11 @@ async function calculateAndUpdateStatusForMappers(
           let dynamicObj = obj[k];
           let financialInfo = obj;
           let status = yearArr.every((item) => {
-            if (Object.keys(item).length) {
+            if(item?.type == 'registerGisProof') return true;
+            if (item?.type) {
               return item.status === "APPROVED";
             } else {
+              
               return true;
             }
           });
@@ -2652,13 +2683,48 @@ async function saveFeedbacksAndForm(
 
 const decideOverAllStatus = (statusObject)=>{
   try{
-    let isFormApproved = Object.values(statusObject).every(item => item === true)
+    let isFormApproved = Object.values(statusObject).every(item => item.status === true)
     return isFormApproved ? 11 : 10
   }
   catch(err){
     console.log("error in decideOverAllStatus :: ",err.message)
   }
   return 9
+}
+
+module.exports.sendEmailToUlb = ()=>{
+  try{
+    let ulbTemplate = Service.emailTemplate.ulbFormSubmitted(
+        ulbName,
+        formName
+    );
+    let mailOptions = {
+        Destination: {
+            /* required */
+            ToAddresses: emailAddress,
+        },
+        Message: {
+            /* required */
+            Body: {
+                /* required */
+                Html: {
+                    Charset: "UTF-8",
+                    Data: ulbTemplate.body,
+                },
+            },
+            Subject: {
+                Charset: "UTF-8",
+                Data: ulbTemplate.subject,
+            },
+        },
+        Source: process.env.EMAIL,
+        /* required */
+        ReplyToAddresses: [process.env.EMAIL],
+    };
+  }
+  catch(err){
+    console.log("error in sendEmailToUlb ::: ",err.message)
+  }
 }
 
 module.exports.actionTakenByMoHua = catchAsync(async (req, res) => {
@@ -2694,9 +2760,11 @@ module.exports.actionTakenByMoHua = catchAsync(async (req, res) => {
       design_year,
       false,
       isDraft
-    );    let formStatus = currentFormStatus
+    );    
+    let formStatus = currentFormStatus
     if(currentFormStatus != 9){
       formStatus = await  decideOverAllStatus(calculationsTabWise)
+      
     }
     let feedBackResp = await saveFeedbacksAndForm(
       calculationsTabWise,
@@ -2707,6 +2775,7 @@ module.exports.actionTakenByMoHua = catchAsync(async (req, res) => {
       role,
       formStatus
     ); 
+    console.log("feedBackResp ::: ",calculationsTabWise)
     if (feedBackResp.success) {
       response.success = true;
       response.message = "Details submitted successfully";
