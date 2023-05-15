@@ -1698,10 +1698,7 @@ module.exports.getCsvForPropertyTaxMapper = async (req, res) => {
         response.success = true
         response.message = "Code working";
     } catch (err) {
-<<<<<<< HEAD
-=======
         console.log("err", err)
->>>>>>> f30bf5faca9799ca0ea4760d23cf86df04cba6db
         response.success = true
         status = 400
         console.log("error in getCsvForPropertyTaxMapper ::::: ", err.message)
