@@ -2758,7 +2758,8 @@ module.exports.actionTakenByMoHua = catchAsync(async (req, res) => {
     message: "",
   };
   try {
-    let { ulbId, formId, actions, design_year, isDraft, status:formBodyStatus } = req.body;
+    let { ulbId, formId, actions, design_year, isDraft,currentFormStatus } = req.body;
+    console.log("currentFormStatus :: ",currentFormStatus)
     let { role, _id: userId } = req.decoded;
     let validation = await checkUndefinedValidations({
       ulb: ulbId,
@@ -2776,7 +2777,7 @@ module.exports.actionTakenByMoHua = catchAsync(async (req, res) => {
     const session = await mongoose.startSession();
     await session.startTransaction();
     let masterFormId = FORMIDs['fiscalRanking'];
-    let params = {isDraft,role,userId,formId,masterFormId, formBodyStatus}
+    let params = {isDraft,role,userId,formId,masterFormId, currentFormStatus}
     await createHistory(params)
     let calculationsTabWise = await calculateAndUpdateStatusForMappers(
       session,
@@ -2920,7 +2921,7 @@ module.exports.createForm = catchAsync(async (req, res) => {
     }
     let masterFormId = FORMIDs['fiscalRanking'];
     let params = {isDraft,role,userId,formId,masterFormId, currentFormStatus}
-    // await createHistory(params)
+    await createHistory(params)
     let calculationsTabWise = await calculateAndUpdateStatusForMappers(
       session,
       actions,
