@@ -1990,7 +1990,7 @@ function getAggregateQuery(
     let sortObj ={
       "formData.modifiedAt": -1,
     }
-    if(sort){
+    if(sort && sort !== "null"){
       let splitSort = sort.split('_');
       sortObj[splitSort[0]] = Number(splitSort[1])
     }
