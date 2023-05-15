@@ -816,8 +816,6 @@ exports.getView = async function (req, res, next) {
       "otherUpload",
     ];
     for (let index = 0; index < keys.length; index++) {
-      console.log("condtion ::: ",viewOne.hasOwnProperty(keys[index]))
-      console.log("index ::: ",keys[index])
       if (viewOne.hasOwnProperty(keys[index])) {
         let obj = viewOne[keys[index]];
         viewOne[keys[index]] = getColumnWiseData(
@@ -2692,11 +2690,11 @@ const decideOverAllStatus = (statusObject)=>{
   return 9
 }
 
-module.exports.sendEmailToUlb = ()=>{
+module.exports.sendEmailToUlb = (ulbName)=>{
   try{
-    let ulbTemplate = Service.emailTemplate.ulbFormSubmitted(
+    
+    let ulbTemplate = Service.emailTemplate.CfrFormRejected(
         ulbName,
-        formName
     );
     let mailOptions = {
         Destination: {
@@ -2720,6 +2718,7 @@ module.exports.sendEmailToUlb = ()=>{
         Source: process.env.EMAIL,
         /* required */
         ReplyToAddresses: [process.env.EMAIL],
+
     };
   }
   catch(err){
