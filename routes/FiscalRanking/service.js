@@ -400,7 +400,7 @@ const getReadOnly = (status, isDraft,role,questionStatus) => {
   let allowedMainLevelStatus = [statusTracker.IP,statusTracker.NS,statusTracker.RBP]
   let allowedQuestionLevelStatus = [questionLevelStatus['3']]
   let specialCases = [statusTracker.RBP,questionLevelStatus['1']]
-  if(role !== "ULB"){
+  if(role !== "ULB" || status === statusTracker.VIP){
     return true
   }
   if(status === undefined || questionStatus === undefined){
