@@ -794,7 +794,7 @@ exports.getView = async function (req, res, next) {
           null,
           "",
           role,
-          data.currentFormStatus
+          data?.currentFormStatus
         );
       }
     }
@@ -853,7 +853,7 @@ exports.getView = async function (req, res, next) {
                   pf["readonly"] =
                     singleFydata.status && singleFydata.status == "NA"
                       ? true
-                      : getReadOnly(data.currentFormStatus, viewOne.isDraft,role,singleFydata.status);
+                      : getReadOnly(data?.currentFormStatus, viewOne.isDraft,role,singleFydata.status);
                 } else {
                   pf["readonly"] = true;
                 }
@@ -919,7 +919,7 @@ exports.getView = async function (req, res, next) {
                     pf["readonly"] =
                       singleFydata.status && singleFydata.status == "NA"
                         ? true
-                        : getReadOnly(data.currentFormStatus, viewOne.isDraft,role,singleFydata.status);
+                        : getReadOnly(data?.currentFormStatus, viewOne.isDraft,role,singleFydata.status);
                   } else {
                     pf["readonly"] = true;
                   }
@@ -1005,7 +1005,7 @@ exports.getView = async function (req, res, next) {
                       pf["readonly"] =
                         singleFydata && singleFydata.status == "NA"
                           ? true
-                          : getReadOnly(data.currentFormStatus, viewOne.isDraft,role,singleFydata.status);
+                          : getReadOnly(data?.currentFormStatus, viewOne.isDraft,role,singleFydata.status);
                     } else {
                       pf["readonly"] = true;
                     }
