@@ -1450,9 +1450,10 @@ const decideDisplayPriority = (index, type, dp, replicaNumber, parentType) => {
 }
 
 
-const canShow = (key, results, updatedDatas, ulb) => {
-    try {
 
+const canShow = (key, results, updatedDatas,ulb) => {
+    try {
+        
         if (Object.keys(skippableKeys).includes(key)) {
             let elementToFind = skippableKeys[key]
             let element = {}
@@ -1460,14 +1461,14 @@ const canShow = (key, results, updatedDatas, ulb) => {
             // console.log("elementsToFind :::",elementToFind)
             if (!updatedDatas[keyName]) {
                 element = results.find(item => item.type === elementToFind)
-
+                
                 updatedDatas[keyName] = element
             }
-            else {
+            else{
                 element = updatedDatas[keyName]
             }
-            let show = element.value === "Yes"
-            if (["entityNameWaterCharges", "entityNaSewerageCharges".includes(key)]) {
+            let show = element.value === "Yes" 
+            if(["entityNameWaterCharges","entityNaSewerageCharges".includes(key)]){
                 show = element.value !== "ULB"
             }
             return show
@@ -1511,7 +1512,6 @@ const canShow = (key, results, updatedDatas, ulb) => {
 //         let ptoFormResults = await PropertyTaxOp.find({
 //             design_year: design_year
 //         }, { _id: 1, ulb: 1 }).lean()
-
 //         let ulbNames = ptoFormResults.map(item => item.ulb)
 //         let mapperData = await PropertyTaxOpMapper.find({
 //             "ptoId": { $in: ptoFormResults.map(item => item._id) }
@@ -1524,68 +1524,29 @@ const canShow = (key, results, updatedDatas, ulb) => {
 //                     "model": "State"
 //                 }
 //             }
-//         }).lean();
-
+//         }).lean()
 //         let filename = "propertyTax.csv"
 //         res.setHeader("Content-disposition", "attachment; filename=" + filename);
 //         res.writeHead(200, { "Content-Type": "text/csv;charset=utf-8,%EF%BB%BF" });
 //         res.write("\ufeff" + `${csvCols.join(",").toString()}` + "\r\n");
 //         let str = ""
 //         res.write("\ufeff" + str + "\r\n");
+//         // cursor.on()
+//         // console.log("mapperData ::: ",ptoFormResults)
 //         await createDataStructureForCsv(ulbNames, mapperData, res)
+//         // res.end()
+//         // console.log("mapperData :: ",mapperData)
 //         response.success = true
-//         response.message = "Code working";
+//         // response.data = dbResults
+//         response.message = "Code working"
 //     }
 //     catch (err) {
 //         response.success = true
 //         status = 400
 //         console.log("error in getCsvForPropertyTaxMapper ::::: ", err.message)
 //     }
+//     // return res.status(status).json(response)
 // }
-
-const createDataStructureForCsv = (ulbs, results, res) => {
-    try {
-        let updatedDatas = {}
-        for (let ulb of ulbs) {
-            let filteredResults = results.filter(item => item.ptoId.ulb._id.toString() === ulb.toString())
-            let sortedResults = filteredResults.sort(sortPosition)
-            for (let result of sortedResults) {
-                let status = MASTER_STATUS_ID[result.ptoId.currentFormStatus] || ""
-                let censusCode = result.ptoId.ulb.censusCode != null ? result.ptoId.ulb.censusCode : result.ptoId.ulb.sbCode
-                let writableStr = result.ptoId.ulb.state.name + "," + result.ptoId.ulb.name + "," + result.ptoId.ulb.natureOfUlb + "," + result.ptoId.ulb.code + "," + censusCode + "," + status + "," + getKeyByValue(years, result.ptoId.design_year.toString()) + ","
-                let modifiedTextValue = getTextValues(result.displayPriority).replace(",")
-                result.textValue = modifiedTextValue ? modifiedTextValue : " "
-                if (!canShow(result.type, sortedResults, updatedDatas, result.ptoId.ulb._id)) continue;
-                writableStr += getStringValue(result, false, true)
-
-                if (result.child && result.child.length) {
-                    res.write(writableStr)
-                    for (let child of result.child) {
-                        let number = decideDisplayPriority(0, child.type, result.displayPriority, child.replicaNumber, result.type)
-                        child.displayPriority = number
-                        let censusCode = result.ptoId.ulb.censusCode != null ? result.ptoId.ulb.censusCode : result.ptoId.ulb.sbCode
-                        writableStr = result.ptoId.ulb.state.name + "," + result.ptoId.ulb.name + "," + result.ptoId.ulb.natureOfUlb + "," + result.ptoId.ulb.code + "," + result.ptoId.ulb.censusCode + "," + status + "," + getKeyByValue(years, result.ptoId.design_year.toString()) + ","
-                        censusCode || ""
-                        child.textValue = child.textValue ? child.textValue : modifiedTextValue
-                        writableStr += getStringValue(child, result.displayPriority, true)
-                        res.write(writableStr)
-                        writableStr = ""
-
-                    }
-                }
-                res.write(writableStr)
-            }
-        }
-        res.end()
-    }
-    catch (err) {
-        console.log("error in createDataStructureForCsv ::: ", err)
-        res.json({
-            "success": false,
-            "message": "something went wrong"
-        })
-    }
-}
 
 module.exports.getCsvForPropertyTaxMapper = async (req, res) => {
     let response = {
@@ -1681,12 +1642,10 @@ module.exports.getCsvForPropertyTaxMapper = async (req, res) => {
                         let number = decideDisplayPriority(0, child.type, result.displayPriority, child.replicaNumber, result.type)
                         child.displayPriority = number
                         if (child) {
-                            child.displayPriority = result.displayPriority + "." + child.replicaNumber
-                            // writableStr = el.state.name + "," + el.ulb.name + "," + el.ulb.natureOfUlb + "," + el.ulb.code + "," + el.ulb.censusCode + "," + MASTER_STATUS_ID[el.currentFormStatus] + "," + getKeyByValue(years, el.design_year.toString()) + ","
                             writableStr = el.state.name + "," + el.ulb.name + "," + el.ulb.natureOfUlb + "," + el.ulb.code + "," + el.ulb.censusCode + "," + status + "," + getKeyByValue(years, el.design_year.toString()) + ","
-                            censusCode || ""
+                         censusCode || ""
                             child.textValue = child.textValue ? child.textValue : modifiedTextValue
-                            writableStr += getStringValue(child, true)
+                            writableStr += getStringValue(child,result.displayPriority, true)
                             res.write(writableStr)
                             writableStr = ""
                         }
@@ -1708,9 +1667,47 @@ module.exports.getCsvForPropertyTaxMapper = async (req, res) => {
     }
 }
 
+const createDataStructureForCsv = (ulbs, results, res) => {
+    try {
+        let updatedDatas = {}
+        for (let ulb of ulbs) {
+            let filteredResults = results.filter(item => item.ptoId.ulb._id.toString() === ulb.toString())
+            let sortedResults = filteredResults.sort(sortPosition)
+            for (let result of sortedResults) {
+                let status = MASTER_STATUS_ID[result.ptoId.currentFormStatus] || ""
+                let censusCode = result.ptoId.ulb.censusCode != null ? result.ptoId.ulb.censusCode : result.ptoId.ulb.sbCode 
+                let writableStr = result.ptoId.ulb.state.name + "," + result.ptoId.ulb.name + "," + result.ptoId.ulb.natureOfUlb + "," + result.ptoId.ulb.code + "," + censusCode + "," + status + "," + getKeyByValue(years, result.ptoId.design_year.toString()) + ","
+                let modifiedTextValue = getTextValues(result.displayPriority).replace(",")
+                result.textValue = modifiedTextValue ? modifiedTextValue : " "
+                if (!canShow(result.type, sortedResults, updatedDatas,result.ptoId.ulb._id)) continue;
+                writableStr += getStringValue(result,false,true)
+                
+                if (result.child && result.child.length) {
+                    res.write(writableStr)
+                    for (let child of result.child) {
+                        let number = decideDisplayPriority(0,child.type,result.displayPriority,child.replicaNumber,result.type)
+                        child.displayPriority = number
+                        let censusCode = result.ptoId.ulb.censusCode != null ? result.ptoId.ulb.censusCode : result.ptoId.ulb.sbCode 
+                        writableStr = result.ptoId.ulb.state.name + "," + result.ptoId.ulb.name + "," + result.ptoId.ulb.natureOfUlb + "," + result.ptoId.ulb.code + "," + result.ptoId.ulb.censusCode + "," + status + "," + getKeyByValue(years, result.ptoId.design_year.toString()) + ","
+                        censusCode || ""
+                        child.textValue = child.textValue ? child.textValue : modifiedTextValue
+                        writableStr += getStringValue(child,result.displayPriority,true)
+                        res.write(writableStr)
+                        writableStr = ""
+                        
+                    }
+                }
+                res.write(writableStr)
+            }
+        }
 
-
-
-
-
-
+        res.end()
+    }
+    catch (err) {
+        console.log("error in createDataStructureForCsv ::: ", err)
+        res.json({
+            "success": false,
+            "message": "something went wrong"
+        })
+    }
+}
