@@ -6,7 +6,7 @@ const FiscalRanking = require("../../models/FiscalRanking");
 const FiscalRankingMapper = require("../../models/FiscalRankingMapper");
 const { FRTypeShortKey } = require('./formjson')
 const UlbLedger = require("../../models/UlbLedger");
-const {FORMIDs, MASTER_STATUS, FORM_LEVEL,POPULATION_TYPE} = require("../../util/FormNames");
+const {FORMIDs, MASTER_STATUS,MASTER_STATUS_ID, FORM_LEVEL,POPULATION_TYPE} = require("../../util/FormNames");
 const {saveCurrentStatus, saveFormHistory, saveStatusHistory} = require("../../util/masterFunctions");
 const FeedBackFiscalRanking = require("../../models/FeedbackFiscalRanking");
 const TwentyEightSlbsForm = require("../../models/TwentyEightSlbsForm");
@@ -1363,41 +1363,6 @@ exports.getAll = async function (req, res, next) {
         },
         { $unwind: "$design_year" },
         {
-          $lookup: {
-            from: "fiscalrankingmappers",
-            let: {
-              fyId: "$_id",
-            },
-            pipeline: [
-              {
-                $match: {
-                  $expr: {
-                    $eq: ["$fiscal_ranking", "$$fyId"],
-                  },
-                },
-              },
-              {
-                $lookup: {
-                  from: "years",
-                  let: { yeardId: "$year" },
-                  pipeline: [
-                    {
-                      $match: {
-                        $expr: {
-                          $eq: ["$_id", "$$yeardId"],
-                        },
-                      },
-                    },
-                  ],
-                  as: "years",
-                },
-              },
-              { $unwind: "$years" },
-            ],
-            as: "fyData",
-          },
-        },
-        {
           $project: {
             fy_19_20_cash: 1,
             fy_19_20_online: 1,
@@ -2019,7 +1984,7 @@ function getAggregateQuery(
     let sortObj ={
       "formData.modifiedAt": -1,
     }
-    if(sort){
+    if(sort && sort !== "null"){
       let splitSort = sort.split('_');
       sortObj[splitSort[0]] = Number(splitSort[1])
     }
