@@ -38,7 +38,11 @@ module.exports.MASTER_STATUS = {
     "Under Review By MoHUA": 4,
     "Returned By State": 5,
     "Submission Acknowledged By MoHUA": 6,
-    "Returned By MoHUA":7
+    "Returned By MoHUA":7,
+    "Verification Not Started":8,
+    "Verification In Progress"  :9,
+    "Returned by PMU":10,
+    "Submission Acknowledged by PMU":11,
 }
 
 module.exports.MASTER_STATUS_ID = {
@@ -50,6 +54,10 @@ module.exports.MASTER_STATUS_ID = {
   5: "Returned By State",
   6: "Submission Acknowledged By MoHUA",
   7: "Returned By MoHUA",
+  8: "Verification Not Started",
+  9: "Verification In Progress",
+  10: "Returned by PMU",
+  11: "Submission Acknowledged by PMU"
 };
 
 module.exports.FORMIDs = {
@@ -85,4 +93,11 @@ module.exports.MODEL_PATH = {
     5: "AnnualAccounts",
     6: "TwentyEightSlbsForm",
     4: "UtilizationReport"
+}
+
+module.exports.POPULATION_TYPE = {
+    1: "4M+",
+    2: "1M to 4M",
+    3: "100K to 1M",
+    4: "<100K"
 }
