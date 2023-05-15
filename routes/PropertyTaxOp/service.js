@@ -1450,7 +1450,6 @@ const decideDisplayPriority = (index, type, dp, replicaNumber, parentType) => {
 }
 
 
-
 const canShow = (key, results, updatedDatas, ulb) => {
     try {
 
@@ -1672,9 +1671,10 @@ module.exports.getCsvForPropertyTaxMapper = async (req, res) => {
                 let writableStr = el.state.name + "," + el.ulb.name + "," + el.ulb.natureOfUlb + "," + el.ulb.code + "," + censusCode + "," + MASTER_STATUS_ID[el.currentFormStatus] + "," + getKeyByValue(years, el.design_year.toString()) + ","
                 let modifiedTextValue = getTextValues(result.displayPriority).replace(",")
                 result.textValue = modifiedTextValue ? modifiedTextValue : " "
-                writableStr += getStringValue(result)
                 if (!canShow(result.type, sortedResults, updatedDatas, el.ulb._id)) continue;
+                writableStr += getStringValue(result, false, true)
                 if (result.child && result.child.length) {
+                    let status = MASTER_STATUS_ID[el.currentFormStatus] || ""
                     res.write(writableStr)
                     for (let childId of result.child) {
                         let child = el?.propertymapperchilddata?.length > 0 ? el?.propertymapperchilddata.find(e => e._id.toString() == childId.toString()) : null
@@ -1682,7 +1682,10 @@ module.exports.getCsvForPropertyTaxMapper = async (req, res) => {
                         child.displayPriority = number
                         if (child) {
                             child.displayPriority = result.displayPriority + "." + child.replicaNumber
-                            writableStr = el.state.name + "," + el.ulb.name + "," + el.ulb.natureOfUlb + "," + el.ulb.code + "," + el.ulb.censusCode + "," + MASTER_STATUS_ID[el.currentFormStatus] + "," + getKeyByValue(years, el.design_year.toString()) + ","
+                            // writableStr = el.state.name + "," + el.ulb.name + "," + el.ulb.natureOfUlb + "," + el.ulb.code + "," + el.ulb.censusCode + "," + MASTER_STATUS_ID[el.currentFormStatus] + "," + getKeyByValue(years, el.design_year.toString()) + ","
+                            writableStr = el.state.name + "," + el.ulb.name + "," + el.ulb.natureOfUlb + "," + el.ulb.code + "," + el.ulb.censusCode + "," + status + "," + getKeyByValue(years, el.design_year.toString()) + ","
+                            censusCode || ""
+                            child.textValue = child.textValue ? child.textValue : modifiedTextValue
                             writableStr += getStringValue(child, true)
                             res.write(writableStr)
                             writableStr = ""
