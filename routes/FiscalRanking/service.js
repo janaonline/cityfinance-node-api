@@ -6,8 +6,8 @@ const FiscalRanking = require("../../models/FiscalRanking");
 const FiscalRankingMapper = require("../../models/FiscalRankingMapper");
 const { FRTypeShortKey } = require('./formjson')
 const UlbLedger = require("../../models/UlbLedger");
-const {FORMIDs} = require("../../util/FormNames");
-const {saveFormHistory} = require("../../util/masterFunctions");
+const {FORMIDs, MASTER_STATUS, FORM_LEVEL,POPULATION_TYPE} = require("../../util/FormNames");
+const {saveCurrentStatus, saveFormHistory, saveStatusHistory} = require("../../util/masterFunctions");
 const FeedBackFiscalRanking = require("../../models/FeedbackFiscalRanking");
 const TwentyEightSlbsForm = require("../../models/TwentyEightSlbsForm");
 const Ulb = require("../../models/Ulb");
@@ -27,7 +27,8 @@ const {
   canTakeActionOrViewOnly,
   calculateStatusForFiscalRankingForms,
   getKeyByValue,
-  AggregationServices
+  AggregationServices,
+  canTakeActionOrViewOnlyMasterForm
 } = require("../CommonActionAPI/service");
 const {FRFormStatus} = require('../../util/15thFCstatus')
 const Sidemenu = require("../../models/Sidemenu");
@@ -1599,9 +1600,32 @@ function getPopulationCondition() {
   try {
     let obj = {
       $cond: {
-        if: { $eq: ["$isMillionPlus", "Yes"] },
-        then: "Million Plus",
-        else: "Non Million",
+        if: {
+          $gt: ["$population", 4000000],
+        },
+        then: "4Mn+",
+        else: {
+          $cond: {
+            if: {
+              $lt: ["$population", 100000],
+            },
+            then: "<100K",
+            else: {
+              $cond: {
+                if: {
+                  $and: [
+                    { $gte: ["$population", 100000] },
+                    {
+                      $lt: ["$population", 1000000],
+                    },
+                  ],
+                },
+                then: "100K to 1M",
+                else: "1M to 4M",
+              },
+            },
+          },
+        },
       },
     };
     return obj;
@@ -1838,6 +1862,8 @@ function getFormQuery(queryArr, collectionName, design_year, csv) {
           status: 1,
           actionTakenByRole: 1,
           isDraft: 1,
+          currentFormStatus:1,
+          modifiedAt:1
         },
       });
     }
@@ -1908,7 +1934,8 @@ function getAggregateQuery(
   limit,
   newFilter,
   csv,
-  stateId = null
+  stateId = null,
+  sort
 ) {
   let query = [];
   try {
@@ -1960,7 +1987,14 @@ function getAggregateQuery(
       getProjectionQueries(query, collectionName, skip, limit, newFilter, csv);
     }
     // stage 7 sort by formData
-    query.push({ $sort: { formData: -1 } });
+    let sortObj ={
+      "formData.modifiedAt": -1,
+    }
+    if(sort){
+      let splitSort = sort.split('_');
+      sortObj[splitSort[0]] = Number(splitSort[1])
+    }
+    query.push({ $sort: sortObj });
   } catch (err) {
     console.log("error in getAggregateQuery :::: ", err);
   }
@@ -1979,10 +2013,11 @@ function searchQueries(req) {
     filter["censusCode"] =
       req.query.censusCode != "null" ? req.query.censusCode : "";
     filter["populationType"] =
-      req.query.populationType != "null" ? req.query.populationType : "";
+      req.query.populationType != "null" ? POPULATION_TYPE[req.query.populationType] : "";
     filter["ulbType"] = req.query.ulbType != "null" ? req.query.ulbType : "";
     filter["UA"] = req.query.UA != "null" ? req.query.UA : "";
-    filter["status"] = req.query.status != "null" ? req.query.status : "";
+    // filter["status"] = req.query.status != "null" ? req.query.status : "";
+    filter['formData.currentFormStatus'] = req.query.status != 'null' ? Number(req.query.status) : ""
     filter["filled_audited"] =
       req.query.filled1 != "null" ? req.query.filled1 : "";
     filter["filled_provisional"] =
@@ -1992,7 +2027,12 @@ function searchQueries(req) {
   }
   return filter;
 }
+function populationTypeFilter(populationType){
+  let filterObj = {
 
+  }
+
+}
 /**
  * Function that returns dynamic column name for tables in the frontend
  * @returns a javascript object with column names
@@ -2061,18 +2101,23 @@ function updateActions(data, role, formType) {
         el["formStatus"] = "Not Started";
         el["cantakeAction"] = false;
       } else {
-        el["formStatus"] = calculateStatusForFiscalRankingForms(
-          el.formData.status,
-          el.formData.actionTakenByRole,
-          el.formData.isDraft,
-          formType
-        );
-        el["cantakeAction"] =
-          role === "ADMIN" || role === userTypes.state
-            ? false
-            : canTakeActionOrViewOnly(el, role, true);
+        let params = {status: el.formData.currentFormStatus, userRole: role}
+        el['cantakeAction'] = role === "ADMIN" || role === userTypes.state ? false : canTakeActionOrViewOnlyMasterForm(params);
+        el['formStatus'] = MASTER_STATUS_ID[el.formData.currentFormStatus]
+      
+        // el["formStatus"] = calculateStatusForFiscalRankingForms(
+        //   el.formData.status,
+        //   el.formData.actionTakenByRole,
+        //   el.formData.isDraft,
+        //   formType
+        // );
+        // el["cantakeAction"] =
+        //   role === "ADMIN" || role === userTypes.state
+        //     ? false
+        //     : canTakeActionOrViewOnly(el, role, true);
       }
       return el;
+      // el['formStatus'] = calculateStatus(el.formData.status, el.formData.actionTakenByRole, el.formData.isDraft, formType);
     });
   } catch (err) {
     console.log("error in updateActions ::: ", err.message);
@@ -2114,6 +2159,7 @@ module.exports.getFRforms = catchAsync(async (req, res) => {
     let aggregateQuery = {};
     let skip = req.query.skip || 0;
     let limit = req.query.limit || 10;
+    let sort = req?.query?.sort
     let { role } = req.decoded;
     let {
       design_year: year,
@@ -2145,6 +2191,10 @@ module.exports.getFRforms = catchAsync(async (req, res) => {
     let keys = calculateKeys(searchFilters["status"], role);
     Object.assign(searchFilters, keys);
     let newFilter = await Service.mapFilterNew(searchFilters);
+    if (Number(req.query.status) === MASTER_STATUS['Not Started']) {// to apply not started filter
+      Object.assign(newFilter, { formData: "" });
+      delete newFilter['formData.currentFormStatus']
+    }  
     // Code that will get the dynamic names when sidemenu is implemented
     //let formTab = await Sidemenu.findOne({ _id: ObjectId(formId) }).lean();
     // get dynamic path and collection name
@@ -2160,7 +2210,8 @@ module.exports.getFRforms = catchAsync(async (req, res) => {
       limit,
       newFilter,
       csv,
-      stateId
+      stateId,
+      sort
     );
     if (getQuery == "true")
       return res.status(200).json({
@@ -2667,7 +2718,7 @@ module.exports.actionTakenByMoHua = catchAsync(async (req, res) => {
     message: "",
   };
   try {
-    let { ulbId, formId, actions, design_year, isDraft,currentFormStatus } = req.body;
+    let { ulbId, formId, actions, design_year, isDraft, status:formBodyStatus } = req.body;
     let { role, _id: userId } = req.decoded;
     let validation = await checkUndefinedValidations({
       ulb: ulbId,
@@ -2684,8 +2735,9 @@ module.exports.actionTakenByMoHua = catchAsync(async (req, res) => {
     }
     const session = await mongoose.startSession();
     await session.startTransaction();
-    let params = {isDraft,role,formId}
-    // await createHistory(params)
+    let masterFormId = FORMIDs['fiscalRanking'];
+    let params = {isDraft,role,userId,formId,masterFormId, formBodyStatus}
+    await createHistory(params)
     let calculationsTabWise = await calculateAndUpdateStatusForMappers(
       session,
       actions,
@@ -2731,7 +2783,7 @@ async function checkIfFormIdExistsOrNot(
   isDraft,
   role,
   userId,
-  currentFormStatus
+  formBodyStatus
 ) {
   let validation = {
     message: "",
@@ -2753,6 +2805,7 @@ async function checkIfFormIdExistsOrNot(
         status: "PENDING",
         currentFormStatus:currentFormStatus,
         isDraft,
+        currentFormStatus: formBodyStatus
       });
       form.save();
       validation.message = "form created";
@@ -2761,7 +2814,7 @@ async function checkIfFormIdExistsOrNot(
     } else {
       let form = await FiscalRanking.findOneAndUpdate(condition, {
         isDraft: isDraft,
-        currentFormStatus:currentFormStatus
+        currentFormStatus: formBodyStatus
       });
       if (form) {
         validation.message = "form exists";
@@ -2792,7 +2845,7 @@ module.exports.createForm = catchAsync(async (req, res) => {
   const session = await mongoose.startSession();
   await session.startTransaction();
   try {
-    let { ulbId, formId, actions, design_year, isDraft ,currentFormStatus } = req.body;
+    let { ulbId, formId, actions, design_year, isDraft,status:formBodyStatus } = req.body;
     let { role, _id: userId } = req.decoded;
     let formIdValidations = await checkIfFormIdExistsOrNot(
       formId,
@@ -2801,7 +2854,7 @@ module.exports.createForm = catchAsync(async (req, res) => {
       isDraft,
       role,
       userId,
-      currentFormStatus
+      formBodyStatus
     );
     if (!formIdValidations.valid) {
       response.message = formIdValidations.message;
@@ -2818,7 +2871,8 @@ module.exports.createForm = catchAsync(async (req, res) => {
       response.message = validation.message;
       return res.status(500).json(response);
     }
-    let params = {isDraft,role,formId}
+    let masterFormId = FORMIDs['fiscalRanking'];
+    let params = {isDraft,role,userId,formId,masterFormId, formBodyStatus}
     await createHistory(params)
     let calculationsTabWise = await calculateAndUpdateStatusForMappers(
       session,
@@ -3273,21 +3327,84 @@ function completionPercent( document, FRCompletionNumber) {
 
 async function createHistory(params){
   try{
-    let {isDraft,role,formId} = params
-    if(!isDraft || role === userTypes.mohua){
-      let data = await FiscalRanking.find({"_id":ObjectId(formId)}).lean()
-      let mapperData  = await FiscalRankingMapper.find({"fiscal_ranking":ObjectId(formId)})
+    let {isDraft,role:actionTakenByRole,userId:actionTakenBy,formId,masterFormId,formBodyStatus} = params
+    // if(!isDraft || role === userTypes.mohua){
+      // let data = await FiscalRanking.find({"_id":ObjectId(formId)}).lean()
+      // let mapperData  = await FiscalRankingMapper.find({"fiscal_ranking":ObjectId(formId)})
+      // data[0]['fiscalMapperData'] = mapperData
+      // let body = {
+      //   "formId":FORMIDs['fiscalRanking'],
+      //   "recordId":formId,
+      //   "data":data
+      // }
+      // let historyParams = {
+      //   body
+      // }
+      // await saveFormHistory(historyParams)
+    // } 
+    if (formBodyStatus === MASTER_STATUS["In Progress"]) {
+      
+      let currentStatusData = {
+        formId: masterFormId,
+        recordId: formId,
+        status: MASTER_STATUS["In Progress"],
+        level: FORM_LEVEL["form"],
+        shortKey: "form_level",
+        rejectReason: "",
+        responseFile: "",
+        actionTakenByRole: actionTakenByRole,
+        actionTakenBy: ObjectId(actionTakenBy),
+      };
+      await saveCurrentStatus({ body: currentStatusData, 
+        // session
+       });
+
+      // await session.commitTransaction();
+      // return Response.OK(res, {}, "Form Submitted");
+    } else if (
+      formBodyStatus === MASTER_STATUS["Verification Not Started"]
+    ) {
+      let data = await FiscalRanking.find({"_id":formId}).lean()
+      let mapperData  = await FiscalRankingMapper.find({"fiscal_ranking":formId})
       data[0]['fiscalMapperData'] = mapperData
-      let body = {
-        "formId":FORMIDs['fiscalRanking'],
-        "recordId":formId,
-        "data":data
-      }
-      let historyParams = {
-        body
-      }
-      await saveFormHistory(historyParams)
-    } 
+      let bodyData = {
+        formId: masterFormId,
+        recordId: formId,
+        data: data,
+      };
+      /* Saving the form history of the user. */
+      await saveFormHistory({ body: bodyData , 
+        // session
+      });
+
+      let currentStatusData = {
+        formId: masterFormId,
+        recordId: formId,
+        status: MASTER_STATUS["Verification Not Started"],
+        level: FORM_LEVEL["form"],
+        shortKey: "form_level",
+        rejectReason: "",
+        responseFile: "",
+        actionTakenByRole: actionTakenByRole,
+        actionTakenBy: ObjectId(actionTakenBy),
+      };
+      await saveCurrentStatus({ body: currentStatusData , 
+        // session
+      });
+
+      let statusHistory = {
+        formId: masterFormId,
+        recordId: formId,
+        shortKey: "form_level",
+        data: currentStatusData,
+      };
+      await saveStatusHistory({ body: statusHistory ,
+        //  session 
+        });
+      
+      // await session.commitTransaction();
+      // return Response.OK(res, {}, "Form Submitted");
+    }
   }
   catch(err){
     console.log("error in createHistory ::: ",err.message)
