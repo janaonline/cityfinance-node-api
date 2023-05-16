@@ -1810,6 +1810,7 @@ function appendStages(query){
       $project: {
         ulbName: "$records.ulbName",
         ulbCode: "$records.ulbCode",
+        ulbId: "$records.ulbId",
         censusCode: "$records.censusCode",
         population: "$records.population",
         stateName: "$stateName.name",
@@ -2336,8 +2337,8 @@ module.exports.getFRforms = catchAsync(async (req, res) => {
     if (!csv) {
       let queryResult = await Ulb.aggregate(aggregateQuery).allowDiskUse(true);
       let data = csv ? [] : queryResult;
-      total = !csv ? data[0]["total"] : 0;
-      total = data[0]["total"];
+      // total = !csv ? data[0]["total"] : 0;
+      total = data.length ? data[0]["total"] : 0;
       let records = csv ? [] : data;
       data = updateActions(records, role, formType);
       response.success = true;
