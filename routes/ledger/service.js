@@ -400,6 +400,7 @@ module.exports.getAllUlbLegders = async function (req, res) {
 }
 // Get all ledgers present in database in CSV Format
 module.exports.getAllLedgersCsv = function (req, res) {
+    const financialYear =  req.query?.financialYear;
     let filename = "All Ledgers " + (moment().format("DD-MMM-YY HH:MM:SS")) + ".csv";
 
     // Set approrpiate download headers
@@ -410,6 +411,11 @@ module.exports.getAllLedgersCsv = function (req, res) {
     res.flushHeaders();
 
     const cursor = UlbLedger.aggregate([
+        {
+            $match:{
+                financialYear
+            }
+        },
         {
             $lookup: {
                 from: "ulbs",
@@ -465,7 +471,7 @@ module.exports.getAllLedgersCsv = function (req, res) {
                 population: 1
             }
         },
-    ]).cursor({ batchSize: 500 }).addCursorFlag('noCursorTimeout', true).exec()
+    ]).cursor({ batchSize: 500 }).allowDiskUse(true).addCursorFlag('noCursorTimeout', true).exec()
     cursor.on("data", function (el) {
         if (el.ulb != 'NA') {
             let line_item = el.line_item ? el.line_item.name.toString().replace(/[,]/g, ' | ') : "";
