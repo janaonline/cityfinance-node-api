@@ -2964,6 +2964,7 @@ async function checkIfFormIdExistsOrNot(
     formId: null,
   };
   try {
+    console.log("currentFormStatus ::: ",currentFormStatus)
     let condition = {
       ulb: ObjectId(ulbId),
       design_year: ObjectId(design_year),
@@ -3018,8 +3019,9 @@ module.exports.createForm = catchAsync(async (req, res) => {
   const session = await mongoose.startSession();
   await session.startTransaction();
   try {
-    let { ulbId, formId, actions, design_year, isDraft,status:currentFormStatus } = req.body;
+    let { ulbId, formId, actions, design_year, isDraft,currentFormStatus } = req.body;
     let { role, _id: userId } = req.decoded;
+    console.log("currentFormStatus ::: 1 ",currentFormStatus)
     let formIdValidations = await checkIfFormIdExistsOrNot(
       formId,
       ulbId,
