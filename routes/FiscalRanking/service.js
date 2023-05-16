@@ -1783,6 +1783,7 @@ function appendStages(query){
       $project: {
         ulbName: "$records.ulbName",
         ulbCode: "$records.ulbCode",
+        ulbId: "$records.ulbId",
         censusCode: "$records.censusCode",
         population: "$records.population",
         stateName: "$stateName.name",
