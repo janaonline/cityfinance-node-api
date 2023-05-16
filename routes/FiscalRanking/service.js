@@ -1362,6 +1362,41 @@ exports.getAll = async function (req, res, next) {
         },
         { $unwind: "$design_year" },
         {
+          $lookup: {
+            from: "fiscalrankingmappers",
+            let: {
+              fyId: "$_id",
+            },
+            pipeline: [
+              {
+                $match: {
+                  $expr: {
+                    $eq: ["$fiscal_ranking", "$$fyId"],
+                  },
+                },
+              },
+              {
+                $lookup: {
+                  from: "years",
+                  let: { yeardId: "$year" },
+                  pipeline: [
+                    {
+                      $match: {
+                        $expr: {
+                          $eq: ["$_id", "$$yeardId"],
+                        },
+                      },
+                    },
+                  ],
+                  as: "years",
+                },
+              },
+              { $unwind: "$years" },
+            ],
+            as: "fyData",
+          },
+        },
+        {
           $project: {
             fy_19_20_cash: 1,
             fy_19_20_online: 1,
@@ -1687,6 +1722,26 @@ function getProjectionQueries(
         formData: { $ifNull: [`$${collectionName}`, ""] },
       },
     };
+    if(!csv){
+      projectionQueryWithConditions = {
+        $project: {
+          ulbName: "$name",
+          ulbId: "$_id",
+          ulbCode: "$code",
+          censusCode: getCensusCodeCondition(),
+          UA: getUAcondition(),
+          UA_ID: getUA_id(),
+          ulbType: "$ulbType.name",
+          ulbType_id: "$ulbType._id",
+          population: "$population",
+          state_id: "$state",
+          populationType: getPopulationCondition(),
+          populationCategory:"$population",
+  
+          formData: { $ifNull: [`$${collectionName}`, ""] },
+        },
+      };
+    }
     if (csv) {
       projectionQueryWithConditions["$project"]["fsMappers"] =
         "$fiscalrankingmappers";
@@ -1704,21 +1759,80 @@ function getProjectionQueries(
       // Object.assign(removeEmptyForms["$match"],newFilter)
       queryArr.push({ $match: newFilter });
     }
+    if(!csv){
+      let sortObj ={
+        "formData.modifiedAt": -1,
+      }
+      queryArr.push({ $sort: sortObj });
+    }
     getFacetQueryForPagination(queryArr, skip, limit);
     //projection query that decides which cols to show
-    let projectionQueryThatDecidesCols = {
-      $project: {
-        formData: 1,
-        records: 1,
-        total: getTotalProjectionQueryForPagination(),
-      },
-    };
-
-    queryArr.push(projectionQueryThatDecidesCols);
+    if(csv){
+      let projectionQueryThatDecidesCols = {
+        $project: {
+          formData: 1,
+          records: 1,
+          total: getTotalProjectionQueryForPagination(),
+        },
+      };
+  
+      queryArr.push(projectionQueryThatDecidesCols);
+    }
+    appendStages(queryArr);
+    
   } catch (err) {
     console.log("error in getProjectionQueries ::: ", err);
   }
 }
+
+function appendStages(query){
+  let arr = [
+    {
+      $unwind: {
+        path: "$records",
+      },
+    },
+    {
+      $lookup: {
+        from: "states",
+        localField: "records.state_id",
+        foreignField: "_id",
+        as: "stateName",
+      },
+    },
+    {
+      $unwind: {
+        path: "$stateName",
+        preserveNullAndEmptyArrays: true,
+      },
+    },
+    {
+      $project: {
+        ulbName: "$records.ulbName",
+        ulbCode: "$records.ulbCode",
+        censusCode: "$records.censusCode",
+        population: "$records.population",
+        stateName: "$stateName.name",
+        populationType: "$records.populationType",
+        filled: "$records.filled",
+        populationCategory: "$records.populationCategory",
+        formData: "$records.formData",
+        "total": {
+          $let: {
+            vars: {
+              totalObj: {
+                $arrayElemAt: ["$metaData", 0],
+              },
+            },
+            in: "$$totalObj.total",
+          },
+        }
+      },
+    },
+  ];
+    return query.push(...arr);
+}
+
 
 /**
  * Get projection query for the columns which exists or not
@@ -1843,11 +1957,13 @@ function getFormQuery(queryArr, collectionName, design_year, csv) {
         pipeline: tableQuery,
       },
     };
-    obj["$lookup"]["pipeline"].push(
-      getCommonLookupObj("years", "design_year", "_id", "design_year")
-    );
-    obj["$lookup"]["pipeline"].push(getUnwindObj("$design_year"));
-    obj["$lookup"]["as"] = collectionName;
+    if(csv){
+      obj["$lookup"]["pipeline"].push(
+        getCommonLookupObj("years", "design_year", "_id", "design_year")
+      );
+      obj["$lookup"]["pipeline"].push(getUnwindObj("$design_year"));
+    }
+      obj["$lookup"]["as"] = collectionName;
     if (!csv) {
       obj["$lookup"]["pipeline"].push({
         $project: {
@@ -1942,21 +2058,27 @@ function getAggregateQuery(
     }
     query.push(match_ulb_with_access);
     // stage 2 get all states realted to ulb
-    get_state_query(query, stateId);
+    if(csv){
+      get_state_query(query, stateId);
+    }
 
     // stage 3 get form data which is filled in this case fiscalranking form
     getFormQuery(query, collectionName, year, csv);
     // if(csv){
     query.push(getUnwindObj(`$${collectionName}`, true));
-    rankingFormQuery(query, "fiscalrankingmappers");
+    if(csv){
+      rankingFormQuery(query, "fiscalrankingmappers");
+    }
     // query.push(getUnwindObj(`$fiscalrankingmappers`,true))
     // }
     // stage 4 get all UA realted to tthis ulb and unwind all ua,s
-    query.push(getCommonLookupObj("uas", "UA", "_id", "UA"));
-    query.push(getUnwindObj("$UA", true));
-    // stage 5 get all ULBS realted the ulb and unwind it
-    query.push(getCommonLookupObj("ulbtypes", "ulbType", "_id", "ulbType"));
-    query.push(getUnwindObj("$ulbType", true));
+    if(csv){
+      query.push(getCommonLookupObj("uas", "UA", "_id", "UA"));
+      query.push(getUnwindObj("$UA", true));
+      // stage 5 get all ULBS realted the ulb and unwind it
+      query.push(getCommonLookupObj("ulbtypes", "ulbType", "_id", "ulbType"));
+      query.push(getUnwindObj("$ulbType", true));
+    }
 
     // stage 6 modify the cols ,handle pagination and search queries
     if (csv) {
@@ -1980,14 +2102,15 @@ function getAggregateQuery(
       getProjectionQueries(query, collectionName, skip, limit, newFilter, csv);
     }
     // stage 7 sort by formData
-    let sortObj ={
-      "formData.modifiedAt": -1,
-    }
+    // let sortObj ={
+    //   "formData.modifiedAt": -1,
+    // }
+    let sortObj = {};
     if(sort && sort !== "null"){
       let splitSort = sort.split('_');
       sortObj[splitSort[0]] = Number(splitSort[1])
+      query.push({ $sort: sortObj });
     }
-    query.push({ $sort: sortObj });
   } catch (err) {
     console.log("error in getAggregateQuery :::: ", err);
   }
@@ -2035,7 +2158,7 @@ function getColumns() {
     sNo: "S No.",
     ulbName: "ULB Name",
     stateName: "State Name",
-    censusCode: "Census/SB Code",
+    censusCode: "Census Code",
     formStatus: "Status",
     cantakeAction: "Action",
     apopulationCategory:"Population Category"
@@ -2212,10 +2335,10 @@ module.exports.getFRforms = catchAsync(async (req, res) => {
       });
     if (!csv) {
       let queryResult = await Ulb.aggregate(aggregateQuery).allowDiskUse(true);
-      let data = csv ? [] : queryResult[0];
-      total = !csv ? data["total"] : 0;
-      total = data["total"];
-      let records = csv ? [] : data["records"];
+      let data = csv ? [] : queryResult;
+      total = !csv ? data[0]["total"] : 0;
+      total = data[0]["total"];
+      let records = csv ? [] : data;
       data = updateActions(records, role, formType);
       response.success = true;
       response.columnNames = cols;
