@@ -1124,7 +1124,18 @@ module.exports.canTakeActionOrViewOnlyMasterForm = (params)=> {
         case status == MASTER_STATUS['Submission Acknowledged By MoHUA']:
             return false;
             break;
-
+        case status ==  MASTER_STATUS['Verification Not Started']:
+            return true;
+            break;
+        case status ==  MASTER_STATUS['Verification In Progress']:
+            return true;
+            break;
+        case status ==  MASTER_STATUS['Returned by PMU']:
+            return false;
+            break;
+        case status ==  MASTER_STATUS['Submission Acknowledged by PMU']:
+            return false;
+            break;
         default:
             break;
     }
