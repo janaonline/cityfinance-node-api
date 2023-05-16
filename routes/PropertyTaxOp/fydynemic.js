@@ -10533,7 +10533,7 @@ let financialYearTableHeader = {
       "info": ""
     }
   ],
-  "1.13": [
+  "1.17": [
     {
       "label": "",
       "info": ""
@@ -11388,6 +11388,50 @@ let specialHeaders = {
   }
 }
 let skipLogicDependencies = {
+  "data.ulbCollectPtax.yearData.0": {
+    "skippable": {
+      "notificationPropertyTax": {
+        "value": "Yes",
+        "years": [
+          0
+        ]
+      },
+      "notificationAdoptionDate": {
+        "value": "Yes",
+        "years": [
+          0
+        ]
+      },
+      "notificationIssuedBy": {
+        "value": "Yes",
+        "years": [
+          0
+        ]
+      },
+      "notificationFile": {
+        "value": "Yes",
+        "years": [
+          0
+        ]
+      },
+      "ulbFinancialYear": {
+        "value": "No",
+        "years": [
+          0
+        ]
+      },
+    }
+  },
+  "data.ulbPassedResolPtax.yearData.0": {
+    "skippable": {
+      "resolutionFile": {
+        "value": "Yes",
+        "years": [
+          0
+        ]
+      },
+    }
+  },
   "data.doesUserChargesDmnd.yearData.0": {
     "skippable": {
       "userChargesDmnd": {
