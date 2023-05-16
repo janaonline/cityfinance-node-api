@@ -17,11 +17,137 @@ const propertyTaxOpFormJson = () => {
         "displayPriority": 3,
         "__v": 0,
         "data": {
+          "ulbCollectPtax": {
+            "key": "ulbCollectPtax",
+            "label": "Did the ULB collect property tax in FY 22-23?",
+            "required": true,
+            "displayPriority": "1.1",
+            "yearData": [
+              {
+                "label": "FY 2018-19",
+                "key": "FY2018-19",
+                "postion": "0",
+                "value": "",
+                "file": "",
+                "min": "",
+                "max": "",
+                "required": true,
+                "type": "ulbCollectPtax",
+                "year": "63735a5bd44534713673c1ca",
+                "code": [],
+                "readonly": false,
+                "formFieldType": "radio-toggle",
+                "bottomText": "",
+                "placeHolder": ""
+              },
+              {},
+              {},
+              {},
+              {}
+            ],
+            "info": ""
+          },
+          "ulbFinancialYear": {
+            "key": "ulbFinancialYear",
+            "label": "On which financial year ULB was formed?",
+            "required": true,
+            "displayPriority": "1.2",
+            "yearData": [
+              {
+                "label": "FY 2018-19",
+                "key": "FY2018-19",
+                "postion": "0",
+                "value": "",
+                "file": "",
+                "min": "",
+                "max": "2023",
+                "required": true,
+                "type": "ulbFinancialYear",
+                "year": "63735a5bd44534713673c1ca",
+                "code": [],
+                "readonly": false,
+                "formFieldType": "number",
+                "bottomText": "",
+                "placeHolder": ""
+              },
+              {},
+              {},
+              {},
+              {}
+            ],
+            "info": ""
+          },
+          "ulbPassedResolPtax": {
+            "key": "ulbPassedResolPtax",
+            "label": "Has the ULB passed the resolution for collecting property tax?",
+            "required": true,
+            "displayPriority": "1.3",
+            "yearData": [
+              {
+                "label": "FY 2018-19",
+                "key": "FY2018-19",
+                "postion": "0",
+                "value": "",
+                "file": "",
+                "min": "",
+                "max": "",
+                "required": true,
+                "type": "ulbPassedResolPtax",
+                "year": "63735a5bd44534713673c1ca",
+                "code": [],
+                "readonly": false,
+                "formFieldType": "radio-toggle",
+                "bottomText": "",
+                "placeHolder": ""
+              },
+              {},
+              {},
+              {},
+              {}
+            ],
+            "info": ""
+          },
+          "resolutionFile": {
+            "key": "resolutionFile",
+            "label": "Please submit the copy of resolution",
+            "required": true,
+            "displayPriority": "1.4",
+            "yearData": [
+              {
+                "label": "FY 2018-19",
+                "key": "FY2018-19",
+                "postion": "0",
+                "value": "",
+                "file": {
+                  "name": "",
+                  "url": ""
+                },
+                "allowedFileTypes": [
+                  "pdf"
+                ],
+                "min": "",
+                "max": "",
+                "required": true,
+                "type": "resolutionFile",
+                "year": "63735a5bd44534713673c1ca",
+                "code": [],
+                "readonly": false,
+                "formFieldType": "file",
+                "bottomText": "",
+                "placeHolder": ""
+              },
+              {},
+              {},
+              {},
+              {}
+            ],
+            "info": ""
+          },
           "notificationPropertyTax": {
             "key": "notificationPropertyTax",
             "label": "Has the ULB adopted notification for charging property tax?",
             "required": true,
-            "displayPriority": "1.1",
+            "displayPriority": "1.5",
             "yearData": [
               {
                 "label": "FY 2018-19",
@@ -51,7 +177,7 @@ const propertyTaxOpFormJson = () => {
             "key": "notificationAdoptionDate",
             "label": "What was the notification adoption date?",
             "required": true,
-            "displayPriority": "1.2",
+            "displayPriority": "1.6",
             "yearData": [
               {
                 "label": "FY 2018-19",
@@ -82,7 +208,7 @@ const propertyTaxOpFormJson = () => {
             "key": "notificationIssuedBy",
             "label": "The adopted notification was issued by?",
             "required": true,
-            "displayPriority": "1.3",
+            "displayPriority": "1.7",
             "yearData": [
               {
                 "label": "FY 2018-19",
@@ -122,7 +248,7 @@ const propertyTaxOpFormJson = () => {
             "key": "notificationFile",
             "label": "Upload a copy of the notification",
             "required": true,
-            "displayPriority": "1.4",
+            "displayPriority": "1.8",
             "yearData": [
               {
                 "label": "FY 2018-19",
@@ -158,7 +284,7 @@ const propertyTaxOpFormJson = () => {
             "key": "dmdIncludingCess",
             "label": "Total property tax demand (including cess, other taxes, AND excluding user charges if user charges are collected with property tax)",
             "required": true,
-            "displayPriority": "1.5",
+            "displayPriority": "1.9",
             "yearData": [
               {
                 "label": "FY 2018-19",
@@ -262,7 +388,7 @@ const propertyTaxOpFormJson = () => {
             "key": "cdmdIncludingCess",
             "label": "Current property tax demand (including cess, other taxes, AND excluding user charges if user charges are collected with property tax)",
             "required": false,
-            "displayPriority": "1.6",
+            "displayPriority": "1.10",
             "yearData": [
               {
                 "label": "FY 2018-19",
@@ -366,7 +492,7 @@ const propertyTaxOpFormJson = () => {
             "key": "admdIncludingCess",
             "label": "Arrear property tax demand (including cess, other taxes, AND excluding user charges if user charges are collected with property tax)",
             "required": false,
-            "displayPriority": "1.7",
+            "displayPriority": "1.11",
             "yearData": [
               {
                 "label": "FY 2018-19",
@@ -470,7 +596,7 @@ const propertyTaxOpFormJson = () => {
             "key": "dmdexcludingCess",
             "label": "Total property tax demand (excluding cess, other taxes, user charges if any)",
             "required": true,
-            "displayPriority": "1.8",
+            "displayPriority": "1.12",
             "yearData": [
               {
                 "label": "FY 2018-19",
@@ -574,7 +700,7 @@ const propertyTaxOpFormJson = () => {
             "key": "taxTypeDemand",
             "label": "Other tax demand (Demand figure for each type of tax other than property tax collected)",
             "required": true,
-            "displayPriority": "1.9",
+            "displayPriority": "1.13",
             "replicaCount": 0,
             "copyChildFrom": [
               {
@@ -697,7 +823,7 @@ const propertyTaxOpFormJson = () => {
             "key": "cessDemand",
             "label": "Cess demand (Demand figure for each type of cess collected)",
             "required": true,
-            "displayPriority": "1.10",
+            "displayPriority": "1.14",
             "replicaCount": 0,
             "copyChildFrom": [
               {
@@ -820,7 +946,7 @@ const propertyTaxOpFormJson = () => {
             "key": "doesUserChargesDmnd",
             "label": "Do you collect any user charges along with Property Tax?",
             "required": true,
-            "displayPriority": "1.11",
+            "displayPriority": "1.15",
             "yearData": [
               {
                 "label": "FY 2018-19",
@@ -850,7 +976,7 @@ const propertyTaxOpFormJson = () => {
             "key": "userChargesDmnd",
             "label": "User charges demand (Demand figure for each type of user charge collected along with property tax)",
             "required": true,
-            "displayPriority": "1.12",
+            "displayPriority": "1.16",
             "replicaCount": 0,
             "copyChildFrom": [
               {
@@ -1000,7 +1126,7 @@ const propertyTaxOpFormJson = () => {
             "key": "collectIncludingCess",
             "label": "Total property tax collection (including cess, other taxes, AND excluding user charges if user charges are collected with property tax)",
             "required": true,
-            "displayPriority": "1.13",
+            "displayPriority": "1.17",
             "yearData": [
               {
                 "label": "FY 2018-19",
@@ -1104,7 +1230,7 @@ const propertyTaxOpFormJson = () => {
             "key": "cuCollectIncludingCess",
             "label": "Current property tax collection (including cess, other taxes, AND excluding user charges if user charges are collected with property tax)",
             "required": false,
-            "displayPriority": "1.14",
+            "displayPriority": "1.18",
             "yearData": [
               {
                 "label": "FY 2018-19",
@@ -1208,7 +1334,7 @@ const propertyTaxOpFormJson = () => {
             "key": "arCollectIncludingCess",
             "label": "Arrear property tax collection (including cess, other taxes, AND excluding user charges if user charges are collected with property tax)",
             "required": false,
-            "displayPriority": "1.15",
+            "displayPriority": "1.19",
             "yearData": [
               {
                 "label": "FY 2018-19",
@@ -1312,7 +1438,7 @@ const propertyTaxOpFormJson = () => {
             "key": "collectExcludingCess",
             "label": "Total property tax collection (excluding cess,other taxes, user charges if any)",
             "required": true,
-            "displayPriority": "1.16",
+            "displayPriority": "1.20",
             "yearData": [
               {
                 "label": "FY 2018-19",
@@ -1416,7 +1542,7 @@ const propertyTaxOpFormJson = () => {
             "key": "taxTypeCollection",
             "label": "Other tax collections (Collection figure for each type of tax other than property tax collected)",
             "required": true,
-            "displayPriority": "1.17",
+            "displayPriority": "1.21",
             "replicaCount": 0,
             "copyChildFrom": [
               {
@@ -1539,7 +1665,7 @@ const propertyTaxOpFormJson = () => {
             "key": "cessCollect",
             "label": "Cess collection (Collection figure for each type of cess collected)",
             "required": true,
-            "displayPriority": "1.18",
+            "displayPriority": "1.22",
             "replicaCount": 0,
             "copyChildFrom": [
               {
@@ -1662,7 +1788,7 @@ const propertyTaxOpFormJson = () => {
             "key": "userChargesCollection",
             "label": "User charges collection (Collection figure for each type of user charge collected along with property tax)",
             "required": true,
-            "displayPriority": "1.19",
+            "displayPriority": "1.23",
             "replicaCount": 0,
             "copyChildFrom": [
               {
@@ -10377,7 +10503,7 @@ function getInputKeysByType(formType, type, label, dataSource = null, position, 
 
 
 let financialYearTableHeader = {
-  "1.5": [
+  "1.9": [
     {
       "label": "",
       "info": ""
