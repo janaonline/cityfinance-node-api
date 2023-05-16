@@ -10,6 +10,25 @@ const StatusList = require("../util/newStatusList");
 const { Not_Started } = require("../util/newStatusList");
 
 
+const CfrFormRejected = (ulbName)=>{
+  try{
+    return {
+      subject:`Fiscal Ranking Form Returned by PMU`,
+      body:`Dear ${ulbName} <br>
+      <p>Your Fiscal Ranking form has been returned by PMU.</p>
+      <p>Please visit https://cityfinance.in/rankings/login to submit the corrected data.</p>`
+    }
+  }
+  catch(err){
+    console.log("error in CfrFormRejected ::: ",err.message)
+  }
+  return {
+    "subject":"",
+    "body":""
+  }
+}
+
+
 const userSignup = (userName, name, link) => {
   return {
     subject: `Registration Successful for City Finance`,
@@ -1606,6 +1625,7 @@ module.exports = {
   grantClaimAcknowledgement,
   gtcSubmission,
   ulbFormSubmitted,
+  CfrFormRejected,
   stateUlbFormTrigger
 
 };

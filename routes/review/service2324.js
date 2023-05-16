@@ -346,7 +346,10 @@ module.exports.get = async (req, res) => {
       if(el.formData || el.formData === "" ) delete el.formData;
   
     })
-    const  ulbFormStatus = await MASTERSTATUS.find({},{statusId:1, status:1}).lean()
+    const Query15FC = {
+      $or: [{ type: "15thFC" }, { multi: { $in: ["15thFC"] } }],
+    };
+    const  ulbFormStatus = await MASTERSTATUS.find(Query15FC,{statusId:1, status:1}).lean()
 
     return res.status(200).json({
       success: true,
