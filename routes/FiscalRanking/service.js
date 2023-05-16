@@ -1335,6 +1335,41 @@ exports.getAll = async function (req, res, next) {
         },
         { $unwind: "$design_year" },
         {
+          $lookup: {
+            from: "fiscalrankingmappers",
+            let: {
+              fyId: "$_id",
+            },
+            pipeline: [
+              {
+                $match: {
+                  $expr: {
+                    $eq: ["$fiscal_ranking", "$$fyId"],
+                  },
+                },
+              },
+              {
+                $lookup: {
+                  from: "years",
+                  let: { yeardId: "$year" },
+                  pipeline: [
+                    {
+                      $match: {
+                        $expr: {
+                          $eq: ["$_id", "$$yeardId"],
+                        },
+                      },
+                    },
+                  ],
+                  as: "years",
+                },
+              },
+              { $unwind: "$years" },
+            ],
+            as: "fyData",
+          },
+        },
+        {
           $project: {
             fy_19_20_cash: 1,
             fy_19_20_online: 1,
