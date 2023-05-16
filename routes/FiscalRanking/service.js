@@ -2832,7 +2832,7 @@ async function checkIfFormIdExistsOrNot(
   isDraft,
   role,
   userId,
-  formBodyStatus
+  currentFormStatus
 ) {
   let validation = {
     message: "",
@@ -2853,7 +2853,7 @@ async function checkIfFormIdExistsOrNot(
         actionTakenBy: userId,
         status: "PENDING",
         isDraft,
-        currentFormStatus: formBodyStatus
+        currentFormStatus: currentFormStatus
       });
       form.save();
       validation.message = "form created";
