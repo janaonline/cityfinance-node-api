@@ -5878,7 +5878,7 @@ const propertyTaxOpFormJson = () => {
           },
           "resNoWaterChrgDm": {
             "key": "resNoWaterChrgDm",
-            "label": "Number of Households/properties from which water charges was demanded",
+            "label": "Number of connections from which water charges was demanded",
             "required": true,
             "displayPriority": "5.14",
             "yearData": [
@@ -5972,7 +5972,7 @@ const propertyTaxOpFormJson = () => {
           },
           "resValueWaterChrgCollected": {
             "key": "resValueWaterChrgCollected",
-            "label": "Value of water charges collected from Households/properties (INR lakhs)",
+            "label": "Value of water charges collected from connections (INR lakhs)",
             "required": true,
             "displayPriority": "5.15",
             "yearData": [
@@ -6076,7 +6076,7 @@ const propertyTaxOpFormJson = () => {
           },
           "resNoWaterChrgCollected": {
             "key": "resNoWaterChrgCollected",
-            "label": "Number of Households/properties from which water charges was collected",
+            "label": "Number of connections from which water charges was collected",
             "required": true,
             "displayPriority": "5.16",
             "yearData": [
@@ -6274,7 +6274,7 @@ const propertyTaxOpFormJson = () => {
           },
           "comNoWaterChrgDm": {
             "key": "comNoWaterChrgDm",
-            "label": "Number of Households/properties from which water charges was demanded",
+            "label": "Number of connections from which water charges was demanded",
             "required": true,
             "displayPriority": "5.18",
             "yearData": [
@@ -6368,7 +6368,7 @@ const propertyTaxOpFormJson = () => {
           },
           "comValueWaterChrgCollected": {
             "key": "comValueWaterChrgCollected",
-            "label": "Value of water charges collected from Households/properties (INR lakhs)",
+            "label": "Value of water charges collected from connections (INR lakhs)",
             "required": true,
             "displayPriority": "5.19",
             "yearData": [
@@ -6472,7 +6472,7 @@ const propertyTaxOpFormJson = () => {
           },
           "comNoWaterChrgCollected": {
             "key": "comNoWaterChrgCollected",
-            "label": "Number of Households/properties from which water charges was collected",
+            "label": "Number of connections from which water charges was collected",
             "required": true,
             "displayPriority": "5.20",
             "yearData": [
@@ -6670,7 +6670,7 @@ const propertyTaxOpFormJson = () => {
           },
           "indNoWaterChrgDm": {
             "key": "indNoWaterChrgDm",
-            "label": "Number of Households/properties from which water charges was demanded",
+            "label": "Number of connections from which water charges was demanded",
             "required": true,
             "displayPriority": "5.22",
             "yearData": [
@@ -6764,7 +6764,7 @@ const propertyTaxOpFormJson = () => {
           },
           "indValueWaterChrgCollected": {
             "key": "indValueWaterChrgCollected",
-            "label": "Value of water charges collected from Households/properties (INR lakhs)",
+            "label": "Value of water charges collected from connections (INR lakhs)",
             "required": true,
             "displayPriority": "5.23",
             "yearData": [
@@ -6868,7 +6868,7 @@ const propertyTaxOpFormJson = () => {
           },
           "indNoWaterChrgCollected": {
             "key": "indNoWaterChrgCollected",
-            "label": "Number of Households/properties from which water charges was collected",
+            "label": "Number of connections from which water charges was collected",
             "required": true,
             "displayPriority": "5.24",
             "yearData": [
@@ -7073,7 +7073,7 @@ const propertyTaxOpFormJson = () => {
               },
               {
                 "key": "othersNoWaterChrgDm",
-                "label": "Number of Households/properties from which water charges was demanded",
+                "label": "Number of connections from which water charges was demanded",
                 "required": true,
                 "displayPriority": "5.27",
                 "yearData": [
@@ -7167,7 +7167,7 @@ const propertyTaxOpFormJson = () => {
               },
               {
                 "key": "othersValueWaterChrgCollected",
-                "label": "Value of water charges collected from Households/properties (INR lakhs)",
+                "label": "Value of water charges collected from connections (INR lakhs)",
                 "required": true,
                 "displayPriority": "5.28",
                 "yearData": [
@@ -7271,7 +7271,7 @@ const propertyTaxOpFormJson = () => {
               },
               {
                 "key": "othersNoWaterChrgCollected",
-                "label": "Number of Households/properties from which water charges was collected",
+                "label": "Number of connections from which water charges was collected",
                 "required": true,
                 "displayPriority": "5.29",
                 "yearData": [
@@ -8619,7 +8619,7 @@ const propertyTaxOpFormJson = () => {
           },
           "resNoSewerageTaxDm": {
             "key": "resNoSewerageTaxDm",
-            "label": "Number of Households/properties from which sewerage charges was demanded",
+            "label": "Number of connections from which sewerage charges was demanded",
             "required": true,
             "displayPriority": "6.14",
             "yearData": [
@@ -8713,7 +8713,7 @@ const propertyTaxOpFormJson = () => {
           },
           "resValueSewerageTaxCollected": {
             "key": "resValueSewerageTaxCollected",
-            "label": "Value of sewerage charges collected from Households/properties (INR lakhs)",
+            "label": "Value of sewerage charges collected from connections (INR lakhs)",
             "required": true,
             "displayPriority": "6.15",
             "yearData": [
@@ -8817,7 +8817,7 @@ const propertyTaxOpFormJson = () => {
           },
           "resNoSewerageTaxCollected": {
             "key": "resNoSewerageTaxCollected",
-            "label": "Number of Households/properties from which sewerage charges was collected",
+            "label": "Number of connections from which sewerage charges was collected",
             "required": true,
             "displayPriority": "6.16",
             "yearData": [
@@ -9015,7 +9015,7 @@ const propertyTaxOpFormJson = () => {
           },
           "comNoSewerageTaxDm": {
             "key": "comNoSewerageTaxDm",
-            "label": "Number of Households/properties from which sewerage charges was demanded",
+            "label": "Number of connections from which sewerage charges was demanded",
             "required": true,
             "displayPriority": "6.18",
             "yearData": [
@@ -9109,7 +9109,7 @@ const propertyTaxOpFormJson = () => {
           },
           "comValueSewerageTaxCollected": {
             "key": "comValueSewerageTaxCollected",
-            "label": "Value of sewerage charges collected from Households/properties (INR lakhs)",
+            "label": "Value of sewerage charges collected from connections (INR lakhs)",
             "required": true,
             "displayPriority": "6.19",
             "yearData": [
@@ -9213,7 +9213,7 @@ const propertyTaxOpFormJson = () => {
           },
           "comNoSewerageTaxCollected": {
             "key": "comNoSewerageTaxCollected",
-            "label": "Number of Households/properties from which sewerage charges was collected",
+            "label": "Number of connections from which sewerage charges was collected",
             "required": true,
             "displayPriority": "6.20",
             "yearData": [
@@ -9411,7 +9411,7 @@ const propertyTaxOpFormJson = () => {
           },
           "indNoSewerageTaxDm": {
             "key": "indNoSewerageTaxDm",
-            "label": "Number of Households/properties from which sewerage charges was demanded",
+            "label": "Number of connections from which sewerage charges was demanded",
             "required": true,
             "displayPriority": "6.22",
             "yearData": [
@@ -9505,7 +9505,7 @@ const propertyTaxOpFormJson = () => {
           },
           "indValueSewerageTaxCollected": {
             "key": "indValueSewerageTaxCollected",
-            "label": "Value of sewerage charges collected from Households/properties (INR lakhs)",
+            "label": "Value of sewerage charges collected from connections (INR lakhs)",
             "required": true,
             "displayPriority": "6.23",
             "yearData": [
@@ -9609,7 +9609,7 @@ const propertyTaxOpFormJson = () => {
           },
           "indNoSewerageTaxCollected": {
             "key": "indNoSewerageTaxCollected",
-            "label": "Number of Households/properties from which sewerage charges was collected",
+            "label": "Number of connections from which sewerage charges was collected",
             "required": true,
             "displayPriority": "6.24",
             "yearData": [
@@ -9814,7 +9814,7 @@ const propertyTaxOpFormJson = () => {
               },
               {
                 "key": "otherNoSewerageTaxDm",
-                "label": "Number of Households/properties from which sewerage charges was demanded",
+                "label": "Number of connections from which sewerage charges was demanded",
                 "required": true,
                 "displayPriority": "6.27",
                 "yearData": [
@@ -9908,7 +9908,7 @@ const propertyTaxOpFormJson = () => {
               },
               {
                 "key": "otherValueSewerageTaxCollected",
-                "label": "Value of sewerage charges collected from Households/properties (INR lakhs)",
+                "label": "Value of sewerage charges collected from connections (INR lakhs)",
                 "required": true,
                 "displayPriority": "6.28",
                 "yearData": [
@@ -10012,7 +10012,7 @@ const propertyTaxOpFormJson = () => {
               },
               {
                 "key": "otherNoSewerageTaxCollected",
-                "label": "Number of Households/properties from which sewerage charges was collected",
+                "label": "Number of connections from which sewerage charges was collected",
                 "required": true,
                 "displayPriority": "6.29",
                 "yearData": [
@@ -10743,7 +10743,7 @@ let financialYearTableHeader = {
       "info": ""
     },
     {
-      "label": "Residential households/properties",
+      "label": "Residential connections",
       "info": ""
     },
     {
@@ -10773,7 +10773,7 @@ let financialYearTableHeader = {
       "info": ""
     },
     {
-      "label": "Commercial households/properties",
+      "label": "Commercial connections",
       "info": ""
     },
     {
@@ -10803,7 +10803,7 @@ let financialYearTableHeader = {
       "info": ""
     },
     {
-      "label": "Industrial households/properties",
+      "label": "Industrial connections",
       "info": ""
     },
     {
@@ -10833,7 +10833,7 @@ let financialYearTableHeader = {
       "info": ""
     },
     {
-      "label": "Other households/properties(any other connection type)",
+      "label": "Other connections(any other connection type)",
       "info": ""
     },
     {
@@ -11013,7 +11013,7 @@ let financialYearTableHeader = {
       "info": ""
     },
     {
-      "label": "Residential households/properties",
+      "label": "Residential connections",
       "info": ""
     },
     {
@@ -11043,7 +11043,7 @@ let financialYearTableHeader = {
       "info": ""
     },
     {
-      "label": "Commercial households/properties",
+      "label": "Commercial connections",
       "info": ""
     },
     {
@@ -11073,7 +11073,7 @@ let financialYearTableHeader = {
       "info": ""
     },
     {
-      "label": "Industrial households/properties",
+      "label": "Industrial connections",
       "info": ""
     },
     {
@@ -11103,7 +11103,7 @@ let financialYearTableHeader = {
       "info": ""
     },
     {
-      "label": "Other households/properties(any other connection type)",
+      "label": "Other connections(any other connection type)",
       "info": ""
     },
     {
@@ -11836,9 +11836,9 @@ let skipLogicDependencies = {
 function getSkippableKeys(skipLogics) {
   const results = {};
   Object.entries(skipLogics).forEach(([key, value]) => {
-      Object.keys(value.skippable).forEach(itemKey => {
-          results[itemKey] = key.split('.')[1];
-      })
+    Object.keys(value.skippable).forEach(itemKey => {
+      results[itemKey] = key.split('.')[1];
+    })
   })
   return results;
 }
