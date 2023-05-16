@@ -2862,7 +2862,7 @@ async function checkIfFormIdExistsOrNot(
     } else {
       let form = await FiscalRanking.findOneAndUpdate(condition, {
         isDraft: isDraft,
-        currentFormStatus: formBodyStatus
+        currentFormStatus: currentFormStatus
       });
       if (form) {
         validation.message = "form exists";
