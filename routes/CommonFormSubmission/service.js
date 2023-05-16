@@ -230,7 +230,6 @@ module.exports.createAndUpdateFormMaster = async (params) => {
               formBodyStatus === MASTER_STATUS["Under Review By State"]
                 ? new Date()
                 : "";
-                console.log("formBodyStatus ::: ",formBodyStatus)
                 if(formBodyStatus === MASTER_STATUS["Under Review By State"]){
                   if(!formData.isProjectLoaded && formData2324){
                     formData.projects = formData2324.projects
