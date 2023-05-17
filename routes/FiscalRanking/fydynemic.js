@@ -6453,6 +6453,27 @@ const questionLevelStatus = {
   // "4":"NA"
 }
 
+const calculatedFields = [
+  'taxRevenue',
+  'feeUserChrg',
+  'assignedCompensation',
+  'revGrants',
+  'centralGrant',
+  'assetsSale',
+  'netRevenue',
+  'stateGrant',
+  'totalOwnRevenue',
+  'totalIncome',
+  'establishExpense',
+  'fixedAsset',
+  'totalOmExp',
+  'totalExpend',
+  'CaptlExp',
+  'registerGisProof',
+  'accountStwreProof'
+]
+
+
 module.exports.financialYearTableHeader = financialYearTableHeader
 module.exports.jsonObject = jsonObject
 module.exports.statusList = statusList
@@ -6461,3 +6482,4 @@ module.exports.questionLevelStatus = questionLevelStatus
 module.exports.fiscalRankingTabs = fiscalRankingTabs;
 module.exports.fiscalRankingFormJson = fiscalRankingFormJson;
 module.exports.getInputKeysByType = getInputKeysByType;
+module.exports.calculatedFields = calculatedFields
