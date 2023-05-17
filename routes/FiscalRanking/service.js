@@ -3382,6 +3382,7 @@ function createCsv(params) {
     let cursor = moongose
       .model(modelName)
       .aggregate(query)
+      .allowDiskUse(true)
       .cursor({ batchSize: 500 })
       .addCursorFlag("noCursorTimeout", true)
       .exec();
