@@ -927,7 +927,7 @@ exports.getView = async function (req, res, next) {
                 console.log(">>>>>.readOnly ulb ::",pf['readonly'])
               }
             } else {
-              if ([1,2,null].includes(viewOne.currentFormStatus)) {
+              if ([1,2,null].includes(viewOne.currentFormStatus) ) {
                 let ulbFyAmount = await getUlbLedgerDataFilter({
                   code: pf.code,
                   year: pf.year,
