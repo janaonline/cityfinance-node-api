@@ -6469,8 +6469,8 @@ const calculatedFields = [
   'totalOmExp',
   'totalExpend',
   'CaptlExp',
-  'registerGisProof',
-  'accountStwreProof'
+  'registerGisProof', //temporary solution should be handled by frontend
+  'accountStwreProof' //temporary solution should be handled by frontend
 ]
 
 

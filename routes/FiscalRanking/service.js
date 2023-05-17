@@ -1008,7 +1008,7 @@ exports.getView = async function (req, res, next) {
                       (el) => el?.year_id.toString() === pf?.year.toString()
                     )
                     : false;
-                  pf["status"] = chekFile ? "NA" : "PENDING";
+                  pf["status"] = chekFile ? "" : "PENDING";
                   pf["modelName"] = chekFile ? "ULBLedger" : "";
                   if (chekFile) {
                     pf[
@@ -2530,7 +2530,7 @@ async function calculateAndUpdateStatusForMappers(
       "signedCopyOfFile",
       "otherUpload",
     ];
-
+    const statusNotMandatory = ["caMembershipNo","uploadFyDoc"]
     for (var tab of tabs) {
       conditionalObj[tab._id.toString()] = {};
       let key = tab.id;
@@ -2548,7 +2548,7 @@ async function calculateAndUpdateStatusForMappers(
           let dynamicObj = obj[k];
           let financialInfo = obj;
           let status = yearArr.every((item) => {
-            if(calculatedFields.includes(item?.type)) return true; //temporary solution should be handled by frontend
+            if(calculatedFields.includes(item?.type)) return true; 
             if (item?.type) {
               return item.status === "APPROVED";
             } else {
