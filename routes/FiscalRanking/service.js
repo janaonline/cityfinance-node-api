@@ -1475,7 +1475,7 @@ exports.getAll = async function (req, res, next) {
       .json({ status: false, message: "Something error wrong!" });
   }
 };
-exports.overviewActivities = async function (req, res, next) {
+exports.overviewUlbActivities = async function (req, res, next) {
   const columns = [
     {
       "label": "State Name",
@@ -1483,11 +1483,11 @@ exports.overviewActivities = async function (req, res, next) {
     },
     {
       "label": "Total ULBs",
-      "key": "ulbCount"
+      "key": "totalUlbs"
     },
     {
       "label": "Under Review by PMU",
-      "key": "underReviewByPmu"
+      "key": "underReviewByPMU"
     },
     {
       "label": "Returned by PMU",
@@ -1527,8 +1527,8 @@ exports.overviewActivities = async function (req, res, next) {
       {
         "$group": {
           "_id": "$state",
-          "ulbCount": { $sum: 1 },
-          "underReviewByPmu": {
+          "totalUlbs": { $sum: 1 },
+          "underReviewByPMU": {
             "$sum": {
               "$cond": [
                 { "$eq": ["$formData.currentFormStatus", 8] },
@@ -1575,15 +1575,20 @@ exports.overviewActivities = async function (req, res, next) {
         }
       },
       {
-        "$unwind":{
-            "path":"$states",
-            "preserveNullAndEmptyArrays": true
-        }  
+        "$unwind": {
+          "path": "$states",
+          "preserveNullAndEmptyArrays": true
+        }
       },
       {
-          "$project":{
-              "stateName":"$states.name"
-          }
+        "$project": {
+          "stateName": "$states.name",
+          "totalUlbs": 1,
+          "underReviewByPMU": 1,
+          "returnedByPMU": 1,
+          "inProgress": 1,
+          "notStarted": 1,
+        }
       }
     ])
 
@@ -1592,6 +1597,147 @@ exports.overviewActivities = async function (req, res, next) {
       status: true,
       message: "Successfully saved data!",
       columns,
+      name: "Overview of ULB activities",
+      data,
+    });
+  } catch (error) {
+    console.log("err", error);
+    return res
+      .status(400)
+      .json({ status: false, message: "Something error wrong!" });
+  }
+};
+exports.overviewPMUActivities = async function (req, res, next) {
+  const columns = [
+    {
+      "label": "State Name",
+      "key": "stateName"
+    },
+    // {
+    //   "label": "Under Review by PMU",
+    //   "key": "underReviewByPMU"
+    // },
+    {
+      "label": "Verification Not Started",
+      "key": "verificationNotStarted"
+    },
+    {
+      "label": "Verification In Progress",
+      "key": "verificationInProgress"
+    },
+    {
+      "label": "Returned by PMU",
+      "key": "returnedByPMU"
+    },
+    {
+      "label": "Submission Acknowledged by PMU",
+      "key": "submissionAckByPMU"
+    },
+  ];
+  try {
+    const data = await Ulb.aggregate([
+      // {
+      // "$match":{
+      // "_id":ObjectId("5fa24662072dab780a6f15c9")
+      // }
+      // },
+
+      {
+        "$lookup": {
+          "from": "fiscalrankings",
+          "localField": "_id",
+          "foreignField": "ulb",
+          "as": "formData"
+        }
+      },
+      {
+        "$unwind": {
+          "path": "$formData",
+          "preserveNullAndEmptyArrays": true
+        }
+      },
+      {
+        "$group": {
+          "_id": "$state",
+          // "underReviewByPMU": {
+          //   "$sum": {
+          //     "$cond": [
+          //       { "$eq": ["$formData.currentFormStatus", 9] },
+          //       1,
+          //       0
+          //     ]
+          //   }
+          // },
+          "verificationNotStarted": {
+            "$sum": {
+              "$cond": [
+                { "$ne": ["$formData.currentFormStatus", 8] },
+                1,
+                0
+              ]
+            }
+          },
+          "verificationInProgress": {
+            "$sum": {
+              "$cond": [
+                { "$eq": ["$formData.currentFormStatus", 9] },
+                1,
+                0
+              ]
+            }
+          },
+          "returnedByPMU": {
+            "$sum": {
+              "$cond": [
+                { "$eq": ["$formData.currentFormStatus", 10] },
+                1,
+                0
+              ]
+            }
+          },
+          "submissionAckByPMU": {
+            "$sum": {
+              "$cond": [
+                { "$eq": ["$formData.currentFormStatus", 11] },
+                1,
+                0
+              ]
+            }
+          },
+        }
+      },
+      {
+        "$lookup": {
+          "from": "states",
+          "localField": "_id",
+          "foreignField": "_id",
+          "as": "states"
+        }
+      },
+      {
+        "$unwind": {
+          "path": "$states",
+          "preserveNullAndEmptyArrays": true
+        }
+      },
+      {
+        "$project": {
+          "stateName": "$states.name",
+          // "underReviewByPMU": 1,
+          "verificationNotStarted": 1,
+          "verificationInProgress": 1,
+          "returnedByPMU": 1,
+          "submissionAckByPMU": 1
+        }
+      }
+    ])
+
+
+    return res.status(200).json({
+      status: true,
+      message: "Successfully saved data!",
+      columns,
+      name: "Overview of PMU activities",
       data,
     });
   } catch (error) {
