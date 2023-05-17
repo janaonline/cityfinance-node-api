@@ -878,6 +878,7 @@ exports.getView = async function (req, res, next) {
             fyDynemic: subData,
           };
           pf['readonly'] =  getReadOnly(data?.currentFormStatus, viewOne.isDraft,role,"PENDING");
+          
           if (pf?.code?.length > 0) {
             pf["status"] = null;
             pf["modelName"] = "";
@@ -887,7 +888,9 @@ exports.getView = async function (req, res, next) {
                   e?.year?.toString() == pf?.year?.toString() &&
                   e.type == pf.type
               );
+              
               if (singleFydata) {
+                console.log("code length :: ",code)
                 if (singleFydata?.date !== null) {
                   pf["date"] = singleFydata ? singleFydata.date : null;
                 } else {
@@ -915,6 +918,7 @@ exports.getView = async function (req, res, next) {
                 pf["status"] = ulbFyAmount ? "" : "PENDING";
                 // subData[key]["modelName"] = ulbFyAmount > 0 ? "ULBLedger" : "FiscalRanking"
                 pf["modelName"] = ulbFyAmount > 0 ? "ULBLedger" : "";
+                console.log("ulbFyAmount ::: ",ulbFyAmount)
                 if (subData[key].calculatedFrom === undefined) {
                   pf["readonly"] = ulbFyAmount > 0 ? true : getReadOnly(data?.currentFormStatus, viewOne.isDraft,role,singleFydata.status);
                 } else {
@@ -923,7 +927,7 @@ exports.getView = async function (req, res, next) {
                 console.log(">>>>>.readOnly ulb ::",pf['readonly'])
               }
             } else {
-              if ([1,2].includes(viewOne.currentFormStatus) === null) {
+              if ([1,2,null].includes(viewOne.currentFormStatus)) {
                 let ulbFyAmount = await getUlbLedgerDataFilter({
                   code: pf.code,
                   year: pf.year,
@@ -934,7 +938,6 @@ exports.getView = async function (req, res, next) {
                 pf["status"] = ulbFyAmount ? "NA" : "PENDING";
                 // subData[key]["modelName"] = ulbFyAmount > 0 ? "ULBLedger" : "FiscalRanking"
                 pf["modelName"] = ulbFyAmount > 0 ? "ULBLedger" : "";
-                console.log("ulbFyAmount ::: ",ulbFyAmount)
                 if (subData[key].calculatedFrom === undefined) {
                   pf["readonly"] = ulbFyAmount > 0 ? true : getReadOnly(data?.currentFormStatus, viewOne.isDraft,role,singleFydata.status);
                 } else {
