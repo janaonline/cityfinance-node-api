@@ -1094,7 +1094,7 @@ exports.getView = async function (req, res, next) {
                   // console.log("sumOfPreviousYear :: ",sumOfPreviousYear)
                   // console.log("sumOfCurrentYear :: ",sumOfCurrentYear)
                   pf["value"] = sumOfCurrentYear - sumOfPreviousYear;
-                  pf['readOnly'] = true
+                  pf['readonly'] = true
                   pf["modelName"] = "ULBLedger";
                   // console.log(">>>>>>>>>>>> ",pf['value'])
                 }
