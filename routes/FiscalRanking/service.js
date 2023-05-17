@@ -911,7 +911,7 @@ exports.getView = async function (req, res, next) {
                 // parameters['valueObj'] = {value:ulbFyAmount}
                 pf["value"] = ulbFyAmount;
                 // pf['value'] = ulbFyAmount;
-                pf["status"] = ulbFyAmount ? "NA" : "PENDING";
+                pf["status"] = ulbFyAmount ? "" : "PENDING";
                 // subData[key]["modelName"] = ulbFyAmount > 0 ? "ULBLedger" : "FiscalRanking"
                 pf["modelName"] = ulbFyAmount > 0 ? "ULBLedger" : "";
                 if (subData[key].calculatedFrom === undefined) {
