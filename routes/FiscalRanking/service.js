@@ -43,7 +43,8 @@ const {
   notRequiredValidations,
   statusList,
   statusTracker,
-  questionLevelStatus
+  questionLevelStatus,
+  calculatedFields
 } = require("./fydynemic");
 const catchAsync = require("../../util/catchAsync");
 const State = require("../../models/State");
@@ -2684,7 +2685,7 @@ async function calculateAndUpdateStatusForMappers(
           let dynamicObj = obj[k];
           let financialInfo = obj;
           let status = yearArr.every((item) => {
-            if(item?.type == 'registerGisProof' || item?.type == 'accountStwreProof' ) return true; //temporary solution should be handled by frontend
+            if(calculatedFields.includes(item?.type)) return true; //temporary solution should be handled by frontend
             if (item?.type) {
               return item.status === "APPROVED";
             } else {
