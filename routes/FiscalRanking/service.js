@@ -912,7 +912,7 @@ exports.getView = async function (req, res, next) {
                 // parameters['valueObj'] = {value:ulbFyAmount}
                 pf["value"] = ulbFyAmount;
                 // pf['value'] = ulbFyAmount;
-                pf["status"] = ulbFyAmount ? "NA" : "PENDING";
+                pf["status"] = ulbFyAmount ? "" : "PENDING";
                 // subData[key]["modelName"] = ulbFyAmount > 0 ? "ULBLedger" : "FiscalRanking"
                 pf["modelName"] = ulbFyAmount > 0 ? "ULBLedger" : "";
                 if (subData[key].calculatedFrom === undefined) {
@@ -956,7 +956,7 @@ exports.getView = async function (req, res, next) {
                 );
                 if (singleFydata) {
                   pf["file"] = singleFydata.file;
-                  pf["status"] = singleFydata.status;
+                  pf["status"] = singleFydata.status ;
                   pf["modelName"] = singleFydata.modelName;
                   pf['rejectReason'] = singleFydata.rejectReason
                   if (subData[key].calculatedFrom === undefined) {
@@ -979,9 +979,8 @@ exports.getView = async function (req, res, next) {
                         (el) => el?.year_id.toString() === pf?.year.toString()
                       )
                       : false;
-                    pf["status"] = chekFile ? singleFydata.status : "PENDING";
+                    pf["status"] = chekFile ? "" : "PENDING";
                     pf["modelName"] = chekFile ? "ULBLedger" : "";
-                    console.log("chekFile :: ", chekFile);
                     if (chekFile) {
                       pf[
                         "info"
@@ -2540,6 +2539,9 @@ async function updateQueryForFiscalRanking(
               throw { message: validator.message, type: "ValidationError" };
             }
           }
+          // if(years.key === "appAnnualBudget"){
+          //   console.log("status")
+          // }
           payload["value"] = years.value;
           payload["date"] = years.date;
           payload["file"] = years.file;
@@ -2682,7 +2684,7 @@ async function calculateAndUpdateStatusForMappers(
           let dynamicObj = obj[k];
           let financialInfo = obj;
           let status = yearArr.every((item) => {
-            if(item?.type == 'registerGisProof') return true;
+            if(item?.type == 'registerGisProof' || item?.type == 'accountStwreProof' ) return true; //temporary solution should be handled by frontend
             if (item?.type) {
               return item.status === "APPROVED";
             } else {
