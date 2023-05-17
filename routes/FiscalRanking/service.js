@@ -891,7 +891,6 @@ exports.getView = async function (req, res, next) {
               );
               
               if (singleFydata) {
-                console.log("code length :: ",code)
                 if (singleFydata?.date !== null) {
                   pf["date"] = singleFydata ? singleFydata.date : null;
                 } else {
