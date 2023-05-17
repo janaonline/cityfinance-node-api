@@ -3364,109 +3364,120 @@ let bodyData =  {
     multi: true
 }
 const IGNORE_YEARS = {
-    [YEAR_CONSTANTS['21_22']] :[ObjectId(YEAR_CONSTANTS['20_21']),ObjectId(YEAR_CONSTANTS['21_22'])],
-    [YEAR_CONSTANTS['22_23']] : [ObjectId(YEAR_CONSTANTS['20_21']), ObjectId(YEAR_CONSTANTS['21_22']),ObjectId(YEAR_CONSTANTS['22_23'])],
-    [YEAR_CONSTANTS['23_24']] : [ObjectId(YEAR_CONSTANTS['20_21']), ObjectId(YEAR_CONSTANTS['21_22']),ObjectId(YEAR_CONSTANTS['22_23']), ObjectId(YEAR_CONSTANTS['23_24'])],
-}
-async function sequentialReview(req,res){
-    try {
-      let { decoded: user, body: bodyData } = req;
-      let { design_year, formId, ulbs, status, multi } = bodyData;
-      if (user.actionTakenByRole !== USER_ROLE["MoHUA"] || status !== "REJECTED") {
-        return Response.BadRequest(
-          res,
-          {},
-          "Only MoHUA can sequentially reject!"
-        );
-      }
-      let designYear = "design_year"
-      formId === FORMIDs['dur'] ? designYear = "designYear" : designYear ="design_year"
+  [YEAR_CONSTANTS["21_22"]]: [
+    ObjectId(YEAR_CONSTANTS["20_21"]),
+    ObjectId(YEAR_CONSTANTS["21_22"]),
+  ],
+  [YEAR_CONSTANTS["22_23"]]: [
+    ObjectId(YEAR_CONSTANTS["20_21"]),
+    ObjectId(YEAR_CONSTANTS["21_22"]),
+    ObjectId(YEAR_CONSTANTS["22_23"]),
+  ],
+  [YEAR_CONSTANTS["23_24"]]: [
+    ObjectId(YEAR_CONSTANTS["20_21"]),
+    ObjectId(YEAR_CONSTANTS["21_22"]),
+    ObjectId(YEAR_CONSTANTS["22_23"]),
+    ObjectId(YEAR_CONSTANTS["23_24"]),
+  ],
+};
+async function sequentialReview(req, res) {
+  try {
+    let { decoded: user, body: bodyData } = req;
+    let { design_year, formId, ulbs, status, multi } = bodyData;
+    if (
+      user.actionTakenByRole !== USER_ROLE["MoHUA"] ||
+      status !== "REJECTED"
+    ) {
+      return Response.BadRequest(
+        res,
+        {},
+        "Only MoHUA can sequentially reject!"
+      );
+    }
+    let designYear = "design_year";
+    formId === FORMIDs["dur"]
+      ? (designYear = "designYear")
+      : (designYear = "design_year");
 
-      const modelName = MODEL_PATH[formId];
-      let query = {
-        ulb: { $in: ulbs },
-        [designYear]: {$nin: IGNORE_YEARS[design_year]}
-      };
-      let forms = await moongose.model(modelName).find(query).lean();
-      if (!Array.isArray(forms) || forms.length) {
-        return Response.BadRequest(res, {}, "No Forms Found!");
-      }
+    const modelName = MODEL_PATH[formId];
+    let query = {
+      ulb: { $in: ulbs },
+      [designYear]: { $nin: IGNORE_YEARS[design_year] },
+    };
+    let forms = await moongose.model(modelName).find(query).lean();
+    if (!Array.isArray(forms) || forms.length) {
+      return Response.BadRequest(res, {}, "No Forms Found!");
+    }
     //   if (design_year === YEAR_CONSTANTS["21_22"]) {
-        let params = {
-          forms,
-          formId,
-          modelName,
-          res,
-          user,
-        };
-        await checkForms(params);
+    let params = {
+      forms,
+      formId,
+      modelName,
+      res,
+      user,
+    };
+    await checkForms(params);
     //   } else {
 
     //   }
-    } catch (error) {
-      return Response.BadRequest(res, {}, `${error.message}`);
-    }
+  } catch (error) {
+    return Response.BadRequest(res, {}, `${error.message}`);
+  }
 }
-module.exports.sequentialReview = sequentialReview
+module.exports.sequentialReview = sequentialReview;
 
-async function checkForms(params){
-    try {
-        let {
-            forms,
-            formId,
-            modelName,
-            res,
-            user,
-          } = params;
-        let designYear = "design_year"
-        formId === FORMIDs['dur'] ? designYear = "designYear" : designYear ="design_year"
-        let formCount =0;
-        for(let form of forms){
-            if(form[designYear].toString() === YEAR_CONSTANTS['22_23']){
-                if(!checkIfUlbCanEditForm2223(form)){
-                   let output =  await rejectForm2223(form,formId,modelName, user )
-                   if(output){
-                    formCount++;
-                   }
-                }
-            } else {
-                if(!checkIfUlbCanEditForm(form?.currentFormStatus)){
-                    let output = await rejectForm(form,formId,modelName, user);
-                    if(output){
-                        formCount++;
-                    }
-                }
-            }
-        }
-    } catch (error) {
-        return Response.BadRequest(res, {}, error.message);
-    }
-}
-
-async function rejectForm(form,formId,modelName, user){
-    try {
-        let {actionTakenByRole, actionTakenBy} =  user;
-        let updateObj = {
-            currentFormStatus: MASTER_STATUS['In Progress'],
-            isDraft: true,
-            actionTakenByRole,
-            actionTakenBy: ObjectId(actionTakenBy)
-
-        };
-        let updatedForm = await moongose.model(modelName).findOneAndUpdate(
-            { _id: form._id },
-            {
-              $set: updateObj,
-            },
-            { new: true }
-          );
-          if (updatedForm){
-            return await saveStatusAndHistory(formId, updatedForm, user);
+async function checkForms(params) {
+  try {
+    let { forms, formId, modelName, res, user } = params;
+    let designYear = "design_year";
+    formId === FORMIDs["dur"]
+      ? (designYear = "designYear")
+      : (designYear = "design_year");
+    let formCount = 0;
+    for (let form of forms) {
+      if (form[designYear].toString() === YEAR_CONSTANTS["22_23"]) {
+        if (!checkIfUlbCanEditForm2223(form)) {
+          let output = await rejectForm2223(form, formId, modelName, user);
+          if (output) {
+            formCount++;
           }
-    } catch (error) {
-      throw `rejectForm:: ${error.message}`;
+        }
+      } else {
+        if (!checkIfUlbCanEditForm(form?.currentFormStatus)) {
+          let output = await rejectForm(form, formId, modelName, user);
+          if (output) {
+            formCount++;
+          }
+        }
+      }
     }
-    
+  } catch (error) {
+    return Response.BadRequest(res, {}, error.message);
+  }
+}
+
+async function rejectForm(form, formId, modelName, user) {
+  try {
+    let { actionTakenByRole, actionTakenBy } = user;
+    let updateObj = {
+      currentFormStatus: MASTER_STATUS["In Progress"],
+      isDraft: true,
+      actionTakenByRole,
+      actionTakenBy: ObjectId(actionTakenBy),
+    };
+    let updatedForm = await moongose.model(modelName).findOneAndUpdate(
+      { _id: form._id },
+      {
+        $set: updateObj,
+      },
+      { new: true }
+    );
+    if (updatedForm) {
+      return await saveStatusAndHistory(formId, updatedForm, user);
+    }
+  } catch (error) {
+    throw `rejectForm:: ${error.message}`;
+  }
 }
 async function saveStatusAndHistory(formId, updatedForm, user) {
   try {
@@ -3509,69 +3520,76 @@ async function saveStatusAndHistory(formId, updatedForm, user) {
     if (formHistoryStatus && statusSaved && statusHistoryStatus) {
       return 1;
     }
+    return 0;
   } catch (error) {
     throw `saveStatusAndHistory:: ${error.message}`;
   }
 }
 
-async function rejectForm2223(form,formId,modelName, user){
-    try {
-        let updateObj = {
-          actionTakenByRole: user.actionTakenByRole,
-          actionTakenBy: ObjectId(user.actionTakenBy),
-          status: "PENDING",
-          isDraft: true,
-          modifiedAt: new Date(),
-        };
-        delete form['history'];
-        let updatedForm = await moongose.model(modelName).findOneAndUpdate(
-          { _id: form._id },
-          {
-            $set: updateObj, $push: { history: form }
-          },
-          { new: true }
-        );
-        if (updatedForm){
-            return 1;
-        }
-        return 0;
-    } catch (error) {
-        throw(`rejectForm2223:: ${error.message}`);
+async function rejectForm2223(form, formId, modelName, user) {
+  try {
+    let updateObj = {
+      actionTakenByRole: user.actionTakenByRole,
+      actionTakenBy: ObjectId(user.actionTakenBy),
+      status: "PENDING",
+      isDraft: true,
+      modifiedAt: new Date(),
+    };
+    delete form["history"];
+    let updatedForm = await moongose.model(modelName).findOneAndUpdate(
+      { _id: form._id },
+      {
+        $set: updateObj,
+        $push: { history: form },
+      },
+      { new: true }
+    );
+    if (updatedForm) {
+      return 1;
     }
+    return 0;
+  } catch (error) {
+    throw `rejectForm2223:: ${error.message}`;
+  }
 }
-function checkIfUlbCanEditForm2223(form){
-    try {
-        let {status,actionTakenByRole,isDraft} = form; 
-        const formType = "ULB";
-        let formStatus =calculateStatus(status, actionTakenByRole,isDraft,formType);
-        const ulbEditStatusArray = [
-            StatusList['In_Progress'], 
-            StatusList['Not_Started'], 
-            StatusList['Rejected_By_MoHUA'], 
-            StatusList['Rejected_By_State']
-        ];
-        if(ulbEditStatusArray.includes(formStatus)){
-            return true;
-        }
-        return false;
-    } catch (error) {
-        throw(`checkIfUlbCanEditForm2223 :: ${error.message}`)
+function checkIfUlbCanEditForm2223(form) {
+  try {
+    let { status, actionTakenByRole, isDraft } = form;
+    const formType = "ULB";
+    let formStatus = calculateStatus(
+      status,
+      actionTakenByRole,
+      isDraft,
+      formType
+    );
+    const ulbEditStatusArray = [
+      StatusList["In_Progress"],
+      StatusList["Not_Started"],
+      StatusList["Rejected_By_MoHUA"],
+      StatusList["Rejected_By_State"],
+    ];
+    if (ulbEditStatusArray.includes(formStatus)) {
+      return true;
     }
+    return false;
+  } catch (error) {
+    throw `checkIfUlbCanEditForm2223 :: ${error.message}`;
+  }
 }
 
-function checkIfUlbCanEditForm(currentFormStatus){
-    try {
-        const ulbEditStatusArray = [
-            MASTER_STATUS['Not Started'], 
-            MASTER_STATUS['In Progress'], 
-            MASTER_STATUS['Returned By MoHUA'], 
-            MASTER_STATUS['Returned By State']
-        ];
-        if(ulbEditStatusArray.includes(currentFormStatus)){
-            return true;
-        }
-        return false;
-    } catch (error) {
-        throw(`checkFormIfUlbCanEdit:: ${error.message}`)
+function checkIfUlbCanEditForm(currentFormStatus) {
+  try {
+    const ulbEditStatusArray = [
+      MASTER_STATUS["Not Started"],
+      MASTER_STATUS["In Progress"],
+      MASTER_STATUS["Returned By MoHUA"],
+      MASTER_STATUS["Returned By State"],
+    ];
+    if (ulbEditStatusArray.includes(currentFormStatus)) {
+      return true;
     }
+    return false;
+  } catch (error) {
+    throw `checkFormIfUlbCanEdit:: ${error.message}`;
+  }
 }
