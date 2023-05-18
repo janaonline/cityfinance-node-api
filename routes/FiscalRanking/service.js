@@ -2554,6 +2554,9 @@ async function updateQueryForFiscalRanking(
     for (var years of yearData) {
       let upsert = false;
       if (years.year) {
+        // if(years.type === "registerGisProof"){
+        //   console.log("years.type ::: ",years.status)
+        // }
         let payload = {};
         let filter = {
           year: ObjectId(years.year),
@@ -2562,6 +2565,7 @@ async function updateQueryForFiscalRanking(
           type: years.type,
         };
         if (updateForm) {
+          
           upsert = true;
           if (dynamicObj.calculatedFrom) {
             let validator = await validateAccordingtoLedgers(
@@ -2579,9 +2583,7 @@ async function updateQueryForFiscalRanking(
               throw { message: validator.message, type: "ValidationError" };
             }
           }
-          // if(years.key === "appAnnualBudget"){
-          //   console.log("status")
-          // }
+          
           payload["value"] = years.value;
           payload["date"] = years.date;
           payload["file"] = years.file;
@@ -2643,7 +2645,6 @@ async function updateFiscalRankingForm(
             obj[key].status = "PENDING"
           }
           else{
-            console.log("going into false",obj[key])
             obj[key].status = ""
           }
         }
