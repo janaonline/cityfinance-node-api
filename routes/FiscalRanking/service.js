@@ -923,13 +923,11 @@ exports.getView = async function (req, res, next) {
                 pf["status"] = ulbFyAmount ? "" : "PENDING";
                 // subData[key]["modelName"] = ulbFyAmount > 0 ? "ULBLedger" : "FiscalRanking"
                 pf["modelName"] = ulbFyAmount > 0 ? "ULBLedger" : "";
-                console.log("ulbFyAmount ::: ",ulbFyAmount)
                 if (subData[key].calculatedFrom === undefined) {
                   pf["readonly"] = ulbFyAmount > 0 ? true : getReadOnly(data?.currentFormStatus, viewOne.isDraft,role,singleFydata.status);
                 } else {
                   pf["readonly"] = true;
                 }
-                console.log(">>>>>.readOnly ulb ::",pf['readonly'])
               }
             } else {
               if ([1,2,null].includes(viewOne.currentFormStatus) ) {
@@ -969,9 +967,10 @@ exports.getView = async function (req, res, next) {
                   pf['rejectReason'] = singleFydata.rejectReason
                   if (subData[key].calculatedFrom === undefined) {
                     pf["required"] =
-                      singleFydata.status && singleFydata.status == "NA"
+                    singleFydata.status || singleFydata.modelName === "ULBLedger"
                         ? false
                         : true;
+                        console.log(pf["required"] ,)
                     pf["readonly"] = getReadOnly(data?.currentFormStatus, viewOne.isDraft,role,singleFydata?.status);
                   } else {
                     pf["readonly"] = true;
@@ -980,7 +979,7 @@ exports.getView = async function (req, res, next) {
                 } else {
                   if (
                     subData[key]?.key !== "appAnnualBudget" &&
-                    viewOne.isDraft == null
+                    [1,2,null] .includes(viewOne.currentFormStatus)
                   ) {
                     let chekFile = ulbDataUniqueFy
                       ? ulbDataUniqueFy.some(
@@ -1005,18 +1004,20 @@ exports.getView = async function (req, res, next) {
                   }
                 }
               } else {
+                
                 if (
-                  subData[key]?.key !== "appAnnualBudget" &&
-                  viewOne.isDraft == null
+                  subData[key]?.key !== "appAnnualBudget" && [1,2,null].includes(viewOne.currentFormStatus)
                 ) {
                   let chekFile = ulbDataUniqueFy
                     ? ulbDataUniqueFy.some(
                       (el) => el?.year_id.toString() === pf?.year.toString()
                     )
                     : false;
+
                   pf["status"] = chekFile ? "" : "PENDING";
                   pf["modelName"] = chekFile ? "ULBLedger" : "";
                   if (chekFile) {
+              
                     pf[
                       "info"
                     ] = `Available on Cityfinance - <a href ="https://cityfinance.in/resources-dashboard/data-sets/income_statement ">View here</a>`;
@@ -1105,7 +1106,6 @@ exports.getView = async function (req, res, next) {
                   // console.log(">>>>>>>>>>>> ",pf['value'])
                 }
               }
-              console.log(">>>>>..",pf['readonly'])
             }
           }
         }
@@ -1179,6 +1179,32 @@ const getUlbLedgerDataFilter = (objData) => {
  */
 const ulbLedgerFy = (condition) => {
   return new Promise(async (resolve, reject) => {
+    console.log(JSON.stringify([
+      { $match: condition },
+      {
+        $group: {
+          _id: "$financialYear",
+        },
+      },
+      {
+        $lookup: {
+          from: "years",
+          localField: "_id",
+          foreignField: "year",
+          as: "years",
+        },
+      },
+      {
+        $unwind: "$years",
+      },
+      {
+        $project: {
+          _id: 0,
+          year_id: "$years._id",
+          year: "$years.year",
+        },
+      },
+    ]))
     try {
       let data = await UlbLedger.aggregate([
         { $match: condition },
