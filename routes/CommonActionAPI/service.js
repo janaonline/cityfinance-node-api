@@ -3422,7 +3422,7 @@ async function sequentialReview(req, res) {
         let msg =  `${formsUpdated} rejected`
         return Response.OK(res,{} ,msg );
     }else{
-      return Response.BadRequest(res, {}, "No Forms Updated!");
+      return Response.OK(res, {}, "No Forms Updated!");
     }
     //   }
   } catch (error) {
@@ -3442,7 +3442,7 @@ async function checkForms(params) {
     for (let form of forms) {
       if (form[designYear].toString() === YEAR_CONSTANTS["22_23"]) {
         if (!checkIfUlbCanEditForm2223(form)) {
-          let output = await rejectForm2223(form, formId, modelName, user);
+          let output = await rejectForm2223(form, modelName, user);
           if (output) {
             formCount++;
           }
@@ -3506,8 +3506,8 @@ async function saveStatusAndHistory(formId, updatedForm, user) {
       shortKey: "form_level",
       rejectReason: "",
       responseFile: "",
-      actionTakenByRole: user.actionTakenByRole,
-      actionTakenBy: ObjectId(user.actionTakenBy),
+      actionTakenByRole: user.role,
+      actionTakenBy: ObjectId(user._id),
     };
     let statusSaved = await saveCurrentStatus({
       body: currentStatusData,
@@ -3532,7 +3532,7 @@ async function saveStatusAndHistory(formId, updatedForm, user) {
   }
 }
 
-async function rejectForm2223(form, formId, modelName, user) {
+async function rejectForm2223(form, modelName, user) {
   try {
     let updateObj = {
       actionTakenByRole: user.role,

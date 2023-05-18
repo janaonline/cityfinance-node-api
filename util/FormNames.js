@@ -83,7 +83,7 @@ module.exports.MODEL_PATH = {
     2: "GfcFormCollection",
     3: "PropertyTaxOp",
     5: "AnnualAccounts",
-    6: "TwentyEightSlbsForm",
+    6: "TwentyEightSlbForm",
     4: "UtilizationReport"
 }
 
