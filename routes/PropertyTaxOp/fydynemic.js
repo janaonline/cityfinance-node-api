@@ -808,7 +808,7 @@ const propertyTaxOpFormJson = () => {
                 "info": ""
               }
             ],
-            "maxChild": 5,
+            "maxChild": 10,
             "child": [],
             "yearData": [
               {},
@@ -931,7 +931,7 @@ const propertyTaxOpFormJson = () => {
                 "info": ""
               }
             ],
-            "maxChild": 5,
+            "maxChild": 10,
             "child": [],
             "yearData": [
               {},
@@ -1084,7 +1084,7 @@ const propertyTaxOpFormJson = () => {
                 "info": ""
               }
             ],
-            "maxChild": 5,
+            "maxChild": 10,
             "copyOptions": [
               {
                 "id": "Water charges",
@@ -1650,7 +1650,7 @@ const propertyTaxOpFormJson = () => {
                 "info": ""
               }
             ],
-            "maxChild": 5,
+            "maxChild": 10,
             "child": [],
             "yearData": [
               {},
@@ -1773,7 +1773,7 @@ const propertyTaxOpFormJson = () => {
                 "info": ""
               }
             ],
-            "maxChild": 5,
+            "maxChild": 10,
             "child": [],
             "yearData": [
               {},
@@ -1896,7 +1896,7 @@ const propertyTaxOpFormJson = () => {
                 "info": ""
               }
             ],
-            "maxChild": 5,
+            "maxChild": 10,
             "copyOptions": [
               {
                 "id": "Water charges",
@@ -4694,7 +4694,7 @@ const propertyTaxOpFormJson = () => {
                 "info": ""
               }
             ],
-            "maxChild": 5,
+            "maxChild": 10,
             "child": [],
             "yearData": [
               {},
@@ -7490,7 +7490,7 @@ const propertyTaxOpFormJson = () => {
                 "info": ""
               }
             ],
-            "maxChild": 5,
+            "maxChild": 10,
             "child": [],
             "yearData": [
               {},
@@ -10231,7 +10231,7 @@ const propertyTaxOpFormJson = () => {
                 "info": ""
               }
             ],
-            "maxChild": 5,
+            "maxChild": 10,
             "child": [],
             "yearData": [
               {},
