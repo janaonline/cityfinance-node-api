@@ -2007,7 +2007,7 @@ module.exports.get = catchAsync(async (req, res) => {
       el['cantakeAction'] = false;
     } else {
       el['formStatus'] = calculateStatus(el.formData.status, el.formData.actionTakenByRole, el.formData.isDraft, formType);
-      if(collectionName ===  CollectionNames.dur){
+      if(collectionName === CollectionNames.dur || collectionName === CollectionNames['28SLB']){
         el['cantakeAction'] = req.decoded.role === "ADMIN" ? false : canTakeActionOrViewOnly(el, loggedInUserRole);
         if( !(approvedUlbs.find(ulb=> ulb.toString() === el.ulbId.toString())) && loggedInUserRole === "MoHUA"){
           el['cantakeAction'] = false
@@ -2214,13 +2214,13 @@ async function masterForms2122(collectionName, data) {
     let ulbsArray = [], approvedUlbs = [];
     let ulbsObject = {},
       masterForms2122;
-    if (collectionName === CollectionNames.dur) {
+    if (collectionName === CollectionNames.dur || collectionName === CollectionNames['28SLB']) {
       ulbsArray = data.map((el) => {
         return el.ulbId;
       });
-      for (let entity of ulbsArray) {
-        ulbsObject[entity] = false;
-      }
+      // for (let entity of ulbsArray) {
+      //   ulbsObject[entity] = false;
+      // }
       if (Array.isArray(ulbsArray) && ulbsArray.length) {
         masterForms2122 = await MasterForm.find(
           {
