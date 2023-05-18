@@ -5740,7 +5740,7 @@ const fiscalRankingFormJson = () => {
               "key": "registerGisProof",
               "label": "Please upload proof",
               "displayPriority": "27.1",
-              "required": true,
+              "required": false,
               "yearData": [
                   {},
                   {},
