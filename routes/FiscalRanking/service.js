@@ -939,12 +939,14 @@ exports.getView = async function (req, res, next) {
                 });
                 pf["value"] = ulbFyAmount;
                 // pf['value'] = ulbFyAmount;
-                pf["status"] = ulbFyAmount ? "NA" : "PENDING";
+                pf["status"] = ulbFyAmount ? "" : "PENDING";
                 // subData[key]["modelName"] = ulbFyAmount > 0 ? "ULBLedger" : "FiscalRanking"
                 pf["modelName"] = ulbFyAmount > 0 ? "ULBLedger" : "";
                 if (subData[key].calculatedFrom === undefined) {
+                  pf["status"]  = "PENDING"
                   pf["readonly"] = ulbFyAmount > 0 ? true : getReadOnly(data?.currentFormStatus, viewOne.isDraft,role,singleFydata.status);
                 } else {
+                  pf["status"]  = ""
                   pf["readonly"] = true;
                 }
               }
@@ -968,10 +970,9 @@ exports.getView = async function (req, res, next) {
                   pf['rejectReason'] = singleFydata.rejectReason
                   if (subData[key].calculatedFrom === undefined) {
                     pf["required"] =
-                    singleFydata.status || singleFydata.modelName === "ULBLedger"
+                    singleFydata.status  || singleFydata.modelName === "ULBLedger"
                         ? false
                         : true;
-                        console.log(pf["required"] ,)
                     pf["readonly"] = getReadOnly(data?.currentFormStatus, viewOne.isDraft,role,singleFydata?.status);
                   } else {
                     pf["readonly"] = true;
