@@ -166,7 +166,7 @@ module.exports.createAndUpdateFormMaster = async (params) => {
       case ModelNames['dur']:
         masterFormId = FORMIDs['dur'];
         try {
-          const formBodyStatus = formData.status;
+          const formBodyStatus = formData.status || formData.currentFormStatus;
           formData.status = "";
           formData.currentFormStatus = formBodyStatus;
           let formData2324 = await moongose
@@ -231,6 +231,11 @@ module.exports.createAndUpdateFormMaster = async (params) => {
                   let validation =  checkForCalculations(formData)
                   if(!validation.valid){
                     return Response.BadRequest(res, {}, validation.messages);
+                  }
+                }
+                if(formCurrentStatus.status === MASTER_STATUS['Returned By State'] && formBodyStatus === MASTER_STATUS['In Progress'] ){
+                  if(!formData.isProjectLoaded && years['2023-24']){
+                    delete formData['projects']
                   }
                 }
             if (formData2324) {
