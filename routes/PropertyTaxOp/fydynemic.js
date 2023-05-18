@@ -707,7 +707,7 @@ const propertyTaxOpFormJson = () => {
                 "key": "taxTypeDemandChild",
                 "label": "Other tax demand (Demand figure for each type of tax other than property tax collected)",
                 "required": true,
-                "displayPriority": "1.9",
+                "displayPriority": "1.13",
                 "yearData": [
                   {
                     "label": "FY 2018-19",
@@ -830,7 +830,7 @@ const propertyTaxOpFormJson = () => {
                 "key": "cessDemandChild",
                 "label": "Cess demand (Demand figure for each type of cess collected)",
                 "required": true,
-                "displayPriority": "1.10",
+                "displayPriority": "1.14",
                 "yearData": [
                   {
                     "label": "FY 2018-19",
@@ -983,7 +983,7 @@ const propertyTaxOpFormJson = () => {
                 "key": "userChargesDmndChild",
                 "label": "User charges demand (Demand figure for each type of user charge collected along with property tax)",
                 "required": true,
-                "displayPriority": "1.12",
+                "displayPriority": "1.16",
                 "yearData": [
                   {
                     "label": "FY 2018-19",
@@ -1549,7 +1549,7 @@ const propertyTaxOpFormJson = () => {
                 "key": "taxTypeCollectionChild",
                 "label": "Other tax collections (Collection figure for each type of tax other than property tax collected)",
                 "required": true,
-                "displayPriority": "1.17",
+                "displayPriority": "1.21",
                 "yearData": [
                   {
                     "label": "FY 2018-19",
@@ -1672,7 +1672,7 @@ const propertyTaxOpFormJson = () => {
                 "key": "cessCollectChild",
                 "label": "Cess collection (Collection figure for each type of cess collected)",
                 "required": true,
-                "displayPriority": "1.18",
+                "displayPriority": "1.22",
                 "yearData": [
                   {
                     "label": "FY 2018-19",
@@ -1795,7 +1795,7 @@ const propertyTaxOpFormJson = () => {
                 "key": "userChargesCollectionChild",
                 "label": "Cess collection (Collection figure for each type of cess collected)",
                 "required": true,
-                "displayPriority": "1.19",
+                "displayPriority": "1.23",
                 "yearData": [
                   {
                     "label": "FY 2018-19",
