@@ -79,7 +79,7 @@ const propertyTaxOpFormJson = () => {
           },
           "ulbPassedResolPtax": {
             "key": "ulbPassedResolPtax",
-            "label": "Has the ULB passed the resolution for collecting property tax?",
+            "label": "Has the ULB passed resolution for levy of property tax?",
             "required": true,
             "displayPriority": "1.3",
             "yearData": [
@@ -808,7 +808,7 @@ const propertyTaxOpFormJson = () => {
                 "info": ""
               }
             ],
-            "maxChild": 5,
+            "maxChild": 10,
             "child": [],
             "yearData": [
               {},
@@ -931,7 +931,7 @@ const propertyTaxOpFormJson = () => {
                 "info": ""
               }
             ],
-            "maxChild": 5,
+            "maxChild": 10,
             "child": [],
             "yearData": [
               {},
@@ -1084,7 +1084,7 @@ const propertyTaxOpFormJson = () => {
                 "info": ""
               }
             ],
-            "maxChild": 5,
+            "maxChild": 10,
             "copyOptions": [
               {
                 "id": "Water charges",
@@ -1650,7 +1650,7 @@ const propertyTaxOpFormJson = () => {
                 "info": ""
               }
             ],
-            "maxChild": 5,
+            "maxChild": 10,
             "child": [],
             "yearData": [
               {},
@@ -1773,7 +1773,7 @@ const propertyTaxOpFormJson = () => {
                 "info": ""
               }
             ],
-            "maxChild": 5,
+            "maxChild": 10,
             "child": [],
             "yearData": [
               {},
@@ -1896,7 +1896,7 @@ const propertyTaxOpFormJson = () => {
                 "info": ""
               }
             ],
-            "maxChild": 5,
+            "maxChild": 10,
             "copyOptions": [
               {
                 "id": "Water charges",
@@ -4694,7 +4694,7 @@ const propertyTaxOpFormJson = () => {
                 "info": ""
               }
             ],
-            "maxChild": 5,
+            "maxChild": 10,
             "child": [],
             "yearData": [
               {},
@@ -7088,7 +7088,7 @@ const propertyTaxOpFormJson = () => {
           },
           "othersValueWaterType": {
             "key": "othersValueWaterType",
-            "label": "Property Type",
+            "label": "Connection Type",
             "required": true,
             "displayPriority": "5.25",
             "replicaCount": 0,
@@ -7490,7 +7490,7 @@ const propertyTaxOpFormJson = () => {
                 "info": ""
               }
             ],
-            "maxChild": 5,
+            "maxChild": 10,
             "child": [],
             "yearData": [
               {},
@@ -9829,7 +9829,7 @@ const propertyTaxOpFormJson = () => {
           },
           "otherValueSewerageType": {
             "key": "otherValueSewerageType",
-            "label": "Property Type",
+            "label": "Connection Type",
             "required": true,
             "displayPriority": "6.25",
             "replicaCount": 0,
@@ -10231,7 +10231,7 @@ const propertyTaxOpFormJson = () => {
                 "info": ""
               }
             ],
-            "maxChild": 5,
+            "maxChild": 10,
             "child": [],
             "yearData": [
               {},
@@ -11415,6 +11415,12 @@ let skipLogicDependencies = {
         ]
       },
       "ulbFinancialYear": {
+        "value": "No",
+        "years": [
+          0
+        ]
+      },
+      "ulbPassedResolPtax": {
         "value": "No",
         "years": [
           0
