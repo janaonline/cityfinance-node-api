@@ -5740,7 +5740,7 @@ const fiscalRankingFormJson = () => {
               "key": "registerGisProof",
               "label": "Please upload proof",
               "displayPriority": "27.1",
-              "required": false,
+              "required": true,
               "yearData": [
                   {},
                   {},
@@ -5756,7 +5756,7 @@ const fiscalRankingFormJson = () => {
                       },
                       "min": 0,
                       "max": "",
-                      "required": false,
+                      "required": true,
                       "type": "registerGisProof",
                       "year": "606aaf854dff55e6c075d219",
                       "code": [],
@@ -5764,7 +5764,7 @@ const fiscalRankingFormJson = () => {
                       "formFieldType": "file",
                       "bottomText": "to be taken from  from I&E statement of Audited Annual Accounts for FY 2018-19 ",
                       "placeHolder": "",
-                      "status": "PENDING",
+                      "status": "",
                       "rejectReason": ""
                   }
               ],
@@ -5802,7 +5802,7 @@ const fiscalRankingFormJson = () => {
                       "formFieldType": "radio-toggle",
                       "bottomText": "to be taken from  from I&E statement of Audited Annual Accounts for FY 2018-19 ",
                       "placeHolder": "",
-                      "status": "PENDING",
+                      "status": "",
                       "rejectReason": ""
                   }
               ]
@@ -6470,8 +6470,6 @@ const calculatedFields = [
   'totalOmExp',
   'totalExpend',
   'CaptlExp',
-  'registerGisProof', //temporary solution should be handled by frontend
-  'accountStwreProof' //temporary solution should be handled by frontend
 ]
 
 
