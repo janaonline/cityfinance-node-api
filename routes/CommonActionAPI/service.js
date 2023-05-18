@@ -197,7 +197,7 @@ const calculateStatus = (status, actionTakenByRole, isDraft, formType) => {
     switch (formType) {
         case "ULB":
             switch (true) {
-                case (status == 'PENDING' || !status || 'N/A') && actionTakenByRole == 'ULB' && isDraft:
+                case (status == 'PENDING' || !status || 'N/A') && (actionTakenByRole == 'ULB' || actionTakenByRole == "MoHUA") && isDraft:
                     return StatusList.In_Progress
                     break;
                 case (status == 'PENDING' || !status || 'N/A') && actionTakenByRole == 'ULB' && !isDraft:
@@ -3385,7 +3385,7 @@ async function sequentialReview(req, res) {
     let { decoded: user, body: bodyData } = req;
     let { design_year, formId, ulbs, status, multi } = bodyData;
     if (
-      user.actionTakenByRole !== USER_ROLE["MoHUA"] ||
+      user.role !== USER_ROLE["MoHUA"] ||
       status !== "REJECTED"
     ) {
       return Response.BadRequest(
@@ -3405,7 +3405,7 @@ async function sequentialReview(req, res) {
       [designYear]: { $nin: IGNORE_YEARS[design_year] },
     };
     let forms = await moongose.model(modelName).find(query).lean();
-    if (!Array.isArray(forms) || forms.length) {
+    if (!Array.isArray(forms) || !forms.length) {
       return Response.BadRequest(res, {}, "No Forms Found!");
     }
     //   if (design_year === YEAR_CONSTANTS["21_22"]) {
@@ -3416,9 +3416,14 @@ async function sequentialReview(req, res) {
       res,
       user,
     };
-    await checkForms(params);
+    let formsUpdated = await checkForms(params);
     //   } else {
-
+    if(formsUpdated){
+        let msg =  `${formsUpdated} rejected`
+        return Response.OK(res,{} ,msg );
+    }else{
+      return Response.BadRequest(res, {}, "No Forms Updated!");
+    }
     //   }
   } catch (error) {
     return Response.BadRequest(res, {}, `${error.message}`);
@@ -3451,6 +3456,7 @@ async function checkForms(params) {
         }
       }
     }
+    return formCount;
   } catch (error) {
     return Response.BadRequest(res, {}, error.message);
   }
@@ -3458,7 +3464,7 @@ async function checkForms(params) {
 
 async function rejectForm(form, formId, modelName, user) {
   try {
-    let { actionTakenByRole, actionTakenBy } = user;
+    let { role: actionTakenByRole, _id:actionTakenBy } = user;
     let updateObj = {
       currentFormStatus: MASTER_STATUS["In Progress"],
       isDraft: true,
@@ -3529,8 +3535,8 @@ async function saveStatusAndHistory(formId, updatedForm, user) {
 async function rejectForm2223(form, formId, modelName, user) {
   try {
     let updateObj = {
-      actionTakenByRole: user.actionTakenByRole,
-      actionTakenBy: ObjectId(user.actionTakenBy),
+      actionTakenByRole: user.role,
+      actionTakenBy: ObjectId(user._id),
       status: "PENDING",
       isDraft: true,
       modifiedAt: new Date(),
