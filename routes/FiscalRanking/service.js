@@ -2139,6 +2139,9 @@ function searchQueries(req) {
     filter["ulbName"] = req.query.ulbName != "null" ? req.query.ulbName : "";
     filter["censusCode"] =
       req.query.censusCode != "null" ? req.query.censusCode : "";
+    filter['state_id'] = 
+      req.query.stateName != "null" ? req.query.stateName : "";
+
     filter["populationType"] =
       req.query.populationType != "null" ? POPULATION_TYPE[req.query.populationType] : "";
     filter["ulbType"] = req.query.ulbType != "null" ? req.query.ulbType : "";
