@@ -379,7 +379,7 @@ module.exports.get = async (req, res) => {
     try {
       let ulbsArray = [], approvedUlbs = [];
       // let ulbsObject = {},
-        forms2223;
+       let forms2223;
       let modelName;
       let designYearField = "design_year";
       if (collectionName == CollectionNames.dur) {
