@@ -878,7 +878,12 @@ exports.getView = async function (req, res, next) {
             pf,
             fyDynemic: subData,
           };
-          pf['readonly'] =  getReadOnly(data?.currentFormStatus, viewOne.isDraft,role,"PENDING");
+          if(subData[key].calculatedFrom === undefined){
+            pf['readonly'] =  getReadOnly(data?.currentFormStatus, viewOne.isDraft,role,"PENDING");
+          }
+          else{
+            pf['readonly'] = true
+          }
           
           if (pf?.code?.length > 0) {
             pf["status"] = null;
@@ -1100,6 +1105,7 @@ exports.getView = async function (req, res, next) {
                   // console.log(">>>>>>>>>>>> ",pf['value'])
                 }
               }
+              console.log(">>>>>..",pf['readonly'])
             }
           }
         }
