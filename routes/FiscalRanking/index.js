@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const { verifyToken } = require('../auth/services/verifyToken')
-const { CreateorUpdate,createForm, overviewUlbActivities, overviewPMUActivities, getAll,getView,approvedByMohua,getFRforms,createTabsFiscalRanking,actionTakenByMoHua, FRUlbFinancialData, FROverAllUlbData } = require('./service')
+const { CreateorUpdate,createForm, overview, getAll,getView,approvedByMohua,getFRforms,createTabsFiscalRanking,actionTakenByMoHua, FRUlbFinancialData, FROverAllUlbData } = require('./service')
 
 router.post("/create", verifyToken, CreateorUpdate);
 router.get("/getAll", verifyToken, getAll);
@@ -13,8 +13,7 @@ router.post("/action-by-mohua",verifyToken,actionTakenByMoHua)
 router.post("/create-form",verifyToken,createForm);
 router.get("/csvFRUlb", FRUlbFinancialData);
 router.get('/csvFROverall', FROverAllUlbData);
-router.get('/overviewUlbActivities', verifyToken,  overviewUlbActivities)
-router.get('/overviewPMUActivities', verifyToken,  overviewPMUActivities)
+router.get('/overview/:type', verifyToken,  overview)
 
 
 module.exports = router;

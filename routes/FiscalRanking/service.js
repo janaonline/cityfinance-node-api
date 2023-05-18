@@ -1475,269 +1475,397 @@ exports.getAll = async function (req, res, next) {
       .json({ status: false, message: "Something error wrong!" });
   }
 };
-exports.overviewUlbActivities = async function (req, res, next) {
-  const columns = [
-    {
-      "label": "State Name",
-      "key": "stateName"
-    },
-    {
-      "label": "Total ULBs",
-      "key": "totalUlbs"
-    },
-    {
-      "label": "Under Review by PMU",
-      "key": "underReviewByPMU"
-    },
-    {
-      "label": "Returned by PMU",
-      "key": "returnedByPMU"
-    },
-    {
-      "label": "In Progress",
-      "key": "inProgress"
-    },
-    {
-      "label": "Not Started",
-      "key": "notStarted"
-    },
-  ];
-  try {
-    const data = await Ulb.aggregate([
-      // {
-      // "$match":{
-      // "_id":ObjectId("5fa24662072dab780a6f15c9")
-      // }
-      // },
 
-      {
-        "$lookup": {
-          "from": "fiscalrankings",
-          "localField": "_id",
-          "foreignField": "ulb",
-          "as": "formData"
-        }
-      },
-      {
-        "$unwind": {
-          "path": "$formData",
-          "preserveNullAndEmptyArrays": true
-        }
-      },
-      {
-        "$group": {
-          "_id": "$state",
-          "totalUlbs": { $sum: 1 },
-          "underReviewByPMU": {
-            "$sum": {
-              "$cond": [
-                { "$eq": ["$formData.currentFormStatus", 8] },
-                1,
-                0
-              ]
-            }
-          },
-          "returnedByPMU": {
-            "$sum": {
-              "$cond": [
-                { "$eq": ["$formData.currentFormStatus", 10] },
-                1,
-                0
-              ]
-            }
-          },
-          "inProgress": {
-            "$sum": {
-              "$cond": [
-                { "$eq": ["$formData.currentFormStatus", 2] },
-                1,
-                0
-              ]
-            }
-          },
-          "notStarted": {
-            "$sum": {
-              "$cond": [
-                { "$eq": ["$formData.currentFormStatus", 1] },
-                1,
-                0
-              ]
-            }
-          },
-        }
-      },
-      {
-        "$lookup": {
-          "from": "states",
-          "localField": "_id",
-          "foreignField": "_id",
-          "as": "states"
-        }
-      },
-      {
-        "$unwind": {
-          "path": "$states",
-          "preserveNullAndEmptyArrays": true
-        }
-      },
-      {
-        "$project": {
-          "stateName": "$states.name",
-          "totalUlbs": 1,
-          "underReviewByPMU": 1,
-          "returnedByPMU": 1,
-          "inProgress": 1,
-          "notStarted": 1,
-        }
-      }
-    ])
-
-
-    return res.status(200).json({
-      status: true,
-      message: "Successfully saved data!",
-      columns,
-      name: "Overview of ULB activities",
-      data,
-    });
-  } catch (error) {
-    console.log("err", error);
-    return res
-      .status(400)
-      .json({ status: false, message: "Something error wrong!" });
-  }
-};
-exports.overviewPMUActivities = async function (req, res, next) {
-  const columns = [
-    {
-      "label": "State Name",
-      "key": "stateName"
-    },
+const getUlbActivities = () => {
+  return Ulb.aggregate([
     // {
-    //   "label": "Under Review by PMU",
-    //   "key": "underReviewByPMU"
+    // "$match":{
+    // "_id":ObjectId("5fa24662072dab780a6f15c9")
+    // }
     // },
-    {
-      "label": "Verification Not Started",
-      "key": "verificationNotStarted"
-    },
-    {
-      "label": "Verification In Progress",
-      "key": "verificationInProgress"
-    },
-    {
-      "label": "Returned by PMU",
-      "key": "returnedByPMU"
-    },
-    {
-      "label": "Submission Acknowledged by PMU",
-      "key": "submissionAckByPMU"
-    },
-  ];
-  try {
-    const data = await Ulb.aggregate([
-      // {
-      // "$match":{
-      // "_id":ObjectId("5fa24662072dab780a6f15c9")
-      // }
-      // },
 
-      {
-        "$lookup": {
-          "from": "fiscalrankings",
-          "localField": "_id",
-          "foreignField": "ulb",
-          "as": "formData"
-        }
-      },
-      {
-        "$unwind": {
-          "path": "$formData",
-          "preserveNullAndEmptyArrays": true
-        }
-      },
-      {
-        "$group": {
-          "_id": "$state",
-          // "underReviewByPMU": {
-          //   "$sum": {
-          //     "$cond": [
-          //       { "$eq": ["$formData.currentFormStatus", 9] },
-          //       1,
-          //       0
-          //     ]
-          //   }
-          // },
-          "verificationNotStarted": {
-            "$sum": {
-              "$cond": [
-                { "$ne": ["$formData.currentFormStatus", 8] },
-                1,
-                0
-              ]
-            }
-          },
-          "verificationInProgress": {
-            "$sum": {
-              "$cond": [
-                { "$eq": ["$formData.currentFormStatus", 9] },
-                1,
-                0
-              ]
-            }
-          },
-          "returnedByPMU": {
-            "$sum": {
-              "$cond": [
-                { "$eq": ["$formData.currentFormStatus", 10] },
-                1,
-                0
-              ]
-            }
-          },
-          "submissionAckByPMU": {
-            "$sum": {
-              "$cond": [
-                { "$eq": ["$formData.currentFormStatus", 11] },
-                1,
-                0
-              ]
-            }
-          },
-        }
-      },
-      {
-        "$lookup": {
-          "from": "states",
-          "localField": "_id",
-          "foreignField": "_id",
-          "as": "states"
-        }
-      },
-      {
-        "$unwind": {
-          "path": "$states",
-          "preserveNullAndEmptyArrays": true
-        }
-      },
-      {
-        "$project": {
-          "stateName": "$states.name",
-          // "underReviewByPMU": 1,
-          "verificationNotStarted": 1,
-          "verificationInProgress": 1,
-          "returnedByPMU": 1,
-          "submissionAckByPMU": 1
-        }
+    {
+      "$lookup": {
+        "from": "fiscalrankings",
+        "localField": "_id",
+        "foreignField": "ulb",
+        "as": "formData"
       }
-    ])
+    },
+    {
+      "$unwind": {
+        "path": "$formData",
+        "preserveNullAndEmptyArrays": true
+      }
+    },
+    {
+      "$group": {
+        "_id": "$state",
+        "totalUlbs": { $sum: 1 },
+        "underReviewByPMU": {
+          "$sum": {
+            "$cond": [
+              { "$eq": ["$formData.currentFormStatus", 8] },
+              1,
+              0
+            ]
+          }
+        },
+        "returnedByPMU": {
+          "$sum": {
+            "$cond": [
+              { "$eq": ["$formData.currentFormStatus", 10] },
+              1,
+              0
+            ]
+          }
+        },
+        "inProgress": {
+          "$sum": {
+            "$cond": [
+              { "$eq": ["$formData.currentFormStatus", 2] },
+              1,
+              0
+            ]
+          }
+        },
+        "notStarted": {
+          "$sum": {
+            "$cond": [
+              { "$eq": ["$formData.currentFormStatus", 1] },
+              1,
+              0
+            ]
+          }
+        },
+      }
+    },
+    {
+      "$lookup": {
+        "from": "states",
+        "localField": "_id",
+        "foreignField": "_id",
+        "as": "states"
+      }
+    },
+    {
+      "$unwind": {
+        "path": "$states",
+        "preserveNullAndEmptyArrays": true
+      }
+    },
+    {
+      "$project": {
+        "stateName": "$states.name",
+        "totalUlbs": 1,
+        "underReviewByPMU": 1,
+        "returnedByPMU": 1,
+        "inProgress": 1,
+        "notStarted": 1,
+      }
+    }
+  ]);
+}
+const getPMUActivities = () => {
+  return Ulb.aggregate([
+    // {
+    // "$match":{
+    // "_id":ObjectId("5fa24662072dab780a6f15c9")
+    // }
+    // },
+
+    {
+      "$lookup": {
+        "from": "fiscalrankings",
+        "localField": "_id",
+        "foreignField": "ulb",
+        "as": "formData"
+      }
+    },
+    {
+      "$unwind": {
+        "path": "$formData",
+        "preserveNullAndEmptyArrays": true
+      }
+    },
+    {
+      "$group": {
+        "_id": "$state",
+        // "underReviewByPMU": {
+        //   "$sum": {
+        //     "$cond": [
+        //       { "$eq": ["$formData.currentFormStatus", 9] },
+        //       1,
+        //       0
+        //     ]
+        //   }
+        // },
+        "verificationNotStarted": {
+          "$sum": {
+            "$cond": [
+              { "$ne": ["$formData.currentFormStatus", 8] },
+              1,
+              0
+            ]
+          }
+        },
+        "verificationInProgress": {
+          "$sum": {
+            "$cond": [
+              { "$eq": ["$formData.currentFormStatus", 9] },
+              1,
+              0
+            ]
+          }
+        },
+        "returnedByPMU": {
+          "$sum": {
+            "$cond": [
+              { "$eq": ["$formData.currentFormStatus", 10] },
+              1,
+              0
+            ]
+          }
+        },
+        "submissionAckByPMU": {
+          "$sum": {
+            "$cond": [
+              { "$eq": ["$formData.currentFormStatus", 11] },
+              1,
+              0
+            ]
+          }
+        },
+      }
+    },
+    {
+      "$lookup": {
+        "from": "states",
+        "localField": "_id",
+        "foreignField": "_id",
+        "as": "states"
+      }
+    },
+    {
+      "$unwind": {
+        "path": "$states",
+        "preserveNullAndEmptyArrays": true
+      }
+    },
+    {
+      "$project": {
+        "stateName": "$states.name",
+        // "underReviewByPMU": 1,
+        "verificationNotStarted": 1,
+        "verificationInProgress": 1,
+        "returnedByPMU": 1,
+        "submissionAckByPMU": 1
+      }
+    }
+  ])
+}
+const getPopulationWiseData = () => {
+  return Ulb.aggregate([
+    // {
+    // "$match":{
+    // "_id":ObjectId("5fa24662072dab780a6f15c9")
+    // }
+    // },
+
+    {
+      "$lookup": {
+        "from": "fiscalrankings",
+        "localField": "_id",
+        "foreignField": "ulb",
+        "as": "formData"
+      }
+    },
+    {
+      "$unwind": {
+        "path": "$formData",
+        "preserveNullAndEmptyArrays": true
+      }
+    },
+    {
+      "$group": {
+        "_id": "$state",
+        // "underReviewByPMU": {
+        //   "$sum": {
+        //     "$cond": [
+        //       { "$eq": ["$formData.currentFormStatus", 9] },
+        //       1,
+        //       0
+        //     ]
+        //   }
+        // },
+        "verificationNotStarted": {
+          "$sum": {
+            "$cond": [
+              { "$ne": ["$formData.currentFormStatus", 8] },
+              1,
+              0
+            ]
+          }
+        },
+        "verificationInProgress": {
+          "$sum": {
+            "$cond": [
+              { "$eq": ["$formData.currentFormStatus", 9] },
+              1,
+              0
+            ]
+          }
+        },
+        "returnedByPMU": {
+          "$sum": {
+            "$cond": [
+              { "$eq": ["$formData.currentFormStatus", 10] },
+              1,
+              0
+            ]
+          }
+        },
+        "submissionAckByPMU": {
+          "$sum": {
+            "$cond": [
+              { "$eq": ["$formData.currentFormStatus", 11] },
+              1,
+              0
+            ]
+          }
+        },
+      }
+    },
+    {
+      "$lookup": {
+        "from": "states",
+        "localField": "_id",
+        "foreignField": "_id",
+        "as": "states"
+      }
+    },
+    {
+      "$unwind": {
+        "path": "$states",
+        "preserveNullAndEmptyArrays": true
+      }
+    },
+    {
+      "$project": {
+        "stateName": "$states.name",
+        // "underReviewByPMU": 1,
+        "verificationNotStarted": 1,
+        "verificationInProgress": 1,
+        "returnedByPMU": 1,
+        "submissionAckByPMU": 1
+      }
+    }
+  ])
+}
+
+exports.overview = async function (req, res, next) {
+
+  const type = req.params.type;
+  console.log({ type });
+
+  const name = {
+    "UlbActivities": "Overview of ULB activities",
+    "PMUActivities": "Overview of PMU activities",
+    "populationWise": "Overview of population-wise data"
+  }[type] || '';
+  
+  const columns = {
+    "UlbActivities": [
+      {
+        "label": "State Name",
+        "key": "stateName"
+      },
+      {
+        "label": "Total ULBs",
+        "key": "totalUlbs"
+      },
+      {
+        "label": "Under Review by PMU",
+        "key": "underReviewByPMU"
+      },
+      {
+        "label": "Returned by PMU",
+        "key": "returnedByPMU"
+      },
+      {
+        "label": "In Progress",
+        "key": "inProgress"
+      },
+      {
+        "label": "Not Started",
+        "key": "notStarted"
+      },
+    ],
+    "PMUActivities": [
+      {
+        "label": "State Name",
+        "key": "stateName"
+      },
+      {
+        "label": "Verification Not Started",
+        "key": "verificationNotStarted"
+      },
+      {
+        "label": "Verification In Progress",
+        "key": "verificationInProgress"
+      },
+      {
+        "label": "Returned by PMU",
+        "key": "returnedByPMU"
+      },
+      {
+        "label": "Submission Acknowledged by PMU",
+        "key": "submissionAckByPMU"
+      },
+    ],
+    "populationWise": [
+      {
+        "label": "State Name",
+        "key": "stateName"
+      },
+      {
+        "label": "Verification Not Started",
+        "key": "verificationNotStarted"
+      },
+      {
+        "label": "Verification In Progress",
+        "key": "verificationInProgress"
+      },
+      {
+        "label": "Returned by PMU",
+        "key": "returnedByPMU"
+      },
+      {
+        "label": "Submission Acknowledged by PMU",
+        "key": "submissionAckByPMU"
+      },
+    ]
+  }[type] || [];
+  try {
+    let data;
+
+    if(type == 'UlbActivities') {
+      data = await getUlbActivities();
+    }
+    else if(type == 'PMUActivities') {
+      data = await getPMUActivities();
+    }
+    else if(type == 'populationWise') {
+      data = await getPopulationWiseData();
+    }
+    
 
 
     return res.status(200).json({
       status: true,
       message: "Successfully saved data!",
       columns,
-      name: "Overview of PMU activities",
+      name,
       data,
     });
   } catch (error) {
