@@ -494,6 +494,7 @@ const getColumnWiseData = (key, obj, isDraft, dataSource = "",role,formStatus) =
           false
         ),
         ...obj,
+        "status":"",
         readonly: getReadOnly(formStatus, isDraft,role,obj.status),
         // rejectReason:"",
       };
@@ -2454,24 +2455,36 @@ async function updateFiscalRankingForm(
   session
 ) {
   try {
+    const statusNotMandatory = ["caMembershipNo","otherUpload"]
     let filter = {
       _id: ObjectId(formId),
     };
     let payload = {};
     for (let key in obj) {
       if (updateForm) {
+        if(statusNotMandatory.includes(key)){
+          // console.log("obj[key].value ::: ",)
+          if(obj[key].value || obj[key]?.name ){
+            obj[key].status = "PENDING"
+          }
+          else{
+            obj[key].status = ""
+          }
+        }
         if (key === "signedCopyOfFile" || key === "otherUpload") {
           payload[key] = obj[key];
         } else {
           // if (!obj[key].value && !notRequiredValidations.includes(key) && !isDraft) {
           //   throw { "message": `value for field ${key} is required`, "type": "ValidationError" }
           // }
+          // console.log("condtion :::: ",statusNotMandatory.includes(key))
+          
           payload[`${key}.value`] = obj[key].value;
           payload[`${key}.status`] = obj[key].status;
           payload[`${key}.modelName`] = obj[key].modelName;
         }
       } else {
-        let status = null;
+        let status = "";
         if (obj[key].status) {
           status = obj[key].status;
         }
@@ -2530,7 +2543,7 @@ async function calculateAndUpdateStatusForMappers(
       "signedCopyOfFile",
       "otherUpload",
     ];
-    const statusNotMandatory = ["caMembershipNo","uploadFyDoc"]
+    
     for (var tab of tabs) {
       conditionalObj[tab._id.toString()] = {};
       let key = tab.id;
