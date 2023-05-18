@@ -163,7 +163,7 @@ module.exports.get = async (req, res) => {
         el['formStatus'] = "Not Started";
         el['cantakeAction'] = false;
       } else {
-        if(collectionName === CollectionNames.dur){
+        if(collectionName === CollectionNames.dur || collectionName === CollectionNames['28SLB']){
           el['formStatus'] = MASTER_STATUS_ID[el.formData.currentFormStatus]
           let params = {status: el.formData.currentFormStatus, userRole: loggedInUserRole}
           el['cantakeAction'] = req.decoded.role === "ADMIN" ? false : canTakeActionOrViewOnlyMasterForm(params);
@@ -382,14 +382,14 @@ module.exports.get = async (req, res) => {
     try {
       let ulbsArray = [], approvedUlbs = [];
       // let ulbsObject = {},
-        forms2223;
+       let forms2223;
       let modelName;
       let designYearField = "design_year";
       if (collectionName == CollectionNames.dur) {
         designYearField = "designYear";
       }
       if (collectionName === CollectionNames.dur || collectionName ===  CollectionNames['28SLB']) {
-        modelName = collectionName === CollectionNames.dur ?  List.ModelNames['dur'] : List.ModelNames['28SLB']
+        modelName = collectionName === CollectionNames.dur ?  List.ModelNames['dur'] : List.ModelNames['twentyEightSlbs']
         ulbsArray = data.map((el) => {
           return el.ulbId;
         });
