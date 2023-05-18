@@ -1666,12 +1666,6 @@ const getPMUActivities = () => {
 }
 const getPopulationWiseData = () => {
   return Ulb.aggregate([
-    // {
-    // "$match":{
-    // "_id":ObjectId("5fa24662072dab780a6f15c9")
-    // }
-    // },
-
     {
       "$lookup": {
         "from": "fiscalrankings",
@@ -1689,28 +1683,26 @@ const getPopulationWiseData = () => {
     {
       "$group": {
         "_id": "$state",
-        // "underReviewByPMU": {
-        //   "$sum": {
-        //     "$cond": [
-        //       { "$eq": ["$formData.currentFormStatus", 9] },
-        //       1,
-        //       0
-        //     ]
-        //   }
-        // },
-        "verificationNotStarted": {
+        "totalUlbs": { $sum: 1 },
+        "underReviewByPMU": {
           "$sum": {
             "$cond": [
-              { "$ne": ["$formData.currentFormStatus", 8] },
+              { "$eq": ["$formData.currentFormStatus", 8] },
               1,
               0
             ]
           }
         },
-        "verificationInProgress": {
+        "4mplus": {
           "$sum": {
             "$cond": [
-              { "$eq": ["$formData.currentFormStatus", 9] },
+              {
+                $and: [
+                  { "$gte": ["$population", 2000] },
+                  { "$lt": ["$population", 20000] },
+                  { "$eq": ["$formData.currentFormStatus", 8] },
+                ]
+              },
               1,
               0
             ]
@@ -1725,10 +1717,19 @@ const getPopulationWiseData = () => {
             ]
           }
         },
-        "submissionAckByPMU": {
+        "inProgress": {
           "$sum": {
             "$cond": [
-              { "$eq": ["$formData.currentFormStatus", 11] },
+              { "$eq": ["$formData.currentFormStatus", 2] },
+              1,
+              0
+            ]
+          }
+        },
+        "notStarted": {
+          "$sum": {
+            "$cond": [
+              { "$eq": ["$formData.currentFormStatus", 1] },
               1,
               0
             ]
@@ -1753,14 +1754,60 @@ const getPopulationWiseData = () => {
     {
       "$project": {
         "stateName": "$states.name",
-        // "underReviewByPMU": 1,
-        "verificationNotStarted": 1,
-        "verificationInProgress": 1,
+        "totalUlbs": 1,
+        "underReviewByPMU": 1,
         "returnedByPMU": 1,
-        "submissionAckByPMU": 1
+        "inProgress": 1,
+        "notStarted": 1,
       }
-    }
+    },
+    {
+      "$match": {
+        "_id": ObjectId("5dcf9d7216a06aed41c748df")
+      }
+    },
   ])
+}
+
+function deleteExtraKeys(arr,obj){
+  for(var key of arr){
+      delete obj[key]
+  }
+}
+
+
+function getSortByKeys(sortBy, order) {
+  let sortKey = {
+      "provided": false
+  }
+  try {
+      if ((sortBy != undefined) && (order != undefined)) {
+          let temp = {}
+          sortKey["provided"] = true
+          if(Array.isArray(sortBy)){
+              for(let key in sortBy){
+                  let name = sortBy[key]
+                  if(!isNaN(parseInt(order[key]))){
+                      temp[sortFilterKeys[name]] = parseInt(order[key])
+                  }
+              }
+          }
+          else{
+              if(!isNaN(parseInt(order))){
+                  temp[sortFilterKeys[sortBy]] = parseInt(order)
+              }
+          }
+          if (Object.keys(temp).length > 0){
+              sortKey['provided'] = true
+              sortKey["filters"] = temp
+          }
+      }
+  }
+  catch (err) {
+      console.log("error in getSortByKeys ::: ", err.message)
+  }
+  console.log(sortKey)
+  return sortKey
 }
 
 exports.overview = async function (req, res, next) {
@@ -1773,16 +1820,18 @@ exports.overview = async function (req, res, next) {
     "PMUActivities": "Overview of PMU activities",
     "populationWise": "Overview of population-wise data"
   }[type] || '';
-  
+
   const columns = {
     "UlbActivities": [
       {
         "label": "State Name",
-        "key": "stateName"
+        "key": "stateName",
+        "query": ""
       },
       {
         "label": "Total ULBs",
-        "key": "totalUlbs"
+        "key": "totalUlbs",
+        "query": ""
       },
       {
         "label": "Under Review by PMU",
@@ -1804,7 +1853,8 @@ exports.overview = async function (req, res, next) {
     "PMUActivities": [
       {
         "label": "State Name",
-        "key": "stateName"
+        "key": "stateName",
+        "query": ""
       },
       {
         "label": "Verification Not Started",
@@ -1826,39 +1876,64 @@ exports.overview = async function (req, res, next) {
     "populationWise": [
       {
         "label": "State Name",
-        "key": "stateName"
+        "key": "stateName",
+        "query": ""
       },
       {
-        "label": "Verification Not Started",
-        "key": "verificationNotStarted"
+        "label": "Total ULBs",
+        "key": "totalUlbs"
       },
       {
-        "label": "Verification In Progress",
-        "key": "verificationInProgress"
+        "label": "4mplus",
+        "key": "4mplus"
+      },
+      {
+        "label": "Under Review by PMU",
+        "key": "underReviewByPMU"
       },
       {
         "label": "Returned by PMU",
         "key": "returnedByPMU"
       },
       {
-        "label": "Submission Acknowledged by PMU",
-        "key": "submissionAckByPMU"
+        "label": "In Progress",
+        "key": "inProgress"
+      },
+      {
+        "label": "Not Started",
+        "key": "notStarted"
       },
     ]
   }[type] || [];
   try {
-    let data;
 
-    if(type == 'UlbActivities') {
+    let skip = parseInt(req.query.skip) || 0
+    let limit = parseInt(req.query.limit) || 10
+    let { sortBy, order } = req.query
+    let filters = { ...req.query }
+    await deleteExtraKeys(["sortBy", "order", "skip", "limit"], filters)
+
+    filters = await Service.mapFilter(filters)
+    let filterObj = {
+      "provided": Object.keys(filters).length > 0 ? true : false,
+      "filters": Object.keys(filters).length > 0 ? { ...filters } : "",
+    }
+    let sortKey = getSortByKeys(sortBy, order)
+    let designYear = years['2022-23']
+    console.log({ skip, limit, sortBy, order, filters, filterObj, sortKey, designYear });
+
+
+    let data;
+    if (type == 'UlbActivities') {
       data = await getUlbActivities();
     }
-    else if(type == 'PMUActivities') {
+    else if (type == 'PMUActivities') {
       data = await getPMUActivities();
     }
-    else if(type == 'populationWise') {
+    else if (type == 'populationWise') {
       data = await getPopulationWiseData();
     }
-    
+
 
 
     return res.status(200).json({
