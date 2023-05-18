@@ -495,7 +495,6 @@ const getColumnWiseData = (key, obj, isDraft, dataSource = "",role,formStatus) =
           false
         ),
         ...obj,
-        "status":"",
         readonly: getReadOnly(formStatus, isDraft,role,obj.status),
         // rejectReason:"",
       };
@@ -2644,6 +2643,7 @@ async function updateFiscalRankingForm(
             obj[key].status = "PENDING"
           }
           else{
+            console.log("going into false",obj[key])
             obj[key].status = ""
           }
         }
