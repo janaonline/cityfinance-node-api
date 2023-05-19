@@ -240,6 +240,11 @@ module.exports.createAndUpdateFormMaster = async (params) => {
                     return Response.BadRequest(res, {}, validation.messages);
                   }
                 }
+                if(formCurrentStatus.status === MASTER_STATUS['Returned By State'] && formBodyStatus === MASTER_STATUS['In Progress'] ){
+                  if(!formData.isProjectLoaded && years['2023-24']){
+                    delete formData['projects']
+                  }
+                }
             if (formData2324) {
               formSubmit = await moongose.model(modelName).findOneAndUpdate(
                 {

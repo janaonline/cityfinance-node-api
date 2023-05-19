@@ -43,7 +43,8 @@ const {
   notRequiredValidations,
   statusList,
   statusTracker,
-  questionLevelStatus
+  questionLevelStatus,
+  calculatedFields
 } = require("./fydynemic");
 const catchAsync = require("../../util/catchAsync");
 const State = require("../../models/State");
@@ -877,7 +878,13 @@ exports.getView = async function (req, res, next) {
             pf,
             fyDynemic: subData,
           };
-          pf['readonly'] =  getReadOnly(data?.currentFormStatus, viewOne.isDraft,role,"PENDING");
+          if(subData[key].calculatedFrom === undefined){
+            pf['readonly'] =  getReadOnly(data?.currentFormStatus, viewOne.isDraft,role,"PENDING");
+          }
+          else{
+            pf['readonly'] = true
+          }
+          
           if (pf?.code?.length > 0) {
             pf["status"] = null;
             pf["modelName"] = "";
@@ -887,6 +894,7 @@ exports.getView = async function (req, res, next) {
                   e?.year?.toString() == pf?.year?.toString() &&
                   e.type == pf.type
               );
+              
               if (singleFydata) {
                 if (singleFydata?.date !== null) {
                   pf["date"] = singleFydata ? singleFydata.date : null;
@@ -912,7 +920,7 @@ exports.getView = async function (req, res, next) {
                 // parameters['valueObj'] = {value:ulbFyAmount}
                 pf["value"] = ulbFyAmount;
                 // pf['value'] = ulbFyAmount;
-                pf["status"] = ulbFyAmount ? "NA" : "PENDING";
+                pf["status"] = ulbFyAmount ? "" : "PENDING";
                 // subData[key]["modelName"] = ulbFyAmount > 0 ? "ULBLedger" : "FiscalRanking"
                 pf["modelName"] = ulbFyAmount > 0 ? "ULBLedger" : "";
                 if (subData[key].calculatedFrom === undefined) {
@@ -920,10 +928,9 @@ exports.getView = async function (req, res, next) {
                 } else {
                   pf["readonly"] = true;
                 }
-                console.log(">>>>>.readOnly ulb ::",pf['readonly'])
               }
             } else {
-              if ([1,2].includes(viewOne.currentFormStatus) === null) {
+              if ([1,2,null].includes(viewOne.currentFormStatus) ) {
                 let ulbFyAmount = await getUlbLedgerDataFilter({
                   code: pf.code,
                   year: pf.year,
@@ -931,13 +938,14 @@ exports.getView = async function (req, res, next) {
                 });
                 pf["value"] = ulbFyAmount;
                 // pf['value'] = ulbFyAmount;
-                pf["status"] = ulbFyAmount ? "NA" : "PENDING";
+                pf["status"] = ulbFyAmount ? "" : "PENDING";
                 // subData[key]["modelName"] = ulbFyAmount > 0 ? "ULBLedger" : "FiscalRanking"
                 pf["modelName"] = ulbFyAmount > 0 ? "ULBLedger" : "";
-                console.log("ulbFyAmount ::: ",ulbFyAmount)
                 if (subData[key].calculatedFrom === undefined) {
+                  pf["status"]  = "PENDING"
                   pf["readonly"] = ulbFyAmount > 0 ? true : getReadOnly(data?.currentFormStatus, viewOne.isDraft,role,singleFydata.status);
                 } else {
+                  pf["status"]  = ""
                   pf["readonly"] = true;
                 }
               }
@@ -956,12 +964,12 @@ exports.getView = async function (req, res, next) {
                 );
                 if (singleFydata) {
                   pf["file"] = singleFydata.file;
-                  pf["status"] = singleFydata.status;
+                  pf["status"] = singleFydata.status ;
                   pf["modelName"] = singleFydata.modelName;
                   pf['rejectReason'] = singleFydata.rejectReason
                   if (subData[key].calculatedFrom === undefined) {
                     pf["required"] =
-                      singleFydata.status && singleFydata.status == "NA"
+                    singleFydata.status  || singleFydata.modelName === "ULBLedger"
                         ? false
                         : true;
                     pf["readonly"] = getReadOnly(data?.currentFormStatus, viewOne.isDraft,role,singleFydata?.status);
@@ -972,16 +980,15 @@ exports.getView = async function (req, res, next) {
                 } else {
                   if (
                     subData[key]?.key !== "appAnnualBudget" &&
-                    viewOne.isDraft == null
+                    [1,2,null] .includes(viewOne.currentFormStatus)
                   ) {
                     let chekFile = ulbDataUniqueFy
                       ? ulbDataUniqueFy.some(
                         (el) => el?.year_id.toString() === pf?.year.toString()
                       )
                       : false;
-                    pf["status"] = chekFile ? singleFydata.status : "PENDING";
+                    pf["status"] = chekFile ? "" : "PENDING";
                     pf["modelName"] = chekFile ? "ULBLedger" : "";
-                    console.log("chekFile :: ", chekFile);
                     if (chekFile) {
                       pf[
                         "info"
@@ -998,18 +1005,20 @@ exports.getView = async function (req, res, next) {
                   }
                 }
               } else {
+                
                 if (
-                  subData[key]?.key !== "appAnnualBudget" &&
-                  viewOne.isDraft == null
+                  subData[key]?.key !== "appAnnualBudget" && [1,2,null].includes(viewOne.currentFormStatus)
                 ) {
                   let chekFile = ulbDataUniqueFy
                     ? ulbDataUniqueFy.some(
                       (el) => el?.year_id.toString() === pf?.year.toString()
                     )
                     : false;
-                  pf["status"] = chekFile ? "NA" : "PENDING";
+
+                  pf["status"] = chekFile ? "" : "PENDING";
                   pf["modelName"] = chekFile ? "ULBLedger" : "";
                   if (chekFile) {
+              
                     pf[
                       "info"
                     ] = `Available on Cityfinance - <a href ="https://cityfinance.in/resources-dashboard/data-sets/income_statement ">View here</a>`;
@@ -1093,6 +1102,7 @@ exports.getView = async function (req, res, next) {
                   // console.log("sumOfPreviousYear :: ",sumOfPreviousYear)
                   // console.log("sumOfCurrentYear :: ",sumOfCurrentYear)
                   pf["value"] = sumOfCurrentYear - sumOfPreviousYear;
+                  pf['readonly'] = true
                   pf["modelName"] = "ULBLedger";
                   // console.log(">>>>>>>>>>>> ",pf['value'])
                 }
@@ -1170,6 +1180,32 @@ const getUlbLedgerDataFilter = (objData) => {
  */
 const ulbLedgerFy = (condition) => {
   return new Promise(async (resolve, reject) => {
+    console.log(JSON.stringify([
+      { $match: condition },
+      {
+        $group: {
+          _id: "$financialYear",
+        },
+      },
+      {
+        $lookup: {
+          from: "years",
+          localField: "_id",
+          foreignField: "year",
+          as: "years",
+        },
+      },
+      {
+        $unwind: "$years",
+      },
+      {
+        $project: {
+          _id: 0,
+          year_id: "$years._id",
+          year: "$years.year",
+        },
+      },
+    ]))
     try {
       let data = await UlbLedger.aggregate([
         { $match: condition },
@@ -2129,6 +2165,9 @@ function searchQueries(req) {
     filter["ulbName"] = req.query.ulbName != "null" ? req.query.ulbName : "";
     filter["censusCode"] =
       req.query.censusCode != "null" ? req.query.censusCode : "";
+    filter['state_id'] = 
+      req.query.stateName != "null" ? req.query.stateName : "";
+
     filter["populationType"] =
       req.query.populationType != "null" ? POPULATION_TYPE[req.query.populationType] : "";
     filter["ulbType"] = req.query.ulbType != "null" ? req.query.ulbType : "";
@@ -2515,6 +2554,9 @@ async function updateQueryForFiscalRanking(
     for (var years of yearData) {
       let upsert = false;
       if (years.year) {
+        // if(years.type === "registerGisProof"){
+        //   console.log("years.type ::: ",years.status)
+        // }
         let payload = {};
         let filter = {
           year: ObjectId(years.year),
@@ -2523,6 +2565,7 @@ async function updateQueryForFiscalRanking(
           type: years.type,
         };
         if (updateForm) {
+          
           upsert = true;
           if (dynamicObj.calculatedFrom) {
             let validator = await validateAccordingtoLedgers(
@@ -2540,6 +2583,7 @@ async function updateQueryForFiscalRanking(
               throw { message: validator.message, type: "ValidationError" };
             }
           }
+          
           payload["value"] = years.value;
           payload["date"] = years.date;
           payload["file"] = years.file;
@@ -2588,24 +2632,36 @@ async function updateFiscalRankingForm(
   session
 ) {
   try {
+    const statusNotMandatory = ["caMembershipNo","otherUpload"]
     let filter = {
       _id: ObjectId(formId),
     };
     let payload = {};
     for (let key in obj) {
       if (updateForm) {
+        if(statusNotMandatory.includes(key)){
+          // console.log("obj[key].value ::: ",)
+          if(obj[key].value || obj[key]?.name ){
+            obj[key].status = "PENDING"
+          }
+          else{
+            obj[key].status = ""
+          }
+        }
         if (key === "signedCopyOfFile" || key === "otherUpload") {
           payload[key] = obj[key];
         } else {
           // if (!obj[key].value && !notRequiredValidations.includes(key) && !isDraft) {
           //   throw { "message": `value for field ${key} is required`, "type": "ValidationError" }
           // }
+          // console.log("condtion :::: ",statusNotMandatory.includes(key))
+          
           payload[`${key}.value`] = obj[key].value;
           payload[`${key}.status`] = obj[key].status;
           payload[`${key}.modelName`] = obj[key].modelName;
         }
       } else {
-        let status = null;
+        let status = "";
         if (obj[key].status) {
           status = obj[key].status;
         }
@@ -2664,7 +2720,7 @@ async function calculateAndUpdateStatusForMappers(
       "signedCopyOfFile",
       "otherUpload",
     ];
-
+    
     for (var tab of tabs) {
       conditionalObj[tab._id.toString()] = {};
       let key = tab.id;
@@ -2682,7 +2738,7 @@ async function calculateAndUpdateStatusForMappers(
           let dynamicObj = obj[k];
           let financialInfo = obj;
           let status = yearArr.every((item) => {
-            if(item?.type == 'registerGisProof') return true;
+            if(calculatedFields.includes(item?.type)) return true; 
             if (item?.type) {
               return item.status === "APPROVED";
             } else {
