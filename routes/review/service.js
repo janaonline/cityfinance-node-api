@@ -8,7 +8,8 @@ const Service = require('../../service');
 const List = require('../../util/15thFCstatus')
 const { calculateKeys } = require('../CommonActionAPI/service')
 const Ulb = require('../../models/Ulb')
-const State = require('../../models/State')
+const State = require('../../models/State');
+const MasterForm = require('../../models/MasterForm');
 
 
 function padTo2Digits(num) {
@@ -1999,13 +2000,21 @@ module.exports.get = catchAsync(async (req, res) => {
   //  if(collectionName == CollectionNames.dur || collectionName == CollectionNames.gfc ||
   //     collectionName == CollectionNames.odf || collectionName == CollectionNames.slb || 
   //     collectionName === CollectionNames.sfc || collectionName === CollectionNames.propTaxState || collectionName === CollectionNames.annual )
+  let approvedUlbs = await masterForms2122(collectionName, data);
   data.forEach(el => {
     if (!el.formData) {
       el['formStatus'] = "Not Started";
       el['cantakeAction'] = false;
     } else {
       el['formStatus'] = calculateStatus(el.formData.status, el.formData.actionTakenByRole, el.formData.isDraft, formType);
-      el['cantakeAction'] = req.decoded.role === "ADMIN" ? false : canTakeActionOrViewOnly(el, loggedInUserRole)
+      if(collectionName === CollectionNames.dur || collectionName === CollectionNames['28SLB']){
+        el['cantakeAction'] = req.decoded.role === "ADMIN" ? false : canTakeActionOrViewOnly(el, loggedInUserRole);
+        if( !(approvedUlbs.find(ulb=> ulb.toString() === el.ulbId.toString())) && loggedInUserRole === "MoHUA"){
+          el['cantakeAction'] = false
+        }
+      }else{
+        el['cantakeAction'] = req.decoded.role === "ADMIN" ? false : canTakeActionOrViewOnly(el, loggedInUserRole)
+      }
     }
   })
 
@@ -2200,6 +2209,47 @@ module.exports.get = catchAsync(async (req, res) => {
 
 })
 
+async function masterForms2122(collectionName, data) {
+  try {
+    let ulbsArray = [], approvedUlbs = [];
+    let ulbsObject = {},
+      masterForms2122;
+    if (collectionName === CollectionNames.dur || collectionName === CollectionNames['28SLB']) {
+      ulbsArray = data.map((el) => {
+        return el.ulbId;
+      });
+      // for (let entity of ulbsArray) {
+      //   ulbsObject[entity] = false;
+      // }
+      if (Array.isArray(ulbsArray) && ulbsArray.length) {
+        masterForms2122 = await MasterForm.find(
+          {
+            ulb: { $in: ulbsArray },
+          },
+          { history: 0,steps:0 }
+        ).lean();
+      }
+      approvedUlbs = getUlbsApprovedByMoHUA(masterForms2122)
+    }
+    return approvedUlbs;
+  } catch (error) {
+    throw(`masterForms2122:: ${error.message}`)
+  }
+}
+
+function getUlbsApprovedByMoHUA(forms){
+  try {
+    let ulbArray = [];
+    for(let form of forms){
+      if(form.actionTakenByRole === "MoHUA" && form.isSubmit && form.status === "APPROVED" ){
+        ulbArray.push(form.ulb);
+      }
+    }
+    return ulbArray;
+  } catch (error) {
+    throw(`getUlbsApprovedByMoHUA:: ${error.message}`);
+  }
+}
 function countStatusData(element, collectionName) {
   let total = 0;
   let notStarted = 0;

@@ -91,7 +91,7 @@ module.exports.MODEL_PATH = {
     2: "GfcFormCollection",
     3: "PropertyTaxOp",
     5: "AnnualAccounts",
-    6: "TwentyEightSlbsForm",
+    6: "TwentyEightSlbForm",
     4: "UtilizationReport"
 }
 
@@ -100,4 +100,9 @@ module.exports.POPULATION_TYPE = {
     2: "1M to 4M",
     3: "100K to 1M",
     4: "<100K"
+}
+module.exports.USER_ROLE = {
+    "MoHUA": "MoHUA",
+    "STATE": "STATE",
+    "ULB": "ULB"
 }

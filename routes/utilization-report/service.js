@@ -397,7 +397,6 @@ module.exports.createOrUpdate = async (req, res) => {
         if(req.body.projects.length === 0){
           body.projects = currentSavedUtilRep.projects
         }
-        console.log("33")
         let validation = await checkForCalculations(body)
         if(!validation.valid){
             return Response.BadRequest(res, {}, validation.messages);

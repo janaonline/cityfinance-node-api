@@ -7,7 +7,7 @@ const Service = require('../../service');
 const { FormNames, MASTER_STATUS_ID } = require('../../util/FormNames');
 const User = require('../../models/User');
 const { checkUndefinedValidations } = require('../../routes/FiscalRanking/service');
-const { propertyTaxOpFormJson, skippableKeys, financialYearTableHeader, specialHeaders, skipLogicDependencies,childKeys } = require('./fydynemic')
+const { propertyTaxOpFormJson, skippableKeys, financialYearTableHeader, specialHeaders, skipLogicDependencies, childKeys } = require('./fydynemic')
 const { isEmptyObj, isReadOnly } = require('../../util/helper');
 const PropertyMapperChildData = require("../../models/PropertyTaxMapperChild");
 const { years } = require('../../service/years');
@@ -215,7 +215,7 @@ module.exports.createOrUpdateForm = async (req, res) => {
                     return response(updatedForm, res, "Form updated.", "Form not updated.")
                 }
             }
-            
+
             if (submittedForm.status === "APPROVED" && submittedForm.actionTakenByRole !== "ULB"
                 && submittedForm.isDraft === false) {
                 return res.status(200).json({
@@ -1139,6 +1139,7 @@ exports.getView = async function (req, res, next) {
 function sortPosition(itemA, itemB) {
     itemA.displayPriority = itemA.displayPriority.toString()
     itemB.displayPriority = itemB.displayPriority.toString()
+    console.log("itemA ::: ", itemA)
     const [integerA, decimalA] = itemA.displayPriority.split('.').map(i => +i);
     const [integerB, decimalB] = itemB.displayPriority.split('.').map(i => +i);
     if (integerA != integerB) {
@@ -1183,7 +1184,7 @@ function getLabelName(type) {
             totalPropertiesTaxDm: 'Total number of properties from which property tax was demanded',
             totalPropertiesTaxDmCollected: 'Total number of properties from which property tax was collected',
             resValuePropertyTaxDm: 'Value of property tax demanded (INR lakhs)',
-            othersValueWaterChrgDm:"Value of water charges demanded (INR lakhs",
+            othersValueWaterChrgDm: "Value of water charges demanded (INR lakhs",
             resNoPropertyTaxDm: 'Number of properties from which property tax was demanded',
             resValuePropertyTaxCollected: 'Value of property tax collected (INR lakhs)',
             resNoPropertyTaxCollected: 'Number of properties from which property tax was collected',
@@ -1276,8 +1277,8 @@ function getLabelName(type) {
             omCostDeleverySewerage: 'What is the O&M cost of service delivery for sewerage ?(INR lakhs)',
             omCostSewerageService: 'Please provide the working sheet for O&M cost calculation',
             signedPdf: 'Upload Signed PDF'
-          }
-          
+        }
+
         let labelName = indicators[type] ? indicators[type].split(",").join("") : ""
         return labelName
     }
@@ -1287,22 +1288,22 @@ function getLabelName(type) {
     }
 }
 
-function getTextValues(displayPriority){
-    try{
-        
+function getTextValues(displayPriority) {
+    try {
+
         let subHeaders = {
-            "2.05-2.08":"Residential Properties",
+            "2.05-2.08": "Residential Properties",
             "2.09-2.12": "Commercial Properties",
             "2.13-2.16": "Industrial Properties",
             "2.17-2.20": "Government Properties",
             "2.21-2.24": "Institutional Properties",
             "2.25-2.29": "Other Properties",
-            "5.13-5.16" :"Residential households/properties",
-            "5.17-5.20":"Commercial households/properties",
-            "5.21-5.24" :"Industrial households/properties",
-            "6.13-6.16" :"Residential households/properties",
-            "6.17-6.20":"Commercial households/properties",
-            "6.21-6.24" :"Industrial households/properties",
+            "5.13-5.16": "Residential households/properties",
+            "5.17-5.20": "Commercial households/properties",
+            "5.21-5.24": "Industrial households/properties",
+            "6.13-6.16": "Residential households/properties",
+            "6.17-6.20": "Commercial households/properties",
+            "6.21-6.24": "Industrial households/properties",
         }
         for (let range in subHeaders) {
             let [integerA, integerB] = range.split("-")
@@ -1318,14 +1319,14 @@ function getTextValues(displayPriority){
                 if (subHeaders[range]) {
                     return subHeaders[range].split(",").join("") || ""
                 }
-                else{
+                else {
                     return ","
                 }
             }
         }
     }
-    catch(err){
-        console.log("error in getIpValues :::: ",err.message)
+    catch (err) {
+        console.log("error in getIpValues :::: ", err.message)
         return "NA"
     }
     return ""
@@ -1366,15 +1367,15 @@ function getSubHeaders(displayPriority) {
                 if (subHeaders[range]) {
                     return subHeaders[range].split(",").join("") || ""
                 }
-                else{
+                else {
                     return ","
                 }
             }
         }
     }
     catch (err) {
-    console.log("error in getSubheades :: ", err.message)
-}
+        console.log("error in getSubheades :: ", err.message)
+    }
     return ","
 }
 
@@ -1400,18 +1401,18 @@ function getIndicator(displayPriority) {
                 }
             }
         }
-    }
-    catch (err) {
+    } catch (err) {
+        console.log(err)
         console.log("error in getIndicators :: ", err.message)
     }
     return ""
 }
 
-const getStringValue = (result,parentDp, ipValue = false) => {
+const getStringValue = (result, parentDp, ipValue = false) => {
     let writableStr = ""
     try {
         let dataYear = result?.year
-        let indicatorDpNumber = parentDp ? parentDp : result.displayPriority
+        let indicatorDpNumber = parentDp ? result.displayPriority : result.displayPriority
         // console.log(">>>",getSubHeaders(result.displayPriority).replace(",", ""))
         let indicatorHead = getIndicator(indicatorDpNumber).replace(",", "")
         let indicatorSubHead = getSubHeaders(indicatorDpNumber).replace(",", "")
@@ -1429,24 +1430,241 @@ const getStringValue = (result,parentDp, ipValue = false) => {
         let assignedValue = value || file || date || " "
         writableStr += assignedValue ? `${assignedValue}` : "" + ","
         writableStr += "\r\n"
-    }
-    catch (err) {
-        console.log("error in getStringValue ::: ", err)
+    } catch (err) {
+        console.log("error in getStringValue ::: ", err);
     }
     return writableStr
 }
 
-const decideDisplayPriority = (index,type,dp,replicaNumber,parentType)=>{
-    try{
+const decideDisplayPriority = (index, type, dp, replicaNumber, parentType) => {
+    try {
         // console.log("type ::: ",type)
-       if(childKeys[type]){
-        return childKeys[type] + "." + replicaNumber
-       }
+        if (childKeys[type]) {
+            return childKeys[type] + "." + replicaNumber
+        }
     }
-    catch(err){
+    catch (err) {
         console.log("error in decideDisplayPriority")
     }
     return dp + "." + replicaNumber
+}
+
+
+
+const canShow = (key, results, updatedDatas,ulb) => {
+    try {
+        
+        if (Object.keys(skippableKeys).includes(key)) {
+            let elementToFind = skippableKeys[key]
+            let element = {}
+            let keyName = elementToFind + "_" + ulb
+            // console.log("elementsToFind :::",elementToFind)
+            if (!updatedDatas[keyName]) {
+                element = results.find(item => item.type === elementToFind)
+                
+                updatedDatas[keyName] = element
+            }
+            else{
+                element = updatedDatas[keyName]
+            }
+            let show = element.value === "Yes" 
+            if(["entityNameWaterCharges","entityNaSewerageCharges".includes(key)]){
+                show = element.value !== "ULB"
+            }
+            return show
+        }
+    }
+    catch (err) {
+        console.log(err)
+        console.log("error in canSHow ::: ", err.message)
+    }
+    return true
+}
+// module.exports.getCsvForPropertyTaxMapper = async (req, res) => {
+//     let response = {
+//         "success": true,
+//         "message": "",
+//         "query": []
+//     }
+//     let status = 200
+//     try {
+//         let { getQuery } = req.query
+//         let csvCols = ["State Name",
+//             "ULB Name",
+//             "ULB Nature",
+//             "City Finance Code",
+//             "Census Code",
+//             "Overall Form Status",
+//             "Design Year",
+//             "Data Year",
+//             "Indicator Head ",
+//             "Indicator sub head",
+//             "Indicator number",
+//             "Input Value",
+//             "Indicator",
+//             "Value| Amount"]
+//         getQuery = getQuery === "true"
+//         let design_year = ObjectId(years['2023-24'])
+//         if (getQuery) {
+//             response.query = getQuery
+//             return response
+//         }
+//         let ptoFormResults = await PropertyTaxOp.find({
+//             design_year: design_year
+//         }, { _id: 1, ulb: 1 }).lean()
+//         let ulbNames = ptoFormResults.map(item => item.ulb)
+//         let mapperData = await PropertyTaxOpMapper.find({
+//             "ptoId": { $in: ptoFormResults.map(item => item._id) }
+//         }).populate("child").populate({
+//             "path": "ptoId",
+//             "populate": {
+//                 "path": "ulb",
+//                 "populate": {
+//                     "path": "state",
+//                     "model": "State"
+//                 }
+//             }
+//         }).lean()
+//         let filename = "propertyTax.csv"
+//         res.setHeader("Content-disposition", "attachment; filename=" + filename);
+//         res.writeHead(200, { "Content-Type": "text/csv;charset=utf-8,%EF%BB%BF" });
+//         res.write("\ufeff" + `${csvCols.join(",").toString()}` + "\r\n");
+//         let str = ""
+//         res.write("\ufeff" + str + "\r\n");
+//         // cursor.on()
+//         // console.log("mapperData ::: ",ptoFormResults)
+//         await createDataStructureForCsv(ulbNames, mapperData, res)
+//         // res.end()
+//         // console.log("mapperData :: ",mapperData)
+//         response.success = true
+//         // response.data = dbResults
+//         response.message = "Code working"
+//     }
+//     catch (err) {
+//         response.success = true
+//         status = 400
+//         console.log("error in getCsvForPropertyTaxMapper ::::: ", err.message)
+//     }
+//     // return res.status(status).json(response)
+// }
+
+module.exports.getCsvForPropertyTaxMapper = async (req, res) => {
+    let response = {
+        "success": true,
+        "message": "",
+        "query": []
+    }
+    let status = 200
+    try {
+        let { getQuery } = req.query
+        let csvCols = ["State Name",
+            "ULB Name",
+            "ULB Nature",
+            "City Finance Code",
+            "Census Code",
+            "Overall Form Status",
+            "Design Year",
+            "Data Year",
+            "Indicator Head ",
+            "Indicator sub head",
+            "Indicator number",
+            "Input Value",
+            "Indicator",
+            "Value| Amount"]
+        getQuery = getQuery === "true"
+        let design_year = ObjectId(years['2023-24'])
+        if (getQuery) {
+            response.query = getQuery
+            return response
+        }
+        let filename = "propertyTax.csv"
+        res.setHeader("Content-disposition", "attachment; filename=" + filename);
+        res.writeHead(200, { "Content-Type": "text/csv;charset=utf-8,%EF%BB%BF" });
+        res.write("\ufeff" + `${csvCols.join(",").toString()}` + "\r\n");
+
+        let cursor = await PropertyTaxOp.aggregate([
+            { $match: { "design_year": design_year } },
+            {
+                $lookup: {
+                    from: "propertytaxopmappers",
+                    localField: "_id",
+                    foreignField: "ptoId",
+                    as: "propertytaxopmapper"
+                }
+            },
+            {
+                $lookup: {
+                    from: "propertymapperchilddatas",
+                    localField: "_id",
+                    foreignField: "ptoId",
+                    as: "propertymapperchilddata"
+                }
+            },
+            {
+                $lookup: {
+                    from: "ulbs",
+                    localField: "ulb",
+                    foreignField: "_id",
+                    as: "ulb"
+                }
+            },
+            { $unwind: "$ulb" },
+            {
+                $lookup: {
+                    from: "states",
+                    localField: "ulb.state",
+                    foreignField: "_id",
+                    as: "state"
+                }
+            },
+            { $unwind: "$state" },
+        ]).allowDiskUse(true)
+            .cursor({ batchSize: 100 })
+            .addCursorFlag("noCursorTimeout", true)
+            .exec();
+
+        cursor.on("data", (el) => {
+            let updatedDatas = {}
+            let filteredResults = el.propertytaxopmapper;
+            let sortedResults = filteredResults.sort(sortPosition)
+            for (let result of sortedResults) {
+                let censusCode = el.ulb.censusCode != null ? el.ulb.censusCode : el.ulb.sbCode
+                let writableStr = el.state.name + "," + el.ulb.name + "," + el.ulb.natureOfUlb + "," + el.ulb.code + "," + censusCode + "," + MASTER_STATUS_ID[el.currentFormStatus] + "," + getKeyByValue(years, el.design_year.toString()) + ","
+                let modifiedTextValue = getTextValues(result.displayPriority).replace(",")
+                result.textValue = modifiedTextValue ? modifiedTextValue : " "
+                if (!canShow(result.type, sortedResults, updatedDatas, el.ulb._id)) continue;
+                writableStr += getStringValue(result, false, true)
+                if (result.child && result.child.length) {
+                    let status = MASTER_STATUS_ID[el.currentFormStatus] || ""
+                    res.write(writableStr)
+                    for (let childId of result.child) {
+                        let child = el?.propertymapperchilddata?.length > 0 ? el?.propertymapperchilddata.find(e => e._id.toString() == childId.toString()) : null
+                        let number = decideDisplayPriority(0, child.type, result.displayPriority, child.replicaNumber, result.type)
+                        child.displayPriority = number
+                        if (child) {
+                            writableStr = el.state.name + "," + el.ulb.name + "," + el.ulb.natureOfUlb + "," + el.ulb.code + "," + el.ulb.censusCode + "," + status + "," + getKeyByValue(years, el.design_year.toString()) + ","
+                         censusCode || ""
+                            child.textValue = child.textValue ? child.textValue : modifiedTextValue
+                            writableStr += getStringValue(child,result.displayPriority, true)
+                            res.write(writableStr)
+                            writableStr = ""
+                        }
+                    }
+                }
+                res.write(writableStr)
+            }
+        });
+        cursor.on("end", function (el) {
+            res.end();
+        });
+        response.success = true
+        response.message = "Code working";
+    } catch (err) {
+        console.log("err", err)
+        response.success = true
+        status = 400
+        console.log("error in getCsvForPropertyTaxMapper ::::: ", err.message)
+    }
 }
 
 const createDataStructureForCsv = (ulbs, results, res) => {
@@ -1492,101 +1710,4 @@ const createDataStructureForCsv = (ulbs, results, res) => {
             "message": "something went wrong"
         })
     }
-}
-
-const canShow = (key, results, updatedDatas,ulb) => {
-    try {
-        
-        if (Object.keys(skippableKeys).includes(key)) {
-            let elementToFind = skippableKeys[key]
-            let element = {}
-            let keyName = elementToFind + "_" + ulb
-            // console.log("elementsToFind :::",elementToFind)
-            if (!updatedDatas[keyName]) {
-                element = results.find(item => item.type === elementToFind)
-                
-                updatedDatas[keyName] = element
-            }
-            else{
-                element = updatedDatas[keyName]
-            }
-            let show = element.value === "Yes" 
-            if(["entityNameWaterCharges","entityNaSewerageCharges".includes(key)]){
-                show = element.value !== "ULB"
-            }
-            return show
-        }
-    }
-    catch (err) {
-        console.log(err)
-        console.log("error in canSHow ::: ", err.message)
-    }
-    return true
-}
-module.exports.getCsvForPropertyTaxMapper = async (req, res) => {
-    let response = {
-        "success": true,
-        "message": "",
-        "query": []
-    }
-    let status = 200
-    try {
-        let { getQuery } = req.query
-        let csvCols = ["State Name",
-            "ULB Name",
-            "ULB Nature",
-            "City Finance Code",
-            "Census Code",
-            "Overall Form Status",
-            "Design Year",
-            "Data Year",
-            "Indicator Head ",
-            "Indicator sub head",
-            "Indicator number",
-            "Input Value",
-            "Indicator",
-            "Value| Amount"]
-        getQuery = getQuery === "true"
-        let design_year = ObjectId(years['2023-24'])
-        if (getQuery) {
-            response.query = getQuery
-            return response
-        }
-        let ptoFormResults = await PropertyTaxOp.find({
-            design_year: design_year
-        }, { _id: 1, ulb: 1 }).lean()
-        let ulbNames = ptoFormResults.map(item => item.ulb)
-        let mapperData = await PropertyTaxOpMapper.find({
-            "ptoId": { $in: ptoFormResults.map(item => item._id) }
-        }).populate("child").populate({
-            "path": "ptoId",
-            "populate": {
-                "path": "ulb",
-                "populate": {
-                    "path": "state",
-                    "model": "State"
-                }
-            }
-        }).lean()
-        let filename = "propertyTax.csv"
-        res.setHeader("Content-disposition", "attachment; filename=" + filename);
-        res.writeHead(200, { "Content-Type": "text/csv;charset=utf-8,%EF%BB%BF" });
-        res.write("\ufeff" + `${csvCols.join(",").toString()}` + "\r\n");
-        let str = ""
-        res.write("\ufeff" + str + "\r\n");
-        // cursor.on()
-        // console.log("mapperData ::: ",ptoFormResults)
-        await createDataStructureForCsv(ulbNames, mapperData, res)
-        // res.end()
-        // console.log("mapperData :: ",mapperData)
-        response.success = true
-        // response.data = dbResults
-        response.message = "Code working"
-    }
-    catch (err) {
-        response.success = true
-        status = 400
-        console.log("error in getCsvForPropertyTaxMapper ::::: ", err.message)
-    }
-    // return res.status(status).json(response)
 }

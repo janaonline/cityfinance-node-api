@@ -46,6 +46,7 @@ const fiscalRankingSchema = new Schema(
         },
         currentFormStatus:{
             type:Number,
+            default:1
         },
         populationFr: {
             value: { type: Number, default: null},
