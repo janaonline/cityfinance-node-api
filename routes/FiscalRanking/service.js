@@ -2499,7 +2499,7 @@ async function updateFiscalRankingForm(
         if(statusNotMandatory.includes(key)){
           // console.log("obj[key].value ::: ",)
           if(obj[key].value || obj[key]?.name ){
-            obj[key].status = "PENDING"
+            obj[key].status = obj[key].status || "PENDING"
           }
           else{
             obj[key].status = ""
