@@ -7,7 +7,7 @@ const Service = require('../../service');
 const { FormNames, MASTER_STATUS_ID } = require('../../util/FormNames');
 const User = require('../../models/User');
 const { checkUndefinedValidations } = require('../../routes/FiscalRanking/service');
-const { propertyTaxOpFormJson, skippableKeys, financialYearTableHeader, specialHeaders, skipLogicDependencies,childKeys } = require('./fydynemic')
+const { propertyTaxOpFormJson, skippableKeys, financialYearTableHeader, specialHeaders, skipLogicDependencies,childKeys,reverseKeys } = require('./fydynemic')
 const { isEmptyObj, isReadOnly } = require('../../util/helper');
 const PropertyMapperChildData = require("../../models/PropertyTaxMapperChild");
 const { years } = require('../../service/years');
@@ -1153,6 +1153,10 @@ function sortPosition(itemA, itemB) {
 function getLabelName(type) {
     try {
         let indicators = {
+            ulbCollectPtax: 'Did the ULB collect property tax in FY 22-23?',
+            ulbFinancialYear: 'On which financial year ULB was formed?',
+            ulbPassedResolPtax: 'Has the ULB passed resolution for levy of property tax?',
+            resolutionFile: 'Please submit the copy of resolution',
             notificationPropertyTax: 'Has the ULB adopted notification for charging property tax?',
             notificationAdoptionDate: 'What was the notification adoption date?',
             notificationIssuedBy: 'The adopted notification was issued by?',
@@ -1183,7 +1187,6 @@ function getLabelName(type) {
             totalPropertiesTaxDm: 'Total number of properties from which property tax was demanded',
             totalPropertiesTaxDmCollected: 'Total number of properties from which property tax was collected',
             resValuePropertyTaxDm: 'Value of property tax demanded (INR lakhs)',
-            othersValueWaterChrgDm:"Value of water charges demanded (INR lakhs",
             resNoPropertyTaxDm: 'Number of properties from which property tax was demanded',
             resValuePropertyTaxCollected: 'Value of property tax collected (INR lakhs)',
             resNoPropertyTaxCollected: 'Number of properties from which property tax was collected',
@@ -1224,22 +1227,22 @@ function getLabelName(type) {
             waterChrgConnectionDm: 'Total Number of connections from which water charges was demanded',
             waterChrgConnectionCol: 'Total Number of connections from which water charges were collected',
             resValueWaterChrgDm: 'Value of water charges demanded (INR lakhs)',
-            resNoWaterChrgDm: 'Number of Households/properties from which water charges was demanded',
-            resValueWaterChrgCollected: 'Value of water charges collected from Households/properties (INR lakhs)',
-            resNoWaterChrgCollected: 'Number of Households/properties from which water charges was collected',
+            resNoWaterChrgDm: 'Number of connections from which water charges was demanded',
+            resValueWaterChrgCollected: 'Value of water charges collected from connections (INR lakhs)',
+            resNoWaterChrgCollected: 'Number of connections from which water charges was collected',
             comValueWaterChrgDm: 'Value of water charges demanded (INR lakhs)',
-            comNoWaterChrgDm: 'Number of Households/properties from which water charges was demanded',
-            comValueWaterChrgCollected: 'Value of water charges collected from Households/properties (INR lakhs)',
-            comNoWaterChrgCollected: 'Number of Households/properties from which water charges was collected',
+            comNoWaterChrgDm: 'Number of connections from which water charges was demanded',
+            comValueWaterChrgCollected: 'Value of water charges collected from connections (INR lakhs)',
+            comNoWaterChrgCollected: 'Number of connections from which water charges was collected',
             indValueWaterChrgDm: 'Value of water charges demanded (INR lakhs)',
-            indNoWaterChrgDm: 'Number of Households/properties from which water charges was demanded',
-            indValueWaterChrgCollected: 'Value of water charges collected from Households/properties (INR lakhs)',
-            indNoWaterChrgCollected: 'Number of Households/properties from which water charges was collected',
-            othersValueWaterType: 'Property Type',
-            otherValueWaterTaxDm: 'Value of water tax demanded (INR lakhs)',
-            othersNoWaterChrgDm: 'Number of Households/properties from which water charges was demanded',
-            othersValueWaterChrgCollected: 'Value of water charges collected from Households/properties (INR lakhs)',
-            othersNoWaterChrgCollected: 'Number of Households/properties from which water charges was collected',
+            indNoWaterChrgDm: 'Number of connections from which water charges was demanded',
+            indValueWaterChrgCollected: 'Value of water charges collected from connections (INR lakhs)',
+            indNoWaterChrgCollected: 'Number of connections from which water charges was collected',
+            othersValueWaterType: 'Connection Type',
+            othersValueWaterChrgDm: 'Value of water charges demanded (INR lakhs)',
+            othersNoWaterChrgDm: 'Number of connections from which water charges was demanded',
+            othersValueWaterChrgCollected: 'Value of water charges collected from connections (INR lakhs)',
+            othersNoWaterChrgCollected: 'Number of connections from which water charges was collected',
             waterChrgTariffDetails: 'Please provide the water tariff sheet',
             omCostDeleveryWater: 'What is the O&M cost of service delivery for water? (INR lakhs)',
             omCostWaterService: 'Please provide the working sheet for O&M cost calculation',
@@ -1256,22 +1259,22 @@ function getLabelName(type) {
             totalSewergeConnectionDm: 'Total number of connections from which sewerage charges was demanded',
             totalSewergeConnectionCol: 'Total number of connections from which sewerage charges were collected',
             resValueSewerageTaxDm: 'Value of sewerage charges demanded (INR lakhs)',
-            resNoSewerageTaxDm: 'Number of Households/properties from which sewerage charges was demanded',
-            resValueSewerageTaxCollected: 'Value of sewerage charges collected from Households/properties (INR lakhs)',
-            resNoSewerageTaxCollected: 'Number of Households/properties from which sewerage charges was collected',
+            resNoSewerageTaxDm: 'Number of connections from which sewerage charges was demanded',
+            resValueSewerageTaxCollected: 'Value of sewerage charges collected from connections (INR lakhs)',
+            resNoSewerageTaxCollected: 'Number of connections from which sewerage charges was collected',
             comValueSewerageTaxDm: 'Value of sewerage charges demanded (INR lakhs)',
-            comNoSewerageTaxDm: 'Number of Households/properties from which sewerage charges was demanded',
-            comValueSewerageTaxCollected: 'Value of sewerage charges collected from Households/properties (INR lakhs)',
-            comNoSewerageTaxCollected: 'Number of Households/properties from which sewerage charges was collected',
+            comNoSewerageTaxDm: 'Number of connections from which sewerage charges was demanded',
+            comValueSewerageTaxCollected: 'Value of sewerage charges collected from connections (INR lakhs)',
+            comNoSewerageTaxCollected: 'Number of connections from which sewerage charges was collected',
             indValueSewerageTaxDm: 'Value of sewerage charges demanded (INR lakhs)',
-            indNoSewerageTaxDm: 'Number of Households/properties from which sewerage charges was demanded',
-            indValueSewerageTaxCollected: 'Value of sewerage charges collected from Households/properties (INR lakhs)',
-            indNoSewerageTaxCollected: 'Number of Households/properties from which sewerage charges was collected',
-            otherValueSewerageType: 'Property Type',
+            indNoSewerageTaxDm: 'Number of connections from which sewerage charges was demanded',
+            indValueSewerageTaxCollected: 'Value of sewerage charges collected from connections (INR lakhs)',
+            indNoSewerageTaxCollected: 'Number of connections from which sewerage charges was collected',
+            otherValueSewerageType: 'Connection Type',
             otherValueSewerageTaxDm: 'Value of sewerage charges demanded (INR lakhs)',
-            otherNoSewerageTaxDm: 'Number of Households/properties from which sewerage charges was demanded',
-            otherValueSewerageTaxCollected: 'Value of sewerage charges collected from Households/properties (INR lakhs)',
-            otherNoSewerageTaxCollected: 'Number of Households/properties from which sewerage charges was collected',
+            otherNoSewerageTaxDm: 'Number of connections from which sewerage charges was demanded',
+            otherValueSewerageTaxCollected: 'Value of sewerage charges collected from connections (INR lakhs)',
+            otherNoSewerageTaxCollected: 'Number of connections from which sewerage charges was collected',
             sewerageChrgTarrifSheet: 'Please provide the sewerage tariff sheet',
             omCostDeleverySewerage: 'What is the O&M cost of service delivery for sewerage ?(INR lakhs)',
             omCostSewerageService: 'Please provide the working sheet for O&M cost calculation',
@@ -1461,21 +1464,22 @@ const canShow = (key, results, updatedDatas,ulb) => {
             // console.log("elementsToFind :::",elementToFind)
             if (!updatedDatas[keyName]) {
                 element = results.find(item => item.type === elementToFind)
-                
                 updatedDatas[keyName] = element
             }
             else{
                 element = updatedDatas[keyName]
             }
             let show = element.value === "Yes" 
-            if(["entityNameWaterCharges","entityNaSewerageCharges".includes(key)]){
+            if(reverseKeys.includes(key)){
+                show = element.value === "No"
+            }
+            if(["entityNameWaterCharges","entityNaSewerageCharges"].includes(key)){
                 show = element.value !== "ULB"
             }
             return show
         }
     }
     catch (err) {
-        console.log(err)
         console.log("error in canSHow ::: ", err.message)
     }
     return true
@@ -1658,7 +1662,7 @@ module.exports.getCsvForPropertyTaxMapper = async (req, res) => {
             res.end();
         });
         response.success = true
-        response.message = "Code working";
+        response.message = "Fetched successfully";
     } catch (err) {
         console.log("err", err)
         response.success = true

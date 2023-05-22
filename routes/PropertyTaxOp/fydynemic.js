@@ -12020,12 +12020,12 @@ function getSkippableKeys(skipLogics) {
 }
 
 let childKeys = {
-  taxTypeDemandChild: '1.9',
-  cessDemandChild: '1.10',
-  userChargesDmndChild: '1.12',
-  taxTypeCollectionChild: '1.17',
-  cessCollectChild: '1.18',
-  userChargesCollectionChild: '1.19',
+  taxTypeDemandChild: '1.13',
+  cessDemandChild: '1.14',
+  userChargesDmndChild: '1.16',
+  taxTypeCollectionChild: '1.21',
+  cessCollectChild: '1.22',
+  userChargesCollectionChild: '1.23',
   otherValuePropertyTaxDm: '2.26',
   otherNoPropertyTaxDm: '2.27',
   otherValuePropertyTaxCollected: '2.28',
@@ -12039,7 +12039,7 @@ let childKeys = {
   otherValueSewerageTaxCollected: '6.28',
   otherNoSewerageTaxCollected: '6.29'
 }
-
+module.exports.reverseKeys = ["ulbFinancialYear","ulbPassedResolPtax"]
 module.exports.skippableKeys = getSkippableKeys(skipLogicDependencies)
 module.exports.financialYearTableHeader = financialYearTableHeader
 module.exports.specialHeaders = specialHeaders
