@@ -709,8 +709,8 @@ exports.getView = async function (req, res, next) {
     }).lean();
     let ulbPData = await Ulb.findOne(
       { _id: ObjectId(req.query.ulb) },
-      { population: 1 }
-    ).lean();
+      { population: 1, name: 1, state: 1 }
+    ).populate("state").lean();
     let viewOne = {};
     let fyData = [];
     if (data) {
@@ -1128,6 +1128,8 @@ exports.getView = async function (req, res, next) {
     let viewData = {
       _id: viewOne._id ? viewOne._id : null,
       ulb: viewOne.ulb ? viewOne.ulb : req.query.ulb,
+      ulbName: ulbPData.name,
+      stateCode: ulbPData?.state?.code,
       design_year: viewOne.design_year
         ? viewOne.design_year
         : req.query.design_year,
