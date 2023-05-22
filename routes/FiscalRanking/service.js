@@ -1565,14 +1565,16 @@ const getUlbActivities = ({ sort, skip, limit, sortBy, order, filters, filterObj
       }
     },
   ];
-  if(sort) {
-    query.push({$sort: sort});
+  if (sort) {
+    query.push({ $sort: sort });
   }
-  console.log(query);
+  if (filterObj.provided) {
+    query.push({ $match: filters });
+  }
   return Ulb.aggregate(query);
 }
 const getPMUActivities = ({ sort, skip, limit, sortBy, order, filters, filterObj, sortKey, designYear }) => {
-  
+
   const query = [
     // {
     // "$match":{
@@ -1669,10 +1671,13 @@ const getPMUActivities = ({ sort, skip, limit, sortBy, order, filters, filterObj
       }
     }
   ];
-  
-  if(sort) {
-    query.push({$sort: sort});
+
+  if (sort) {
+    query.push({ $sort: sort });
   };
+  if (filterObj.provided) {
+    query.push({ $match: filters });
+  }
   return Ulb.aggregate(query);
 }
 const getPopulationWiseData = () => {
@@ -1921,9 +1926,12 @@ exports.overview = async function (req, res, next) {
     let skip = parseInt(req.query.skip) || 0
     let limit = parseInt(req.query.limit) || 10
     let { sortBy, order } = req.query
-    let filters = { ...req.query }
+    let filters = Object.entries({ ...req.query })
+      .reduce((obj, [key, value]) => ({ ...obj, [key]: /^\d+$/.test(value) ? +value : value }), {});
+
     await deleteExtraKeys(["sortBy", "order", "skip", "limit"], filters)
 
+    console.log(filters);
     filters = await Service.mapFilter(filters)
     let filterObj = {
       "provided": Object.keys(filters).length > 0 ? true : false,
@@ -1944,6 +1952,7 @@ exports.overview = async function (req, res, next) {
     console.log({ sort, skip, limit, sortBy, order, filters, filterObj, sortKey, designYear });
 
     let data;
+    console.log(JSON.stringify(filters));
     if (type == 'UlbActivities') {
       data = await getUlbActivities({ sort, skip, limit, sortBy, order, filters, filterObj, sortKey, designYear });
     }
