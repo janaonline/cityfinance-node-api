@@ -1328,6 +1328,8 @@ function getTextValues(displayPriority){
         }
     }
     catch(err){
+        console.log(err)
+        console.log("displayPriority ::: ",displayPriority)
         console.log("error in getIpValues :::: ",err.message)
         return "NA"
     }
@@ -1685,7 +1687,6 @@ const createDataStructureForCsv = (ulbs, results, res) => {
                 result.textValue = modifiedTextValue ? modifiedTextValue : " "
                 if (!canShow(result.type, sortedResults, updatedDatas,result.ptoId.ulb._id)) continue;
                 writableStr += getStringValue(result,false,true)
-                
                 if (result.child && result.child.length) {
                     res.write(writableStr)
                     for (let child of result.child) {
@@ -1698,7 +1699,6 @@ const createDataStructureForCsv = (ulbs, results, res) => {
                         writableStr += getStringValue(child,result.displayPriority,true)
                         res.write(writableStr)
                         writableStr = ""
-                        
                     }
                 }
                 res.write(writableStr)
