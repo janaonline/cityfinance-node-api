@@ -774,8 +774,8 @@ exports.getView = async function (req, res, next) {
           "2017-18",
           "2018-19",
           "2019-20",
-          "2020-21",
-          "2021-22",
+          // "2020-21",
+          // "2021-22",
           "2022-23",
           "2023-24",
         ],
@@ -876,16 +876,13 @@ exports.getView = async function (req, res, next) {
                   pf["modelName"] = singleFydata.modelName;
                   if (subData[key].calculatedFrom === undefined) {
                     pf["required"] =
-                      singleFydata.status && singleFydata.status == "NA"
+                    singleFydata.status  ||  singleFydata.modelName === "ULBLedger"
                         ? false
                         : true;
-                    pf["readonly"] =
-                      singleFydata.status && singleFydata.status == "NA"
-                        ? true
-                        : getReadOnly(singleFydata.status, viewOne.isDraft);
+                    pf["readonly"] = singleFydata.modelName === "ULBLedger" ? true : getReadOnly(singleFydata.status, viewOne.isDraft);
                   } else {
                     pf["readonly"] = true;
-                  }
+                  }                
                 } else {
                   if (
                     subData[key]?.key !== "appAnnualBudget" &&
@@ -1191,7 +1188,7 @@ const ulbLedgersData = (objData) => {
               ],
             },
             year: {
-              $in: ["2017-18", "2018-19", "2019-20", "2020-21", "2021-22"],
+              $in: ["2017-18", "2018-19", "2019-20"],
             },
           },
         },
