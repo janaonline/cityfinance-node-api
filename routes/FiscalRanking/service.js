@@ -969,14 +969,13 @@ exports.getView = async function (req, res, next) {
                   pf['rejectReason'] = singleFydata.rejectReason
                   if (subData[key].calculatedFrom === undefined) {
                     pf["required"] =
-                    singleFydata.status  || singleFydata.modelName === "ULBLedger"
+                    singleFydata.status  ||  singleFydata.modelName === "ULBLedger"
                         ? false
                         : true;
-                    pf["readonly"] = getReadOnly(data?.currentFormStatus, viewOne.isDraft,role,singleFydata?.status);
+                    pf["readonly"] = singleFydata.modelName === "ULBLedger" ? true : getReadOnly(data?.currentFormStatus, viewOne.isDraft,role,singleFydata?.status);
                   } else {
                     pf["readonly"] = true;
-                  }
-                  
+                  }                
                 } else {
                   if (
                     subData[key]?.key !== "appAnnualBudget" &&
