@@ -856,8 +856,8 @@ exports.getView = async function (req, res, next) {
           "2017-18",
           "2018-19",
           "2019-20",
-          "2020-21",
-          "2021-22",
+          // "2020-21",
+          // "2021-22",
           "2022-23",
           "2023-24",
         ],
@@ -1309,7 +1309,7 @@ const ulbLedgersData = (objData) => {
               ],
             },
             year: {
-              $in: ["2017-18", "2018-19", "2019-20", "2020-21", "2021-22"],
+              $in: ["2017-18", "2018-19", "2019-20"], //"2020-21", "2021-22"
             },
           },
         },
@@ -2844,7 +2844,6 @@ module.exports.actionTakenByMoHua = catchAsync(async (req, res) => {
       role,
       formStatus
     ); 
-    console.log("feedBackResp ::: ",calculationsTabWise)
     if (feedBackResp.success) {
       response.success = true;
       response.message = "Details submitted successfully";
