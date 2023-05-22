@@ -1499,6 +1499,13 @@ const getUlbActivities = ({ sort, skip, limit, sortBy, order, filters, filterObj
       }
     },
     {
+      "$addFields": {
+          "emptyForms": {
+              "$ifNull": ["$formData", 1]
+          }
+      }
+  },
+    {
       "$group": {
         "_id": "$state",
         "totalUlbs": { $sum: 1 },
@@ -1532,7 +1539,7 @@ const getUlbActivities = ({ sort, skip, limit, sortBy, order, filters, filterObj
         "notStarted": {
           "$sum": {
             "$cond": [
-              { "$eq": ["$formData.currentFormStatus", 1] },
+              { "$eq": ["$emptyForms", 1] },
               1,
               0
             ]
