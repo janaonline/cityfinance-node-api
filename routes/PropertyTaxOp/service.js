@@ -7,7 +7,7 @@ const Service = require('../../service');
 const { FormNames, MASTER_STATUS_ID } = require('../../util/FormNames');
 const User = require('../../models/User');
 const { checkUndefinedValidations } = require('../../routes/FiscalRanking/service');
-const { propertyTaxOpFormJson, skippableKeys, financialYearTableHeader, specialHeaders, skipLogicDependencies,childKeys,reverseKeys } = require('./fydynemic')
+const { propertyTaxOpFormJson, skippableKeys, financialYearTableHeader, specialHeaders, skipLogicDependencies,childKeys,reverseKeys ,questionIndicators,sortPosition} = require('./fydynemic')
 const { isEmptyObj, isReadOnly } = require('../../util/helper');
 const PropertyMapperChildData = require("../../models/PropertyTaxMapperChild");
 const { years } = require('../../service/years');
@@ -1136,150 +1136,13 @@ exports.getView = async function (req, res, next) {
     }
 }
 
-function sortPosition(itemA, itemB) {
-    itemA.displayPriority = itemA.displayPriority.toString()
-    itemB.displayPriority = itemB.displayPriority.toString()
-    const [integerA, decimalA] = itemA.displayPriority.split('.').map(i => +i);
-    const [integerB, decimalB] = itemB.displayPriority.split('.').map(i => +i);
-    if (integerA != integerB) {
-        return integerA > integerB ? 1 : (integerB > integerA ? -1 : 0);;
-    }
-    return decimalA > decimalB ? 1 : (decimalB > decimalA ? -1 : 0);;
 
-}
 
 
 
 function getLabelName(type) {
     try {
-        let indicators = {
-            ulbCollectPtax: 'Did the ULB collect property tax in FY 22-23?',
-            ulbFinancialYear: 'On which financial year ULB was formed?',
-            ulbPassedResolPtax: 'Has the ULB passed resolution for levy of property tax?',
-            resolutionFile: 'Please submit the copy of resolution',
-            notificationPropertyTax: 'Has the ULB adopted notification for charging property tax?',
-            notificationAdoptionDate: 'What was the notification adoption date?',
-            notificationIssuedBy: 'The adopted notification was issued by?',
-            notificationFile: 'Upload a copy of the notification',
-            dmdIncludingCess: 'Total property tax demand (including cess, other taxes, AND excluding user charges if user charges are collected with property tax)',
-            cdmdIncludingCess: 'Current property tax demand (including cess, other taxes, AND excluding user charges if user charges are collected with property tax)',
-            admdIncludingCess: 'Arrear property tax demand (including cess, other taxes, AND excluding user charges if user charges are collected with property tax)',
-            dmdexcludingCess: 'Total property tax demand (excluding cess, other taxes, user charges if any)',
-            taxTypeDemand: 'Other tax demand (Demand figure for each type of tax other than property tax collected)',
-            taxTypeDemandChild: 'Other tax demand (Demand figure for each type of tax other than property tax collected)',
-            cessDemand: 'Cess demand (Demand figure for each type of cess collected)',
-            cessDemandChild: 'Cess demand (Demand figure for each type of cess collected)',
-            doesUserChargesDmnd: 'Do you collect any user charges along with Property Tax?',
-            userChargesDmnd: 'User charges demand (Demand figure for each type of user charge collected along with property tax)',
-            userChargesDmndChild: 'User charges demand (Demand figure for each type of user charge collected along with property tax)',
-            collectIncludingCess: 'Total property tax collection (including cess, other taxes, AND excluding user charges if user charges are collected with property tax)',
-            cuCollectIncludingCess: 'Current property tax collection (including cess, other taxes, AND excluding user charges if user charges are collected with property tax)',
-            arCollectIncludingCess: 'Arrear property tax collection (including cess, other taxes, AND excluding user charges if user charges are collected with property tax)',
-            collectExcludingCess: 'Total property tax collection (excluding cess,other taxes, user charges if any)',
-            taxTypeCollection: 'Other tax collections (Collection figure for each type of tax other than property tax collected)',
-            taxTypeCollectionChild: 'Other tax collections (Collection figure for each type of tax other than property tax collected)',
-            cessCollect: 'Cess collection (Collection figure for each type of cess collected)',
-            cessCollectChild: 'Cess collection (Collection figure for each type of cess collected)',
-            userChargesCollection: 'User charges collection (Collection figure for each type of user charge collected along with property tax)',
-            userChargesCollectionChild: 'Cess collection (Collection figure for each type of cess collected)',
-            totalMappedPropertiesUlb: 'Total number of properties mapped in the ULB (including properties exempted from paying property tax)',
-            totalPropertiesTax: 'Total number of properties exempted from paying property tax',
-            totalPropertiesTaxDm: 'Total number of properties from which property tax was demanded',
-            totalPropertiesTaxDmCollected: 'Total number of properties from which property tax was collected',
-            resValuePropertyTaxDm: 'Value of property tax demanded (INR lakhs)',
-            resNoPropertyTaxDm: 'Number of properties from which property tax was demanded',
-            resValuePropertyTaxCollected: 'Value of property tax collected (INR lakhs)',
-            resNoPropertyTaxCollected: 'Number of properties from which property tax was collected',
-            comValuePropertyTaxDm: 'Value of property tax demanded (INR lakhs)',
-            comNoPropertyTaxDm: 'Number of properties from which property tax was demanded',
-            comValuePropertyTaxCollected: 'Value of property tax collected (INR lakhs)',
-            comNoPropertyTaxCollected: 'Number of properties from which property tax was collected',
-            indValuePropertyTaxDm: 'Value of property tax demanded (INR lakhs)',
-            indNoPropertyTaxDm: 'Number of properties from which property tax was demanded',
-            indValuePropertyTaxCollected: 'Value of property tax collected (INR lakhs)',
-            indNoPropertyTaxCollected: 'Number of properties from which property tax was collected',
-            govValuePropertyTaxDm: 'Value of property tax demanded (INR lakhs)',
-            govNoPropertyTaxDm: 'Number of properties from which property tax was demanded',
-            govValuePropertyTaxCollected: 'Value of property tax collected (INR lakhs)',
-            govNoPropertyTaxCollected: 'Number of properties from which property tax was collected',
-            insValuePropertyTaxDm: 'Value of property tax demanded (INR lakhs)',
-            insNoPropertyTaxDm: 'Number of properties from which property tax was demanded',
-            insValuePropertyTaxCollected: 'Value of property tax collected (INR lakhs)',
-            insNoPropertyTaxCollected: 'Number of properties from which property tax was collected',
-            otherValuePropertyType: 'Property Type',
-            otherValuePropertyTaxDm: 'Value of property tax demanded (INR lakhs)',
-            otherNoPropertyTaxDm: 'Number of properties from which property tax was demanded',
-            otherValuePropertyTaxCollected: 'Value of property tax collected (INR lakhs)',
-            otherNoPropertyTaxCollected: 'Number of properties from which property tax was collected',
-            noOfPropertiesPaidOnline: 'Number of properties that paid online (through website or mobile application)',
-            totalCollectionOnline: 'Total collections made via online channel i.e. through website or mobile application (INR lakhs)',
-            propertyTaxValuationDetails: 'Please submit the property tax rate card',
-            notificationWaterCharges: 'Are water charges being collected in the ULB?',
-            entityWaterCharges: 'Which entity is collecting the water charges?',
-            entityNameWaterCharges: 'Please fill the name of entity',
-            notificationWaterChargesFile: 'Upload a copy of gazette notification that notifies water charges',
-            waterChrgDm: 'Total water charges demand',
-            cuWaterChrgDm: 'Current water charges demand',
-            arWaterChrgDm: 'Arrear water charges demand',
-            waterChrgCol: 'Total water charges collection',
-            cuWaterChrgCol: 'Current water charges collection',
-            arWaterChrgCol: 'Arrear water charges collection',
-            waterChrgConnectionDm: 'Total Number of connections from which water charges was demanded',
-            waterChrgConnectionCol: 'Total Number of connections from which water charges were collected',
-            resValueWaterChrgDm: 'Value of water charges demanded (INR lakhs)',
-            resNoWaterChrgDm: 'Number of connections from which water charges was demanded',
-            resValueWaterChrgCollected: 'Value of water charges collected from connections (INR lakhs)',
-            resNoWaterChrgCollected: 'Number of connections from which water charges was collected',
-            comValueWaterChrgDm: 'Value of water charges demanded (INR lakhs)',
-            comNoWaterChrgDm: 'Number of connections from which water charges was demanded',
-            comValueWaterChrgCollected: 'Value of water charges collected from connections (INR lakhs)',
-            comNoWaterChrgCollected: 'Number of connections from which water charges was collected',
-            indValueWaterChrgDm: 'Value of water charges demanded (INR lakhs)',
-            indNoWaterChrgDm: 'Number of connections from which water charges was demanded',
-            indValueWaterChrgCollected: 'Value of water charges collected from connections (INR lakhs)',
-            indNoWaterChrgCollected: 'Number of connections from which water charges was collected',
-            othersValueWaterType: 'Connection Type',
-            othersValueWaterChrgDm: 'Value of water charges demanded (INR lakhs)',
-            othersNoWaterChrgDm: 'Number of connections from which water charges was demanded',
-            othersValueWaterChrgCollected: 'Value of water charges collected from connections (INR lakhs)',
-            othersNoWaterChrgCollected: 'Number of connections from which water charges was collected',
-            waterChrgTariffDetails: 'Please provide the water tariff sheet',
-            omCostDeleveryWater: 'What is the O&M cost of service delivery for water? (INR lakhs)',
-            omCostWaterService: 'Please provide the working sheet for O&M cost calculation',
-            doesColSewerageCharges: 'Are sewerage charges being collected in the ULB?',
-            entitySewerageCharges: 'Which entity is collecting the sewerage charges?',
-            entityNaSewerageCharges: 'Please fill the name of the entity',
-            copyGazetteNotificationSewerage: 'Upload a copy of gazette notification that notifies collection of sewerage charges',
-            totalSewergeChrgDm: 'Total sewerage charges demand',
-            curSewergeChrgDm: 'Current sewerage charges demand',
-            arrSewergeChrgDm: 'Arrear sewerage charges demand',
-            totalSewergeChrgCol: 'Total sewerage charges collection',
-            curSewergeChrgCol: 'Current sewerage charges collection',
-            arrSewergeChrgCol: 'Arrear sewerage charges collection',
-            totalSewergeConnectionDm: 'Total number of connections from which sewerage charges was demanded',
-            totalSewergeConnectionCol: 'Total number of connections from which sewerage charges were collected',
-            resValueSewerageTaxDm: 'Value of sewerage charges demanded (INR lakhs)',
-            resNoSewerageTaxDm: 'Number of connections from which sewerage charges was demanded',
-            resValueSewerageTaxCollected: 'Value of sewerage charges collected from connections (INR lakhs)',
-            resNoSewerageTaxCollected: 'Number of connections from which sewerage charges was collected',
-            comValueSewerageTaxDm: 'Value of sewerage charges demanded (INR lakhs)',
-            comNoSewerageTaxDm: 'Number of connections from which sewerage charges was demanded',
-            comValueSewerageTaxCollected: 'Value of sewerage charges collected from connections (INR lakhs)',
-            comNoSewerageTaxCollected: 'Number of connections from which sewerage charges was collected',
-            indValueSewerageTaxDm: 'Value of sewerage charges demanded (INR lakhs)',
-            indNoSewerageTaxDm: 'Number of connections from which sewerage charges was demanded',
-            indValueSewerageTaxCollected: 'Value of sewerage charges collected from connections (INR lakhs)',
-            indNoSewerageTaxCollected: 'Number of connections from which sewerage charges was collected',
-            otherValueSewerageType: 'Connection Type',
-            otherValueSewerageTaxDm: 'Value of sewerage charges demanded (INR lakhs)',
-            otherNoSewerageTaxDm: 'Number of connections from which sewerage charges was demanded',
-            otherValueSewerageTaxCollected: 'Value of sewerage charges collected from connections (INR lakhs)',
-            otherNoSewerageTaxCollected: 'Number of connections from which sewerage charges was collected',
-            sewerageChrgTarrifSheet: 'Please provide the sewerage tariff sheet',
-            omCostDeleverySewerage: 'What is the O&M cost of service delivery for sewerage ?(INR lakhs)',
-            omCostSewerageService: 'Please provide the working sheet for O&M cost calculation',
-            signedPdf: 'Upload Signed PDF'
-          }
+        let indicators = questionIndicators
           
         let labelName = indicators[type] ? indicators[type].split(",").join("") : ""
         return labelName
