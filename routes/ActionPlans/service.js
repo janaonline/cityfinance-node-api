@@ -290,6 +290,7 @@ exports.getActionPlans = async (req, res) => {
         design_year: ObjectId(year2122Id._id),
       }).lean();
     }
+    /* GET 22-23, 23-24 action plan form Data */
     const data2223Query = ActionPlans.findOne({
       state: ObjectId(state),
       design_year: ObjectId(YEAR_CONSTANTS['22_23']),
@@ -299,16 +300,16 @@ exports.getActionPlans = async (req, res) => {
       design_year: ObjectId(YEAR_CONSTANTS['23_24']),
     }).lean();
 
-    // const data2223Query = ActionPlans.findOne({
-    //   state: ObjectId(state),
-    //   design_year,
-    // }).lean();
-    
+    //GET State Master form Data of 21-22 
     const stateMasterFormDataQuery = StateMasterForm.findOne({
       state,
       design_year: ObjectId(year2122Id._id),
     }).lean()
 
+    /* The above code is using destructuring assignment to assign the results of four asynchronous
+    queries to four variables: `data2122`, `data2223`, `data2324`, and `stateMasterFormData`. The
+    `await` keyword is used to wait for all the promises to resolve before continuing with the
+    execution of the code. */
     const [ data2122, data2223,data2324, stateMasterFormData] = await Promise.all([
       data2122Query,
       data2223Query,
@@ -317,6 +318,7 @@ exports.getActionPlans = async (req, res) => {
     ]);
     let uaArray;
     if (design_year === YEAR_CONSTANTS["23_24"]) {
+      //If 23-24 data found then assign canTakeAction And return, else check 22-23 data and disable projects
       if (data2324) {
         let params = {
           status: data2324['currentFormStatus'],
@@ -327,7 +329,6 @@ exports.getActionPlans = async (req, res) => {
           canTakeAction: canTakenActionMaster(params),
           statusId: data2324['currentFormStatus']
         });
-        
         return Response.OK(res, data2324, "Success");
       }
       if (data2223) {
