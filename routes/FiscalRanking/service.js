@@ -1476,8 +1476,8 @@ exports.getAll = async function (req, res, next) {
   }
 };
 
-const getUlbActivities = () => {
-  return Ulb.aggregate([
+const getUlbActivities = ({ sort, skip, limit, sortBy, order, filters, filterObj, sortKey, designYear }) => {
+  const query = [
     // {
     // "$match":{
     // "_id":ObjectId("5fa24662072dab780a6f15c9")
@@ -1563,11 +1563,17 @@ const getUlbActivities = () => {
         "inProgress": 1,
         "notStarted": 1,
       }
-    }
-  ]);
+    },
+  ];
+  if(sort) {
+    query.push({$sort: sort});
+  }
+  console.log(query);
+  return Ulb.aggregate(query);
 }
-const getPMUActivities = () => {
-  return Ulb.aggregate([
+const getPMUActivities = ({ sort, skip, limit, sortBy, order, filters, filterObj, sortKey, designYear }) => {
+  
+  const query = [
     // {
     // "$match":{
     // "_id":ObjectId("5fa24662072dab780a6f15c9")
@@ -1662,7 +1668,12 @@ const getPMUActivities = () => {
         "submissionAckByPMU": 1
       }
     }
-  ])
+  ];
+  
+  if(sort) {
+    query.push({$sort: sort});
+  };
+  return Ulb.aggregate(query);
 }
 const getPopulationWiseData = () => {
   return Ulb.aggregate([
@@ -1769,42 +1780,42 @@ const getPopulationWiseData = () => {
   ])
 }
 
-function deleteExtraKeys(arr,obj){
-  for(var key of arr){
-      delete obj[key]
+function deleteExtraKeys(arr, obj) {
+  for (var key of arr) {
+    delete obj[key]
   }
 }
 
 
 function getSortByKeys(sortBy, order) {
   let sortKey = {
-      "provided": false
+    "provided": false
   }
   try {
-      if ((sortBy != undefined) && (order != undefined)) {
-          let temp = {}
-          sortKey["provided"] = true
-          if(Array.isArray(sortBy)){
-              for(let key in sortBy){
-                  let name = sortBy[key]
-                  if(!isNaN(parseInt(order[key]))){
-                      temp[sortFilterKeys[name]] = parseInt(order[key])
-                  }
-              }
+    if ((sortBy != undefined) && (order != undefined)) {
+      let temp = {}
+      sortKey["provided"] = true
+      if (Array.isArray(sortBy)) {
+        for (let key in sortBy) {
+          let name = sortBy[key]
+          if (!isNaN(parseInt(order[key]))) {
+            temp[sortFilterKeys[name]] = parseInt(order[key])
           }
-          else{
-              if(!isNaN(parseInt(order))){
-                  temp[sortFilterKeys[sortBy]] = parseInt(order)
-              }
-          }
-          if (Object.keys(temp).length > 0){
-              sortKey['provided'] = true
-              sortKey["filters"] = temp
-          }
+        }
       }
+      else {
+        if (!isNaN(parseInt(order))) {
+          temp[sortFilterKeys[sortBy]] = parseInt(order)
+        }
+      }
+      if (Object.keys(temp).length > 0) {
+        sortKey['provided'] = true
+        sortKey["filters"] = temp
+      }
+    }
   }
   catch (err) {
-      console.log("error in getSortByKeys ::: ", err.message)
+    console.log("error in getSortByKeys ::: ", err.message)
   }
   console.log(sortKey)
   return sortKey
@@ -1920,15 +1931,24 @@ exports.overview = async function (req, res, next) {
     }
     let sortKey = getSortByKeys(sortBy, order)
     let designYear = years['2022-23']
-    console.log({ skip, limit, sortBy, order, filters, filterObj, sortKey, designYear });
 
+    let sort;
+    if (sortBy) {
+      if (Array.isArray(sortBy)) {
+        sort = sortBy?.reduce((obj, key, index) => ({ ...obj, [key]: +order[index] }), {});
+      } else {
+        sort = { [sortBy]: +order };
+      }
+    }
+
+    console.log({ sort, skip, limit, sortBy, order, filters, filterObj, sortKey, designYear });
 
     let data;
     if (type == 'UlbActivities') {
-      data = await getUlbActivities();
+      data = await getUlbActivities({ sort, skip, limit, sortBy, order, filters, filterObj, sortKey, designYear });
     }
     else if (type == 'PMUActivities') {
-      data = await getPMUActivities();
+      data = await getPMUActivities({ sort, skip, limit, sortBy, order, filters, filterObj, sortKey, designYear });
     }
     else if (type == 'populationWise') {
       data = await getPopulationWiseData();
