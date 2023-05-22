@@ -11,6 +11,8 @@ const {canTakenAction} = require('../CommonActionAPI/service');
 const {BackendHeaderHost, FrontendHeaderHost} = require('../../util/envUrl')
 const StateMasterForm = require('../../models/StateMasterForm')
 const { YEAR_CONSTANTS } = require("../../util/FormNames");
+const { ModelNames } = require("../../util/15thFCstatus");
+const {createAndUpdateFormMasterState} =  require('../../routes/CommonFormSubmissionState/service')
 
 
 function response(form, res, successMsg ,errMsg){
@@ -52,6 +54,7 @@ exports.saveActionPlans = async (req, res) => {
     let formData = {};
     formData = {...data};   
     const {_id: actionTakenBy, role: actionTakenByRole } = user;
+    let currentMasterFormStatus = req.body['status']
   
     formData["actionTakenBy"] = ObjectId(actionTakenBy);
     formData["actionTakenByRole"] = actionTakenByRole;
@@ -69,7 +72,18 @@ exports.saveActionPlans = async (req, res) => {
     const condition = {};
     condition["design_year"] = data.design_year;
     condition["state"] = data.state;
-
+    if(data.state && data.design_year === YEAR_CONSTANTS['23_24'] ){
+      formData.status = currentMasterFormStatus
+      let params = {
+        modelName: ModelNames['actionPlan'],
+        formData,
+        res,
+        actionTakenByRole,
+        actionTakenBy
+      };
+      return await createAndUpdateFormMasterState(params);
+      
+    }
     if(formData.isDraft ===  false && formData['uaData']){
       
       let [validatedSuccess, validateResponse] = await validateFormData(formData['uaData']);

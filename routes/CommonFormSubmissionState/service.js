@@ -24,10 +24,10 @@ module.exports.createAndUpdateFormMasterState = async (params) => {
   try {
     let { modelName, formData, res , actionTakenByRole, actionTakenBy} = params;
 
-    let masterFormId = "";
-    switch (modelName) {
-      case ModelNames['waterRej']:
-        masterFormId = FORMIDs['waterRej'];
+    let masterFormId = modelName === ModelNames['waterRej'] ? FORMIDs['waterRej'] : FORMIDs['actionPlan'];
+
+    switch (true) {
+      case [ModelNames['waterRej'], ModelNames['actionPlan']].includes(modelName):
         try {
           const formBodyStatus = formData.status;
           formData.status = "";
