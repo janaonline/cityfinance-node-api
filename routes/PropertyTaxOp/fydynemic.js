@@ -12033,7 +12033,7 @@ let childKeys = {
   otherValueSewerageTaxCollected: '6.28',
   otherNoSewerageTaxCollected: '6.29'
 }
-
+module.exports.reverseLogicKeys = ["ulbFinancialYear","ulbPassedResolPtax"]
 module.exports.skippableKeys = getSkippableKeys(skipLogicDependencies)
 module.exports.financialYearTableHeader = financialYearTableHeader
 module.exports.specialHeaders = specialHeaders
