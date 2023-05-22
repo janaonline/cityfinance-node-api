@@ -48,11 +48,11 @@ const validationJson = {
                     "admdIncludingCess"
                 ],
                 "sequence": [
-                    "1.6",
-                    "1.7"
+                    "1.10",
+                    "1.11"
                 ],
                 "message": "Sum of current and arrears should be equal to total property tax demand.",
-                "displayNumber": "1.5"
+                "displayNumber": "1.9"
             },
             {
                 "logic": "sum",
@@ -62,15 +62,15 @@ const validationJson = {
                     "cessDemand"
                 ],
                 "sequence": [
-                    "1.8",
-                    "1.9",
-                    "1.10"
+                    "1.12",
+                    "1.13",
+                    "1.14"
                 ],
                 "message": "Sum should be equal to total property tax demand.",
-                "displayNumber": "1.5"
+                "displayNumber": "1.9"
             }
         ],
-        "displayNumber": "1.5"
+        "displayNumber": "1.9"
     },
     "collectIncludingCess": {
         "logic": "multiple",
@@ -81,10 +81,10 @@ const validationJson = {
                     "dmdIncludingCess"
                 ],
                 "sequence": [
-                    "1.5"
+                    "1.9"
                 ],
                 "message": "Total property tax collection including cess, other taxes, AND excluding user charges should be less than or equal to total property tax demand.",
-                "displayNumber": "1.13"
+                "displayNumber": "1.17"
             },
             {
                 "logic": "sum",
@@ -94,12 +94,12 @@ const validationJson = {
                     "cessCollect"
                 ],
                 "sequence": [
-                    "1.16",
-                    "1.17",
-                    "1.18"
+                    "1.20",
+                    "1.21",
+                    "1.22"
                 ],
                 "message": "Sum should be equal to total property tax collection.",
-                "displayNumber": "1.13"
+                "displayNumber": "1.17"
             },
             {
                 "logic": "sum",
@@ -108,14 +108,14 @@ const validationJson = {
                     "arCollectIncludingCess"
                 ],
                 "sequence": [
-                    "1.14",
-                    "1.15"
+                    "1.18",
+                    "1.19"
                 ],
                 "message": "Sum of current and arrears should be equal to total property tax collection",
                 "displayNumber": "1.13"
             }
         ],
-        "displayNumber": "1.13"
+        "displayNumber": "1.17"
     },
     "collectExcludingCess": {
         "logic": "ltequal",
@@ -123,10 +123,10 @@ const validationJson = {
             "dmdexcludingCess"
         ],
         "sequence": [
-            "1.8"
+            "1.12"
         ],
         "message": "Total property tax collection exlluding cess, other taxes, and user charges should be less than or equal to total property tax demand.",
-        "displayNumber": "1.16"
+        "displayNumber": "1.20"
     },
     "noOfPropertiesPaidOnline": {
         "logic": "ltequal",
