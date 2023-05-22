@@ -7,7 +7,7 @@ const Response = require("../../service").response;
 const ExcelJS = require("exceljs");
 const User = require('../../models/User')
 const Year = require('../../models/Year');
-const {canTakenAction} = require('../CommonActionAPI/service');
+const {canTakenAction, canTakenActionMaster} = require('../CommonActionAPI/service');
 const {BackendHeaderHost, FrontendHeaderHost} = require('../../util/envUrl')
 const StateMasterForm = require('../../models/StateMasterForm')
 const { YEAR_CONSTANTS } = require("../../util/FormNames");
@@ -292,26 +292,58 @@ exports.getActionPlans = async (req, res) => {
     }
     const data2223Query = ActionPlans.findOne({
       state: ObjectId(state),
-      design_year,
+      design_year: ObjectId(YEAR_CONSTANTS['22_23']),
     }).lean();
+    const data2324Query = ActionPlans.findOne({
+      state: ObjectId(state),
+      design_year: ObjectId(YEAR_CONSTANTS['23_24']),
+    }).lean();
+
+    // const data2223Query = ActionPlans.findOne({
+    //   state: ObjectId(state),
+    //   design_year,
+    // }).lean();
     
     const stateMasterFormDataQuery = StateMasterForm.findOne({
       state,
       design_year: ObjectId(year2122Id._id),
     }).lean()
 
-    const [ data2122, data2223, stateMasterFormData] = await Promise.all([
+    const [ data2122, data2223,data2324, stateMasterFormData] = await Promise.all([
       data2122Query,
       data2223Query,
+      data2324Query,
       stateMasterFormDataQuery
     ]);
-
+    let uaArray;
+    if (design_year === YEAR_CONSTANTS["23_24"]) {
+      if (data2324) {
+        let params = {
+          status: data2324['currentFormStatus'],
+          formType:"STATE",
+          loggedInUser: role,
+        };
+        Object.assign(data2324, {
+          canTakeAction: canTakenActionMaster(params),
+          statusId: data2324['currentFormStatus']
+        });
+        
+        return Response.OK(res, data2324, "Success");
+      }
+      if (data2223) {
+        uaArray = getDisabledProjects(uaArray, data2223);
+      } else {
+        return res.status(400).json({
+          status: true,
+          message: `Your Previous Year's form status is - Not Submitted. Kindly submit form for previous year at - <a href =https://${host}/stateform/dashboard target="_blank">Click here</a> in order to submit form`,
+        });
+      }
+    }
     if(data2223){
       Object.assign(data2223, {canTakeAction: canTakenAction(data2223['status'], data2223['actionTakenByRole'], data2223['isDraft'], "STATE",role ) })
       return Response.OK(res, data2223, "Success");
 
     }
-    let uaArray;
     // let uaArray2223;
     // let ua2122projectExecute, ua2122sourceFund, ua2122yearOutlay;
     if (stateMasterFormData) {
@@ -427,6 +459,34 @@ exports.getActionPlans = async (req, res) => {
   }
 };
 
+function getDisabledProjects(uaArray, data2223) {
+  uaArray = data2223.uaData;
+  for (let i = 0; i < uaArray.length; i++) {
+    let ua = uaArray[i];
+    //an entry of ua
+    for (let category in ua) {
+      //category in ua
+      if (
+        category === "projectExecute" ||
+        category === "sourceFund" ||
+        category === "yearOutlay"
+        ) {
+        for (let project of ua[category]) {
+          //set project isDisable key = true
+          if (project) {
+            Object.assign(project, { isDisable: true ,
+              // dprCompletion:"", dprPreparation:"", workCompletion:""
+            });
+            // if(category === "serviceLevelIndicators"){
+            //   Object.assign(project, {bypassValidation: true});
+            // }
+          }
+        }
+      }
+    }
+  }
+  return uaArray;
+}
 exports.action = async (req, res) => {
   try {
     let { design_year, state } = req.body;
