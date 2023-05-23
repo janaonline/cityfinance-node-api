@@ -542,6 +542,17 @@ module.exports.getForm = async (req, res,next) => {
           let params = { modelName: ModelNames['twentyEightSlbs'], currentFormStatus:formData.currentFormStatus ,formType: "ULB", actionTakenByRole:userRole} ;
           let canTakeActionOnMasterForm =  await getMasterForm(params);
           Object.assign(formData, canTakeActionOnMasterForm);
+          if (masterFormData && userRole === "MoHUA") {
+            if (
+              !(
+                masterFormData.actionTakenByRole === "MoHUA" &&
+                !masterFormData.isDraft &&
+                masterFormData.status === "APPROVED"
+              )
+            ) {
+              formData["canTakeAction"] = false;
+            }
+          }
         }else{
           Object.assign(formData, {
             canTakeAction: canTakenAction(
@@ -552,6 +563,17 @@ module.exports.getForm = async (req, res,next) => {
               userRole
             ),
           });
+          if (masterFormData && userRole === "MoHUA") {
+            if (
+              !(
+                masterFormData.actionTakenByRole === "MoHUA" &&
+                !masterFormData.isDraft &&
+                masterFormData.status === "APPROVED"
+              )
+            ) {
+              formData["canTakeAction"] = false;
+            }
+          }
         }
 
 
