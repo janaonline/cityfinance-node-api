@@ -710,8 +710,8 @@ exports.getView = async function (req, res, next) {
     }).lean();
     let ulbPData = await Ulb.findOne(
       { _id: ObjectId(req.query.ulb) },
-      { population: 1 }
-    ).lean();
+      { population: 1, name: 1, state: 1 }
+    ).populate("state").lean();
     let viewOne = {};
     let fyData = [];
     if (data) {
@@ -1128,6 +1128,8 @@ exports.getView = async function (req, res, next) {
     let viewData = {
       _id: viewOne._id ? viewOne._id : null,
       ulb: viewOne.ulb ? viewOne.ulb : req.query.ulb,
+      ulbName: ulbPData.name,
+      stateCode: ulbPData?.state?.code,
       design_year: viewOne.design_year
         ? viewOne.design_year
         : req.query.design_year,
@@ -2641,7 +2643,7 @@ async function updateFiscalRankingForm(
         if(statusNotMandatory.includes(key)){
           // console.log("obj[key].value ::: ",)
           if(obj[key].value || obj[key]?.name ){
-            obj[key].status = "PENDING"
+            obj[key].status = obj[key].status || "PENDING"
           }
           else{
             obj[key].status = ""
@@ -2986,7 +2988,6 @@ module.exports.actionTakenByMoHua = catchAsync(async (req, res) => {
       role,
       formStatus
     ); 
-    console.log("feedBackResp ::: ",calculationsTabWise)
     if (feedBackResp.success) {
       response.success = true;
       response.message = "Details submitted successfully";
