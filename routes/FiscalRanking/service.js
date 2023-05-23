@@ -13,6 +13,7 @@ const TwentyEightSlbsForm = require("../../models/TwentyEightSlbsForm");
 const Ulb = require("../../models/Ulb");
 const Service = require("../../service");
 const Users = require("../../models/User");
+const {stateWiseHeatMapQuery} = require("../../util/aggregation")
 const FiscalRankingArray = require("./formjson").arr;
 const {
   csvColsFr,
@@ -4259,6 +4260,35 @@ function computeQuery(params) {
   }
   return output;
 }
+
+exports.heatMapReport = async(req,res,next)=>{
+  let response = {
+    "success":false,
+    "message":"",
+    "data" :{}
+  }
+  try{
+    let {state,getQuery} = req.query
+    getQuery = getQuery ==="true"
+    let query =  stateWiseHeatMapQuery(state)
+    if(getQuery) return res.json(query)
+    let queryResult = await Ulb.aggregate(query)
+    response.success = true
+    response.message = queryResult.length ? "Fetched Successfully" : "No data found"
+    response.data = queryResult.length ? queryResult[0] : {}
+    return res.json(response)
+
+  }
+  catch(err){
+    response.message = "Something went wrong"
+    if(["stg","demo"].includes(process.env.ENV)){
+      response.message = err.message
+    }
+    return res.json(response)
+  }
+}
+
+
 /**
  * It removes newline and comma characters from a string
  * @param entity - The entity to be cleaned up.
