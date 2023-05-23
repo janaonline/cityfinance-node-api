@@ -12023,8 +12023,7 @@ function sortPosition(itemA, itemB) {
 }
 
 
-function fetchIndicatorsOrDp(dynamicJson,type="indicators") {
-  // let type = ["indicators","displayPriorities"]
+function fetchIndicatorsOrDp(dynamicJson) {
   let keysWithLabel = []
   let childELements = {}
   let keysWithLabelObj = {}
@@ -12055,12 +12054,11 @@ function fetchIndicatorsOrDp(dynamicJson,type="indicators") {
       }
     }
     let sortedArray = keysWithLabel.sort(sortPosition)
-    if(type === "indicators"){
-      return keysWithLabelObj
-    }
-    if(type === "displayPriorities"){ 
-      return childELements
-    }
+      return {
+        childKeys:childELements,
+        questionIndicators:keysWithLabelObj
+
+      }
   }
   catch (err) {
     console.log("error in fetchIndicatorsOrDp ::: ", err.message)
@@ -12078,33 +12076,14 @@ function getSkippableKeys(skipLogics) {
   return results;
 }
 
-let childKeys = {
-  taxTypeDemandChild: '1.13',
-  cessDemandChild: '1.14',
-  userChargesDmndChild: '1.16',
-  taxTypeCollectionChild: '1.21',
-  cessCollectChild: '1.22',
-  userChargesCollectionChild: '1.23',
-  otherValuePropertyTaxDm: '2.26',
-  otherNoPropertyTaxDm: '2.27',
-  otherValuePropertyTaxCollected: '2.28',
-  otherNoPropertyTaxCollected: '2.29',
-  othersValueWaterChrgDm: '5.26',
-  othersNoWaterChrgDm: '5.27',
-  othersValueWaterChrgCollected: '5.28',
-  othersNoWaterChrgCollected: '5.29',
-  otherValueSewerageTaxDm: '6.26',
-  otherNoSewerageTaxDm: '6.27',
-  otherValueSewerageTaxCollected: '6.28',
-  otherNoSewerageTaxCollected: '6.29'
-}
 let dynamicJson = propertyTaxOpFormJson()['tabs'][0]['data']
+let {childKeys, questionIndicators} = fetchIndicatorsOrDp(dynamicJson)
 module.exports.reverseKeys = ["ulbFinancialYear","ulbPassedResolPtax"]
 module.exports.skippableKeys = getSkippableKeys(skipLogicDependencies)
 module.exports.financialYearTableHeader = financialYearTableHeader
 module.exports.specialHeaders = specialHeaders
-module.exports.childKeys = fetchIndicatorsOrDp(dynamicJson,"displayPriorities")
-module.exports.questionIndicators = fetchIndicatorsOrDp(dynamicJson,"indicators")
+module.exports.childKeys =childKeys
+module.exports.questionIndicators = questionIndicators
 module.exports.propertyTaxOpFormJson = propertyTaxOpFormJson;
 module.exports.getInputKeysByType = getInputKeysByType;
 module.exports.skipLogicDependencies = skipLogicDependencies

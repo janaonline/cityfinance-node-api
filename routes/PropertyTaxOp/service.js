@@ -15,7 +15,6 @@ const { saveFormHistory } = require("../../util/masterFunctions")
 const { validationJson, keysWithChild } = require("./validation");
 const MasterStatus = require('../../models/MasterStatus');
 const { saveStatusAndHistory } = require("../CommonFormSubmission/service")
-
 const getKeyByValue = (object, value) => {
     return Object.keys(object).find(key => object[key] === value);
 }
