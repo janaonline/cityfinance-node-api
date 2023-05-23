@@ -25,7 +25,7 @@ const keysWithChild = {
       "otherNoPropertyTaxCollected"
     ],
     "othersValueWaterType": [
-      "otherValueWaterTaxDm",
+      "othersValueWaterChrgDm",
       "othersNoWaterChrgDm",
       "othersValueWaterChrgCollected",
       "othersNoWaterChrgCollected"
@@ -44,33 +44,41 @@ const validationJson = {
             {
                 "logic": "sum",
                 "fields": [
-                    "cdmdIncludingCess",
-                    "admdIncludingCess"
-                ],
-                "sequence": [
-                    "1.6",
-                    "1.7"
-                ],
-                "message": "Sum of current and arrears should be equal to total property tax demand.",
-                "displayNumber": "1.5"
-            },
-            {
-                "logic": "sum",
-                "fields": [
                     "dmdexcludingCess",
                     "taxTypeDemand",
                     "cessDemand"
                 ],
                 "sequence": [
-                    "1.8",
-                    "1.9",
-                    "1.10"
+                    "1.12",
+                    "1.13",
+                    "1.14"
                 ],
                 "message": "Sum should be equal to total property tax demand.",
-                "displayNumber": "1.5"
-            }
+                "displayNumber": "1.9"
+            },
+            {
+                "logic": "sum",
+                "fields": [
+                    "resValuePropertyTaxDm",
+                    "resNoPropertyTaxCollected",
+                    "indValuePropertyTaxDm",
+                    "govValuePropertyTaxDm",
+                    "insValuePropertyTaxDm",
+                    "otherValuePropertyTaxDm"
+                ],
+                "sequence": [
+                    "2.5",
+                    "2.8",
+                    "2.13",
+                    "2.17",
+                    "2.21",
+                    "2.26",
+                ],
+                "message": "The sum should be equal to total property tax demand",
+                "displayNumber": "1.9"
+            },
         ],
-        "displayNumber": "1.5"
+        "displayNumber": "1.9"
     },
     "collectIncludingCess": {
         "logic": "multiple",
@@ -81,10 +89,31 @@ const validationJson = {
                     "dmdIncludingCess"
                 ],
                 "sequence": [
-                    "1.5"
+                    "1.9"
                 ],
                 "message": "Total property tax collection including cess, other taxes, AND excluding user charges should be less than or equal to total property tax demand.",
-                "displayNumber": "1.13"
+                "displayNumber": "1.17"
+            },
+            {
+                "logic": "sum",
+                "fields": [
+                    "resValuePropertyTaxCollected",
+                    "comValuePropertyTaxCollected",
+                    "indValuePropertyTaxCollected",
+                    "govValuePropertyTaxCollected",
+                    "insValuePropertyTaxCollected",
+                    "otherValuePropertyTaxCollected"
+                ],
+                "sequence": [
+                    "2.7",
+                    "2.11",
+                    "2.15",
+                    "2.19",
+                    "2.23",
+                    "2.28"
+                ],
+                "message": "The sum should be equal to total property tax collection",
+                "displayNumber": "1.17"
             },
             {
                 "logic": "sum",
@@ -94,12 +123,12 @@ const validationJson = {
                     "cessCollect"
                 ],
                 "sequence": [
-                    "1.16",
-                    "1.17",
-                    "1.18"
+                    "1.20",
+                    "1.21",
+                    "1.22"
                 ],
                 "message": "Sum should be equal to total property tax collection.",
-                "displayNumber": "1.13"
+                "displayNumber": "1.17"
             },
             {
                 "logic": "sum",
@@ -108,14 +137,14 @@ const validationJson = {
                     "arCollectIncludingCess"
                 ],
                 "sequence": [
-                    "1.14",
-                    "1.15"
+                    "1.18",
+                    "1.19"
                 ],
                 "message": "Sum of current and arrears should be equal to total property tax collection",
                 "displayNumber": "1.13"
             }
         ],
-        "displayNumber": "1.13"
+        "displayNumber": "1.17"
     },
     "collectExcludingCess": {
         "logic": "ltequal",
@@ -123,10 +152,10 @@ const validationJson = {
             "dmdexcludingCess"
         ],
         "sequence": [
-            "1.8"
+            "1.12"
         ],
         "message": "Total property tax collection exlluding cess, other taxes, and user charges should be less than or equal to total property tax demand.",
-        "displayNumber": "1.16"
+        "displayNumber": "1.20"
     },
     "noOfPropertiesPaidOnline": {
         "logic": "ltequal",
@@ -280,7 +309,7 @@ const validationJson = {
         "message": "Number of properties from which property tax is collected should be less that or equal to number of properties from which property tax is demanded.",
         "displayNumber": "2.19"
     },
-    "govNoPropertyTaxCollected":{
+    "govNoPropertyTaxCollected": {
         "logic": "ltequal",
         "fields": [
             "govNoPropertyTaxDm"
@@ -303,29 +332,73 @@ const validationJson = {
         "displayNumber": "3.2"
     },
     "waterChrgDm": {
-        "logic": "sum",
-        "fields": [
-            "cuWaterChrgDm",
-            "arWaterChrgDm"
-        ],
-        "sequence": [
-            "5.6",
-            "5.7"
-        ],
-        "message": "Sum of current and arrears should be equal to total water charges demand.",
-        "displayNumber": "5.5"
+        "logic": "multiple",
+        "multipleValidations": [
+            {
+                "logic":"sum",
+                "fields":[
+                    "resValueWaterChrgDm",
+                    "comValueWaterChrgDm",
+                    "indValueWaterChrgDm",
+                    "othersValueWaterChrgDm"
+                ],
+                "sequence":[
+                    "5.13",
+                    "5.17",
+                    "5.21",
+                    "5.26"
+                ],
+                "message":" The sum should be equal to total water charges demand",
+                "displayNumber":"5.5"
+            },
+            {
+                "logic": "sum",
+                "fields": [
+                    "cuWaterChrgDm",
+                    "arWaterChrgDm"
+                ],
+                "sequence": [
+                    "5.6",
+                    "5.7"
+                ],
+                "message": "Sum of current and arrears should be equal to total water charges demand.",
+                "displayNumber": "5.5"
+            },],
+            "displayNumber": "5.5"
     },
-    "waterChrgCol":{
-        "logic": "sum",
-        "fields": [
-            "cuWaterChrgCol",
-            "arWaterChrgCol",
+    "waterChrgCol": {
+        "logic":"multiple",
+        "multipleValidations":[
+            {
+                "logic":"sum",
+                "fields":[
+                    "resValueWaterChrgCollected",
+                    "comValueWaterChrgCollected",
+                    "indValueWaterChrgCollected",
+                    "othersValueWaterChrgCollected"
+                ],
+                "sequence":[
+                    "5.15",
+                    "5.19",
+                    "5.23",
+                    "5.28"
+                ],
+                "message":"The sum should be equal to total water charges collection"
+            },
+            {
+                "logic": "sum",
+                "fields": [
+                    "cuWaterChrgCol",
+                    "arWaterChrgCol",
+                ],
+                "sequence": [
+                    "5.9",
+                    "5.10",
+                ],
+                "message": "Sum of current and arrears should be equal to total water charges collection.",
+                "displayNumber": "5.8"
+            }
         ],
-        "sequence": [
-            "5.9",
-            "5.10",
-        ],
-        "message": "Sum of current and arrears should be equal to total water charges collection.",
         "displayNumber": "5.8"
     },
     "waterChrgConnectionDm": {
@@ -373,7 +446,7 @@ const validationJson = {
         "message": "Value of water charges collected should be less that or equal to value of water charges demanded.",
         "displayNumber": "5.15"
     },
-    "comValueWaterChrgCollected":{
+    "comValueWaterChrgCollected": {
         "logic": "ltequal",
         "fields": [
             "comValueWaterChrgDm"
@@ -381,10 +454,10 @@ const validationJson = {
         "sequence": [
             "5.17"
         ],
-        "message": " Value of water charges collected should be less that or equal to value of water charges demanded.",
+        "message": "Value of water charges collected should be less that or equal to value of water charges demanded",
         "displayNumber": "5.19"
     },
-    "comNoWaterChrgCollected":{
+    "comNoWaterChrgCollected": {
         "logic": "ltequal",
         "fields": [
             "comNoWaterChrgDm"
@@ -395,7 +468,7 @@ const validationJson = {
         "message": "Number of households/properties from which water charges was collected should be less that or equal to number of households/properties from which water charges was demanded.",
         "displayNumber": "5.20"
     },
-    "indValueWaterChrgCollected":{
+    "indValueWaterChrgCollected": {
         "logic": "ltequal",
         "fields": [
             "indValueWaterChrgDm"
@@ -406,7 +479,7 @@ const validationJson = {
         "message": "Value of water charges collected should be less that or equal to value of water charges demanded.",
         "displayNumber": "5.20"
     },
-    "indNoWaterChrgCollected":{
+    "indNoWaterChrgCollected": {
         "logic": "ltequal",
         "fields": [
             "indNoWaterChrgDm"
@@ -417,7 +490,7 @@ const validationJson = {
         "message": "Number of households/properties from which water charges was collected should be less that or equal to number of households/properties from which water charges was demanded.",
         "displayNumber": "5.24"
     },
-    "othersValueWaterChrgCollected":{
+    "othersValueWaterChrgCollected": {
         "logic": "ltequal",
         "fields": [
             "othersValueWaterChrgDm"
@@ -428,7 +501,7 @@ const validationJson = {
         "message": " Value of water charges collected should be less that or equal to value of water charges demanded",
         "displayNumber": "5.28"
     },
-    "othersNoWaterChrgCollected":{
+    "othersNoWaterChrgCollected": {
         "logic": "ltequal",
         "fields": [
             "othersNoWaterChrgDm"
@@ -436,10 +509,10 @@ const validationJson = {
         "sequence": [
             "5.27"
         ],
-        "message": "  Number of households/properties from which water charges was collected should be less that or equal to number of households/properties from which water charges was demanded.",
+        "message": "Number of households/properties from which water charges was collected should be less that or equal to number of households/properties from which water charges was demanded.",
         "displayNumber": "5.29"
     },
-    "resNoWaterChrgCollected":{
+    "resNoWaterChrgCollected": {
         "logic": "ltequal",
         "fields": [
             "resNoWaterChrgDm"
@@ -450,7 +523,7 @@ const validationJson = {
         "message": "Number of households/properties from which water charges was collected should be less that or equal to number of households/properties from which water charges was demanded.",
         "displayNumber": "5.16"
     },
-    'otherValuePropertyTaxCollected':{
+    'otherValuePropertyTaxCollected': {
         "logic": "ltequal",
         "fields": [
             "otherValuePropertyTaxDm"
@@ -458,75 +531,120 @@ const validationJson = {
         "sequence": [
             "2.26"
         ],
-        "message": " Value of property tax collected should be less that or equal to value of property tax demanded." 
+        "message": " Value of property tax collected should be less that or equal to value of property tax demanded."
     },
-    "otherNoPropertyTaxCollected":{
-        "logic":"ltequal",
-        "fields":[
+    "otherNoPropertyTaxCollected": {
+        "logic": "ltequal",
+        "fields": [
             "otherNoPropertyTaxCollected"
         ],
-        "sequence":[
+        "sequence": [
             "2.29"
         ],
-        "message":"Number of properties from which property tax is collected should be less that or equal to number of properties from which property tax is demanded."
+        "message": "Number of properties from which property tax is collected should be less that or equal to number of properties from which property tax is demanded."
     },
-    "totalSewergeChrgDm":{
-        "logic":"sum",
-        "fields":[
-            "curSewergeChrgDm",
-            "arrSewergeChrgDm"
-        ],
-        "sequence":[
-            "6.6",
-            "6.7"
-        ],
-        "message":"Sum of current and arrears should match the total charges demand."
+    "totalSewergeChrgDm": {
+        "logic":"multiple",
+        "multipleValidations":[
+            {
+                "logic":"sum",
+                "fields":[
+                    "resValueSewerageTaxDm",
+                    "comValueSewerageTaxDm",
+                    "indValueSewerageTaxDm",
+                    "otherValueSewerageTaxDm"
+                ],
+                "sequence":[
+                    "6.13",
+                    "6.17",
+                    "6.21",
+                    "6.26"
+                ],
+                "displayNumber":"6.5",
+                "message":"The sum should be equal to total sewerage charges demand"
+            },
+            {
+            "logic": "sum",
+            "fields": [
+                "curSewergeChrgDm",
+                "arrSewergeChrgDm"
+            ],
+            "sequence": [
+                "6.6",
+                "6.7"
+            ],
+            "message": "Sum of current and arrears should match the total charges demand.",
+            "displayNumber":"6.5"
+        }],
+        "displayNumber":"6.5"
     },
-    "totalSewergeChrgCol":{
-        "logic":"sum",
-        "fields":[
-            "curSewergeChrgCol",
-            "arrSewergeChrgCol"
+    "totalSewergeChrgCol": {
+        "logic":"multiple",
+        "multipleValidations":[
+            {
+                "logic":"sum",
+                "fields":[
+                    "resValueSewerageTaxCollected",
+                    "comValueSewerageTaxCollected",
+                    "indValueSewerageTaxCollected",
+                    "otherValueSewerageTaxCollected"
+                ],
+                "sequence":[
+                    "6.15",
+                    "6.19",
+                    "6.23",
+                    "6.28"
+                ]
+            },
+            {
+                "logic": "sum",
+                "fields": [
+                    "curSewergeChrgCol",
+                    "arrSewergeChrgCol"
+                ],
+                "sequence": [
+                    "6.9",
+                    "6.10"
+                ],
+                "message": "Sum of current and arrears should match the total charges collection."
+            }
         ],
-        "sequence":[
-            "6.9",
-            "6.10"
-        ],
-        "message":"Sum of current and arrears should match the total charges collection."
+        "displayNumber":"6.8"
+        
     },
-    "totalSewergeConnectionDm":{
-        "logic":"sum",
-        "fields":[
+    "totalSewergeConnectionDm": {
+        "logic": "sum",
+        "fields": [
             "resNoSewerageTaxDm",
             "comNoSewerageTaxDm",
             "indNoSewerageTaxDm",
             "otherNoSewerageTaxDm"
         ],
-        "sequence":[
+        "sequence": [
             "6.14",
             "6.18",
             "6.22",
             "6.27"
         ],
-        "message":"The sum should be equal to total number of connections from which sewerage charges were demanded"
+        "message": "The sum should be equal to total number of connections from which sewerage charges were demanded."
     },
-    "totalSewergeConnectionCol":{
-        "logic":"sum",
-        "fields":[
+    "totalSewergeConnectionCol": {
+        "logic": "sum",
+        "fields": [
             "resNoSewerageTaxCollected",
             "comNoSewerageTaxCollected",
             "indNoSewerageTaxCollected",
             "otherNoSewerageTaxCollected"
         ],
-        "sequence":[
+        "sequence": [
             "6.16",
             "6.20",
             "6.24",
             "6.29"
         ],
-        "message":"The sum should be equal to total number of connections from which sewerage charges were collected."
+        "message": " The sum should be equal to total number of connections from which sewerage charges were collected"
     },
-    "resValueSewerageTaxCollected":{
+    "resValueSewerageTaxCollected": {
         "logic": "ltequal",
         "fields": [
             "resValueSewerageTaxDm"
@@ -534,9 +652,9 @@ const validationJson = {
         "sequence": [
             "6.13"
         ],
-        "message": "Value of sewerage charges collected should be less than or equal to value of sewerage charges demanded." 
+        "message": "Value of sewerage charges collected should be less than or equal to value of sewerage charges demanded."
     },
-    "resNoSewerageTaxCollected":{
+    "resNoSewerageTaxCollected": {
         "logic": "ltequal",
         "fields": [
             "resNoSewerageTaxDm"
@@ -544,9 +662,9 @@ const validationJson = {
         "sequence": [
             "6.14"
         ],
-        "message": "Number of Households/properties from which sewerage charges was collected should be less than or equal to Number of Households/properties from which sewerage charges was demanded." 
+        "message": "Number of Households/properties from which sewerage charges was collected should be less than or equal to Number of Households/properties from which sewerage charges was demanded."
     },
-    "comValueSewerageTaxCollected":{
+    "comValueSewerageTaxCollected": {
         "logic": "ltequal",
         "fields": [
             "comValueSewerageTaxDm"
@@ -554,9 +672,9 @@ const validationJson = {
         "sequence": [
             "6.17"
         ],
-        "message": "Value of sewerage charges collected should be less than or equal to value of sewerage charges demanded." 
+        "message": "Value of sewerage charges collected should be less than or equal to value of sewerage charges demanded."
     },
-    "comNoSewerageTaxCollected":{
+    "comNoSewerageTaxCollected": {
         "logic": "ltequal",
         "fields": [
             "comNoSewerageTaxDm"
@@ -564,9 +682,9 @@ const validationJson = {
         "sequence": [
             "6.18"
         ],
-        "message": "Number of Households/properties from which sewerage charges was collected should be less than or equal to Number of Households/properties from which sewerage charges was demanded." 
+        "message": "Number of Households/properties from which sewerage charges was collected should be less than or equal to Number of Households/properties from which sewerage charges was demanded."
     },
-    "indValueSewerageTaxCollected":{
+    "indValueSewerageTaxCollected": {
         "logic": "ltequal",
         "fields": [
             "indValueSewerageTaxDm"
@@ -574,9 +692,9 @@ const validationJson = {
         "sequence": [
             "6.21"
         ],
-        "message": "Value of sewerage charges collected should be less than or equal to value of sewerage charges demanded." 
+        "message": "Value of sewerage charges collected should be less than or equal to value of sewerage charges demanded."
     },
-    "indNoSewerageTaxCollected":{
+    "indNoSewerageTaxCollected": {
         "logic": "ltequal",
         "fields": [
             "indNoSewerageTaxDm"
@@ -584,9 +702,9 @@ const validationJson = {
         "sequence": [
             "6.22"
         ],
-        "message": "Value of sewerage charges collected should be less than or equal to value of sewerage charges demanded." 
+        "message": "Number of Households/properties from which sewerage charges was collected should be less than or equal to Number of Households/properties from which sewerage charges was demanded."
     },
-    "otherValueSewerageTaxCollected":{
+    "otherValueSewerageTaxCollected": {
         "logic": "ltequal",
         "fields": [
             "otherValueSewerageTaxDm"
@@ -594,9 +712,9 @@ const validationJson = {
         "sequence": [
             "6.26"
         ],
-        "message": "Value of sewerage charges collected should be less than or equal to value of sewerage charges demanded." 
+        "message": "Value of sewerage charges collected should be less than or equal to value of sewerage charges demanded."
     },
-    "otherNoSewerageTaxCollected":{
+    "otherNoSewerageTaxCollected": {
         "logic": "ltequal",
         "fields": [
             "otherNoSewerageTaxDm"
@@ -604,7 +722,7 @@ const validationJson = {
         "sequence": [
             "6.27"
         ],
-        "message": " Number of Households/properties from which sewerage charges was collected should be less than or equal to Number of Households/properties from which sewerage charges was demanded." 
+        "message": "Number of Households/properties from which sewerage charges was collected should be less than or equal to Number of Households/properties from which sewerage charges was demanded."
     }
 }
 exports.checkValidation = async function (req, res, next) {
