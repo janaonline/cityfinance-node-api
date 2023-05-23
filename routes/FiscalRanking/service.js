@@ -710,8 +710,8 @@ exports.getView = async function (req, res, next) {
     }).lean();
     let ulbPData = await Ulb.findOne(
       { _id: ObjectId(req.query.ulb) },
-      { population: 1 }
-    ).lean();
+      { population: 1, name: 1, state: 1 }
+    ).populate("state").lean();
     let viewOne = {};
     let fyData = [];
     if (data) {
@@ -857,8 +857,8 @@ exports.getView = async function (req, res, next) {
           "2017-18",
           "2018-19",
           "2019-20",
-          "2020-21",
-          "2021-22",
+          // "2020-21",
+          // "2021-22",
           "2022-23",
           "2023-24",
         ],
@@ -878,6 +878,9 @@ exports.getView = async function (req, res, next) {
             pf,
             fyDynemic: subData,
           };
+          if(pf['type'] === "property_tax_register"){
+            console.log("validations before" ,pf['status'])
+          }
           if(subData[key].calculatedFrom === undefined){
             pf['readonly'] =  getReadOnly(data?.currentFormStatus, viewOne.isDraft,role,"PENDING");
           }
@@ -886,7 +889,7 @@ exports.getView = async function (req, res, next) {
           }
           
           if (pf?.code?.length > 0) {
-            pf["status"] = null;
+            pf["status"] = 'PENDING';
             pf["modelName"] = "";
             if (fyData.length) {
               let singleFydata = fyData.find(
@@ -901,10 +904,9 @@ exports.getView = async function (req, res, next) {
                 } else {
                   pf["value"] = singleFydata ? singleFydata.value : "";
                 }
-                pf["status"] = singleFydata.status
                 pf["rejectReason"] = singleFydata.rejectReason
                 pf["modelName"] = singleFydata ? singleFydata.modelName : "";
-                pf["status"] = singleFydata.status;
+                pf["status"] = singleFydata.status || 'PENDING';
                 if (subData[key].calculatedFrom === undefined) {
                   pf["readonly"] =  getReadOnly(data?.currentFormStatus, viewOne.isDraft,role,singleFydata.status);
                 } else {
@@ -964,7 +966,8 @@ exports.getView = async function (req, res, next) {
                 );
                 if (singleFydata) {
                   pf["file"] = singleFydata.file;
-                  pf["status"] = singleFydata.status ;
+                  pf["status"] = singleFydata.status || 'PENDING';
+                  
                   pf["modelName"] = singleFydata.modelName;
                   pf['rejectReason'] = singleFydata.rejectReason
                   if (subData[key].calculatedFrom === undefined) {
@@ -1033,12 +1036,15 @@ exports.getView = async function (req, res, next) {
               }
             } else {
               if (fyData.length) {
+                
                 if (pf.year && pf.type) {
+                  
                   let singleFydata = fyData.find(
                     (e) =>
                       e.year.toString() == pf.year.toString() &&
                       e.type == pf.type
                   );
+                  
                   if (singleFydata) {
                     if (singleFydata?.date !== null) {
                       pf["date"] = singleFydata ? singleFydata.date : null;
@@ -1051,7 +1057,7 @@ exports.getView = async function (req, res, next) {
                       };
                     pf["value"] = singleFydata ? singleFydata.value : "";
                     pf["status"] = singleFydata
-                      ? singleFydata.status
+                      ? (singleFydata.status || "PENDING")
                       : "PENDING";
                     pf["modelName"] = singleFydata
                       ? singleFydata.modelName
@@ -1109,6 +1115,9 @@ exports.getView = async function (req, res, next) {
               }
             }
           }
+          if(pf['type'] === "property_tax_register"){
+            console.log("validations before" ,pf['status'])
+          }
         }
       }
     }
@@ -1129,6 +1138,8 @@ exports.getView = async function (req, res, next) {
     let viewData = {
       _id: viewOne._id ? viewOne._id : null,
       ulb: viewOne.ulb ? viewOne.ulb : req.query.ulb,
+      ulbName: ulbPData.name,
+      stateCode: ulbPData?.state?.code,
       design_year: viewOne.design_year
         ? viewOne.design_year
         : req.query.design_year,
@@ -1310,7 +1321,7 @@ const ulbLedgersData = (objData) => {
               ],
             },
             year: {
-              $in: ["2017-18", "2018-19", "2019-20", "2020-21", "2021-22"],
+              $in: ["2017-18", "2018-19", "2019-20"], //"2020-21", "2021-22"
             },
           },
         },
@@ -2642,7 +2653,7 @@ async function updateFiscalRankingForm(
         if(statusNotMandatory.includes(key)){
           // console.log("obj[key].value ::: ",)
           if(obj[key].value || obj[key]?.name ){
-            obj[key].status = "PENDING"
+            obj[key].status = obj[key].status || "PENDING"
           }
           else{
             obj[key].status = ""
@@ -2987,7 +2998,6 @@ module.exports.actionTakenByMoHua = catchAsync(async (req, res) => {
       role,
       formStatus
     ); 
-    console.log("feedBackResp ::: ",calculationsTabWise)
     if (feedBackResp.success) {
       response.success = true;
       response.message = "Details submitted successfully";
