@@ -544,7 +544,7 @@ module.exports.getForm = async (req, res,next) => {
           Object.assign(formData, canTakeActionOnMasterForm);
           let prevYearCond = {
             ulb:  ObjectId(data.ulb),
-            design_year: ObjectId(YEAR_CONSTANTS["23_24"])
+            design_year: ObjectId(YEAR_CONSTANTS['22_23'])
           }
           let prev28SlbFormData = await TwentyEightSlbsForm.findOne(prevYearCond,{history:0}).lean()
           if (prev28SlbFormData && userRole === "MoHUA") {
