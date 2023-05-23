@@ -2230,7 +2230,7 @@ function checkValidRequest(stateId, role) {
     message: "",
   };
   try {
-    if (role === userTypes.mohua) {
+    if (role === userTypes.mohua || role === userTypes.pmu) {
       validation.valid = true;
     }
     // if (formId === undefined || formId === "") {

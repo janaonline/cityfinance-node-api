@@ -1018,6 +1018,11 @@ module.exports.read2223 = catchAsync(async (req, res,next) => {
       };
       const canTakeActionOnMasterForm = await getMasterForm(params);
       Object.assign(fetchedData, canTakeActionOnMasterForm);
+      if (prevData && role === "MoHUA") { 
+          if(!(prevData.actionTakenByRole === "MoHUA" && !prevData.isDraft && prevData.status === "APPROVED")){
+            fetchedData['canTakeAction'] = false;
+        }
+      } 
     } else {
       Object.assign(fetchedData, {
         canTakeAction: canTakenAction(
@@ -1028,6 +1033,11 @@ module.exports.read2223 = catchAsync(async (req, res,next) => {
           role
         ),
       });
+      if (prevData && role === "MoHUA") { 
+          if(!(prevData.actionTakenByRole === "MoHUA" && !prevData.isDraft && prevData.status === "APPROVED")){
+            fetchedData['canTakeAction'] = false;
+        }
+      }
     }
 
 
