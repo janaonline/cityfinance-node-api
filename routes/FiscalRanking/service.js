@@ -912,6 +912,7 @@ exports.getView = async function (req, res, next) {
                 pf["modelName"] = singleFydata ? singleFydata.modelName : "";
                 pf["status"] = singleFydata.status || 'PENDING';
                 if (subData[key].calculatedFrom === undefined) {
+                  pf["status"]  = ""
                   pf["readonly"] = getReadOnly(data?.currentFormStatus, viewOne.isDraft, role, singleFydata.status);
                 } else {
                   pf["readonly"] = true;
