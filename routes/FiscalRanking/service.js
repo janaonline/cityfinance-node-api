@@ -2820,10 +2820,10 @@ module.exports.actionTakenByMoHua = catchAsync(async (req, res) => {
       response.message = validation.message;
       return res.status(500).json(response);
     }
-    // if (role !== userTypes.mohua) {
-    //   response.message = "Not permitted";
-    //   return res.status(500).json(response);
-    // }
+    if (role !== userTypes.mohua) {
+      response.message = "Not permitted";
+      return res.status(500).json(response);
+    }
     const session = await mongoose.startSession();
     await session.startTransaction();
     let masterFormId = FORMIDs['fiscalRanking'];
