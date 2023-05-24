@@ -465,7 +465,7 @@ const validationJson = {
         "sequence": [
             "5.18"
         ],
-        "message": "Number of households/properties from which water charges was collected should be less that or equal to number of households/properties from which water charges was demanded.",
+        "message": "Number of connections from which water charges was collected should be less that or equal to number of connections from which water charges was demanded.",
         "displayNumber": "5.20"
     },
     "indValueWaterChrgCollected": {
@@ -487,7 +487,7 @@ const validationJson = {
         "sequence": [
             "5.22"
         ],
-        "message": "Number of households/properties from which water charges was collected should be less that or equal to number of households/properties from which water charges was demanded.",
+        "message": "Number of connections from which water charges was collected should be less that or equal to number of connections from which water charges was demanded.",
         "displayNumber": "5.24"
     },
     "othersValueWaterChrgCollected": {
@@ -509,7 +509,7 @@ const validationJson = {
         "sequence": [
             "5.27"
         ],
-        "message": "Number of households/properties from which water charges was collected should be less that or equal to number of households/properties from which water charges was demanded.",
+        "message": "Number of connections from which water charges was collected should be less that or equal to number of connections from which water charges was demanded.",
         "displayNumber": "5.29"
     },
     "resNoWaterChrgCollected": {
@@ -520,7 +520,7 @@ const validationJson = {
         "sequence": [
             "5.14"
         ],
-        "message": "Number of households/properties from which water charges was collected should be less that or equal to number of households/properties from which water charges was demanded.",
+        "message": "Number of connections from which water charges was collected should be less that or equal to number of connections from which water charges was demanded.",
         "displayNumber": "5.16"
     },
     'otherValuePropertyTaxCollected': {
@@ -662,7 +662,7 @@ const validationJson = {
         "sequence": [
             "6.14"
         ],
-        "message": "Number of Households/properties from which sewerage charges was collected should be less than or equal to Number of Households/properties from which sewerage charges was demanded."
+        "message": "Number of connections from which sewerage charges was collected should be less than or equal to Number of connections from which sewerage charges was demanded."
     },
     "comValueSewerageTaxCollected": {
         "logic": "ltequal",
@@ -682,7 +682,7 @@ const validationJson = {
         "sequence": [
             "6.18"
         ],
-        "message": "Number of Households/properties from which sewerage charges was collected should be less than or equal to Number of Households/properties from which sewerage charges was demanded."
+        "message": "Number of connections from which sewerage charges was collected should be less than or equal to Number of connections from which sewerage charges was demanded."
     },
     "indValueSewerageTaxCollected": {
         "logic": "ltequal",
@@ -702,7 +702,7 @@ const validationJson = {
         "sequence": [
             "6.22"
         ],
-        "message": "Number of Households/properties from which sewerage charges was collected should be less than or equal to Number of Households/properties from which sewerage charges was demanded."
+        "message": "Number of connections from which sewerage charges was collected should be less than or equal to Number of connections from which sewerage charges was demanded."
     },
     "otherValueSewerageTaxCollected": {
         "logic": "ltequal",
@@ -722,7 +722,7 @@ const validationJson = {
         "sequence": [
             "6.27"
         ],
-        "message": "Number of Households/properties from which sewerage charges was collected should be less than or equal to Number of Households/properties from which sewerage charges was demanded."
+        "message": "Number of connections from which sewerage charges was collected should be less than or equal to Number of connections from which sewerage charges was demanded."
     }
 }
 exports.checkValidation = async function (req, res, next) {
