@@ -877,9 +877,6 @@ exports.getView = async function (req, res, next) {
             pf,
             fyDynemic: subData,
           };
-          if(pf['type'] === "property_tax_register"){
-            console.log("validations before" ,pf['status'])
-          }
           if(subData[key].calculatedFrom === undefined){
             pf['readonly'] =  getReadOnly(data?.currentFormStatus, viewOne.isDraft,role,"PENDING");
           }
@@ -905,7 +902,7 @@ exports.getView = async function (req, res, next) {
                 }
                 pf["rejectReason"] = singleFydata.rejectReason
                 pf["modelName"] = singleFydata ? singleFydata.modelName : "";
-                pf["status"] = singleFydata.status || 'PENDING';
+                pf["status"] = singleFydata.status != null ?  singleFydata.status : 'PENDING';
                 if (subData[key].calculatedFrom === undefined) {
                   console.log("key :: ",key)
                   
@@ -1062,7 +1059,7 @@ exports.getView = async function (req, res, next) {
                       };
                     pf["value"] = singleFydata ? singleFydata.value : "";
                     pf["status"] = singleFydata
-                      ? (singleFydata.status || "PENDING")
+                      ? singleFydata.status
                       : "PENDING";
                     pf["modelName"] = singleFydata
                       ? singleFydata.modelName
@@ -1120,9 +1117,6 @@ exports.getView = async function (req, res, next) {
                 }
               }
             }
-          }
-          if(pf['type'] === "property_tax_register"){
-            console.log("validations before" ,pf['status'])
           }
         }
       }
