@@ -965,7 +965,7 @@ exports.getView = async function (req, res, next) {
                 );
                 if (singleFydata) {
                   pf["file"] = singleFydata.file;
-                  pf["status"] = singleFydata.status || 'PENDING';
+                  pf["status"] = singleFydata.status
                   
                   pf["modelName"] = singleFydata.modelName;
                   pf['rejectReason'] = singleFydata.rejectReason
@@ -984,6 +984,7 @@ exports.getView = async function (req, res, next) {
                     subData[key]?.key !== "appAnnualBudget" &&
                     [1,2,null] .includes(viewOne.currentFormStatus)
                   ) {
+                    console.log("chekFile :: ",chekFile)
                     let chekFile = ulbDataUniqueFy
                       ? ulbDataUniqueFy.some(
                         (el) => el?.year_id.toString() === pf?.year.toString()
@@ -1007,7 +1008,7 @@ exports.getView = async function (req, res, next) {
                   }
                 }
               } else {
-                
+                console.log(">>>>",subData[key]?.key)
                 if (
                   subData[key]?.key !== "appAnnualBudget" && [1,2,null].includes(viewOne.currentFormStatus)
                 ) {
@@ -1016,7 +1017,6 @@ exports.getView = async function (req, res, next) {
                       (el) => el?.year_id.toString() === pf?.year.toString()
                     )
                     : false;
-
                   pf["status"] = chekFile ? "" : "PENDING";
                   pf["modelName"] = chekFile ? "ULBLedger" : "";
                   if (chekFile) {
@@ -1032,6 +1032,8 @@ exports.getView = async function (req, res, next) {
                     pf["readonly"] = true;
                   }
                 }
+                console.log("subData[key]?.key :: ",subData[key]?.key)
+                console.log(">>>>>>>>>>>>>>>>",subData[key])
               }
             } else {
               if (fyData.length) {
