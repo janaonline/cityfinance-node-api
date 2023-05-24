@@ -3267,8 +3267,8 @@ async function calculateAndUpdateStatusForMappers(
           let financialInfo = obj;
           let status = yearArr.every((item) => {
             if(calculatedFields.includes(item?.type)) return true; 
-            if (item?.type) {
-              return item.status === "APPROVED";
+            if (item?.type && item.status) {
+              return item.status === "APPROVED" || item.status === "";
             } else {
 
               return true;
@@ -3469,6 +3469,7 @@ module.exports.actionTakenByMoHua = catchAsync(async (req, res) => {
     let { ulbId, formId, actions, design_year, isDraft, currentFormStatus } = req.body;
     console.log("currentFormStatus :: ", currentFormStatus)
     let { role, _id: userId } = req.decoded;
+    console.log("role :: ",role)
     let validation = await checkUndefinedValidations({
       ulb: ulbId,
       actions: actions,
@@ -3614,6 +3615,7 @@ module.exports.createForm = catchAsync(async (req, res) => {
       userId,
       currentFormStatus
     );
+    
     if (!formIdValidations.valid) {
       response.message = formIdValidations.message;
       return res.status(500).json(response);
