@@ -1781,7 +1781,7 @@ const getPopulationWiseData = ({ columns, sort, skip, limit, sortBy, order, filt
             ...obj,
             [`${column.key} ${parameter.label}`]: column.key == 'populationCategories' ? {
               $first: parameter.label
-            } :
+            } : 
               {
                 $sum: {
                   $cond: {
@@ -1789,10 +1789,14 @@ const getPopulationWiseData = ({ columns, sort, skip, limit, sortBy, order, filt
                       $and: parameter.condition == 'range' ? [
                         { $gt: ["$population", parameter.max] },
                         { $lt: ["$population", parameter.min] },
-                        { $eq: ["$formData.currentFormStatus", column.currentFormStatus] },
+                        ...(column.key == 'totalUlbs' ? []: [{ 
+                          $eq: ["$formData.currentFormStatus", column.currentFormStatus] 
+                        }])
                       ] : [
-                        { [parameter.condition]: ["$population", 4000000] },
-                        { $eq: ["$formData.currentFormStatus", column.currentFormStatus] },
+                        { [parameter.condition]: ["$population", parameter.value] },
+                        ...(column.key == 'totalUlbs' ? []: [{ 
+                          $eq: ["$formData.currentFormStatus", column.currentFormStatus] 
+                        }])
                       ],
                     },
                     then: 1,
