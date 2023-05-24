@@ -409,17 +409,20 @@ module.exports.getAllLedgersCsv = async function (req, res) {
     res.write("ULB Name, ULB Code, AMRUT, Head of account,Code, Line Item, Budget year, Budget amount\r\n");
     // Flush the headers before we start pushing the CSV content
     res.flushHeaders();
-    let lineItem = await LineItem.find({ "isActive": true }, { 'name': 1 }).lean()
+    let lineItem = await LineItem.find({ "isActive": true }, { 'modifiedAt': 0, createdAt: 0, isActive: 0 }).lean()
+    let ulbsList = await Ulb.find({}, { 'name': 1, code: 1, amrut: 1 }).lean()
+    // console.log("lineItem",lineItem);process.exit();
 
     const cursor = UlbLedger.aggregate([
-        {
-            $lookup: {
-                from: "ulbs",
-                as: "ulbs",
-                foreignField: "_id",
-                localField: "ulb"
-            }
-        },
+        // {
+        //     $lookup: {
+        //         from: "ulbs",
+        //         as: "ulbs",
+        //         foreignField: "_id",
+        //         localField: "ulb"
+        //     }
+        // },
+
         // {
         //     $lookup: {
         //         from: "lineitems",
@@ -446,31 +449,27 @@ module.exports.getAllLedgersCsv = async function (req, res) {
         // },
         {
             $project: {
-                "ulbs": { $arrayElemAt: ["$ulbs", 0] },
+                // "ulbs": 1,
+                "ulb": 1,
+
                 // "states": { $arrayElemAt: ["$states", 0] },
                 // "ulbtypes": { $arrayElemAt: ["$ulbtypes", 0] },
                 // "lineitems": { $arrayElemAt: ["$lineitems", 0] },
+                "lineItem": "$lineItem",
                 financialYear: "$financialYear",
                 amount: 1,
                 population: 1
             }
-        },
-        {
-            $project: {
-                _id: 0,
-                ulb: { $cond: ["$ulbs", "$ulbs", "NA"] },
-                // state: { $cond: ["$states", "$states", "NA"] },
-                // ulbtypes: { $cond: ["$ulbtypes", "$ulbtypes", "NA"] },
-                // line_item: { $cond: ["$lineitems", "$lineitems", "NA"] },
-                financialYear: 1,
-                amount: 1,
-                population: 1
-            }
-        },
-    ]).cursor({ batchSize: 300 }).addCursorFlag('noCursorTimeout', true).exec()
+        }
+    ]).allowDiskUse(true).cursor({ batchSize: 50000 }).addCursorFlag('noCursorTimeout', true).exec()
     cursor.on("data", function (el) {
-        let maplineItem = lineItem?.length ? lineItem.find(e => e._id == el.lineItem) : null
+        let maplineItem = lineItem?.length ? lineItem.find(e => e._id.toString() == el.lineItem.toString()) : null
+        let mapUlb = ulbsList?.length ? ulbsList.find(e => e._id.toString() == el.ulb.toString()) : null
+
         el['line_item'] = maplineItem;
+        // el['ulb'] = el?.ulbs?.length ? el.ulbs[0] : "NA";
+        el['ulb'] = mapUlb ? mapUlb : "NA";
+
         if (el.ulb != 'NA') {
             let line_item = el.line_item ? el.line_item.name.toString().replace(/[,]/g, ' | ') : "";
             el.code = el.line_item ? el.line_item.code : "";
