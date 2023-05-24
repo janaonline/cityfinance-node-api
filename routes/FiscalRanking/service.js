@@ -6,7 +6,7 @@ const FiscalRanking = require("../../models/FiscalRanking");
 const FiscalRankingMapper = require("../../models/FiscalRankingMapper");
 const { FRTypeShortKey } = require('./formjson')
 const UlbLedger = require("../../models/UlbLedger");
-const { FORMIDs, MASTER_STATUS, MASTER_STATUS_ID, FORM_LEVEL, POPULATION_TYPE } = require("../../util/FormNames");
+const { FORMIDs, MASTER_STATUS, MASTER_STATUS_ID, FORM_LEVEL, POPULATION_TYPE, USER_ROLE } = require("../../util/FormNames");
 const { saveCurrentStatus, saveFormHistory, saveStatusHistory } = require("../../util/masterFunctions");
 const FeedBackFiscalRanking = require("../../models/FeedbackFiscalRanking");
 const TwentyEightSlbsForm = require("../../models/TwentyEightSlbsForm");
@@ -2785,7 +2785,7 @@ function updateActions(data, role, formType) {
         el["cantakeAction"] = false;
       } else {
         let params = { status: el.formData.currentFormStatus, userRole: role }
-        el['cantakeAction'] = role === "ADMIN" || role === userTypes.state ? false : canTakeActionOrViewOnlyMasterForm(params);
+        el['cantakeAction'] = role === "ADMIN" || role === userTypes.state || role === userTypes.mohua ? false : canTakeActionOrViewOnlyMasterForm(params);
         el['formStatus'] = MASTER_STATUS_ID[el.formData.currentFormStatus]
 
         // el["formStatus"] = calculateStatusForFiscalRankingForms(
