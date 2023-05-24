@@ -931,7 +931,8 @@ exports.getView = async function (req, res, next) {
                 // subData[key]["modelName"] = ulbFyAmount > 0 ? "ULBLedger" : "FiscalRanking"
                 pf["modelName"] = ulbFyAmount > 0 ? "ULBLedger" : "";
                 if (subData[key].calculatedFrom === undefined) {
-                  pf["readonly"] = ulbFyAmount > 0 ? true : getReadOnly(data?.currentFormStatus, viewOne.isDraft, role, singleFydata.status);
+                  pf["status"]  = ""
+                  pf["readonly"] = ulbFyAmount > 0 ? true : getReadOnly(data?.currentFormStatus, viewOne.isDraft,role,singleFydata.status);
                 } else {
                   pf["readonly"] = true;
                 }
