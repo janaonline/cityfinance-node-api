@@ -888,7 +888,7 @@ exports.getView = async function (req, res, next) {
           }
           
           if (pf?.code?.length > 0) {
-            pf["status"] = 'PENDING';
+            pf["status"] = '';
             pf["modelName"] = "";
             if (fyData.length) {
               let singleFydata = fyData.find(
@@ -907,10 +907,13 @@ exports.getView = async function (req, res, next) {
                 pf["modelName"] = singleFydata ? singleFydata.modelName : "";
                 pf["status"] = singleFydata.status || 'PENDING';
                 if (subData[key].calculatedFrom === undefined) {
-                  pf["status"]  = ""
+                  console.log("key :: ",key)
+                  
                   pf["readonly"] = getReadOnly(data?.currentFormStatus, viewOne.isDraft, role, singleFydata.status);
                 } else {
                   pf["readonly"] = true;
+                  pf["status"]  = ""
+                  
                 }
                 
               } else {
@@ -926,10 +929,10 @@ exports.getView = async function (req, res, next) {
                 // subData[key]["modelName"] = ulbFyAmount > 0 ? "ULBLedger" : "FiscalRanking"
                 pf["modelName"] = ulbFyAmount > 0 ? "ULBLedger" : "";
                 if (subData[key].calculatedFrom === undefined) {
-                  pf["status"]  = ""
                   pf["readonly"] = ulbFyAmount > 0 ? true : getReadOnly(data?.currentFormStatus, viewOne.isDraft,role,singleFydata.status);
                 } else {
                   pf["readonly"] = true;
+                  pf["status"]  = ""
                 }
               }
             } else {
@@ -980,6 +983,7 @@ exports.getView = async function (req, res, next) {
                   } else {
                     pf["readonly"] = true;
                     pf["status"] = ""
+                    console.log("key ::: ",key)
                   }
                   
                 } else {
@@ -1068,6 +1072,7 @@ exports.getView = async function (req, res, next) {
                       pf["readonly"] = getReadOnly(data?.currentFormStatus, viewOne.isDraft,role,singleFydata.status);
                     } else {
                       pf["readonly"] = true;
+                      pf['status'] = ""
                     }
                   }
                 }
