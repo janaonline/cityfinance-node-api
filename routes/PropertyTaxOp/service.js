@@ -1162,21 +1162,28 @@ function getLabelName(type) {
             admdIncludingCess: 'Arrear property tax demand (including cess, other taxes, AND excluding user charges if user charges are collected with property tax)',
             dmdexcludingCess: 'Total property tax demand (excluding cess, other taxes, user charges if any)',
             taxTypeDemand: 'Other tax demand (Demand figure for each type of tax other than property tax collected)',
+            taxTypeDemandChild: 'Other tax demand (Demand figure for each type of tax other than property tax collected)',
             cessDemand: 'Cess demand (Demand figure for each type of cess collected)',
+            cessDemandChild: 'Cess demand (Demand figure for each type of cess collected)',
             doesUserChargesDmnd: 'Do you collect any user charges along with Property Tax?',
             userChargesDmnd: 'User charges demand (Demand figure for each type of user charge collected along with property tax)',
+            userChargesDmndChild: 'User charges demand (Demand figure for each type of user charge collected along with property tax)',
             collectIncludingCess: 'Total property tax collection (including cess, other taxes, AND excluding user charges if user charges are collected with property tax)',
             cuCollectIncludingCess: 'Current property tax collection (including cess, other taxes, AND excluding user charges if user charges are collected with property tax)',
             arCollectIncludingCess: 'Arrear property tax collection (including cess, other taxes, AND excluding user charges if user charges are collected with property tax)',
             collectExcludingCess: 'Total property tax collection (excluding cess,other taxes, user charges if any)',
             taxTypeCollection: 'Other tax collections (Collection figure for each type of tax other than property tax collected)',
+            taxTypeCollectionChild: 'Other tax collections (Collection figure for each type of tax other than property tax collected)',
             cessCollect: 'Cess collection (Collection figure for each type of cess collected)',
+            cessCollectChild: 'Cess collection (Collection figure for each type of cess collected)',
             userChargesCollection: 'User charges collection (Collection figure for each type of user charge collected along with property tax)',
+            userChargesCollectionChild: 'Cess collection (Collection figure for each type of cess collected)',
             totalMappedPropertiesUlb: 'Total number of properties mapped in the ULB (including properties exempted from paying property tax)',
             totalPropertiesTax: 'Total number of properties exempted from paying property tax',
             totalPropertiesTaxDm: 'Total number of properties from which property tax was demanded',
             totalPropertiesTaxDmCollected: 'Total number of properties from which property tax was collected',
             resValuePropertyTaxDm: 'Value of property tax demanded (INR lakhs)',
+            othersValueWaterChrgDm:"Value of water charges demanded (INR lakhs",
             resNoPropertyTaxDm: 'Number of properties from which property tax was demanded',
             resValuePropertyTaxCollected: 'Value of property tax collected (INR lakhs)',
             resNoPropertyTaxCollected: 'Number of properties from which property tax was collected',
@@ -1197,6 +1204,10 @@ function getLabelName(type) {
             insValuePropertyTaxCollected: 'Value of property tax collected (INR lakhs)',
             insNoPropertyTaxCollected: 'Number of properties from which property tax was collected',
             otherValuePropertyType: 'Property Type',
+            otherValuePropertyTaxDm: 'Value of property tax demanded (INR lakhs)',
+            otherNoPropertyTaxDm: 'Number of properties from which property tax was demanded',
+            otherValuePropertyTaxCollected: 'Value of property tax collected (INR lakhs)',
+            otherNoPropertyTaxCollected: 'Number of properties from which property tax was collected',
             noOfPropertiesPaidOnline: 'Number of properties that paid online (through website or mobile application)',
             totalCollectionOnline: 'Total collections made via online channel i.e. through website or mobile application (INR lakhs)',
             propertyTaxValuationDetails: 'Please submit the property tax rate card',
@@ -1225,6 +1236,10 @@ function getLabelName(type) {
             indValueWaterChrgCollected: 'Value of water charges collected from Households/properties (INR lakhs)',
             indNoWaterChrgCollected: 'Number of Households/properties from which water charges was collected',
             othersValueWaterType: 'Property Type',
+            otherValueWaterTaxDm: 'Value of water tax demanded (INR lakhs)',
+            othersNoWaterChrgDm: 'Number of Households/properties from which water charges was demanded',
+            othersValueWaterChrgCollected: 'Value of water charges collected from Households/properties (INR lakhs)',
+            othersNoWaterChrgCollected: 'Number of Households/properties from which water charges was collected',
             waterChrgTariffDetails: 'Please provide the water tariff sheet',
             omCostDeleveryWater: 'What is the O&M cost of service delivery for water? (INR lakhs)',
             omCostWaterService: 'Please provide the working sheet for O&M cost calculation',
@@ -1253,11 +1268,16 @@ function getLabelName(type) {
             indValueSewerageTaxCollected: 'Value of sewerage charges collected from Households/properties (INR lakhs)',
             indNoSewerageTaxCollected: 'Number of Households/properties from which sewerage charges was collected',
             otherValueSewerageType: 'Property Type',
+            otherValueSewerageTaxDm: 'Value of sewerage charges demanded (INR lakhs)',
+            otherNoSewerageTaxDm: 'Number of Households/properties from which sewerage charges was demanded',
+            otherValueSewerageTaxCollected: 'Value of sewerage charges collected from Households/properties (INR lakhs)',
+            otherNoSewerageTaxCollected: 'Number of Households/properties from which sewerage charges was collected',
             sewerageChrgTarrifSheet: 'Please provide the sewerage tariff sheet',
             omCostDeleverySewerage: 'What is the O&M cost of service delivery for sewerage ?(INR lakhs)',
             omCostSewerageService: 'Please provide the working sheet for O&M cost calculation',
             signedPdf: 'Upload Signed PDF'
-        }
+          }
+          
         let labelName = indicators[type] ? indicators[type].split(",").join("") : ""
         return labelName
     }
@@ -1277,6 +1297,12 @@ function getTextValues(displayPriority){
             "2.17-2.20": "Government Properties",
             "2.21-2.24": "Institutional Properties",
             "2.25-2.29": "Other Properties",
+            "5.13-5.16" :"Residential households/properties",
+            "5.17-5.20":"Commercial households/properties",
+            "5.21-5.24" :"Industrial households/properties",
+            "6.13-6.16" :"Residential households/properties",
+            "6.17-6.20":"Commercial households/properties",
+            "6.21-6.24" :"Industrial households/properties",
         }
         for (let range in subHeaders) {
             let [integerA, integerB] = range.split("-")
@@ -1311,7 +1337,7 @@ function getSubHeaders(displayPriority) {
         let subHeaders = {
             "1.05-1.12": "Property Tax Demand Details (Amount in INR Lakhs)",
             "1.13-1.18": "Property Tax Collection Details (Amount in INR Lakhs)",
-            "2.50-2.80": "Property Tax Demand and Collection Details by Property Type (including cess, other tax charges, excluding user charges if any)",
+            "2.05-3.00": "Property Tax Demand and Collection Details by Property Type (including cess, other tax charges, excluding user charges if any)",
             "5.05-5.10": "Water Charges Demand and Collection Details (Amount in INR lakhs)",
             "5.11-5.12": "Water Connection Details",
             "5.13-5.20": "Water Charges Demand and Collection Details by Household/Property type",
@@ -1355,12 +1381,12 @@ function getSubHeaders(displayPriority) {
 function getIndicator(displayPriority) {
     try {
         let headers = {
-            "1.01-1.18": "Property Tax Details",
+            "1.01-1.19": "Property Tax Details",
             "2.01-2.29": "Property Register Details",
             "3.01-3.02": "Property Tax Collection Details by Mode of payment (including cess, other tax charges, excluding user charges if any)",
             "4.01-4.01": "Property Tax Valuation Details",
-            "5.01-5.04": "Water Charges Details",
-            "6.01-6.04": "Sewerage Charges Details",
+            "5.01-5.32": "Water Charges Details",
+            "6.01-6.32": "Sewerage Charges Details",
         }
         for (let range in headers) {
             let [integerA, integerB] = range.split("-")
@@ -1381,23 +1407,25 @@ function getIndicator(displayPriority) {
     return ""
 }
 
-const getStringValue = (result, ipValue = false) => {
+const getStringValue = (result,parentDp, ipValue = false) => {
     let writableStr = ""
     try {
         let dataYear = result?.year
+        let indicatorDpNumber = parentDp ? parentDp : result.displayPriority
         // console.log(">>>",getSubHeaders(result.displayPriority).replace(",", ""))
-        let indicatorHead = getIndicator(result.displayPriority).replace(",", "")
-        let indicatorSubHead = getSubHeaders(result.displayPriority).replace(",", "")
+        let indicatorHead = getIndicator(indicatorDpNumber).replace(",", "")
+        let indicatorSubHead = getSubHeaders(indicatorDpNumber).replace(",", "")
         let indicatorNumber = JSON.stringify(result.displayPriority)
         let value = result.value
         let file = result?.file?.url
-        let date = result?.date ? result.date.toLocaleString('en-GB', { timeZone: 'Asia/Kolkata' }) : null
+        let date = result?.date ? result.date.toLocaleString('en-GB', { timeZone: 'Asia/Kolkata' }).split(",")[0] : null
         writableStr += dataYear ? getKeyByValue(years, result?.year.toString()) + "," : " " + ","
         writableStr += indicatorHead + ","
         writableStr += indicatorSubHead + ","
         writableStr += indicatorNumber + ","
         writableStr += ipValue ? result.textValue + "," : "NA" + ","
         writableStr += getLabelName(result.type) + ","
+        // console.log("parentDp ::: ",parentDp)
         let assignedValue = value || file || date || " "
         writableStr += assignedValue ? `${assignedValue}` : "" + ","
         writableStr += "\r\n"
@@ -1411,7 +1439,6 @@ const getStringValue = (result, ipValue = false) => {
 const decideDisplayPriority = (index,type,dp,replicaNumber,parentType)=>{
     try{
         // console.log("type ::: ",type)
-        
        if(childKeys[type]){
         return childKeys[type] + "." + replicaNumber
        }
@@ -1422,53 +1449,11 @@ const decideDisplayPriority = (index,type,dp,replicaNumber,parentType)=>{
     return dp + "." + replicaNumber
 }
 
-const createDataStructureForCsv = (ulbs, results, res) => {
-    try {
-        let updatedDatas = {}
-        for (let ulb of ulbs) {
-            let filteredResults = results.filter(item => item.ptoId.ulb._id.toString() === ulb.toString())
-            let sortedResults = filteredResults.sort(sortPosition)
-            for (let result of sortedResults) {
-                let status = MASTER_STATUS_ID[result.ptoId.currentFormStatus] || ""
-                let censusCode = result.ptoId.ulb.censusCode != null ? result.ptoId.ulb.censusCode : result.ptoId.ulb.sbCode 
-                let writableStr = result.ptoId.ulb.state.name + "," + result.ptoId.ulb.name + "," + result.ptoId.ulb.natureOfUlb + "," + result.ptoId.ulb.code + "," + censusCode + "," + status + "," + getKeyByValue(years, result.ptoId.design_year.toString()) + ","
-                let modifiedTextValue = getTextValues(result.displayPriority).replace(",")
-                result.textValue = modifiedTextValue ? modifiedTextValue : " "
-                writableStr += getStringValue(result,true)
-                if (!canShow(result.type, sortedResults, updatedDatas,result.ptoId.ulb._id)) continue;
-                if (result.child && result.child.length) {
-                    res.write(writableStr)
-                    for (let child of result.child) {
-                        let number = decideDisplayPriority(0,child.type,result.displayPriority,child.replicaNumber,result.type)
-                        child.displayPriority = number
-                        
-                        let censusCode = result.ptoId.ulb.censusCode != null ? result.ptoId.ulb.censusCode : result.ptoId.ulb.sbCode 
-                        writableStr = result.ptoId.ulb.state.name + "," + result.ptoId.ulb.name + "," + result.ptoId.ulb.natureOfUlb + "," + result.ptoId.ulb.code + "," + result.ptoId.ulb.censusCode + "," + status + "," + getKeyByValue(years, result.ptoId.design_year.toString()) + ","
-                        censusCode || ""
-                        child.textValue = child.textValue ? child.textValue : modifiedTextValue
-                        writableStr += getStringValue(child, true)
-                        res.write(writableStr)
-                        writableStr = ""
-                        
-                    }
-                }
-                res.write(writableStr)
-            }
-        }
 
-        res.end()
-    }
-    catch (err) {
-        console.log("error in createDataStructureForCsv ::: ", err)
-        res.json({
-            "success": false,
-            "message": "something went wrong"
-        })
-    }
-}
 
 const canShow = (key, results, updatedDatas,ulb) => {
     try {
+        
         if (Object.keys(skippableKeys).includes(key)) {
             let elementToFind = skippableKeys[key]
             let element = {}
@@ -1482,7 +1467,11 @@ const canShow = (key, results, updatedDatas,ulb) => {
             else{
                 element = updatedDatas[keyName]
             }
-            return element.value === "Yes"
+            let show = element.value === "Yes" 
+            if(["entityNameWaterCharges","entityNaSewerageCharges".includes(key)]){
+                show = element.value !== "ULB"
+            }
+            return show
         }
     }
     catch (err) {
@@ -1491,6 +1480,74 @@ const canShow = (key, results, updatedDatas,ulb) => {
     }
     return true
 }
+// module.exports.getCsvForPropertyTaxMapper = async (req, res) => {
+//     let response = {
+//         "success": true,
+//         "message": "",
+//         "query": []
+//     }
+//     let status = 200
+//     try {
+//         let { getQuery } = req.query
+//         let csvCols = ["State Name",
+//             "ULB Name",
+//             "ULB Nature",
+//             "City Finance Code",
+//             "Census Code",
+//             "Overall Form Status",
+//             "Design Year",
+//             "Data Year",
+//             "Indicator Head ",
+//             "Indicator sub head",
+//             "Indicator number",
+//             "Input Value",
+//             "Indicator",
+//             "Value| Amount"]
+//         getQuery = getQuery === "true"
+//         let design_year = ObjectId(years['2023-24'])
+//         if (getQuery) {
+//             response.query = getQuery
+//             return response
+//         }
+//         let ptoFormResults = await PropertyTaxOp.find({
+//             design_year: design_year
+//         }, { _id: 1, ulb: 1 }).lean()
+//         let ulbNames = ptoFormResults.map(item => item.ulb)
+//         let mapperData = await PropertyTaxOpMapper.find({
+//             "ptoId": { $in: ptoFormResults.map(item => item._id) }
+//         }).populate("child").populate({
+//             "path": "ptoId",
+//             "populate": {
+//                 "path": "ulb",
+//                 "populate": {
+//                     "path": "state",
+//                     "model": "State"
+//                 }
+//             }
+//         }).lean()
+//         let filename = "propertyTax.csv"
+//         res.setHeader("Content-disposition", "attachment; filename=" + filename);
+//         res.writeHead(200, { "Content-Type": "text/csv;charset=utf-8,%EF%BB%BF" });
+//         res.write("\ufeff" + `${csvCols.join(",").toString()}` + "\r\n");
+//         let str = ""
+//         res.write("\ufeff" + str + "\r\n");
+//         // cursor.on()
+//         // console.log("mapperData ::: ",ptoFormResults)
+//         await createDataStructureForCsv(ulbNames, mapperData, res)
+//         // res.end()
+//         // console.log("mapperData :: ",mapperData)
+//         response.success = true
+//         // response.data = dbResults
+//         response.message = "Code working"
+//     }
+//     catch (err) {
+//         response.success = true
+//         status = 400
+//         console.log("error in getCsvForPropertyTaxMapper ::::: ", err.message)
+//     }
+//     // return res.status(status).json(response)
+// }
+
 module.exports.getCsvForPropertyTaxMapper = async (req, res) => {
     let response = {
         "success": true,
@@ -1520,41 +1577,137 @@ module.exports.getCsvForPropertyTaxMapper = async (req, res) => {
             response.query = getQuery
             return response
         }
-        let ptoFormResults = await PropertyTaxOp.find({
-            design_year: design_year
-        }, { _id: 1, ulb: 1 }).lean()
-        let ulbNames = ptoFormResults.map(item => item.ulb)
-        let mapperData = await PropertyTaxOpMapper.find({
-            "ptoId": { $in: ptoFormResults.map(item => item._id) }
-        }).populate("child").populate({
-            "path": "ptoId",
-            "populate": {
-                "path": "ulb",
-                "populate": {
-                    "path": "state",
-                    "model": "State"
-                }
-            }
-        }).lean()
         let filename = "propertyTax.csv"
         res.setHeader("Content-disposition", "attachment; filename=" + filename);
         res.writeHead(200, { "Content-Type": "text/csv;charset=utf-8,%EF%BB%BF" });
         res.write("\ufeff" + `${csvCols.join(",").toString()}` + "\r\n");
-        let str = ""
-        res.write("\ufeff" + str + "\r\n");
-        // cursor.on()
-        // console.log("mapperData ::: ",ptoFormResults)
-        await createDataStructureForCsv(ulbNames, mapperData, res)
-        // res.end()
-        // console.log("mapperData :: ",mapperData)
+
+        let cursor = await PropertyTaxOp.aggregate([
+            { $match: { "design_year": design_year } },
+            {
+                $lookup: {
+                    from: "propertytaxopmappers",
+                    localField: "_id",
+                    foreignField: "ptoId",
+                    as: "propertytaxopmapper"
+                }
+            },
+            {
+                $lookup: {
+                    from: "propertymapperchilddatas",
+                    localField: "_id",
+                    foreignField: "ptoId",
+                    as: "propertymapperchilddata"
+                }
+            },
+            {
+                $lookup: {
+                    from: "ulbs",
+                    localField: "ulb",
+                    foreignField: "_id",
+                    as: "ulb"
+                }
+            },
+            { $unwind: "$ulb" },
+            {
+                $lookup: {
+                    from: "states",
+                    localField: "ulb.state",
+                    foreignField: "_id",
+                    as: "state"
+                }
+            },
+            { $unwind: "$state" },
+        ]).allowDiskUse(true)
+            .cursor({ batchSize: 100 })
+            .addCursorFlag("noCursorTimeout", true)
+            .exec();
+
+        cursor.on("data", (el) => {
+            let updatedDatas = {}
+            let filteredResults = el.propertytaxopmapper;
+            let sortedResults = filteredResults.sort(sortPosition)
+            for (let result of sortedResults) {
+                let censusCode = el.ulb.censusCode != null ? el.ulb.censusCode : el.ulb.sbCode
+                let writableStr = el.state.name + "," + el.ulb.name + "," + el.ulb.natureOfUlb + "," + el.ulb.code + "," + censusCode + "," + MASTER_STATUS_ID[el.currentFormStatus] + "," + getKeyByValue(years, el.design_year.toString()) + ","
+                let modifiedTextValue = getTextValues(result.displayPriority).replace(",")
+                result.textValue = modifiedTextValue ? modifiedTextValue : " "
+                if (!canShow(result.type, sortedResults, updatedDatas, el.ulb._id)) continue;
+                writableStr += getStringValue(result, false, true)
+                if (result.child && result.child.length) {
+                    let status = MASTER_STATUS_ID[el.currentFormStatus] || ""
+                    res.write(writableStr)
+                    for (let childId of result.child) {
+                        let child = el?.propertymapperchilddata?.length > 0 ? el?.propertymapperchilddata.find(e => e._id.toString() == childId.toString()) : null
+                        let number = decideDisplayPriority(0, child.type, result.displayPriority, child.replicaNumber, result.type)
+                        child.displayPriority = number
+                        if (child) {
+                            writableStr = el.state.name + "," + el.ulb.name + "," + el.ulb.natureOfUlb + "," + el.ulb.code + "," + el.ulb.censusCode + "," + status + "," + getKeyByValue(years, el.design_year.toString()) + ","
+                         censusCode || ""
+                            child.textValue = child.textValue ? child.textValue : modifiedTextValue
+                            writableStr += getStringValue(child,result.displayPriority, true)
+                            res.write(writableStr)
+                            writableStr = ""
+                        }
+                    }
+                }
+                res.write(writableStr)
+            }
+        });
+        cursor.on("end", function (el) {
+            res.end();
+        });
         response.success = true
-        // response.data = dbResults
-        response.message = "Code working"
-    }
-    catch (err) {
+        response.message = "Code working";
+    } catch (err) {
+        console.log("err", err)
         response.success = true
         status = 400
         console.log("error in getCsvForPropertyTaxMapper ::::: ", err.message)
     }
-    // return res.status(status).json(response)
+}
+
+const createDataStructureForCsv = (ulbs, results, res) => {
+    try {
+        let updatedDatas = {}
+        for (let ulb of ulbs) {
+            let filteredResults = results.filter(item => item.ptoId.ulb._id.toString() === ulb.toString())
+            let sortedResults = filteredResults.sort(sortPosition)
+            for (let result of sortedResults) {
+                let status = MASTER_STATUS_ID[result.ptoId.currentFormStatus] || ""
+                let censusCode = result.ptoId.ulb.censusCode != null ? result.ptoId.ulb.censusCode : result.ptoId.ulb.sbCode 
+                let writableStr = result.ptoId.ulb.state.name + "," + result.ptoId.ulb.name + "," + result.ptoId.ulb.natureOfUlb + "," + result.ptoId.ulb.code + "," + censusCode + "," + status + "," + getKeyByValue(years, result.ptoId.design_year.toString()) + ","
+                let modifiedTextValue = getTextValues(result.displayPriority).replace(",")
+                result.textValue = modifiedTextValue ? modifiedTextValue : " "
+                if (!canShow(result.type, sortedResults, updatedDatas,result.ptoId.ulb._id)) continue;
+                writableStr += getStringValue(result,false,true)
+                
+                if (result.child && result.child.length) {
+                    res.write(writableStr)
+                    for (let child of result.child) {
+                        let number = decideDisplayPriority(0,child.type,result.displayPriority,child.replicaNumber,result.type)
+                        child.displayPriority = number
+                        let censusCode = result.ptoId.ulb.censusCode != null ? result.ptoId.ulb.censusCode : result.ptoId.ulb.sbCode 
+                        writableStr = result.ptoId.ulb.state.name + "," + result.ptoId.ulb.name + "," + result.ptoId.ulb.natureOfUlb + "," + result.ptoId.ulb.code + "," + result.ptoId.ulb.censusCode + "," + status + "," + getKeyByValue(years, result.ptoId.design_year.toString()) + ","
+                        censusCode || ""
+                        child.textValue = child.textValue ? child.textValue : modifiedTextValue
+                        writableStr += getStringValue(child,result.displayPriority,true)
+                        res.write(writableStr)
+                        writableStr = ""
+                        
+                    }
+                }
+                res.write(writableStr)
+            }
+        }
+
+        res.end()
+    }
+    catch (err) {
+        console.log("error in createDataStructureForCsv ::: ", err)
+        res.json({
+            "success": false,
+            "message": "something went wrong"
+        })
+    }
 }

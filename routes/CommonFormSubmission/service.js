@@ -166,7 +166,7 @@ module.exports.createAndUpdateFormMaster = async (params) => {
       case ModelNames['dur']:
         masterFormId = FORMIDs['dur'];
         try {
-          const formBodyStatus = formData.status;
+          const formBodyStatus = formData.status || formData.currentFormStatus ;
           formData.status = "";
           formData.currentFormStatus = formBodyStatus;
           let formData2324 = await moongose
@@ -183,7 +183,6 @@ module.exports.createAndUpdateFormMaster = async (params) => {
               recordId: formData2324._id,
             }).lean();
           }
-
           if (
             formCurrentStatus &&
             [
@@ -221,16 +220,30 @@ module.exports.createAndUpdateFormMaster = async (params) => {
                 delete formData['projects']
               }
             }
+            if(formCurrentStatus.status === MASTER_STATUS['Returned By State'] && formBodyStatus === MASTER_STATUS['In Progress'] ){
+              if(!formData.isProjectLoaded && years['2023-24']){
+                delete formData['projects']
+              }
+            }
             let formSubmit;
             formData["ulbSubmit"] =
               formBodyStatus === MASTER_STATUS["Under Review By State"]
                 ? new Date()
                 : "";
+                console.log("formBodyStatus ::: ",formBodyStatus)
                 if(formBodyStatus === MASTER_STATUS["Under Review By State"]){
-                  console.log("formData :: ",formData)
+                  if(!formData.isProjectLoaded && formData2324){
+                    formData.projects = formData2324.projects
+                  }
+
                   let validation =  checkForCalculations(formData)
                   if(!validation.valid){
                     return Response.BadRequest(res, {}, validation.messages);
+                  }
+                }
+                if(formCurrentStatus.status === MASTER_STATUS['Returned By State'] && formBodyStatus === MASTER_STATUS['In Progress'] ){
+                  if(!formData.isProjectLoaded && years['2023-24']){
+                    delete formData['projects']
                   }
                 }
             if (formData2324) {
