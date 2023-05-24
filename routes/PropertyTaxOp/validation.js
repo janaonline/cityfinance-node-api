@@ -60,7 +60,7 @@ const validationJson = {
                 "logic": "sum",
                 "fields": [
                     "resValuePropertyTaxDm",
-                    "resNoPropertyTaxCollected",
+                    "comValuePropertyTaxDm",
                     "indValuePropertyTaxDm",
                     "govValuePropertyTaxDm",
                     "insValuePropertyTaxDm",
@@ -68,7 +68,7 @@ const validationJson = {
                 ],
                 "sequence": [
                     "2.5",
-                    "2.8",
+                    "2.9",
                     "2.13",
                     "2.17",
                     "2.21",
