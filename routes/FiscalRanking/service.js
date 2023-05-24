@@ -3484,7 +3484,7 @@ module.exports.actionTakenByMoHua = catchAsync(async (req, res) => {
       response.message = validation.message;
       return res.status(500).json(response);
     }
-    if (role !== userTypes.mohua) {
+    if (role !== userTypes.pmu) {
       response.message = "Not permitted";
       return res.status(500).json(response);
     }
