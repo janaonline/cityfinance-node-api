@@ -1500,11 +1500,11 @@ const getUlbActivities = ({ sort, skip, limit, sortBy, order, filters, filterObj
     },
     {
       "$addFields": {
-          "emptyForms": {
-              "$ifNull": ["$formData", 1]
-          }
+        "emptyForms": {
+          "$ifNull": ["$formData", 1]
+        }
       }
-  },
+    },
     {
       "$group": {
         "_id": "$state",
@@ -1688,6 +1688,73 @@ const getPMUActivities = ({ sort, skip, limit, sortBy, order, filters, filterObj
   return Ulb.aggregate(query);
 }
 const getPopulationWiseData = () => {
+  return Ulb.aggregate([
+    {
+      "$match": {
+        "state": ObjectId("5dcf9d7216a06aed41c748df")
+      }
+    },
+    {
+      "$lookup": {
+        "from": "fiscalrankings",
+        "localField": "_id",
+        "foreignField": "ulb",
+        "as": "formData"
+      }
+    },
+    {
+      "$unwind": {
+        "path": "$formData",
+        "preserveNullAndEmptyArrays": true
+      }
+    },
+    {
+      $group: {
+        _id: "$state",
+        "population": { $sum: "$population" },
+        "4Million":
+        {
+          $sum: {
+            $cond: {
+              if: {
+                $and: [
+                  { $gt: ["$population", 4000000] },
+                  { $eq: ["$formData.currentFormStatus", 8] },
+                ],
+              },
+              then: 1,
+              else: 0,
+            },
+          }
+        },
+        "3Million":
+        {
+          $sum: {
+            $cond: {
+              if: {
+                $and: [
+                  { $gt: ["$population", 3000000] },
+                  { $eq: ["$formData.currentFormStatus", 8] },
+                ],
+              },
+              then: 1,
+              else: 0,
+            },
+          }
+        }
+      }
+    },
+    {
+      $project: {
+        "data": [
+          {
+            "title": "",
+            "approved": "$4Million"
+          }
+        ]
+      }
+    }
+  ])
   return Ulb.aggregate([
     {
       "$lookup": {
