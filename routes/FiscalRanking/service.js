@@ -1013,7 +1013,6 @@ exports.getView = async function (req, res, next) {
                   }
                 }
               } else {
-                console.log(">>>>",subData[key]?.key)
                 if (
                   subData[key]?.key !== "appAnnualBudget" && [1,2,null].includes(viewOne.currentFormStatus)
                 ) {
@@ -1037,8 +1036,6 @@ exports.getView = async function (req, res, next) {
                     pf["readonly"] = true;
                   }
                 }
-                console.log("subData[key]?.key :: ",subData[key]?.key)
-                console.log(">>>>>>>>>>>>>>>>",subData[key])
               }
             } else {
               if (fyData.length) {
