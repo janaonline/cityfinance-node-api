@@ -2608,8 +2608,8 @@ async function calculateAndUpdateStatusForMappers(
           let financialInfo = obj;
           let status = yearArr.every((item) => {
             if(calculatedFields.includes(item?.type)) return true; 
-            if (item?.type) {
-              return item.status === "APPROVED";
+            if (item?.type && item.status) {
+              return item.status === "APPROVED" || item.status === "";
             } else {
               
               return true;
@@ -2810,6 +2810,7 @@ module.exports.actionTakenByMoHua = catchAsync(async (req, res) => {
     let { ulbId, formId, actions, design_year, isDraft,currentFormStatus } = req.body;
     console.log("currentFormStatus :: ",currentFormStatus)
     let { role, _id: userId } = req.decoded;
+    console.log("role :: ",role)
     let validation = await checkUndefinedValidations({
       ulb: ulbId,
       actions: actions,
@@ -2819,10 +2820,10 @@ module.exports.actionTakenByMoHua = catchAsync(async (req, res) => {
       response.message = validation.message;
       return res.status(500).json(response);
     }
-    if (role !== userTypes.mohua) {
-      response.message = "Not permitted";
-      return res.status(500).json(response);
-    }
+    // if (role !== userTypes.mohua) {
+    //   response.message = "Not permitted";
+    //   return res.status(500).json(response);
+    // }
     const session = await mongoose.startSession();
     await session.startTransaction();
     let masterFormId = FORMIDs['fiscalRanking'];
@@ -2836,12 +2837,11 @@ module.exports.actionTakenByMoHua = catchAsync(async (req, res) => {
       design_year,
       false,
       isDraft
-    );    
+    );   
+    console.log("calculationsTabWise ::: ",calculationsTabWise)
     let formStatus = currentFormStatus
-    console.log("currentFormStatus :: ",currentFormStatus)
     if(currentFormStatus != 9){
       formStatus = await  decideOverAllStatus(calculationsTabWise)
-      console.log("formStatus :: ",formStatus)
       if(formStatus === 10){
         await sendEmailToUlb(ulbId)
       }
@@ -2952,6 +2952,7 @@ module.exports.createForm = catchAsync(async (req, res) => {
       userId,
       currentFormStatus
     );
+    
     if (!formIdValidations.valid) {
       response.message = formIdValidations.message;
       return res.status(500).json(response);
