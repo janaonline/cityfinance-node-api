@@ -3951,7 +3951,7 @@ function computeQuery(params) {
                 modifiedAt: 1,
                 designYear: 1,
                 isDraft: 1,
-                population11: 1,
+                population11: "$population",
                 populationFr: 1,
                 webLink: 1,
                 nameCmsnr: 1,
