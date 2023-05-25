@@ -6,11 +6,12 @@ const Sidemenu = require('../../models/Sidemenu');
 const ObjectId = require("mongoose").Types.ObjectId;
 const Service = require('../../service');
 const STATUS_LIST = require('../../util/newStatusList');
-const { MASTER_STATUS , MASTER_STATUS_ID} = require('../../util/FormNames');
+const { MASTER_STATUS , MASTER_STATUS_ID, YEAR_CONSTANTS} = require('../../util/FormNames');
 const  { canTakeActionOrViewOnlyMasterForm} = require('../../routes/CommonActionAPI/service')
 const List = require('../../util/15thFCstatus')
 const MASTERSTATUS = require('../../models/MasterStatus');
 const { years } = require('../../service/years');
+const mongoose = require('mongoose');
 
 
 module.exports.get = async (req, res) => {
@@ -156,15 +157,25 @@ module.exports.get = async (req, res) => {
     }
     total = allData[1].length ? allData[1][0]['total'] : 0
 
+    let approvedUlbs = await forms2223(collectionName, data);
     data.forEach(el => {
       if (!el.formData) {
         el['formStatus'] = "Not Started";
         el['cantakeAction'] = false;
       } else {
-        // el['formStatus'] = calculateStatus(el.formData.status, el.formData.actionTakenByRole, el.formData.isDraft, formType);
-        let params = {status: el.formData.currentFormStatus, userRole: loggedInUserRole}
-        el['cantakeAction'] = req.decoded.role === "ADMIN" ? false : canTakeActionOrViewOnlyMasterForm(params);
-        el['formStatus'] = MASTER_STATUS_ID[el.formData.currentFormStatus]
+        if(collectionName === CollectionNames.dur || collectionName === CollectionNames['28SLB']){
+          el['formStatus'] = MASTER_STATUS_ID[el.formData.currentFormStatus]
+          let params = {status: el.formData.currentFormStatus, userRole: loggedInUserRole}
+          el['cantakeAction'] = req.decoded.role === "ADMIN" ? false : canTakeActionOrViewOnlyMasterForm(params);
+          if( !(approvedUlbs.find(ulb=> ulb.toString() === el.ulbId.toString())) && loggedInUserRole === "MoHUA"){
+            el['cantakeAction'] = false
+          }
+        }else{
+          // el['formStatus'] = calculateStatus(el.formData.status, el.formData.actionTakenByRole, el.formData.isDraft, formType);
+          let params = {status: el.formData.currentFormStatus, userRole: loggedInUserRole}
+          el['cantakeAction'] = req.decoded.role === "ADMIN" ? false : canTakeActionOrViewOnlyMasterForm(params);
+          el['formStatus'] = MASTER_STATUS_ID[el.formData.currentFormStatus]
+        }
       }
     })
   
@@ -346,7 +357,10 @@ module.exports.get = async (req, res) => {
       if(el.formData || el.formData === "" ) delete el.formData;
   
     })
-    const  ulbFormStatus = await MASTERSTATUS.find({},{statusId:1, status:1}).lean()
+    const Query15FC = {
+      $or: [{ type: "15thFC" }, { multi: { $in: ["15thFC"] } }],
+    };
+    const  ulbFormStatus = await MASTERSTATUS.find(Query15FC,{statusId:1, status:1}).lean()
 
     return res.status(200).json({
       success: true,
@@ -363,6 +377,56 @@ module.exports.get = async (req, res) => {
     return Response.BadRequest(res, {}, error.message);
   }
   }
+
+  async function forms2223(collectionName, data) {
+    try {
+      let ulbsArray = [], approvedUlbs = [];
+      // let ulbsObject = {},
+       let forms2223;
+      let modelName;
+      let designYearField = "design_year";
+      if (collectionName == CollectionNames.dur) {
+        designYearField = "designYear";
+      }
+      if (collectionName === CollectionNames.dur || collectionName ===  CollectionNames['28SLB']) {
+        modelName = collectionName === CollectionNames.dur ?  List.ModelNames['dur'] : List.ModelNames['twentyEightSlbs']
+        ulbsArray = data.map((el) => {
+          return el.ulbId;
+        });
+        // for (let entity of ulbsArray) {
+        //   ulbsObject[entity] = false;
+        // }
+        if (Array.isArray(ulbsArray) && ulbsArray.length) {
+          forms2223 = await mongoose.model(modelName).find(
+            {
+              ulb: { $in: ulbsArray },
+              [designYearField]: YEAR_CONSTANTS['22_23']
+            },
+            { history: 0,steps:0 }
+          ).lean();
+        }
+        approvedUlbs = getUlbsApprovedByMoHUA(forms2223)
+      }
+      return approvedUlbs;
+    } catch (error) {
+      throw(`forms2223:: ${error.message}`)
+    }
+  }
+  
+  function getUlbsApprovedByMoHUA(forms){
+    try {
+      let ulbArray = [];
+      for(let form of forms){
+        if(form.actionTakenByRole === "MoHUA" && !form.isDraft && form.status === "APPROVED" ){
+          ulbArray.push(form.ulb);
+        }
+      }
+      return ulbArray;
+    } catch (error) {
+      throw(`getUlbsApprovedByMoHUA:: ${error.message}`);
+    }
+  }
+
 const computeQuery = (params) => {
   const {collectionName:formName, formType:userRole, isFormOptional, state, design_year, csv, skip, limit, newFilter:filter, dbCollectionName, folderName} = params
     let filledQueryExpression = {};

@@ -6,8 +6,8 @@ const FiscalRanking = require("../../models/FiscalRanking");
 const FiscalRankingMapper = require("../../models/FiscalRankingMapper");
 const { FRTypeShortKey } = require('./formjson')
 const UlbLedger = require("../../models/UlbLedger");
-const {FORMIDs} = require("../../util/FormNames");
-const {saveFormHistory} = require("../../util/masterFunctions");
+const {FORMIDs, MASTER_STATUS,MASTER_STATUS_ID, FORM_LEVEL,POPULATION_TYPE} = require("../../util/FormNames");
+const {saveCurrentStatus, saveFormHistory, saveStatusHistory} = require("../../util/masterFunctions");
 const FeedBackFiscalRanking = require("../../models/FeedbackFiscalRanking");
 const TwentyEightSlbsForm = require("../../models/TwentyEightSlbsForm");
 const Ulb = require("../../models/Ulb");
@@ -28,9 +28,10 @@ const {
   canTakeActionOrViewOnly,
   calculateStatusForFiscalRankingForms,
   getKeyByValue,
-  AggregationServices
+  AggregationServices,
+  canTakeActionOrViewOnlyMasterForm
 } = require("../CommonActionAPI/service");
-const {FRFormStatus} = require('../../util/15thFCstatus')
+const { FRFormStatus } = require('../../util/15thFCstatus')
 const Sidemenu = require("../../models/Sidemenu");
 const {
   fiscalRankingFormJson,
@@ -726,12 +727,14 @@ exports.getView = async function (req, res, next) {
         readonly: false,
         modelName: twEightSlbs?.population > 0 ? "TwentyEightSlbForm" : "",
       };
-      data["population11"] = {
-        value: ulbPData?.population || 0,
+      data["population11"] = {...data.population11,
+        value: data.population11.value
+          ? data.population11.value
+          : ulbPData
+            ? ulbPData?.population
+            : "",
         readonly: true,
-        status: "",
-        modelName: ulbPData?.population > 0 ? "" : "",
-        rejectReason:"",
+        modelName: ulbPData?.population > 0 ? "Ulb" : "",
       };
       data["fyData"] = fyData;
       viewOne = data;
@@ -971,16 +974,13 @@ exports.getView = async function (req, res, next) {
                   pf['rejectReason'] = singleFydata.rejectReason
                   if (subData[key].calculatedFrom === undefined) {
                     pf["required"] =
-                    singleFydata.status  || singleFydata.modelName === "ULBLedger"
+                    singleFydata.status  ||  singleFydata.modelName === "ULBLedger"
                         ? false
                         : true;
-                    pf["readonly"] = singleFydata.modelName === "ULBLedger" ? true :getReadOnly(data?.currentFormStatus, viewOne.isDraft,role,singleFydata?.status);
+                    pf["readonly"] = singleFydata.modelName === "ULBLedger" ? true : getReadOnly(data?.currentFormStatus, viewOne.isDraft,role,singleFydata?.status);
                   } else {
                     pf["readonly"] = true;
-                    pf["status"] = ""
-                    console.log("key ::: ",key)
-                  }
-                  
+                  }                
                 } else {
                   if (
                     subData[key]?.key !== "appAnnualBudget" &&
@@ -1319,7 +1319,7 @@ const ulbLedgersData = (objData) => {
               ],
             },
             year: {
-              $in: ["2017-18", "2018-19", "2019-20"], //"2020-21", "2021-22"
+              $in: ["2017-18", "2018-19", "2019-20"],
             },
           },
         },
@@ -1673,9 +1673,32 @@ function getPopulationCondition() {
   try {
     let obj = {
       $cond: {
-        if: { $eq: ["$isMillionPlus", "Yes"] },
-        then: "Million Plus",
-        else: "Non Million",
+        if: {
+          $gt: ["$population", 4000000],
+        },
+        then: "4Mn+",
+        else: {
+          $cond: {
+            if: {
+              $lt: ["$population", 100000],
+            },
+            then: "<100K",
+            else: {
+              $cond: {
+                if: {
+                  $and: [
+                    { $gte: ["$population", 100000] },
+                    {
+                      $lt: ["$population", 1000000],
+                    },
+                  ],
+                },
+                then: "100K to 1M",
+                else: "1M to 4M",
+              },
+            },
+          },
+        },
       },
     };
     return obj;
@@ -1744,6 +1767,26 @@ function getProjectionQueries(
         formData: { $ifNull: [`$${collectionName}`, ""] },
       },
     };
+    if(!csv){
+      projectionQueryWithConditions = {
+        $project: {
+          ulbName: "$name",
+          ulbId: "$_id",
+          ulbCode: "$code",
+          censusCode: getCensusCodeCondition(),
+          UA: getUAcondition(),
+          UA_ID: getUA_id(),
+          ulbType: "$ulbType.name",
+          ulbType_id: "$ulbType._id",
+          population: "$population",
+          state_id: "$state",
+          populationType: getPopulationCondition(),
+          populationCategory:"$population",
+  
+          formData: { $ifNull: [`$${collectionName}`, ""] },
+        },
+      };
+    }
     if (csv) {
       projectionQueryWithConditions["$project"]["fsMappers"] =
         "$fiscalrankingmappers";
@@ -1761,21 +1804,81 @@ function getProjectionQueries(
       // Object.assign(removeEmptyForms["$match"],newFilter)
       queryArr.push({ $match: newFilter });
     }
+    if(!csv){
+      let sortObj ={
+        "formData.modifiedAt": -1,
+      }
+      queryArr.push({ $sort: sortObj });
+    }
     getFacetQueryForPagination(queryArr, skip, limit);
     //projection query that decides which cols to show
-    let projectionQueryThatDecidesCols = {
-      $project: {
-        formData: 1,
-        records: 1,
-        total: getTotalProjectionQueryForPagination(),
-      },
-    };
-
-    queryArr.push(projectionQueryThatDecidesCols);
+    if(csv){
+      let projectionQueryThatDecidesCols = {
+        $project: {
+          formData: 1,
+          records: 1,
+          total: getTotalProjectionQueryForPagination(),
+        },
+      };
+  
+      queryArr.push(projectionQueryThatDecidesCols);
+    }
+    appendStages(queryArr);
+    
   } catch (err) {
     console.log("error in getProjectionQueries ::: ", err);
   }
 }
+
+function appendStages(query){
+  let arr = [
+    {
+      $unwind: {
+        path: "$records",
+      },
+    },
+    {
+      $lookup: {
+        from: "states",
+        localField: "records.state_id",
+        foreignField: "_id",
+        as: "stateName",
+      },
+    },
+    {
+      $unwind: {
+        path: "$stateName",
+        preserveNullAndEmptyArrays: true,
+      },
+    },
+    {
+      $project: {
+        ulbName: "$records.ulbName",
+        ulbCode: "$records.ulbCode",
+        ulbId: "$records.ulbId",
+        censusCode: "$records.censusCode",
+        population: "$records.population",
+        stateName: "$stateName.name",
+        populationType: "$records.populationType",
+        filled: "$records.filled",
+        populationCategory: "$records.populationCategory",
+        formData: "$records.formData",
+        "total": {
+          $let: {
+            vars: {
+              totalObj: {
+                $arrayElemAt: ["$metaData", 0],
+              },
+            },
+            in: "$$totalObj.total",
+          },
+        }
+      },
+    },
+  ];
+    return query.push(...arr);
+}
+
 
 /**
  * Get projection query for the columns which exists or not
@@ -1900,11 +2003,13 @@ function getFormQuery(queryArr, collectionName, design_year, csv) {
         pipeline: tableQuery,
       },
     };
-    obj["$lookup"]["pipeline"].push(
-      getCommonLookupObj("years", "design_year", "_id", "design_year")
-    );
-    obj["$lookup"]["pipeline"].push(getUnwindObj("$design_year"));
-    obj["$lookup"]["as"] = collectionName;
+    if(csv){
+      obj["$lookup"]["pipeline"].push(
+        getCommonLookupObj("years", "design_year", "_id", "design_year")
+      );
+      obj["$lookup"]["pipeline"].push(getUnwindObj("$design_year"));
+    }
+      obj["$lookup"]["as"] = collectionName;
     if (!csv) {
       obj["$lookup"]["pipeline"].push({
         $project: {
@@ -1912,6 +2017,8 @@ function getFormQuery(queryArr, collectionName, design_year, csv) {
           status: 1,
           actionTakenByRole: 1,
           isDraft: 1,
+          currentFormStatus:1,
+          modifiedAt:1
         },
       });
     }
@@ -1982,7 +2089,8 @@ function getAggregateQuery(
   limit,
   newFilter,
   csv,
-  stateId = null
+  stateId = null,
+  sort
 ) {
   let query = [];
   try {
@@ -1996,21 +2104,27 @@ function getAggregateQuery(
     }
     query.push(match_ulb_with_access);
     // stage 2 get all states realted to ulb
-    get_state_query(query, stateId);
+    if(csv){
+      get_state_query(query, stateId);
+    }
 
     // stage 3 get form data which is filled in this case fiscalranking form
     getFormQuery(query, collectionName, year, csv);
     // if(csv){
     query.push(getUnwindObj(`$${collectionName}`, true));
-    rankingFormQuery(query, "fiscalrankingmappers");
+    if(csv){
+      rankingFormQuery(query, "fiscalrankingmappers");
+    }
     // query.push(getUnwindObj(`$fiscalrankingmappers`,true))
     // }
     // stage 4 get all UA realted to tthis ulb and unwind all ua,s
-    query.push(getCommonLookupObj("uas", "UA", "_id", "UA"));
-    query.push(getUnwindObj("$UA", true));
-    // stage 5 get all ULBS realted the ulb and unwind it
-    query.push(getCommonLookupObj("ulbtypes", "ulbType", "_id", "ulbType"));
-    query.push(getUnwindObj("$ulbType", true));
+    if(csv){
+      query.push(getCommonLookupObj("uas", "UA", "_id", "UA"));
+      query.push(getUnwindObj("$UA", true));
+      // stage 5 get all ULBS realted the ulb and unwind it
+      query.push(getCommonLookupObj("ulbtypes", "ulbType", "_id", "ulbType"));
+      query.push(getUnwindObj("$ulbType", true));
+    }
 
     // stage 6 modify the cols ,handle pagination and search queries
     if (csv) {
@@ -2034,7 +2148,15 @@ function getAggregateQuery(
       getProjectionQueries(query, collectionName, skip, limit, newFilter, csv);
     }
     // stage 7 sort by formData
-    query.push({ $sort: { formData: -1 } });
+    // let sortObj ={
+    //   "formData.modifiedAt": -1,
+    // }
+    let sortObj = {};
+    if(sort && sort !== "null"){
+      let splitSort = sort.split('_');
+      sortObj[splitSort[0]] = Number(splitSort[1])
+      query.push({ $sort: sortObj });
+    }
   } catch (err) {
     console.log("error in getAggregateQuery :::: ", err);
   }
@@ -2052,11 +2174,15 @@ function searchQueries(req) {
     filter["ulbName"] = req.query.ulbName != "null" ? req.query.ulbName : "";
     filter["censusCode"] =
       req.query.censusCode != "null" ? req.query.censusCode : "";
+    filter['state_id'] = 
+      req.query.stateName != "null" ? req.query.stateName : "";
+
     filter["populationType"] =
-      req.query.populationType != "null" ? req.query.populationType : "";
+      req.query.populationType != "null" ? POPULATION_TYPE[req.query.populationType] : "";
     filter["ulbType"] = req.query.ulbType != "null" ? req.query.ulbType : "";
     filter["UA"] = req.query.UA != "null" ? req.query.UA : "";
-    filter["status"] = req.query.status != "null" ? req.query.status : "";
+    // filter["status"] = req.query.status != "null" ? req.query.status : "";
+    filter['formData.currentFormStatus'] = req.query.status != 'null' ? Number(req.query.status) : ""
     filter["filled_audited"] =
       req.query.filled1 != "null" ? req.query.filled1 : "";
     filter["filled_provisional"] =
@@ -2066,7 +2192,12 @@ function searchQueries(req) {
   }
   return filter;
 }
+function populationTypeFilter(populationType){
+  let filterObj = {
 
+  }
+
+}
 /**
  * Function that returns dynamic column name for tables in the frontend
  * @returns a javascript object with column names
@@ -2076,7 +2207,7 @@ function getColumns() {
     sNo: "S No.",
     ulbName: "ULB Name",
     stateName: "State Name",
-    censusCode: "Census/SB Code",
+    censusCode: "Census Code",
     formStatus: "Status",
     cantakeAction: "Action",
     apopulationCategory:"Population Category"
@@ -2097,7 +2228,7 @@ function checkValidRequest(stateId, role) {
     message: "",
   };
   try {
-    if (role === userTypes.mohua) {
+    if (role === userTypes.mohua || role === userTypes.pmu) {
       validation.valid = true;
     }
     // if (formId === undefined || formId === "") {
@@ -2135,18 +2266,23 @@ function updateActions(data, role, formType) {
         el["formStatus"] = "Not Started";
         el["cantakeAction"] = false;
       } else {
-        el["formStatus"] = calculateStatusForFiscalRankingForms(
-          el.formData.status,
-          el.formData.actionTakenByRole,
-          el.formData.isDraft,
-          formType
-        );
-        el["cantakeAction"] =
-          role === "ADMIN" || role === userTypes.state
-            ? false
-            : canTakeActionOrViewOnly(el, role, true);
+        let params = {status: el.formData.currentFormStatus, userRole: role}
+        el['cantakeAction'] = role === "ADMIN" || role === userTypes.state ? false : canTakeActionOrViewOnlyMasterForm(params);
+        el['formStatus'] = MASTER_STATUS_ID[el.formData.currentFormStatus]
+      
+        // el["formStatus"] = calculateStatusForFiscalRankingForms(
+        //   el.formData.status,
+        //   el.formData.actionTakenByRole,
+        //   el.formData.isDraft,
+        //   formType
+        // );
+        // el["cantakeAction"] =
+        //   role === "ADMIN" || role === userTypes.state
+        //     ? false
+        //     : canTakeActionOrViewOnly(el, role, true);
       }
       return el;
+      // el['formStatus'] = calculateStatus(el.formData.status, el.formData.actionTakenByRole, el.formData.isDraft, formType);
     });
   } catch (err) {
     console.log("error in updateActions ::: ", err.message);
@@ -2188,6 +2324,7 @@ module.exports.getFRforms = catchAsync(async (req, res) => {
     let aggregateQuery = {};
     let skip = req.query.skip || 0;
     let limit = req.query.limit || 10;
+    let sort = req?.query?.sort
     let { role } = req.decoded;
     let {
       design_year: year,
@@ -2219,6 +2356,10 @@ module.exports.getFRforms = catchAsync(async (req, res) => {
     let keys = calculateKeys(searchFilters["status"], role);
     Object.assign(searchFilters, keys);
     let newFilter = await Service.mapFilterNew(searchFilters);
+    if (Number(req.query.status) === MASTER_STATUS['Not Started']) {// to apply not started filter
+      Object.assign(newFilter, { formData: "" });
+      delete newFilter['formData.currentFormStatus']
+    }  
     // Code that will get the dynamic names when sidemenu is implemented
     //let formTab = await Sidemenu.findOne({ _id: ObjectId(formId) }).lean();
     // get dynamic path and collection name
@@ -2234,7 +2375,8 @@ module.exports.getFRforms = catchAsync(async (req, res) => {
       limit,
       newFilter,
       csv,
-      stateId
+      stateId,
+      sort
     );
     if (getQuery == "true")
       return res.status(200).json({
@@ -2242,10 +2384,10 @@ module.exports.getFRforms = catchAsync(async (req, res) => {
       });
     if (!csv) {
       let queryResult = await Ulb.aggregate(aggregateQuery).allowDiskUse(true);
-      let data = csv ? [] : queryResult[0];
-      total = !csv ? data["total"] : 0;
-      total = data["total"];
-      let records = csv ? [] : data["records"];
+      let data = csv ? [] : queryResult;
+      // total = !csv ? data[0]["total"] : 0;
+      total = data.length ? data[0]["total"] : 0;
+      let records = csv ? [] : data;
       data = updateActions(records, role, formType);
       response.success = true;
       response.columnNames = cols;
@@ -2886,6 +3028,7 @@ async function checkIfFormIdExistsOrNot(
     formId: null,
   };
   try {
+    console.log("currentFormStatus ::: ",currentFormStatus)
     let condition = {
       ulb: ObjectId(ulbId),
       design_year: ObjectId(design_year),
@@ -2898,8 +3041,8 @@ async function checkIfFormIdExistsOrNot(
         actionTakenByRole: role,
         actionTakenBy: userId,
         status: "PENDING",
-        currentFormStatus:currentFormStatus,
         isDraft,
+        currentFormStatus: currentFormStatus
       });
       form.save();
       validation.message = "form created";
@@ -2908,7 +3051,7 @@ async function checkIfFormIdExistsOrNot(
     } else {
       let form = await FiscalRanking.findOneAndUpdate(condition, {
         isDraft: isDraft,
-        currentFormStatus:currentFormStatus
+        currentFormStatus: currentFormStatus
       });
       if (form) {
         validation.message = "form exists";
@@ -2927,6 +3070,7 @@ async function checkIfFormIdExistsOrNot(
       validation.message = "form for this ulb and design year already exists";
     }
     validation.valid = false;
+    console.log(err)
     console.log("error in checkIfFormIdExistsornot ::: ", err.message);
   }
   return validation;
@@ -2939,8 +3083,9 @@ module.exports.createForm = catchAsync(async (req, res) => {
   const session = await mongoose.startSession();
   await session.startTransaction();
   try {
-    let { ulbId, formId, actions, design_year, isDraft ,currentFormStatus } = req.body;
+    let { ulbId, formId, actions, design_year, isDraft,currentFormStatus } = req.body;
     let { role, _id: userId } = req.decoded;
+    console.log("currentFormStatus ::: 1 ",currentFormStatus)
     let formIdValidations = await checkIfFormIdExistsOrNot(
       formId,
       ulbId,
@@ -2977,12 +3122,12 @@ module.exports.createForm = catchAsync(async (req, res) => {
       true,
       isDraft
     );
-    if(!isDraft){
+    if (!isDraft) {
       await FiscalRanking.findOneAndUpdate({
         ulb: ObjectId(req.body.ulbId),
         design_year: ObjectId(req.body.design_year),
-      },{
-        submittedDate:new Date()
+      }, {
+        submittedDate: new Date()
       })
     }
     response.success = true;
@@ -3121,12 +3266,12 @@ module.exports.FROverAllUlbData = async (req, res) => {
       csvCols,
       removeEscapesFromArr,
       labelObj: {},
-      FRKeyWithDate:["FR_auditAnnualReport_2021-22","FR_auditAnnualReport_2020-21", "FR_auditAnnualReport_2019-20"],
-      FRKeyWithFile: ["FR_accountStwreProof_2021-22","FR_appAnnualBudget_2020-21","FR_appAnnualBudget_2021-22","FR_appAnnualBudget_2022-23",
-        "FR_appAnnualBudget_2023-24","FR_auditedAnnualFySt_2018-19","FR_auditedAnnualFySt_2019-20","FR_auditedAnnualFySt_2020-21","FR_auditedAnnualFySt_2021-22",
+      FRKeyWithDate: ["FR_auditAnnualReport_2021-22", "FR_auditAnnualReport_2020-21", "FR_auditAnnualReport_2019-20"],
+      FRKeyWithFile: ["FR_accountStwreProof_2021-22", "FR_appAnnualBudget_2020-21", "FR_appAnnualBudget_2021-22", "FR_appAnnualBudget_2022-23",
+        "FR_appAnnualBudget_2023-24", "FR_auditedAnnualFySt_2018-19", "FR_auditedAnnualFySt_2019-20", "FR_auditedAnnualFySt_2020-21", "FR_auditedAnnualFySt_2021-22",
         "FR_registerGisProof_2021-22",
 
-        ]
+      ]
     });
   } catch (error) {
     return Response.BadRequest(res, {}, error.message);
@@ -3302,7 +3447,7 @@ function createCsv(params) {
       .exec();
     res.setHeader("Content-disposition", "attachment; filename=" + filename);
     res.writeHead(200, { "Content-Type": "text/csv;charset=utf-8,%EF%BB%BF" });
-    res.write("\ufeff"+ `${csvCols.join(",").toString()}` + "\r\n");
+    res.write("\ufeff" + `${csvCols.join(",").toString()}` + "\r\n");
     // res.write();
     cursor.on("data", (document) => {
       try {
@@ -3312,8 +3457,8 @@ function createCsv(params) {
         const ignoreZero = 0;
         const completionKey = "completionPercentFR";
         const mandatoryFieldsKey = "arrayOfMandatoryField";
-        if(Array.isArray(document[mandatoryFieldsKey]) && document[mandatoryFieldsKey]){
-          document["completionPercent"]= completionPercent( document[mandatoryFieldsKey], document[completionKey]);
+        if (Array.isArray(document[mandatoryFieldsKey]) && document[mandatoryFieldsKey]) {
+          document["completionPercent"] = completionPercent(document[mandatoryFieldsKey], document[completionKey]);
         }
         for (let key of dbCols) {
           /* *
@@ -3327,11 +3472,11 @@ function createCsv(params) {
           if (removeEscapesFromArr.includes(key)) {
             document[key] = removeEscapeChars(document[key]);
           }
-          
+
           if (key.split("_")[0] !== "FR") {
             if (document[key] === ignoreZero || document[key]) {
               /* A destructuring assignment.FR case in Fiscal Mapper */
-               FRFinancialCsvCase(
+              FRFinancialCsvCase(
                 key,
                 document,
                 labelObj
@@ -3356,15 +3501,15 @@ function createCsv(params) {
             ].find((el) => key === el.key);
             if (fiscalrankingmappersDocument) {
               let FRMapperKey = "value"
-              if(FRKeyWithDate.length>0 && FRKeyWithDate.includes(key)){
+              if (FRKeyWithDate.length > 0 && FRKeyWithDate.includes(key)) {
                 FRMapperKey = "date"
-              }else if(FRKeyWithFile.length>0 && FRKeyWithFile.includes(key)){
+              } else if (FRKeyWithFile.length > 0 && FRKeyWithFile.includes(key)) {
                 FRMapperKey = "file"
               }
-              if(fiscalrankingmappersDocument[FRMapperKey]){
+              if (fiscalrankingmappersDocument[FRMapperKey]) {
                 str += fiscalrankingmappersDocument[FRMapperKey] + ",";
-              }else{
-              str += " " + ",";
+              } else {
+                str += " " + ",";
               }
             } else {
               str += " " + ",";
@@ -3381,7 +3526,7 @@ function createCsv(params) {
         //   str = str2.join(",");
         // }
         str.trim()
-        res.write("\ufeff"+ str + "\r\n");
+        res.write("\ufeff" + str + "\r\n");
         // if (FRFlag) {
         //   res.write("\ufeff" + str2 + "\r\n");
         //   FRFlag = false;
@@ -3401,45 +3546,108 @@ function createCsv(params) {
   }
 }
 
-function completionPercent( document, FRCompletionNumber) {
+function completionPercent(document, FRCompletionNumber) {
   let completionPercent = 0;
   const totalMandatoryFields = 29;
-  const [objOfMandatoryFields] =  document;
+  const [objOfMandatoryFields] = document;
 
-  for( let field in objOfMandatoryFields){
-    if(objOfMandatoryFields[field]){
+  for (let field in objOfMandatoryFields) {
+    if (objOfMandatoryFields[field]) {
       completionPercent++;
     }
   }
 
-  if(FRCompletionNumber){
+  if (FRCompletionNumber) {
     completionPercent = completionPercent + FRCompletionNumber
   }
 
-  return  ((completionPercent / totalMandatoryFields) * 100 ).toFixed();
+  return ((completionPercent / totalMandatoryFields) * 100).toFixed();
 }
 
 
 async function createHistory(params){
   try{
-    let {isDraft,role,formId} = params
-    if(!isDraft || role === userTypes.mohua){
-      let data = await FiscalRanking.find({"_id":ObjectId(formId)}).lean()
-      let mapperData  = await FiscalRankingMapper.find({"fiscal_ranking":ObjectId(formId)})
+    let {isDraft,role:actionTakenByRole,userId:actionTakenBy,formId,masterFormId,formBodyStatus} = params
+    // if(!isDraft || role === userTypes.mohua){
+      // let data = await FiscalRanking.find({"_id":ObjectId(formId)}).lean()
+      // let mapperData  = await FiscalRankingMapper.find({"fiscal_ranking":ObjectId(formId)})
+      // data[0]['fiscalMapperData'] = mapperData
+      // let body = {
+      //   "formId":FORMIDs['fiscalRanking'],
+      //   "recordId":formId,
+      //   "data":data
+      // }
+      // let historyParams = {
+      //   body
+      // }
+      // await saveFormHistory(historyParams)
+    // } 
+    if (formBodyStatus === MASTER_STATUS["In Progress"]) {
+      
+      let currentStatusData = {
+        formId: masterFormId,
+        recordId: formId,
+        status: MASTER_STATUS["In Progress"],
+        level: FORM_LEVEL["form"],
+        shortKey: "form_level",
+        rejectReason: "",
+        responseFile: "",
+        actionTakenByRole: actionTakenByRole,
+        actionTakenBy: ObjectId(actionTakenBy),
+      };
+      await saveCurrentStatus({ body: currentStatusData, 
+        // session
+       });
+
+      // await session.commitTransaction();
+      // return Response.OK(res, {}, "Form Submitted");
+    } else if (
+      formBodyStatus === MASTER_STATUS["Verification Not Started"]
+    ) {
+      let data = await FiscalRanking.find({"_id":formId}).lean()
+      let mapperData  = await FiscalRankingMapper.find({"fiscal_ranking":formId})
       data[0]['fiscalMapperData'] = mapperData
-      let body = {
-        "formId":FORMIDs['fiscalRanking'],
-        "recordId":formId,
-        "data":data
-      }
-      let historyParams = {
-        body
-      }
-      await saveFormHistory(historyParams)
-    } 
+      let bodyData = {
+        formId: masterFormId,
+        recordId: formId,
+        data: data,
+      };
+      /* Saving the form history of the user. */
+      await saveFormHistory({ body: bodyData , 
+        // session
+      });
+
+      let currentStatusData = {
+        formId: masterFormId,
+        recordId: formId,
+        status: MASTER_STATUS["Verification Not Started"],
+        level: FORM_LEVEL["form"],
+        shortKey: "form_level",
+        rejectReason: "",
+        responseFile: "",
+        actionTakenByRole: actionTakenByRole,
+        actionTakenBy: ObjectId(actionTakenBy),
+      };
+      await saveCurrentStatus({ body: currentStatusData , 
+        // session
+      });
+
+      let statusHistory = {
+        formId: masterFormId,
+        recordId: formId,
+        shortKey: "form_level",
+        data: currentStatusData,
+      };
+      await saveStatusHistory({ body: statusHistory ,
+        //  session 
+        });
+      
+      // await session.commitTransaction();
+      // return Response.OK(res, {}, "Form Submitted");
+    }
   }
-  catch(err){
-    console.log("error in createHistory ::: ",err.message)
+  catch (err) {
+    console.log("error in createHistory ::: ", err.message)
   }
 }
 
@@ -3463,11 +3671,11 @@ function FRFinancialCsvCase(
   labelObj
 ) {
   if (key === "indicator") {
-  //  if (document[key] === "totalOwnRevenueArea") {
-      // FRFlag = true;
-      // str2 = str;
-      // str2 += `${totalownOwnRevenueAreaLabel}, ${
-        // document["fy_21_22_cash"] ?? ""
+    //  if (document[key] === "totalOwnRevenueArea") {
+    // FRFlag = true;
+    // str2 = str;
+    // str2 += `${totalownOwnRevenueAreaLabel}, ${
+    // document["fy_21_22_cash"] ?? ""
     //   // }`;
     // }
     document[key] = removeEscapeChars(labelObj[document[key]]);
@@ -3869,23 +4077,23 @@ function computeQuery(params) {
                     then: "$file.url",
                     else: {
                       "$cond": {
-                          "if": {
-                              "$and": [
-                                  {
-                                      "$eq": [
-                                          "$type",
-                                          "auditedAnnualFySt"
-                                      ]
-                                  },
-                                  {
-                                    "$eq": ["$modelName","ULBLedger"]
-                                   }
+                        "if": {
+                          "$and": [
+                            {
+                              "$eq": [
+                                "$type",
+                                "auditedAnnualFySt"
                               ]
-                          },
-                          "then": "Already Uploaded on Cityfinance",
-                          "else": null
+                            },
+                            {
+                              "$eq": ["$modelName", "ULBLedger"]
+                            }
+                          ]
+                        },
+                        "then": "Already Uploaded on Cityfinance",
+                        "else": null
                       }
-                  },
+                    },
                   },
                 },
                 modelName: 1,

@@ -42,6 +42,12 @@ const fiscalRankingSchema = new Schema(
             type:Number,
             default:1
         },
+        population11: {
+            value: { type: Number},
+            status: statusSchema(),
+            dataSource:modelSchema(),
+            rejectReason:{type:String,default:""}
+        },
         populationFr: {
             value: { type: Number, default: null},
             status: statusSchema(),
@@ -197,11 +203,13 @@ const fiscalRankingSchema = new Schema(
         status: {
             type: String,
             enum: {
-                values: ["PENDING", "APPROVED", "REJECTED"],
+                values: ["PENDING", "APPROVED", "REJECTED",""],
                 message: "ERROR: STATUS BE EITHER 'PENDING'/ 'APPROVED' / 'REJECTED'",
             },
         },
-        
+        currentFormStatus: {
+            type: Number,
+        },
         actionTakenBy: { type: Schema.Types.ObjectId, ref: "User", default: null ,required:true},
         actionTakenByRole: { type: String, default: null,required:true },
         rejectReason: { type: String, default: null },

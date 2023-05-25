@@ -4,10 +4,10 @@ const { response } = require('../../util/response');
 const ObjectId = require('mongoose').Types.ObjectId
 const { canTakenAction, canTakenActionMaster } = require('../CommonActionAPI/service')
 const Service = require('../../service');
-const { FormNames, MASTER_STATUS_ID } = require('../../util/FormNames');
+const { FormNames, MASTER_STATUS_ID ,MASTER_STATUS } = require('../../util/FormNames');
 const User = require('../../models/User');
 const { checkUndefinedValidations } = require('../../routes/FiscalRanking/service');
-const { propertyTaxOpFormJson, skippableKeys, financialYearTableHeader, specialHeaders, skipLogicDependencies,childKeys } = require('./fydynemic')
+const { propertyTaxOpFormJson, skippableKeys, financialYearTableHeader, specialHeaders, skipLogicDependencies,childKeys,reverseKeys ,questionIndicators,sortPosition} = require('./fydynemic')
 const { isEmptyObj, isReadOnly } = require('../../util/helper');
 const PropertyMapperChildData = require("../../models/PropertyTaxMapperChild");
 const { years } = require('../../service/years');
@@ -15,7 +15,6 @@ const { saveFormHistory } = require("../../util/masterFunctions")
 const { validationJson, keysWithChild } = require("./validation");
 const MasterStatus = require('../../models/MasterStatus');
 const { saveStatusAndHistory } = require("../CommonFormSubmission/service")
-
 const getKeyByValue = (object, value) => {
     return Object.keys(object).find(key => object[key] === value);
 }
@@ -215,7 +214,7 @@ module.exports.createOrUpdateForm = async (req, res) => {
                     return response(updatedForm, res, "Form updated.", "Form not updated.")
                 }
             }
-            
+
             if (submittedForm.status === "APPROVED" && submittedForm.actionTakenByRole !== "ULB"
                 && submittedForm.isDraft === false) {
                 return res.status(200).json({
@@ -554,6 +553,7 @@ function assignChildToMainKeys(data) {
             let element = { ...seperatedObject[key] }
             if (element.child) {
                 for (let childElement of keysWithChild[key]) {
+                    console.log("childElement :: ",childElement)
                     let filteredChildren = element.child.filter(item => item.key === childElement)
                     let yearData = [...mergeChildObjectsYearData(filteredChildren)]
                     seperatedObject[childElement] = {
@@ -576,6 +576,8 @@ function assignChildToMainKeys(data) {
 function getYearDataSumForValidations(keysToFind, payload) {
     let sumObj = {}
     let data = { ...payload }
+    // console.log("payload ::: ",["othersValueWaterChrgDm"])
+    // console.log("data ::: ",payload["othersValueWaterChrgDm"])
     try {
         for (let keyName of keysToFind) {
             if (data[keyName]) {
@@ -616,6 +618,8 @@ function compareValues(params) {
     }
     try {
         let { sumOfrefVal, sumOfCurrentKey, logic, message } = params
+        // console.log("sumOfrefVal :: ",sumOfrefVal)
+        // console.log("sumOfCurrentKey ::: ",sumOfCurrentKey)
         // console.log(">>>>>>>>>>>>>>>>>>1")
         for (let key in sumOfrefVal) {
             // console.log(">>>>>>>>>>>>>>>>>>2")
@@ -664,7 +668,7 @@ async function handleMultipleValidations(params) {
             let toCheckValidation = await checkIfFieldsAreNotEmpty(validationParams)
             // console.log("toCheckValidation :: ",toCheckValidation)
             if (toCheckValidation.checkForValidations) {
-
+                console.log("toCheckValidation 44:: ",keysToFind)
                 let sumOfrefVal = await getYearDataSumForValidations(keysToFind, data)
                 let sumOfCurrentKey = await yearWiseValues(dynamicObj.yearData)
                 let errorMessage = await createErrorMessage(validationObj, dynamicObj)
@@ -677,9 +681,9 @@ async function handleMultipleValidations(params) {
                     message: errorMessage
                 }
                 let compareValidator = compareValues(valueParams)
-                // console.log("sumOfrefVal :: ",sumOfrefVal)
-                // console.log("sumOfCurrentKey :: ",sumOfCurrentKey)
-                // console.log("compareValidator :::: ",compareValidator)
+                console.log("sumOfrefVal :: ",sumOfrefVal)
+                console.log("sumOfCurrentKey :: ",sumOfCurrentKey)
+                console.log("compareValidator :::: ",compareValidator)
                 if (!compareValidator.valid) {
                     return compareValidator
                 }
@@ -826,7 +830,7 @@ async function handleNonSubmissionValidation(params) {
                 // console.log("sumOfrefVal ::: ",sumOfrefVal,"keystoFind ::: ",keysToFind)
                 // console.log("sumOfCurrentKey :::: ",sumOfCurrentKey,"keysToFind:::",keysToFind)
                 if (toCheckValidation.checkForValidations) {
-
+                    console.log("toCheckValidation  33:: ",keysToFind)
                     let sumOfrefVal = await getYearDataSumForValidations(keysToFind, data)
                     let sumOfCurrentKey = await yearWiseValues(dynamicObj.yearData)
                     let errorMessage = await createErrorMessage(validationJson[dynamicObj.key], dynamicObj)
@@ -1136,147 +1140,13 @@ exports.getView = async function (req, res, next) {
     }
 }
 
-function sortPosition(itemA, itemB) {
-    itemA.displayPriority = itemA.displayPriority.toString()
-    itemB.displayPriority = itemB.displayPriority.toString()
-    const [integerA, decimalA] = itemA.displayPriority.split('.').map(i => +i);
-    const [integerB, decimalB] = itemB.displayPriority.split('.').map(i => +i);
-    if (integerA != integerB) {
-        return integerA > integerB ? 1 : (integerB > integerA ? -1 : 0);;
-    }
-    return decimalA > decimalB ? 1 : (decimalB > decimalA ? -1 : 0);;
 
-}
 
 
 
 function getLabelName(type) {
     try {
-        let indicators = {
-            notificationPropertyTax: 'Has the ULB adopted notification for charging property tax?',
-            notificationAdoptionDate: 'What was the notification adoption date?',
-            notificationIssuedBy: 'The adopted notification was issued by?',
-            notificationFile: 'Upload a copy of the notification',
-            dmdIncludingCess: 'Total property tax demand (including cess, other taxes, AND excluding user charges if user charges are collected with property tax)',
-            cdmdIncludingCess: 'Current property tax demand (including cess, other taxes, AND excluding user charges if user charges are collected with property tax)',
-            admdIncludingCess: 'Arrear property tax demand (including cess, other taxes, AND excluding user charges if user charges are collected with property tax)',
-            dmdexcludingCess: 'Total property tax demand (excluding cess, other taxes, user charges if any)',
-            taxTypeDemand: 'Other tax demand (Demand figure for each type of tax other than property tax collected)',
-            taxTypeDemandChild: 'Other tax demand (Demand figure for each type of tax other than property tax collected)',
-            cessDemand: 'Cess demand (Demand figure for each type of cess collected)',
-            cessDemandChild: 'Cess demand (Demand figure for each type of cess collected)',
-            doesUserChargesDmnd: 'Do you collect any user charges along with Property Tax?',
-            userChargesDmnd: 'User charges demand (Demand figure for each type of user charge collected along with property tax)',
-            userChargesDmndChild: 'User charges demand (Demand figure for each type of user charge collected along with property tax)',
-            collectIncludingCess: 'Total property tax collection (including cess, other taxes, AND excluding user charges if user charges are collected with property tax)',
-            cuCollectIncludingCess: 'Current property tax collection (including cess, other taxes, AND excluding user charges if user charges are collected with property tax)',
-            arCollectIncludingCess: 'Arrear property tax collection (including cess, other taxes, AND excluding user charges if user charges are collected with property tax)',
-            collectExcludingCess: 'Total property tax collection (excluding cess,other taxes, user charges if any)',
-            taxTypeCollection: 'Other tax collections (Collection figure for each type of tax other than property tax collected)',
-            taxTypeCollectionChild: 'Other tax collections (Collection figure for each type of tax other than property tax collected)',
-            cessCollect: 'Cess collection (Collection figure for each type of cess collected)',
-            cessCollectChild: 'Cess collection (Collection figure for each type of cess collected)',
-            userChargesCollection: 'User charges collection (Collection figure for each type of user charge collected along with property tax)',
-            userChargesCollectionChild: 'Cess collection (Collection figure for each type of cess collected)',
-            totalMappedPropertiesUlb: 'Total number of properties mapped in the ULB (including properties exempted from paying property tax)',
-            totalPropertiesTax: 'Total number of properties exempted from paying property tax',
-            totalPropertiesTaxDm: 'Total number of properties from which property tax was demanded',
-            totalPropertiesTaxDmCollected: 'Total number of properties from which property tax was collected',
-            resValuePropertyTaxDm: 'Value of property tax demanded (INR lakhs)',
-            othersValueWaterChrgDm:"Value of water charges demanded (INR lakhs",
-            resNoPropertyTaxDm: 'Number of properties from which property tax was demanded',
-            resValuePropertyTaxCollected: 'Value of property tax collected (INR lakhs)',
-            resNoPropertyTaxCollected: 'Number of properties from which property tax was collected',
-            comValuePropertyTaxDm: 'Value of property tax demanded (INR lakhs)',
-            comNoPropertyTaxDm: 'Number of properties from which property tax was demanded',
-            comValuePropertyTaxCollected: 'Value of property tax collected (INR lakhs)',
-            comNoPropertyTaxCollected: 'Number of properties from which property tax was collected',
-            indValuePropertyTaxDm: 'Value of property tax demanded (INR lakhs)',
-            indNoPropertyTaxDm: 'Number of properties from which property tax was demanded',
-            indValuePropertyTaxCollected: 'Value of property tax collected (INR lakhs)',
-            indNoPropertyTaxCollected: 'Number of properties from which property tax was collected',
-            govValuePropertyTaxDm: 'Value of property tax demanded (INR lakhs)',
-            govNoPropertyTaxDm: 'Number of properties from which property tax was demanded',
-            govValuePropertyTaxCollected: 'Value of property tax collected (INR lakhs)',
-            govNoPropertyTaxCollected: 'Number of properties from which property tax was collected',
-            insValuePropertyTaxDm: 'Value of property tax demanded (INR lakhs)',
-            insNoPropertyTaxDm: 'Number of properties from which property tax was demanded',
-            insValuePropertyTaxCollected: 'Value of property tax collected (INR lakhs)',
-            insNoPropertyTaxCollected: 'Number of properties from which property tax was collected',
-            otherValuePropertyType: 'Property Type',
-            otherValuePropertyTaxDm: 'Value of property tax demanded (INR lakhs)',
-            otherNoPropertyTaxDm: 'Number of properties from which property tax was demanded',
-            otherValuePropertyTaxCollected: 'Value of property tax collected (INR lakhs)',
-            otherNoPropertyTaxCollected: 'Number of properties from which property tax was collected',
-            noOfPropertiesPaidOnline: 'Number of properties that paid online (through website or mobile application)',
-            totalCollectionOnline: 'Total collections made via online channel i.e. through website or mobile application (INR lakhs)',
-            propertyTaxValuationDetails: 'Please submit the property tax rate card',
-            notificationWaterCharges: 'Are water charges being collected in the ULB?',
-            entityWaterCharges: 'Which entity is collecting the water charges?',
-            entityNameWaterCharges: 'Please fill the name of entity',
-            notificationWaterChargesFile: 'Upload a copy of gazette notification that notifies water charges',
-            waterChrgDm: 'Total water charges demand',
-            cuWaterChrgDm: 'Current water charges demand',
-            arWaterChrgDm: 'Arrear water charges demand',
-            waterChrgCol: 'Total water charges collection',
-            cuWaterChrgCol: 'Current water charges collection',
-            arWaterChrgCol: 'Arrear water charges collection',
-            waterChrgConnectionDm: 'Total Number of connections from which water charges was demanded',
-            waterChrgConnectionCol: 'Total Number of connections from which water charges were collected',
-            resValueWaterChrgDm: 'Value of water charges demanded (INR lakhs)',
-            resNoWaterChrgDm: 'Number of Households/properties from which water charges was demanded',
-            resValueWaterChrgCollected: 'Value of water charges collected from Households/properties (INR lakhs)',
-            resNoWaterChrgCollected: 'Number of Households/properties from which water charges was collected',
-            comValueWaterChrgDm: 'Value of water charges demanded (INR lakhs)',
-            comNoWaterChrgDm: 'Number of Households/properties from which water charges was demanded',
-            comValueWaterChrgCollected: 'Value of water charges collected from Households/properties (INR lakhs)',
-            comNoWaterChrgCollected: 'Number of Households/properties from which water charges was collected',
-            indValueWaterChrgDm: 'Value of water charges demanded (INR lakhs)',
-            indNoWaterChrgDm: 'Number of Households/properties from which water charges was demanded',
-            indValueWaterChrgCollected: 'Value of water charges collected from Households/properties (INR lakhs)',
-            indNoWaterChrgCollected: 'Number of Households/properties from which water charges was collected',
-            othersValueWaterType: 'Property Type',
-            otherValueWaterTaxDm: 'Value of water tax demanded (INR lakhs)',
-            othersNoWaterChrgDm: 'Number of Households/properties from which water charges was demanded',
-            othersValueWaterChrgCollected: 'Value of water charges collected from Households/properties (INR lakhs)',
-            othersNoWaterChrgCollected: 'Number of Households/properties from which water charges was collected',
-            waterChrgTariffDetails: 'Please provide the water tariff sheet',
-            omCostDeleveryWater: 'What is the O&M cost of service delivery for water? (INR lakhs)',
-            omCostWaterService: 'Please provide the working sheet for O&M cost calculation',
-            doesColSewerageCharges: 'Are sewerage charges being collected in the ULB?',
-            entitySewerageCharges: 'Which entity is collecting the sewerage charges?',
-            entityNaSewerageCharges: 'Please fill the name of the entity',
-            copyGazetteNotificationSewerage: 'Upload a copy of gazette notification that notifies collection of sewerage charges',
-            totalSewergeChrgDm: 'Total sewerage charges demand',
-            curSewergeChrgDm: 'Current sewerage charges demand',
-            arrSewergeChrgDm: 'Arrear sewerage charges demand',
-            totalSewergeChrgCol: 'Total sewerage charges collection',
-            curSewergeChrgCol: 'Current sewerage charges collection',
-            arrSewergeChrgCol: 'Arrear sewerage charges collection',
-            totalSewergeConnectionDm: 'Total number of connections from which sewerage charges was demanded',
-            totalSewergeConnectionCol: 'Total number of connections from which sewerage charges were collected',
-            resValueSewerageTaxDm: 'Value of sewerage charges demanded (INR lakhs)',
-            resNoSewerageTaxDm: 'Number of Households/properties from which sewerage charges was demanded',
-            resValueSewerageTaxCollected: 'Value of sewerage charges collected from Households/properties (INR lakhs)',
-            resNoSewerageTaxCollected: 'Number of Households/properties from which sewerage charges was collected',
-            comValueSewerageTaxDm: 'Value of sewerage charges demanded (INR lakhs)',
-            comNoSewerageTaxDm: 'Number of Households/properties from which sewerage charges was demanded',
-            comValueSewerageTaxCollected: 'Value of sewerage charges collected from Households/properties (INR lakhs)',
-            comNoSewerageTaxCollected: 'Number of Households/properties from which sewerage charges was collected',
-            indValueSewerageTaxDm: 'Value of sewerage charges demanded (INR lakhs)',
-            indNoSewerageTaxDm: 'Number of Households/properties from which sewerage charges was demanded',
-            indValueSewerageTaxCollected: 'Value of sewerage charges collected from Households/properties (INR lakhs)',
-            indNoSewerageTaxCollected: 'Number of Households/properties from which sewerage charges was collected',
-            otherValueSewerageType: 'Property Type',
-            otherValueSewerageTaxDm: 'Value of sewerage charges demanded (INR lakhs)',
-            otherNoSewerageTaxDm: 'Number of Households/properties from which sewerage charges was demanded',
-            otherValueSewerageTaxCollected: 'Value of sewerage charges collected from Households/properties (INR lakhs)',
-            otherNoSewerageTaxCollected: 'Number of Households/properties from which sewerage charges was collected',
-            sewerageChrgTarrifSheet: 'Please provide the sewerage tariff sheet',
-            omCostDeleverySewerage: 'What is the O&M cost of service delivery for sewerage ?(INR lakhs)',
-            omCostSewerageService: 'Please provide the working sheet for O&M cost calculation',
-            signedPdf: 'Upload Signed PDF'
-          }
+        let indicators = questionIndicators
           
         let labelName = indicators[type] ? indicators[type].split(",").join("") : ""
         return labelName
@@ -1287,22 +1157,22 @@ function getLabelName(type) {
     }
 }
 
-function getTextValues(displayPriority){
-    try{
-        
+function getTextValues(displayPriority) {
+    try {
+
         let subHeaders = {
-            "2.05-2.08":"Residential Properties",
+            "2.05-2.08": "Residential Properties",
             "2.09-2.12": "Commercial Properties",
             "2.13-2.16": "Industrial Properties",
             "2.17-2.20": "Government Properties",
             "2.21-2.24": "Institutional Properties",
             "2.25-2.29": "Other Properties",
-            "5.13-5.16" :"Residential households/properties",
-            "5.17-5.20":"Commercial households/properties",
-            "5.21-5.24" :"Industrial households/properties",
-            "6.13-6.16" :"Residential households/properties",
-            "6.17-6.20":"Commercial households/properties",
-            "6.21-6.24" :"Industrial households/properties",
+            "5.13-5.16": "Residential households/properties",
+            "5.17-5.20": "Commercial households/properties",
+            "5.21-5.24": "Industrial households/properties",
+            "6.13-6.16": "Residential households/properties",
+            "6.17-6.20": "Commercial households/properties",
+            "6.21-6.24": "Industrial households/properties",
         }
         for (let range in subHeaders) {
             let [integerA, integerB] = range.split("-")
@@ -1318,14 +1188,14 @@ function getTextValues(displayPriority){
                 if (subHeaders[range]) {
                     return subHeaders[range].split(",").join("") || ""
                 }
-                else{
+                else {
                     return ","
                 }
             }
         }
     }
-    catch(err){
-        console.log("error in getIpValues :::: ",err.message)
+    catch (err) {
+        console.log("error in getIpValues :::: ", err.message)
         return "NA"
     }
     return ""
@@ -1366,15 +1236,15 @@ function getSubHeaders(displayPriority) {
                 if (subHeaders[range]) {
                     return subHeaders[range].split(",").join("") || ""
                 }
-                else{
+                else {
                     return ","
                 }
             }
         }
     }
     catch (err) {
-    console.log("error in getSubheades :: ", err.message)
-}
+        console.log("error in getSubheades :: ", err.message)
+    }
     return ","
 }
 
@@ -1400,18 +1270,18 @@ function getIndicator(displayPriority) {
                 }
             }
         }
-    }
-    catch (err) {
+    } catch (err) {
+        console.log(err)
         console.log("error in getIndicators :: ", err.message)
     }
     return ""
 }
 
-const getStringValue = (result,parentDp, ipValue = false) => {
+const getStringValue = (result, parentDp, ipValue = false) => {
     let writableStr = ""
     try {
         let dataYear = result?.year
-        let indicatorDpNumber = parentDp ? parentDp : result.displayPriority
+        let indicatorDpNumber = parentDp ? result.displayPriority : result.displayPriority
         // console.log(">>>",getSubHeaders(result.displayPriority).replace(",", ""))
         let indicatorHead = getIndicator(indicatorDpNumber).replace(",", "")
         let indicatorSubHead = getSubHeaders(indicatorDpNumber).replace(",", "")
@@ -1429,21 +1299,20 @@ const getStringValue = (result,parentDp, ipValue = false) => {
         let assignedValue = value || file || date || " "
         writableStr += assignedValue ? `${assignedValue}` : "" + ","
         writableStr += "\r\n"
-    }
-    catch (err) {
-        console.log("error in getStringValue ::: ", err)
+    } catch (err) {
+        console.log("error in getStringValue ::: ", err);
     }
     return writableStr
 }
 
-const decideDisplayPriority = (index,type,dp,replicaNumber,parentType)=>{
-    try{
+const decideDisplayPriority = (index, type, dp, replicaNumber, parentType) => {
+    try {
         // console.log("type ::: ",type)
-       if(childKeys[type]){
-        return childKeys[type] + "." + replicaNumber
-       }
+        if (childKeys[type]) {
+            return childKeys[type] + "." + replicaNumber
+        }
     }
-    catch(err){
+    catch (err) {
         console.log("error in decideDisplayPriority")
     }
     return dp + "." + replicaNumber
@@ -1461,21 +1330,22 @@ const canShow = (key, results, updatedDatas,ulb) => {
             // console.log("elementsToFind :::",elementToFind)
             if (!updatedDatas[keyName]) {
                 element = results.find(item => item.type === elementToFind)
-                
                 updatedDatas[keyName] = element
             }
             else{
                 element = updatedDatas[keyName]
             }
             let show = element.value === "Yes" 
-            if(["entityNameWaterCharges","entityNaSewerageCharges".includes(key)]){
+            if(reverseKeys.includes(key)){
+                show = element.value === "No"
+            }
+            if(["entityNameWaterCharges","entityNaSewerageCharges"].includes(key)){
                 show = element.value !== "ULB"
             }
             return show
         }
     }
     catch (err) {
-        console.log(err)
         console.log("error in canSHow ::: ", err.message)
     }
     return true
@@ -1658,7 +1528,7 @@ module.exports.getCsvForPropertyTaxMapper = async (req, res) => {
             res.end();
         });
         response.success = true
-        response.message = "Code working";
+        response.message = "Fetched successfully";
     } catch (err) {
         console.log("err", err)
         response.success = true
@@ -1681,7 +1551,6 @@ const createDataStructureForCsv = (ulbs, results, res) => {
                 result.textValue = modifiedTextValue ? modifiedTextValue : " "
                 if (!canShow(result.type, sortedResults, updatedDatas,result.ptoId.ulb._id)) continue;
                 writableStr += getStringValue(result,false,true)
-                
                 if (result.child && result.child.length) {
                     res.write(writableStr)
                     for (let child of result.child) {
@@ -1694,7 +1563,6 @@ const createDataStructureForCsv = (ulbs, results, res) => {
                         writableStr += getStringValue(child,result.displayPriority,true)
                         res.write(writableStr)
                         writableStr = ""
-                        
                     }
                 }
                 res.write(writableStr)

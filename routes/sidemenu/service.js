@@ -65,6 +65,15 @@ let FormModelMapping_State = {
     "WaterRejenuvationRecycling": ObjectId("62c554382954384b44b3c396")
     
 }
+let FormModelMappingMaster_State = {
+  "GrantTransferCertificate": ObjectId("63ff31d63ae39326f4b2f473"),
+  "PropertyTaxFloorRate": ObjectId("63ff31d63ae39326f4b2f474"),
+  "StateFinanceCommissionFormation": ObjectId("63ff31d73ae39326f4b2f475"),
+  "ActionPlans" : ObjectId("63ff31d73ae39326f4b2f478"),
+  "GrantAllocation": ObjectId("63ff31d73ae39326f4b2f479"),
+  "GrantClaim": ObjectId("63ff31d73ae39326f4b2f47a"),
+  "WaterRejenuvationRecycling": ObjectId("63ff31d73ae39326f4b2f477")
+}
 
 let SUB_CATEGORY_CONSTANTS = {
   "Dashboard": 1,
@@ -288,8 +297,12 @@ module.exports.get = catchAsync(async (req, res) => {
             if(el !== GTC_STATE){
             let formData = await el.findOne(condition).lean()
             if (formData) {
-
-                output.push(findStatusAndTooltip(formData, FormModelMapping_State[el['modelName']] , el['modelName'], user.role, role))
+                if(formData.design_year.toString() === YEAR_CONSTANTS['23_24']){
+                  output.push(findStatusAndTooltipMaster({formData,formId: FormModelMappingMaster_State[el['modelName']], loggedInUserRole: user.role, viewFor: role}))
+                }else{
+                  output.push(findStatusAndTooltip(formData, FormModelMapping_State[el['modelName']] , el['modelName'], user.role, role))
+                }
+                
                 }
             }else{
                 let formDataArray = await el.find(condition).lean();

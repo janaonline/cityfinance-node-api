@@ -16,7 +16,7 @@ const PropertyTaxFloorRate = require('../../models/PropertyTaxFloorRate');
 const StateFinanceCommissionFormation = require('../../models/StateFinanceCommissionFormation');
 const TwentyEightSlbsForm = require('../../models/TwentyEightSlbsForm');
 const GrantTransferCertificate = require('../../models/GrantTransferCertificate');
-const { FormNames, FORM_LEVEL, MASTER_STATUS, YEAR_CONSTANTS,ULB_ACCESSIBLE_YEARS } = require('../../util/FormNames');
+const { FormNames, FORM_LEVEL, MASTER_STATUS, YEAR_CONSTANTS,ULB_ACCESSIBLE_YEARS , USER_ROLE, MODEL_PATH} = require('../../util/FormNames');
 const { calculateTabwiseStatus } = require('../annual-accounts/utilFunc');
 const {modelPath} = require('../../util/masterFunctions')
 const Response = require("../../service").response;
@@ -197,7 +197,7 @@ const calculateStatus = (status, actionTakenByRole, isDraft, formType) => {
     switch (formType) {
         case "ULB":
             switch (true) {
-                case (status == 'PENDING' || !status || 'N/A') && actionTakenByRole == 'ULB' && isDraft:
+                case (status == 'PENDING' || !status || 'N/A') && (actionTakenByRole == 'ULB' || actionTakenByRole == "MoHUA") && isDraft:
                     return StatusList.In_Progress
                     break;
                 case (status == 'PENDING' || !status || 'N/A') && actionTakenByRole == 'ULB' && !isDraft:
@@ -1124,7 +1124,18 @@ module.exports.canTakeActionOrViewOnlyMasterForm = (params)=> {
         case status == MASTER_STATUS['Submission Acknowledged By MoHUA']:
             return false;
             break;
-
+        case status ==  MASTER_STATUS['Verification Not Started']:
+            return true;
+            break;
+        case status ==  MASTER_STATUS['Verification In Progress']:
+            return true;
+            break;
+        case status ==  MASTER_STATUS['Returned by PMU']:
+            return false;
+            break;
+        case status ==  MASTER_STATUS['Submission Acknowledged by PMU']:
+            return false;
+            break;
         default:
             break;
     }
@@ -3354,3 +3365,248 @@ module.exports.checkIfUlbHasAccess = checkIfUlbHasAccess
 module.exports.calculateStatus = calculateStatus
 module.exports.nestedObjectParser = nestedObjectParser
 module.exports.clearVariables = clearVariables
+
+
+let bodyData =  {
+    ulbs:[],
+    design_year: "",
+    status: "REJECTED",
+    formId: 4,
+    multi: true
+}
+const IGNORE_YEARS = {
+  [YEAR_CONSTANTS["21_22"]]: [
+    ObjectId(YEAR_CONSTANTS["20_21"]),
+    ObjectId(YEAR_CONSTANTS["21_22"]),
+  ],
+  [YEAR_CONSTANTS["22_23"]]: [
+    ObjectId(YEAR_CONSTANTS["20_21"]),
+    ObjectId(YEAR_CONSTANTS["21_22"]),
+    ObjectId(YEAR_CONSTANTS["22_23"]),
+  ],
+  [YEAR_CONSTANTS["23_24"]]: [
+    ObjectId(YEAR_CONSTANTS["20_21"]),
+    ObjectId(YEAR_CONSTANTS["21_22"]),
+    ObjectId(YEAR_CONSTANTS["22_23"]),
+    ObjectId(YEAR_CONSTANTS["23_24"]),
+  ],
+};
+async function sequentialReview(req, res) {
+  try {
+    let { decoded: user, body: bodyData } = req;
+    let { design_year, formId, ulbs, status, multi } = bodyData;
+    if (
+      user.role !== USER_ROLE["MoHUA"] ||
+      status !== "REJECTED"
+    ) {
+      return Response.BadRequest(
+        res,
+        {},
+        "Only MoHUA can sequentially reject!"
+      );
+    }
+    let designYear = "design_year";
+    formId === FORMIDs["dur"]
+      ? (designYear = "designYear")
+      : (designYear = "design_year");
+
+    const modelName = MODEL_PATH[formId];
+    let query = {
+      ulb: { $in: ulbs },
+      [designYear]: { $nin: IGNORE_YEARS[design_year] },
+    };
+    let forms = await moongose.model(modelName).find(query).lean();
+    if (!Array.isArray(forms) || !forms.length) {
+      return Response.BadRequest(res, {}, "No Forms Found!");
+    }
+    //   if (design_year === YEAR_CONSTANTS["21_22"]) {
+    let params = {
+      forms,
+      formId,
+      modelName,
+      res,
+      user,
+    };
+    let formsUpdated = await checkForms(params);
+    //   } else {
+    if(formsUpdated){
+        let msg =  `${formsUpdated} rejected`
+        return Response.OK(res,{} ,msg );
+    }else{
+      return Response.OK(res, {}, "No Forms Updated!");
+    }
+    //   }
+  } catch (error) {
+    return Response.BadRequest(res, {}, `${error.message}`);
+  }
+}
+module.exports.sequentialReview = sequentialReview;
+
+async function checkForms(params) {
+  try {
+    let { forms, formId, modelName, res, user } = params;
+    let designYear = "design_year";
+    formId === FORMIDs["dur"]
+      ? (designYear = "designYear")
+      : (designYear = "design_year");
+    let formCount = 0;
+    for (let form of forms) {
+      if (form[designYear].toString() === YEAR_CONSTANTS["22_23"]) {
+        if (!checkIfUlbCanEditForm2223(form)) {
+          let output = await rejectForm2223(form, modelName, user);
+          if (output) {
+            formCount++;
+          }
+        }
+      } else {
+        if (!checkIfUlbCanEditForm(form?.currentFormStatus)) {
+          let output = await rejectForm(form, formId, modelName, user);
+          if (output) {
+            formCount++;
+          }
+        }
+      }
+    }
+    return formCount;
+  } catch (error) {
+    return Response.BadRequest(res, {}, error.message);
+  }
+}
+
+async function rejectForm(form, formId, modelName, user) {
+  try {
+    let { role: actionTakenByRole, _id:actionTakenBy } = user;
+    let updateObj = {
+      currentFormStatus: MASTER_STATUS["In Progress"],
+      isDraft: true,
+      actionTakenByRole,
+      actionTakenBy: ObjectId(actionTakenBy),
+    };
+    let updatedForm = await moongose.model(modelName).findOneAndUpdate(
+      { _id: form._id },
+      {
+        $set: updateObj,
+      },
+      { new: true }
+    );
+    if (updatedForm) {
+      return await saveStatusAndHistory(formId, updatedForm, user);
+    }
+  } catch (error) {
+    throw `rejectForm:: ${error.message}`;
+  }
+}
+async function saveStatusAndHistory(formId, updatedForm, user) {
+  try {
+    let bodyData = {
+      formId,
+      recordId: ObjectId(updatedForm._id),
+      data: updatedForm,
+    };
+    /* Saving the form history of the user. */
+    let formHistoryStatus = await saveFormHistory({
+      body: bodyData,
+      // session
+    });
+
+    let currentStatusData = {
+      formId,
+      recordId: ObjectId(updatedForm._id),
+      status: MASTER_STATUS["In Progress"],
+      level: FORM_LEVEL["form"],
+      shortKey: "form_level",
+      rejectReason: "",
+      responseFile: "",
+      actionTakenByRole: user.role,
+      actionTakenBy: ObjectId(user._id),
+    };
+    let statusSaved = await saveCurrentStatus({
+      body: currentStatusData,
+    });
+    let statusHistory = {
+      formId,
+      recordId: ObjectId(updatedForm._id),
+      shortKey: "form_level",
+      data: currentStatusData,
+    };
+    let statusHistoryStatus = await saveStatusHistory({
+      body: statusHistory,
+      //  session
+    });
+
+    if (formHistoryStatus && statusSaved && statusHistoryStatus) {
+      return 1;
+    }
+    return 0;
+  } catch (error) {
+    throw `saveStatusAndHistory:: ${error.message}`;
+  }
+}
+
+async function rejectForm2223(form, modelName, user) {
+  try {
+    let updateObj = {
+      actionTakenByRole: user.role,
+      actionTakenBy: ObjectId(user._id),
+      status: "PENDING",
+      isDraft: true,
+      modifiedAt: new Date(),
+    };
+    delete form["history"];
+    let updatedForm = await moongose.model(modelName).findOneAndUpdate(
+      { _id: form._id },
+      {
+        $set: updateObj,
+        $push: { history: form },
+      },
+      { new: true }
+    );
+    if (updatedForm) {
+      return 1;
+    }
+    return 0;
+  } catch (error) {
+    throw `rejectForm2223:: ${error.message}`;
+  }
+}
+function checkIfUlbCanEditForm2223(form) {
+  try {
+    let { status, actionTakenByRole, isDraft } = form;
+    const formType = "ULB";
+    let formStatus = calculateStatus(
+      status,
+      actionTakenByRole,
+      isDraft,
+      formType
+    );
+    const ulbEditStatusArray = [
+      StatusList["In_Progress"],
+      StatusList["Not_Started"],
+      StatusList["Rejected_By_MoHUA"],
+      StatusList["Rejected_By_State"],
+    ];
+    if (ulbEditStatusArray.includes(formStatus)) {
+      return true;
+    }
+    return false;
+  } catch (error) {
+    throw `checkIfUlbCanEditForm2223 :: ${error.message}`;
+  }
+}
+
+function checkIfUlbCanEditForm(currentFormStatus) {
+  try {
+    const ulbEditStatusArray = [
+      MASTER_STATUS["Not Started"],
+      MASTER_STATUS["In Progress"],
+      MASTER_STATUS["Returned By MoHUA"],
+      MASTER_STATUS["Returned By State"],
+    ];
+    if (ulbEditStatusArray.includes(currentFormStatus)) {
+      return true;
+    }
+    return false;
+  } catch (error) {
+    throw `checkFormIfUlbCanEdit:: ${error.message}`;
+  }
+}
