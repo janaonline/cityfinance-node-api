@@ -1873,7 +1873,7 @@ function getSortByKeys(sortBy, order) {
 
 exports.overview = async function (req, res, next) {
 
-  const type = req.params.type;
+  const {type} = req.params;
   console.log({ type });
 
   let name = {
@@ -1882,63 +1882,75 @@ exports.overview = async function (req, res, next) {
     "populationWise": "Overview of population-wise data"
   }[type] || '';
 
+
+
   const columns = {
     "UlbActivities": [
       {
         "label": "State Name",
         "key": "stateName",
-        "query": ""
+        "query": "",
+        "sortable": true
       },
       {
         "label": "Total ULBs",
         "key": "totalUlbs",
-        "query": ""
+        "query": "",
+        "sortable": true
       },
       {
         "label": "Under Review by PMU",
-        "key": "underReviewByPMU"
+        "key": "underReviewByPMU",
+        "sortable": true
       },
       {
         "label": "Returned by PMU",
-        "key": "returnedByPMU"
+        "key": "returnedByPMU",
+        "sortable": true
       },
       {
         "label": "In Progress",
-        "key": "inProgress"
+        "key": "inProgress",
+        "sortable": true
       },
       {
         "label": "Not Started",
-        "key": "notStarted"
+        "key": "notStarted",
+        "sortable": true
       },
     ],
     "PMUActivities": [
       {
         "label": "State Name",
         "key": "stateName",
-        "query": ""
+        "query": "",
+        "sortable": true
       },
       {
         "label": "Verification Not Started",
-        "key": "verificationNotStarted"
+        "key": "verificationNotStarted",
+        "sortable": true
       },
       {
         "label": "Verification In Progress",
-        "key": "verificationInProgress"
+        "key": "verificationInProgress",
+        "sortable": true
       },
       {
         "label": "Returned by PMU",
-        "key": "returnedByPMU"
+        "key": "returnedByPMU",
+        "sortable": true
       },
       {
         "label": "Submission Acknowledged by PMU",
-        "key": "submissionAckByPMU"
+        "key": "submissionAckByPMU",
+        "sortable": true
       },
     ],
     "populationWise": [
       {
         "label": "Population Categories",
         "key": "populationCategories",
-        "query": "",
       },
       {
         "label": "Total ULBs",
@@ -1957,7 +1969,7 @@ exports.overview = async function (req, res, next) {
       {
         "label": "In Progress",
         "key": "inProgress",
-        "currentFormStatus": 4,
+        "currentFormStatus": 2,
       },
       {
         "label": "Not Started",
@@ -1966,6 +1978,14 @@ exports.overview = async function (req, res, next) {
       },
     ]
   }[type] || [];
+
+
+  const lastRow = {
+    "UlbActivities": ["Total", "$sum", "$sum", "$sum", "$sum", "$sum"],
+    "PMUActivities": ["Total", "$sum", "$sum", "$sum", "$sum"],
+    "populationWise": ["Total", "$sum", "$sum", "$sum", "$sum", "$sum"]
+  }[type];
+
   try {
 
     let skip = parseInt(req.query.skip) || 0
@@ -2018,6 +2038,7 @@ exports.overview = async function (req, res, next) {
       columns,
       name,
       data,
+      lastRow,
     });
   } catch (error) {
     console.log("err", error);
