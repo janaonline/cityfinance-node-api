@@ -1601,6 +1601,12 @@ const getUlbActivities = ({ sort, skip, limit, sortBy, order, filters, filterObj
     {
       "$project": {
         "stateName": "$states.name",
+        "stateNameLink": {
+          "$concat": [
+            "/rankings/populationWise/",
+            { "$toString": "$states._id" }
+          ]
+        },
         "totalUlbs": 1,
         "underReviewByPMU": 1,
         "returnedByPMU": 1,
