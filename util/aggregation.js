@@ -6264,7 +6264,7 @@ const stateWiseHeatMapQuery = (state) => {
         "localField": "_id",
         "foreignField": "_id",
         "as": "states"
-      }
+      },
     },
     {
       "$unwind": {
@@ -6273,7 +6273,7 @@ const stateWiseHeatMapQuery = (state) => {
       }
     },
     {
-    "$addFields": {
+      "$addFields": {
         "percentage": {
           "$multiply": [
             {
@@ -6286,7 +6286,6 @@ const stateWiseHeatMapQuery = (state) => {
                     "$verificationNotStarted"
                   ]
                 }
-
                 , "$totalUlbs"]
             }
             , 100]
@@ -6303,41 +6302,50 @@ const stateWiseHeatMapQuery = (state) => {
       }
     },
     {
-      "$project": {
-        "heatMap": {
-          "_id": "$states._id",
-          "stateId": "$states._id",
-          "code": "$states.code",
-          "percentage": "$percentage"
-        },
-        "ulbWiseData": {
-          "totalUlbs": "$totalUlbs",
-          "inProgress": "$inProgress",
-          "submitted": "$verificationInProgress"
+      "$group": {
+        "_id": "states._id",
+        "heatMaps": {
+          "$push": {
+            "_id": "$states.name",
+            "stateId": "$states._id",
+            "code": "$states.code",
+            "percentage": "$percentage"
+          }
         },
         "formWiseData": {
-          "totalForms": "$totalForms",
-          "verificationInProgress": "$verificationInProgress",
-          "approved": "$submissionAckByPMU",
-          "rejected": "$returnedByPMU"
+          "$first": {
+            "totalForms": "$totalForms",
+            "verificationInProgress": "$verificationInProgress",
+            "approved": "$submissionAckByPMU",
+            "rejected": "$returnedByPMU"
+          },
         },
-        "stateName": "$states.name",
-        "totalUlbs": "$totalUlbs"
+        "ulbWiseData": {
+          "$first": {
+            "totalUlbs": "$totalUlbs",
+            "inProgress": "$inProgress",
+            "submitted": "$verificationInProgress"
+          },
+        },
+      }
+    },
+    {
+      "$project": {
+        "heatMaps": "$heatMaps",
+        "formWiseData": 1,
+        "ulbWiseData": 1
       }
     }
   ]
-  if(state != "all"){
+  if (state) {
     state = ObjectId(state)
     matchObj = {
-      "$match":{
-        "state":state
+      "$match": {
+        "state": state
       }
     }
-    aggregationQuery = [matchObj,...aggregationQuery]
+    aggregationQuery = [matchObj, ...aggregationQuery]
   }
-
-
-  
   return aggregationQuery
 }
 
