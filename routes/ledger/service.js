@@ -4,6 +4,7 @@ const mongoose = require("mongoose");
 const moment = require("moment");
 const ObjectId = require("mongoose").Types.ObjectId;
 const Ulb = require("../../models/Ulb");
+const LineItem = require("../../models/LineItem");
 const RequestLog = require("../../models/RequestLog");
 const DataCollectionForms = require("../../models/DataCollectionForm");
 const AnnualAccount = require("../../models/AnnualAccounts");
@@ -399,7 +400,7 @@ module.exports.getAllUlbLegders = async function (req, res) {
 
 }
 // Get all ledgers present in database in CSV Format
-module.exports.getAllLedgersCsv = function (req, res) {
+module.exports.getAllLedgersCsv = async function (req, res) {
     let filename = "All Ledgers " + (moment().format("DD-MMM-YY HH:MM:SS")) + ".csv";
 
     // Set approrpiate download headers
@@ -408,65 +409,67 @@ module.exports.getAllLedgersCsv = function (req, res) {
     res.write("ULB Name, ULB Code, AMRUT, Head of account,Code, Line Item, Budget year, Budget amount\r\n");
     // Flush the headers before we start pushing the CSV content
     res.flushHeaders();
+    let lineItem = await LineItem.find({ "isActive": true }, { 'modifiedAt': 0, createdAt: 0, isActive: 0 }).lean()
+    let ulbsList = await Ulb.find({}, { 'name': 1, code: 1, amrut: 1 }).lean()
+    // console.log("lineItem",lineItem);process.exit();
 
     const cursor = UlbLedger.aggregate([
-        {
-            $lookup: {
-                from: "ulbs",
-                as: "ulbs",
-                foreignField: "_id",
-                localField: "ulb"
-            }
-        },
-        {
-            $lookup: {
-                from: "lineitems",
-                as: "lineitems",
-                foreignField: "_id",
-                localField: "lineItem"
-            }
-        },
-        {
-            $lookup: {
-                from: "states",
-                as: "states",
-                foreignField: "_id",
-                localField: "ulbs.state"
-            }
-        },
-        {
-            $lookup: {
-                from: "ulbtypes",
-                as: "ulbtypes",
-                foreignField: "_id",
-                localField: "ulbs.ulbType"
-            }
-        },
+        // {
+        //     $lookup: {
+        //         from: "ulbs",
+        //         as: "ulbs",
+        //         foreignField: "_id",
+        //         localField: "ulb"
+        //     }
+        // },
+
+        // {
+        //     $lookup: {
+        //         from: "lineitems",
+        //         as: "lineitems",
+        //         foreignField: "_id",
+        //         localField: "lineItem"
+        //     }
+        // },
+        // {
+        //     $lookup: {
+        //         from: "states",
+        //         as: "states",
+        //         foreignField: "_id",
+        //         localField: "ulbs.state"
+        //     }
+        // },
+        // {
+        //     $lookup: {
+        //         from: "ulbtypes",
+        //         as: "ulbtypes",
+        //         foreignField: "_id",
+        //         localField: "ulbs.ulbType"
+        //     }
+        // },
         {
             $project: {
-                "ulbs": { $arrayElemAt: ["$ulbs", 0] },
-                "states": { $arrayElemAt: ["$states", 0] },
-                "ulbtypes": { $arrayElemAt: ["$ulbtypes", 0] },
-                "lineitems": { $arrayElemAt: ["$lineitems", 0] },
+                // "ulbs": 1,
+                "ulb": 1,
+
+                // "states": { $arrayElemAt: ["$states", 0] },
+                // "ulbtypes": { $arrayElemAt: ["$ulbtypes", 0] },
+                // "lineitems": { $arrayElemAt: ["$lineitems", 0] },
+                "lineItem": "$lineItem",
                 financialYear: "$financialYear",
                 amount: 1,
                 population: 1
             }
-        },
-        {
-            $project: {
-                _id: 0,
-                ulb: { $cond: ["$ulbs", "$ulbs", "NA"] },
-                state: { $cond: ["$states", "$states", "NA"] },
-                ulbtypes: { $cond: ["$ulbtypes", "$ulbtypes", "NA"] },
-                line_item: { $cond: ["$lineitems", "$lineitems", "NA"] },
-                financialYear: 1,
-                amount: 1,
-                population: 1
-            }
-        },
-    ]).cursor({ batchSize: 500 }).addCursorFlag('noCursorTimeout', true).exec()
+        }
+    ]).allowDiskUse(true).cursor({ batchSize: 50000 }).addCursorFlag('noCursorTimeout', true).exec()
     cursor.on("data", function (el) {
+        let maplineItem = lineItem?.length ? lineItem.find(e => e._id.toString() == el.lineItem.toString()) : null
+        let mapUlb = ulbsList?.length ? ulbsList.find(e => e._id.toString() == el.ulb.toString()) : null
+
+        el['line_item'] = maplineItem;
+        // el['ulb'] = el?.ulbs?.length ? el.ulbs[0] : "NA";
+        el['ulb'] = mapUlb ? mapUlb : "NA";
+
         if (el.ulb != 'NA') {
             let line_item = el.line_item ? el.line_item.name.toString().replace(/[,]/g, ' | ') : "";
             el.code = el.line_item ? el.line_item.code : "";

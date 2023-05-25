@@ -7,7 +7,7 @@ const Response = require("../../service").response;
 const User = require('../../models/User');
 const Year = require('../../models/Year');
 const {BackendHeaderHost, FrontendHeaderHost} = require('../../util/envUrl')
-const {canTakenAction} = require('../CommonActionAPI/service');
+const {canTakenAction,canTakenActionMaster} = require('../CommonActionAPI/service');
 const StateMasterForm = require('../../models/StateMasterForm')
 const { YEAR_CONSTANTS } = require("../../util/FormNames");
 const IndicatorLineItem = require('../../models/indicatorLineItems');
@@ -298,15 +298,16 @@ exports.getWaterRejenuvation = async (req, res) => {
     let uaArray;
     if (design_year === YEAR_CONSTANTS["23_24"]) {
       if (data2324) {
+        let params = {
+          status: data2324['currentFormStatus'],
+          formType:"STATE",
+          loggedInUser: role,
+        };
         Object.assign(data2324, {
-          canTakeAction: canTakenAction(
-            data2324["status"],
-            data2324["actionTakenByRole"],
-            data2324["isDraft"],
-            "STATE",
-            role
-          ),
+          canTakeAction: canTakenActionMaster(params),
+          statusId: data2324['currentFormStatus']
         });
+        
         return Response.OK(res, data2324, "Success");
       }
       if (data2223) {
@@ -576,7 +577,7 @@ function getDisabledProjects(uaArray, data2223) {
         for (let project of ua[category]) {
           //set project isDisable key = true
           if (project) {
-            Object.assign(project, { isDisable: true });
+            Object.assign(project, { isDisable: true ,dprCompletion:"", dprPreparation:"", workCompletion:""});
             if(category === "serviceLevelIndicators"){
               Object.assign(project, {bypassValidation: true});
             }
