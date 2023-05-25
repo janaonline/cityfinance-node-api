@@ -12009,6 +12009,63 @@ let skipLogicDependencies = {
     }
   }
 }
+
+function sortPosition(itemA, itemB) {
+  itemA.displayPriority = itemA.displayPriority.toString()
+  itemB.displayPriority = itemB.displayPriority.toString()
+  const [integerA, decimalA] = itemA.displayPriority.split('.').map(i => +i);
+  const [integerB, decimalB] = itemB.displayPriority.split('.').map(i => +i);
+  if (integerA != integerB) {
+      return integerA > integerB ? 1 : (integerB > integerA ? -1 : 0);;
+  }
+  return decimalA > decimalB ? 1 : (decimalB > decimalA ? -1 : 0);;
+
+}
+
+
+function fetchIndicatorsOrDp(dynamicJson) {
+  let keysWithLabel = []
+  let childELements = {}
+  let keysWithLabelObj = {}
+  try {
+    for (let key in dynamicJson) {
+      let obj = dynamicJson[key]
+      let temp = {
+        key: key,
+        label: obj.label,
+        displayPriority: obj.displayPriority
+      }
+      keysWithLabelObj[key] = obj.label
+      keysWithLabel.push(temp)
+      if (obj.copyChildFrom) {
+        for (let objects of obj.copyChildFrom) {
+          let temp = {
+            key: objects.key,
+            label: obj.label,
+            displayPriority: obj.displayPriority
+          }
+          keysWithLabelObj[objects.key] = objects.label
+          childELements[objects.key] = objects.displayPriority
+          if (keysWithLabel.findIndex(item => item.key === objects.key) !== -1) {
+            keysWithLabel.push(temp)
+            keysWithLabelObj[objects.type] = objects.label
+          }
+        }
+      }
+    }
+    let sortedArray = keysWithLabel.sort(sortPosition)
+      return {
+        childKeys:childELements,
+        questionIndicators:keysWithLabelObj
+
+      }
+  }
+  catch (err) {
+    console.log("error in fetchIndicatorsOrDp ::: ", err.message)
+  }
+}
+
+
 function getSkippableKeys(skipLogics) {
   const results = {};
   Object.entries(skipLogics).forEach(([key, value]) => {
@@ -12019,32 +12076,15 @@ function getSkippableKeys(skipLogics) {
   return results;
 }
 
-let childKeys = {
-  taxTypeDemandChild: '1.9',
-  cessDemandChild: '1.10',
-  userChargesDmndChild: '1.12',
-  taxTypeCollectionChild: '1.17',
-  cessCollectChild: '1.18',
-  userChargesCollectionChild: '1.19',
-  otherValuePropertyTaxDm: '2.26',
-  otherNoPropertyTaxDm: '2.27',
-  otherValuePropertyTaxCollected: '2.28',
-  otherNoPropertyTaxCollected: '2.29',
-  othersValueWaterChrgDm: '5.26',
-  othersNoWaterChrgDm: '5.27',
-  othersValueWaterChrgCollected: '5.28',
-  othersNoWaterChrgCollected: '5.29',
-  otherValueSewerageTaxDm: '6.26',
-  otherNoSewerageTaxDm: '6.27',
-  otherValueSewerageTaxCollected: '6.28',
-  otherNoSewerageTaxCollected: '6.29'
-}
-
+let dynamicJson = propertyTaxOpFormJson()['tabs'][0]['data']
+let {childKeys, questionIndicators} = fetchIndicatorsOrDp(dynamicJson)
+module.exports.reverseKeys = ["ulbFinancialYear","ulbPassedResolPtax"]
 module.exports.skippableKeys = getSkippableKeys(skipLogicDependencies)
 module.exports.financialYearTableHeader = financialYearTableHeader
 module.exports.specialHeaders = specialHeaders
-module.exports.childKeys = childKeys
-// module.exports.jsonObject = jsonObject
+module.exports.childKeys =childKeys
+module.exports.questionIndicators = questionIndicators
 module.exports.propertyTaxOpFormJson = propertyTaxOpFormJson;
 module.exports.getInputKeysByType = getInputKeysByType;
 module.exports.skipLogicDependencies = skipLogicDependencies
+module.exports.sortPosition = sortPosition
