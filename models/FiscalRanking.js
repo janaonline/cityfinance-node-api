@@ -42,12 +42,12 @@ const fiscalRankingSchema = new Schema(
             type:Number,
             default:1
         },
-        population11: {
-            value: { type: Number},
-            status: statusSchema(),
-            dataSource:modelSchema(),
-            rejectReason:{type:String,default:""}
-        },
+        // population11: {
+        //     value: { type: Number},
+        //     status: statusSchema(),
+        //     dataSource:modelSchema(),
+        //     rejectReason:{type:String,default:""}
+        // },
         populationFr: {
             value: { type: Number, default: null},
             status: statusSchema(),
