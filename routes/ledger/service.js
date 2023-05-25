@@ -461,7 +461,7 @@ module.exports.getAllLedgersCsv = async function (req, res) {
                 population: 1
             }
         }
-    ]).allowDiskUse(true).cursor({ batchSize: 50000 }).addCursorFlag('noCursorTimeout', true).exec()
+    ]).allowDiskUse(true).cursor({ batchSize: 10000 }).addCursorFlag('noCursorTimeout', true).exec()
     cursor.on("data", function (el) {
         let maplineItem = lineItem?.length ? lineItem.find(e => e._id.toString() == el.lineItem.toString()) : null
         let mapUlb = ulbsList?.length ? ulbsList.find(e => e._id.toString() == el.ulb.toString()) : null
