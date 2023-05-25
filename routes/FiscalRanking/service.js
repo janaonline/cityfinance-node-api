@@ -726,12 +726,14 @@ exports.getView = async function (req, res, next) {
         readonly: false,
         modelName: twEightSlbs?.population > 0 ? "TwentyEightSlbForm" : "",
       };
-      data["population11"] = {
-        value: ulbPData?.population || 0,
+      data["population11"] = {...data.population11,
+        value: data.population11.value
+          ? data.population11.value
+          : ulbPData
+            ? ulbPData?.population
+            : "",
         readonly: true,
-        status: "",
-        modelName: ulbPData?.population > 0 ? "" : "",
-        rejectReason:"",
+        modelName: ulbPData?.population > 0 ? "Ulb" : "",
       };
       data["fyData"] = fyData;
       viewOne = data;
