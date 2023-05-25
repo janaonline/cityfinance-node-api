@@ -728,13 +728,11 @@ exports.getView = async function (req, res, next) {
         modelName: twEightSlbs?.population > 0 ? "TwentyEightSlbForm" : "",
       };
       data["population11"] = {...data.population11,
-        value: data.population11.value
-          ? data.population11.value
-          : ulbPData
-            ? ulbPData?.population
-            : "",
+        value: data.population11.value || 0,
         readonly: true,
-        modelName: ulbPData?.population > 0 ? "Ulb" : "",
+        status:"",
+        modelName: ulbPData?.population > 0 ? "" : "",
+        rejectReason:""
       };
       data["fyData"] = fyData;
       viewOne = data;
@@ -3953,7 +3951,7 @@ function computeQuery(params) {
                 modifiedAt: 1,
                 designYear: 1,
                 isDraft: 1,
-                population11: 1,
+                population11: "$population",
                 populationFr: 1,
                 webLink: 1,
                 nameCmsnr: 1,
