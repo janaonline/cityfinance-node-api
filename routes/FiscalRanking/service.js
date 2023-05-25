@@ -726,14 +726,12 @@ exports.getView = async function (req, res, next) {
         readonly: false,
         modelName: twEightSlbs?.population > 0 ? "TwentyEightSlbForm" : "",
       };
-      data["population11"] = {...data.population11,
-        value: data.population11.value
-          ? data.population11.value
-          : ulbPData
-            ? ulbPData?.population
-            : "",
+      data["population11"] = {
+        value: ulbPData?.population || 0,
         readonly: true,
-        modelName: ulbPData?.population > 0 ? "Ulb" : "",
+        status: "",
+        modelName: ulbPData?.population > 0 ? "" : "",
+        rejectReason:"",
       };
       data["fyData"] = fyData;
       viewOne = data;
@@ -744,8 +742,8 @@ exports.getView = async function (req, res, next) {
         population11: {
           value: ulbPData?.population,
           readonly: true,
-          status: ulbPData?.population > 0 ? "NA" : "PENDING",
-          modelName: ulbPData?.population > 0 ? "TwentyEightSlbForm" : "",
+          status: ulbPData?.population > 0 ? "" : "PENDING",
+          modelName: ulbPData?.population > 0 ? "Ulb" : "",
           rejectReason:"",
         },
         populationFr: {
