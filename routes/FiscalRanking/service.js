@@ -882,9 +882,6 @@ exports.getView = async function (req, res, next) {
             pf,
             fyDynemic: subData,
           };
-          if(pf['type'] === "property_tax_register"){
-            console.log("validations before" ,pf['status'])
-          }
           if(subData[key].calculatedFrom === undefined){
             pf['readonly'] =  getReadOnly(data?.currentFormStatus, viewOne.isDraft,role,"PENDING");
           }
@@ -910,7 +907,7 @@ exports.getView = async function (req, res, next) {
                 }
                 pf["rejectReason"] = singleFydata.rejectReason
                 pf["modelName"] = singleFydata ? singleFydata.modelName : "";
-                pf["status"] = singleFydata.status || 'PENDING';
+                pf["status"] = singleFydata.status != null ?  singleFydata.status : 'PENDING';
                 if (subData[key].calculatedFrom === undefined) {
                   console.log("key :: ",key)
                   
@@ -984,7 +981,7 @@ exports.getView = async function (req, res, next) {
                     singleFydata.status  || singleFydata.modelName === "ULBLedger"
                         ? false
                         : true;
-                    pf["readonly"] = getReadOnly(data?.currentFormStatus, viewOne.isDraft, role, singleFydata?.status);
+                    pf["readonly"] = singleFydata.modelName === "ULBLedger" ? true :getReadOnly(data?.currentFormStatus, viewOne.isDraft,role,singleFydata?.status);
                   } else {
                     pf["readonly"] = true;
                     pf["status"] = ""
@@ -1067,7 +1064,7 @@ exports.getView = async function (req, res, next) {
                       };
                     pf["value"] = singleFydata ? singleFydata.value : "";
                     pf["status"] = singleFydata
-                      ? (singleFydata.status || "PENDING")
+                      ? singleFydata.status
                       : "PENDING";
                     pf["modelName"] = singleFydata
                       ? singleFydata.modelName
@@ -1125,9 +1122,6 @@ exports.getView = async function (req, res, next) {
                 }
               }
             }
-          }
-          if(pf['type'] === "property_tax_register"){
-            console.log("validations before" ,pf['status'])
           }
         }
       }
@@ -3273,8 +3267,8 @@ async function calculateAndUpdateStatusForMappers(
           let financialInfo = obj;
           let status = yearArr.every((item) => {
             if(calculatedFields.includes(item?.type)) return true; 
-            if (item?.type) {
-              return item.status === "APPROVED";
+            if (item?.type && item.status) {
+              return item.status === "APPROVED" || item.status === "";
             } else {
 
               return true;
@@ -3475,6 +3469,7 @@ module.exports.actionTakenByMoHua = catchAsync(async (req, res) => {
     let { ulbId, formId, actions, design_year, isDraft, currentFormStatus } = req.body;
     console.log("currentFormStatus :: ", currentFormStatus)
     let { role, _id: userId } = req.decoded;
+    console.log("role :: ",role)
     let validation = await checkUndefinedValidations({
       ulb: ulbId,
       actions: actions,
@@ -3620,6 +3615,7 @@ module.exports.createForm = catchAsync(async (req, res) => {
       userId,
       currentFormStatus
     );
+    
     if (!formIdValidations.valid) {
       response.message = formIdValidations.message;
       return res.status(500).json(response);
