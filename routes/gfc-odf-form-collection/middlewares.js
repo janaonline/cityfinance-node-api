@@ -2,7 +2,7 @@ const { years } = require("../../service/years")
 const { getFlatObj,payloadParser,mutuateGetPayload,mutateJson,modifiedShortKeys } = require("../CommonActionAPI/service")
 const FormsJson = require("../../models/FormsJson");
 // const Sidemenu = require("../../models/Sidemenu");
-const {MASTER_STATUS_ID} = require("../../util/FormNames")
+const {MASTER_STATUS_ID,MASTER_STATUS} = require("../../util/FormNames")
 const ObjectId = require("mongoose").Types.ObjectId;
 
 
@@ -114,7 +114,7 @@ module.exports.changeFormGetStructure = async (req, res, next) => {
         "language":[],
         "canTakeAction":false,
         "status":MASTER_STATUS_ID[parseInt(req?.form?.currentFormStatus)] || "Not Started",
-        "statusId": req?.form?.currentFormStatus,
+        "statusId": req?.form?.currentFormStatus || MASTER_STATUS['Not Started'],
       }
     ]
     let keysToBeDeleted = ["_id","createdAt","modifiedAt","actionTakenByRole","actionTakenBy","ulb","design_year","isDraft"]
