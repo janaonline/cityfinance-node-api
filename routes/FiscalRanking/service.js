@@ -2266,7 +2266,7 @@ function updateActions(data, role, formType) {
         el["cantakeAction"] = false;
       } else {
         let params = { status: el.formData.currentFormStatus, userRole: role }
-        el['cantakeAction'] = role === "ADMIN" || role === userTypes.state ? false : canTakeActionOrViewOnlyMasterForm(params);
+        el['cantakeAction'] = role === "ADMIN" || role === userTypes.state || role === userTypes.mohua ? false : canTakeActionOrViewOnlyMasterForm(params);
         el['formStatus'] = MASTER_STATUS_ID[el.formData.currentFormStatus]
 
         // el["formStatus"] = calculateStatusForFiscalRankingForms(
