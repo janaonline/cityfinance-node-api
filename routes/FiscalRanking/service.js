@@ -972,7 +972,6 @@ exports.getView = async function (req, res, next) {
                   pf['rejectReason'] = singleFydata.rejectReason
                   if (subData[key].calculatedFrom === undefined) {
                     pf["required"] =
-<<<<<<< HEAD
                     singleFydata.status  ||  singleFydata.modelName === "ULBLedger"
                         ? false
                         : true;
@@ -980,18 +979,6 @@ exports.getView = async function (req, res, next) {
                   } else {
                     pf["readonly"] = true;
                   }                
-=======
-                    singleFydata.status  || singleFydata.modelName === "ULBLedger"
-                        ? false
-                        : true;
-                    pf["readonly"] = singleFydata.modelName === "ULBLedger" ? true :getReadOnly(data?.currentFormStatus, viewOne.isDraft,role,singleFydata?.status);
-                  } else {
-                    pf["readonly"] = true;
-                    pf["status"] = ""
-                    console.log("key ::: ",key)
-                  }
-                  
->>>>>>> 1a21274f7b5f05e6795d1b6fb969a5fb1692e5df
                 } else {
                   if (
                     subData[key]?.key !== "appAnnualBudget" &&
@@ -1330,11 +1317,7 @@ const ulbLedgersData = (objData) => {
               ],
             },
             year: {
-<<<<<<< HEAD
               $in: ["2017-18", "2018-19", "2019-20"],
-=======
-              $in: ["2017-18", "2018-19", "2019-20"], //"2020-21", "2021-22"
->>>>>>> 1a21274f7b5f05e6795d1b6fb969a5fb1692e5df
             },
           },
         },
