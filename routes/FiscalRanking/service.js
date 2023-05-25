@@ -1604,7 +1604,9 @@ const getUlbActivities = ({ sort, skip, limit, sortBy, order, filters, filterObj
         "stateNameLink": {
           "$concat": [
             "/rankings/populationWise/",
-            { "$toString": "$states._id" }
+            { "$toString": "$states._id" },
+            "?stateName=",
+            { "$toString": "$states.name" },
           ]
         },
         "totalUlbs": 1,
@@ -1730,7 +1732,7 @@ const getPMUActivities = ({ sort, skip, limit, sortBy, order, filters, filterObj
   }
   return Ulb.aggregate(query);
 }
-const getPopulationWiseData = ({ columns, sort, skip, limit, sortBy, order, filters, filterObj, sortKey, designYear }) => {
+const getPopulationWiseData = ({ stateId, columns, sort, skip, limit, sortBy, order, filters, filterObj, sortKey, designYear }) => {
 
   const parameters = [
     {
@@ -1760,7 +1762,7 @@ const getPopulationWiseData = ({ columns, sort, skip, limit, sortBy, order, filt
   const query = [
     {
       "$match": {
-        "state": ObjectId("5dcf9d7216a06aed41c748df")
+        "state": ObjectId(stateId)
       }
     },
     {
@@ -1874,7 +1876,7 @@ exports.overview = async function (req, res, next) {
   const type = req.params.type;
   console.log({ type });
 
-  const name = {
+  let name = {
     "UlbActivities": "Overview of ULB activities",
     "PMUActivities": "Overview of PMU activities",
     "populationWise": "Overview of population-wise data"
@@ -1968,7 +1970,7 @@ exports.overview = async function (req, res, next) {
 
     let skip = parseInt(req.query.skip) || 0
     let limit = parseInt(req.query.limit) || 10
-    let { sortBy, order } = req.query
+    let { sortBy, order, stateId, stateName } = req.query
     let filters = Object.entries({ ...req.query })
       .reduce((obj, [key, value]) => ({ ...obj, [key]: /^\d+$/.test(value) ? +value : value }), {});
 
@@ -2003,8 +2005,9 @@ exports.overview = async function (req, res, next) {
       data = await getPMUActivities({ sort, skip, limit, sortBy, order, filters, filterObj, sortKey, designYear });
     }
     else if (type == 'populationWise') {
-      data = await getPopulationWiseData({ columns, sort, skip, limit, sortBy, order, filters, filterObj, sortKey, designYear });
+      data = await getPopulationWiseData({ stateId, columns, sort, skip, limit, sortBy, order, filters, filterObj, sortKey, designYear });
       data = data?.[0]?.data;
+      name += ' - ' + stateName;
     }
 
 
