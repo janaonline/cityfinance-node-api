@@ -74,7 +74,7 @@ const validationJson = {
                     "2.21",
                     "2.26",
                 ],
-                "message": "The sum should be equal to total property tax demand",
+                "message": "Total Property tax demand should be equal to the sum of total of all the tax demand figures under property type section.",
                 "displayNumber": "1.9"
             },
         ],
@@ -112,7 +112,7 @@ const validationJson = {
                     "2.23",
                     "2.28"
                 ],
-                "message": "The sum should be equal to total property tax collection",
+                "message": "Total Property tax collection should be equal to the sum of total of all the tax collection figures under property type section",
                 "displayNumber": "1.17"
             },
             {
@@ -208,7 +208,7 @@ const validationJson = {
             "2.22",
             "2.27"
         ],
-        "message": "Sum should be equal to total number of properties from which property tax is demanded",
+        "message": "Sum should be equal to total number of properties from which property tax is demanded.",
         "displayNumber": "2.3"
     },
     "totalPropertiesTaxDmCollected": {
@@ -229,7 +229,7 @@ const validationJson = {
             "2.24",
             "2.29"
         ],
-        "message": " Sum should be equal to total number of properties from which property tax is collected",
+        "message": "Sum should be equal to total number of properties from which property tax is collected",
         "displayNumber": "2.4"
     },
     "resValuePropertyTaxCollected": {
@@ -251,7 +251,7 @@ const validationJson = {
         "sequence": [
             "2.6"
         ],
-        "message": " Number of properties from which property tax is collected should be less that or equal to number of properties from which property tax is demanded.",
+        "message": "Number of properties from which property tax is collected should be less that or equal to number of properties from which property tax is demanded.",
         "displayNumber": "2.8"
     },
     "comValuePropertyTaxCollected": {
@@ -273,7 +273,7 @@ const validationJson = {
         "sequence": [
             "2.10"
         ],
-        "message": "Value of property tax collected should be less that or equal to value of property tax demanded.",
+        "message": "Number of properties from which property tax is collected should be less that or equal to number of properties from which property tax is demanded.",
         "displayNumber": "2.12"
     },
     "indValuePropertyTaxCollected": {
@@ -306,7 +306,7 @@ const validationJson = {
         "sequence": [
             "2.17"
         ],
-        "message": "Number of properties from which property tax is collected should be less that or equal to number of properties from which property tax is demanded.",
+        "message": "Value of property tax collected should be less that or equal to value of property tax demanded",
         "displayNumber": "2.19"
     },
     "govNoPropertyTaxCollected": {
@@ -317,7 +317,7 @@ const validationJson = {
         "sequence": [
             "2.18"
         ],
-        "message": "NNumber of properties from which property tax is collected should be less that or equal to number of properties from which property tax is demanded.",
+        "message": "Number of properties from which property tax is collected should be less that or equal to number of properties from which property tax is demanded.",
         "displayNumber": "2.19"
     },
     "totalCollectionOnline": {
@@ -348,7 +348,7 @@ const validationJson = {
                     "5.21",
                     "5.26"
                 ],
-                "message":" The sum should be equal to total water charges demand",
+                "message":"Total water charges demand should be equal to the sum total of all the water charges demanded under the connection type",
                 "displayNumber":"5.5"
             },
             {
@@ -383,7 +383,7 @@ const validationJson = {
                     "5.23",
                     "5.28"
                 ],
-                "message":"The sum should be equal to total water charges collection"
+                "message":`Total water charges collection figures should be equal to the sum total of all the water charges collected under the "connection" type`
             },
             {
                 "logic": "sum",
@@ -454,7 +454,7 @@ const validationJson = {
         "sequence": [
             "5.17"
         ],
-        "message": "Value of water charges collected should be less that or equal to value of water charges demanded",
+        "message": "Value of water charges collected should be less that or equal to value of water charges demanded.",
         "displayNumber": "5.19"
     },
     "comNoWaterChrgCollected": {
@@ -465,7 +465,7 @@ const validationJson = {
         "sequence": [
             "5.18"
         ],
-        "message": "Number of connections from which water charges was collected should be less that or equal to number of connections from which water charges was demanded.",
+        "message": "Number of households/properties from which water charges was collected should be less that or equal to number of households/properties from which water charges was demanded.",
         "displayNumber": "5.20"
     },
     "indValueWaterChrgCollected": {
@@ -487,7 +487,7 @@ const validationJson = {
         "sequence": [
             "5.22"
         ],
-        "message": "Number of connections from which water charges was collected should be less that or equal to number of connections from which water charges was demanded.",
+        "message": "Number of households/properties from which water charges was collected should be less that or equal to number of households/properties from which water charges was demanded.",
         "displayNumber": "5.24"
     },
     "othersValueWaterChrgCollected": {
@@ -509,7 +509,7 @@ const validationJson = {
         "sequence": [
             "5.27"
         ],
-        "message": "Number of connections from which water charges was collected should be less that or equal to number of connections from which water charges was demanded.",
+        "message": "Number of households/properties from which water charges was collected should be less that or equal to number of households/properties from which water charges was demanded.",
         "displayNumber": "5.29"
     },
     "resNoWaterChrgCollected": {
@@ -520,7 +520,7 @@ const validationJson = {
         "sequence": [
             "5.14"
         ],
-        "message": "Number of connections from which water charges was collected should be less that or equal to number of connections from which water charges was demanded.",
+        "message": "Number of households/properties from which water charges was collected should be less that or equal to number of households/properties from which water charges was demanded.",
         "displayNumber": "5.16"
     },
     'otherValuePropertyTaxCollected': {
@@ -536,12 +536,13 @@ const validationJson = {
     "otherNoPropertyTaxCollected": {
         "logic": "ltequal",
         "fields": [
-            "otherNoPropertyTaxCollected"
+            "otherNoPropertyTaxDm"
         ],
         "sequence": [
-            "2.29"
+            "2.27"
         ],
-        "message": "Number of properties from which property tax is collected should be less that or equal to number of properties from which property tax is demanded."
+        "message": "Number of properties from which property tax is collected should be less that or equal to number of properties from which property tax is demanded.",
+        "displayNumber":"2.29"
     },
     "totalSewergeChrgDm": {
         "logic":"multiple",
@@ -561,7 +562,7 @@ const validationJson = {
                     "6.26"
                 ],
                 "displayNumber":"6.5",
-                "message":"The sum should be equal to total sewerage charges demand"
+                "message":`Total sewerage charges demand figures should be equal to the sum total of all the sewerage charges demanded under "connection" type`
             },
             {
             "logic": "sum",
@@ -581,6 +582,19 @@ const validationJson = {
     "totalSewergeChrgCol": {
         "logic":"multiple",
         "multipleValidations":[
+           
+            {
+                "logic": "sum",
+                "fields": [
+                    "curSewergeChrgCol",
+                    "arrSewergeChrgCol"
+                ],
+                "sequence": [
+                    "6.9",
+                    "6.10"
+                ],
+                "message": "Sum of current and arrears should match the total charges collection."
+            },
             {
                 "logic":"sum",
                 "fields":[
@@ -594,20 +608,9 @@ const validationJson = {
                     "6.19",
                     "6.23",
                     "6.28"
-                ]
+                ],
+                "message":`Total sewerage charges collection figures should be equal to the sum total of all the sewerage charges collected under the "connection" type`
             },
-            {
-                "logic": "sum",
-                "fields": [
-                    "curSewergeChrgCol",
-                    "arrSewergeChrgCol"
-                ],
-                "sequence": [
-                    "6.9",
-                    "6.10"
-                ],
-                "message": "Sum of current and arrears should match the total charges collection."
-            }
         ],
         "displayNumber":"6.8"
         
@@ -642,7 +645,7 @@ const validationJson = {
             "6.24",
             "6.29"
         ],
-        "message": " The sum should be equal to total number of connections from which sewerage charges were collected"
+        "message": "The sum should be equal to total number of connections from which sewerage charges were collected."
     },
     "resValueSewerageTaxCollected": {
         "logic": "ltequal",
@@ -662,7 +665,7 @@ const validationJson = {
         "sequence": [
             "6.14"
         ],
-        "message": "Number of connections from which sewerage charges was collected should be less than or equal to Number of connections from which sewerage charges was demanded."
+        "message": "Number of Households/properties from which sewerage charges was collected should be less than or equal to Number of Households/properties from which sewerage charges was demanded."
     },
     "comValueSewerageTaxCollected": {
         "logic": "ltequal",
@@ -672,7 +675,7 @@ const validationJson = {
         "sequence": [
             "6.17"
         ],
-        "message": "Value of sewerage charges collected should be less than or equal to value of sewerage charges demanded."
+        "message": "Value of sewerage charges collected should be less than or equal to value of sewerage charges demanded.."
     },
     "comNoSewerageTaxCollected": {
         "logic": "ltequal",
@@ -682,7 +685,7 @@ const validationJson = {
         "sequence": [
             "6.18"
         ],
-        "message": "Number of connections from which sewerage charges was collected should be less than or equal to Number of connections from which sewerage charges was demanded."
+        "message": "Number of Households/properties from which sewerage charges was collected should be less than or equal to Number of Households/properties from which sewerage charges was demanded."
     },
     "indValueSewerageTaxCollected": {
         "logic": "ltequal",
@@ -702,7 +705,7 @@ const validationJson = {
         "sequence": [
             "6.22"
         ],
-        "message": "Number of connections from which sewerage charges was collected should be less than or equal to Number of connections from which sewerage charges was demanded."
+        "message": "Number of Households/properties from which sewerage charges was collected should be less than or equal to Number of Households/properties from which sewerage charges was demanded."
     },
     "otherValueSewerageTaxCollected": {
         "logic": "ltequal",
@@ -722,7 +725,7 @@ const validationJson = {
         "sequence": [
             "6.27"
         ],
-        "message": "Number of connections from which sewerage charges was collected should be less than or equal to Number of connections from which sewerage charges was demanded."
+        "message": "Number of Households/properties from which sewerage charges was collected should be less than or equal to Number of Households/properties from which sewerage charges was demanded."
     }
 }
 exports.checkValidation = async function (req, res, next) {
