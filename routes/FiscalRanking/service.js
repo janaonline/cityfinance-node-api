@@ -13,7 +13,7 @@ const TwentyEightSlbsForm = require("../../models/TwentyEightSlbsForm");
 const Ulb = require("../../models/Ulb");
 const Service = require("../../service");
 const Users = require("../../models/User");
-const {stateWiseHeatMapQuery} = require("../../util/aggregation")
+const { stateWiseHeatMapQuery } = require("../../util/aggregation")
 const FiscalRankingArray = require("./formjson").arr;
 const {
   csvColsFr,
@@ -884,13 +884,13 @@ exports.getView = async function (req, res, next) {
             pf,
             fyDynemic: subData,
           };
-          if(subData[key].calculatedFrom === undefined){
-            pf['readonly'] =  getReadOnly(data?.currentFormStatus, viewOne.isDraft,role,"PENDING");
+          if (subData[key].calculatedFrom === undefined) {
+            pf['readonly'] = getReadOnly(data?.currentFormStatus, viewOne.isDraft, role, "PENDING");
           }
-          else{
+          else {
             pf['readonly'] = true
           }
-          
+
           if (pf?.code?.length > 0) {
             pf["status"] = '';
             pf["modelName"] = "";
@@ -900,7 +900,7 @@ exports.getView = async function (req, res, next) {
                   e?.year?.toString() == pf?.year?.toString() &&
                   e.type == pf.type
               );
-              
+
               if (singleFydata) {
                 if (singleFydata?.date !== null) {
                   pf["date"] = singleFydata ? singleFydata.date : null;
@@ -909,15 +909,15 @@ exports.getView = async function (req, res, next) {
                 }
                 pf["rejectReason"] = singleFydata.rejectReason
                 pf["modelName"] = singleFydata ? singleFydata.modelName : "";
-                pf["status"] = singleFydata.status != null ?  singleFydata.status : 'PENDING';
+                pf["status"] = singleFydata.status != null ? singleFydata.status : 'PENDING';
                 if (subData[key].calculatedFrom === undefined) {
-                  console.log("key :: ",key)
-                  
+                  console.log("key :: ", key)
+
                   pf["readonly"] = getReadOnly(data?.currentFormStatus, viewOne.isDraft, role, singleFydata.status);
                 } else {
                   pf["readonly"] = true;
-                  pf["status"]  = ""
-                  
+                  pf["status"] = ""
+
                 }
 
               } else {
@@ -933,14 +933,14 @@ exports.getView = async function (req, res, next) {
                 // subData[key]["modelName"] = ulbFyAmount > 0 ? "ULBLedger" : "FiscalRanking"
                 pf["modelName"] = ulbFyAmount > 0 ? "ULBLedger" : "";
                 if (subData[key].calculatedFrom === undefined) {
-                  pf["readonly"] = ulbFyAmount > 0 ? true : getReadOnly(data?.currentFormStatus, viewOne.isDraft,role,singleFydata.status);
+                  pf["readonly"] = ulbFyAmount > 0 ? true : getReadOnly(data?.currentFormStatus, viewOne.isDraft, role, singleFydata.status);
                 } else {
                   pf["readonly"] = true;
-                  pf["status"]  = ""
+                  pf["status"] = ""
                 }
               }
             } else {
-              if ([1,2,null].includes(viewOne.currentFormStatus) ) {
+              if ([1, 2, null].includes(viewOne.currentFormStatus)) {
                 let ulbFyAmount = await getUlbLedgerDataFilter({
                   code: pf.code,
                   year: pf.year,
@@ -952,10 +952,10 @@ exports.getView = async function (req, res, next) {
                 // subData[key]["modelName"] = ulbFyAmount > 0 ? "ULBLedger" : "FiscalRanking"
                 pf["modelName"] = ulbFyAmount > 0 ? "ULBLedger" : "";
                 if (subData[key].calculatedFrom === undefined) {
-                  pf["status"]  = "PENDING"
-                  pf["readonly"] = ulbFyAmount > 0 ? true : getReadOnly(data?.currentFormStatus, viewOne.isDraft,role,singleFydata.status);
+                  pf["status"] = "PENDING"
+                  pf["readonly"] = ulbFyAmount > 0 ? true : getReadOnly(data?.currentFormStatus, viewOne.isDraft, role, singleFydata.status);
                 } else {
-                  pf["status"]  = ""
+                  pf["status"] = ""
                   pf["readonly"] = true;
                 }
               }
@@ -975,27 +975,27 @@ exports.getView = async function (req, res, next) {
                 if (singleFydata) {
                   pf["file"] = singleFydata.file;
                   pf["status"] = singleFydata.status
-                  
+
                   pf["modelName"] = singleFydata.modelName;
                   pf['rejectReason'] = singleFydata.rejectReason
                   if (subData[key].calculatedFrom === undefined) {
                     pf["required"] =
-                    singleFydata.status  || singleFydata.modelName === "ULBLedger"
+                      singleFydata.status || singleFydata.modelName === "ULBLedger"
                         ? false
                         : true;
-                    pf["readonly"] = singleFydata.modelName === "ULBLedger" ? true :getReadOnly(data?.currentFormStatus, viewOne.isDraft,role,singleFydata?.status);
+                    pf["readonly"] = singleFydata.modelName === "ULBLedger" ? true : getReadOnly(data?.currentFormStatus, viewOne.isDraft, role, singleFydata?.status);
                   } else {
                     pf["readonly"] = true;
                     pf["status"] = ""
-                    console.log("key ::: ",key)
+                    console.log("key ::: ", key)
                   }
 
                 } else {
                   if (
                     subData[key]?.key !== "appAnnualBudget" &&
-                    [1,2,null] .includes(viewOne.currentFormStatus)
+                    [1, 2, null].includes(viewOne.currentFormStatus)
                   ) {
-                    console.log("chekFile :: ",chekFile)
+                    console.log("chekFile :: ", chekFile)
                     let chekFile = ulbDataUniqueFy
                       ? ulbDataUniqueFy.some(
                         (el) => el?.year_id.toString() === pf?.year.toString()
@@ -1020,7 +1020,7 @@ exports.getView = async function (req, res, next) {
                 }
               } else {
                 if (
-                  subData[key]?.key !== "appAnnualBudget" && [1,2,null].includes(viewOne.currentFormStatus)
+                  subData[key]?.key !== "appAnnualBudget" && [1, 2, null].includes(viewOne.currentFormStatus)
                 ) {
                   let chekFile = ulbDataUniqueFy
                     ? ulbDataUniqueFy.some(
@@ -1030,7 +1030,7 @@ exports.getView = async function (req, res, next) {
                   pf["status"] = chekFile ? "" : "PENDING";
                   pf["modelName"] = chekFile ? "ULBLedger" : "";
                   if (chekFile) {
-              
+
                     pf[
                       "info"
                     ] = `Available on Cityfinance - <a href ="https://cityfinance.in/resources-dashboard/data-sets/income_statement ">View here</a>`;
@@ -1045,15 +1045,15 @@ exports.getView = async function (req, res, next) {
               }
             } else {
               if (fyData.length) {
-                
+
                 if (pf.year && pf.type) {
-                  
+
                   let singleFydata = fyData.find(
                     (e) =>
                       e.year.toString() == pf.year.toString() &&
                       e.type == pf.type
                   );
-                  
+
                   if (singleFydata) {
                     if (singleFydata?.date !== null) {
                       pf["date"] = singleFydata ? singleFydata.date : null;
@@ -1551,11 +1551,11 @@ const getUlbActivities = ({ sort, skip, limit, sortBy, order, filters, filterObj
     },
     {
       "$addFields": {
-          "emptyForms": {
-              "$ifNull": ["$formData", 1]
-          }
+        "emptyForms": {
+          "$ifNull": ["$formData", 1]
+        }
       }
-  },
+    },
     {
       "$group": {
         "_id": "$state",
@@ -1615,6 +1615,14 @@ const getUlbActivities = ({ sort, skip, limit, sortBy, order, filters, filterObj
     {
       "$project": {
         "stateName": "$states.name",
+        "stateNameLink": {
+          "$concat": [
+            "/rankings/populationWise/",
+            { "$toString": "$states._id" },
+            "?stateName=",
+            { "$toString": "$states.name" },
+          ]
+        },
         "totalUlbs": 1,
         "underReviewByPMU": 1,
         "returnedByPMU": 1,
@@ -1738,8 +1746,39 @@ const getPMUActivities = ({ sort, skip, limit, sortBy, order, filters, filterObj
   }
   return Ulb.aggregate(query);
 }
-const getPopulationWiseData = () => {
-  return Ulb.aggregate([
+const getPopulationWiseData = ({ stateId, columns, sort, skip, limit, sortBy, order, filters, filterObj, sortKey, designYear }) => {
+
+  const parameters = [
+    {
+      condition: '$gt',
+      value: 4000000,
+      label: '4MN+'
+    },
+    {
+      condition: 'range',
+      min: 1000000,
+      max: 4000000,
+      label: '1MN to 4MN'
+    },
+    {
+      condition: 'range',
+      min: 100000,
+      max: 1000000,
+      label: '100K to 1MN'
+    },
+    {
+      condition: '$lt',
+      value: 100000,
+      label: '<100K'
+    },
+  ];
+
+  const query = [
+    {
+      "$match": {
+        "state": ObjectId(stateId)
+      }
+    },
     {
       "$lookup": {
         "from": "fiscalrankings",
@@ -1755,92 +1794,54 @@ const getPopulationWiseData = () => {
       }
     },
     {
-      "$group": {
-        "_id": "$state",
-        "totalUlbs": { $sum: 1 },
-        "underReviewByPMU": {
-          "$sum": {
-            "$cond": [
-              { "$eq": ["$formData.currentFormStatus", 8] },
-              1,
-              0
-            ]
-          }
-        },
-        "4mplus": {
-          "$sum": {
-            "$cond": [
+      $group: {
+        _id: "$state",
+        "population": { $sum: "$population" },
+        ...columns.reduce((result, column) => ({
+          ...result,
+          ...parameters.reduce((obj, parameter) => ({
+            ...obj,
+            [`${column.key} ${parameter.label}`]: column.key == 'populationCategories' ? {
+              $first: parameter.label
+            } :
               {
-                $and: [
-                  { "$gte": ["$population", 2000] },
-                  { "$lt": ["$population", 20000] },
-                  { "$eq": ["$formData.currentFormStatus", 8] },
-                ]
-              },
-              1,
-              0
-            ]
-          }
-        },
-        "returnedByPMU": {
-          "$sum": {
-            "$cond": [
-              { "$eq": ["$formData.currentFormStatus", 10] },
-              1,
-              0
-            ]
-          }
-        },
-        "inProgress": {
-          "$sum": {
-            "$cond": [
-              { "$eq": ["$formData.currentFormStatus", 2] },
-              1,
-              0
-            ]
-          }
-        },
-        "notStarted": {
-          "$sum": {
-            "$cond": [
-              { "$eq": ["$formData.currentFormStatus", 1] },
-              1,
-              0
-            ]
-          }
-        },
+                $sum: {
+                  $cond: {
+                    if: {
+                      $and: parameter.condition == 'range' ? [
+                        { $gt: ["$population", parameter.max] },
+                        { $lt: ["$population", parameter.min] },
+                        ...(column.key == 'totalUlbs' ? [] : [{
+                          $eq: ["$formData.currentFormStatus", column.currentFormStatus]
+                        }])
+                      ] : [
+                        { [parameter.condition]: ["$population", parameter.value] },
+                        ...(column.key == 'totalUlbs' ? [] : [{
+                          $eq: ["$formData.currentFormStatus", column.currentFormStatus]
+                        }])
+                      ],
+                    },
+                    then: 1,
+                    else: 0,
+                  },
+                }
+              }
+          }), {})
+        }), {}),
       }
     },
     {
-      "$lookup": {
-        "from": "states",
-        "localField": "_id",
-        "foreignField": "_id",
-        "as": "states"
+      $project: {
+        "data": parameters.map(parameter => (
+          columns.reduce((obj, column) => ({
+            ...obj,
+            [column.key]: `$${column.key} ${parameter.label}`
+          }), {})
+        ))
       }
-    },
-    {
-      "$unwind": {
-        "path": "$states",
-        "preserveNullAndEmptyArrays": true
-      }
-    },
-    {
-      "$project": {
-        "stateName": "$states.name",
-        "totalUlbs": 1,
-        "underReviewByPMU": 1,
-        "returnedByPMU": 1,
-        "inProgress": 1,
-        "notStarted": 1,
-      }
-    },
-    {
-      "$match": {
-        "_id": ObjectId("5dcf9d7216a06aed41c748df")
-      }
-    },
-  ])
+    }
+  ]
+  return Ulb.aggregate(query);
 }
 
 function deleteExtraKeys(arr, obj) {
@@ -1886,104 +1887,124 @@ function getSortByKeys(sortBy, order) {
 
 exports.overview = async function (req, res, next) {
 
-  const type = req.params.type;
+  const { type } = req.params;
   console.log({ type });
 
-  const name = {
+  let name = {
     "UlbActivities": "Overview of ULB activities",
     "PMUActivities": "Overview of PMU activities",
     "populationWise": "Overview of population-wise data"
   }[type] || '';
+
+
 
   const columns = {
     "UlbActivities": [
       {
         "label": "State Name",
         "key": "stateName",
-        "query": ""
+        "query": "",
+        "sortable": true
       },
       {
         "label": "Total ULBs",
         "key": "totalUlbs",
-        "query": ""
+        "query": "",
+        "sortable": true
       },
       {
         "label": "Under Review by PMU",
-        "key": "underReviewByPMU"
+        "key": "underReviewByPMU",
+        "sortable": true
       },
       {
         "label": "Returned by PMU",
-        "key": "returnedByPMU"
+        "key": "returnedByPMU",
+        "sortable": true
       },
       {
         "label": "In Progress",
-        "key": "inProgress"
+        "key": "inProgress",
+        "sortable": true
       },
       {
         "label": "Not Started",
-        "key": "notStarted"
+        "key": "notStarted",
+        "sortable": true
       },
     ],
     "PMUActivities": [
       {
         "label": "State Name",
         "key": "stateName",
-        "query": ""
+        "query": "",
+        "sortable": true
       },
       {
         "label": "Verification Not Started",
-        "key": "verificationNotStarted"
+        "key": "verificationNotStarted",
+        "sortable": true
       },
       {
         "label": "Verification In Progress",
-        "key": "verificationInProgress"
+        "key": "verificationInProgress",
+        "sortable": true
       },
       {
         "label": "Returned by PMU",
-        "key": "returnedByPMU"
+        "key": "returnedByPMU",
+        "sortable": true
       },
       {
         "label": "Submission Acknowledged by PMU",
-        "key": "submissionAckByPMU"
+        "key": "submissionAckByPMU",
+        "sortable": true
       },
     ],
     "populationWise": [
       {
-        "label": "State Name",
-        "key": "stateName",
-        "query": ""
+        "label": "Population Categories",
+        "key": "populationCategories",
       },
       {
         "label": "Total ULBs",
         "key": "totalUlbs"
       },
       {
-        "label": "4mplus",
-        "key": "4mplus"
-      },
-      {
         "label": "Under Review by PMU",
-        "key": "underReviewByPMU"
+        "key": "underReviewByPMU",
+        "currentFormStatus": 9,
       },
       {
         "label": "Returned by PMU",
-        "key": "returnedByPMU"
+        "key": "returnedByPMU",
+        "currentFormStatus": 10,
       },
       {
         "label": "In Progress",
-        "key": "inProgress"
+        "key": "inProgress",
+        "currentFormStatus": 2,
       },
       {
         "label": "Not Started",
-        "key": "notStarted"
+        "key": "notStarted",
+        "currentFormStatus": 1,
       },
     ]
   }[type] || [];
+
+
+  const lastRow = {
+    "UlbActivities": ["Total", "$sum", "$sum", "$sum", "$sum", "$sum"],
+    "PMUActivities": ["Total", "$sum", "$sum", "$sum", "$sum"],
+    "populationWise": ["Total", "$sum", "$sum", "$sum", "$sum", "$sum"]
+  }[type];
+
   try {
 
     let skip = parseInt(req.query.skip) || 0
     let limit = parseInt(req.query.limit) || 10
-    let { sortBy, order } = req.query
+    let { sortBy, order, stateId, stateName } = req.query
     let filters = Object.entries({ ...req.query })
       .reduce((obj, [key, value]) => ({ ...obj, [key]: /^\d+$/.test(value) ? +value : value }), {});
 
@@ -2018,7 +2039,9 @@ exports.overview = async function (req, res, next) {
       data = await getPMUActivities({ sort, skip, limit, sortBy, order, filters, filterObj, sortKey, designYear });
     }
     else if (type == 'populationWise') {
-      data = await getPopulationWiseData();
+      data = await getPopulationWiseData({ stateId, columns, sort, skip, limit, sortBy, order, filters, filterObj, sortKey, designYear });
+      data = data?.[0]?.data;
+      name += ' - ' + stateName;
     }
 
 
@@ -2029,6 +2052,7 @@ exports.overview = async function (req, res, next) {
       columns,
       name,
       data,
+      lastRow,
     });
   } catch (error) {
     console.log("err", error);
@@ -2695,7 +2719,7 @@ function searchQueries(req) {
     filter["ulbName"] = req.query.ulbName != "null" ? req.query.ulbName : "";
     filter["censusCode"] =
       req.query.censusCode != "null" ? req.query.censusCode : "";
-    filter['state_id'] = 
+    filter['state_id'] =
       req.query.stateName != "null" ? req.query.stateName : "";
 
     filter["populationType"] =
@@ -3095,7 +3119,7 @@ async function updateQueryForFiscalRanking(
           type: years.type,
         };
         if (updateForm) {
-          
+
           upsert = true;
           if (dynamicObj.calculatedFrom) {
             let validator = await validateAccordingtoLedgers(
@@ -3113,7 +3137,7 @@ async function updateQueryForFiscalRanking(
               throw { message: validator.message, type: "ValidationError" };
             }
           }
-          
+
           payload["value"] = years.value;
           payload["date"] = years.date;
           payload["file"] = years.file;
@@ -3162,19 +3186,19 @@ async function updateFiscalRankingForm(
   session
 ) {
   try {
-    const statusNotMandatory = ["caMembershipNo","otherUpload"]
+    const statusNotMandatory = ["caMembershipNo", "otherUpload"]
     let filter = {
       _id: ObjectId(formId),
     };
     let payload = {};
     for (let key in obj) {
       if (updateForm) {
-        if(statusNotMandatory.includes(key)){
+        if (statusNotMandatory.includes(key)) {
           // console.log("obj[key].value ::: ",)
-          if(obj[key].value || obj[key]?.name ){
+          if (obj[key].value || obj[key]?.name) {
             obj[key].status = obj[key].status || "PENDING"
           }
-          else{
+          else {
             obj[key].status = ""
           }
         }
@@ -3185,7 +3209,7 @@ async function updateFiscalRankingForm(
           //   throw { "message": `value for field ${key} is required`, "type": "ValidationError" }
           // }
           // console.log("condtion :::: ",statusNotMandatory.includes(key))
-          
+
           payload[`${key}.value`] = obj[key].value;
           payload[`${key}.status`] = obj[key].status;
           payload[`${key}.modelName`] = obj[key].modelName;
@@ -3250,7 +3274,7 @@ async function calculateAndUpdateStatusForMappers(
       "signedCopyOfFile",
       "otherUpload",
     ];
-    
+
     for (var tab of tabs) {
       conditionalObj[tab._id.toString()] = {};
       let key = tab.id;
@@ -3268,7 +3292,7 @@ async function calculateAndUpdateStatusForMappers(
           let dynamicObj = obj[k];
           let financialInfo = obj;
           let status = yearArr.every((item) => {
-            if(calculatedFields.includes(item?.type)) return true; 
+            if (calculatedFields.includes(item?.type)) return true;
             if (item?.type && item.status) {
               return item.status === "APPROVED" || item.status === "";
             } else {
@@ -3471,7 +3495,7 @@ module.exports.actionTakenByMoHua = catchAsync(async (req, res) => {
     let { ulbId, formId, actions, design_year, isDraft, currentFormStatus } = req.body;
     console.log("currentFormStatus :: ", currentFormStatus)
     let { role, _id: userId } = req.decoded;
-    console.log("role :: ",role)
+    console.log("role :: ", role)
     let validation = await checkUndefinedValidations({
       ulb: ulbId,
       actions: actions,
@@ -3517,7 +3541,7 @@ module.exports.actionTakenByMoHua = catchAsync(async (req, res) => {
       userId,
       role,
       formStatus
-    ); 
+    );
     if (feedBackResp.success) {
       response.success = true;
       response.message = "Details submitted successfully";
@@ -3617,7 +3641,7 @@ module.exports.createForm = catchAsync(async (req, res) => {
       userId,
       currentFormStatus
     );
-    
+
     if (!formIdValidations.valid) {
       response.message = formIdValidations.message;
       return res.status(500).json(response);
@@ -4785,17 +4809,17 @@ function computeQuery(params) {
   return output;
 }
 
-exports.heatMapReport = async(req,res,next)=>{
+exports.heatMapReport = async (req, res, next) => {
   let response = {
-    "success":false,
-    "message":"",
-    "data" :{}
+    "success": false,
+    "message": "",
+    "data": {}
   }
-  try{
-    let {state,getQuery} = req.query
-    getQuery = getQuery ==="true"
-    let query =  stateWiseHeatMapQuery(state)
-    if(getQuery) return res.json(query)
+  try {
+    let { state, getQuery } = req.query
+    getQuery = getQuery === "true"
+    let query = stateWiseHeatMapQuery(state)
+    if (getQuery) return res.json(query)
     let queryResult = await Ulb.aggregate(query)
     response.success = true
     response.message = queryResult.length ? "Fetched Successfully" : "No data found"
@@ -4803,9 +4827,9 @@ exports.heatMapReport = async(req,res,next)=>{
     return res.json(response)
 
   }
-  catch(err){
+  catch (err) {
     response.message = "Something went wrong"
-    if(["stg","demo"].includes(process.env.ENV)){
+    if (["stg", "demo"].includes(process.env.ENV)) {
       response.message = err.message
     }
     return res.json(response)
