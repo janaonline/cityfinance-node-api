@@ -6426,7 +6426,7 @@ let financialYearTableHeader = {
     16: ['', 'SECTION B: Details from Audited Annual Accounts (Balance Sheet) ', '2021-22', '2020-21', '2019-20', '2018-19'],
     19: ['', 'SECTION C:  Details from Audited Annual Accounts (Receipts & Payments Statement) ', '2021-22', '2020-21', '2019-20', '2018-19'],
     20: ['', 'SECTION D:  Other details from Approved Annual Budgets ', '2021-22', '2020-21', '2019-20', '2018-19'],
-    24: ['', 'SECTION E: Self-reported Details for Fiscal Governance Parameters', '2021-22', '2020-21', '2019-20', '2018-19'],
+    24: ['', 'SECTION E: Self-reported Details for Fiscal Governance Parameters', '2021-22', '2020-21', '2019-20', ''],
 }
 
 const statusList = {

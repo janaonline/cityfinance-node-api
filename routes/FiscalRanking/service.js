@@ -727,14 +727,12 @@ exports.getView = async function (req, res, next) {
         readonly: false,
         modelName: twEightSlbs?.population > 0 ? "TwentyEightSlbForm" : "",
       };
-      data["population11"] = {...data.population11,
-        value: data.population11.value
-          ? data.population11.value
-          : ulbPData
-            ? ulbPData?.population
-            : "",
+      data["population11"] = {
+        value: ulbPData?.population || 0,
         readonly: true,
-        modelName: ulbPData?.population > 0 ? "Ulb" : "",
+        status: "",
+        modelName: ulbPData?.population > 0 ? "" : "",
+        rejectReason:"",
       };
       data["fyData"] = fyData;
       viewOne = data;
@@ -745,8 +743,8 @@ exports.getView = async function (req, res, next) {
         population11: {
           value: ulbPData?.population,
           readonly: true,
-          status: ulbPData?.population > 0 ? "NA" : "PENDING",
-          modelName: ulbPData?.population > 0 ? "TwentyEightSlbForm" : "",
+          status: ulbPData?.population > 0 ? "" : "PENDING",
+          modelName: ulbPData?.population > 0 ? "Ulb" : "",
           rejectReason:"",
         },
         populationFr: {
@@ -878,9 +876,6 @@ exports.getView = async function (req, res, next) {
             pf,
             fyDynemic: subData,
           };
-          if(pf['type'] === "property_tax_register"){
-            console.log("validations before" ,pf['status'])
-          }
           if(subData[key].calculatedFrom === undefined){
             pf['readonly'] =  getReadOnly(data?.currentFormStatus, viewOne.isDraft,role,"PENDING");
           }
@@ -889,7 +884,7 @@ exports.getView = async function (req, res, next) {
           }
           
           if (pf?.code?.length > 0) {
-            pf["status"] = 'PENDING';
+            pf["status"] = '';
             pf["modelName"] = "";
             if (fyData.length) {
               let singleFydata = fyData.find(
@@ -906,11 +901,15 @@ exports.getView = async function (req, res, next) {
                 }
                 pf["rejectReason"] = singleFydata.rejectReason
                 pf["modelName"] = singleFydata ? singleFydata.modelName : "";
-                pf["status"] = singleFydata.status || 'PENDING';
+                pf["status"] = singleFydata.status != null ?  singleFydata.status : 'PENDING';
                 if (subData[key].calculatedFrom === undefined) {
-                  pf["readonly"] =  getReadOnly(data?.currentFormStatus, viewOne.isDraft,role,singleFydata.status);
+                  console.log("key :: ",key)
+                  
+                  pf["readonly"] = getReadOnly(data?.currentFormStatus, viewOne.isDraft, role, singleFydata.status);
                 } else {
                   pf["readonly"] = true;
+                  pf["status"]  = ""
+                  
                 }
                 
               } else {
@@ -929,6 +928,7 @@ exports.getView = async function (req, res, next) {
                   pf["readonly"] = ulbFyAmount > 0 ? true : getReadOnly(data?.currentFormStatus, viewOne.isDraft,role,singleFydata.status);
                 } else {
                   pf["readonly"] = true;
+                  pf["status"]  = ""
                 }
               }
             } else {
@@ -972,6 +972,7 @@ exports.getView = async function (req, res, next) {
                   pf['rejectReason'] = singleFydata.rejectReason
                   if (subData[key].calculatedFrom === undefined) {
                     pf["required"] =
+<<<<<<< HEAD
                     singleFydata.status  ||  singleFydata.modelName === "ULBLedger"
                         ? false
                         : true;
@@ -979,6 +980,18 @@ exports.getView = async function (req, res, next) {
                   } else {
                     pf["readonly"] = true;
                   }                
+=======
+                    singleFydata.status  || singleFydata.modelName === "ULBLedger"
+                        ? false
+                        : true;
+                    pf["readonly"] = singleFydata.modelName === "ULBLedger" ? true :getReadOnly(data?.currentFormStatus, viewOne.isDraft,role,singleFydata?.status);
+                  } else {
+                    pf["readonly"] = true;
+                    pf["status"] = ""
+                    console.log("key ::: ",key)
+                  }
+                  
+>>>>>>> 1a21274f7b5f05e6795d1b6fb969a5fb1692e5df
                 } else {
                   if (
                     subData[key]?.key !== "appAnnualBudget" &&
@@ -1008,7 +1021,6 @@ exports.getView = async function (req, res, next) {
                   }
                 }
               } else {
-                console.log(">>>>",subData[key]?.key)
                 if (
                   subData[key]?.key !== "appAnnualBudget" && [1,2,null].includes(viewOne.currentFormStatus)
                 ) {
@@ -1032,8 +1044,6 @@ exports.getView = async function (req, res, next) {
                     pf["readonly"] = true;
                   }
                 }
-                console.log("subData[key]?.key :: ",subData[key]?.key)
-                console.log(">>>>>>>>>>>>>>>>",subData[key])
               }
             } else {
               if (fyData.length) {
@@ -1058,7 +1068,7 @@ exports.getView = async function (req, res, next) {
                       };
                     pf["value"] = singleFydata ? singleFydata.value : "";
                     pf["status"] = singleFydata
-                      ? (singleFydata.status || "PENDING")
+                      ? singleFydata.status
                       : "PENDING";
                     pf["modelName"] = singleFydata
                       ? singleFydata.modelName
@@ -1068,6 +1078,7 @@ exports.getView = async function (req, res, next) {
                       pf["readonly"] = getReadOnly(data?.currentFormStatus, viewOne.isDraft,role,singleFydata.status);
                     } else {
                       pf["readonly"] = true;
+                      pf['status'] = ""
                     }
                   }
                 }
@@ -1115,9 +1126,6 @@ exports.getView = async function (req, res, next) {
                 }
               }
             }
-          }
-          if(pf['type'] === "property_tax_register"){
-            console.log("validations before" ,pf['status'])
           }
         }
       }
@@ -1322,7 +1330,11 @@ const ulbLedgersData = (objData) => {
               ],
             },
             year: {
+<<<<<<< HEAD
               $in: ["2017-18", "2018-19", "2019-20"],
+=======
+              $in: ["2017-18", "2018-19", "2019-20"], //"2020-21", "2021-22"
+>>>>>>> 1a21274f7b5f05e6795d1b6fb969a5fb1692e5df
             },
           },
         },
@@ -2751,8 +2763,8 @@ async function calculateAndUpdateStatusForMappers(
           let financialInfo = obj;
           let status = yearArr.every((item) => {
             if(calculatedFields.includes(item?.type)) return true; 
-            if (item?.type) {
-              return item.status === "APPROVED";
+            if (item?.type && item.status) {
+              return item.status === "APPROVED" || item.status === "";
             } else {
               
               return true;
@@ -2953,6 +2965,7 @@ module.exports.actionTakenByMoHua = catchAsync(async (req, res) => {
     let { ulbId, formId, actions, design_year, isDraft,currentFormStatus } = req.body;
     console.log("currentFormStatus :: ",currentFormStatus)
     let { role, _id: userId } = req.decoded;
+    console.log("role :: ",role)
     let validation = await checkUndefinedValidations({
       ulb: ulbId,
       actions: actions,
@@ -2979,12 +2992,11 @@ module.exports.actionTakenByMoHua = catchAsync(async (req, res) => {
       design_year,
       false,
       isDraft
-    );    
+    );   
+    console.log("calculationsTabWise ::: ",calculationsTabWise)
     let formStatus = currentFormStatus
-    console.log("currentFormStatus :: ",currentFormStatus)
     if(currentFormStatus != 9){
       formStatus = await  decideOverAllStatus(calculationsTabWise)
-      console.log("formStatus :: ",formStatus)
       if(formStatus === 10){
         await sendEmailToUlb(ulbId)
       }
@@ -3098,6 +3110,7 @@ module.exports.createForm = catchAsync(async (req, res) => {
       userId,
       currentFormStatus
     );
+    
     if (!formIdValidations.valid) {
       response.message = formIdValidations.message;
       return res.status(500).json(response);
