@@ -6332,7 +6332,7 @@ const stateWiseHeatMapQuery = (state) => {
           "verificationInProgress": "$verificationInProgress",
           "verificationNotStarted": "$verificationNotStarted",
           "approved": "$approved",
-          "rejected": "$rejected"
+          "rejected": "$returnedByPMU"
         },
         "ulbWiseData": {
           "totalUlbs": "$totalUlbs",
