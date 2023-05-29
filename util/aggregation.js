@@ -6172,7 +6172,32 @@ function getOldYear(financialYear) {
   return `${Number(temp[0]) - 1}-${Number(temp[1]) - 1}`;
 }
 
-const stateWiseHeatMapQuery = (state) => {
+const getCategoryMatchObject = category => ({
+  '1': {
+    'population': {
+      $gt: 4000000
+    }
+  },
+  '2': {
+    'population': {
+      $gte: 1000000,
+      $lte: 4000000
+    }
+  },
+  '3': {
+    'population': {
+      $gte: 100000,
+      $lte: 1000000
+    }
+  },
+  '4': {
+    'population': {
+      $lt: 100000,
+    }
+  }
+}[category] || {});
+
+const stateWiseHeatMapQuery = ({ state, category }) => {
   let matchObj = {}
   let aggregationQuery = [
     {
@@ -6343,11 +6368,12 @@ const stateWiseHeatMapQuery = (state) => {
       }
     }
   ]
-  if (state) {
+  if (state || category) {
     state = ObjectId(state)
     matchObj = {
       "$match": {
-        "state": state
+        ...(state && {"state": state}),
+        ...getCategoryMatchObject(category)
       }
     }
     aggregationQuery = [matchObj, ...aggregationQuery]

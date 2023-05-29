@@ -4816,9 +4816,9 @@ exports.heatMapReport = async (req, res, next) => {
     "data": {}
   }
   try {
-    let { state, getQuery } = req.query
+    let { state, category, getQuery } = req.query
     getQuery = getQuery === "true"
-    let query = stateWiseHeatMapQuery(state)
+    let query = stateWiseHeatMapQuery({state, category})
     if (getQuery) return res.json(query)
     let queryResult = await Ulb.aggregate(query)
     response.success = true
