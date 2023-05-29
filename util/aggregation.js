@@ -6303,7 +6303,7 @@ const stateWiseHeatMapQuery = (state) => {
     },
     {
       "$group": {
-        "_id": "states._id",
+        "_id": 0,
         "heatMaps": {
           "$push": {
             "_id": "$states.name",
@@ -6312,28 +6312,35 @@ const stateWiseHeatMapQuery = (state) => {
             "percentage": "$percentage"
           }
         },
-        "formWiseData": {
-          "$first": {
-            "totalForms": "$totalForms",
-            "verificationInProgress": "$verificationInProgress",
-            "approved": "$submissionAckByPMU",
-            "rejected": "$returnedByPMU"
-          },
-        },
-        "ulbWiseData": {
-          "$first": {
-            "totalUlbs": "$totalUlbs",
-            "inProgress": "$inProgress",
-            "submitted": "$verificationInProgress"
-          },
-        },
+        "totalForms": { $sum: "$totalForms" },
+        "verificationInProgress": { $sum: "$verificationInProgress" },
+        "verificationNotStarted": { $sum: "$verificationNotStarted" },
+        "approved": { $sum: "$submissionAckByPMU" },
+        "returnedByPMU": { $sum: "$returnedByPMU" },
+        "totalUlbs": { $sum: "$totalUlbs" },
+        "inProgress": { $sum: "$inProgress" },
+        "submitted": { $sum: "$verificationInProgress" },
+        "notStarted": { $sum: "$notStarted" },
+
       }
     },
     {
       "$project": {
         "heatMaps": "$heatMaps",
-        "formWiseData": 1,
-        "ulbWiseData": 1
+        "formWiseData": {
+          "totalForms": "$totalForms",
+          "verificationInProgress": "$verificationInProgress",
+          "verificationNotStarted": "$verificationNotStarted",
+          "approved": "$approved",
+          "rejected": "$rejected"
+        },
+        "ulbWiseData": {
+          "totalUlbs": "$totalUlbs",
+          "inProgress": "$inProgress",
+          "submitted": "$submitted",
+          "notStarted": "$notStarted"
+
+        }
       }
     }
   ]
