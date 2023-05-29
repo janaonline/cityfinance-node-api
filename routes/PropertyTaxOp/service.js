@@ -1157,7 +1157,7 @@ function getLabelName(type) {
     }
 }
 
-function getTextValues(displayPriority){
+function getTextValues(result,displayPriority){
     try{
         
         let subHeaders = {
@@ -1196,7 +1196,8 @@ function getTextValues(displayPriority){
     }
     catch(err){
         console.log(err)
-        console.log("displayPriority ::: ",displayPriority)
+        console.log("ulb ::: ",result.ulb)
+        console.log("result.type ::: ",result.type ,"dp ::: ",result.displayPriority)
         console.log("error in getIpValues :::: ",err.message)
         return "NA"
     }
@@ -1294,7 +1295,7 @@ const getStringValue = (result,parentDp, ipValue = false) => {
         writableStr += dataYear ? getKeyByValue(years, result?.year.toString()) + "," : " " + ","
         writableStr += indicatorHead + ","
         writableStr += indicatorSubHead + ","
-        writableStr += indicatorNumber + ","
+        writableStr +=  "'"+indicatorNumber + ","
         writableStr += ipValue ? result.textValue + "," : "NA" + ","
         writableStr += getLabelName(result.type) + ","
         // console.log("parentDp ::: ",parentDp)
@@ -1349,6 +1350,8 @@ const canShow = (key, results, updatedDatas,ulb) => {
         }
     }
     catch (err) {
+        console.log("ulb ::: ",ulb)
+        // notificationFile
         console.log("error in canSHow ::: ", err.message)
     }
     return true
@@ -1503,7 +1506,7 @@ module.exports.getCsvForPropertyTaxMapper = async (req, res) => {
             for (let result of sortedResults) {
                 let censusCode = el.ulb.censusCode != null ? el.ulb.censusCode : el.ulb.sbCode
                 let writableStr = el.state.name + "," + el.ulb.name + "," + el.ulb.natureOfUlb + "," + el.ulb.code + "," + censusCode + "," + MASTER_STATUS_ID[el.currentFormStatus] + "," + getKeyByValue(years, el.design_year.toString()) + ","
-                let modifiedTextValue = getTextValues(result.displayPriority).replace(",")
+                let modifiedTextValue = getTextValues(result,result.displayPriority).replace(",")
                 result.textValue = modifiedTextValue ? modifiedTextValue : " "
                 if (!canShow(result.type, sortedResults, updatedDatas, el.ulb._id)) continue;
                 writableStr += getStringValue(result, false, true)
@@ -1550,7 +1553,7 @@ const createDataStructureForCsv = (ulbs, results, res) => {
                 let status = MASTER_STATUS_ID[result.ptoId.currentFormStatus] || ""
                 let censusCode = result.ptoId.ulb.censusCode != null ? result.ptoId.ulb.censusCode : result.ptoId.ulb.sbCode 
                 let writableStr = result.ptoId.ulb.state.name + "," + result.ptoId.ulb.name + "," + result.ptoId.ulb.natureOfUlb + "," + result.ptoId.ulb.code + "," + censusCode + "," + status + "," + getKeyByValue(years, result.ptoId.design_year.toString()) + ","
-                let modifiedTextValue = getTextValues(result.displayPriority).replace(",")
+                let modifiedTextValue = getTextValues(result,result.displayPriority).replace(",")
                 result.textValue = modifiedTextValue ? modifiedTextValue : " "
                 if (!canShow(result.type, sortedResults, updatedDatas,result.ptoId.ulb._id)) continue;
                 writableStr += getStringValue(result,false,true)
