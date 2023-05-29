@@ -7,7 +7,7 @@ const Service = require('../../service');
 const { FormNames, MASTER_STATUS_ID ,MASTER_STATUS } = require('../../util/FormNames');
 const User = require('../../models/User');
 const { checkUndefinedValidations } = require('../../routes/FiscalRanking/service');
-const { propertyTaxOpFormJson, skippableKeys, financialYearTableHeader, specialHeaders, skipLogicDependencies,childKeys,reverseKeys ,questionIndicators,sortPosition} = require('./fydynemic')
+const { propertyTaxOpFormJson, skippableKeys, financialYearTableHeader,indicatorsWithNoyears ,  specialHeaders, skipLogicDependencies,childKeys,reverseKeys ,questionIndicators,sortPosition} = require('./fydynemic')
 const { isEmptyObj, isReadOnly } = require('../../util/helper');
 const PropertyMapperChildData = require("../../models/PropertyTaxMapperChild");
 const { years } = require('../../service/years');
@@ -1284,6 +1284,9 @@ const getStringValue = (result,parentDp, ipValue = false) => {
     let writableStr = ""
     try {
         let dataYear = result?.year
+        if(indicatorsWithNoyears.includes(result.type)){
+            dataYear = ""
+        }
         let indicatorDpNumber = parentDp ? parentDp : result.displayPriority
         // console.log(">>>",getSubHeaders(result.displayPriority).replace(",", ""))
         let indicatorHead = getIndicator(indicatorDpNumber).replace(",", "")

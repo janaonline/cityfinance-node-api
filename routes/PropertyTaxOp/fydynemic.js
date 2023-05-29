@@ -12027,6 +12027,7 @@ function fetchIndicatorsOrDp(dynamicJson) {
   let keysWithLabel = []
   let childELements = {}
   let keysWithLabelObj = {}
+  let indicatorsWithNoyears = []
   try {
     for (let key in dynamicJson) {
       let obj = dynamicJson[key]
@@ -12037,6 +12038,10 @@ function fetchIndicatorsOrDp(dynamicJson) {
       }
       keysWithLabelObj[key] = obj.label
       keysWithLabel.push(temp)
+      let multipleParameters = obj.yearData.filter(item => item?.type === obj.key)
+      if(multipleParameters.length === 1){
+        indicatorsWithNoyears.push(obj.key)
+      }
       if (obj.copyChildFrom) {
         for (let objects of obj.copyChildFrom) {
           let temp = {
@@ -12056,7 +12061,8 @@ function fetchIndicatorsOrDp(dynamicJson) {
     let sortedArray = keysWithLabel.sort(sortPosition)
       return {
         childKeys:childELements,
-        questionIndicators:keysWithLabelObj
+        questionIndicators:keysWithLabelObj,
+        indicatorsWithNoyears:indicatorsWithNoyears
 
       }
   }
@@ -12077,12 +12083,13 @@ function getSkippableKeys(skipLogics) {
 }
 
 let dynamicJson = propertyTaxOpFormJson()['tabs'][0]['data']
-let {childKeys, questionIndicators} = fetchIndicatorsOrDp(dynamicJson)
+let {childKeys, questionIndicators,indicatorsWithNoyears} = fetchIndicatorsOrDp(dynamicJson)
 module.exports.reverseKeys = ["ulbFinancialYear","ulbPassedResolPtax"]
 module.exports.skippableKeys = getSkippableKeys(skipLogicDependencies)
 module.exports.financialYearTableHeader = financialYearTableHeader
 module.exports.specialHeaders = specialHeaders
 module.exports.childKeys =childKeys
+module.exports.indicatorsWithNoyears = indicatorsWithNoyears
 module.exports.questionIndicators = questionIndicators
 module.exports.propertyTaxOpFormJson = propertyTaxOpFormJson;
 module.exports.getInputKeysByType = getInputKeysByType;
