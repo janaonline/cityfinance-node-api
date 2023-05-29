@@ -6264,7 +6264,7 @@ const stateWiseHeatMapQuery = (state) => {
         "localField": "_id",
         "foreignField": "_id",
         "as": "states"
-      }
+      },
     },
     {
       "$unwind": {
@@ -6273,7 +6273,7 @@ const stateWiseHeatMapQuery = (state) => {
       }
     },
     {
-    "$addFields": {
+      "$addFields": {
         "percentage": {
           "$multiply": [
             {
@@ -6286,7 +6286,6 @@ const stateWiseHeatMapQuery = (state) => {
                     "$verificationNotStarted"
                   ]
                 }
-
                 , "$totalUlbs"]
             }
             , 100]
@@ -6303,41 +6302,56 @@ const stateWiseHeatMapQuery = (state) => {
       }
     },
     {
+      "$group": {
+        "_id": 0,
+        "heatMaps": {
+          "$push": {
+            "_id": "$states.name",
+            "stateId": "$states._id",
+            "code": "$states.code",
+            "percentage": "$percentage"
+          }
+        },
+        "totalForms": { $sum: "$totalForms" },
+        "verificationInProgress": { $sum: "$verificationInProgress" },
+        "verificationNotStarted": { $sum: "$verificationNotStarted" },
+        "approved": { $sum: "$submissionAckByPMU" },
+        "rejected": { $sum: "$returnedByPMU" },
+        "totalUlbs": { $sum: "$totalUlbs" },
+        "inProgress": { $sum: "$inProgress" },
+        "submitted": { $sum: "$verificationInProgress" },
+        "notStarted": { $sum: "$notStarted" },
+
+      }
+    },
+    {
       "$project": {
-        "heatMap": {
-          "_id": "$states._id",
-          "stateId": "$states._id",
-          "code": "$states.code",
-          "percentage": "$percentage"
+        "heatMaps": "$heatMaps",
+        "formWiseData": {
+          "totalForms": "$totalForms",
+          "verificationInProgress": "$verificationInProgress",
+          "verificationNotStarted": "$verificationNotStarted",
+          "approved": "$approved",
+          "rejected": "$rejected"
         },
         "ulbWiseData": {
           "totalUlbs": "$totalUlbs",
           "inProgress": "$inProgress",
-          "submitted": "$verificationInProgress"
-        },
-        "formWiseData": {
-          "totalForms": "$totalForms",
-          "verificationInProgress": "$verificationInProgress",
-          "approved": "$submissionAckByPMU",
-          "rejected": "$returnedByPMU"
-        },
-        "stateName": "$states.name",
-        "totalUlbs": "$totalUlbs"
+          "submitted": "$submitted",
+          "notStarted": "$notStarted"
+        }
       }
     }
   ]
-  if(state != "all"){
+  if (state) {
     state = ObjectId(state)
     matchObj = {
-      "$match":{
-        "state":state
+      "$match": {
+        "state": state
       }
     }
-    aggregationQuery = [matchObj,...aggregationQuery]
+    aggregationQuery = [matchObj, ...aggregationQuery]
   }
-
-
-  
   return aggregationQuery
 }
 
