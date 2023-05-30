@@ -1809,8 +1809,8 @@ const getPopulationWiseData = ({ stateId, columns, sort, skip, limit, sortBy, or
                   $cond: {
                     if: {
                       $and: parameter.condition == 'range' ? [
-                        { $gt: ["$population", parameter.max] },
-                        { $lt: ["$population", parameter.min] },
+                        { $gt: ["$population", parameter.min] },
+                        { $lt: ["$population", parameter.max] },
                         ...(column.key == 'totalUlbs' ? [] : [{
                           $eq: ["$formData.currentFormStatus", column.currentFormStatus]
                         }])
