@@ -1208,7 +1208,7 @@ function getTextValues(result,displayPriority){
 function getSubHeaders(displayPriority) {
     try {
         let subHeaders = {
-            "1.05-1.12": "Property Tax Demand Details (Amount in INR Lakhs)",
+            "1.09-1.12": "Property Tax Demand Details (Amount in INR Lakhs)",
             "1.13-1.18": "Property Tax Collection Details (Amount in INR Lakhs)",
             "2.05-3.00": "Property Tax Demand and Collection Details by Property Type (including cess, other tax charges, excluding user charges if any)",
             "5.05-5.10": "Water Charges Demand and Collection Details (Amount in INR lakhs)",
