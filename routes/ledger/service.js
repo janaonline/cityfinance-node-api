@@ -410,18 +410,19 @@ module.exports.getAllLedgersCsv = async function (req, res) {
     // Flush the headers before we start pushing the CSV content
     res.flushHeaders();
     let lineItem = await LineItem.find({ "isActive": true }, { 'modifiedAt': 0, createdAt: 0, isActive: 0 }).lean()
-    let ulbsList = await Ulb.find({}, { 'name': 1, code: 1, amrut: 1 }).lean()
+    // let ulbsList = await Ulb.find({}, { 'name': 1, code: 1, amrut: 1 }).lean()
+
     // console.log("lineItem",lineItem);process.exit();
 
     const cursor = UlbLedger.aggregate([
-        // {
-        //     $lookup: {
-        //         from: "ulbs",
-        //         as: "ulbs",
-        //         foreignField: "_id",
-        //         localField: "ulb"
-        //     }
-        // },
+        {
+            $lookup: {
+                from: "ulbs",
+                as: "ulbs",
+                foreignField: "_id",
+                localField: "ulb"
+            }
+        },
 
         // {
         //     $lookup: {
@@ -450,7 +451,7 @@ module.exports.getAllLedgersCsv = async function (req, res) {
         {
             $project: {
                 // "ulbs": 1,
-                "ulb": 1,
+                "ulb": "$ulb",
 
                 // "states": { $arrayElemAt: ["$states", 0] },
                 // "ulbtypes": { $arrayElemAt: ["$ulbtypes", 0] },
@@ -461,14 +462,15 @@ module.exports.getAllLedgersCsv = async function (req, res) {
                 population: 1
             }
         }
-    ]).allowDiskUse(true).cursor({ batchSize: 10000 }).addCursorFlag('noCursorTimeout', true).exec()
+    ]).allowDiskUse(true)
+        .cursor({ batchSize: 5000 })
+        .addCursorFlag('noCursorTimeout', true)
+        .exec()
     cursor.on("data", function (el) {
         let maplineItem = lineItem?.length ? lineItem.find(e => e._id.toString() == el.lineItem.toString()) : null
-        let mapUlb = ulbsList?.length ? ulbsList.find(e => e._id.toString() == el.ulb.toString()) : null
-
+        // let mapUlb = ulbsList?.length ? ulbsList.find(e => e._id.toString() == el.ulb.toString()) : null
         el['line_item'] = maplineItem;
-        // el['ulb'] = el?.ulbs?.length ? el.ulbs[0] : "NA";
-        el['ulb'] = mapUlb ? mapUlb : "NA";
+        el['ulb'] = el?.ulbs?.length ? el.ulbs[0] : "NA";
 
         if (el.ulb != 'NA') {
             let line_item = el.line_item ? el.line_item.name.toString().replace(/[,]/g, ' | ') : "";
