@@ -1563,7 +1563,7 @@ const getUlbActivities = ({ sort, skip, limit, sortBy, order, filters, filterObj
         "underReviewByPMU": {
           "$sum": {
             "$cond": [
-              { "$eq": ["$formData.currentFormStatus", 8] },
+              { "$in": ["$formData.currentFormStatus", [8, 9, 11]] },
               1,
               0
             ]
@@ -1665,19 +1665,19 @@ const getPMUActivities = ({ sort, skip, limit, sortBy, order, filters, filterObj
     {
       "$group": {
         "_id": "$state",
-        // "underReviewByPMU": {
-        //   "$sum": {
-        //     "$cond": [
-        //       { "$eq": ["$formData.currentFormStatus", 9] },
-        //       1,
-        //       0
-        //     ]
-        //   }
-        // },
+        "underReviewByPMU": {
+          "$sum": {
+            "$cond": [
+              { "$in": ["$formData.currentFormStatus", [8, 9, 10, 11]] },
+              1,
+              0
+            ]
+          }
+        },
         "verificationNotStarted": {
           "$sum": {
             "$cond": [
-              { "$ne": ["$formData.currentFormStatus", 8] },
+              { "$eq": ["$formData.currentFormStatus", 8] },
               1,
               0
             ]
@@ -1729,7 +1729,7 @@ const getPMUActivities = ({ sort, skip, limit, sortBy, order, filters, filterObj
     {
       "$project": {
         "stateName": "$states.name",
-        // "underReviewByPMU": 1,
+        "underReviewByPMU": 1,
         "verificationNotStarted": 1,
         "verificationInProgress": 1,
         "returnedByPMU": 1,
@@ -1809,8 +1809,8 @@ const getPopulationWiseData = ({ stateId, columns, sort, skip, limit, sortBy, or
                   $cond: {
                     if: {
                       $and: parameter.condition == 'range' ? [
-                        { $gt: ["$population", parameter.max] },
-                        { $lt: ["$population", parameter.min] },
+                        { $gt: ["$population", parameter.min] },
+                        { $lt: ["$population", parameter.max] },
                         ...(column.key == 'totalUlbs' ? [] : [{
                           $eq: ["$formData.currentFormStatus", column.currentFormStatus]
                         }])
@@ -1941,6 +1941,11 @@ exports.overview = async function (req, res, next) {
         "sortable": true
       },
       {
+        "label": "Under Review by PMU",
+        "key": "underReviewByPMU",
+        "sortable": true
+      },
+      {
         "label": "Verification Not Started",
         "key": "verificationNotStarted",
         "sortable": true
@@ -1996,7 +2001,7 @@ exports.overview = async function (req, res, next) {
 
   const lastRow = {
     "UlbActivities": ["Total", "$sum", "$sum", "$sum", "$sum", "$sum"],
-    "PMUActivities": ["Total", "$sum", "$sum", "$sum", "$sum"],
+    "PMUActivities": ["Total", "$sum", "$sum", "$sum", "$sum", "$sum"],
     "populationWise": ["Total", "$sum", "$sum", "$sum", "$sum", "$sum"]
   }[type];
 
