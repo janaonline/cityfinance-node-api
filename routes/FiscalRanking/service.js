@@ -912,7 +912,6 @@ exports.getView = async function (req, res, next) {
                 pf["status"] = singleFydata.status != null ? singleFydata.status : 'PENDING';
                 if (subData[key].calculatedFrom === undefined) {
                   console.log("key :: ", key)
-
                   pf["readonly"] = getReadOnly(data?.currentFormStatus, viewOne.isDraft, role, singleFydata.status);
                 } else {
                   pf["readonly"] = true;
@@ -974,8 +973,8 @@ exports.getView = async function (req, res, next) {
                 );
                 if (singleFydata) {
                   pf["file"] = singleFydata.file;
-                  pf["status"] = singleFydata.status
-
+                  pf["status"] = singleFydata.status && singleFydata.status != null ? singleFydata.status : "PENDING"
+                  pf['status'] = singleFydata.modelName === "ULBLedger" ? "" : pf["status"]
                   pf["modelName"] = singleFydata.modelName;
                   pf['rejectReason'] = singleFydata.rejectReason
                   if (subData[key].calculatedFrom === undefined) {
@@ -1065,7 +1064,7 @@ exports.getView = async function (req, res, next) {
                         url: "",
                       };
                     pf["value"] = singleFydata ? singleFydata.value : "";
-                    pf["status"] = singleFydata
+                    pf["status"] = singleFydata && singleFydata.status != null
                       ? singleFydata.status
                       : "PENDING";
                     pf["modelName"] = singleFydata
@@ -3544,11 +3543,9 @@ module.exports.actionTakenByMoHua = catchAsync(async (req, res) => {
       isDraft
     );
     let formStatus = currentFormStatus
-    console.log("currentFormStatus :: ", currentFormStatus)
-    if (currentFormStatus != 9) {
+    if (currentFormStatus != statusTracker["VIP"]) {
       formStatus = await decideOverAllStatus(calculationsTabWise)
-      console.log("formStatus :: ", formStatus)
-      if (formStatus === 10) {
+      if (formStatus === statusTracker['RBP']) {
         await sendEmailToUlb(ulbId)
       }
 
