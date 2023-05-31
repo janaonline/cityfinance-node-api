@@ -116,7 +116,7 @@ const search = catchAsync(async (req, res) => {
       return Response.BadRequest(res, null, "Provide word to match");
 
       if(type && type == 'state'){
-        let query = { name: { $regex: `${matchingWord}`, $options: "im" } };
+        let query = { name: { $regex: `^${matchingWord[type]}`, $options: "im" } };
         let statePromise = await State.find(query)
         .limit(10)
         .lean();
@@ -136,7 +136,7 @@ if(statePromise.length>0){
         let stateData
       
 
-        let query = { name: { $regex: `${matchingWord}`, $options: "im" } };
+        let query = { name: { $regex: `^${matchingWord[type]}`, $options: "i" } };
         if(state){
           if(state && ObjectId.isValid(state) ){
             Object.assign(query, {state: ObjectId(state)})  
