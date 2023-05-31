@@ -740,7 +740,7 @@ exports.getView = async function (req, res, next) {
         readonly: true,
         status: "",
         modelName: ulbPData?.population > 0 ? "" : "",
-        rejectReason:"",
+        rejectReason: "",
       };
       data["fyData"] = fyData;
       viewOne = data;
@@ -1794,6 +1794,13 @@ const getPopulationWiseData = ({ stateId, columns, sort, skip, limit, sortBy, or
       }
     },
     {
+      "$addFields": {
+        "emptyForms": {
+          "$ifNull": ["$formData", 1]
+        }
+      }
+    },
+    {
       $group: {
         _id: "$state",
         "population": { $sum: "$population" },
@@ -1811,14 +1818,22 @@ const getPopulationWiseData = ({ stateId, columns, sort, skip, limit, sortBy, or
                       $and: parameter.condition == 'range' ? [
                         { $gt: ["$population", parameter.min] },
                         { $lt: ["$population", parameter.max] },
-                        ...(column.key == 'totalUlbs' ? [] : [{
-                          $eq: ["$formData.currentFormStatus", column.currentFormStatus]
-                        }])
+                        ...(column.key == 'totalUlbs' ? [] : (
+                          column.currentFormStatus == 1 ? [{ 
+                            "$eq": ["$emptyForms", 1] 
+                          }] : [{
+                            $eq: ["$formData.currentFormStatus", column.currentFormStatus]
+                          }]
+                        ))
                       ] : [
                         { [parameter.condition]: ["$population", parameter.value] },
-                        ...(column.key == 'totalUlbs' ? [] : [{
-                          $eq: ["$formData.currentFormStatus", column.currentFormStatus]
-                        }])
+                        ...(column.key == 'totalUlbs' ? [] : (
+                          column.currentFormStatus == 1 ? [{ 
+                            "$eq": ["$emptyForms", 1] 
+                          }] : [{
+                            $eq: ["$formData.currentFormStatus", column.currentFormStatus]
+                          }]
+                        ))
                       ],
                     },
                     then: 1,
@@ -1840,7 +1855,7 @@ const getPopulationWiseData = ({ stateId, columns, sort, skip, limit, sortBy, or
         ))
       }
     }
-  ]
+  ];
   return Ulb.aggregate(query);
 }
 
@@ -4823,7 +4838,7 @@ exports.heatMapReport = async (req, res, next) => {
   try {
     let { state, category, getQuery } = req.query
     getQuery = getQuery === "true"
-    let query = stateWiseHeatMapQuery({state, category})
+    let query = stateWiseHeatMapQuery({ state, category })
     if (getQuery) return res.json(query)
     let queryResult = await Ulb.aggregate(query)
     response.success = true
