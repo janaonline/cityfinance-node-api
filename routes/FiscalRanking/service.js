@@ -1515,11 +1515,11 @@ exports.getAll = async function (req, res, next) {
 
 const getUlbActivities = ({ req, sort, skip, limit, sortBy, order, filters, filterObj, sortKey, designYear }) => {
   let query = [
-    ...(req.decoded.role == userTypes.state && [{
+    ...(req.decoded.role == userTypes.state ? [{
       $match: {
         "state":ObjectId(req.decoded.state)
       }
-    }]),
+    }] : []),
     {
       "$lookup": {
         "from": "fiscalrankings",
@@ -1548,7 +1548,7 @@ const getUlbActivities = ({ req, sort, skip, limit, sortBy, order, filters, filt
         "underReviewByPMU": {
           "$sum": {
             "$cond": [
-              { "$eq": ["$formData.currentFormStatus", 8] },
+              { "$in": ["$formData.currentFormStatus", [8, 9, 11]] },
               1,
               0
             ]
@@ -1628,11 +1628,11 @@ const getUlbActivities = ({ req, sort, skip, limit, sortBy, order, filters, filt
 const getPMUActivities = ({ req, sort, skip, limit, sortBy, order, filters, filterObj, sortKey, designYear }) => {
 
   const query = [
-    ...(req.decoded.role == userTypes.state && [{
+    ...(req.decoded.role == userTypes.state ? [{
       $match: {
         "state":ObjectId(req.decoded.state)
       }
-    }]),
+    }] : []),
     {
       "$lookup": {
         "from": "fiscalrankings",
@@ -1650,19 +1650,19 @@ const getPMUActivities = ({ req, sort, skip, limit, sortBy, order, filters, filt
     {
       "$group": {
         "_id": "$state",
-        // "underReviewByPMU": {
-        //   "$sum": {
-        //     "$cond": [
-        //       { "$eq": ["$formData.currentFormStatus", 9] },
-        //       1,
-        //       0
-        //     ]
-        //   }
-        // },
+        "underReviewByPMU": {
+          "$sum": {
+            "$cond": [
+              { "$in": ["$formData.currentFormStatus", [8, 9, 10, 11]] },
+              1,
+              0
+            ]
+          }
+        },
         "verificationNotStarted": {
           "$sum": {
             "$cond": [
-              { "$ne": ["$formData.currentFormStatus", 8] },
+              { "$eq": ["$formData.currentFormStatus", 8] },
               1,
               0
             ]
@@ -1714,7 +1714,7 @@ const getPMUActivities = ({ req, sort, skip, limit, sortBy, order, filters, filt
     {
       "$project": {
         "stateName": "$states.name",
-        // "underReviewByPMU": 1,
+        "underReviewByPMU": 1,
         "verificationNotStarted": 1,
         "verificationInProgress": 1,
         "returnedByPMU": 1,
@@ -1779,6 +1779,13 @@ const getPopulationWiseData = ({ stateId, columns, sort, skip, limit, sortBy, or
       }
     },
     {
+      "$addFields": {
+        "emptyForms": {
+          "$ifNull": ["$formData", 1]
+        }
+      }
+    },
+    {
       $group: {
         _id: "$state",
         "population": { $sum: "$population" },
@@ -1788,22 +1795,30 @@ const getPopulationWiseData = ({ stateId, columns, sort, skip, limit, sortBy, or
             ...obj,
             [`${column.key} ${parameter.label}`]: column.key == 'populationCategories' ? {
               $first: parameter.label
-            } : 
+            } :
               {
                 $sum: {
                   $cond: {
                     if: {
                       $and: parameter.condition == 'range' ? [
-                        { $gt: ["$population", parameter.max] },
-                        { $lt: ["$population", parameter.min] },
-                        ...(column.key == 'totalUlbs' ? []: [{ 
-                          $eq: ["$formData.currentFormStatus", column.currentFormStatus] 
-                        }])
+                        { $gt: ["$population", parameter.min] },
+                        { $lt: ["$population", parameter.max] },
+                        ...(column.key == 'totalUlbs' ? [] : (
+                          column.currentFormStatus == 1 ? [{ 
+                            "$eq": ["$emptyForms", 1] 
+                          }] : [{
+                            [Array.isArray(column.currentFormStatus) ? '$in': '$eq']: ["$formData.currentFormStatus", column.currentFormStatus]
+                          }]
+                        ))
                       ] : [
                         { [parameter.condition]: ["$population", parameter.value] },
-                        ...(column.key == 'totalUlbs' ? []: [{ 
-                          $eq: ["$formData.currentFormStatus", column.currentFormStatus] 
-                        }])
+                        ...(column.key == 'totalUlbs' ? [] : (
+                          column.currentFormStatus == 1 ? [{ 
+                            "$eq": ["$emptyForms", 1] 
+                          }] : [{
+                            [Array.isArray(column.currentFormStatus) ? '$in': '$eq']: ["$formData.currentFormStatus", column.currentFormStatus]
+                          }]
+                        ))
                       ],
                     },
                     then: 1,
@@ -1825,7 +1840,7 @@ const getPopulationWiseData = ({ stateId, columns, sort, skip, limit, sortBy, or
         ))
       }
     }
-  ]
+  ];
   return Ulb.aggregate(query);
 }
 
@@ -1873,7 +1888,7 @@ function getSortByKeys(sortBy, order) {
 exports.overview = async function (req, res, next) {
 
   const {type} = req.params;
-  console.log({ decoded: req.decoded.state });
+  console.log({ decoded: req.decoded });
 
   let name = {
     "UlbActivities": "Overview of ULB activities",
@@ -1888,13 +1903,17 @@ exports.overview = async function (req, res, next) {
       {
         "label": "State Name",
         "key": "stateName",
-        "query": "",
+        ...(req.decoded.role != userTypes.state && {
+          "query": "",
+        }),
         "sortable": true
       },
       {
         "label": "Total ULBs",
         "key": "totalUlbs",
-        "query": "",
+        ...(req.decoded.role != userTypes.state && {
+          "query": "",
+        }),
         "sortable": true
       },
       {
@@ -1922,7 +1941,14 @@ exports.overview = async function (req, res, next) {
       {
         "label": "State Name",
         "key": "stateName",
-        "query": "",
+        ...(req.decoded.role != userTypes.state && {
+          "query": "",
+        }),
+        "sortable": true
+      },
+      {
+        "label": "Under Review by PMU",
+        "key": "underReviewByPMU",
         "sortable": true
       },
       {
@@ -1958,7 +1984,7 @@ exports.overview = async function (req, res, next) {
       {
         "label": "Under Review by PMU",
         "key": "underReviewByPMU",
-        "currentFormStatus": 9,
+        "currentFormStatus": [8, 9, 11],
       },
       {
         "label": "Returned by PMU",
@@ -1981,7 +2007,7 @@ exports.overview = async function (req, res, next) {
 
   const lastRow = {
     "UlbActivities": ["Total", "$sum", "$sum", "$sum", "$sum", "$sum"],
-    "PMUActivities": ["Total", "$sum", "$sum", "$sum", "$sum"],
+    "PMUActivities": ["Total", "$sum", "$sum", "$sum", "$sum", "$sum"],
     "populationWise": ["Total", "$sum", "$sum", "$sum", "$sum", "$sum"]
   }[type];
 
