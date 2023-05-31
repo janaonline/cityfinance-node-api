@@ -722,8 +722,8 @@ exports.getView = async function (req, res, next) {
       }).lean();
       data["populationFr"] = {
         ...data.populationFr,
-        value: data.populationFr.value
-          ? data.populationFr.value
+        value: data?.populationFr?.value
+          ? data?.populationFr?.value
           : twEightSlbs
             ? twEightSlbs?.population
             : "",
@@ -732,8 +732,8 @@ exports.getView = async function (req, res, next) {
       };
       data["population11"] = {
         ...data.population11,
-        value: data.population11.value
-          ? data.population11.value
+        value: data?.population11?.value
+          ? data?.population11?.value
           : ulbPData
             ? ulbPData?.population
             : "",
