@@ -84,9 +84,6 @@ const projectDetails = () => {
     isDisable:{
       type: Boolean
     },
-    bypassValidation:{
-      type: Boolean
-    }
   };
 };
 
@@ -168,6 +165,9 @@ const projectDetails3 = () => {
       max: [100, "Max % can be 100"]
     },
     isDisable:{
+      type: Boolean
+    },
+    bypassValidation:{
       type: Boolean
     }
   };
