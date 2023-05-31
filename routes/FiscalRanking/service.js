@@ -1526,14 +1526,13 @@ exports.getAll = async function (req, res, next) {
   }
 };
 
-const getUlbActivities = ({ sort, skip, limit, sortBy, order, filters, filterObj, sortKey, designYear }) => {
-  const query = [
-    // {
-    // "$match":{
-    // "_id":ObjectId("5fa24662072dab780a6f15c9")
-    // }
-    // },
-
+const getUlbActivities = ({ req, sort, skip, limit, sortBy, order, filters, filterObj, sortKey, designYear }) => {
+  let query = [
+    ...(req.decoded.role == userTypes.state ? [{
+      $match: {
+        "state":ObjectId(req.decoded.state)
+      }
+    }] : []),
     {
       "$lookup": {
         "from": "fiscalrankings",
@@ -1636,17 +1635,17 @@ const getUlbActivities = ({ sort, skip, limit, sortBy, order, filters, filterObj
   if (filterObj.provided) {
     query.push({ $match: filters });
   }
+  console.log(query);
   return Ulb.aggregate(query);
 }
-const getPMUActivities = ({ sort, skip, limit, sortBy, order, filters, filterObj, sortKey, designYear }) => {
+const getPMUActivities = ({ req, sort, skip, limit, sortBy, order, filters, filterObj, sortKey, designYear }) => {
 
   const query = [
-    // {
-    // "$match":{
-    // "_id":ObjectId("5fa24662072dab780a6f15c9")
-    // }
-    // },
-
+    ...(req.decoded.role == userTypes.state ? [{
+      $match: {
+        "state":ObjectId(req.decoded.state)
+      }
+    }] : []),
     {
       "$lookup": {
         "from": "fiscalrankings",
@@ -1901,8 +1900,8 @@ function getSortByKeys(sortBy, order) {
 
 exports.overview = async function (req, res, next) {
 
-  const { type } = req.params;
-  console.log({ type });
+  const {type} = req.params;
+  console.log({ decoded: req.decoded });
 
   let name = {
     "UlbActivities": "Overview of ULB activities",
@@ -1917,13 +1916,17 @@ exports.overview = async function (req, res, next) {
       {
         "label": "State Name",
         "key": "stateName",
-        "query": "",
+        ...(req.decoded.role != userTypes.state && {
+          "query": "",
+        }),
         "sortable": true
       },
       {
         "label": "Total ULBs",
         "key": "totalUlbs",
-        "query": "",
+        ...(req.decoded.role != userTypes.state && {
+          "query": "",
+        }),
         "sortable": true
       },
       {
@@ -1951,7 +1954,9 @@ exports.overview = async function (req, res, next) {
       {
         "label": "State Name",
         "key": "stateName",
-        "query": "",
+        ...(req.decoded.role != userTypes.state && {
+          "query": "",
+        }),
         "sortable": true
       },
       {
@@ -2030,7 +2035,7 @@ exports.overview = async function (req, res, next) {
     await deleteExtraKeys(["sortBy", "order", "skip", "limit"], filters)
 
     console.log(filters);
-    filters = await Service.mapFilter(filters)
+    filters = await Service.mapFilter(filters);
     let filterObj = {
       "provided": Object.keys(filters).length > 0 ? true : false,
       "filters": Object.keys(filters).length > 0 ? { ...filters } : "",
@@ -2052,10 +2057,10 @@ exports.overview = async function (req, res, next) {
     let data;
     console.log(JSON.stringify(filters));
     if (type == 'UlbActivities') {
-      data = await getUlbActivities({ sort, skip, limit, sortBy, order, filters, filterObj, sortKey, designYear });
+      data = await getUlbActivities({ req, sort, skip, limit, sortBy, order, filters, filterObj, sortKey, designYear });
     }
     else if (type == 'PMUActivities') {
-      data = await getPMUActivities({ sort, skip, limit, sortBy, order, filters, filterObj, sortKey, designYear });
+      data = await getPMUActivities({ req, sort, skip, limit, sortBy, order, filters, filterObj, sortKey, designYear });
     }
     else if (type == 'populationWise') {
       data = await getPopulationWiseData({ stateId, columns, sort, skip, limit, sortBy, order, filters, filterObj, sortKey, designYear });
