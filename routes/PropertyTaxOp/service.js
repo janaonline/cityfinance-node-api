@@ -7,7 +7,7 @@ const Service = require('../../service');
 const { FormNames, MASTER_STATUS_ID ,MASTER_STATUS } = require('../../util/FormNames');
 const User = require('../../models/User');
 const { checkUndefinedValidations } = require('../../routes/FiscalRanking/service');
-const { propertyTaxOpFormJson, skippableKeys, financialYearTableHeader, specialHeaders, skipLogicDependencies,childKeys,reverseKeys ,questionIndicators,sortPosition} = require('./fydynemic')
+const { propertyTaxOpFormJson, skippableKeys, financialYearTableHeader,indicatorsWithNoyears ,  specialHeaders, skipLogicDependencies,childKeys,reverseKeys ,questionIndicators,sortPosition} = require('./fydynemic')
 const { isEmptyObj, isReadOnly } = require('../../util/helper');
 const PropertyMapperChildData = require("../../models/PropertyTaxMapperChild");
 const { years } = require('../../service/years');
@@ -1157,9 +1157,9 @@ function getLabelName(type) {
     }
 }
 
-function getTextValues(displayPriority) {
-    try {
-
+function getTextValues(result,displayPriority){
+    try{
+        
         let subHeaders = {
             "2.05-2.08": "Residential Properties",
             "2.09-2.12": "Commercial Properties",
@@ -1167,12 +1167,12 @@ function getTextValues(displayPriority) {
             "2.17-2.20": "Government Properties",
             "2.21-2.24": "Institutional Properties",
             "2.25-2.29": "Other Properties",
-            "5.13-5.16": "Residential households/properties",
-            "5.17-5.20": "Commercial households/properties",
-            "5.21-5.24": "Industrial households/properties",
-            "6.13-6.16": "Residential households/properties",
-            "6.17-6.20": "Commercial households/properties",
-            "6.21-6.24": "Industrial households/properties",
+            "5.13-5.16" :"Residential connections",
+            "5.17-5.20":"Commercial connections",
+            "5.21-5.24" :"Industrial connections",
+            "6.13-6.16" :"Residential connections",
+            "6.17-6.20":"Commercial connections",
+            "6.21-6.24" :"Industrial connections",
         }
         for (let range in subHeaders) {
             let [integerA, integerB] = range.split("-")
@@ -1194,8 +1194,11 @@ function getTextValues(displayPriority) {
             }
         }
     }
-    catch (err) {
-        console.log("error in getIpValues :::: ", err.message)
+    catch(err){
+        console.log(err)
+        console.log("ulb ::: ",result.ulb)
+        console.log("result.type ::: ",result.type ,"dp ::: ",result.displayPriority)
+        console.log("error in getIpValues :::: ",err.message)
         return "NA"
     }
     return ""
@@ -1205,23 +1208,23 @@ function getTextValues(displayPriority) {
 function getSubHeaders(displayPriority) {
     try {
         let subHeaders = {
-            "1.05-1.12": "Property Tax Demand Details (Amount in INR Lakhs)",
-            "1.13-1.18": "Property Tax Collection Details (Amount in INR Lakhs)",
+            "1.09-1.15": "Property Tax Demand Details (Amount in INR Lakhs)",
+            "1.17-1.23": "Property Tax Collection Details (Amount in INR Lakhs)",
             "2.05-3.00": "Property Tax Demand and Collection Details by Property Type (including cess, other tax charges, excluding user charges if any)",
             "5.05-5.10": "Water Charges Demand and Collection Details (Amount in INR lakhs)",
             "5.11-5.12": "Water Connection Details",
-            "5.13-5.20": "Water Charges Demand and Collection Details by Household/Property type",
-            "5.21-5.24": "Industrial households/properties",
-            "5.25-5.29": "Other households/properties(any other connection type)",
+            "5.13-5.20": "Water Charges Demand and Collection Details by connection type",
+            "5.21-5.24": "Industrial connections",
+            "5.25-5.29": "Other connections(any other connection type)",
             "5.30-5.30": "Water Charges Tariff Details",
             "5.31-5.31": "Water Charges: Cost of Service Delivery Details",
             "5.32-5.32": "Working of the O&M Cost- Water Service",
             "6.05-6.10": "Sewerage Charges Demand and Collection Details (Amount in INR lakhs)",
             "6.11-6.12": "Sewerage Connection Details",
-            "6.13-6.16": "Sewerage Charges Details by household/property type",
-            "6.17-6.20": "Commercial households/properties",
-            "6.21-6.24": "Industrial households/properties",
-            "6.25-6.29": "Other households/properties(any other connection type)",
+            "6.13-6.16": "Sewerage Charges Details by connection type",
+            "6.17-6.20": "Commercial connections",
+            "6.21-6.24": "Industrial connections",
+            "6.25-6.29": "Other connections(any other connection type)",
             "6.30-6.30": "Sewerage Charges Tariff Details",
             "6.31-6.31": "Sewerage Charges: Cost of Service Delivery Details",
             "6.32-6.32": "Working of the O&M Cost- Sewerage Service"
@@ -1281,7 +1284,10 @@ const getStringValue = (result, parentDp, ipValue = false) => {
     let writableStr = ""
     try {
         let dataYear = result?.year
-        let indicatorDpNumber = parentDp ? result.displayPriority : result.displayPriority
+        if(indicatorsWithNoyears.includes(result.type)){
+            dataYear = ""
+        }
+        let indicatorDpNumber = parentDp ? parentDp : result.displayPriority
         // console.log(">>>",getSubHeaders(result.displayPriority).replace(",", ""))
         let indicatorHead = getIndicator(indicatorDpNumber).replace(",", "")
         let indicatorSubHead = getSubHeaders(indicatorDpNumber).replace(",", "")
@@ -1292,7 +1298,7 @@ const getStringValue = (result, parentDp, ipValue = false) => {
         writableStr += dataYear ? getKeyByValue(years, result?.year.toString()) + "," : " " + ","
         writableStr += indicatorHead + ","
         writableStr += indicatorSubHead + ","
-        writableStr += indicatorNumber + ","
+        writableStr +=  "'"+indicatorNumber + ","
         writableStr += ipValue ? result.textValue + "," : "NA" + ","
         writableStr += getLabelName(result.type) + ","
         // console.log("parentDp ::: ",parentDp)
@@ -1346,6 +1352,8 @@ const canShow = (key, results, updatedDatas,ulb) => {
         }
     }
     catch (err) {
+        console.log("ulb ::: ",ulb)
+        // notificationFile
         console.log("error in canSHow ::: ", err.message)
     }
     return true
@@ -1500,7 +1508,7 @@ module.exports.getCsvForPropertyTaxMapper = async (req, res) => {
             for (let result of sortedResults) {
                 let censusCode = el.ulb.censusCode != null ? el.ulb.censusCode : el.ulb.sbCode
                 let writableStr = el.state.name + "," + el.ulb.name + "," + el.ulb.natureOfUlb + "," + el.ulb.code + "," + censusCode + "," + MASTER_STATUS_ID[el.currentFormStatus] + "," + getKeyByValue(years, el.design_year.toString()) + ","
-                let modifiedTextValue = getTextValues(result.displayPriority).replace(",")
+                let modifiedTextValue = getTextValues(result,result.displayPriority).replace(",")
                 result.textValue = modifiedTextValue ? modifiedTextValue : " "
                 if (!canShow(result.type, sortedResults, updatedDatas, el.ulb._id)) continue;
                 writableStr += getStringValue(result, false, true)
@@ -1547,7 +1555,7 @@ const createDataStructureForCsv = (ulbs, results, res) => {
                 let status = MASTER_STATUS_ID[result.ptoId.currentFormStatus] || ""
                 let censusCode = result.ptoId.ulb.censusCode != null ? result.ptoId.ulb.censusCode : result.ptoId.ulb.sbCode 
                 let writableStr = result.ptoId.ulb.state.name + "," + result.ptoId.ulb.name + "," + result.ptoId.ulb.natureOfUlb + "," + result.ptoId.ulb.code + "," + censusCode + "," + status + "," + getKeyByValue(years, result.ptoId.design_year.toString()) + ","
-                let modifiedTextValue = getTextValues(result.displayPriority).replace(",")
+                let modifiedTextValue = getTextValues(result,result.displayPriority).replace(",")
                 result.textValue = modifiedTextValue ? modifiedTextValue : " "
                 if (!canShow(result.type, sortedResults, updatedDatas,result.ptoId.ulb._id)) continue;
                 writableStr += getStringValue(result,false,true)
