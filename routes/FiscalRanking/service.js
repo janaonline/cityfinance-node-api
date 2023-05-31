@@ -1529,11 +1529,11 @@ exports.getAll = async function (req, res, next) {
 
 const getUlbActivities = ({ req, sort, skip, limit, sortBy, order, filters, filterObj, sortKey, designYear }) => {
   let query = [
-    ...(req.decoded.role == userTypes.state && [{
+    ...(req.decoded.role == userTypes.state ? [{
       $match: {
         "state":ObjectId(req.decoded.state)
       }
-    }]),
+    }] : []),
     {
       "$lookup": {
         "from": "fiscalrankings",
@@ -1642,11 +1642,11 @@ const getUlbActivities = ({ req, sort, skip, limit, sortBy, order, filters, filt
 const getPMUActivities = ({ req, sort, skip, limit, sortBy, order, filters, filterObj, sortKey, designYear }) => {
 
   const query = [
-    ...(req.decoded.role == userTypes.state && [{
+    ...(req.decoded.role == userTypes.state ? [{
       $match: {
         "state":ObjectId(req.decoded.state)
       }
-    }]),
+    }] : []),
     {
       "$lookup": {
         "from": "fiscalrankings",
@@ -1902,7 +1902,7 @@ function getSortByKeys(sortBy, order) {
 exports.overview = async function (req, res, next) {
 
   const {type} = req.params;
-  console.log({ decoded: req.decoded.state });
+  console.log({ decoded: req.decoded });
 
   let name = {
     "UlbActivities": "Overview of ULB activities",
