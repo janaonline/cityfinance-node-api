@@ -1822,7 +1822,7 @@ const getPopulationWiseData = ({ stateId, columns, sort, skip, limit, sortBy, or
                           column.currentFormStatus == 1 ? [{ 
                             "$eq": ["$emptyForms", 1] 
                           }] : [{
-                            $eq: ["$formData.currentFormStatus", column.currentFormStatus]
+                            [Array.isArray(column.currentFormStatus) ? '$in': '$eq']: ["$formData.currentFormStatus", column.currentFormStatus]
                           }]
                         ))
                       ] : [
@@ -1831,7 +1831,7 @@ const getPopulationWiseData = ({ stateId, columns, sort, skip, limit, sortBy, or
                           column.currentFormStatus == 1 ? [{ 
                             "$eq": ["$emptyForms", 1] 
                           }] : [{
-                            $eq: ["$formData.currentFormStatus", column.currentFormStatus]
+                            [Array.isArray(column.currentFormStatus) ? '$in': '$eq']: ["$formData.currentFormStatus", column.currentFormStatus]
                           }]
                         ))
                       ],
@@ -1993,7 +1993,7 @@ exports.overview = async function (req, res, next) {
       {
         "label": "Under Review by PMU",
         "key": "underReviewByPMU",
-        "currentFormStatus": 9,
+        "currentFormStatus": [8, 9, 11],
       },
       {
         "label": "Returned by PMU",
