@@ -3157,45 +3157,48 @@ module.exports.createForm = catchAsync(async (req, res) => {
   return res.status(500).json(response);
 });
 
-module.exports.FRUlbFinancialData = async (req, res) => {
-  try {
-    let filters = { ...req.query };
-    let skip = parseInt(filters.skip) || 0;
-    let limit = parseInt(filters.limit) || 10;
-    let { getQuery, sortBy, csv } = filters;
-    csv = csv === "true" ? true : false;
 
-    let params = { FRUlbFinancialData: true };
-    let { FRUlbFinancialData: query } = await computeQuery(params);
-    if (getQuery === "true") {
-      return res.status(200).json(query);
-    }
+/* OLD */
+// module.exports.FRUlbFinancialData = async (req, res) => {
+//   try {
+//     let filters = { ...req.query };
 
-    filters["csv"] ? delete filters["csv"] : "";
+//     let { getQuery, sortBy, csv } = filters;
+//     csv = csv === "true" ? true : false;
 
-    let newFilter = await Service.mapFilterNew(filters);
-    let { financialInformation } = await fiscalRankingFormJson();
+//     let params = { FRUlbFinancialData: true };
+//     let { FRUlbFinancialData: query } = await computeQuery(params);
+//     if (getQuery === "true") {
+//       return res.status(200).json(query);
+//     }
 
-    const FinancialRankingFilename = "ULB_Ranking_Financial_Data.csv";
-    let { csvCols, dbCols, FRShortKeyObj } = await columnsForCSV(params);
-    let csv2 = createCsv({
-      query,
-      res,
-      filename: FinancialRankingFilename,
-      modelName: "FiscalRankingMapper",
-      dbCols,
-      csvCols,
-      removeEscapesFromArr: [],
-      labelObj: FRShortKeyObj,
-      // percentCompletionArr: [],
-      FRKeyWithDate: [],
-      FRKeyWithFile: []
+//     filters["csv"] ? delete filters["csv"] : "";
 
-    });
-  } catch (error) {
-    return Response.BadRequest(res, {}, error.message);
-  }
-};
+//     let newFilter = await Service.mapFilterNew(filters);
+//     let { financialInformation } = await fiscalRankingFormJson();
+
+//     const FinancialRankingFilename = "ULB_Ranking_Financial_Data.csv";
+//     let { csvCols, dbCols, FRShortKeyObj } = await columnsForCSV(params);
+//     let csv2 = createCsv({
+//       query,
+//       res,
+//       filename: FinancialRankingFilename,
+//       modelName: "FiscalRankingMapper",
+//       dbCols,
+//       csvCols,
+//       removeEscapesFromArr: [],
+//       labelObj: FRShortKeyObj,
+//       // percentCompletionArr: [],
+//       FRKeyWithDate: [],
+//       FRKeyWithFile: []
+
+//     });
+//   } catch (error) {
+//     return Response.BadRequest(res, {}, error.message);
+//   }
+// };
+
+
 
 module.exports.FROverAllUlbData = async (req, res) => {
   try {
@@ -3417,133 +3420,6 @@ async function columnsForCSV(params) {
   return output;
 }
 
-function createCsv(params) {
-  try {
-    let {
-      query,
-      res,
-      filename,
-      modelName,
-      dbCols,
-      csvCols,
-      removeEscapesFromArr,
-      labelObj,
-      FRKeyWithDate,
-      FRKeyWithFile
-    } = params;
-    // if(!dbCols.length){
-    //   dbCols =  Object.keys(cols)
-    // }
-    // if(!csvCols.length){
-    //   csvCols = Object.values(cols)
-    // }
-    let cursor = moongose
-      .model(modelName)
-      .aggregate(query)
-      .allowDiskUse(true)
-      .cursor({ batchSize: 500 })
-      .addCursorFlag("noCursorTimeout", true)
-      .exec();
-    res.setHeader("Content-disposition", "attachment; filename=" + filename);
-    res.writeHead(200, { "Content-Type": "text/csv;charset=utf-8,%EF%BB%BF" });
-    res.write("\ufeff" + `${csvCols.join(",").toString()}` + "\r\n");
-    // res.write();
-    cursor.on("data", (document) => {
-      try {
-        let str = "";
-        let str2 = "";
-        let FRFlag = false;
-        const ignoreZero = 0;
-        const completionKey = "completionPercentFR";
-        const mandatoryFieldsKey = "arrayOfMandatoryField";
-        if (Array.isArray(document[mandatoryFieldsKey]) && document[mandatoryFieldsKey]) {
-          document["completionPercent"] = completionPercent(document[mandatoryFieldsKey], document[completionKey]);
-        }
-        for (let key of dbCols) {
-          /* *
-              this condition converts date to DD/MM/YYYY format
-            * */
-          // if (["createdAt", "modifiedAt"].includes(key)) {
-          //   document[key]
-          //     ? (document[key] = dateFormatter(document[key], "/"))
-          //     : "";
-          // }
-          if (removeEscapesFromArr.includes(key)) {
-            document[key] = removeEscapeChars(document[key]);
-          }
-
-          if (key.split("_")[0] !== "FR") {
-            if (document[key] === ignoreZero || document[key]) {
-              /* A destructuring assignment.FR case in Fiscal Mapper */
-              FRFinancialCsvCase(
-                key,
-                document,
-                labelObj
-              );
-              // if (key === "formStatus") {
-              //   let { status, actionTakenByRole, isDraft } = document[key];
-              //   document[key] = calculateStatusForFiscalRankingForms(
-              //     status,
-              //     actionTakenByRole,
-              //     isDraft,
-              //     "ULB"
-              //   );
-              // }
-
-              str += document[key] + ",";
-            } else {
-              str += " " + ",";
-            }
-          } else {
-            let fiscalrankingmappersDocument = document[
-              "fiscalrankingmappers"
-            ].find((el) => key === el.key);
-            if (fiscalrankingmappersDocument) {
-              let FRMapperKey = "value"
-              if (FRKeyWithDate.length > 0 && FRKeyWithDate.includes(key)) {
-                FRMapperKey = "date"
-              } else if (FRKeyWithFile.length > 0 && FRKeyWithFile.includes(key)) {
-                FRMapperKey = "file"
-              }
-              if (fiscalrankingmappersDocument[FRMapperKey]) {
-                str += fiscalrankingmappersDocument[FRMapperKey] + ",";
-              } else {
-                str += " " + ",";
-              }
-            } else {
-              str += " " + ",";
-            }
-          }
-        }
-        // if (FROverallFlag) {
-        //   let percent = (
-        //     (completionPercent / denominatorMandatory) *
-        //     100
-        //   ).toFixed();
-        //   str2 = str.split(",");
-        //   str2.splice(9, 1, `${percent}%`);
-        //   str = str2.join(",");
-        // }
-        str.trim()
-        res.write("\ufeff" + str + "\r\n");
-        // if (FRFlag) {
-        //   res.write("\ufeff" + str2 + "\r\n");
-        //   FRFlag = false;
-        // }
-      } catch (err) {
-        console.log("error in writeCsv :: ", err.message);
-      }
-    });
-
-    cursor.on("end", (el) => {
-      // res.flushHeaders();
-      // console.log("ended");
-      return res.end();
-    });
-  } catch (error) {
-    return Response.BadRequest(res, {}, error.message);
-  }
-}
 
 function completionPercent(document, FRCompletionNumber) {
   let completionPercent = 0;
@@ -4270,4 +4146,277 @@ function computeQuery(params) {
 function removeEscapeChars(entity) {
   return !entity ? entity : entity.replace(/(\n|,)/gm, " ");
 }
+
+
+module.exports.FRUlbFinancialData = async (req, res) => {
+  try {
+    let filters = { ...req.query };
+    let { getQuery, sortBy, csv } = filters;
+    csv = csv === "true" ? true : false;
+    let params = { FRUlbFinancialData: true };
+    // let { FRUlbFinancialData: query } = await computeQuery(params);
+    if (getQuery === "true") {
+      return res.status(200).json(query);
+    }
+    filters["csv"] ? delete filters["csv"] : "";
+
+    let { csvCols, dbCols, FRShortKeyObj } = await columnsForCSV(params);
+    createCsv1234({
+      res,
+      filename: "ULB_Ranking_Financial_Data.csv",
+      modelName: "FiscalRankingMapper",
+      dbCols,
+      csvCols,
+      removeEscapesFromArr: [],
+      labelObj: FRShortKeyObj,
+      FRKeyWithDate: [],
+      FRKeyWithFile: []
+    });
+  } catch (error) {
+    return Response.BadRequest(res, {}, error.message);
+  }
+};
+
+
+
+
+function createCsv1234(params) {
+  try {
+    let {
+      res,
+      filename,
+      modelName,
+      dbCols,
+      csvCols,
+      removeEscapesFromArr,
+      labelObj,
+      FRKeyWithDate,
+      FRKeyWithFile
+    } = params;
+
+    res.setHeader("Content-disposition", "attachment; filename=" + filename);
+    res.writeHead(200, { "Content-Type": "text/csv;charset=utf-8,%EF%BB%BF" });
+    res.write("\ufeff" + `${csvCols.join(",").toString()}` + "\r\n");
+
+    // let cursor = moongose
+    //   .model(modelName)
+    //   .aggregate([
+    //     {
+    //       "$lookup": {
+    //         "from": "fiscalrankingmappers",
+    //         "localField": "_id",
+    //         "foreignField": "fiscal_ranking",
+    //         "as": "fiscalrankingmapper"
+    //       }
+    //     },
+    //     {
+    //       "$lookup": {
+    //         "from": "ulbs",
+    //         "localField": "ulb",
+    //         "foreignField": "_id",
+    //         "as": "ulb"
+    //       }
+    //     },
+    //     {
+    //       "$unwind": {
+    //         "path": "$ulb",
+    //         "preserveNullAndEmptyArrays": true
+    //       }
+    //     },
+    //     {
+    //       "$project": {
+    //         "ulbName": "$ulb.name",
+    //         "cityFinanceCode": "$ulb.code",
+    //         "fiscalrankingmapper": "$fiscalrankingmapper",
+    //         "censusCode": {
+    //           "$cond": {
+    //             "if": {
+    //               "$or": [
+    //                 {
+    //                   "$eq": [
+    //                     "$censusCode",
+    //                     ""
+    //                   ]
+    //                 },
+    //                 {
+    //                   "$eq": [
+    //                     "$censusCode",
+    //                     null
+    //                   ]
+    //                 }
+    //               ]
+    //             },
+    //             "then": "$ulb.sbCode",
+    //             "else": "$ulb.censusCode"
+    //           }
+    //         },
+    //         "formStatus2": {
+    //           "$cond": {
+    //             "if": {
+    //               "$or": [
+    //                 {
+    //                   "$eq": [
+    //                     "$isDraft",
+    //                     true
+    //                   ]
+    //                 }
+    //               ]
+    //             },
+    //             "then": "In Progress",
+    //             "else": "Under Review By MoHUA"
+    //           }
+    //         },
+    //         "designYear": "$design_year"
+    //       }
+    //     },
+    //     {
+    //       "$sort": {
+    //         "cityFinanceCode": 1
+    //       }
+    //     }
+    //   ])
+    //   .allowDiskUse(true)
+    //   .cursor({ batchSize: 500 })
+    //   .addCursorFlag("noCursorTimeout", true)
+    //   .exec();
+
+
+    cursor.on("data", (document) => {
+      try {
+        let fyMapperData = document.fiscalrankingmapper;
+
+        for (let key of dbCols) {
+          if (removeEscapesFromArr.includes(key)) {
+            document[key] = removeEscapeChars(document[key]);
+          }
+          
+          let fiscalrankingmappersDocument = document[
+            "fiscalrankingmappers"
+          ].find((el) => key === el.key);
+          if (fiscalrankingmappersDocument) {
+            let FRMapperKey = "value"
+            if (FRKeyWithDate.length > 0 && FRKeyWithDate.includes(key)) {
+              FRMapperKey = "date"
+            } else if (FRKeyWithFile.length > 0 && FRKeyWithFile.includes(key)) {
+              FRMapperKey = "file"
+            }
+            if (fiscalrankingmappersDocument[FRMapperKey]) {
+              str += fiscalrankingmappersDocument[FRMapperKey] + ",";
+            } else {
+              str += " " + ",";
+            }
+          } else {
+            str += " " + ",";
+          }
+        }
+        str.trim()
+        res.write("\ufeff" + str + "\r\n");
+      } catch (err) {
+        console.log("error in writeCsv :: ", err.message);
+      }
+    });
+
+    cursor.on("end", (el) => {
+      // res.flushHeaders();
+      // console.log("ended");
+      return res.end();
+    });
+  } catch (error) {
+    return Response.BadRequest(res, {}, error.message);
+  }
+}
+
+
+function createCsv(params) {
+  try {
+    let {
+      query,
+      res,
+      filename,
+      modelName,
+      dbCols,
+      csvCols,
+      removeEscapesFromArr,
+      labelObj,
+      FRKeyWithDate,
+      FRKeyWithFile
+    } = params;
+
+    res.setHeader("Content-disposition", "attachment; filename=" + filename);
+    res.writeHead(200, { "Content-Type": "text/csv;charset=utf-8,%EF%BB%BF" });
+    res.write("\ufeff" + `${csvCols.join(",").toString()}` + "\r\n");
+
+    let cursor = moongose
+      .model(modelName)
+      .aggregate(query)
+      .allowDiskUse(true)
+      .cursor({ batchSize: 500 })
+      .addCursorFlag("noCursorTimeout", true)
+      .exec();
+
+    cursor.on("data", (document) => {
+      try {
+        let str = "";
+        let str2 = "";
+        let FRFlag = false;
+        if (Array.isArray(document[mandatoryFieldsKey]) && document[mandatoryFieldsKey]) {
+          document["completionPercent"] = completionPercent(document[mandatoryFieldsKey], document[completionKey]);
+        }
+
+        for (let key of dbCols) {
+          if (removeEscapesFromArr.includes(key)) {
+            document[key] = removeEscapeChars(document[key]);
+          }
+
+          if (key.split("_")[0] !== "FR") {
+            if (document[key] === ignoreZero || document[key]) {
+              /* A destructuring assignment.FR case in Fiscal Mapper */
+              FRFinancialCsvCase(
+                key,
+                document,
+                labelObj
+              );
+              str += document[key] + ",";
+            } else {
+              str += " " + ",";
+            }
+          } else {
+            let fiscalrankingmappersDocument = document[
+              "fiscalrankingmappers"
+            ].find((el) => key === el.key);
+            if (fiscalrankingmappersDocument) {
+              let FRMapperKey = "value"
+              if (FRKeyWithDate.length > 0 && FRKeyWithDate.includes(key)) {
+                FRMapperKey = "date"
+              } else if (FRKeyWithFile.length > 0 && FRKeyWithFile.includes(key)) {
+                FRMapperKey = "file"
+              }
+              if (fiscalrankingmappersDocument[FRMapperKey]) {
+                str += fiscalrankingmappersDocument[FRMapperKey] + ",";
+              } else {
+                str += " " + ",";
+              }
+            } else {
+              str += " " + ",";
+            }
+          }
+        }
+        str.trim()
+        res.write("\ufeff" + str + "\r\n");
+      } catch (err) {
+        console.log("error in writeCsv :: ", err.message);
+      }
+    });
+
+    cursor.on("end", (el) => {
+      // res.flushHeaders();
+      // console.log("ended");
+      return res.end();
+    });
+  } catch (error) {
+    return Response.BadRequest(res, {}, error.message);
+  }
+}
+
+
 module.exports.checkUndefinedValidations = checkUndefinedValidations
