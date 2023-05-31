@@ -2351,20 +2351,7 @@ function manageDisabledQues(question,flattedForm){
                     
                 }
             }
-            let customKeyAudited = "audited.submit_standardized_data";
-            let customKeyUnAudited =  "unAudited.submit_standardized_data";
-            let customObjUnAudited = "unAudited.canTakeAction";
-            let customObjAudited =  "audited.canTakeAction";
-            if(customKeyAudited === (question.shortKey)){
-                if(flattedForm[customObjAudited]) {
-                    delete question["canTakeAction"];
-                }
-            }
-            if(customKeyUnAudited === (question.shortKey)){
-                if(flattedForm[customObjUnAudited]) {
-                    delete question["canTakeAction"];
-                }
-            }
+
         })
         // console.log("question ::: shortKey ",question.shortKey)
     }
