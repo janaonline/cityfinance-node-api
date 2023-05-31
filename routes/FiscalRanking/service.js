@@ -1917,13 +1917,17 @@ exports.overview = async function (req, res, next) {
       {
         "label": "State Name",
         "key": "stateName",
-        "query": "",
+        ...(req.decoded.role != userTypes.state && {
+          "query": "",
+        }),
         "sortable": true
       },
       {
         "label": "Total ULBs",
         "key": "totalUlbs",
-        "query": "",
+        ...(req.decoded.role != userTypes.state && {
+          "query": "",
+        }),
         "sortable": true
       },
       {
@@ -1951,7 +1955,9 @@ exports.overview = async function (req, res, next) {
       {
         "label": "State Name",
         "key": "stateName",
-        "query": "",
+        ...(req.decoded.role != userTypes.state && {
+          "query": "",
+        }),
         "sortable": true
       },
       {
