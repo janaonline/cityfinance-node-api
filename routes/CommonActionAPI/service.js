@@ -2351,6 +2351,7 @@ function manageDisabledQues(question,flattedForm){
                     
                 }
             }
+
         })
         // console.log("question ::: shortKey ",question.shortKey)
     }
@@ -2373,7 +2374,7 @@ async function mutuateGetPayload(jsonFormat, flattedForm, keysToBeDeleted,role) 
         for (let key in obj) {
             let questions = obj[key].question
             if (questions){
-                for (let question of questions) {    
+                for (let question of questions) {              
                     let answer = []
                     let obj = { ...answerObj }
                     let answerKey = inputType[question.input_type]
