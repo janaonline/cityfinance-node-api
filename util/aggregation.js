@@ -6320,8 +6320,7 @@ const stateWiseHeatMapQuery = ({ state, category }) => {
             "$submissionAckByPMU",
             "$returnedByPMU",
             "$verificationInProgress",
-            "$verificationNotStarted",
-            "$inProgress"
+            "$verificationNotStarted"
           ]
         }
       }
