@@ -6343,7 +6343,7 @@ const stateWiseHeatMapQuery = ({ state, category }) => {
         "rejected": { $sum: "$returnedByPMU" },
         "totalUlbs": { $sum: "$totalUlbs" },
         "inProgress": { $sum: "$inProgress" },
-        "submitted": { $sum: "$verificationInProgress" },
+        "submitted": { $sum: { $add: ["$verificationNotStarted", "$verificationInProgress", "$submissionAckByPMU"] } },
         "notStarted": { $sum: "$notStarted" },
 
       }
@@ -6377,6 +6377,8 @@ const stateWiseHeatMapQuery = ({ state, category }) => {
     }
     aggregationQuery = [matchObj, ...aggregationQuery]
   }
+
+  console.log(JSON.stringify(aggregationQuery, 3, 3));
   return aggregationQuery
 }
 
