@@ -912,7 +912,6 @@ exports.getView = async function (req, res, next) {
                 pf["status"] = singleFydata.status != null ? singleFydata.status : 'PENDING';
                 if (subData[key].calculatedFrom === undefined) {
                   console.log("key :: ", key)
-
                   pf["readonly"] = getReadOnly(data?.currentFormStatus, viewOne.isDraft, role, singleFydata.status);
                 } else {
                   pf["readonly"] = true;
@@ -974,8 +973,8 @@ exports.getView = async function (req, res, next) {
                 );
                 if (singleFydata) {
                   pf["file"] = singleFydata.file;
-                  pf["status"] = singleFydata.status
-
+                  pf["status"] = singleFydata.status && singleFydata.status != null ? singleFydata.status : "PENDING"
+                  pf['status'] = singleFydata.modelName === "ULBLedger" ? "" : pf["status"]
                   pf["modelName"] = singleFydata.modelName;
                   pf['rejectReason'] = singleFydata.rejectReason
                   if (subData[key].calculatedFrom === undefined) {
@@ -1065,7 +1064,7 @@ exports.getView = async function (req, res, next) {
                         url: "",
                       };
                     pf["value"] = singleFydata ? singleFydata.value : "";
-                    pf["status"] = singleFydata
+                    pf["status"] = singleFydata && singleFydata.status != null
                       ? singleFydata.status
                       : "PENDING";
                     pf["modelName"] = singleFydata
@@ -1198,32 +1197,6 @@ const getUlbLedgerDataFilter = (objData) => {
  */
 const ulbLedgerFy = (condition) => {
   return new Promise(async (resolve, reject) => {
-    console.log(JSON.stringify([
-      { $match: condition },
-      {
-        $group: {
-          _id: "$financialYear",
-        },
-      },
-      {
-        $lookup: {
-          from: "years",
-          localField: "_id",
-          foreignField: "year",
-          as: "years",
-        },
-      },
-      {
-        $unwind: "$years",
-      },
-      {
-        $project: {
-          _id: 0,
-          year_id: "$years._id",
-          year: "$years.year",
-        },
-      },
-    ]))
     try {
       let data = await UlbLedger.aggregate([
         { $match: condition },
@@ -1328,7 +1301,7 @@ const ulbLedgersData = (objData) => {
               ],
             },
             year: {
-              $in: ["2017-18", "2018-19", "2019-20"], //"2020-21", "2021-22"
+              $in: ["2017-18", "2018-19", "2019-20"],
             },
           },
         },
@@ -1818,19 +1791,19 @@ const getPopulationWiseData = ({ stateId, columns, sort, skip, limit, sortBy, or
                         { $gt: ["$population", parameter.min] },
                         { $lt: ["$population", parameter.max] },
                         ...(column.key == 'totalUlbs' ? [] : (
-                          column.currentFormStatus == 1 ? [{ 
-                            "$eq": ["$emptyForms", 1] 
+                          column.currentFormStatus == 1 ? [{
+                            "$eq": ["$emptyForms", 1]
                           }] : [{
-                            [Array.isArray(column.currentFormStatus) ? '$in': '$eq']: ["$formData.currentFormStatus", column.currentFormStatus]
+                            [Array.isArray(column.currentFormStatus) ? '$in' : '$eq']: ["$formData.currentFormStatus", column.currentFormStatus]
                           }]
                         ))
                       ] : [
                         { [parameter.condition]: ["$population", parameter.value] },
                         ...(column.key == 'totalUlbs' ? [] : (
-                          column.currentFormStatus == 1 ? [{ 
-                            "$eq": ["$emptyForms", 1] 
+                          column.currentFormStatus == 1 ? [{
+                            "$eq": ["$emptyForms", 1]
                           }] : [{
-                            [Array.isArray(column.currentFormStatus) ? '$in': '$eq']: ["$formData.currentFormStatus", column.currentFormStatus]
+                            [Array.isArray(column.currentFormStatus) ? '$in' : '$eq']: ["$formData.currentFormStatus", column.currentFormStatus]
                           }]
                         ))
                       ],
@@ -3090,12 +3063,13 @@ async function validateAccordingtoLedgers(
           financialInfo
         );
         if (ulbValue === sum) {
-          (validator.valid = true), (validator.value = years.value);
+          validator.valid = true
+           validator.value = years.value
         } else {
-          (validator.valid = false),
-            (validator.message = `Data in our ledger records in not matching the sub of break up. Please check these fields in financial information. ${dynamicObj.calculatedFrom.join(
+            validator.valid = false
+            validator.message = `Data in our ledger records in not matching the sub of break up. Please check these fields in financial information. ${dynamicObj.calculatedFrom.join(
               ","
-            )}`);
+            )}`;
         }
         return validator;
       }
@@ -3549,11 +3523,9 @@ module.exports.actionTakenByMoHua = catchAsync(async (req, res) => {
       isDraft
     );
     let formStatus = currentFormStatus
-    console.log("currentFormStatus :: ", currentFormStatus)
-    if (currentFormStatus != 9) {
+    if (currentFormStatus != statusTracker["VIP"]) {
       formStatus = await decideOverAllStatus(calculationsTabWise)
-      console.log("formStatus :: ", formStatus)
-      if (formStatus === 10) {
+      if (formStatus === statusTracker['RBP']) {
         await sendEmailToUlb(ulbId)
       }
 
@@ -4359,7 +4331,6 @@ function computeQuery(params) {
           as: "ulb",
         },
       },
-
       {
         $unwind: {
           path: "$ulb",
@@ -4472,6 +4443,7 @@ function computeQuery(params) {
   }
   if (FROverAllUlbData) {
     output["FROverAllUlbData"] = [
+      // { $match: { _id: ObjectId("5fa281a3c7ffa964f0cfa9b1") } },
       {
         $lookup: {
           from: "states",
@@ -4528,7 +4500,7 @@ function computeQuery(params) {
                 modifiedAt: 1,
                 designYear: 1,
                 isDraft: 1,
-                population11: 1,
+                population11: "$population",
                 populationFr: 1,
                 webLink: 1,
                 nameCmsnr: 1,
@@ -4547,7 +4519,7 @@ function computeQuery(params) {
                 signedCopyOfFile: 1,
                 arrayOfMandatoryField: [
                   {
-                    population11: "$population11.value",
+                    population11: "$population",
                     populationFr: "$populationFr.value",
                     webLink: "$webLink.value",
                     nameCmsnr: "$nameCmsnr.value",
@@ -4759,7 +4731,7 @@ function computeQuery(params) {
           "III FINANCIAL INFORMATION_Comments": "",
           "IV UPLOAD FINANCIAL DOCUMENTS_Comments": "",
           "V SELF DECLARATION_Comments": "",
-          population11: { $ifNull: ["$fiscalrankings.population11.value", ""] },
+          population11: { $ifNull: ["$population", ""] },
           populationFr: { $ifNull: ["$fiscalrankings.populationFr.value", ""] },
           webLink: { $ifNull: ["$fiscalrankings.webLink.value", ""] },
           nameCmsnr: { $ifNull: ["$fiscalrankings.nameCmsnr.value", ""] },

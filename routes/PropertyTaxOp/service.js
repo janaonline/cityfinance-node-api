@@ -214,7 +214,7 @@ module.exports.createOrUpdateForm = async (req, res) => {
                     return response(updatedForm, res, "Form updated.", "Form not updated.")
                 }
             }
-            
+
             if (submittedForm.status === "APPROVED" && submittedForm.actionTakenByRole !== "ULB"
                 && submittedForm.isDraft === false) {
                 return res.status(200).json({
@@ -1161,7 +1161,7 @@ function getTextValues(result,displayPriority){
     try{
         
         let subHeaders = {
-            "2.05-2.08":"Residential Properties",
+            "2.05-2.08": "Residential Properties",
             "2.09-2.12": "Commercial Properties",
             "2.13-2.16": "Industrial Properties",
             "2.17-2.20": "Government Properties",
@@ -1188,7 +1188,7 @@ function getTextValues(result,displayPriority){
                 if (subHeaders[range]) {
                     return subHeaders[range].split(",").join("") || ""
                 }
-                else{
+                else {
                     return ","
                 }
             }
@@ -1239,15 +1239,15 @@ function getSubHeaders(displayPriority) {
                 if (subHeaders[range]) {
                     return subHeaders[range].split(",").join("") || ""
                 }
-                else{
+                else {
                     return ","
                 }
             }
         }
     }
     catch (err) {
-    console.log("error in getSubheades :: ", err.message)
-}
+        console.log("error in getSubheades :: ", err.message)
+    }
     return ","
 }
 
@@ -1273,14 +1273,14 @@ function getIndicator(displayPriority) {
                 }
             }
         }
-    }
-    catch (err) {
+    } catch (err) {
+        console.log(err)
         console.log("error in getIndicators :: ", err.message)
     }
     return ""
 }
 
-const getStringValue = (result,parentDp, ipValue = false) => {
+const getStringValue = (result, parentDp, ipValue = false) => {
     let writableStr = ""
     try {
         let dataYear = result?.year
@@ -1305,21 +1305,20 @@ const getStringValue = (result,parentDp, ipValue = false) => {
         let assignedValue = value || file || date || " "
         writableStr += assignedValue ? `${assignedValue}` : "" + ","
         writableStr += "\r\n"
-    }
-    catch (err) {
-        console.log("error in getStringValue ::: ", err)
+    } catch (err) {
+        console.log("error in getStringValue ::: ", err);
     }
     return writableStr
 }
 
-const decideDisplayPriority = (index,type,dp,replicaNumber,parentType)=>{
-    try{
+const decideDisplayPriority = (index, type, dp, replicaNumber, parentType) => {
+    try {
         // console.log("type ::: ",type)
-       if(childKeys[type]){
-        return childKeys[type] + "." + replicaNumber
-       }
+        if (childKeys[type]) {
+            return childKeys[type] + "." + replicaNumber
+        }
     }
-    catch(err){
+    catch (err) {
         console.log("error in decideDisplayPriority")
     }
     return dp + "." + replicaNumber

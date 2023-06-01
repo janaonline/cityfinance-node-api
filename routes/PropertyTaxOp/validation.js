@@ -44,6 +44,19 @@ const validationJson = {
             {
                 "logic": "sum",
                 "fields": [
+                    "cdmdIncludingCess",
+                    "admdIncludingCess"
+                ],
+                "sequence": [
+                    "1.10",
+                    "1.11"
+                ],
+                "message": "Sum of current and arrears should be equal to total property tax demand.",
+                "displayNumber": "1.9"
+            },
+            {
+                "logic": "sum",
+                "fields": [
                     "dmdexcludingCess",
                     "taxTypeDemand",
                     "cessDemand"
