@@ -17,18 +17,25 @@ module.exports.FormNames = {
 
 module.exports.YEAR_CONSTANTS = {
     "20_21": "606aadac4dff55e6c075c507",
-    "21_22":"606aaf854dff55e6c075d219",
-    "22_23":"606aafb14dff55e6c075d3ae",
+    "21_22": "606aaf854dff55e6c075d219",
+    "22_23": "606aafb14dff55e6c075d3ae",
     "23_24": "606aafc14dff55e6c075d3ec"
 }
-
-
-module.exports.ULB_ACCESSIBLE_YEARS = {
-    "2021-22":"access_2122",
-    "2022-23":"access_2223",
-    "2023-24":"access_2324"
+module.exports.YEAR_CONSTANTS_IDS = {
+    "63735a4bd44534713673bfbf": "2017-18",
+    "63735a5bd44534713673c1ca": "2018-19",
+    "607697074dff55e6c0be33ba": "2019-20",
+    "606aadac4dff55e6c075c507": "2020-21",
+    "606aaf854dff55e6c075d219": "2021-22",
+    "606aafb14dff55e6c075d3ae": "2022-23",
+    "606aafc14dff55e6c075d3ec": "2023-24"
 }
 
+module.exports.ULB_ACCESSIBLE_YEARS = {
+    "2021-22": "access_2122",
+    "2022-23": "access_2223",
+    "2023-24": "access_2324"
+}
 
 module.exports.MASTER_STATUS = {
     "No Status": -1,
@@ -38,41 +45,41 @@ module.exports.MASTER_STATUS = {
     "Under Review By MoHUA": 4,
     "Returned By State": 5,
     "Submission Acknowledged By MoHUA": 6,
-    "Returned By MoHUA":7,
-    "Verification Not Started":8,
-    "Verification In Progress"  :9,
-    "Returned by PMU":10,
-    "Submission Acknowledged by PMU":11,
+    "Returned By MoHUA": 7,
+    "Verification Not Started": 8,
+    "Verification In Progress": 9,
+    "Returned by PMU": 10,
+    "Submission Acknowledged by PMU": 11,
 }
 
 module.exports.MASTER_STATUS_ID = {
-  "-1" : "No Status",
-  1: "Not Started",
-  2: "In Progress",
-  3: "Under Review By State",
-  4: "Under Review By MoHUA",
-  5: "Returned By State",
-  6: "Submission Acknowledged By MoHUA",
-  7: "Returned By MoHUA",
-  8: "Verification Not Started",
-  9: "Verification In Progress",
-  10: "Returned by PMU",
-  11: "Submission Acknowledged by PMU"
+    "-1": "No Status",
+    1: "Not Started",
+    2: "In Progress",
+    3: "Under Review By State",
+    4: "Under Review By MoHUA",
+    5: "Returned By State",
+    6: "Submission Acknowledged By MoHUA",
+    7: "Returned By MoHUA",
+    8: "Verification Not Started",
+    9: "Verification In Progress",
+    10: "Returned by PMU",
+    11: "Submission Acknowledged by PMU"
 };
 
 module.exports.FORMIDs = {
     "ODF": 1,
-    "GFC":2,
-    "PTO":3,
+    "GFC": 2,
+    "PTO": 3,
     "AnnualAccount": 5,
-    'dur':4,
+    'dur': 4,
     "twentyEightSlb": 6,
-    "fiscalRanking":9,
+    "fiscalRanking": 9,
     "GTC_STATE": 10,
     "GTC_ULB": 11,
-    "waterRej":12,
-    "actionPlan":13
-    
+    "waterRej": 12,
+    "actionPlan": 13
+
 }
 
 module.exports.FORM_LEVEL_SHORTKEY = {
