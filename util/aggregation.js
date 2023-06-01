@@ -6209,6 +6209,11 @@ const stateWiseHeatMapQuery = ({ state, category }) => {
       }
     },
     {
+      "$match": {
+        "isActive": { "$eq": true }
+      }
+    },
+    {
       "$unwind": {
         "path": "$formData",
         "preserveNullAndEmptyArrays": true
