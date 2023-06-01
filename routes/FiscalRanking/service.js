@@ -1198,32 +1198,6 @@ const getUlbLedgerDataFilter = (objData) => {
  */
 const ulbLedgerFy = (condition) => {
   return new Promise(async (resolve, reject) => {
-    console.log(JSON.stringify([
-      { $match: condition },
-      {
-        $group: {
-          _id: "$financialYear",
-        },
-      },
-      {
-        $lookup: {
-          from: "years",
-          localField: "_id",
-          foreignField: "year",
-          as: "years",
-        },
-      },
-      {
-        $unwind: "$years",
-      },
-      {
-        $project: {
-          _id: 0,
-          year_id: "$years._id",
-          year: "$years.year",
-        },
-      },
-    ]))
     try {
       let data = await UlbLedger.aggregate([
         { $match: condition },
@@ -3070,12 +3044,13 @@ async function validateAccordingtoLedgers(
           financialInfo
         );
         if (ulbValue === sum) {
-          (validator.valid = true), (validator.value = years.value);
+          validator.valid = true
+          validator.value = years.value;
         } else {
-          (validator.valid = false),
-            (validator.message = `Data in our ledger records in not matching the sub of break up. Please check these fields in financial information. ${dynamicObj.calculatedFrom.join(
+          validator.valid = false
+            validator.message = `Data in our ledger records in not matching the sub of break up. Please check these fields in financial information. ${dynamicObj.calculatedFrom.join(
               ","
-            )}`);
+            )}`;
         }
         return validator;
       }
