@@ -6,7 +6,7 @@ const FiscalRanking = require("../../models/FiscalRanking");
 const FiscalRankingMapper = require("../../models/FiscalRankingMapper");
 const { FRTypeShortKey } = require('./formjson')
 const UlbLedger = require("../../models/UlbLedger");
-const { FORMIDs, MASTER_STATUS, MASTER_STATUS_ID, FORM_LEVEL, POPULATION_TYPE } = require("../../util/FormNames");
+const { FORMIDs, MASTER_STATUS, MASTER_STATUS_ID, FORM_LEVEL, POPULATION_TYPE, YEAR_CONSTANTS, YEAR_CONSTANTS_IDS } = require("../../util/FormNames");
 const { saveCurrentStatus, saveFormHistory, saveStatusHistory } = require("../../util/masterFunctions");
 const FeedBackFiscalRanking = require("../../models/FeedbackFiscalRanking");
 const TwentyEightSlbsForm = require("../../models/TwentyEightSlbsForm");
@@ -21,7 +21,7 @@ const {
 } = require("../../util/fiscalRankingsConst");
 const userTypes = require("../../util/userTypes");
 const { dateFormatter } = require("../../util/dateformatter");
-// const converter = require('json-2-csv');
+const { fyCsvDownloadQuery } = require('./query');
 
 const {
   calculateKeys,
@@ -44,7 +44,8 @@ const {
   statusList,
   statusTracker,
   questionLevelStatus,
-  calculatedFields
+  calculatedFields,
+  fiscalRankingQestionSortkeys
 } = require("./fydynemic");
 const catchAsync = require("../../util/catchAsync");
 const State = require("../../models/State");
@@ -58,6 +59,7 @@ let priorTabsForFiscalRanking = {
   uploadFyDoc: "s4",
   selDec: "s5",
 };
+
 exports.CreateorUpdate = async (req, res, next) => {
   // console.log("req.body",req.body)
   try {
@@ -3550,21 +3552,8 @@ function FRFinancialCsvCase(
   labelObj
 ) {
   if (key === "indicator") {
-    //  if (document[key] === "totalOwnRevenueArea") {
-    // FRFlag = true;
-    // str2 = str;
-    // str2 += `${totalownOwnRevenueAreaLabel}, ${
-    // document["fy_21_22_cash"] ?? ""
-    //   // }`;
-    // }
     document[key] = removeEscapeChars(labelObj[document[key]]);
-    // if(!labelObj[document[key]]){
-    //   console.log(document["indicator"])
-    // }
   }
-  // return { FRFlag, 
-  //   // str2 
-  // };
 }
 
 /**
@@ -3610,7 +3599,6 @@ function computeQuery(params) {
     output["FRUlbFinancialData"] = [
       {
         $match: {
-          // ulb: ObjectId("5fa24662072dab780a6f15c9"),
           type: {
             $in: indicatorArr,
           },
@@ -4147,185 +4135,92 @@ function removeEscapeChars(entity) {
   return !entity ? entity : entity.replace(/(\n|,)/gm, " ");
 }
 
-
 module.exports.FRUlbFinancialData = async (req, res) => {
   try {
     let filters = { ...req.query };
-    let { getQuery, sortBy, csv } = filters;
+    let { getQuery, csv } = filters;
     csv = csv === "true" ? true : false;
     let params = { FRUlbFinancialData: true };
-    // let { FRUlbFinancialData: query } = await computeQuery(params);
+    let query = fyCsvDownloadQuery();
     if (getQuery === "true") {
       return res.status(200).json(query);
     }
     filters["csv"] ? delete filters["csv"] : "";
-
-    let { csvCols, dbCols, FRShortKeyObj } = await columnsForCSV(params);
-    createCsv1234({
+    let { csvCols } = await columnsForCSV(params);
+    fyUlbFyCsv({
       res,
       filename: "ULB_Ranking_Financial_Data.csv",
       modelName: "FiscalRankingMapper",
-      dbCols,
       csvCols,
-      removeEscapesFromArr: [],
-      labelObj: FRShortKeyObj,
-      FRKeyWithDate: [],
-      FRKeyWithFile: []
-    });
-  } catch (error) {
-    return Response.BadRequest(res, {}, error.message);
-  }
-};
-
-
-
-
-function createCsv1234(params) {
-  try {
-    let {
-      res,
-      filename,
-      modelName,
-      dbCols,
-      csvCols,
-      removeEscapesFromArr,
-      labelObj,
-      FRKeyWithDate,
-      FRKeyWithFile
-    } = params;
-
-    res.setHeader("Content-disposition", "attachment; filename=" + filename);
-    res.writeHead(200, { "Content-Type": "text/csv;charset=utf-8,%EF%BB%BF" });
-    res.write("\ufeff" + `${csvCols.join(",").toString()}` + "\r\n");
-
-    // let cursor = moongose
-    //   .model(modelName)
-    //   .aggregate([
-    //     {
-    //       "$lookup": {
-    //         "from": "fiscalrankingmappers",
-    //         "localField": "_id",
-    //         "foreignField": "fiscal_ranking",
-    //         "as": "fiscalrankingmapper"
-    //       }
-    //     },
-    //     {
-    //       "$lookup": {
-    //         "from": "ulbs",
-    //         "localField": "ulb",
-    //         "foreignField": "_id",
-    //         "as": "ulb"
-    //       }
-    //     },
-    //     {
-    //       "$unwind": {
-    //         "path": "$ulb",
-    //         "preserveNullAndEmptyArrays": true
-    //       }
-    //     },
-    //     {
-    //       "$project": {
-    //         "ulbName": "$ulb.name",
-    //         "cityFinanceCode": "$ulb.code",
-    //         "fiscalrankingmapper": "$fiscalrankingmapper",
-    //         "censusCode": {
-    //           "$cond": {
-    //             "if": {
-    //               "$or": [
-    //                 {
-    //                   "$eq": [
-    //                     "$censusCode",
-    //                     ""
-    //                   ]
-    //                 },
-    //                 {
-    //                   "$eq": [
-    //                     "$censusCode",
-    //                     null
-    //                   ]
-    //                 }
-    //               ]
-    //             },
-    //             "then": "$ulb.sbCode",
-    //             "else": "$ulb.censusCode"
-    //           }
-    //         },
-    //         "formStatus2": {
-    //           "$cond": {
-    //             "if": {
-    //               "$or": [
-    //                 {
-    //                   "$eq": [
-    //                     "$isDraft",
-    //                     true
-    //                   ]
-    //                 }
-    //               ]
-    //             },
-    //             "then": "In Progress",
-    //             "else": "Under Review By MoHUA"
-    //           }
-    //         },
-    //         "designYear": "$design_year"
-    //       }
-    //     },
-    //     {
-    //       "$sort": {
-    //         "cityFinanceCode": 1
-    //       }
-    //     }
-    //   ])
-    //   .allowDiskUse(true)
-    //   .cursor({ batchSize: 500 })
-    //   .addCursorFlag("noCursorTimeout", true)
-    //   .exec();
-
-
-    cursor.on("data", (document) => {
-      try {
-        let fyMapperData = document.fiscalrankingmapper;
-
-        for (let key of dbCols) {
-          if (removeEscapesFromArr.includes(key)) {
-            document[key] = removeEscapeChars(document[key]);
-          }
-          
-          let fiscalrankingmappersDocument = document[
-            "fiscalrankingmappers"
-          ].find((el) => key === el.key);
-          if (fiscalrankingmappersDocument) {
-            let FRMapperKey = "value"
-            if (FRKeyWithDate.length > 0 && FRKeyWithDate.includes(key)) {
-              FRMapperKey = "date"
-            } else if (FRKeyWithFile.length > 0 && FRKeyWithFile.includes(key)) {
-              FRMapperKey = "file"
-            }
-            if (fiscalrankingmappersDocument[FRMapperKey]) {
-              str += fiscalrankingmappersDocument[FRMapperKey] + ",";
-            } else {
-              str += " " + ",";
-            }
-          } else {
-            str += " " + ",";
-          }
-        }
-        str.trim()
-        res.write("\ufeff" + str + "\r\n");
-      } catch (err) {
-        console.log("error in writeCsv :: ", err.message);
-      }
-    });
-
-    cursor.on("end", (el) => {
-      // res.flushHeaders();
-      // console.log("ended");
-      return res.end();
+      query
     });
   } catch (error) {
     return Response.BadRequest(res, {}, error.message);
   }
 }
 
+/**
+ * This is a function that generates a CSV file based on given parameters and data from a MongoDB
+ * database.
+ * @param params - The `params` object contains the following properties:
+ * @returns The function `fyUlbFyCsv` does not have a return statement. It writes a CSV file to the
+ * response object and ends the response.
+ */
+
+async function fyUlbFyCsv(params) {
+  try {
+    let {
+      res,
+      filename,
+      csvCols,
+      query
+    } = params;
+
+    let FRShortKeyObj = {};
+
+    if (FiscalRankingArray.length > 0) {
+      for (let FRObj of FiscalRankingArray) {
+        FRShortKeyObj[FRObj["key"]] = removeEscapeChars(FRObj["label"]);
+      }
+    }
+
+    let stateList = await State.find({}, { "_id": 1, "name": 1 }).lean();
+    res.setHeader("Content-disposition", "attachment; filename=" + filename);
+    res.writeHead(200, { "Content-Type": "text/csv;charset=utf-8,%EF%BB%BF" });
+    res.write("\ufeff" + `${csvCols.join(",").toString()}` + "\r\n");
+    let cursor = moongose
+      .model("FiscalRanking")
+      .aggregate(query).allowDiskUse(true)
+      .cursor({ batchSize: 300 })
+      .addCursorFlag("noCursorTimeout", true)
+      .exec();
+    cursor.on("data", (document) => {
+      try {
+        let fyMapperData = document.fiscalrankingmapper;
+        let sortKeys = fiscalRankingQestionSortkeys();
+        let stateObj = stateList.length ? stateList.find(e => e._id.toString() == document.state.toString()) : null
+        let stateName = stateObj ? stateObj.name : ""
+        let censusCode = document.censusCode ? document.censusCode : document.sbCode;
+        for (let key in sortKeys) {
+          let fyData = fyMapperData.length ? fyMapperData.filter(e => parseFloat(e.displayPriority) == sortKeys[key]) : null;
+          if (fyData) {
+            let str = '';
+            for (let pf of fyData) {
+              let value = pf.file ? pf.file : pf.date ? pf.date : pf.value ? pf.value : ""
+              str = stateName + "," + document.ulbName + "," + document.cityFinanceCode + "," + censusCode + "," + MASTER_STATUS_ID[document.currentFormStatus] + "," + YEAR_CONSTANTS_IDS[document.designYear] + "," + YEAR_CONSTANTS_IDS[pf.year] + "," + FRShortKeyObj[pf.type] + "," + value;
+              str.trim()
+              res.write("\ufeff" + str + "\r\n");
+            }
+          }
+        }
+      } catch (err) {
+        console.log("error in writeCsv :: ", err);
+        return Response.BadRequest(res, {}, error.message);
+      }
+    });
+    cursor.on("end", (el) => { return res.end() });
+  } catch (error) { return Response.BadRequest(res, {}, error) }
+}
 
 function createCsv(params) {
   try {
@@ -4407,16 +4302,12 @@ function createCsv(params) {
         console.log("error in writeCsv :: ", err.message);
       }
     });
-
     cursor.on("end", (el) => {
-      // res.flushHeaders();
-      // console.log("ended");
       return res.end();
     });
   } catch (error) {
     return Response.BadRequest(res, {}, error.message);
   }
 }
-
 
 module.exports.checkUndefinedValidations = checkUndefinedValidations
