@@ -6348,7 +6348,7 @@ const stateWiseHeatMapQuery = ({ state, category }) => {
         "rejected": { $sum: "$returnedByPMU" },
         "totalUlbs": { $sum: "$totalUlbs" },
         "inProgress": { $sum: "$inProgress" },
-        "submitted": { $sum: { $add: ["$verificationNotStarted", "$verificationInProgress", "$submissionAckByPMU"] } },
+        "submitted": { $sum: { $add: ["$verificationNotStarted", "$verificationInProgress", "$returnedByPMU", "$submissionAckByPMU"] } },
         "notStarted": { $sum: "$notStarted" },
 
       }
