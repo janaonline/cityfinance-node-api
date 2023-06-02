@@ -6,7 +6,7 @@ const FiscalRanking = require("../../models/FiscalRanking");
 const FiscalRankingMapper = require("../../models/FiscalRankingMapper");
 const { FRTypeShortKey } = require('./formjson')
 const UlbLedger = require("../../models/UlbLedger");
-const { FORMIDs, MASTER_STATUS, MASTER_STATUS_ID, FORM_LEVEL, POPULATION_TYPE, USER_ROLE } = require("../../util/FormNames");
+const { FORMIDs, MASTER_STATUS, MASTER_STATUS_ID, FORM_LEVEL, POPULATION_TYPE, YEAR_CONSTANTS, YEAR_CONSTANTS_IDS, USER_ROLE } = require("../../util/FormNames");
 const { saveCurrentStatus, saveFormHistory, saveStatusHistory } = require("../../util/masterFunctions");
 const FeedBackFiscalRanking = require("../../models/FeedbackFiscalRanking");
 const TwentyEightSlbsForm = require("../../models/TwentyEightSlbsForm");
@@ -22,7 +22,7 @@ const {
 } = require("../../util/fiscalRankingsConst");
 const userTypes = require("../../util/userTypes");
 const { dateFormatter } = require("../../util/dateformatter");
-// const converter = require('json-2-csv');
+const { fyCsvDownloadQuery } = require('./query');
 
 const {
   calculateKeys,
@@ -45,7 +45,8 @@ const {
   statusList,
   statusTracker,
   questionLevelStatus,
-  calculatedFields
+  calculatedFields,
+  fiscalRankingQestionSortkeys
 } = require("./fydynemic");
 const catchAsync = require("../../util/catchAsync");
 const State = require("../../models/State");
@@ -60,6 +61,7 @@ let priorTabsForFiscalRanking = {
   uploadFyDoc: "s4",
   selDec: "s5",
 };
+
 exports.CreateorUpdate = async (req, res, next) => {
   // console.log("req.body",req.body)
   try {
@@ -696,6 +698,45 @@ async function getPreviousYearValues(pf, ulbData) {
   }
 }
 
+const keyBasedCond = (value,key)=>{
+  try{
+    if(value[key] == null || value[key] === ""){
+      value.status = ""
+    }
+    return value
+  }
+  catch(err){
+    console.log("error in keyBasedCond :: ",err.message)
+  }
+  return value
+}
+
+function manageNullValuesInMainTable(data){
+  const statusNotMandatory = ["caMembershipNo", "otherUpload"]
+  const fileCase = ["otherUpload"]
+  try{
+    return Object.entries(data).reduce((acc, [key, value]) => {
+      if(typeof(value) === "object" && value?.status === null){
+        value.status = "PENDING"
+      }
+      if(statusNotMandatory.includes(key)){
+        if(fileCase.includes(key)){
+          value = keyBasedCond(value,"url")
+        }
+        else{
+         value = keyBasedCond(value,"value")
+        }
+      }
+      acc[key] = value;
+      return acc;
+    }, {});
+  }
+  catch(err){
+    console.log("error in manageNullValueInMainTable")
+  }
+  return data
+}
+
 exports.getView = async function (req, res, next) {
   try {
     let condition = {};
@@ -707,6 +748,7 @@ exports.getView = async function (req, res, next) {
       };
     }
     let data = await FiscalRanking.findOne(condition, { history: 0 }).lean();
+    data = manageNullValuesInMainTable(data)
     let twEightSlbs = await TwentyEightSlbsForm.findOne(condition, {
       population: 1,
     }).lean();
@@ -1197,32 +1239,6 @@ const getUlbLedgerDataFilter = (objData) => {
  */
 const ulbLedgerFy = (condition) => {
   return new Promise(async (resolve, reject) => {
-    console.log(JSON.stringify([
-      { $match: condition },
-      {
-        $group: {
-          _id: "$financialYear",
-        },
-      },
-      {
-        $lookup: {
-          from: "years",
-          localField: "_id",
-          foreignField: "year",
-          as: "years",
-        },
-      },
-      {
-        $unwind: "$years",
-      },
-      {
-        $project: {
-          _id: 0,
-          year_id: "$years._id",
-          year: "$years.year",
-        },
-      },
-    ]))
     try {
       let data = await UlbLedger.aggregate([
         { $match: condition },
@@ -1526,14 +1542,13 @@ exports.getAll = async function (req, res, next) {
   }
 };
 
-const getUlbActivities = ({ sort, skip, limit, sortBy, order, filters, filterObj, sortKey, designYear }) => {
-  const query = [
-    // {
-    // "$match":{
-    // "_id":ObjectId("5fa24662072dab780a6f15c9")
-    // }
-    // },
-
+const getUlbActivities = ({ req, sort, skip, limit, sortBy, order, filters, filterObj, sortKey, designYear }) => {
+  let query = [
+    ...(req.decoded.role == userTypes.state ? [{
+      $match: {
+        "state": ObjectId(req.decoded.state)
+      }
+    }] : []),
     {
       "$lookup": {
         "from": "fiscalrankings",
@@ -1636,17 +1651,17 @@ const getUlbActivities = ({ sort, skip, limit, sortBy, order, filters, filterObj
   if (filterObj.provided) {
     query.push({ $match: filters });
   }
+  console.log(query);
   return Ulb.aggregate(query);
 }
-const getPMUActivities = ({ sort, skip, limit, sortBy, order, filters, filterObj, sortKey, designYear }) => {
+const getPMUActivities = ({ req, sort, skip, limit, sortBy, order, filters, filterObj, sortKey, designYear }) => {
 
   const query = [
-    // {
-    // "$match":{
-    // "_id":ObjectId("5fa24662072dab780a6f15c9")
-    // }
-    // },
-
+    ...(req.decoded.role == userTypes.state ? [{
+      $match: {
+        "state": ObjectId(req.decoded.state)
+      }
+    }] : []),
     {
       "$lookup": {
         "from": "fiscalrankings",
@@ -1902,7 +1917,7 @@ function getSortByKeys(sortBy, order) {
 exports.overview = async function (req, res, next) {
 
   const { type } = req.params;
-  console.log({ type });
+  console.log({ decoded: req.decoded });
 
   let name = {
     "UlbActivities": "Overview of ULB activities",
@@ -1917,13 +1932,17 @@ exports.overview = async function (req, res, next) {
       {
         "label": "State Name",
         "key": "stateName",
-        "query": "",
+        ...(req.decoded.role != userTypes.state && {
+          "query": "",
+        }),
         "sortable": true
       },
       {
         "label": "Total ULBs",
         "key": "totalUlbs",
-        "query": "",
+        ...(req.decoded.role != userTypes.state && {
+          "query": "",
+        }),
         "sortable": true
       },
       {
@@ -1951,7 +1970,9 @@ exports.overview = async function (req, res, next) {
       {
         "label": "State Name",
         "key": "stateName",
-        "query": "",
+        ...(req.decoded.role != userTypes.state && {
+          "query": "",
+        }),
         "sortable": true
       },
       {
@@ -2030,7 +2051,7 @@ exports.overview = async function (req, res, next) {
     await deleteExtraKeys(["sortBy", "order", "skip", "limit"], filters)
 
     console.log(filters);
-    filters = await Service.mapFilter(filters)
+    filters = await Service.mapFilter(filters);
     let filterObj = {
       "provided": Object.keys(filters).length > 0 ? true : false,
       "filters": Object.keys(filters).length > 0 ? { ...filters } : "",
@@ -2052,10 +2073,10 @@ exports.overview = async function (req, res, next) {
     let data;
     console.log(JSON.stringify(filters));
     if (type == 'UlbActivities') {
-      data = await getUlbActivities({ sort, skip, limit, sortBy, order, filters, filterObj, sortKey, designYear });
+      data = await getUlbActivities({ req, sort, skip, limit, sortBy, order, filters, filterObj, sortKey, designYear });
     }
     else if (type == 'PMUActivities') {
-      data = await getPMUActivities({ sort, skip, limit, sortBy, order, filters, filterObj, sortKey, designYear });
+      data = await getPMUActivities({ req, sort, skip, limit, sortBy, order, filters, filterObj, sortKey, designYear });
     }
     else if (type == 'populationWise') {
       data = await getPopulationWiseData({ stateId, columns, sort, skip, limit, sortBy, order, filters, filterObj, sortKey, designYear });
@@ -3084,12 +3105,13 @@ async function validateAccordingtoLedgers(
           financialInfo
         );
         if (ulbValue === sum) {
-          (validator.valid = true), (validator.value = years.value);
+          validator.valid = true
+           validator.value = years.value
         } else {
-          (validator.valid = false),
-            (validator.message = `Data in our ledger records in not matching the sub of break up. Please check these fields in financial information. ${dynamicObj.calculatedFrom.join(
+            validator.valid = false
+            validator.message = `Data in our ledger records in not matching the sub of break up. Please check these fields in financial information. ${dynamicObj.calculatedFrom.join(
               ","
-            )}`);
+            )}`;
         }
         return validator;
       }
@@ -3721,45 +3743,48 @@ module.exports.createForm = catchAsync(async (req, res) => {
   return res.status(500).json(response);
 });
 
-module.exports.FRUlbFinancialData = async (req, res) => {
-  try {
-    let filters = { ...req.query };
-    let skip = parseInt(filters.skip) || 0;
-    let limit = parseInt(filters.limit) || 10;
-    let { getQuery, sortBy, csv } = filters;
-    csv = csv === "true" ? true : false;
 
-    let params = { FRUlbFinancialData: true };
-    let { FRUlbFinancialData: query } = await computeQuery(params);
-    if (getQuery === "true") {
-      return res.status(200).json(query);
-    }
+/* OLD */
+// module.exports.FRUlbFinancialData = async (req, res) => {
+//   try {
+//     let filters = { ...req.query };
 
-    filters["csv"] ? delete filters["csv"] : "";
+//     let { getQuery, sortBy, csv } = filters;
+//     csv = csv === "true" ? true : false;
 
-    let newFilter = await Service.mapFilterNew(filters);
-    let { financialInformation } = await fiscalRankingFormJson();
+//     let params = { FRUlbFinancialData: true };
+//     let { FRUlbFinancialData: query } = await computeQuery(params);
+//     if (getQuery === "true") {
+//       return res.status(200).json(query);
+//     }
 
-    const FinancialRankingFilename = "ULB_Ranking_Financial_Data.csv";
-    let { csvCols, dbCols, FRShortKeyObj } = await columnsForCSV(params);
-    let csv2 = createCsv({
-      query,
-      res,
-      filename: FinancialRankingFilename,
-      modelName: "FiscalRankingMapper",
-      dbCols,
-      csvCols,
-      removeEscapesFromArr: [],
-      labelObj: FRShortKeyObj,
-      // percentCompletionArr: [],
-      FRKeyWithDate: [],
-      FRKeyWithFile: []
+//     filters["csv"] ? delete filters["csv"] : "";
 
-    });
-  } catch (error) {
-    return Response.BadRequest(res, {}, error.message);
-  }
-};
+//     let newFilter = await Service.mapFilterNew(filters);
+//     let { financialInformation } = await fiscalRankingFormJson();
+
+//     const FinancialRankingFilename = "ULB_Ranking_Financial_Data.csv";
+//     let { csvCols, dbCols, FRShortKeyObj } = await columnsForCSV(params);
+//     let csv2 = createCsv({
+//       query,
+//       res,
+//       filename: FinancialRankingFilename,
+//       modelName: "FiscalRankingMapper",
+//       dbCols,
+//       csvCols,
+//       removeEscapesFromArr: [],
+//       labelObj: FRShortKeyObj,
+//       // percentCompletionArr: [],
+//       FRKeyWithDate: [],
+//       FRKeyWithFile: []
+
+//     });
+//   } catch (error) {
+//     return Response.BadRequest(res, {}, error.message);
+//   }
+// };
+
+
 
 module.exports.FROverAllUlbData = async (req, res) => {
   try {
@@ -3981,133 +4006,6 @@ async function columnsForCSV(params) {
   return output;
 }
 
-function createCsv(params) {
-  try {
-    let {
-      query,
-      res,
-      filename,
-      modelName,
-      dbCols,
-      csvCols,
-      removeEscapesFromArr,
-      labelObj,
-      FRKeyWithDate,
-      FRKeyWithFile
-    } = params;
-    // if(!dbCols.length){
-    //   dbCols =  Object.keys(cols)
-    // }
-    // if(!csvCols.length){
-    //   csvCols = Object.values(cols)
-    // }
-    let cursor = moongose
-      .model(modelName)
-      .aggregate(query)
-      .allowDiskUse(true)
-      .cursor({ batchSize: 500 })
-      .addCursorFlag("noCursorTimeout", true)
-      .exec();
-    res.setHeader("Content-disposition", "attachment; filename=" + filename);
-    res.writeHead(200, { "Content-Type": "text/csv;charset=utf-8,%EF%BB%BF" });
-    res.write("\ufeff" + `${csvCols.join(",").toString()}` + "\r\n");
-    // res.write();
-    cursor.on("data", (document) => {
-      try {
-        let str = "";
-        let str2 = "";
-        let FRFlag = false;
-        const ignoreZero = 0;
-        const completionKey = "completionPercentFR";
-        const mandatoryFieldsKey = "arrayOfMandatoryField";
-        if (Array.isArray(document[mandatoryFieldsKey]) && document[mandatoryFieldsKey]) {
-          document["completionPercent"] = completionPercent(document[mandatoryFieldsKey], document[completionKey]);
-        }
-        for (let key of dbCols) {
-          /* *
-              this condition converts date to DD/MM/YYYY format
-            * */
-          // if (["createdAt", "modifiedAt"].includes(key)) {
-          //   document[key]
-          //     ? (document[key] = dateFormatter(document[key], "/"))
-          //     : "";
-          // }
-          if (removeEscapesFromArr.includes(key)) {
-            document[key] = removeEscapeChars(document[key]);
-          }
-
-          if (key.split("_")[0] !== "FR") {
-            if (document[key] === ignoreZero || document[key]) {
-              /* A destructuring assignment.FR case in Fiscal Mapper */
-              FRFinancialCsvCase(
-                key,
-                document,
-                labelObj
-              );
-              // if (key === "formStatus") {
-              //   let { status, actionTakenByRole, isDraft } = document[key];
-              //   document[key] = calculateStatusForFiscalRankingForms(
-              //     status,
-              //     actionTakenByRole,
-              //     isDraft,
-              //     "ULB"
-              //   );
-              // }
-
-              str += document[key] + ",";
-            } else {
-              str += " " + ",";
-            }
-          } else {
-            let fiscalrankingmappersDocument = document[
-              "fiscalrankingmappers"
-            ].find((el) => key === el.key);
-            if (fiscalrankingmappersDocument) {
-              let FRMapperKey = "value"
-              if (FRKeyWithDate.length > 0 && FRKeyWithDate.includes(key)) {
-                FRMapperKey = "date"
-              } else if (FRKeyWithFile.length > 0 && FRKeyWithFile.includes(key)) {
-                FRMapperKey = "file"
-              }
-              if (fiscalrankingmappersDocument[FRMapperKey]) {
-                str += fiscalrankingmappersDocument[FRMapperKey] + ",";
-              } else {
-                str += " " + ",";
-              }
-            } else {
-              str += " " + ",";
-            }
-          }
-        }
-        // if (FROverallFlag) {
-        //   let percent = (
-        //     (completionPercent / denominatorMandatory) *
-        //     100
-        //   ).toFixed();
-        //   str2 = str.split(",");
-        //   str2.splice(9, 1, `${percent}%`);
-        //   str = str2.join(",");
-        // }
-        str.trim()
-        res.write("\ufeff" + str + "\r\n");
-        // if (FRFlag) {
-        //   res.write("\ufeff" + str2 + "\r\n");
-        //   FRFlag = false;
-        // }
-      } catch (err) {
-        console.log("error in writeCsv :: ", err.message);
-      }
-    });
-
-    cursor.on("end", (el) => {
-      // res.flushHeaders();
-      // console.log("ended");
-      return res.end();
-    });
-  } catch (error) {
-    return Response.BadRequest(res, {}, error.message);
-  }
-}
 
 function completionPercent(document, FRCompletionNumber) {
   let completionPercent = 0;
@@ -4238,21 +4136,8 @@ function FRFinancialCsvCase(
   labelObj
 ) {
   if (key === "indicator") {
-    //  if (document[key] === "totalOwnRevenueArea") {
-    // FRFlag = true;
-    // str2 = str;
-    // str2 += `${totalownOwnRevenueAreaLabel}, ${
-    // document["fy_21_22_cash"] ?? ""
-    //   // }`;
-    // }
     document[key] = removeEscapeChars(labelObj[document[key]]);
-    // if(!labelObj[document[key]]){
-    //   console.log(document["indicator"])
-    // }
   }
-  // return { FRFlag, 
-  //   // str2 
-  // };
 }
 
 /**
@@ -4298,7 +4183,6 @@ function computeQuery(params) {
     output["FRUlbFinancialData"] = [
       {
         $match: {
-          // ulb: ObjectId("5fa24662072dab780a6f15c9"),
           type: {
             $in: indicatorArr,
           },
@@ -4863,4 +4747,180 @@ exports.heatMapReport = async (req, res, next) => {
 function removeEscapeChars(entity) {
   return !entity ? entity : entity.replace(/(\n|,)/gm, " ");
 }
+
+module.exports.FRUlbFinancialData = async (req, res) => {
+  try {
+    let filters = { ...req.query };
+    let { getQuery, csv } = filters;
+    csv = csv === "true" ? true : false;
+    let params = { FRUlbFinancialData: true };
+    let query = fyCsvDownloadQuery();
+    if (getQuery === "true") {
+      return res.status(200).json(query);
+    }
+    filters["csv"] ? delete filters["csv"] : "";
+    let { csvCols } = await columnsForCSV(params);
+    fyUlbFyCsv({
+      res,
+      filename: "ULB_Ranking_Financial_Data.csv",
+      modelName: "FiscalRankingMapper",
+      csvCols,
+      query
+    });
+  } catch (error) {
+    return Response.BadRequest(res, {}, error.message);
+  }
+}
+
+/**
+ * This is a function that generates a CSV file based on given parameters and data from a MongoDB
+ * database.
+ * @param params - The `params` object contains the following properties:
+ * @returns The function `fyUlbFyCsv` does not have a return statement. It writes a CSV file to the
+ * response object and ends the response.
+ */
+
+async function fyUlbFyCsv(params) {
+  try {
+    let {
+      res,
+      filename,
+      csvCols,
+      query
+    } = params;
+
+    let FRShortKeyObj = {};
+
+    if (FiscalRankingArray.length > 0) {
+      for (let FRObj of FiscalRankingArray) {
+        FRShortKeyObj[FRObj["key"]] = removeEscapeChars(FRObj["label"]);
+      }
+    }
+
+    let stateList = await State.find({}, { "_id": 1, "name": 1 }).lean();
+    res.setHeader("Content-disposition", "attachment; filename=" + filename);
+    res.writeHead(200, { "Content-Type": "text/csv;charset=utf-8,%EF%BB%BF" });
+    res.write("\ufeff" + `${csvCols.join(",").toString()}` + "\r\n");
+    let cursor = moongose
+      .model("FiscalRanking")
+      .aggregate(query).allowDiskUse(true)
+      .cursor({ batchSize: 300 })
+      .addCursorFlag("noCursorTimeout", true)
+      .exec();
+    cursor.on("data", (document) => {
+      try {
+        let fyMapperData = document.fiscalrankingmapper;
+        let sortKeys = fiscalRankingQestionSortkeys();
+        let stateObj = stateList.length ? stateList.find(e => e._id.toString() == document.state.toString()) : null
+        let stateName = stateObj ? stateObj.name : ""
+        let censusCode = document.censusCode ? document.censusCode : document.sbCode;
+        for (let key in sortKeys) {
+          let fyData = fyMapperData.length ? fyMapperData.filter(e => parseFloat(e.displayPriority) == sortKeys[key]) : null;
+          if (fyData) {
+            let str = '';
+            for (let pf of fyData) {
+              let value = pf.file ? pf.file : pf.date ? pf.date : pf.value ? pf.value : ""
+              str = stateName + "," + document.ulbName + "," + document.cityFinanceCode + "," + censusCode + "," + MASTER_STATUS_ID[document.currentFormStatus] + "," + YEAR_CONSTANTS_IDS[document.designYear] + "," + YEAR_CONSTANTS_IDS[pf.year] + "," + FRShortKeyObj[pf.type] + "," + value;
+              str.trim()
+              res.write("\ufeff" + str + "\r\n");
+            }
+          }
+        }
+      } catch (err) {
+        console.log("error in writeCsv :: ", err);
+        return Response.BadRequest(res, {}, error.message);
+      }
+    });
+    cursor.on("end", (el) => { return res.end() });
+  } catch (error) { return Response.BadRequest(res, {}, error) }
+}
+
+function createCsv(params) {
+  try {
+    let {
+      query,
+      res,
+      filename,
+      modelName,
+      dbCols,
+      csvCols,
+      removeEscapesFromArr,
+      labelObj,
+      FRKeyWithDate,
+      FRKeyWithFile
+    } = params;
+
+    res.setHeader("Content-disposition", "attachment; filename=" + filename);
+    res.writeHead(200, { "Content-Type": "text/csv;charset=utf-8,%EF%BB%BF" });
+    res.write("\ufeff" + `${csvCols.join(",").toString()}` + "\r\n");
+
+    let cursor = moongose
+      .model(modelName)
+      .aggregate(query)
+      .allowDiskUse(true)
+      .cursor({ batchSize: 500 })
+      .addCursorFlag("noCursorTimeout", true)
+      .exec();
+
+    cursor.on("data", (document) => {
+      try {
+        let str = "";
+        let str2 = "";
+        let FRFlag = false;
+        if (Array.isArray(document[mandatoryFieldsKey]) && document[mandatoryFieldsKey]) {
+          document["completionPercent"] = completionPercent(document[mandatoryFieldsKey], document[completionKey]);
+        }
+
+        for (let key of dbCols) {
+          if (removeEscapesFromArr.includes(key)) {
+            document[key] = removeEscapeChars(document[key]);
+          }
+
+          if (key.split("_")[0] !== "FR") {
+            if (document[key] === ignoreZero || document[key]) {
+              /* A destructuring assignment.FR case in Fiscal Mapper */
+              FRFinancialCsvCase(
+                key,
+                document,
+                labelObj
+              );
+              str += document[key] + ",";
+            } else {
+              str += " " + ",";
+            }
+          } else {
+            let fiscalrankingmappersDocument = document[
+              "fiscalrankingmappers"
+            ].find((el) => key === el.key);
+            if (fiscalrankingmappersDocument) {
+              let FRMapperKey = "value"
+              if (FRKeyWithDate.length > 0 && FRKeyWithDate.includes(key)) {
+                FRMapperKey = "date"
+              } else if (FRKeyWithFile.length > 0 && FRKeyWithFile.includes(key)) {
+                FRMapperKey = "file"
+              }
+              if (fiscalrankingmappersDocument[FRMapperKey]) {
+                str += fiscalrankingmappersDocument[FRMapperKey] + ",";
+              } else {
+                str += " " + ",";
+              }
+            } else {
+              str += " " + ",";
+            }
+          }
+        }
+        str.trim()
+        res.write("\ufeff" + str + "\r\n");
+      } catch (err) {
+        console.log("error in writeCsv :: ", err.message);
+      }
+    });
+    cursor.on("end", (el) => {
+      return res.end();
+    });
+  } catch (error) {
+    return Response.BadRequest(res, {}, error.message);
+  }
+}
+
 module.exports.checkUndefinedValidations = checkUndefinedValidations
