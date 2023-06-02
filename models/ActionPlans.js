@@ -107,6 +107,9 @@ const ActionPlansSchema = new Schema(
       enum: ["ULB", "MoHUA", "STATE"],
       required: true,
     },
+    currentFormStatus: {
+      type: Number
+    }
   },
   { timestamp: { createdAt: "createdAt", updatedAt: "modifiedAt" } }
 );
