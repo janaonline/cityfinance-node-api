@@ -698,6 +698,45 @@ async function getPreviousYearValues(pf, ulbData) {
   }
 }
 
+const keyBasedCond = (value,key)=>{
+  try{
+    if(value[key] == null || value[key] === ""){
+      value.status = ""
+    }
+    return value
+  }
+  catch(err){
+    console.log("error in keyBasedCond :: ",err.message)
+  }
+  return value
+}
+
+function manageNullValuesInMainTable(data){
+  const statusNotMandatory = ["caMembershipNo", "otherUpload"]
+  const fileCase = ["otherUpload"]
+  try{
+    return Object.entries(data).reduce((acc, [key, value]) => {
+      if(typeof(value) === "object" && value?.status === null){
+        value.status = "PENDING"
+      }
+      if(statusNotMandatory.includes(key)){
+        if(fileCase.includes(key)){
+          value = keyBasedCond(value,"url")
+        }
+        else{
+         value = keyBasedCond(value,"value")
+        }
+      }
+      acc[key] = value;
+      return acc;
+    }, {});
+  }
+  catch(err){
+    console.log("error in manageNullValueInMainTable")
+  }
+  return data
+}
+
 exports.getView = async function (req, res, next) {
   try {
     let condition = {};
@@ -709,6 +748,7 @@ exports.getView = async function (req, res, next) {
       };
     }
     let data = await FiscalRanking.findOne(condition, { history: 0 }).lean();
+    data = manageNullValuesInMainTable(data)
     let twEightSlbs = await TwentyEightSlbsForm.findOne(condition, {
       population: 1,
     }).lean();
