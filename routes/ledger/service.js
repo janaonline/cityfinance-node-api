@@ -401,88 +401,92 @@ module.exports.getAllUlbLegders = async function (req, res) {
 }
 // Get all ledgers present in database in CSV Format
 module.exports.getAllLedgersCsv = async function (req, res) {
-    let filename = "All Ledgers " + (moment().format("DD-MMM-YY HH:MM:SS")) + ".csv";
+    try {
+        let filename = "All Ledgers " + (moment().format("DD-MMM-YY HH:MM:SS")) + ".csv";
 
-    // Set approrpiate download headers
-    res.setHeader("Content-disposition", "attachment; filename=" + filename);
-    res.writeHead(200, { "Content-Type": "text/csv;charset=utf-8,%EF%BB%BF" });
-    res.write("ULB Name, ULB Code, AMRUT, Head of account,Code, Line Item, Budget year, Budget amount\r\n");
-    // Flush the headers before we start pushing the CSV content
-    res.flushHeaders();
-    let lineItem = await LineItem.find({ "isActive": true }, { 'modifiedAt': 0, createdAt: 0, isActive: 0 }).lean()
-    // let ulbsList = await Ulb.find({}, { 'name': 1, code: 1, amrut: 1 }).lean()
+        // Set approrpiate download headers
+        res.setHeader("Content-disposition", "attachment; filename=" + filename);
+        res.writeHead(200, { "Content-Type": "text/csv;charset=utf-8,%EF%BB%BF" });
+        res.write("ULB Name, ULB Code, AMRUT, Head of account,Code, Line Item, Budget year, Budget amount\r\n");
+        // Flush the headers before we start pushing the CSV content
+        res.flushHeaders();
+        let lineItem = await LineItem.find({ "isActive": true }, { 'modifiedAt': 0, createdAt: 0, isActive: 0 }).lean()
+        // let ulbsList = await Ulb.find({}, { 'name': 1, code: 1, amrut: 1 }).lean()
 
-    // console.log("lineItem",lineItem);process.exit();
+        // console.log("lineItem",lineItem);process.exit();
 
-    const cursor = UlbLedger.aggregate([
-        {
-            $lookup: {
-                from: "ulbs",
-                as: "ulbs",
-                foreignField: "_id",
-                localField: "ulb"
+        const cursor = UlbLedger.aggregate([
+            {
+                $lookup: {
+                    from: "ulbs",
+                    as: "ulbs",
+                    foreignField: "_id",
+                    localField: "ulb"
+                }
+            },
+
+            // {
+            //     $lookup: {
+            //         from: "lineitems",
+            //         as: "lineitems",
+            //         foreignField: "_id",
+            //         localField: "lineItem"
+            //     }
+            // },
+            // {
+            //     $lookup: {
+            //         from: "states",
+            //         as: "states",
+            //         foreignField: "_id",
+            //         localField: "ulbs.state"
+            //     }
+            // },
+            // {
+            //     $lookup: {
+            //         from: "ulbtypes",
+            //         as: "ulbtypes",
+            //         foreignField: "_id",
+            //         localField: "ulbs.ulbType"
+            //     }
+            // },
+            {
+                $project: {
+                    // "ulbs": 1,
+                    "ulbs": "$ulbs",
+
+                    // "states": { $arrayElemAt: ["$states", 0] },
+                    // "ulbtypes": { $arrayElemAt: ["$ulbtypes", 0] },
+                    // "lineitems": { $arrayElemAt: ["$lineitems", 0] },
+                    "lineItem": "$lineItem",
+                    financialYear: "$financialYear",
+                    amount: 1,
+                    population: 1
+                }
             }
-        },
-
-        // {
-        //     $lookup: {
-        //         from: "lineitems",
-        //         as: "lineitems",
-        //         foreignField: "_id",
-        //         localField: "lineItem"
-        //     }
-        // },
-        // {
-        //     $lookup: {
-        //         from: "states",
-        //         as: "states",
-        //         foreignField: "_id",
-        //         localField: "ulbs.state"
-        //     }
-        // },
-        // {
-        //     $lookup: {
-        //         from: "ulbtypes",
-        //         as: "ulbtypes",
-        //         foreignField: "_id",
-        //         localField: "ulbs.ulbType"
-        //     }
-        // },
-        {
-            $project: {
-                // "ulbs": 1,
-                "ulb": "$ulb",
-
-                // "states": { $arrayElemAt: ["$states", 0] },
-                // "ulbtypes": { $arrayElemAt: ["$ulbtypes", 0] },
-                // "lineitems": { $arrayElemAt: ["$lineitems", 0] },
-                "lineItem": "$lineItem",
-                financialYear: "$financialYear",
-                amount: 1,
-                population: 1
+        ]).allowDiskUse(true)
+            .cursor({ batchSize: 5000 })
+            .addCursorFlag('noCursorTimeout', true)
+            .exec()
+        cursor.on("data", function (el) {
+            let maplineItem = lineItem?.length ? lineItem.find(e => e._id.toString() == el.lineItem.toString()) : null
+            // let mapUlb = ulbsList?.length ? ulbsList.find(e => e._id.toString() == el.ulb.toString()) : null
+            el['line_item'] = maplineItem;
+            el['ulb'] = el?.ulbs?.length ? el.ulbs[0] : "NA";
+            if (el.ulb != 'NA') {
+                let line_item = el.line_item ? el.line_item.name.toString().replace(/[,]/g, ' | ') : "";
+                el.code = el.line_item ? el.line_item.code : "";
+                el.head_of_account = el.line_item ? el.line_item.headOfAccount : "";
+                el.ulb.name = el.ulb ? el.ulb.name.toString().replace(/[,]/g, ' | ') : "";
+                let str =el.ulb.name + "," + el.ulb.code + "," + el.ulb.amrut + "," + el.head_of_account + "," + el.code + "," + line_item + "," + el.financialYear + "," + el.amount + "\r\n";
+                res.write(str);
             }
-        }
-    ]).allowDiskUse(true)
-        .cursor({ batchSize: 5000 })
-        .addCursorFlag('noCursorTimeout', true)
-        .exec()
-    cursor.on("data", function (el) {
-        let maplineItem = lineItem?.length ? lineItem.find(e => e._id.toString() == el.lineItem.toString()) : null
-        // let mapUlb = ulbsList?.length ? ulbsList.find(e => e._id.toString() == el.ulb.toString()) : null
-        el['line_item'] = maplineItem;
-        el['ulb'] = el?.ulbs?.length ? el.ulbs[0] : "NA";
-
-        if (el.ulb != 'NA') {
-            let line_item = el.line_item ? el.line_item.name.toString().replace(/[,]/g, ' | ') : "";
-            el.code = el.line_item ? el.line_item.code : "";
-            el.head_of_account = el.line_item ? el.line_item.headOfAccount : "";
-            el.ulb.name = el.ulb ? el.ulb.name.toString().replace(/[,]/g, ' | ') : "";
-            res.write(el.ulb.name + "," + el.ulb.code + "," + el.ulb.amrut + "," + el.head_of_account + "," + el.code + "," + line_item + "," + el.financialYear + "," + el.amount + "\r\n");
-        }
-    })
-    cursor.on("end", function (el) {
-        res.end()
-    })
+        })
+        cursor.on("end", function (el) {
+            res.end()
+        })
+    } catch (error) {
+         console.log("error",error)
+    }
 }
 //@LedgerLog
 module.exports.getAllLogs = function (req, res) {

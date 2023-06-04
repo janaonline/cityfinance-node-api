@@ -4867,6 +4867,9 @@ function createCsv(params) {
         let str = "";
         let str2 = "";
         let FRFlag = false;
+        const ignoreZero = 0;
+        const completionKey = "completionPercentFR";
+        const mandatoryFieldsKey = "arrayOfMandatoryField";
         if (Array.isArray(document[mandatoryFieldsKey]) && document[mandatoryFieldsKey]) {
           document["completionPercent"] = completionPercent(document[mandatoryFieldsKey], document[completionKey]);
         }
@@ -4912,7 +4915,7 @@ function createCsv(params) {
         str.trim()
         res.write("\ufeff" + str + "\r\n");
       } catch (err) {
-        console.log("error in writeCsv :: ", err.message);
+        console.log("error in writeCsv :: ", err);
       }
     });
     cursor.on("end", (el) => {
