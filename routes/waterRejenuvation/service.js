@@ -330,9 +330,9 @@ exports.getWaterRejenuvation = async (req, res) => {
           role
         ),
         statusId: MASTER_STATUS["Not Started"],
-        status: MASTER_STATUS_ID[MASTER_STATUS["Not Started"]]
+        status: MASTER_STATUS_ID[MASTER_STATUS["Not Started"]],
+        isDraft: null
       });
-      data2223.isDraft = null
       return Response.OK(res, data2223, "Success");
     }
     if (stateMasterFormData) {
