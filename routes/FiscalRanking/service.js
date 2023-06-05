@@ -2107,8 +2107,9 @@ exports.overview = async function (req, res, next) {
     }
     let sortKey = getSortByKeys(sortBy, order)
     let designYear = years['2022-23']
-
-    let sort;
+    let sort = {
+      "stateName":1
+    };
     if (sortBy) {
       if (Array.isArray(sortBy)) {
         sort = sortBy?.reduce((obj, key, index) => ({ ...obj, [key]: +order[index] }), {});
@@ -2116,11 +2117,7 @@ exports.overview = async function (req, res, next) {
         sort = { [sortBy]: +order };
       }
     }
-
-    console.log({ sort, skip, limit, sortBy, order, filters, filterObj, sortKey, designYear });
-
     let data;
-    console.log(JSON.stringify(filters));
     if (type == 'UlbActivities') {
       data = await getUlbActivities({ req, sort, skip, limit, sortBy, order, filters, filterObj, sortKey, designYear });
     }
@@ -2132,8 +2129,6 @@ exports.overview = async function (req, res, next) {
       data = data?.[0]?.data;
       name += ' - ' + stateName;
     }
-
-
 
     return res.status(200).json({
       status: true,
@@ -4916,6 +4911,9 @@ function createCsv(params) {
         let str = "";
         let str2 = "";
         let FRFlag = false;
+        const ignoreZero = 0;
+        const completionKey = "completionPercentFR";
+        const mandatoryFieldsKey = "arrayOfMandatoryField";
         if (Array.isArray(document[mandatoryFieldsKey]) && document[mandatoryFieldsKey]) {
           document["completionPercent"] = completionPercent(document[mandatoryFieldsKey], document[completionKey]);
         }
@@ -4961,7 +4959,7 @@ function createCsv(params) {
         str.trim()
         res.write("\ufeff" + str + "\r\n");
       } catch (err) {
-        console.log("error in writeCsv :: ", err.message);
+        console.log("error in writeCsv :: ", err);
       }
     });
     cursor.on("end", (el) => {
