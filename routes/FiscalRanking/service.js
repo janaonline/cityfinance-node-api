@@ -1222,6 +1222,7 @@ exports.getView = async function (req, res, next) {
      */
     let modifiedLedgerData = fyDynemic
     if(![statusTracker.SAP].includes(viewOne.currentFormStatus)){
+      console.log("modifiedLedgerData ::")
       modifiedLedgerData = await manageLedgerData(params)
     }
     Object.assign(conditionForFeedbacks, condition);
