@@ -352,9 +352,10 @@ exports.getActionPlans = async (req, res) => {
         ),
         statusId: MASTER_STATUS["Not Started"],
         status: MASTER_STATUS_ID[MASTER_STATUS["Not Started"]],
+        isDraft: null
       });
       // data2223.status = null
-      data2223.isDraft = null
+      
       return Response.OK(res, data2223, "Success");
     }
     // let uaArray2223;
