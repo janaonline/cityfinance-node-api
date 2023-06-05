@@ -62,6 +62,36 @@ let priorTabsForFiscalRanking = {
   selDec: "s5",
 };
 
+async function manageLedgerData(params){
+  try{
+    let {ledgerData,ledgerKeys,responseData} = params
+    for(let ledgerKey of ledgerKeys){
+      let question = responseData.financialInformation[ledgerKey]
+      if(question.yearData.length){
+        for(let yearObj of question.yearData){
+          let ulbFyAmount = await getUlbLedgerDataFilter({
+            code: yearObj.code,
+            year: yearObj.year,
+            data: ledgerData,
+          })
+          if(yearObj.previousYearCodes){
+            ulbFyAmount = await getPreviousYearValues(yearObj,ledgerData)
+          }
+          yearObj.modelName = ulbFyAmount ? "ULBLedger" : ""
+          yearObj.value = ulbFyAmount ? ulbFyAmount : yearObj.value
+          yearObj.readonly = question?.calculatedFrom.length ? true : false,
+          yearObj.required = false
+          
+        }
+      }
+    }
+    return responseData
+  }
+  catch(err){
+    console.log("error in manageLedgerData  ::::",err.message)
+  }
+}
+
 exports.CreateorUpdate = async (req, res, next) => {
   // console.log("req.body",req.body)
   try {
@@ -913,6 +943,7 @@ exports.getView = async function (req, res, next) {
       },
       ulb: ObjectId(req.query.ulb),
     });
+    let ledgerKeys = []
     for (let sortKey in fyDynemic) {
       let subData = fyDynemic[sortKey];
       // console.log("subData  >>>> 1::: ",subData)
@@ -932,8 +963,11 @@ exports.getView = async function (req, res, next) {
           else {
             pf['readonly'] = true
           }
-
+          
           if (pf?.code?.length > 0) {
+            if(!ledgerKeys.includes(key)){
+              ledgerKeys.push(key)
+            }
             pf["status"] = '';
             pf["modelName"] = "";
             if (fyData.length) {
@@ -1122,6 +1156,9 @@ exports.getView = async function (req, res, next) {
                   }
                 }
               } else if (pf?.previousYearCodes?.length) {
+                if(!ledgerKeys.includes(key)){
+                  ledgerKeys.push(key)
+                }
                 let yearName = getKeyByValue(years, pf.year);
                 let year = parseInt(yearName);
                 let previousYear = year - 1;
@@ -1161,7 +1198,6 @@ exports.getView = async function (req, res, next) {
                   pf["value"] = sumOfCurrentYear - sumOfPreviousYear;
                   pf['readonly'] = true
                   pf["modelName"] = "ULBLedger";
-                  // console.log(">>>>>>>>>>>> ",pf['value'])
                 }
               }
             }
@@ -1176,11 +1212,24 @@ exports.getView = async function (req, res, next) {
     let conditionForFeedbacks = {
       fiscal_ranking: data?._id || null,
     };
+    let params = {
+      ledgerData : ulbData,
+      ledgerKeys:ledgerKeys,
+      responseData:fyDynemic
+    }
+    /**
+     * This function always get latest data for ledgers
+     */
+    let modifiedLedgerData = fyDynemic
+    if(![statusTracker.SAP].includes(viewOne.currentFormStatus)){
+      console.log("modifiedLedgerData ::")
+      modifiedLedgerData = await manageLedgerData(params)
+    }
     Object.assign(conditionForFeedbacks, condition);
     let modifiedTabs = await getModifiedTabsFiscalRanking(
       tabs,
       viewOne,
-      fyDynemic,
+      modifiedLedgerData,
       conditionForFeedbacks
     );
     let viewData = {
