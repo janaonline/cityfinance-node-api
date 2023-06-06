@@ -3759,7 +3759,6 @@ module.exports.createForm = catchAsync(async (req, res) => {
     let masterFormId = FORMIDs['fiscalRanking'];
     let params = { isDraft, role, userId, formId, masterFormId, formBodyStatus: currentFormStatus }
     await createHistory(params)
-
     let calculationsTabWise = await calculateAndUpdateStatusForMappers(
       session,
       actions,
