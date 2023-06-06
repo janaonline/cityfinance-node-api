@@ -1595,6 +1595,7 @@ const getUlbActivities = ({ req, sort, skip, limit, sortBy, order, filters, filt
   let query = [
     ...(req.decoded.role == userTypes.state ? [{
       $match: {
+        "isActive":true,
         "state": ObjectId(req.decoded.state)
       }
     }] : []),
@@ -1708,6 +1709,7 @@ const getPMUActivities = ({ req, sort, skip, limit, sortBy, order, filters, filt
   const query = [
     ...(req.decoded.role == userTypes.state ? [{
       $match: {
+        "isActive":true,
         "state": ObjectId(req.decoded.state)
       }
     }] : []),
@@ -1839,6 +1841,7 @@ const getPopulationWiseData = ({ stateId, columns, sort, skip, limit, sortBy, or
   const query = [
     {
       "$match": {
+        "isActive":true,
         "state": ObjectId(stateId)
       }
     },
