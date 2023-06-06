@@ -698,40 +698,40 @@ async function getPreviousYearValues(pf, ulbData) {
   }
 }
 
-const keyBasedCond = (value,key)=>{
-  try{
-    if(value[key] == null || value[key] === ""){
+const keyBasedCond = (value, key) => {
+  try {
+    if (value[key] == null || value[key] === "") {
       value.status = ""
     }
     return value
   }
-  catch(err){
-    console.log("error in keyBasedCond :: ",err.message)
+  catch (err) {
+    console.log("error in keyBasedCond :: ", err.message)
   }
   return value
 }
 
-function manageNullValuesInMainTable(data){
+function manageNullValuesInMainTable(data) {
   const statusNotMandatory = ["caMembershipNo", "otherUpload"]
   const fileCase = ["otherUpload"]
-  try{
+  try {
     return Object.entries(data).reduce((acc, [key, value]) => {
-      if(typeof(value) === "object" && value?.status === null){
+      if (typeof (value) === "object" && value?.status === null) {
         value.status = "PENDING"
       }
-      if(statusNotMandatory.includes(key)){
-        if(fileCase.includes(key)){
-          value = keyBasedCond(value,"url")
+      if (statusNotMandatory.includes(key)) {
+        if (fileCase.includes(key)) {
+          value = keyBasedCond(value, "url")
         }
-        else{
-         value = keyBasedCond(value,"value")
+        else {
+          value = keyBasedCond(value, "value")
         }
       }
       acc[key] = value;
       return acc;
     }, {});
   }
-  catch(err){
+  catch (err) {
     console.log("error in manageNullValueInMainTable")
   }
   return data
@@ -1542,7 +1542,7 @@ exports.getAll = async function (req, res, next) {
   }
 };
 
-const getUlbActivities = ({ req, sort, skip, limit, sortBy, order, filters, filterObj, sortKey, designYear }) => {
+const getUlbActivities = ({ req, sort, selectedState, skip, limit, sortBy, order, filters, filterObj, sortKey, designYear }) => {
   let query = [
     ...(req.decoded.role == userTypes.state ? [{
       $match: {
@@ -1629,6 +1629,15 @@ const getUlbActivities = ({ req, sort, skip, limit, sortBy, order, filters, filt
     {
       "$project": {
         "stateName": "$states.name",
+        "selected": {
+          "$cond": {
+            "if": {
+              "$eq": ["$states._id", ObjectId(selectedState)]
+            },
+            "then": true,
+            "else": false
+          }
+        },
         "stateNameLink": {
           "$concat": [
             "/rankings/populationWise/",
@@ -1651,7 +1660,7 @@ const getUlbActivities = ({ req, sort, skip, limit, sortBy, order, filters, filt
   if (filterObj.provided) {
     query.push({ $match: filters });
   }
-  console.log(query);
+  console.log(JSON.stringify(query, 3, 3));
   return Ulb.aggregate(query);
 }
 const getPMUActivities = ({ req, sort, skip, limit, sortBy, order, filters, filterObj, sortKey, designYear }) => {
@@ -2039,8 +2048,10 @@ exports.overview = async function (req, res, next) {
 
   try {
 
-    let skip = parseInt(req.query.skip) || 0
-    let limit = parseInt(req.query.limit) || 10
+    let skip = parseInt(req.query.skip) || 0;
+    let limit = parseInt(req.query.limit) || 10;
+    let selectedState = req.query.selectedState;
+    delete req.query.selectedState;
     let { sortBy, order, stateId, stateName } = req.query
     let filters = Object.entries({ ...req.query })
       .reduce((obj, [key, value]) => ({ ...obj, [key]: /^\d+$/.test(value) ? +value : value }), {});
@@ -2070,10 +2081,10 @@ exports.overview = async function (req, res, next) {
     let data;
     console.log(JSON.stringify(filters));
     if (type == 'UlbActivities') {
-      data = await getUlbActivities({ req, sort, skip, limit, sortBy, order, filters, filterObj, sortKey, designYear });
+      data = await getUlbActivities({ req, selectedState, sort, skip, limit, sortBy, order, filters, filterObj, sortKey, designYear });
     }
     else if (type == 'PMUActivities') {
-      data = await getPMUActivities({ req, sort, skip, limit, sortBy, order, filters, filterObj, sortKey, designYear });
+      data = await getPMUActivities({ req, selectedState, sort, skip, limit, sortBy, order, filters, filterObj, sortKey, designYear });
     }
     else if (type == 'populationWise') {
       data = await getPopulationWiseData({ stateId, columns, sort, skip, limit, sortBy, order, filters, filterObj, sortKey, designYear });
@@ -3103,12 +3114,12 @@ async function validateAccordingtoLedgers(
         );
         if (ulbValue === sum) {
           validator.valid = true
-           validator.value = years.value
+          validator.value = years.value
         } else {
-            validator.valid = false
-            validator.message = `Data in our ledger records in not matching the sub of break up. Please check these fields in financial information. ${dynamicObj.calculatedFrom.join(
-              ","
-            )}`;
+          validator.valid = false
+          validator.message = `Data in our ledger records in not matching the sub of break up. Please check these fields in financial information. ${dynamicObj.calculatedFrom.join(
+            ","
+          )}`;
         }
         return validator;
       }
