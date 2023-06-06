@@ -22,6 +22,12 @@ module.exports.login = async (req, res) => {
         message: "Sorry! You are not Authorized To Access XV FC Grants Module"
       })
     }
+    if(user.role === "PMU" && req.body.type === "15thFC"){
+      return res.status(403).json({
+        success: false,
+        message: "PMU user not allowed login from 15th Fc, Please login with Ranking 2022."
+      })
+    }
     if (user.role === "ULB") {
       ulb = await Ulb.findOne({ _id: ObjectId(user.ulb), isActive: true });
       role = user.role;

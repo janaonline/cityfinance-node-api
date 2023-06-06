@@ -5,7 +5,7 @@ const {getKeyByValue} = require("../../util/masterFunctions")
 // const Sidemenu = require("../../models/Sidemenu");
 const ObjectId = require("mongoose").Types.ObjectId;
 let outDatedYears = ["2018-19","2019-20","2021-22","2022-23"]
-const { MASTER_STATUS_ID } = require("../../util/FormNames");
+const { MASTER_STATUS_ID,MASTER_STATUS } = require("../../util/FormNames");
 
 module.exports.changeApiGetForm = async(req,res)=>{
     let response = {
@@ -50,7 +50,7 @@ module.exports.changeApiGetForm = async(req,res)=>{
             responseData[0]['language'][0]['isDraft'] =  req?.form?.isDraft
             responseData[0]['isQuestionDisabled'] = formStatus
             response.success = true
-            responseData[0]["statusId"]= req?.form?.currentFormStatus 
+            responseData[0]["statusId"]= req?.form?.currentFormStatus  || MASTER_STATUS['Not Started']
             responseData[0]["status"]=MASTER_STATUS_ID[req?.form?.currentFormStatus] || "Not Started",
             response.data = responseData
             response.message = 'Form Questionare!'

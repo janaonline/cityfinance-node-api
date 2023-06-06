@@ -38,16 +38,16 @@ const fiscalRankingSchema = new Schema(
     {
         ulb: { type: Schema.Types.ObjectId, ref: "Ulb", required: true },
         design_year: { type: Schema.Types.ObjectId, ref: "Year", required: true },
-        population11: {
-            value: { type: Number},
-            status: statusSchema(),
-            dataSource:modelSchema(),
-            rejectReason:{type:String,default:""}
-        },
         currentFormStatus:{
             type:Number,
             default:1
         },
+        // population11: {
+        //     value: { type: Number},
+        //     status: statusSchema(),
+        //     dataSource:modelSchema(),
+        //     rejectReason:{type:String,default:""}
+        // },
         populationFr: {
             value: { type: Number, default: null},
             status: statusSchema(),

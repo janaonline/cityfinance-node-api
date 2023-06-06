@@ -6172,6 +6172,31 @@ function getOldYear(financialYear) {
   return `${Number(temp[0]) - 1}-${Number(temp[1]) - 1}`;
 }
 
+const getCategoryMatchObject = category => ({
+  '1': {
+    'population': {
+      $gt: 4000000
+    }
+  },
+  '2': {
+    'population': {
+      $gte: 1000000,
+      $lte: 4000000
+    }
+  },
+  '3': {
+    'population': {
+      $gte: 100000,
+      $lte: 1000000
+    }
+  },
+  '4': {
+    'population': {
+      $lt: 100000,
+    }
+  }
+}[category] || {});
+
 const stateWiseHeatMapQuery = ({ state, category }) => {
   let matchObj = {}
   let aggregationQuery = [
@@ -6181,6 +6206,11 @@ const stateWiseHeatMapQuery = ({ state, category }) => {
         "localField": "_id",
         "foreignField": "ulb",
         "as": "formData"
+      }
+    },
+    {
+      "$match": {
+        "isActive": { "$eq": true }
       }
     },
     {
@@ -6295,8 +6325,7 @@ const stateWiseHeatMapQuery = ({ state, category }) => {
             "$submissionAckByPMU",
             "$returnedByPMU",
             "$verificationInProgress",
-            "$verificationNotStarted",
-            "$inProgress"
+            "$verificationNotStarted"
           ]
         }
       }
@@ -6319,7 +6348,7 @@ const stateWiseHeatMapQuery = ({ state, category }) => {
         "rejected": { $sum: "$returnedByPMU" },
         "totalUlbs": { $sum: "$totalUlbs" },
         "inProgress": { $sum: "$inProgress" },
-        "submitted": { $sum: "$verificationInProgress" },
+        "submitted": { $sum: { $add: ["$verificationNotStarted", "$verificationInProgress", "$submissionAckByPMU"] } },
         "notStarted": { $sum: "$notStarted" },
 
       }
@@ -6353,6 +6382,8 @@ const stateWiseHeatMapQuery = ({ state, category }) => {
     }
     aggregationQuery = [matchObj, ...aggregationQuery]
   }
+
+  console.log(JSON.stringify(aggregationQuery, 3, 3));
   return aggregationQuery
 }
 
