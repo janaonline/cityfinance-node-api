@@ -213,6 +213,10 @@ const fiscalRankingSchema = new Schema(
         actionTakenBy: { type: Schema.Types.ObjectId, ref: "User", default: null ,required:true},
         actionTakenByRole: { type: String, default: null,required:true },
         rejectReason: { type: String, default: null },
+        progress:{
+            ulbCompletion:{type:Schema.Types.Mixed,default:0},
+            verificationProgress:{type:Schema.Types.Mixed,default:0}
+        },
         // createdAt: { type: Date, default: Date.now },
         // modifiedAt: { type: Date, default: Date.now },
         isActive: { type: Boolean, default: 1 },

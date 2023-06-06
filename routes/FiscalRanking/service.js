@@ -2515,6 +2515,8 @@ function appendStages(query) {
         filled: "$records.filled",
         populationCategory: "$records.populationCategory",
         formData: "$records.formData",
+        ulbDataSubmitted: { $ifNull: [`$records.formData.progress.ulbCompletion`, null] },
+        pmuVerificationProgress: { $ifNull: [`$records.formData.progress.verificationProgress`, null] },
         "total": {
           $let: {
             vars: {
@@ -2667,6 +2669,7 @@ function getFormQuery(queryArr, collectionName, design_year, csv) {
         $project: {
           _id: 1,
           status: 1,
+          progress:1,
           actionTakenByRole: 1,
           isDraft: 1,
           currentFormStatus: 1,
@@ -2862,7 +2865,9 @@ function getColumns() {
     censusCode: "Census Code",
     formStatus: "Status",
     cantakeAction: "Action",
-    apopulationCategory: "Population Category"
+    apopulationCategory: "Population Category",
+    ulbDataSubmitted: "ULB Data Submitted (%)",
+    pmuVerificationProgress: "PMU Verification Progress"
   };
 }
 
@@ -3291,7 +3296,7 @@ async function updateFiscalRankingForm(
   year,
   updateForm,
   isDraft,
-  session
+  session,
 ) {
   try {
     const statusNotMandatory = ["caMembershipNo", "otherUpload"]
@@ -3355,6 +3360,29 @@ function getStatusesFromObject(obj, element, ignoredVariables) {
   return status;
 }
 
+
+async function manageFormPercentage(params){
+  try{
+    let {totalIndicator, completedIndicator,approvedIndicator,rejectedIndicator,formId} = params
+    let completedPercentage = (completedIndicator/totalIndicator) * 100
+    let verificationProgress = ((approvedIndicator+rejectedIndicator)/totalIndicator) * 100
+    let payload = {}
+    console.log({totalIndicator, completedIndicator,approvedIndicator,rejectedIndicator,formId})
+    payload['progress'] = {
+      "ulbCompletion" :completedPercentage.toFixed(2),
+      "verificationProgress":verificationProgress.toFixed(2),
+    }
+    console.log("payload ::: ",payload)
+    await FiscalRanking.findOneAndUpdate({
+      "_id":formId
+    },payload)    
+  }
+  catch(err){
+    console.log("error in manageFormPercentage :::: ",err.message)
+  }
+}
+
+
 /**
  *
  * @param {array} tabs
@@ -3373,6 +3401,10 @@ async function calculateAndUpdateStatusForMappers(
   isDraft
 ) {
   try {
+    let totalIndicator = 0;
+    let completedIndicator = 0;
+    let approvedIndicator = 0;
+    let rejectedIndicator = 0;
     let conditionalObj = {};
     let ignorablevariables = ["guidanceNotes"];
     const fiscalRankingKeys = [
@@ -3382,7 +3414,7 @@ async function calculateAndUpdateStatusForMappers(
       "signedCopyOfFile",
       "otherUpload",
     ];
-
+    let types = new Set()
     for (var tab of tabs) {
       conditionalObj[tab._id.toString()] = {};
       let key = tab.id;
@@ -3400,11 +3432,18 @@ async function calculateAndUpdateStatusForMappers(
           let dynamicObj = obj[k];
           let financialInfo = obj;
           let status = yearArr.every((item) => {
+            if(obj[k]?.required){
+              types.add(k)
+              totalIndicator +=1
+              let count = calculateReviewCount(item)
+              completedIndicator += count[0]
+              approvedIndicator += count[1]
+              rejectedIndicator += count[2]
+            }
             if (calculatedFields.includes(item?.type)) return true;
             if (item?.type && item.status) {
               return item.status === "APPROVED" || item.status === "";
             } else {
-
               return true;
             }
           });
@@ -3439,7 +3478,8 @@ async function calculateAndUpdateStatusForMappers(
               year,
               updateForm,
               isDraft,
-              session
+              session,
+              
             );
           }
         }
@@ -3455,8 +3495,10 @@ async function calculateAndUpdateStatusForMappers(
         conditionalObj[tabName].status = "NA";
       }
     }
+    let params = {totalIndicator, completedIndicator,approvedIndicator,rejectedIndicator,formId}
     await session.commitTransaction();
     await session.endSession();
+    await manageFormPercentage(params)
     return conditionalObj;
   } catch (err) {
     // await session.abortTransaction()
@@ -5008,6 +5050,36 @@ function createCsv(params) {
   } catch (error) {
     return Response.BadRequest(res, {}, error.message);
   }
+}
+/**
+ * The function calculates review count based on completed, approved, and rejected indicators for a
+ * given item.
+ * @param item - The item parameter is likely an object that contains information about a review, such
+ * as the review value and status.
+ * @param completedIndicator - A variable that keeps track of whether the item has been completed or
+ * not. It is initially set to 0 and will be set to 1 if the item has a value.
+ * @param approvedIndicator - A variable that keeps track of whether the item has been approved or not.
+ * It is initially set to 0 and will be set to 1 if the item has a value and its status is "APPROVED".
+ * @param rejectedIndicator - The rejectedIndicator parameter is a variable that keeps track of whether
+ * a review item has been rejected or not. It is initially set to 0 and will be set to 1 if the item
+ * has a value and its status is "REJECTED".
+ * @returns An array containing the values of `completedIndicator`, `approvedIndicator`, and
+ * `rejectedIndicator`.
+ */
+function calculateReviewCount(item){
+  let completedIndicator = 0
+  let approvedIndicator = 0
+  let rejectedIndicator = 0
+  if(item.value || item.date != null || item?.file?.url != "" || item.modelName === "ULBLedger"){
+    completedIndicator = 1;
+  }
+  if(item.status === "APPROVED"){
+    approvedIndicator = 1;
+  }
+  if(item.status === "REJECTED"){
+    rejectedIndicator = 1;
+  }
+  return [completedIndicator,approvedIndicator,rejectedIndicator]
 }
 
 module.exports.checkUndefinedValidations = checkUndefinedValidations
