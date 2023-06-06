@@ -3728,7 +3728,7 @@ module.exports.createForm = catchAsync(async (req, res) => {
   try {
     let { ulbId, formId, actions, design_year, isDraft, currentFormStatus } = req.body;
     let { role, _id: userId } = req.decoded;
-    if(statusTracker.VIP){
+    if(statusTracker.VIP === currentFormStatus){
       const actionTaken = await checkIfActionTaken(actions)
       currentFormStatus = actionTaken ? statusTracker.VIP : statusTracker.VNS
     }
