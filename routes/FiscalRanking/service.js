@@ -1944,6 +1944,7 @@ exports.overview = async function (req, res, next) {
         ...(req.decoded.role != userTypes.state && {
           "query": "",
         }),
+        "sort": 1,
         "sortable": true
       },
       {
@@ -1979,6 +1980,7 @@ exports.overview = async function (req, res, next) {
         ...(req.decoded.role != userTypes.state && {
           "query": "",
         }),
+        "sort": 1,
         "sortable": true
       },
       {
@@ -2051,12 +2053,11 @@ exports.overview = async function (req, res, next) {
     let skip = parseInt(req.query.skip) || 0;
     let limit = parseInt(req.query.limit) || 10;
     let selectedState = req.query.selectedState;
-    delete req.query.selectedState;
     let { sortBy, order, stateId, stateName } = req.query
     let filters = Object.entries({ ...req.query })
       .reduce((obj, [key, value]) => ({ ...obj, [key]: /^\d+$/.test(value) ? +value : value }), {});
 
-    await deleteExtraKeys(["sortBy", "order", "skip", "limit"], filters)
+    await deleteExtraKeys(["sortBy", "order", "skip", "limit", "selectedState"], filters)
 
     console.log(filters);
     filters = await Service.mapFilter(filters);
@@ -2075,6 +2076,8 @@ exports.overview = async function (req, res, next) {
         sort = { [sortBy]: +order };
       }
     }
+
+    sort = { 'stateName': 1, ...sort };
 
     console.log({ sort, skip, limit, sortBy, order, filters, filterObj, sortKey, designYear });
 
