@@ -953,7 +953,6 @@ exports.getView = async function (req, res, next) {
                 pf["modelName"] = singleFydata ? singleFydata.modelName : "";
                 pf["status"] = singleFydata.status != null ? singleFydata.status : 'PENDING';
                 if (subData[key].calculatedFrom === undefined) {
-                  console.log("key :: ", key)
                   pf["readonly"] = getReadOnly(data?.currentFormStatus, viewOne.isDraft, role, singleFydata.status);
                 } else {
                   pf["readonly"] = true;
@@ -1028,7 +1027,6 @@ exports.getView = async function (req, res, next) {
                   } else {
                     pf["readonly"] = true;
                     pf["status"] = ""
-                    console.log("key ::: ", key)
                   }
 
                 } else {
@@ -1036,7 +1034,7 @@ exports.getView = async function (req, res, next) {
                     subData[key]?.key !== "appAnnualBudget" &&
                     [1, 2, null].includes(viewOne.currentFormStatus)
                   ) {
-                    console.log("chekFile :: ", chekFile)
+
                     let chekFile = ulbDataUniqueFy
                       ? ulbDataUniqueFy.some(
                         (el) => el?.year_id.toString() === pf?.year.toString()
@@ -1050,7 +1048,6 @@ exports.getView = async function (req, res, next) {
                       ] = `Available on Cityfinance - <a href ="https://cityfinance.in/resources-dashboard/data-sets/income_statement ">View here</a>`;
                     }
                     if (subData[key].calculatedFrom === undefined) {
-                      console.log("chekFile", chekFile);
                       pf["readonly"] = chekFile ? true : false;
                       pf["required"] = chekFile ? false : true;
                     } else {
