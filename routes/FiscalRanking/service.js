@@ -54,6 +54,7 @@ const fs = require("fs");
 const { fiscalRankingColsNameCsv } = require("../../util/Constants");
 const TabsFiscalRankings = require("../../models/TabsFiscalRankings");
 const { ulb } = require("../../util/userTypes");
+const FormHistory = require("../../models/FormHistory");
 let priorTabsForFiscalRanking = {
   basicUlbDetails: "s1",
   conInfo: "s2",
@@ -62,30 +63,47 @@ let priorTabsForFiscalRanking = {
   selDec: "s5",
 };
 
+
+
 async function manageLedgerData(params){
+  let messages = []
   try{
-    let {ledgerData,ledgerKeys,responseData} = params
+    let {ledgerData,ledgerKeys,responseData,formId} = params
+    let formHistory = await FormHistory.findOne({
+      recordId:formId
+    },{
+      data:1
+    }).lean()
+    let formHistoryData = formHistory && formHistory.data.length ? formHistory?.data[0]['fiscalMapperData'].filter(item => ledgerKeys.includes(item.type) && item.modelName === "ULBLedger") : []
     for(let ledgerKey of ledgerKeys){
       let question = responseData.financialInformation[ledgerKey]
       if(question.yearData.length){
         for(let yearObj of question.yearData){
+          let historicalObject = formHistoryData.find(item => item.type === yearObj.type && item.year.toString() === yearObj.year.toString())
+          let yearName = getKeyByValue(years, yearObj.year);
           let ulbFyAmount = await getUlbLedgerDataFilter({
             code: yearObj.code,
-            year: yearObj.year,
+            year: yearObj.year.toString(),
             data: ledgerData,
           })
-          if(yearObj.previousYearCodes){
+          if(yearObj.previousYearCodes && yearObj.previousYearCodes.length){
+
             ulbFyAmount = await getPreviousYearValues(yearObj,ledgerData)
+          }
+
+          if(historicalObject && ulbFyAmount !== historicalObject.value  && ![years['2020-21'],years['2021-22']].includes(yearObj.year) ){
+            messages.push(`Data for field ${question.displayPriority} ${getKeyByValue(years, yearObj.year)} has been updated. kindly revisit those calculations`)
           }
           yearObj.modelName = ulbFyAmount ? "ULBLedger" : ""
           yearObj.value = ulbFyAmount ? ulbFyAmount : yearObj.value
-          yearObj.readonly = question?.calculatedFrom.length ? true : false,
           yearObj.required = false
-          
         }
       }
     }
-    return responseData
+    return {
+      responseData,
+      messages
+    }
   }
   catch(err){
     console.log("error in manageLedgerData  ::::",err.message)
@@ -943,7 +961,8 @@ exports.getView = async function (req, res, next) {
       },
       ulb: ObjectId(req.query.ulb),
     });
-    let ledgerKeys = []
+    let userMessages = []
+    let ledgerKeys = ["fixedAsset","CaptlExp"]
     for (let sortKey in fyDynemic) {
       let subData = fyDynemic[sortKey];
       // console.log("subData  >>>> 1::: ",subData)
@@ -1212,15 +1231,18 @@ exports.getView = async function (req, res, next) {
     let params = {
       ledgerData : ulbData,
       ledgerKeys:ledgerKeys,
-      responseData:fyDynemic
+      responseData:fyDynemic,
+      formId:viewOne._id
     }
     /**
      * This function always get latest data for ledgers
      */
+
     let modifiedLedgerData = fyDynemic
     if(![statusTracker.SAP].includes(viewOne.currentFormStatus)){
-      console.log("modifiedLedgerData ::")
-      modifiedLedgerData = await manageLedgerData(params)
+     let {responseData,messages} = await manageLedgerData(params)
+     modifiedLedgerData = responseData
+     userMessages = messages
     }
     Object.assign(conditionForFeedbacks, condition);
     let modifiedTabs = await getModifiedTabsFiscalRanking(
@@ -1241,6 +1263,7 @@ exports.getView = async function (req, res, next) {
       tabs: modifiedTabs,
       currentFormStatus: viewOne.currentFormStatus,
       financialYearTableHeader,
+      messages:userMessages
     };
     return res
       .status(200)
