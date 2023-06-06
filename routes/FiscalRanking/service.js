@@ -2335,8 +2335,6 @@ function getProjectionQueries(
         populationCategory: "$population",
 
         formData: { $ifNull: [`$${collectionName}`, ""] },
-        ulbDataSubmitted: "$ulbDataSubmitted",
-        pmuVerificationProgress: "$pmuVerificationProgress",
       },
     };
     if (!csv) {
@@ -2356,8 +2354,6 @@ function getProjectionQueries(
           populationCategory: "$population",
 
           formData: { $ifNull: [`$${collectionName}`, ""] },
-          ulbDataSubmitted: "$ulbDataSubmitted",
-          pmuVerificationProgress: "$pmuVerificationProgress",
         },
       };
     }
@@ -2437,8 +2433,8 @@ function appendStages(query) {
         filled: "$records.filled",
         populationCategory: "$records.populationCategory",
         formData: "$records.formData",
-        ulbDataSubmitted: "0",
-        pmuVerificationProgress: "0",
+        ulbDataSubmitted: { $ifNull: [`$records.formData.ulbDataSubmitted`, null] },
+        pmuVerificationProgress: { $ifNull: [`$records.formData.pmuVerificationProgress`, null] },
         "total": {
           $let: {
             vars: {
