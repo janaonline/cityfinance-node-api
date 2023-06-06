@@ -2335,6 +2335,8 @@ function getProjectionQueries(
         populationCategory: "$population",
 
         formData: { $ifNull: [`$${collectionName}`, ""] },
+        ulbDataSubmitted: "$ulbDataSubmitted",
+        pmuVerificationProgress: "$pmuVerificationProgress",
       },
     };
     if (!csv) {
@@ -2354,6 +2356,8 @@ function getProjectionQueries(
           populationCategory: "$population",
 
           formData: { $ifNull: [`$${collectionName}`, ""] },
+          ulbDataSubmitted: "$ulbDataSubmitted",
+          pmuVerificationProgress: "$pmuVerificationProgress",
         },
       };
     }
@@ -2433,6 +2437,8 @@ function appendStages(query) {
         filled: "$records.filled",
         populationCategory: "$records.populationCategory",
         formData: "$records.formData",
+        ulbDataSubmitted: "0",
+        pmuVerificationProgress: "0",
         "total": {
           $let: {
             vars: {
@@ -2780,7 +2786,9 @@ function getColumns() {
     censusCode: "Census Code",
     formStatus: "Status",
     cantakeAction: "Action",
-    apopulationCategory: "Population Category"
+    apopulationCategory: "Population Category",
+    ulbDataSubmitted: "ULB Data Submitted (%)",
+    pmuVerificationProgress: "PMU Verification Progress"
   };
 }
 
@@ -3317,6 +3325,13 @@ async function calculateAndUpdateStatusForMappers(
           let dynamicObj = obj[k];
           let financialInfo = obj;
           let status = yearArr.every((item) => {
+            if(item?.required){
+              totalIndicator += 1;
+              let count = calculateReviewCount(item,completedIndicator,approvedIndicator,rejectedIndicator);
+              completedIndicator += count[0];
+              approvedIndicator += count[1];
+              rejectedIndicator += count[2];
+            }
             if (calculatedFields.includes(item?.type)) return true;
             if (item?.type && item.status) {
               return item.status === "APPROVED" || item.status === "";
@@ -4871,4 +4886,33 @@ exports.heatMapReport = async (req, res, next) => {
 function removeEscapeChars(entity) {
   return !entity ? entity : entity.replace(/(\n|,)/gm, " ");
 }
+
+/**
+ * The function calculates review count based on completed, approved, and rejected indicators for a
+ * given item.
+ * @param item - The item parameter is likely an object that contains information about a review, such
+ * as the review value and status.
+ * @param completedIndicator - A variable that keeps track of whether the item has been completed or
+ * not. It is initially set to 0 and will be set to 1 if the item has a value.
+ * @param approvedIndicator - A variable that keeps track of whether the item has been approved or not.
+ * It is initially set to 0 and will be set to 1 if the item has a value and its status is "APPROVED".
+ * @param rejectedIndicator - The rejectedIndicator parameter is a variable that keeps track of whether
+ * a review item has been rejected or not. It is initially set to 0 and will be set to 1 if the item
+ * has a value and its status is "REJECTED".
+ * @returns An array containing the values of `completedIndicator`, `approvedIndicator`, and
+ * `rejectedIndicator`.
+ */
+function calculateReviewCount(item,completedIndicator,approvedIndicator,rejectedIndicator){
+  if(item.value || item.value !== ""){
+    completedIndicator =1;
+  }
+  if(item.value && item.value !== "" && item.status === "APPROVED"){
+    approvedIndicator =1;
+  }
+  if(item.value && item.value !== "" && item.status === "REJECTED"){
+    rejectedIndicator =1;
+  }
+  return [completedIndicator,approvedIndicator,rejectedIndicator];
+}
+
 module.exports.checkUndefinedValidations = checkUndefinedValidations
