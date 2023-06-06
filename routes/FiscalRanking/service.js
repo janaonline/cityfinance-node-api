@@ -1940,9 +1940,6 @@ exports.overview = async function (req, res, next) {
       {
         "label": "Total ULBs",
         "key": "totalUlbs",
-        ...(req.decoded.role != userTypes.state && {
-          "query": "",
-        }),
         "sortable": true
       },
       {
