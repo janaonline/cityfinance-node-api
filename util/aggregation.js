@@ -6208,11 +6208,11 @@ const stateWiseHeatMapQuery = ({ state, category }) => {
         "as": "formData"
       }
     },
-    {
-      "$match": {
-        "isActive": { "$eq": true }
-      }
-    },
+    // {
+    //   "$match": {
+    //     "isActive": { "$eq": true }
+    //   }
+    // },
     {
       "$unwind": {
         "path": "$formData",

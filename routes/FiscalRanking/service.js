@@ -1595,6 +1595,7 @@ const getUlbActivities = ({ req, sort, skip, limit, sortBy, order, filters, filt
   let query = [
     ...(req.decoded.role == userTypes.state ? [{
       $match: {
+        "isActive":true,
         "state": ObjectId(req.decoded.state)
       }
     }] : []),
@@ -1708,6 +1709,7 @@ const getPMUActivities = ({ req, sort, skip, limit, sortBy, order, filters, filt
   const query = [
     ...(req.decoded.role == userTypes.state ? [{
       $match: {
+        "isActive":true,
         "state": ObjectId(req.decoded.state)
       }
     }] : []),
@@ -1839,6 +1841,7 @@ const getPopulationWiseData = ({ stateId, columns, sort, skip, limit, sortBy, or
   const query = [
     {
       "$match": {
+        "isActive":true,
         "state": ObjectId(stateId)
       }
     },
@@ -3704,6 +3707,20 @@ async function checkIfFormIdExistsOrNot(
   }
   return validation;
 }
+
+
+const checkIfActionTaken = (actions)=>{
+  try{
+      let tab = actions.find(item => item.id === "s5")['data']
+      let actionTaken = Object.entries(tab).some(([key,value]) => ["APPROVED","REJECTED"].includes(value.status) )
+      return actionTaken
+  }
+  catch(err){
+    console.log("error in checkIfActionTaken ::: ",err.message)
+  }
+  return true
+}
+
 module.exports.createForm = catchAsync(async (req, res) => {
   const response = {
     success: false,
@@ -3714,7 +3731,10 @@ module.exports.createForm = catchAsync(async (req, res) => {
   try {
     let { ulbId, formId, actions, design_year, isDraft, currentFormStatus } = req.body;
     let { role, _id: userId } = req.decoded;
-    console.log("currentFormStatus ::: 1 ", currentFormStatus)
+    if(statusTracker.VIP){
+      const actionTaken = await checkIfActionTaken(actions)
+      currentFormStatus = actionTaken ? statusTracker.VIP : statusTracker.VNS
+    }
     let formIdValidations = await checkIfFormIdExistsOrNot(
       formId,
       ulbId,
@@ -3724,7 +3744,7 @@ module.exports.createForm = catchAsync(async (req, res) => {
       userId,
       currentFormStatus
     );
-
+    
     if (!formIdValidations.valid) {
       response.message = formIdValidations.message;
       return res.status(500).json(response);
