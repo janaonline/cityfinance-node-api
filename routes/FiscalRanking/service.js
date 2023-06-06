@@ -1797,11 +1797,11 @@ const getPopulationWiseData = ({ stateId, columns, sort, skip, limit, sortBy, or
   ];
 
   const query = [
-    {
+    ...(stateId ? [{
       "$match": {
         "state": ObjectId(stateId)
       }
-    },
+    }] : []),
     {
       "$lookup": {
         "from": "fiscalrankings",
@@ -1831,7 +1831,7 @@ const getPopulationWiseData = ({ stateId, columns, sort, skip, limit, sortBy, or
           ...result,
           ...parameters.reduce((obj, parameter) => ({
             ...obj,
-            [`${column.key} ${parameter.label}`]: column.key == 'populationCategories' ? {
+            [`${column.key}${parameter.label}`]: column.key == 'populationCategories' ? {
               $first: parameter.label
             } :
               {
@@ -1873,12 +1873,13 @@ const getPopulationWiseData = ({ stateId, columns, sort, skip, limit, sortBy, or
         "data": parameters.map(parameter => (
           columns.reduce((obj, column) => ({
             ...obj,
-            [column.key]: `$${column.key} ${parameter.label}`
+            [column.key]: `$${column.key}${parameter.label}`
           }), {})
         ))
       }
     }
   ];
+  console.log(JSON.stringify(query, 3, 3))
   return Ulb.aggregate(query);
 }
 
