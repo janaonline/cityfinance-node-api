@@ -3939,6 +3939,8 @@ async function columnsForCSV(params) {
       "Created Date",
       "Last Submitted Date",
       "Overall Form Status",
+      "ULB Data Submitted (%)",
+      "PMU Verification Progress",
       "% Completion",
       "I. BASIC ULB DETAILS_Comments",
       "II CONTACT INFORMATION_Comments",
@@ -3989,6 +3991,8 @@ async function columnsForCSV(params) {
       "createdAt",
       "modifiedAt",
       "formStatus",
+      "ulbDataSubmitted",
+      "pmuVerificationProgress",
       "completionPercent",
       "comment_1",
       "II CONTACT INFORMATION_Comments",
@@ -4641,11 +4645,13 @@ function computeQuery(params) {
                     signedCopyOfFile: "$signedCopyOfFile.url"
                   },
                 ],
+                ulbDataSubmitted: { $ifNull: [`$fiscalrankings.progress.ulbCompletion`, null] },
+                pmuVerificationProgress: { $ifNull: [`$fiscalrankings.progress.verificationProgress`, null] },
               },
             },
           ],
           as: "fiscalrankings",
-        },
+        },  
       },
       {
         $unwind: {
@@ -4903,6 +4909,8 @@ function computeQuery(params) {
               },
             },
           },
+          ulbDataSubmitted: { $ifNull: [`$fiscalrankings.progress.ulbCompletion`, null] },
+          pmuVerificationProgress: { $ifNull: [`$fiscalrankings.progress.verificationProgress`, null] },
         },
       },
     ];
