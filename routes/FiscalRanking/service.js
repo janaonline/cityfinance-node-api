@@ -3353,7 +3353,7 @@ async function calculateAndUpdateStatusForMappers(
           let dynamicObj = obj[k];
           let financialInfo = obj;
           let status = yearArr.every((item) => {
-            if(obj[k]?.required){
+            if(item?.required){
               types.add(k)
               totalIndicator +=1
               let count = calculateReviewCount(item)
