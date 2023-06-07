@@ -1770,7 +1770,7 @@ const getPMUActivities = ({ req, sort, skip, limit, sortBy, order, filters, filt
   }
   return Ulb.aggregate(query);
 }
-const getPopulationWiseData = ({ stateId, columns, sort, skip, limit, sortBy, order, filters, filterObj, sortKey, designYear }) => {
+const getPopulationWiseData = ({ stateId, selectedCategory, columns, sort, skip, limit, sortBy, order, filters, filterObj, sortKey, designYear }) => {
 
   const parameters = [
     {
@@ -1871,10 +1871,11 @@ const getPopulationWiseData = ({ stateId, columns, sort, skip, limit, sortBy, or
     },
     {
       $project: {
-        "data": parameters.map(parameter => (
+        "data": parameters.map((parameter, index) => (
           columns.reduce((obj, column) => ({
             ...obj,
-            [column.key]: `$${column.key}${parameter.label}`
+            [column.key]: `$${column.key}${parameter.label}`,
+            ...(selectedCategory && {'selected': (selectedCategory - 1 ) == index })
           }), {})
         ))
       }
@@ -2054,9 +2055,7 @@ exports.overview = async function (req, res, next) {
 
     let skip = parseInt(req.query.skip) || 0;
     let limit = parseInt(req.query.limit) || 10;
-    let selectedState = req.query.selectedState;
-    let selectedCategory = req.query.selectedCategory;
-    let { sortBy, order, stateId, stateName } = req.query
+    let { sortBy, order, stateId, stateName, selectedState, selectedCategory } = req.query
     let filters = Object.entries({ ...req.query })
       .reduce((obj, [key, value]) => ({ ...obj, [key]: /^\d+$/.test(value) ? +value : value }), {});
 
@@ -2093,7 +2092,7 @@ exports.overview = async function (req, res, next) {
       data = await getPMUActivities({ req, selectedState, sort, skip, limit, sortBy, order, filters, filterObj, sortKey, designYear });
     }
     else if (type == 'populationWise') {
-      data = await getPopulationWiseData({ stateId, columns, sort, skip, limit, sortBy, order, filters, filterObj, sortKey, designYear });
+      data = await getPopulationWiseData({ stateId, selectedCategory, columns, sort, skip, limit, sortBy, order, filters, filterObj, sortKey, designYear });
       data = data?.[0]?.data;
       name += ' - ' + stateName;
     }
