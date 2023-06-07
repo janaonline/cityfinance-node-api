@@ -6387,4 +6387,5 @@ const stateWiseHeatMapQuery = ({ state, category }) => {
   return aggregationQuery
 }
 
+module.exports.getCategoryMatchObject = getCategoryMatchObject
 module.exports.stateWiseHeatMapQuery = stateWiseHeatMapQuery

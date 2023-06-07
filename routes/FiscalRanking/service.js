@@ -13,7 +13,7 @@ const TwentyEightSlbsForm = require("../../models/TwentyEightSlbsForm");
 const Ulb = require("../../models/Ulb");
 const Service = require("../../service");
 const Users = require("../../models/User");
-const { stateWiseHeatMapQuery } = require("../../util/aggregation")
+const { stateWiseHeatMapQuery, getCategoryMatchObject } = require("../../util/aggregation")
 const FiscalRankingArray = require("./formjson").arr;
 const {
   csvColsFr,
@@ -1544,11 +1544,6 @@ exports.getAll = async function (req, res, next) {
 
 const getUlbActivities = ({ req, sort, selectedState, selectedCategory, skip, limit, sortBy, order, filters, filterObj, sortKey, designYear }) => {
   let query = [
-    ...(req.decoded.role == userTypes.state ? [{
-      "$match": {
-        "state": ObjectId(req.decoded.state)
-      }
-    }] : []),
     {
       "$lookup": {
         "from": "fiscalrankings",
@@ -1655,6 +1650,17 @@ const getUlbActivities = ({ req, sort, selectedState, selectedCategory, skip, li
       }
     },
   ];
+  if (req.decoded.role == userTypes.state || selectedCategory) {
+    const state = ObjectId(req.decoded.state);
+    matchObj = {
+      "$match": {
+        ...(state && { "state": state }),
+        ...getCategoryMatchObject(selectedCategory)
+      }
+    }
+    query = [matchObj, ...query]
+  }
+
   if (sort) {
     query.push({ $sort: sort });
   }
@@ -1875,7 +1881,7 @@ const getPopulationWiseData = ({ stateId, selectedCategory, columns, sort, skip,
           columns.reduce((obj, column) => ({
             ...obj,
             [column.key]: `$${column.key}${parameter.label}`,
-            ...(selectedCategory && {'selected': (selectedCategory - 1 ) == index })
+            ...(selectedCategory && { 'selected': (selectedCategory - 1) == index })
           }), {})
         ))
       }
