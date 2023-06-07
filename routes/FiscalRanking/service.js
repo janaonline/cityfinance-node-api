@@ -5141,10 +5141,10 @@ function calculateReviewCount(item) {
   if(item.value || item.date != null || (item.file && item?.file?.url != "") || item.modelName === "ULBLedger"){
     completedIndicator = 1;
   }
-  if (item.status === "APPROVED") {
+  if(item.status === "APPROVED" || (item.file && item.modelName === "ULBLedger")){
     approvedIndicator = 1;
   }
-  if (item.status === "REJECTED") {
+  if(item.status === "REJECTED" || (item.file && item.modelName === "ULBLedger")){
     rejectedIndicator = 1;
   }
   return [completedIndicator, approvedIndicator, rejectedIndicator]
