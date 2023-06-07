@@ -1922,7 +1922,7 @@ async function handleDbValues(questionObj,formObj,order){
                 questionObj.answer['answer'] =[answer]
             }
             catch(err){
-                question.answer = {...question.answer,answer:[answer]}
+                questionObj.answer = {...questionObj.answer,answer:[answer]}
             }
         }
         
