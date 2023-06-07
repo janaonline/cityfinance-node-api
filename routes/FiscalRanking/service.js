@@ -13,7 +13,7 @@ const TwentyEightSlbsForm = require("../../models/TwentyEightSlbsForm");
 const Ulb = require("../../models/Ulb");
 const Service = require("../../service");
 const Users = require("../../models/User");
-const { stateWiseHeatMapQuery } = require("../../util/aggregation")
+const { stateWiseHeatMapQuery, getCategoryMatchObject } = require("../../util/aggregation")
 const FiscalRankingArray = require("./formjson").arr;
 const {
   csvColsFr,
@@ -746,40 +746,40 @@ async function getPreviousYearValues(pf, ulbData) {
   }
 }
 
-const keyBasedCond = (value,key)=>{
-  try{
-    if(value[key] == null || value[key] === ""){
+const keyBasedCond = (value, key) => {
+  try {
+    if (value[key] == null || value[key] === "") {
       value.status = ""
     }
     return value
   }
-  catch(err){
-    console.log("error in keyBasedCond :: ",err.message)
+  catch (err) {
+    console.log("error in keyBasedCond :: ", err.message)
   }
   return value
 }
 
-function manageNullValuesInMainTable(data){
+function manageNullValuesInMainTable(data) {
   const statusNotMandatory = ["caMembershipNo", "otherUpload"]
   const fileCase = ["otherUpload"]
-  try{
+  try {
     return Object.entries(data).reduce((acc, [key, value]) => {
-      if(typeof(value) === "object" && value?.status === null){
+      if (typeof (value) === "object" && value?.status === null) {
         value.status = "PENDING"
       }
-      if(statusNotMandatory.includes(key)){
-        if(fileCase.includes(key)){
-          value = keyBasedCond(value,"url")
+      if (statusNotMandatory.includes(key)) {
+        if (fileCase.includes(key)) {
+          value = keyBasedCond(value, "url")
         }
-        else{
-         value = keyBasedCond(value,"value")
+        else {
+          value = keyBasedCond(value, "value")
         }
       }
       acc[key] = value;
       return acc;
     }, {});
   }
-  catch(err){
+  catch (err) {
     console.log("error in manageNullValueInMainTable")
   }
   return data
@@ -1611,7 +1611,7 @@ exports.getAll = async function (req, res, next) {
   }
 };
 
-const getUlbActivities = ({ req, sort, skip, limit, sortBy, order, filters, filterObj, sortKey, designYear }) => {
+const getUlbActivities = ({ req, sort, selectedState, selectedCategory, skip, limit, sortBy, order, filters, filterObj, sortKey, designYear }) => {
   let query = [
     ...(req.decoded.role == userTypes.state ? [{
       $match: {
@@ -1699,12 +1699,22 @@ const getUlbActivities = ({ req, sort, skip, limit, sortBy, order, filters, filt
     {
       "$project": {
         "stateName": "$states.name",
+        "selected": {
+          "$cond": {
+            "if": {
+              "$eq": ["$states._id", ObjectId(selectedState)]
+            },
+            "then": true,
+            "else": false
+          }
+        },
         "stateNameLink": {
           "$concat": [
             "/rankings/populationWise/",
             { "$toString": "$states._id" },
             "?stateName=",
             { "$toString": "$states.name" },
+            ...(selectedCategory ? [`&selectedCategory=${selectedCategory}`] : [])
           ]
         },
         "totalUlbs": 1,
@@ -1715,13 +1725,23 @@ const getUlbActivities = ({ req, sort, skip, limit, sortBy, order, filters, filt
       }
     },
   ];
+  if (req.decoded.role == userTypes.state || selectedCategory) {
+    matchObj = {
+      "$match": {
+        ...(req.decoded.state && { "state": ObjectId(req.decoded.state) }),
+        ...getCategoryMatchObject(selectedCategory)
+      }
+    }
+    query = [matchObj, ...query]
+  }
+
   if (sort) {
     query.push({ $sort: sort });
   }
   if (filterObj.provided) {
     query.push({ $match: filters });
   }
-  console.log(query);
+  console.log(JSON.stringify(query, 3, 3));
   return Ulb.aggregate(query);
 }
 const getPMUActivities = ({ req, sort, skip, limit, sortBy, order, filters, filterObj, sortKey, designYear }) => {
@@ -1831,7 +1851,7 @@ const getPMUActivities = ({ req, sort, skip, limit, sortBy, order, filters, filt
   }
   return Ulb.aggregate(query);
 }
-const getPopulationWiseData = ({ stateId, columns, sort, skip, limit, sortBy, order, filters, filterObj, sortKey, designYear }) => {
+const getPopulationWiseData = ({ stateId, selectedCategory, columns, sort, skip, limit, sortBy, order, filters, filterObj, sortKey, designYear }) => {
 
   const parameters = [
     {
@@ -1859,12 +1879,12 @@ const getPopulationWiseData = ({ stateId, columns, sort, skip, limit, sortBy, or
   ];
 
   const query = [
-    {
+    ...(stateId ? [{
       "$match": {
         "isActive":true,
         "state": ObjectId(stateId)
       }
-    },
+    }] : []),
     {
       "$lookup": {
         "from": "fiscalrankings",
@@ -1894,7 +1914,7 @@ const getPopulationWiseData = ({ stateId, columns, sort, skip, limit, sortBy, or
           ...result,
           ...parameters.reduce((obj, parameter) => ({
             ...obj,
-            [`${column.key} ${parameter.label}`]: column.key == 'populationCategories' ? {
+            [`${column.key}${parameter.label}`]: column.key == 'populationCategories' ? {
               $first: parameter.label
             } :
               {
@@ -1933,15 +1953,17 @@ const getPopulationWiseData = ({ stateId, columns, sort, skip, limit, sortBy, or
     },
     {
       $project: {
-        "data": parameters.map(parameter => (
+        "data": parameters.map((parameter, index) => (
           columns.reduce((obj, column) => ({
             ...obj,
-            [column.key]: `$${column.key} ${parameter.label}`
+            [column.key]: `$${column.key}${parameter.label}`,
+            ...(selectedCategory && { 'selected': (selectedCategory - 1) == index })
           }), {})
         ))
       }
     }
   ];
+  console.log(JSON.stringify(query, 3, 3))
   return Ulb.aggregate(query);
 }
 
@@ -2007,14 +2029,12 @@ exports.overview = async function (req, res, next) {
         ...(req.decoded.role != userTypes.state && {
           "query": "",
         }),
+        "sort": 1,
         "sortable": true
       },
       {
         "label": "Total ULBs",
         "key": "totalUlbs",
-        ...(req.decoded.role != userTypes.state && {
-          "query": "",
-        }),
         "sortable": true
       },
       {
@@ -2045,6 +2065,7 @@ exports.overview = async function (req, res, next) {
         ...(req.decoded.role != userTypes.state && {
           "query": "",
         }),
+        "sort": 1,
         "sortable": true
       },
       {
@@ -2114,13 +2135,13 @@ exports.overview = async function (req, res, next) {
 
   try {
 
-    let skip = parseInt(req.query.skip) || 0
-    let limit = parseInt(req.query.limit) || 10
-    let { sortBy, order, stateId, stateName } = req.query
+    let skip = parseInt(req.query.skip) || 0;
+    let limit = parseInt(req.query.limit) || 10;
+    let { sortBy, order, stateId, stateName, selectedState, selectedCategory } = req.query
     let filters = Object.entries({ ...req.query })
       .reduce((obj, [key, value]) => ({ ...obj, [key]: /^\d+$/.test(value) ? +value : value }), {});
 
-    await deleteExtraKeys(["sortBy", "order", "skip", "limit"], filters)
+    await deleteExtraKeys(["sortBy", "order", "skip", "limit", "selectedState", "selectedCategory"], filters)
 
     console.log(filters);
     filters = await Service.mapFilter(filters);
@@ -2140,15 +2161,20 @@ exports.overview = async function (req, res, next) {
         sort = { [sortBy]: +order };
       }
     }
+
+    sort = { 'stateName': 1, ...sort };
+
+    console.log({ sort, skip, limit, sortBy, order, filters, filterObj, sortKey, designYear });
+
     let data;
     if (type == 'UlbActivities') {
-      data = await getUlbActivities({ req, sort, skip, limit, sortBy, order, filters, filterObj, sortKey, designYear });
+      data = await getUlbActivities({ req, selectedState, selectedCategory, sort, skip, limit, sortBy, order, filters, filterObj, sortKey, designYear });
     }
     else if (type == 'PMUActivities') {
-      data = await getPMUActivities({ req, sort, skip, limit, sortBy, order, filters, filterObj, sortKey, designYear });
+      data = await getPMUActivities({ req, selectedState, sort, skip, limit, sortBy, order, filters, filterObj, sortKey, designYear });
     }
     else if (type == 'populationWise') {
-      data = await getPopulationWiseData({ stateId, columns, sort, skip, limit, sortBy, order, filters, filterObj, sortKey, designYear });
+      data = await getPopulationWiseData({ stateId, selectedCategory, columns, sort, skip, limit, sortBy, order, filters, filterObj, sortKey, designYear });
       data = data?.[0]?.data;
       name += ' - ' + stateName;
     }
@@ -3178,12 +3204,12 @@ async function validateAccordingtoLedgers(
         );
         if (ulbValue === sum) {
           validator.valid = true
-           validator.value = years.value
+          validator.value = years.value
         } else {
-            validator.valid = false
-            validator.message = `Data in our ledger records in not matching the sub of break up. Please check these fields in financial information. ${dynamicObj.calculatedFrom.join(
-              ","
-            )}`;
+          validator.valid = false
+          validator.message = `Data in our ledger records in not matching the sub of break up. Please check these fields in financial information. ${dynamicObj.calculatedFrom.join(
+            ","
+          )}`;
         }
         return validator;
       }
@@ -4845,6 +4871,7 @@ exports.heatMapReport = async (req, res, next) => {
   try {
     let { state, category, getQuery } = req.query
     getQuery = getQuery === "true"
+    console.log(state, category, getQuery);
     let query = stateWiseHeatMapQuery({ state, category })
     if (getQuery) return res.json(query)
     let queryResult = await Ulb.aggregate(query)
