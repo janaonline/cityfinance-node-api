@@ -3525,11 +3525,7 @@ async function calculateAndUpdateStatusForMappers(
         conditionalObj[tabName].status = "NA";
       }
     }
-<<<<<<< HEAD
-    let params = { totalIndicator, completedIndicator, approvedIndicator, rejectedIndicator, formId }
-=======
     let params = { totalIndicator, completedIndicator, approvedIndicator, rejectedIndicator, formId ,updateForm}
->>>>>>> e5aae02662de5a78dafdc04aba59f8a84cf93235
     await session.commitTransaction();
     await session.endSession();
     await manageFormPercentage(params)
