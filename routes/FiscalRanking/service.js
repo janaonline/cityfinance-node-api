@@ -5070,7 +5070,7 @@ function calculateReviewCount(item){
   let completedIndicator = 0
   let approvedIndicator = 0
   let rejectedIndicator = 0
-  if(item.value || item.date != null || item?.file?.url != "" || item.modelName === "ULBLedger"){
+  if(item.value || item.date != null || (item.file && item?.file?.url != "") || item.modelName === "ULBLedger"){
     completedIndicator = 1;
   }
   if(item.status === "APPROVED"){
