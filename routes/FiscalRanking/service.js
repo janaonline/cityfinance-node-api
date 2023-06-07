@@ -1803,11 +1803,12 @@ const getPopulationWiseData = ({ stateId, selectedCategory, columns, sort, skip,
   ];
 
   const query = [
-    ...(stateId ? [{
+    {
       "$match": {
-        "state": ObjectId(stateId)
-      }
-    }] : []),
+        ...(stateId && { state: ObjectId(stateId) }),
+        "isActive": true
+      },
+    },
     {
       "$lookup": {
         "from": "fiscalrankings",
@@ -2098,7 +2099,21 @@ exports.overview = async function (req, res, next) {
     }
     else if (type == 'populationWise') {
       data = await getPopulationWiseData({ stateId, selectedCategory, columns, sort, skip, limit, sortBy, order, filters, filterObj, sortKey, designYear });
-      data = data?.[0]?.data;
+      const result = [];
+      data?.forEach(item => {
+        item.data.forEach((innerData, index) => {
+          if (result[index]) {
+            Object.entries(innerData).forEach(([key, value]) => {
+              if (key != 'populationCategories') {
+                result[index][key] += +value || 0;
+              }
+            });
+          } else {
+            result.push(innerData)
+          }
+        })
+      });
+      data = result || [];
       name += ' - ' + stateName;
     }
 
