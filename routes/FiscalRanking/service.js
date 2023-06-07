@@ -3549,6 +3549,7 @@ async function calculateAndUpdateStatusForMappers(
         conditionalObj[tab._id.toString()] = temp;
       }
     }
+    console.log("totalIndicator",totalIndicator)
     for (var tabName in conditionalObj) {
       if (conditionalObj[tabName].status.length > 0) {
         conditionalObj[tabName].status = conditionalObj[tabName].status.every(
@@ -5142,7 +5143,7 @@ function calculateReviewCount(item) {
   let completedIndicator = 0
   let approvedIndicator = 0
   let rejectedIndicator = 0
-  if(item.value || item.date != null || (item.file && item?.file?.url != "") || (item.file && item.modelName === "ULBLedger")){
+  if((item.value || item.date != null || (item.file && item?.file?.url != "") || (item.file && item.modelName === "ULBLedger")) && item?.type !==undefined){
     console.log("item.type :: ",item.type)
     completedIndicator = 1;
   }
