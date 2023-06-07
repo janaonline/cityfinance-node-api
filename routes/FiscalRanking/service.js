@@ -1654,7 +1654,7 @@ const getUlbActivities = ({ req, sort, selectedState, selectedCategory, skip, li
     const state = ObjectId(req.decoded.state);
     matchObj = {
       "$match": {
-        ...(state && { "state": state }),
+        ...(req.decoded.state && { "state": state }),
         ...getCategoryMatchObject(selectedCategory)
       }
     }
@@ -4738,7 +4738,8 @@ exports.heatMapReport = async (req, res, next) => {
   try {
     let { state, category, getQuery } = req.query
     getQuery = getQuery === "true"
-    let query = stateWiseHeatMapQuery({ state, category })
+    console.log(state, category, getQuery);
+    let query = stateWiseHeatMapQuery({ stateId: state, category })
     if (getQuery) return res.json(query)
     let queryResult = await Ulb.aggregate(query)
     response.success = true
