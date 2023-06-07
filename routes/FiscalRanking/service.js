@@ -3283,15 +3283,13 @@ async function manageFormPercentage(params) {
     let { totalIndicator, completedIndicator, approvedIndicator, rejectedIndicator, formId,updateForm } = params
     let completedPercentage = (completedIndicator / totalIndicator) * 100
     let verificationProgress = ((approvedIndicator + rejectedIndicator) / totalIndicator) * 100
-    let payload = {
-      "progress":{}
-    }
+    let payload = {}
     console.log({ totalIndicator, completedIndicator, approvedIndicator, rejectedIndicator, formId })
     if(updateForm){
-      payload["progress"]["ulbCompletion"]=  completedPercentage.toFixed(2)
+      payload["progress.ulbCompletion"]=  completedPercentage.toFixed(2)
     }
     else{
-      payload["progress"]["verificationProgress"]= verificationProgress.toFixed(2)
+      payload["progress.verificationProgress"]= verificationProgress.toFixed(2)
     }
     console.log("payload ::: ",payload)
     await FiscalRanking.findOneAndUpdate({
@@ -3323,6 +3321,7 @@ async function calculateAndUpdateStatusForMappers(
 ) {
   try {
     let totalIndicator = 0;
+    let total = 0
     let completedIndicator = 0;
     let approvedIndicator = 0;
     let rejectedIndicator = 0;
@@ -3349,10 +3348,21 @@ async function calculateAndUpdateStatusForMappers(
           continue;
         }
         if (obj[k].yearData) {
+          total += 1
           let yearArr = obj[k].yearData;
           let dynamicObj = obj[k];
           let financialInfo = obj;
           let status = yearArr.every((item) => {
+            let skipFiles = {
+              "registerGisProof":"registerGis",
+              "accountStwreProof":"accountStwre"
+            }
+            if(Object.keys(skipFiles).includes(item.type)){
+              let element = tab.data[skipFiles[item.type]]['yearData'][0]
+              if(element.value == "No"){
+                  item.required = false
+              }
+            }
             if(item?.required){
               types.add(k)
               totalIndicator +=1
@@ -3385,12 +3395,30 @@ async function calculateAndUpdateStatusForMappers(
             key === priorTabsForFiscalRanking["basicUlbDetails"] ||
             key === priorTabsForFiscalRanking["conInfo"] ||
             fiscalRankingKeys.includes(k)
+            
           ) {
+            if(k === "signedCopyOfFile"){
+              console.log("inside if  condition")
+              totalIndicator += 1
+              let demoItem = {
+                "status":obj[k].status,
+               "file":{
+                name:obj[k].name,
+                file:obj[k].file
+               }
+              }
+              let count = calculateReviewCount(demoItem)
+              completedIndicator += count[0]
+              approvedIndicator += count[1]
+              rejectedIndicator += count[2]
+            }
             let statueses = getStatusesFromObject(tab.data, "status", [
               "population11",
               "populationFr"
             ]);
-            let finalStatus = statueses.every((item) => item === "APPROVED");
+            let finalStatus = statueses.every((item) => {              
+              return item === "APPROVED"
+            });
             temp["status"].push(finalStatus);
             await updateFiscalRankingForm(
               tab.data,
@@ -3419,6 +3447,7 @@ async function calculateAndUpdateStatusForMappers(
     let params = { totalIndicator, completedIndicator, approvedIndicator, rejectedIndicator, formId ,updateForm}
     await session.commitTransaction();
     await session.endSession();
+    console.log("total ::: ",total)
     await manageFormPercentage(params)
     return conditionalObj;
   } catch (err) {
@@ -4948,10 +4977,10 @@ function calculateReviewCount(item){
   if(item.value || item.date != null || (item.file && item?.file?.url != "") || item.modelName === "ULBLedger"){
     completedIndicator = 1;
   }
-  if(item.status === "APPROVED"){
+  if(item.status === "APPROVED" || (item.file && item.modelName === "ULBLedger")){
     approvedIndicator = 1;
   }
-  if(item.status === "REJECTED"){
+  if(item.status === "REJECTED" || (item.file && item.modelName === "ULBLedger")){
     rejectedIndicator = 1;
   }
   return [completedIndicator,approvedIndicator,rejectedIndicator]
