@@ -6197,7 +6197,7 @@ const getCategoryMatchObject = category => ({
   }
 }[category] || {});
 
-const stateWiseHeatMapQuery = ({ state, category }) => {
+const stateWiseHeatMapQuery = ({ stateId: state, category }) => {
   let matchObj = {}
   let aggregationQuery = [
     {
@@ -6373,10 +6373,9 @@ const stateWiseHeatMapQuery = ({ state, category }) => {
     }
   ]
   if (state || category) {
-    state = ObjectId(state)
     matchObj = {
       "$match": {
-        ...(state && {"state": state}),
+        ...(state && {"state": ObjectId(state)}),
         ...getCategoryMatchObject(category)
       }
     }
@@ -6387,4 +6386,5 @@ const stateWiseHeatMapQuery = ({ state, category }) => {
   return aggregationQuery
 }
 
+module.exports.getCategoryMatchObject = getCategoryMatchObject
 module.exports.stateWiseHeatMapQuery = stateWiseHeatMapQuery
