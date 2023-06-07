@@ -13,7 +13,7 @@ const TwentyEightSlbsForm = require("../../models/TwentyEightSlbsForm");
 const Ulb = require("../../models/Ulb");
 const Service = require("../../service");
 const Users = require("../../models/User");
-const { stateWiseHeatMapQuery } = require("../../util/aggregation")
+const { stateWiseHeatMapQuery, getCategoryMatchObject } = require("../../util/aggregation")
 const FiscalRankingArray = require("./formjson").arr;
 const {
   csvColsFr,
@@ -65,20 +65,20 @@ let priorTabsForFiscalRanking = {
 
 
 
-async function manageLedgerData(params){
+async function manageLedgerData(params) {
   let messages = []
-  try{
-    let {ledgerData,ledgerKeys,responseData,formId} = params
+  try {
+    let { ledgerData, ledgerKeys, responseData, formId } = params
     let formHistory = await FormHistory.findOne({
-      recordId:formId
-    },{
-      data:1
+      recordId: formId
+    }, {
+      data: 1
     }).lean()
     let formHistoryData = formHistory && formHistory.data.length ? formHistory?.data[0]['fiscalMapperData'].filter(item => ledgerKeys.includes(item.type) && item.modelName === "ULBLedger") : []
-    for(let ledgerKey of ledgerKeys){
+    for (let ledgerKey of ledgerKeys) {
       let question = responseData.financialInformation[ledgerKey]
-      if(question.yearData.length){
-        for(let yearObj of question.yearData){
+      if (question.yearData.length) {
+        for (let yearObj of question.yearData) {
           let historicalObject = formHistoryData.find(item => item.type === yearObj.type && item.year.toString() === yearObj.year.toString())
           let yearName = getKeyByValue(years, yearObj.year);
           let ulbFyAmount = await getUlbLedgerDataFilter({
@@ -86,12 +86,12 @@ async function manageLedgerData(params){
             year: yearObj.year.toString(),
             data: ledgerData,
           })
-          if(yearObj.previousYearCodes && yearObj.previousYearCodes.length){
+          if (yearObj.previousYearCodes && yearObj.previousYearCodes.length) {
 
-            ulbFyAmount = await getPreviousYearValues(yearObj,ledgerData)
+            ulbFyAmount = await getPreviousYearValues(yearObj, ledgerData)
           }
 
-          if(historicalObject && ulbFyAmount !== historicalObject.value  && ![years['2020-21'],years['2021-22']].includes(yearObj.year) ){
+          if (historicalObject && ulbFyAmount !== historicalObject.value && ![years['2020-21'], years['2021-22']].includes(yearObj.year)) {
             messages.push(`Data for field ${question.displayPriority} ${getKeyByValue(years, yearObj.year)} has been updated. kindly revisit those calculations`)
           }
           yearObj.modelName = ulbFyAmount ? "ULBLedger" : ""
@@ -105,8 +105,8 @@ async function manageLedgerData(params){
       messages
     }
   }
-  catch(err){
-    console.log("error in manageLedgerData  ::::",err.message)
+  catch (err) {
+    console.log("error in manageLedgerData  ::::", err.message)
   }
 }
 
@@ -746,40 +746,40 @@ async function getPreviousYearValues(pf, ulbData) {
   }
 }
 
-const keyBasedCond = (value,key)=>{
-  try{
-    if(value[key] == null || value[key] === ""){
+const keyBasedCond = (value, key) => {
+  try {
+    if (value[key] == null || value[key] === "") {
       value.status = ""
     }
     return value
   }
-  catch(err){
-    console.log("error in keyBasedCond :: ",err.message)
+  catch (err) {
+    console.log("error in keyBasedCond :: ", err.message)
   }
   return value
 }
 
-function manageNullValuesInMainTable(data){
+function manageNullValuesInMainTable(data) {
   const statusNotMandatory = ["caMembershipNo", "otherUpload"]
   const fileCase = ["otherUpload"]
-  try{
+  try {
     return Object.entries(data).reduce((acc, [key, value]) => {
-      if(typeof(value) === "object" && value?.status === null){
+      if (typeof (value) === "object" && value?.status === null) {
         value.status = "PENDING"
       }
-      if(statusNotMandatory.includes(key)){
-        if(fileCase.includes(key)){
-          value = keyBasedCond(value,"url")
+      if (statusNotMandatory.includes(key)) {
+        if (fileCase.includes(key)) {
+          value = keyBasedCond(value, "url")
         }
-        else{
-         value = keyBasedCond(value,"value")
+        else {
+          value = keyBasedCond(value, "value")
         }
       }
       acc[key] = value;
       return acc;
     }, {});
   }
-  catch(err){
+  catch (err) {
     console.log("error in manageNullValueInMainTable")
   }
   return data
@@ -962,7 +962,7 @@ exports.getView = async function (req, res, next) {
       ulb: ObjectId(req.query.ulb),
     });
     let userMessages = []
-    let ledgerKeys = ["fixedAsset","CaptlExp"]
+    let ledgerKeys = ["fixedAsset", "CaptlExp"]
     for (let sortKey in fyDynemic) {
       let subData = fyDynemic[sortKey];
       // console.log("subData  >>>> 1::: ",subData)
@@ -982,9 +982,9 @@ exports.getView = async function (req, res, next) {
           else {
             pf['readonly'] = true
           }
-          
+
           if (pf?.code?.length > 0) {
-            if(!ledgerKeys.includes(key)){
+            if (!ledgerKeys.includes(key)) {
               ledgerKeys.push(key)
             }
             pf["status"] = '';
@@ -1172,7 +1172,7 @@ exports.getView = async function (req, res, next) {
                   }
                 }
               } else if (pf?.previousYearCodes?.length) {
-                if(!ledgerKeys.includes(key)){
+                if (!ledgerKeys.includes(key)) {
                   ledgerKeys.push(key)
                 }
                 let yearName = getKeyByValue(years, pf.year);
@@ -1229,20 +1229,20 @@ exports.getView = async function (req, res, next) {
       fiscal_ranking: data?._id || null,
     };
     let params = {
-      ledgerData : ulbData,
-      ledgerKeys:ledgerKeys,
-      responseData:fyDynemic,
-      formId:viewOne._id
+      ledgerData: ulbData,
+      ledgerKeys: ledgerKeys,
+      responseData: fyDynemic,
+      formId: viewOne._id
     }
     /**
      * This function always get latest data for ledgers
      */
 
     let modifiedLedgerData = fyDynemic
-    if(![statusTracker.SAP].includes(viewOne.currentFormStatus)){
-     let {responseData,messages} = await manageLedgerData(params)
-     modifiedLedgerData = responseData
-     userMessages = messages
+    if (![statusTracker.SAP].includes(viewOne.currentFormStatus)) {
+      let { responseData, messages } = await manageLedgerData(params)
+      modifiedLedgerData = responseData
+      userMessages = messages
     }
     Object.assign(conditionForFeedbacks, condition);
     let modifiedTabs = await getModifiedTabsFiscalRanking(
@@ -1263,7 +1263,7 @@ exports.getView = async function (req, res, next) {
       tabs: modifiedTabs,
       currentFormStatus: viewOne.currentFormStatus,
       financialYearTableHeader,
-      messages:userMessages
+      messages: userMessages
     };
     return res
       .status(200)
@@ -1611,11 +1611,11 @@ exports.getAll = async function (req, res, next) {
   }
 };
 
-const getUlbActivities = ({ req, sort, skip, limit, sortBy, order, filters, filterObj, sortKey, designYear }) => {
+const getUlbActivities = ({ req, sort, selectedState, selectedCategory, skip, limit, sortBy, order, filters, filterObj, sortKey, designYear }) => {
   let query = [
     ...(req.decoded.role == userTypes.state ? [{
       $match: {
-        "isActive":true,
+        "isActive": true,
         "state": ObjectId(req.decoded.state)
       }
     }] : []),
@@ -1699,12 +1699,22 @@ const getUlbActivities = ({ req, sort, skip, limit, sortBy, order, filters, filt
     {
       "$project": {
         "stateName": "$states.name",
+        "selected": {
+          "$cond": {
+            "if": {
+              "$eq": ["$states._id", ObjectId(selectedState)]
+            },
+            "then": true,
+            "else": false
+          }
+        },
         "stateNameLink": {
           "$concat": [
             "/rankings/populationWise/",
             { "$toString": "$states._id" },
             "?stateName=",
             { "$toString": "$states.name" },
+            ...(selectedCategory ? [`&selectedCategory=${selectedCategory}`] : [])
           ]
         },
         "totalUlbs": 1,
@@ -1715,13 +1725,23 @@ const getUlbActivities = ({ req, sort, skip, limit, sortBy, order, filters, filt
       }
     },
   ];
+  if (req.decoded.role == userTypes.state || selectedCategory) {
+    matchObj = {
+      "$match": {
+        ...(req.decoded.state && { "state": ObjectId(req.decoded.state) }),
+        ...getCategoryMatchObject(selectedCategory)
+      }
+    }
+    query = [matchObj, ...query]
+  }
+
   if (sort) {
     query.push({ $sort: sort });
   }
   if (filterObj.provided) {
     query.push({ $match: filters });
   }
-  console.log(query);
+  console.log(JSON.stringify(query, 3, 3));
   return Ulb.aggregate(query);
 }
 const getPMUActivities = ({ req, sort, skip, limit, sortBy, order, filters, filterObj, sortKey, designYear }) => {
@@ -1729,7 +1749,7 @@ const getPMUActivities = ({ req, sort, skip, limit, sortBy, order, filters, filt
   const query = [
     ...(req.decoded.role == userTypes.state ? [{
       $match: {
-        "isActive":true,
+        "isActive": true,
         "state": ObjectId(req.decoded.state)
       }
     }] : []),
@@ -1831,7 +1851,7 @@ const getPMUActivities = ({ req, sort, skip, limit, sortBy, order, filters, filt
   }
   return Ulb.aggregate(query);
 }
-const getPopulationWiseData = ({ stateId, columns, sort, skip, limit, sortBy, order, filters, filterObj, sortKey, designYear }) => {
+const getPopulationWiseData = ({ stateId, selectedCategory, columns, sort, skip, limit, sortBy, order, filters, filterObj, sortKey, designYear }) => {
 
   const parameters = [
     {
@@ -1859,12 +1879,12 @@ const getPopulationWiseData = ({ stateId, columns, sort, skip, limit, sortBy, or
   ];
 
   const query = [
-    {
+    ...(stateId ? [{
       "$match": {
-        "isActive":true,
+        "isActive": true,
         "state": ObjectId(stateId)
       }
-    },
+    }] : []),
     {
       "$lookup": {
         "from": "fiscalrankings",
@@ -1894,7 +1914,7 @@ const getPopulationWiseData = ({ stateId, columns, sort, skip, limit, sortBy, or
           ...result,
           ...parameters.reduce((obj, parameter) => ({
             ...obj,
-            [`${column.key} ${parameter.label}`]: column.key == 'populationCategories' ? {
+            [`${column.key}${parameter.label}`]: column.key == 'populationCategories' ? {
               $first: parameter.label
             } :
               {
@@ -1933,15 +1953,17 @@ const getPopulationWiseData = ({ stateId, columns, sort, skip, limit, sortBy, or
     },
     {
       $project: {
-        "data": parameters.map(parameter => (
+        "data": parameters.map((parameter, index) => (
           columns.reduce((obj, column) => ({
             ...obj,
-            [column.key]: `$${column.key} ${parameter.label}`
+            [column.key]: `$${column.key}${parameter.label}`,
+            ...(selectedCategory && { 'selected': (selectedCategory - 1) == index })
           }), {})
         ))
       }
     }
   ];
+  console.log(JSON.stringify(query, 3, 3))
   return Ulb.aggregate(query);
 }
 
@@ -2007,14 +2029,12 @@ exports.overview = async function (req, res, next) {
         ...(req.decoded.role != userTypes.state && {
           "query": "",
         }),
+        "sort": 1,
         "sortable": true
       },
       {
         "label": "Total ULBs",
         "key": "totalUlbs",
-        ...(req.decoded.role != userTypes.state && {
-          "query": "",
-        }),
         "sortable": true
       },
       {
@@ -2045,6 +2065,7 @@ exports.overview = async function (req, res, next) {
         ...(req.decoded.role != userTypes.state && {
           "query": "",
         }),
+        "sort": 1,
         "sortable": true
       },
       {
@@ -2114,13 +2135,13 @@ exports.overview = async function (req, res, next) {
 
   try {
 
-    let skip = parseInt(req.query.skip) || 0
-    let limit = parseInt(req.query.limit) || 10
-    let { sortBy, order, stateId, stateName } = req.query
+    let skip = parseInt(req.query.skip) || 0;
+    let limit = parseInt(req.query.limit) || 10;
+    let { sortBy, order, stateId, stateName, selectedState, selectedCategory } = req.query
     let filters = Object.entries({ ...req.query })
       .reduce((obj, [key, value]) => ({ ...obj, [key]: /^\d+$/.test(value) ? +value : value }), {});
 
-    await deleteExtraKeys(["sortBy", "order", "skip", "limit"], filters)
+    await deleteExtraKeys(["sortBy", "order", "skip", "limit", "selectedState", "selectedCategory"], filters)
 
     console.log(filters);
     filters = await Service.mapFilter(filters);
@@ -2131,7 +2152,7 @@ exports.overview = async function (req, res, next) {
     let sortKey = getSortByKeys(sortBy, order)
     let designYear = years['2022-23']
     let sort = {
-      "stateName":1
+      "stateName": 1
     };
     if (sortBy) {
       if (Array.isArray(sortBy)) {
@@ -2140,15 +2161,20 @@ exports.overview = async function (req, res, next) {
         sort = { [sortBy]: +order };
       }
     }
+
+    sort = { 'stateName': 1, ...sort };
+
+    console.log({ sort, skip, limit, sortBy, order, filters, filterObj, sortKey, designYear });
+
     let data;
     if (type == 'UlbActivities') {
-      data = await getUlbActivities({ req, sort, skip, limit, sortBy, order, filters, filterObj, sortKey, designYear });
+      data = await getUlbActivities({ req, selectedState, selectedCategory, sort, skip, limit, sortBy, order, filters, filterObj, sortKey, designYear });
     }
     else if (type == 'PMUActivities') {
-      data = await getPMUActivities({ req, sort, skip, limit, sortBy, order, filters, filterObj, sortKey, designYear });
+      data = await getPMUActivities({ req, selectedState, sort, skip, limit, sortBy, order, filters, filterObj, sortKey, designYear });
     }
     else if (type == 'populationWise') {
-      data = await getPopulationWiseData({ stateId, columns, sort, skip, limit, sortBy, order, filters, filterObj, sortKey, designYear });
+      data = await getPopulationWiseData({ stateId, selectedCategory, columns, sort, skip, limit, sortBy, order, filters, filterObj, sortKey, designYear });
       data = data?.[0]?.data;
       name += ' - ' + stateName;
     }
@@ -2669,7 +2695,7 @@ function getFormQuery(queryArr, collectionName, design_year, csv) {
         $project: {
           _id: 1,
           status: 1,
-          progress:1,
+          progress: 1,
           actionTakenByRole: 1,
           isDraft: 1,
           currentFormStatus: 1,
@@ -3178,12 +3204,12 @@ async function validateAccordingtoLedgers(
         );
         if (ulbValue === sum) {
           validator.valid = true
-           validator.value = years.value
+          validator.value = years.value
         } else {
-            validator.valid = false
-            validator.message = `Data in our ledger records in not matching the sub of break up. Please check these fields in financial information. ${dynamicObj.calculatedFrom.join(
-              ","
-            )}`;
+          validator.valid = false
+          validator.message = `Data in our ledger records in not matching the sub of break up. Please check these fields in financial information. ${dynamicObj.calculatedFrom.join(
+            ","
+          )}`;
         }
         return validator;
       }
@@ -3361,24 +3387,24 @@ function getStatusesFromObject(obj, element, ignoredVariables) {
 }
 
 
-async function manageFormPercentage(params){
-  try{
-    let {totalIndicator, completedIndicator,approvedIndicator,rejectedIndicator,formId} = params
-    let completedPercentage = (completedIndicator/totalIndicator) * 100
-    let verificationProgress = ((approvedIndicator+rejectedIndicator)/totalIndicator) * 100
+async function manageFormPercentage(params) {
+  try {
+    let { totalIndicator, completedIndicator, approvedIndicator, rejectedIndicator, formId } = params
+    let completedPercentage = (completedIndicator / totalIndicator) * 100
+    let verificationProgress = ((approvedIndicator + rejectedIndicator) / totalIndicator) * 100
     let payload = {}
-    console.log({totalIndicator, completedIndicator,approvedIndicator,rejectedIndicator,formId})
+    console.log({ totalIndicator, completedIndicator, approvedIndicator, rejectedIndicator, formId })
     payload['progress'] = {
-      "ulbCompletion" :completedPercentage.toFixed(2),
-      "verificationProgress":verificationProgress.toFixed(2),
+      "ulbCompletion": completedPercentage.toFixed(2),
+      "verificationProgress": verificationProgress.toFixed(2),
     }
-    console.log("payload ::: ",payload)
+    console.log("payload ::: ", payload)
     await FiscalRanking.findOneAndUpdate({
-      "_id":formId
-    },payload)    
+      "_id": formId
+    }, payload)
   }
-  catch(err){
-    console.log("error in manageFormPercentage :::: ",err.message)
+  catch (err) {
+    console.log("error in manageFormPercentage :::: ", err.message)
   }
 }
 
@@ -3432,9 +3458,9 @@ async function calculateAndUpdateStatusForMappers(
           let dynamicObj = obj[k];
           let financialInfo = obj;
           let status = yearArr.every((item) => {
-            if(obj[k]?.required){
+            if (obj[k]?.required) {
               types.add(k)
-              totalIndicator +=1
+              totalIndicator += 1
               let count = calculateReviewCount(item)
               completedIndicator += count[0]
               approvedIndicator += count[1]
@@ -3479,7 +3505,7 @@ async function calculateAndUpdateStatusForMappers(
               updateForm,
               isDraft,
               session,
-              
+
             );
           }
         }
@@ -3495,7 +3521,7 @@ async function calculateAndUpdateStatusForMappers(
         conditionalObj[tabName].status = "NA";
       }
     }
-    let params = {totalIndicator, completedIndicator,approvedIndicator,rejectedIndicator,formId}
+    let params = { totalIndicator, completedIndicator, approvedIndicator, rejectedIndicator, formId }
     await session.commitTransaction();
     await session.endSession();
     await manageFormPercentage(params)
@@ -3771,14 +3797,14 @@ async function checkIfFormIdExistsOrNot(
 }
 
 
-const checkIfActionTaken = (actions)=>{
-  try{
-      let tab = actions.find(item => item.id === "s5")['data']
-      let actionTaken = Object.entries(tab).some(([key,value]) => ["APPROVED","REJECTED"].includes(value.status) )
-      return actionTaken
+const checkIfActionTaken = (actions) => {
+  try {
+    let tab = actions.find(item => item.id === "s5")['data']
+    let actionTaken = Object.entries(tab).some(([key, value]) => ["APPROVED", "REJECTED"].includes(value.status))
+    return actionTaken
   }
-  catch(err){
-    console.log("error in checkIfActionTaken ::: ",err.message)
+  catch (err) {
+    console.log("error in checkIfActionTaken ::: ", err.message)
   }
   return true
 }
@@ -3793,7 +3819,7 @@ module.exports.createForm = catchAsync(async (req, res) => {
   try {
     let { ulbId, formId, actions, design_year, isDraft, currentFormStatus } = req.body;
     let { role, _id: userId } = req.decoded;
-    if(statusTracker.VIP === currentFormStatus){
+    if (statusTracker.VIP === currentFormStatus) {
       const actionTaken = await checkIfActionTaken(actions)
       currentFormStatus = actionTaken ? statusTracker.VIP : statusTracker.VNS
     }
@@ -3806,7 +3832,7 @@ module.exports.createForm = catchAsync(async (req, res) => {
       userId,
       currentFormStatus
     );
-    
+
     if (!formIdValidations.valid) {
       response.message = formIdValidations.message;
       return res.status(500).json(response);
@@ -4845,6 +4871,7 @@ exports.heatMapReport = async (req, res, next) => {
   try {
     let { state, category, getQuery } = req.query
     getQuery = getQuery === "true"
+    console.log(state, category, getQuery);
     let query = stateWiseHeatMapQuery({ state, category })
     if (getQuery) return res.json(query)
     let queryResult = await Ulb.aggregate(query)
@@ -5066,19 +5093,19 @@ function createCsv(params) {
  * @returns An array containing the values of `completedIndicator`, `approvedIndicator`, and
  * `rejectedIndicator`.
  */
-function calculateReviewCount(item){
+function calculateReviewCount(item) {
   let completedIndicator = 0
   let approvedIndicator = 0
   let rejectedIndicator = 0
-  if(item.value || item.date != null || item?.file?.url != "" || item.modelName === "ULBLedger"){
+  if (item.value || item.date != null || item?.file?.url != "" || item.modelName === "ULBLedger") {
     completedIndicator = 1;
   }
-  if(item.status === "APPROVED"){
+  if (item.status === "APPROVED") {
     approvedIndicator = 1;
   }
-  if(item.status === "REJECTED"){
+  if (item.status === "REJECTED") {
     rejectedIndicator = 1;
   }
-  return [completedIndicator,approvedIndicator,rejectedIndicator]
+  return [completedIndicator, approvedIndicator, rejectedIndicator]
 }
 
