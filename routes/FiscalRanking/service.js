@@ -1071,7 +1071,7 @@ exports.getView = async function (req, res, next) {
                   pf['status'] = singleFydata.modelName === "ULBLedger" ? "" : pf["status"]
                   pf["modelName"] = singleFydata.modelName;
                   pf['rejectReason'] = singleFydata.rejectReason
-                  console.log("singleFydata.status ::: ",singleFydata.status)
+                  console.log("singleFydata.status ::: ", singleFydata.status)
                   if (subData[key].calculatedFrom === undefined) {
                     pf["required"] =
                       singleFydata.modelName === "ULBLedger"
@@ -3390,16 +3390,16 @@ function getStatusesFromObject(obj, element, ignoredVariables) {
 
 async function manageFormPercentage(params) {
   try {
-    let { totalIndicator, completedIndicator, approvedIndicator, rejectedIndicator, formId,updateForm } = params
+    let { totalIndicator, completedIndicator, approvedIndicator, rejectedIndicator, formId, updateForm } = params
     let completedPercentage = (completedIndicator / totalIndicator) * 100
     let verificationProgress = ((approvedIndicator + rejectedIndicator) / totalIndicator) * 100
     let payload = {}
     console.log({ totalIndicator, completedIndicator, approvedIndicator, rejectedIndicator, formId })
-    if(updateForm){
-      payload["progress.ulbCompletion"]=  completedPercentage.toFixed(2)
+    if (updateForm) {
+      payload["progress.ulbCompletion"] = completedPercentage.toFixed(2)
     }
-    else{
-      payload["progress.verificationProgress"]= verificationProgress.toFixed(2)
+    else {
+      payload["progress.verificationProgress"] = verificationProgress.toFixed(2)
     }
     console.log("payload ::: ", payload)
     await FiscalRanking.findOneAndUpdate({
@@ -3461,22 +3461,22 @@ async function calculateAndUpdateStatusForMappers(
         }
         if (obj[k].yearData) {
           total += 1
-          
+
           let yearArr = obj[k].yearData;
           let dynamicObj = obj[k];
           let financialInfo = obj;
-          yearArr.forEach((item)=>{
+          yearArr.forEach((item) => {
             let skipFiles = {
-              "registerGisProof":"registerGis",
-              "accountStwreProof":"accountStwre"
+              "registerGisProof": "registerGis",
+              "accountStwreProof": "accountStwre"
             }
-            if(Object.keys(skipFiles).includes(item.type)){
+            if (Object.keys(skipFiles).includes(item.type)) {
               let element = tab.data[skipFiles[item.type]]['yearData'][0]
-              if(element.value == "No" || element.value === ""){
-                  item.required = false
+              if (element.value == "No" || element.value === "") {
+                item.required = false
               }
             }
-            if(item?.required && item.year){
+            if (item?.required && item.year) {
               totalIndicator += 1
               let count = calculateReviewCount(item)
               completedIndicator += count[0]
@@ -3509,17 +3509,17 @@ async function calculateAndUpdateStatusForMappers(
             key === priorTabsForFiscalRanking["basicUlbDetails"] ||
             key === priorTabsForFiscalRanking["conInfo"] ||
             fiscalRankingKeys.includes(k)
-            
+
           ) {
-            if(k === "signedCopyOfFile"){
+            if (k === "signedCopyOfFile") {
               console.log("inside if  condition")
               totalIndicator += 1
               let demoItem = {
-                "status":obj[k].status,
-               "file":{
-                name:obj[k].name,
-                file:obj[k].file
-               }
+                "status": obj[k].status,
+                "file": {
+                  name: obj[k].name,
+                  file: obj[k].file || ""
+                }
               }
               let count = calculateReviewCount(demoItem)
               completedIndicator += count[0]
@@ -3530,7 +3530,7 @@ async function calculateAndUpdateStatusForMappers(
               "population11",
               "populationFr"
             ]);
-            let finalStatus = statueses.every((item) => {              
+            let finalStatus = statueses.every((item) => {
               return item === "APPROVED"
             });
             temp["status"].push(finalStatus);
@@ -3549,7 +3549,7 @@ async function calculateAndUpdateStatusForMappers(
         conditionalObj[tab._id.toString()] = temp;
       }
     }
-    console.log("totalIndicator",totalIndicator)
+    console.log("totalIndicator", totalIndicator)
     for (var tabName in conditionalObj) {
       if (conditionalObj[tabName].status.length > 0) {
         conditionalObj[tabName].status = conditionalObj[tabName].status.every(
@@ -3559,7 +3559,7 @@ async function calculateAndUpdateStatusForMappers(
         conditionalObj[tabName].status = "NA";
       }
     }
-    let params = { totalIndicator, completedIndicator, approvedIndicator, rejectedIndicator, formId ,updateForm}
+    let params = { totalIndicator, completedIndicator, approvedIndicator, rejectedIndicator, formId, updateForm }
     await session.commitTransaction();
     await session.endSession();
     await manageFormPercentage(params)
@@ -4641,7 +4641,7 @@ function computeQuery(params) {
             },
           ],
           as: "fiscalrankings",
-        },  
+        },
       },
       {
         $unwind: {
@@ -5143,14 +5143,14 @@ function calculateReviewCount(item) {
   let completedIndicator = 0
   let approvedIndicator = 0
   let rejectedIndicator = 0
-  if((item.value || item.date != null || (item.file && item?.file?.url != "") || (item.file && item.modelName === "ULBLedger")) && item?.type !==undefined){
-    console.log("item.type :: ",item.type)
+  if (item.value || item.date != null || (item.file && item?.file?.url) || (item.file && item.modelName === "ULBLedger")) {
+    console.log("item.type :: ", item.type)
     completedIndicator = 1;
   }
-  if(item.status === "APPROVED" || (item.file && item.modelName === "ULBLedger")){
+  if (item.status === "APPROVED" || (item.file && item.modelName === "ULBLedger")) {
     approvedIndicator = 1;
-  }calculateReviewCount
-  if(item.status === "REJECTED" || (item.file && item.modelName === "ULBLedger")){
+  }
+  if (item.status === "REJECTED" || (item.file && item.modelName === "ULBLedger")) {
     rejectedIndicator = 1;
   }
   return [completedIndicator, approvedIndicator, rejectedIndicator]
