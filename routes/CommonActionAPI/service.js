@@ -2254,9 +2254,9 @@ const handleRadioButtonCase = async(question,obj,flattedForm,mainKey) =>{
         let answerIds = question.answer_option.map(item => ({[item.name]:item._id}))
         let answerKeys = question.answer_option.map(item => item.name)
         let filteredObj = getFilteredOptions(answerKeys,annualRadioButtons)
-        let mformValue = getKeyByValue(filteredObj,value)
-        if(mformValue){
-            let answerObj = question.answer_option.find(item => item.name === mformValue)
+        let mformValue = getKeyByValue(filteredObj,value) || value
+        let answerObj = question.answer_option.find(item => item.name === mformValue)
+        if(answerObj){
             question['modelValue'] = answerObj._id
             question['value'] = answerObj._id
             obj['textValue'] = mformValue

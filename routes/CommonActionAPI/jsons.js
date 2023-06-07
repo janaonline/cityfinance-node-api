@@ -2173,245 +2173,411 @@ let DurProjectJson = {
     },
     //gtc form childQuestions
     "transAmount": {
-        information: '',
-        _id: '6437ff67bae92b4649191c63',
-        order: '4.001',
-        answer_option: [],
-        title: 'Amount Transferred, excluding interest (in lakhs)',
-        hint: '',
-        resource_urls: [],
-        label: '1',
-        shortKey: 'transAmount',
-        viewSequence: '15',
-        child: [],
-        parent: [],
-        validation: [ [Object], [Object] ],
-        restrictions: [],
-        minRange: 1,
-        maxRange: 999999,
-        pattern: '^((?:[1-9]|[1-9][0-9]{1,5}))$',
-        input_type: '2',
-        weightage: [],
-        valueHolder: '',
-        isQuestionDisabled: false,
-        value: '',
-        acceptableType: '',
-        acceptableFileType: '',
-        type: '2',
-        visibility: true,
-        nestedConfig: { parentOrder: '4', index: 0, loopIndex: 0 },
-        selectedAnswerOption: { name: ' 1' },
-        forParentValue: 1
-    },
+        "information": "",
+        "_id": "6437ff67bae92b4649191c63",
+        "order": "4.001",
+        "answer_option": [],
+        "title": "Amount Transferred, excluding interest (in lakhs)",
+        "hint": "",
+        "resource_urls": [],
+        "label": "1",
+        "shortKey": "transAmount",
+        "viewSequence": "15",
+        "child": [],
+        "parent": [],
+        "validation": [
+          {
+            "error_msg": "",
+            "_id": "1"
+          },
+          {
+            "error_msg": "",
+            "_id": "2"
+          }
+        ],
+        "restrictions": [],
+        "minRange": 1,
+        "maxRange": 999999,
+        "pattern": "^((?:[1-9]|[1-9][0-9]{1,5}))$",
+        "input_type": "2",
+        "weightage": [],
+        "valueHolder": "",
+        "isQuestionDisabled": false,
+        "value": "40",
+        "acceptableType": "",
+        "acceptableFileType": "",
+        "type": "2",
+        "visibility": true,
+        "nestedConfig": {
+          "parentOrder": "4",
+          "index": 0,
+          "loopIndex": 0
+        },
+        "selectedAnswerOption": {
+          "name": " 1"
+        },
+        "forParentValue": 1,
+        "isSelectValue": false,
+        "previousValue": "",
+        "modelValue": "40",
+        "selectedValue": [
+          {
+            "label": "",
+            "textValue": "",
+            "value": "40"
+          }
+        ],
+        "errorMessage": ""
+      },
     "transDate": {
-        information: '',
-        _id: '6437ffd11a51164651cac69b',
-        order: '4.002',
-        answer_option: [],
-        title: 'Date of Transfer',
-        hint: '',
-        resource_urls: [],
-        label: '2',
-        shortKey: 'transDate',
-        viewSequence: '16',
-        child: [],
-        parent: [],
-        validation: [ [Object], [Object] ],
-        restrictions: [],
-        input_type: '14',
-        weightage: [],
-        isQuestionDisabled: false,
-        value: '',
-        acceptableType: '',
-        acceptableFileType: '',
-        type: '14',
-        visibility: true,
-        nestedConfig: { parentOrder: '4', index: 1, loopIndex: 0 },
-        selectedAnswerOption: { name: ' 1' },
-        forParentValue: 1
-    },
-    "transDelay": {
-        information: '',
-        _id: '6438005010d7a646562ea4bf',
-        order: '4.003',
-        answer_option: [ [Object], [Object] ],
-        title: 'Was there any delay in transfer?',
-        hint: '',
-        resource_urls: [],
-        label: '3',
-        shortKey: 'transDelay',
-        viewSequence: '17',
-        child: [],
-        parent: [],
-        validation: [ [Object] ],
-        restrictions: [],
-        input_type: '5',
-        weightage: [],
-        isQuestionDisabled: false,
-        value: '',
-        acceptableType: '',
-        acceptableFileType: '',
-        type: '5',
-        visibility: true,
-        nestedConfig: { parentOrder: '4', index: 2, loopIndex: 0 },
-        selectedAnswerOption: { name: ' 1' },
-        forParentValue: 1
-    },
+        "information": "",
+        "_id": "6437ffd11a51164651cac69b",
+        "order": "4.002",
+        "answer_option": [],
+        "title": "Date of Transfer",
+        "hint": "",
+        "resource_urls": [],
+        "label": "2",
+        "shortKey": "transDate",
+        "viewSequence": "16",
+        "child": [],
+        "parent": [],
+        "validation": [
+          {
+            "error_msg": "",
+            "_id": "1"
+          },
+          {
+            "_id": "24",
+            "error_msg": "",
+            "value": ""
+          }
+        ],
+        "restrictions": [],
+        "input_type": "14",
+        "weightage": [],
+        "isQuestionDisabled": false,
+        "value": "",
+        "acceptableType": "",
+        "acceptableFileType": "",
+        "type": "14",
+        "visibility": true,
+        "nestedConfig": {
+          "parentOrder": "4",
+          "index": 1,
+          "loopIndex": 0
+        },
+        "selectedAnswerOption": {
+          "name": " 1"
+        },
+        "forParentValue": 1
+      },
+    "transDelay":{
+        "information": "",
+        "_id": "6438005010d7a646562ea4bf",
+        "order": "4.003",
+        "answer_option": [
+          {
+            "name": "Yes",
+            "did": [],
+            "viewSequence": "1",
+            "_id": "1"
+          },
+          {
+            "name": "No",
+            "did": [],
+            "viewSequence": "2",
+            "_id": "2"
+          }
+        ],
+        "title": "Was there any delay in transfer?",
+        "hint": "",
+        "resource_urls": [],
+        "label": "3",
+        "shortKey": "transDelay",
+        "viewSequence": "17",
+        "child": [],
+        "parent": [],
+        "validation": [
+          {
+            "error_msg": "",
+            "_id": "1"
+          }
+        ],
+        "restrictions": [],
+        "input_type": "5",
+        "weightage": [],
+        "isQuestionDisabled": false,
+        "value": "",
+        "acceptableType": "",
+        "acceptableFileType": "",
+        "type": "5",
+        "visibility": true,
+        "nestedConfig": {
+          "parentOrder": "4",
+          "index": 2,
+          "loopIndex": 0
+        },
+        "selectedAnswerOption": {
+          "name": " 1"
+        },
+        "forParentValue": 1
+      },
     "daysDelay": {
-        information: '',
-        _id: '6438009129e2ab464aea897f',
-        order: '4.004',
-        answer_option: [],
-        title: 'No. of working days delayed',
-        hint: '',
-        resource_urls: [],
-        label: '4',
-        shortKey: 'daysDelay',
-        viewSequence: '18',
-        child: [],
-        parent: [],
-        validation: [ [Object], [Object] ],
-        restrictions: [],
-        minRange: 0,
-        maxRange: 999,
-        pattern: '^((?:[0-9]|[1-9][0-9]{1,2}))$',
-        input_type: '2',
-        weightage: [],
-        valueHolder: '',
-        isQuestionDisabled: false,
-        value: '',
-        acceptableType: '',
-        acceptableFileType: '',
-        type: '2',
-        visibility: true,
-        nestedConfig: { parentOrder: '4', index: 3, loopIndex: 0 },
-        selectedAnswerOption: { name: ' 1' },
-        forParentValue: 1
-    },
+        "information": "",
+        "_id": "6438009129e2ab464aea897f",
+        "order": "4.004",
+        "answer_option": [],
+        "title": "No. of working days delayed",
+        "hint": "",
+        "resource_urls": [],
+        "label": "4",
+        "shortKey": "daysDelay",
+        "viewSequence": "18",
+        "child": [],
+        "parent": [],
+        "validation": [
+          {
+            "error_msg": "",
+            "_id": "1"
+          },
+          {
+            "error_msg": "",
+            "_id": "2"
+          }
+        ],
+        "restrictions": [],
+        "minRange": 0,
+        "maxRange": 999,
+        "pattern": "^((?:[0-9]|[1-9][0-9]{1,2}))$",
+        "input_type": "2",
+        "weightage": [],
+        "valueHolder": "",
+        "isQuestionDisabled": false,
+        "value": "30",
+        "acceptableType": "",
+        "acceptableFileType": "",
+        "type": "2",
+        "visibility": true,
+        "nestedConfig": {
+          "parentOrder": "4",
+          "index": 3,
+          "loopIndex": 0
+        },
+        "selectedAnswerOption": {
+          "name": " 1"
+        },
+        "forParentValue": 1,
+        "isSelectValue": false,
+        "previousValue": "",
+        "modelValue": "30",
+        "selectedValue": [
+          {
+            "label": "",
+            "textValue": "",
+            "value": "30"
+          }
+        ],
+        "errorMessage": ""
+      },
     "interest": {
-        information: '',
-        _id: '643800f110d7a646562ea59b',
-        order: '4.005',
-        answer_option: [],
-        title: 'Rate of interest (annual rate)',
-        hint: '',
-        resource_urls: [],
-        label: '5',
-        shortKey: 'interest',
-        viewSequence: '19',
-        child: [],
-        parent: [],
-        validation: [ [Object], [Object] ],
-        restrictions: [],
-        minRange: 0,
-        maxRange: 100,
-        pattern: '^((?:[0-9]|[1-9][0-9]|100))$',
-        input_type: '2',
-        weightage: [],
-        valueHolder: '',
-        isQuestionDisabled: false,
-        value: '',
-        acceptableType: '',
-        acceptableFileType: '',
-        type: '2',
-        visibility: true,
-        nestedConfig: { parentOrder: '4', index: 4, loopIndex: 0 },
-        selectedAnswerOption: { name: ' 1' },
-        forParentValue: 1
-    },
+        "information": "",
+        "_id": "643800f110d7a646562ea59b",
+        "order": "4.005",
+        "answer_option": [],
+        "title": "Rate of interest (annual rate)",
+        "hint": "",
+        "resource_urls": [],
+        "label": "5",
+        "shortKey": "interest",
+        "viewSequence": "19",
+        "child": [],
+        "parent": [],
+        "validation": [
+          {
+            "error_msg": "",
+            "_id": "1"
+          },
+          {
+            "error_msg": "",
+            "_id": "2"
+          }
+        ],
+        "restrictions": [],
+        "minRange": 0,
+        "maxRange": 100,
+        "pattern": "^((?:[0-9]|[1-9][0-9]|100))$",
+        "input_type": "2",
+        "weightage": [],
+        "valueHolder": "",
+        "isQuestionDisabled": false,
+        "value": "80",
+        "acceptableType": "",
+        "acceptableFileType": "",
+        "type": "2",
+        "visibility": true,
+        "nestedConfig": {
+          "parentOrder": "4",
+          "index": 4,
+          "loopIndex": 0
+        },
+        "selectedAnswerOption": {
+          "name": " 1"
+        },
+        "forParentValue": 1,
+        "isSelectValue": false,
+        "previousValue": "",
+        "modelValue": "80",
+        "selectedValue": [
+          {
+            "label": "",
+            "textValue": "",
+            "value": "80"
+          }
+        ],
+        "errorMessage": ""
+      },
     "intTransfer": {
-        information: '',
-        _id: '643802e229e2ab464aea8af9',
-        order: '4.006',
-        answer_option: [],
-        title: "Amount of interest transferred, If there's any delay (in lakhs)",
-        hint: '',
-        resource_urls: [],
-        label: '6',
-        shortKey: 'intTransfer',
-        viewSequence: '20',
-        child: [],
-        parent: [],
-        validation: [ [Object], [Object] ],
-        restrictions: [],
-        minRange: 0,
-        maxRange: 9999,
-        pattern: '^((?:[0-9]|[1-9][0-9]{1,3}))$',
-        input_type: '2',
-        weightage: [],
-        valueHolder: '',
-        isQuestionDisabled: false,
-        value: '',
-        acceptableType: '',
-        acceptableFileType: '',
-        type: '2',
-        visibility: true,
-        nestedConfig: { parentOrder: '4', index: 5, loopIndex: 0 },
-        selectedAnswerOption: { name: ' 1' },
-        forParentValue: 1
-    },
+        "information": "",
+        "_id": "643802e229e2ab464aea8af9",
+        "order": "4.006",
+        "answer_option": [],
+        "title": "Amount of interest transferred, If there's any delay (in lakhs)",
+        "hint": "",
+        "resource_urls": [],
+        "label": "6",
+        "shortKey": "intTransfer",
+        "viewSequence": "20",
+        "child": [],
+        "parent": [],
+        "validation": [
+          {
+            "error_msg": "",
+            "_id": "1"
+          },
+          {
+            "error_msg": "",
+            "_id": "2"
+          }
+        ],
+        "restrictions": [],
+        "minRange": 0,
+        "maxRange": 9999,
+        "pattern": "^((?:[0-9]|[1-9][0-9]{1,3}))$",
+        "input_type": "2",
+        "weightage": [],
+        "valueHolder": "",
+        "isQuestionDisabled": false,
+        "value": "40",
+        "acceptableType": "",
+        "acceptableFileType": "",
+        "type": "2",
+        "visibility": true,
+        "nestedConfig": {
+          "parentOrder": "4",
+          "index": 5,
+          "loopIndex": 0
+        },
+        "selectedAnswerOption": {
+          "name": " 1"
+        },
+        "forParentValue": 1,
+        "isSelectValue": false,
+        "previousValue": "",
+        "modelValue": "40",
+        "selectedValue": [
+          {
+            "label": "",
+            "textValue": "",
+            "value": "40"
+          }
+        ],
+        "errorMessage": ""
+      },
     "totalTransAmount": {
-        information: '',
-        _id: '6438034510d7a646562ea77b',
-        order: '4.007',
-        answer_option: [],
-        title: 'Total Amount Transferred, excluding interest (In lakhs)',
-        hint: '',
-        resource_urls: [],
-        label: '7',
-        shortKey: 'totalTransAmount',
-        viewSequence: '21',
-        child: [],
-        parent: [],
-        validation: [ [Object] ],
-        restrictions: [],
-        minRange: null,
-        maxRange: null,
-        pattern: '',
-        input_type: '2',
-        weightage: [],
-        valueHolder: '',
-        isQuestionDisabled: false,
-        value: '',
-        acceptableType: '',
-        acceptableFileType: '',
-        type: '2',
-        visibility: true,
-        nestedConfig: { parentOrder: '4', index: 6, loopIndex: 0 },
-        selectedAnswerOption: { name: ' 1' },
-        forParentValue: 1
-    },
-    "totalIntTransfer": {
-        information: '',
-        _id: '643803941a51164651cac913',
-        order: '4.008',
-        answer_option: [],
-        title: 'Total Amount of Interest Transferred (In lakhs)',
-        hint: '',
-        resource_urls: [],
-        label: '8',
-        shortKey: 'totalIntTransfer',
-        viewSequence: '22',
-        child: [],
-        parent: [],
-        validation: [ [Object] ],
-        restrictions: [],
-        minRange: null,
-        maxRange: null,
-        pattern: '',
-        input_type: '2',
-        weightage: [],
-        valueHolder: '',
-        isQuestionDisabled: false,
-        value: '',
-        acceptableType: '',
-        acceptableFileType: '',
-        type: '2',
-        visibility: true,
-        nestedConfig: { parentOrder: '4', index: 7, loopIndex: 0 },
-        selectedAnswerOption: { name: ' 1'},
-        forParentValue: 1
-    }
+        "information": "",
+        "_id": "6438034510d7a646562ea77b",
+        "order": "4.007",
+        "answer_option": [],
+        "title": "Total Amount Transferred, excluding interest (In lakhs)",
+        "hint": "",
+        "resource_urls": [],
+        "label": "7",
+        "shortKey": "totalTransAmount",
+        "viewSequence": "21",
+        "child": [],
+        "parent": [],
+        "validation": [
+          {
+            "error_msg": "",
+            "_id": "1"
+          }
+        ],
+        "restrictions": [],
+        "minRange": 0,
+        "maxRange": 9999,
+        "pattern": "",
+        "input_type": "2",
+        "weightage": [],
+        "valueHolder": "",
+        "isQuestionDisabled": false,
+        "value": "",
+        "acceptableType": "",
+        "acceptableFileType": "",
+        "type": "2",
+        "visibility": true,
+        "nestedConfig": {
+          "parentOrder": "4",
+          "index": 6,
+          "loopIndex": 0
+        },
+        "selectedAnswerOption": {
+          "name": " 1"
+        },
+        "forParentValue": 1
+      },
+    "totalIntTransfer":{
+        "information": "",
+        "_id": "643803941a51164651cac913",
+        "order": "4.008",
+        "answer_option": [],
+        "title": "Total Amount of Interest Transferred (In lakhs)",
+        "hint": "",
+        "resource_urls": [],
+        "label": "8",
+        "shortKey": "totalIntTransfer",
+        "viewSequence": "22",
+        "child": [],
+        "parent": [],
+        "validation": [
+          {
+            "error_msg": "",
+            "_id": "1"
+          }
+        ],
+        "restrictions": [],
+        "minRange": 0,
+        "maxRange": 9999,
+        "pattern": "",
+        "input_type": "2",
+        "weightage": [],
+        "valueHolder": "",
+        "isQuestionDisabled": false,
+        "value": "",
+        "acceptableType": "",
+        "acceptableFileType": "",
+        "type": "2",
+        "visibility": true,
+        "nestedConfig": {
+          "parentOrder": "4",
+          "index": 7,
+          "loopIndex": 0
+        },
+        "selectedAnswerOption": {
+          "name": " 1"
+        },
+        "forParentValue": 1
+      }
 }
 
 
