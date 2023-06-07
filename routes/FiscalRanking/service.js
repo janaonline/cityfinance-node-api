@@ -2515,8 +2515,8 @@ function appendStages(query) {
         filled: "$records.filled",
         populationCategory: "$records.populationCategory",
         formData: "$records.formData",
-        ulbDataSubmitted: { $ifNull: [`$records.formData.progress.ulbCompletion`, null] },
-        pmuVerificationProgress: { $ifNull: [`$records.formData.progress.verificationProgress`, null] },
+        ulbDataSubmitted: { $ifNull: [`$records.formData.progress.ulbCompletion`, 0] },
+        pmuVerificationProgress: { $ifNull: [`$records.formData.progress.verificationProgress`, 0] },
         "total": {
           $let: {
             vars: {
