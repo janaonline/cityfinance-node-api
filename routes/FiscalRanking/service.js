@@ -3323,6 +3323,7 @@ async function calculateAndUpdateStatusForMappers(
 ) {
   try {
     let totalIndicator = 0;
+    let total = 0
     let completedIndicator = 0;
     let approvedIndicator = 0;
     let rejectedIndicator = 0;
@@ -3349,10 +3350,21 @@ async function calculateAndUpdateStatusForMappers(
           continue;
         }
         if (obj[k].yearData) {
+          total += 1
           let yearArr = obj[k].yearData;
           let dynamicObj = obj[k];
           let financialInfo = obj;
           let status = yearArr.every((item) => {
+            let skipFiles = {
+              "registerGisProof":"registerGis",
+              "accountStwreProof":"accountStwre"
+            }
+            if(Object.keys(skipFiles).includes(item.type)){
+              let element = tab.data[skipFiles[item.type]]['yearData'][0]
+              if(element.value == "No"){
+                  item.required = false
+              }
+            }
             if(item?.required){
               types.add(k)
               totalIndicator +=1
@@ -3385,12 +3397,29 @@ async function calculateAndUpdateStatusForMappers(
             key === priorTabsForFiscalRanking["basicUlbDetails"] ||
             key === priorTabsForFiscalRanking["conInfo"] ||
             fiscalRankingKeys.includes(k)
+            
           ) {
+            if(k === "signedCopyOfFile"){
+              console.log("inside if  condition")
+              totalIndicator += 1
+              let demoItem = {
+               "file":{
+                name:obj[k].name,
+                file:obj[k].file
+               }
+              }
+              let count = calculateReviewCount(demoItem)
+              completedIndicator += count[0]
+              approvedIndicator += count[1]
+              rejectedIndicator += count[2]
+            }
             let statueses = getStatusesFromObject(tab.data, "status", [
               "population11",
               "populationFr"
             ]);
-            let finalStatus = statueses.every((item) => item === "APPROVED");
+            let finalStatus = statueses.every((item) => {              
+              return item === "APPROVED"
+            });
             temp["status"].push(finalStatus);
             await updateFiscalRankingForm(
               tab.data,
@@ -3419,6 +3448,7 @@ async function calculateAndUpdateStatusForMappers(
     let params = { totalIndicator, completedIndicator, approvedIndicator, rejectedIndicator, formId ,updateForm}
     await session.commitTransaction();
     await session.endSession();
+    console.log("total ::: ",total)
     await manageFormPercentage(params)
     return conditionalObj;
   } catch (err) {
