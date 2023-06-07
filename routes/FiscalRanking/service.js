@@ -3392,15 +3392,13 @@ async function manageFormPercentage(params) {
     let { totalIndicator, completedIndicator, approvedIndicator, rejectedIndicator, formId,updateForm } = params
     let completedPercentage = (completedIndicator / totalIndicator) * 100
     let verificationProgress = ((approvedIndicator + rejectedIndicator) / totalIndicator) * 100
-    let payload = {
-      "progress":{}
-    }
+    let payload = {}
     console.log({ totalIndicator, completedIndicator, approvedIndicator, rejectedIndicator, formId })
     if(updateForm){
-      payload["progress"]["ulbCompletion"]=  completedPercentage.toFixed(2)
+      payload["progress.ulbCompletion"]=  completedPercentage.toFixed(2)
     }
     else{
-      payload["progress"]["verificationProgress"]= verificationProgress.toFixed(2)
+      payload["progress.verificationProgress"]= verificationProgress.toFixed(2)
     }
     console.log("payload ::: ", payload)
     await FiscalRanking.findOneAndUpdate({
