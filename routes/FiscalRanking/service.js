@@ -1542,10 +1542,10 @@ exports.getAll = async function (req, res, next) {
   }
 };
 
-const getUlbActivities = ({ req, sort, selectedState, skip, limit, sortBy, order, filters, filterObj, sortKey, designYear }) => {
+const getUlbActivities = ({ req, sort, selectedState, selectedCategory, skip, limit, sortBy, order, filters, filterObj, sortKey, designYear }) => {
   let query = [
     ...(req.decoded.role == userTypes.state ? [{
-      $match: {
+      "$match": {
         "state": ObjectId(req.decoded.state)
       }
     }] : []),
@@ -1644,6 +1644,7 @@ const getUlbActivities = ({ req, sort, selectedState, skip, limit, sortBy, order
             { "$toString": "$states._id" },
             "?stateName=",
             { "$toString": "$states.name" },
+            ...(selectedCategory ? [`&selectedCategory=${selectedCategory}`] : [])
           ]
         },
         "totalUlbs": 1,
@@ -2054,11 +2055,12 @@ exports.overview = async function (req, res, next) {
     let skip = parseInt(req.query.skip) || 0;
     let limit = parseInt(req.query.limit) || 10;
     let selectedState = req.query.selectedState;
+    let selectedCategory = req.query.selectedCategory;
     let { sortBy, order, stateId, stateName } = req.query
     let filters = Object.entries({ ...req.query })
       .reduce((obj, [key, value]) => ({ ...obj, [key]: /^\d+$/.test(value) ? +value : value }), {});
 
-    await deleteExtraKeys(["sortBy", "order", "skip", "limit", "selectedState"], filters)
+    await deleteExtraKeys(["sortBy", "order", "skip", "limit", "selectedState", "selectedCategory"], filters)
 
     console.log(filters);
     filters = await Service.mapFilter(filters);
@@ -2085,7 +2087,7 @@ exports.overview = async function (req, res, next) {
     let data;
     console.log(JSON.stringify(filters));
     if (type == 'UlbActivities') {
-      data = await getUlbActivities({ req, selectedState, sort, skip, limit, sortBy, order, filters, filterObj, sortKey, designYear });
+      data = await getUlbActivities({ req, selectedState, selectedCategory, sort, skip, limit, sortBy, order, filters, filterObj, sortKey, designYear });
     }
     else if (type == 'PMUActivities') {
       data = await getPMUActivities({ req, selectedState, sort, skip, limit, sortBy, order, filters, filterObj, sortKey, designYear });
