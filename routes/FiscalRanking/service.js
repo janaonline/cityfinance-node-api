@@ -1651,10 +1651,9 @@ const getUlbActivities = ({ req, sort, selectedState, selectedCategory, skip, li
     },
   ];
   if (req.decoded.role == userTypes.state || selectedCategory) {
-    const state = ObjectId(req.decoded.state);
     matchObj = {
       "$match": {
-        ...(req.decoded.state && { "state": state }),
+        ...(req.decoded.state && { "state": ObjectId(req.decoded.state) }),
         ...getCategoryMatchObject(selectedCategory)
       }
     }
@@ -4739,7 +4738,7 @@ exports.heatMapReport = async (req, res, next) => {
     let { state, category, getQuery } = req.query
     getQuery = getQuery === "true"
     console.log(state, category, getQuery);
-    let query = stateWiseHeatMapQuery({ stateId: state, category })
+    let query = stateWiseHeatMapQuery({ state, category })
     if (getQuery) return res.json(query)
     let queryResult = await Ulb.aggregate(query)
     response.success = true
