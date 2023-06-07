@@ -3278,16 +3278,20 @@ function getStatusesFromObject(obj, element, ignoredVariables) {
 }
 
 
-async function manageFormPercentage(params){
-  try{
-    let {totalIndicator, completedIndicator,approvedIndicator,rejectedIndicator,formId} = params
-    let completedPercentage = (completedIndicator/totalIndicator) * 100
-    let verificationProgress = ((approvedIndicator+rejectedIndicator)/totalIndicator) * 100
-    let payload = {}
-    console.log({totalIndicator, completedIndicator,approvedIndicator,rejectedIndicator,formId})
-    payload['progress'] = {
-      "ulbCompletion" :completedPercentage.toFixed(2),
-      "verificationProgress":verificationProgress.toFixed(2),
+async function manageFormPercentage(params) {
+  try {
+    let { totalIndicator, completedIndicator, approvedIndicator, rejectedIndicator, formId,updateForm } = params
+    let completedPercentage = (completedIndicator / totalIndicator) * 100
+    let verificationProgress = ((approvedIndicator + rejectedIndicator) / totalIndicator) * 100
+    let payload = {
+      "progress":{}
+    }
+    console.log({ totalIndicator, completedIndicator, approvedIndicator, rejectedIndicator, formId })
+    if(updateForm){
+      payload["progress"]["ulbCompletion"]=  completedPercentage.toFixed(2)
+    }
+    else{
+      payload["progress"]["verificationProgress"]= verificationProgress.toFixed(2)
     }
     console.log("payload ::: ",payload)
     await FiscalRanking.findOneAndUpdate({
@@ -3412,7 +3416,7 @@ async function calculateAndUpdateStatusForMappers(
         conditionalObj[tabName].status = "NA";
       }
     }
-    let params = {totalIndicator, completedIndicator,approvedIndicator,rejectedIndicator,formId}
+    let params = { totalIndicator, completedIndicator, approvedIndicator, rejectedIndicator, formId ,updateForm}
     await session.commitTransaction();
     await session.endSession();
     await manageFormPercentage(params)
