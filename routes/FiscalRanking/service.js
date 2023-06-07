@@ -3389,14 +3389,18 @@ function getStatusesFromObject(obj, element, ignoredVariables) {
 
 async function manageFormPercentage(params) {
   try {
-    let { totalIndicator, completedIndicator, approvedIndicator, rejectedIndicator, formId } = params
+    let { totalIndicator, completedIndicator, approvedIndicator, rejectedIndicator, formId,updateForm } = params
     let completedPercentage = (completedIndicator / totalIndicator) * 100
     let verificationProgress = ((approvedIndicator + rejectedIndicator) / totalIndicator) * 100
-    let payload = {}
+    let payload = {
+      "progress":{}
+    }
     console.log({ totalIndicator, completedIndicator, approvedIndicator, rejectedIndicator, formId })
-    payload['progress'] = {
-      "ulbCompletion": completedPercentage.toFixed(2),
-      "verificationProgress": verificationProgress.toFixed(2),
+    if(updateForm){
+      payload["progress"]["ulbCompletion"]=  completedPercentage.toFixed(2)
+    }
+    else{
+      payload["progress"]["verificationProgress"]= verificationProgress.toFixed(2)
     }
     console.log("payload ::: ", payload)
     await FiscalRanking.findOneAndUpdate({
@@ -3458,7 +3462,7 @@ async function calculateAndUpdateStatusForMappers(
           let dynamicObj = obj[k];
           let financialInfo = obj;
           let status = yearArr.every((item) => {
-            if (obj[k]?.required) {
+            if(item?.required){
               types.add(k)
               totalIndicator += 1
               let count = calculateReviewCount(item)
@@ -3521,7 +3525,11 @@ async function calculateAndUpdateStatusForMappers(
         conditionalObj[tabName].status = "NA";
       }
     }
+<<<<<<< HEAD
     let params = { totalIndicator, completedIndicator, approvedIndicator, rejectedIndicator, formId }
+=======
+    let params = { totalIndicator, completedIndicator, approvedIndicator, rejectedIndicator, formId ,updateForm}
+>>>>>>> e5aae02662de5a78dafdc04aba59f8a84cf93235
     await session.commitTransaction();
     await session.endSession();
     await manageFormPercentage(params)
