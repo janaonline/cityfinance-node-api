@@ -3472,7 +3472,7 @@ async function calculateAndUpdateStatusForMappers(
             }
             if(Object.keys(skipFiles).includes(item.type)){
               let element = tab.data[skipFiles[item.type]]['yearData'][0]
-              if(element.value == "No"){
+              if(element.value == "No" || element.value === ""){
                   item.required = false
               }
             }
