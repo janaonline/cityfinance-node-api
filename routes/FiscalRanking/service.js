@@ -3510,6 +3510,7 @@ async function calculateAndUpdateStatusForMappers(
               console.log("inside if  condition")
               totalIndicator += 1
               let demoItem = {
+                "status":obj[k].status,
                "file":{
                 name:obj[k].name,
                 file:obj[k].file
