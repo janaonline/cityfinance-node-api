@@ -1071,9 +1071,10 @@ exports.getView = async function (req, res, next) {
                   pf['status'] = singleFydata.modelName === "ULBLedger" ? "" : pf["status"]
                   pf["modelName"] = singleFydata.modelName;
                   pf['rejectReason'] = singleFydata.rejectReason
+                  console.log("singleFydata.status ::: ",singleFydata.status)
                   if (subData[key].calculatedFrom === undefined) {
                     pf["required"] =
-                      singleFydata.status || singleFydata.modelName === "ULBLedger"
+                      singleFydata.modelName === "ULBLedger"
                         ? false
                         : true;
                     pf["readonly"] = singleFydata.modelName === "ULBLedger" ? true : getReadOnly(data?.currentFormStatus, viewOne.isDraft, role, singleFydata?.status);
@@ -3434,6 +3435,7 @@ async function calculateAndUpdateStatusForMappers(
     let completedIndicator = 0;
     let approvedIndicator = 0;
     let rejectedIndicator = 0;
+    let quesItems = {}
     let conditionalObj = {};
     let ignorablevariables = ["guidanceNotes"];
     const fiscalRankingKeys = [
@@ -3443,6 +3445,7 @@ async function calculateAndUpdateStatusForMappers(
       "signedCopyOfFile",
       "otherUpload",
     ];
+    let idc = []
     let types = new Set()
     for (var tab of tabs) {
       conditionalObj[tab._id.toString()] = {};
@@ -3458,10 +3461,11 @@ async function calculateAndUpdateStatusForMappers(
         }
         if (obj[k].yearData) {
           total += 1
+          
           let yearArr = obj[k].yearData;
           let dynamicObj = obj[k];
           let financialInfo = obj;
-          let status = yearArr.every((item) => {
+          yearArr.forEach((item)=>{
             let skipFiles = {
               "registerGisProof":"registerGis",
               "accountStwreProof":"accountStwre"
@@ -3472,14 +3476,15 @@ async function calculateAndUpdateStatusForMappers(
                   item.required = false
               }
             }
-            if(item?.required){
-              types.add(k)
+            if(item?.required && item.year){
               totalIndicator += 1
               let count = calculateReviewCount(item)
               completedIndicator += count[0]
               approvedIndicator += count[1]
               rejectedIndicator += count[2]
             }
+          })
+          let status = yearArr.every((item) => {
             if (calculatedFields.includes(item?.type)) return true;
             if (item?.type && item.status) {
               return item.status === "APPROVED" || item.status === "";
@@ -3556,7 +3561,6 @@ async function calculateAndUpdateStatusForMappers(
     let params = { totalIndicator, completedIndicator, approvedIndicator, rejectedIndicator, formId ,updateForm}
     await session.commitTransaction();
     await session.endSession();
-    console.log("total ::: ",total)
     await manageFormPercentage(params)
     return conditionalObj;
   } catch (err) {
@@ -4610,6 +4614,8 @@ function computeQuery(params) {
                 fy_21_22_cash: 1,
                 otherUpload: 1,
                 signedCopyOfFile: 1,
+                ulbDataSubmitted: "$progress.ulbCompletion",
+                pmuVerificationProgress: "$progress.verificationProgress",
                 arrayOfMandatoryField: [
                   {
                     population11: "$population",
@@ -4630,8 +4636,6 @@ function computeQuery(params) {
                     signedCopyOfFile: "$signedCopyOfFile.url"
                   },
                 ],
-                ulbDataSubmitted: { $ifNull: [`$fiscalrankings.progress.ulbCompletion`, null] },
-                pmuVerificationProgress: { $ifNull: [`$fiscalrankings.progress.verificationProgress`, null] },
               },
             },
           ],
@@ -4821,6 +4825,8 @@ function computeQuery(params) {
               },
             },
           },
+          ulbDataSubmitted: { $ifNull: [`$fiscalrankings.ulbDataSubmitted`, null] },
+          pmuVerificationProgress: { $ifNull: [`$fiscalrankings.pmuVerificationProgress`, null] },
           comment_1: "",
           "II CONTACT INFORMATION_Comments": "",
           "III FINANCIAL INFORMATION_Comments": "",
@@ -4894,8 +4900,6 @@ function computeQuery(params) {
               },
             },
           },
-          ulbDataSubmitted: { $ifNull: [`$fiscalrankings.progress.ulbCompletion`, null] },
-          pmuVerificationProgress: { $ifNull: [`$fiscalrankings.progress.verificationProgress`, null] },
         },
       },
     ];
@@ -5138,12 +5142,13 @@ function calculateReviewCount(item) {
   let completedIndicator = 0
   let approvedIndicator = 0
   let rejectedIndicator = 0
-  if(item.value || item.date != null || (item.file && item?.file?.url != "") || item.modelName === "ULBLedger"){
+  if(item.value || item.date != null || (item.file && item?.file?.url != "") || (item.file && item.modelName === "ULBLedger")){
+    console.log("item.type :: ",item.type)
     completedIndicator = 1;
   }
   if(item.status === "APPROVED" || (item.file && item.modelName === "ULBLedger")){
     approvedIndicator = 1;
-  }
+  }calculateReviewCount
   if(item.status === "REJECTED" || (item.file && item.modelName === "ULBLedger")){
     rejectedIndicator = 1;
   }
