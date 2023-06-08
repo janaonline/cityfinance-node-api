@@ -1745,7 +1745,7 @@ const getUlbActivities = ({ req, sort, selectedState, selectedCategory, skip, li
   console.log(JSON.stringify(query, 3, 3));
   return Ulb.aggregate(query);
 }
-const getPMUActivities = ({ req, sort, skip, limit, sortBy, order, filters, filterObj, sortKey, designYear }) => {
+const getPMUActivities = ({ req, sort, selectedState, skip, limit, sortBy, order, filters, filterObj, sortKey, designYear }) => {
 
   const query = [
     ...(req.decoded.role == userTypes.state ? [{
@@ -1835,6 +1835,15 @@ const getPMUActivities = ({ req, sort, skip, limit, sortBy, order, filters, filt
     {
       "$project": {
         "stateName": "$states.name",
+        "selected": {
+          "$cond": {
+            "if": {
+              "$eq": ["$states._id", ObjectId(selectedState)]
+            },
+            "then": true,
+            "else": false
+          }
+        },
         "underReviewByPMU": 1,
         "verificationNotStarted": 1,
         "verificationInProgress": 1,
@@ -1883,7 +1892,9 @@ const getPopulationWiseData = ({ stateId, selectedCategory, columns, sort, skip,
     {
       "$match": {
         "isActive":true,
-        "state": ObjectId(stateId)
+        ...(stateId && {
+          "state": ObjectId(stateId)
+        })
       }
     },
     {
@@ -2195,14 +2206,23 @@ exports.overview = async function (req, res, next) {
       name += ' - ' + stateName;
     }
 
-    return res.status(200).json({
+
+    const response = {
       status: true,
       message: "Successfully saved data!",
       columns,
       name,
       data,
       lastRow,
-    });
+    }
+    if(type == 'UlbActivities') {
+      response['headerLink'] =  {
+        label: 'See National level data',
+        link: '/rankings/populationWise?stateName=India' + (selectedCategory ? '&selectedCategory=' + selectedCategory : '')
+      };
+    }
+
+    return res.status(200).json(response);
   } catch (error) {
     console.log("err", error);
     return res
