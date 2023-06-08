@@ -3439,12 +3439,12 @@ async function manageFormPercentage(params) {
     let payload = {}
     console.log({ totalIndicator, completedIndicator, approvedIndicator, rejectedIndicator, formId })
     if(updateForm){
-      payload["progress.ulbCompletion"]=  completedPercentage < 100 ? completedPercentage.toFixed(2) : (parseInt(approvedPerc)).toString()
+      payload["progress.ulbCompletion"]=  completedPercentage < 100 && completedPercentage!= 0 ? completedPercentage.toFixed(2) : (parseInt(approvedPerc)).toString()
     }
     else{
-      payload["progress.verificationProgress"]= verificationProgress < 100 ? verificationProgress.toFixed(2) : (parseInt(verificationProgress)).toString()
-      payload['progress.approvedProgress'] = approvedPerc < 100 ? approvedPerc.toFixed(2) : (parseInt(approvedPerc)).toString()
-      payload['progress.rejectedProgress'] = rejectedPerc < 100 ? rejectedPerc.toFixed(2) : (parseInt(rejectedPerc)).toString()
+      payload["progress.verificationProgress"]= verificationProgress < 100 && verificationProgress != 0 ? verificationProgress.toFixed(2) : (parseInt(verificationProgress)).toString()
+      payload['progress.approvedProgress'] = approvedPerc < 100 && approvedPerc != 0 ? approvedPerc.toFixed(2) : (parseInt(approvedPerc)).toString()
+      payload['progress.rejectedProgress'] = rejectedPerc < 100  && rejectedPerc != 0 ? rejectedPerc.toFixed(2) : (parseInt(rejectedPerc)).toString()
     }
     await FiscalRanking.findOneAndUpdate({
       "_id":formId
@@ -4117,7 +4117,8 @@ async function columnsForCSV(params) {
       "Last Submitted Date",
       "Overall Form Status",
       "ULB Data Submitted (%)",
-      "PMU Verification Progress",
+      "PMU Verification progress (Approved %)",
+      "PMU Verification progress (Rejected %)",
       "% Completion",
       "I. BASIC ULB DETAILS_Comments",
       "II CONTACT INFORMATION_Comments",
@@ -4169,7 +4170,8 @@ async function columnsForCSV(params) {
       "modifiedAt",
       "formStatus",
       "ulbDataSubmitted",
-      "pmuVerificationProgress",
+      "pmuVerificationapprovedProgress",
+      "pmuVerificationrejectedProgress",
       "completionPercent",
       "comment_1",
       "II CONTACT INFORMATION_Comments",
@@ -4662,7 +4664,8 @@ function computeQuery(params) {
                 otherUpload: 1,
                 signedCopyOfFile: 1,
                 ulbDataSubmitted: "$progress.ulbCompletion",
-                pmuVerificationProgress: "$progress.verificationProgress",
+                pmuVerificationapprovedProgress: "$progress.approvedProgress",
+                pmuVerificationrejectedProgress: "$progress.rejectedProgress",
                 arrayOfMandatoryField: [
                   {
                     population11: "$population",
@@ -4872,8 +4875,27 @@ function computeQuery(params) {
               },
             },
           },
-          ulbDataSubmitted: { $ifNull: [`$fiscalrankings.ulbDataSubmitted`, null] },
-          pmuVerificationProgress: { $ifNull: [`$fiscalrankings.pmuVerificationProgress`, null] },
+          ulbDataSubmitted: { $ifNull: [{
+            "$concat":[`$fiscalrankings.ulbDataSubmitted`,"%"]
+          }, {
+            "$concat":["0","%"]
+          }] },
+          pmuVerificationapprovedProgress: { $ifNull: [{
+            "$concat": [
+              {"$toString":"$fiscalrankings.pmuVerificationapprovedProgress"},
+              "%"
+          ]
+          }, {
+            "$concat":["0","%"]
+          }] },
+          pmuVerificationrejectedProgress: { $ifNull: [{
+            "$concat": [
+              {"$toString":"$fiscalrankings.pmuVerificationrejectedProgress"},
+              "%"
+          ]
+          }, {
+            "$concat":["0","%"]
+          }] },
           comment_1: "",
           "II CONTACT INFORMATION_Comments": "",
           "III FINANCIAL INFORMATION_Comments": "",
