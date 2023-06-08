@@ -594,13 +594,12 @@ const checkForPreviousForms = async(design_year,state)=>{
     return validator;
 }
 
-const getManipulatedJson = async(params)=>{
+const getManipulatedJson = async(installment,type,design_year,formJson,fieldsTohide,state)=>{
     let keysToBeDeleted = ["_id","createdAt","modifiedAt","actionTakenByRole","actionTakenBy","ulb","design_year"]
     let mformObject = {
         "language":[],
       }
     try{
-        let {installment,type,design_year,formJson,fieldsTohide,state} = params
         let gtcForm = await GrantTransferCertificate.findOne({
                 year:ObjectId(design_year),
                 installment,
@@ -622,11 +621,11 @@ const getManipulatedJson = async(params)=>{
             installmentForm.grantType =   grantsWithUlbTypes[type].grantType
             installmentForm.year = getKeyByValue(years,design_year)
         }
-        let questionData = formJson.data
         installmentForm.installment_type = installment_types[installment]
         let flattedForm = await getFlatObj(installmentForm)
         flattedForm['fieldsTohide'] = fieldsTohide
-        let questionJson = await mutuateGetPayload(questionData,flattedForm,keysToBeDeleted,"ULB")
+        flattedForm['disableFields'] = false // to do logic to be implemented
+        let questionJson = await mutuateGetPayload(formJson.data,flattedForm,keysToBeDeleted,"ULB")
         mformObject['language'] = questionJson
         let data = {
             "data":[mformObject]
@@ -657,17 +656,9 @@ const getJson = async(state,design_year)=>{
         }
         let returnableJson = []
         for(let carousel of basicEmptyStructure){
+            console.log("basicEmptyStructure ::: ",basicEmptyStructure)
             for(let question of carousel.questions){
-                let params = {
-                    "installment": question.installment,
-                    "type":question.type,
-                    "year":question.year,
-                    "design_year":design_year,
-                    "formJson":formJson,
-                    "fieldsTohide":fieldsTohide,
-                    "state":ObjectId(state),
-                }
-                question.questionresponse = await getManipulatedJson(params)
+                question.questionresponse = await getManipulatedJson(question.installment,question.type,design_year,{...formJson},fieldsTohide,ObjectId(state))
             }
             returnableJson.push(carousel)
             

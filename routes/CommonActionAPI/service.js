@@ -2100,7 +2100,7 @@ async function appendvalues(childQuestionData,flattedForm,shortKey,question){
                         obj.minRange = modifiedObj.minRange ? modifiedObj.minRange  : obj.minRange
                         obj.maxRange = modifiedObj.maxRange ? modifiedObj.maxRange : obj.minRange
                         obj.hint = modifiedObj.hint || ""
-                        obj.visibility = flattedForm.fieldsTohide && flattedForm.fieldsTohide.includes(obj.shortKey) ? false : obj.visibilty
+                        obj.visibility = flattedForm.fieldsTohide && flattedForm.fieldsTohide.includes(obj.shortKey) ? false : obj.visibility
                     }
                 }
             }
@@ -2403,12 +2403,8 @@ function manageDisabledQues(question,flattedForm){
 
 async function mutuateGetPayload(jsonFormat, flattedForm, keysToBeDeleted,role) {
     try {
-        // console.log(">>>>>>>>>> obj ::: ",jsonFormat)
         let obj = [...jsonFormat]
-        // console.log("flattedForm ::: ",flattedForm)
-        // if(flattedForm.actionTakenByRole == userTypes.ulb){
         roleWiseJson(obj[0],role)
-        // }
         obj[0] = await appendExtraKeys(keysToBeDeleted, obj[0], flattedForm)
         await deleteKeys(flattedForm, keysToBeDeleted)
         for (let key in obj) {
