@@ -862,7 +862,7 @@ async function handleInstallmentForm(params){
 
 async function getOrCreateFormId(params){
     try{
-        let {installment,year,type,isDraft,status,financialYear,design_year,state,currentFormStatus,file} = params
+        let {installment,year,type,isDraft,status:currentFormStatus,financialYear,design_year,state,file} = params
         let gtcForm = await GrantTransferCertificate.findOneAndUpdate({
             installment,
             year:ObjectId(year),
@@ -916,6 +916,7 @@ module.exports.createOrUpdateInstallmentForm = async(req,res)=>{
             return res.status(405).json(response)
         }
         let gtcFormId = await getOrCreateFormId(req.body)
+        console.log("gtcFormId ::: ",gtcFormId)
         if(!gtcFormId){
             throw {message:"something went wrong"}
         }
