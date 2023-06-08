@@ -453,7 +453,7 @@ function assignCalculatedValues(fyDynemic, viewONe) {
 const getReadOnly = (status, isDraft, role, questionStatus) => {
   let allowedMainLevelStatus = [statusTracker.IP, statusTracker.NS, statusTracker.RBP]
   let allowedQuestionLevelStatus = [questionLevelStatus['3']]
-  let specialCases = [statusTracker.RBP, questionLevelStatus['1']]
+  let specialCases = [statusTracker.RBP, questionLevelStatus['1'],statusTracker.IP]
   if (role !== "ULB" || status === statusTracker.VIP) {
     return true
   }
@@ -3532,7 +3532,7 @@ async function calculateAndUpdateStatusForMappers(
                 "status":obj[k].status,
                "file":{
                 name:obj[k].name,
-                file:obj[k].file
+                url:obj[k].url || ""
                }
               }
               let count = calculateReviewCount(demoItem)
@@ -5156,7 +5156,7 @@ function calculateReviewCount(item){
   let completedIndicator = 0
   let approvedIndicator = 0
   let rejectedIndicator = 0
-  if(item.value || item.date != null || (item.file && item?.file?.url != "") || (item.file && item.modelName === "ULBLedger")){
+  if(item.value || item.date != null || (item.file && item?.file?.url) || (item.file && item.modelName === "ULBLedger")){
     console.log("item.type :: ",item.type)
     completedIndicator = 1;
   }
