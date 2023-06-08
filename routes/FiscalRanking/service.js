@@ -1669,7 +1669,7 @@ const getUlbActivities = ({ req, sort, selectedState, selectedCategory, skip, li
   console.log(JSON.stringify(query, 3, 3));
   return Ulb.aggregate(query);
 }
-const getPMUActivities = ({ req, sort, skip, limit, sortBy, order, filters, filterObj, sortKey, designYear }) => {
+const getPMUActivities = ({ req, sort, selectedState, skip, limit, sortBy, order, filters, filterObj, sortKey, designYear }) => {
 
   const query = [
     ...(req.decoded.role == userTypes.state ? [{
@@ -1758,6 +1758,15 @@ const getPMUActivities = ({ req, sort, skip, limit, sortBy, order, filters, filt
     {
       "$project": {
         "stateName": "$states.name",
+        "selected": {
+          "$cond": {
+            "if": {
+              "$eq": ["$states._id", ObjectId(selectedState)]
+            },
+            "then": true,
+            "else": false
+          }
+        },
         "underReviewByPMU": 1,
         "verificationNotStarted": 1,
         "verificationInProgress": 1,
