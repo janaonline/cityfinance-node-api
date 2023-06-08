@@ -5157,13 +5157,8 @@ function calculateReviewCount(item) {
   let completedIndicator = 0
   let approvedIndicator = 0
   let rejectedIndicator = 0
-<<<<<<< HEAD
-  if (item.value || item.date != null || (item.file && item?.file?.url) || (item.file && item.modelName === "ULBLedger")) {
-    console.log("item.type :: ", item.type)
-=======
   if(item.value || item.date != null || (item.file && item?.file?.url) || (item.file && item.modelName === "ULBLedger")){
     console.log("item.type :: ",item.type)
->>>>>>> ccad7a1611e45c223ffac8811d52911606cb98bc
     completedIndicator = 1;
   }
   if (item.status === "APPROVED" || (item.file && item.modelName === "ULBLedger")) {
