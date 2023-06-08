@@ -1891,7 +1891,9 @@ const getPopulationWiseData = ({ stateId, selectedCategory, columns, sort, skip,
     {
       "$match": {
         "isActive":true,
-        "state": ObjectId(stateId)
+        ...(stateId && {
+          "state": ObjectId(stateId)
+        })
       }
     },
     {
