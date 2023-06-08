@@ -3529,11 +3529,11 @@ async function calculateAndUpdateStatusForMappers(
               console.log("inside if  condition")
               totalIndicator += 1
               let demoItem = {
-                "status": obj[k].status,
-                "file": {
-                  name: obj[k].name,
-                  file: obj[k].file || ""
-                }
+                "status":obj[k].status,
+               "file":{
+                name:obj[k].name,
+                url:obj[k].url || ""
+               }
               }
               let count = calculateReviewCount(demoItem)
               completedIndicator += count[0]
@@ -5157,8 +5157,13 @@ function calculateReviewCount(item) {
   let completedIndicator = 0
   let approvedIndicator = 0
   let rejectedIndicator = 0
+<<<<<<< HEAD
   if (item.value || item.date != null || (item.file && item?.file?.url) || (item.file && item.modelName === "ULBLedger")) {
     console.log("item.type :: ", item.type)
+=======
+  if(item.value || item.date != null || (item.file && item?.file?.url) || (item.file && item.modelName === "ULBLedger")){
+    console.log("item.type :: ",item.type)
+>>>>>>> ccad7a1611e45c223ffac8811d52911606cb98bc
     completedIndicator = 1;
   }
   if (item.status === "APPROVED" || (item.file && item.modelName === "ULBLedger")) {
