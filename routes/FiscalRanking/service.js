@@ -3955,7 +3955,8 @@ async function columnsForCSV(params) {
       "Last Submitted Date",
       "Overall Form Status",
       "ULB Data Submitted (%)",
-      "PMU Verification Progress",
+      "PMU Verification progress (Approved %)",
+      "PMU Verification progress (Rejected %)",
       "% Completion",
       "I. BASIC ULB DETAILS_Comments",
       "II CONTACT INFORMATION_Comments",
@@ -4007,7 +4008,8 @@ async function columnsForCSV(params) {
       "modifiedAt",
       "formStatus",
       "ulbDataSubmitted",
-      "pmuVerificationProgress",
+      "pmuVerificationapprovedProgress",
+      "pmuVerificationrejectedProgress",
       "completionPercent",
       "comment_1",
       "II CONTACT INFORMATION_Comments",
@@ -4857,9 +4859,22 @@ function computeQuery(params) {
           }, {
             "$concat":["0","%"]
           }] },
-          pmuVerificationProgress: { $ifNull: [{
-            "$concat":[`$fiscalrankings.pmuVerificationapprovedProgress`,`%`,`-`,`$fiscalrankings.pmuVerificationrejectedProgress`,`%`]
-          }, {"$concat":["0","%"]}] },
+          pmuVerificationapprovedProgress: { $ifNull: [{
+            "$concat": [
+              {"$toString":"$fiscalrankings.pmuVerificationapprovedProgress"},
+              "%"
+          ]
+          }, {
+            "$concat":["0","%"]
+          }] },
+          pmuVerificationrejectedProgress: { $ifNull: [{
+            "$concat": [
+              {"$toString":"$fiscalrankings.pmuVerificationrejectedProgress"},
+              "%"
+          ]
+          }, {
+            "$concat":["0","%"]
+          }] },
           comment_1: "",
           "II CONTACT INFORMATION_Comments": "",
           "III FINANCIAL INFORMATION_Comments": "",
