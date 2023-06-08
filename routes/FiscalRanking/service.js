@@ -4641,7 +4641,8 @@ function computeQuery(params) {
                 otherUpload: 1,
                 signedCopyOfFile: 1,
                 ulbDataSubmitted: "$progress.ulbCompletion",
-                pmuVerificationProgress: "$progress.verificationProgress",
+                pmuVerificationapprovedProgress: "$progress.approvedProgress",
+                pmuVerificationrejectedProgress: "$progress.rejectedProgress",
                 arrayOfMandatoryField: [
                   {
                     population11: "$population11.value",
@@ -4851,8 +4852,14 @@ function computeQuery(params) {
               },
             },
           },
-          ulbDataSubmitted: { $ifNull: [`$fiscalrankings.ulbDataSubmitted`, null] },
-          pmuVerificationProgress: { $ifNull: [`$fiscalrankings.pmuVerificationProgress`, null] },
+          ulbDataSubmitted: { $ifNull: [{
+            "$concat":[`$fiscalrankings.ulbDataSubmitted`,"%"]
+          }, {
+            "$concat":["0","%"]
+          }] },
+          pmuVerificationProgress: { $ifNull: [{
+            "$concat":[`$fiscalrankings.pmuVerificationapprovedProgress`,`%`,`-`,`$fiscalrankings.pmuVerificationrejectedProgress`,`%`]
+          }, {"$concat":["0","%"]}] },
           comment_1: "",
           "II CONTACT INFORMATION_Comments": "",
           "III FINANCIAL INFORMATION_Comments": "",
