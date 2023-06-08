@@ -403,7 +403,7 @@ function assignCalculatedValues(fyDynemic, viewONe) {
 const getReadOnly = (status, isDraft, role, questionStatus) => {
   let allowedMainLevelStatus = [statusTracker.IP, statusTracker.NS, statusTracker.RBP]
   let allowedQuestionLevelStatus = [questionLevelStatus['3']]
-  let specialCases = [statusTracker.RBP, questionLevelStatus['1']]
+  let specialCases = [statusTracker.RBP, questionLevelStatus['1'],statusTracker.IP]
   if (role !== "ULB" || status === statusTracker.VIP) {
     return true
   }
