@@ -4936,7 +4936,21 @@ exports.heatMapReport = async (req, res, next) => {
     let queryResult = await Ulb.aggregate(query)
     response.success = true
     response.message = queryResult.length ? "Fetched Successfully" : "No data found"
-    response.data = queryResult.length ? queryResult[0] : {}
+    response.data = queryResult.length ? queryResult[0] : {
+      formWiseData: {
+        totalForms: 0,
+        verificationInProgress: 0,
+        verificationNotStarted: 0,
+        approved: 0,
+        rejected: 0
+      },
+      ulbWiseData: {
+        totalUlbs: 0,
+        inProgress: 0,
+        submitted: 0,
+        notStarted: 0
+      }
+    }
     return res.json(response)
 
   }
