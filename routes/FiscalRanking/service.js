@@ -3489,6 +3489,8 @@ async function calculateAndUpdateStatusForMappers(
               if(element.value == "No" || element.value === ""){
                   item.required = false
               }
+              item.status = element.status
+              
             }
             if(item?.required && item.year){
               totalIndicator += 1
