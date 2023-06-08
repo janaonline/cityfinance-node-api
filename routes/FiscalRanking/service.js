@@ -3409,7 +3409,7 @@ async function calculateAndUpdateStatusForMappers(
                 "status":obj[k].status,
                "file":{
                 name:obj[k].name,
-                file:obj[k].file
+                url:obj[k].url || ""
                }
               }
               let count = calculateReviewCount(demoItem)
@@ -4978,7 +4978,7 @@ function calculateReviewCount(item){
   let completedIndicator = 0
   let approvedIndicator = 0
   let rejectedIndicator = 0
-  if(item.value || item.date != null || (item.file && item?.file?.url != "") || (item.file && item.modelName === "ULBLedger")){
+  if(item.value || item.date != null || (item.file && item?.file?.url) || (item.file && item.modelName === "ULBLedger")){
     console.log("item.type :: ",item.type)
     completedIndicator = 1;
   }
