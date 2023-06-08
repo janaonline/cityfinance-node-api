@@ -600,13 +600,18 @@ const getManipulatedJson = async(installment,type,design_year,formJson,fieldsToh
         "language":[],
       }
     try{
+        let file = {
+            "name":"",
+            "url":""
+        }
         let gtcForm = await GrantTransferCertificate.findOne({
-                year:ObjectId(design_year),
-                installment,
-                type,
-                state
-            },{history:0}).lean()
+            year:ObjectId(design_year),
+            installment,
+            type,
+            state
+        },{history:0}).lean()
         let yearName =  getKeyByValue(years,design_year)
+        file = gtcForm && gtcForm.file  ? gtcForm.file : file
         let installmentForm = await GtcInstallmentForm.findOne({
             gtcForm:gtcForm?._id,
             formType:type,
@@ -630,7 +635,7 @@ const getManipulatedJson = async(installment,type,design_year,formJson,fieldsToh
         let data = {
             "data":[mformObject]
         }
-        return data
+        return {questionResponse:data,file}
     }
     catch(err){
         console.log("error in getManipulatedJson ::: ",err.message)
@@ -656,9 +661,10 @@ const getJson = async(state,design_year)=>{
         }
         let returnableJson = []
         for(let carousel of basicEmptyStructure){
-            console.log("basicEmptyStructure ::: ",basicEmptyStructure)
             for(let question of carousel.questions){
-                question.questionresponse = await getManipulatedJson(question.installment,question.type,design_year,{...formJson},fieldsTohide,ObjectId(state))
+                let {questionResponse,file} = await getManipulatedJson(question.installment,question.type,design_year,{...formJson},fieldsTohide,ObjectId(state))
+                question.questionresponse = questionResponse
+                question.file = file
             }
             returnableJson.push(carousel)
             
@@ -856,7 +862,7 @@ async function handleInstallmentForm(params){
 
 async function getOrCreateFormId(params){
     try{
-        let {installment,year,type,isDraft,status,financialYear,design_year,state,currentFormStatus} = params
+        let {installment,year,type,isDraft,status,financialYear,design_year,state,currentFormStatus,file} = params
         let gtcForm = await GrantTransferCertificate.findOneAndUpdate({
             installment,
             year:ObjectId(year),
@@ -869,6 +875,7 @@ async function getOrCreateFormId(params){
             design_year:ObjectId(design_year),
             state:ObjectId(state),
             currentFormStatus:currentFormStatus,
+            file:file
         },{upsert:true,new: true})
         return gtcForm._id
     }
