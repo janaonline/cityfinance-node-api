@@ -215,7 +215,9 @@ const fiscalRankingSchema = new Schema(
         rejectReason: { type: String, default: null },
         progress:{
             ulbCompletion:{type:Schema.Types.Mixed,default:0},
-            verificationProgress:{type:Schema.Types.Mixed,default:0}
+            verificationProgress:{type:Schema.Types.Mixed,default:0},
+            approvedProgress:{type:Schema.Types.Mixed,default:0},
+            rejectedProgress:{type:Schema.Types.Mixed,default:0},
         },
         // createdAt: { type: Date, default: Date.now },
         // modifiedAt: { type: Date, default: Date.now },

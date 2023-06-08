@@ -2557,8 +2557,14 @@ function appendStages(query) {
         filled: "$records.filled",
         populationCategory: "$records.populationCategory",
         formData: "$records.formData",
-        ulbDataSubmitted: { $ifNull: [`$records.formData.progress.ulbCompletion`, 0] },
-        pmuVerificationProgress: { $ifNull: [`$records.formData.progress.verificationProgress`, 0] },
+        ulbDataSubmitted: { $ifNull: [{
+          "$concat":[`$records.formData.progress.ulbCompletion`,"%"]
+        }, {
+          "$concat":["0","%"]
+        }] },
+        pmuVerificationProgress: { $ifNull: [{
+          "$concat":[`$records.formData.progress.approvedProgress`,`%`,`,`,`$records.formData.progress.rejectedProgress`,`%`]
+        }, {"$concat":["0","%"]}] },
         "total": {
           $let: {
             vars: {
@@ -2909,7 +2915,7 @@ function getColumns() {
     cantakeAction: "Action",
     apopulationCategory: "Population Category",
     ulbDataSubmitted: "ULB Data Submitted (%)",
-    pmuVerificationProgress: "PMU Verification Progress"
+    pmuVerificationProgress: "PMU Verification Progress (Approved,Rejected)"
   };
 }
 
@@ -3408,15 +3414,18 @@ async function manageFormPercentage(params) {
     let { totalIndicator, completedIndicator, approvedIndicator, rejectedIndicator, formId,updateForm } = params
     let completedPercentage = (completedIndicator / totalIndicator) * 100
     let verificationProgress = ((approvedIndicator + rejectedIndicator) / totalIndicator) * 100
+    let approvedPerc = (approvedIndicator/totalIndicator)*100
+    let rejectedPerc = (rejectedIndicator/totalIndicator)*100
     let payload = {}
     console.log({ totalIndicator, completedIndicator, approvedIndicator, rejectedIndicator, formId })
     if(updateForm){
-      payload["progress.ulbCompletion"]=  completedPercentage.toFixed(2)
+      payload["progress.ulbCompletion"]=  completedPercentage < 100 ? completedPercentage.toFixed(2) : (parseInt(approvedPerc)).toString()
     }
     else{
-      payload["progress.verificationProgress"]= verificationProgress.toFixed(2)
+      payload["progress.verificationProgress"]= verificationProgress < 100 ? verificationProgress.toFixed(2) : (parseInt(verificationProgress)).toString()
+      payload['progress.approvedProgress'] = approvedPerc < 100 ? approvedPerc.toFixed(2) : (parseInt(approvedPerc)).toString()
+      payload['progress.rejectedProgress'] = rejectedPerc < 100 ? rejectedPerc.toFixed(2) : (parseInt(rejectedPerc)).toString()
     }
-    console.log("payload ::: ",payload)
     await FiscalRanking.findOneAndUpdate({
       "_id":formId
     },payload)    
@@ -3480,7 +3489,8 @@ async function calculateAndUpdateStatusForMappers(
           let yearArr = obj[k].yearData;
           let dynamicObj = obj[k];
           let financialInfo = obj;
-          yearArr.forEach((item)=>{
+          yearArr.forEach((uniqueItem)=>{
+            let item = {...uniqueItem}
             let skipFiles = {
               "registerGisProof":"registerGis",
               "accountStwreProof":"accountStwre"
