@@ -2084,8 +2084,9 @@ exports.overview = async function (req, res, next) {
         sort = { [sortBy]: +order };
       }
     }
-
-    sort = { 'stateName': 1, ...sort };
+    if(!sort) {
+      sort = { 'stateName': 1};
+    }
 
     console.log({ sort, skip, limit, sortBy, order, filters, filterObj, sortKey, designYear });
 
