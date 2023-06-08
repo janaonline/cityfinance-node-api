@@ -2205,14 +2205,23 @@ exports.overview = async function (req, res, next) {
       name += ' - ' + stateName;
     }
 
-    return res.status(200).json({
+
+    const response = {
       status: true,
       message: "Successfully saved data!",
       columns,
       name,
       data,
       lastRow,
-    });
+    }
+    if(type == 'UlbActivities') {
+      response['headerLink'] =  {
+        label: 'See National level data',
+        link: '/rankings/populationWise?stateName=India' + (selectedCategory ? '&selectedCategory=' + selectedCategory : '')
+      };
+    }
+
+    return res.status(200).json(response);
   } catch (error) {
     console.log("err", error);
     return res
