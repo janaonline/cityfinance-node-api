@@ -723,9 +723,9 @@ module.exports.get2223 = catchAsync(async (req, res) => {
     }
     responseObj.fourSLB.data = slbWeigthed
 
-    if(design_year === YEAR_CONSTANTS['23_24']){
+    // if(design_year === YEAR_CONSTANTS['23_24']){
        responseObj = updateResponse(responseObj)
-    }
+    // }
     return res.status(200).json({
         success: true,
         data: responseObj
@@ -1460,11 +1460,11 @@ function getGFCFormat(input) {
       value:  input.approved.count.toString(),
       ulbs: [...input.approved.ulbs, ...input.pending.ulbs]
     }
-    gfcFormat.data[1].value = {
+    gfcFormat.data[1] = {
         value:input.approved.ulbs.length.toString(),
         ulbs: input.approved.ulbs
     }
-    gfcFormat.data[2].value = {
+    gfcFormat.data[2] = {
         value: input.pending.ulbs.length.toString(),
         ulbs: input.pending.ulbs
     }
@@ -1515,11 +1515,11 @@ function getODFFormat(input) {
         value:  input.approved.count.toString(),
         ulbs: [...input.approved.ulbs, ...input.pending.ulbs]
       }
-      odfFormat.data[1].value = {
+      odfFormat.data[1] = {
           value:input.approved.ulbs.length.toString(),
           ulbs: input.approved.ulbs
       }
-      odfFormat.data[2].value = {
+      odfFormat.data[2] = {
           value: input.pending.ulbs.length.toString(),
           ulbs: input.pending.ulbs
       }
