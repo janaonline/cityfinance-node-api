@@ -6181,13 +6181,13 @@ const getCategoryMatchObject = category => ({
   '2': {
     'population': {
       $gte: 1000000,
-      $lte: 4000000
+      $lt: 4000000
     }
   },
   '3': {
     'population': {
       $gte: 100000,
-      $lte: 1000000
+      $lt: 1000000
     }
   },
   '4': {
