@@ -87,7 +87,7 @@ var customkeys = {
         "year":"year",
         "ulbType":"ulbType",
         "grantType":"grantType",
-        "installmentType":"installmentType"
+        "installment_type":"installment_type"
     },
     "statedetails":{
         "totalMpc":"totalMpc",

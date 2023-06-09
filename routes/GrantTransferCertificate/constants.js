@@ -1,7 +1,7 @@
 let grantsWithUlbTypes =  {
     "million_tied":{ulbType:"MPC",grantType:"Tied"},
-    "nonmillion_untied":{ulbType:"NPMC",grantType:"Untied"},
-    "nonmillion_tied" :{ulbType:"NPMC",grantType:"Tied"}
+    "nonmillion_untied":{ulbType:"NMPC",grantType:"Untied"},
+    "nonmillion_tied" :{ulbType:"NMPC",grantType:"Tied"}
 }
 
 let installment_types = {
