@@ -96,6 +96,7 @@ async function manageLedgerData(params) {
             Object.values(calculationFields).forEach((item)=>{
               item.yearData.forEach((childItem)=>{
                 if(childItem.year.toString() ===  yearObj.year){
+                  childItem.readonly = [statusTracker.RBP,statusTracker.IP].includes(currentFormStatus) && [questionLevelStatus['1']].includes(childItem.status) ? false  : childItem.readonly
                   childItem.rejectReason = [statusTracker.RBP,statusTracker.IP].includes(currentFormStatus) && [questionLevelStatus['1']].includes(childItem.status) ? msg  : childItem.rejectReason
                   childItem.status = [statusTracker.RBP,statusTracker.IP].includes(currentFormStatus) && [questionLevelStatus['1']].includes(childItem.status)  ? "REJECTED"  :  childItem.status 
                 }
