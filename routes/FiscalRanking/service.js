@@ -1785,28 +1785,33 @@ const getPMUActivities = ({ req, sort, selectedState, skip, limit, sortBy, order
 }
 const getPopulationWiseData = ({ stateId, selectedCategory, columns, sort, skip, limit, sortBy, order, filters, filterObj, sortKey, designYear }) => {
 
+
   const parameters = [
     {
-      condition: '$gt',
-      value: 4000000,
-      label: '4MN+'
+      label: '4MN+',
+      query: [
+        { $gt: ["$population", 4000000] }
+      ],
     },
     {
-      condition: 'range',
-      min: 1000000,
-      max: 4000000,
-      label: '1MN to 4MN'
+      label: '1MN to 4MN',
+      query: [
+        { $lte: ["$population", 4000000] },
+        { $gte: ["$population", 1000000] },
+      ]
     },
     {
-      condition: 'range',
-      min: 100000,
-      max: 1000000,
-      label: '100K to 1MN'
+      label: '100K to 1MN',
+      query: [
+        { $lt: ["$population", 1000000] },
+        { $gte: ["$population", 100000] }
+      ],
     },
     {
-      condition: '$lt',
-      value: 100000,
-      label: '<100K'
+      label: '<100K',
+      query: [
+        { $lt: ["$population", 100000] }
+      ],
     },
   ];
 
@@ -1853,18 +1858,8 @@ const getPopulationWiseData = ({ stateId, selectedCategory, columns, sort, skip,
                 $sum: {
                   $cond: {
                     if: {
-                      $and: parameter.condition == 'range' ? [
-                        { $gt: ["$population", parameter.min] },
-                        { $lt: ["$population", parameter.max] },
-                        ...(column.key == 'totalUlbs' ? [] : (
-                          column.currentFormStatus == 1 ? [{
-                            "$eq": ["$emptyForms", 1]
-                          }] : [{
-                            [Array.isArray(column.currentFormStatus) ? '$in' : '$eq']: ["$formData.currentFormStatus", column.currentFormStatus]
-                          }]
-                        ))
-                      ] : [
-                        { [parameter.condition]: ["$population", parameter.value] },
+                      $and: [
+                        ...parameter.query,
                         ...(column.key == 'totalUlbs' ? [] : (
                           column.currentFormStatus == 1 ? [{
                             "$eq": ["$emptyForms", 1]
@@ -2084,7 +2079,7 @@ exports.overview = async function (req, res, next) {
     let sortKey = getSortByKeys(sortBy, order)
     let designYear = years['2022-23']
 
-    let sort;
+    let sort; 
     if (sortBy) {
       if (Array.isArray(sortBy)) {
         sort = sortBy?.reduce((obj, key, index) => ({ ...obj, [key]: +order[index] }), {});

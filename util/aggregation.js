@@ -6180,14 +6180,14 @@ const getCategoryMatchObject = category => ({
   },
   '2': {
     'population': {
+      $lte: 4000000,
       $gte: 1000000,
-      $lt: 4000000
     }
   },
   '3': {
     'population': {
+      $lt: 1000000,
       $gte: 100000,
-      $lt: 1000000
     }
   },
   '4': {
