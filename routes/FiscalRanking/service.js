@@ -67,8 +67,8 @@ let priorTabsForFiscalRanking = {
 
 async function manageLedgerData(params) {
   let messages = []
-  try {
-    let { ledgerData, ledgerKeys, responseData, formId } = params
+  try{
+    let {ledgerData,ledgerKeys,responseData,formId,currentFormStatus} = params
     let formHistory = await FormHistory.findOne({
       recordId: formId
     }, {
@@ -86,13 +86,15 @@ async function manageLedgerData(params) {
             year: yearObj.year.toString(),
             data: ledgerData,
           })
-          if (yearObj.previousYearCodes && yearObj.previousYearCodes.length) {
-
-            ulbFyAmount = await getPreviousYearValues(yearObj, ledgerData)
+          if(yearObj.previousYearCodes && yearObj.previousYearCodes.length){
+            ulbFyAmount = await getPreviousYearValues(yearObj,ledgerData)
           }
-
-          if (historicalObject && ulbFyAmount !== historicalObject.value && ![years['2020-21'], years['2021-22']].includes(yearObj.year)) {
-            messages.push(`Data for field ${question.displayPriority} ${getKeyByValue(years, yearObj.year)} has been updated. kindly revisit those calculations`)
+          if(historicalObject && ulbFyAmount !== historicalObject.value  && ![years['2020-21'],years['2021-22']].includes(yearObj.year) ){
+            let msg = `Data for field ${question.displayPriority} ${getKeyByValue(years, yearObj.year)} has been updated. kindly revisit those calculations`
+            messages.push(msg)
+            yearObj.disableStatus = true
+            yearObj.status = ![statusTracker.IP,statusTracker.SAP].includes(currentFormStatus) ? "REJECTED"  : yearObj.status
+            yearObj.rejectReason = ![statusTracker.IP,statusTracker.SAP].includes(currentFormStatus) ? msg  : yearObj.rejectReason
           }
           yearObj.modelName = ulbFyAmount ? "ULBLedger" : ""
           yearObj.value = ulbFyAmount ? ulbFyAmount : yearObj.value
@@ -1230,10 +1232,11 @@ exports.getView = async function (req, res, next) {
       fiscal_ranking: data?._id || null,
     };
     let params = {
-      ledgerData: ulbData,
-      ledgerKeys: ledgerKeys,
-      responseData: fyDynemic,
-      formId: viewOne._id
+      ledgerData : ulbData,
+      ledgerKeys:ledgerKeys,
+      responseData:fyDynemic,
+      formId:viewOne._id,
+      currentFormStatus:viewOne.currentFormStatus
     }
     /**
      * This function always get latest data for ledgers
@@ -1745,7 +1748,7 @@ const getUlbActivities = ({ req, sort, selectedState, selectedCategory, skip, li
   console.log(JSON.stringify(query, 3, 3));
   return Ulb.aggregate(query);
 }
-const getPMUActivities = ({ req, sort, skip, limit, sortBy, order, filters, filterObj, sortKey, designYear }) => {
+const getPMUActivities = ({ req, sort, selectedState, skip, limit, sortBy, order, filters, filterObj, sortKey, designYear }) => {
 
   const query = [
     ...(req.decoded.role == userTypes.state ? [{
@@ -1835,6 +1838,15 @@ const getPMUActivities = ({ req, sort, skip, limit, sortBy, order, filters, filt
     {
       "$project": {
         "stateName": "$states.name",
+        "selected": {
+          "$cond": {
+            "if": {
+              "$eq": ["$states._id", ObjectId(selectedState)]
+            },
+            "then": true,
+            "else": false
+          }
+        },
         "underReviewByPMU": 1,
         "verificationNotStarted": 1,
         "verificationInProgress": 1,
@@ -1882,9 +1894,11 @@ const getPopulationWiseData = ({ stateId, selectedCategory, columns, sort, skip,
   const query = [
     {
       "$match": {
-        ...(stateId && { state: ObjectId(stateId) }),
-        "isActive": true
-      },
+        "isActive":true,
+        ...(stateId && {
+          "state": ObjectId(stateId)
+        })
+      }
     },
     {
       "$lookup": {
@@ -2162,8 +2176,9 @@ exports.overview = async function (req, res, next) {
         sort = { [sortBy]: +order };
       }
     }
-
-    sort = { 'stateName': 1, ...sort };
+    if(!sort) {
+      sort = { 'stateName': 1};
+    }
 
     console.log({ sort, skip, limit, sortBy, order, filters, filterObj, sortKey, designYear });
 
@@ -2194,14 +2209,23 @@ exports.overview = async function (req, res, next) {
       name += ' - ' + stateName;
     }
 
-    return res.status(200).json({
+
+    const response = {
       status: true,
       message: "Successfully saved data!",
       columns,
       name,
       data,
       lastRow,
-    });
+    }
+    if(type == 'UlbActivities') {
+      response['headerLink'] =  {
+        label: 'See National level data',
+        link: '/rankings/populationWise?stateName=India' + (selectedCategory ? '&selectedCategory=' + selectedCategory : '')
+      };
+    }
+
+    return res.status(200).json(response);
   } catch (error) {
     console.log("err", error);
     return res
@@ -3416,15 +3440,17 @@ async function manageFormPercentage(params) {
     let approvedPerc = (approvedIndicator/totalIndicator)*100
     let rejectedPerc = (rejectedIndicator/totalIndicator)*100
     let payload = {}
+    console.log(">>",completedPercentage)
     console.log({ totalIndicator, completedIndicator, approvedIndicator, rejectedIndicator, formId })
     if(updateForm){
-      payload["progress.ulbCompletion"]=  completedPercentage < 100 && completedPercentage!= 0 ? completedPercentage.toFixed(2) : (parseInt(approvedPerc)).toString()
+      payload["progress.ulbCompletion"]=  completedPercentage < 100 && completedPercentage!= 0 ? completedPercentage.toFixed(2) : (parseInt(completedPercentage)).toString()
     }
     else{
       payload["progress.verificationProgress"]= verificationProgress < 100 && verificationProgress != 0 ? verificationProgress.toFixed(2) : (parseInt(verificationProgress)).toString()
       payload['progress.approvedProgress'] = approvedPerc < 100 && approvedPerc != 0 ? approvedPerc.toFixed(2) : (parseInt(approvedPerc)).toString()
       payload['progress.rejectedProgress'] = rejectedPerc < 100  && rejectedPerc != 0 ? rejectedPerc.toFixed(2) : (parseInt(rejectedPerc)).toString()
     }
+    console.log(payload)
     await FiscalRanking.findOneAndUpdate({
       "_id": formId
     }, payload)
@@ -4097,7 +4123,8 @@ async function columnsForCSV(params) {
       "Last Submitted Date",
       "Overall Form Status",
       "ULB Data Submitted (%)",
-      "PMU Verification Progress",
+      "PMU Verification progress (Approved %)",
+      "PMU Verification progress (Rejected %)",
       "% Completion",
       "I. BASIC ULB DETAILS_Comments",
       "II CONTACT INFORMATION_Comments",
@@ -4149,7 +4176,8 @@ async function columnsForCSV(params) {
       "modifiedAt",
       "formStatus",
       "ulbDataSubmitted",
-      "pmuVerificationProgress",
+      "pmuVerificationapprovedProgress",
+      "pmuVerificationrejectedProgress",
       "completionPercent",
       "comment_1",
       "II CONTACT INFORMATION_Comments",
@@ -4858,9 +4886,22 @@ function computeQuery(params) {
           }, {
             "$concat":["0","%"]
           }] },
-          pmuVerificationProgress: { $ifNull: [{
-            "$concat":[`$fiscalrankings.pmuVerificationapprovedProgress`,`%`,`-`,`$fiscalrankings.pmuVerificationrejectedProgress`,`%`]
-          }, {"$concat":["0","%"]}] },
+          pmuVerificationapprovedProgress: { $ifNull: [{
+            "$concat": [
+              {"$toString":"$fiscalrankings.pmuVerificationapprovedProgress"},
+              "%"
+          ]
+          }, {
+            "$concat":["0","%"]
+          }] },
+          pmuVerificationrejectedProgress: { $ifNull: [{
+            "$concat": [
+              {"$toString":"$fiscalrankings.pmuVerificationrejectedProgress"},
+              "%"
+          ]
+          }, {
+            "$concat":["0","%"]
+          }] },
           comment_1: "",
           "II CONTACT INFORMATION_Comments": "",
           "III FINANCIAL INFORMATION_Comments": "",
@@ -4956,7 +4997,21 @@ exports.heatMapReport = async (req, res, next) => {
     let queryResult = await Ulb.aggregate(query)
     response.success = true
     response.message = queryResult.length ? "Fetched Successfully" : "No data found"
-    response.data = queryResult.length ? queryResult[0] : {}
+    response.data = queryResult.length ? queryResult[0] : {
+      formWiseData: {
+        totalForms: 0,
+        verificationInProgress: 0,
+        verificationNotStarted: 0,
+        approved: 0,
+        rejected: 0
+      },
+      ulbWiseData: {
+        totalUlbs: 0,
+        inProgress: 0,
+        submitted: 0,
+        notStarted: 0
+      }
+    }
     return res.json(response)
 
   }
