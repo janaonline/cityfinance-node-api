@@ -6201,16 +6201,18 @@ const stateWiseHeatMapQuery = ({ state, category }) => {
   let matchObj = {}
   let aggregationQuery = [
     {
+      "$match": {
+        "isActive": true,
+        ...(state && {"state": ObjectId(state)}),
+        ...getCategoryMatchObject(category)
+      }
+    },
+    {
       "$lookup": {
         "from": "fiscalrankings",
         "localField": "_id",
         "foreignField": "ulb",
         "as": "formData"
-      }
-    },
-    {
-      "$match": {
-        "isActive": { "$eq": true }
       }
     },
     {
@@ -6371,16 +6373,7 @@ const stateWiseHeatMapQuery = ({ state, category }) => {
         }
       }
     }
-  ]
-  if (state || category) {
-    matchObj = {
-      "$match": {
-        ...(state && {"state": ObjectId(state)}),
-        ...getCategoryMatchObject(category)
-      }
-    }
-    aggregationQuery = [matchObj, ...aggregationQuery]
-  }
+  ];
 
   console.log(JSON.stringify(aggregationQuery, 3, 3));
   return aggregationQuery
