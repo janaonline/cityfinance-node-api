@@ -1855,6 +1855,7 @@ async function handleSelectCase(question,obj,flattedForm){
                 question['modelValue'] = tempObj['_id']
                 question['value'] = tempObj['_id']
                 question['selectedAnswerOption'] = {'name':tempObj['_id']}
+                
             }
         }
         return obj
@@ -1916,8 +1917,9 @@ async function handleDbValues(questionObj,formObj,order){
         }
         else{
             await handleCasesByInputType(questionObj)
-            await handleValues(questionObj,answer,formObj)
+            answer = await handleValues(questionObj,answer,formObj)
             questionObj.selectedValue = [answer]
+            
             try{
                 questionObj.answer['answer'] =[answer]
             }
@@ -2081,32 +2083,11 @@ async function handleArrayFields(shortKey,flattedForm,childQuestionData){
 
 async function appendvalues(childQuestionData,flattedForm,shortKey,question){
     try{
+        let modifiedArr = []
         let arrKeys = Object.keys(arrFields)
        if(!arrKeys.includes(shortKey)){
         // handle array of objects childrens
-        for(let arr of childQuestionData){
-            for(let obj of arr){
-                let questionKeys = Object.keys(customkeys[shortKey])
-                for(let questionkey of questionKeys){
-                    if(obj.shortKey === questionkey){
-                        let answer = { label: '', textValue: '', value: '' }
-                        await handleValues(obj,answer,flattedForm)
-                        if(obj.input_type !== "11"){
-                            obj.selectedValue = [answer]
-                        }
-                        if(obj.isQuestionDisabled !== true){
-                            obj.isQuestionDisabled = handleDisableFields(flattedForm)
-                        }
-                        obj.answer = {...obj.answer,...answer}
-                        let modifiedObj ={...await handleRangeIfExists(obj,flattedForm)}
-                        obj.minRange = modifiedObj.minRange ? modifiedObj.minRange  : obj.minRange
-                        obj.maxRange = modifiedObj.maxRange ? modifiedObj.maxRange : obj.minRange
-                        obj.hint = modifiedObj.hint || ""
-                        obj.visibility = flattedForm.fieldsTohide && flattedForm.fieldsTohide.includes(obj.shortKey) ? false : obj.visibility
-                    }
-                }
-            }
-        }
+        childQuestionData = await handleSectionStructure(childQuestionData, shortKey, flattedForm);
        }
        if(arrKeys.includes(shortKey) && !specialCases.includes(shortKey)){
          await handleArrayFields(shortKey,flattedForm,childQuestionData)
@@ -2120,12 +2101,41 @@ async function appendvalues(childQuestionData,flattedForm,shortKey,question){
         console.log("error in appendValues :::: ",err.message)
     }
 }
+async function handleSectionStructure(childArr, shortKey, flattedForm) {
+    let childQuestionData = [...childArr]
+    for (let arr of childQuestionData) {
+        for (let obj of arr) {
+            let questionKeys = Object.keys(customkeys[shortKey]);
+            for (let questionkey of questionKeys) {
+                if (obj.shortKey === questionkey) {
+                    let answer = { label: '', textValue: '', value: '' };
+                    // console.log("shortKey11111111 :: ",obj.shortKey,obj.input_type)
+                    answer = await handleValues(obj, answer, flattedForm);
+                    if (obj.input_type !== "11") {
+                        obj.selectedValue = [{...answer}];
+                    }
+                    if (obj.isQuestionDisabled !== true) {
+                        obj.isQuestionDisabled = handleDisableFields(flattedForm);
+                    }
+                    obj.answer = { ...obj.answer, answer:{...answer} };
+                    let modifiedObj = { ...await handleRangeIfExists(obj, flattedForm) };
+                    obj.minRange = modifiedObj.minRange ? modifiedObj.minRange : obj.minRange;
+                    obj.maxRange = modifiedObj.maxRange ? modifiedObj.maxRange : obj.minRange;
+                    obj.hint = modifiedObj.hint || "";
+                    obj.visibility = flattedForm.fieldsTohide && flattedForm.fieldsTohide.includes(obj.shortKey) ? false : obj.visibility;
+                }
+            }
+        }
+    }
+    return childQuestionData
+}
+
 async function appendChildQues(question,obj,flattedForm){
     try{
         let customShortKeys = Object.keys(customkeys)
         if(customShortKeys.includes(question.shortKey)){
            let childQuestionData = await appendvalues(question.childQuestionData,flattedForm,question.shortKey,question)
-           return childQuestionData
+           return [...childQuestionData]
         }
     }
     catch(err){
@@ -2137,7 +2147,7 @@ const handleChildCase = async(question,obj,flattedForm)=>{
         let order = question.order
         let childQuestionData = await appendChildQues(question,obj,flattedForm)
         if(childQuestionData){
-            question.childQuestionData = childQuestionData
+            question.childQuestionData = [...childQuestionData]
         }
     
     }
@@ -2263,6 +2273,7 @@ const handleRadioButtonCase = async(question,obj,flattedForm,mainKey) =>{
             question['value'] = answerObj._id
             obj['textValue'] = mformValue
             obj['value'] = answerObj._id
+           
         }
     }
     catch(err){
@@ -2306,7 +2317,8 @@ const handleValues = async(question,obj,flattedForm,mainKey=false)=>{
                 obj[answerKey] = flattedForm[shortKey]
                 break
         }
-        return obj
+        // console.log("obj ::::::::::",obj)
+        return {...obj}
     }
     catch(err){
         console.log("error in handleValues ::: ",err.message)

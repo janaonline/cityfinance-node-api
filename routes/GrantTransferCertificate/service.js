@@ -629,12 +629,14 @@ const getManipulatedJson = async(installment,type,design_year,formJson,fieldsToh
             installmentForm.year = getKeyByValue(years,design_year)
         }
         installmentForm.installment_type = installment_types[installment]
-        console.log("installmentForm :: ",installmentForm.installment_type)
         let flattedForm = await getFlatObj(installmentForm)
         flattedForm['fieldsTohide'] = fieldsTohide
         flattedForm['disableFields'] = false // to do logic to be implemented
         let questionJson = await mutuateGetPayload(formJson.data,flattedForm,keysToBeDeleted,"ULB")
         mformObject['language'] = questionJson
+        // let questionD = questionJson[0]['question'].find(item => item.shortKey === "basic")['childQuestionData'][0]
+        // let questionR = questionD.map(item => item.answer.answer)
+        // console.log("questionD :: ",questionR)
         let data = {
             "data":[mformObject]
         }
@@ -665,14 +667,22 @@ const getJson = async(state,design_year)=>{
         let returnableJson = []
         for(let carousel of basicEmptyStructure){
             for(let question of carousel.questions){
-                let {questionResponse,file} = await getManipulatedJson(question.installment,question.type,design_year,{...formJson},fieldsTohide,ObjectId(state))
-                question.questionresponse = questionResponse
+                question.questionresponse = ""
+                let {questionResponse,file} = await getManipulatedJson(question.installment,question.type,design_year,{...formJson},fieldsTohide,ObjectId(state))                
+                question.questionresponse = JSON.parse(JSON.stringify(questionResponse))
+                // let questionD = question.questionresponse['data'][0]['language'][0]['question'].find(item => item.shortKey === "basic")['childQuestionData'][0]
+                // let questionR = questionD.map(item => item.answer.answer)
+                // console.log("questionR :: ",questionR)
                 question.file = file
             }
-            returnableJson.push(carousel)
+            returnableJson.push({...carousel})
             
         }
-        return {json:returnableJson,stateIsMillion:stateIsMillion}
+        // console.log("000000",returnableJson[0].questions[0].questionresponse.data)
+        // let questionL = returnableJson[0].questions[0].questionresponse.data[0]['language'][0]['question'].find(item => item.shortKey === "basic")['childQuestionData'][0]
+        // let questionm = questionL.map(item => item.answer.answer)
+        // console.log("returnableJson :: ",questionm)
+        return {json:[...returnableJson],stateIsMillion:stateIsMillion}
     }
     catch(err){
         console.log("error in getJson ::: ",err.message)
