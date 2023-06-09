@@ -2091,7 +2091,9 @@ async function appendvalues(childQuestionData,flattedForm,shortKey,question){
                     if(obj.shortKey === questionkey){
                         let answer = { label: '', textValue: '', value: '' }
                         await handleValues(obj,answer,flattedForm)
-                        obj.selectedValue = [answer]
+                        if(obj.input_type !== "11"){
+                            obj.selectedValue = [answer]
+                        }
                         if(obj.isQuestionDisabled !== true){
                             obj.isQuestionDisabled = handleDisableFields(flattedForm)
                         }
@@ -2350,6 +2352,8 @@ function handleFileCase(question,obj,flattedForm){
         obj['textValue'] = flattedForm[url] || ""
         question['modelValue'] = flattedForm[url] || ""
         question['value'] = flattedForm[url] || ""
+        // question['selectedValue'] = {...obj}
+        question['answer'] = {...question.answer,answer:[obj]}
     }
     catch(err){
         console.log("error in handleObjectCase :: ",err.message)

@@ -583,6 +583,7 @@ const checkForPreviousForms = async(design_year,state)=>{
             "design_year":yearId,
             "state":ObjectId(state),            
          }).countDocuments()
+        console.log("gtcFormsLength :: ",gtcFormsLength)
         if(gtcFormsLength < 8){
             validator.valid = false
             validator.message = alerts['prevForm']
@@ -619,6 +620,7 @@ const getManipulatedJson = async(installment,type,design_year,formJson,fieldsToh
             year:yearName,
             state:ObjectId(state)
         }).populate("transferGrantdetail").lean()
+        
         mformObject._id = installmentForm?._id
         if(installmentForm === null){
             installmentForm = await GtcInstallmentForm().toObject({virtuals:true})
@@ -627,6 +629,7 @@ const getManipulatedJson = async(installment,type,design_year,formJson,fieldsToh
             installmentForm.year = getKeyByValue(years,design_year)
         }
         installmentForm.installment_type = installment_types[installment]
+        console.log("installmentForm :: ",installmentForm.installment_type)
         let flattedForm = await getFlatObj(installmentForm)
         flattedForm['fieldsTohide'] = fieldsTohide
         flattedForm['disableFields'] = false // to do logic to be implemented
@@ -816,6 +819,7 @@ async function handleInstallmentForm(params){
             gtcForm:ObjectId(gtcFormId) 
         }
         Object.assign(payload,data)
+        console.log("data ::: ",data)
         let installmentValidatior = await checkValidationsInstallmentForm(payload,transferGrantData)
         if(!installmentValidatior.valid){
             validator.message = "Not valid"
@@ -922,12 +926,12 @@ module.exports.createOrUpdateInstallmentForm = async(req,res)=>{
         }
         req.body.gtcFormId = gtcFormId
         let installmentFormValidator = await handleInstallmentForm(req.body)
-        if(!installmentFormValidator.valid){
-            response.success = false
-            response.message = installmentFormValidator.message
-            response.errors = installmentFormValidator.errors
-            return res.status(405).json(response)
-        }
+        // if(!installmentFormValidator.valid){
+        //     response.success = false
+        //     response.message = installmentFormValidator.message
+        //     response.errors = installmentFormValidator.errors
+        //     return res.status(405).json(response)
+        // }
         await createHistory({isDraft,currentFormStatus,gtcFormId})
         response.success = true
         response.message = "Success"
