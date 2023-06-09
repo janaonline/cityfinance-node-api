@@ -2344,12 +2344,12 @@ function handleFileCase(question,obj,flattedForm){
             mainKey = modifiedShortKeys[mainKey]
         }
         let name = mainKey + "." + "name"
-        let url = mainKey + "." + "url"
-        obj['label'] = flattedForm[name]
-        obj['value'] = flattedForm[url]
-        obj['textValue'] = flattedForm[url]
-        question['modelValue'] = flattedForm[url]
-        question['value'] = flattedForm[url]
+        let url = mainKey + "." + "url" 
+        obj['label'] = flattedForm[name] || ""
+        obj['value'] = flattedForm[url] || ""
+        obj['textValue'] = flattedForm[url] || ""
+        question['modelValue'] = flattedForm[url] || ""
+        question['value'] = flattedForm[url] || ""
     }
     catch(err){
         console.log("error in handleObjectCase :: ",err.message)
