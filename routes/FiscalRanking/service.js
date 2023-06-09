@@ -1621,6 +1621,13 @@ const getUlbActivities = ({ req, sort, selectedState, selectedCategory, skip, li
       }
     }] : []),
     {
+      "$match": {
+        isActive: true,
+        ...(req.decoded.role == userTypes.state && req.decoded.state && { "state": ObjectId(req.decoded.state) }),
+        ...getCategoryMatchObject(selectedCategory)
+      },
+    },
+    {
       "$lookup": {
         "from": "fiscalrankings",
         "localField": "_id",
@@ -1726,15 +1733,6 @@ const getUlbActivities = ({ req, sort, selectedState, selectedCategory, skip, li
       }
     },
   ];
-  if (req.decoded.role == userTypes.state || selectedCategory) {
-    matchObj = {
-      "$match": {
-        ...(req.decoded.state && { "state": ObjectId(req.decoded.state) }),
-        ...getCategoryMatchObject(selectedCategory)
-      }
-    }
-    query = [matchObj, ...query]
-  }
 
   if (sort) {
     query.push({ $sort: sort });
@@ -1748,12 +1746,12 @@ const getUlbActivities = ({ req, sort, selectedState, selectedCategory, skip, li
 const getPMUActivities = ({ req, sort, selectedState, skip, limit, sortBy, order, filters, filterObj, sortKey, designYear }) => {
 
   const query = [
-    ...(req.decoded.role == userTypes.state ? [{
-      $match: {
-        "isActive":true,
-        "state": ObjectId(req.decoded.state)
+    {
+      "$match": {
+        "isActive": true,
+        ...(req.decoded.role == userTypes.state && req.decoded.state && { "state": ObjectId(req.decoded.state) }),
       }
-    }] : []),
+    },
     {
       "$lookup": {
         "from": "fiscalrankings",
@@ -1891,11 +1889,9 @@ const getPopulationWiseData = ({ stateId, selectedCategory, columns, sort, skip,
   const query = [
     {
       "$match": {
-        "isActive":true,
-        ...(stateId && {
-          "state": ObjectId(stateId)
-        })
-      }
+        "isActive": true,
+        ...(stateId && { state: ObjectId(stateId) }),
+      },
     },
     {
       "$lookup": {
@@ -2173,8 +2169,8 @@ exports.overview = async function (req, res, next) {
         sort = { [sortBy]: +order };
       }
     }
-    if(!sort) {
-      sort = { 'stateName': 1};
+    if (!sort) {
+      sort = { 'stateName': 1 };
     }
 
     console.log({ sort, skip, limit, sortBy, order, filters, filterObj, sortKey, designYear });
@@ -2215,8 +2211,8 @@ exports.overview = async function (req, res, next) {
       data,
       lastRow,
     }
-    if(type == 'UlbActivities') {
-      response['headerLink'] =  {
+    if (type == 'UlbActivities') {
+      response['headerLink'] = {
         label: 'See National level data',
         link: '/rankings/populationWise?stateName=India' + (selectedCategory ? '&selectedCategory=' + selectedCategory : '')
       };
@@ -2819,7 +2815,7 @@ function getAggregateQuery(
   try {
     //stage one get Matching ulbs
     let match_ulb_with_access = {
-      $match: { access_2223: true },
+      $match: { isActive: true },
     };
     // if state id is provided then it will search ulb with state
     if (stateId !== null && stateId !== undefined) {

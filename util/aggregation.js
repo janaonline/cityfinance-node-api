@@ -6181,13 +6181,13 @@ const getCategoryMatchObject = category => ({
   '2': {
     'population': {
       $gte: 1000000,
-      $lte: 4000000
+      $lt: 4000000
     }
   },
   '3': {
     'population': {
       $gte: 100000,
-      $lte: 1000000
+      $lt: 1000000
     }
   },
   '4': {
@@ -6201,6 +6201,13 @@ const stateWiseHeatMapQuery = ({ state, category }) => {
   let matchObj = {}
   let aggregationQuery = [
     {
+      "$match": {
+        "isActive": true,
+        ...(state && {"state": ObjectId(state)}),
+        ...getCategoryMatchObject(category)
+      }
+    },
+    {
       "$lookup": {
         "from": "fiscalrankings",
         "localField": "_id",
@@ -6208,11 +6215,6 @@ const stateWiseHeatMapQuery = ({ state, category }) => {
         "as": "formData"
       }
     },
-    // {
-    //   "$match": {
-    //     "isActive": { "$eq": true }
-    //   }
-    // },
     {
       "$unwind": {
         "path": "$formData",
@@ -6371,16 +6373,7 @@ const stateWiseHeatMapQuery = ({ state, category }) => {
         }
       }
     }
-  ]
-  if (state || category) {
-    matchObj = {
-      "$match": {
-        ...(state && {"state": ObjectId(state)}),
-        ...getCategoryMatchObject(category)
-      }
-    }
-    aggregationQuery = [matchObj, ...aggregationQuery]
-  }
+  ];
 
   console.log(JSON.stringify(aggregationQuery, 3, 3));
   return aggregationQuery
