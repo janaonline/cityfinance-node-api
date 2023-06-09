@@ -1168,6 +1168,9 @@ function updateResponse(response) {
         performanceAsst: {
           title: "Performance Assessment",
           key : "performanceAsst",
+          info: "",
+          id: "",    
+          name: "On the basis of the total marks obtained by UA, proportionate grants shall be recommended by MOH&UA as per the table given below:",
           tables: getPerformanceAsstTable(),
           dataCount: {},
           uaScore: {
@@ -1192,9 +1195,6 @@ function updateResponse(response) {
 function getPerformanceAsstTable() {
   return [
     {
-      name: "On the basis of the total marks obtained by UA, proportionate grants shall be recommended by MOH&UA as per the table given below:",
-      info: "",
-      id: "",
       tableType: "lineItem-highlited",
       rows: [
         {
