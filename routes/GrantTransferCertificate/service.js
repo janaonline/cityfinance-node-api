@@ -610,7 +610,8 @@ const getManipulatedJson = async(installment,type,design_year,formJson,fieldsToh
             installment,
             type,
             state
-        },{history:0}).lean()
+        },{history:0}).lean() || {}
+        gtcForm.currentFormStatus = gtcForm ? gtcForm.currentFormStatus : 1
         let yearName =  getKeyByValue(years,design_year)
         file = gtcForm && gtcForm.file  ? gtcForm.file : file
         let installmentForm = await GtcInstallmentForm.findOne({
@@ -631,7 +632,7 @@ const getManipulatedJson = async(installment,type,design_year,formJson,fieldsToh
         installmentForm.installment_type = installment_types[installment]
         let flattedForm = await getFlatObj(installmentForm)
         flattedForm['fieldsTohide'] = fieldsTohide
-        flattedForm['disableFields'] = false // to do logic to be implemented
+        flattedForm['disableFields'] = [4].includes(gtcForm?.currentFormStatus) ? true : false // to do logic to be implemented
         let questionJson = await mutuateGetPayload(formJson.data,flattedForm,keysToBeDeleted,"ULB")
         mformObject['language'] = questionJson
         // let questionD = questionJson[0]['question'].find(item => item.shortKey === "basic")['childQuestionData'][0]
@@ -654,7 +655,7 @@ const getJson = async(state,design_year)=>{
             "state":ObjectId(state),
             "isMillionPlus":"Yes"
         },{isMillionPlus : 1})
-        let stateIsMillion = ulb.isMillionPlus === "Yes" ? true : false
+        let stateIsMillion = ulb?.isMillionPlus === "Yes" ? true : false
         let forms = await FormsJson.find({
             "formId":{"$in":[11.1,7]}
         }).lean()
@@ -670,18 +671,11 @@ const getJson = async(state,design_year)=>{
                 question.questionresponse = ""
                 let {questionResponse,file} = await getManipulatedJson(question.installment,question.type,design_year,{...formJson},fieldsTohide,ObjectId(state))                
                 question.questionresponse = JSON.parse(JSON.stringify(questionResponse))
-                // let questionD = question.questionresponse['data'][0]['language'][0]['question'].find(item => item.shortKey === "basic")['childQuestionData'][0]
-                // let questionR = questionD.map(item => item.answer.answer)
-                // console.log("questionR :: ",questionR)
                 question.file = file
             }
             returnableJson.push({...carousel})
             
         }
-        // console.log("000000",returnableJson[0].questions[0].questionresponse.data)
-        // let questionL = returnableJson[0].questions[0].questionresponse.data[0]['language'][0]['question'].find(item => item.shortKey === "basic")['childQuestionData'][0]
-        // let questionm = questionL.map(item => item.answer.answer)
-        // console.log("returnableJson :: ",questionm)
         return {json:[...returnableJson],stateIsMillion:stateIsMillion}
     }
     catch(err){
@@ -765,13 +759,13 @@ async function checkValidationsInstallmentForm(payload,transferDetail){
     }
     try{
         if(payload['totalElectedNmpc'] != undefined && payload['totalNmpc']  != undefined ){
-            if(parseInt(payload['totalElectedNmpc']) > parseInt(payload['totalNmpc'])){
+            if(parseFloat(payload['totalElectedNmpc']) > parseFloat(payload['totalNmpc'])){
                 validator.valid = false
                 validator.errors.push(warnings['electedNmpcToNmpc'])
             }
         }
         if(payload['totalElectedMpc']  != undefined && payload['totalMpc']  != undefined){
-            if(parseInt(payload['totalElectedMpc']) > parseInt(payload['totalMpc']) ){
+            if(parseFloat(payload['totalElectedMpc']) > parseFloat(payload['totalMpc']) ){
                 validator.valid = false
                 validator.errors.push(warnings['electedMpcToMpc'])
             }
