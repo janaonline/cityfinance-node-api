@@ -7,6 +7,7 @@ module.exports.FormNames = {
     annualAcc: "Annual Accounts",
     propTaxOp: "Property Tax Operationalisation",
     slb28: "28 SLBs",
+    indicatorForm: "Indicators for Water Supply and Sanitation"
 
 }
 
@@ -78,7 +79,8 @@ module.exports.FORMIDs = {
     "GTC_STATE": 10,
     "GTC_ULB": 11,
     "waterRej": 12,
-    "actionPlan": 13
+    "actionPlan": 13,
+    "indicatorForm": 14
 
 }
 

@@ -18,7 +18,8 @@ const { calculateSlbMarks } = require('../Scoring/service');
 const { ulb } = require('../../util/userTypes');
 const { columns,csvCols,sortFilterKeys,dashboardColumns } = require("./constants.js")
 const Redis = require("../../service/redis")
-const { AggregationServices } = require("../../routes/CommonActionAPI/service")
+const { AggregationServices } = require("../../routes/CommonActionAPI/service");
+const { YEAR_CONSTANTS , FORMIDs, FormNames} = require('../../util/FormNames');
 const lineItemIndicatorIDs = [
     "6284d6f65da0fa64b423b52a",
     "6284d6f65da0fa64b423b53a",
@@ -402,22 +403,35 @@ module.exports.get2223 = catchAsync(async (req, res) => {
             if (el.hasOwnProperty("xvfcgrantulbforms") && Object.keys(el.xvfcgrantulbforms).length > 0) {
                 if (TEslbdata.length) {
                     TEslbdata.forEach(el2 => {
-                        if (el2.hasOwnProperty("twentyeightslbforms") && Object.keys(el2.twentyeightslbforms).length > 0) {
-                            if (el._id.toString() == el2._id.toString()) {
-                                if (el.xvfcgrantulbforms.waterManagement.status == "APPROVED" && el2.twentyeightslbforms.status == "APPROVED") {
-                                    slbApproved.count += 1;
-                                    slbApproved.ulbs.push({
-                                        ulbName: el.name,
-                                        censusCode: el.censusCode ?? el.sbCode
-                                    })
-                                } else {
-                                    slbPending.count += 1
-                                    slbPending.ulbs.push({
-                                        ulbName: el.name,
-                                        censusCode: el.censusCode ?? el.sbCode
-                                    })
-                                }
+                        if (
+                          el2.hasOwnProperty("twentyeightslbforms") &&
+                          Object.keys(el2.twentyeightslbforms).length > 0
+                        ) {
+                          if (el._id.toString() == el2._id.toString()) {
+                            if (
+                              el.xvfcgrantulbforms.waterManagement.status ==
+                                "APPROVED" &&
+                              el2.twentyeightslbforms.status == "APPROVED"
+                            ) {
+                              slbApproved.count += 1;
+                              slbApproved.ulbs.push({
+                                ulbName: el.name,
+                                censusCode: el.censusCode ?? el.sbCode,
+                              });
+                            } else {
+                              slbPending.count += 1;
+                              slbPending.ulbs.push({
+                                ulbName: el.name,
+                                censusCode: el.censusCode ?? el.sbCode,
+                              });
                             }
+                          }
+                        } else {
+                          slbPending.count += 1;
+                          slbPending.ulbs.push({
+                            ulbName: el.name,
+                            censusCode: el.censusCode ?? el.sbCode,
+                          });
                         }
 
                     })
@@ -690,21 +704,817 @@ module.exports.get2223 = catchAsync(async (req, res) => {
         numeratorGFC += el2.rating.marks * el2.population
         popDataGFC += el2.population
     })
-    responseObj.gfc.score = numeratorGFC / popDataGFC;
+    if(gfcData.length){
+        responseObj.gfc.score = numeratorGFC / popDataGFC;
+    }else{
+        responseObj.gfc.score = 0;
+    }
 
     let numeratorOdf = 0, popDataOdf = 0
     odfData.forEach((el2, index) => {
         numeratorOdf += el2.rating.marks * el2.population
         popDataOdf += el2.population
     })
-    responseObj.odf.score = numeratorOdf / popDataOdf;
+    if(odfData.length){
+        responseObj.odf.score = numeratorOdf / popDataOdf;
+    }else{
+        responseObj.odf.score = 0;
+
+    }
     responseObj.fourSLB.data = slbWeigthed
+
+    if(design_year === YEAR_CONSTANTS['23_24']){
+       responseObj = updateResponse(responseObj)
+    }
     return res.status(200).json({
         success: true,
         data: responseObj
     })
 })
 
+const oldFormat = {
+    "success": true,
+    "data": {
+        "totalUlbs": 3,
+        "fourSLB": {
+            "data": {
+                "_id": "",
+                "ua": "Jamshedpur U.A.",
+                "ulbData": [
+                    "5dd24b8f91344e2300876c9a"
+                ],
+                "total": 1,
+                "waterSuppliedPerDay2021": 97,
+                "waterSuppliedPerDay2122": 97,
+                "waterSuppliedPerDay2223": 99,
+                "waterSuppliedPerDay2324": 100,
+                "waterSuppliedPerDay2425": 105,
+                "reduction2021": 31.9,
+                "reduction2122": 30,
+                "reduction2223": 29,
+                "reduction2324": 27,
+                "reduction2425": 26,
+                "houseHoldCoveredWithSewerage2021": 0,
+                "houseHoldCoveredWithSewerage2122": 0,
+                "houseHoldCoveredWithSewerage2223": 10,
+                "houseHoldCoveredWithSewerage2324": 15,
+                "houseHoldCoveredWithSewerage2425": 20,
+                "houseHoldCoveredPipedSupply2021": 60.2,
+                "houseHoldCoveredPipedSupply2122": 73,
+                "houseHoldCoveredPipedSupply2223": 73,
+                "houseHoldCoveredPipedSupply2324": 74,
+                "houseHoldCoveredPipedSupply2425": 75,
+                "houseHoldCoveredPipedSupply_actual2122": 82.0333240430578,
+                "waterSuppliedPerDay_actual2122": 127.3647186887039,
+                "reduction_actual2122": 15.229934319504846,
+                "houseHoldCoveredWithSewerage_actual2122": 28.730936091668728,
+                "houseHoldCoveredWithSewerage_score": 20,
+                "houseHoldCoveredPipedSupply_score": 20,
+                "waterSuppliedPerDay_score": 10,
+                "reduction_score": 10
+            },
+            "approved": {
+                "count": 1,
+                "ulbs": [
+                    {
+                        "ulbName": "Mango Municipal Corporation",
+                        "censusCode": "801780"
+                    }
+                ]
+            },
+            "pending": {
+                "count": 2,
+                "ulbs": [
+                    {
+                        "ulbName": "Jugsalai Nagar Parishad",
+                        "censusCode": "801782"
+                    },
+                    {
+                        "ulbName": "Jamshedpur Notified Area Council",
+                        "censusCode": "801781"
+                    }
+                ]
+            }
+        },
+        "gfc": {
+            "score": 29.529940104016028,
+            "approved": {
+                "count": 3,
+                "ulbs": [
+                    {
+                        "ulbName": "Jugsalai Nagar Parishad",
+                        "censusCode": "801782"
+                    },
+                    {
+                        "ulbName": "Jamshedpur Notified Area Council",
+                        "censusCode": "801781"
+                    },
+                    {
+                        "ulbName": "Mango Municipal Corporation",
+                        "censusCode": "801780"
+                    }
+                ]
+            },
+            "pending": {
+                "count": 0,
+                "ulbs": []
+            }
+        },
+        "odf": {
+            "score": 10,
+            "approved": {
+                "count": 3,
+                "ulbs": [
+                    {
+                        "ulbName": "Jugsalai Nagar Parishad",
+                        "censusCode": "801782"
+                    },
+                    {
+                        "ulbName": "Jamshedpur Notified Area Council",
+                        "censusCode": "801781"
+                    },
+                    {
+                        "ulbName": "Mango Municipal Corporation",
+                        "censusCode": "801780"
+                    }
+                ]
+            },
+            "pending": {
+                "count": 0,
+                "ulbs": []
+            }
+        }
+    }
+}
+
+const newFormat = {
+  formName: "Indicators for Water Supply and Sanitation",
+  formId: "",
+  status: "",
+  statusId: "",
+  info: "The below tables denotes the aggregate indicators and targets of ULBs in respective UA",
+  previousYrMsg: "",
+  indicator_wss: {
+    title: "Indicators for Water Supply and Sanitation(A)",
+    dataCount: {
+      fourSlbData: {
+        name: "",
+        data: [
+          {
+            name: "Total Number of ULBs in UA",
+            value: "",
+            key: "",
+          },
+          {
+            name: "Approved by State",
+            value: "",
+            key: "",
+          },
+          {
+            name: "Pending for Submission/Approval",
+            value: "",
+            key: "",
+          },
+        ],
+      },
+    },
+
+    tables: [
+      {
+        tableType: "four-slb",
+        rows:[
+            {
+              serviceLevelIndicators: 'Water supplied in litre per capita per day(lpcd)',
+              key:"waterSuppliedPerDay",
+              benchmark: '135 LPCD',
+              achieved2122: '',
+              target2223: '',
+              achieved2223: '',
+              target2122: '',
+              target2324: '',
+              target2425: '',
+              wghtd_score: ''
+            },
+            {
+              serviceLevelIndicators: '% of Non-revenue water',
+              key: "reduction",
+              benchmark: '70 %',
+              achieved2122: '',
+              target2223: '',
+              achieved2223: '',
+              target2122: '',
+              target2324: '',
+              target2425: '',
+              wghtd_score: ''
+      
+            },
+            {
+              serviceLevelIndicators: '% of households covered with sewerage/septage services',
+              key:"houseHoldCoveredWithSewerage",
+              benchmark: '100 %',
+              achieved2122: '',
+              target2223: '',
+              achieved2223: '',
+              target2122: '',
+              target2324: '',
+              target2425: '',
+              wghtd_score: ''
+      
+            },
+            {
+              serviceLevelIndicators: '% of households covered with piped water supply',
+              key: "houseHoldCoveredPipedSupply",
+              benchmark: '100 %',
+              achieved2122: '',
+              target2223: '',
+              achieved2223: '',
+              target2122: '',
+              target2324: '',
+              target2425: '',
+              wghtd_score: ''
+      
+            },
+          ],
+        columns: [
+          {
+            key: "serviceLevelIndicators",
+            display_name: "Service Level Indicators",
+          },
+          {
+            key: "benchmark",
+            display_name: "Benchmark",
+          },
+          {
+            key: "achieved2122",
+            display_name: "Achieved <br> 2021-22",
+          },
+          {
+            key: "target2223",
+            display_name: "Target <br> 2022-23",
+          },
+          {
+            key: "achieved2223",
+            display_name: "Achieved <br> 2022-23",
+          },
+          {
+            key: "target2122",
+            display_name: "Target <br> 2021-22",
+          },
+          {
+            key: "target2324",
+            display_name: "Target <br> 2023-24",
+          },
+          {
+            key: "target2425",
+            display_name: "Target <br> 2024-25",
+          },
+          {
+            key: "wghtd_score",
+            display_name: "Weighted Score",
+          },
+        ],
+      },
+    ],
+    uaScore: {
+      title:
+        "Total UA Score for Water Supply and Sanitation : 60.00(out of maximum 60)",
+      value: "60",
+    },
+  },
+  indicators_swm: {
+    title: "Indicators for Solid Waste Management(B)",
+    dataCount: {
+      odfFormData: {
+        name: "ODF",
+        data: [
+          {
+            name: "Total Number of ULBs in UA",
+            value: "",
+            key: "",
+          },
+          {
+            name: "Approved by State",
+            value: "",
+            key: "",
+          },
+          {
+            name: "Pending for Submission/Approval",
+            value: "",
+            key: "",
+          },
+        ],
+        odfRatings: {
+          name: "ODF Rating",
+          value: "10",
+        },
+      },
+      gfcFormData: {
+        name: "GFC",
+        data: [
+          {
+            name: "Total Number of ULBs in UA",
+            value: "",
+            key: "",
+          },
+          {
+            name: "Approved by State",
+            value: "",
+            key: "",
+          },
+          {
+            name: "Pending for Submission/Approval",
+            value: "",
+            key: "",
+          },
+        ],
+        odfRatings: {
+          name: "GFC Rating",
+          value: "10",
+        },
+      },
+    },
+    uaScore: {
+      title:
+        "Total UA Score for Solid Waste Management : 39.53 (out of maximum 40 marks)",
+      value: "39.4",
+    },
+  },
+  performanceAsst: {
+    title: "Performance Assessment",
+
+    tables: [
+      {
+        name: "On the basis of the total marks obtained by UA, proportionate grants shall be recommended by MOH&UA as per the table given below:",
+        info: "",
+        id: "",
+        tableType: "lineItem-highlited",
+        rows: [
+          {
+            marks: "% of Recommended tied grant",
+            less30: "0%",
+            "30To45": "60%",
+            "45To60": "75%",
+            "60To80": "90%",
+            greater80: "100%",
+          },
+        ],
+        columns: [
+          {
+            key: "marks",
+            display_name: "Marks",
+          },
+          {
+            key: "less30",
+            display_name: "< 30",
+          },
+          {
+            key: "30To45",
+            display_name: "< 30 and <=45",
+          },
+          {
+            key: "45To60",
+            display_name: "> 45 and <=60",
+          },
+          {
+            key: "60To80",
+            display_name: "> 60 and <=80",
+          },
+          {
+            key: "greater80",
+            display_name: "> 80",
+          },
+        ],
+      },
+    ],
+    dataCount: {},
+    uaScore: {
+      title: `On the basis of the total marks obtained by UA,
+         proportionate grants shall be recommended by MOH&UA as per the table given below:`,
+      value: "",
+    },
+  },
+};  
+function updateResponse(response) {
+  try {
+    // let data = createNewFormat(response["fourSLB"]);
+    //   let rows = convertToRows(response);
+    // let columns = getColumnsIndicatorWss();
+    // let value3 = getUAScore(response["fourSLB"]['data']);
+
+    // let odfFormData = getODFFormat(response["odf"]);
+    // let gfcFormData = getGFCFormat(response["gfc"]);
+    // let value = getindicators_swmScore(
+    //   response["odf"]["score"],
+    //   response["gfc"]["score"]
+    // );
+    // let value2 =
+    //   getUAScore(response["fourSLB"]['data']) +
+    //   getindicators_swmScore(
+    //     response["odf"]["score"],
+    //     response["gfc"]["score"]
+    //   );
+    let responseObj = {
+      formName: FormNames['indicatorForm'],
+      formId: FORMIDs['indicatorForm'],
+      status: "",
+      statusId: "",
+      info: "The below tables denotes the aggregate indicators and targets of ULBs in respective UA",
+      previousYrMsg: "",
+      data: {
+        indicators_wss: {
+          title: "Indicators for Water Supply and Sanitation(A)",
+          dataCount: {
+            fourSlbData: {
+              name: "",
+              data: createNewFormat(response["fourSLB"]),
+            },
+          },
+          tables: [
+            {
+              tableType: "four-slb",
+              rows: convertToRows(response),
+              columns: getColumnsIndicatorWss(),
+            },
+          ],
+          uaScore: {
+            title:
+              "Total UA Score for Water Supply and Sanitation : 60.00(out of maximum 60)",
+            value: getUAScore(response["fourSLB"]['data']),
+          },
+        },
+        indicators_swm: {
+          title: "Indicators for Solid Waste Management(B)",
+          dataCount: {
+            odfFormData: getODFFormat(response["odf"]),
+            gfcFormData: getGFCFormat(response["gfc"]),
+          },
+          uaScore: {
+            title:
+              "Total UA Score for Solid Waste Management : 39.53 (out of maximum 40 marks)",
+            value: getindicators_swmScore(
+              response["odf"]["score"],
+              response["gfc"]["score"]
+            ),
+          },
+        },
+        performanceAsst: {
+          title: "Performance Assessment",
+          tables: getPerformanceAsstTable(),
+          dataCount: {},
+          uaScore: {
+            title: `On the basis of the total marks obtained by UA,
+                     proportionate grants shall be recommended by MOH&UA as per the table given below:`,
+            value:
+              getUAScore(response["fourSLB"]['data']) +
+              getindicators_swmScore(
+                response["odf"]["score"],
+                response["gfc"]["score"]
+              ),
+          },
+        },
+      },
+    };
+    return responseObj;
+  } catch (error) {
+    throw `updateResponse:: ${error.message}`;
+  }
+}
+
+function getPerformanceAsstTable() {
+  return [
+    {
+      name: "On the basis of the total marks obtained by UA, proportionate grants shall be recommended by MOH&UA as per the table given below:",
+      info: "",
+      id: "",
+      tableType: "lineItem-highlited",
+      rows: [
+        {
+          marks: "% of Recommended tied grant",
+          less30: "0%",
+          "30To45": "60%",
+          "45To60": "75%",
+          "60To80": "90%",
+          greater80: "100%",
+        },
+      ],
+      columns: getPerformanceAsstColumns(),
+    },
+  ];
+}
+
+function getindicators_swmScore(odfScore, gfcScore) {
+  return Number((odfScore + gfcScore).toFixed(2));
+}
+function getPerformanceAsstColumns() {
+  return [
+    {
+      key: "marks",
+      display_name: "Marks",
+    },
+    {
+      key: "less30",
+      display_name: "< 30",
+    },
+    {
+      key: "30To45",
+      display_name: "< 30 and <=45",
+    },
+    {
+      key: "45To60",
+      display_name: "> 45 and <=60",
+    },
+    {
+      key: "60To80",
+      display_name: "> 60 and <=80",
+    },
+    {
+      key: "greater80",
+      display_name: "> 80",
+    },
+  ];
+}
+
+function getColumnsIndicatorWss() {
+  return [
+    {
+      key: "serviceLevelIndicators",
+      display_name: "Service Level Indicators",
+    },
+    {
+      key: "benchmark",
+      display_name: "Benchmark",
+    },
+    {
+      key: "achieved2122",
+      display_name: "Achieved <br> 2021-22",
+    },
+    {
+      key: "target2223",
+      display_name: "Target <br> 2022-23",
+    },
+    {
+      key: "achieved2223",
+      display_name: "Achieved <br> 2022-23",
+    },
+    {
+      key: "target2122",
+      display_name: "Target <br> 2021-22",
+    },
+    {
+      key: "target2324",
+      display_name: "Target <br> 2023-24",
+    },
+    {
+      key: "target2425",
+      display_name: "Target <br> 2024-25",
+    },
+    {
+      key: "wghtd_score",
+      display_name: "Weighted Score",
+    },
+  ];
+}
+
+/**
+ * The function converts data from an old format into rows with specific indicators and benchmarks.
+ * @param oldFormat - The input data in the old format that needs to be converted to a new format.
+ * @returns an array of objects, where each object represents a row of data for a specific service
+ * level indicator. The objects contain properties such as the name of the indicator, benchmark,
+ * achieved and target values for different years, and a weighted score.
+ */
+function convertToRows(oldFormat) {
+  try {
+    const rows = [];
+    const indicators = [
+      {
+        serviceLevelIndicators:
+          "Water supplied in litre per capita per day(lpcd)",
+        key: "waterSuppliedPerDay",
+        benchmark: "135 LPCD",
+        wghtd_score: "waterSuppliedPerDay_score",
+      },
+      {
+        serviceLevelIndicators: "% of Non-revenue water",
+        key: "reduction",
+        benchmark: "70 %",
+        wghtd_score: "reduction_score",
+      },
+      {
+        serviceLevelIndicators:
+          "% of households covered with sewerage/septage services",
+        key: "houseHoldCoveredWithSewerage",
+        benchmark: "100 %",
+        wghtd_score: "houseHoldCoveredWithSewerage_score",
+      },
+      {
+        serviceLevelIndicators:
+          "% of households covered with piped water supply",
+        key: "houseHoldCoveredPipedSupply",
+        benchmark: "100 %",
+        wghtd_score: "houseHoldCoveredPipedSupply_score",
+      },
+    ];
+
+    /* The above code is iterating through an array called "indicators" and creating a new object
+        called "row" for each element in the array. The properties of the "row" object are being
+        populated with values from another object called "oldFormat.fourSLB.data". The values are
+        being converted to strings using the "String()" method. The "row" objects are being pushed
+        into an array called "rows". */
+    for (let i = 0; i < indicators.length; i++) {
+      const indicator = indicators[i];
+      const row = {
+        serviceLevelIndicators: indicator.serviceLevelIndicators,
+        key: indicator.key,
+        benchmark: indicator.benchmark,
+        achieved2122: String(
+          oldFormat.fourSLB.data[`${indicator.key}_actual2122`]
+        ),
+        target2223: String(oldFormat.fourSLB.data[`${indicator.key}2223`]),
+        achieved2223: "",
+        target2122: String(oldFormat.fourSLB.data[`${indicator.key}2122`]),
+        target2324: String(oldFormat.fourSLB.data[`${indicator.key}2324`]),
+        target2425: String(oldFormat.fourSLB.data[`${indicator.key}2425`]),
+        wghtd_score: String(oldFormat.fourSLB.data[indicator.wghtd_score]),
+      };
+      rows.push(row);
+    }
+
+    return rows;
+  } catch (error) {
+    throw `convertToRows:: ${error.message}`;
+  }
+}
+/**
+ * The function creates a new format for a given input of fourSLB data by categorizing ULBs into "Total
+ * Number of ULBs in UA", "Approved by State", and "Pending for Submission/Approval".
+ * @param fourSLB - It is an object that contains information about ULBs (Urban Local Bodies) that are
+ * approved and pending for submission/approval. It has the following structure:
+ * @returns a new format object that categorizes ULBs (Urban Local Bodies) based on their approval
+ * status. The object has three categories: "Total Number of ULBs in UA", "Approved by State", and
+ * "Pending for Submission/Approval". Each category has an empty value and key, and an array of ULBs
+ * with their names and census codes. The ULBs are added to
+ */
+function createNewFormat(fourSLB) {
+  try {
+    const newFormat = [
+      {
+        name: "Total Number of ULBs in UA",
+        value: "",
+        key: "",
+        ulbs: [],
+      },
+      {
+        name: "Approved by State",
+        value: "",
+        key: "",
+        ulbs: [],
+      },
+      {
+        name: "Pending for Submission/Approval",
+        value: "",
+        key: "",
+        ulbs: [],
+      },
+    ];
+
+    // Add ULBs to "Approved by State" category
+    const approvedULBs = fourSLB.approved.ulbs;
+    for (const ulb of approvedULBs) {
+      newFormat[1].ulbs.push({
+        ulbName: ulb.ulbName,
+        censusCode: ulb.censusCode,
+      });
+    }
+
+    // Add ULBs to "Pending for Submission/Approval" category
+    const pendingULBs = fourSLB.pending.ulbs;
+    for (const ulb of pendingULBs) {
+      newFormat[2].ulbs.push({
+        ulbName: ulb.ulbName,
+        censusCode: ulb.censusCode,
+      });
+    }
+
+    return newFormat;
+  } catch (error) {
+    throw `createNewFormat:: ${error.message}`;
+  }
+}
+
+/**
+ * The function takes an input object and returns a formatted object in the GFC format with specific
+ * data keys and values.
+ * @param input - The input parameter is an object that contains information about the ULBs (Urban
+ * Local Bodies) in a particular area, including the number of ULBs approved by the state, the ULBs
+ * pending for submission/approval, and a score for the overall performance of the ULBs.
+ * @returns The function `getGFCFormat` returns an object in the GFC format, which includes the name of
+ * the format, an array of data items, and a GFC rating value. The data items include the total number
+ * of ULBs in UA, the number of ULBs approved by the state, and the number of ULBs pending for
+ * submission/approval. The values for these data items
+ */
+function getGFCFormat(input) {
+  try {
+    const gfcFormat = {
+      name: "GFC",
+      data: [],
+      gfcRatings: {
+        name: "GFC Rating",
+        value: Number(input.score.toFixed()),
+      },
+    };
+
+    const dataKeys = [
+      "Total Number of ULBs in UA",
+      "Approved by State",
+      "Pending for Submission/Approval",
+    ];
+
+    for (const key of dataKeys) {
+      const dataItem = {
+        name: key,
+        value: "",
+        key: "",
+      };
+      gfcFormat.data.push(dataItem);
+    }
+
+    gfcFormat.data[0].value = input.approved.count.toString();
+    gfcFormat.data[1].value = input.approved.ulbs.length.toString();
+    gfcFormat.data[2].value = input.pending.ulbs.length.toString();
+
+    return gfcFormat;
+  } catch (error) {
+    throw `getGFCFormat:: ${error.message}`;
+  }
+}
+/**
+ * The function takes an input object and returns an ODF format object with specific data keys and
+ * values.
+ * @param input - The input parameter is an object that contains information about the ODF (Open
+ * Defecation Free) status of a region. It has the following properties:
+ * @returns an object with the name "ODF", an array of data, and an object with the name "ODF Rating"
+ * and a value that is a string representation of the input score. The data array contains objects with
+ * the keys "name", "value", and "key", where "name" is a string representing the name of the data,
+ * "value" is a string
+ */
+function getODFFormat(input) {
+  try {
+    const odfFormat = {
+      name: "ODF",
+      data: [],
+      odfRatings: {
+        name: "ODF Rating",
+        value: Number(input.score.toFixed()),
+      },
+    };
+
+    const dataKeys = [
+      "Total Number of ULBs in UA",
+      "Approved by State",
+      "Pending for Submission/Approval",
+    ];
+
+    for (const key of dataKeys) {
+      odfFormat.data.push({
+        name: key,
+        value: "",
+        key: "",
+      });
+    }
+
+    odfFormat.data[0].value = input.approved.count.toString();
+    odfFormat.data[1].value = input.approved.ulbs.length.toString();
+    odfFormat.data[2].value = input.pending.ulbs.length.toString();
+
+    return odfFormat;
+  } catch (error) {
+    throw `getODFFormat:: ${error.message}`;
+  }
+}
+
+/**
+ * The function calculates a score based on four input parameters related to household water and
+ * sanitation.
+ * @param input - The input parameter is an object that contains four properties:
+ * @returns The function `getUAScore` is returning a numerical value which is the sum of four
+ * properties of the `input` object, after rounding the result to two decimal places using the
+ * `toFixed()` method.
+ */
+function getUAScore(input) {
+  try {
+    return Number(
+      (
+        input["houseHoldCoveredWithSewerage_score"] +
+        input["houseHoldCoveredPipedSupply_score"] +
+        input["waterSuppliedPerDay_score"] +
+        input["reduction_score"]
+      ).toFixed(2)
+    );
+  } catch (error) {
+    throw `getUAScore:: ${error.message}`;
+  }
+}
+  
 module.exports.getRelatedUAFile = catchAsync(async (req, res) => {
     let response = {
         "success": false,
