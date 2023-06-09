@@ -68,7 +68,7 @@ let priorTabsForFiscalRanking = {
 async function manageLedgerData(params){
   let messages = []
   try{
-    let {ledgerData,ledgerKeys,responseData,formId} = params
+    let {ledgerData,ledgerKeys,responseData,formId,currentFormStatus} = params
     let formHistory = await FormHistory.findOne({
       recordId:formId
     },{
@@ -87,12 +87,14 @@ async function manageLedgerData(params){
             data: ledgerData,
           })
           if(yearObj.previousYearCodes && yearObj.previousYearCodes.length){
-
             ulbFyAmount = await getPreviousYearValues(yearObj,ledgerData)
           }
-
           if(historicalObject && ulbFyAmount !== historicalObject.value  && ![years['2020-21'],years['2021-22']].includes(yearObj.year) ){
-            messages.push(`Data for field ${question.displayPriority} ${getKeyByValue(years, yearObj.year)} has been updated. kindly revisit those calculations`)
+            let msg = `Data for field ${question.displayPriority} ${getKeyByValue(years, yearObj.year)} has been updated. kindly revisit those calculations`
+            messages.push(msg)
+            yearObj.disableStatus = true
+            yearObj.status = ![statusTracker.IP,statusTracker.SAP].includes(currentFormStatus) ? "REJECTED"  : yearObj.status
+            yearObj.rejectReason = ![statusTracker.IP,statusTracker.SAP].includes(currentFormStatus) ? msg  : yearObj.rejectReason
           }
           yearObj.modelName = ulbFyAmount ? "ULBLedger" : ""
           yearObj.value = ulbFyAmount ? ulbFyAmount : yearObj.value
@@ -1233,7 +1235,8 @@ exports.getView = async function (req, res, next) {
       ledgerData : ulbData,
       ledgerKeys:ledgerKeys,
       responseData:fyDynemic,
-      formId:viewOne._id
+      formId:viewOne._id,
+      currentFormStatus:viewOne.currentFormStatus
     }
     /**
      * This function always get latest data for ledgers
