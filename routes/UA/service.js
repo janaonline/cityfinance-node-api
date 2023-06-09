@@ -991,16 +991,19 @@ const newFormat = {
             name: "Total Number of ULBs in UA",
             value: "",
             key: "",
+            ulbs:[]
           },
           {
             name: "Approved by State",
             value: "",
             key: "",
+            ulbs:[]
           },
           {
             name: "Pending for Submission/Approval",
             value: "",
             key: "",
+            ulbs:[]
           },
         ],
         odfRatings: {
@@ -1015,16 +1018,19 @@ const newFormat = {
             name: "Total Number of ULBs in UA",
             value: "",
             key: "",
+            ulbs:[]
           },
           {
             name: "Approved by State",
             value: "",
             key: "",
+            ulbs:[]
           },
           {
             name: "Pending for Submission/Approval",
             value: "",
             key: "",
+            ulbs:[]
           },
         ],
         odfRatings: {
@@ -1123,6 +1129,7 @@ function updateResponse(response) {
       data: {
         indicators_wss: {
           title: "Indicators for Water Supply and Sanitation(A)",
+          key: 'indicators_wss',
           dataCount: {
             fourSlbData: {
               name: "",
@@ -1144,6 +1151,7 @@ function updateResponse(response) {
         },
         indicators_swm: {
           title: "Indicators for Solid Waste Management(B)",
+          key: 'indicators_swm',
           dataCount: {
             odfFormData: getODFFormat(response["odf"]),
             gfcFormData: getGFCFormat(response["gfc"]),
@@ -1159,6 +1167,7 @@ function updateResponse(response) {
         },
         performanceAsst: {
           title: "Performance Assessment",
+          key : "performanceAsst",
           tables: getPerformanceAsstTable(),
           dataCount: {},
           uaScore: {
@@ -1384,6 +1393,10 @@ function createNewFormat(fourSLB) {
         ulbName: ulb.ulbName,
         censusCode: ulb.censusCode,
       });
+      newFormat[0].ulbs.push({
+        ulbName: ulb.ulbName,
+        censusCode: ulb.censusCode
+      })
     }
 
     // Add ULBs to "Pending for Submission/Approval" category
@@ -1393,6 +1406,10 @@ function createNewFormat(fourSLB) {
         ulbName: ulb.ulbName,
         censusCode: ulb.censusCode,
       });
+      newFormat[0].ulbs.push({
+        ulbName: ulb.ulbName,
+        censusCode: ulb.censusCode
+      })
     }
 
     return newFormat;
@@ -1434,13 +1451,23 @@ function getGFCFormat(input) {
         name: key,
         value: "",
         key: "",
+        ulbs:[]
       };
       gfcFormat.data.push(dataItem);
     }
 
-    gfcFormat.data[0].value = input.approved.count.toString();
-    gfcFormat.data[1].value = input.approved.ulbs.length.toString();
-    gfcFormat.data[2].value = input.pending.ulbs.length.toString();
+    gfcFormat.data[0] = {
+      value:  input.approved.count.toString(),
+      ulbs: [...input.approved.ulbs, ...input.pending.ulbs]
+    }
+    gfcFormat.data[1].value = {
+        value:input.approved.ulbs.length.toString(),
+        ulbs: input.approved.ulbs
+    }
+    gfcFormat.data[2].value = {
+        value: input.pending.ulbs.length.toString(),
+        ulbs: input.pending.ulbs
+    }
 
     return gfcFormat;
   } catch (error) {
@@ -1479,12 +1506,23 @@ function getODFFormat(input) {
         name: key,
         value: "",
         key: "",
+        ulbs:[]
       });
     }
 
-    odfFormat.data[0].value = input.approved.count.toString();
-    odfFormat.data[1].value = input.approved.ulbs.length.toString();
-    odfFormat.data[2].value = input.pending.ulbs.length.toString();
+
+    odfFormat.data[0] = {
+        value:  input.approved.count.toString(),
+        ulbs: [...input.approved.ulbs, ...input.pending.ulbs]
+      }
+      odfFormat.data[1].value = {
+          value:input.approved.ulbs.length.toString(),
+          ulbs: input.approved.ulbs
+      }
+      odfFormat.data[2].value = {
+          value: input.pending.ulbs.length.toString(),
+          ulbs: input.pending.ulbs
+      }
 
     return odfFormat;
   } catch (error) {
