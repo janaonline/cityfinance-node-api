@@ -2730,7 +2730,7 @@ function getAggregateQuery(
   try {
     //stage one get Matching ulbs
     let match_ulb_with_access = {
-      $match: { access_2223: true },
+      $match: { isActive: true },
     };
     // if state id is provided then it will search ulb with state
     if (stateId !== null && stateId !== undefined) {
