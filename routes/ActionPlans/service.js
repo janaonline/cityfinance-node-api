@@ -10,7 +10,7 @@ const Year = require('../../models/Year');
 const {canTakenAction, canTakenActionMaster} = require('../CommonActionAPI/service');
 const {BackendHeaderHost, FrontendHeaderHost} = require('../../util/envUrl')
 const StateMasterForm = require('../../models/StateMasterForm')
-const { YEAR_CONSTANTS, MASTER_STATUS } = require("../../util/FormNames");
+const { YEAR_CONSTANTS, MASTER_STATUS, MASTER_STATUS_ID } = require("../../util/FormNames");
 const { ModelNames } = require("../../util/15thFCstatus");
 const {createAndUpdateFormMasterState} =  require('../../routes/CommonFormSubmissionState/service')
 
@@ -327,7 +327,8 @@ exports.getActionPlans = async (req, res) => {
         };
         Object.assign(data2324, {
           canTakeAction: canTakenActionMaster(params),
-          statusId: data2324['currentFormStatus']
+          statusId: data2324['currentFormStatus'],
+          status: MASTER_STATUS_ID[data2324['currentFormStatus']]
         });
         return Response.OK(res, data2324, "Success");
       }
@@ -340,10 +341,22 @@ exports.getActionPlans = async (req, res) => {
         });
       }
     }
-    if(data2223){
-      Object.assign(data2223, {canTakeAction: canTakenAction(data2223['status'], data2223['actionTakenByRole'], data2223['isDraft'], "STATE",role ), statusId: MASTER_STATUS['Not Started'] })
+    if (data2223) {
+      Object.assign(data2223, {
+        canTakeAction: canTakenAction(
+          data2223["status"],
+          data2223["actionTakenByRole"],
+          data2223["isDraft"],
+          "STATE",
+          role
+        ),
+        statusId: MASTER_STATUS["Not Started"],
+        status: MASTER_STATUS_ID[MASTER_STATUS["Not Started"]],
+        isDraft: null
+      });
+      // data2223.status = null
+      
       return Response.OK(res, data2223, "Success");
-
     }
     // let uaArray2223;
     // let ua2122projectExecute, ua2122sourceFund, ua2122yearOutlay;
