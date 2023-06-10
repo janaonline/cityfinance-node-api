@@ -311,7 +311,6 @@ module.exports.get2223 = catchAsync(async (req, res) => {
 
     let uaData = await UA.findOne({ _id: ObjectId(uaId) }).lean()
     let ulbs = []
-    let slbTotalScore = 0, gfcScore = 0, odfScore = 0;
 
     ulbs = uaData.ulb;
     responseObj.totalUlbs = ulbs.length
@@ -1627,19 +1626,18 @@ function getGFCFormat(input) {
       gfcFormat.data.push(dataItem);
     }
 
-    gfcFormat.data[0] = {
-      value:  input.approved.count.toString(),
-      ulbs: [...input.approved.ulbs, ...input.pending.ulbs]
-    }
-    gfcFormat.data[1] = {
+    Object.assign(gfcFormat.data[0],{
+        value:  input.approved.count.toString(),
+        ulbs: [...input.approved.ulbs, ...input.pending.ulbs]
+      })
+    Object.assign( gfcFormat.data[1], {
         value:input.approved.ulbs.length.toString(),
         ulbs: input.approved.ulbs
-    }
-    gfcFormat.data[2] = {
+    })
+    Object.assign(gfcFormat.data[2] ,{
         value: input.pending.ulbs.length.toString(),
         ulbs: input.pending.ulbs
-    }
-
+    })
     return gfcFormat;
   } catch (error) {
     throw `getGFCFormat:: ${error.message}`;
@@ -1681,20 +1679,18 @@ function getODFFormat(input) {
       });
     }
 
-
-    odfFormat.data[0] = {
+    Object.assign(odfFormat.data[0],{
         value:  input.approved.count.toString(),
         ulbs: [...input.approved.ulbs, ...input.pending.ulbs]
-      }
-      odfFormat.data[1] = {
-          value:input.approved.ulbs.length.toString(),
-          ulbs: input.approved.ulbs
-      }
-      odfFormat.data[2] = {
-          value: input.pending.ulbs.length.toString(),
-          ulbs: input.pending.ulbs
-      }
-
+      })
+    Object.assign( odfFormat.data[1], {
+        value:input.approved.ulbs.length.toString(),
+        ulbs: input.approved.ulbs
+    })
+    Object.assign(odfFormat.data[2] ,{
+        value: input.pending.ulbs.length.toString(),
+        ulbs: input.pending.ulbs
+    })
     return odfFormat;
   } catch (error) {
     throw `getODFFormat:: ${error.message}`;
