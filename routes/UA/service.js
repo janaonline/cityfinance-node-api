@@ -396,7 +396,7 @@ module.exports.get2223 = catchAsync(async (req, res) => {
         },
     ])
     let TEslbdata2 =[];
-    // if(design_year === YEAR_CONSTANTS['23_24']){
+    if(design_year === YEAR_CONSTANTS['23_24']){
         TEslbdata2  = await Ulb.aggregate([
             {
                 $match: {
@@ -437,7 +437,7 @@ module.exports.get2223 = catchAsync(async (req, res) => {
                 },
             },
         ])
-    // }
+    }
     if (slbdata.length) {
         slbdata.forEach(el => {
 
@@ -477,7 +477,7 @@ module.exports.get2223 = catchAsync(async (req, res) => {
 
                     })
                 }
-                // if (design_year === YEAR_CONSTANTS["23_24"]) {
+                if (design_year === YEAR_CONSTANTS["23_24"]) {
                   if (TEslbdata2.length) {
                     TEslbdata2.forEach((el2) => {
                       if (
@@ -516,7 +516,7 @@ module.exports.get2223 = catchAsync(async (req, res) => {
                   slbApproved.ulbs = removeDuplicates(slbApproved.ulbs);
                   slbPending.count = (slbPending.ulbs).length;
                   slbApproved.count = (slbApproved.ulbs).length;
-                // }
+                }
             } else {
                 
                 slbPending.count += 1
@@ -815,10 +815,10 @@ module.exports.get2223 = catchAsync(async (req, res) => {
     }
     responseObj.fourSLB.data = slbWeigthed
 
-    // if(design_year === YEAR_CONSTANTS['23_24']){
+    if(design_year === YEAR_CONSTANTS['23_24']){
        responseObj.fourSLB.data = get2223TwentySlbData(TEslbdata2, slbWeigthed);
        responseObj = updateResponse(responseObj, false)
-    // }
+    }
     return res.status(200).json({
         success: true,
         data: responseObj
