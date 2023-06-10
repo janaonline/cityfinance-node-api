@@ -3950,7 +3950,6 @@ module.exports.createForm = catchAsync(async (req, res) => {
     }
     let masterFormId = FORMIDs['fiscalRanking'];
     let params = { isDraft, role, userId, formId, masterFormId, formBodyStatus: currentFormStatus }
-    await createHistory(params)
     let calculationsTabWise = await calculateAndUpdateStatusForMappers(
       session,
       actions,
@@ -3959,7 +3958,8 @@ module.exports.createForm = catchAsync(async (req, res) => {
       design_year,
       true,
       isDraft
-    );
+      );
+    await createHistory(params)
     if (!isDraft) {
       await FiscalRanking.findOneAndUpdate({
         ulb: ObjectId(req.body.ulbId),
@@ -4301,9 +4301,10 @@ async function createHistory(params) {
     //   body
     // }
     // await saveFormHistory(historyParams)
-    // } 
+    // }
+    console.log("formBodyStatus ::: ",formBodyStatus) 
     if (formBodyStatus === MASTER_STATUS["In Progress"]) {
-
+    
       let currentStatusData = {
         formId: masterFormId,
         recordId: formId,
