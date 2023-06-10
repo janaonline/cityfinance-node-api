@@ -605,6 +605,7 @@ const getManipulatedJson = async(installment,type,design_year,formJson,fieldsToh
             "name":"",
             "url":""
         }
+        console.log("design_year ::: ",design_year)
         let gtcForm = await GrantTransferCertificate.findOne({
             year:ObjectId(design_year),
             installment,
@@ -621,7 +622,6 @@ const getManipulatedJson = async(installment,type,design_year,formJson,fieldsToh
             year:yearName,
             state:ObjectId(state)
         }).populate("transferGrantdetail").lean()
-        
         mformObject._id = installmentForm?._id
         if(installmentForm === null){
             installmentForm = await GtcInstallmentForm().toObject({virtuals:true})
@@ -662,7 +662,7 @@ const getJson = async(state,design_year)=>{
         let basicEmptyStructure = forms.find(item => item.formId === 11.1).data
         let formJson = forms.find(item => item.formId === 7)
         if(!stateIsMillion){
-            stateIsMillion =  basicEmptyStructure.filter( item => item.type != "million_tied")
+            basicEmptyStructure =  basicEmptyStructure.filter( item => item.type != "million")
             fieldsTohide = ["totalMpc","totalElectedMpc"]
         }
         let returnableJson = []
@@ -823,20 +823,20 @@ async function handleInstallmentForm(params){
             gtcForm:ObjectId(gtcFormId) 
         }
         Object.assign(payload,data)
-        console.log("data ::: ",data)
         let installmentValidatior = await checkValidationsInstallmentForm(payload,transferGrantData)
-        if(!installmentValidatior.valid){
-            validator.message = "Not valid"
-            validator.valid = false
-            validator.errors = installmentValidatior.errors
-            return validator
-        }
+        // if(!installmentValidatior.valid){
+        //     validator.message = "Not valid"
+        //     validator.valid = false
+        //     validator.errors = installmentValidatior.errors
+        //     return validator
+        // }
         let gtcInstallment = await GtcInstallmentForm.findOneAndUpdate({
             installment,
             year,
             formType:type,
             state:ObjectId(state)
         },payload,{upsert:true,new:true,runValidators: true})
+        
         let totalTransAmount = transferGrantData.reduce((result,value) => parseFloat(result) + parseFloat(value.transAmount) ,0)
         let totalIntTransfer = transferGrantData.reduce((result,value) => parseFloat(result) + parseFloat(value.intTransfer) ,0)
         transferGrantData = await appendFormId(transferGrantData,gtcInstallment)
@@ -848,7 +848,7 @@ async function handleInstallmentForm(params){
         let insertedData = await TransferGrantDetailForm.bulkWrite(transferGrantData)
         let grantDetailIds = Object.values(insertedData.insertedIds)
         // updateIds and total
-        await GtcInstallmentForm.findOneAndUpdate({
+        let ele = await GtcInstallmentForm.findOneAndUpdate({
             "_id":gtcInstallment._id,
             
         },{
@@ -871,6 +871,7 @@ async function handleInstallmentForm(params){
 async function getOrCreateFormId(params){
     try{
         let {installment,year,type,isDraft,status:currentFormStatus,financialYear,design_year,state,file} = params
+        console.log("design_year ::: ",design_year)
         let gtcForm = await GrantTransferCertificate.findOneAndUpdate({
             installment,
             year:ObjectId(year),
