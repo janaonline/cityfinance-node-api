@@ -77,6 +77,8 @@ async function manageLedgerData(params) {
       "_id": -1
     }).limit(1).lean()
     let formHistoryData = formHistory[0] && formHistory[0].data.length ? formHistory[0]?.data[0]['fiscalMapperData'].filter(item => ledgerKeys.includes(item.type) && item.modelName === "ULBLedger") : []
+    let errYears = []
+    let dps = []
     for (let ledgerKey of ledgerKeys) {
       let question = responseData.financialInformation[ledgerKey]
       if (question.yearData.length) {
@@ -88,20 +90,19 @@ async function manageLedgerData(params) {
             year: yearObj.year.toString(),
             data: ledgerData,
           })
-          console.log("historicalObject :: ", historicalObject)
           if (yearObj.previousYearCodes && yearObj.previousYearCodes.length) {
             ulbFyAmount = await getPreviousYearValues(yearObj, ledgerData)
           }
           if (historicalObject && ulbFyAmount !== historicalObject.value && ![years['2020-21'], years['2021-22']].includes(yearObj.year)) {
-            var msg = `Data for field ${question.displayPriority} ${getKeyByValue(years, yearObj.year)} has been updated. kindly revisit those calculations`
             if (![statusTracker.IP, statusTracker.SAP].includes(currentFormStatus)) {
-              messages.push(msg)
+              errYears.push(getKeyByValue(years, yearObj.year))
+              dps.push(question.displayPriority)
+              // messages.push(msg)
             }
             let calculationFields = Object.entries(responseData.financialInformation).reduce((result, [key, value]) => ({ ...result, ...(question?.calculatedFrom.includes(value.displayPriority)) && { [key]: value } }), {})
             Object.values(calculationFields).forEach((item) => {
               item.yearData.forEach((childItem) => {
                 if (childItem.year.toString() === yearObj.year) {
-                  console.log("[statusTracker.RBP,statusTracker.IP].includes(currentFormStatus) && [questionLevelStatus['1']].includes(childItem.status) && ulbRole === userTypes.ulb", [statusTracker.RBP, statusTracker.IP].includes(currentFormStatus) && [questionLevelStatus['1']].includes(childItem.status) && ulbRole === userTypes.ulb)
                   childItem.readonly = [statusTracker.RBP, statusTracker.IP].includes(currentFormStatus) && [questionLevelStatus['1']].includes(childItem.status) && ulbRole === userTypes.ulb ? false : childItem.readonly
                   childItem.rejectReason = [statusTracker.RBP, statusTracker.IP].includes(currentFormStatus) && [questionLevelStatus['1']].includes(childItem.status) ? msg : childItem.rejectReason
                   childItem.status = [statusTracker.RBP, statusTracker.IP].includes(currentFormStatus) && [questionLevelStatus['1']].includes(childItem.status) ? "REJECTED" : childItem.status
@@ -115,6 +116,10 @@ async function manageLedgerData(params) {
           yearObj.required = false
         }
       }
+    }
+    if (errYears.length) {
+      msg = `Data for fields ${dps.join(",")} and years${errYears.join(",")} has been updated. kindly revisit those calculations`
+      messages.push(msg)
     }
     return {
       responseData,
@@ -1635,6 +1640,13 @@ const getUlbActivities = ({ req, sort, selectedState, selectedCategory, skip, li
       }
     }] : []),
     {
+      "$match": {
+        isActive: true,
+        ...(req.decoded.role == userTypes.state && req.decoded.state && { "state": ObjectId(req.decoded.state) }),
+        ...getCategoryMatchObject(selectedCategory)
+      },
+    },
+    {
       "$lookup": {
         "from": "fiscalrankings",
         "localField": "_id",
@@ -1740,15 +1752,6 @@ const getUlbActivities = ({ req, sort, selectedState, selectedCategory, skip, li
       }
     },
   ];
-  if (req.decoded.role == userTypes.state || selectedCategory) {
-    matchObj = {
-      "$match": {
-        ...(req.decoded.state && { "state": ObjectId(req.decoded.state) }),
-        ...getCategoryMatchObject(selectedCategory)
-      }
-    }
-    query = [matchObj, ...query]
-  }
 
   if (sort) {
     query.push({ $sort: sort });
@@ -1762,12 +1765,12 @@ const getUlbActivities = ({ req, sort, selectedState, selectedCategory, skip, li
 const getPMUActivities = ({ req, sort, selectedState, skip, limit, sortBy, order, filters, filterObj, sortKey, designYear }) => {
 
   const query = [
-    ...(req.decoded.role == userTypes.state ? [{
-      $match: {
+    {
+      "$match": {
         "isActive": true,
-        "state": ObjectId(req.decoded.state)
+        ...(req.decoded.role == userTypes.state && req.decoded.state && { "state": ObjectId(req.decoded.state) }),
       }
-    }] : []),
+    },
     {
       "$lookup": {
         "from": "fiscalrankings",
@@ -1877,28 +1880,33 @@ const getPMUActivities = ({ req, sort, selectedState, skip, limit, sortBy, order
 }
 const getPopulationWiseData = ({ stateId, selectedCategory, columns, sort, skip, limit, sortBy, order, filters, filterObj, sortKey, designYear }) => {
 
+
   const parameters = [
     {
-      condition: '$gt',
-      value: 4000000,
-      label: '4MN+'
+      label: '4MN+',
+      query: [
+        { $gt: ["$population", 4000000] }
+      ],
     },
     {
-      condition: 'range',
-      min: 1000000,
-      max: 4000000,
-      label: '1MN to 4MN'
+      label: '1MN to 4MN',
+      query: [
+        { $lte: ["$population", 4000000] },
+        { $gte: ["$population", 1000000] },
+      ]
     },
     {
-      condition: 'range',
-      min: 100000,
-      max: 1000000,
-      label: '100K to 1MN'
+      label: '100K to 1MN',
+      query: [
+        { $lt: ["$population", 1000000] },
+        { $gte: ["$population", 100000] }
+      ],
     },
     {
-      condition: '$lt',
-      value: 100000,
-      label: '<100K'
+      label: '<100K',
+      query: [
+        { $lt: ["$population", 100000] }
+      ],
     },
   ];
 
@@ -1906,10 +1914,8 @@ const getPopulationWiseData = ({ stateId, selectedCategory, columns, sort, skip,
     {
       "$match": {
         "isActive": true,
-        ...(stateId && {
-          "state": ObjectId(stateId)
-        })
-      }
+        ...(stateId && { state: ObjectId(stateId) }),
+      },
     },
     {
       "$lookup": {
@@ -1947,18 +1953,8 @@ const getPopulationWiseData = ({ stateId, selectedCategory, columns, sort, skip,
                 $sum: {
                   $cond: {
                     if: {
-                      $and: parameter.condition == 'range' ? [
-                        { $gt: ["$population", parameter.min] },
-                        { $lt: ["$population", parameter.max] },
-                        ...(column.key == 'totalUlbs' ? [] : (
-                          column.currentFormStatus == 1 ? [{
-                            "$eq": ["$emptyForms", 1]
-                          }] : [{
-                            [Array.isArray(column.currentFormStatus) ? '$in' : '$eq']: ["$formData.currentFormStatus", column.currentFormStatus]
-                          }]
-                        ))
-                      ] : [
-                        { [parameter.condition]: ["$population", parameter.value] },
+                      $and: [
+                        ...parameter.query,
                         ...(column.key == 'totalUlbs' ? [] : (
                           column.currentFormStatus == 1 ? [{
                             "$eq": ["$emptyForms", 1]
@@ -2177,9 +2173,8 @@ exports.overview = async function (req, res, next) {
     }
     let sortKey = getSortByKeys(sortBy, order)
     let designYear = years['2022-23']
-    let sort = {
-      "stateName": 1
-    };
+
+    let sort;
     if (sortBy) {
       if (Array.isArray(sortBy)) {
         sort = sortBy?.reduce((obj, key, index) => ({ ...obj, [key]: +order[index] }), {});
@@ -2837,7 +2832,7 @@ function getAggregateQuery(
   try {
     //stage one get Matching ulbs
     let match_ulb_with_access = {
-      $match: { access_2223: true },
+      $match: { isActive: true },
     };
     // if state id is provided then it will search ulb with state
     if (stateId !== null && stateId !== undefined) {
