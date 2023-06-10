@@ -68,13 +68,17 @@ let priorTabsForFiscalRanking = {
 async function manageLedgerData(params){
   let messages = []
   try{
-    let {ledgerData,ledgerKeys,responseData,formId,currentFormStatus} = params
-    let formHistory = await FormHistory.findOne({
+    let {ledgerData,ledgerKeys,responseData,formId,currentFormStatus,ulbRole} = params
+    let formHistory = await FormHistory.find({
       recordId:formId
     },{
       data:1
-    }).lean()
-    let formHistoryData = formHistory && formHistory.data.length ? formHistory?.data[0]['fiscalMapperData'].filter(item => ledgerKeys.includes(item.type) && item.modelName === "ULBLedger") : []
+    }).sort({
+      "_id":-1
+    }).limit(1).lean()
+    let formHistoryData = formHistory[0] && formHistory[0].data.length ? formHistory[0]?.data[0]['fiscalMapperData'].filter(item => ledgerKeys.includes(item.type) && item.modelName === "ULBLedger") : []
+    let errYears = []
+    let dps = []
     for(let ledgerKey of ledgerKeys){
       let question = responseData.financialInformation[ledgerKey]
       if(question.yearData.length){
@@ -90,15 +94,16 @@ async function manageLedgerData(params){
             ulbFyAmount = await getPreviousYearValues(yearObj,ledgerData)
           }
           if(historicalObject && ulbFyAmount !== historicalObject.value  && ![years['2020-21'],years['2021-22']].includes(yearObj.year) ){
-            var msg = `Data for field ${question.displayPriority} ${getKeyByValue(years, yearObj.year)} has been updated. kindly revisit those calculations`
             if(![statusTracker.IP,statusTracker.SAP].includes(currentFormStatus)){
-              messages.push(msg)
+              errYears.push(getKeyByValue(years, yearObj.year))
+              dps.push(question.displayPriority)
+              // messages.push(msg)
             }
             let calculationFields =  Object.entries(responseData.financialInformation).reduce((result,[key,value]) => ({...result, ...(question?.calculatedFrom.includes(value.displayPriority)) && {[key]: value}}) ,{})
             Object.values(calculationFields).forEach((item)=>{
               item.yearData.forEach((childItem)=>{
                 if(childItem.year.toString() ===  yearObj.year){
-                  childItem.readonly = [statusTracker.RBP,statusTracker.IP].includes(currentFormStatus) && [questionLevelStatus['1']].includes(childItem.status) ? false  : childItem.readonly
+                  childItem.readonly = [statusTracker.RBP,statusTracker.IP].includes(currentFormStatus) && [questionLevelStatus['1']].includes(childItem.status) && ulbRole === userTypes.ulb ? false  : childItem.readonly
                   childItem.rejectReason = [statusTracker.RBP,statusTracker.IP].includes(currentFormStatus) && [questionLevelStatus['1']].includes(childItem.status) ? msg  : childItem.rejectReason
                   childItem.status = [statusTracker.RBP,statusTracker.IP].includes(currentFormStatus) && [questionLevelStatus['1']].includes(childItem.status)  ? "REJECTED"  :  childItem.status 
                 }
@@ -111,6 +116,10 @@ async function manageLedgerData(params){
           yearObj.required = false
         }
       }
+    }
+    if(errYears.length){
+      msg = `Data for fields ${dps.join(",")} and years${errYears.join(",")} has been updated. kindly revisit those calculations`
+      messages.push(msg)
     }
     return {
       responseData,
@@ -801,6 +810,7 @@ exports.getView = async function (req, res, next) {
   try {
     let condition = {};
     let { role } = req.decoded
+    console.log("role :: ",role)
     if (req.query.ulb && req.query.design_year) {
       condition = {
         ulb: ObjectId(req.query.ulb),
@@ -1148,9 +1158,7 @@ exports.getView = async function (req, res, next) {
               }
             } else {
               if (fyData.length) {
-
                 if (pf.year && pf.type) {
-
                   let singleFydata = fyData.find(
                     (e) =>
                       e.year.toString() == pf.year.toString() &&
@@ -1240,17 +1248,18 @@ exports.getView = async function (req, res, next) {
     let conditionForFeedbacks = {
       fiscal_ranking: data?._id || null,
     };
+    let ulbRole = req.decoded.role
     let params = {
       ledgerData : ulbData,
       ledgerKeys:ledgerKeys,
-      responseData:fyDynemic,
+      responseData:{...fyDynemic},
       formId:viewOne._id,
+      ulbRole:ulbRole,
       currentFormStatus:viewOne.currentFormStatus
     }
     /**
      * This function always get latest data for ledgers
      */
-
     let modifiedLedgerData = fyDynemic
      let {responseData,messages} = await manageLedgerData(params)
      modifiedLedgerData = responseData
@@ -3936,7 +3945,6 @@ module.exports.createForm = catchAsync(async (req, res) => {
     }
     let masterFormId = FORMIDs['fiscalRanking'];
     let params = { isDraft, role, userId, formId, masterFormId, formBodyStatus: currentFormStatus }
-    await createHistory(params)
     let calculationsTabWise = await calculateAndUpdateStatusForMappers(
       session,
       actions,
@@ -3945,7 +3953,8 @@ module.exports.createForm = catchAsync(async (req, res) => {
       design_year,
       true,
       isDraft
-    );
+      );
+    await createHistory(params)
     if (!isDraft) {
       await FiscalRanking.findOneAndUpdate({
         ulb: ObjectId(req.body.ulbId),
@@ -4287,9 +4296,10 @@ async function createHistory(params) {
     //   body
     // }
     // await saveFormHistory(historyParams)
-    // } 
+    // }
+    console.log("formBodyStatus ::: ",formBodyStatus) 
     if (formBodyStatus === MASTER_STATUS["In Progress"]) {
-
+    
       let currentStatusData = {
         formId: masterFormId,
         recordId: formId,
@@ -4309,7 +4319,7 @@ async function createHistory(params) {
       // await session.commitTransaction();
       // return Response.OK(res, {}, "Form Submitted");
     } else if (
-      formBodyStatus === MASTER_STATUS["Verification Not Started"]
+      [MASTER_STATUS["Submission Acknowledged by PMU"],MASTER_STATUS["Verification Not Started"],MASTER_STATUS["Verification In Progress"],MASTER_STATUS["Returned by PMU"]].includes(formBodyStatus)
     ) {
       let data = await FiscalRanking.find({ "_id": formId }).lean()
       let mapperData = await FiscalRankingMapper.find({ "fiscal_ranking": formId })
@@ -4328,7 +4338,7 @@ async function createHistory(params) {
       let currentStatusData = {
         formId: masterFormId,
         recordId: formId,
-        status: MASTER_STATUS["Verification Not Started"],
+        status: formBodyStatus,
         level: FORM_LEVEL["form"],
         shortKey: "form_level",
         rejectReason: "",
