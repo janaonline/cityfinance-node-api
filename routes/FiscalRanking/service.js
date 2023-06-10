@@ -91,7 +91,9 @@ async function manageLedgerData(params){
           }
           if(historicalObject && ulbFyAmount !== historicalObject.value  && ![years['2020-21'],years['2021-22']].includes(yearObj.year) ){
             var msg = `Data for field ${question.displayPriority} ${getKeyByValue(years, yearObj.year)} has been updated. kindly revisit those calculations`
-            messages.push(msg)
+            if(![statusTracker.IP,statusTracker.SAP].includes(currentFormStatus)){
+              messages.push(msg)
+            }
             let calculationFields =  Object.entries(responseData.financialInformation).reduce((result,[key,value]) => ({...result, ...(question?.calculatedFrom.includes(value.displayPriority)) && {[key]: value}}) ,{})
             Object.values(calculationFields).forEach((item)=>{
               item.yearData.forEach((childItem)=>{
@@ -1250,11 +1252,9 @@ exports.getView = async function (req, res, next) {
      */
 
     let modifiedLedgerData = fyDynemic
-    if(![statusTracker.SAP].includes(viewOne.currentFormStatus)){
      let {responseData,messages} = await manageLedgerData(params)
      modifiedLedgerData = responseData
      userMessages = messages
-    }
     Object.assign(conditionForFeedbacks, condition);
     let modifiedTabs = await getModifiedTabsFiscalRanking(
       tabs,
