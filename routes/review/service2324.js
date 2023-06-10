@@ -8,11 +8,11 @@ const Service = require('../../service');
 const STATUS_LIST = require('../../util/newStatusList');
 const { MASTER_STATUS, MASTER_STATUS_ID, YEAR_CONSTANTS } = require('../../util/FormNames');
 const { canTakeActionOrViewOnlyMasterForm } = require('../../routes/CommonActionAPI/service')
+const { createDynamicColumns } = require('./service')
 const List = require('../../util/15thFCstatus')
 const MASTERSTATUS = require('../../models/MasterStatus');
 const { years } = require('../../service/years');
 const mongoose = require('mongoose');
-
 
 module.exports.get = async (req, res) => {
   try {
@@ -128,199 +128,65 @@ module.exports.get = async (req, res) => {
     let folderName = formTab?.folderName;
     let params = { collectionName, formType, isFormOptional, state, design_year, csv, skip, limit, newFilter, dbCollectionName, folderName }
     let query = computeQuery(params);
-    if (getQuery) return res.json({
-      query: query[0]
-    })
 
+    if (getQuery) return res.json({ query: query[0] })
     // if csv - then no skip and limit, else with skip and limit
     let data = formType == "ULB" ? Ulb.aggregate(query[0]).allowDiskUse(true) : State.aggregate(query[0]).allowDiskUse(true)
-    // if(skip === 0){
-    total = formType == "ULB" ? Ulb.aggregate(query[1]).allowDiskUse(true) : State.aggregate(query[1]).allowDiskUse(true);
-    // }
 
-    let allData = await Promise.all([data, total]);
-    data = allData[0]
-    if (!total && skip !== 0) {
-      allData[1] = [{ total: 0 }]
-    }
-    total = allData[1].length ? allData[1][0]['total'] : 0
-
+    let allData = await Promise.all([data]);
+    data = allData[0][0].data
+    total = allData[0][0]['count']?.length ? allData[0][0]['count'][0].total : 0
     let approvedUlbs = await forms2223(collectionName, data);
-    data.forEach(el => {
-      if (!el.formData) {
-        el['formStatus'] = "Not Started";
-        el['cantakeAction'] = false;
-      } else {
-        if (collectionName === CollectionNames.dur || collectionName === CollectionNames['28SLB']) {
-          el['formStatus'] = MASTER_STATUS_ID[el.formData.currentFormStatus]
-          let params = { status: el.formData.currentFormStatus, userRole: loggedInUserRole }
-          el['cantakeAction'] = req.decoded.role === "ADMIN" ? false : canTakeActionOrViewOnlyMasterForm(params);
-          if (!(approvedUlbs.find(ulb => ulb.toString() === el.ulbId.toString())) && loggedInUserRole === "MoHUA") {
-            el['cantakeAction'] = false
-          }
-        } else {
-          let params = { status: el.formData.currentFormStatus, userRole: loggedInUserRole }
-          el['cantakeAction'] = req.decoded.role === "ADMIN" ? false : canTakeActionOrViewOnlyMasterForm(params);
-          el['formStatus'] = MASTER_STATUS_ID[el.formData.currentFormStatus]
-        }
-      }
-    })
-
+    await setCurrentStatus(req, data, approvedUlbs, collectionName, loggedInUserRole);
     // if users clicks on Download Button - the data gets downloaded as per the applied filter
+
     if (csv) {
       let filename = `Review_${formType}-${collectionName}.csv`;
-      // Set approrpiate download headers
+      // Set appropriate download headers
       res.setHeader("Content-disposition", "attachment; filename=" + filename);
       res.writeHead(200, { "Content-Type": "text/csv;charset=utf-8,%EF%BB%BF" });
+      let fixedColumns, dynamicColumns;
       if (formType === 'ULB') {
-        let fixedColumns = `State Name, ULB Name, City Finance Code, Census Code, Population Category, UA, UA Name,`;
-        let dynamicColumns = createDynamicColumns(collectionName);
-        if (collectionName != CollectionNames.annual && collectionName != CollectionNames['28SLB']) {
-          res.write(
-            "\ufeff" +
-            `${fixedColumns.toString()} ${dynamicColumns.toString()} \r\n`
-          );
-          res.flushHeaders();
+        fixedColumns = `State Name, ULB Name, City Finance Code, Census Code, Population Category, UA, UA Name,`;
+        dynamicColumns = createDynamicColumns(collectionName);
+        if (collectionName !== CollectionNames.annual && collectionName !== CollectionNames['28SLB']) {
+          res.write("\ufeff" + `${fixedColumns.toString()} ${dynamicColumns.toString()} \r\n`);
           for (let el of data) {
             let dynamicElementData = await createDynamicElements(collectionName, formType, el);
-            if (el.UA === "null") {
-              el.UA = "NA"
-            }
-            if (el.UA === "NA") {
-              el.isUA = "No";
-            } else if (el.UA !== "NA") {
-              el.isUA = "Yes";
-            }
-            if (!el.censusCode) {
-              el.censusCode = "NA"
-            }
-            res.write(
-              "\ufeff" +
-              el.stateName +
-              "," +
-              el.ulbName +
-              "," +
-              el.ulbCode +
-              "," +
-              el.censusCode +
-              "," +
-              el.populationType +
-              "," +
-              el.isUA +
-              "," +
-              el.UA +
-              "," +
-              dynamicElementData.toString() +
-              "\r\n"
-            )
+            el.UA = el.UA === "null" ? "NA" : el.UA;
+            el.isUA = el.UA === "NA" ? "No" : "Yes";
+            el.censusCode = el.censusCode || "NA";
+            const row = `${el.stateName},${el.ulbName},${el.ulbCode},${el.censusCode},${el.populationType},${el.isUA},${el.UA},${dynamicElementData.toString()}\r\n`;
+            res.write("\ufeff" + row);
           }
-          res.end();
-          return
         } else {
-          res.write(
-            "\ufeff" +
-            `State Name, ULB Name, City Finance Code, Census Code, Population Category, UA, UA Name, ${dynamicColumns.toString()}  \r\n`
-          );
-
-          res.flushHeaders();
+          res.write("\ufeff" + `State Name, ULB Name, City Finance Code, Census Code, Population Category, UA, UA Name, ${dynamicColumns.toString()}\r\n`);
           for (let el of data) {
-
             let [row1, row2] = await createDynamicElements(collectionName, formType, el);
-
-            if (el.UA === "null") {
-              el.UA = "NA"
-            }
-            if (el.UA === "NA") {
-              el.isUA = "No";
-            } else if (el.UA !== "NA") {
-              el.isUA = "Yes";
-            }
-            if (!el.censusCode) {
-              el.censusCode = "NA"
-            }
-
-            res.write(
-              "\ufeff" +
-              el.stateName +
-              "," +
-              el.ulbName +
-              "," +
-              el.ulbCode +
-              "," +
-              el.censusCode +
-              "," +
-              el.populationType +
-              "," +
-              el.isUA +
-              "," +
-              el.UA +
-              "," +
-              row1.toString() +
-
-              "\r\n"
-            )
-            res.write(
-              "\ufeff" +
-              el.stateName +
-              "," +
-              el.ulbName +
-              "," +
-              el.ulbCode +
-              "," +
-              el.censusCode +
-              "," +
-              el.populationType +
-              "," +
-              el.isUA +
-              "," +
-              el.UA +
-              "," +
-              row2.toString() +
-
-              "\r\n"
-            )
-
+            el.UA = el.UA === "null" ? "NA" : el.UA;
+            el.isUA = el.UA === "NA" ? "No" : "Yes";
+            el.censusCode = el.censusCode || "NA";
+            const rowOne = `${el.stateName},${el.ulbName},${el.ulbCode},${el.censusCode},${el.populationType},${el.isUA},${el.UA},${row1.toString()}\r\n`;
+            const rowTwo = `${el.stateName},${el.ulbName},${el.ulbCode},${el.censusCode},${el.populationType},${el.isUA},${el.UA},${row2.toString()}\r\n`;
+            res.write("\ufeff" + rowOne + rowTwo);
           }
-          res.end();
-          return
         }
       } else if (formType === "STATE") {
-        let fixedColumns = `State Name, City Finance Code, Regional Name,`;
-        let dynamicColumns = createDynamicColumns(collectionName)
-        res.write(
-          "\ufeff" +
-          `${fixedColumns.toString()} ${dynamicColumns.toString()} \r\n`
-        );
-
-        res.flushHeaders();
+        fixedColumns = `State Name, City Finance Code, Regional Name,`;
+        dynamicColumns = createDynamicColumns(collectionName);
+        res.write("\ufeff" + `${fixedColumns.toString()} ${dynamicColumns.toString()} \r\n`);
         for (let el of data) {
           let dynamicElementData = await createDynamicElements(collectionName, formType, el);
-
-          res.write(
-            "\ufeff" +
-            el.stateName +
-            "," +
-            el.stateCode +
-            "," +
-            el.regionalName +
-            "," +
-            dynamicElementData.toString() +
-            "\r\n"
-          )
-
+          const row = `${el.stateName},${el.stateCode},${el.regionalName},${dynamicElementData.toString()}\r\n`;
+          res.write("\ufeff" + row);
         }
-        res.end();
-        return
       }
-
-
+      res.end();
+      return;
     }
-    if (
-      collectionName === CollectionNames.state_gtc ||
-      collectionName === CollectionNames.state_grant_alloc
-    ) {
+
+    if (collectionName === CollectionNames.state_gtc || collectionName === CollectionNames.state_grant_alloc) {
       data.forEach((element) => {
-        // element.stateName = element["stateName"];
         let { status, pending } = countStatusData(element, collectionName);
         element.formStatus = status;
         if (pending > 0 && collectionName === CollectionNames.state_gtc) {
@@ -328,15 +194,10 @@ module.exports.get = async (req, res) => {
         }
       });
     }
-
     //  console.log(data)
-    data.forEach(el => {
-      if (el.formData || el.formData === "") delete el.formData;
+    data.forEach(el => { if (el.formData || el.formData === "") delete el.formData })
 
-    })
-    const Query15FC = {
-      $or: [{ type: "15thFC" }, { multi: { $in: ["15thFC"] } }],
-    };
+    const Query15FC = { $or: [{ type: "15thFC" }, { multi: { $in: ["15thFC"] } }] };
     const ulbFormStatus = await MASTERSTATUS.find(Query15FC, { statusId: 1, status: 1 }).lean()
 
     return res.status(200).json({
@@ -349,8 +210,8 @@ module.exports.get = async (req, res) => {
       populationType: formType == 'ULB' ? List.populationType : {},
       title: formType == 'ULB' ? 'Review Grant Application' : 'Review State Forms'
     })
-
   } catch (error) {
+    console.log("error", error)
     return Response.BadRequest(res, {}, error.message);
   }
 }
@@ -358,7 +219,6 @@ module.exports.get = async (req, res) => {
 async function forms2223(collectionName, data) {
   try {
     let ulbsArray = [], approvedUlbs = [];
-    // let ulbsObject = {},
     let forms2223;
     let modelName;
     let designYearField = "design_year";
@@ -367,12 +227,8 @@ async function forms2223(collectionName, data) {
     }
     if (collectionName === CollectionNames.dur || collectionName === CollectionNames['28SLB']) {
       modelName = collectionName === CollectionNames.dur ? List.ModelNames['dur'] : List.ModelNames['twentyEightSlbs']
-      ulbsArray = data.map((el) => {
-        return el.ulbId;
-      });
-      // for (let entity of ulbsArray) {
-      //   ulbsObject[entity] = false;
-      // }
+      ulbsArray = data.map((el) => { return el.ulbId });
+
       if (Array.isArray(ulbsArray) && ulbsArray.length) {
         forms2223 = await mongoose.model(modelName).find(
           {
@@ -389,6 +245,31 @@ async function forms2223(collectionName, data) {
     throw (`forms2223:: ${error.message}`)
   }
 }
+
+const setCurrentStatus = (req, data, approvedUlbs, collectionName, loggedInUserRole) => {
+  data.forEach(el => {
+    if (!el.formData) {
+      el['formStatus'] = "Not Started";
+      el['cantakeAction'] = false;
+    } else {
+      if (collectionName === CollectionNames.dur || collectionName === CollectionNames['28SLB']) {
+        el['formStatus'] = MASTER_STATUS_ID[el.formData.currentFormStatus]
+        let params = { status: el.formData.currentFormStatus, userRole: loggedInUserRole }
+        el['cantakeAction'] = req.decoded.role === "ADMIN" ? false : canTakeActionOrViewOnlyMasterForm(params);
+        if (!(approvedUlbs.find(ulb => ulb.toString() === el.ulbId.toString())) && loggedInUserRole === "MoHUA") {
+          el['cantakeAction'] = false
+        }
+      } else {
+        let params = { status: el.formData.currentFormStatus, userRole: loggedInUserRole }
+        el['cantakeAction'] = req.decoded.role === "ADMIN" ? false : canTakeActionOrViewOnlyMasterForm(params);
+        el['formStatus'] = MASTER_STATUS_ID[el.formData.currentFormStatus]
+      }
+    }
+  })
+  return data;
+}
+
+
 
 function getUlbsApprovedByMoHUA(forms) {
   try {
@@ -413,7 +294,6 @@ const computeQuery = (params) => {
     filledQueryExpression = getFilledQueryExpression(formName, filledQueryExpression, design_year);
     if (formName === CollectionNames.annual) {
       ({ filledProvisionalExpression, filledAuditedExpression } = getFilledQueryExpression(formName, filledQueryExpression, design_year));
-
     }
   }
   let dY = "$design_year";
@@ -422,14 +302,16 @@ const computeQuery = (params) => {
     dY = "$designYear";
     designYearField = "designYear";
   }
+  let condition = {};
+  if (state && state !== 'null') {
+    condition['state'] = ObjectId(state)
+    // condition['censusCode'] = "802484"
+  }
+  condition["access_2223"] = true
   switch (userRole) {
     case "ULB":
       let query = [
-        {
-          $match: {
-            "access_2223": true
-          }
-        },
+        { $match: condition },
         {
           $lookup: {
 
@@ -438,22 +320,11 @@ const computeQuery = (params) => {
             foreignField: "_id",
             as: "state"
           }
-        }, {
-          $unwind: "$state"
-        },
+        }, { $unwind: "$state" },
         {
-          $match: {
-            "state.accessToXVFC": true
-          }
-        }]
-      if (state && state !== 'null') {
-        query.push({
-          $match: {
-            "state._id": ObjectId(state)
-          }
-
-        })
-      }
+          $match: { "state.accessToXVFC": true }
+        }
+      ]
       let query_2 = [
         {
           $lookup: {
@@ -614,29 +485,21 @@ const computeQuery = (params) => {
         },
       ];
       query.push(...query_2)
-      // if (csv) {
-      //   query = createDynamicQuery(formName, query, userRole, csv);
-      // }
+
 
       if (formName == CollectionNames.annual) {
         delete query[query.length - 2]['$project']['filled']
         Object.assign(query[query.length - 2]['$project'], { filled_provisional: filledProvisionalExpression, filled_audited: filledAuditedExpression })
       }
-      let filterApplied = Object.keys(filter).length > 0
-      if (filterApplied) {
-        if (filter.sbCode) {
-          delete Object.assign(filter, { ["censusCode"]: filter["sbCode"] })["sbCode"];
-        }
-        query.push({
-          $match: filter
-        },
-        )
-      }
-      let countQuery = query.slice()
-      countQuery.push({
-        $count: "total"
-      })
 
+      let filterApplied = Object.keys(filter).length > 0
+
+      if (filterApplied) {
+        if (filter.sbCode) { delete Object.assign(filter, { ["censusCode"]: filter["sbCode"] })["sbCode"]; }
+        query.push({ $match: filter })
+      }
+
+      let limitSkip = !csv ? [{ $limit: limit }, { "$skip": skip }] : [{ $match: {} }]
       let paginator = [
         { $addFields: { "dummy": [] } },
         {
@@ -644,20 +507,18 @@ const computeQuery = (params) => {
             path: "$dummy",
             preserveNullAndEmptyArrays: true
           }
-        },
-        {
-          $skip: skip
-        },
-        { $limit: limit }
+        }
       ]
       if (!csv) {
         query.push(...paginator)
       }
-      // query.push( {
-      //   allowDiskUse: true
-      // })
-      return [query, countQuery]
-      break;
+      query.push({
+        $facet: {
+          data: limitSkip,
+          count: [{ $count: "total" }]
+        }
+      })
+      return [query]
     case "STATE":
       let query_s = [
         {
@@ -725,14 +586,12 @@ const computeQuery = (params) => {
           $sort: { formData: -1 },
         },
       ];
-
       query_s = createDynamicQuery(formName, query_s, userRole, csv);
       /* Checking if the user role is STATE and the folder name is IndicatorForWaterSupply. */
       if (folderName === List['FolderName']['IndicatorForWaterSupply']) {
         let startIndex = query_s.findIndex((el) => {
           return el.hasOwnProperty("$lookup");
         })
-
         /* Splicing the query_s string starting at the startIndex. */
         query_s.splice(startIndex);
         query_s.push({
@@ -754,25 +613,20 @@ const computeQuery = (params) => {
         )
       }
       let countQuery_s = query_s.slice()
-      countQuery_s.push({
-        $count: "total"
-      })
-      let paginator_s = [
-        {
-          $skip: skip
-        },
-        { $limit: limit }
-      ]
+      let paginator_s = [{
+        $facet: {
+          data: [{ $limit: limit }, { "$skip": skip }],
+          count: [{ $count: "totalRecords" }]
+        }
+      }]
       if (!csv) {
+        console.log("ssss")
         query_s.push(...paginator_s)
       }
       return [query_s, countQuery_s]
-      break;
-
     default:
       break;
   }
-
 }
 
 function getFilledQueryExpression(formName, filledQueryExpression, design_year) {
@@ -838,4 +692,1516 @@ function getFilledQueryExpression(formName, filledQueryExpression, design_year) 
       break;
   }
   return filledQueryExpression;
+}
+
+function removeEscapesFromAnnual(element) {
+  for (let key in element) {
+    if (element[key] && typeof element[key] === "object") {
+      if (element[key].hasOwnProperty("rejectReason_state")) {
+        element[key]["rejectReason_state"] = removeEscapeChars(element[key]["rejectReason_state"]);
+      }
+      if (element[key].hasOwnProperty("rejectReason_mohua")) {
+        element[key]["rejectReason_mohua"] = removeEscapeChars(element[key]["rejectReason_mohua"]);
+      }
+    }
+  }
+}
+
+function createDynamicQuery(collectionName, oldQuery, userRole, csv) {
+  let query_2 = {};
+  let query_3 = {}, query_4 = {}, query_5 = {};
+  let pipelineIndex;
+  for (let i = 0; i < oldQuery.length; i++) {
+    if (oldQuery[i].hasOwnProperty("$lookup")) {
+      let lookupQuery = oldQuery[i]["$lookup"];
+      if (lookupQuery.hasOwnProperty("pipeline") && lookupQuery.hasOwnProperty("let")) {
+        pipelineIndex = i;
+        break;
+      }
+    }
+  }
+  switch (userRole) {
+    case "ULB":
+      switch (collectionName) {
+        case CollectionNames.odf:
+        case CollectionNames.gfc:
+          query_2 = {
+            $lookup: {
+              from: "ratings",
+              localField: "rating",
+              foreignField: "_id",
+              as: "rating",
+            },
+          };
+          query_3 = { $unwind: { path: "$rating" } };
+
+          oldQuery[pipelineIndex]["$lookup"]["pipeline"].push(query_2);
+          oldQuery[pipelineIndex]["$lookup"]["pipeline"].push(query_3);
+          break;
+
+        case CollectionNames.pfms:
+
+          break;
+        case CollectionNames.annual:
+          query_2 = {
+            $lookup: {
+              "from": "years",
+              "localField": "audited.year",
+              "foreignField": "_id",
+              "as": "auditedYear"
+            },
+          }
+          query_3 = {
+            $unwind: {
+              "path": "$auditedYear"
+            }
+          };
+          query_4 = {
+            $lookup: {
+              "from": "years",
+              "localField": "unAudited.year",
+              "foreignField": "_id",
+              "as": "unAuditedYear"
+            }
+          }
+          query_5 = {
+            $unwind: {
+              "path": "$unAuditedYear"
+            }
+          }
+          oldQuery[pipelineIndex]["$lookup"]["pipeline"].push(query_2);
+          oldQuery[pipelineIndex]["$lookup"]["pipeline"].push(query_3);
+          oldQuery[pipelineIndex]["$lookup"]["pipeline"].push(query_4);
+          oldQuery[pipelineIndex]["$lookup"]["pipeline"].push(query_5);
+          break;
+        case CollectionNames['28SLB']:
+          query_2 = {
+            $lookup: {
+              from: "years",
+              localField: "data.actual.year",
+              foreignField: "_id",
+              as: "actual_year"
+            }
+          }
+          query_3 = {
+            $unwind: "$actual_year"
+          }
+          query_4 = {
+            $lookup: {
+              from: "years",
+              localField: "data.target_1.year",
+              foreignField: "_id",
+              as: "target_1_year"
+            }
+          };
+          query_5 = {
+            $unwind: "$target_1_year"
+          };
+          oldQuery[pipelineIndex]["$lookup"]["pipeline"].push(query_2);
+          oldQuery[pipelineIndex]["$lookup"]["pipeline"].push(query_3);
+          oldQuery[pipelineIndex]["$lookup"]["pipeline"].push(query_4);
+          oldQuery[pipelineIndex]["$lookup"]["pipeline"].push(query_5);
+          break;
+        case CollectionNames.dur:
+          query_2 = {
+            "$lookup": {
+              "from": "years",
+              "localField": "financialYear",
+              "foreignField": "_id",
+              "as": "financialYear"
+            }
+          };
+          query_3 = {
+            "$unwind": "$financialYear"
+          }
+          oldQuery[pipelineIndex]["$lookup"]["pipeline"].push(query_2);
+          oldQuery[pipelineIndex]["$lookup"]["pipeline"].push(query_3);
+          break;
+        default:
+          query = {};
+          break;
+      }
+      break;
+    case "STATE":
+      switch (collectionName) {
+        case CollectionNames.state_gtc:
+          if (!csv) {
+            query_2 = {
+              $group: {
+                _id: "$state",
+                status: { $push: "$formData.status" },
+                stateName: { $first: "$stateName" },
+                state: { $first: "$state" },
+                stateCode: { $first: "$stateCode" },
+              },
+            };
+            oldQuery.push(query_2);
+          }
+          break;
+        case CollectionNames.state_grant_alloc:
+          query_2 = {
+            $group: {
+              _id: "$state",
+              draft: { $push: "$formData.isDraft" },
+              stateName: { $first: "$stateName" },
+              state: { $first: "$state" },
+              stateCode: { $first: "$stateCode" },
+            }
+          }
+          oldQuery.push(query_2);
+          break;
+      }
+  }
+  return oldQuery;
+}
+
+async function createDynamicElements(collectionName, formType, entity) {
+  if (!entity.formData) {
+    entity["filled"] = "No";
+    entity['formData'] = createDynamicObject(collectionName, formType);
+  }
+  let actions = actionTakenByResponse(entity.formData, entity.formStatus, formType, collectionName);
+
+  
+  if (formType === "ULB") {
+
+    if (!entity["formData"]["rejectReason_state"]) {
+      entity["formData"]["rejectReason_state"] = ""
+    }
+
+    if (!entity["formData"]["rejectReason_mohua"]) {
+      entity["formData"]["rejectReason_mohua"] = ""
+    }
+    
+    if (!entity["formData"]["responseFile_state"]) {
+      entity["formData"]["responseFile_state"] = {
+        url: "",
+        name: ""
+      }
+    }
+    if (!entity["formData"]["responseFile_mohua"]) {
+      entity["formData"]["responseFile_mohua"] = {
+        url: "",
+        name: ""
+      }
+    }
+    if (entity?.formData.ulbSubmit) {
+      entity["formData"]["ulbSubmit"] = formatDate(
+        entity?.formData.ulbSubmit
+      );
+    }
+
+
+  } else if (formType === "STATE") {
+    if (!entity["formData"]["rejectReason_mohua"]) {
+      entity["formData"]["rejectReason_mohua"] = "";
+    }
+    if (!entity["formData"]["responseFile_mohua"]) {
+      entity["formData"]["responseFile_mohua"] = {
+        url: "",
+        name: "",
+      };
+    }
+    if (entity?.formData.stateSubmit) {
+      entity["formData"]["stateSubmit"] = formatDate(
+        entity?.formData.stateSubmit
+      );
+    }
+  }
+  if (!entity["formData"]["design_year"]) {
+    entity["formData"]["design_year"] = {
+      year: ""
+    }
+  }
+  if (entity?.formData.createdAt) {
+    entity["formData"]["createdAt"] = formatDate(
+      entity?.formData.createdAt
+    );
+  }
+  if (entity?.formData.modifiedAt) {
+    entity["formData"]["modifiedAt"] = formatDate(
+      entity?.formData.modifiedAt
+    );
+  }
+  let data = entity?.formData;
+  switch (formType) {
+    case "ULB":
+      switch (collectionName) {
+        case CollectionNames.odf:
+        case CollectionNames.gfc:
+          if (entity?.formData.certDate) {
+            entity["formData"]["certDate"] = formatDate(
+              entity?.formData.certDate
+            );
+          }
+          if (!entity?.formData.certDate) {
+            entity.formData.certDate = "";
+          }
+
+          entity = ` ${data?.design_year?.year ?? ""}, ${entity?.formStatus ?? ""
+            }, ${data?.createdAt ?? ""}, ${data?.ulbSubmit ?? ""},${entity.filled ?? ""
+            }, ${data["rating"]["name"] ?? ""},${data["rating"]["marks"] ?? ""
+            },${data["cert"]["url"] ?? ""},${data["cert"]["name"] ?? ""},${data["certDate"] ?? ""
+            },${actions["state_status"] ?? ""},${actions["rejectReason_state"] ?? ""
+            },${actions["mohua_status"] ?? ""},${actions["rejectReason_mohua"] ?? ""
+            },${actions["responseFile_state"]["url"] ?? ""},${actions["responseFile_mohua"]["url"] ?? ""
+            } `;
+          break;
+        case CollectionNames.pfms:
+          data["cert"]["name"] = removeEscapeChars(data["cert"]["name"]);
+          data["otherDocs"]["name"] = removeEscapeChars(data["otherDocs"]["name"]);
+          data["PFMSAccountNumber"] ? data["PFMSAccountNumber"] = `'${data["PFMSAccountNumber"]}'` : ""
+          entity = ` ${data?.design_year?.year ?? ""}, ${entity?.formStatus ?? ""}, ${data?.createdAt ?? ""}, ${data?.ulbSubmit ?? ""},${entity.filled ?? ""}, ${data["linkPFMS"] ?? ""},${data["PFMSAccountNumber"] ?? ""},${data["isUlbLinkedWithPFMS"] ?? ""},${data["cert"]["url"] ?? ""},${data["cert"]["name"] ?? ""},${data["otherDocs"]["url"] ?? ""},${data["otherDocs"]["name"] ?? ""},${actions["state_status"] ?? ""},${actions["rejectReason_state"] ?? ""},${actions["mohua_status"] ?? ""},${actions["rejectReason_mohua"] ?? ""},${actions["responseFile_state"]["url"] ?? ""},${actions["responseFile_mohua"]["url"] ?? ""} `;
+          break;
+        case CollectionNames.annual:
+          let auditedEntity, unAuditedEntity;
+
+          let unAuditedProvisional = data?.unAudited?.provisional_data;
+          let auditedProvisional = data?.audited?.provisional_data;
+
+          let unAuditedStandardized = data?.unAudited?.standardized_data;
+          let auditedStandardized = data?.audited?.standardized_data
+
+          removeEscapesFromAnnual(unAuditedProvisional);
+          removeEscapesFromAnnual(auditedProvisional);
+          removeEscapesFromAnnual(unAuditedStandardized);
+          removeEscapesFromAnnual(auditedStandardized);
+          if (data.audited.rejectReason_mohua) {
+            data.audited.rejectReason_mohua = removeEscapeChars(data?.audited?.rejectReason_mohua);
+          }
+          if (data.audited.rejectReason_state) {
+            data.audited.rejectReason_state = removeEscapeChars(data?.audited?.rejectReason_state)
+          }
+          if (data.unAudited.rejectReason_mohua) {
+            data.unAudited.rejectReason_mohua = removeEscapeChars(data?.unAudited?.rejectReason_mohua);
+          }
+          if (data.audited.rejectReason_state) {
+            data.unAudited.rejectReason_state = removeEscapeChars(data?.unAudited?.rejectReason_state)
+          }
+          /* Destructuring the data from the annualAccountCsvFormat function. */
+          ({ auditedEntity, unAuditedEntity } = annualAccountCsvFormat(data, auditedEntity, entity, auditedProvisional, auditedStandardized, actions, unAuditedEntity, unAuditedProvisional, unAuditedStandardized));
+          return [auditedEntity, unAuditedEntity];
+          break;
+        case CollectionNames.propTaxUlb:
+          data["proof"]["name"] = removeEscapeChars(data["proof"]["name"]);
+          data["rateCard"]["name"] = removeEscapeChars(data["rateCard"]["name"]);
+          data["ptCollection"]["name"] = removeEscapeChars(data["ptCollection"]["name"]);
+
+          entity = ` ${data?.design_year?.year ?? ""}, ${entity?.formStatus ?? ""
+            }, ${data?.createdAt ?? ""}, ${data?.ulbSubmit ?? ""},${entity.filled ?? ""
+            }, ${data["toCollect"] ?? ""},${data["operationalize"] ?? ""},${data["proof"]["url"] ?? ""
+            }, ${data["proof"]["name"] ?? ""},${data["method"] ?? ""},${data["rateCard"]["url"] ?? ""
+            },${data["rateCard"]["name"] ?? ""},${data["collection2019_20"] ?? ""
+            },${data["collection2020_21"] ?? ""},${data["collection2021_22"] ?? ""
+            },${data["target2022_23"] ?? ""},${data["ptCollection"]["url"] ?? ""
+            },${data["ptCollection"]["name"] ?? ""},${actions["state_status"] ?? ""
+            },${actions["rejectReason_state"] ?? ""},${actions["mohua_status"] ?? ""
+            },${actions["rejectReason_mohua"] ?? ""},${actions["responseFile_state"]["url"] ?? ""
+            },${actions["responseFile_mohua"]["url"] ?? ""} `;
+          break;
+        case CollectionNames.dur:
+
+          if (
+            data?.categoryWiseData_wm &&
+            data?.categoryWiseData_wm.length > 0
+          ) {
+            let wm = await convertValue({
+              data: data.categoryWiseData_wm,
+              keyArr: ["grantUtilised", "numberOfProjects", "totalProjectCost"],
+            });
+            data.categoryWiseData_wm = wm;
+          }
+          console.log("su", data);
+          if (
+            data?.categoryWiseData_swm &&
+            data?.categoryWiseData_swm.length > 0
+          ) {
+            let swm = await convertValue({
+              data: data.categoryWiseData_swm,
+              keyArr: ["grantUtilised", "numberOfProjects", "totalProjectCost"],
+            });
+            data.categoryWiseData_swm = swm;
+          }
+          let wmData = data?.categoryWiseData_wm;
+          let swmData = data?.categoryWiseData_swm;
+
+          data.name = removeEscapeChars(data['name']);
+          data.designation = removeEscapeChars(data['designation'])
+          entity = ` ${data?.design_year?.year ?? ""}, ${entity?.formStatus ?? ""
+            }, ${data?.createdAt ?? ""}, ${data?.ulbSubmit ?? ""},${entity.filled ?? ""
+            },${data?.["financialYear"]["year"] ?? ""}, ${(typeof data?.grantPosition?.unUtilizedPrevYr === "number"
+              ? Number(data?.grantPosition?.unUtilizedPrevYr).toFixed(2)
+              : "") ?? ""
+            } ,${(typeof data?.grantPosition?.receivedDuringYr === "number"
+              ? Number(data?.grantPosition?.receivedDuringYr).toFixed(2)
+              : "") ?? ""
+            }, ${(typeof data?.grantPosition?.expDuringYr === "number"
+              ? Number(data?.grantPosition?.expDuringYr).toFixed(2)
+              : "") ?? ""
+            },${data?.grantPosition?.closingBal ? (
+              Number(data?.grantPosition?.closingBal).toFixed(2)
+              ?? "") : ""
+            },${wmData[0]?.["grantUtilised"] ?? ""
+            },${wmData[0]?.["numberOfProjects"] ?? ""
+            }, ${wmData[0]?.["totalProjectCost"] ?? ""
+            },${wmData[1]?.["grantUtilised"] ?? ""
+            },${wmData[1]?.["numberOfProjects"] ?? ""
+            }, ${wmData[1]?.["totalProjectCost"] ?? ""
+            },${wmData[2]?.["grantUtilised"] ?? ""
+            },${wmData[2]?.["numberOfProjects"] ?? ""
+            }, ${wmData[2]?.["totalProjectCost"] ?? ""
+            },${wmData[3]?.["grantUtilised"] ?? ""
+            },${wmData[3]?.["numberOfProjects"] ?? ""
+            }, ${wmData[3]?.["totalProjectCost"] ?? ""
+            },${swmData[0]?.["grantUtilised"] ?? ""
+            },${swmData[0]?.["numberOfProjects"] ?? ""
+            }, ${swmData[0]?.["totalProjectCost"] ?? ""
+            },${swmData[1]?.["grantUtilised"] ?? ""
+            },${swmData[1]?.["numberOfProjects"] ?? ""
+            }, ${swmData[1]?.["totalProjectCost"] ?? ""
+            }, ${data?.name ?? ""
+            }, ${data?.designation ?? ""
+            }, ${actions["state_status"] ?? ""},${actions["rejectReason_state"] ?? ""
+            },${actions["mohua_status"] ?? ""},${actions["rejectReason_mohua"] ?? ""
+            },${actions["responseFile_state"]["url"] ?? ""},${actions["responseFile_mohua"]["url"] ?? ""
+            }`;
+          break;
+
+        case CollectionNames['28SLB']:
+          let i = 0;
+          let actualEntity = `${data?.design_year?.year ?? ""}, ${entity?.formStatus ?? ""
+            }, ${data?.createdAt ?? ""}, ${data?.ulbSubmit ?? ""},${entity.filled ?? ""
+            },Actual,${data["actual_year"]["year"] ?? ""},${data["data"][i++]["actual"]["value"] ?? ""
+            },${data["data"][i++]["actual"]["value"] ?? ""},${data["data"][i++]["actual"]["value"] ?? ""
+            },${data["data"][i++]["actual"]["value"] ?? ""},${data["data"][i++]["actual"]["value"] ?? ""
+            },${data["data"][i++]["actual"]["value"] ?? ""},${data["data"][i++]["actual"]["value"] ?? ""
+            },${data["data"][i++]["actual"]["value"] ?? ""},${data["data"][i++]["actual"]["value"] ?? ""
+            },${data["data"][i++]["actual"]["value"] ?? ""},${data["data"][i++]["actual"]["value"] ?? ""
+            },${data["data"][i++]["actual"]["value"] ?? ""},${data["data"][i++]["actual"]["value"] ?? ""
+            },${data["data"][i++]["actual"]["value"] ?? ""},${data["data"][i++]["actual"]["value"] ?? ""
+            },${data["data"][i++]["actual"]["value"] ?? ""},${data["data"][i++]["actual"]["value"] ?? ""
+            },${data["data"][i++]["actual"]["value"] ?? ""},${data["data"][i++]["actual"]["value"] ?? ""
+            },${data["data"][i++]["actual"]["value"] ?? ""},${data["data"][i++]["actual"]["value"] ?? ""
+            },${data["data"][i++]["actual"]["value"] ?? ""},${data["data"][i++]["actual"]["value"] ?? ""
+            },${data["data"][i++]["actual"]["value"] ?? ""},${data["data"][i++]["actual"]["value"] ?? ""
+            },${data["data"][i++]["actual"]["value"] ?? ""},${data["data"][i++]["actual"]["value"] ?? ""
+            },${data["data"][i++]["actual"]["value"] ?? ""}, ${actions["state_status"] ?? ""
+            },${actions["rejectReason_state"] ?? ""},${actions["mohua_status"] ?? ""
+            },${actions["rejectReason_mohua"] ?? ""},${actions["responseFile_state"]["url"] ?? ""
+            },${actions["responseFile_mohua"]["url"] ?? ""} `;
+          i = 0;
+          let targetEntity = `${data?.design_year?.year ?? ""}, ${entity?.formStatus ?? ""}, ${data?.createdAt ?? ""}, ${data?.ulbSubmit ?? ""},${entity.filled ?? ""},Target,${data['target_1_year']['year'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""}, ${actions["state_status"] ?? ""},${actions["rejectReason_state"] ?? ""},${actions["mohua_status"] ?? ""},${actions["rejectReason_mohua"] ?? ""},${actions["responseFile_state"]["url"] ?? ""},${actions["responseFile_mohua"]["url"] ?? ""} `
+
+          return [actualEntity, targetEntity];
+          break;
+      };
+      break;
+    case "STATE":
+      switch (collectionName) {
+        case CollectionNames.propTaxState:
+
+          if (!data.hasOwnProperty("comManual") || !data["comManual"]["name"]) {
+            data['comManual'] = {
+              name: "",
+              url: ""
+            }
+          }
+          if (
+            !data.hasOwnProperty("extantActDoc") ||
+            !data["extantActDoc"]["name"]
+          ) {
+            data["extantActDoc"] = {
+              name: "",
+              url: "",
+            };
+          }
+          if (!data.hasOwnProperty("stateNotification") || !data["stateNotification"]["name"]) {
+            data['stateNotification'] = {
+              name: "",
+              url: ""
+            }
+          } if (!data.hasOwnProperty("floorRate") || !data["floorRate"]["name"]) {
+            data['floorRate'] = {
+              name: "",
+              url: ""
+            }
+          }
+          data["stateNotification"]["name"] = removeEscapeChars(data["stateNotification"]["name"]);
+          data["comManual"]["name"] = removeEscapeChars(data["comManual"]["name"]);
+          data["floorRate"]["name"] = removeEscapeChars(data["floorRate"]["name"]);
+          data["extantActDoc"]["name"] = removeEscapeChars(data["extantActDoc"]["name"]);
+          entity = `${data?.design_year?.year ?? ""}, ${entity?.formStatus ?? ""
+            }, ${data?.createdAt ?? ""}, ${data?.stateSubmit ?? ""},${entity.filled ?? ""
+            },${data.stateNotification.url ?? ""},${data.stateNotification.name ?? ""
+            },${data.actPage ?? ""}, ${data.floorRate.url ?? ""}, ${data.floorRate.name ?? ""
+            }, ${data.comManual.url ?? ""}, ${data.comManual.name ?? ""},${data.actMunicipal ?? ""},${data.extantAct ?? ""},${data.extantActDoc.url ?? ""},${data.extantActDoc.name ?? ""}, ${actions["mohua_status"] ?? ""
+            },${actions["rejectReason_mohua"] ?? ""}, ${actions["responseFile_mohua"]["url"] ?? ""
+            }`;
+          break;
+        case CollectionNames.sfc:
+          entity = `${data?.design_year?.year ?? ""}, ${entity?.formStatus ?? ""
+            }, ${data?.createdAt ?? ""}, ${data?.stateSubmit ?? ""},${entity.filled ?? ""
+            },${data.constitutedSfc ?? ""},${data.stateNotification.url ?? ""
+            },${data.stateNotification.name ?? ""}, ${actions["mohua_status"] ?? ""
+            },${actions["rejectReason_mohua"] ?? ""}, ${actions["responseFile_mohua"]["url"] ?? ""
+            }`;
+          break;
+        case CollectionNames.state_gtc:
+          entity = `${data?.design_year?.year ?? ""}, ${entity?.formStatus ?? ""}, ${data?.createdAt ?? ""}, ${data?.stateSubmit ?? ""},${entity.filled ?? ""}, ${data.type ?? ""}, ${data.file['url'] ?? ""}, ${data.file['name']}, ${actions["mohua_status"] ?? ""},${actions["rejectReason_mohua"] ?? ""}, ${actions["responseFile_mohua"]["url"] ?? ""} `
+          break;
+
+          if (
+            data?.categoryWiseData_wm &&
+            data?.categoryWiseData_wm.length > 0
+          ) {
+            let wm = await convertValue({
+              data: data.categoryWiseData_wm,
+              keyArr: ["grantUtilised", "numberOfProjects", "totalProjectCost"],
+            });
+            data.categoryWiseData_wm = wm;
+          }
+          console.log("su", data);
+          if (
+            data?.categoryWiseData_swm &&
+            data?.categoryWiseData_swm.length > 0
+          ) {
+            let swm = await convertValue({
+              data: data.categoryWiseData_swm,
+              keyArr: ["grantUtilised", "numberOfProjects", "totalProjectCost"],
+            });
+            data.categoryWiseData_swm = swm;
+          }
+          let wmData = data?.categoryWiseData_wm;
+          let swmData = data?.categoryWiseData_swm;
+
+
+          entity = ` ${data?.design_year?.year ?? ""}, ${entity?.formStatus ?? ""
+            }, ${data?.createdAt ?? ""}, ${data?.ulbSubmit ?? ""},${entity.filled ?? ""
+            },${data?.["financialYear"]["year"] ?? ""}, ${(typeof data?.grantPosition?.unUtilizedPrevYr === "number"
+              ? Number(data?.grantPosition?.unUtilizedPrevYr).toFixed(2)
+              : "") ?? ""
+            } ,${(typeof data?.grantPosition?.receivedDuringYr === "number"
+              ? Number(data?.grantPosition?.receivedDuringYr).toFixed(2)
+              : "") ?? ""
+            }, ${(typeof data?.grantPosition?.expDuringYr === "number"
+              ? Number(data?.grantPosition?.expDuringYr).toFixed(2)
+              : "") ?? ""
+            },${data?.grantPosition?.closingBal ? (
+              Number(data?.grantPosition?.closingBal).toFixed(2)
+              ?? "") : ""
+            },${wmData[0]?.["grantUtilised"] ?? ""
+            },${wmData[0]?.["numberOfProjects"] ?? ""
+            }, ${wmData[0]?.["totalProjectCost"] ?? ""
+            },${wmData[1]?.["grantUtilised"] ?? ""
+            },${wmData[1]?.["numberOfProjects"] ?? ""
+            }, ${wmData[1]?.["totalProjectCost"] ?? ""
+            },${wmData[2]?.["grantUtilised"] ?? ""
+            },${wmData[2]?.["numberOfProjects"] ?? ""
+            }, ${wmData[2]?.["totalProjectCost"] ?? ""
+            },${wmData[3]?.["grantUtilised"] ?? ""
+            },${wmData[3]?.["numberOfProjects"] ?? ""
+            }, ${wmData[3]?.["totalProjectCost"] ?? ""
+            },${swmData[0]?.["grantUtilised"] ?? ""
+            },${swmData[0]?.["numberOfProjects"] ?? ""
+            }, ${swmData[0]?.["totalProjectCost"] ?? ""
+            },${swmData[1]?.["grantUtilised"] ?? ""
+            },${swmData[1]?.["numberOfProjects"] ?? ""
+            }, ${swmData[1]?.["totalProjectCost"] ?? ""
+            }, ${actions["state_status"] ?? ""},${actions["rejectReason_state"] ?? ""
+            },${actions["mohua_status"] ?? ""},${actions["rejectReason_mohua"] ?? ""
+            },${actions["responseFile_state"]["url"] ?? ""},${actions["responseFile_mohua"]["url"] ?? ""
+            }`;
+          break;
+
+        case CollectionNames['28SLB']:
+          let i = 0;
+          let actualEntity = `${data?.design_year?.year ?? ""}, ${entity?.formStatus ?? ""
+            }, ${data?.createdAt ?? ""}, ${data?.ulbSubmit ?? ""},${entity.filled ?? ""
+            },Actual,${data["actual_year"]["year"] ?? ""},${data["data"][i++]["actual"]["value"] ?? ""
+            },${data["data"][i++]["actual"]["value"] ?? ""},${data["data"][i++]["actual"]["value"] ?? ""
+            },${data["data"][i++]["actual"]["value"] ?? ""},${data["data"][i++]["actual"]["value"] ?? ""
+            },${data["data"][i++]["actual"]["value"] ?? ""},${data["data"][i++]["actual"]["value"] ?? ""
+            },${data["data"][i++]["actual"]["value"] ?? ""},${data["data"][i++]["actual"]["value"] ?? ""
+            },${data["data"][i++]["actual"]["value"] ?? ""},${data["data"][i++]["actual"]["value"] ?? ""
+            },${data["data"][i++]["actual"]["value"] ?? ""},${data["data"][i++]["actual"]["value"] ?? ""
+            },${data["data"][i++]["actual"]["value"] ?? ""},${data["data"][i++]["actual"]["value"] ?? ""
+            },${data["data"][i++]["actual"]["value"] ?? ""},${data["data"][i++]["actual"]["value"] ?? ""
+            },${data["data"][i++]["actual"]["value"] ?? ""},${data["data"][i++]["actual"]["value"] ?? ""
+            },${data["data"][i++]["actual"]["value"] ?? ""},${data["data"][i++]["actual"]["value"] ?? ""
+            },${data["data"][i++]["actual"]["value"] ?? ""},${data["data"][i++]["actual"]["value"] ?? ""
+            },${data["data"][i++]["actual"]["value"] ?? ""},${data["data"][i++]["actual"]["value"] ?? ""
+            },${data["data"][i++]["actual"]["value"] ?? ""},${data["data"][i++]["actual"]["value"] ?? ""
+            },${data["data"][i++]["actual"]["value"] ?? ""}, ${actions["state_status"] ?? ""
+            },${actions["rejectReason_state"] ?? ""},${actions["mohua_status"] ?? ""
+            },${actions["rejectReason_mohua"] ?? ""},${actions["responseFile_state"]["url"] ?? ""
+            },${actions["responseFile_mohua"]["url"] ?? ""} `;
+          i = 0;
+          let targetEntity = `${data?.design_year?.year ?? ""}, ${entity?.formStatus ?? ""}, ${data?.createdAt ?? ""}, ${data?.ulbSubmit ?? ""},${entity.filled ?? ""},Target,${data['target_1_year']['year'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""}, ${actions["state_status"] ?? ""},${actions["rejectReason_state"] ?? ""},${actions["mohua_status"] ?? ""},${actions["rejectReason_mohua"] ?? ""},${actions["responseFile_state"]["url"] ?? ""},${actions["responseFile_mohua"]["url"] ?? ""} `
+
+          return [actualEntity, targetEntity];
+          break;
+      };
+      break;
+    case "STATE":
+      switch (collectionName) {
+        case CollectionNames.propTaxState:
+
+          if (!data.hasOwnProperty("comManual") || !data["comManual"]["name"]) {
+            data['comManual'] = {
+              name: "",
+              url: ""
+            }
+          }
+          if (
+            !data.hasOwnProperty("extantActDoc") ||
+            !data["extantActDoc"]["name"]
+          ) {
+            data["extantActDoc"] = {
+              name: "",
+              url: "",
+            };
+          }
+          if (!data.hasOwnProperty("stateNotification") || !data["stateNotification"]["name"]) {
+            data['stateNotification'] = {
+              name: "",
+              url: ""
+            }
+          } if (!data.hasOwnProperty("floorRate") || !data["floorRate"]["name"]) {
+            data['floorRate'] = {
+              name: "",
+              url: ""
+            }
+          }
+          data["stateNotification"]["name"] = removeEscapeChars(data["stateNotification"]["name"]);
+          data["comManual"]["name"] = removeEscapeChars(data["comManual"]["name"]);
+          data["floorRate"]["name"] = removeEscapeChars(data["floorRate"]["name"]);
+          data["extantActDoc"]["name"] = removeEscapeChars(data["extantActDoc"]["name"]);
+          entity = `${data?.design_year?.year ?? ""}, ${entity?.formStatus ?? ""
+            }, ${data?.createdAt ?? ""}, ${data?.stateSubmit ?? ""},${entity.filled ?? ""
+            },${data.stateNotification.url ?? ""},${data.stateNotification.name ?? ""
+            },${data.actPage ?? ""}, ${data.floorRate.url ?? ""}, ${data.floorRate.name ?? ""
+            }, ${data.comManual.url ?? ""}, ${data.comManual.name ?? ""},${data.actMunicipal ?? ""},${data.extantAct ?? ""},${data.extantActDoc.url ?? ""},${data.extantActDoc.name ?? ""}, ${actions["mohua_status"] ?? ""
+            },${actions["rejectReason_mohua"] ?? ""}, ${actions["responseFile_mohua"]["url"] ?? ""
+            }`;
+          break;
+        case CollectionNames.sfc:
+          entity = `${data?.design_year?.year ?? ""}, ${entity?.formStatus ?? ""
+            }, ${data?.createdAt ?? ""}, ${data?.stateSubmit ?? ""},${entity.filled ?? ""
+            },${data.constitutedSfc ?? ""},${data.stateNotification.url ?? ""
+            },${data.stateNotification.name ?? ""}, ${actions["mohua_status"] ?? ""
+            },${actions["rejectReason_mohua"] ?? ""}, ${actions["responseFile_mohua"]["url"] ?? ""
+            }`;
+          break;
+        case CollectionNames.state_gtc:
+          // entity = sortGtcData(entity);
+          entity = `${data?.design_year?.year ?? ""}, ${entity?.formStatus ?? ""}, ${data?.createdAt ?? ""}, ${data?.stateSubmit ?? ""},${entity.filled ?? ""}, ${data.type ?? ""}, ${data.file['url'] ?? ""}, ${data.file['name']}, ${actions["mohua_status"] ?? ""},${actions["rejectReason_mohua"] ?? ""}, ${actions["responseFile_mohua"]["url"] ?? ""} `
+          break;
+
+      }
+  }
+  return entity;
+}
+
+function createDynamicObject(collectionName, formType) {
+  let obj = {};
+  switch (formType) {
+    case "ULB":
+      switch (collectionName) {
+        case CollectionNames.gfc:
+        case CollectionNames.odf:
+          obj = {
+            design_year: {
+              year: "",
+            },
+            createdAt: "",
+            modifiedAt: "",
+            ulbSubmit: "",
+            rating: {
+              name: "",
+              marks: "",
+            },
+            cert: {
+              url: "",
+              name: "",
+            },
+            certDate: "",
+            rejectReason_state: "",
+            rejectReason_mohua: "",
+            responseFile_state: {
+              url: "",
+              name: "",
+            },
+            responseFile_mohua: {
+              url: "",
+              name: "",
+            },
+          };
+          break;
+        case CollectionNames.pfms:
+          obj = {
+            design_year: {
+              year: "",
+            },
+            createdAt: "",
+            modifiedAt: "",
+            ulbSubmit: "",
+            linkPFMS: "",
+            PFMSAccountNumber: "",
+            isUlbLinkedWithPFMS: "",
+            cert: {
+              url: "",
+              name: "",
+            },
+            otherDocs: {
+              url: "",
+              name: "",
+            },
+            rejectReason_state: "",
+            rejectReason_mohua: "",
+            responseFile_state: {
+              url: "",
+              name: "",
+            },
+            responseFile_mohua: {
+              url: "",
+              name: "",
+            },
+          };
+          break;
+        case CollectionNames.annual:
+          obj = {
+            modifiedAt: "",
+            createdAt: "",
+            ulbSubmit: "",
+            design_year: {
+              year: "",
+            },
+            status: "",
+            audited: {
+              submit_annual_accounts: "",
+              submit_standardized_data: "",
+              provisional_data: {
+                bal_sheet: {
+                  rejectReason: "",
+                  rejectReason_state: "",
+                  rejectReason_mohua: "",
+                  responseFile_state: {
+                    url: "",
+                    name: "",
+                  },
+                  responseFile_mohua: {
+                    url: "",
+                    name: ""
+                  },
+                  pdf: {
+                    url: "",
+                    name: "",
+                  },
+                  excel: {
+                    url: "",
+                    name: "",
+                  },
+                  status: "",
+                  responseFile: {
+                    url: "",
+                    name: "",
+                  },
+                },
+                assets: "",
+                f_assets: "",
+                s_grant: "",
+                c_grant: "",
+                bal_sheet_schedules: {
+                  rejectReason_state: "",
+                  rejectReason_mohua: "",
+                  responseFile_state: {
+                    url: "",
+                    name: "",
+                  },
+                  responseFile_mohua: {
+                    url: "",
+                    name: ""
+                  },
+                  rejectReason: "",
+                  pdf: {
+                    url: "",
+                    name: "",
+                  },
+                  excel: {
+                    url: "",
+                    name: "",
+                  },
+                  status: "",
+                  responseFile: {
+                    url: "",
+                    name: "",
+                  },
+                },
+                inc_exp: {
+                  rejectReason: "",
+                  rejectReason_state: "",
+                  rejectReason_mohua: "",
+                  responseFile_state: {
+                    url: "",
+                    name: "",
+                  },
+                  responseFile_mohua: {
+                    url: "",
+                    name: ""
+                  },
+                  pdf: {
+                    url: "",
+                    name: "",
+                  },
+                  excel: {
+                    url: "",
+                    name: "",
+                  },
+                  status: "",
+                  responseFile: {
+                    url: "",
+                    name: "",
+                  },
+                },
+                revenue: "",
+                expense: "",
+                inc_exp_schedules: {
+                  rejectReason: "",
+                  rejectReason_state: "",
+                  rejectReason_mohua: "",
+                  responseFile_state: {
+                    url: "",
+                    name: "",
+                  },
+                  responseFile_mohua: {
+                    url: "",
+                    name: ""
+                  },
+                  pdf: {
+                    url: "",
+                    name: "",
+                  },
+                  excel: {
+                    url: "",
+                    name: "",
+                  },
+                  status: "",
+                  responseFile: {
+                    url: "",
+                    name: "",
+                  },
+                },
+                cash_flow: {
+                  rejectReason: "",
+                  rejectReason_state: "",
+                  rejectReason_mohua: "",
+                  responseFile_state: {
+                    url: "",
+                    name: "",
+                  },
+                  responseFile_mohua: {
+                    url: "",
+                    name: ""
+                  },
+                  pdf: {
+                    url: "",
+                    name: "",
+                  },
+                  excel: {
+                    url: "",
+                    name: "",
+                  },
+                  status: "",
+                  responseFile: {
+                    url: "",
+                    name: "",
+                  },
+                },
+                auditor_report: {
+                  rejectReason: "",
+                  rejectReason_state: "",
+                  rejectReason_mohua: "",
+                  responseFile_state: {
+                    url: "",
+                    name: "",
+                  },
+                  responseFile_mohua: {
+                    url: "",
+                    name: ""
+                  },
+                  pdf: {
+                    url: "",
+                    name: "",
+                  },
+                  status: "",
+                  responseFile: {
+                    url: "",
+                    name: "",
+                  },
+                },
+              },
+              standardized_data: {
+                declaration: "",
+                excel: {
+                  url: "",
+                  name: "",
+                },
+              },
+              audit_status: "",
+              year: "",
+              rejectReason_state: "",
+              rejectReason_mohua: "",
+              responseFile_state: {
+                url: "",
+                name: "",
+              },
+              responseFile_mohua: {
+                url: "",
+                name: ""
+              },
+              rejectReason: "",
+              responseFile: {
+                url: "",
+                name: ""
+              }
+            },
+            unAudited: {
+              rejectReason: "",
+              responseFile: {
+                url: "",
+                name: ""
+              },
+              rejectReason_state: "",
+              rejectReason_mohua: "",
+              responseFile_state: {
+                url: "",
+                name: "",
+              },
+              responseFile_mohua: {
+                url: "",
+                name: ""
+              },
+              submit_annual_accounts: "",
+              submit_standardized_data: "",
+              provisional_data: {
+                bal_sheet: {
+                  rejectReason: "",
+                  rejectReason_state: "",
+                  rejectReason_mohua: "",
+                  responseFile_state: {
+                    url: "",
+                    name: "",
+                  },
+                  responseFile_mohua: {
+                    url: "",
+                    name: ""
+                  },
+                  pdf: {
+                    url: "",
+                    name: "",
+                  },
+                  excel: {
+                    url: "",
+                    name: "",
+                  },
+                  status: "",
+                  responseFile: {
+                    url: "",
+                    name: "",
+                  },
+                },
+                assets: "",
+                f_assets: "",
+                s_grant: "",
+                c_grant: "",
+                bal_sheet_schedules: {
+                  rejectReason: "",
+                  rejectReason_state: "",
+                  rejectReason_mohua: "",
+                  responseFile_state: {
+                    url: "",
+                    name: "",
+                  },
+                  responseFile_mohua: {
+                    url: "",
+                    name: ""
+                  },
+                  pdf: {
+                    url: "",
+                    name: "",
+                  },
+                  excel: {
+                    url: "",
+                    name: "",
+                  },
+                  status: "",
+                  responseFile: {
+                    url: "",
+                    name: "",
+                  },
+                },
+                inc_exp: {
+                  rejectReason: "",
+                  rejectReason_state: "",
+                  rejectReason_mohua: "",
+                  responseFile_state: {
+                    url: "",
+                    name: "",
+                  },
+                  responseFile_mohua: {
+                    url: "",
+                    name: ""
+                  },
+                  pdf: {
+                    url: "",
+                    name: "",
+                  },
+                  excel: {
+                    url: "",
+                    name: "",
+                  },
+                  status: "",
+                  responseFile: {
+                    url: "",
+                    name: "",
+                  },
+                },
+                revenue: "",
+                expense: "",
+                inc_exp_schedules: {
+                  rejectReason_state: "",
+                  rejectReason_mohua: "",
+                  responseFile_state: {
+                    url: "",
+                    name: "",
+                  },
+                  responseFile_mohua: {
+                    url: "",
+                    name: ""
+                  },
+                  rejectReason: "",
+                  pdf: {
+                    url: "",
+                    name: "",
+                  },
+                  excel: {
+                    url: "",
+                    name: "",
+                  },
+                  status: "",
+                  responseFile: {
+                    url: "",
+                    name: "",
+                  },
+                },
+                cash_flow: {
+                  rejectReason: "",
+                  rejectReason_state: "",
+                  rejectReason_mohua: "",
+                  responseFile_state: {
+                    url: "",
+                    name: "",
+                  },
+                  responseFile_mohua: {
+                    url: "",
+                    name: ""
+                  },
+                  pdf: {
+                    url: "",
+                    name: "",
+                  },
+                  excel: {
+                    url: "",
+                    name: "",
+                  },
+                  status: "",
+                  responseFile: {
+                    url: "",
+                    name: "",
+                  },
+                },
+              },
+              standardized_data: {
+                declaration: "",
+                excel: {
+                  url: "",
+                  name: "",
+                },
+              },
+              audit_status: "",
+              year: "",
+            },
+            actionTakenBy: "",
+            filled_provisional: "",
+            filled_audited: "",
+          };
+          break;
+        case CollectionNames.propTaxUlb:
+          obj = {
+            rejectReason_state: "",
+            rejectReason_mohua: "",
+            isDraft: false,
+            history: [],
+            ulb: "",
+            design_year: "",
+            toCollect: "",
+            operationalize: "",
+            method: "",
+            other: "",
+            collection2019_20: "",
+            collection2020_21: "",
+            collection2021_22: "",
+            target2022_23: null,
+            proof: {
+              url: "",
+              name: "",
+            },
+            rateCard: {
+              url: "",
+              name: "",
+            },
+            ptCollection: {
+              url: "",
+              name: "",
+            },
+            actionTakenBy: "",
+            actionTakenByRole: "",
+            createdAt: "",
+            modifiedAt: "",
+            ulbSubmit: "",
+            status: "",
+          };
+          break;
+        case CollectionNames.dur:
+          obj = {
+            _id: "",
+            designYear: "",
+            financialYear: "",
+            ulb: "",
+            actionTakenBy: "",
+            actionTakenByRole: "",
+            categoryWiseData_swm: [
+              {
+                category_name: "",
+                grantUtilised: "",
+                numberOfProjects: "",
+                totalProjectCost: "",
+                _id: "",
+              },
+              {
+                category_name: "",
+                grantUtilised: "",
+                numberOfProjects: "",
+                totalProjectCost: "",
+                _id: "",
+              },
+            ],
+            categoryWiseData_wm: [
+              {
+                category_name: "",
+                grantUtilised: "",
+                numberOfProjects: "",
+                totalProjectCost: "",
+                _id: "",
+              },
+              {
+                category_name: "",
+                grantUtilised: "",
+                numberOfProjects: "",
+                totalProjectCost: "",
+                _id: "",
+              },
+              {
+                category_name: "",
+                grantUtilised: "",
+                numberOfProjects: "",
+                totalProjectCost: "",
+                _id: "",
+              },
+              {
+                category_name: "",
+                grantUtilised: "",
+                numberOfProjects: "",
+                totalProjectCost: "",
+                _id: "",
+              },
+            ],
+            createdAt: "",
+            declaration: "",
+            designation: "",
+            grantPosition: {
+              unUtilizedPrevYr: "",
+              receivedDuringYr: "",
+              expDuringYr: "",
+              closingBal: "",
+            },
+            grantType: "",
+            history: [],
+            isActive: "",
+            isDraft: "",
+            modifiedAt: "",
+            name: "",
+            projects: [
+              {
+                cost: "",
+                expenditure: "",
+                modifiedAt: "",
+                createdAt: "",
+                isActive: "",
+                _id: "",
+                category: "",
+                name: "",
+                location: {
+                  lat: "",
+                  long: "",
+                },
+              },
+            ],
+            rejectReason: "",
+            rejectReason_mohua: "",
+            rejectReason_state: "",
+            status: "",
+            responseFile_state: {
+              url: "",
+              name: "",
+            },
+            design_year: {
+              _id: "",
+              year: "",
+              isActive: "",
+            },
+          };
+          break;
+        case CollectionNames["28SLB"]:
+          obj = {
+            _id: "",
+            population: "",
+            createdAt: "",
+            modifiedAt: "",
+            ulbSubmit: "",
+            isDraft: "",
+            rejectReason: "",
+            history: [],
+            data: [],
+            design_year: "",
+            ulb: "",
+            actionTakenBy: "",
+            actionTakenByRole: "",
+            status: "",
+            actual_year: {
+              _id: "",
+              year: "",
+              isActive: "",
+            },
+            target_1_year: {
+              _id: "",
+              year: "",
+              isActive: "",
+            },
+          };
+          let quesObj = {
+            question: "",
+            type: "",
+            unit: "",
+            range: "",
+            actualDisable: "",
+            targetDisable: "",
+            _id: "",
+            actual: {
+              year: "",
+              value: "",
+            },
+            target_1: {
+              year: "",
+              value: "",
+            },
+            indicatorLineItem: "",
+          };
+          for (let i = 0; i < 28; i++) {
+            //adding question object to data array
+            obj["data"].push(quesObj);
+          }
+          break;
+      }
+      break;
+
+    case "STATE":
+      switch (collectionName) {
+        case CollectionNames["propTaxState"]:
+          obj = {
+            actPage: "",
+            isDraft: "",
+            rejectReason: "",
+            history: [],
+            state: "",
+            design_year: "",
+            floorRate: {
+              url: "",
+              name: "",
+            },
+            stateNotification: {
+              url: "",
+              name: "",
+            },
+            actionTakenBy: "",
+            actionTakenByRole: "",
+            createdAt: "",
+            modifiedAt: "",
+            __v: "",
+            comManual: {
+              url: "",
+              name: "",
+            },
+            status: "",
+            rejectReason_mohua: "",
+            responseFile_mohua: {
+              url: "",
+              name: "",
+            },
+          };
+          break;
+        case CollectionNames["sfc"]:
+          obj = {
+            _id: "",
+            isDraft: "",
+            rejectReason: "",
+            history: [],
+            constitutedSfc: "",
+            state: "",
+            design_year: "",
+            actionTakenBy: "",
+            actionTakenByRole: "",
+            createdAt: "",
+            modifiedAt: "",
+            __v: "",
+            stateNotification: {
+              url: "",
+              name: "",
+            },
+            status: "",
+            rejectReason_mohua: "",
+            responseFile_mohua: {
+              url: "",
+              name: "",
+            },
+          };
+          break;
+        case CollectionNames['state_gtc']:
+          obj = {
+            _id: "",
+            isDraft: "",
+            rejectReason: "",
+            history: [],
+            installment: "",
+            year: "",
+            type: "",
+            file: {
+              name: "",
+              url: "",
+            },
+            status: "",
+            state: "",
+            design_year: "",
+            actionTakenBy: "",
+            actionTakenByRole: "",
+            createdAt: "",
+            modifiedAt: "",
+            __v: "",
+            rejectReason_mohua: "",
+            responseFile_mohua: {
+              url: "",
+              name: "",
+            },
+          };
+          break;
+      }
+      break;
+  }
+  return obj;
+}
+
+
+
+
+
+function actionTakenByResponse(entity, formStatus, formType, collectionName) {
+  let obj = {
+    state_status: "",
+    mohua_status: "",
+    rejectReason_state: "",
+    rejectReason_mohua: "",
+    responseFile_state: {
+      url: "",
+      name: ""
+    },
+    responseFile_mohua: {
+      url: "",
+      name: ""
+    }
+  };
+
+  if (collectionName === CollectionNames['annual']) {
+    obj.auditedResponseFile_state = {
+      url: "",
+      name: ""
+    };
+    obj.unAuditedResponseFile_state = {
+      url: "",
+      name: ""
+    };
+    obj.auditedResponseFile_mohua = {
+      url: "",
+      name: ""
+    };
+    obj.unAuditedResponseFile_mohua = {
+      url: "",
+      name: ""
+    };
+  }
+  if (formType === "STATE") {
+    obj = {
+      mohua_status: "",
+      rejectReason_mohua: "",
+      responseFile_mohua: {
+        url: "",
+        name: "",
+      },
+    };
+    if (
+      formStatus === STATUS_LIST.In_Progress ||
+      formStatus === STATUS_LIST.Under_Review_By_MoHUA ||
+      formStatus === STATUS_LIST.Not_Started
+    ) {
+      return obj;
+    }
+    if (
+      formStatus === STATUS_LIST.Approved_By_MoHUA ||
+      formStatus === STATUS_LIST.Rejected_By_MoHUA
+    ) {
+      if (entity["status"]) {
+        obj.mohua_status = entity["status"];
+      }
+      if (entity["rejectReason_mohua"]) {
+        obj.rejectReason_mohua = removeEscapeChars(entity["rejectReason_mohua"]);
+      }
+      if (entity["responseFile_mohua"]) {
+        entity["responseFile_mohua"]["name"] = removeEscapeChars(entity["responseFile_mohua"]["name"])
+        obj.responseFile_mohua = entity["responseFile_mohua"];
+      }
+      return obj;
+    }
+
+  }
+
+  if (formStatus === STATUS_LIST.In_Progress || formStatus === STATUS_LIST.Under_Review_By_State ||
+    formStatus === STATUS_LIST.Not_Started
+  ) {
+    return obj;
+  }
+  
+  let stateFlag = true;
+  let mohuaFlag = true;
+  if (
+    formStatus === STATUS_LIST.Under_Review_By_MoHUA ||
+    formStatus === STATUS_LIST.Rejected_By_State
+  ) {
+    if (entity["rejectReason_state"]) {
+      obj.rejectReason_state = removeEscapeChars(entity["rejectReason_state"]);
+    }
+    if (entity["responseFile_state"]) {
+      entity["responseFile_state"]["name"] = removeEscapeChars(entity["responseFile_state"]["name"])
+      obj.responseFile_state = entity["responseFile_state"];
+    }
+    if (entity["status"]) {
+      obj.state_status = entity["status"];
+    }
+    if (collectionName === CollectionNames['annual']) {
+      if (entity.audited.responseFile_state) {
+        entity.audited.responseFile_state.name = removeEscapeChars(entity.audited.responseFile_state?.name)
+        obj.auditedResponseFile_state = entity.audited.responseFile_state;
+      }
+      if (entity.unAudited.responseFile_state) {
+        entity.unAudited.responseFile_state.name = removeEscapeChars(entity.unAudited.responseFile_state?.name)
+        obj.unAuditedResponseFile_state = entity.unAudited.responseFile_state;
+      }
+    }
+    return obj;
+  }
+
+
+  if (
+    formStatus === STATUS_LIST.Approved_By_MoHUA ||
+    formStatus === STATUS_LIST.Rejected_By_MoHUA
+  ) {
+    if (entity["rejectReason_mohua"]) {
+      obj.rejectReason_mohua = removeEscapeChars(entity["rejectReason_mohua"]);
+    }
+    if (entity["responseFile_mohua"]) {
+      entity["responseFile_mohua"]["name"] = removeEscapeChars(entity["responseFile_mohua"]["name"])
+      obj.responseFile_mohua = entity["responseFile_mohua"];
+    }
+    if (entity["status"]) {
+      obj.mohua_status = entity["status"];
+    }
+    if (collectionName === CollectionNames['annual']) {
+      if (entity.audited.responseFile_mohua) {
+        entity.audited.responseFile_mohua.name = removeEscapeChars(entity.audited.responseFile_mohua?.name)
+        obj.auditedResponseFile_mohua = entity.audited.responseFile_mohua;
+      }
+      if (entity.unAudited.responseFile_mohua) {
+        entity.unAudited.responseFile_mohua.name = removeEscapeChars(entity.unAudited.responseFile_mohua?.name)
+        obj.unAuditedResponseFile_mohua = entity.unAudited.responseFile_mohua;
+      }
+    }
+    mohuaFlag = false;
+  }
+
+  let histories = entity["history"];
+  if (!histories) {
+    return obj;
+  }
+
+  for (let i = histories.length - 1; i >= 0; i--) { // finding state response
+    let history = histories[i];
+    if (!stateFlag && !mohuaFlag) break;
+    if (history["actionTakenByRole"] === "STATE" && stateFlag) {
+      if (history["rejectReason_state"]) {
+        obj.rejectReason_state = removeEscapeChars(history["rejectReason_state"]);
+      }
+      if (history["responseFile_state"]) {
+        entity["responseFile_state"]["name"] = removeEscapeChars(entity["responseFile_state"]["name"])
+        obj.responseFile_state = history["responseFile_state"];
+      }
+      if (history["status"]) {
+        obj.state_status = history["status"];
+      }
+
+      if (collectionName === CollectionNames['annual']) {
+        if (history.audited.responseFile_state) {
+          history["audited"]["responseFile_state"]["name"] = removeEscapeChars(history["audited"]["responseFile_state"]["name"])
+          obj.auditedResponseFile_state = history.audited.responseFile_state;
+        }
+        if (history.unAudited.responseFile_state) {
+          history["unAudited"]["responseFile_state"]["name"] = removeEscapeChars(history["unAudited"]["responseFile_state"]["name"])
+          obj.unAuditedResponseFile_state = history.unAudited.responseFile_state;
+        }
+      }
+      stateFlag = false;
+    }
+  }
+  return obj;
+}
+
+function removeEscapeChars(entity) {
+  return !entity ? entity : entity.replace(/(\n|,)/gm, " ");
+}
+function formatDate(date) {
+  return [
+    padTo2Digits(date.getDate()),
+    padTo2Digits(date.getMonth() + 1),
+    date.getFullYear(),
+  ].join('/');
+}
+function padTo2Digits(num) {
+  return num.toString().padStart(2, '0');
 }
