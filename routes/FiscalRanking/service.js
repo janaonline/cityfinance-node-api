@@ -69,13 +69,15 @@ async function manageLedgerData(params) {
   let messages = []
   try{
     let {ledgerData,ledgerKeys,responseData,formId,currentFormStatus} = params
-    let formHistory = await FormHistory.findOne({
-      recordId: formId
-    }, {
-      data: 1
-    }).lean()
-    let formHistoryData = formHistory && formHistory.data.length ? formHistory?.data[0]['fiscalMapperData'].filter(item => ledgerKeys.includes(item.type) && item.modelName === "ULBLedger") : []
-    for (let ledgerKey of ledgerKeys) {
+    let formHistory = await FormHistory.find({
+      recordId:formId
+    },{
+      data:1
+    }).sort({
+      "_id":-1
+    }).limit(1).lean()
+    let formHistoryData = formHistory[0] && formHistory[0].data.length ? formHistory[0]?.data[0]['fiscalMapperData'].filter(item => ledgerKeys.includes(item.type) && item.modelName === "ULBLedger") : []
+    for(let ledgerKey of ledgerKeys){
       let question = responseData.financialInformation[ledgerKey]
       if (question.yearData.length) {
         for (let yearObj of question.yearData) {
@@ -86,10 +88,12 @@ async function manageLedgerData(params) {
             year: yearObj.year.toString(),
             data: ledgerData,
           })
+          console.log("historicalObject :: ",historicalObject)
           if(yearObj.previousYearCodes && yearObj.previousYearCodes.length){
             ulbFyAmount = await getPreviousYearValues(yearObj,ledgerData)
           }
           if(historicalObject && ulbFyAmount !== historicalObject.value  && ![years['2020-21'],years['2021-22']].includes(yearObj.year) ){
+            console.log("historicalovh :: ")
             var msg = `Data for field ${question.displayPriority} ${getKeyByValue(years, yearObj.year)} has been updated. kindly revisit those calculations`
             if(![statusTracker.IP,statusTracker.SAP].includes(currentFormStatus)){
               messages.push(msg)
@@ -1148,9 +1152,7 @@ exports.getView = async function (req, res, next) {
               }
             } else {
               if (fyData.length) {
-
                 if (pf.year && pf.type) {
-
                   let singleFydata = fyData.find(
                     (e) =>
                       e.year.toString() == pf.year.toString() &&
@@ -1243,14 +1245,13 @@ exports.getView = async function (req, res, next) {
     let params = {
       ledgerData : ulbData,
       ledgerKeys:ledgerKeys,
-      responseData:fyDynemic,
+      responseData:{...fyDynemic},
       formId:viewOne._id,
       currentFormStatus:viewOne.currentFormStatus
     }
     /**
      * This function always get latest data for ledgers
      */
-
     let modifiedLedgerData = fyDynemic
      let {responseData,messages} = await manageLedgerData(params)
      modifiedLedgerData = responseData
@@ -4320,7 +4321,7 @@ async function createHistory(params) {
       // await session.commitTransaction();
       // return Response.OK(res, {}, "Form Submitted");
     } else if (
-      formBodyStatus === MASTER_STATUS["Verification Not Started"]
+      [MASTER_STATUS["Submission Acknowledged by PMU"],MASTER_STATUS["Verification Not Started"],MASTER_STATUS["Verification In Progress"],MASTER_STATUS["Returned by PMU"]].includes(formBodyStatus)
     ) {
       let data = await FiscalRanking.find({ "_id": formId }).lean()
       let mapperData = await FiscalRankingMapper.find({ "fiscal_ranking": formId })
@@ -4339,7 +4340,7 @@ async function createHistory(params) {
       let currentStatusData = {
         formId: masterFormId,
         recordId: formId,
-        status: MASTER_STATUS["Verification Not Started"],
+        status: formBodyStatus,
         level: FORM_LEVEL["form"],
         shortKey: "form_level",
         rejectReason: "",
