@@ -77,6 +77,8 @@ async function manageLedgerData(params) {
       "_id":-1
     }).limit(1).lean()
     let formHistoryData = formHistory[0] && formHistory[0].data.length ? formHistory[0]?.data[0]['fiscalMapperData'].filter(item => ledgerKeys.includes(item.type) && item.modelName === "ULBLedger") : []
+    let errYears = []
+    let dps = []
     for(let ledgerKey of ledgerKeys){
       let question = responseData.financialInformation[ledgerKey]
       if (question.yearData.length) {
@@ -88,20 +90,19 @@ async function manageLedgerData(params) {
             year: yearObj.year.toString(),
             data: ledgerData,
           })
-          console.log("historicalObject :: ",historicalObject)
           if(yearObj.previousYearCodes && yearObj.previousYearCodes.length){
             ulbFyAmount = await getPreviousYearValues(yearObj,ledgerData)
           }
           if(historicalObject && ulbFyAmount !== historicalObject.value  && ![years['2020-21'],years['2021-22']].includes(yearObj.year) ){
-            var msg = `Data for field ${question.displayPriority} ${getKeyByValue(years, yearObj.year)} has been updated. kindly revisit those calculations`
             if(![statusTracker.IP,statusTracker.SAP].includes(currentFormStatus)){
-              messages.push(msg)
+              errYears.push(getKeyByValue(years, yearObj.year))
+              dps.push(question.displayPriority)
+              // messages.push(msg)
             }
             let calculationFields =  Object.entries(responseData.financialInformation).reduce((result,[key,value]) => ({...result, ...(question?.calculatedFrom.includes(value.displayPriority)) && {[key]: value}}) ,{})
             Object.values(calculationFields).forEach((item)=>{
               item.yearData.forEach((childItem)=>{
                 if(childItem.year.toString() ===  yearObj.year){
-                  console.log("[statusTracker.RBP,statusTracker.IP].includes(currentFormStatus) && [questionLevelStatus['1']].includes(childItem.status) && ulbRole === userTypes.ulb",[statusTracker.RBP,statusTracker.IP].includes(currentFormStatus) && [questionLevelStatus['1']].includes(childItem.status) && ulbRole === userTypes.ulb)
                   childItem.readonly = [statusTracker.RBP,statusTracker.IP].includes(currentFormStatus) && [questionLevelStatus['1']].includes(childItem.status) && ulbRole === userTypes.ulb ? false  : childItem.readonly
                   childItem.rejectReason = [statusTracker.RBP,statusTracker.IP].includes(currentFormStatus) && [questionLevelStatus['1']].includes(childItem.status) ? msg  : childItem.rejectReason
                   childItem.status = [statusTracker.RBP,statusTracker.IP].includes(currentFormStatus) && [questionLevelStatus['1']].includes(childItem.status)  ? "REJECTED"  :  childItem.status 
@@ -115,6 +116,10 @@ async function manageLedgerData(params) {
           yearObj.required = false
         }
       }
+    }
+    if(errYears.length){
+      msg = `Data for fields ${dps.join(",")} and years${errYears.join(",")} has been updated. kindly revisit those calculations`
+      messages.push(msg)
     }
     return {
       responseData,
