@@ -68,7 +68,7 @@ let priorTabsForFiscalRanking = {
 async function manageLedgerData(params){
   let messages = []
   try{
-    let {ledgerData,ledgerKeys,responseData,formId,currentFormStatus} = params
+    let {ledgerData,ledgerKeys,responseData,formId,currentFormStatus,role} = params
     let formHistory = await FormHistory.find({
       recordId:formId
     },{
@@ -102,7 +102,7 @@ async function manageLedgerData(params){
             Object.values(calculationFields).forEach((item)=>{
               item.yearData.forEach((childItem)=>{
                 if(childItem.year.toString() ===  yearObj.year){
-                  childItem.readonly = [statusTracker.RBP,statusTracker.IP].includes(currentFormStatus) && [questionLevelStatus['1']].includes(childItem.status) ? false  : childItem.readonly
+                  childItem.readonly = [statusTracker.RBP,statusTracker.IP].includes(currentFormStatus) && [questionLevelStatus['1']].includes(childItem.status) && role === userTypes.ulb ? false  : childItem.readonly
                   childItem.rejectReason = [statusTracker.RBP,statusTracker.IP].includes(currentFormStatus) && [questionLevelStatus['1']].includes(childItem.status) ? msg  : childItem.rejectReason
                   childItem.status = [statusTracker.RBP,statusTracker.IP].includes(currentFormStatus) && [questionLevelStatus['1']].includes(childItem.status)  ? "REJECTED"  :  childItem.status 
                 }
@@ -1247,6 +1247,7 @@ exports.getView = async function (req, res, next) {
       ledgerKeys:ledgerKeys,
       responseData:{...fyDynemic},
       formId:viewOne._id,
+      role:role,
       currentFormStatus:viewOne.currentFormStatus
     }
     /**
