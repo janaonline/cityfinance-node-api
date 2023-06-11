@@ -3,6 +3,48 @@ const CurrentStatus = require("../models/CurrentStatus");
 const StatusHistory = require("../models/StatusHistory");
 const FORMJSON  = require('../models/FormsJson');
 const { MODEL_PATH } = require("../util/FormNames");
+const getLabels = (formName)=>{
+  try{
+    switch (formName){
+      case "GtcInstallmentForm":
+        const {grantInstallmentLabels} = require("./labels")
+        return grantInstallmentLabels
+        break
+      default:
+        false
+        break
+    }
+  }
+  catch(err){
+    console.log("error in getLabels ::: ",err.message)
+  }
+}
+
+module.exports.radioSchema = (key,formName,options=["Yes","No"])=>{
+  options.push(null)
+  let labels = getLabels(formName)
+  let keyName = labels && labels[key] ? labels[key] : key
+  return {
+      type:String,
+      enum:options,
+      required:[true,`${keyName} is required`],
+  }
+}
+module.exports.pdfSchema = (required = false)=>{
+  return {
+      url: {type: String,required:required},
+      name: {type: String,required:required},
+  }
+}
+module.exports.limitValidationSchema = (keyName,min,max,mandatory=false)=>{
+  return {
+      type:Number,
+      min:min,
+      max:[max,`${keyName} must not be greater than ${max}`],
+      required : mandatory,
+  }
+}
+
 
 module.exports.saveFormHistory = (params) => {
   return new Promise(async (resolve, reject) => {
