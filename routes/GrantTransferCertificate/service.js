@@ -596,7 +596,7 @@ const checkForPreviousForms = async(design_year,state)=>{
     return validator;
 }
 
-const getManipulatedJson = async(installment,type,design_year,formJson,fieldsTohide,state)=>{
+const getManipulatedJson = async(installment,type,design_year,formJson,fieldsTohide,state,role)=>{
     let keysToBeDeleted = ["_id","createdAt","modifiedAt","actionTakenByRole","actionTakenBy","ulb","design_year"]
     let mformObject = {
         "language":[],
@@ -632,10 +632,11 @@ const getManipulatedJson = async(installment,type,design_year,formJson,fieldsToh
         if(installmentForm.transferGrantdetail.length === 0){
             delete installmentForm['transferGrantdetail']
         }
+        let inputAllowed = [MASTER_STATUS['In Progress'],MASTER_STATUS['Not Started'],MASTER_STATUS['Rejected by MoHUA']]
         installmentForm.installment_type = installment_types[installment]
         let flattedForm = await getFlatObj(installmentForm)
         flattedForm['fieldsTohide'] = fieldsTohide
-        flattedForm['disableFields'] = [4].includes(gtcForm?.currentFormStatus) ? true : false // to do logic to be implemented
+        flattedForm['disableFields'] = [inputAllowed].includes(gtcForm?.currentFormStatus) || role === userTypes.state ? false : true 
         let questionJson = await mutuateGetPayload(formJson.data,flattedForm,keysToBeDeleted,"ULB")
         mformObject['language'] = questionJson
         // let questionD = questionJson[0]['question'].find(item => item.shortKey === "basic")['childQuestionData'][0]
@@ -653,7 +654,7 @@ const getManipulatedJson = async(installment,type,design_year,formJson,fieldsToh
     }
 }
 
-const getJson = async(state,design_year)=>{
+const getJson = async(state,design_year,role)=>{
     try{
         let fieldsTohide = []
         let ulb = await Ulb.findOne({
@@ -674,7 +675,7 @@ const getJson = async(state,design_year)=>{
         for(let carousel of basicEmptyStructure){
             for(let question of carousel.questions){
                 question.questionresponse = ""
-                let {questionResponse,file,status,statusId} = await getManipulatedJson(question.installment,question.type,design_year,{...formJson},fieldsTohide,ObjectId(state))                
+                let {questionResponse,file,status,statusId} = await getManipulatedJson(question.installment,question.type,design_year,{...formJson},fieldsTohide,ObjectId(state),role)                
                 question.status = status
                 question.statusId = statusId
                 question.questionresponse = JSON.parse(JSON.stringify(questionResponse))
@@ -700,6 +701,7 @@ module.exports.getInstallmentForm = async(req,res,next)=>{
     try{
         let responseData = []
         let {design_year,state,formType} = req.query
+        let {role} = req.decoded.role
         let validator = await checkForUndefinedVaribales({
             "design year":design_year,
             "state":state
@@ -715,7 +717,7 @@ module.exports.getInstallmentForm = async(req,res,next)=>{
         }
         response.success = true
         response.message = ""
-        let {json,stateIsMillion} = await getJson(state,design_year)
+        let {json,stateIsMillion} = await getJson(state,design_year,role)
         response.data = json
         response.stateIsMillion = stateIsMillion
     }
