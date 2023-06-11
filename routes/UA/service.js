@@ -309,11 +309,11 @@ module.exports.get2223 = catchAsync(async (req, res) => {
         }
     }
 
-    let uaData = await UA.findOne({ _id: ObjectId(uaId) }).lean()
+    let uaData =  await UA.findOne({ _id: ObjectId(uaId) }).lean();
     let ulbs = []
-    let slbTotalScore = 0, gfcScore = 0, odfScore = 0;
 
     ulbs = uaData.ulb;
+    let ulbData = await Ulb.find({_id:{$in:ulbs}}).lean();
     responseObj.totalUlbs = ulbs.length
     let slbdata = await Ulb.aggregate([
         {
@@ -395,10 +395,51 @@ module.exports.get2223 = catchAsync(async (req, res) => {
             },
         },
     ])
-    console.log('1')
+    let TEslbdata2 =[];
+    if(design_year === YEAR_CONSTANTS['23_24']){
+        TEslbdata2  = await Ulb.aggregate([
+            {
+                $match: {
+    
+                    _id: { $in: ulbs }
+                }
+            },
+            {
+                $lookup: {
+                    from: "twentyeightslbforms",
+                    let: {
+                        firstUser: ObjectId(YEAR_CONSTANTS['22_23']),
+                        secondUser: "$_id",
+                    },
+                    pipeline: [
+                        {
+                            $match: {
+                                $expr: {
+                                    $and: [
+                                        {
+                                            $eq: ["$design_year", "$$firstUser"],
+                                        },
+                                        {
+                                            $eq: ["$ulb", "$$secondUser"],
+                                        },
+                                    ],
+                                },
+                            },
+                        },
+                    ],
+                    as: "twentyeightslbforms",
+                },
+            },
+            {
+                $unwind: {
+                    path: "$twentyeightslbforms",
+                    preserveNullAndEmptyArrays: true,
+                },
+            },
+        ])
+    }
     if (slbdata.length) {
         slbdata.forEach(el => {
-            console.log('2')
 
             if (el.hasOwnProperty("xvfcgrantulbforms") && Object.keys(el.xvfcgrantulbforms).length > 0) {
                 if (TEslbdata.length) {
@@ -436,14 +477,55 @@ module.exports.get2223 = catchAsync(async (req, res) => {
 
                     })
                 }
+                if (design_year === YEAR_CONSTANTS["23_24"]) {
+                  if (TEslbdata2.length) {
+                    TEslbdata2.forEach((el2) => {
+                      if (
+                        el2.hasOwnProperty("twentyeightslbforms") &&
+                        Object.keys(el2.twentyeightslbforms).length > 0
+                      ) {
+                        if (el._id.toString() == el2._id.toString()) {
+                          if (
+                            el.xvfcgrantulbforms.waterManagement.status ==
+                              "APPROVED" &&
+                            el2.twentyeightslbforms.status == "APPROVED"
+                          ) {
+                            slbApproved.count += 1;
+                            slbApproved.ulbs.push({
+                              ulbName: el.name,
+                              censusCode: el.censusCode ?? el.sbCode,
+                            });
+                          } else {
+                            slbPending.count += 1;
+                            slbPending.ulbs.push({
+                              ulbName: el.name,
+                              censusCode: el.censusCode ?? el.sbCode,
+                            });
+                          }
+                        }
+                      } else {
+                        slbPending.count += 1;
+                        slbPending.ulbs.push({
+                          ulbName: el.name,
+                          censusCode: el.censusCode ?? el.sbCode,
+                        });
+                      }
+                    });
+                  }
+                  slbPending.ulbs = removeDuplicates(slbPending.ulbs);
+                  slbApproved.ulbs = removeDuplicates(slbApproved.ulbs);
+                  slbPending.count = (slbPending.ulbs).length;
+                  slbApproved.count = (slbApproved.ulbs).length;
+                }
             } else {
+                
                 slbPending.count += 1
                 slbPending.ulbs.push({
                     ulbName: el.name,
                     censusCode: el.censusCode ?? el.sbCode
                 })
-            }
-
+            
+        }
         });
     }
 
@@ -602,8 +684,11 @@ module.exports.get2223 = catchAsync(async (req, res) => {
 
         });
     }
+    if(design_year === YEAR_CONSTANTS['23_24']){
+        gfcPending.ulbs = checkUlbFormStatus(ulbData, gfcApproved, gfcPending);
+        odfPending.ulbs = checkUlbFormStatus(ulbData, odfApproved, odfPending);
 
-    console.log(slbApproved, slbPending, gfcApproved, gfcPending, odfPending, odfApproved)
+      }
     responseObj.fourSLB.approved = slbApproved
     responseObj.fourSLB.pending = slbPending
     responseObj.gfc.approved = gfcApproved
@@ -615,6 +700,13 @@ module.exports.get2223 = catchAsync(async (req, res) => {
         responseObj.gfc.pending.count === ulbs.length ||
         responseObj.odf.pending.count === ulbs.length
     ) {
+        if(design_year ===  YEAR_CONSTANTS['23_24']){
+            responseObj = updateResponse(responseObj, true)
+            return res.status(200).json({
+                success: true,
+                data: responseObj
+            })
+        }
         return res.status(200).json({
             data: responseObj,
             message: "Insufficient Data",
@@ -624,18 +716,20 @@ module.exports.get2223 = catchAsync(async (req, res) => {
 
     let slbWeigthed = {}
     // console.log(uaId,`${process.env.BASEURL}/xv-fc-form/state/606aaf854dff55e6c075d219?ua_id=${uaId}` )
-    await axios.get(`https://staging.cityfinance.in/api/v1/xv-fc-form/state/606aaf854dff55e6c075d219?ua_id=${uaId}`).then(function (response) {
-        console.log('Data Fetched');
-        slbWeigthed = response.data.data[0]
-
-    })
-        .catch(function (error) {
-            console.log('Not Fetched', error.message);
-        })
+    await axios
+      .get(
+        `https://staging.cityfinance.in/api/v1/xv-fc-form/state/606aaf854dff55e6c075d219?ua_id=${uaId}`
+      )
+      .then(function (response) {
+        slbWeigthed = response.data.data[0];
+      })
+      .catch(function (error) {
+        console.log("Not Fetched", error.message);
+      });
 
 
     Object.assign(responseObj.fourSLB.data, slbWeigthed)
-    let usableData = []
+    // let usableData = []
     let arr = []
     let filteredData = []
     TEslbdata.forEach(el => {
@@ -664,25 +758,27 @@ module.exports.get2223 = catchAsync(async (req, res) => {
 
 
 
-    let wtAvgSLB = []
+    let wtAvgSLB = [];
+    let year = design_year === YEAR_CONSTANTS["23_24"] ? "2223" : "2122";
+    
     numerator.forEach((el, index) => {
         wtAvgSLB.push({ value: numerator[index].value / popData[index].value, id: numerator[index].id })
         if (el.id == lineItemIndicatorIDs[0]) {
             Object.assign(slbWeigthed, {
-                "houseHoldCoveredWithSewerage_actual2122": wtAvgSLB[index].value,
+                [`houseHoldCoveredWithSewerage_actual${year}`]: wtAvgSLB[index].value,
             })
 
         } else if (el.id == lineItemIndicatorIDs[1]) {
             Object.assign(slbWeigthed, {
-                "houseHoldCoveredPipedSupply_actual2122": wtAvgSLB[index].value,
+                [`houseHoldCoveredPipedSupply_actual${year}`]: wtAvgSLB[index].value,
             })
         } else if (el.id == lineItemIndicatorIDs[2]) {
             Object.assign(slbWeigthed, {
-                "waterSuppliedPerDay_actual2122": wtAvgSLB[index].value,
+                [`waterSuppliedPerDay_actual${year}`]: wtAvgSLB[index].value,
             })
         } else if (el.id == lineItemIndicatorIDs[3]) {
             Object.assign(slbWeigthed, {
-                "reduction_actual2122": wtAvgSLB[index].value,
+                [`reduction_actual${year}`]: wtAvgSLB[index].value,
             })
         }
     })
@@ -724,7 +820,8 @@ module.exports.get2223 = catchAsync(async (req, res) => {
     responseObj.fourSLB.data = slbWeigthed
 
     if(design_year === YEAR_CONSTANTS['23_24']){
-       responseObj = updateResponse(responseObj)
+       responseObj.fourSLB.data = get2223TwentySlbData(TEslbdata2, slbWeigthed);
+       responseObj = updateResponse(responseObj, false)
     }
     return res.status(200).json({
         success: true,
@@ -732,6 +829,106 @@ module.exports.get2223 = catchAsync(async (req, res) => {
     })
 })
 
+function checkUlbFormStatus(ulbData, approvedUlbs,pendingUlbs) {
+    ulbData.forEach(ulb => {
+        let found = approvedUlbs.ulbs.find(el => {
+            return el.ulbName === ulb.name;
+        });
+        if(!found){
+            found = pendingUlbs.ulbs.find(el => {
+                return el.ulbName === ulb.name;
+            });
+            if(!found){
+                pendingUlbs.ulbs.push({
+                    ulbName: ulb.name,
+                    censusCode: ulb.censusCode ?? ulb.sbCode
+                })
+            }
+        }
+    });
+    return pendingUlbs.ulbs;
+}
+
+function get2223TwentySlbData(TEslbdata2, slbWeigthed) {
+    let arr1 = [];
+    let filteredData2 = [];
+    TEslbdata2.forEach((el) => {
+      if (el.hasOwnProperty("twentyeightslbforms")) {
+        filteredData2 = el.twentyeightslbforms.data.filter((el2) =>
+          lineItemIndicatorIDs.includes(el2.indicatorLineItem.toString())
+        );
+      }
+      arr1.push({
+        data: filteredData2,
+        population: el.population,
+      });
+    });
+    let numerator2 = [
+        { id: "", value: 0 },
+        { id: "", value: 0 },
+        { id: "", value: 0 },
+        { id: "", value: 0 },
+      ],
+      popData2 = [
+        { id: "", value: 0 },
+        { id: "", value: 0 },
+        { id: "", value: 0 },
+        { id: "", value: 0 },
+      ];
+    arr1.forEach(el => {
+        el.data.forEach((el2, index) => {
+            numerator2[index]['id'] = el2.indicatorLineItem.toString();
+            numerator2[index]['value'] += el2.actual.value * el.population;
+            popData2[index]['value'] += el.population;
+            popData2[index]['id'] = el2.indicatorLineItem.toString();
+        });
+    });
+
+    let wtAvgSLB2 = [];
+    numerator2.forEach((el, index) => {
+        wtAvgSLB2.push({ value: numerator2[index].value / popData2[index].value, id: numerator2[index].id });
+        if (el.id == lineItemIndicatorIDs[0]) {
+            Object.assign(slbWeigthed, {
+                "houseHoldCoveredWithSewerage_actual2122": wtAvgSLB2[index].value,
+            });
+
+        } else if (el.id == lineItemIndicatorIDs[1]) {
+            Object.assign(slbWeigthed, {
+                "houseHoldCoveredPipedSupply_actual2122": wtAvgSLB2[index].value,
+            });
+        } else if (el.id == lineItemIndicatorIDs[2]) {
+            Object.assign(slbWeigthed, {
+                "waterSuppliedPerDay_actual2122": wtAvgSLB2[index].value,
+            });
+        } else if (el.id == lineItemIndicatorIDs[3]) {
+            Object.assign(slbWeigthed, {
+                "reduction_actual2122": wtAvgSLB2[index].value,
+            });
+        }
+    });
+    let scores2 = calculateSlbMarks(slbWeigthed);
+    Object.assign(slbWeigthed, {
+        "houseHoldCoveredWithSewerage_score": scores2[2],
+        "houseHoldCoveredPipedSupply_score": scores2[3],
+        "waterSuppliedPerDay_score": scores2[0],
+        "reduction_score": scores2[1],
+    });
+    return slbWeigthed;
+}
+
+function removeDuplicates(arr) {
+    const uniqueArr = arr.filter((obj, index, self) => {
+      return (
+        index ===
+        self.findIndex((o) => {
+          return o.ulbName === obj.ulbName;
+        })
+      );
+    });
+  
+    return uniqueArr;
+  }
+  
 const oldFormat = {
     "success": true,
     "data": {
@@ -744,22 +941,22 @@ const oldFormat = {
                     "5dd24b8f91344e2300876c9a"
                 ],
                 "total": 1,
-                "waterSuppliedPerDay2021": 97,
+                "waterSuppliedPerDay2021": 97,//actual
                 "waterSuppliedPerDay2122": 97,
                 "waterSuppliedPerDay2223": 99,
                 "waterSuppliedPerDay2324": 100,
                 "waterSuppliedPerDay2425": 105,
-                "reduction2021": 31.9,
+                "reduction2021": 31.9,//actual
                 "reduction2122": 30,
                 "reduction2223": 29,
                 "reduction2324": 27,
                 "reduction2425": 26,
-                "houseHoldCoveredWithSewerage2021": 0,
+                "houseHoldCoveredWithSewerage2021": 0,//actual
                 "houseHoldCoveredWithSewerage2122": 0,
                 "houseHoldCoveredWithSewerage2223": 10,
                 "houseHoldCoveredWithSewerage2324": 15,
                 "houseHoldCoveredWithSewerage2425": 20,
-                "houseHoldCoveredPipedSupply2021": 60.2,
+                "houseHoldCoveredPipedSupply2021": 60.2,//actual
                 "houseHoldCoveredPipedSupply2122": 73,
                 "houseHoldCoveredPipedSupply2223": 73,
                 "houseHoldCoveredPipedSupply2324": 74,
@@ -1100,7 +1297,7 @@ const newFormat = {
     },
   },
 };  
-function updateResponse(response) {
+function updateResponse(response, InsufficientFlag) {
   try {
     // let data = createNewFormat(response["fourSLB"]);
     //   let rows = convertToRows(response);
@@ -1136,7 +1333,7 @@ function updateResponse(response) {
               data: createNewFormat(response["fourSLB"]),
             },
           },
-          tables: [
+          tables: InsufficientFlag ? [] :[
             {
               tableType: "four-slb",
               rows: convertToRows(response),
@@ -1146,7 +1343,7 @@ function updateResponse(response) {
           uaScore: {
             title:
               "Total UA Score for Water Supply and Sanitation : 60.00(out of maximum 60)",
-            value: getUAScore(response["fourSLB"]['data']),
+            value: InsufficientFlag ? null : getUAScore(response["fourSLB"]['data']),
           },
         },
         indicators_swm: {
@@ -1159,7 +1356,7 @@ function updateResponse(response) {
           uaScore: {
             title:
               "Total UA Score for Solid Waste Management : 39.53 (out of maximum 40 marks)",
-            value: getindicators_swmScore(
+            value: InsufficientFlag ? null : getindicators_swmScore(
               response["odf"]["score"],
               response["gfc"]["score"]
             ),
@@ -1168,12 +1365,15 @@ function updateResponse(response) {
         performanceAsst: {
           title: "Performance Assessment",
           key : "performanceAsst",
+          info: "",
+          id: "",    
+          name: "On the basis of the total marks obtained by UA, proportionate grants shall be recommended by MOH&UA as per the table given below:",
           tables: getPerformanceAsstTable(),
           dataCount: {},
           uaScore: {
             title: `On the basis of the total marks obtained by UA,
                      proportionate grants shall be recommended by MOH&UA as per the table given below:`,
-            value:
+            value: InsufficientFlag ? null :
               getUAScore(response["fourSLB"]['data']) +
               getindicators_swmScore(
                 response["odf"]["score"],
@@ -1192,9 +1392,6 @@ function updateResponse(response) {
 function getPerformanceAsstTable() {
   return [
     {
-      name: "On the basis of the total marks obtained by UA, proportionate grants shall be recommended by MOH&UA as per the table given below:",
-      info: "",
-      id: "",
       tableType: "lineItem-highlited",
       rows: [
         {
@@ -1335,15 +1532,13 @@ function convertToRows(oldFormat) {
         serviceLevelIndicators: indicator.serviceLevelIndicators,
         key: indicator.key,
         benchmark: indicator.benchmark,
-        achieved2122: String(
-          oldFormat.fourSLB.data[`${indicator.key}_actual2122`]
-        ),
-        target2223: String(oldFormat.fourSLB.data[`${indicator.key}2223`]),
-        achieved2223: "",
-        target2122: String(oldFormat.fourSLB.data[`${indicator.key}2122`]),
-        target2324: String(oldFormat.fourSLB.data[`${indicator.key}2324`]),
-        target2425: String(oldFormat.fourSLB.data[`${indicator.key}2425`]),
-        wghtd_score: String(oldFormat.fourSLB.data[indicator.wghtd_score]),
+        achieved2122:  String(oldFormat.fourSLB.data[`${indicator.key}_actual2122`]) === "" ? null : String(oldFormat.fourSLB.data[`${indicator.key}_actual2122`]) ,
+        target2223: String(oldFormat.fourSLB.data[`${indicator.key}2223`]) === "" ? null : String(oldFormat.fourSLB.data[`${indicator.key}2223`]) ,
+        achieved2223: String(oldFormat.fourSLB.data[`${indicator.key}_actual2223`]) === "" ? null : String(oldFormat.fourSLB.data[`${indicator.key}_actual2223`]) ,
+        target2122: String(oldFormat.fourSLB.data[`${indicator.key}2122`]) === "" ? null : String(oldFormat.fourSLB.data[`${indicator.key}2122`]) ,
+        target2324: String(oldFormat.fourSLB.data[`${indicator.key}2324`]) === "" ? null : String(oldFormat.fourSLB.data[`${indicator.key}2324`]) ,
+        target2425: String(oldFormat.fourSLB.data[`${indicator.key}2425`]) === "" ? null : String(oldFormat.fourSLB.data[`${indicator.key}2425`]),
+        wghtd_score: String(oldFormat.fourSLB.data[indicator.wghtd_score]) === "" ? null : String(oldFormat.fourSLB.data[indicator.wghtd_score]) ,
       };
       rows.push(row);
     }
@@ -1456,19 +1651,18 @@ function getGFCFormat(input) {
       gfcFormat.data.push(dataItem);
     }
 
-    gfcFormat.data[0] = {
-      value:  input.approved.count.toString(),
-      ulbs: [...input.approved.ulbs, ...input.pending.ulbs]
-    }
-    gfcFormat.data[1].value = {
+    Object.assign(gfcFormat.data[0],{
+        value:  input.approved.count.toString(),
+        ulbs: [...input.approved.ulbs, ...input.pending.ulbs]
+      })
+    Object.assign( gfcFormat.data[1], {
         value:input.approved.ulbs.length.toString(),
         ulbs: input.approved.ulbs
-    }
-    gfcFormat.data[2].value = {
+    })
+    Object.assign(gfcFormat.data[2] ,{
         value: input.pending.ulbs.length.toString(),
         ulbs: input.pending.ulbs
-    }
-
+    })
     return gfcFormat;
   } catch (error) {
     throw `getGFCFormat:: ${error.message}`;
@@ -1510,20 +1704,18 @@ function getODFFormat(input) {
       });
     }
 
-
-    odfFormat.data[0] = {
+    Object.assign(odfFormat.data[0],{
         value:  input.approved.count.toString(),
         ulbs: [...input.approved.ulbs, ...input.pending.ulbs]
-      }
-      odfFormat.data[1].value = {
-          value:input.approved.ulbs.length.toString(),
-          ulbs: input.approved.ulbs
-      }
-      odfFormat.data[2].value = {
-          value: input.pending.ulbs.length.toString(),
-          ulbs: input.pending.ulbs
-      }
-
+      })
+    Object.assign( odfFormat.data[1], {
+        value:input.approved.ulbs.length.toString(),
+        ulbs: input.approved.ulbs
+    })
+    Object.assign(odfFormat.data[2] ,{
+        value: input.pending.ulbs.length.toString(),
+        ulbs: input.pending.ulbs
+    })
     return odfFormat;
   } catch (error) {
     throw `getODFFormat:: ${error.message}`;
