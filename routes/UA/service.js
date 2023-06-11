@@ -309,10 +309,11 @@ module.exports.get2223 = catchAsync(async (req, res) => {
         }
     }
 
-    let uaData = await UA.findOne({ _id: ObjectId(uaId) }).lean()
+    let uaData =  await UA.findOne({ _id: ObjectId(uaId) }).lean();
     let ulbs = []
 
     ulbs = uaData.ulb;
+    let ulbData = await Ulb.find({_id:{$in:ulbs}}).lean();
     responseObj.totalUlbs = ulbs.length
     let slbdata = await Ulb.aggregate([
         {
@@ -683,7 +684,11 @@ module.exports.get2223 = catchAsync(async (req, res) => {
 
         });
     }
+    if(design_year === YEAR_CONSTANTS['23_24']){
+        gfcPending.ulbs = checkUlbFormStatus(ulbData, gfcApproved, gfcPending);
+        odfPending.ulbs = checkUlbFormStatus(ulbData, odfApproved, odfPending);
 
+      }
     responseObj.fourSLB.approved = slbApproved
     responseObj.fourSLB.pending = slbPending
     responseObj.gfc.approved = gfcApproved
@@ -823,6 +828,26 @@ module.exports.get2223 = catchAsync(async (req, res) => {
         data: responseObj
     })
 })
+
+function checkUlbFormStatus(ulbData, approvedUlbs,pendingUlbs) {
+    ulbData.forEach(ulb => {
+        let found = approvedUlbs.ulbs.find(el => {
+            return el.ulbName === ulb.name;
+        });
+        if(!found){
+            found = pendingUlbs.ulbs.find(el => {
+                return el.ulbName === ulb.name;
+            });
+            if(!found){
+                pendingUlbs.ulbs.push({
+                    ulbName: ulb.name,
+                    censusCode: ulb.censusCode ?? ulb.sbCode
+                })
+            }
+        }
+    });
+    return pendingUlbs.ulbs;
+}
 
 function get2223TwentySlbData(TEslbdata2, slbWeigthed) {
     let arr1 = [];
