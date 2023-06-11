@@ -11,6 +11,7 @@ const TransferGrantDetailForm = require("../../models/TransferGrantDetailForm")
 const {grantsWithUlbTypes,installment_types,singleInstallmentTypes,grantDistributeOptions} = require("./constants")
 const FormsJson = require("../../models/FormsJson");
 const { MASTER_STATUS, MASTER_STATUS_ID } = require('../../util/FormNames');
+const userTypes = require("../../util/userTypes")
 
 let gtcYears = ["2018-19","2019-20","2021-22","2022-23"]
 let GtcFormTypes = [
@@ -612,7 +613,7 @@ const getManipulatedJson = async(installment,type,design_year,formJson,fieldsToh
             type,
             state
         },{history:0}).lean() || {}
-        gtcForm.currentFormStatus = gtcForm ? gtcForm.currentFormStatus : 1
+        gtcForm.currentFormStatus = gtcForm.hasOwnProperty("currentFormStatus") ? gtcForm.currentFormStatus : 1
         let yearName =  getKeyByValue(years,design_year)
         file = gtcForm && gtcForm.file  ? gtcForm.file : file
         let installmentForm = await GtcInstallmentForm.findOne({
@@ -636,7 +637,7 @@ const getManipulatedJson = async(installment,type,design_year,formJson,fieldsToh
         installmentForm.installment_type = installment_types[installment]
         let flattedForm = await getFlatObj(installmentForm)
         flattedForm['fieldsTohide'] = fieldsTohide
-        flattedForm['disableFields'] = [inputAllowed].includes(gtcForm?.currentFormStatus) || role === userTypes.state ? false : true 
+        flattedForm['disableFields'] = inputAllowed.includes(gtcForm?.currentFormStatus) && role === userTypes.state ? false : true 
         let questionJson = await mutuateGetPayload(formJson.data,flattedForm,keysToBeDeleted,"ULB")
         mformObject['language'] = questionJson
         // let questionD = questionJson[0]['question'].find(item => item.shortKey === "basic")['childQuestionData'][0]
@@ -701,7 +702,7 @@ module.exports.getInstallmentForm = async(req,res,next)=>{
     try{
         let responseData = []
         let {design_year,state,formType} = req.query
-        let {role} = req.decoded.role
+        let {role} = req.decoded
         let validator = await checkForUndefinedVaribales({
             "design year":design_year,
             "state":state
