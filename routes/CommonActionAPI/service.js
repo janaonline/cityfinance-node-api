@@ -28,6 +28,10 @@ var ignorableKeys = ["actionTakenByRole","actionTakenBy","ulb","design_year"]
 let groupedQuestions = {
     "location":['lat','long']
 }
+
+
+
+
 let yearValueField = {
     "year":"",
     "value":""
@@ -75,7 +79,7 @@ var annualRadioButtons = { // if there are any label changes for radio button in
     "Agree":true
 }
 var customBtnsWithFormID = {
-    "5":annualRadioButtons
+    "5":annualRadioButtons,
 }
 
 const customDisableFields = {
@@ -2085,6 +2089,7 @@ async function appendvalues(childQuestionData,flattedForm,shortKey,question){
     try{
         let modifiedArr = []
         let arrKeys = Object.keys(arrFields)
+        let modelKey = arrFields[shortKey]
        if(!arrKeys.includes(shortKey)){
         // handle array of objects childrens
         childQuestionData = await handleSectionStructure(childQuestionData, shortKey, flattedForm);
@@ -2093,7 +2098,9 @@ async function appendvalues(childQuestionData,flattedForm,shortKey,question){
          await handleArrayFields(shortKey,flattedForm,childQuestionData)
         }
         if(specialCases.includes(shortKey)){
-            childQuestionData = await handleArrOfObjects(question,flattedForm)
+            if(flattedForm[modelKey]){
+                childQuestionData = await handleArrOfObjects(question,flattedForm)
+            }
         }
         return [...childQuestionData]
     }

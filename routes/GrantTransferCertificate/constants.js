@@ -9,10 +9,15 @@ let installment_types = {
     2 :"2nd Installment"
 }
 
+let grantDistributeOptions = {
+    "Yes":"As per Census 2011",
+    "No":"As per SFC Recommendations"
+}
+
 let singleInstallmentTypes = ["million_tied"]
 
 
-
+module.exports.grantDistributeOptions = grantDistributeOptions
 module.exports.grantsWithUlbTypes = grantsWithUlbTypes
 module.exports.installment_types = installment_types
 module.exports.singleInstallmentTypes = singleInstallmentTypes

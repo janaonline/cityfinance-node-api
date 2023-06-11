@@ -665,8 +665,8 @@ exports.getView = async function (req, res, next) {
         modelName: twEightSlbs?.population > 0 ? "TwentyEightSlbForm" : "",
       };
       data["population11"] = {
-        value: data.population11.value
-          ? data.population11.value
+        value: data?.population11?.value
+          ? data?.population11?.value
           : ulbPData
             ? ulbPData?.population
             : "",

@@ -8,8 +8,9 @@ const {getKeyByValue,saveFormHistory} = require("../../util/masterFunctions");
 const { years } = require('../../service/years');
 const GtcInstallmentForm = require("../../models/GtcInstallmentForm")
 const TransferGrantDetailForm = require("../../models/TransferGrantDetailForm")
-const {grantsWithUlbTypes,installment_types,singleInstallmentTypes} = require("./constants")
+const {grantsWithUlbTypes,installment_types,singleInstallmentTypes,grantDistributeOptions} = require("./constants")
 const FormsJson = require("../../models/FormsJson");
+const { MASTER_STATUS, MASTER_STATUS_ID } = require('../../util/FormNames');
 
 let gtcYears = ["2018-19","2019-20","2021-22","2022-23"]
 let GtcFormTypes = [
@@ -605,7 +606,6 @@ const getManipulatedJson = async(installment,type,design_year,formJson,fieldsToh
             "name":"",
             "url":""
         }
-        console.log("design_year ::: ",design_year)
         let gtcForm = await GrantTransferCertificate.findOne({
             year:ObjectId(design_year),
             installment,
@@ -629,6 +629,9 @@ const getManipulatedJson = async(installment,type,design_year,formJson,fieldsToh
             installmentForm.grantType =   grantsWithUlbTypes[type].grantType
             installmentForm.year = getKeyByValue(years,design_year)
         }
+        if(installmentForm.transferGrantdetail.length === 0){
+            delete installmentForm['transferGrantdetail']
+        }
         installmentForm.installment_type = installment_types[installment]
         let flattedForm = await getFlatObj(installmentForm)
         flattedForm['fieldsTohide'] = fieldsTohide
@@ -641,7 +644,9 @@ const getManipulatedJson = async(installment,type,design_year,formJson,fieldsToh
         let data = {
             "data":[mformObject]
         }
-        return {questionResponse:data,file}
+        let status = gtcForm.currentFormStatus
+        let statusId = MASTER_STATUS_ID[gtcForm.currentFormStatus]
+        return {questionResponse:data,file,status,statusId}
     }
     catch(err){
         console.log("error in getManipulatedJson ::: ",err.message)
@@ -669,7 +674,9 @@ const getJson = async(state,design_year)=>{
         for(let carousel of basicEmptyStructure){
             for(let question of carousel.questions){
                 question.questionresponse = ""
-                let {questionResponse,file} = await getManipulatedJson(question.installment,question.type,design_year,{...formJson},fieldsTohide,ObjectId(state))                
+                let {questionResponse,file,status,statusId} = await getManipulatedJson(question.installment,question.type,design_year,{...formJson},fieldsTohide,ObjectId(state))                
+                question.status = status
+                question.statusId = statusId
                 question.questionresponse = JSON.parse(JSON.stringify(questionResponse))
                 question.file = file
             }
@@ -810,8 +817,9 @@ async function handleInstallmentForm(params){
         errors:""
     }
     try{
-        let {installment,year,type,status,financialYear,design_year,state,data,gtcFormId} = params
+        let {installment,year,type,status,financialYear,design_year,state,data,gtcFormId,statusId:currentFormStatus} = params
         year = getKeyByValue(years,year)
+        let runValidators = [MASTER_STATUS['In Progress']].includes(currentFormStatus) ? false : true
         let transferGrantData = data['transferGrantdetail']
         delete data['transferGrantdetail']
         data.grantType= grantsWithUlbTypes[type].grantType
@@ -823,7 +831,11 @@ async function handleInstallmentForm(params){
             gtcForm:ObjectId(gtcFormId) 
         }
         Object.assign(payload,data)
+        payload.grantDistribute = grantDistributeOptions[payload.grantDistribute] || null
         let installmentValidatior = await checkValidationsInstallmentForm(payload,transferGrantData)
+        /**
+         * Uncomment this code before giving to testing
+         */
         // if(!installmentValidatior.valid){
         //     validator.message = "Not valid"
         //     validator.valid = false
@@ -835,8 +847,7 @@ async function handleInstallmentForm(params){
             year,
             formType:type,
             state:ObjectId(state)
-        },payload,{upsert:true,new:true,runValidators: true})
-        
+        },payload,{upsert:true,new:true,runValidators: runValidators})
         let totalTransAmount = transferGrantData.reduce((result,value) => parseFloat(result) + parseFloat(value.transAmount) ,0)
         let totalIntTransfer = transferGrantData.reduce((result,value) => parseFloat(result) + parseFloat(value.intTransfer) ,0)
         transferGrantData = await appendFormId(transferGrantData,gtcInstallment)
@@ -845,8 +856,9 @@ async function handleInstallmentForm(params){
             installmentForm : gtcInstallment._id
         })
         // insert new Data
-        let insertedData = await TransferGrantDetailForm.bulkWrite(transferGrantData)
+        let insertedData = await TransferGrantDetailForm.bulkWrite(transferGrantData,{runValidators})
         let grantDetailIds = Object.values(insertedData.insertedIds)
+        console.log("grantDetailIds :: ",grantDetailIds)
         // updateIds and total
         let ele = await GtcInstallmentForm.findOneAndUpdate({
             "_id":gtcInstallment._id,
@@ -856,6 +868,7 @@ async function handleInstallmentForm(params){
             "totalIntTransfer":totalIntTransfer,
             "totalTransAmount":totalTransAmount
         })
+       
         validator.valid = true
         validator.message = ""
     }
@@ -870,8 +883,7 @@ async function handleInstallmentForm(params){
 
 async function getOrCreateFormId(params){
     try{
-        let {installment,year,type,isDraft,status:currentFormStatus,financialYear,design_year,state,file} = params
-        console.log("design_year ::: ",design_year)
+        let {installment,year,type,isDraft,status,financialYear,design_year,state,file,statusId:currentFormStatus} = params
         let gtcForm = await GrantTransferCertificate.findOneAndUpdate({
             installment,
             year:ObjectId(year),

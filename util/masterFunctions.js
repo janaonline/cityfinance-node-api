@@ -20,12 +20,13 @@ const getLabels = (formName)=>{
   }
 }
 
-module.exports.radioSchema = (key,formName)=>{
+module.exports.radioSchema = (key,formName,options=["Yes","No"])=>{
+  options.push(null)
   let labels = getLabels(formName)
   let keyName = labels && labels[key] ? labels[key] : key
   return {
       type:String,
-      enum:["Yes","No"],
+      enum:options,
       required:[true,`${keyName} is required`],
   }
 }
