@@ -646,8 +646,8 @@ const getManipulatedJson = async(installment,type,design_year,formJson,fieldsToh
         let data = {
             "data":[mformObject]
         }
-        let status = gtcForm.currentFormStatus
-        let statusId = MASTER_STATUS_ID[gtcForm.currentFormStatus]
+        let statusId = gtcForm.currentFormStatus
+        let  status = MASTER_STATUS_ID[gtcForm.currentFormStatus]
         return {questionResponse:data,file,status,statusId}
     }
     catch(err){
