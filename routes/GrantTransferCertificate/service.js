@@ -845,6 +845,7 @@ async function handleInstallmentForm(params){
         //     validator.errors = installmentValidatior.errors
         //     return validator
         // }
+        console.log("payload :: ",payload)
         let gtcInstallment = await GtcInstallmentForm.findOneAndUpdate({
             installment,
             year,
@@ -917,12 +918,19 @@ module.exports.createOrUpdateInstallmentForm = async(req,res)=>{
     }
     try{
         let {installment,type,isDraft,status,financialYear,year,state,statusId:currentFormStatus} = req.body
+        let role = req.decoded.role
+        if(role !== userTypes.state){
+            response.success = false
+            response.message = "Not Permitted"
+            response.message = ["Not Permitted"]
+            return response.status(405).json(response)
+        }
         let params = {
             "installment id":installment,
             "year id ":year,
             "type":type,
             "isDraft":isDraft,
-            "status":status,
+            "status":currentFormStatus,
             "financialYear":financialYear,
             "year":year,
             "state":state
