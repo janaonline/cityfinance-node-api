@@ -2118,9 +2118,9 @@ async function handleSectionStructure(childArr, shortKey, flattedForm) {
                     let answer = { label: '', textValue: '', value: '' };
                     // console.log("shortKey11111111 :: ",obj.shortKey,obj.input_type)
                     answer = await handleValues(obj, answer, flattedForm);
-                    if (obj.input_type !== "11") {
+                    // if (obj.input_type !== "11") {
                         obj.selectedValue = [{...answer}];
-                    }
+                    // }
                     if (obj.isQuestionDisabled !== true) {
                         obj.isQuestionDisabled = handleDisableFields(flattedForm);
                     }
