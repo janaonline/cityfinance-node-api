@@ -46,7 +46,8 @@ const {
   statusTracker,
   questionLevelStatus,
   calculatedFields,
-  fiscalRankingQestionSortkeys
+  fiscalRankingQestionSortkeys,
+  requiredFields
 } = require("./fydynemic");
 const catchAsync = require("../../util/catchAsync");
 const State = require("../../models/State");
@@ -77,9 +78,10 @@ async function manageLedgerData(params) {
       "_id": -1
     }).limit(1).lean()
     let formHistoryData = formHistory[0] && formHistory[0].data.length ? formHistory[0]?.data[0]['fiscalMapperData'].filter(item => ledgerKeys.includes(item.type) && item.modelName === "ULBLedger") : []
-    let errYears = []
-    let dps = []
-    for(let ledgerKey of ledgerKeys){
+    let errYears = new Set()
+    let dps = new Set()
+    let errorWithDps = {}
+    for (let ledgerKey of ledgerKeys) {
       let question = responseData.financialInformation[ledgerKey]
       if (question.yearData.length) {
         for (let yearObj of question.yearData) {
@@ -90,22 +92,29 @@ async function manageLedgerData(params) {
             year: yearObj.year.toString(),
             data: ledgerData,
           })
-          if(yearObj.previousYearCodes && yearObj.previousYearCodes.length){
-            ulbFyAmount = await getPreviousYearValues(yearObj,ledgerData)
+          if (yearObj.previousYearCodes && yearObj.previousYearCodes.length) {
+            ulbFyAmount = await getPreviousYearValues(yearObj, ledgerData)
           }
-          if(historicalObject && ulbFyAmount !== historicalObject.value  && ![years['2020-21'],years['2021-22']].includes(yearObj.year) ){
-            if(![statusTracker.IP,statusTracker.SAP].includes(currentFormStatus)){
-              errYears.push(getKeyByValue(years, yearObj.year))
-              dps.push(question.displayPriority)
+          if (historicalObject && ulbFyAmount !== historicalObject.value && ![years['2020-21'], years['2021-22']].includes(yearObj.year)) {
+            if (![statusTracker.IP, statusTracker.SAP].includes(currentFormStatus)) {
+              try{
+                errorWithDps[question.displayPriority].push(getKeyByValue(years, yearObj.year))
+              } 
+              catch(err){
+                errorWithDps[question.displayPriority] = [getKeyByValue(years, yearObj.year)]
+              }
+              errYears.add(getKeyByValue(years, yearObj.year))
+              dps.add(question.displayPriority)
               // messages.push(msg)
             }
-            let calculationFields =  Object.entries(responseData.financialInformation).reduce((result,[key,value]) => ({...result, ...(question?.calculatedFrom.includes(value.displayPriority)) && {[key]: value}}) ,{})
-            Object.values(calculationFields).forEach((item)=>{
-              item.yearData.forEach((childItem)=>{
-                if(childItem.year.toString() ===  yearObj.year){
-                  childItem.readonly = [statusTracker.RBP,statusTracker.IP].includes(currentFormStatus) && [questionLevelStatus['1']].includes(childItem.status) && ulbRole === userTypes.ulb ? false  : childItem.readonly
-                  childItem.rejectReason = [statusTracker.RBP,statusTracker.IP].includes(currentFormStatus) && [questionLevelStatus['1']].includes(childItem.status) ? msg  : childItem.rejectReason
-                  childItem.status = [statusTracker.RBP,statusTracker.IP].includes(currentFormStatus) && [questionLevelStatus['1']].includes(childItem.status)  ? "REJECTED"  :  childItem.status 
+            let calculationFields = Object.entries(responseData.financialInformation).reduce((result, [key, value]) => ({ ...result, ...(question?.calculatedFrom.includes(value.displayPriority)) && { [key]: value } }), {})
+            Object.values(calculationFields).forEach((item) => {
+              item.yearData.forEach((childItem) => {
+                let reason = `Data for this field has been updated in ledger. kindly revisit the calculation`
+                if (childItem.year.toString() === yearObj.year) {
+                  childItem.readonly = [statusTracker.RBP, statusTracker.IP].includes(currentFormStatus) && [questionLevelStatus['1']].includes(childItem.status) && ulbRole === userTypes.ulb ? false : childItem.readonly
+                  childItem.rejectReason = [statusTracker.RBP, statusTracker.IP].includes(currentFormStatus) && [questionLevelStatus['1']].includes(childItem.status) ? reason : childItem.rejectReason
+                  childItem.status = [statusTracker.RBP, statusTracker.IP].includes(currentFormStatus) && [questionLevelStatus['1']].includes(childItem.status) ? "REJECTED" : childItem.status
                 }
               })
             })
@@ -117,8 +126,8 @@ async function manageLedgerData(params) {
         }
       }
     }
-    if(errYears.length){
-      msg = `Data for fields ${dps.join(",")} and years${errYears.join(",")} has been updated. kindly revisit those calculations`
+    if (Array.from(errYears).length) {
+      let msg = `Data for fields ${Array.from(dps).join(",")} and years ${Array.from(errYears).join(",")} has been updated. kindly revisit those calculations`
       messages.push(msg)
     }
     return {
@@ -1284,6 +1293,10 @@ exports.getView = async function (req, res, next) {
       financialYearTableHeader,
       messages: userMessages
     };
+    if (messages.length > 0 && role === "ULB") {
+      let {approvedPerc,rejectedPerc} = calculatePercentage(modifiedLedgerData, requiredFields, viewOne)
+      await updatePercentage(approvedPerc,rejectedPerc,viewOne.formId)
+    }
     return res
       .status(200)
       .json({ status: true, message: "Success fetched data!", data: viewData });
@@ -1294,6 +1307,27 @@ exports.getView = async function (req, res, next) {
       .json({ status: false, message: "Something went wrong!" });
   }
 };
+
+async function updatePercentage(approvedPerc,rejectedPerc,formId){
+  try{
+    let filter = {
+      "_id":formId
+    }
+    let payload = {
+      "progress.approvedProgress":approvedPerc < 100 && approvedPerc !== 0 ? approvedPerc.toFixed(2).toString() : parseInt(approvedPerc).toString() ,
+      "progress.rejectedProgress":rejectedPerc < 100 && rejectedPerc !== 0 ? rejectedPerc.toFixed(2).toString() : parseInt(rejectedPerc).toString() 
+    }
+    console.log("payload :: ",payload)
+    await FiscalRanking.findOneAndUpdate({
+      filter
+    },payload)
+    
+  }
+  catch(err){
+    console.log("error in updatePercentage ::: ",err.message)
+  }
+}
+
 
 /**
  * It takes an object with three properties (code, year, data) and returns the sum of the totalAmount
@@ -4948,6 +4982,33 @@ function computeQuery(params, cond = null) {
               "$concat": ["0", "%"]
             }]
           },
+          ulbDataSubmitted: {
+            $ifNull: [{
+              "$concat": [`$fiscalrankings.ulbDataSubmitted`, "%"]
+            }, {
+              "$concat": ["0", "%"]
+            }]
+          },
+          pmuVerificationapprovedProgress: {
+            $ifNull: [{
+              "$concat": [
+                { "$toString": "$fiscalrankings.pmuVerificationapprovedProgress" },
+                "%"
+              ]
+            }, {
+              "$concat": ["0", "%"]
+            }]
+          },
+          pmuVerificationrejectedProgress: {
+            $ifNull: [{
+              "$concat": [
+                { "$toString": "$fiscalrankings.pmuVerificationrejectedProgress" },
+                "%"
+              ]
+            }, {
+              "$concat": ["0", "%"]
+            }]
+          },
           comment_1: "",
           "II CONTACT INFORMATION_Comments": "",
           "III FINANCIAL INFORMATION_Comments": "",
@@ -5067,6 +5128,48 @@ exports.heatMapReport = async (req, res, next) => {
       response.message = err.message
     }
     return res.json(response)
+  }
+}
+
+/**
+ * @param {object} fyData 
+ * @param {Array} requiredKeys 
+ */
+function calculatePercentage(fyData, requiredKeys, viewOne) {
+  try {
+    let total = 0
+    let approved = 0
+    let rejected = 0
+    if (viewOne['signedCopyOfFile']) {
+      total+=1
+      if (viewOne["signedCopyOfFile"]?.status === "APPROVED") {
+        approved += 1
+      }
+      else if (viewOne["signedCopyOfFile"]?.status === "REJECTED") {
+        rejected += 1
+      }
+    }
+    for (let requiredKey of requiredKeys) {
+      let financialObj = fyData.financialInformation[requiredKey] || fyData.uploadFyDoc[requiredKey]
+      let financialYears = financialObj?.yearData || []
+      for (let item of financialYears) {
+        if (item.status) {
+          total += 1
+        }
+        if (item.status === "APPROVED") {
+          approved += 1
+        }
+        else if (item.status === "Rejected") {
+          rejected += 1
+        }
+      }
+    }
+    let approvedPerc = (approved/total) * 100
+    let rejectedPerc = (rejected/total) * 100
+    return {approvedPerc,rejectedPerc}
+  }
+  catch (err) {
+    console.log("error in calculatePercentage ::: ", err.message)
   }
 }
 
