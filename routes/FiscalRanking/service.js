@@ -4633,6 +4633,7 @@ function computeQuery(params, cond = null) {
               $project: {
                 createdAt: 1,
                 modifiedAt: 1,
+                submittedDate:1,
                 designYear: 1,
                 isDraft: 1,
                 population11: "$population",
