@@ -71,7 +71,8 @@ async function manageLedgerData(params) {
   try {
     let { ledgerData, ledgerKeys, responseData, formId, currentFormStatus, ulbRole } = params
     let formHistory = await FormHistory.find({
-      recordId: formId
+      recordId: formId,
+      "actionTakenByRole":userTypes.ulb
     }, {
       data: 1
     }).sort({
