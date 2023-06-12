@@ -4851,7 +4851,7 @@ function computeQuery(params, cond = null) {
           modifiedAt: {
             $ifNull: [
               AggregationServices.getCommonDateTransformer(
-                "$fiscalrankings.modifiedAt"
+                "$fiscalrankings.submittedDate"
               ),
               "",
             ],
