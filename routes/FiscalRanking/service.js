@@ -71,7 +71,8 @@ async function manageLedgerData(params) {
   try {
     let { ledgerData, ledgerKeys, responseData, formId, currentFormStatus, ulbRole } = params
     let formHistory = await FormHistory.find({
-      recordId: formId
+      recordId: formId,
+      "data.0.actionTakenByRole":userTypes.ulb
     }, {
       data: 1
     }).sort({
@@ -86,6 +87,7 @@ async function manageLedgerData(params) {
       if (question.yearData.length) {
         for (let yearObj of question.yearData) {
           let historicalObject = formHistoryData.find(item => item.type === yearObj.type && item.year.toString() === yearObj.year.toString())
+          console.log("historicalObject ::: ",historicalObject)
           let yearName = getKeyByValue(years, yearObj.year);
           let ulbFyAmount = await getUlbLedgerDataFilter({
             code: yearObj.code,
@@ -1673,6 +1675,13 @@ const getUlbActivities = ({ req, sort, selectedState, selectedCategory, skip, li
       }
     }] : []),
     {
+      "$match": {
+        isActive: true,
+        ...(req.decoded.role == userTypes.state && req.decoded.state && { "state": ObjectId(req.decoded.state) }),
+        ...getCategoryMatchObject(selectedCategory)
+      },
+    },
+    {
       "$lookup": {
         "from": "fiscalrankings",
         "localField": "_id",
@@ -1778,15 +1787,6 @@ const getUlbActivities = ({ req, sort, selectedState, selectedCategory, skip, li
       }
     },
   ];
-  if (req.decoded.role == userTypes.state || selectedCategory) {
-    matchObj = {
-      "$match": {
-        ...(req.decoded.state && { "state": ObjectId(req.decoded.state) }),
-        ...getCategoryMatchObject(selectedCategory)
-      }
-    }
-    query = [matchObj, ...query]
-  }
 
   if (sort) {
     query.push({ $sort: sort });
@@ -1800,12 +1800,12 @@ const getUlbActivities = ({ req, sort, selectedState, selectedCategory, skip, li
 const getPMUActivities = ({ req, sort, selectedState, skip, limit, sortBy, order, filters, filterObj, sortKey, designYear }) => {
 
   const query = [
-    ...(req.decoded.role == userTypes.state ? [{
-      $match: {
+    {
+      "$match": {
         "isActive": true,
-        "state": ObjectId(req.decoded.state)
+        ...(req.decoded.role == userTypes.state && req.decoded.state && { "state": ObjectId(req.decoded.state) }),
       }
-    }] : []),
+    },
     {
       "$lookup": {
         "from": "fiscalrankings",
@@ -1915,28 +1915,33 @@ const getPMUActivities = ({ req, sort, selectedState, skip, limit, sortBy, order
 }
 const getPopulationWiseData = ({ stateId, selectedCategory, columns, sort, skip, limit, sortBy, order, filters, filterObj, sortKey, designYear }) => {
 
+
   const parameters = [
     {
-      condition: '$gt',
-      value: 4000000,
-      label: '4MN+'
+      label: '4MN+',
+      query: [
+        { $gt: ["$population", 4000000] }
+      ],
     },
     {
-      condition: 'range',
-      min: 1000000,
-      max: 4000000,
-      label: '1MN to 4MN'
+      label: '1MN to 4MN',
+      query: [
+        { $lte: ["$population", 4000000] },
+        { $gte: ["$population", 1000000] },
+      ]
     },
     {
-      condition: 'range',
-      min: 100000,
-      max: 1000000,
-      label: '100K to 1MN'
+      label: '100K to 1MN',
+      query: [
+        { $lt: ["$population", 1000000] },
+        { $gte: ["$population", 100000] }
+      ],
     },
     {
-      condition: '$lt',
-      value: 100000,
-      label: '<100K'
+      label: '<100K',
+      query: [
+        { $lt: ["$population", 100000] }
+      ],
     },
   ];
 
@@ -1944,10 +1949,8 @@ const getPopulationWiseData = ({ stateId, selectedCategory, columns, sort, skip,
     {
       "$match": {
         "isActive": true,
-        ...(stateId && {
-          "state": ObjectId(stateId)
-        })
-      }
+        ...(stateId && { state: ObjectId(stateId) }),
+      },
     },
     {
       "$lookup": {
@@ -1985,18 +1988,8 @@ const getPopulationWiseData = ({ stateId, selectedCategory, columns, sort, skip,
                 $sum: {
                   $cond: {
                     if: {
-                      $and: parameter.condition == 'range' ? [
-                        { $gt: ["$population", parameter.min] },
-                        { $lt: ["$population", parameter.max] },
-                        ...(column.key == 'totalUlbs' ? [] : (
-                          column.currentFormStatus == 1 ? [{
-                            "$eq": ["$emptyForms", 1]
-                          }] : [{
-                            [Array.isArray(column.currentFormStatus) ? '$in' : '$eq']: ["$formData.currentFormStatus", column.currentFormStatus]
-                          }]
-                        ))
-                      ] : [
-                        { [parameter.condition]: ["$population", parameter.value] },
+                      $and: [
+                        ...parameter.query,
                         ...(column.key == 'totalUlbs' ? [] : (
                           column.currentFormStatus == 1 ? [{
                             "$eq": ["$emptyForms", 1]
@@ -2215,9 +2208,8 @@ exports.overview = async function (req, res, next) {
     }
     let sortKey = getSortByKeys(sortBy, order)
     let designYear = years['2022-23']
-    let sort = {
-      "stateName": 1
-    };
+
+    let sort; 
     if (sortBy) {
       if (Array.isArray(sortBy)) {
         sort = sortBy?.reduce((obj, key, index) => ({ ...obj, [key]: +order[index] }), {});
@@ -2875,7 +2867,7 @@ function getAggregateQuery(
   try {
     //stage one get Matching ulbs
     let match_ulb_with_access = {
-      $match: { access_2223: true },
+      $match: { isActive: true },
     };
     // if state id is provided then it will search ulb with state
     if (stateId !== null && stateId !== undefined) {
@@ -4112,36 +4104,6 @@ module.exports.FROverAllUlbData = async (req, res) => {
       "designationOftNodalOfficer",
       "otherUpload",
     ];
-    // let percentCompletionArr = [
-    //   "population11",
-    //   "populationFr",
-    //   "webLink",
-    //   "nameCmsnr",
-    //   "auditorName",
-    //   "nameOfNodalOfficer",
-    //   "designationOftNodalOfficer",
-    //   "email",
-    //   "mobile",
-    //   "waterSupply",
-    //   "sanitationService",
-    //   "propertyWaterTax",
-    //   "propertySanitationTax",
-    //   "FR_auditAnnualReport_2021-22",
-    //   "FR_auditAnnualReport_2020-21",
-    //   "FR_auditAnnualReport_2019-20",
-    //   "FR_webUrlAnnual_2021-22",
-    //   "FR_registerGis_2021-22",
-    //   "FR_accountStwre_2021-22",
-    //   "FR_accountStwreProof_2021-22",
-    //   "FR_appAnnualBudget_2023-24",
-    //   "FR_appAnnualBudget_2022-23",
-    //   "FR_appAnnualBudget_2021-22",
-    //   "FR_appAnnualBudget_2020-21",
-    //   "FR_auditedAnnualFySt_2021-22",
-    //   "FR_auditedAnnualFySt_2020-21",
-    //   "FR_auditedAnnualFySt_2019-20",
-    //   "FR_auditedAnnualFySt_2018-19",
-    // ];
     let csv2 = createCsv({
       query,
       res,
@@ -4706,6 +4668,7 @@ function computeQuery(params, cond = null) {
               $project: {
                 createdAt: 1,
                 modifiedAt: 1,
+                submittedDate:1,
                 designYear: 1,
                 isDraft: 1,
                 population11: "$population",
@@ -4924,7 +4887,7 @@ function computeQuery(params, cond = null) {
           modifiedAt: {
             $ifNull: [
               AggregationServices.getCommonDateTransformer(
-                "$fiscalrankings.modifiedAt"
+                "$fiscalrankings.submittedDate"
               ),
               "",
             ],
@@ -5210,7 +5173,7 @@ module.exports.FRUlbFinancialData = async (req, res) => {
 }
 
 const fiscalRankingFilter = (req) => {
-  let condition = {};
+  let condition = { "isActive": true };
   let condition_one = {}
   try {
     if (req.query.stateName && req.query.stateName != "null") condition['state'] = ObjectId(state)

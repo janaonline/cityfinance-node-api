@@ -22,7 +22,7 @@ module.exports.fyCsvDownloadQuery = () => {
                 "preserveNullAndEmptyArrays": true
             }
         },
-        // { $match: condition },
+        { $match: { "ulb.isActive": true } },
         {
             "$project": {
                 "ulbName": "$ulb.name",
