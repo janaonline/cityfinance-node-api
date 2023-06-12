@@ -46,7 +46,8 @@ const {
   statusTracker,
   questionLevelStatus,
   calculatedFields,
-  fiscalRankingQestionSortkeys
+  fiscalRankingQestionSortkeys,
+  requiredFields
 } = require("./fydynemic");
 const catchAsync = require("../../util/catchAsync");
 const State = require("../../models/State");
@@ -65,24 +66,25 @@ let priorTabsForFiscalRanking = {
 
 
 
-async function manageLedgerData(params){
+async function manageLedgerData(params) {
   let messages = []
-  try{
-    let {ledgerData,ledgerKeys,responseData,formId,currentFormStatus,ulbRole} = params
+  try {
+    let { ledgerData, ledgerKeys, responseData, formId, currentFormStatus, ulbRole } = params
     let formHistory = await FormHistory.find({
-      recordId:formId
-    },{
-      data:1
+      recordId: formId
+    }, {
+      data: 1
     }).sort({
-      "_id":-1
+      "_id": -1
     }).limit(1).lean()
     let formHistoryData = formHistory[0] && formHistory[0].data.length ? formHistory[0]?.data[0]['fiscalMapperData'].filter(item => ledgerKeys.includes(item.type) && item.modelName === "ULBLedger") : []
-    let errYears = []
-    let dps = []
-    for(let ledgerKey of ledgerKeys){
+    let errYears = new Set()
+    let dps = new Set()
+    let errorWithDps = {}
+    for (let ledgerKey of ledgerKeys) {
       let question = responseData.financialInformation[ledgerKey]
-      if(question.yearData.length){
-        for(let yearObj of question.yearData){
+      if (question.yearData.length) {
+        for (let yearObj of question.yearData) {
           let historicalObject = formHistoryData.find(item => item.type === yearObj.type && item.year.toString() === yearObj.year.toString())
           let yearName = getKeyByValue(years, yearObj.year);
           let ulbFyAmount = await getUlbLedgerDataFilter({
@@ -90,26 +92,33 @@ async function manageLedgerData(params){
             year: yearObj.year.toString(),
             data: ledgerData,
           })
-          if(yearObj.previousYearCodes && yearObj.previousYearCodes.length){
-            ulbFyAmount = await getPreviousYearValues(yearObj,ledgerData)
+          if (yearObj.previousYearCodes && yearObj.previousYearCodes.length) {
+            ulbFyAmount = await getPreviousYearValues(yearObj, ledgerData)
           }
-          if(historicalObject && ulbFyAmount !== historicalObject.value  && ![years['2020-21'],years['2021-22']].includes(yearObj.year) ){
-            if(![statusTracker.IP,statusTracker.SAP].includes(currentFormStatus)){
-              errYears.push(getKeyByValue(years, yearObj.year))
-              dps.push(question.displayPriority)
+          if (historicalObject && ulbFyAmount !== historicalObject.value && ![years['2020-21'], years['2021-22']].includes(yearObj.year)) {
+            if (![statusTracker.IP, statusTracker.SAP].includes(currentFormStatus)) {
+              try{
+                errorWithDps[question.displayPriority].push(getKeyByValue(years, yearObj.year))
+              } 
+              catch(err){
+                errorWithDps[question.displayPriority] = [getKeyByValue(years, yearObj.year)]
+              }
+              errYears.add(getKeyByValue(years, yearObj.year))
+              dps.add(question.displayPriority)
               // messages.push(msg)
             }
-            let calculationFields =  Object.entries(responseData.financialInformation).reduce((result,[key,value]) => ({...result, ...(question?.calculatedFrom.includes(value.displayPriority)) && {[key]: value}}) ,{})
-            Object.values(calculationFields).forEach((item)=>{
-              item.yearData.forEach((childItem)=>{
-                if(childItem.year.toString() ===  yearObj.year){
-                  childItem.readonly = [statusTracker.RBP,statusTracker.IP].includes(currentFormStatus) && [questionLevelStatus['1']].includes(childItem.status) && ulbRole === userTypes.ulb ? false  : childItem.readonly
-                  childItem.rejectReason = [statusTracker.RBP,statusTracker.IP].includes(currentFormStatus) && [questionLevelStatus['1']].includes(childItem.status) ? msg  : childItem.rejectReason
-                  childItem.status = [statusTracker.RBP,statusTracker.IP].includes(currentFormStatus) && [questionLevelStatus['1']].includes(childItem.status)  ? "REJECTED"  :  childItem.status 
+            let calculationFields = Object.entries(responseData.financialInformation).reduce((result, [key, value]) => ({ ...result, ...(question?.calculatedFrom.includes(value.displayPriority)) && { [key]: value } }), {})
+            Object.values(calculationFields).forEach((item) => {
+              item.yearData.forEach((childItem) => {
+                let reason = `Data for this field has been updated in ledger. kindly revisit the calculation`
+                if (childItem.year.toString() === yearObj.year) {
+                  childItem.readonly = [statusTracker.RBP, statusTracker.IP].includes(currentFormStatus) && [questionLevelStatus['1']].includes(childItem.status) && ulbRole === userTypes.ulb ? false : childItem.readonly
+                  childItem.rejectReason = [statusTracker.RBP, statusTracker.IP].includes(currentFormStatus) && [questionLevelStatus['1']].includes(childItem.status) ? reason : childItem.rejectReason
+                  childItem.status = [statusTracker.RBP, statusTracker.IP].includes(currentFormStatus) && [questionLevelStatus['1']].includes(childItem.status) ? "REJECTED" : childItem.status
                 }
               })
             })
-            responseData = {...responseData , ...calculationFields}
+            responseData = { ...responseData, ...calculationFields }
           }
           yearObj.modelName = ulbFyAmount ? "ULBLedger" : ""
           yearObj.value = ulbFyAmount ? ulbFyAmount : yearObj.value
@@ -117,8 +126,8 @@ async function manageLedgerData(params){
         }
       }
     }
-    if(errYears.length){
-      msg = `Data for fields ${dps.join(",")} and years${errYears.join(",")} has been updated. kindly revisit those calculations`
+    if (Array.from(errYears).length) {
+      let msg = `Data for fields ${Array.from(dps).join(",")} and years ${Array.from(errYears).join(",")} has been updated. kindly revisit those calculations`
       messages.push(msg)
     }
     return {
@@ -126,8 +135,8 @@ async function manageLedgerData(params){
       messages
     }
   }
-  catch(err){
-    console.log("error in manageLedgerData  ::::",err.message)
+  catch (err) {
+    console.log("error in manageLedgerData  ::::", err.message)
   }
 }
 
@@ -474,7 +483,7 @@ function assignCalculatedValues(fyDynemic, viewONe) {
 const getReadOnly = (status, isDraft, role, questionStatus) => {
   let allowedMainLevelStatus = [statusTracker.IP, statusTracker.NS, statusTracker.RBP]
   let allowedQuestionLevelStatus = [questionLevelStatus['3']]
-  let specialCases = [statusTracker.RBP, questionLevelStatus['1'],statusTracker.IP]
+  let specialCases = [statusTracker.RBP, questionLevelStatus['1'], statusTracker.IP]
   if (role !== "ULB" || status === statusTracker.VIP) {
     return true
   }
@@ -810,7 +819,7 @@ exports.getView = async function (req, res, next) {
   try {
     let condition = {};
     let { role } = req.decoded
-    console.log("role :: ",role)
+    console.log("role :: ", role)
     if (req.query.ulb && req.query.design_year) {
       condition = {
         ulb: ObjectId(req.query.ulb),
@@ -984,7 +993,7 @@ exports.getView = async function (req, res, next) {
       ulb: ObjectId(req.query.ulb),
     });
     let userMessages = []
-    let ledgerKeys = ["fixedAsset","CaptlExp"]
+    let ledgerKeys = ["fixedAsset", "CaptlExp"]
     for (let sortKey in fyDynemic) {
       let subData = fyDynemic[sortKey];
       // console.log("subData  >>>> 1::: ",subData)
@@ -1004,9 +1013,9 @@ exports.getView = async function (req, res, next) {
           else {
             pf['readonly'] = true
           }
-          
+
           if (pf?.code?.length > 0) {
-            if(!ledgerKeys.includes(key)){
+            if (!ledgerKeys.includes(key)) {
               ledgerKeys.push(key)
             }
             pf["status"] = '';
@@ -1192,7 +1201,7 @@ exports.getView = async function (req, res, next) {
                   }
                 }
               } else if (pf?.previousYearCodes?.length) {
-                if(!ledgerKeys.includes(key)){
+                if (!ledgerKeys.includes(key)) {
                   ledgerKeys.push(key)
                 }
                 let yearName = getKeyByValue(years, pf.year);
@@ -1250,20 +1259,20 @@ exports.getView = async function (req, res, next) {
     };
     let ulbRole = req.decoded.role
     let params = {
-      ledgerData : ulbData,
-      ledgerKeys:ledgerKeys,
-      responseData:{...fyDynemic},
-      formId:viewOne._id,
-      ulbRole:ulbRole,
-      currentFormStatus:viewOne.currentFormStatus
+      ledgerData: ulbData,
+      ledgerKeys: ledgerKeys,
+      responseData: { ...fyDynemic },
+      formId: viewOne._id,
+      ulbRole: ulbRole,
+      currentFormStatus: viewOne.currentFormStatus
     }
     /**
      * This function always get latest data for ledgers
      */
     let modifiedLedgerData = fyDynemic
-     let {responseData,messages} = await manageLedgerData(params)
-     modifiedLedgerData = responseData
-     userMessages = messages
+    let { responseData, messages } = await manageLedgerData(params)
+    modifiedLedgerData = responseData
+    userMessages = messages
     Object.assign(conditionForFeedbacks, condition);
     let modifiedTabs = await getModifiedTabsFiscalRanking(
       tabs,
@@ -1283,8 +1292,12 @@ exports.getView = async function (req, res, next) {
       tabs: modifiedTabs,
       currentFormStatus: viewOne.currentFormStatus,
       financialYearTableHeader,
-      messages:userMessages
+      messages: userMessages
     };
+    if (messages.length > 0 && role === "ULB") {
+      let {approvedPerc,rejectedPerc} = calculatePercentage(modifiedLedgerData, requiredFields, viewOne)
+      await updatePercentage(approvedPerc,rejectedPerc,viewOne.formId)
+    }
     return res
       .status(200)
       .json({ status: true, message: "Success fetched data!", data: viewData });
@@ -1295,6 +1308,27 @@ exports.getView = async function (req, res, next) {
       .json({ status: false, message: "Something went wrong!" });
   }
 };
+
+async function updatePercentage(approvedPerc,rejectedPerc,formId){
+  try{
+    let filter = {
+      "_id":formId
+    }
+    let payload = {
+      "progress.approvedProgress":approvedPerc < 100 && approvedPerc !== 0 ? approvedPerc.toFixed(2).toString() : parseInt(approvedPerc).toString() ,
+      "progress.rejectedProgress":rejectedPerc < 100 && rejectedPerc !== 0 ? rejectedPerc.toFixed(2).toString() : parseInt(rejectedPerc).toString() 
+    }
+    console.log("payload :: ",payload)
+    await FiscalRanking.findOneAndUpdate({
+      filter
+    },payload)
+    
+  }
+  catch(err){
+    console.log("error in updatePercentage ::: ",err.message)
+  }
+}
+
 
 /**
  * It takes an object with three properties (code, year, data) and returns the sum of the totalAmount
@@ -1635,7 +1669,7 @@ const getUlbActivities = ({ req, sort, selectedState, selectedCategory, skip, li
   let query = [
     ...(req.decoded.role == userTypes.state ? [{
       $match: {
-        "isActive":true,
+        "isActive": true,
         "state": ObjectId(req.decoded.state)
       }
     }] : []),
@@ -1769,7 +1803,7 @@ const getPMUActivities = ({ req, sort, selectedState, skip, limit, sortBy, order
   const query = [
     ...(req.decoded.role == userTypes.state ? [{
       $match: {
-        "isActive":true,
+        "isActive": true,
         "state": ObjectId(req.decoded.state)
       }
     }] : []),
@@ -1910,7 +1944,7 @@ const getPopulationWiseData = ({ stateId, selectedCategory, columns, sort, skip,
   const query = [
     {
       "$match": {
-        "isActive":true,
+        "isActive": true,
         ...(stateId && {
           "state": ObjectId(stateId)
         })
@@ -2183,7 +2217,7 @@ exports.overview = async function (req, res, next) {
     let sortKey = getSortByKeys(sortBy, order)
     let designYear = years['2022-23']
     let sort = {
-      "stateName":1
+      "stateName": 1
     };
     if (sortBy) {
       if (Array.isArray(sortBy)) {
@@ -2192,8 +2226,8 @@ exports.overview = async function (req, res, next) {
         sort = { [sortBy]: +order };
       }
     }
-    if(!sort) {
-      sort = { 'stateName': 1};
+    if (!sort) {
+      sort = { 'stateName': 1 };
     }
 
     console.log({ sort, skip, limit, sortBy, order, filters, filterObj, sortKey, designYear });
@@ -2234,8 +2268,8 @@ exports.overview = async function (req, res, next) {
       data,
       lastRow,
     }
-    if(type == 'UlbActivities') {
-      response['headerLink'] =  {
+    if (type == 'UlbActivities') {
+      response['headerLink'] = {
         label: 'See National level data',
         link: '/rankings/populationWise?stateName=India' + (selectedCategory ? '&selectedCategory=' + selectedCategory : '')
       };
@@ -2596,14 +2630,18 @@ function appendStages(query) {
         filled: "$records.filled",
         populationCategory: "$records.populationCategory",
         formData: "$records.formData",
-        ulbDataSubmitted: { $ifNull: [{
-          "$concat":[`$records.formData.progress.ulbCompletion`,"%"]
-        }, {
-          "$concat":["0","%"]
-        }] },
-        pmuVerificationProgress: { $ifNull: [{
-          "$concat":[`$records.formData.progress.approvedProgress`,`%`,`,`,`$records.formData.progress.rejectedProgress`,`%`]
-        }, {"$concat":["0","%"]}] },
+        ulbDataSubmitted: {
+          $ifNull: [{
+            "$concat": [`$records.formData.progress.ulbCompletion`, "%"]
+          }, {
+            "$concat": ["0", "%"]
+          }]
+        },
+        pmuVerificationProgress: {
+          $ifNull: [{
+            "$concat": [`$records.formData.progress.approvedProgress`, `%`, `,`, `$records.formData.progress.rejectedProgress`, `%`]
+          }, { "$concat": ["0", "%"] }]
+        },
         "total": {
           $let: {
             vars: {
@@ -2756,7 +2794,7 @@ function getFormQuery(queryArr, collectionName, design_year, csv) {
         $project: {
           _id: 1,
           status: 1,
-          progress:1,
+          progress: 1,
           actionTakenByRole: 1,
           isDraft: 1,
           currentFormStatus: 1,
@@ -3451,29 +3489,29 @@ function getStatusesFromObject(obj, element, ignoredVariables) {
 
 async function manageFormPercentage(params) {
   try {
-    let { totalIndicator, completedIndicator, approvedIndicator, rejectedIndicator, formId,updateForm } = params
+    let { totalIndicator, completedIndicator, approvedIndicator, rejectedIndicator, formId, updateForm } = params
     let completedPercentage = (completedIndicator / totalIndicator) * 100
     let verificationProgress = ((approvedIndicator + rejectedIndicator) / totalIndicator) * 100
-    let approvedPerc = (approvedIndicator/totalIndicator)*100
-    let rejectedPerc = (rejectedIndicator/totalIndicator)*100
+    let approvedPerc = (approvedIndicator / totalIndicator) * 100
+    let rejectedPerc = (rejectedIndicator / totalIndicator) * 100
     let payload = {}
-    console.log(">>",completedPercentage)
+    console.log(">>", completedPercentage)
     console.log({ totalIndicator, completedIndicator, approvedIndicator, rejectedIndicator, formId })
-    if(updateForm){
-      payload["progress.ulbCompletion"]=  completedPercentage < 100 && completedPercentage!= 0 ? completedPercentage.toFixed(2) : (parseInt(completedPercentage)).toString()
+    if (updateForm) {
+      payload["progress.ulbCompletion"] = completedPercentage < 100 && completedPercentage != 0 ? completedPercentage.toFixed(2) : (parseInt(completedPercentage)).toString()
     }
-    else{
-      payload["progress.verificationProgress"]= verificationProgress < 100 && verificationProgress != 0 ? verificationProgress.toFixed(2) : (parseInt(verificationProgress)).toString()
+    else {
+      payload["progress.verificationProgress"] = verificationProgress < 100 && verificationProgress != 0 ? verificationProgress.toFixed(2) : (parseInt(verificationProgress)).toString()
       payload['progress.approvedProgress'] = approvedPerc < 100 && approvedPerc != 0 ? approvedPerc.toFixed(2) : (parseInt(approvedPerc)).toString()
-      payload['progress.rejectedProgress'] = rejectedPerc < 100  && rejectedPerc != 0 ? rejectedPerc.toFixed(2) : (parseInt(rejectedPerc)).toString()
+      payload['progress.rejectedProgress'] = rejectedPerc < 100 && rejectedPerc != 0 ? rejectedPerc.toFixed(2) : (parseInt(rejectedPerc)).toString()
     }
     console.log(payload)
     await FiscalRanking.findOneAndUpdate({
-      "_id":formId
-    },payload)    
+      "_id": formId
+    }, payload)
   }
-  catch(err){
-    console.log("error in manageFormPercentage :::: ",err.message)
+  catch (err) {
+    console.log("error in manageFormPercentage :::: ", err.message)
   }
 }
 
@@ -3527,25 +3565,25 @@ async function calculateAndUpdateStatusForMappers(
         }
         if (obj[k].yearData) {
           total += 1
-          
+
           let yearArr = obj[k].yearData;
           let dynamicObj = obj[k];
           let financialInfo = obj;
-          yearArr.forEach((uniqueItem)=>{
-            let item = {...uniqueItem}
+          yearArr.forEach((uniqueItem) => {
+            let item = { ...uniqueItem }
             let skipFiles = {
-              "registerGisProof":"registerGis",
-              "accountStwreProof":"accountStwre"
+              "registerGisProof": "registerGis",
+              "accountStwreProof": "accountStwre"
             }
-            if(Object.keys(skipFiles).includes(item.type)){
+            if (Object.keys(skipFiles).includes(item.type)) {
               let element = tab.data[skipFiles[item.type]]['yearData'][0]
-              if(element.value == "No" || element.value === ""){
-                  item.required = false
+              if (element.value == "No" || element.value === "") {
+                item.required = false
               }
               item.status = element.status
-              
+
             }
-            if(item?.required && item.year){
+            if (item?.required && item.year) {
               totalIndicator += 1
               let count = calculateReviewCount(item)
               completedIndicator += count[0]
@@ -3578,17 +3616,17 @@ async function calculateAndUpdateStatusForMappers(
             key === priorTabsForFiscalRanking["basicUlbDetails"] ||
             key === priorTabsForFiscalRanking["conInfo"] ||
             fiscalRankingKeys.includes(k)
-            
+
           ) {
-            if(k === "signedCopyOfFile"){
+            if (k === "signedCopyOfFile") {
               console.log("inside if  condition")
               totalIndicator += 1
               let demoItem = {
-                "status":obj[k].status,
-               "file":{
-                name:obj[k].name,
-                url:obj[k].url || ""
-               }
+                "status": obj[k].status,
+                "file": {
+                  name: obj[k].name,
+                  url: obj[k].url || ""
+                }
               }
               let count = calculateReviewCount(demoItem)
               completedIndicator += count[0]
@@ -3599,7 +3637,7 @@ async function calculateAndUpdateStatusForMappers(
               "population11",
               "populationFr"
             ]);
-            let finalStatus = statueses.every((item) => {              
+            let finalStatus = statueses.every((item) => {
               return item === "APPROVED"
             });
             temp["status"].push(finalStatus);
@@ -3611,7 +3649,7 @@ async function calculateAndUpdateStatusForMappers(
               updateForm,
               isDraft,
               session,
-              
+
             );
           }
         }
@@ -3627,7 +3665,7 @@ async function calculateAndUpdateStatusForMappers(
         conditionalObj[tabName].status = "NA";
       }
     }
-    let params = { totalIndicator, completedIndicator, approvedIndicator, rejectedIndicator, formId ,updateForm}
+    let params = { totalIndicator, completedIndicator, approvedIndicator, rejectedIndicator, formId, updateForm }
     await session.commitTransaction();
     await session.endSession();
     await manageFormPercentage(params)
@@ -3903,14 +3941,14 @@ async function checkIfFormIdExistsOrNot(
 }
 
 
-const checkIfActionTaken = (actions)=>{
-  try{
-      let tab = actions.find(item => item.id === "s5")['data']
-      let actionTaken = Object.entries(tab).some(([key,value]) => ["APPROVED","REJECTED"].includes(value.status) )
-      return actionTaken
+const checkIfActionTaken = (actions) => {
+  try {
+    let tab = actions.find(item => item.id === "s5")['data']
+    let actionTaken = Object.entries(tab).some(([key, value]) => ["APPROVED", "REJECTED"].includes(value.status))
+    return actionTaken
   }
-  catch(err){
-    console.log("error in checkIfActionTaken ::: ",err.message)
+  catch (err) {
+    console.log("error in checkIfActionTaken ::: ", err.message)
   }
   return true
 }
@@ -3925,7 +3963,7 @@ module.exports.createForm = catchAsync(async (req, res) => {
   try {
     let { ulbId, formId, actions, design_year, isDraft, currentFormStatus } = req.body;
     let { role, _id: userId } = req.decoded;
-    if(statusTracker.VIP === currentFormStatus){
+    if (statusTracker.VIP === currentFormStatus) {
       const actionTaken = await checkIfActionTaken(actions)
       currentFormStatus = actionTaken ? statusTracker.VIP : statusTracker.VNS
     }
@@ -3938,7 +3976,7 @@ module.exports.createForm = catchAsync(async (req, res) => {
       userId,
       currentFormStatus
     );
-    
+
     if (!formIdValidations.valid) {
       response.message = formIdValidations.message;
       return res.status(500).json(response);
@@ -3963,7 +4001,7 @@ module.exports.createForm = catchAsync(async (req, res) => {
       design_year,
       true,
       isDraft
-      );
+    );
     await createHistory(params)
     if (!isDraft) {
       await FiscalRanking.findOneAndUpdate({
@@ -4307,9 +4345,9 @@ async function createHistory(params) {
     // }
     // await saveFormHistory(historyParams)
     // }
-    console.log("formBodyStatus ::: ",formBodyStatus) 
+    console.log("formBodyStatus ::: ", formBodyStatus)
     if (formBodyStatus === MASTER_STATUS["In Progress"]) {
-    
+
       let currentStatusData = {
         formId: masterFormId,
         recordId: formId,
@@ -4329,7 +4367,7 @@ async function createHistory(params) {
       // await session.commitTransaction();
       // return Response.OK(res, {}, "Form Submitted");
     } else if (
-      [MASTER_STATUS["Submission Acknowledged by PMU"],MASTER_STATUS["Verification Not Started"],MASTER_STATUS["Verification In Progress"],MASTER_STATUS["Returned by PMU"]].includes(formBodyStatus)
+      [MASTER_STATUS["Submission Acknowledged by PMU"], MASTER_STATUS["Verification Not Started"], MASTER_STATUS["Verification In Progress"], MASTER_STATUS["Returned by PMU"]].includes(formBodyStatus)
     ) {
       let data = await FiscalRanking.find({ "_id": formId }).lean()
       let mapperData = await FiscalRankingMapper.find({ "fiscal_ranking": formId })
@@ -4713,7 +4751,7 @@ function computeQuery(params) {
             },
           ],
           as: "fiscalrankings",
-        },  
+        },
       },
       {
         $unwind: {
@@ -4898,27 +4936,33 @@ function computeQuery(params) {
               },
             },
           },
-          ulbDataSubmitted: { $ifNull: [{
-            "$concat":[`$fiscalrankings.ulbDataSubmitted`,"%"]
-          }, {
-            "$concat":["0","%"]
-          }] },
-          pmuVerificationapprovedProgress: { $ifNull: [{
-            "$concat": [
-              {"$toString":"$fiscalrankings.pmuVerificationapprovedProgress"},
-              "%"
-          ]
-          }, {
-            "$concat":["0","%"]
-          }] },
-          pmuVerificationrejectedProgress: { $ifNull: [{
-            "$concat": [
-              {"$toString":"$fiscalrankings.pmuVerificationrejectedProgress"},
-              "%"
-          ]
-          }, {
-            "$concat":["0","%"]
-          }] },
+          ulbDataSubmitted: {
+            $ifNull: [{
+              "$concat": [`$fiscalrankings.ulbDataSubmitted`, "%"]
+            }, {
+              "$concat": ["0", "%"]
+            }]
+          },
+          pmuVerificationapprovedProgress: {
+            $ifNull: [{
+              "$concat": [
+                { "$toString": "$fiscalrankings.pmuVerificationapprovedProgress" },
+                "%"
+              ]
+            }, {
+              "$concat": ["0", "%"]
+            }]
+          },
+          pmuVerificationrejectedProgress: {
+            $ifNull: [{
+              "$concat": [
+                { "$toString": "$fiscalrankings.pmuVerificationrejectedProgress" },
+                "%"
+              ]
+            }, {
+              "$concat": ["0", "%"]
+            }]
+          },
           comment_1: "",
           "II CONTACT INFORMATION_Comments": "",
           "III FINANCIAL INFORMATION_Comments": "",
@@ -5038,6 +5082,48 @@ exports.heatMapReport = async (req, res, next) => {
       response.message = err.message
     }
     return res.json(response)
+  }
+}
+
+/**
+ * @param {object} fyData 
+ * @param {Array} requiredKeys 
+ */
+function calculatePercentage(fyData, requiredKeys, viewOne) {
+  try {
+    let total = 0
+    let approved = 0
+    let rejected = 0
+    if (viewOne['signedCopyOfFile']) {
+      total+=1
+      if (viewOne["signedCopyOfFile"]?.status === "APPROVED") {
+        approved += 1
+      }
+      else if (viewOne["signedCopyOfFile"]?.status === "REJECTED") {
+        rejected += 1
+      }
+    }
+    for (let requiredKey of requiredKeys) {
+      let financialObj = fyData.financialInformation[requiredKey] || fyData.uploadFyDoc[requiredKey]
+      let financialYears = financialObj?.yearData || []
+      for (let item of financialYears) {
+        if (item.status) {
+          total += 1
+        }
+        if (item.status === "APPROVED") {
+          approved += 1
+        }
+        else if (item.status === "Rejected") {
+          rejected += 1
+        }
+      }
+    }
+    let approvedPerc = (approved/total) * 100
+    let rejectedPerc = (rejected/total) * 100
+    return {approvedPerc,rejectedPerc}
+  }
+  catch (err) {
+    console.log("error in calculatePercentage ::: ", err.message)
   }
 }
 
@@ -5244,21 +5330,21 @@ function createCsv(params) {
  * @returns An array containing the values of `completedIndicator`, `approvedIndicator`, and
  * `rejectedIndicator`.
  */
-function calculateReviewCount(item){
+function calculateReviewCount(item) {
   let completedIndicator = 0
   let approvedIndicator = 0
   let rejectedIndicator = 0
-  if(item.value || item.date != null || (item.file && item?.file?.url) || (item.file && item.modelName === "ULBLedger")){
-    console.log("item.type :: ",item.type)
+  if (item.value || item.date != null || (item.file && item?.file?.url) || (item.file && item.modelName === "ULBLedger")) {
+    console.log("item.type :: ", item.type)
     completedIndicator = 1;
   }
-  if(item.status === "APPROVED" || (item.file && item.modelName === "ULBLedger")){
+  if (item.status === "APPROVED" || (item.file && item.modelName === "ULBLedger")) {
     approvedIndicator = 1;
-  }calculateReviewCount
-  if(item.status === "REJECTED" || (item.file && item.modelName === "ULBLedger")){
+  } calculateReviewCount
+  if (item.status === "REJECTED" || (item.file && item.modelName === "ULBLedger")) {
     rejectedIndicator = 1;
   }
-  return [completedIndicator,approvedIndicator,rejectedIndicator]
+  return [completedIndicator, approvedIndicator, rejectedIndicator]
 }
 
 module.exports.checkUndefinedValidations = checkUndefinedValidations
