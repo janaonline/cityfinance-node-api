@@ -72,13 +72,14 @@ async function manageLedgerData(params) {
     let { ledgerData, ledgerKeys, responseData, formId, currentFormStatus, ulbRole } = params
     let formHistory = await FormHistory.find({
       recordId: formId,
-      "actionTakenByRole":userTypes.ulb
+      "data.0.actionTakenByRole":userTypes.ulb
     }, {
       data: 1
     }).sort({
       "_id": -1
     }).limit(1).lean()
     let formHistoryData = formHistory[0] && formHistory[0].data.length ? formHistory[0]?.data[0]['fiscalMapperData'].filter(item => ledgerKeys.includes(item.type) && item.modelName === "ULBLedger") : []
+    console.log("formHistoryData :: ",formHistory)
     let errYears = new Set()
     let dps = new Set()
     let errorWithDps = {}
@@ -87,6 +88,7 @@ async function manageLedgerData(params) {
       if (question.yearData.length) {
         for (let yearObj of question.yearData) {
           let historicalObject = formHistoryData.find(item => item.type === yearObj.type && item.year.toString() === yearObj.year.toString())
+          console.log("historicalObject ::: ",historicalObject)
           let yearName = getKeyByValue(years, yearObj.year);
           let ulbFyAmount = await getUlbLedgerDataFilter({
             code: yearObj.code,
