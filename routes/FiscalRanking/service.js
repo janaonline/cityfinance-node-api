@@ -4070,36 +4070,6 @@ module.exports.FROverAllUlbData = async (req, res) => {
       "designationOftNodalOfficer",
       "otherUpload",
     ];
-    // let percentCompletionArr = [
-    //   "population11",
-    //   "populationFr",
-    //   "webLink",
-    //   "nameCmsnr",
-    //   "auditorName",
-    //   "nameOfNodalOfficer",
-    //   "designationOftNodalOfficer",
-    //   "email",
-    //   "mobile",
-    //   "waterSupply",
-    //   "sanitationService",
-    //   "propertyWaterTax",
-    //   "propertySanitationTax",
-    //   "FR_auditAnnualReport_2021-22",
-    //   "FR_auditAnnualReport_2020-21",
-    //   "FR_auditAnnualReport_2019-20",
-    //   "FR_webUrlAnnual_2021-22",
-    //   "FR_registerGis_2021-22",
-    //   "FR_accountStwre_2021-22",
-    //   "FR_accountStwreProof_2021-22",
-    //   "FR_appAnnualBudget_2023-24",
-    //   "FR_appAnnualBudget_2022-23",
-    //   "FR_appAnnualBudget_2021-22",
-    //   "FR_appAnnualBudget_2020-21",
-    //   "FR_auditedAnnualFySt_2021-22",
-    //   "FR_auditedAnnualFySt_2020-21",
-    //   "FR_auditedAnnualFySt_2019-20",
-    //   "FR_auditedAnnualFySt_2018-19",
-    // ];
     let csv2 = createCsv({
       query,
       res,
@@ -5099,7 +5069,7 @@ module.exports.FRUlbFinancialData = async (req, res) => {
 }
 
 const fiscalRankingFilter = (req) => {
-  let condition = {};
+  let condition = { "isActive": true };
   let condition_one = {}
   try {
     if (req.query.stateName && req.query.stateName != "null") condition['state'] = ObjectId(state)
