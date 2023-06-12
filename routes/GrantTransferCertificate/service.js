@@ -640,6 +640,7 @@ const getManipulatedJson = async(installment,type,design_year,formJson,fieldsToh
         flattedForm['disableFields'] = inputAllowed.includes(gtcForm?.currentFormStatus) && role === userTypes.state ? false : true 
         let questionJson = await mutuateGetPayload(formJson.data,flattedForm,keysToBeDeleted,"ULB")
         mformObject['language'] = questionJson
+        mformObject['isQuestionDisabled'] = inputAllowed.includes(gtcForm?.currentFormStatus) && role === userTypes.state ? false : true 
         // let questionD = questionJson[0]['question'].find(item => item.shortKey === "basic")['childQuestionData'][0]
         // let questionR = questionD.map(item => item.answer.answer)
         // console.log("questionD :: ",questionR)
