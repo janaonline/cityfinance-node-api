@@ -1342,8 +1342,9 @@ function updateResponse(response, InsufficientFlag) {
           ],
           uaScore: {
             title:
-              "Total UA Score for Water Supply and Sanitation : 60.00(out of maximum 60)",
+              "Total UA Score for Water Supply and Sanitation :",
             value: InsufficientFlag ? null : getUAScore(response["fourSLB"]['data']),
+            maximum: 60
           },
         },
         indicators_swm: {
@@ -1355,11 +1356,12 @@ function updateResponse(response, InsufficientFlag) {
           },
           uaScore: {
             title:
-              "Total UA Score for Solid Waste Management : 39.53 (out of maximum 40 marks)",
+              "Total UA Score for Solid Waste Management :",
             value: InsufficientFlag ? null : getindicators_swmScore(
               response["odf"]["score"],
               response["gfc"]["score"]
             ),
+            maximum: 40
           },
         },
         performanceAsst: {
@@ -1379,6 +1381,7 @@ function updateResponse(response, InsufficientFlag) {
                 response["odf"]["score"],
                 response["gfc"]["score"]
               ),
+            maximum: 100
           },
         },
       },
@@ -1606,6 +1609,18 @@ function createNewFormat(fourSLB) {
         censusCode: ulb.censusCode
       })
     }
+    Object.assign(newFormat[0],{
+        value:  String(fourSLB.approved.count + fourSLB.pending.count),
+        ulbs: [...fourSLB.approved.ulbs, ...fourSLB.pending.ulbs]
+      })
+    Object.assign( newFormat[1], {
+        value:fourSLB.approved.ulbs.length.toString(),
+        ulbs: fourSLB.approved.ulbs
+    })
+    Object.assign(newFormat[2] ,{
+        value: fourSLB.pending.ulbs.length.toString(),
+        ulbs: fourSLB.pending.ulbs
+    })
 
     return newFormat;
   } catch (error) {
@@ -1652,11 +1667,11 @@ function getGFCFormat(input) {
     }
 
     Object.assign(gfcFormat.data[0],{
-        value:  input.approved.count.toString(),
+        value:  String(input.approved.ulbs.length + input.pending.ulbs.length),
         ulbs: [...input.approved.ulbs, ...input.pending.ulbs]
       })
     Object.assign( gfcFormat.data[1], {
-        value:input.approved.ulbs.length.toString(),
+        value: input.approved.ulbs.length.toString(),
         ulbs: input.approved.ulbs
     })
     Object.assign(gfcFormat.data[2] ,{
@@ -1705,7 +1720,7 @@ function getODFFormat(input) {
     }
 
     Object.assign(odfFormat.data[0],{
-        value:  input.approved.count.toString(),
+        value:  String(input.approved.ulbs.length + input.pending.ulbs.length),
         ulbs: [...input.approved.ulbs, ...input.pending.ulbs]
       })
     Object.assign( odfFormat.data[1], {
