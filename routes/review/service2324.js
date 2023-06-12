@@ -11,6 +11,8 @@ const { canTakeActionOrViewOnlyMasterForm } = require('../../routes/CommonAction
 const { createDynamicColumns } = require('./service')
 const List = require('../../util/15thFCstatus')
 const MASTERSTATUS = require('../../models/MasterStatus');
+const Rating = require('../../models/Rating');
+
 const { years } = require('../../service/years');
 const mongoose = require('mongoose');
 
@@ -139,7 +141,13 @@ module.exports.get = async (req, res) => {
     let approvedUlbs = await forms2223(collectionName, data);
     await setCurrentStatus(req, data, approvedUlbs, collectionName, loggedInUserRole);
     // if users clicks on Download Button - the data gets downloaded as per the applied filter
+    let ratingList = []
+    // console.log("sssss::::",collectionName)
 
+    if (['ODF', 'GFC'].includes(collectionName)) {
+      let ratingIds = [...new Set(data.map(e => e?.formData?.rating))].filter(e => e !== undefined)
+      ratingList = ratingIds.length ? await getRating(ratingIds) : [];
+    }
     if (csv) {
       let filename = `Review_${formType}-${collectionName}.csv`;
       // Set appropriate download headers
@@ -152,7 +160,9 @@ module.exports.get = async (req, res) => {
         if (collectionName !== CollectionNames.annual && collectionName !== CollectionNames['28SLB']) {
           res.write("\ufeff" + `${fixedColumns.toString()} ${dynamicColumns.toString()} \r\n`);
           for (let el of data) {
+            if (['ODF', 'GFC'].includes(collectionName)) await setRating(el, ratingList)
             let dynamicElementData = await createDynamicElements(collectionName, formType, el);
+            // console.log("dynamicElementData",dynamicElementData)
             el.UA = el.UA === "null" ? "NA" : el.UA;
             el.isUA = el.UA === "NA" ? "No" : "Yes";
             el.censusCode = el.censusCode || "NA";
@@ -184,7 +194,6 @@ module.exports.get = async (req, res) => {
       res.end();
       return;
     }
-
     if (collectionName === CollectionNames.state_gtc || collectionName === CollectionNames.state_grant_alloc) {
       data.forEach((element) => {
         let { status, pending } = countStatusData(element, collectionName);
@@ -268,6 +277,28 @@ const setCurrentStatus = (req, data, approvedUlbs, collectionName, loggedInUserR
   })
   return data;
 }
+const setRating = (el, ratingList) => {
+  if (ratingList.length && el?.formData) {
+    let rating = ratingList.find(e => e?._id.toString() == el?.formData?.rating?.toString());
+    el['formData']['rating'] = rating ? rating : {
+      "name": "",
+      "marks": ""
+    };
+  }
+  return el
+}
+
+const getRating = async (ratingId) => {
+  return new Promise(async (resolve, reject) => {
+    try {
+      let d = await Rating.find({ "_id": { $in: ratingId } }, { "name": 1, "marks": 1 }).lean();
+      resolve(d)
+    } catch (error) {
+      reject(error)
+    }
+  })
+}
+
 
 
 
@@ -862,7 +893,7 @@ async function createDynamicElements(collectionName, formType, entity) {
   }
   let actions = actionTakenByResponse(entity.formData, entity.formStatus, formType, collectionName);
 
-  
+
   if (formType === "ULB") {
 
     if (!entity["formData"]["rejectReason_state"]) {
@@ -872,7 +903,7 @@ async function createDynamicElements(collectionName, formType, entity) {
     if (!entity["formData"]["rejectReason_mohua"]) {
       entity["formData"]["rejectReason_mohua"] = ""
     }
-    
+
     if (!entity["formData"]["responseFile_state"]) {
       entity["formData"]["responseFile_state"] = {
         url: "",
@@ -924,6 +955,7 @@ async function createDynamicElements(collectionName, formType, entity) {
     );
   }
   let data = entity?.formData;
+  // console.log("data",data)
   switch (formType) {
     case "ULB":
       switch (collectionName) {
@@ -2098,7 +2130,7 @@ function actionTakenByResponse(entity, formStatus, formType, collectionName) {
   ) {
     return obj;
   }
-  
+
   let stateFlag = true;
   let mohuaFlag = true;
   if (
