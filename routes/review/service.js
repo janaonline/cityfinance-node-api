@@ -27,7 +27,6 @@ function formatDate(date) {
 function createDynamicColumns(collectionName) {
   let columns = ``;
   switch (collectionName) {
-
     case CollectionNames.odf:
     case CollectionNames.gfc:
       columns = `Financial Year,Form Status, Created, Submitted On, Filled Status, Rating, Score, Certificate URL, Certificate Name, Certificate Issue Date,State Review Status, State Comments,MoHUA Review Status, MoHUA Comments, State Review File URL, MoHUA Review File URL `;
