@@ -3600,7 +3600,6 @@ async function calculateAndUpdateStatusForMappers(
             }
             let statueses = getStatusesFromObject(tab.data, "status", [
               "population11",
-              "populationFr"
             ]);
             let finalStatus = statueses.every((item) => {
               return item === "APPROVED"
