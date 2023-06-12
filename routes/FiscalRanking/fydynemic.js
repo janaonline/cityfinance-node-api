@@ -6547,6 +6547,71 @@ const fiscalRankingQestionSortkeys = () => {
     }
 }
 
+let requiredFields = [
+    'accountStwre',
+    'adminExpense',
+    'advTax',
+    'auditAnnualReport',
+    'CaptExpOther',
+    'CaptlExpSanitation',
+    'CaptlExpWaterSupply',
+    'categoryA',
+    'categoryB',
+    'categoryC',
+    'centralscheme',
+    'centralTransfer',
+    'cfcGrant',
+    'cssGrant',
+    'debtOs',
+    'drainageTax',
+    'entertainTax',
+    'faLandBuild',
+    'faOther',
+    'finExpense',
+    'fy_21_22_cash',
+    'fy_21_22_online',
+    'garbageFee',
+    'incmLandSale',
+    'incmOtherAssets',
+    'misExpense',
+    'octroiCompensation',
+    'omExpOther',
+    'otherCompensation',
+    'otherEstExpense',
+    'otherExpense',
+    'otherFee',
+    'otherGrant',
+    'otherIncome',
+    'otherStateTrans',
+    'otherTaxRev',
+    'paid_property_tax',
+    'paying_property_tax',
+    'profTax',
+    'property_tax_register',
+    'propertyTax',
+    'RcptBudget',
+    'registerGis',
+    'rentInc',
+    'sanitationFee',
+    'sewerageTax',
+    'sfcGrant',
+    'stateScheme',
+    'totalCaptlExpWaterSupply',
+    'totalOMCaptlExpSanitation',
+    'totalOwnRevenueArea',
+    'totalRcptSanitation',
+    'totalRcptWaterSupply',
+    'totalRecActual',
+    'waterSupplyFee',
+    'waterTax',
+    'webUrlAnnual',
+    'appAnnualBudget',
+    'auditedAnnualFySt',
+    'signedCopyOfFile'
+  ]
+
+
+
 module.exports.financialYearTableHeader = financialYearTableHeader
 module.exports.jsonObject = jsonObject
 module.exports.statusList = statusList
@@ -6557,3 +6622,4 @@ module.exports.fiscalRankingFormJson = fiscalRankingFormJson;
 module.exports.getInputKeysByType = getInputKeysByType;
 module.exports.fiscalRankingQestionSortkeys = fiscalRankingQestionSortkeys
 module.exports.calculatedFields = calculatedFields
+module.exports.requiredFields = requiredFields
