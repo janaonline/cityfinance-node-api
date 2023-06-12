@@ -225,7 +225,7 @@ const fiscalRankingSchema = new Schema(
         isDraft: { type: Boolean, default: false, required: true },
         submittedDate :  { type: Date, default:null },
     },
-    { timestamp: { createdAt: "createdAt", updatedAt: "modifiedAt" } }
+    { timestamps: { createdAt: "createdAt", updatedAt: "modifiedAt" } }
 );
 fiscalRankingSchema.index(
     { ulb: 1, design_year: 1 },
