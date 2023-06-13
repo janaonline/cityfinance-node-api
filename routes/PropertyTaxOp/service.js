@@ -1461,7 +1461,8 @@ module.exports.getCsvForPropertyTaxMapper = async (req, res) => {
         res.write("\ufeff" + `${csvCols.join(",").toString()}` + "\r\n");
 
         let cursor = await PropertyTaxOp.aggregate([
-            { $match: { "design_year": design_year } },
+            { $match: { "design_year": design_year} },
+            // { $match: { "design_year": design_year,"ulb": ObjectId("5fa24661072dab780a6f150b")} },
             {
                 $lookup: {
                     from: "propertytaxopmappers",
