@@ -95,7 +95,12 @@ async function manageLedgerData(params) {
           if (yearObj.previousYearCodes && yearObj.previousYearCodes.length) {
             ulbFyAmount = await getPreviousYearValues(yearObj, ledgerData)
           }
-          if (historicalObject && ulbFyAmount !== historicalObject.value && ![years['2020-21'], years['2021-22']].includes(yearObj.year)) {
+          console.log("condition ::: ",(historicalObject && ulbFyAmount !== historicalObject.value && ![years['2020-21'], years['2021-22']].includes(yearObj.year)))
+          if(!(historicalObject && ulbFyAmount !== historicalObject.value && ![years['2020-21'], years['2021-22']].includes(yearObj.year))){
+            console.log("ulbFyAmount ::: ",ulbFyAmount)
+            console.log("historicalObject.value :: ",historicalObject?.value)
+          }
+          if (historicalObject && ulbFyAmount !== historicalObject?.value && ![years['2020-21'], years['2021-22']].includes(yearObj.year)) {
             if (![statusTracker.IP, statusTracker.SAP].includes(currentFormStatus)) {
               try{
                 errorWithDps[question.displayPriority].push(getKeyByValue(years, yearObj.year))
@@ -127,6 +132,7 @@ async function manageLedgerData(params) {
       }
     }
     if (Array.from(errYears).length) {
+      console.log("dps ::: ",dps)
       let msg = `Data for fields ${Array.from(dps).join(",")} and years ${Array.from(errYears).join(",")} has been updated. kindly revisit those calculations`
       messages.push(msg)
     }
@@ -1320,6 +1326,7 @@ async function updatePercentage(approvedPerc,rejectedPerc,ulb,design_year){
       "progress.approvedProgress":approvedPerc < 100 && approvedPerc !== 0 ? approvedPerc.toFixed(2).toString() : parseInt(approvedPerc).toString() ,
       "progress.rejectedProgress":rejectedPerc < 100 && rejectedPerc !== 0 ? rejectedPerc.toFixed(2).toString() : parseInt(rejectedPerc).toString() 
     }
+    console.log("payload :: ",payload)
     let up = await FiscalRanking.findOneAndUpdate(filter,{
       "$set":payload
     })
@@ -3833,7 +3840,7 @@ module.exports.actionTakenByMoHua = catchAsync(async (req, res) => {
     const session = await mongoose.startSession();
     await session.startTransaction();
     let masterFormId = FORMIDs['fiscalRanking'];
-    let params = { isDraft, role, userId, formId, masterFormId, formBodyStatus: currentFormStatus }
+    let params = { isDraft, role, userId, formId, masterFormId, formBodyStatus: currentFormStatus ,actionTakenBy:userId , actionTakenByRole:role }
     await createHistory(params)
     let calculationsTabWise = await calculateAndUpdateStatusForMappers(
       session,
@@ -3993,7 +4000,7 @@ module.exports.createForm = catchAsync(async (req, res) => {
       return res.status(500).json(response);
     }
     let masterFormId = FORMIDs['fiscalRanking'];
-    let params = { isDraft, role, userId, formId, masterFormId, formBodyStatus: currentFormStatus }
+    let params = { isDraft, role, userId, formId, masterFormId, formBodyStatus: currentFormStatus ,actionBy:ulbId }
     let calculationsTabWise = await calculateAndUpdateStatusForMappers(
       session,
       actions,
@@ -4003,8 +4010,9 @@ module.exports.createForm = catchAsync(async (req, res) => {
       true,
       isDraft
     );
+    console.log(">>>>>>~>>>>>>>>>>>")
     await createHistory(params)
-    if (!isDraft) {
+    if (!statusTracker.IP === currentFormStatus) {
       await FiscalRanking.findOneAndUpdate({
         ulb: ObjectId(req.body.ulbId),
         design_year: ObjectId(req.body.design_year),
@@ -4345,8 +4353,7 @@ async function createHistory(params) {
     //   body
     // }
     // await saveFormHistory(historyParams)
-    // }
-    console.log("formBodyStatus ::: ", formBodyStatus)
+    // }\
     if (formBodyStatus === MASTER_STATUS["In Progress"]) {
 
       let currentStatusData = {
@@ -4368,9 +4375,12 @@ async function createHistory(params) {
       // await session.commitTransaction();
       // return Response.OK(res, {}, "Form Submitted");
     } else if (
+      
       [MASTER_STATUS["Submission Acknowledged by PMU"], MASTER_STATUS["Verification Not Started"], MASTER_STATUS["Verification In Progress"], MASTER_STATUS["Returned by PMU"]].includes(formBodyStatus)
     ) {
       let data = await FiscalRanking.find({ "_id": formId }).lean()
+      // data[0]['actionTakenByRole'] = actionTakenByRole
+      // data[0]['actionTakenBy'] = actionTakenBy
       let mapperData = await FiscalRankingMapper.find({ "fiscal_ranking": formId })
       data[0]['fiscalMapperData'] = mapperData
       let bodyData = {
@@ -4416,6 +4426,7 @@ async function createHistory(params) {
     }
   }
   catch (err) {
+    console.log(err)
     console.log("error in createHistory ::: ", err.message)
   }
 }
@@ -5114,7 +5125,7 @@ function calculatePercentage(fyData, requiredKeys, viewOne) {
         if (item.status === "APPROVED") {
           approved += 1
         }
-        else if (item.status === "Rejected") {
+        else if (item.status === "REJECTED") {
           rejected += 1
         }
       }
@@ -5336,7 +5347,6 @@ function calculateReviewCount(item) {
   let approvedIndicator = 0
   let rejectedIndicator = 0
   if (item.value || item.date != null || (item.file && item?.file?.url) || (item.file && item.modelName === "ULBLedger")) {
-    console.log("item.type :: ", item.type)
     completedIndicator = 1;
   }
   if (item.status === "APPROVED" || (item.file && item.modelName === "ULBLedger")) {
