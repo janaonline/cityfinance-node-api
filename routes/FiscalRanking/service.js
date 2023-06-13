@@ -4379,8 +4379,8 @@ async function createHistory(params) {
       [MASTER_STATUS["Submission Acknowledged by PMU"], MASTER_STATUS["Verification Not Started"], MASTER_STATUS["Verification In Progress"], MASTER_STATUS["Returned by PMU"]].includes(formBodyStatus)
     ) {
       let data = await FiscalRanking.find({ "_id": formId }).lean()
-      // data[0]['actionTakenByRole'] = actionTakenByRole
-      // data[0]['actionTakenBy'] = actionTakenBy
+      data[0]['actionTakenByRole'] = actionTakenByRole
+      data[0]['actionTakenBy'] = actionTakenBy
       let mapperData = await FiscalRankingMapper.find({ "fiscal_ranking": formId })
       data[0]['fiscalMapperData'] = mapperData
       let bodyData = {
