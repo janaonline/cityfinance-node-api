@@ -396,47 +396,8 @@ module.exports.get2223 = catchAsync(async (req, res) => {
         },
     ])
     let TEslbdata2 =[];
-    if(design_year === YEAR_CONSTANTS['23_24']){
-        TEslbdata2  = await Ulb.aggregate([
-            {
-                $match: {
-    
-                    _id: { $in: ulbs }
-                }
-            },
-            {
-                $lookup: {
-                    from: "twentyeightslbforms",
-                    let: {
-                        firstUser: ObjectId(YEAR_CONSTANTS['22_23']),
-                        secondUser: "$_id",
-                    },
-                    pipeline: [
-                        {
-                            $match: {
-                                $expr: {
-                                    $and: [
-                                        {
-                                            $eq: ["$design_year", "$$firstUser"],
-                                        },
-                                        {
-                                            $eq: ["$ulb", "$$secondUser"],
-                                        },
-                                    ],
-                                },
-                            },
-                        },
-                    ],
-                    as: "twentyeightslbforms",
-                },
-            },
-            {
-                $unwind: {
-                    path: "$twentyeightslbforms",
-                    preserveNullAndEmptyArrays: true,
-                },
-            },
-        ])
+    if(![YEAR_CONSTANTS['21_22'],YEAR_CONSTANTS['22_23'] ].includes(design_year)){
+        TEslbdata2 = await getTwentyEightSLb2223Data(TEslbdata2, ulbs);
     }
     if (slbdata.length) {
       slbdata.forEach((el) => {
@@ -490,7 +451,7 @@ module.exports.get2223 = catchAsync(async (req, res) => {
         }
       });
     }
-    if (design_year === YEAR_CONSTANTS["23_24"]) {
+    if(![YEAR_CONSTANTS['21_22'],YEAR_CONSTANTS['22_23'] ].includes(design_year)){
         if (TEslbdata2.length) {
           TEslbdata2.forEach((el2) => {
             if (
@@ -524,10 +485,8 @@ module.exports.get2223 = catchAsync(async (req, res) => {
           });
         }    
         }
-    if(design_year === YEAR_CONSTANTS['23_24']){
-       slbApproved.ulbs = removeApproved(slbPending.ulbs, slbApproved.ulbs)
-        console.log(slbPending);
-        console.log(slbApproved);
+        if(![YEAR_CONSTANTS['21_22'],YEAR_CONSTANTS['22_23'] ].includes(design_year)){
+        slbApproved.ulbs = removeApproved(slbPending.ulbs, slbApproved.ulbs)
         slbPending.ulbs = removeDuplicates(slbPending.ulbs);
         slbApproved.ulbs = removeDuplicates(slbApproved.ulbs);
         
@@ -690,7 +649,7 @@ module.exports.get2223 = catchAsync(async (req, res) => {
 
         });
     }
-    if(design_year === YEAR_CONSTANTS['23_24']){
+    if(![YEAR_CONSTANTS['21_22'],YEAR_CONSTANTS['22_23'] ].includes(design_year)){
         gfcPending.ulbs = checkUlbFormStatus(ulbData, gfcApproved, gfcPending);
         odfPending.ulbs = checkUlbFormStatus(ulbData, odfApproved, odfPending);
 
@@ -706,7 +665,7 @@ module.exports.get2223 = catchAsync(async (req, res) => {
         responseObj.gfc.pending.count === ulbs.length ||
         responseObj.odf.pending.count === ulbs.length
     ) {
-        if(design_year ===  YEAR_CONSTANTS['23_24']){
+        if(![YEAR_CONSTANTS['21_22'],YEAR_CONSTANTS['22_23'] ].includes(design_year)){
             responseObj = updateResponse(responseObj, true)
             return res.status(200).json({
                 success: true,
@@ -834,6 +793,49 @@ module.exports.get2223 = catchAsync(async (req, res) => {
         data: responseObj
     })
 })
+
+async function getTwentyEightSLb2223Data(TEslbdata2, ulbs) {
+    TEslbdata2 = await Ulb.aggregate([
+        {
+            $match: {
+                _id: { $in: ulbs }
+            }
+        },
+        {
+            $lookup: {
+                from: "twentyeightslbforms",
+                let: {
+                    firstUser: ObjectId(YEAR_CONSTANTS['22_23']),
+                    secondUser: "$_id",
+                },
+                pipeline: [
+                    {
+                        $match: {
+                            $expr: {
+                                $and: [
+                                    {
+                                        $eq: ["$design_year", "$$firstUser"],
+                                    },
+                                    {
+                                        $eq: ["$ulb", "$$secondUser"],
+                                    },
+                                ],
+                            },
+                        },
+                    },
+                ],
+                as: "twentyeightslbforms",
+            },
+        },
+        {
+            $unwind: {
+                path: "$twentyeightslbforms",
+                preserveNullAndEmptyArrays: true,
+            },
+        },
+    ]);
+    return TEslbdata2;
+}
 
 function checkUlbFormStatus(ulbData, approvedUlbs,pendingUlbs) {
     ulbData.forEach(ulb => {
