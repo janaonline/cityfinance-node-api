@@ -396,47 +396,8 @@ module.exports.get2223 = catchAsync(async (req, res) => {
         },
     ])
     let TEslbdata2 =[];
-    if(design_year === YEAR_CONSTANTS['23_24']){
-        TEslbdata2  = await Ulb.aggregate([
-            {
-                $match: {
-    
-                    _id: { $in: ulbs }
-                }
-            },
-            {
-                $lookup: {
-                    from: "twentyeightslbforms",
-                    let: {
-                        firstUser: ObjectId(YEAR_CONSTANTS['22_23']),
-                        secondUser: "$_id",
-                    },
-                    pipeline: [
-                        {
-                            $match: {
-                                $expr: {
-                                    $and: [
-                                        {
-                                            $eq: ["$design_year", "$$firstUser"],
-                                        },
-                                        {
-                                            $eq: ["$ulb", "$$secondUser"],
-                                        },
-                                    ],
-                                },
-                            },
-                        },
-                    ],
-                    as: "twentyeightslbforms",
-                },
-            },
-            {
-                $unwind: {
-                    path: "$twentyeightslbforms",
-                    preserveNullAndEmptyArrays: true,
-                },
-            },
-        ])
+    if(![YEAR_CONSTANTS['21_22'],YEAR_CONSTANTS['22_23'] ].includes(design_year)){
+        TEslbdata2 = await getTwentyEightSLb2223Data(TEslbdata2, ulbs);
     }
     if (slbdata.length) {
       slbdata.forEach((el) => {
@@ -490,50 +451,17 @@ module.exports.get2223 = catchAsync(async (req, res) => {
         }
       });
     }
-    if (design_year === YEAR_CONSTANTS["23_24"]) {
-        if (TEslbdata2.length) {
-          TEslbdata2.forEach((el2) => {
-            if (
-              el2.hasOwnProperty("twentyeightslbforms") &&
-              Object.keys(el2.twentyeightslbforms).length > 0
-            ) {
-            //   if (el._id.toString() == el2._id.toString()) {
-                if (
-                  el2.twentyeightslbforms.status == "APPROVED"
-                ) {
-                  slbApproved.count += 1;
-                  slbApproved.ulbs.push({
-                    ulbName: el2.name,
-                    censusCode: el2.censusCode ?? el2.sbCode,
-                  });
-                } else {
-                  slbPending.count += 1;
-                  slbPending.ulbs.push({
-                    ulbName: el2.name,
-                    censusCode: el2.censusCode ?? el2.sbCode,
-                  });
-                // }
-              }
-            } else {
-              slbPending.count += 1;
-              slbPending.ulbs.push({
-                ulbName: el2.name,
-                censusCode: el2.censusCode ?? el2.sbCode,
-              });
-            }
-          });
-        }    
-        }
-    if(design_year === YEAR_CONSTANTS['23_24']){
-       slbApproved.ulbs = removeApproved(slbPending.ulbs, slbApproved.ulbs)
-        console.log(slbPending);
-        console.log(slbApproved);
-        slbPending.ulbs = removeDuplicates(slbPending.ulbs);
-        slbApproved.ulbs = removeDuplicates(slbApproved.ulbs);
-        
+    //get slbApproved and pending count
+    get28SLB2223Data(design_year, TEslbdata2, slbApproved, slbPending);
+    if (
+      ![YEAR_CONSTANTS["21_22"], YEAR_CONSTANTS["22_23"]].includes(design_year)
+    ) {
+      slbApproved.ulbs = removeApproved(slbPending.ulbs, slbApproved.ulbs);
+      slbPending.ulbs = removeDuplicates(slbPending.ulbs);
+      slbApproved.ulbs = removeDuplicates(slbApproved.ulbs);
     }
-    slbPending.count = (slbPending.ulbs).length;
-    slbApproved.count = (slbApproved.ulbs).length;
+    slbPending.count = slbPending.ulbs.length;
+    slbApproved.count = slbApproved.ulbs.length;
 
     let gfcData = await Ulb.aggregate([
         {
@@ -690,7 +618,7 @@ module.exports.get2223 = catchAsync(async (req, res) => {
 
         });
     }
-    if(design_year === YEAR_CONSTANTS['23_24']){
+    if(![YEAR_CONSTANTS['21_22'],YEAR_CONSTANTS['22_23'] ].includes(design_year)){
         gfcPending.ulbs = checkUlbFormStatus(ulbData, gfcApproved, gfcPending);
         odfPending.ulbs = checkUlbFormStatus(ulbData, odfApproved, odfPending);
 
@@ -706,7 +634,7 @@ module.exports.get2223 = catchAsync(async (req, res) => {
         responseObj.gfc.pending.count === ulbs.length ||
         responseObj.odf.pending.count === ulbs.length
     ) {
-        if(design_year ===  YEAR_CONSTANTS['23_24']){
+        if(![YEAR_CONSTANTS['21_22'],YEAR_CONSTANTS['22_23'] ].includes(design_year)){
             responseObj = updateResponse(responseObj, true)
             return res.status(200).json({
                 success: true,
@@ -835,6 +763,124 @@ module.exports.get2223 = catchAsync(async (req, res) => {
     })
 })
 
+/**
+ * The function retrieves data related to SLB forms for ULBs based on the design year and updates the
+ * count and ULB lists for approved and pending forms.
+ * @param design_year - The design year is a variable that represents the year for which the data is
+ * being retrieved. It is expected to be either "21_22" or "22_23".
+ * @param TEslbdata2 - TEslbdata2 is an array of objects containing data related to various ULBs (Urban
+ * Local Bodies).
+ * @param slbApproved - slbApproved is an object that contains a count property and an ulbs property.
+ * The count property represents the number of ULBs (Urban Local Bodies) that have been approved, while
+ * the ulbs property is an array of objects that contain the name and census code of each approved ULB.
+ * @param slbPending - `slbPending` is an object that contains a `count` property and an array of
+ * `ulbs`. The `count` property represents the number of ULBs (Urban Local Bodies) with pending status,
+ * while the `ulbs` array contains objects representing each ULB with pending status.
+ */
+function get28SLB2223Data(design_year, TEslbdata2, slbApproved, slbPending) {
+  try {
+    if (
+      ![YEAR_CONSTANTS["21_22"], YEAR_CONSTANTS["22_23"]].includes(design_year)
+    ) {
+      if (TEslbdata2.length) {
+        TEslbdata2.forEach((el2) => {
+          if (
+            el2.hasOwnProperty("twentyeightslbforms") &&
+            Object.keys(el2.twentyeightslbforms).length > 0
+          ) {
+            //   if (el._id.toString() == el2._id.toString()) {
+            if (el2.twentyeightslbforms.status == "APPROVED") {
+              slbApproved.count += 1;
+              slbApproved.ulbs.push({
+                ulbName: el2.name,
+                censusCode: el2.censusCode ?? el2.sbCode,
+              });
+            } else {
+              slbPending.count += 1;
+              slbPending.ulbs.push({
+                ulbName: el2.name,
+                censusCode: el2.censusCode ?? el2.sbCode,
+              });
+              // }
+            }
+          } else {
+            slbPending.count += 1;
+            slbPending.ulbs.push({
+              ulbName: el2.name,
+              censusCode: el2.censusCode ?? el2.sbCode,
+            });
+          }
+        });
+      }
+    }
+  } catch (error) {
+    throw `get28SLB2223Data:: ${error.message}`;
+  }
+}
+
+/**
+ * The function retrieves data from the "twentyeightslbforms" collection for a given set of ULBs.
+ * @param TEslbdata2 - an array that will contain the data retrieved from the database query
+ * @param ulbs - An array of MongoDB ObjectIds representing the ULBs (Urban Local Bodies) to be matched
+ * in the aggregation pipeline.
+ * @returns The function `getTwentyEightSLb2223Data` returns the result of an aggregation query
+ * performed on the `Ulb` collection, with a `` stage to filter by `_id` values in the `ulbs`
+ * array, a `` stage to join with the `twentyeightslbforms` collection based on a matching
+ * `design_year` and `ulb` fields
+ */
+async function getTwentyEightSLb2223Data(TEslbdata2, ulbs) {
+    TEslbdata2 = await Ulb.aggregate([
+        {
+            $match: {
+                _id: { $in: ulbs }
+            }
+        },
+        {
+            $lookup: {
+                from: "twentyeightslbforms",
+                let: {
+                    firstUser: ObjectId(YEAR_CONSTANTS['22_23']),
+                    secondUser: "$_id",
+                },
+                pipeline: [
+                    {
+                        $match: {
+                            $expr: {
+                                $and: [
+                                    {
+                                        $eq: ["$design_year", "$$firstUser"],
+                                    },
+                                    {
+                                        $eq: ["$ulb", "$$secondUser"],
+                                    },
+                                ],
+                            },
+                        },
+                    },
+                ],
+                as: "twentyeightslbforms",
+            },
+        },
+        {
+            $unwind: {
+                path: "$twentyeightslbforms",
+                preserveNullAndEmptyArrays: true,
+            },
+        },
+    ]);
+    return TEslbdata2;
+}
+
+/**
+ * The function checks the status of ULB forms and adds pending ULBs to a list if they are not already
+ * approved or pending.
+ * @param ulbData - an array of objects containing data about ULBs (Urban Local Bodies)
+ * @param approvedUlbs - an object containing an array of approved ULBs (urban local bodies) with their
+ * names and census codes.
+ * @param pendingUlbs - an object that contains an array called "ulbs" which stores information about
+ * ULBs (Urban Local Bodies) that are pending approval.
+ * @returns an array of pending ULBs (Urban Local Bodies) that have not been approved yet.
+ */
 function checkUlbFormStatus(ulbData, approvedUlbs,pendingUlbs) {
     ulbData.forEach(ulb => {
         let found = approvedUlbs.ulbs.find(el => {
@@ -855,6 +901,16 @@ function checkUlbFormStatus(ulbData, approvedUlbs,pendingUlbs) {
     return pendingUlbs.ulbs;
 }
 
+/**
+ * The function removes objects from the "approved" array that are also present in the "pending" array.
+ * @param pending - The `pending` parameter is an array of objects representing items that are waiting
+ * for approval.
+ * @param approved - The "approved" parameter is an array of objects that have been approved.
+ * @returns The function `removeApproved` is returning an array of objects that are present in the
+ * `approved` array but not in the `pending` array. It does this by using the `filter` method on the
+ * `approved` array and checking if each object is present in the `pending` array using the `some`
+ * method and the `compareObjects` function. If the object is not present in
+ */
 function removeApproved(pending, approved) {
     return approved.filter(approvedObj =>
       !pending.some(pendingObj =>
@@ -863,6 +919,14 @@ function removeApproved(pending, approved) {
     );
   }
   
+  /**
+   * The function compares two objects by checking if they have the same keys and values.
+   * @param obj1 - The first object to be compared.
+   * @param obj2 - The `obj2` parameter is an object that is being compared to another object (`obj1`)
+   * in the `compareObjects` function.
+   * @returns The `compareObjects` function is returning a boolean value. It returns `true` if the two
+   * objects passed as arguments have the same keys and values for each key, and `false` otherwise.
+   */
   function compareObjects(obj1, obj2) {
     const keys1 = Object.keys(obj1);
     const keys2 = Object.keys(obj2);
@@ -873,6 +937,16 @@ function removeApproved(pending, approved) {
     
     return keys1.every(key => obj1[key] === obj2[key]);
   }
+/**
+ * The function calculates and returns SLB data and scores based on input data.
+ * @param TEslbdata2 - TEslbdata2 is an array of objects containing data related to the 22-23 SLB
+ * (Service Level Benchmark) indicators.
+ * @param slbWeigthed - slbWeigthed is an object that contains data related to SLB (Service Level
+ * Benchmark) indicators, including actual values and scores. The function is updating the values of
+ * this object based on the data passed in the TEslbdata2 parameter.
+ * @returns the updated `slbWeigthed` object with calculated scores for four different indicators
+ * related to water supply and sanitation.
+ */
 function get2223TwentySlbData(TEslbdata2, slbWeigthed) {
     let arr1 = [];
     let filteredData2 = [];
@@ -940,6 +1014,13 @@ function get2223TwentySlbData(TEslbdata2, slbWeigthed) {
     return slbWeigthed;
 }
 
+/**
+ * The function removes duplicate objects from an array based on a specific property.
+ * @param arr - an array of objects that may contain duplicates. Each object has a property called
+ * "ulbName".
+ * @returns The `removeDuplicates` function is returning an array with unique objects based on the
+ * `ulbName` property.
+ */
 function removeDuplicates(arr) {
     const uniqueArr = arr.filter((obj, index, self) => {
       return (
@@ -953,393 +1034,8 @@ function removeDuplicates(arr) {
     return uniqueArr;
   }
   
-const oldFormat = {
-    "success": true,
-    "data": {
-        "totalUlbs": 3,
-        "fourSLB": {
-            "data": {
-                "_id": "",
-                "ua": "Jamshedpur U.A.",
-                "ulbData": [
-                    "5dd24b8f91344e2300876c9a"
-                ],
-                "total": 1,
-                "waterSuppliedPerDay2021": 97,//actual
-                "waterSuppliedPerDay2122": 97,
-                "waterSuppliedPerDay2223": 99,
-                "waterSuppliedPerDay2324": 100,
-                "waterSuppliedPerDay2425": 105,
-                "reduction2021": 31.9,//actual
-                "reduction2122": 30,
-                "reduction2223": 29,
-                "reduction2324": 27,
-                "reduction2425": 26,
-                "houseHoldCoveredWithSewerage2021": 0,//actual
-                "houseHoldCoveredWithSewerage2122": 0,
-                "houseHoldCoveredWithSewerage2223": 10,
-                "houseHoldCoveredWithSewerage2324": 15,
-                "houseHoldCoveredWithSewerage2425": 20,
-                "houseHoldCoveredPipedSupply2021": 60.2,//actual
-                "houseHoldCoveredPipedSupply2122": 73,
-                "houseHoldCoveredPipedSupply2223": 73,
-                "houseHoldCoveredPipedSupply2324": 74,
-                "houseHoldCoveredPipedSupply2425": 75,
-                "houseHoldCoveredPipedSupply_actual2122": 82.0333240430578,
-                "waterSuppliedPerDay_actual2122": 127.3647186887039,
-                "reduction_actual2122": 15.229934319504846,
-                "houseHoldCoveredWithSewerage_actual2122": 28.730936091668728,
-                "houseHoldCoveredWithSewerage_score": 20,
-                "houseHoldCoveredPipedSupply_score": 20,
-                "waterSuppliedPerDay_score": 10,
-                "reduction_score": 10
-            },
-            "approved": {
-                "count": 1,
-                "ulbs": [
-                    {
-                        "ulbName": "Mango Municipal Corporation",
-                        "censusCode": "801780"
-                    }
-                ]
-            },
-            "pending": {
-                "count": 2,
-                "ulbs": [
-                    {
-                        "ulbName": "Jugsalai Nagar Parishad",
-                        "censusCode": "801782"
-                    },
-                    {
-                        "ulbName": "Jamshedpur Notified Area Council",
-                        "censusCode": "801781"
-                    }
-                ]
-            }
-        },
-        "gfc": {
-            "score": 29.529940104016028,
-            "approved": {
-                "count": 3,
-                "ulbs": [
-                    {
-                        "ulbName": "Jugsalai Nagar Parishad",
-                        "censusCode": "801782"
-                    },
-                    {
-                        "ulbName": "Jamshedpur Notified Area Council",
-                        "censusCode": "801781"
-                    },
-                    {
-                        "ulbName": "Mango Municipal Corporation",
-                        "censusCode": "801780"
-                    }
-                ]
-            },
-            "pending": {
-                "count": 0,
-                "ulbs": []
-            }
-        },
-        "odf": {
-            "score": 10,
-            "approved": {
-                "count": 3,
-                "ulbs": [
-                    {
-                        "ulbName": "Jugsalai Nagar Parishad",
-                        "censusCode": "801782"
-                    },
-                    {
-                        "ulbName": "Jamshedpur Notified Area Council",
-                        "censusCode": "801781"
-                    },
-                    {
-                        "ulbName": "Mango Municipal Corporation",
-                        "censusCode": "801780"
-                    }
-                ]
-            },
-            "pending": {
-                "count": 0,
-                "ulbs": []
-            }
-        }
-    }
-}
-
-const newFormat = {
-  formName: "Indicators for Water Supply and Sanitation",
-  formId: "",
-  status: "",
-  statusId: "",
-  info: "The below tables denotes the aggregate indicators and targets of ULBs in respective UA",
-  previousYrMsg: "",
-  indicator_wss: {
-    title: "Indicators for Water Supply and Sanitation(A)",
-    dataCount: {
-      fourSlbData: {
-        name: "",
-        data: [
-          {
-            name: "Total Number of ULBs in UA",
-            value: "",
-            key: "",
-          },
-          {
-            name: "Approved by State",
-            value: "",
-            key: "",
-          },
-          {
-            name: "Pending for Submission/Approval",
-            value: "",
-            key: "",
-          },
-        ],
-      },
-    },
-
-    tables: [
-      {
-        tableType: "four-slb",
-        rows:[
-            {
-              serviceLevelIndicators: 'Water supplied in litre per capita per day(lpcd)',
-              key:"waterSuppliedPerDay",
-              benchmark: '135 LPCD',
-              achieved2122: '',
-              target2223: '',
-              achieved2223: '',
-              target2122: '',
-              target2324: '',
-              target2425: '',
-              wghtd_score: ''
-            },
-            {
-              serviceLevelIndicators: '% of Non-revenue water',
-              key: "reduction",
-              benchmark: '70 %',
-              achieved2122: '',
-              target2223: '',
-              achieved2223: '',
-              target2122: '',
-              target2324: '',
-              target2425: '',
-              wghtd_score: ''
-      
-            },
-            {
-              serviceLevelIndicators: '% of households covered with sewerage/septage services',
-              key:"houseHoldCoveredWithSewerage",
-              benchmark: '100 %',
-              achieved2122: '',
-              target2223: '',
-              achieved2223: '',
-              target2122: '',
-              target2324: '',
-              target2425: '',
-              wghtd_score: ''
-      
-            },
-            {
-              serviceLevelIndicators: '% of households covered with piped water supply',
-              key: "houseHoldCoveredPipedSupply",
-              benchmark: '100 %',
-              achieved2122: '',
-              target2223: '',
-              achieved2223: '',
-              target2122: '',
-              target2324: '',
-              target2425: '',
-              wghtd_score: ''
-      
-            },
-          ],
-        columns: [
-          {
-            key: "serviceLevelIndicators",
-            display_name: "Service Level Indicators",
-          },
-          {
-            key: "benchmark",
-            display_name: "Benchmark",
-          },
-          {
-            key: "achieved2122",
-            display_name: "Achieved <br> 2021-22",
-          },
-          {
-            key: "target2223",
-            display_name: "Target <br> 2022-23",
-          },
-          {
-            key: "achieved2223",
-            display_name: "Achieved <br> 2022-23",
-          },
-          {
-            key: "target2122",
-            display_name: "Target <br> 2021-22",
-          },
-          {
-            key: "target2324",
-            display_name: "Target <br> 2023-24",
-          },
-          {
-            key: "target2425",
-            display_name: "Target <br> 2024-25",
-          },
-          {
-            key: "wghtd_score",
-            display_name: "Weighted Score",
-          },
-        ],
-      },
-    ],
-    uaScore: {
-      title:
-        "Total UA Score for Water Supply and Sanitation : 60.00(out of maximum 60)",
-      value: "60",
-    },
-  },
-  indicators_swm: {
-    title: "Indicators for Solid Waste Management(B)",
-    dataCount: {
-      odfFormData: {
-        name: "ODF",
-        data: [
-          {
-            name: "Total Number of ULBs in UA",
-            value: "",
-            key: "",
-            ulbs:[]
-          },
-          {
-            name: "Approved by State",
-            value: "",
-            key: "",
-            ulbs:[]
-          },
-          {
-            name: "Pending for Submission/Approval",
-            value: "",
-            key: "",
-            ulbs:[]
-          },
-        ],
-        odfRatings: {
-          name: "ODF Rating",
-          value: "10",
-        },
-      },
-      gfcFormData: {
-        name: "GFC",
-        data: [
-          {
-            name: "Total Number of ULBs in UA",
-            value: "",
-            key: "",
-            ulbs:[]
-          },
-          {
-            name: "Approved by State",
-            value: "",
-            key: "",
-            ulbs:[]
-          },
-          {
-            name: "Pending for Submission/Approval",
-            value: "",
-            key: "",
-            ulbs:[]
-          },
-        ],
-        odfRatings: {
-          name: "GFC Rating",
-          value: "10",
-        },
-      },
-    },
-    uaScore: {
-      title:
-        "Total UA Score for Solid Waste Management : 39.53 (out of maximum 40 marks)",
-      value: "39.4",
-    },
-  },
-  performanceAsst: {
-    title: "Performance Assessment",
-
-    tables: [
-      {
-        name: "On the basis of the total marks obtained by UA, proportionate grants shall be recommended by MOH&UA as per the table given below:",
-        info: "",
-        id: "",
-        tableType: "lineItem-highlited",
-        rows: [
-          {
-            marks: "% of Recommended tied grant",
-            less30: "0%",
-            "30To45": "60%",
-            "45To60": "75%",
-            "60To80": "90%",
-            greater80: "100%",
-          },
-        ],
-        columns: [
-          {
-            key: "marks",
-            display_name: "Marks",
-          },
-          {
-            key: "less30",
-            display_name: "< 30",
-          },
-          {
-            key: "30To45",
-            display_name: "< 30 and <=45",
-          },
-          {
-            key: "45To60",
-            display_name: "> 45 and <=60",
-          },
-          {
-            key: "60To80",
-            display_name: "> 60 and <=80",
-          },
-          {
-            key: "greater80",
-            display_name: "> 80",
-          },
-        ],
-      },
-    ],
-    dataCount: {},
-    uaScore: {
-      title: `On the basis of the total marks obtained by UA,
-         proportionate grants shall be recommended by MOH&UA as per the table given below:`,
-      value: "",
-    },
-  },
-};  
 function updateResponse(response, InsufficientFlag) {
   try {
-    // let data = createNewFormat(response["fourSLB"]);
-    //   let rows = convertToRows(response);
-    // let columns = getColumnsIndicatorWss();
-    // let value3 = getUAScore(response["fourSLB"]['data']);
-
-    // let odfFormData = getODFFormat(response["odf"]);
-    // let gfcFormData = getGFCFormat(response["gfc"]);
-    // let value = getindicators_swmScore(
-    //   response["odf"]["score"],
-    //   response["gfc"]["score"]
-    // );
-    // let value2 =
-    //   getUAScore(response["fourSLB"]['data']) +
-    //   getindicators_swmScore(
-    //     response["odf"]["score"],
-    //     response["gfc"]["score"]
-    //   );
     let responseObj = {
       formName: FormNames['indicatorForm'],
       formId: FORMIDs['indicatorForm'],
