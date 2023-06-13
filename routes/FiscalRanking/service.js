@@ -1299,7 +1299,8 @@ exports.getView = async function (req, res, next) {
     };
     if (messages.length > 0 && role === "ULB") {
       let {approvedPerc,rejectedPerc} = calculatePercentage(modifiedLedgerData, requiredFields, viewOne)
-      await updatePercentage(approvedPerc,rejectedPerc,viewOne.formId)
+      let {ulb,design_year} = req.query
+      await updatePercentage(approvedPerc,rejectedPerc,ulb,design_year)
     }
     return res
       .status(200)
@@ -1312,19 +1313,17 @@ exports.getView = async function (req, res, next) {
   }
 };
 
-async function updatePercentage(approvedPerc,rejectedPerc,formId){
+async function updatePercentage(approvedPerc,rejectedPerc,ulb,design_year){
   try{
     let filter = {
-      "_id":formId
+      "ulb":ObjectId(ulb),
+      "design_year":ObjectId(design_year)
     }
     let payload = {
       "progress.approvedProgress":approvedPerc < 100 && approvedPerc !== 0 ? approvedPerc.toFixed(2).toString() : parseInt(approvedPerc).toString() ,
       "progress.rejectedProgress":rejectedPerc < 100 && rejectedPerc !== 0 ? rejectedPerc.toFixed(2).toString() : parseInt(rejectedPerc).toString() 
     }
-    console.log("payload :: ",payload)
-    await FiscalRanking.findOneAndUpdate({
-      filter
-    },{
+    let up = await FiscalRanking.findOneAndUpdate(filter,{
       "$set":payload
     })
     
