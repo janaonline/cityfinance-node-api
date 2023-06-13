@@ -19,7 +19,7 @@ const { ulb } = require('../../util/userTypes');
 const { columns,csvCols,sortFilterKeys,dashboardColumns } = require("./constants.js")
 const Redis = require("../../service/redis")
 const { AggregationServices } = require("../../routes/CommonActionAPI/service");
-const { YEAR_CONSTANTS , FORMIDs, FormNames} = require('../../util/FormNames');
+const { YEAR_CONSTANTS , FORMIDs, FormNames, MASTER_STATUS} = require('../../util/FormNames');
 const lineItemIndicatorIDs = [
     "6284d6f65da0fa64b423b52a",
     "6284d6f65da0fa64b423b53a",
@@ -439,95 +439,101 @@ module.exports.get2223 = catchAsync(async (req, res) => {
         ])
     }
     if (slbdata.length) {
-        slbdata.forEach(el => {
-
-            if (el.hasOwnProperty("xvfcgrantulbforms") && Object.keys(el.xvfcgrantulbforms).length > 0) {
-                if (TEslbdata.length) {
-                    TEslbdata.forEach(el2 => {
-                        if (
-                          el2.hasOwnProperty("twentyeightslbforms") &&
-                          Object.keys(el2.twentyeightslbforms).length > 0
-                        ) {
-                          if (el._id.toString() == el2._id.toString()) {
-                            if (
-                              el.xvfcgrantulbforms.waterManagement.status ==
-                                "APPROVED" &&
-                              el2.twentyeightslbforms.status == "APPROVED"
-                            ) {
-                              slbApproved.count += 1;
-                              slbApproved.ulbs.push({
-                                ulbName: el.name,
-                                censusCode: el.censusCode ?? el.sbCode,
-                              });
-                            } else {
-                              slbPending.count += 1;
-                              slbPending.ulbs.push({
-                                ulbName: el.name,
-                                censusCode: el.censusCode ?? el.sbCode,
-                              });
-                            }
-                          }
-                        } else {
-                          slbPending.count += 1;
-                          slbPending.ulbs.push({
-                            ulbName: el.name,
-                            censusCode: el.censusCode ?? el.sbCode,
-                          });
-                        }
-
-                    })
-                }
-                if (design_year === YEAR_CONSTANTS["23_24"]) {
-                  if (TEslbdata2.length) {
-                    TEslbdata2.forEach((el2) => {
-                      if (
-                        el2.hasOwnProperty("twentyeightslbforms") &&
-                        Object.keys(el2.twentyeightslbforms).length > 0
-                      ) {
-                        if (el._id.toString() == el2._id.toString()) {
-                          if (
-                            el.xvfcgrantulbforms.waterManagement.status ==
-                              "APPROVED" &&
-                            el2.twentyeightslbforms.status == "APPROVED"
-                          ) {
-                            slbApproved.count += 1;
-                            slbApproved.ulbs.push({
-                              ulbName: el.name,
-                              censusCode: el.censusCode ?? el.sbCode,
-                            });
-                          } else {
-                            slbPending.count += 1;
-                            slbPending.ulbs.push({
-                              ulbName: el.name,
-                              censusCode: el.censusCode ?? el.sbCode,
-                            });
-                          }
-                        }
-                      } else {
-                        slbPending.count += 1;
-                        slbPending.ulbs.push({
-                          ulbName: el.name,
-                          censusCode: el.censusCode ?? el.sbCode,
-                        });
-                      }
+      slbdata.forEach((el) => {
+        if (
+          el.hasOwnProperty("xvfcgrantulbforms") &&
+          Object.keys(el.xvfcgrantulbforms).length > 0
+        ) {
+          if (TEslbdata.length) {
+            TEslbdata.forEach((el2) => {
+              if (
+                el2.hasOwnProperty("twentyeightslbforms") &&
+                Object.keys(el2.twentyeightslbforms).length > 0
+              ) {
+                if (el._id.toString() == el2._id.toString()) {
+                  if (
+                    (el.xvfcgrantulbforms.waterManagement.status ==
+                      "APPROVED" &&
+                      el2.twentyeightslbforms.status == "APPROVED") ||
+                    [MASTER_STATUS["Under Review By MoHUA"]].includes(
+                      el2.twentyeightslbforms?.currentFormStatus
+                    )
+                  ) {
+                    slbApproved.count += 1;
+                    slbApproved.ulbs.push({
+                      ulbName: el2.name,
+                      censusCode: el2.censusCode ?? el2.sbCode,
+                    });
+                  } else {
+                    slbPending.count += 1;
+                    slbPending.ulbs.push({
+                      ulbName: el2.name,
+                      censusCode: el2.censusCode ?? el2.sbCode,
                     });
                   }
-                  slbPending.ulbs = removeDuplicates(slbPending.ulbs);
-                  slbApproved.ulbs = removeDuplicates(slbApproved.ulbs);
-                  slbPending.count = (slbPending.ulbs).length;
-                  slbApproved.count = (slbApproved.ulbs).length;
                 }
-            } else {
-                
-                slbPending.count += 1
+              } else {
+                slbPending.count += 1;
                 slbPending.ulbs.push({
-                    ulbName: el.name,
-                    censusCode: el.censusCode ?? el.sbCode
-                })
-            
+                  ulbName: el2.name,
+                  censusCode: el2.censusCode ?? el2.sbCode,
+                });
+              }
+            });
+          }
+        } else {
+          slbPending.count += 1;
+          slbPending.ulbs.push({
+            ulbName: el.name,
+            censusCode: el.censusCode ?? el.sbCode,
+          });
         }
-        });
+      });
     }
+    if (design_year === YEAR_CONSTANTS["23_24"]) {
+        if (TEslbdata2.length) {
+          TEslbdata2.forEach((el2) => {
+            if (
+              el2.hasOwnProperty("twentyeightslbforms") &&
+              Object.keys(el2.twentyeightslbforms).length > 0
+            ) {
+            //   if (el._id.toString() == el2._id.toString()) {
+                if (
+                  el2.twentyeightslbforms.status == "APPROVED"
+                ) {
+                  slbApproved.count += 1;
+                  slbApproved.ulbs.push({
+                    ulbName: el2.name,
+                    censusCode: el2.censusCode ?? el2.sbCode,
+                  });
+                } else {
+                  slbPending.count += 1;
+                  slbPending.ulbs.push({
+                    ulbName: el2.name,
+                    censusCode: el2.censusCode ?? el2.sbCode,
+                  });
+                // }
+              }
+            } else {
+              slbPending.count += 1;
+              slbPending.ulbs.push({
+                ulbName: el2.name,
+                censusCode: el2.censusCode ?? el2.sbCode,
+              });
+            }
+          });
+        }    
+        }
+    if(design_year === YEAR_CONSTANTS['23_24']){
+       slbApproved.ulbs = removeApproved(slbPending.ulbs, slbApproved.ulbs)
+        console.log(slbPending);
+        console.log(slbApproved);
+        slbPending.ulbs = removeDuplicates(slbPending.ulbs);
+        slbApproved.ulbs = removeDuplicates(slbApproved.ulbs);
+        
+    }
+    slbPending.count = (slbPending.ulbs).length;
+    slbApproved.count = (slbApproved.ulbs).length;
 
     let gfcData = await Ulb.aggregate([
         {
@@ -583,7 +589,7 @@ module.exports.get2223 = catchAsync(async (req, res) => {
     if (gfcData) {
         gfcData.forEach(el => {
             if (el.hasOwnProperty("gfcformcollections") && Object.keys(el.gfcformcollections).length > 0) {
-                if (el.gfcformcollections.status == "APPROVED") {
+                if (el.gfcformcollections.status == "APPROVED" || [MASTER_STATUS['Under Review By MoHUA']].includes(el.gfcformcollections.currentFormStatus)) {
                     gfcApproved.count += 1;
                     gfcApproved.ulbs.push({
                         ulbName: el.name,
@@ -661,7 +667,7 @@ module.exports.get2223 = catchAsync(async (req, res) => {
     if (odfData) {
         odfData.forEach(el => {
             if (el.hasOwnProperty("odfformcollections") && Object.keys(el.odfformcollections).length > 0) {
-                if (el.odfformcollections.status == "APPROVED") {
+                if (el.odfformcollections.status == "APPROVED" || [MASTER_STATUS['Under Review By MoHUA']].includes(el.odfformcollections.currentFormStatus)) {
                     odfApproved.count += 1;
                     odfApproved.ulbs.push({
                         ulbName: el.name,
@@ -849,6 +855,24 @@ function checkUlbFormStatus(ulbData, approvedUlbs,pendingUlbs) {
     return pendingUlbs.ulbs;
 }
 
+function removeApproved(pending, approved) {
+    return approved.filter(approvedObj =>
+      !pending.some(pendingObj =>
+        compareObjects(pendingObj, approvedObj)
+      )
+    );
+  }
+  
+  function compareObjects(obj1, obj2) {
+    const keys1 = Object.keys(obj1);
+    const keys2 = Object.keys(obj2);
+    
+    if (keys1.length !== keys2.length) {
+      return false;
+    }
+    
+    return keys1.every(key => obj1[key] === obj2[key]);
+  }
 function get2223TwentySlbData(TEslbdata2, slbWeigthed) {
     let arr1 = [];
     let filteredData2 = [];
