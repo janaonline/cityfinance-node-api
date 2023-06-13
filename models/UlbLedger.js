@@ -69,17 +69,19 @@ LedgerSchema.post("findOneAndUpdate",async function (doc){
             let codeValue = ledgerFields[mapper.type].codes.find(item => item === lineItemCode)
             let rejectFields = await ShouldReject(frObject.currentFormStatus,mapper.status)
             let maximumValue = ledgerFields[mapper.type].codes.reduce((a,b) => Math.max(parseInt(a),parseInt(b)) ,0)
-            console.log("maximumValue :: ",maximumValue)
-            console.log("lineItemCode::",lineItemCode)
             if(!ledgerFields[mapper.type].logic && codeValue){
-                payload.value = doc.amount
-                payload.ledgerUpdated = true
+               if(doc.amount.toString() != mapper.value){
+                    payload.value = doc.amount
+                    payload.ledgerUpdated = true
+               }
             }
-            else if(ledgerFields[mapper.type].logic && maximumValue === lineItemCode.toString() ){
-                let calculatedAmount = getPreviousYearValues(mapper.year,ledgerFields[mapper.type].codes,ulb,this)
-                console.log("calculatedAmount ::: ",calculatedAmount)
-                payload.value = calculatedAmount
-                payload.ledgerUpdated = true
+            else if(ledgerFields[mapper.type].logic && maximumValue.toString() === lineItemCode.toString() ){
+                let calculatedAmount = await getPreviousYearValues(mapper.year,ledgerFields[mapper.type].codes,mapper.ulb,this)
+                if(doc.amount.toString() != mapper.value){
+                    payload.value = calculatedAmount
+                    payload.ledgerUpdated = true
+                }
+                
             }   
             let updateMapper = await Fiscalrankingmappers.findOneAndUpdate({
                 "_id":ObjectId(mapper._id)
@@ -112,7 +114,7 @@ const ShouldReject =(formStatus,fieldStatus)=>{
 
 const getPreviousYearValues = async(mapperYear,codes,ulbId,obj)=>{
     try{
-        let yearName = getKeyByValue(years, mapperYear);
+        let yearName = getKeyByValue(years, mapperYear.toString());
         let year = parseInt(yearName);
         let previousYear = year - 1;
         let yearlyData = {}
@@ -120,28 +122,30 @@ const getPreviousYearValues = async(mapperYear,codes,ulbId,obj)=>{
         let previousYearId = years[previousYearString].toString();
         let calculatableYears = [previousYearString, yearName];
         let yearWiseData = {}
-        for(let financialYear in calculatableYears){
+        for(let financialYear of calculatableYears){
             yearWiseData[financialYear] = []
-            for(let code in codes){
+            for(let code of codes){
                 let ledgerData = await obj.model.findOne({
                     "ulb":ObjectId(ulbId),
-                    "lineItem":code
+                    "lineItem":ledgerCodes[code],
+                    "financialYear":financialYear
                 },{
                     amount:1,
                     _id:0
                 }).lean()
                 if(ledgerData.amount){
-                    yearWiseData[financialYear].push(ledgerData.amount)
+                    yearWiseData[financialYear].push(parseFloat(ledgerData.amount))
                 }
             }
         }
         let containsZero = Object.values(yearWiseData).some(item => item.includes(0))
         if(containsZero) {return 0};
-        let sum = Object.values(years).reduce((acc,[a,b])=>acc+(a+b),0)
+        let sum = Object.values(yearWiseData).reduce((acc,[a,b])=>acc+(a+b),0)
         return sum
 
     }
     catch(err){
+        console.log(">>>>>>>>",err)
         console.log("error in getPreviousYearValue ::: ",err.message)
     }
 }
