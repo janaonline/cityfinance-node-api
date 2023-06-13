@@ -173,10 +173,6 @@ module.exports.get2223 = async (req, res)=>{
 
     ];
       let dashboardData = await getDashboardData(req, stateId, financialYear);
-    //   let grantClaimedData = await GrantsClaimed.findOne({
-    //     state: ObjectId(stateId),
-    //     financialYear: ObjectId(financialYear),
-    //   }).lean();
       let nmpc_untied_1 ={},
         nmpc_untied_2 ={},
         nmpc_tied_1 = {},
@@ -202,29 +198,6 @@ module.exports.get2223 = async (req, res)=>{
           status: "Eligibility Condition Pending",
         };
 
-    //   if (grantClaimedData) {
-    //     if (grantClaimedData.hasOwnProperty("nmpc_tied")) {
-    //       if (grantClaimedData["nmpc_tied"][0]["installment"] === "1") {
-    //         nmpc_tied_1_GrantData = grantClaimedData["nmpc_tied"][0];
-    //       } else if (grantClaimedData["nmpc_tied"][1]["installment"] === "2") {
-    //         nmpc_tied_2_GrantData = grantClaimedData["nmpc_tied"][1];
-    //       }
-    //     }
-    //     if (grantClaimedData.hasOwnProperty("nmpc_untied")) {
-    //       if (grantClaimedData["nmpc_untied"][0]["installment"] === "1") {
-    //         nmpc_untied_1_GrantData = grantClaimedData["nmpc_untied"][0];
-    //       } else if (
-    //         grantClaimedData["nmpc_untied"][1]["installment"] === "2"
-    //       ) {
-    //         nmpc_untied_2_GrantData = grantClaimedData["nmpc_untied"][1];
-    //       }
-    //     }
-    //     if (grantClaimedData.hasOwnProperty("mpc")) {
-    //       if (grantClaimedData["mpc"] !== "NA") {
-    //         mpc_tied_1_GrantData = grantClaimedData["mpc"];
-    //       }
-    //     }
-    //   }
     const grantTypes = await GrantTypes.find({})
       .select({ _id: 1, name: 1 })
       .lean();
