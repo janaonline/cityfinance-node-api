@@ -134,7 +134,7 @@ async function manageLedgerData(params) {
           str += `${keyName}${ k>0 ?" ," :""} year ${dp.join(",")}`
       }
       str += " has been updated please revisit calculations"
-      let msg = str || `Data for fields ${Array.from(dps).join(",")} and years ${Array.from(errYears).join(",")} has been updated. kindly revisit those calculations`
+      let msg =`Data for fields ${Array.from(dps).join(",")} and years ${Array.from(errYears).join(",")} has been updated. kindly revisit those calculations`
       messages.push(msg)
     }
     return {
