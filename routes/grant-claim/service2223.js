@@ -6,6 +6,7 @@ const GrantTypes = require('../../models/GrantType');
 const {CollectionNames} = require('../../util/15thFCstatus');
 const GrantClaim = require('../../models/GrantClaim');
 const moment = require("moment");
+const { YEAR_CONSTANTS } = require('../../util/FormNames');
 const gtcConstants = {
     mpc_tied : "Million Plus for Water Supply and SWM",
     nmpc_untied: "Non-Million Untied",
@@ -16,6 +17,9 @@ const LOCALHOST = 'localhost:8080';
 
 
 module.exports.get2223 = async (req, res)=>{
+  try {
+
+  const { financialYear, stateId } = req.query;
 
     let expectedValues = {
         annualAccounts: 25,
@@ -27,6 +31,16 @@ module.exports.get2223 = async (req, res)=>{
         gfc: 100,
         twentyEightSlbs: 100
     }
+    let expectedValues2324 = {
+      annualAccounts: 100,
+      utilReport: 100,
+      slb: 100,
+      linkPFMS: 100,
+      dur:100,
+      odf: 100,
+      gfc: 100,
+      twentyEightSlbs: 100
+  }
     let claimsInformation = {
         npmc_tied: null,
         nmpc_untied: null,
@@ -34,11 +48,11 @@ module.exports.get2223 = async (req, res)=>{
     }
     const conditions_nmpc_untied_1st = [
       { key: CollectionNames.annualAcc,
-        text: `Minimum ${expectedValues.annualAccounts}% Annual Account form submission of Unstandardized data by ULBs and Approved by State ULB having data in Both Years should be considered in ${expectedValues.annualAccounts}%`,
+        text: `Minimum ${financialYear === YEAR_CONSTANTS['22_23']? expectedValues.annualAccounts : expectedValues2324.annualAccounts }% Annual Account form submission of Unstandardized data by ULBs and Approved by State ULB having data in Both Years should be considered in ${financialYear === YEAR_CONSTANTS['22_23'] ? expectedValues.annualAccounts : expectedValues2324.annualAccounts}%`,
       },
       {
         key: CollectionNames.linkPFMS,
-        text: `${expectedValues.linkPFMS}% Linking of PFMS Account forms Filled, Submitted, and Approved by State`,
+        text: `${financialYear === YEAR_CONSTANTS['22_23']? expectedValues.linkPFMS : expectedValues2324.linkPFMS}% Linking of PFMS Account forms Filled, Submitted, and Approved by State`,
       },
       {
         key: CollectionNames.gtc,
@@ -52,14 +66,14 @@ module.exports.get2223 = async (req, res)=>{
     const conditions_nmpc_tied_1st = [
       { 
         key: CollectionNames.dur,
-        text: `${expectedValues.dur}% Detailed Utilisation Report form submitted, and Approved by State` },
+        text: `${financialYear === YEAR_CONSTANTS['22_23']? expectedValues.dur : expectedValues2324.dur}% Detailed Utilisation Report form submitted, and Approved by State` },
       {
         key: CollectionNames.annualAcc,
-        text: `Minimum ${expectedValues.annualAccounts}% Annual Account form submission of Unstandardized data by ULBs and Approved by State ULB having data in Both Years should be considered in ${expectedValues.annualAccounts}%`,
+        text: `Minimum ${financialYear === YEAR_CONSTANTS['22_23']? expectedValues.annualAccounts : expectedValues2324.annualAccounts}% Annual Account form submission of Unstandardized data by ULBs and Approved by State ULB having data in Both Years should be considered in ${financialYear === YEAR_CONSTANTS['22_23']? expectedValues.annualAccounts : expectedValues2324.annualAccounts}%`,
       },
       {
         key: CollectionNames.linkPFMS,
-        text: `${expectedValues.linkPFMS}% Linking of PFMS Account form Filled, Submitted, and Approved by State`,
+        text: `${financialYear === YEAR_CONSTANTS['22_23']? expectedValues.linkPFMS : expectedValues2324.linkPFMS}% Linking of PFMS Account form Filled, Submitted, and Approved by State`,
       },
       {
         key: CollectionNames.gtc,
@@ -75,11 +89,11 @@ module.exports.get2223 = async (req, res)=>{
     const conditions_nmpc_untied_2nd = [
       {
         key: CollectionNames.annualAcc,
-        text: `Minimum ${expectedValues.annualAccounts}% Annual Account form submission of Unstandardized data by ULBs and Approved by State ULB having data in Both Years should be considered in ${expectedValues.annualAccounts}%`,
+        text: `Minimum ${financialYear === YEAR_CONSTANTS['22_23']? expectedValues.annualAccounts : expectedValues2324.annualAccounts}% Annual Account form submission of Unstandardized data by ULBs and Approved by State ULB having data in Both Years should be considered in ${financialYear === YEAR_CONSTANTS['22_23']? expectedValues.annualAccounts : expectedValues2324.annualAccounts}%`,
       },
       {
         key: CollectionNames.linkPFMS,
-        text: `${expectedValues.linkPFMS}% Linking of PFMS Account form Filled, Submitted, and Approved by State`,
+        text: `${financialYear === YEAR_CONSTANTS['22_23']? expectedValues.linkPFMS : expectedValues2324.linkPFMS}% Linking of PFMS Account form Filled, Submitted, and Approved by State`,
       },
       {
         key: CollectionNames.gtc,
@@ -96,14 +110,14 @@ module.exports.get2223 = async (req, res)=>{
     ];
      const conditions_nmpc_tied_2nd = [
         { key: CollectionNames.dur,
-          text: `${expectedValues.dur}% Detailed Utilisation Report form Submitted, and Approved by State` },
+          text: `${financialYear === YEAR_CONSTANTS['22_23']? expectedValues.dur : expectedValues2324.dur}% Detailed Utilisation Report form Submitted, and Approved by State` },
         {
           key: CollectionNames.annualAcc,
-          text: `Minimum ${expectedValues.annualAccounts}% Annual Account form submission of Unstandardized data by ULBs and Approved by State ULB having data in Both Years should be considered in ${expectedValues.annualAccounts}%`,
+          text: `Minimum ${financialYear === YEAR_CONSTANTS['22_23']? expectedValues.annualAccounts : expectedValues2324.annualAccounts}% Annual Account form submission of Unstandardized data by ULBs and Approved by State ULB having data in Both Years should be considered in ${financialYear === YEAR_CONSTANTS['22_23']? expectedValues.annualAccounts : expectedValues2324.annualAccounts}%`,
         },
         {
           key: CollectionNames.linkPFMS,
-          text: `${expectedValues.linkPFMS}% Linking of PFMS Account form Filled, Submitted, and Approved by State`,
+          text: `${financialYear === YEAR_CONSTANTS['22_23']? expectedValues.linkPFMS : expectedValues2324.linkPFMS}% Linking of PFMS Account form Filled, Submitted, and Approved by State`,
         },
         {
           key: CollectionNames.gtc,
@@ -119,30 +133,30 @@ module.exports.get2223 = async (req, res)=>{
     const conditions_mpc_tied_1st = [
       { 
         key: CollectionNames.dur,
-        text: `${expectedValues.dur}% Detailed Utilization Report form Submitted, and Approved by State` },
+        text: `${financialYear === YEAR_CONSTANTS['22_23']? expectedValues.dur : expectedValues2324.dur}% Detailed Utilization Report form Submitted, and Approved by State` },
       {
         key: CollectionNames.annualAcc,
-        text: `Minimum ${expectedValues.annualAccounts}% Annual Account Form Submission of Unstandardized data by ULBs and Approved by State ULB having data in Both Years should be considered in 25%`,
+        text: `Minimum ${financialYear === YEAR_CONSTANTS['22_23']? expectedValues.annualAccounts : expectedValues2324.annualAccounts}% Annual Account Form Submission of Unstandardized data by ULBs and Approved by State ULB having data in Both Years should be considered in 25%`,
       },
       {
         key: CollectionNames.linkPFMS,
-        text: `${expectedValues.linkPFMS}% Linking of PFMS Account form Filled, Submitted, and Approved by State`,
+        text: `${financialYear === YEAR_CONSTANTS['22_23']? expectedValues.linkPFMS : expectedValues2324.linkPFMS}% Linking of PFMS Account form Filled, Submitted, and Approved by State`,
       },
       {
         key: CollectionNames['twentyEightSlbs'],
-        text: `${expectedValues.twentyEightSlbs}% 28 Slbs form  Submitted, and Approved by State`
+        text: `${financialYear === YEAR_CONSTANTS['22_23']? expectedValues.twentyEightSlbs : expectedValues2324.twentyEightSlbs}% 28 Slbs form  Submitted, and Approved by State`
       },
       {
         key: CollectionNames.odf,
-        text: `${expectedValues.odf}% Open Defecation Free Forms Submitted, and Approved by State`,
+        text: `${financialYear === YEAR_CONSTANTS['22_23']? expectedValues.odf : expectedValues2324.odf}% Open Defecation Free Forms Submitted, and Approved by State`,
       },
       {
         key: CollectionNames.gfc,
-        text: `${expectedValues.gfc}% Garbage Free City Forms Submitted, and Approved by State`,
+        text: `${financialYear === YEAR_CONSTANTS['22_23']? expectedValues.gfc : expectedValues2324.gfc}% Garbage Free City Forms Submitted, and Approved by State`,
       },
       {
         key: CollectionNames.slb,
-        text: `${expectedValues.slb}% SLBs for Water Supply and Sanitation form Filled, Submitted, and Approved by State `
+        text: `${financialYear === YEAR_CONSTANTS['22_23']? expectedValues.slb : expectedValues2324.slb}% SLBs for Water Supply and Sanitation form Filled, Submitted, and Approved by State `
       },
       {
         key: CollectionNames.gtc,
@@ -158,8 +172,6 @@ module.exports.get2223 = async (req, res)=>{
       }
 
     ];
-    const { financialYear, stateId } = req.query;
-    try {
       let dashboardData = await getDashboardData(req, stateId, financialYear);
     //   let grantClaimedData = await GrantsClaimed.findOne({
     //     state: ObjectId(stateId),
