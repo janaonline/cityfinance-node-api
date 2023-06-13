@@ -64,7 +64,7 @@ function checkForCalculations(reports) {
       validator.errors.push(false)
       validator.messages.push(validationMessages['negativeBal'])
     }
-    console.log("closingBal",typeof sumWmSm, "dd", typeof exp);
+    // console.log("closingBal",projectSum, "dd", exp);
 
     if (sumWmSm !== exp) {
       console.log("2")
