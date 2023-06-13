@@ -95,11 +95,6 @@ async function manageLedgerData(params) {
           if (yearObj.previousYearCodes && yearObj.previousYearCodes.length) {
             ulbFyAmount = await getPreviousYearValues(yearObj, ledgerData)
           }
-          console.log("condition ::: ",(historicalObject && ulbFyAmount !== historicalObject.value && ![years['2020-21'], years['2021-22']].includes(yearObj.year)))
-          if(!(historicalObject && ulbFyAmount !== historicalObject.value && ![years['2020-21'], years['2021-22']].includes(yearObj.year))){
-            console.log("ulbFyAmount ::: ",ulbFyAmount)
-            console.log("historicalObject.value :: ",historicalObject?.value)
-          }
           if (historicalObject && ulbFyAmount !== historicalObject?.value && ![years['2020-21'], years['2021-22']].includes(yearObj.year)) {
             if (![statusTracker.IP, statusTracker.SAP].includes(currentFormStatus)) {
               try{
@@ -115,7 +110,7 @@ async function manageLedgerData(params) {
             let calculationFields = Object.entries(responseData.financialInformation).reduce((result, [key, value]) => ({ ...result, ...(question?.calculatedFrom.includes(value.displayPriority)) && { [key]: value } }), {})
             Object.values(calculationFields).forEach((item) => {
               item.yearData.forEach((childItem) => {
-                let reason = `Data for this field has been updated in ledger. kindly revisit the calculation`
+                let reason = `Data for ${yearObj.year} has been updated in ledger. kindly revisit the calculation`
                 if (childItem.year.toString() === yearObj.year) {
                   childItem.readonly = [statusTracker.RBP, statusTracker.IP].includes(currentFormStatus) && [questionLevelStatus['1']].includes(childItem.status) && ulbRole === userTypes.ulb ? false : childItem.readonly
                   childItem.rejectReason = [statusTracker.RBP, statusTracker.IP].includes(currentFormStatus) && [questionLevelStatus['1']].includes(childItem.status) ? reason : childItem.rejectReason
@@ -132,8 +127,14 @@ async function manageLedgerData(params) {
       }
     }
     if (Array.from(errYears).length) {
-      console.log("dps ::: ",dps)
-      let msg = `Data for fields ${Array.from(dps).join(",")} and years ${Array.from(errYears).join(",")} has been updated. kindly revisit those calculations`
+      let str = 'Data for fields '
+      for(let k in Object.keys(errorWithDps)){
+          let keyName = Object.keys(errorWithDps)[k]
+          let dp = errorWithDps[keyName]
+          str += `${keyName}${ k>0 ?" ," :""} year ${dp.join(",")}`
+      }
+      str += " has been updated please revisit calculations"
+      let msg = str || `Data for fields ${Array.from(dps).join(",")} and years ${Array.from(errYears).join(",")} has been updated. kindly revisit those calculations`
       messages.push(msg)
     }
     return {
@@ -1300,7 +1301,7 @@ exports.getView = async function (req, res, next) {
       financialYearTableHeader,
       messages: userMessages
     };
-    if (messages.length > 0 && role === "ULB") {
+    if (messages.length > 0) {
       let {approvedPerc,rejectedPerc} = calculatePercentage(modifiedLedgerData, requiredFields, viewOne)
       let {ulb,design_year} = req.query
       await updatePercentage(approvedPerc,rejectedPerc,ulb,design_year)
