@@ -820,8 +820,9 @@ async function handleInstallmentForm(params){
         message:"",
         errors:""
     }
+
+    let {installment,year,type,status,financialYear,design_year,state,data,gtcFormId,statusId:currentFormStatus} = params
     try{
-        let {installment,year,type,status,financialYear,design_year,state,data,gtcFormId,statusId:currentFormStatus} = params
         year = getKeyByValue(years,year)
         let runValidators = [MASTER_STATUS['In Progress']].includes(currentFormStatus) ? false : true
         let transferGrantData = data['transferGrantdetail']

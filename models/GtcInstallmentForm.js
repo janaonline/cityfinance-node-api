@@ -58,7 +58,7 @@ const installmentFormSchema = new Schema(
             type:Date,
             max:[new Date().toISOString().split("T")[0],`${grantInstallmentLabels['receiptDate']} should not be greater than the present date`]
         },
-        recomAvail:radioSchema("recomAvail","GtcInstallmentForm",[]),
+        recomAvail:radioSchema("recomAvail","GtcInstallmentForm"),
         grantDistribute:radioSchema("grantDistribute","GtcInstallmentForm",options),
         sfcNotificationCopy:pdfSchema(false),
         projectUndtkn:radioSchema("projectUndtkn","GtcInstallmentForm"),
