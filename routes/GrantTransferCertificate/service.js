@@ -4,11 +4,11 @@ const StateGTCCertificate = require('../../models/StateGTCertificate');
 const ObjectId = require("mongoose").Types.ObjectId;
 const Ulb = require('../../models/Ulb')
 const {checkForUndefinedVaribales,mutuateGetPayload,getFlatObj} = require("../../routes/CommonActionAPI/service")
-const {getKeyByValue,saveFormHistory} = require("../../util/masterFunctions");
+const {getKeyByValue,saveFormHistory,grantDistributeOptions} = require("../../util/masterFunctions");
 const { years } = require('../../service/years');
 const GtcInstallmentForm = require("../../models/GtcInstallmentForm")
 const TransferGrantDetailForm = require("../../models/TransferGrantDetailForm")
-const {grantsWithUlbTypes,installment_types,singleInstallmentTypes,grantDistributeOptions} = require("./constants")
+const {grantsWithUlbTypes,installment_types,singleInstallmentTypes} = require("./constants")
 const FormsJson = require("../../models/FormsJson");
 const { MASTER_STATUS, MASTER_STATUS_ID } = require('../../util/FormNames');
 const userTypes = require("../../util/userTypes")
@@ -881,6 +881,13 @@ async function handleInstallmentForm(params){
         console.log("error in handleInstallmentForm ::: ",err.message)
         validator.message = "Not valid"
         validator.valid = false
+        let ele = await GrantTransferCertificate.findOneAndUpdate({
+            "_id":ObjectId(gtcFormId)
+        },{
+            "$set":{
+                currentFormStatus:2
+            }
+        })
         validator.errors = Object.keys(err.errors).map(item => err.errors[item]['properties']['message'])
     }
     return validator
@@ -958,8 +965,8 @@ module.exports.createOrUpdateInstallmentForm = async(req,res)=>{
         let installmentFormValidator = await handleInstallmentForm(req.body)
         if(!installmentFormValidator.valid && runValidators ){
             response.success = false
-            response.message = installmentFormValidator.message
-            response.errors = installmentFormValidator.errors
+            response.message = installmentFormValidator.errors
+            // response.errors = installmentFormValidator.errors
             return res.status(405).json(response)
         }
         await createHistory({isDraft,currentFormStatus,gtcFormId})
