@@ -84,49 +84,20 @@ async function manageLedgerData(params) {
     for (let ledgerKey of ledgerKeys) {
       let question = responseData.financialInformation[ledgerKey]
       if (question.yearData.length) {
-        for (let yearObj of question.yearData) {
-          let historicalObject = formHistoryData.find(item => item.type === yearObj.type && item.year.toString() === yearObj.year.toString())
-          let yearName = getKeyByValue(years, yearObj.year);
-          let ulbFyAmount = await getUlbLedgerDataFilter({
-            code: yearObj.code,
-            year: yearObj.year.toString(),
-            data: ledgerData,
-          })
-          if (yearObj.previousYearCodes && yearObj.previousYearCodes.length) {
-            ulbFyAmount = await getPreviousYearValues(yearObj, ledgerData)
-          }
-          if (historicalObject && ulbFyAmount !== historicalObject?.value && ![years['2020-21'], years['2021-22']].includes(yearObj.year)) {
-            if (![statusTracker.IP, statusTracker.SAP].includes(currentFormStatus)) {
-              try{
-                errorWithDps[question.displayPriority].push(getKeyByValue(years, yearObj.year))
-              } 
-              catch(err){
-                errorWithDps[question.displayPriority] = [getKeyByValue(years, yearObj.year)]
-              }
-              errYears.add(getKeyByValue(years, yearObj.year))
-              dps.add(question.displayPriority)
-              // messages.push(msg)
+        for(let yearObj of question.yearData){
+          if(yearObj.ledgerUpdated){
+            let yearName = getKeyByValue(years,yearObj.year)
+            try{
+              errorWithDps[yearObj.displayPriority].push(yearName)
             }
-            let calculationFields = Object.entries(responseData.financialInformation).reduce((result, [key, value]) => ({ ...result, ...(question?.calculatedFrom.includes(value.displayPriority)) && { [key]: value } }), {})
-            Object.values(calculationFields).forEach((item) => {
-              item.yearData.forEach((childItem) => {
-                let reason = `Data for ${yearObj.year} has been updated in ledger. kindly revisit the calculation`
-                if (childItem.year.toString() === yearObj.year) {
-                  childItem.readonly = [statusTracker.RBP, statusTracker.IP].includes(currentFormStatus) && [questionLevelStatus['1']].includes(childItem.status) && ulbRole === userTypes.ulb ? false : childItem.readonly
-                  childItem.rejectReason = [statusTracker.RBP, statusTracker.IP].includes(currentFormStatus) && [questionLevelStatus['1']].includes(childItem.status) ? reason : childItem.rejectReason
-                  childItem.status = [statusTracker.RBP, statusTracker.IP].includes(currentFormStatus) && [questionLevelStatus['1']].includes(childItem.status) ? "REJECTED" : childItem.status
-                }
-              })
-            })
-            responseData = { ...responseData, ...calculationFields }
+            catch(err){
+              errorWithDps[yearObj.displayPriority] = [yearName]
+            }
           }
-          yearObj.modelName = ulbFyAmount ? "ULBLedger" : ""
-          yearObj.value = ulbFyAmount ? ulbFyAmount : yearObj.value
-          yearObj.required = false
         }
       }
     }
-    if (Array.from(errYears).length) {
+    if (Object.keys(errorWithDps).length) {
       let str = 'Data for fields '
       for(let k in Object.keys(errorWithDps)){
           let keyName = Object.keys(errorWithDps)[k]
@@ -135,7 +106,7 @@ async function manageLedgerData(params) {
       }
       str += " has been updated please revisit calculations"
       let msg =`Data for fields ${Array.from(dps).join(",")} and years ${Array.from(errYears).join(",")} has been updated. kindly revisit those calculations`
-      messages.push(msg)
+      messages.push(str)
     }
     return {
       responseData,
@@ -1043,6 +1014,7 @@ exports.getView = async function (req, res, next) {
                 pf["rejectReason"] = singleFydata.rejectReason
                 pf["modelName"] = singleFydata ? singleFydata.modelName : "";
                 pf["status"] = singleFydata.status != null ? singleFydata.status : 'PENDING';
+                pf['ledgerUpdated'] = singleFydata.ledgerUpdated || false
                 if (subData[key].calculatedFrom === undefined) {
                   pf["readonly"] = getReadOnly(data?.currentFormStatus, viewOne.isDraft, role, singleFydata.status);
                 } else {
@@ -1199,6 +1171,7 @@ exports.getView = async function (req, res, next) {
                       ? singleFydata.modelName
                       : "";
                     pf["rejectReason"] = singleFydata ? singleFydata.rejectReason : ""
+                    pf['ledgerUpdated'] = singleFydata.ledgerUpdated
                     if (subData[key].calculatedFrom === undefined) {
                       pf["readonly"] = getReadOnly(data?.currentFormStatus, viewOne.isDraft, role, singleFydata.status);
                     } else {
@@ -1250,6 +1223,7 @@ exports.getView = async function (req, res, next) {
                   pf["value"] = sumOfCurrentYear - sumOfPreviousYear;
                   pf['readonly'] = true
                   pf["modelName"] = "ULBLedger";
+                  
                 }
               }
             }
@@ -3392,6 +3366,7 @@ async function updateQueryForFiscalRanking(
           payload["modelName"] = years.modelName;
           payload["rejectReason"] = years?.rejectReason || ""
           payload["displayPriority"] = dynamicObj.position;
+          payload['ledgerUpdated'] = false
         } else {
           payload["status"] = years.status;
           payload["rejectReason"] = years?.rejectReason
@@ -3644,7 +3619,6 @@ async function calculateAndUpdateStatusForMappers(
             }
             let statueses = getStatusesFromObject(tab.data, "status", [
               "population11",
-              "populationFr"
             ]);
             let finalStatus = statueses.every((item) => {
               return item === "APPROVED"

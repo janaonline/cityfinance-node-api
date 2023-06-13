@@ -3,7 +3,22 @@ const CurrentStatus = require("../models/CurrentStatus");
 const StatusHistory = require("../models/StatusHistory");
 const FORMJSON  = require('../models/FormsJson');
 const { MODEL_PATH } = require("../util/FormNames");
-
+module.exports.ledgerCodes = {
+  "410":"5dd10c2785c951b54ec1d779",
+  "412":"5dd10c2785c951b54ec1d774"
+}
+module.exports.ledgerFields = {
+  "fixedAsset":{
+    "codes":["410"],
+    "logic":"",
+    "calculatedFrom":["faLandBuild","faOther"]
+  },
+  "CaptlExp":{
+    "codes":["410","412"],
+    "logic":"CurrentCodeYear - PreviousCodeYear",
+    "calculatedFrom":["CaptlExpWaterSupply","CaptlExpSanitation","CaptExpOther"]
+  }
+}
 module.exports.saveFormHistory = (params) => {
   return new Promise(async (resolve, reject) => {
     try {
