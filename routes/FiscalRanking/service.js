@@ -88,7 +88,6 @@ async function manageLedgerData(params) {
           if(yearObj.ledgerUpdated){
             let yearName = getKeyByValue(years,yearObj.year)
             try{
-              console.log("yearObj :: ",yearObj)
               errorWithDps[question.displayPriority].push(yearName)
             }
             catch(err){
@@ -103,7 +102,7 @@ async function manageLedgerData(params) {
       for(let k in Object.keys(errorWithDps)){
           let keyName = Object.keys(errorWithDps)[k]
           let dp = errorWithDps[keyName]
-          str += `${keyName}${ k>0 ?" ," :""} year ${dp.join(",")}`
+          str += `${ k>0 ?" ," :""} ${keyName} year ${dp.join(",")}`
       }
       str += " has been updated please revisit calculations"
       let msg =`Data for fields ${Array.from(dps).join(",")} and years ${Array.from(errYears).join(",")} has been updated. kindly revisit those calculations`
