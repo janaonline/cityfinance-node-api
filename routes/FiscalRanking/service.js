@@ -89,10 +89,11 @@ async function manageLedgerData(params) {
           if(yearObj.ledgerUpdated){
             let yearName = getKeyByValue(years,yearObj.year)
             try{
-              errorWithDps[yearObj.displayPriority].push(yearName)
+              console.log("yearObj :: ",yearObj)
+              errorWithDps[question.displayPriority].push(yearName)
             }
             catch(err){
-              errorWithDps[yearObj.displayPriority] = [yearName]
+              errorWithDps[question.displayPriority] = [yearName]
             }
           }
         }

@@ -43,6 +43,8 @@ async function rejectMapperFields(calculatedFields,year,frId,displayPriority){
 
 LedgerSchema.post("findOneAndUpdate",async function (doc){
     if(["2018-19","2019-20"].includes(doc.financialYear) && Object.values(ledgerCodes).includes(doc.lineItem.toString())){
+        console.log("doc :: ",doc.financialYear)
+        console.log("doc lineItem ::: ",doc.lineItem)
         let ledgerItem = await LineItem.findOne({"_id":doc.lineItem}).lean()
         let frObject = await FiscalRanking.findOne({
             "ulb":doc.ulb,
@@ -67,12 +69,15 @@ LedgerSchema.post("findOneAndUpdate",async function (doc){
             let codeValue = ledgerFields[mapper.type].codes.find(item => item === lineItemCode)
             let rejectFields = await ShouldReject(frObject.currentFormStatus,mapper.status)
             let maximumValue = ledgerFields[mapper.type].codes.reduce((a,b) => Math.max(parseInt(a),parseInt(b)) ,0)
+            console.log("maximumValue :: ",maximumValue)
+            console.log("lineItemCode::",lineItemCode)
             if(!ledgerFields[mapper.type].logic && codeValue){
                 payload.value = doc.amount
                 payload.ledgerUpdated = true
             }
-            else if(ledgerFields[mapper.type].logic && maximumValue === lineItemCode ){
+            else if(ledgerFields[mapper.type].logic && maximumValue === lineItemCode.toString() ){
                 let calculatedAmount = getPreviousYearValues(mapper.year,ledgerFields[mapper.type].codes,ulb,this)
+                console.log("calculatedAmount ::: ",calculatedAmount)
                 payload.value = calculatedAmount
                 payload.ledgerUpdated = true
             }   
