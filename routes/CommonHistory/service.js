@@ -3,7 +3,8 @@ const Sidemenu = require('../../models/Sidemenu');
 const ObjectId = require("mongoose").Types.ObjectId;
 const Response = require('../../service').response;
 const {calculateStatus} = require('../../routes/CommonActionAPI/service');
-const { CollectionNames } = require('../../util/15thFCstatus')
+const { CollectionNames } = require('../../util/15thFCstatus');
+const FormHistory = require('../../models/FormHistory');
 
 module.exports.getHistory = catchAsync(async (req, res) => {
     let user = req.decoded;
@@ -68,12 +69,13 @@ module.exports.getHistory = catchAsync(async (req, res) => {
 
   module.exports.getHistory2324 = catchAsync(async (req, res) => {
     let user = req.decoded;
-    let { formId , ulbId, stateId, design_year } = req.query;
+    let { formId , ulbId, design_year } = req.query;
 
     /* Checking if formId is present or not. If not present then it will return error. */
-    if((!ulbId && !stateId) || !design_year || !formId) return Response.BadRequest(res, {}, "Required fields missing");
+    if(!ulbId || !design_year || !formId) return Response.BadRequest(res, {}, "Required fields missing");
 
-    const formTabData = await Sidemenu.findOne({_id: ObjectId(formId)}).lean()
+    const formTabData = await Sidemenu.findOne({ _id : ObjectId(formId)}).lean()
+
     if (user.role != "ULB" && formTabData) {
       let query = {}
       if(formTabData.role ==="ULB"){
@@ -93,12 +95,20 @@ module.exports.getHistory = catchAsync(async (req, res) => {
       }else {
         return Response.BadRequest(res, {}, "Wrong Form Id");
       }
+
+      
       let path = formTabData?.path;
+      
       const model = require(`../../models/${path}`);
-      let getData = await model.findOne(query, { history: 1 }).lean();
+     
+      let getData = await model.findOne(query, { _id: 1 }).lean();
+      let historyQuery = {recordId:{$in : ObjectId(getData._id)} , formId : formTabData?.formId};
+      let history = await FormHistory.find(historyQuery,{"data":1}).lean();
+      
       let outputArr = [];
-      if (getData) {
-        for(let el of getData['history']){
+     // console.log("fdsafdsa",history);
+      if (history) {
+        for(let el of history['data']){
         // getData["history"].forEach((el) => {
           let output = {};
 
