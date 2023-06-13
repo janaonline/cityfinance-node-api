@@ -1321,7 +1321,9 @@ async function updatePercentage(approvedPerc,rejectedPerc,formId){
     console.log("payload :: ",payload)
     await FiscalRanking.findOneAndUpdate({
       filter
-    },payload)
+    },{
+      "$set":payload
+    })
     
   }
   catch(err){
