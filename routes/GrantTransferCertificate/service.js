@@ -857,8 +857,8 @@ async function handleInstallmentForm(params){
             formType:type,
             state:ObjectId(state)
         },payload,{upsert:true,new:true,runValidators: runValidators})
-        let totalTransAmount = transferGrantData.reduce((result,value) => parseFloat(result) + parseFloat(value.transAmount) ,0)
-        let totalIntTransfer = transferGrantData.reduce((result,value) => parseFloat(result) + parseFloat(value.intTransfer) ,0)
+        let totalTransAmount = transferGrantData.reduce((result,value) => parseFloat(result) + parseFloat(value.transAmount) ,0) || 0
+        let totalIntTransfer = transferGrantData.reduce((result,value) => parseFloat(result) + parseFloat(value.intTransfer) ,0) || 0
         transferGrantData = await appendFormId(transferGrantData,gtcInstallment)
         //delete Previous data
         await TransferGrantDetailForm.deleteMany({
@@ -882,7 +882,7 @@ async function handleInstallmentForm(params){
         validator.message = ""
     }
     catch(err){
-        console.log("error in handleInstallmentForm ::: ",err.message)
+        console.log("error in handleInstallmentForm ::: ",err)
         validator.message = "Not valid"
         validator.valid = false
         let ele = await GrantTransferCertificate.findOneAndUpdate({
