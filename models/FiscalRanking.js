@@ -214,10 +214,10 @@ const fiscalRankingSchema = new Schema(
         actionTakenByRole: { type: String, default: null,required:true },
         rejectReason: { type: String, default: null },
         progress:{
-            ulbCompletion:{type:Schema.Types.Mixed,default:0},
-            verificationProgress:{type:Schema.Types.Mixed,default:0},
-            approvedProgress:{type:Schema.Types.Mixed,default:0},
-            rejectedProgress:{type:Schema.Types.Mixed,default:0},
+            ulbCompletion:{type:Schema.Types.Mixed,default:"0"},
+            verificationProgress:{type:Schema.Types.Mixed,default:"0"},
+            approvedProgress:{type:Schema.Types.Mixed,default:"0"},
+            rejectedProgress:{type:Schema.Types.Mixed,default:"0"},
         },
         // createdAt: { type: Date, default: Date.now },
         // modifiedAt: { type: Date, default: Date.now },
@@ -225,7 +225,7 @@ const fiscalRankingSchema = new Schema(
         isDraft: { type: Boolean, default: false, required: true },
         submittedDate :  { type: Date, default:null },
     },
-    { timestamp: { createdAt: "createdAt", updatedAt: "modifiedAt" } }
+    { timestamps: { createdAt: "createdAt", updatedAt: "modifiedAt" } }
 );
 fiscalRankingSchema.index(
     { ulb: 1, design_year: 1 },

@@ -65,6 +65,9 @@ const grantTransferCertificateSchema = new Schema({
         type: Date,
         default: Date.now
     },
+    currentFormStatus:{
+        type:Number,
+    },
     history:{
         type: Array,
         default: []
