@@ -44,11 +44,6 @@ module.exports.get2223 = async (req, res)=>{
         twentyEightSlbs: 100
       }
   }
-    let claimsInformation = {
-        npmc_tied: null,
-        nmpc_untied: null,
-        mpc: null
-    }
     const conditions_nmpc_untied_1st = [
       { key: CollectionNames.annualAcc,
         text: `Minimum ${financialYear === YEAR_CONSTANTS['22_23']? expectedValues.annualAccounts : expectedValues2324[IdToYear].annualAccounts }% Annual Account form submission of Unstandardized data by ULBs and Approved by State ULB having data in Both Years should be considered in ${financialYear === YEAR_CONSTANTS['22_23'] ? expectedValues.annualAccounts : expectedValues2324[IdToYear].annualAccounts}%`,
