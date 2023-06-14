@@ -49,6 +49,7 @@ module.exports.limitValidationSchema = (keyName,min,max,mandatory=false)=>{
       min:min,
       max:[max,`${keyName} must not be greater than ${max}`],
       required : mandatory,
+      default:null,
   }
 }
 

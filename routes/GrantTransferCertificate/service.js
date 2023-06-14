@@ -663,9 +663,7 @@ const getManipulatedJson = async(installment,type,design_year,formJson,fieldsToh
             installmentForm.transferGrantdetail = installmentForm?.transferGrantdetail.map(item => item.disableFields = shouldDisableFields)
         }
         flattedForm['disableFields'] = shouldDisableFields
-
         let questionJson = await mutuateGetPayload([...formJson.data],flattedForm,keysToBeDeleted,"STATE")
-
         mformObject['language'] = questionJson
         mformObject['language'][0].isQuestionDisabled = shouldDisableFields
         mformObject['isQuestionDisabled'] = shouldDisableFields 
