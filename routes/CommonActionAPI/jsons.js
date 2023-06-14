@@ -175,7 +175,7 @@ let DurProjectJson = {
         "resource_urls": [],
         "label": "3",
         "shortKey": "startDate",
-        "max":new Date().toISOString().slice(0,10),
+        "max": new Date().toISOString().slice(0, 10),
         "viewSequence": "23",
         "child": [],
         "parent": [],
@@ -581,7 +581,7 @@ let DurProjectJson = {
         "child": [],
         "parent": [],
         "pattern": "",
-        "showAsText":true,
+        "showAsText": true,
         "validation": [],
         "restrictions": [],
         "min": 1,
@@ -977,7 +977,7 @@ let DurProjectJson = {
         "hint": "",
         "resource_urls": [],
         "label": "",
-        "showAsText":true,
+        "showAsText": true,
         "shortKey": "sanitation_question",
         "viewSequence": "9",
         "child": [],
@@ -1377,7 +1377,7 @@ let DurProjectJson = {
         "title": "Sections/Indicators",
         "hint": "",
         "resource_urls": [],
-        "showAsText":true,
+        "showAsText": true,
         "label": "",
         "shortKey": "solidWaste_question",
         "viewSequence": "16",
@@ -1781,7 +1781,7 @@ let DurProjectJson = {
         "label": "",
         "shortKey": "stormWater_question",
         "viewSequence": "23",
-        "showAsText":true,
+        "showAsText": true,
         "child": [],
         "parent": [],
         "pattern": "",
@@ -2186,14 +2186,14 @@ let DurProjectJson = {
         "child": [],
         "parent": [],
         "validation": [
-          {
-            "error_msg": "",
-            "_id": "1"
-          },
-          {
-            "error_msg": "",
-            "_id": "2"
-          }
+            {
+                "error_msg": "",
+                "_id": "1"
+            },
+            {
+                "error_msg": "",
+                "_id": "2"
+            }
         ],
         "restrictions": [],
         "minRange": 1,
@@ -2209,26 +2209,26 @@ let DurProjectJson = {
         "type": "2",
         "visibility": true,
         "nestedConfig": {
-          "parentOrder": "4",
-          "index": 0,
-          "loopIndex": 0
+            "parentOrder": "4",
+            "index": 0,
+            "loopIndex": 0
         },
         "selectedAnswerOption": {
-          "name": " 1"
+            "name": " 1"
         },
         "forParentValue": 1,
         "isSelectValue": false,
         "previousValue": "",
         "modelValue": "40",
         "selectedValue": [
-          {
-            "label": "",
-            "textValue": "",
-            "value": "40"
-          }
+            {
+                "label": "",
+                "textValue": "",
+                "value": "40"
+            }
         ],
         "errorMessage": ""
-      },
+    },
     "transDate": {
         "information": "",
         "_id": "6437ffd11a51164651cac69b",
@@ -2243,15 +2243,15 @@ let DurProjectJson = {
         "child": [],
         "parent": [],
         "validation": [
-          {
-            "error_msg": "",
-            "_id": "1"
-          },
-          {
-            "_id": "24",
-            "error_msg": "",
-            "value": ""
-          }
+            {
+                "error_msg": "",
+                "_id": "1"
+            },
+            {
+                "_id": "24",
+                "error_msg": "",
+                "value": ""
+            }
         ],
         "restrictions": [],
         "input_type": "14",
@@ -2261,35 +2261,35 @@ let DurProjectJson = {
         "acceptableType": "",
         "acceptableFileType": "",
         "type": "14",
-        "max":new Date(),
+        "max": new Date(),
         "visibility": true,
         "nestedConfig": {
-          "parentOrder": "4",
-          "index": 1,
-          "loopIndex": 0
+            "parentOrder": "4",
+            "index": 1,
+            "loopIndex": 0
         },
         "selectedAnswerOption": {
-          "name": " 1"
+            "name": " 1"
         },
         "forParentValue": 1
-      },
-    "transDelay":{
+    },
+    "transDelay": {
         "information": "",
         "_id": "6438005010d7a646562ea4bf",
         "order": "4.003",
         "answer_option": [
-          {
-            "name": "Yes",
-            "did": [],
-            "viewSequence": "1",
-            "_id": "1"
-          },
-          {
-            "name": "No",
-            "did": [],
-            "viewSequence": "2",
-            "_id": "2"
-          }
+            {
+                "name": "Yes",
+                "did": [],
+                "viewSequence": "1",
+                "_id": "1"
+            },
+            {
+                "name": "No",
+                "did": [],
+                "viewSequence": "2",
+                "_id": "2"
+            }
         ],
         "title": "Was there any delay in transfer?",
         "hint": "",
@@ -2297,13 +2297,29 @@ let DurProjectJson = {
         "label": "3",
         "shortKey": "transDelay",
         "viewSequence": "17",
-        "child": [],
+        "child": [
+            {
+                "type": "2",
+                "value": "^([1])$",
+                "order": "4.004"
+            },
+            {
+                "type": "2",
+                "value": "^([1])$",
+                "order": "4.005"
+            },
+            {
+                "type": "2",
+                "value": "^([1])$",
+                "order": "4.006"
+            }
+        ],
         "parent": [],
         "validation": [
-          {
-            "error_msg": "",
-            "_id": "1"
-          }
+            {
+                "error_msg": "",
+                "_id": "1"
+            }
         ],
         "restrictions": [],
         "input_type": "5",
@@ -2315,15 +2331,15 @@ let DurProjectJson = {
         "type": "5",
         "visibility": true,
         "nestedConfig": {
-          "parentOrder": "4",
-          "index": 2,
-          "loopIndex": 0
+            "parentOrder": "4",
+            "index": 2,
+            "loopIndex": 0
         },
         "selectedAnswerOption": {
-          "name": " 1"
+            "name": " 1"
         },
         "forParentValue": 1
-      },
+    },
     "daysDelay": {
         "information": "",
         "_id": "6438009129e2ab464aea897f",
@@ -2336,16 +2352,22 @@ let DurProjectJson = {
         "shortKey": "daysDelay",
         "viewSequence": "18",
         "child": [],
-        "parent": [],
+        "parent": [
+            {
+                "value": "^([1])$",
+                "type": "5",
+                "order": "4.003"
+            }
+        ],
         "validation": [
-          {
-            "error_msg": "",
-            "_id": "1"
-          },
-          {
-            "error_msg": "",
-            "_id": "2"
-          }
+            {
+                "error_msg": "",
+                "_id": "1"
+            },
+            {
+                "error_msg": "",
+                "_id": "2"
+            }
         ],
         "restrictions": [],
         "minRange": 0,
@@ -2361,26 +2383,26 @@ let DurProjectJson = {
         "type": "2",
         "visibility": true,
         "nestedConfig": {
-          "parentOrder": "4",
-          "index": 3,
-          "loopIndex": 0
+            "parentOrder": "4",
+            "index": 3,
+            "loopIndex": 0
         },
         "selectedAnswerOption": {
-          "name": " 1"
+            "name": " 1"
         },
         "forParentValue": 1,
         "isSelectValue": false,
         "previousValue": "",
         "modelValue": "30",
         "selectedValue": [
-          {
-            "label": "",
-            "textValue": "",
-            "value": "30"
-          }
+            {
+                "label": "",
+                "textValue": "",
+                "value": "30"
+            }
         ],
         "errorMessage": ""
-      },
+    },
     "interest": {
         "information": "",
         "_id": "643800f110d7a646562ea59b",
@@ -2393,16 +2415,22 @@ let DurProjectJson = {
         "shortKey": "interest",
         "viewSequence": "19",
         "child": [],
-        "parent": [],
+        "parent": [
+            {
+                "value": "^([1])$",
+                "type": "5",
+                "order": "4.003"
+            }
+        ],
         "validation": [
-          {
-            "error_msg": "",
-            "_id": "1"
-          },
-          {
-            "error_msg": "",
-            "_id": "2"
-          }
+            {
+                "error_msg": "",
+                "_id": "1"
+            },
+            {
+                "error_msg": "",
+                "_id": "2"
+            }
         ],
         "restrictions": [],
         "minRange": 0,
@@ -2418,26 +2446,26 @@ let DurProjectJson = {
         "type": "2",
         "visibility": true,
         "nestedConfig": {
-          "parentOrder": "4",
-          "index": 4,
-          "loopIndex": 0
+            "parentOrder": "4",
+            "index": 4,
+            "loopIndex": 0
         },
         "selectedAnswerOption": {
-          "name": " 1"
+            "name": " 1"
         },
         "forParentValue": 1,
         "isSelectValue": false,
         "previousValue": "",
         "modelValue": "80",
         "selectedValue": [
-          {
-            "label": "",
-            "textValue": "",
-            "value": "80"
-          }
+            {
+                "label": "",
+                "textValue": "",
+                "value": "80"
+            }
         ],
         "errorMessage": ""
-      },
+    },
     "intTransfer": {
         "information": "",
         "_id": "643802e229e2ab464aea8af9",
@@ -2450,16 +2478,22 @@ let DurProjectJson = {
         "shortKey": "intTransfer",
         "viewSequence": "20",
         "child": [],
-        "parent": [],
+        "parent": [
+            {
+                "value": "^([1])$",
+                "type": "5",
+                "order": "4.003"
+            }
+        ],
         "validation": [
-          {
-            "error_msg": "",
-            "_id": "1"
-          },
-          {
-            "error_msg": "",
-            "_id": "2"
-          }
+            {
+                "error_msg": "",
+                "_id": "1"
+            },
+            {
+                "error_msg": "",
+                "_id": "2"
+            }
         ],
         "restrictions": [],
         "minRange": 0,
@@ -2475,26 +2509,26 @@ let DurProjectJson = {
         "type": "2",
         "visibility": true,
         "nestedConfig": {
-          "parentOrder": "4",
-          "index": 5,
-          "loopIndex": 0
+            "parentOrder": "4",
+            "index": 5,
+            "loopIndex": 0
         },
         "selectedAnswerOption": {
-          "name": " 1"
+            "name": " 1"
         },
         "forParentValue": 1,
         "isSelectValue": false,
         "previousValue": "",
         "modelValue": "40",
         "selectedValue": [
-          {
-            "label": "",
-            "textValue": "",
-            "value": "40"
-          }
+            {
+                "label": "",
+                "textValue": "",
+                "value": "40"
+            }
         ],
         "errorMessage": ""
-      },
+    },
     "totalTransAmount": {
         "information": "",
         "_id": "6438034510d7a646562ea77b",
@@ -2509,10 +2543,10 @@ let DurProjectJson = {
         "child": [],
         "parent": [],
         "validation": [
-          {
-            "error_msg": "",
-            "_id": "1"
-          }
+            {
+                "error_msg": "",
+                "_id": "1"
+            }
         ],
         "restrictions": [],
         "minRange": 0,
@@ -2528,16 +2562,16 @@ let DurProjectJson = {
         "type": "2",
         "visibility": true,
         "nestedConfig": {
-          "parentOrder": "4",
-          "index": 6,
-          "loopIndex": 0
+            "parentOrder": "4",
+            "index": 6,
+            "loopIndex": 0
         },
         "selectedAnswerOption": {
-          "name": " 1"
+            "name": " 1"
         },
         "forParentValue": 1
-      },
-    "totalIntTransfer":{
+    },
+    "totalIntTransfer": {
         "information": "",
         "_id": "643803941a51164651cac913",
         "order": "4.008",
@@ -2551,10 +2585,10 @@ let DurProjectJson = {
         "child": [],
         "parent": [],
         "validation": [
-          {
-            "error_msg": "",
-            "_id": "1"
-          }
+            {
+                "error_msg": "",
+                "_id": "1"
+            }
         ],
         "restrictions": [],
         "minRange": 0,
@@ -2570,15 +2604,15 @@ let DurProjectJson = {
         "type": "2",
         "visibility": true,
         "nestedConfig": {
-          "parentOrder": "4",
-          "index": 7,
-          "loopIndex": 0
+            "parentOrder": "4",
+            "index": 7,
+            "loopIndex": 0
         },
         "selectedAnswerOption": {
-          "name": " 1"
+            "name": " 1"
         },
         "forParentValue": 1
-      }
+    }
 }
 
 
