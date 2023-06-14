@@ -2261,6 +2261,7 @@ let DurProjectJson = {
         "acceptableType": "",
         "acceptableFileType": "",
         "type": "14",
+        "max":new Date(),
         "visibility": true,
         "nestedConfig": {
           "parentOrder": "4",
