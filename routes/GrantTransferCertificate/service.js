@@ -597,7 +597,25 @@ const checkForPreviousForms = async(design_year,state)=>{
     return validator;
 }
 
-const getManipulatedJson = async(installment,type,design_year,formJson,fieldsTohide,state,role)=>{
+const getRejectedFields = (currentFormStatus,formStatuses,installment,inputAllowed,role)=>{
+    try{
+        // console.log("formStatuses :: ",formStatuses)
+        let prevInstallment = installment - 1
+        let allowedStatuses = [MASTER_STATUS['Under Review by MoHUA'],MASTER_STATUS['Rejected by MoHUA']]
+        // console.log("prevInstallment :: ",prevInstallment)
+        if(prevInstallment  && !allowedStatuses.includes(formStatuses?.[prevInstallment]) && role === userTypes.state){
+            return true
+        }
+        else{
+            return inputAllowed.includes(currentFormStatus) && role === userTypes.state ? false : true 
+        }
+    }
+    catch(err){
+        console.log("error in  getRejectedgetRejectedFieldsFields::::  ",err.message)
+    }
+}
+
+const getManipulatedJson = async(installment,type,design_year,formJson,fieldsTohide,state,role,formStatuses)=>{
     let keysToBeDeleted = ["_id","createdAt","modifiedAt","actionTakenByRole","actionTakenBy","ulb","design_year"]
     let mformObject = {
         "language":[],
@@ -631,7 +649,7 @@ const getManipulatedJson = async(installment,type,design_year,formJson,fieldsToh
             installmentForm.grantType =   grantsWithUlbTypes[type].grantType
             installmentForm.year = getKeyByValue(years,design_year)
         }
-        console.log("installmentForm :: ",installmentForm)
+        console.log("installmentForm :: ",installment)
         if(installmentForm?.transferGrantdetail && installmentForm?.transferGrantdetail.length === 0){
             delete installmentForm['transferGrantdetail']
         }
@@ -640,7 +658,9 @@ const getManipulatedJson = async(installment,type,design_year,formJson,fieldsToh
         let installmentObj = {...installmentForm}
         let flattedForm = await getFlatObj(installmentObj)
         flattedForm['fieldsTohide'] = fieldsTohide
-        flattedForm['disableFields'] = inputAllowed.includes(gtcForm?.currentFormStatus) && role === userTypes.state ? false : true 
+        let shouldDisableFields = getRejectedFields(gtcForm?.currentFormStatus,formStatuses,installment,inputAllowed,role)
+        formStatuses[installment] = gtcForm?.currentFormStatus
+        flattedForm['disableFields'] = shouldDisableFields
         let questionJson = await mutuateGetPayload(formJson.data,flattedForm,keysToBeDeleted,"ULB")
         mformObject['language'] = questionJson
         mformObject['isQuestionDisabled'] = inputAllowed.includes(gtcForm?.currentFormStatus) && role === userTypes.state ? false : true 
@@ -661,6 +681,7 @@ const getManipulatedJson = async(installment,type,design_year,formJson,fieldsToh
 
 const getJson = async(state,design_year,role)=>{
     try{
+        var formStatuses = {}
         let fieldsTohide = []
         let ulb = await Ulb.findOne({
             "state":ObjectId(state),
@@ -680,7 +701,7 @@ const getJson = async(state,design_year,role)=>{
         for(let carousel of basicEmptyStructure){
             for(let question of carousel.questions){
                 question.questionresponse = ""
-                let {questionResponse,file,status,statusId} = await getManipulatedJson(question.installment,question.type,design_year,{...formJson},fieldsTohide,ObjectId(state),role)                
+                let {questionResponse,file,status,statusId} = await getManipulatedJson(question.installment,question.type,design_year,{...formJson},fieldsTohide,ObjectId(state),role,formStatuses)                
                 question.status = status
                 question.statusId = statusId
                 question.questionresponse = JSON.parse(JSON.stringify(questionResponse))

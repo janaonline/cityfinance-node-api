@@ -1561,7 +1561,6 @@ module.exports.getFlatObj = (obj) => {
     flattendObj['parent_obj'] = new Set()
     traverseAndFlatten({...obj}, flattendObj)
     // let flattenArr = []
-    console.log("flattendObj :: ",flattendObj.receiptDate)
     flattendObj['parent_arr'] = Array.from(flattendObj['parent_arr'])
     flattendObj['parent_obj'] = Array.from(flattendObj['parent_obj'])
     return flattendObj
