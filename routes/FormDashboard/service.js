@@ -174,19 +174,19 @@ function gtcSubmitCondition2324(type, installment, state, designYear){
         const conditions = [
             {
               type: 'nmpc_untied',
-              installments: [2, 1],
+              installments: ['2', '1'],
               years: [YEAR_CONSTANTS['22_23'], YEAR_CONSTANTS['23_24']],
               condition: 'nonmillion_untied',
             },
             {
               type: 'nmpc_tied',
-              installments: [2, 1],
+              installments: ['2', '1'],
               years: [ YEAR_CONSTANTS['22_23'], YEAR_CONSTANTS['23_24']],
               condition: 'nonmillion_tied',
             },
             {
               type: 'mpc_tied',
-              installments: [1],
+              installments: ['1'],
               years: [YEAR_CONSTANTS['22_23']],
               condition: 'million_tied',
             },
@@ -220,9 +220,9 @@ function gtcSubmitCondition2324(type, installment, state, designYear){
             }
           }
           condition.$or = submitConditionState;
-          return {
+          return [{
             $match: condition,
-          };
+          }];
     } catch (error) {
         throw(`gtcSubmitCondition2324:: ${error.message}`)
     }
@@ -444,7 +444,7 @@ function getFormData(formCategory, modelName, sidemenuForms, reviewForm){
     }
     return formData;
 }
-function approvedForms(forms, formCategory, design_year){
+function approvedForms(forms, formCategory, design_year, modelName){
     let numOfApprovedForms = 0;
     for(let i =0 ; i < forms.length; i++){
         let element = forms[i];
@@ -455,7 +455,7 @@ function approvedForms(forms, formCategory, design_year){
         if(!role){
             role = element?.["user"]["role"];
         }
-        if(design_year === YEAR_CONSTANTS['23_24']){
+        if(design_year === YEAR_CONSTANTS['23_24'] && ![CollectionNames.linkPFMS, CollectionNames.sfc].includes(modelName)){
             switch(formCategory){
                 case "ULB":
                     if( [MASTER_STATUS['Under Review By State'],
@@ -738,6 +738,32 @@ function getQuery2324(modelName, formType, designYear, formCategory, stateId){
             }
         }
     ]
+    let submitConditionUlb2223 = [{
+        isDraft: false,
+        actionTakenByRole: "ULB",
+        status: "PENDING"
+    },{
+        isDraft: false,
+        actionTakenByRole: "STATE",
+        status: "APPROVED"
+    },{
+        isDraft: false,
+        actionTakenByRole: "MoHUA",
+        status:"APPROVED"
+    }]
+
+    let submitConditionState2223 = [
+        {
+            isDraft: false,
+            actionTakenByRole: "STATE",
+            status: "PENDING", 
+        },
+        {
+            isDraft: false,
+            actionTakenByRole: "MoHUA",
+            status: "APPROVED"
+        }
+    ]
     switch(formCategory){
         case "ULB":
             switch(modelName){
@@ -769,7 +795,7 @@ function getQuery2324(modelName, formType, designYear, formCategory, stateId){
                         $match: {
                             design_year: ObjectId(YEAR_CONSTANTS['22_23']),
                             "ulb.state": ObjectId(stateId),
-                            $or:[...submitConditionUlb,condition]
+                            $or:[...submitConditionUlb2223,condition]
                         }
                     });
                     break;
@@ -793,7 +819,7 @@ function getQuery2324(modelName, formType, designYear, formCategory, stateId){
                         $match:{
                             design_year: ObjectId(designYear),
                             "ulb.state": ObjectId(stateId),
-                            $or:[...submitConditionUlb, condition]
+                            $or:[...submitConditionUlb2223, condition]
                     }
                     });
                     break;
@@ -815,7 +841,7 @@ function getQuery2324(modelName, formType, designYear, formCategory, stateId){
                         $match:{
                             design_year: ObjectId(YEAR_CONSTANTS['22_23']),
                             state: ObjectId(stateId),
-                            $or:[...submitConditionState]
+                            $or:[...submitConditionState2223]
                     }
                     })  
                     break;
@@ -836,7 +862,7 @@ function getQuery2324(modelName, formType, designYear, formCategory, stateId){
     return query;
 }
 
-module.exports.dashboard = async (req, res) => {
+const dashboard = async (req, res) => {
     try {
         let data = req.query;
         let user = req.decoded;
@@ -1002,6 +1028,7 @@ module.exports.dashboard = async (req, res) => {
             if(data.design_year === YEAR_CONSTANTS['23_24']){
              pipeline = getQuery2324(modelName,data.formType, data.design_year, formCategory, state);
             }
+            // return res.json(pipeline)
             //Pipeline query condition for Grant transfer cetificate
             if(modelName === CollectionNames.gtc){
                 pipeline = gtcSubmitCondition(data.formType, data.installment, state, data.design_year);
@@ -1010,7 +1037,7 @@ module.exports.dashboard = async (req, res) => {
                 }
             }
 
-            // if(modelName === CollectionNames.gtc){
+            // if(modelName === CollectionNames.linkPFMS){
             //     return res.status(200).json({
             //         status: true,
             //         query: pipeline
@@ -1020,7 +1047,7 @@ module.exports.dashboard = async (req, res) => {
             //Get Approved forms percent
             let submittedForms = await collection.aggregate(pipeline);
             // console.log( submittedForms.length, pipeline);
-            if(modelName === CollectionNames.gtc && data.installment === '1'){
+            if(modelName === CollectionNames.gtc && data.installment === '1' && ![YEAR_CONSTANTS['23_24']].includes(data.design_year)){
                 let query = stateGtcCertificateSubmmitedForms(data.formType, data.installment, state);
                 let forms = await StateGTCCertificate.aggregate(query);
                 if(forms && submittedForms.length === 0 && forms.length>0){
@@ -1037,7 +1064,7 @@ module.exports.dashboard = async (req, res) => {
             if(formCategory === "ULB"){
                 submitPercent = Math.round((submittedForms.length/totalForms)*100);
                 submittedFormPercent[modelName] = submitPercent;
-                totalApprovedForm = approvedForms(submittedForms, formCategory, data.design_year);
+                totalApprovedForm = approvedForms(submittedForms, formCategory, data.design_year, modelName);
                 approvedFormPercent[modelName] = Math.round((totalApprovedForm/totalForms)*100);
                 totalApprovedUlbForm[modelName] = totalApprovedForm;
                 totalSubmittedUlbForm[modelName] = submittedForms.length;
@@ -1045,7 +1072,7 @@ module.exports.dashboard = async (req, res) => {
                 if(submittedForms.length === 0){
                     submitPercent = 0;
                     submittedFormPercent[modelName] = submitPercent;
-                    totalApprovedForm = approvedForms(submittedForms, formCategory, data.design_year);
+                    totalApprovedForm = approvedForms(submittedForms, formCategory, data.design_year, modelName);
                     approvedFormPercent[modelName] = 0;
                     totalApprovedStateForm[modelName] = (totalApprovedForm*100)/1;
                     totalSubmittedStateForm[modelName] = submittedForms.length;
@@ -1053,7 +1080,7 @@ module.exports.dashboard = async (req, res) => {
                 } else if(submittedForms.length === 1){
                     submitPercent = 100;
                     submittedFormPercent[modelName] = submitPercent;
-                    totalApprovedForm = approvedForms(submittedForms, formCategory, data.design_year);
+                    totalApprovedForm = approvedForms(submittedForms, formCategory, data.design_year, modelName);
                     approvedFormPercent[modelName] = (totalApprovedForm*100)/1;
                     totalApprovedStateForm[modelName] = totalApprovedForm;
                     totalSubmittedStateForm[modelName] = submittedForms.length;
@@ -1119,6 +1146,22 @@ module.exports.dashboard = async (req, res) => {
                 stateResponseArray.push(stateResponse);
             }
         };
+        if(data.flagFunction){
+            return{
+                data: [{
+                    formHeader:'ULB Forms',
+                    approvedColor:'#E67E15',
+                    submittedColor:'#E67E1566',
+                    formData: ulbResponseArray
+                },
+                {
+                    formHeader:'State Forms',
+                    approvedColor:'#059B05',
+                    submittedColor:'#E67E1566',
+                    formData : stateResponseArray
+                }]
+            } ;
+        }
         return res. status(200).json({
             status: true,
             data: [{
@@ -1143,3 +1186,4 @@ module.exports.dashboard = async (req, res) => {
     }
 
 }
+module.exports.dashboard = dashboard
