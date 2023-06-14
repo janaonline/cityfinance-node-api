@@ -57,9 +57,8 @@ module.exports.changeGetApiForm = async (req, res, next) => {
             console.log("form ::: ", form.ulbName)
             flattedForm['name_'] = flattedForm['name']
             let keysToBeDeleted = ["_id", "createdAt", "modifiedAt", "actionTakenByRole", "actionTakenBy", "ulb", "design_year"]
-            let closingBalance = +form.grantPosition.unUtilizedPrevYr + (+form.grantPosition.receivedDuringYr) - (+form.grantPosition.expDuringYr);
-
-            flattedForm['grantPosition.closingBal'] = closingBalance ? parseFloat(closingBalance.toFixed(2)) : closingBalance
+            let closingBalance = round((+form.grantPosition.unUtilizedPrevYr) + (+form.grantPosition.receivedDuringYr), 2) - (+form.grantPosition.expDuringYr);
+            flattedForm['grantPosition.closingBal'] = closingBalance ? round(closingBalance, 2) : closingBalance
             obj = await mutuateGetPayload(obj, flattedForm, keysToBeDeleted, role)
             obj[0].isDraft = form.isDraft
             responseData[0]['language'] = obj
@@ -82,7 +81,16 @@ module.exports.changeGetApiForm = async (req, res, next) => {
         console.log("error in changeGetApiForm ::: ", err.message)
     }
 }
-
+function round(num, decimalPlaces = 0) {
+    if (num < 0)
+        return -round(-num, decimalPlaces);
+    var p = Math.pow(10, decimalPlaces);
+    var n = num * p;
+    var f = n - Math.floor(n);
+    var e = Number.EPSILON * n;
+    // Determine whether this fraction is a midpoint value.
+    return (f >= .5 - e) ? Math.ceil(n) / p : Math.floor(n) / p;
+}
 module.exports.changePayloadFormat = async (req, res, next) => {
     try {
         let { designYear, financialYear, ulb, data } = req.body
