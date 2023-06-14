@@ -46,13 +46,19 @@ function Helper() {
     this.isEmptyObj = (obj) => {
         return Object.keys(obj).length == 0 && obj.constructor === Object
     }
-    this.isReadOnly = ({ isDraft, status ,currentFormStatus ,role }) => {
-        if([1, 2, 5, 7].includes(currentFormStatus) && role === userTypes.ulb){
+    this.isReadOnly = ({ isDraft, status, currentFormStatus, role }) => {
+        if ([1, 2, 5, 7].includes(currentFormStatus) && role === userTypes.ulb) {
             return false
         }
-        else{
-           return true
+        else {
+            return true
         }
+    }
+    this.roundValue = (key) => {
+        if (typeof key == 'number') {
+            return Number(key).toFixed(2)
+        }
+        return key || ""
     }
 }
 module.exports = new Helper();
