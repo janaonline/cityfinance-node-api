@@ -4,11 +4,11 @@ const StateGTCCertificate = require('../../models/StateGTCertificate');
 const ObjectId = require("mongoose").Types.ObjectId;
 const Ulb = require('../../models/Ulb')
 const {checkForUndefinedVaribales,mutuateGetPayload,getFlatObj} = require("../../routes/CommonActionAPI/service")
-const {getKeyByValue,saveFormHistory} = require("../../util/masterFunctions");
+const {getKeyByValue,saveFormHistory,grantDistributeOptions} = require("../../util/masterFunctions");
 const { years } = require('../../service/years');
 const GtcInstallmentForm = require("../../models/GtcInstallmentForm")
 const TransferGrantDetailForm = require("../../models/TransferGrantDetailForm")
-const {grantsWithUlbTypes,installment_types,singleInstallmentTypes,grantDistributeOptions} = require("./constants")
+const {grantsWithUlbTypes,installment_types,singleInstallmentTypes} = require("./constants")
 const FormsJson = require("../../models/FormsJson");
 const { MASTER_STATUS, MASTER_STATUS_ID } = require('../../util/FormNames');
 const userTypes = require("../../util/userTypes")
@@ -624,6 +624,7 @@ const getManipulatedJson = async(installment,type,design_year,formJson,fieldsToh
             state:ObjectId(state)
         }).populate("transferGrantdetail").lean()
         mformObject._id = installmentForm?._id
+        // console.log("installmentForm ::: ",installmentForm)
         if(installmentForm === null){
             installmentForm = await GtcInstallmentForm().toObject({virtuals:true})
             installmentForm.ulbType = grantsWithUlbTypes[type].ulbType
@@ -635,7 +636,8 @@ const getManipulatedJson = async(installment,type,design_year,formJson,fieldsToh
         }
         let inputAllowed = [MASTER_STATUS['In Progress'],MASTER_STATUS['Not Started'],MASTER_STATUS['Rejected by MoHUA']]
         installmentForm.installment_type = installment_types[installment]
-        let flattedForm = await getFlatObj(installmentForm)
+        let installmentObj = {...installmentForm}
+        let flattedForm = await getFlatObj(installmentObj)
         flattedForm['fieldsTohide'] = fieldsTohide
         flattedForm['disableFields'] = inputAllowed.includes(gtcForm?.currentFormStatus) && role === userTypes.state ? false : true 
         let questionJson = await mutuateGetPayload(formJson.data,flattedForm,keysToBeDeleted,"ULB")
@@ -820,8 +822,9 @@ async function handleInstallmentForm(params){
         message:"",
         errors:""
     }
+
+    let {installment,year,type,status,financialYear,design_year,state,data,gtcFormId,statusId:currentFormStatus} = params
     try{
-        let {installment,year,type,status,financialYear,design_year,state,data,gtcFormId,statusId:currentFormStatus} = params
         year = getKeyByValue(years,year)
         let runValidators = [MASTER_STATUS['In Progress']].includes(currentFormStatus) ? false : true
         let transferGrantData = data['transferGrantdetail']
@@ -881,6 +884,13 @@ async function handleInstallmentForm(params){
         console.log("error in handleInstallmentForm ::: ",err.message)
         validator.message = "Not valid"
         validator.valid = false
+        let ele = await GrantTransferCertificate.findOneAndUpdate({
+            "_id":ObjectId(gtcFormId)
+        },{
+            "$set":{
+                currentFormStatus:2
+            }
+        })
         validator.errors = Object.keys(err.errors).map(item => err.errors[item]['properties']['message'])
     }
     return validator
@@ -958,8 +968,8 @@ module.exports.createOrUpdateInstallmentForm = async(req,res)=>{
         let installmentFormValidator = await handleInstallmentForm(req.body)
         if(!installmentFormValidator.valid && runValidators ){
             response.success = false
-            response.message = installmentFormValidator.message
-            response.errors = installmentFormValidator.errors
+            response.message = installmentFormValidator.errors
+            // response.errors = installmentFormValidator.errors
             return res.status(405).json(response)
         }
         await createHistory({isDraft,currentFormStatus,gtcFormId})

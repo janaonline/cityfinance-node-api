@@ -3,6 +3,13 @@ const CurrentStatus = require("../models/CurrentStatus");
 const StatusHistory = require("../models/StatusHistory");
 const FORMJSON  = require('../models/FormsJson');
 const { MODEL_PATH } = require("../util/FormNames");
+
+const grantDistributeOptions = {
+  "Yes":"As per Census 2011",
+  "No":"As per SFC Recommendations"
+}
+
+
 const getLabels = (formName)=>{
   try{
     switch (formName){
@@ -27,7 +34,7 @@ module.exports.radioSchema = (key,formName,options=["Yes","No"])=>{
   return {
       type:String,
       enum:options,
-      required:[true,`${keyName} is required`],
+      required:[false,`${keyName} is required`],
   }
 }
 module.exports.pdfSchema = (required = false)=>{
@@ -76,7 +83,7 @@ module.exports.saveFormHistory = (params) => {
 
 module.exports.saveCurrentStatus = (params) => {
   return new Promise(async (resolve, reject) => {
-    try {
+    try {grantDistributeOptions
       const { body, session } = params;
       if (body.recordId) {
         let currentStatus = await CurrentStatus.findOneAndUpdate(
@@ -133,3 +140,5 @@ module.exports.getShortKeys = async (params) => {
     return error.message;
   }
 }
+
+module.exports.grantDistributeOptions = grantDistributeOptions
