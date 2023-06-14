@@ -30,7 +30,7 @@ let groupedQuestions = {
 }
 
 
-
+let addMoreFields = ["transferGrantdetail_tableview_addbutton"]
 
 let yearValueField = {
     "year":"",
@@ -2108,6 +2108,20 @@ async function appendvalues(childQuestionData,flattedForm,shortKey,question){
         if(specialCases.includes(shortKey)){
             if(flattedForm[modelKey]){
                 childQuestionData = await handleArrOfObjects(question,flattedForm)
+                let questionLength = childQuestionData.length
+                if(addMoreFields.includes(shortKey)){
+                    console.log(">>>>>>>>>>>if conditipon :::",questionLength)
+                    question.value = questionLength
+                    question.modelValue = questionLength
+                    question.selectedValue = {
+                        "text":questionLength,
+                        "value":questionLength,
+                        "label":questionLength
+                        
+                    }
+                    console.log("question :: ",question.value)
+
+                }
             }
         }
         return [...childQuestionData]
