@@ -624,6 +624,7 @@ const getManipulatedJson = async(installment,type,design_year,formJson,fieldsToh
             state:ObjectId(state)
         }).populate("transferGrantdetail").lean()
         mformObject._id = installmentForm?._id
+        // console.log("installmentForm ::: ",installmentForm)
         if(installmentForm === null){
             installmentForm = await GtcInstallmentForm().toObject({virtuals:true})
             installmentForm.ulbType = grantsWithUlbTypes[type].ulbType
@@ -635,7 +636,8 @@ const getManipulatedJson = async(installment,type,design_year,formJson,fieldsToh
         }
         let inputAllowed = [MASTER_STATUS['In Progress'],MASTER_STATUS['Not Started'],MASTER_STATUS['Rejected by MoHUA']]
         installmentForm.installment_type = installment_types[installment]
-        let flattedForm = await getFlatObj(installmentForm)
+        let installmentObj = {...installmentForm}
+        let flattedForm = await getFlatObj(installmentObj)
         flattedForm['fieldsTohide'] = fieldsTohide
         flattedForm['disableFields'] = inputAllowed.includes(gtcForm?.currentFormStatus) && role === userTypes.state ? false : true 
         let questionJson = await mutuateGetPayload(formJson.data,flattedForm,keysToBeDeleted,"ULB")
