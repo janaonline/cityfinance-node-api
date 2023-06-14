@@ -631,7 +631,8 @@ const getManipulatedJson = async(installment,type,design_year,formJson,fieldsToh
             installmentForm.grantType =   grantsWithUlbTypes[type].grantType
             installmentForm.year = getKeyByValue(years,design_year)
         }
-        if(installmentForm.transferGrantdetail.length === 0){
+        console.log("installmentForm :: ",installmentForm)
+        if(installmentForm?.transferGrantdetail && installmentForm?.transferGrantdetail.length === 0){
             delete installmentForm['transferGrantdetail']
         }
         let inputAllowed = [MASTER_STATUS['In Progress'],MASTER_STATUS['Not Started'],MASTER_STATUS['Rejected by MoHUA']]
@@ -654,7 +655,7 @@ const getManipulatedJson = async(installment,type,design_year,formJson,fieldsToh
         return {questionResponse:data,file,status,statusId}
     }
     catch(err){
-        console.log("error in getManipulatedJson ::: ",err.message)
+        console.log("error in getManipulatedJson ::: ",err)
     }
 }
 
