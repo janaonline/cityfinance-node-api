@@ -2007,6 +2007,7 @@ async function handleArrOfObjects(question,flattedForm){
                         questionObj =  await handleDbValues(questionObj,formObj,order) 
                         if(questionObj.isQuestionDisabled !== true){
                             questionObj.isQuestionDisabled = handleDisableFields({disableFields})
+                            
                             if(Object.keys(customDisableFields).includes(keys)){
                                 questionObj.isQuestionDisabled = obj[customDisableFields[keys]]
                             }
@@ -2434,9 +2435,10 @@ function manageDisabledQues(question,flattedForm){
     }
 }
 
-async function mutuateGetPayload(jsonFormat, flattedForm, keysToBeDeleted,role) {
+async function mutuateGetPayload(jsonFormat, flatForm, keysToBeDeleted,role) {
     try {
-        let obj = [...jsonFormat]
+        let obj = JSON.parse(JSON.stringify(jsonFormat))
+        let flattedForm = JSON.parse(JSON.stringify(flatForm))
         roleWiseJson(obj[0],role)
         obj[0] = await appendExtraKeys(keysToBeDeleted, obj[0], flattedForm)
         await deleteKeys(flattedForm, keysToBeDeleted)
