@@ -27,7 +27,7 @@ const getLabels = (formName)=>{
   }
 }
 
-module.exports.radioSchema = (key,formName,options=["Yes","No",""])=>{
+module.exports.radioSchema = (key,formName,options=["Yes","No"])=>{
   options.push(null)
   let labels = getLabels(formName)
   let keyName = labels && labels[key] ? labels[key] : key
