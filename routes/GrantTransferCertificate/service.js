@@ -742,7 +742,7 @@ module.exports.getInstallmentForm = async(req,res,next)=>{
         }
         let formValidator = await checkForPreviousForms(design_year,state)
         if(!formValidator.valid){
-            response.success= true
+            response.success= false;
             response.message = formValidator.message
             return res.json(response)
         }
