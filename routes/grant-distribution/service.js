@@ -492,6 +492,7 @@ const getGrantDistributionForm = async (req, res, next) => {
     response.isStateMillion = isStateMillion
     response.formName = "Grant Allocation to ULBs"
     response.gtcFormData = json
+    return res.status(200).json(response)
   }
   catch (err) {
     console.log("error in getGrantDistributionForm :::: ", err.message)
