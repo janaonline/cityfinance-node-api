@@ -601,7 +601,8 @@ const getRejectedFields = (currentFormStatus,formStatuses,installment,inputAllow
     try{
         // console.log("formStatuses :: ",formStatuses)
         let prevInstallment = installment - 1
-        let allowedStatuses = [MASTER_STATUS['Under Review by MoHUA'],MASTER_STATUS['Rejected by MoHUA']]
+        let allowedStatuses = [MASTER_STATUS['Under Review By MoHUA'],MASTER_STATUS['Rejected By MoHUA']]
+        console.log("allowedStatuses ::: ",allowedStatuses)
         // console.log("prevInstallment :: ",prevInstallment)
         if(prevInstallment  && !allowedStatuses.includes(formStatuses?.[prevInstallment]) && role === userTypes.state){
             return true
@@ -652,7 +653,7 @@ const getManipulatedJson = async(installment,type,design_year,formJson,fieldsToh
         if(installmentForm?.transferGrantdetail && installmentForm?.transferGrantdetail.length === 0){
             delete installmentForm['transferGrantdetail']
         }
-        let inputAllowed = [MASTER_STATUS['In Progress'],MASTER_STATUS['Not Started'],MASTER_STATUS['Rejected by MoHUA']]
+        let inputAllowed = [MASTER_STATUS['In Progress'],MASTER_STATUS['Not Started'],MASTER_STATUS['Rejected By MoHUA']]
         installmentForm.installment_type = installment_types[installment]
         let installmentObj = {...installmentForm}
         let flattedForm = await getFlatObj(installmentObj)
