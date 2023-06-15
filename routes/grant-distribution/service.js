@@ -449,7 +449,6 @@ const getSectionWiseJson = async(state, design_year) => {
         "url":""
       }
       file = allocationForm?.file && allocationForm?.file.url || file 
-      console.log("section.yearCode :: ")
       let params = {
         installment : i,
         year:years[section.yearCode],
@@ -460,7 +459,6 @@ const getSectionWiseJson = async(state, design_year) => {
         file:file,
        }
        let question = await getChildQuestion(params)
-       console.log("question :: ",question)
        section.quesArray.push(question)
     }
   }
