@@ -12,7 +12,8 @@ const gtcConstants = {
     nmpc_untied: "Non-Million Untied",
     nmpc_tied:"Non-Million Tied"
 }
-const {dashboard} = require('../../routes/FormDashboard/service')
+const {dashboard} = require('../../routes/FormDashboard/service');
+const UA = require('../../models/UA');
 const LOCALHOST = 'localhost:8080';
 
 
@@ -41,7 +42,9 @@ module.exports.get2223 = async (req, res)=>{
         dur:100,
         odf: 100,
         gfc: 100,
-        twentyEightSlbs: 100
+        twentyEightSlbs: 100,
+        propertyTaxOp: 100,
+        slbScoring: 100,
       }
   }
     const conditions_nmpc_untied_1st = [
@@ -53,11 +56,15 @@ module.exports.get2223 = async (req, res)=>{
         text: `${financialYear === YEAR_CONSTANTS['22_23']? expectedValues.linkPFMS : expectedValues2324[IdToYear].linkPFMS}% Linking of PFMS Account forms Filled, Submitted, and Approved by State`,
       },
       {
+        key: CollectionNames.propTaxOp,
+        text: `${expectedValues2324[IdToYear].propertyTaxOp}% Property Tax & UC form Filled, Submitted, and Approved by State`,
+      },
+      {
         key: CollectionNames.gtc,
-        text: ` Grant Transfer Certificate form submission of Previous installment document i.e. 2021-22 Untied 2nd Instalment`,
+        text: `Grant Transfer Certificate form submission of Previous installment document i.e. 2021-22 Untied 2nd Instalment`,
       },
       { key: CollectionNames.pTAX,
-        text: ` Property Tax Floor Rate form submission by State & Approval by MoHUA` },
+        text: `Property Tax Floor Rate form submission by State & Approval by MoHUA` },
       { key: CollectionNames.sfc,
         text: `State Finance Commission Notification form submission by State & Approval by MoHUA` },
     ];
@@ -74,8 +81,12 @@ module.exports.get2223 = async (req, res)=>{
         text: `${financialYear === YEAR_CONSTANTS['22_23']? expectedValues.linkPFMS : expectedValues2324[IdToYear].linkPFMS}% Linking of PFMS Account form Filled, Submitted, and Approved by State`,
       },
       {
+        key: CollectionNames.propTaxOp,
+        text: `${expectedValues2324[IdToYear].propertyTaxOp}% Property Tax & UC form Filled, Submitted, and Approved by State`,
+      },
+      {
         key: CollectionNames.gtc,
-        text: ` Grant Transfer Certificate form submission of Previous installment document i.e. 2021-22 Tied 2nd Instalment`,
+        text: `Grant Transfer Certificate form submission of Previous installment document i.e. 2021-22 Tied 2nd Instalment`,
       },
       { 
         key: CollectionNames.pTAX,
@@ -92,6 +103,10 @@ module.exports.get2223 = async (req, res)=>{
       {
         key: CollectionNames.linkPFMS,
         text: `${financialYear === YEAR_CONSTANTS['22_23']? expectedValues.linkPFMS : expectedValues2324[IdToYear].linkPFMS}% Linking of PFMS Account form Filled, Submitted, and Approved by State`,
+      },
+      {
+        key: CollectionNames.propTaxOp,
+        text: `${expectedValues2324[IdToYear].propertyTaxOp}% Property Tax & UC form Filled, Submitted, and Approved by State`,
       },
       {
         key: CollectionNames.gtc,
@@ -118,6 +133,10 @@ module.exports.get2223 = async (req, res)=>{
           text: `${financialYear === YEAR_CONSTANTS['22_23']? expectedValues.linkPFMS : expectedValues2324[IdToYear].linkPFMS}% Linking of PFMS Account form Filled, Submitted, and Approved by State`,
         },
         {
+          key: CollectionNames.propTaxOp,
+          text: `${expectedValues2324[IdToYear].propertyTaxOp}% Property Tax & UC form Filled, Submitted, and Approved by State`,
+        },
+        {
           key: CollectionNames.gtc,
           text: `Grant Transfer Certificate form submission of Previous installment document i.e. 2022-23 Tied 1st Instalment`,
         },
@@ -128,7 +147,7 @@ module.exports.get2223 = async (req, res)=>{
           key: CollectionNames.sfc,
           text: `State Finance Commission Notification form submission by State & Approval by MoHUA` },
      ] 
-    const conditions_mpc_tied_1st = [
+    let conditions_mpc_tied_1st = [
       { 
         key: CollectionNames.dur,
         text: `${financialYear === YEAR_CONSTANTS['22_23']? expectedValues.dur : expectedValues2324[IdToYear].dur}% Detailed Utilization Report form Submitted, and Approved by State` },
@@ -157,19 +176,41 @@ module.exports.get2223 = async (req, res)=>{
         text: `${financialYear === YEAR_CONSTANTS['22_23']? expectedValues.slb : expectedValues2324[IdToYear].slb}% SLBs for Water Supply and Sanitation form Filled, Submitted, and Approved by State `
       },
       {
+        key: CollectionNames.propTaxOp,
+        text: `${expectedValues2324[IdToYear].propertyTaxOp}% Property Tax & UC form Filled, Submitted, and Approved by State`,
+      },
+      {
         key: CollectionNames.gtc,
         text: `Grant Transfer Certificate Form Submission of Previous year document i.e. 2021-22`
       },
       {
         key: CollectionNames.pTAX,
-        text: ` Property Tax Floor Rate form Submission by State & Approval by MoHUA`
+        text: `Property Tax Floor Rate form Submission by State & Approval by MoHUA`
       },
       {
         key: CollectionNames.sfc,
         text: `State Finance Commission Notication form Submission by State & Approval by MoHUA`
+      },
+      {
+        key: CollectionNames.actionPlan,
+        text: `Action Plan form Submission by State & Approval by MoHUA`
+      },
+      {
+        key: CollectionNames.slbScoring,
+        text: `${expectedValues2324[IdToYear].slbScoring}% Submission by ULBs part of UA`
+      },
+      {
+        key: CollectionNames.waterRej,
+        text: `Projects for Water Supply and Sanitation form Submission by State & Approval by MoHUA`
       }
 
     ];
+    const hasUA =  await UA.find({
+      state : ObjectId(stateId)
+    }).lean();
+    if(!hasUA.length){
+      conditions_mpc_tied_1st = removeLastThreeEntries(conditions_mpc_tied_1st);
+    }
       let dashboardData = await getDashboardData(req,res, stateId, financialYear);
       let nmpc_untied_1 ={},
         nmpc_untied_2 ={},
@@ -439,6 +480,10 @@ module.exports.get2223 = async (req, res)=>{
       
     
     
+}
+
+function removeLastThreeEntries(arr) {
+ return arr.slice(0, arr.length - 3);
 }
 
 function calculateSuccess(dashboardData, submitCondition){

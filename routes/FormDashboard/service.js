@@ -19,6 +19,7 @@ const Sidemenu = require('../../models/Sidemenu');
 const ObjectId = require('mongoose').Types.ObjectId;
 const {CollectionNames} = require('../../util/15thFCstatus');
 const { YEAR_CONSTANTS, MASTER_STATUS } = require('../../util/FormNames');
+const UA = require('../../models/UA');
 
 const CUTOFF =  {
     STATE:{
@@ -439,6 +440,11 @@ function getFormData(formCategory, modelName, sidemenuForms, reviewForm){
             formData["formName"] = element.name;
             formData['icon'] = element.icon;
             formData['link'] = `/${element.url}`;
+        }else if (modelName === CollectionNames.propTaxOp && element._id === "PropertyTaxOp" ){
+            flag = true;
+            formData["formName"] = element.name;
+            formData['icon'] = element.icon;
+            formData['link'] = `/${element.url}`;
         }
         if (flag) break;
     }
@@ -832,6 +838,16 @@ function getQuery2324(modelName, formType, designYear, formCategory, stateId){
                     }
                     })  
                     break;
+                case CollectionNames.propTaxOp:
+                query.push({
+                    $match: {
+                        design_year: ObjectId(designYear),
+                        "ulb.state": ObjectId(stateId),
+                        $or: [...submitConditionUlb]
+                }
+                })  
+                break;
+
             }
             break;
         case "STATE":
@@ -959,9 +975,16 @@ const dashboard = async (req, res) => {
             },
           },
         ];
+        let hasUA = []; 
         if(data.formType !== "mpc_tied"){
             totalUlbs = await State.aggregate(totalUlbNonMillionPlusPipeline);
+            hasUA =  await UA.find({
+                state: ObjectId(state)
+            }).lean();
         }else{
+            hasUA =  await UA.find({
+                state: ObjectId(state)
+            }).lean();
             totalUlbs = await State.aggregate(totalUlbMpcAndNmpcUAPipeline);
         }
         let [sidemenuForms, reviewSidemenuForm] = await Promise.all([
@@ -1023,6 +1046,9 @@ const dashboard = async (req, res) => {
             } else {
               formCategory = "STATE";
             }
+            if([CollectionNames.actionPlan, CollectionNames.waterRej].includes(modelName) && !hasUA.length){
+                continue;
+            }
             //Get pipeline query, using modelName
             let pipeline = getQuery(modelName,data.formType, data.design_year, formCategory, state);
             if(data.design_year === YEAR_CONSTANTS['23_24']){
@@ -1036,31 +1062,16 @@ const dashboard = async (req, res) => {
                     pipeline = gtcSubmitCondition2324(data.formType, data.installment, state, data.design_year);
                 }
             }
-
-            // if(modelName === CollectionNames.linkPFMS){
-            //     return res.status(200).json({
-            //         status: true,
-            //         query: pipeline
-            //     })
-            // }
             //Get submitted forms            
             //Get Approved forms percent
             let submittedForms = await collection.aggregate(pipeline);
-            // console.log( submittedForms.length, pipeline);
             if(modelName === CollectionNames.gtc && data.installment === '1' && ![YEAR_CONSTANTS['23_24']].includes(data.design_year)){
                 let query = stateGtcCertificateSubmmitedForms(data.formType, data.installment, state);
                 let forms = await StateGTCCertificate.aggregate(query);
                 if(forms && submittedForms.length === 0 && forms.length>0){
                     submittedForms.push(forms[0]);
                 }
-
-            //     if(modelName === CollectionNames.gtc){
-            //     return res.status(200).json({
-            //         status: true,
-            //         query: query
-            //     })
-            // }
-            }
+             }
             if(formCategory === "ULB"){
                 submitPercent = Math.round((submittedForms.length/totalForms)*100);
                 submittedFormPercent[modelName] = submitPercent;

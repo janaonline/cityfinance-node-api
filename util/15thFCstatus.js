@@ -61,7 +61,8 @@ module.exports.CollectionNames = {
     gfc: "gfcformcollections",
     slb: "xvfcgrantulbforms",
     waterRej: "waterrejenuvationrecyclings",
-    actionPlan: "actionplans"
+    actionPlan: "actionplans",
+    slbScoring: "slbScoring"
 }
 
 
