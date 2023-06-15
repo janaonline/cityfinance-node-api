@@ -422,7 +422,7 @@ async function getUlbData(ulbCodes, ulbNames) {
 }
 
 const getSectionWiseJson = async(state, design_year) => {
-  let host = process.env.BASEURL
+  let host = process.env.HOSTNAME
 
   try {
     let ulb = await ULB.findOne({
@@ -442,7 +442,6 @@ const getSectionWiseJson = async(state, design_year) => {
     let installments = section.installments
     console.log(installments )
     for(let i=1; i <= installments; i++){
-      console.log(">>>>>>>>>",i)
       let allocationForm = allocationForms.find(item => item.installment === i && item.year.toString() === years[section.yearCode])
       let file = {
         "name":"",
@@ -455,7 +454,7 @@ const getSectionWiseJson = async(state, design_year) => {
         year:years[section.yearCode],
         type:section.type,
         quesType:"",
-        url:`${host}/api/grantDistribution/template?type=${section.type}&year=${years[section.yearCode]}&installment=${i}`,
+        url:`${host}/api/v1/grantDistribution/template?type=${section.type}&year=${years[section.yearCode]}&installment=${i}`,
         key:`${section.type}_${section.yearCode}_${i}`,
         file:file,
        }
