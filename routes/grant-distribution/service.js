@@ -63,7 +63,7 @@ exports.getTemplate = async (req, res) => {
   let { state } = req?.decoded;
   let formData = req.query;
   let amount = "grant amount";
-
+  formData.design_year = getKeyByValue(years,formData.design_year)
   if (formData.year === "606aafb14dff55e6c075d3ae") {
     formData.design_year = "2022-23";
   } else if (formData.year === "606aaf854dff55e6c075d219") {
@@ -114,7 +114,9 @@ exports.uploadTemplate = async (req, res) => {
   let { url, design_year } = req.query;
   let state = req.decoded?.state;
   let formData = req.query;
-  
+  let outDatedYearIds = Object.entries(years).map(([key,value])=> {
+    return ['2017-18', '2018-19', '2019-20', '2020-21', '2021-22' ].includes(key) && value
+  } )
   try {
     downloadFileToDisk(url, async (err, file) => {
       if (err) {
@@ -182,7 +184,7 @@ exports.uploadTemplate = async (req, res) => {
         { $unwind: "$state" }
 
       ]);
-      if (formData.design_year === "606aafb14dff55e6c075d3ae") {
+      if (!outDatedYearIds.includes(formData.design_year)) {
         let [xslDataStateInfo, stateInfo] = await Promise.all([xslDataState, ULB.aggregate(queryState)]);
         let ulbCount = stateInfo[0].totalUlbs;
         let xslDataStateName = xslDataStateInfo[0].state.name;
@@ -199,6 +201,7 @@ exports.uploadTemplate = async (req, res) => {
       const notValid = await validate(XslData, formData);
       if (notValid) {
         let amount = "grant amount";
+        formData.design_year = getKeyByValue(years,formData.design_year)
         if (formData.design_year === "606aafb14dff55e6c075d3ae") {
           formData.design_year = '2022-23';
         } else if (formData.design_year === "606aaf854dff55e6c075d219") {
@@ -206,7 +209,6 @@ exports.uploadTemplate = async (req, res) => {
         }
         let type = `${formData.type}_${formData.design_year}_${formData.installment}`
         amount = `${amount} - ${type}`
-        formData.design_year = getKeyByValue(years,form.formData.design_year)
         /* Checking if the formData.design_year is equal to 2021-22 or undefined, if it is, then it sets the amount variable
         to "grant amount". */
         formData.design_year === undefined || formData.design_year === "2021-22"
@@ -324,6 +326,7 @@ async function validate(data, formData) {
   } else if (formData.design_year === "606aaf854dff55e6c075d219") {
     formData.design_year = '2021-22';
   }
+  formData.design_year = getKeyByValue(years,formData.design_year)
   const type = `${formData.type}_${formData.design_year}_${formData.installment}`
   amount = `${amount} - ${type}`
   /* Checking if the formData.design_year is equal to 2021-22, if it is, then it sets the amount variable
