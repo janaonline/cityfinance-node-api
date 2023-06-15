@@ -422,7 +422,7 @@ async function getUlbData(ulbCodes, ulbNames) {
 }
 
 const getSectionWiseJson = async(state, design_year) => {
-  let host = process.env.HOSTNAME
+  let host = process.env.BASEURL
 
   try {
     let ulb = await ULB.findOne({
