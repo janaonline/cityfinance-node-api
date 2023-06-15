@@ -21,13 +21,8 @@ let GtcFormTypes = [
     "nonmillion_tied"
 ]
 let alerts = {
-<<<<<<< HEAD
-    "prevForm": "Your previous year's GTC form is not complete. <a href=https://democityfinance.dhwaniris.in/upload-annual-accounts target=\"_blank\">Click Here!</a> to access previous year form.",
-    "installmentMsg": (year) => {
-=======
     "prevForm":`Your previous year's GTC form is not complete. <a href=${process.env.HOSTNAME}/stateform2223/gtCertificate">Click Here!</a> to access previous year form.`,
     "installmentMsg":(year)=>{
->>>>>>> 3a9479a07cdd5daf1322be6388b901f9fd86cbdf
         return `1st Installment (${year}) GTC has to be uploaded first before uploading 2nd Installment (${year}) GTC`
     }
 }
