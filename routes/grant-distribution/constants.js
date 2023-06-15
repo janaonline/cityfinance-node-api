@@ -7,7 +7,7 @@ function getChildQuestion(params){
     try{
       let childQuestion = {
         "installment": installment,
-        "year": years['year'],
+        "year": year,
         "type": type,
         "instlText": `${installmentLabels[installment]} FY (${getKeyByValue(years,year)})`,
         "isDisableQues": true,
@@ -42,23 +42,28 @@ function getChildQuestion(params){
     return {
       "nonmillion_tied_2023-24_1":{
         "question":`(A) Upload Grant Allocation to ULBs - 1st Installment (${year})`,
-        "quesTxt":""
+        "quesTxt":"",
+        "disableMsg":""
       },
       "nonmillion_tied_2023-24_2":{
         "question":`(B) Upload Grant Allocation to ULBs - 2nd Installment (${year})`,
-        "quesTxt":""
+        "quesTxt":"",
+        "disableMsg":""
       },
       "nonmillion_untied_2023-24_1":{
         "question":`(A) Upload Grant Allocation to ULBs - 1st Installment (${year})`,
-        "quesTxt":""
+        "quesTxt":"",
+        "disableMsg":""
       },
       "nonmillion_untied_2023-24_2":{
         "questions":`(B) Upload Grant Allocation to ULBs - 2nd Installment (${year})`,
-        "quesTxt":""
+        "quesTxt":"",
+        "disableMsg":""
       },
       "million_tied_2023-24_1" : {
         "question":`(A) Upload Grant Allocation for  Water Supply and SWM - FY (${year})`,
-        "quesText":"Upload Grant Allocation for Water Supply and SWM"
+        "quesText":"Upload Grant Allocation for Water Supply and SWM",
+        "disableMsg":""
       }
     }
   }
