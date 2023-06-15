@@ -661,7 +661,8 @@ module.exports.get2223 = catchAsync(async (req, res) => {
         console.log("Not Fetched", error.message);
       });
 
-
+    //   return res.json(slbWeigthed);
+    slbWeigthed = roundOffToTwoDigits(slbWeigthed);
     Object.assign(responseObj.fourSLB.data, slbWeigthed)
     // let usableData = []
     let arr = []
@@ -762,6 +763,24 @@ module.exports.get2223 = catchAsync(async (req, res) => {
         data: responseObj
     })
 })
+
+function roundOffToTwoDigits(obj) {
+  try {
+    const newObj = {};
+
+    for (let key in obj) {
+      if (typeof obj[key] === "number") {
+        newObj[key] = Number(obj[key].toFixed(2));
+      } else {
+        newObj[key] = obj[key];
+      }
+    }
+
+    return newObj;
+  } catch (error) {
+    throw `roundOffToTwoDigits:: ${error.message}`;
+  }
+}
 
 /**
  * The function retrieves data related to SLB forms for ULBs based on the design year and updates the
