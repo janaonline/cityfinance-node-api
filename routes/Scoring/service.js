@@ -259,16 +259,17 @@ function calculateSlbMarks2324(data, year) {
         "houseHoldCoveredPipedSupply",
       ];
       const obj = {};
+      const yearUpdateNumber = 101;
       for (const category of slbCategories) {
         obj[category] = {
           baseline: {
             [`${year}`]: "",
           },
           target: {
-            [`${year + 101}`]: "",
+            [`${year + yearUpdateNumber}`]: "",
           },
           achieved: {
-            [`${year + 101}`]: "",
+            [`${year + yearUpdateNumber}`]: "",
           },
         };
         const ignoreKeys = ["_id", "total"]
@@ -280,17 +281,17 @@ function calculateSlbMarks2324(data, year) {
               counter++;
             } else if (
               el.includes(category) &&
-              el.includes(`${year + 101}`) &&
+              el.includes(`${year + yearUpdateNumber}`) &&
               !el.includes("actual")
             ) {
-              obj[category].target[`${year + 101}`] = data[el];
+              obj[category].target[`${year + yearUpdateNumber}`] = data[el];
               counter++;
             } else if (
               el.includes(category) &&
-              el.includes(`${year + 101}`) &&
+              el.includes(`${year + yearUpdateNumber}`) &&
               el.includes("actual")
             ) {
-              obj[category].achieved[`${year + 101}`] = data[el];
+              obj[category].achieved[`${year + yearUpdateNumber}`] = data[el];
               counter++;
             }
           }
@@ -303,12 +304,12 @@ function calculateSlbMarks2324(data, year) {
 
         if (
           baseline[`${year}`] &&
-          target[`${year + 101}`] &&
-          achieved[`${year + 101}`]
+          target[`${year + yearUpdateNumber}`] &&
+          achieved[`${year + yearUpdateNumber}`]
         ) {
           const x = Number(baseline[`${year}`]);
-          const y = Number(target[`${year + 101}`]);
-          const z = Number(achieved[`${year + 101}`]);
+          const y = Number(target[`${year + yearUpdateNumber}`]);
+          const z = Number(achieved[`${year + yearUpdateNumber}`]);
 
           if (category === "reduction") {
             obtainedMarks.push(
