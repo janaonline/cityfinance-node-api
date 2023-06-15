@@ -35,6 +35,7 @@ module.exports.radioSchema = (key,formName,options=["Yes","No"])=>{
       type:String,
       enum:options,
       required:[false,`${keyName} is required`],
+      default:null
   }
 }
 module.exports.pdfSchema = (required = false)=>{
@@ -49,6 +50,7 @@ module.exports.limitValidationSchema = (keyName,min,max,mandatory=false)=>{
       min:min,
       max:[max,`${keyName} must not be greater than ${max}`],
       required : mandatory,
+      default:null,
   }
 }
 
