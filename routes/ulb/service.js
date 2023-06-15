@@ -3304,7 +3304,7 @@ module.exports.getUlbsWithAuditStatus = async (req, res) => {
           location: "$ulb.location",
         },
       },
-    ]);
+    ]).allowDiskUse(true);
     return res.status(200).json({
       message: "Ulb list with population and coordinates and population.",
       success: true,
