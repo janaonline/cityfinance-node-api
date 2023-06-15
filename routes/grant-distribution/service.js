@@ -419,18 +419,47 @@ async function getUlbData(ulbCodes, ulbNames) {
 }
 
 const getSectionWiseJson = async(state, design_year) => {
+  let host = process.env.host
+
   try {
     let ulb = await Ulb.findOne({
       "state": ObjectId(state),
       "isMillionPlus": "Yes"
     }, { isMillionPlus: 1 })
     let stateIsMillion = ulb?.isMillionPlus === "Yes" ? true : false
-    let forms = await FormsJson.find({
-      "formId":{"$in":[11.2,8]}
+    let tabularStructure = await FormsJson.findOne({
+      "formId":{"$in":[11.2]}
   }).lean()
+  let allocationForms = await GrantDistribution.find({
+    state:ObjectId(state),
+    design_year:design_year,
+  }).lean()
+  for(let section of tabularStructure){
+    let installments = section.installments
+    for(let i=0; i< installments.length; i++){
+      let allocationForm = allocationForms.find(item => item.installment === i && item.year.toString() === years[section.yearCode])
+      let file = {
+        "name":"",
+        "url":""
+      }
+      file = allocationForm.file && allocationForm.file.url || file 
+      let params = {
+        installment : i,
+        year:years[section.yearCode],
+        type:section.type,
+        quesType:"",
+        url:`${host}/api/grantDistribution/template?type=${nonmillion_tied}&year=${years[section.yearCode]}&installment=${i}`,
+        key:`${section.type}_${section.yearCode}_${installment}`,
+        file:file,
+       }
+       let question = await getChildQuestion(params)
+       quesArray.push(question)
+    }
+  }
+  return {json:tabularStructure,isStateMillion:stateIsMillion}
   }
   catch (err) {
-    console.log("error in ")
+    console.log("error in getSectionWiseJson ::: ",err.message)
   }
 }
 
@@ -446,7 +475,7 @@ const getGrantDistributionForm = async (req, res, next) => {
     let { state, design_year } = req.query
     let { role } = req.decoded
     if (![userTypes.mohua, userTypes.ulb].includes(role)) {
-      response.message = "not allowed"
+      response.message = "Not allowed"
       return res.status(405).json(response)
     }
     let validator = await checkForUndefinedVaribales({
