@@ -114,6 +114,7 @@ exports.uploadTemplate = async (req, res) => {
   let { url, design_year } = req.query;
   let state = req.decoded?.state;
   let formData = req.query;
+  
   try {
     downloadFileToDisk(url, async (err, file) => {
       if (err) {
@@ -205,7 +206,7 @@ exports.uploadTemplate = async (req, res) => {
         }
         let type = `${formData.type}_${formData.design_year}_${formData.installment}`
         amount = `${amount} - ${type}`
-
+        formData.design_year = getKeyByValue(years,form.formData.design_year)
         /* Checking if the formData.design_year is equal to 2021-22 or undefined, if it is, then it sets the amount variable
         to "grant amount". */
         formData.design_year === undefined || formData.design_year === "2021-22"
@@ -448,7 +449,6 @@ const getSectionWiseJson = async(state, design_year) => {
         "url":""
       }
       file = allocationForm?.file && allocationForm?.file.url || file 
-      console.log("section.yearCode :: ",section)
       let params = {
         installment : i,
         year:years[section.yearCode],
@@ -459,7 +459,6 @@ const getSectionWiseJson = async(state, design_year) => {
         file:file,
        }
        let question = await getChildQuestion(params)
-       console.log("question :: ",question)
        section.quesArray.push(question)
     }
   }
