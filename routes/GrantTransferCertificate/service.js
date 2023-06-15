@@ -675,14 +675,15 @@ const getManipulatedJson = async (installment, type, design_year, formJson, fiel
             "data": [mformObject]
         }
         flattedForm = {}
-        let statusId = gtcForm.currentFormStatus
-        let rejectReason_mohua = gtcForm?.rejectReason_mohua || '';
-        let responseFile_mohua = gtcForm?.responseFile_mohua || {
+        const statusId = gtcForm.currentFormStatus;
+        const canTakeAction = (statusId == MASTER_STATUS['Under Review by MoHUA'] && role == userTypes.mohua);
+        const rejectReason_mohua = gtcForm?.rejectReason_mohua || '';
+        const responseFile_mohua = gtcForm?.responseFile_mohua || {
             name: '',
             url: ''
         }
         let status = MASTER_STATUS_ID[gtcForm.currentFormStatus]
-        return { questionResponse: data, file, status, statusId, rejectReason_mohua, responseFile_mohua };
+        return { questionResponse: data, file, status, statusId, rejectReason_mohua, responseFile_mohua, canTakeAction };
     }
     catch (err) {
         console.log("error in getManipulatedJson ::: ", err)
@@ -711,13 +712,12 @@ const getJson = async (state, design_year, role) => {
         for (let carousel of basicEmptyStructure) {
             for (let question of carousel.questions) {
                 question.questionresponse = ""
-                let { questionResponse, file, status, statusId, rejectReason_mohua, responseFile_mohua } = await getManipulatedJson(question.installment, question.type, design_year, { ...formJson }, fieldsTohide, ObjectId(state), role, formStatuses)
+                let { questionResponse, file, status, statusId, rejectReason_mohua, responseFile_mohua, canTakeAction } = await getManipulatedJson(question.installment, question.type, design_year, { ...formJson }, fieldsTohide, ObjectId(state), role, formStatuses)
                 question.status = status
                 question.statusId = statusId
                 question.questionresponse = JSON.parse(JSON.stringify(questionResponse))
                 question.file = file
-                question.canTakeAction = true;
-                // question.isDraft = false;
+                question.canTakeAction = canTakeAction;
                 question.rejectReason_mohua = rejectReason_mohua;
                 question.responseFile_mohua = responseFile_mohua;
             }
@@ -1061,7 +1061,6 @@ module.exports.installmentAction = async (req, res) => {
 
         if(!found) return res.status(404).json({ message: 'Installment not found'});
 
-        console.log(gtcForm);
 
         return res.status(200).json({
             success: true,
