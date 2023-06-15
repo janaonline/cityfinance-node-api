@@ -52,14 +52,20 @@ module.exports.MASTER_STATUS_ID = {
 
 module.exports.FORMIDs = {
     "ODF": 1,
-    "GFC":2,
-    "PTO":3,
+    "GFC": 2,
+    "PTO": 3,
     "AnnualAccount": 5,
-    'dur':4,
+    'dur': 4,
     "twentyEightSlb": 6,
-    "fiscalRanking":9
+    "fiscalRanking": 9,
+    "GTC_STATE": 7,
+    "GTC_TABLE_STRUCTURE":11.1,
+    "GTC_ULB": 11,
+    "waterRej": 12,
+    "actionPlan": 13,
+    "indicatorForm": 14,
+    "GrantAllocation":11.2
 }
-
 module.exports.FORM_LEVEL_SHORTKEY = {
     form: "form_level",
     tab: "tab_level",

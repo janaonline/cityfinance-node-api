@@ -30,7 +30,7 @@ let groupedQuestions = {
 }
 
 
-
+let addMoreFields = ["transferGrantdetail_tableview_addbutton"]
 
 let yearValueField = {
     "year":"",
@@ -1561,7 +1561,6 @@ module.exports.getFlatObj = (obj) => {
     flattendObj['parent_obj'] = new Set()
     traverseAndFlatten({...obj}, flattendObj)
     // let flattenArr = []
-    console.log("flattendObj :: ",flattendObj.receiptDate)
     flattendObj['parent_arr'] = Array.from(flattendObj['parent_arr'])
     flattendObj['parent_obj'] = Array.from(flattendObj['parent_obj'])
     return flattendObj
@@ -2008,6 +2007,7 @@ async function handleArrOfObjects(question,flattedForm){
                         questionObj =  await handleDbValues(questionObj,formObj,order) 
                         if(questionObj.isQuestionDisabled !== true){
                             questionObj.isQuestionDisabled = handleDisableFields({disableFields})
+                            
                             if(Object.keys(customDisableFields).includes(keys)){
                                 questionObj.isQuestionDisabled = obj[customDisableFields[keys]]
                             }
@@ -2108,6 +2108,20 @@ async function appendvalues(childQuestionData,flattedForm,shortKey,question){
         if(specialCases.includes(shortKey)){
             if(flattedForm[modelKey]){
                 childQuestionData = await handleArrOfObjects(question,flattedForm)
+                let questionLength = childQuestionData.length
+                if(addMoreFields.includes(shortKey)){
+                    console.log(">>>>>>>>>>>if conditipon :::",questionLength)
+                    question.value = questionLength
+                    question.modelValue = questionLength
+                    question.selectedValue = {
+                        "text":questionLength,
+                        "value":questionLength,
+                        "label":questionLength
+                        
+                    }
+                    console.log("question :: ",question.value)
+
+                }
             }
         }
         return [...childQuestionData]
@@ -2435,9 +2449,10 @@ function manageDisabledQues(question,flattedForm){
     }
 }
 
-async function mutuateGetPayload(jsonFormat, flattedForm, keysToBeDeleted,role) {
+async function mutuateGetPayload(jsonFormat, flatForm, keysToBeDeleted,role) {
     try {
-        let obj = [...jsonFormat]
+        let obj = JSON.parse(JSON.stringify(jsonFormat))
+        let flattedForm = JSON.parse(JSON.stringify(flatForm))
         roleWiseJson(obj[0],role)
         obj[0] = await appendExtraKeys(keysToBeDeleted, obj[0], flattedForm)
         await deleteKeys(flattedForm, keysToBeDeleted)
