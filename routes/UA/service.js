@@ -724,7 +724,7 @@ module.exports.get2223 = catchAsync(async (req, res) => {
     //     "reduction_actual2122": wtAvgSLB[3]
     //   })
     slbWeigthed = roundOffToTwoDigits(slbWeigthed);
-    let scores = calculateSlbMarks(slbWeigthed, design_year)
+    let scores = calculateSlbMarks(slbWeigthed, false)
     Object.assign(slbWeigthed, {
         "houseHoldCoveredWithSewerage_score": scores[2],
         "houseHoldCoveredPipedSupply_score": scores[3],
@@ -1028,12 +1028,12 @@ function get2223TwentySlbData(TEslbdata2, slbWeigthed, design_year) {
       }
     });
     slbWeigthed = roundOffToTwoDigits(slbWeigthed);
-    let scores2 = calculateSlbMarks(slbWeigthed, design_year);
+    let scores2 = calculateSlbMarks(slbWeigthed, true);
     Object.assign(slbWeigthed, {
-      houseHoldCoveredWithSewerage_score: scores2[2],
-      houseHoldCoveredPipedSupply_score: scores2[3],
-      waterSuppliedPerDay_score: scores2[0],
-      reduction_score: scores2[1],
+      houseHoldCoveredWithSewerage_score: Number(scores2[2].toFixed(2)),
+      houseHoldCoveredPipedSupply_score: Number(scores2[3].toFixed(2)),
+      waterSuppliedPerDay_score: Number(scores2[0].toFixed(2)),
+      reduction_score: Number(scores2[1].toFixed(2)),
     });
     return slbWeigthed;
   } catch (error) {

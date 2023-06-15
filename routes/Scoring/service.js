@@ -114,8 +114,8 @@ const { YEAR_CONSTANTS } = require('../../util/FormNames');
 //     "design_year" : ("606aadac4dff55e6c075c507")
 // }
 
-module.exports.calculateSlbMarks = (data, design_year) => {
-    if(![YEAR_CONSTANTS['21_22'], YEAR_CONSTANTS['22_23']].includes(design_year)){
+module.exports.calculateSlbMarks = (data, flag) => {
+    if(flag){
         const yearToCalculate = 2122;
         return calculateSlbMarks2324(data, yearToCalculate);
     }
@@ -276,7 +276,8 @@ function calculateSlbMarks2324(data, year) {
         let counter =0;
         for (const el in data) {
           if (typeof data[el] === "number" && !ignoreKeys.includes(el)) {
-            if (el.includes(category) && el.includes(year)) {
+            if (el.includes(category) && el.includes(year) && el.includes("actual")
+            ) {
               obj[category].baseline[year] = data[el];
               counter++;
             } else if (
