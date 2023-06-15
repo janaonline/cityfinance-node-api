@@ -27,7 +27,7 @@ const getLabels = (formName)=>{
   }
 }
 
-module.exports.radioSchema = (key,formName,options=["Yes","No"])=>{
+module.exports.radioSchema = (key,formName,options=["Yes","No",""])=>{
   options.push(null)
   let labels = getLabels(formName)
   let keyName = labels && labels[key] ? labels[key] : key
@@ -35,6 +35,7 @@ module.exports.radioSchema = (key,formName,options=["Yes","No"])=>{
       type:String,
       enum:options,
       required:[false,`${keyName} is required`],
+      default:null
   }
 }
 module.exports.pdfSchema = (required = false)=>{
