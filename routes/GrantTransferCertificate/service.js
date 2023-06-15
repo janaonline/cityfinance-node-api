@@ -12,6 +12,7 @@ const { grantsWithUlbTypes, installment_types, singleInstallmentTypes } = requir
 const FormsJson = require("../../models/FormsJson");
 const { MASTER_STATUS, MASTER_STATUS_ID } = require('../../util/FormNames');
 const userTypes = require("../../util/userTypes");
+const {FORMIDs} = require("../../util/FormNames")
 
 let gtcYears = ["2018-19", "2019-20", "2021-22", "2022-23"]
 let GtcFormTypes = [
@@ -20,8 +21,13 @@ let GtcFormTypes = [
     "nonmillion_tied"
 ]
 let alerts = {
+<<<<<<< HEAD
     "prevForm": "Your previous year's GTC form is not complete. <a href=https://democityfinance.dhwaniris.in/upload-annual-accounts target=\"_blank\">Click Here!</a> to access previous year form.",
     "installmentMsg": (year) => {
+=======
+    "prevForm":`Your previous year's GTC form is not complete. <a href=${process.env.HOSTNAME}/stateform2223/gtCertificate">Click Here!</a> to access previous year form.`,
+    "installmentMsg":(year)=>{
+>>>>>>> 3a9479a07cdd5daf1322be6388b901f9fd86cbdf
         return `1st Installment (${year}) GTC has to be uploaded first before uploading 2nd Installment (${year}) GTC`
     }
 }
@@ -698,7 +704,7 @@ const getJson = async (state, design_year, role) => {
         }, { isMillionPlus: 1 })
         let stateIsMillion = ulb?.isMillionPlus === "Yes" ? true : false
         let forms = await FormsJson.find({
-            "formId": { "$in": [11.1, 7] }
+            "formId":{"$in":[FORMIDs['GTC_STATE'],FORMIDs['GTC_TABLE_STRUCTURE']]}
         }).lean()
         let basicEmptyStructure = forms.find(item => item.formId === 11.1).data
         let formJson = forms.find(item => item.formId === 7)
