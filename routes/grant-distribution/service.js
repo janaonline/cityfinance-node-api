@@ -4,9 +4,12 @@ const ObjectId = require("mongoose").Types.ObjectId;
 const ULB = require("../../models/Ulb");
 const STATE = require("../../models/State");
 const Response = require("../../service").response;
+const FormsJson = require("../../models/FormsJson");
 const Service = require("../../service");
+const {years} = require("../../service/years");
 const downloadFileToDisk = require("../file-upload/service").downloadFileToDisk;
 const GrantDistribution = require("../../models/GrantDistribution");
+const {getChildQuestion} = require("./constants")
 const { checkForUndefinedVaribales, mutuateGetPayload, getFlatObj } = require("../../routes/CommonActionAPI/service")
 const { getKeyByValue, saveFormHistory, grantDistributeOptions } = require("../../util/masterFunctions");
 const {
@@ -419,10 +422,10 @@ async function getUlbData(ulbCodes, ulbNames) {
 }
 
 const getSectionWiseJson = async(state, design_year) => {
-  let host = process.env.host
+  let host = process.env.HOSTNAME
 
   try {
-    let ulb = await Ulb.findOne({
+    let ulb = await ULB.findOne({
       "state": ObjectId(state),
       "isMillionPlus": "Yes"
     }, { isMillionPlus: 1 })
@@ -430,41 +433,47 @@ const getSectionWiseJson = async(state, design_year) => {
     let tabularStructure = await FormsJson.findOne({
       "formId":{"$in":[11.2]}
   }).lean()
+  tabularStructure = tabularStructure?.data || []
   let allocationForms = await GrantDistribution.find({
     state:ObjectId(state),
     design_year:design_year,
   }).lean()
   for(let section of tabularStructure){
     let installments = section.installments
-    for(let i=0; i< installments.length; i++){
+    console.log(installments )
+    for(let i=1; i <= installments; i++){
+      console.log(">>>>>>>>>",i)
       let allocationForm = allocationForms.find(item => item.installment === i && item.year.toString() === years[section.yearCode])
       let file = {
         "name":"",
         "url":""
       }
-      file = allocationForm.file && allocationForm.file.url || file 
+      file = allocationForm?.file && allocationForm?.file.url || file 
+      console.log("section.yearCode :: ",section)
       let params = {
         installment : i,
         year:years[section.yearCode],
         type:section.type,
         quesType:"",
-        url:`${host}/api/grantDistribution/template?type=${nonmillion_tied}&year=${years[section.yearCode]}&installment=${i}`,
-        key:`${section.type}_${section.yearCode}_${installment}`,
+        url:`${host}/api/grantDistribution/template?type=${section.type}&year=${years[section.yearCode]}&installment=${i}`,
+        key:`${section.type}_${section.yearCode}_${i}`,
         file:file,
        }
        let question = await getChildQuestion(params)
-       quesArray.push(question)
+       console.log("question :: ",question)
+       section.quesArray.push(question)
     }
   }
   return {json:tabularStructure,isStateMillion:stateIsMillion}
   }
   catch (err) {
-    console.log("error in getSectionWiseJson ::: ",err.message)
+    console.log("error in getSectionWiseJson ::: ",err)
+    return{json:[],isStateMillion:true}
   }
 }
 
 
-const getGrantDistributionForm = async (req, res, next) => {
+module.exports.getGrantDistributionForm = async (req, res, next) => {
   let response = {
     success: false,
     message: "",
@@ -474,7 +483,7 @@ const getGrantDistributionForm = async (req, res, next) => {
   try {
     let { state, design_year } = req.query
     let { role } = req.decoded
-    if (![userTypes.mohua, userTypes.ulb].includes(role)) {
+    if (![userTypes.mohua, userTypes.state].includes(role)) {
       response.message = "Not allowed"
       return res.status(405).json(response)
     }

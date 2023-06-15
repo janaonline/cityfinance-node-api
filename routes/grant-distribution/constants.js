@@ -1,12 +1,13 @@
 
 const {getKeyByValue} = require("../../util/masterFunctions")
-
+const {years} = require("../../service/years");
 function getChildQuestion(params){
     let {year,installment,type,key,quesType,file,url} = params 
+    console.log("year :: ",year)
     try{
       let childQuestion = {
         "installment": installment,
-        "year": year,
+        "year": years['year'],
         "type": type,
         "instlText": `${installmentLabels[installment]} FY (${getKeyByValue(years,year)})`,
         "isDisableQues": true,
@@ -23,6 +24,7 @@ function getChildQuestion(params){
           "error": null,
         }
       }
+      return childQuestion
     }
     catch(err){
       console.log("error in getChildQuestion :::: ",err.message)
