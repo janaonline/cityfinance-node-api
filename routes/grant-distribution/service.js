@@ -439,7 +439,10 @@ const getRejectedFields = (currentFormStatus,formStatuses,installment,role)=>{
       let prevInstallment = installment - 1
       let inputAllowed = [MASTER_STATUS['In Progress'],MASTER_STATUS['Not Started'],MASTER_STATUS['Rejected By MoHUA']]
       let allowedStatuses = [MASTER_STATUS['Submission Acknowledged By MoHUA']]
-      if(prevInstallment  && !allowedStatuses.includes(formStatuses?.[prevInstallment]) && role === userTypes.state){
+      console.log("currentFormStatues :: ",currentFormStatus)
+      // console.log(">>>>>>>>>>>>>>>>>>>",prevInstallment  && allowedStatuses.includes(formStatuses?.[prevInstallment]) && role === userTypes.state)
+      if(prevInstallment  && allowedStatuses.includes(formStatuses?.[prevInstallment]) && role === userTypes.state){
+        // console.log("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<")
           return true
       }
       else{
@@ -455,7 +458,6 @@ const getRejectedFields = (currentFormStatus,formStatuses,installment,role)=>{
 const getSectionWiseJson = async(state, design_year,role) => {
 let host = baseUrls[process.env.ENV]
   let formStatuses = {}
-  let inputAllowed = [MASTER_STATUS['In Progress'],MASTER_STATUS['Not Started'],MASTER_STATUS['Rejected By MoHUA']]
   try {
     let ulb = await ULB.findOne({
       "state": ObjectId(state),
@@ -477,7 +479,8 @@ let host = baseUrls[process.env.ENV]
         "name":"",
         "url":""
       }
-      let allocationForm =  allocationForms.find(item => item.installment === i && item.year.toString() === years[section.yearCode])
+      let allocationForm =  allocationForms.find(item => item.installment === i && item.year.toString() === years[section.yearCode] && item.type === section.type ) || {}
+      allocationForm.currentFormStatus = allocationForm?.currentFormStatus ? allocationForm?.currentFormStatus : 1
       let url = ""
       url = allocationForm?.url || ""
       file.name  = allocationForm?.fileName || ""

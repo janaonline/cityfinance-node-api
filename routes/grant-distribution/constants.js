@@ -9,7 +9,7 @@ function getChildQuestion(params){
         "year": year,
         "type": type,
         "instlText": `${installmentLabels[installment]} FY (${getKeyByValue(years,year)})`,
-        "isDisableQues": false,
+        "isDisableQues": isDisableQues,
         "quesText": `${quesType}`,
         "question": getQuestions(getKeyByValue(years,year))[key]['question'] || "",
         "key": key,
