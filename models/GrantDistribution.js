@@ -10,6 +10,7 @@ const GrantDistributionSchema = new Schema(
     modifiedAt: { type: Date, default: Date.now() },
     createdAt: { type: Date, default: Date.now() },
     isActive: { type: Boolean, default: 1 },
+    currentFormStatus:{type:Number},
     actionTakenBy: {
       type: Schema.Types.ObjectId,
       ref: "User",

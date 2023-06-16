@@ -2,7 +2,7 @@
 const {getKeyByValue} = require("../../util/masterFunctions")
 const {years} = require("../../service/years");
 function getChildQuestion(params){
-    let {year,installment,type,key,quesType,file,url} = params 
+    let {year,installment,type,key,quesType,file,isDisableQues,template,url} = params 
     try{
       let childQuestion = {
         "installment": installment,
@@ -15,10 +15,10 @@ function getChildQuestion(params){
         "key": key,
         "qusType": "",
         "disableMsg":getQuestions(getKeyByValue(years,year))[key]['disableMsg'] || "",
-        "fileName": "",
+        "fileName": file.name || "",
         "quesText":getQuestions(getKeyByValue(years,year))[key]['quesText'] || "",
-        "url": "",
-        "template":url,
+        "url": url || "",
+        "template":template,
         "file": {
           "name": file.name || "",
           "url": file.url || "",
