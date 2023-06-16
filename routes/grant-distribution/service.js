@@ -74,14 +74,13 @@ exports.getTemplate = async (req, res) => {
   let formData = req.query;
   let amount = "grant amount";
   
-  formData.design_year = getKeyByValue(years,formData.design_year)
+  formData.design_year = getKeyByValue(years,formData.year)
   if (formData.year === "606aafb14dff55e6c075d3ae") {
     formData.design_year = "2022-23";
   } else if (formData.year === "606aaf854dff55e6c075d219") {
     formData.design_year = "2021-22";
   }
   const type = `${formData?.type}_${formData?.design_year}_${formData?.installment}`;
-
   /* Checking if the formData.year is equal to the string "606aafb14dff55e6c075d3ae" and if it is, it is
  value of the variable "type" to the variable amount. */
  !outDatedYearIds.includes(formData.year)
