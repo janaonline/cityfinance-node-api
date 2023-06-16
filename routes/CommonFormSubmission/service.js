@@ -53,13 +53,13 @@ module.exports.createAndUpdateFormMaster = async (params) => {
             [
               MASTER_STATUS["Not Started"],
               MASTER_STATUS["In Progress"],
-              MASTER_STATUS["Rejected by State"],
-              MASTER_STATUS["Rejected by MoHUA"],
+              MASTER_STATUS["Returned By State"],
+              MASTER_STATUS["Returned By MoHUA"],
             ].includes(formCurrentStatus.status)
           ) {
             let formSubmit;
             formData["ulbSubmit"] =
-              formBodyStatus === MASTER_STATUS["Under Review by State"]
+              formBodyStatus === MASTER_STATUS["Under Review By State"]
                 ? new Date()
                 : "";
             if (formData2324) {
@@ -102,7 +102,7 @@ module.exports.createAndUpdateFormMaster = async (params) => {
               // await session.commitTransaction();
               return Response.OK(res, {}, "Form Submitted");
             } else if (
-              formBodyStatus === MASTER_STATUS["Under Review by State"]
+              formBodyStatus === MASTER_STATUS["Under Review By State"]
             ) {
               let bodyData = {
                 formId: masterFormId,
@@ -118,7 +118,7 @@ module.exports.createAndUpdateFormMaster = async (params) => {
               let currentStatusData = {
                 formId: masterFormId,
                 recordId: ObjectId(formSubmit._id),
-                status: MASTER_STATUS["Under Review by State"],
+                status: MASTER_STATUS["Under Review By State"],
                 level: FORM_LEVEL["form"],
                 shortKey: "form_level",
                 rejectReason: "",
@@ -147,9 +147,9 @@ module.exports.createAndUpdateFormMaster = async (params) => {
             }
           } else if (
             [
-              MASTER_STATUS["Approved by MoHUA"],
-              MASTER_STATUS["Under Review by MoHUA"],
-              MASTER_STATUS["Under Review by State"],
+              MASTER_STATUS["Submission Acknowledged By MoHUA"],
+              MASTER_STATUS["Under Review By MoHUA"],
+              MASTER_STATUS["Under Review By State"],
             ].includes(formCurrentStatus.status)
           ) {
             return res.status(200).json({
@@ -166,7 +166,7 @@ module.exports.createAndUpdateFormMaster = async (params) => {
       case ModelNames['dur']:
         masterFormId = FORMIDs['dur'];
         try {
-          const formBodyStatus = formData.status;
+          const formBodyStatus = formData.status || formData.currentFormStatus ;
           formData.status = "";
           formData.currentFormStatus = formBodyStatus;
           let formData2324 = await moongose
@@ -183,14 +183,13 @@ module.exports.createAndUpdateFormMaster = async (params) => {
               recordId: formData2324._id,
             }).lean();
           }
-
           if (
             formCurrentStatus &&
             [
               MASTER_STATUS["Not Started"],
               MASTER_STATUS["In Progress"],
-              MASTER_STATUS["Rejected by State"],
-              MASTER_STATUS["Rejected by MoHUA"],
+              MASTER_STATUS["Returned By State"],
+              MASTER_STATUS["Returned By MoHUA"],
             ].includes(formCurrentStatus.status)
           ) {
             if(formCurrentStatus.status === MASTER_STATUS['Not Started']){
@@ -221,16 +220,29 @@ module.exports.createAndUpdateFormMaster = async (params) => {
                 delete formData['projects']
               }
             }
+            if(formCurrentStatus.status === MASTER_STATUS['Returned By State'] && formBodyStatus === MASTER_STATUS['In Progress'] ){
+              if(!formData.isProjectLoaded && years['2023-24']){
+                delete formData['projects']
+              }
+            }
             let formSubmit;
             formData["ulbSubmit"] =
-              formBodyStatus === MASTER_STATUS["Under Review by State"]
+              formBodyStatus === MASTER_STATUS["Under Review By State"]
                 ? new Date()
                 : "";
-                if(formBodyStatus === MASTER_STATUS["Under Review by State"]){
-                  console.log("formData :: ",formData)
+                if(formBodyStatus === MASTER_STATUS["Under Review By State"]){
+                  if(!formData.isProjectLoaded && formData2324){
+                    formData.projects = formData2324.projects
+                  }
+
                   let validation =  checkForCalculations(formData)
                   if(!validation.valid){
                     return Response.BadRequest(res, {}, validation.messages);
+                  }
+                }
+                if(formCurrentStatus.status === MASTER_STATUS['Returned By State'] && formBodyStatus === MASTER_STATUS['In Progress'] ){
+                  if(!formData.isProjectLoaded && years['2023-24']){
+                    delete formData['projects']
                   }
                 }
             if (formData2324) {
@@ -273,7 +285,7 @@ module.exports.createAndUpdateFormMaster = async (params) => {
               // await session.commitTransaction();
               return Response.OK(res, {}, "Form Submitted");
             } else if (
-              formBodyStatus === MASTER_STATUS["Under Review by State"]
+              formBodyStatus === MASTER_STATUS["Under Review By State"]
             ) {
               let bodyData = {
                 formId: masterFormId,
@@ -289,7 +301,7 @@ module.exports.createAndUpdateFormMaster = async (params) => {
               let currentStatusData = {
                 formId: masterFormId,
                 recordId: ObjectId(formSubmit._id),
-                status: MASTER_STATUS["Under Review by State"],
+                status: MASTER_STATUS["Under Review By State"],
                 level: FORM_LEVEL["form"],
                 shortKey: "form_level",
                 rejectReason: "",
@@ -318,9 +330,9 @@ module.exports.createAndUpdateFormMaster = async (params) => {
             }
           } else if (
             [
-              MASTER_STATUS["Approved by MoHUA"],
-              MASTER_STATUS["Under Review by MoHUA"],
-              MASTER_STATUS["Under Review by State"],
+              MASTER_STATUS["Submission Acknowledged By MoHUA"],
+              MASTER_STATUS["Under Review By MoHUA"],
+              MASTER_STATUS["Under Review By State"],
             ].includes(formCurrentStatus.status)
           ) {
             return res.status(200).json({
@@ -415,3 +427,79 @@ function checkForCalculations(reports){
   }
   return validator
 }
+
+async function saveStatusAndHistory(params){
+  let validation = {
+    "message":"",
+    "valid":true
+  }
+  let {formBodyStatus,actionTakenBy,actionTakenByRole,formSubmit,formType} = params
+  let masterFormId = FORMIDs[formType]
+  try{
+    console.log("formBodyStatu ",formBodyStatus === MASTER_STATUS["In Progress"])
+    if (formBodyStatus === MASTER_STATUS["In Progress"]) {
+      console.log("masterFormId ::: ",masterFormId)
+      let currentStatusData = {
+        formId: masterFormId,
+        recordId: ObjectId(formSubmit[0]._id),
+        status: MASTER_STATUS["In Progress"],
+        level: FORM_LEVEL["form"],
+        shortKey: "form_level",
+        rejectReason: "",
+        responseFile: "",
+        actionTakenByRole: actionTakenByRole,
+        actionTakenBy: ObjectId(actionTakenBy),
+      };
+      await saveCurrentStatus({
+        body: currentStatusData,
+        // session
+      });
+      // return Response.OK(res, {}, "Form Submitted");
+    } else if (
+      formBodyStatus === MASTER_STATUS["Under Review By State"]
+    ) {
+      let bodyData = {
+        formId: masterFormId,
+        recordId: ObjectId(formSubmit[0]._id),
+        data: formSubmit,
+      };
+      await saveFormHistory({
+        body: bodyData,
+      });
+
+      let currentStatusData = {
+        formId: masterFormId,
+        recordId: ObjectId(formSubmit[0]._id),
+        status: MASTER_STATUS["Under Review By State"],
+        level: FORM_LEVEL["form"],
+        shortKey: "form_level",
+        rejectReason: "",
+        responseFile: "",
+        actionTakenByRole: actionTakenByRole,
+        actionTakenBy: ObjectId(actionTakenBy),
+      };
+      await saveCurrentStatus({
+        body: currentStatusData,
+        // session
+      });
+
+      let statusHistory = {
+        formId: masterFormId,
+        recordId: ObjectId(formSubmit[0]._id),
+        shortKey: "form_level",
+        data: currentStatusData,
+      };
+      await saveStatusHistory({
+        body: statusHistory,
+      });
+    }
+  }
+  catch(err){
+    validation.message = err.message
+    validation.valid = false
+    console.log("error in saveStatusAndHistory :::: ",err.message)
+  }
+  return validation
+}
+
+module.exports.saveStatusAndHistory = saveStatusAndHistory

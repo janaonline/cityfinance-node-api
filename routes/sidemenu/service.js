@@ -47,6 +47,14 @@ let FormModelMapping_Master = {
   "PropertyTaxOp" : ObjectId("63ff31d63ae39326f4b2f464")
 }
 
+let FormModelMapping_Master_23_24 = {
+  "PropertyTaxOp" : ObjectId("642aaf2c3e05d72a8df4b646"),
+  "TwentyEightSlbForm" : ObjectId("63ff31d63ae39326f4b2f46e"),
+  "UtilizationReport" : ObjectId("63ff31d63ae39326f4b2f462"),
+  "AnnualAccountData" : ObjectId("63ff31d63ae39326f4b2f460"),
+ 
+  }
+
 let FormModelMapping_State = {
     "GrantTransferCertificate": ObjectId("62c552c52954384b44b3c386"),
     "PropertyTaxFloorRate": ObjectId("62c5534e2954384b44b3c38a"),
@@ -56,6 +64,15 @@ let FormModelMapping_State = {
     "GrantClaim": ObjectId("62c554cb2954384b44b3c3a2"),
     "WaterRejenuvationRecycling": ObjectId("62c554382954384b44b3c396")
     
+}
+let FormModelMappingMaster_State = {
+  "GrantTransferCertificate": ObjectId("63ff31d63ae39326f4b2f473"),
+  "PropertyTaxFloorRate": ObjectId("63ff31d63ae39326f4b2f474"),
+  "StateFinanceCommissionFormation": ObjectId("63ff31d73ae39326f4b2f475"),
+  "ActionPlans" : ObjectId("63ff31d73ae39326f4b2f478"),
+  "GrantAllocation": ObjectId("63ff31d73ae39326f4b2f479"),
+  "GrantClaim": ObjectId("63ff31d73ae39326f4b2f47a"),
+  "WaterRejenuvationRecycling": ObjectId("63ff31d73ae39326f4b2f477")
 }
 
 let SUB_CATEGORY_CONSTANTS = {
@@ -193,6 +210,7 @@ const findStatusAndTooltipMaster = (params)=>{
     let {formData, formId,loggedInUserRole, viewFor} = params;
     let status = formData.currentFormStatus
     let tooltip = calculateStatusMaster(status);
+    console.log("tooltip: :: ",tooltip)
     let tick = calculateTick(tooltip, loggedInUserRole, viewFor)
 
     return {
@@ -201,6 +219,15 @@ const findStatusAndTooltipMaster = (params)=>{
             tick: tick
         }
     }
+}
+
+const UA_FORM_MODEL = {
+  GFC_UA_YES: ObjectId("63ff31d63ae39326f4b2f467"),
+  GFC_UA_NO: ObjectId("63ff31d63ae39326f4b2f46b"),
+  ODF_UA_YES: ObjectId("63ff31d63ae39326f4b2f466"),
+  ODF_UA_NO: ObjectId("63ff31d63ae39326f4b2f46a"),
+  XVFcGrantULBForm_UA_YES: ObjectId("63ff31d63ae39326f4b2f465"),
+  XVFcGrantULBForm_UA_NO: ObjectId("63ff31d63ae39326f4b2f469")
 }
 
 module.exports.get = catchAsync(async (req, res) => {
@@ -238,9 +265,9 @@ module.exports.get = catchAsync(async (req, res) => {
         FormModelMapping["OdfFormCollection"] = isUA == 'Yes' ? ObjectId("62aa1d6ec9a98b2254632a9a") : ObjectId("62aa1dc0c9a98b2254632aaa")
         FormModelMapping["XVFcGrantULBForm"] = isUA == 'Yes' ? ObjectId("62aa1d4fc9a98b2254632a96") : ObjectId("62aa1dadc9a98b2254632aa6")
         
-        FormModelMapping_Master["GfcFormCollection"] = isUA == 'Yes' ? ObjectId("63ff31d63ae39326f4b2f467") : ObjectId("63ff31d63ae39326f4b2f46b")
-        FormModelMapping_Master["OdfFormCollection"] = isUA == 'Yes' ? ObjectId("63ff31d63ae39326f4b2f466") : ObjectId("63ff31d63ae39326f4b2f46a")
-        FormModelMapping_Master["XVFcGrantULBForm"] = isUA == 'Yes' ? ObjectId("63ff31d63ae39326f4b2f465") : ObjectId("63ff31d63ae39326f4b2f469")
+        FormModelMapping_Master_23_24["GfcFormCollection"] = isUA == 'Yes' ? UA_FORM_MODEL['GFC_UA_YES'] : UA_FORM_MODEL['GFC_UA_NO']
+        FormModelMapping_Master_23_24["OdfFormCollection"] = isUA == 'Yes' ?   UA_FORM_MODEL['ODF_UA_YES'] : UA_FORM_MODEL['ODF_UA_NO']
+        FormModelMapping_Master_23_24["XVFcGrantULBForm"] = isUA == 'Yes' ?  UA_FORM_MODEL['XVFcGrantULBForm_UA_YES'] : UA_FORM_MODEL['XVFcGrantULBForm_UA_NO']
         
         let condition = {
             ulb: ObjectId(_id),
@@ -262,7 +289,7 @@ module.exports.get = catchAsync(async (req, res) => {
             let formData = await el.findOne(condition).lean()
             if (formData) {
               if(formData[designYearCond].toString() === YEAR_CONSTANTS['23_24']){
-                output.push(findStatusAndTooltipMaster({formData,formId: FormModelMapping_Master[el['modelName']], loggedInUserRole: user.role, viewFor: role}))
+                output.push(findStatusAndTooltipMaster({formData,formId: FormModelMapping_Master_23_24[el['modelName']], loggedInUserRole: user.role, viewFor: role}))
               }else{
                 output.push(findStatusAndTooltip(formData, FormModelMapping[el['modelName']] , el['modelName'], user.role, role))
              }
@@ -279,8 +306,12 @@ module.exports.get = catchAsync(async (req, res) => {
             if(el !== GTC_STATE){
             let formData = await el.findOne(condition).lean()
             if (formData) {
-
-                output.push(findStatusAndTooltip(formData, FormModelMapping_State[el['modelName']] , el['modelName'], user.role, role))
+                if(formData.design_year.toString() === YEAR_CONSTANTS['23_24']){
+                  output.push(findStatusAndTooltipMaster({formData,formId: FormModelMappingMaster_State[el['modelName']], loggedInUserRole: user.role, viewFor: role}))
+                }else{
+                  output.push(findStatusAndTooltip(formData, FormModelMapping_State[el['modelName']] , el['modelName'], user.role, role))
+                }
+                
                 }
             }else{
                 let formDataArray = await el.find(condition).lean();
@@ -357,7 +388,9 @@ module.exports.get = catchAsync(async (req, res) => {
 
             if(i === 0){//first entry
                 entity.prevUrl = null;
-                entity.nextUrl = `../${tempData[i+1].url}`;
+                if(tempData[i+1]){
+                  entity.nextUrl = `../${tempData[i+1].url}`;
+                }
             } else if(i === (tempData.length-1)){//last entry
                 entity.prevUrl =  `../${tempData[i-1].url}`;
                 entity.nextUrl = null;

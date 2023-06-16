@@ -18,7 +18,8 @@ const { calculateSlbMarks } = require('../Scoring/service');
 const { ulb } = require('../../util/userTypes');
 const { columns,csvCols,sortFilterKeys,dashboardColumns } = require("./constants.js")
 const Redis = require("../../service/redis")
-const { AggregationServices } = require("../../routes/CommonActionAPI/service")
+const { AggregationServices } = require("../../routes/CommonActionAPI/service");
+const { YEAR_CONSTANTS , FORMIDs, FormNames, MASTER_STATUS} = require('../../util/FormNames');
 const lineItemIndicatorIDs = [
     "6284d6f65da0fa64b423b52a",
     "6284d6f65da0fa64b423b53a",
@@ -308,11 +309,11 @@ module.exports.get2223 = catchAsync(async (req, res) => {
         }
     }
 
-    let uaData = await UA.findOne({ _id: ObjectId(uaId) }).lean()
+    let uaData =  await UA.findOne({ _id: ObjectId(uaId) }).lean();
     let ulbs = []
-    let slbTotalScore = 0, gfcScore = 0, odfScore = 0;
 
     ulbs = uaData.ulb;
+    let ulbData = await Ulb.find({_id:{$in:ulbs}}).lean();
     responseObj.totalUlbs = ulbs.length
     let slbdata = await Ulb.aggregate([
         {
@@ -394,44 +395,73 @@ module.exports.get2223 = catchAsync(async (req, res) => {
             },
         },
     ])
-    console.log('1')
-    if (slbdata.length) {
-        slbdata.forEach(el => {
-            console.log('2')
-
-            if (el.hasOwnProperty("xvfcgrantulbforms") && Object.keys(el.xvfcgrantulbforms).length > 0) {
-                if (TEslbdata.length) {
-                    TEslbdata.forEach(el2 => {
-                        if (el2.hasOwnProperty("twentyeightslbforms") && Object.keys(el2.twentyeightslbforms).length > 0) {
-                            if (el._id.toString() == el2._id.toString()) {
-                                if (el.xvfcgrantulbforms.waterManagement.status == "APPROVED" && el2.twentyeightslbforms.status == "APPROVED") {
-                                    slbApproved.count += 1;
-                                    slbApproved.ulbs.push({
-                                        ulbName: el.name,
-                                        censusCode: el.censusCode ?? el.sbCode
-                                    })
-                                } else {
-                                    slbPending.count += 1
-                                    slbPending.ulbs.push({
-                                        ulbName: el.name,
-                                        censusCode: el.censusCode ?? el.sbCode
-                                    })
-                                }
-                            }
-                        }
-
-                    })
-                }
-            } else {
-                slbPending.count += 1
-                slbPending.ulbs.push({
-                    ulbName: el.name,
-                    censusCode: el.censusCode ?? el.sbCode
-                })
-            }
-
-        });
+    let TEslbdata2 =[];
+    if(![YEAR_CONSTANTS['21_22'],YEAR_CONSTANTS['22_23'] ].includes(design_year)){
+        TEslbdata2 = await getTwentyEightSLb2223Data(TEslbdata2, ulbs);
     }
+    if (slbdata.length) {
+      slbdata.forEach((el) => {
+        if (
+          el.hasOwnProperty("xvfcgrantulbforms") &&
+          Object.keys(el.xvfcgrantulbforms).length > 0
+        ) {
+          if (TEslbdata.length) {
+            TEslbdata.forEach((el2) => {
+              if (
+                el2.hasOwnProperty("twentyeightslbforms") &&
+                Object.keys(el2.twentyeightslbforms).length > 0
+              ) {
+                if (el._id.toString() == el2._id.toString()) {
+                  if (
+                    (el.xvfcgrantulbforms.waterManagement.status ==
+                      "APPROVED" &&
+                      el2.twentyeightslbforms.status == "APPROVED") ||
+                    [MASTER_STATUS["Under Review By MoHUA"]].includes(
+                      el2.twentyeightslbforms?.currentFormStatus
+                    )
+                  ) {
+                    slbApproved.count += 1;
+                    slbApproved.ulbs.push({
+                      ulbName: el2.name,
+                      censusCode: el2.censusCode ?? el2.sbCode,
+                    });
+                  } else {
+                    slbPending.count += 1;
+                    slbPending.ulbs.push({
+                      ulbName: el2.name,
+                      censusCode: el2.censusCode ?? el2.sbCode,
+                    });
+                  }
+                }
+              } else {
+                slbPending.count += 1;
+                slbPending.ulbs.push({
+                  ulbName: el2.name,
+                  censusCode: el2.censusCode ?? el2.sbCode,
+                });
+              }
+            });
+          }
+        } else {
+          slbPending.count += 1;
+          slbPending.ulbs.push({
+            ulbName: el.name,
+            censusCode: el.censusCode ?? el.sbCode,
+          });
+        }
+      });
+    }
+    //get slbApproved and pending count
+    get28SLB2223Data(design_year, TEslbdata2, slbApproved, slbPending);
+    if (
+      ![YEAR_CONSTANTS["21_22"], YEAR_CONSTANTS["22_23"]].includes(design_year)
+    ) {
+      slbApproved.ulbs = removeApproved(slbPending.ulbs, slbApproved.ulbs);
+      slbPending.ulbs = removeDuplicates(slbPending.ulbs);
+      slbApproved.ulbs = removeDuplicates(slbApproved.ulbs);
+    }
+    slbPending.count = slbPending.ulbs.length;
+    slbApproved.count = slbApproved.ulbs.length;
 
     let gfcData = await Ulb.aggregate([
         {
@@ -487,7 +517,7 @@ module.exports.get2223 = catchAsync(async (req, res) => {
     if (gfcData) {
         gfcData.forEach(el => {
             if (el.hasOwnProperty("gfcformcollections") && Object.keys(el.gfcformcollections).length > 0) {
-                if (el.gfcformcollections.status == "APPROVED") {
+                if (el.gfcformcollections.status == "APPROVED" || [MASTER_STATUS['Under Review By MoHUA']].includes(el.gfcformcollections.currentFormStatus)) {
                     gfcApproved.count += 1;
                     gfcApproved.ulbs.push({
                         ulbName: el.name,
@@ -565,7 +595,7 @@ module.exports.get2223 = catchAsync(async (req, res) => {
     if (odfData) {
         odfData.forEach(el => {
             if (el.hasOwnProperty("odfformcollections") && Object.keys(el.odfformcollections).length > 0) {
-                if (el.odfformcollections.status == "APPROVED") {
+                if (el.odfformcollections.status == "APPROVED" || [MASTER_STATUS['Under Review By MoHUA']].includes(el.odfformcollections.currentFormStatus)) {
                     odfApproved.count += 1;
                     odfApproved.ulbs.push({
                         ulbName: el.name,
@@ -588,8 +618,11 @@ module.exports.get2223 = catchAsync(async (req, res) => {
 
         });
     }
+    if(![YEAR_CONSTANTS['21_22'],YEAR_CONSTANTS['22_23'] ].includes(design_year)){
+        gfcPending.ulbs = checkUlbFormStatus(ulbData, gfcApproved, gfcPending);
+        odfPending.ulbs = checkUlbFormStatus(ulbData, odfApproved, odfPending);
 
-    console.log(slbApproved, slbPending, gfcApproved, gfcPending, odfPending, odfApproved)
+      }
     responseObj.fourSLB.approved = slbApproved
     responseObj.fourSLB.pending = slbPending
     responseObj.gfc.approved = gfcApproved
@@ -601,6 +634,13 @@ module.exports.get2223 = catchAsync(async (req, res) => {
         responseObj.gfc.pending.count === ulbs.length ||
         responseObj.odf.pending.count === ulbs.length
     ) {
+        if(![YEAR_CONSTANTS['21_22'],YEAR_CONSTANTS['22_23'] ].includes(design_year)){
+            responseObj = updateResponse(responseObj, true)
+            return res.status(200).json({
+                success: true,
+                data: responseObj
+            })
+        }
         return res.status(200).json({
             data: responseObj,
             message: "Insufficient Data",
@@ -610,18 +650,21 @@ module.exports.get2223 = catchAsync(async (req, res) => {
 
     let slbWeigthed = {}
     // console.log(uaId,`${process.env.BASEURL}/xv-fc-form/state/606aaf854dff55e6c075d219?ua_id=${uaId}` )
-    await axios.get(`https://staging.cityfinance.in/api/v1/xv-fc-form/state/606aaf854dff55e6c075d219?ua_id=${uaId}`).then(function (response) {
-        console.log('Data Fetched');
-        slbWeigthed = response.data.data[0]
+    await axios
+      .get(
+        `https://staging.cityfinance.in/api/v1/xv-fc-form/state/606aaf854dff55e6c075d219?ua_id=${uaId}`
+      )
+      .then(function (response) {
+        slbWeigthed = response.data.data[0];
+      })
+      .catch(function (error) {
+        console.log("Not Fetched", error.message);
+      });
 
-    })
-        .catch(function (error) {
-            console.log('Not Fetched', error.message);
-        })
-
-
+    //   return res.json(slbWeigthed);
+    slbWeigthed = roundOffToTwoDigits(slbWeigthed);
     Object.assign(responseObj.fourSLB.data, slbWeigthed)
-    let usableData = []
+    // let usableData = []
     let arr = []
     let filteredData = []
     TEslbdata.forEach(el => {
@@ -650,25 +693,27 @@ module.exports.get2223 = catchAsync(async (req, res) => {
 
 
 
-    let wtAvgSLB = []
+    let wtAvgSLB = [];
+    let year = design_year === YEAR_CONSTANTS["23_24"] ? "2223" : "2122";
+    
     numerator.forEach((el, index) => {
         wtAvgSLB.push({ value: numerator[index].value / popData[index].value, id: numerator[index].id })
         if (el.id == lineItemIndicatorIDs[0]) {
             Object.assign(slbWeigthed, {
-                "houseHoldCoveredWithSewerage_actual2122": wtAvgSLB[index].value,
+                [`houseHoldCoveredWithSewerage_actual${year}`]: wtAvgSLB[index].value,
             })
 
         } else if (el.id == lineItemIndicatorIDs[1]) {
             Object.assign(slbWeigthed, {
-                "houseHoldCoveredPipedSupply_actual2122": wtAvgSLB[index].value,
+                [`houseHoldCoveredPipedSupply_actual${year}`]: wtAvgSLB[index].value,
             })
         } else if (el.id == lineItemIndicatorIDs[2]) {
             Object.assign(slbWeigthed, {
-                "waterSuppliedPerDay_actual2122": wtAvgSLB[index].value,
+                [`waterSuppliedPerDay_actual${year}`]: wtAvgSLB[index].value,
             })
         } else if (el.id == lineItemIndicatorIDs[3]) {
             Object.assign(slbWeigthed, {
-                "reduction_actual2122": wtAvgSLB[index].value,
+                [`reduction_actual${year}`]: wtAvgSLB[index].value,
             })
         }
     })
@@ -690,21 +735,770 @@ module.exports.get2223 = catchAsync(async (req, res) => {
         numeratorGFC += el2.rating.marks * el2.population
         popDataGFC += el2.population
     })
-    responseObj.gfc.score = numeratorGFC / popDataGFC;
+    if(gfcData.length){
+        responseObj.gfc.score = numeratorGFC / popDataGFC;
+    }else{
+        responseObj.gfc.score = 0;
+    }
 
     let numeratorOdf = 0, popDataOdf = 0
     odfData.forEach((el2, index) => {
         numeratorOdf += el2.rating.marks * el2.population
         popDataOdf += el2.population
     })
-    responseObj.odf.score = numeratorOdf / popDataOdf;
+    if(odfData.length){
+        responseObj.odf.score = numeratorOdf / popDataOdf;
+    }else{
+        responseObj.odf.score = 0;
+
+    }
     responseObj.fourSLB.data = slbWeigthed
+
+    if(design_year === YEAR_CONSTANTS['23_24']){
+       responseObj.fourSLB.data = get2223TwentySlbData(TEslbdata2, slbWeigthed);
+       responseObj = updateResponse(responseObj, false)
+    }
     return res.status(200).json({
         success: true,
         data: responseObj
     })
 })
 
+function roundOffToTwoDigits(obj) {
+  try {
+    const newObj = {};
+
+    for (let key in obj) {
+      if (typeof obj[key] === "number") {
+        newObj[key] = Number(obj[key].toFixed(2));
+      } else {
+        newObj[key] = obj[key];
+      }
+    }
+
+    return newObj;
+  } catch (error) {
+    throw `roundOffToTwoDigits:: ${error.message}`;
+  }
+}
+
+/**
+ * The function retrieves data related to SLB forms for ULBs based on the design year and updates the
+ * count and ULB lists for approved and pending forms.
+ * @param design_year - The design year is a variable that represents the year for which the data is
+ * being retrieved. It is expected to be either "21_22" or "22_23".
+ * @param TEslbdata2 - TEslbdata2 is an array of objects containing data related to various ULBs (Urban
+ * Local Bodies).
+ * @param slbApproved - slbApproved is an object that contains a count property and an ulbs property.
+ * The count property represents the number of ULBs (Urban Local Bodies) that have been approved, while
+ * the ulbs property is an array of objects that contain the name and census code of each approved ULB.
+ * @param slbPending - `slbPending` is an object that contains a `count` property and an array of
+ * `ulbs`. The `count` property represents the number of ULBs (Urban Local Bodies) with pending status,
+ * while the `ulbs` array contains objects representing each ULB with pending status.
+ */
+function get28SLB2223Data(design_year, TEslbdata2, slbApproved, slbPending) {
+  try {
+    if (
+      ![YEAR_CONSTANTS["21_22"], YEAR_CONSTANTS["22_23"]].includes(design_year)
+    ) {
+      if (TEslbdata2.length) {
+        TEslbdata2.forEach((el2) => {
+          if (
+            el2.hasOwnProperty("twentyeightslbforms") &&
+            Object.keys(el2.twentyeightslbforms).length > 0
+          ) {
+            //   if (el._id.toString() == el2._id.toString()) {
+            if (el2.twentyeightslbforms.status == "APPROVED") {
+              slbApproved.count += 1;
+              slbApproved.ulbs.push({
+                ulbName: el2.name,
+                censusCode: el2.censusCode ?? el2.sbCode,
+              });
+            } else {
+              slbPending.count += 1;
+              slbPending.ulbs.push({
+                ulbName: el2.name,
+                censusCode: el2.censusCode ?? el2.sbCode,
+              });
+              // }
+            }
+          } else {
+            slbPending.count += 1;
+            slbPending.ulbs.push({
+              ulbName: el2.name,
+              censusCode: el2.censusCode ?? el2.sbCode,
+            });
+          }
+        });
+      }
+    }
+  } catch (error) {
+    throw `get28SLB2223Data:: ${error.message}`;
+  }
+}
+
+/**
+ * The function retrieves data from the "twentyeightslbforms" collection for a given set of ULBs.
+ * @param TEslbdata2 - an array that will contain the data retrieved from the database query
+ * @param ulbs - An array of MongoDB ObjectIds representing the ULBs (Urban Local Bodies) to be matched
+ * in the aggregation pipeline.
+ * @returns The function `getTwentyEightSLb2223Data` returns the result of an aggregation query
+ * performed on the `Ulb` collection, with a `` stage to filter by `_id` values in the `ulbs`
+ * array, a `` stage to join with the `twentyeightslbforms` collection based on a matching
+ * `design_year` and `ulb` fields
+ */
+async function getTwentyEightSLb2223Data(TEslbdata2, ulbs) {
+    TEslbdata2 = await Ulb.aggregate([
+        {
+            $match: {
+                _id: { $in: ulbs }
+            }
+        },
+        {
+            $lookup: {
+                from: "twentyeightslbforms",
+                let: {
+                    firstUser: ObjectId(YEAR_CONSTANTS['22_23']),
+                    secondUser: "$_id",
+                },
+                pipeline: [
+                    {
+                        $match: {
+                            $expr: {
+                                $and: [
+                                    {
+                                        $eq: ["$design_year", "$$firstUser"],
+                                    },
+                                    {
+                                        $eq: ["$ulb", "$$secondUser"],
+                                    },
+                                ],
+                            },
+                        },
+                    },
+                ],
+                as: "twentyeightslbforms",
+            },
+        },
+        {
+            $unwind: {
+                path: "$twentyeightslbforms",
+                preserveNullAndEmptyArrays: true,
+            },
+        },
+    ]);
+    return TEslbdata2;
+}
+
+/**
+ * The function checks the status of ULB forms and adds pending ULBs to a list if they are not already
+ * approved or pending.
+ * @param ulbData - an array of objects containing data about ULBs (Urban Local Bodies)
+ * @param approvedUlbs - an object containing an array of approved ULBs (urban local bodies) with their
+ * names and census codes.
+ * @param pendingUlbs - an object that contains an array called "ulbs" which stores information about
+ * ULBs (Urban Local Bodies) that are pending approval.
+ * @returns an array of pending ULBs (Urban Local Bodies) that have not been approved yet.
+ */
+function checkUlbFormStatus(ulbData, approvedUlbs,pendingUlbs) {
+    ulbData.forEach(ulb => {
+        let found = approvedUlbs.ulbs.find(el => {
+            return el.ulbName === ulb.name;
+        });
+        if(!found){
+            found = pendingUlbs.ulbs.find(el => {
+                return el.ulbName === ulb.name;
+            });
+            if(!found){
+                pendingUlbs.ulbs.push({
+                    ulbName: ulb.name,
+                    censusCode: ulb.censusCode ?? ulb.sbCode
+                })
+            }
+        }
+    });
+    return pendingUlbs.ulbs;
+}
+
+/**
+ * The function removes objects from the "approved" array that are also present in the "pending" array.
+ * @param pending - The `pending` parameter is an array of objects representing items that are waiting
+ * for approval.
+ * @param approved - The "approved" parameter is an array of objects that have been approved.
+ * @returns The function `removeApproved` is returning an array of objects that are present in the
+ * `approved` array but not in the `pending` array. It does this by using the `filter` method on the
+ * `approved` array and checking if each object is present in the `pending` array using the `some`
+ * method and the `compareObjects` function. If the object is not present in
+ */
+function removeApproved(pending, approved) {
+    return approved.filter(approvedObj =>
+      !pending.some(pendingObj =>
+        compareObjects(pendingObj, approvedObj)
+      )
+    );
+  }
+  
+  /**
+   * The function compares two objects by checking if they have the same keys and values.
+   * @param obj1 - The first object to be compared.
+   * @param obj2 - The `obj2` parameter is an object that is being compared to another object (`obj1`)
+   * in the `compareObjects` function.
+   * @returns The `compareObjects` function is returning a boolean value. It returns `true` if the two
+   * objects passed as arguments have the same keys and values for each key, and `false` otherwise.
+   */
+  function compareObjects(obj1, obj2) {
+    const keys1 = Object.keys(obj1);
+    const keys2 = Object.keys(obj2);
+    
+    if (keys1.length !== keys2.length) {
+      return false;
+    }
+    
+    return keys1.every(key => obj1[key] === obj2[key]);
+  }
+/**
+ * The function calculates and returns SLB data and scores based on input data.
+ * @param TEslbdata2 - TEslbdata2 is an array of objects containing data related to the 22-23 SLB
+ * (Service Level Benchmark) indicators.
+ * @param slbWeigthed - slbWeigthed is an object that contains data related to SLB (Service Level
+ * Benchmark) indicators, including actual values and scores. The function is updating the values of
+ * this object based on the data passed in the TEslbdata2 parameter.
+ * @returns the updated `slbWeigthed` object with calculated scores for four different indicators
+ * related to water supply and sanitation.
+ */
+function get2223TwentySlbData(TEslbdata2, slbWeigthed) {
+    let arr1 = [];
+    let filteredData2 = [];
+    TEslbdata2.forEach((el) => {
+      if (el.hasOwnProperty("twentyeightslbforms")) {
+        filteredData2 = el.twentyeightslbforms.data.filter((el2) =>
+          lineItemIndicatorIDs.includes(el2.indicatorLineItem.toString())
+        );
+      }
+      arr1.push({
+        data: filteredData2,
+        population: el.population,
+      });
+    });
+    let numerator2 = [
+        { id: "", value: 0 },
+        { id: "", value: 0 },
+        { id: "", value: 0 },
+        { id: "", value: 0 },
+      ],
+      popData2 = [
+        { id: "", value: 0 },
+        { id: "", value: 0 },
+        { id: "", value: 0 },
+        { id: "", value: 0 },
+      ];
+    arr1.forEach(el => {
+        el.data.forEach((el2, index) => {
+            numerator2[index]['id'] = el2.indicatorLineItem.toString();
+            numerator2[index]['value'] += el2.actual.value * el.population;
+            popData2[index]['value'] += el.population;
+            popData2[index]['id'] = el2.indicatorLineItem.toString();
+        });
+    });
+
+    let wtAvgSLB2 = [];
+    numerator2.forEach((el, index) => {
+        wtAvgSLB2.push({ value: numerator2[index].value / popData2[index].value, id: numerator2[index].id });
+        if (el.id == lineItemIndicatorIDs[0]) {
+            Object.assign(slbWeigthed, {
+                "houseHoldCoveredWithSewerage_actual2122": wtAvgSLB2[index].value,
+            });
+
+        } else if (el.id == lineItemIndicatorIDs[1]) {
+            Object.assign(slbWeigthed, {
+                "houseHoldCoveredPipedSupply_actual2122": wtAvgSLB2[index].value,
+            });
+        } else if (el.id == lineItemIndicatorIDs[2]) {
+            Object.assign(slbWeigthed, {
+                "waterSuppliedPerDay_actual2122": wtAvgSLB2[index].value,
+            });
+        } else if (el.id == lineItemIndicatorIDs[3]) {
+            Object.assign(slbWeigthed, {
+                "reduction_actual2122": wtAvgSLB2[index].value,
+            });
+        }
+    });
+    let scores2 = calculateSlbMarks(slbWeigthed);
+    Object.assign(slbWeigthed, {
+        "houseHoldCoveredWithSewerage_score": scores2[2],
+        "houseHoldCoveredPipedSupply_score": scores2[3],
+        "waterSuppliedPerDay_score": scores2[0],
+        "reduction_score": scores2[1],
+    });
+    return slbWeigthed;
+}
+
+/**
+ * The function removes duplicate objects from an array based on a specific property.
+ * @param arr - an array of objects that may contain duplicates. Each object has a property called
+ * "ulbName".
+ * @returns The `removeDuplicates` function is returning an array with unique objects based on the
+ * `ulbName` property.
+ */
+function removeDuplicates(arr) {
+    const uniqueArr = arr.filter((obj, index, self) => {
+      return (
+        index ===
+        self.findIndex((o) => {
+          return o.ulbName === obj.ulbName;
+        })
+      );
+    });
+  
+    return uniqueArr;
+  }
+  
+function updateResponse(response, InsufficientFlag) {
+  try {
+    let responseObj = {
+      formName: FormNames['indicatorForm'],
+      formId: FORMIDs['indicatorForm'],
+      status: "",
+      statusId: "",
+      info: "The below tables denotes the aggregate indicators and targets of ULBs in respective UA",
+      previousYrMsg: "",
+      data: {
+        indicators_wss: {
+          title: "Indicators for Water Supply and Sanitation(A)",
+          key: 'indicators_wss',
+          dataCount: {
+            fourSlbData: {
+              name: "",
+              data: createNewFormat(response["fourSLB"]),
+            },
+          },
+          tables: InsufficientFlag ? [] :[
+            {
+              tableType: "four-slb",
+              rows: convertToRows(response),
+              columns: getColumnsIndicatorWss(),
+            },
+          ],
+          uaScore: {
+            title:
+              "Total UA Score for Water Supply and Sanitation :",
+            value: InsufficientFlag ? null : getUAScore(response["fourSLB"]['data']),
+            maximum: 60
+          },
+        },
+        indicators_swm: {
+          title: "Indicators for Solid Waste Management(B)",
+          key: 'indicators_swm',
+          dataCount: {
+            odfFormData: getODFFormat(response["odf"]),
+            gfcFormData: getGFCFormat(response["gfc"]),
+          },
+          uaScore: {
+            title:
+              "Total UA Score for Solid Waste Management :",
+            value: InsufficientFlag ? null : getindicators_swmScore(
+              response["odf"]["score"],
+              response["gfc"]["score"]
+            ),
+            maximum: 40
+          },
+        },
+        performanceAsst: {
+          title: "Performance Assessment",
+          key : "performanceAsst",
+          info: "",
+          id: "",    
+          name: "On the basis of the total marks obtained by UA, proportionate grants shall be recommended by MOH&UA as per the table given below:",
+          tables: getPerformanceAsstTable(),
+          dataCount: {},
+          uaScore: {
+            title: `On the basis of the total marks obtained by UA,
+                     proportionate grants shall be recommended by MOH&UA as per the table given below:`,
+            value: InsufficientFlag ? null :
+              getUAScore(response["fourSLB"]['data']) +
+              getindicators_swmScore(
+                response["odf"]["score"],
+                response["gfc"]["score"]
+              ),
+            maximum: 100
+          },
+        },
+      },
+    };
+    return responseObj;
+  } catch (error) {
+    throw `updateResponse:: ${error.message}`;
+  }
+}
+
+function getPerformanceAsstTable() {
+  return [
+    {
+      tableType: "lineItem-highlited",
+      rows: [
+        {
+          marks: "% of Recommended tied grant",
+          less30: "0%",
+          "30To45": "60%",
+          "45To60": "75%",
+          "60To80": "90%",
+          greater80: "100%",
+        },
+      ],
+      columns: getPerformanceAsstColumns(),
+    },
+  ];
+}
+
+function getindicators_swmScore(odfScore, gfcScore) {
+  return Number((odfScore + gfcScore).toFixed(2));
+}
+function getPerformanceAsstColumns() {
+  return [
+    {
+      key: "marks",
+      display_name: "Marks",
+    },
+    {
+      key: "less30",
+      display_name: "< 30",
+    },
+    {
+      key: "30To45",
+      display_name: "< 30 and <=45",
+    },
+    {
+      key: "45To60",
+      display_name: "> 45 and <=60",
+    },
+    {
+      key: "60To80",
+      display_name: "> 60 and <=80",
+    },
+    {
+      key: "greater80",
+      display_name: "> 80",
+    },
+  ];
+}
+
+function getColumnsIndicatorWss() {
+  return [
+    {
+      key: "serviceLevelIndicators",
+      display_name: "Service Level Indicators",
+    },
+    {
+      key: "benchmark",
+      display_name: "Benchmark",
+    },
+    {
+      key: "achieved2122",
+      display_name: "Achieved <br> 2021-22",
+    },
+    {
+      key: "target2223",
+      display_name: "Target <br> 2022-23",
+    },
+    {
+      key: "achieved2223",
+      display_name: "Achieved <br> 2022-23",
+    },
+    {
+      key: "target2122",
+      display_name: "Target <br> 2021-22",
+    },
+    {
+      key: "target2324",
+      display_name: "Target <br> 2023-24",
+    },
+    {
+      key: "target2425",
+      display_name: "Target <br> 2024-25",
+    },
+    {
+      key: "wghtd_score",
+      display_name: "Weighted Score",
+    },
+  ];
+}
+
+/**
+ * The function converts data from an old format into rows with specific indicators and benchmarks.
+ * @param oldFormat - The input data in the old format that needs to be converted to a new format.
+ * @returns an array of objects, where each object represents a row of data for a specific service
+ * level indicator. The objects contain properties such as the name of the indicator, benchmark,
+ * achieved and target values for different years, and a weighted score.
+ */
+function convertToRows(oldFormat) {
+  try {
+    const rows = [];
+    const indicators = [
+      {
+        serviceLevelIndicators:
+          "Water supplied in litre per capita per day(lpcd)",
+        key: "waterSuppliedPerDay",
+        benchmark: "135 LPCD",
+        wghtd_score: "waterSuppliedPerDay_score",
+      },
+      {
+        serviceLevelIndicators: "% of Non-revenue water",
+        key: "reduction",
+        benchmark: "70 %",
+        wghtd_score: "reduction_score",
+      },
+      {
+        serviceLevelIndicators:
+          "% of households covered with sewerage/septage services",
+        key: "houseHoldCoveredWithSewerage",
+        benchmark: "100 %",
+        wghtd_score: "houseHoldCoveredWithSewerage_score",
+      },
+      {
+        serviceLevelIndicators:
+          "% of households covered with piped water supply",
+        key: "houseHoldCoveredPipedSupply",
+        benchmark: "100 %",
+        wghtd_score: "houseHoldCoveredPipedSupply_score",
+      },
+    ];
+
+    /* The above code is iterating through an array called "indicators" and creating a new object
+        called "row" for each element in the array. The properties of the "row" object are being
+        populated with values from another object called "oldFormat.fourSLB.data". The values are
+        being converted to strings using the "String()" method. The "row" objects are being pushed
+        into an array called "rows". */
+    for (let i = 0; i < indicators.length; i++) {
+      const indicator = indicators[i];
+      const row = {
+        serviceLevelIndicators: indicator.serviceLevelIndicators,
+        key: indicator.key,
+        benchmark: indicator.benchmark,
+        achieved2122:  String(oldFormat.fourSLB.data[`${indicator.key}_actual2122`]) === "" ? null : String(oldFormat.fourSLB.data[`${indicator.key}_actual2122`]) ,
+        target2223: String(oldFormat.fourSLB.data[`${indicator.key}2223`]) === "" ? null : String(oldFormat.fourSLB.data[`${indicator.key}2223`]) ,
+        achieved2223: String(oldFormat.fourSLB.data[`${indicator.key}_actual2223`]) === "" ? null : String(oldFormat.fourSLB.data[`${indicator.key}_actual2223`]) ,
+        target2122: String(oldFormat.fourSLB.data[`${indicator.key}2122`]) === "" ? null : String(oldFormat.fourSLB.data[`${indicator.key}2122`]) ,
+        target2324: String(oldFormat.fourSLB.data[`${indicator.key}2324`]) === "" ? null : String(oldFormat.fourSLB.data[`${indicator.key}2324`]) ,
+        target2425: String(oldFormat.fourSLB.data[`${indicator.key}2425`]) === "" ? null : String(oldFormat.fourSLB.data[`${indicator.key}2425`]),
+        wghtd_score: String(oldFormat.fourSLB.data[indicator.wghtd_score]) === "" ? null : String(oldFormat.fourSLB.data[indicator.wghtd_score]) ,
+      };
+      rows.push(row);
+    }
+
+    return rows;
+  } catch (error) {
+    throw `convertToRows:: ${error.message}`;
+  }
+}
+/**
+ * The function creates a new format for a given input of fourSLB data by categorizing ULBs into "Total
+ * Number of ULBs in UA", "Approved by State", and "Pending for Submission/Approval".
+ * @param fourSLB - It is an object that contains information about ULBs (Urban Local Bodies) that are
+ * approved and pending for submission/approval. It has the following structure:
+ * @returns a new format object that categorizes ULBs (Urban Local Bodies) based on their approval
+ * status. The object has three categories: "Total Number of ULBs in UA", "Approved by State", and
+ * "Pending for Submission/Approval". Each category has an empty value and key, and an array of ULBs
+ * with their names and census codes. The ULBs are added to
+ */
+function createNewFormat(fourSLB) {
+  try {
+    const newFormat = [
+      {
+        name: "Total Number of ULBs in UA",
+        value: "",
+        key: "",
+        ulbs: [],
+      },
+      {
+        name: "Approved by State",
+        value: "",
+        key: "",
+        ulbs: [],
+      },
+      {
+        name: "Pending for Submission/Approval",
+        value: "",
+        key: "",
+        ulbs: [],
+      },
+    ];
+
+    // Add ULBs to "Approved by State" category
+    const approvedULBs = fourSLB.approved.ulbs;
+    for (const ulb of approvedULBs) {
+      newFormat[1].ulbs.push({
+        ulbName: ulb.ulbName,
+        censusCode: ulb.censusCode,
+      });
+      newFormat[0].ulbs.push({
+        ulbName: ulb.ulbName,
+        censusCode: ulb.censusCode
+      })
+    }
+
+    // Add ULBs to "Pending for Submission/Approval" category
+    const pendingULBs = fourSLB.pending.ulbs;
+    for (const ulb of pendingULBs) {
+      newFormat[2].ulbs.push({
+        ulbName: ulb.ulbName,
+        censusCode: ulb.censusCode,
+      });
+      newFormat[0].ulbs.push({
+        ulbName: ulb.ulbName,
+        censusCode: ulb.censusCode
+      })
+    }
+    Object.assign(newFormat[0],{
+        value:  String(fourSLB.approved.count + fourSLB.pending.count),
+        ulbs: [...fourSLB.approved.ulbs, ...fourSLB.pending.ulbs]
+      })
+    Object.assign( newFormat[1], {
+        value:fourSLB.approved.ulbs.length.toString(),
+        ulbs: fourSLB.approved.ulbs
+    })
+    Object.assign(newFormat[2] ,{
+        value: fourSLB.pending.ulbs.length.toString(),
+        ulbs: fourSLB.pending.ulbs
+    })
+
+    return newFormat;
+  } catch (error) {
+    throw `createNewFormat:: ${error.message}`;
+  }
+}
+
+/**
+ * The function takes an input object and returns a formatted object in the GFC format with specific
+ * data keys and values.
+ * @param input - The input parameter is an object that contains information about the ULBs (Urban
+ * Local Bodies) in a particular area, including the number of ULBs approved by the state, the ULBs
+ * pending for submission/approval, and a score for the overall performance of the ULBs.
+ * @returns The function `getGFCFormat` returns an object in the GFC format, which includes the name of
+ * the format, an array of data items, and a GFC rating value. The data items include the total number
+ * of ULBs in UA, the number of ULBs approved by the state, and the number of ULBs pending for
+ * submission/approval. The values for these data items
+ */
+function getGFCFormat(input) {
+  try {
+    const gfcFormat = {
+      name: "GFC",
+      data: [],
+      gfcRatings: {
+        name: "GFC Rating",
+        value: Number(input.score.toFixed()),
+      },
+    };
+
+    const dataKeys = [
+      "Total Number of ULBs in UA",
+      "Approved by State",
+      "Pending for Submission/Approval",
+    ];
+
+    for (const key of dataKeys) {
+      const dataItem = {
+        name: key,
+        value: "",
+        key: "",
+        ulbs:[]
+      };
+      gfcFormat.data.push(dataItem);
+    }
+
+    Object.assign(gfcFormat.data[0],{
+        value:  String(input.approved.ulbs.length + input.pending.ulbs.length),
+        ulbs: [...input.approved.ulbs, ...input.pending.ulbs]
+      })
+    Object.assign( gfcFormat.data[1], {
+        value: input.approved.ulbs.length.toString(),
+        ulbs: input.approved.ulbs
+    })
+    Object.assign(gfcFormat.data[2] ,{
+        value: input.pending.ulbs.length.toString(),
+        ulbs: input.pending.ulbs
+    })
+    return gfcFormat;
+  } catch (error) {
+    throw `getGFCFormat:: ${error.message}`;
+  }
+}
+/**
+ * The function takes an input object and returns an ODF format object with specific data keys and
+ * values.
+ * @param input - The input parameter is an object that contains information about the ODF (Open
+ * Defecation Free) status of a region. It has the following properties:
+ * @returns an object with the name "ODF", an array of data, and an object with the name "ODF Rating"
+ * and a value that is a string representation of the input score. The data array contains objects with
+ * the keys "name", "value", and "key", where "name" is a string representing the name of the data,
+ * "value" is a string
+ */
+function getODFFormat(input) {
+  try {
+    const odfFormat = {
+      name: "ODF",
+      data: [],
+      odfRatings: {
+        name: "ODF Rating",
+        value: Number(input.score.toFixed()),
+      },
+    };
+
+    const dataKeys = [
+      "Total Number of ULBs in UA",
+      "Approved by State",
+      "Pending for Submission/Approval",
+    ];
+
+    for (const key of dataKeys) {
+      odfFormat.data.push({
+        name: key,
+        value: "",
+        key: "",
+        ulbs:[]
+      });
+    }
+
+    Object.assign(odfFormat.data[0],{
+        value:  String(input.approved.ulbs.length + input.pending.ulbs.length),
+        ulbs: [...input.approved.ulbs, ...input.pending.ulbs]
+      })
+    Object.assign( odfFormat.data[1], {
+        value:input.approved.ulbs.length.toString(),
+        ulbs: input.approved.ulbs
+    })
+    Object.assign(odfFormat.data[2] ,{
+        value: input.pending.ulbs.length.toString(),
+        ulbs: input.pending.ulbs
+    })
+    return odfFormat;
+  } catch (error) {
+    throw `getODFFormat:: ${error.message}`;
+  }
+}
+
+/**
+ * The function calculates a score based on four input parameters related to household water and
+ * sanitation.
+ * @param input - The input parameter is an object that contains four properties:
+ * @returns The function `getUAScore` is returning a numerical value which is the sum of four
+ * properties of the `input` object, after rounding the result to two decimal places using the
+ * `toFixed()` method.
+ */
+function getUAScore(input) {
+  try {
+    return Number(
+      (
+        input["houseHoldCoveredWithSewerage_score"] +
+        input["houseHoldCoveredPipedSupply_score"] +
+        input["waterSuppliedPerDay_score"] +
+        input["reduction_score"]
+      ).toFixed(2)
+    );
+  } catch (error) {
+    throw `getUAScore:: ${error.message}`;
+  }
+}
+  
 module.exports.getRelatedUAFile = catchAsync(async (req, res) => {
     let response = {
         "success": false,

@@ -6,12 +6,14 @@ const FiscalRanking = require("../../models/FiscalRanking");
 const FiscalRankingMapper = require("../../models/FiscalRankingMapper");
 const { FRTypeShortKey } = require('./formjson')
 const UlbLedger = require("../../models/UlbLedger");
-const {FORMIDs} = require("../../util/FormNames");
-const {saveFormHistory} = require("../../util/masterFunctions");
+const { FORMIDs, MASTER_STATUS, MASTER_STATUS_ID, FORM_LEVEL, POPULATION_TYPE, YEAR_CONSTANTS, YEAR_CONSTANTS_IDS, USER_ROLE } = require("../../util/FormNames");
+const { saveCurrentStatus, saveFormHistory, saveStatusHistory } = require("../../util/masterFunctions");
 const FeedBackFiscalRanking = require("../../models/FeedbackFiscalRanking");
 const TwentyEightSlbsForm = require("../../models/TwentyEightSlbsForm");
 const Ulb = require("../../models/Ulb");
 const Service = require("../../service");
+const Users = require("../../models/User");
+const { stateWiseHeatMapQuery, getCategoryMatchObject } = require("../../util/aggregation")
 const FiscalRankingArray = require("./formjson").arr;
 const {
   csvColsFr,
@@ -20,15 +22,17 @@ const {
 } = require("../../util/fiscalRankingsConst");
 const userTypes = require("../../util/userTypes");
 const { dateFormatter } = require("../../util/dateformatter");
-// const converter = require('json-2-csv');
+const { fyCsvDownloadQuery } = require('./query');
+
 const {
   calculateKeys,
   canTakeActionOrViewOnly,
   calculateStatusForFiscalRankingForms,
   getKeyByValue,
-  AggregationServices
+  AggregationServices,
+  canTakeActionOrViewOnlyMasterForm
 } = require("../CommonActionAPI/service");
-const {FRFormStatus} = require('../../util/15thFCstatus')
+const { FRFormStatus } = require('../../util/15thFCstatus')
 const Sidemenu = require("../../models/Sidemenu");
 const {
   fiscalRankingFormJson,
@@ -38,12 +42,20 @@ const {
   jsonObject,
   fiscalRankingTabs,
   notRequiredValidations,
+  statusList,
+  statusTracker,
+  questionLevelStatus,
+  calculatedFields,
+  fiscalRankingQestionSortkeys,
+  requiredFields
 } = require("./fydynemic");
 const catchAsync = require("../../util/catchAsync");
 const State = require("../../models/State");
 const fs = require("fs");
 const { fiscalRankingColsNameCsv } = require("../../util/Constants");
 const TabsFiscalRankings = require("../../models/TabsFiscalRankings");
+const { ulb } = require("../../util/userTypes");
+const FormHistory = require("../../models/FormHistory");
 let priorTabsForFiscalRanking = {
   basicUlbDetails: "s1",
   conInfo: "s2",
@@ -51,6 +63,62 @@ let priorTabsForFiscalRanking = {
   uploadFyDoc: "s4",
   selDec: "s5",
 };
+
+
+
+async function manageLedgerData(params) {
+  let messages = []
+  try {
+    let { ledgerData, ledgerKeys, responseData, formId, currentFormStatus, ulbRole } = params
+    let formHistory = await FormHistory.find({
+      recordId: formId,
+      "data.0.actionTakenByRole":userTypes.ulb
+    }, {
+      data: 1
+    }).sort({
+      "_id": -1
+    }).limit(1).lean()
+    let formHistoryData = formHistory[0] && formHistory[0].data.length ? formHistory[0]?.data[0]['fiscalMapperData'].filter(item => ledgerKeys.includes(item.type) && item.modelName === "ULBLedger") : []
+    let errYears = new Set()
+    let dps = new Set()
+    let errorWithDps = {}
+    for (let ledgerKey of ledgerKeys) {
+      let question = responseData.financialInformation[ledgerKey]
+      if (question.yearData.length) {
+        for(let yearObj of question.yearData){
+          if(yearObj.ledgerUpdated){
+            let yearName = getKeyByValue(years,yearObj.year)
+            try{
+              errorWithDps[question.displayPriority].push(yearName)
+            }
+            catch(err){
+              errorWithDps[question.displayPriority] = [yearName]
+            }
+          }
+        }
+      }
+    }
+    if (Object.keys(errorWithDps).length) {
+      let str = 'Data for fields '
+      for(let k in Object.keys(errorWithDps)){
+          let keyName = Object.keys(errorWithDps)[k]
+          let dp = errorWithDps[keyName]
+          str += `${ k>0 ?" ," :""} ${keyName} year ${dp.join(",")}`
+      }
+      str += " has been updated please revisit calculations"
+      let msg =`Data for fields ${Array.from(dps).join(",")} and years ${Array.from(errYears).join(",")} has been updated. kindly revisit those calculations`
+      messages.push(str)
+    }
+    return {
+      responseData,
+      messages
+    }
+  }
+  catch (err) {
+    console.log("error in manageLedgerData  ::::", err.message)
+  }
+}
+
 exports.CreateorUpdate = async (req, res, next) => {
   // console.log("req.body",req.body)
   try {
@@ -391,17 +459,26 @@ function assignCalculatedValues(fyDynemic, viewONe) {
 }
 
 /* A function which is used to get the data from the database. */
-const getReadOnly = (status, isDraft) => {
-  if (status === "REJECTED" || isDraft) {
-    return false;
-  } else if (status === "PENDING" && isDraft == null) {
-    return false;
-  } else {
-    return true;
+const getReadOnly = (status, isDraft, role, questionStatus) => {
+  let allowedMainLevelStatus = [statusTracker.IP, statusTracker.NS, statusTracker.RBP]
+  let allowedQuestionLevelStatus = [questionLevelStatus['3']]
+  let specialCases = [statusTracker.RBP, questionLevelStatus['1'], statusTracker.IP]
+  if (role !== "ULB" || status === statusTracker.VIP) {
+    return true
   }
+  if (status === undefined || questionStatus === undefined) {
+    return false
+  }
+  if (!allowedMainLevelStatus.includes(status) && !allowedQuestionLevelStatus.includes(questionStatus)) {
+    return true
+  }
+  if (specialCases.includes(status) && specialCases.includes(questionStatus)) {
+    return true
+  }
+  return false
 };
 
-const getColumnWiseData = (key, obj, isDraft, dataSource = "") => {
+const getColumnWiseData = (key, obj, isDraft, dataSource = "", role, formStatus) => {
   switch (key) {
     case "populationFr":
       return {
@@ -413,7 +490,8 @@ const getColumnWiseData = (key, obj, isDraft, dataSource = "") => {
           "4"
         ),
         ...obj,
-        readonly: getReadOnly(obj.status, isDraft),
+        readonly: getReadOnly(formStatus, isDraft, role, obj.status),
+        // rejectReason:"",
       };
     case "population11":
       return {
@@ -426,6 +504,7 @@ const getColumnWiseData = (key, obj, isDraft, dataSource = "") => {
         ),
         ...obj,
         readonly: true,
+        // rejectReason:"",
       };
     case "webLink":
       return {
@@ -437,7 +516,8 @@ const getColumnWiseData = (key, obj, isDraft, dataSource = "") => {
           "5"
         ),
         ...obj,
-        readonly: getReadOnly(obj.status, isDraft),
+        readonly: getReadOnly(formStatus, isDraft, role, obj.status),
+        // rejectReason:"",
       };
     case "nameCmsnr":
       return {
@@ -449,13 +529,21 @@ const getColumnWiseData = (key, obj, isDraft, dataSource = "") => {
           "6"
         ),
         ...obj,
-        readonly: getReadOnly(obj.status, isDraft),
+        readonly: getReadOnly(formStatus, isDraft, role, obj.status),
+        // rejectReason:"",
       };
     case "auditorName":
+      console.log({
+        ...getInputKeysByType("text", "", "Auditor Name", dataSource, "7"),
+        ...obj,
+        readonly: getReadOnly(formStatus, isDraft, role, obj.status),
+        // rejectReason:"",
+      })
       return {
         ...getInputKeysByType("text", "", "Auditor Name", dataSource, "7"),
         ...obj,
-        readonly: getReadOnly(obj.status, isDraft),
+        readonly: getReadOnly(formStatus, isDraft, role, obj.status),
+        // rejectReason:"",
       };
     case "caMembershipNo":
       return {
@@ -468,7 +556,8 @@ const getColumnWiseData = (key, obj, isDraft, dataSource = "") => {
           false
         ),
         ...obj,
-        readonly: false,
+        readonly: getReadOnly(formStatus, isDraft, role, obj.status),
+        // rejectReason:"",
       };
     case "nameOfNodalOfficer":
       return {
@@ -480,7 +569,8 @@ const getColumnWiseData = (key, obj, isDraft, dataSource = "") => {
           "1"
         ),
         ...obj,
-        readonly: getReadOnly(obj.status, isDraft),
+        readonly: getReadOnly(formStatus, isDraft, role, obj.status),
+        // rejectReason:"",
       };
     case "designationOftNodalOfficer":
       return {
@@ -492,7 +582,8 @@ const getColumnWiseData = (key, obj, isDraft, dataSource = "") => {
           "2"
         ),
         ...obj,
-        readonly: getReadOnly(obj.status, isDraft),
+        readonly: getReadOnly(formStatus, isDraft, role, obj.status),
+        // rejectReason:"",
       };
     case "email":
       return {
@@ -504,7 +595,8 @@ const getColumnWiseData = (key, obj, isDraft, dataSource = "") => {
           "3"
         ),
         ...obj,
-        readonly: getReadOnly(obj.status, isDraft),
+        readonly: getReadOnly(formStatus, isDraft, role, obj.status),
+        // rejectReason:"",
       };
     case "mobile":
       return {
@@ -518,7 +610,8 @@ const getColumnWiseData = (key, obj, isDraft, dataSource = "") => {
           true
         ),
         ...obj,
-        readonly: getReadOnly(obj.status, isDraft),
+        readonly: getReadOnly(formStatus, isDraft, role, obj.status),
+        // rejectReason:"",
       };
     case "waterSupply":
       return {
@@ -530,7 +623,8 @@ const getColumnWiseData = (key, obj, isDraft, dataSource = "") => {
           "9"
         ),
         ...obj,
-        readonly: getReadOnly(obj.status, isDraft),
+        readonly: getReadOnly(formStatus, isDraft, role, obj.status),
+        // rejectReason:"",
       };
     case "sanitationService":
       return {
@@ -542,7 +636,8 @@ const getColumnWiseData = (key, obj, isDraft, dataSource = "") => {
           "10"
         ),
         ...obj,
-        readonly: getReadOnly(obj.status, isDraft),
+        readonly: getReadOnly(formStatus, isDraft, role, obj.status),
+        // rejectReason:"",
       };
     case "propertyWaterTax":
       return {
@@ -557,7 +652,8 @@ const getColumnWiseData = (key, obj, isDraft, dataSource = "") => {
           "Tax revenue levied for provision of water supply services."
         ),
         ...obj,
-        readonly: getReadOnly(obj.status, isDraft),
+        readonly: getReadOnly(formStatus, isDraft, role, obj.status),
+        // rejectReason:"",
       };
     case "propertySanitationTax":
       return {
@@ -572,7 +668,34 @@ const getColumnWiseData = (key, obj, isDraft, dataSource = "") => {
           "Tax revenue levied for provision of sanitation & sewerage service delivery."
         ),
         ...obj,
-        readonly: getReadOnly(obj.status, isDraft),
+        readonly: getReadOnly(formStatus, isDraft, role, obj.status),
+        // rejectReason:"",
+      };
+    case "signedCopyOfFile":
+      return {
+        ...statusObj(
+          "",
+          "file",
+          "",
+          dataSource,
+          "0"
+        ),
+        ...obj,
+        readonly: getReadOnly(formStatus, isDraft, role, obj.status),
+        // rejectReason:"",
+      };
+    case "otherUpload":
+      return {
+        ...statusObj(
+          "",
+          "file",
+          "",
+          dataSource,
+          "0"
+        ),
+        ...obj,
+        readonly: getReadOnly(formStatus, isDraft, role, obj.status),
+        // rejectReason:"",
       };
     default:
     // code block
@@ -632,9 +755,50 @@ async function getPreviousYearValues(pf, ulbData) {
   }
 }
 
+const keyBasedCond = (value, key) => {
+  try {
+    if (value[key] == null || value[key] === "") {
+      value.status = ""
+    }
+    return value
+  }
+  catch (err) {
+    console.log("error in keyBasedCond :: ", err.message)
+  }
+  return value
+}
+
+function manageNullValuesInMainTable(data) {
+  const statusNotMandatory = ["caMembershipNo", "otherUpload"]
+  const fileCase = ["otherUpload"]
+  try {
+    return Object.entries(data).reduce((acc, [key, value]) => {
+      if (typeof (value) === "object" && value?.status === null) {
+        value.status = "PENDING"
+      }
+      if (statusNotMandatory.includes(key)) {
+        if (fileCase.includes(key)) {
+          value = keyBasedCond(value, "url")
+        }
+        else {
+          value = keyBasedCond(value, "value")
+        }
+      }
+      acc[key] = value;
+      return acc;
+    }, {});
+  }
+  catch (err) {
+    console.log("error in manageNullValueInMainTable")
+  }
+  return data
+}
+
 exports.getView = async function (req, res, next) {
   try {
     let condition = {};
+    let { role } = req.decoded
+    console.log("role :: ", role)
     if (req.query.ulb && req.query.design_year) {
       condition = {
         ulb: ObjectId(req.query.ulb),
@@ -642,13 +806,14 @@ exports.getView = async function (req, res, next) {
       };
     }
     let data = await FiscalRanking.findOne(condition, { history: 0 }).lean();
+    data = manageNullValuesInMainTable(data)
     let twEightSlbs = await TwentyEightSlbsForm.findOne(condition, {
       population: 1,
     }).lean();
     let ulbPData = await Ulb.findOne(
       { _id: ObjectId(req.query.ulb) },
-      { population: 1 }
-    ).lean();
+      { population: 1, name: 1, state: 1 }
+    ).populate("state").lean();
     let viewOne = {};
     let fyData = [];
     if (data) {
@@ -656,8 +821,9 @@ exports.getView = async function (req, res, next) {
         fiscal_ranking: data._id,
       }).lean();
       data["populationFr"] = {
-        value: data.populationFr.value
-          ? data.populationFr.value
+        ...data.populationFr,
+        value: data?.populationFr?.value
+          ? data?.populationFr?.value
           : twEightSlbs
             ? twEightSlbs?.population
             : "",
@@ -671,11 +837,12 @@ exports.getView = async function (req, res, next) {
             ? ulbPData?.population
             : "",
         readonly: true,
-        modelName: ulbPData?.population > 0 ? "Ulb" : "",
+        status: "",
+        modelName: ulbPData?.population > 0 ? "" : "",
+        rejectReason: "",
       };
       data["fyData"] = fyData;
       viewOne = data;
-      // console.log("viewOne ::: ",viewOne.population11)
     } else {
       viewOne = {
         ulb: null,
@@ -685,39 +852,53 @@ exports.getView = async function (req, res, next) {
           readonly: true,
           status: ulbPData?.population > 0 ? "NA" : "PENDING",
           modelName: ulbPData?.population > 0 ? "TwentyEightSlbForm" : "",
+          rejectReason: "",
         },
         populationFr: {
           value: twEightSlbs ? twEightSlbs?.population : "",
           readonly: false,
           status: "PENDING",
           modelName: twEightSlbs?.population > 0 ? "Ulb" : "",
+          rejectReason: "",
         },
         fy_21_22_cash: {
           year: null,
           type: null,
           value: null,
           status: "PENDING",
+          rejectReason: "",
         },
         signedCopyOfFile: {
           name: null,
           url: null,
           required: true,
           status: "PENDING",
+          rejectReason: "",
         },
         otherUpload: {
           name: null,
           url: null,
           required: false, // IMPORTANT :: if changed inform frotend
           status: "PENDING",
+          rejectReason: "",
         },
         fy_21_22_online: {
           type: null,
           value: null,
           year: null,
           status: "PENDING",
+          rejectReason: "",
+        },
+        auditorName: {
+          type: null,
+          value: null,
+          year: null,
+          status: "PENDING",
+          rejectReason: "",
         },
         fyData: [],
         isDraft: null,
+        currentFormStatus: 1
       };
     }
 
@@ -739,18 +920,23 @@ exports.getView = async function (req, res, next) {
       "paid_property_tax",
       "auditorName",
       "caMembershipNo",
+      "signedCopyOfFile",
+      "otherUpload",
     ];
-    console.log(viewOne.po);
     for (let index = 0; index < keys.length; index++) {
       if (viewOne.hasOwnProperty(keys[index])) {
         let obj = viewOne[keys[index]];
-
         viewOne[keys[index]] = getColumnWiseData(
           keys[index],
           obj,
           viewOne.isDraft,
-          ""
+          "",
+          role,
+          data?.currentFormStatus
         );
+        // getReadOnly(formStatus, isDraft,role,obj.status),
+        viewOne['readonly'] = getReadOnly(data?.currentFormStatus, viewOne.isDraft, role)
+
       } else {
         viewOne[keys[index]] = getColumnWiseData(
           keys[index],
@@ -759,7 +945,9 @@ exports.getView = async function (req, res, next) {
             status: "PENDING",
           },
           null,
-          ""
+          "",
+          role,
+          data?.currentFormStatus
         );
       }
     }
@@ -774,17 +962,18 @@ exports.getView = async function (req, res, next) {
           "2017-18",
           "2018-19",
           "2019-20",
-          "2020-21",
-          "2021-22",
+          // "2020-21",
+          // "2021-22",
           "2022-23",
           "2023-24",
         ],
       },
       ulb: ObjectId(req.query.ulb),
     });
+    let userMessages = []
+    let ledgerKeys = ["fixedAsset", "CaptlExp"]
     for (let sortKey in fyDynemic) {
       let subData = fyDynemic[sortKey];
-
       // console.log("subData  >>>> 1::: ",subData)
       for (let key in subData) {
         let calculationField = subData[key].calculatedFrom ? true : false;
@@ -796,8 +985,18 @@ exports.getView = async function (req, res, next) {
             pf,
             fyDynemic: subData,
           };
+          if (subData[key].calculatedFrom === undefined) {
+            pf['readonly'] = getReadOnly(data?.currentFormStatus, viewOne.isDraft, role, "PENDING");
+          }
+          else {
+            pf['readonly'] = true
+          }
+
           if (pf?.code?.length > 0) {
-            pf["status"] = null;
+            if (!ledgerKeys.includes(key)) {
+              ledgerKeys.push(key)
+            }
+            pf["status"] = '';
             pf["modelName"] = "";
             if (fyData.length) {
               let singleFydata = fyData.find(
@@ -805,22 +1004,25 @@ exports.getView = async function (req, res, next) {
                   e?.year?.toString() == pf?.year?.toString() &&
                   e.type == pf.type
               );
+
               if (singleFydata) {
                 if (singleFydata?.date !== null) {
                   pf["date"] = singleFydata ? singleFydata.date : null;
                 } else {
                   pf["value"] = singleFydata ? singleFydata.value : "";
                 }
+                pf["rejectReason"] = singleFydata.rejectReason
                 pf["modelName"] = singleFydata ? singleFydata.modelName : "";
-                pf["status"] = singleFydata.status;
+                pf["status"] = singleFydata.status != null ? singleFydata.status : 'PENDING';
+                pf['ledgerUpdated'] = singleFydata.ledgerUpdated || false
                 if (subData[key].calculatedFrom === undefined) {
-                  pf["readonly"] =
-                    singleFydata.status && singleFydata.status == "NA"
-                      ? true
-                      : getReadOnly(singleFydata.status, viewOne.isDraft);
+                  pf["readonly"] = getReadOnly(data?.currentFormStatus, viewOne.isDraft, role, singleFydata.status);
                 } else {
                   pf["readonly"] = true;
+                  pf["status"] = ""
+
                 }
+
               } else {
                 let ulbFyAmount = await getUlbLedgerDataFilter({
                   code: pf.code,
@@ -830,17 +1032,18 @@ exports.getView = async function (req, res, next) {
                 // parameters['valueObj'] = {value:ulbFyAmount}
                 pf["value"] = ulbFyAmount;
                 // pf['value'] = ulbFyAmount;
-                pf["status"] = ulbFyAmount ? "NA" : "PENDING";
+                pf["status"] = ulbFyAmount ? "" : "PENDING";
                 // subData[key]["modelName"] = ulbFyAmount > 0 ? "ULBLedger" : "FiscalRanking"
                 pf["modelName"] = ulbFyAmount > 0 ? "ULBLedger" : "";
                 if (subData[key].calculatedFrom === undefined) {
-                  pf["readonly"] = ulbFyAmount > 0 ? true : false;
+                  pf["readonly"] = ulbFyAmount > 0 ? true : getReadOnly(data?.currentFormStatus, viewOne.isDraft, role, singleFydata.status);
                 } else {
                   pf["readonly"] = true;
+                  pf["status"] = ""
                 }
               }
             } else {
-              if (viewOne.isDraft == null) {
+              if ([1, 2, null].includes(viewOne.currentFormStatus)) {
                 let ulbFyAmount = await getUlbLedgerDataFilter({
                   code: pf.code,
                   year: pf.year,
@@ -848,12 +1051,14 @@ exports.getView = async function (req, res, next) {
                 });
                 pf["value"] = ulbFyAmount;
                 // pf['value'] = ulbFyAmount;
-                pf["status"] = ulbFyAmount ? "NA" : "PENDING";
+                pf["status"] = ulbFyAmount ? "" : "PENDING";
                 // subData[key]["modelName"] = ulbFyAmount > 0 ? "ULBLedger" : "FiscalRanking"
                 pf["modelName"] = ulbFyAmount > 0 ? "ULBLedger" : "";
                 if (subData[key].calculatedFrom === undefined) {
-                  pf["readonly"] = ulbFyAmount > 0 ? true : false;
+                  pf["status"] = "PENDING"
+                  pf["readonly"] = ulbFyAmount > 0 ? true : getReadOnly(data?.currentFormStatus, viewOne.isDraft, role, singleFydata.status);
                 } else {
+                  pf["status"] = ""
                   pf["readonly"] = true;
                 }
               }
@@ -872,66 +1077,67 @@ exports.getView = async function (req, res, next) {
                 );
                 if (singleFydata) {
                   pf["file"] = singleFydata.file;
-                  pf["status"] = singleFydata.status;
+                  pf["status"] = singleFydata.status && singleFydata.status != null ? singleFydata.status : "PENDING"
+                  pf['status'] = singleFydata.modelName === "ULBLedger" ? "" : pf["status"]
                   pf["modelName"] = singleFydata.modelName;
+                  pf['rejectReason'] = singleFydata.rejectReason
                   if (subData[key].calculatedFrom === undefined) {
                     pf["required"] =
-                      singleFydata.status && singleFydata.status == "NA"
+                      singleFydata.modelName === "ULBLedger"
                         ? false
                         : true;
-                    pf["readonly"] =
-                      singleFydata.status && singleFydata.status == "NA"
-                        ? true
-                        : getReadOnly(singleFydata.status, viewOne.isDraft);
+                    pf["readonly"] = singleFydata.modelName === "ULBLedger" ? true : getReadOnly(data?.currentFormStatus, viewOne.isDraft, role, singleFydata?.status);
                   } else {
                     pf["readonly"] = true;
+                    pf["status"] = ""
                   }
+
                 } else {
                   if (
                     subData[key]?.key !== "appAnnualBudget" &&
-                    viewOne.isDraft == null
+                    [1, 2, null].includes(viewOne.currentFormStatus)
                   ) {
+
                     let chekFile = ulbDataUniqueFy
                       ? ulbDataUniqueFy.some(
                         (el) => el?.year_id.toString() === pf?.year.toString()
                       )
                       : false;
-                    pf["status"] = chekFile ? "NA" : "PENDING";
+                    pf["status"] = chekFile ? "" : "PENDING";
                     pf["modelName"] = chekFile ? "ULBLedger" : "";
-                    console.log("chekFile :: ", chekFile);
                     if (chekFile) {
                       pf[
                         "info"
                       ] = `Available on Cityfinance - <a href ="https://cityfinance.in/resources-dashboard/data-sets/income_statement ">View here</a>`;
                     }
                     if (subData[key].calculatedFrom === undefined) {
-                      console.log("chekFile", chekFile);
                       pf["readonly"] = chekFile ? true : false;
                       pf["required"] = chekFile ? false : true;
                     } else {
                       pf["readonly"] = true;
                     }
+
                   }
                 }
               } else {
                 if (
-                  subData[key]?.key !== "appAnnualBudget" &&
-                  viewOne.isDraft == null
+                  subData[key]?.key !== "appAnnualBudget" && [1, 2, null].includes(viewOne.currentFormStatus)
                 ) {
                   let chekFile = ulbDataUniqueFy
                     ? ulbDataUniqueFy.some(
                       (el) => el?.year_id.toString() === pf?.year.toString()
                     )
                     : false;
-                  pf["status"] = chekFile ? "NA" : "PENDING";
+                  pf["status"] = chekFile ? "" : "PENDING";
                   pf["modelName"] = chekFile ? "ULBLedger" : "";
                   if (chekFile) {
+
                     pf[
                       "info"
                     ] = `Available on Cityfinance - <a href ="https://cityfinance.in/resources-dashboard/data-sets/income_statement ">View here</a>`;
                   }
                   if (subData[key].calculatedFrom === undefined) {
-                    pf["readonly"] = chekFile ? true : false;
+                    pf["readonly"] = chekFile ? true : getReadOnly(data?.currentFormStatus, viewOne.isDraft, role, "PENDING");
                     pf["required"] = chekFile ? false : true;
                   } else {
                     pf["readonly"] = true;
@@ -946,6 +1152,7 @@ exports.getView = async function (req, res, next) {
                       e.year.toString() == pf.year.toString() &&
                       e.type == pf.type
                   );
+
                   if (singleFydata) {
                     if (singleFydata?.date !== null) {
                       pf["date"] = singleFydata ? singleFydata.date : null;
@@ -957,23 +1164,26 @@ exports.getView = async function (req, res, next) {
                         url: "",
                       };
                     pf["value"] = singleFydata ? singleFydata.value : "";
-                    pf["status"] = singleFydata
+                    pf["status"] = singleFydata && singleFydata.status != null
                       ? singleFydata.status
                       : "PENDING";
                     pf["modelName"] = singleFydata
                       ? singleFydata.modelName
                       : "";
+                    pf["rejectReason"] = singleFydata ? singleFydata.rejectReason : ""
+                    pf['ledgerUpdated'] = singleFydata.ledgerUpdated
                     if (subData[key].calculatedFrom === undefined) {
-                      pf["readonly"] =
-                        singleFydata && singleFydata.status == "NA"
-                          ? true
-                          : getReadOnly(singleFydata.status, viewOne.isDraft);
+                      pf["readonly"] = getReadOnly(data?.currentFormStatus, viewOne.isDraft, role, singleFydata.status);
                     } else {
                       pf["readonly"] = true;
+                      pf['status'] = ""
                     }
                   }
                 }
               } else if (pf?.previousYearCodes?.length) {
+                if (!ledgerKeys.includes(key)) {
+                  ledgerKeys.push(key)
+                }
                 let yearName = getKeyByValue(years, pf.year);
                 let year = parseInt(yearName);
                 let previousYear = year - 1;
@@ -1011,8 +1221,9 @@ exports.getView = async function (req, res, next) {
                   // console.log("sumOfPreviousYear :: ",sumOfPreviousYear)
                   // console.log("sumOfCurrentYear :: ",sumOfCurrentYear)
                   pf["value"] = sumOfCurrentYear - sumOfPreviousYear;
+                  pf['readonly'] = true
                   pf["modelName"] = "ULBLedger";
-                  // console.log(">>>>>>>>>>>> ",pf['value'])
+                  
                 }
               }
             }
@@ -1027,23 +1238,48 @@ exports.getView = async function (req, res, next) {
     let conditionForFeedbacks = {
       fiscal_ranking: data?._id || null,
     };
+    let ulbRole = req.decoded.role
+    let params = {
+      ledgerData: ulbData,
+      ledgerKeys: ledgerKeys,
+      responseData: { ...fyDynemic },
+      formId: viewOne._id,
+      ulbRole: ulbRole,
+      currentFormStatus: viewOne.currentFormStatus
+    }
+    /**
+     * This function always get latest data for ledgers
+     */
+    let modifiedLedgerData = fyDynemic
+    let { responseData, messages } = await manageLedgerData(params)
+    modifiedLedgerData = responseData
+    userMessages = messages
     Object.assign(conditionForFeedbacks, condition);
     let modifiedTabs = await getModifiedTabsFiscalRanking(
       tabs,
       viewOne,
-      fyDynemic,
+      modifiedLedgerData,
       conditionForFeedbacks
     );
     let viewData = {
       _id: viewOne._id ? viewOne._id : null,
       ulb: viewOne.ulb ? viewOne.ulb : req.query.ulb,
+      ulbName: ulbPData.name,
+      stateCode: ulbPData?.state?.code,
       design_year: viewOne.design_year
         ? viewOne.design_year
         : req.query.design_year,
       isDraft: viewOne.isDraft,
       tabs: modifiedTabs,
+      currentFormStatus: viewOne.currentFormStatus,
       financialYearTableHeader,
+      messages: userMessages
     };
+    if (messages.length > 0) {
+      let {approvedPerc,rejectedPerc} = calculatePercentage(modifiedLedgerData, requiredFields, viewOne)
+      let {ulb,design_year} = req.query
+      await updatePercentage(approvedPerc,rejectedPerc,ulb,design_year)
+    }
     return res
       .status(200)
       .json({ status: true, message: "Success fetched data!", data: viewData });
@@ -1051,9 +1287,31 @@ exports.getView = async function (req, res, next) {
     console.log("err", error);
     return res
       .status(400)
-      .json({ status: false, message: "Something error wrong!" });
+      .json({ status: false, message: "Something went wrong!" });
   }
 };
+
+async function updatePercentage(approvedPerc,rejectedPerc,ulb,design_year){
+  try{
+    let filter = {
+      "ulb":ObjectId(ulb),
+      "design_year":ObjectId(design_year)
+    }
+    let payload = {
+      "progress.approvedProgress":approvedPerc < 100 && approvedPerc !== 0 ? approvedPerc.toFixed(2).toString() : parseInt(approvedPerc).toString() ,
+      "progress.rejectedProgress":rejectedPerc < 100 && rejectedPerc !== 0 ? rejectedPerc.toFixed(2).toString() : parseInt(rejectedPerc).toString() 
+    }
+    console.log("payload :: ",payload)
+    let up = await FiscalRanking.findOneAndUpdate(filter,{
+      "$set":payload
+    })
+    
+  }
+  catch(err){
+    console.log("error in updatePercentage ::: ",err.message)
+  }
+}
+
 
 /**
  * It takes an object with three properties (code, year, data) and returns the sum of the totalAmount
@@ -1191,7 +1449,7 @@ const ulbLedgersData = (objData) => {
               ],
             },
             year: {
-              $in: ["2017-18", "2018-19", "2019-20", "2020-21", "2021-22"],
+              $in: ["2017-18", "2018-19", "2019-20"],
             },
           },
         },
@@ -1389,6 +1647,616 @@ exports.getAll = async function (req, res, next) {
       .json({ status: false, message: "Something error wrong!" });
   }
 };
+
+const getUlbActivities = ({ req, sort, selectedState, selectedCategory, skip, limit, sortBy, order, filters, filterObj, sortKey, designYear }) => {
+  let query = [
+    ...(req.decoded.role == userTypes.state ? [{
+      $match: {
+        "isActive": true,
+        "state": ObjectId(req.decoded.state)
+      }
+    }] : []),
+    {
+      "$match": {
+        isActive: true,
+        ...(req.decoded.role == userTypes.state && req.decoded.state && { "state": ObjectId(req.decoded.state) }),
+        ...getCategoryMatchObject(selectedCategory)
+      },
+    },
+    {
+      "$lookup": {
+        "from": "fiscalrankings",
+        "localField": "_id",
+        "foreignField": "ulb",
+        "as": "formData"
+      }
+    },
+    {
+      "$unwind": {
+        "path": "$formData",
+        "preserveNullAndEmptyArrays": true
+      }
+    },
+    {
+      "$addFields": {
+        "emptyForms": {
+          "$ifNull": ["$formData", 1]
+        }
+      }
+    },
+    {
+      "$group": {
+        "_id": "$state",
+        "totalUlbs": { $sum: 1 },
+        "underReviewByPMU": {
+          "$sum": {
+            "$cond": [
+              { "$in": ["$formData.currentFormStatus", [8, 9, 11]] },
+              1,
+              0
+            ]
+          }
+        },
+        "returnedByPMU": {
+          "$sum": {
+            "$cond": [
+              { "$eq": ["$formData.currentFormStatus", 10] },
+              1,
+              0
+            ]
+          }
+        },
+        "inProgress": {
+          "$sum": {
+            "$cond": [
+              { "$eq": ["$formData.currentFormStatus", 2] },
+              1,
+              0
+            ]
+          }
+        },
+        "notStarted": {
+          "$sum": {
+            "$cond": [
+              { "$eq": ["$emptyForms", 1] },
+              1,
+              0
+            ]
+          }
+        },
+      }
+    },
+    {
+      "$lookup": {
+        "from": "states",
+        "localField": "_id",
+        "foreignField": "_id",
+        "as": "states"
+      }
+    },
+    {
+      "$unwind": {
+        "path": "$states",
+        "preserveNullAndEmptyArrays": true
+      }
+    },
+    {
+      "$project": {
+        "stateName": "$states.name",
+        "selected": {
+          "$cond": {
+            "if": {
+              "$eq": ["$states._id", ObjectId(selectedState)]
+            },
+            "then": true,
+            "else": false
+          }
+        },
+        "stateNameLink": {
+          "$concat": [
+            "/rankings/populationWise/",
+            { "$toString": "$states._id" },
+            "?stateName=",
+            { "$toString": "$states.name" },
+            ...(selectedCategory ? [`&selectedCategory=${selectedCategory}`] : [])
+          ]
+        },
+        "totalUlbs": 1,
+        "underReviewByPMU": 1,
+        "returnedByPMU": 1,
+        "inProgress": 1,
+        "notStarted": 1,
+      }
+    },
+  ];
+
+  if (sort) {
+    query.push({ $sort: sort });
+  }
+  if (filterObj.provided) {
+    query.push({ $match: filters });
+  }
+  console.log(JSON.stringify(query, 3, 3));
+  return Ulb.aggregate(query);
+}
+const getPMUActivities = ({ req, sort, selectedState, skip, limit, sortBy, order, filters, filterObj, sortKey, designYear }) => {
+
+  const query = [
+    {
+      "$match": {
+        "isActive": true,
+        ...(req.decoded.role == userTypes.state && req.decoded.state && { "state": ObjectId(req.decoded.state) }),
+      }
+    },
+    {
+      "$lookup": {
+        "from": "fiscalrankings",
+        "localField": "_id",
+        "foreignField": "ulb",
+        "as": "formData"
+      }
+    },
+    {
+      "$unwind": {
+        "path": "$formData",
+        "preserveNullAndEmptyArrays": true
+      }
+    },
+    {
+      "$group": {
+        "_id": "$state",
+        "underReviewByPMU": {
+          "$sum": {
+            "$cond": [
+              { "$in": ["$formData.currentFormStatus", [8, 9, 10, 11]] },
+              1,
+              0
+            ]
+          }
+        },
+        "verificationNotStarted": {
+          "$sum": {
+            "$cond": [
+              { "$eq": ["$formData.currentFormStatus", 8] },
+              1,
+              0
+            ]
+          }
+        },
+        "verificationInProgress": {
+          "$sum": {
+            "$cond": [
+              { "$eq": ["$formData.currentFormStatus", 9] },
+              1,
+              0
+            ]
+          }
+        },
+        "returnedByPMU": {
+          "$sum": {
+            "$cond": [
+              { "$eq": ["$formData.currentFormStatus", 10] },
+              1,
+              0
+            ]
+          }
+        },
+        "submissionAckByPMU": {
+          "$sum": {
+            "$cond": [
+              { "$eq": ["$formData.currentFormStatus", 11] },
+              1,
+              0
+            ]
+          }
+        },
+      }
+    },
+    {
+      "$lookup": {
+        "from": "states",
+        "localField": "_id",
+        "foreignField": "_id",
+        "as": "states"
+      }
+    },
+    {
+      "$unwind": {
+        "path": "$states",
+        "preserveNullAndEmptyArrays": true
+      }
+    },
+    {
+      "$project": {
+        "stateName": "$states.name",
+        "selected": {
+          "$cond": {
+            "if": {
+              "$eq": ["$states._id", ObjectId(selectedState)]
+            },
+            "then": true,
+            "else": false
+          }
+        },
+        "underReviewByPMU": 1,
+        "verificationNotStarted": 1,
+        "verificationInProgress": 1,
+        "returnedByPMU": 1,
+        "submissionAckByPMU": 1
+      }
+    }
+  ];
+
+  if (sort) {
+    query.push({ $sort: sort });
+  };
+  if (filterObj.provided) {
+    query.push({ $match: filters });
+  }
+  return Ulb.aggregate(query);
+}
+const getPopulationWiseData = ({ stateId, selectedCategory, columns, sort, skip, limit, sortBy, order, filters, filterObj, sortKey, designYear }) => {
+
+
+  const parameters = [
+    {
+      label: '4MN+',
+      query: [
+        { $gt: ["$population", 4000000] }
+      ],
+    },
+    {
+      label: '1MN to 4MN',
+      query: [
+        { $lte: ["$population", 4000000] },
+        { $gte: ["$population", 1000000] },
+      ]
+    },
+    {
+      label: '100K to 1MN',
+      query: [
+        { $lt: ["$population", 1000000] },
+        { $gte: ["$population", 100000] }
+      ],
+    },
+    {
+      label: '<100K',
+      query: [
+        { $lt: ["$population", 100000] }
+      ],
+    },
+  ];
+
+  const query = [
+    {
+      "$match": {
+        "isActive": true,
+        ...(stateId && { state: ObjectId(stateId) }),
+      },
+    },
+    {
+      "$lookup": {
+        "from": "fiscalrankings",
+        "localField": "_id",
+        "foreignField": "ulb",
+        "as": "formData"
+      }
+    },
+    {
+      "$unwind": {
+        "path": "$formData",
+        "preserveNullAndEmptyArrays": true
+      }
+    },
+    {
+      "$addFields": {
+        "emptyForms": {
+          "$ifNull": ["$formData", 1]
+        }
+      }
+    },
+    {
+      $group: {
+        _id: "$state",
+        "population": { $sum: "$population" },
+        ...columns.reduce((result, column) => ({
+          ...result,
+          ...parameters.reduce((obj, parameter) => ({
+            ...obj,
+            [`${column.key}${parameter.label}`]: column.key == 'populationCategories' ? {
+              $first: parameter.label
+            } :
+              {
+                $sum: {
+                  $cond: {
+                    if: {
+                      $and: [
+                        ...parameter.query,
+                        ...(column.key == 'totalUlbs' ? [] : (
+                          column.currentFormStatus == 1 ? [{
+                            "$eq": ["$emptyForms", 1]
+                          }] : [{
+                            [Array.isArray(column.currentFormStatus) ? '$in' : '$eq']: ["$formData.currentFormStatus", column.currentFormStatus]
+                          }]
+                        ))
+                      ],
+                    },
+                    then: 1,
+                    else: 0,
+                  },
+                }
+              }
+          }), {})
+        }), {}),
+      }
+    },
+    {
+      $project: {
+        "data": parameters.map((parameter, index) => (
+          columns.reduce((obj, column) => ({
+            ...obj,
+            [column.key]: `$${column.key}${parameter.label}`,
+            ...(selectedCategory && { 'selected': (selectedCategory - 1) == index })
+          }), {})
+        ))
+      }
+    }
+  ];
+  console.log(JSON.stringify(query, 3, 3))
+  return Ulb.aggregate(query);
+}
+
+function deleteExtraKeys(arr, obj) {
+  for (var key of arr) {
+    delete obj[key]
+  }
+}
+
+
+function getSortByKeys(sortBy, order) {
+  let sortKey = {
+    "provided": false
+  }
+  try {
+    if ((sortBy != undefined) && (order != undefined)) {
+      let temp = {}
+      sortKey["provided"] = true
+      if (Array.isArray(sortBy)) {
+        for (let key in sortBy) {
+          let name = sortBy[key]
+          if (!isNaN(parseInt(order[key]))) {
+            temp[sortFilterKeys[name]] = parseInt(order[key])
+          }
+        }
+      }
+      else {
+        if (!isNaN(parseInt(order))) {
+          temp[sortFilterKeys[sortBy]] = parseInt(order)
+        }
+      }
+      if (Object.keys(temp).length > 0) {
+        sortKey['provided'] = true
+        sortKey["filters"] = temp
+      }
+    }
+  }
+  catch (err) {
+    console.log("error in getSortByKeys ::: ", err.message)
+  }
+  console.log(sortKey)
+  return sortKey
+}
+
+exports.overview = async function (req, res, next) {
+
+  const { type } = req.params;
+  console.log({ decoded: req.decoded });
+
+  let name = {
+    "UlbActivities": "Overview of ULB activities",
+    "PMUActivities": "Overview of PMU activities",
+    "populationWise": "Overview of population-wise data"
+  }[type] || '';
+
+
+
+  const columns = {
+    "UlbActivities": [
+      {
+        "label": "State Name",
+        "key": "stateName",
+        ...(req.decoded.role != userTypes.state && {
+          "query": "",
+        }),
+        "sort": 1,
+        "sortable": true
+      },
+      {
+        "label": "Total ULBs",
+        "key": "totalUlbs",
+        "sortable": true
+      },
+      {
+        "label": "Under Review by PMU",
+        "key": "underReviewByPMU",
+        "sortable": true
+      },
+      {
+        "label": "Returned by PMU",
+        "key": "returnedByPMU",
+        "sortable": true
+      },
+      {
+        "label": "In Progress",
+        "key": "inProgress",
+        "sortable": true
+      },
+      {
+        "label": "Not Started",
+        "key": "notStarted",
+        "sortable": true
+      },
+    ],
+    "PMUActivities": [
+      {
+        "label": "State Name",
+        "key": "stateName",
+        ...(req.decoded.role != userTypes.state && {
+          "query": "",
+        }),
+        "sort": 1,
+        "sortable": true
+      },
+      {
+        "label": "Under Review by PMU",
+        "key": "underReviewByPMU",
+        "sortable": true
+      },
+      {
+        "label": "Verification Not Started",
+        "key": "verificationNotStarted",
+        "sortable": true
+      },
+      {
+        "label": "Verification In Progress",
+        "key": "verificationInProgress",
+        "sortable": true
+      },
+      {
+        "label": "Returned by PMU",
+        "key": "returnedByPMU",
+        "sortable": true
+      },
+      {
+        "label": "Submission Acknowledged by PMU",
+        "key": "submissionAckByPMU",
+        "sortable": true
+      },
+    ],
+    "populationWise": [
+      {
+        "label": "Population Categories",
+        "key": "populationCategories",
+      },
+      {
+        "label": "Total ULBs",
+        "key": "totalUlbs"
+      },
+      {
+        "label": "Under Review by PMU",
+        "key": "underReviewByPMU",
+        "currentFormStatus": [8, 9, 11],
+      },
+      {
+        "label": "Returned by PMU",
+        "key": "returnedByPMU",
+        "currentFormStatus": 10,
+      },
+      {
+        "label": "In Progress",
+        "key": "inProgress",
+        "currentFormStatus": 2,
+      },
+      {
+        "label": "Not Started",
+        "key": "notStarted",
+        "currentFormStatus": 1,
+      },
+    ]
+  }[type] || [];
+
+
+  const lastRow = {
+    "UlbActivities": ["Total", "$sum", "$sum", "$sum", "$sum", "$sum"],
+    "PMUActivities": ["Total", "$sum", "$sum", "$sum", "$sum", "$sum"],
+    "populationWise": ["Total", "$sum", "$sum", "$sum", "$sum", "$sum"]
+  }[type];
+
+  try {
+
+    let skip = parseInt(req.query.skip) || 0;
+    let limit = parseInt(req.query.limit) || 10;
+    let { sortBy, order, stateId, stateName, selectedState, selectedCategory } = req.query
+    let filters = Object.entries({ ...req.query })
+      .reduce((obj, [key, value]) => ({ ...obj, [key]: /^\d+$/.test(value) ? +value : value }), {});
+
+    await deleteExtraKeys(["sortBy", "order", "skip", "limit", "selectedState", "selectedCategory"], filters)
+
+    console.log(filters);
+    filters = await Service.mapFilter(filters);
+    let filterObj = {
+      "provided": Object.keys(filters).length > 0 ? true : false,
+      "filters": Object.keys(filters).length > 0 ? { ...filters } : "",
+    }
+    let sortKey = getSortByKeys(sortBy, order)
+    let designYear = years['2022-23']
+
+    let sort; 
+    if (sortBy) {
+      if (Array.isArray(sortBy)) {
+        sort = sortBy?.reduce((obj, key, index) => ({ ...obj, [key]: +order[index] }), {});
+      } else {
+        sort = { [sortBy]: +order };
+      }
+    }
+    if (!sort) {
+      sort = { 'stateName': 1 };
+    }
+
+    console.log({ sort, skip, limit, sortBy, order, filters, filterObj, sortKey, designYear });
+
+    let data;
+    if (type == 'UlbActivities') {
+      data = await getUlbActivities({ req, selectedState, selectedCategory, sort, skip, limit, sortBy, order, filters, filterObj, sortKey, designYear });
+    }
+    else if (type == 'PMUActivities') {
+      data = await getPMUActivities({ req, selectedState, sort, skip, limit, sortBy, order, filters, filterObj, sortKey, designYear });
+    }
+    else if (type == 'populationWise') {
+      data = await getPopulationWiseData({ stateId, selectedCategory, columns, sort, skip, limit, sortBy, order, filters, filterObj, sortKey, designYear });
+      const result = [];
+      data?.forEach(item => {
+        item.data.forEach((innerData, index) => {
+          if (result[index]) {
+            Object.entries(innerData).forEach(([key, value]) => {
+              if (key != 'populationCategories') {
+                result[index][key] += +value || 0;
+              }
+            });
+          } else {
+            result.push(innerData)
+          }
+        })
+      });
+      data = result || [];
+      name += ' - ' + stateName;
+    }
+
+
+    const response = {
+      status: true,
+      message: "Successfully saved data!",
+      columns,
+      name,
+      data,
+      lastRow,
+    }
+    if (type == 'UlbActivities') {
+      response['headerLink'] = {
+        label: 'See National level data',
+        link: '/rankings/populationWise?stateName=India' + (selectedCategory ? '&selectedCategory=' + selectedCategory : '')
+      };
+    }
+
+    return res.status(200).json(response);
+  } catch (error) {
+    console.log("err", error);
+    return res
+      .status(400)
+      .json({ status: false, message: "Something error wrong!" });
+  }
+};
+
 exports.approvedByMohua = async function (req, res, next) {
   try {
     let { ulb, design_year, year, type, actionTakenByRole, status } = req.body;
@@ -1545,9 +2413,32 @@ function getPopulationCondition() {
   try {
     let obj = {
       $cond: {
-        if: { $eq: ["$isMillionPlus", "Yes"] },
-        then: "Million Plus",
-        else: "Non Million",
+        if: {
+          $gt: ["$population", 4000000],
+        },
+        then: "4Mn+",
+        else: {
+          $cond: {
+            if: {
+              $lt: ["$population", 100000],
+            },
+            then: "<100K",
+            else: {
+              $cond: {
+                if: {
+                  $and: [
+                    { $gte: ["$population", 100000] },
+                    {
+                      $lt: ["$population", 1000000],
+                    },
+                  ],
+                },
+                then: "100K to 1M",
+                else: "1M to 4M",
+              },
+            },
+          },
+        },
       },
     };
     return obj;
@@ -1611,10 +2502,31 @@ function getProjectionQueries(
         state_id: "$state._id",
         stateName: "$state.name",
         populationType: getPopulationCondition(),
+        populationCategory: "$population",
 
         formData: { $ifNull: [`$${collectionName}`, ""] },
       },
     };
+    if (!csv) {
+      projectionQueryWithConditions = {
+        $project: {
+          ulbName: "$name",
+          ulbId: "$_id",
+          ulbCode: "$code",
+          censusCode: getCensusCodeCondition(),
+          UA: getUAcondition(),
+          UA_ID: getUA_id(),
+          ulbType: "$ulbType.name",
+          ulbType_id: "$ulbType._id",
+          population: "$population",
+          state_id: "$state",
+          populationType: getPopulationCondition(),
+          populationCategory: "$population",
+
+          formData: { $ifNull: [`$${collectionName}`, ""] },
+        },
+      };
+    }
     if (csv) {
       projectionQueryWithConditions["$project"]["fsMappers"] =
         "$fiscalrankingmappers";
@@ -1632,21 +2544,93 @@ function getProjectionQueries(
       // Object.assign(removeEmptyForms["$match"],newFilter)
       queryArr.push({ $match: newFilter });
     }
+    if (!csv) {
+      let sortObj = {
+        "formData.modifiedAt": -1,
+      }
+      queryArr.push({ $sort: sortObj });
+    }
     getFacetQueryForPagination(queryArr, skip, limit);
     //projection query that decides which cols to show
-    let projectionQueryThatDecidesCols = {
-      $project: {
-        formData: 1,
-        records: 1,
-        total: getTotalProjectionQueryForPagination(),
-      },
-    };
+    if (csv) {
+      let projectionQueryThatDecidesCols = {
+        $project: {
+          formData: 1,
+          records: 1,
+          total: getTotalProjectionQueryForPagination(),
+        },
+      };
 
-    queryArr.push(projectionQueryThatDecidesCols);
+      queryArr.push(projectionQueryThatDecidesCols);
+    }
+    appendStages(queryArr);
+
   } catch (err) {
     console.log("error in getProjectionQueries ::: ", err);
   }
 }
+
+function appendStages(query) {
+  let arr = [
+    {
+      $unwind: {
+        path: "$records",
+      },
+    },
+    {
+      $lookup: {
+        from: "states",
+        localField: "records.state_id",
+        foreignField: "_id",
+        as: "stateName",
+      },
+    },
+    {
+      $unwind: {
+        path: "$stateName",
+        preserveNullAndEmptyArrays: true,
+      },
+    },
+    {
+      $project: {
+        ulbName: "$records.ulbName",
+        ulbCode: "$records.ulbCode",
+        ulbId: "$records.ulbId",
+        censusCode: "$records.censusCode",
+        population: "$records.population",
+        stateName: "$stateName.name",
+        populationType: "$records.populationType",
+        filled: "$records.filled",
+        populationCategory: "$records.populationCategory",
+        formData: "$records.formData",
+        ulbDataSubmitted: {
+          $ifNull: [{
+            "$concat": [`$records.formData.progress.ulbCompletion`, "%"]
+          }, {
+            "$concat": ["0", "%"]
+          }]
+        },
+        pmuVerificationProgress: {
+          $ifNull: [{
+            "$concat": [`$records.formData.progress.approvedProgress`, `%`, `,`, `$records.formData.progress.rejectedProgress`, `%`]
+          }, { "$concat": ["0", "%"] }]
+        },
+        "total": {
+          $let: {
+            vars: {
+              totalObj: {
+                $arrayElemAt: ["$metaData", 0],
+              },
+            },
+            in: "$$totalObj.total",
+          },
+        }
+      },
+    },
+  ];
+  return query.push(...arr);
+}
+
 
 /**
  * Get projection query for the columns which exists or not
@@ -1771,18 +2755,23 @@ function getFormQuery(queryArr, collectionName, design_year, csv) {
         pipeline: tableQuery,
       },
     };
-    obj["$lookup"]["pipeline"].push(
-      getCommonLookupObj("years", "design_year", "_id", "design_year")
-    );
-    obj["$lookup"]["pipeline"].push(getUnwindObj("$design_year"));
+    if (csv) {
+      obj["$lookup"]["pipeline"].push(
+        getCommonLookupObj("years", "design_year", "_id", "design_year")
+      );
+      obj["$lookup"]["pipeline"].push(getUnwindObj("$design_year"));
+    }
     obj["$lookup"]["as"] = collectionName;
     if (!csv) {
       obj["$lookup"]["pipeline"].push({
         $project: {
           _id: 1,
           status: 1,
+          progress: 1,
           actionTakenByRole: 1,
           isDraft: 1,
+          currentFormStatus: 1,
+          modifiedAt: 1
         },
       });
     }
@@ -1853,13 +2842,14 @@ function getAggregateQuery(
   limit,
   newFilter,
   csv,
-  stateId = null
+  stateId = null,
+  sort
 ) {
   let query = [];
   try {
     //stage one get Matching ulbs
     let match_ulb_with_access = {
-      $match: { access_2223: true },
+      $match: { isActive: true },
     };
     // if state id is provided then it will search ulb with state
     if (stateId !== null && stateId !== undefined) {
@@ -1867,21 +2857,27 @@ function getAggregateQuery(
     }
     query.push(match_ulb_with_access);
     // stage 2 get all states realted to ulb
-    get_state_query(query, stateId);
+    if (csv) {
+      get_state_query(query, stateId);
+    }
 
     // stage 3 get form data which is filled in this case fiscalranking form
     getFormQuery(query, collectionName, year, csv);
     // if(csv){
     query.push(getUnwindObj(`$${collectionName}`, true));
-    rankingFormQuery(query, "fiscalrankingmappers");
+    if (csv) {
+      rankingFormQuery(query, "fiscalrankingmappers");
+    }
     // query.push(getUnwindObj(`$fiscalrankingmappers`,true))
     // }
     // stage 4 get all UA realted to tthis ulb and unwind all ua,s
-    query.push(getCommonLookupObj("uas", "UA", "_id", "UA"));
-    query.push(getUnwindObj("$UA", true));
-    // stage 5 get all ULBS realted the ulb and unwind it
-    query.push(getCommonLookupObj("ulbtypes", "ulbType", "_id", "ulbType"));
-    query.push(getUnwindObj("$ulbType", true));
+    if (csv) {
+      query.push(getCommonLookupObj("uas", "UA", "_id", "UA"));
+      query.push(getUnwindObj("$UA", true));
+      // stage 5 get all ULBS realted the ulb and unwind it
+      query.push(getCommonLookupObj("ulbtypes", "ulbType", "_id", "ulbType"));
+      query.push(getUnwindObj("$ulbType", true));
+    }
 
     // stage 6 modify the cols ,handle pagination and search queries
     if (csv) {
@@ -1905,7 +2901,15 @@ function getAggregateQuery(
       getProjectionQueries(query, collectionName, skip, limit, newFilter, csv);
     }
     // stage 7 sort by formData
-    query.push({ $sort: { formData: -1 } });
+    // let sortObj ={
+    //   "formData.modifiedAt": -1,
+    // }
+    let sortObj = {};
+    if (sort && sort !== "null") {
+      let splitSort = sort.split('_');
+      sortObj[splitSort[0]] = Number(splitSort[1])
+      query.push({ $sort: sortObj });
+    }
   } catch (err) {
     console.log("error in getAggregateQuery :::: ", err);
   }
@@ -1923,11 +2927,15 @@ function searchQueries(req) {
     filter["ulbName"] = req.query.ulbName != "null" ? req.query.ulbName : "";
     filter["censusCode"] =
       req.query.censusCode != "null" ? req.query.censusCode : "";
+    filter['state_id'] =
+      req.query.stateName != "null" ? req.query.stateName : "";
+
     filter["populationType"] =
-      req.query.populationType != "null" ? req.query.populationType : "";
+      req.query.populationType != "null" ? POPULATION_TYPE[req.query.populationType] : "";
     filter["ulbType"] = req.query.ulbType != "null" ? req.query.ulbType : "";
     filter["UA"] = req.query.UA != "null" ? req.query.UA : "";
-    filter["status"] = req.query.status != "null" ? req.query.status : "";
+    // filter["status"] = req.query.status != "null" ? req.query.status : "";
+    filter['formData.currentFormStatus'] = req.query.status != 'null' ? Number(req.query.status) : ""
     filter["filled_audited"] =
       req.query.filled1 != "null" ? req.query.filled1 : "";
     filter["filled_provisional"] =
@@ -1937,7 +2945,12 @@ function searchQueries(req) {
   }
   return filter;
 }
+function populationTypeFilter(populationType) {
+  let filterObj = {
 
+  }
+
+}
 /**
  * Function that returns dynamic column name for tables in the frontend
  * @returns a javascript object with column names
@@ -1947,15 +2960,12 @@ function getColumns() {
     sNo: "S No.",
     ulbName: "ULB Name",
     stateName: "State Name",
-    censusCode: "Census/SB Code",
-    ulbType: "ULB Type",
-    populationType: "Population Type",
-    UA: "UA",
-    formStatus: "Form Status",
-    filled: "Filled Status",
-    filled_audited: "Audited Filled Status",
-    filled_provisional: "Provisional Filled Status",
-    action: "Action",
+    censusCode: "Census Code",
+    formStatus: "Status",
+    cantakeAction: "Action",
+    apopulationCategory: "Population Category",
+    ulbDataSubmitted: "ULB Data Submitted (%)",
+    pmuVerificationProgress: "PMU Verification Progress (Approved,Rejected)"
   };
 }
 
@@ -1967,16 +2977,19 @@ function getColumns() {
  * @param {*} role:String
  * @returns a json object with message and validation
  */
-function checkValidRequest(formId, stateId, role) {
+function checkValidRequest(stateId, role) {
   let validation = {
     valid: false,
     message: "",
   };
   try {
-    if (formId === undefined || formId === "") {
-      validation.valid = false;
-      validation.message = "Form id is required";
+    if (role === userTypes.mohua || role === userTypes.pmu) {
+      validation.valid = true;
     }
+    // if (formId === undefined || formId === "") {
+    //   validation.valid = false;
+    //   validation.message = "Form id is required";
+    // }
     if (role === userTypes.state) {
       if (stateId === "" || stateId === undefined) {
         validation.valid = false;
@@ -1985,9 +2998,7 @@ function checkValidRequest(formId, stateId, role) {
         validation.valid = true;
       }
     }
-    if (role === userTypes.mohua) {
-      validation.valid = true;
-    }
+
     if (role === userTypes.ulb) {
       validation.message = "Not allowed";
     }
@@ -2010,18 +3021,23 @@ function updateActions(data, role, formType) {
         el["formStatus"] = "Not Started";
         el["cantakeAction"] = false;
       } else {
-        el["formStatus"] = calculateStatusForFiscalRankingForms(
-          el.formData.status,
-          el.formData.actionTakenByRole,
-          el.formData.isDraft,
-          formType
-        );
-        el["cantakeAction"] =
-          role === "ADMIN" || role === userTypes.state
-            ? false
-            : canTakeActionOrViewOnly(el, role, true);
+        let params = { status: el.formData.currentFormStatus, userRole: role }
+        el['cantakeAction'] = role === "ADMIN" || role === userTypes.state || role === userTypes.mohua ? false : canTakeActionOrViewOnlyMasterForm(params);
+        el['formStatus'] = MASTER_STATUS_ID[el.formData.currentFormStatus]
+
+        // el["formStatus"] = calculateStatusForFiscalRankingForms(
+        //   el.formData.status,
+        //   el.formData.actionTakenByRole,
+        //   el.formData.isDraft,
+        //   formType
+        // );
+        // el["cantakeAction"] =
+        //   role === "ADMIN" || role === userTypes.state
+        //     ? false
+        //     : canTakeActionOrViewOnly(el, role, true);
       }
       return el;
+      // el['formStatus'] = calculateStatus(el.formData.status, el.formData.actionTakenByRole, el.formData.isDraft, formType);
     });
   } catch (err) {
     console.log("error in updateActions ::: ", err.message);
@@ -2063,6 +3079,7 @@ module.exports.getFRforms = catchAsync(async (req, res) => {
     let aggregateQuery = {};
     let skip = req.query.skip || 0;
     let limit = req.query.limit || 10;
+    let sort = req?.query?.sort
     let { role } = req.decoded;
     let {
       design_year: year,
@@ -2084,7 +3101,7 @@ module.exports.getFRforms = catchAsync(async (req, res) => {
       response.message = "Year parameter is required";
       return res.status(500).json(response);
     }
-    let validation = checkValidRequest(formId, stateId, role);
+    let validation = checkValidRequest(stateId, role);
     console.log(validation);
     if (!validation.valid) {
       response.message = validation.message;
@@ -2094,6 +3111,10 @@ module.exports.getFRforms = catchAsync(async (req, res) => {
     let keys = calculateKeys(searchFilters["status"], role);
     Object.assign(searchFilters, keys);
     let newFilter = await Service.mapFilterNew(searchFilters);
+    if (Number(req.query.status) === MASTER_STATUS['Not Started']) {// to apply not started filter
+      Object.assign(newFilter, { formData: "" });
+      delete newFilter['formData.currentFormStatus']
+    }
     // Code that will get the dynamic names when sidemenu is implemented
     //let formTab = await Sidemenu.findOne({ _id: ObjectId(formId) }).lean();
     // get dynamic path and collection name
@@ -2109,7 +3130,8 @@ module.exports.getFRforms = catchAsync(async (req, res) => {
       limit,
       newFilter,
       csv,
-      stateId
+      stateId,
+      sort
     );
     if (getQuery == "true")
       return res.status(200).json({
@@ -2117,10 +3139,10 @@ module.exports.getFRforms = catchAsync(async (req, res) => {
       });
     if (!csv) {
       let queryResult = await Ulb.aggregate(aggregateQuery).allowDiskUse(true);
-      let data = csv ? [] : queryResult[0];
-      total = !csv ? data["total"] : 0;
-      total = data["total"];
-      let records = csv ? [] : data["records"];
+      let data = csv ? [] : queryResult;
+      // total = !csv ? data[0]["total"] : 0;
+      total = data.length ? data[0]["total"] : 0;
+      let records = csv ? [] : data;
       data = updateActions(records, role, formType);
       response.success = true;
       response.columnNames = cols;
@@ -2253,12 +3275,13 @@ async function validateAccordingtoLedgers(
           financialInfo
         );
         if (ulbValue === sum) {
-          (validator.valid = true), (validator.value = years.value);
+          validator.valid = true
+          validator.value = years.value
         } else {
-          (validator.valid = false),
-            (validator.message = `Data in our ledger records in not matching the sub of break up. Please check these fields in financial information. ${dynamicObj.calculatedFrom.join(
-              ","
-            )}`);
+          validator.valid = false
+          validator.message = `Data in our ledger records in not matching the sub of break up. Please check these fields in financial information. ${dynamicObj.calculatedFrom.join(
+            ","
+          )}`;
         }
         return validator;
       }
@@ -2296,6 +3319,9 @@ async function updateQueryForFiscalRanking(
     for (var years of yearData) {
       let upsert = false;
       if (years.year) {
+        // if(years.type === "registerGisProof"){
+        //   console.log("years.type ::: ",years.status)
+        // }
         let payload = {};
         let filter = {
           year: ObjectId(years.year),
@@ -2304,6 +3330,7 @@ async function updateQueryForFiscalRanking(
           type: years.type,
         };
         if (updateForm) {
+
           upsert = true;
           if (dynamicObj.calculatedFrom) {
             let validator = await validateAccordingtoLedgers(
@@ -2321,14 +3348,18 @@ async function updateQueryForFiscalRanking(
               throw { message: validator.message, type: "ValidationError" };
             }
           }
+
           payload["value"] = years.value;
           payload["date"] = years.date;
           payload["file"] = years.file;
           payload["status"] = years.status;
           payload["modelName"] = years.modelName;
-          payload["displayPriority"] = dynamicObj.displayPriority;
+          payload["rejectReason"] = years?.rejectReason || ""
+          payload["displayPriority"] = dynamicObj.position;
+          payload['ledgerUpdated'] = false
         } else {
           payload["status"] = years.status;
+          payload["rejectReason"] = years?.rejectReason
         }
         let up = await FiscalRankingMapper.findOneAndUpdate(filter, payload, {
           upsert: upsert,
@@ -2365,31 +3396,44 @@ async function updateFiscalRankingForm(
   year,
   updateForm,
   isDraft,
-  session
+  session,
 ) {
   try {
+    const statusNotMandatory = ["caMembershipNo", "otherUpload"]
     let filter = {
       _id: ObjectId(formId),
     };
     let payload = {};
     for (let key in obj) {
       if (updateForm) {
+        if (statusNotMandatory.includes(key)) {
+          // console.log("obj[key].value ::: ",)
+          if (obj[key].value || obj[key]?.name) {
+            obj[key].status = obj[key].status || "PENDING"
+          }
+          else {
+            obj[key].status = ""
+          }
+        }
         if (key === "signedCopyOfFile" || key === "otherUpload") {
           payload[key] = obj[key];
         } else {
           // if (!obj[key].value && !notRequiredValidations.includes(key) && !isDraft) {
           //   throw { "message": `value for field ${key} is required`, "type": "ValidationError" }
           // }
+          // console.log("condtion :::: ",statusNotMandatory.includes(key))
+
           payload[`${key}.value`] = obj[key].value;
           payload[`${key}.status`] = obj[key].status;
           payload[`${key}.modelName`] = obj[key].modelName;
         }
       } else {
-        let status = null;
+        let status = "";
         if (obj[key].status) {
           status = obj[key].status;
         }
         payload[`${key}.status`] = status;
+        payload[`${key}.rejectReason`] = obj[key]?.rejectReason;
       }
     }
     // console.log("payload",payload);process.exit()
@@ -2416,6 +3460,36 @@ function getStatusesFromObject(obj, element, ignoredVariables) {
   return status;
 }
 
+
+async function manageFormPercentage(params) {
+  try {
+    let { totalIndicator, completedIndicator, approvedIndicator, rejectedIndicator, formId, updateForm } = params
+    let completedPercentage = (completedIndicator / totalIndicator) * 100
+    let verificationProgress = ((approvedIndicator + rejectedIndicator) / totalIndicator) * 100
+    let approvedPerc = (approvedIndicator / totalIndicator) * 100
+    let rejectedPerc = (rejectedIndicator / totalIndicator) * 100
+    let payload = {}
+    console.log(">>", completedPercentage)
+    console.log({ totalIndicator, completedIndicator, approvedIndicator, rejectedIndicator, formId })
+    if (updateForm) {
+      payload["progress.ulbCompletion"] = completedPercentage < 100 && completedPercentage != 0 ? completedPercentage.toFixed(2) : (parseInt(completedPercentage)).toString()
+    }
+    else {
+      payload["progress.verificationProgress"] = verificationProgress < 100 && verificationProgress != 0 ? verificationProgress.toFixed(2) : (parseInt(verificationProgress)).toString()
+      payload['progress.approvedProgress'] = approvedPerc < 100 && approvedPerc != 0 ? approvedPerc.toFixed(2) : (parseInt(approvedPerc)).toString()
+      payload['progress.rejectedProgress'] = rejectedPerc < 100 && rejectedPerc != 0 ? rejectedPerc.toFixed(2) : (parseInt(rejectedPerc)).toString()
+    }
+    console.log(payload)
+    await FiscalRanking.findOneAndUpdate({
+      "_id": formId
+    }, payload)
+  }
+  catch (err) {
+    console.log("error in manageFormPercentage :::: ", err.message)
+  }
+}
+
+
 /**
  *
  * @param {array} tabs
@@ -2434,6 +3508,12 @@ async function calculateAndUpdateStatusForMappers(
   isDraft
 ) {
   try {
+    let totalIndicator = 0;
+    let total = 0
+    let completedIndicator = 0;
+    let approvedIndicator = 0;
+    let rejectedIndicator = 0;
+    let quesItems = {}
     let conditionalObj = {};
     let ignorablevariables = ["guidanceNotes"];
     const fiscalRankingKeys = [
@@ -2443,13 +3523,14 @@ async function calculateAndUpdateStatusForMappers(
       "signedCopyOfFile",
       "otherUpload",
     ];
-
+    let idc = []
+    let types = new Set()
     for (var tab of tabs) {
       conditionalObj[tab._id.toString()] = {};
       let key = tab.id;
       let obj = tab.data;
       let temp = {
-        comment: tab.feedback.comment,
+        comment: tab?.feedback?.comment,
         status: [],
       };
       for (var k in tab.data) {
@@ -2457,12 +3538,37 @@ async function calculateAndUpdateStatusForMappers(
           continue;
         }
         if (obj[k].yearData) {
+          total += 1
+
           let yearArr = obj[k].yearData;
           let dynamicObj = obj[k];
           let financialInfo = obj;
+          yearArr.forEach((uniqueItem) => {
+            let item = { ...uniqueItem }
+            let skipFiles = {
+              "registerGisProof": "registerGis",
+              "accountStwreProof": "accountStwre"
+            }
+            if (Object.keys(skipFiles).includes(item.type)) {
+              let element = tab.data[skipFiles[item.type]]['yearData'][0]
+              if (element.value == "No" || element.value === "") {
+                item.required = false
+              }
+              item.status = element.status
+
+            }
+            if (item?.required && item.year) {
+              totalIndicator += 1
+              let count = calculateReviewCount(item)
+              completedIndicator += count[0]
+              approvedIndicator += count[1]
+              rejectedIndicator += count[2]
+            }
+          })
           let status = yearArr.every((item) => {
-            if (Object.keys(item).length) {
-              return item.status === "APPROVED";
+            if (calculatedFields.includes(item?.type)) return true;
+            if (item?.type && item.status) {
+              return item.status === "APPROVED" || item.status === "";
             } else {
               return true;
             }
@@ -2484,12 +3590,29 @@ async function calculateAndUpdateStatusForMappers(
             key === priorTabsForFiscalRanking["basicUlbDetails"] ||
             key === priorTabsForFiscalRanking["conInfo"] ||
             fiscalRankingKeys.includes(k)
+
           ) {
+            if (k === "signedCopyOfFile") {
+              console.log("inside if  condition")
+              totalIndicator += 1
+              let demoItem = {
+                "status": obj[k].status,
+                "file": {
+                  name: obj[k].name,
+                  url: obj[k].url || ""
+                }
+              }
+              let count = calculateReviewCount(demoItem)
+              completedIndicator += count[0]
+              approvedIndicator += count[1]
+              rejectedIndicator += count[2]
+            }
             let statueses = getStatusesFromObject(tab.data, "status", [
               "population11",
             ]);
-
-            let finalStatus = statueses.every((item) => item === "APPROVED");
+            let finalStatus = statueses.every((item) => {
+              return item === "APPROVED"
+            });
             temp["status"].push(finalStatus);
             await updateFiscalRankingForm(
               tab.data,
@@ -2498,13 +3621,15 @@ async function calculateAndUpdateStatusForMappers(
               year,
               updateForm,
               isDraft,
-              session
+              session,
+
             );
           }
         }
         conditionalObj[tab._id.toString()] = temp;
       }
     }
+    console.log("totalIndicator", totalIndicator)
     for (var tabName in conditionalObj) {
       if (conditionalObj[tabName].status.length > 0) {
         conditionalObj[tabName].status = conditionalObj[tabName].status.every(
@@ -2514,8 +3639,10 @@ async function calculateAndUpdateStatusForMappers(
         conditionalObj[tabName].status = "NA";
       }
     }
+    let params = { totalIndicator, completedIndicator, approvedIndicator, rejectedIndicator, formId, updateForm }
     await session.commitTransaction();
     await session.endSession();
+    await manageFormPercentage(params)
     return conditionalObj;
   } catch (err) {
     // await session.abortTransaction()
@@ -2564,7 +3691,7 @@ async function saveFeedbacksAndForm(
   design_year,
   userId,
   role,
-  isDraft
+  formStatus
 ) {
   let validator = {
     success: true,
@@ -2575,49 +3702,15 @@ async function saveFeedbacksAndForm(
   let payloadForForm = {
     actionTakenBy: ObjectId(userId),
     actionTakenByRole: role,
+    currentFormStatus: formStatus,
   };
   let filterForForm = {
-    _id: ObjectId(formId),
+    // _id: ObjectId(formId),
+    ulb: ObjectId(ulbId),
+    design_year: ObjectId(design_year)
+
   };
   try {
-    for (var calc in calculatedStatus) {
-      let filter = {
-        ulb: ObjectId(ulbId),
-        fiscal_ranking: ObjectId(formId),
-        design_year: ObjectId(design_year),
-        tab: calc,
-      };
-      let payload = {
-        ulb: ObjectId(ulbId),
-        fiscal_ranking: ObjectId(formId),
-        design_year: ObjectId(design_year),
-        status:
-          calculatedStatus[calc].status == false ||
-            calculatedStatus[calc].status == "NA"
-            ? "REJECTED"
-            : "APPROVED",
-        tab: calc,
-        comment: calculatedStatus[calc].comment,
-      };
-
-      let feedBack = await FeedBackFiscalRanking.findOneAndUpdate(
-        filter,
-        payload,
-        { upsert: true }
-      );
-      delete filter.tab;
-      filter["_id"] = filter["fiscal_ranking"];
-      delete filter.fiscal_ranking;
-      mainStatus_arr.push(calculatedStatus[calc].status);
-    }
-
-    if (!isDraft) {
-      calc = mainStatus_arr.every((item) => item == true);
-      status = calc ? "APPROVED" : "REJECTED";
-      payloadForForm["status"] = status;
-    } else {
-      payloadForForm["status"] = "PENDING";
-    }
     let updateForm = await FiscalRanking.findOneAndUpdate(
       filterForForm,
       payloadForForm
@@ -2631,17 +3724,74 @@ async function saveFeedbacksAndForm(
   return validator;
 }
 
+const decideOverAllStatus = (statusObject) => {
+  try {
+    let isFormApproved = Object.values(statusObject).every(item => item.status === true)
+    return isFormApproved ? 11 : 10
+  }
+  catch (err) {
+    console.log("error in decideOverAllStatus :: ", err.message)
+  }
+  return 9
+}
+
+const sendEmailToUlb = async (ulbId) => {
+  try {
+    let userInf = await Users.findOne({
+      "ulb": ObjectId(ulbId),
+      "role": "ULB"
+    }).populate("ulb")
+    let emailAddress = [userInf.email]
+    let ulbName = userInf.name
+    let ulbTemplate = Service.emailTemplate.CfrFormRejected(
+      ulbName,
+    );
+    console.log("emailAddress ::: ", emailAddress)
+    let mailOptions = {
+      Destination: {
+        /* required */
+        ToAddresses: emailAddress,
+      },
+      Message: {
+        /* required */
+        Body: {
+          /* required */
+          Html: {
+            Charset: "UTF-8",
+            Data: ulbTemplate.body,
+          },
+        },
+        Subject: {
+          Charset: "UTF-8",
+          Data: ulbTemplate.subject,
+        },
+      },
+      Source: process.env.EMAIL,
+      /* required */
+      ReplyToAddresses: [process.env.EMAIL],
+
+    };
+    await Service.sendEmail(mailOptions);
+    console.log("email Sent")
+  }
+  catch (err) {
+    console.log("error in sendEmailToUlb ::: ", err.message)
+  }
+
+}
+
 module.exports.actionTakenByMoHua = catchAsync(async (req, res) => {
   const response = {
     success: false,
     message: "",
   };
   try {
-    let { ulbId, formId, actions, design_year, isDraft } = req.body;
+    let { ulbId, formId, actions, design_year, isDraft, currentFormStatus } = req.body;
+    console.log("currentFormStatus :: ", currentFormStatus)
     let { role, _id: userId } = req.decoded;
+    console.log("role :: ", role)
     let validation = await checkUndefinedValidations({
       ulb: ulbId,
-      formId: formId,
       actions: actions,
       design_year: design_year,
     });
@@ -2649,13 +3799,14 @@ module.exports.actionTakenByMoHua = catchAsync(async (req, res) => {
       response.message = validation.message;
       return res.status(500).json(response);
     }
-    if (role !== userTypes.mohua) {
+    if (role !== userTypes.pmu) {
       response.message = "Not permitted";
       return res.status(500).json(response);
     }
     const session = await mongoose.startSession();
     await session.startTransaction();
-    let params = {isDraft,role,formId}
+    let masterFormId = FORMIDs['fiscalRanking'];
+    let params = { isDraft, role, userId, formId, masterFormId, formBodyStatus: currentFormStatus ,actionTakenBy:userId , actionTakenByRole:role }
     await createHistory(params)
     let calculationsTabWise = await calculateAndUpdateStatusForMappers(
       session,
@@ -2666,6 +3817,14 @@ module.exports.actionTakenByMoHua = catchAsync(async (req, res) => {
       false,
       isDraft
     );
+    let formStatus = currentFormStatus
+    if (currentFormStatus != statusTracker["VIP"]) {
+      formStatus = await decideOverAllStatus(calculationsTabWise)
+      if (formStatus === statusTracker['RBP']) {
+        await sendEmailToUlb(ulbId)
+      }
+
+    }
     let feedBackResp = await saveFeedbacksAndForm(
       calculationsTabWise,
       ulbId,
@@ -2673,8 +3832,8 @@ module.exports.actionTakenByMoHua = catchAsync(async (req, res) => {
       design_year,
       userId,
       role,
-      isDraft
-    ); 
+      formStatus
+    );
     if (feedBackResp.success) {
       response.success = true;
       response.message = "Details submitted successfully";
@@ -2698,7 +3857,8 @@ async function checkIfFormIdExistsOrNot(
   design_year,
   isDraft,
   role,
-  userId
+  userId,
+  currentFormStatus
 ) {
   let validation = {
     message: "",
@@ -2706,6 +3866,7 @@ async function checkIfFormIdExistsOrNot(
     formId: null,
   };
   try {
+    console.log("currentFormStatus ::: ", currentFormStatus)
     let condition = {
       ulb: ObjectId(ulbId),
       design_year: ObjectId(design_year),
@@ -2719,6 +3880,7 @@ async function checkIfFormIdExistsOrNot(
         actionTakenBy: userId,
         status: "PENDING",
         isDraft,
+        currentFormStatus: currentFormStatus
       });
       form.save();
       validation.message = "form created";
@@ -2727,6 +3889,9 @@ async function checkIfFormIdExistsOrNot(
     } else {
       let form = await FiscalRanking.findOneAndUpdate(condition, {
         isDraft: isDraft,
+        actionTakenByRole: role,
+        actionTakenBy: userId,
+        currentFormStatus: currentFormStatus
       });
       if (form) {
         validation.message = "form exists";
@@ -2745,10 +3910,25 @@ async function checkIfFormIdExistsOrNot(
       validation.message = "form for this ulb and design year already exists";
     }
     validation.valid = false;
+    console.log(err)
     console.log("error in checkIfFormIdExistsornot ::: ", err.message);
   }
   return validation;
 }
+
+
+const checkIfActionTaken = (actions) => {
+  try {
+    let tab = actions.find(item => item.id === "s5")['data']
+    let actionTaken = Object.entries(tab).some(([key, value]) => ["APPROVED", "REJECTED"].includes(value.status))
+    return actionTaken
+  }
+  catch (err) {
+    console.log("error in checkIfActionTaken ::: ", err.message)
+  }
+  return true
+}
+
 module.exports.createForm = catchAsync(async (req, res) => {
   const response = {
     success: false,
@@ -2757,21 +3937,26 @@ module.exports.createForm = catchAsync(async (req, res) => {
   const session = await mongoose.startSession();
   await session.startTransaction();
   try {
-    let { ulbId, formId, actions, design_year, isDraft } = req.body;
+    let { ulbId, formId, actions, design_year, isDraft, currentFormStatus } = req.body;
     let { role, _id: userId } = req.decoded;
+    if (statusTracker.VIP === currentFormStatus) {
+      const actionTaken = await checkIfActionTaken(actions)
+      currentFormStatus = actionTaken ? statusTracker.VIP : statusTracker.VNS
+    }
     let formIdValidations = await checkIfFormIdExistsOrNot(
       formId,
       ulbId,
       design_year,
       isDraft,
       role,
-      userId
+      userId,
+      currentFormStatus
     );
+
     if (!formIdValidations.valid) {
       response.message = formIdValidations.message;
       return res.status(500).json(response);
     }
-
     let validation = await checkUndefinedValidations({
       ulb: ulbId,
       actions: actions,
@@ -2782,8 +3967,8 @@ module.exports.createForm = catchAsync(async (req, res) => {
       response.message = validation.message;
       return res.status(500).json(response);
     }
-    let params = {isDraft,role,formId}
-    await createHistory(params)
+    let masterFormId = FORMIDs['fiscalRanking'];
+    let params = { isDraft, role, userId, formId, masterFormId, formBodyStatus: currentFormStatus ,actionBy:ulbId }
     let calculationsTabWise = await calculateAndUpdateStatusForMappers(
       session,
       actions,
@@ -2793,6 +3978,16 @@ module.exports.createForm = catchAsync(async (req, res) => {
       true,
       isDraft
     );
+    console.log(">>>>>>~>>>>>>>>>>>")
+    await createHistory(params)
+    if (!statusTracker.IP === currentFormStatus) {
+      await FiscalRanking.findOneAndUpdate({
+        ulb: ObjectId(req.body.ulbId),
+        design_year: ObjectId(req.body.design_year),
+      }, {
+        submittedDate: new Date()
+      })
+    }
     response.success = true;
     response.formId = formId;
     response.message = "Form submitted successfully";
@@ -2809,6 +4004,7 @@ module.exports.createForm = catchAsync(async (req, res) => {
       {
         $set: {
           isDraft: true,
+          currentFormStatus: 2
         },
       }
     );
@@ -2820,45 +4016,48 @@ module.exports.createForm = catchAsync(async (req, res) => {
   return res.status(500).json(response);
 });
 
-module.exports.FRUlbFinancialData = async (req, res) => {
-  try {
-    let filters = { ...req.query };
-    let skip = parseInt(filters.skip) || 0;
-    let limit = parseInt(filters.limit) || 10;
-    let { getQuery, sortBy, csv } = filters;
-    csv = csv === "true" ? true : false;
 
-    let params = { FRUlbFinancialData: true };
-    let { FRUlbFinancialData: query } = await computeQuery(params);
-    if (getQuery === "true") {
-      return res.status(200).json(query);
-    }
+/* OLD */
+// module.exports.FRUlbFinancialData = async (req, res) => {
+//   try {
+//     let filters = { ...req.query };
 
-    filters["csv"] ? delete filters["csv"] : "";
+//     let { getQuery, sortBy, csv } = filters;
+//     csv = csv === "true" ? true : false;
 
-    let newFilter = await Service.mapFilterNew(filters);
-    let { financialInformation } = await fiscalRankingFormJson();
+//     let params = { FRUlbFinancialData: true };
+//     let { FRUlbFinancialData: query } = await computeQuery(params);
+//     if (getQuery === "true") {
+//       return res.status(200).json(query);
+//     }
 
-    const FinancialRankingFilename = "ULB_Ranking_Financial_Data.csv";
-    let { csvCols, dbCols, FRShortKeyObj } = await columnsForCSV(params);
-    let csv2 = createCsv({
-      query,
-      res,
-      filename: FinancialRankingFilename,
-      modelName: "FiscalRankingMapper",
-      dbCols,
-      csvCols,
-      removeEscapesFromArr: [],
-      labelObj: FRShortKeyObj,
-      // percentCompletionArr: [],
-      FRKeyWithDate: [],
-      FRKeyWithFile: []
+//     filters["csv"] ? delete filters["csv"] : "";
 
-    });
-  } catch (error) {
-    return Response.BadRequest(res, {}, error.message);
-  }
-};
+//     let newFilter = await Service.mapFilterNew(filters);
+//     let { financialInformation } = await fiscalRankingFormJson();
+
+//     const FinancialRankingFilename = "ULB_Ranking_Financial_Data.csv";
+//     let { csvCols, dbCols, FRShortKeyObj } = await columnsForCSV(params);
+//     let csv2 = createCsv({
+//       query,
+//       res,
+//       filename: FinancialRankingFilename,
+//       modelName: "FiscalRankingMapper",
+//       dbCols,
+//       csvCols,
+//       removeEscapesFromArr: [],
+//       labelObj: FRShortKeyObj,
+//       // percentCompletionArr: [],
+//       FRKeyWithDate: [],
+//       FRKeyWithFile: []
+
+//     });
+//   } catch (error) {
+//     return Response.BadRequest(res, {}, error.message);
+//   }
+// };
+
+
 
 module.exports.FROverAllUlbData = async (req, res) => {
   try {
@@ -2868,8 +4067,10 @@ module.exports.FROverAllUlbData = async (req, res) => {
     let { getQuery, sortBy, csv } = filters;
     csv = csv === "true" ? true : false;
 
+    let condition = fiscalRankingFilter(req);
+
     let params = { FROverAllUlbData: true };
-    let { FROverAllUlbData: query } = await computeQuery(params);
+    let { FROverAllUlbData: query } = await computeQuery(params, condition);
     if (getQuery === "true") {
       return res.status(200).json(query);
     }
@@ -2889,36 +4090,6 @@ module.exports.FROverAllUlbData = async (req, res) => {
       "designationOftNodalOfficer",
       "otherUpload",
     ];
-    // let percentCompletionArr = [
-    //   "population11",
-    //   "populationFr",
-    //   "webLink",
-    //   "nameCmsnr",
-    //   "auditorName",
-    //   "nameOfNodalOfficer",
-    //   "designationOftNodalOfficer",
-    //   "email",
-    //   "mobile",
-    //   "waterSupply",
-    //   "sanitationService",
-    //   "propertyWaterTax",
-    //   "propertySanitationTax",
-    //   "FR_auditAnnualReport_2021-22",
-    //   "FR_auditAnnualReport_2020-21",
-    //   "FR_auditAnnualReport_2019-20",
-    //   "FR_webUrlAnnual_2021-22",
-    //   "FR_registerGis_2021-22",
-    //   "FR_accountStwre_2021-22",
-    //   "FR_accountStwreProof_2021-22",
-    //   "FR_appAnnualBudget_2023-24",
-    //   "FR_appAnnualBudget_2022-23",
-    //   "FR_appAnnualBudget_2021-22",
-    //   "FR_appAnnualBudget_2020-21",
-    //   "FR_auditedAnnualFySt_2021-22",
-    //   "FR_auditedAnnualFySt_2020-21",
-    //   "FR_auditedAnnualFySt_2019-20",
-    //   "FR_auditedAnnualFySt_2018-19",
-    // ];
     let csv2 = createCsv({
       query,
       res,
@@ -2928,12 +4099,11 @@ module.exports.FROverAllUlbData = async (req, res) => {
       csvCols,
       removeEscapesFromArr,
       labelObj: {},
-      FRKeyWithDate:["FR_auditAnnualReport_2021-22","FR_auditAnnualReport_2020-21", "FR_auditAnnualReport_2019-20"],
-      FRKeyWithFile: ["FR_accountStwreProof_2021-22","FR_appAnnualBudget_2020-21","FR_appAnnualBudget_2021-22","FR_appAnnualBudget_2022-23",
-        "FR_appAnnualBudget_2023-24","FR_auditedAnnualFySt_2018-19","FR_auditedAnnualFySt_2019-20","FR_auditedAnnualFySt_2020-21","FR_auditedAnnualFySt_2021-22",
+      FRKeyWithDate: ["FR_auditAnnualReport_2021-22", "FR_auditAnnualReport_2020-21", "FR_auditAnnualReport_2019-20"],
+      FRKeyWithFile: ["FR_accountStwreProof_2021-22", "FR_appAnnualBudget_2020-21", "FR_appAnnualBudget_2021-22", "FR_appAnnualBudget_2022-23",
+        "FR_appAnnualBudget_2023-24", "FR_auditedAnnualFySt_2018-19", "FR_auditedAnnualFySt_2019-20", "FR_auditedAnnualFySt_2020-21", "FR_auditedAnnualFySt_2021-22",
         "FR_registerGisProof_2021-22",
-
-        ]
+      ]
     });
   } catch (error) {
     return Response.BadRequest(res, {}, error.message);
@@ -2954,6 +4124,9 @@ async function columnsForCSV(params) {
       "Created Date",
       "Last Submitted Date",
       "Overall Form Status",
+      "ULB Data Submitted (%)",
+      "PMU Verification progress (Approved %)",
+      "PMU Verification progress (Rejected %)",
       "% Completion",
       "I. BASIC ULB DETAILS_Comments",
       "II CONTACT INFORMATION_Comments",
@@ -2992,6 +4165,7 @@ async function columnsForCSV(params) {
       "Copy of Audited Annual Financial Statements preferably in English FY 2019-20",
       "Copy of Audited Annual Financial Statements preferably in English FY 2018-19",
       "Any other information that you would like to provide us?",
+      "Upload Signed Copy"
     ];
     output["dbCols"] = [
       "stateName",
@@ -3002,7 +4176,10 @@ async function columnsForCSV(params) {
       "designYear",
       "createdAt",
       "modifiedAt",
-      "formStatus",
+      "currentFormStatus",
+      "ulbDataSubmitted",
+      "pmuVerificationapprovedProgress",
+      "pmuVerificationrejectedProgress",
       "completionPercent",
       "comment_1",
       "II CONTACT INFORMATION_Comments",
@@ -3041,6 +4218,7 @@ async function columnsForCSV(params) {
       "FR_auditedAnnualFySt_2019-20",
       "FR_auditedAnnualFySt_2018-19",
       "otherUpload",
+      "signedCopyOfFile"
     ];
     output["FRShortKeyObj"] = {};
   } else if (FRUlbFinancialData) {
@@ -3078,172 +4256,115 @@ async function columnsForCSV(params) {
   return output;
 }
 
-function createCsv(params) {
-  try {
-    let {
-      query,
-      res,
-      filename,
-      modelName,
-      dbCols,
-      csvCols,
-      removeEscapesFromArr,
-      labelObj,
-      FRKeyWithDate,
-      FRKeyWithFile
-    } = params;
-    // if(!dbCols.length){
-    //   dbCols =  Object.keys(cols)
-    // }
-    // if(!csvCols.length){
-    //   csvCols = Object.values(cols)
-    // }
-    let totalownOwnRevenueAreaLabel =
-      "Own Revenue collection amount for FY 2021-22 - by Cash/Cheque/DD";
-    let cursor = moongose
-      .model(modelName)
-      .aggregate(query)
-      .cursor({ batchSize: 500 })
-      .addCursorFlag("noCursorTimeout", true)
-      .exec();
-    res.setHeader("Content-disposition", "attachment; filename=" + filename);
-    res.writeHead(200, { "Content-Type": "text/csv;charset=utf-8,%EF%BB%BF" });
-    res.write("\ufeff"+ `${csvCols.join(",").toString()}` + "\r\n");
-    // res.write();
-    cursor.on("data", (document) => {
-      try {
-        let str = "";
-        let str2 = "";
-        let FRFlag = false;
-        const completionKey = "completionPercentFR";
-        const mandatoryFieldsKey = "arrayOfMandatoryField";
-        if(Array.isArray(document[mandatoryFieldsKey]) && document[mandatoryFieldsKey]){
-          document["completionPercent"]= completionPercent( document[mandatoryFieldsKey], document[completionKey]);
-        }
-        for (let key of dbCols) {
-          /* *
-              this condition converts date to DD/MM/YYYY format
-            * */
-          // if (["createdAt", "modifiedAt"].includes(key)) {
-          //   document[key]
-          //     ? (document[key] = dateFormatter(document[key], "/"))
-          //     : "";
-          // }
-          if (removeEscapesFromArr.includes(key)) {
-            document[key] = removeEscapeChars(document[key]);
-          }
-          
-          if (key.split("_")[0] !== "FR") {
-            if (document[key]) {
-              /* A destructuring assignment.FR case in Fiscal Mapper */
-               FRFinancialCsvCase(
-                key,
-                document,
-                labelObj
-              );
-              // if (key === "formStatus") {
-              //   let { status, actionTakenByRole, isDraft } = document[key];
-              //   document[key] = calculateStatusForFiscalRankingForms(
-              //     status,
-              //     actionTakenByRole,
-              //     isDraft,
-              //     "ULB"
-              //   );
-              // }
 
-              str += document[key] + ",";
-            } else {
-              str += " " + ",";
-            }
-          } else {
-            let fiscalrankingmappersDocument = document[
-              "fiscalrankingmappers"
-            ].find((el) => key === el.key);
-            if (fiscalrankingmappersDocument) {
-              let FRMapperKey = "value"
-              if(FRKeyWithDate.length>0 && FRKeyWithDate.includes(key)){
-                FRMapperKey = "date"
-              }else if(FRKeyWithFile.length>0 && FRKeyWithFile.includes(key)){
-                FRMapperKey = "file"
-              }
-              if(fiscalrankingmappersDocument[FRMapperKey]){
-                str += fiscalrankingmappersDocument[FRMapperKey] + ",";
-              }else{
-              str += " " + ",";
-              }
-            } else {
-              str += " " + ",";
-            }
-          }
-        }
-        // if (FROverallFlag) {
-        //   let percent = (
-        //     (completionPercent / denominatorMandatory) *
-        //     100
-        //   ).toFixed();
-        //   str2 = str.split(",");
-        //   str2.splice(9, 1, `${percent}%`);
-        //   str = str2.join(",");
-        // }
-        res.write("\ufeff"+ str + "\r\n");
-        // if (FRFlag) {
-        //   res.write("\ufeff" + str2 + "\r\n");
-        //   FRFlag = false;
-        // }
-      } catch (err) {
-        console.log("error in writeCsv :: ", err.message);
-      }
-    });
-
-    cursor.on("end", (el) => {
-      // res.flushHeaders();
-      // console.log("ended");
-      return res.end();
-    });
-  } catch (error) {
-    return Response.BadRequest(res, {}, error.message);
-  }
-}
-
-function completionPercent( document, FRCompletionNumber) {
+function completionPercent(document, FRCompletionNumber) {
   let completionPercent = 0;
-  const totalMandatoryFields = 28;
-  const [objOfMandatoryFields] =  document;
+  const totalMandatoryFields = 29;
+  const [objOfMandatoryFields] = document;
 
-  for( let field in objOfMandatoryFields){
-    if(objOfMandatoryFields[field]){
+  for (let field in objOfMandatoryFields) {
+    if (objOfMandatoryFields[field]) {
       completionPercent++;
     }
   }
 
-  if(FRCompletionNumber){
+  if (FRCompletionNumber) {
     completionPercent = completionPercent + FRCompletionNumber
   }
 
-  return  ((completionPercent / totalMandatoryFields) * 100 ).toFixed();
+  return ((completionPercent / totalMandatoryFields) * 100).toFixed();
 }
 
 
-async function createHistory(params){
-  try{
-    let {isDraft,role,formId} = params
-    if(!isDraft || role === userTypes.mohua){
-      let data = await FiscalRanking.find({"_id":ObjectId(formId)}).lean()
-      let mapperData  = await FiscalRankingMapper.find({"fiscal_ranking":ObjectId(formId)})
+async function createHistory(params) {
+  try {
+    let { isDraft, role: actionTakenByRole, userId: actionTakenBy, formId, masterFormId, formBodyStatus } = params
+    // if(!isDraft || role === userTypes.mohua){
+    // let data = await FiscalRanking.find({"_id":ObjectId(formId)}).lean()
+    // let mapperData  = await FiscalRankingMapper.find({"fiscal_ranking":ObjectId(formId)})
+    // data[0]['fiscalMapperData'] = mapperData
+    // let body = {
+    //   "formId":FORMIDs['fiscalRanking'],
+    //   "recordId":formId,
+    //   "data":data
+    // }
+    // let historyParams = {
+    //   body
+    // }
+    // await saveFormHistory(historyParams)
+    // }\
+    if (formBodyStatus === MASTER_STATUS["In Progress"]) {
+
+      let currentStatusData = {
+        formId: masterFormId,
+        recordId: formId,
+        status: MASTER_STATUS["In Progress"],
+        level: FORM_LEVEL["form"],
+        shortKey: "form_level",
+        rejectReason: "",
+        responseFile: "",
+        actionTakenByRole: actionTakenByRole,
+        actionTakenBy: ObjectId(actionTakenBy),
+      };
+      await saveCurrentStatus({
+        body: currentStatusData,
+        // session
+      });
+
+      // await session.commitTransaction();
+      // return Response.OK(res, {}, "Form Submitted");
+    } else if (
+      
+      [MASTER_STATUS["Submission Acknowledged by PMU"], MASTER_STATUS["Verification Not Started"], MASTER_STATUS["Verification In Progress"], MASTER_STATUS["Returned by PMU"]].includes(formBodyStatus)
+    ) {
+      let data = await FiscalRanking.find({ "_id": formId }).lean()
+      let mapperData = await FiscalRankingMapper.find({ "fiscal_ranking": formId })
       data[0]['fiscalMapperData'] = mapperData
-      let body = {
-        "formId":FORMIDs['fiscalRanking'],
-        "recordId":formId,
-        "data":data
-      }
-      let historyParams = {
-        body
-      }
-      await saveFormHistory(historyParams)
-    } 
+      let bodyData = {
+        formId: masterFormId,
+        recordId: formId,
+        data: data,
+      };
+      /* Saving the form history of the user. */
+      await saveFormHistory({
+        body: bodyData,
+        // session
+      });
+
+      let currentStatusData = {
+        formId: masterFormId,
+        recordId: formId,
+        status: formBodyStatus,
+        level: FORM_LEVEL["form"],
+        shortKey: "form_level",
+        rejectReason: "",
+        responseFile: "",
+        actionTakenByRole: actionTakenByRole,
+        actionTakenBy: ObjectId(actionTakenBy),
+      };
+      await saveCurrentStatus({
+        body: currentStatusData,
+        // session
+      });
+
+      let statusHistory = {
+        formId: masterFormId,
+        recordId: formId,
+        shortKey: "form_level",
+        data: currentStatusData,
+      };
+      await saveStatusHistory({
+        body: statusHistory,
+        //  session 
+      });
+
+      // await session.commitTransaction();
+      // return Response.OK(res, {}, "Form Submitted");
+    }
   }
-  catch(err){
-    console.log("error in createHistory ::: ",err.message)
+  catch (err) {
+    console.log(err)
+    console.log("error in createHistory ::: ", err.message)
   }
 }
 
@@ -3267,21 +4388,8 @@ function FRFinancialCsvCase(
   labelObj
 ) {
   if (key === "indicator") {
-  //  if (document[key] === "totalOwnRevenueArea") {
-      // FRFlag = true;
-      // str2 = str;
-      // str2 += `${totalownOwnRevenueAreaLabel}, ${
-        // document["fy_21_22_cash"] ?? ""
-    //   // }`;
-    // }
     document[key] = removeEscapeChars(labelObj[document[key]]);
-    // if(!labelObj[document[key]]){
-    //   console.log(document["indicator"])
-    // }
   }
-  // return { FRFlag, 
-  //   // str2 
-  // };
 }
 
 /**
@@ -3291,7 +4399,7 @@ function FRFinancialCsvCase(
  * @param params - This is the object that is passed to the function.
  * @returns The query returns the data for the fiscal ranking dashboard.
  */
-function computeQuery(params) {
+function computeQuery(params, cond = null) {
   const { FRUlbFinancialData, FROverAllUlbData } = params;
   let output = {};
   if (FRUlbFinancialData) {
@@ -3327,7 +4435,6 @@ function computeQuery(params) {
     output["FRUlbFinancialData"] = [
       {
         $match: {
-          // ulb: ObjectId("5fa24662072dab780a6f15c9"),
           type: {
             $in: indicatorArr,
           },
@@ -3380,7 +4487,6 @@ function computeQuery(params) {
           as: "ulb",
         },
       },
-
       {
         $unwind: {
           path: "$ulb",
@@ -3492,7 +4598,9 @@ function computeQuery(params) {
     ];
   }
   if (FROverAllUlbData) {
+    const { condition, condition_one } = cond
     output["FROverAllUlbData"] = [
+      { $match: condition },
       {
         $lookup: {
           from: "states",
@@ -3547,9 +4655,10 @@ function computeQuery(params) {
               $project: {
                 createdAt: 1,
                 modifiedAt: 1,
+                submittedDate:1,
                 designYear: 1,
                 isDraft: 1,
-                population11: 1,
+                population11: "$population",
                 populationFr: 1,
                 webLink: 1,
                 nameCmsnr: 1,
@@ -3565,9 +4674,14 @@ function computeQuery(params) {
                 propertySanitationTax: 1,
                 fy_21_22_cash: 1,
                 otherUpload: 1,
+                signedCopyOfFile: 1,
+                currentFormStatus: 1,
+                ulbDataSubmitted: "$progress.ulbCompletion",
+                pmuVerificationapprovedProgress: "$progress.approvedProgress",
+                pmuVerificationrejectedProgress: "$progress.rejectedProgress",
                 arrayOfMandatoryField: [
                   {
-                    population11: "$population11.value",
+                    population11: "$population",
                     populationFr: "$populationFr.value",
                     webLink: "$webLink.value",
                     nameCmsnr: "$nameCmsnr.value",
@@ -3582,6 +4696,7 @@ function computeQuery(params) {
                     propertyWaterTax: "$propertyWaterTax.value",
                     propertySanitationTax: "$propertySanitationTax.value",
                     fy_21_22_cash: "$fy_21_22_cash.value",
+                    signedCopyOfFile: "$signedCopyOfFile.url"
                   },
                 ],
               },
@@ -3596,6 +4711,22 @@ function computeQuery(params) {
           preserveNullAndEmptyArrays: true,
         },
       },
+      {
+        $addFields: {
+          currentFormStatus: {
+            $cond: {
+              if: {
+                $and: [
+                  { $eq: [{ $type: "$fiscalrankings" }, "object"] },
+                ]
+              },
+              then: "$fiscalrankings.currentFormStatus",
+              else: 1
+            }
+          }
+        }
+      },
+      { $match: condition_one },
       {
         $lookup: {
           from: "fiscalrankingmappers",
@@ -3669,7 +4800,25 @@ function computeQuery(params) {
                       ],
                     },
                     then: "$file.url",
-                    else: null,
+                    else: {
+                      "$cond": {
+                        "if": {
+                          "$and": [
+                            {
+                              "$eq": [
+                                "$type",
+                                "auditedAnnualFySt"
+                              ]
+                            },
+                            {
+                              "$eq": ["$modelName", "ULBLedger"]
+                            }
+                          ]
+                        },
+                        "then": "Already Uploaded on Cityfinance",
+                        "else": null
+                      }
+                    },
                   },
                 },
                 modelName: 1,
@@ -3725,42 +4874,97 @@ function computeQuery(params) {
           modifiedAt: {
             $ifNull: [
               AggregationServices.getCommonDateTransformer(
-                "$fiscalrankings.modifiedAt"
+                "$fiscalrankings.submittedDate"
               ),
               "",
             ],
           },
-          formStatus: {
-            $cond: {
-              if: {
-                $or: [
-                  {
-                    $eq: [{ $ifNull: ["$fiscalrankings", ""] }, ""],
-                  },
-                ],
-              },
-              then: FRFormStatus["Not_Started"],
-              else: {
-                $cond: {
-                  if: {
-                    $or: [
-                      {
-                        $eq: ["$fiscalrankings.isDraft", true],
-                      },
-                    ],
-                  },
-                  then: FRFormStatus["In_Progress"],
-                  else: FRFormStatus["Under_Review_By_MoHUA"],
-                },
-              },
-            },
+          currentFormStatus: "$currentFormStatus",
+          // formStatus: {
+          //   $cond: {
+          //     if: {
+          //       $or: [
+          //         {
+          //           $eq: [{ $ifNull: ["$fiscalrankings", ""] }, ""],
+          //         },
+          //       ],
+          //     },
+          //     then: FRFormStatus["Not_Started"],
+          //     else: {
+          //       $cond: {
+          //         if: {
+          //           $or: [
+          //             {
+          //               $eq: ["$fiscalrankings.isDraft", true],
+          //             },
+          //           ],
+          //         },
+          //         then: FRFormStatus["In_Progress"],
+          //         else: FRFormStatus["Under_Review_By_MoHUA"],
+          //       },
+          //     },
+          //   },
+          // },
+          ulbDataSubmitted: {
+            $ifNull: [{
+              "$concat": [`$fiscalrankings.ulbDataSubmitted`, "%"]
+            }, {
+              "$concat": ["0", "%"]
+            }]
+          },
+          pmuVerificationapprovedProgress: {
+            $ifNull: [{
+              "$concat": [
+                { "$toString": "$fiscalrankings.pmuVerificationapprovedProgress" },
+                "%"
+              ]
+            }, {
+              "$concat": ["0", "%"]
+            }]
+          },
+          pmuVerificationrejectedProgress: {
+            $ifNull: [{
+              "$concat": [
+                { "$toString": "$fiscalrankings.pmuVerificationrejectedProgress" },
+                "%"
+              ]
+            }, {
+              "$concat": ["0", "%"]
+            }]
+          },
+          ulbDataSubmitted: {
+            $ifNull: [{
+              "$concat": [`$fiscalrankings.ulbDataSubmitted`, "%"]
+            }, {
+              "$concat": ["0", "%"]
+            }]
+          },
+          pmuVerificationapprovedProgress: {
+            $ifNull: [{
+              "$concat": [
+                { "$toString": "$fiscalrankings.pmuVerificationapprovedProgress" },
+                "%"
+              ]
+            }, {
+              "$concat": ["0", "%"]
+            }]
+          },
+          pmuVerificationrejectedProgress: {
+            $ifNull: [{
+              "$concat": [
+                { "$toString": "$fiscalrankings.pmuVerificationrejectedProgress" },
+                "%"
+              ]
+            }, {
+              "$concat": ["0", "%"]
+            }]
           },
           comment_1: "",
           "II CONTACT INFORMATION_Comments": "",
           "III FINANCIAL INFORMATION_Comments": "",
           "IV UPLOAD FINANCIAL DOCUMENTS_Comments": "",
           "V SELF DECLARATION_Comments": "",
-          population11: { $ifNull: ["$fiscalrankings.population11.value", ""] },
+          population11: { $ifNull: ["$population", ""] },
           populationFr: { $ifNull: ["$fiscalrankings.populationFr.value", ""] },
           webLink: { $ifNull: ["$fiscalrankings.webLink.value", ""] },
           nameCmsnr: { $ifNull: ["$fiscalrankings.nameCmsnr.value", ""] },
@@ -3801,6 +5005,9 @@ function computeQuery(params) {
             $ifNull: ["$fiscalrankings.fy_21_22_cash.value", ""],
           },
           otherUpload: { $ifNull: ["$fiscalrankings.otherUpload.url", ""] },
+          signedCopyOfFile: {
+            $ifNull: ["$fiscalrankings.signedCopyOfFile.url", ""],
+          },
           fiscalrankingmappers: 1,
           arrayOfMandatoryField: "$fiscalrankings.arrayOfMandatoryField",
           completionPercentFR: {
@@ -3831,6 +5038,92 @@ function computeQuery(params) {
   }
   return output;
 }
+
+exports.heatMapReport = async (req, res, next) => {
+  let response = {
+    "success": false,
+    "message": "",
+    "data": {}
+  }
+  try {
+    let { state, category, getQuery } = req.query
+    getQuery = getQuery === "true"
+    console.log(state, category, getQuery);
+    let query = stateWiseHeatMapQuery({ state, category })
+    if (getQuery) return res.json(query)
+    let queryResult = await Ulb.aggregate(query)
+    response.success = true
+    response.message = queryResult.length ? "Fetched Successfully" : "No data found"
+    response.data = queryResult.length ? queryResult[0] : {
+      formWiseData: {
+        totalForms: 0,
+        verificationInProgress: 0,
+        verificationNotStarted: 0,
+        approved: 0,
+        rejected: 0
+      },
+      ulbWiseData: {
+        totalUlbs: 0,
+        inProgress: 0,
+        submitted: 0,
+        notStarted: 0
+      }
+    }
+    return res.json(response)
+
+  }
+  catch (err) {
+    response.message = "Something went wrong"
+    if (["stg", "demo"].includes(process.env.ENV)) {
+      response.message = err.message
+    }
+    return res.json(response)
+  }
+}
+
+/**
+ * @param {object} fyData 
+ * @param {Array} requiredKeys 
+ */
+function calculatePercentage(fyData, requiredKeys, viewOne) {
+  try {
+    let total = 0
+    let approved = 0
+    let rejected = 0
+    if (viewOne['signedCopyOfFile']) {
+      total+=1
+      if (viewOne["signedCopyOfFile"]?.status === "APPROVED") {
+        approved += 1
+      }
+      else if (viewOne["signedCopyOfFile"]?.status === "REJECTED") {
+        rejected += 1
+      }
+    }
+    for (let requiredKey of requiredKeys) {
+      let financialObj = fyData.financialInformation[requiredKey] || fyData.uploadFyDoc[requiredKey]
+      let financialYears = financialObj?.yearData || []
+      for (let item of financialYears) {
+        if (item.status) {
+          total += 1
+        }
+        if (item.status === "APPROVED") {
+          approved += 1
+        }
+        else if (item.status === "REJECTED") {
+          rejected += 1
+        }
+      }
+    }
+    let approvedPerc = (approved/total) * 100
+    let rejectedPerc = (rejected/total) * 100
+    return {approvedPerc,rejectedPerc}
+  }
+  catch (err) {
+    console.log("error in calculatePercentage ::: ", err.message)
+  }
+}
+
+
 /**
  * It removes newline and comma characters from a string
  * @param entity - The entity to be cleaned up.
@@ -3840,4 +5133,233 @@ function computeQuery(params) {
 function removeEscapeChars(entity) {
   return !entity ? entity : entity.replace(/(\n|,)/gm, " ");
 }
+
+module.exports.FRUlbFinancialData = async (req, res) => {
+  try {
+    let filters = { ...req.query };
+    // let condition = fiscalRankingFilter(req);
+    let { getQuery, csv } = filters;
+    csv = csv === "true" ? true : false;
+    let params = { FRUlbFinancialData: true };
+    let query = fyCsvDownloadQuery();
+    if (getQuery === "true") {
+      return res.status(200).json(query);
+    }
+    filters["csv"] ? delete filters["csv"] : "";
+    let { csvCols } = await columnsForCSV(params);
+    fyUlbFyCsv({
+      res,
+      filename: "ULB_Ranking_Financial_Data.csv",
+      modelName: "FiscalRankingMapper",
+      csvCols,
+      query
+    });
+  } catch (error) {
+    return Response.BadRequest(res, {}, error.message);
+  }
+}
+
+const fiscalRankingFilter = (req) => {
+  let condition = { "isActive": true };
+  let condition_one = {}
+  try {
+    if (req.query.stateName && req.query.stateName != "null") condition['state'] = ObjectId(state)
+    if (req.query.status && req.query.status != "null") condition_one['currentFormStatus'] = parseInt(req.query.status)
+    if (req.query.ulbName && req.query.ulbName != "null") condition["ulbName"] = req.query.ulbName
+    if (req.query.censusCode && req.query.censusCode != "null") condition["censusCode"] = req.query.censusCode
+    if (req.query.populationType && req.query.populationType != "null") condition["populationType"] = req.query.populationType
+    if (req.query.ulbType && req.query.ulbType != "null") condition["ulbType"] = req.query.ulbType
+    if (req.query.UA && req.query.UA != "null") condition["UA"] = req.query.UA
+    return { condition, condition_one }
+  } catch (err) {
+    console.log("err", err)
+    return { condition, condition_one }
+  }
+}
+
+/**
+ * This is a function that generates a CSV file based on given parameters and data from a MongoDB
+ * database.
+ * @param params - The `params` object contains the following properties:
+ * @returns The function `fyUlbFyCsv` does not have a return statement. It writes a CSV file to the
+ * response object and ends the response.
+ */
+
+async function fyUlbFyCsv(params) {
+  try {
+    let {
+      res,
+      filename,
+      csvCols,
+      query
+    } = params;
+    let FRShortKeyObj = {};
+    if (FiscalRankingArray.length > 0) {
+      for (let FRObj of FiscalRankingArray) {
+        FRShortKeyObj[FRObj["key"]] = removeEscapeChars(FRObj["label"]);
+      }
+    }
+
+    let stateList = await State.find({}, { "_id": 1, "name": 1 }).lean();
+    res.setHeader("Content-disposition", "attachment; filename=" + filename);
+    res.writeHead(200, { "Content-Type": "text/csv;charset=utf-8,%EF%BB%BF" });
+    res.write("\ufeff" + `${csvCols.join(",").toString()}` + "\r\n");
+    let cursor = moongose
+      .model("FiscalRanking")
+      .aggregate(query).allowDiskUse(true)
+      .cursor({ batchSize: 300 })
+      .addCursorFlag("noCursorTimeout", true)
+      .exec();
+    cursor.on("data", (document) => {
+      try {
+        let fyMapperData = document.fiscalrankingmapper;
+        let sortKeys = fiscalRankingQestionSortkeys();
+        let stateObj = stateList.length ? stateList.find(e => e._id.toString() == document.state.toString()) : null
+        let stateName = stateObj ? stateObj.name : ""
+        let censusCode = document.censusCode ? document.censusCode : document.sbCode;
+        for (let key in sortKeys) {
+          let fyData = fyMapperData.length ? fyMapperData.filter(e => parseFloat(e.displayPriority) == sortKeys[key]) : null;
+          if (fyData) {
+            let str = '';
+            for (let pf of fyData) {
+              let value = pf.file ? pf.file : pf.date ? pf.date : pf.value ? pf.value : ""
+              str = stateName + "," + document.ulbName + "," + document.cityFinanceCode + "," + censusCode + "," + MASTER_STATUS_ID[document.currentFormStatus] + "," + YEAR_CONSTANTS_IDS[document.designYear] + "," + YEAR_CONSTANTS_IDS[pf.year] + "," + FRShortKeyObj[pf.type] + "," + value;
+              str.trim()
+              res.write("\ufeff" + str + "\r\n");
+            }
+          }
+        }
+      } catch (err) {
+        console.log("error in writeCsv :: ", err);
+        return Response.BadRequest(res, {}, error.message);
+      }
+    });
+    cursor.on("end", (el) => { return res.end() });
+  } catch (error) { return Response.BadRequest(res, {}, error) }
+}
+
 module.exports.checkUndefinedValidations = checkUndefinedValidations
+
+function createCsv(params) {
+  try {
+    let {
+      query,
+      res,
+      filename,
+      modelName,
+      dbCols,
+      csvCols,
+      removeEscapesFromArr,
+      labelObj,
+      FRKeyWithDate,
+      FRKeyWithFile
+    } = params;
+
+    res.setHeader("Content-disposition", "attachment; filename=" + filename);
+    res.writeHead(200, { "Content-Type": "text/csv;charset=utf-8,%EF%BB%BF" });
+    res.write("\ufeff" + `${csvCols.join(",").toString()}` + "\r\n");
+
+    let cursor = moongose
+      .model(modelName)
+      .aggregate(query)
+      .allowDiskUse(true)
+      .cursor({ batchSize: 500 })
+      .addCursorFlag("noCursorTimeout", true)
+      .exec();
+
+    cursor.on("data", (document) => {
+      try {
+        let str = "";
+        let str2 = "";
+        let FRFlag = false;
+        const ignoreZero = 0;
+        const completionKey = "completionPercentFR";
+        const mandatoryFieldsKey = "arrayOfMandatoryField";
+        if (Array.isArray(document[mandatoryFieldsKey]) && document[mandatoryFieldsKey]) {
+          document["completionPercent"] = completionPercent(document[mandatoryFieldsKey], document[completionKey]);
+        }
+
+        for (let key of dbCols) {
+          if (removeEscapesFromArr.includes(key)) {
+            document[key] = removeEscapeChars(document[key]);
+          }
+          if (key == "currentFormStatus") {
+            document[key] = MASTER_STATUS_ID[document.currentFormStatus]
+          }
+          if (key.split("_")[0] !== "FR") {
+            if (document[key] === ignoreZero || document[key]) {
+              /* A destructuring assignment.FR case in Fiscal Mapper */
+              FRFinancialCsvCase(
+                key,
+                document,
+                labelObj
+              );
+              str += document[key] + ",";
+            } else {
+              str += " " + ",";
+            }
+          } else {
+            let fiscalrankingmappersDocument = document[
+              "fiscalrankingmappers"
+            ].find((el) => key === el.key);
+            if (fiscalrankingmappersDocument) {
+              let FRMapperKey = "value"
+              if (FRKeyWithDate.length > 0 && FRKeyWithDate.includes(key)) {
+                FRMapperKey = "date"
+              } else if (FRKeyWithFile.length > 0 && FRKeyWithFile.includes(key)) {
+                FRMapperKey = "file"
+              }
+              if (fiscalrankingmappersDocument[FRMapperKey]) {
+                str += fiscalrankingmappersDocument[FRMapperKey] + ",";
+              } else {
+                str += " " + ",";
+              }
+            } else {
+              str += " " + ",";
+            }
+          }
+        }
+        str.trim()
+        res.write("\ufeff" + str + "\r\n");
+      } catch (err) {
+        console.log("error in writeCsv :: ", err);
+      }
+    });
+    cursor.on("end", (el) => {
+      return res.end();
+    });
+  } catch (error) {
+    return Response.BadRequest(res, {}, error.message);
+  }
+}
+/**
+ * The function calculates review count based on completed, approved, and rejected indicators for a
+ * given item.
+ * @param item - The item parameter is likely an object that contains information about a review, such
+ * as the review value and status.
+ * @param completedIndicator - A variable that keeps track of whether the item has been completed or
+ * not. It is initially set to 0 and will be set to 1 if the item has a value.
+ * @param approvedIndicator - A variable that keeps track of whether the item has been approved or not.
+ * It is initially set to 0 and will be set to 1 if the item has a value and its status is "APPROVED".
+ * @param rejectedIndicator - The rejectedIndicator parameter is a variable that keeps track of whether
+ * a review item has been rejected or not. It is initially set to 0 and will be set to 1 if the item
+ * has a value and its status is "REJECTED".
+ * @returns An array containing the values of `completedIndicator`, `approvedIndicator`, and
+ * `rejectedIndicator`.
+ */
+function calculateReviewCount(item) {
+  let completedIndicator = 0
+  let approvedIndicator = 0
+  let rejectedIndicator = 0
+  if (item.value || item.date != null || (item.file && item?.file?.url) || (item.file && item.modelName === "ULBLedger")) {
+    completedIndicator = 1;
+  }
+  if (item.status === "APPROVED" || (item.file && item.modelName === "ULBLedger")) {
+    approvedIndicator = 1;
+  }
+  if (item.status === "REJECTED" || (item.file && item.modelName === "ULBLedger")) {
+    rejectedIndicator = 1;
+  }
+  return [completedIndicator, approvedIndicator, rejectedIndicator]
+}
+

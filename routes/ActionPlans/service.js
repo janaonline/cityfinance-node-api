@@ -7,10 +7,12 @@ const Response = require("../../service").response;
 const ExcelJS = require("exceljs");
 const User = require('../../models/User')
 const Year = require('../../models/Year');
-const {canTakenAction} = require('../CommonActionAPI/service');
+const {canTakenAction, canTakenActionMaster} = require('../CommonActionAPI/service');
 const {BackendHeaderHost, FrontendHeaderHost} = require('../../util/envUrl')
 const StateMasterForm = require('../../models/StateMasterForm')
-const { YEAR_CONSTANTS } = require("../../util/FormNames");
+const { YEAR_CONSTANTS, MASTER_STATUS, MASTER_STATUS_ID } = require("../../util/FormNames");
+const { ModelNames } = require("../../util/15thFCstatus");
+const {createAndUpdateFormMasterState} =  require('../../routes/CommonFormSubmissionState/service')
 
 
 function response(form, res, successMsg ,errMsg){
@@ -52,6 +54,7 @@ exports.saveActionPlans = async (req, res) => {
     let formData = {};
     formData = {...data};   
     const {_id: actionTakenBy, role: actionTakenByRole } = user;
+    let currentMasterFormStatus = req.body['status']
   
     formData["actionTakenBy"] = ObjectId(actionTakenBy);
     formData["actionTakenByRole"] = actionTakenByRole;
@@ -69,7 +72,18 @@ exports.saveActionPlans = async (req, res) => {
     const condition = {};
     condition["design_year"] = data.design_year;
     condition["state"] = data.state;
-
+    if(data.state && data.design_year === YEAR_CONSTANTS['23_24'] ){
+      formData.status = currentMasterFormStatus
+      let params = {
+        modelName: ModelNames['actionPlan'],
+        formData,
+        res,
+        actionTakenByRole,
+        actionTakenBy
+      };
+      return await createAndUpdateFormMasterState(params);
+      
+    }
     if(formData.isDraft ===  false && formData['uaData']){
       
       let [validatedSuccess, validateResponse] = await validateFormData(formData['uaData']);
@@ -276,28 +290,74 @@ exports.getActionPlans = async (req, res) => {
         design_year: ObjectId(year2122Id._id),
       }).lean();
     }
+    /* GET 22-23, 23-24 action plan form Data */
     const data2223Query = ActionPlans.findOne({
       state: ObjectId(state),
-      design_year,
+      design_year: ObjectId(YEAR_CONSTANTS['22_23']),
     }).lean();
-    
+    const data2324Query = ActionPlans.findOne({
+      state: ObjectId(state),
+      design_year: ObjectId(YEAR_CONSTANTS['23_24']),
+    }).lean();
+
+    //GET State Master form Data of 21-22 
     const stateMasterFormDataQuery = StateMasterForm.findOne({
       state,
       design_year: ObjectId(year2122Id._id),
     }).lean()
 
-    const [ data2122, data2223, stateMasterFormData] = await Promise.all([
+    /* The above code is using destructuring assignment to assign the results of four asynchronous
+    queries to four variables: `data2122`, `data2223`, `data2324`, and `stateMasterFormData`. The
+    `await` keyword is used to wait for all the promises to resolve before continuing with the
+    execution of the code. */
+    const [ data2122, data2223,data2324, stateMasterFormData] = await Promise.all([
       data2122Query,
       data2223Query,
+      data2324Query,
       stateMasterFormDataQuery
     ]);
-
-    if(data2223){
-      Object.assign(data2223, {canTakeAction: canTakenAction(data2223['status'], data2223['actionTakenByRole'], data2223['isDraft'], "STATE",role ) })
-      return Response.OK(res, data2223, "Success");
-
-    }
     let uaArray;
+    if (design_year === YEAR_CONSTANTS["23_24"]) {
+      //If 23-24 data found then assign canTakeAction And return, else check 22-23 data and disable projects
+      if (data2324) {
+        let params = {
+          status: data2324['currentFormStatus'],
+          formType:"STATE",
+          loggedInUser: role,
+        };
+        Object.assign(data2324, {
+          canTakeAction: canTakenActionMaster(params),
+          statusId: data2324['currentFormStatus'],
+          status: MASTER_STATUS_ID[data2324['currentFormStatus']]
+        });
+        return Response.OK(res, data2324, "Success");
+      }
+      if (data2223) {
+        uaArray = getDisabledProjects(uaArray, data2223);
+      } else {
+        return res.status(400).json({
+          status: true,
+          message: `Your Previous Year's form status is - Not Submitted. Kindly submit form for previous year at - <a href =https://${host}/stateform/dashboard target="_blank">Click here</a> in order to submit form`,
+        });
+      }
+    }
+    if (data2223) {
+      Object.assign(data2223, {
+        canTakeAction: canTakenAction(
+          data2223["status"],
+          data2223["actionTakenByRole"],
+          data2223["isDraft"],
+          "STATE",
+          role
+        ),
+        statusId: MASTER_STATUS["Not Started"],
+        status: MASTER_STATUS_ID[MASTER_STATUS["Not Started"]],
+        isDraft: null
+      });
+      // data2223.status = null
+      
+      return Response.OK(res, data2223, "Success");
+    }
     // let uaArray2223;
     // let ua2122projectExecute, ua2122sourceFund, ua2122yearOutlay;
     if (stateMasterFormData) {
@@ -413,6 +473,34 @@ exports.getActionPlans = async (req, res) => {
   }
 };
 
+function getDisabledProjects(uaArray, data2223) {
+  uaArray = data2223.uaData;
+  for (let i = 0; i < uaArray.length; i++) {
+    let ua = uaArray[i];
+    //an entry of ua
+    for (let category in ua) {
+      //category in ua
+      if (
+        category === "projectExecute" ||
+        category === "sourceFund" ||
+        category === "yearOutlay"
+        ) {
+        for (let project of ua[category]) {
+          //set project isDisable key = true
+          if (project) {
+            Object.assign(project, { isDisable: true ,
+              // dprCompletion:"", dprPreparation:"", workCompletion:""
+            });
+            // if(category === "serviceLevelIndicators"){
+            //   Object.assign(project, {bypassValidation: true});
+            // }
+          }
+        }
+      }
+    }
+  }
+  return uaArray;
+}
 exports.action = async (req, res) => {
   try {
     let { design_year, state } = req.body;

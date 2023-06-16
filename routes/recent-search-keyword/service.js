@@ -110,76 +110,75 @@ async function getAllKeyword(req, res) {
 const search = catchAsync(async (req, res) => {
   try {
     const { matchingWord, onlyUlb } = req.body;
-    const {type, state} = req.query
-    
+    const { type, state } = req.query
+
     if (!matchingWord)
       return Response.BadRequest(res, null, "Provide word to match");
 
-      if(type && type == 'state'){
-        let query = { name: { $regex: `${matchingWord}`, $options: "im" } };
-        let statePromise = await State.find(query)
+    if (type && type == 'state') {
+      let query = { name: { $regex: `^${matchingWord[type]}`, $options: "im" } };
+      let statePromise = await State.find(query)
         .limit(10)
         .lean();
-        let data =[]
-if(statePromise.length>0){
-   data =   
+      let data = []
+      if (statePromise.length > 0) {
+        data =
           statePromise.map((value) => {
             value.type = "state";
             return value;
           })
-}
-      
-        
-
-        return Response.OK(res, data);
-      }else if(type && type == 'ulb'){
-        let stateData
-      
-
-        let query = { name: { $regex: `${matchingWord}`, $options: "im" } };
-        if(state){
-          if(state && ObjectId.isValid(state) ){
-            Object.assign(query, {state: ObjectId(state)})  
-          }else{
-            stateData =  await State.findOne({code:state}).lean()
-            Object.assign(query, {state: ObjectId(stateData._id)})  
-          }
-          
-       }
-
-        let ulbPromise = await Ulb.find(query)
-          .populate("state")
-          .populate("ulbType")
-          .limit(10)
-          .sort({name:1})
-          .lean();
-          let data =   
-           ulbPromise.map((value) => {
-            value.name = toTitleCase(value.name)
-              value.type = "ulb";
-              return value;
-            })
-          
-
-          return Response.OK(res, data);
       }
+
+
+
+      return Response.OK(res, data);
+    } else if (type && type == 'ulb') {
+      let stateData
+      let query = { name: { $regex: `^${matchingWord}`, $options: "i" } }
+      if (matchingWord.hasOwnProperty("contentType")) {  // filter add chnage suresh
+        query = { name: { $regex: `^${matchingWord[type]}`, $options: "i" } };
+      }
+      if (state) {
+        if (state && ObjectId.isValid(state)) {
+          Object.assign(query, { state: ObjectId(state) })
+        } else {
+          stateData = await State.findOne({ code: state }).lean()
+          Object.assign(query, { state: ObjectId(stateData._id) })
+        }
+      }
+      let ulbPromise = await Ulb.find(query)
+        .populate("state")
+        .populate("ulbType")
+        .limit(10)
+        .sort({ name: 1 })
+        .lean();
+      let data =
+        ulbPromise.map((value) => {
+          value.name = toTitleCase(value.name)
+          value.type = "ulb";
+          return value;
+        })
+
+
+      return Response.OK(res, data);
+    }
     let query = { name: { $regex: `${matchingWord}`, $options: "im" } };
     let ulbPromise = Ulb.find(query)
       .populate("state")
       .populate("ulbType")
       .limit(8)
-      .sort({name:1})
+      .sort({ name: 1 })
       .lean();
-      
+
     let statePromise = State.find(query)
       // .select({ name: 1, _id: 1 })
       .limit(5)
-      .sort({name:1})
+      .sort({ name: 1 })
       .lean();
     let searchKeywordPromise = SearchKeyword.find(query)
       // .select({ name: 1, _id: 1 })
       .limit(5)
-      .sort({name:1})
+      .sort({ name: 1 })
       .lean();
     let data = await Promise.all([
       ulbPromise,
@@ -221,7 +220,7 @@ if(statePromise.length>0){
 function toTitleCase(str) {
   return str.replace(
     /\w\S*/g,
-    function(txt) {
+    function (txt) {
       return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
     }
   );

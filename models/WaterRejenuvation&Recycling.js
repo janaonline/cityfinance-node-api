@@ -3,7 +3,7 @@ require("./dbConnect");
 const statusType = () => {
   return {
     type: String,
-    enum: ["APPROVED", "REJECTED", "PENDING"],
+    enum: ["APPROVED", "REJECTED", "PENDING", ""],
     default: "PENDING",
   };
 };
@@ -72,18 +72,18 @@ const projectDetails = () => {
     _id: false,
     dprCompletion:{
       type: String,
-      enum: ["Yes", "No",""]
+      enum: ["Yes", "No","",null]
     },
     dprPreparation:{
       type: String,
-      enum: ["Yes", "No",""]
+      enum: ["Yes", "No","",null]
     },
     workCompletion: {
       type: Number
     },
     isDisable:{
       type: Boolean
-    }
+    },
   };
 };
 
@@ -116,11 +116,11 @@ const projectDetails2 = () => {
     _id: false,
     dprCompletion:{
       type: String,
-      enum: ["Yes", "No",""]
+      enum: ["Yes", "No","",null]
     },
     dprPreparation:{
       type: String,
-      enum: ["Yes", "No",""]
+      enum: ["Yes", "No","",null]
     },
     workCompletion: {
       type: Number
@@ -154,17 +154,20 @@ const projectDetails3 = () => {
     _id: false,
     dprCompletion:{
       type: String,
-      enum: ["Yes", "No",""]
+      enum: ["Yes", "No","", null]
     },
     dprPreparation:{
       type: String,
-      enum: ["Yes", "No",""]
+      enum: ["Yes", "No","", null]
     },
     workCompletion: {
       type: Number,
       max: [100, "Max % can be 100"]
     },
     isDisable:{
+      type: Boolean
+    },
+    bypassValidation:{
       type: Boolean
     }
   };
@@ -212,6 +215,9 @@ const WaterRejenuvationRecyclingPlansSchema = mongoose.Schema({
     enum: ["ULB", "MoHUA", "STATE"],
     required: true,
   },
+  currentFormStatus: {
+    type: Number
+  }
 });
 
 WaterRejenuvationRecyclingPlansSchema.index(

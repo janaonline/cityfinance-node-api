@@ -16,6 +16,10 @@ const fiscalRankingMapperSchema = new Schema(
                 message: "ERROR: STATUS BE EITHER 'PENDING'/ 'APPROVED' / 'REJECTED'",
             },
         },
+        rejectReason :{
+            type:String,
+            default:""
+        },
         isActive: { type: Boolean, default: 1 },
         modelName: modelSchema(),
         type: {
@@ -37,6 +41,7 @@ const fiscalRankingMapperSchema = new Schema(
                 message: "ERROR: STATUS BE EITHER",
             },
         },
+        ledgerUpdated: { type: Boolean, default: false },
         displayPriority: { type: Number, default: null },
         // createdAt: { type: Date, default: Date.now() },
         // modifiedAt: { type: Date, default: Date.now() },

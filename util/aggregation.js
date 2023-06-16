@@ -43,8 +43,8 @@ exports.nationalDashRevenuePipeline = (
     }
   );
   pipeline.push({
-    "$match":{
-      "ulb.isActive":true
+    "$match": {
+      "ulb.isActive": true
     }
   })
   if (type == "totalRevenue") {
@@ -1279,8 +1279,8 @@ exports.getStateWiseDataAvailPipeline = (financialYear) => {
       $unwind: "$ulb",
     },
     {
-      $match:{
-        "ulb.isActive":true
+      $match: {
+        "ulb.isActive": true
       }
     },
     {
@@ -6171,3 +6171,213 @@ function getOldYear(financialYear) {
   let temp = financialYear.split("-");
   return `${Number(temp[0]) - 1}-${Number(temp[1]) - 1}`;
 }
+
+const getCategoryMatchObject = category => ({
+  '1': {
+    'population': {
+      $gt: 4000000
+    }
+  },
+  '2': {
+    'population': {
+      $lte: 4000000,
+      $gte: 1000000,
+    }
+  },
+  '3': {
+    'population': {
+      $lt: 1000000,
+      $gte: 100000,
+    }
+  },
+  '4': {
+    'population': {
+      $lt: 100000,
+    }
+  }
+}[category] || {});
+
+const stateWiseHeatMapQuery = ({ state, category }) => {
+  let matchObj = {}
+  let aggregationQuery = [
+    {
+      "$match": {
+        "isActive": true,
+        ...(state && {"state": ObjectId(state)}),
+        ...getCategoryMatchObject(category)
+      }
+    },
+    {
+      "$lookup": {
+        "from": "fiscalrankings",
+        "localField": "_id",
+        "foreignField": "ulb",
+        "as": "formData"
+      }
+    },
+    {
+      "$unwind": {
+        "path": "$formData",
+        "preserveNullAndEmptyArrays": true
+      }
+    },
+    {
+      "$addFields": {
+        "emptyForms": {
+          "$ifNull": ["$formData", 1]
+        }
+      }
+    },
+    {
+      "$group": {
+        "_id": "$state",
+        "totalUlbs": {
+          "$sum": 1
+        },
+        "verificationNotStarted": {
+          "$sum": {
+            "$cond": [
+              { "$eq": ["$formData.currentFormStatus", 8] },
+              1,
+              0
+            ]
+          }
+        },
+        "verificationInProgress": {
+          "$sum": {
+            "$cond": [
+              { "$eq": ["$formData.currentFormStatus", 9] },
+              1,
+              0
+            ]
+          }
+        },
+        "returnedByPMU": {
+          "$sum": {
+            "$cond": [
+              { "$eq": ["$formData.currentFormStatus", 10] },
+              1,
+              0
+            ]
+          }
+        },
+        "notStarted": {
+          "$sum": {
+            "$cond": [
+              { "$eq": ["$emptyForms", 1] },
+              1,
+              0
+            ]
+          }
+        },
+        "inProgress": {
+          "$sum": {
+            "$cond": [
+              { "$eq": ["$formData.currentFormStatus", 2] },
+              1,
+              0
+            ]
+          }
+        },
+        "submissionAckByPMU": {
+          "$sum": {
+            "$cond": [
+              { "$eq": ["$formData.currentFormStatus", 11] },
+              1,
+              0
+            ]
+          }
+        },
+      }
+    },
+    {
+      "$lookup": {
+        "from": "states",
+        "localField": "_id",
+        "foreignField": "_id",
+        "as": "states"
+      },
+    },
+    {
+      "$unwind": {
+        "path": "$states",
+        "preserveNullAndEmptyArrays": true
+      }
+    },
+    {
+      "$addFields": {
+        "percentage": {
+          "$multiply": [
+            {
+              "$divide": [
+                {
+                  "$add": [
+                    "$submissionAckByPMU",
+                    "$returnedByPMU",
+                    "$verificationInProgress",
+                    "$verificationNotStarted"
+                  ]
+                }
+                , "$totalUlbs"]
+            }
+            , 100]
+        },
+        "totalForms": {
+          "$add": [
+            "$submissionAckByPMU",
+            "$returnedByPMU",
+            "$verificationInProgress",
+            "$verificationNotStarted"
+          ]
+        }
+      }
+    },
+    {
+      "$group": {
+        "_id": 0,
+        "heatMaps": {
+          "$push": {
+            "_id": "$states.name",
+            "stateId": "$states._id",
+            "code": "$states.code",
+            "percentage": "$percentage"
+          }
+        },
+        "totalForms": { $sum: "$totalForms" },
+        "verificationInProgress": { $sum: "$verificationInProgress" },
+        "verificationNotStarted": { $sum: "$verificationNotStarted" },
+        "approved": { $sum: "$submissionAckByPMU" },
+        "rejected": { $sum: "$returnedByPMU" },
+        "totalUlbs": { $sum: "$totalUlbs" },
+        "inProgress": { $sum: "$inProgress" },
+        "submitted": { $sum: { $add: ["$verificationNotStarted", "$verificationInProgress", "$submissionAckByPMU"] } },
+        "notStarted": { $sum: "$notStarted" },
+
+      }
+    },
+    {
+      "$project": {
+        "heatMaps": "$heatMaps",
+        "formWiseData": {
+          "totalForms": "$totalForms",
+          "verificationInProgress": "$verificationInProgress",
+          "verificationNotStarted": "$verificationNotStarted",
+          "approved": "$approved",
+          "rejected": "$rejected"
+        },
+        "ulbWiseData": {
+          "totalUlbs": "$totalUlbs",
+          "inProgress": "$inProgress",
+          "submitted": "$submitted",
+          "notStarted": "$notStarted"
+        }
+      }
+    }
+  ];
+
+  console.log(JSON.stringify(aggregationQuery, 3, 3));
+  return aggregationQuery
+}
+
+module.exports.getCategoryMatchObject = getCategoryMatchObject
+module.exports.stateWiseHeatMapQuery = stateWiseHeatMapQuery

@@ -13,11 +13,23 @@ module.exports.createValue = async(req,res)=>{
 
 module.exports.getAll = async (req, res) =>{
     try {
-        let output = await MasterStatus.find({},{status:1, statusId:1}).lean();
-        if(!output || output.length === 0) return Response.BadRequest(res, {}, "Failed")
-        return Response.OK(res, output, "Success")
+      let type = req?.query?.type;
+      let query = {};
+      if (type) {
+        type = req?.query?.type;
+        query = {
+          $or: [{ type }, { multi: { $in: [type] } }],
+        };
+      }
+      let output = await MasterStatus.find(query, {
+        status: 1,
+        statusId: 1,
+      }).lean();
+      if (!output || output.length === 0)
+        return Response.BadRequest(res, {}, "Failed");
+      return Response.OK(res, output, "Success");
     } catch (error) {
-        return Response.BadRequest(res, {}, error.message);
+      return Response.BadRequest(res, {}, error.message);
     }
 }
 

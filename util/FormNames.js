@@ -7,6 +7,7 @@ module.exports.FormNames = {
     annualAcc: "Annual Accounts",
     propTaxOp: "Property Tax Operationalisation",
     slb28: "28 SLBs",
+    indicatorForm: "Indicators for Water Supply and Sanitation"
 
 }
 
@@ -17,37 +18,54 @@ module.exports.FormNames = {
 
 module.exports.YEAR_CONSTANTS = {
     "20_21": "606aadac4dff55e6c075c507",
-    "21_22":"606aaf854dff55e6c075d219",
-    "22_23":"606aafb14dff55e6c075d3ae",
+    "21_22": "606aaf854dff55e6c075d219",
+    "22_23": "606aafb14dff55e6c075d3ae",
     "23_24": "606aafc14dff55e6c075d3ec"
 }
-
-
-module.exports.ULB_ACCESSIBLE_YEARS = {
-    "2021-22":"access_2122",
-    "2022-23":"access_2223",
-    "2023-24":"access_2324"
+module.exports.YEAR_CONSTANTS_IDS = {
+    "63735a4bd44534713673bfbf": "2017-18",
+    "63735a5bd44534713673c1ca": "2018-19",
+    "607697074dff55e6c0be33ba": "2019-20",
+    "606aadac4dff55e6c075c507": "2020-21",
+    "606aaf854dff55e6c075d219": "2021-22",
+    "606aafb14dff55e6c075d3ae": "2022-23",
+    "606aafc14dff55e6c075d3ec": "2023-24"
 }
 
+module.exports.ULB_ACCESSIBLE_YEARS = {
+    "2021-22": "access_2122",
+    "2022-23": "access_2223",
+    "2023-24": "access_2324"
+}
 
 module.exports.MASTER_STATUS = {
+    "No Status": -1,
     "Not Started": 1,
     "In Progress": 2,
-    "Under Review by State": 3,
-    "Under Review by MoHUA": 4,
-    "Rejected by State": 5,
-    "Approved by MoHUA": 6,
-    "Rejected by MoHUA":7
+    "Under Review By State": 3,
+    "Under Review By MoHUA": 4,
+    "Returned By State": 5,
+    "Submission Acknowledged By MoHUA": 6,
+    "Returned By MoHUA": 7,
+    "Verification Not Started": 8,
+    "Verification In Progress": 9,
+    "Returned by PMU": 10,
+    "Submission Acknowledged by PMU": 11,
 }
 
 module.exports.MASTER_STATUS_ID = {
-  1: "Not Started",
-  2: "In Progress",
-  3: "Under Review by State",
-  4: "Under Review by MoHUA",
-  5: "Rejected by State",
-  6: "Approved by MoHUA",
-  7: "Rejected by MoHUA",
+    "-1": "No Status",
+    1: "Not Started",
+    2: "In Progress",
+    3: "Under Review By State",
+    4: "Under Review By MoHUA",
+    5: "Returned By State",
+    6: "Submission Acknowledged By MoHUA",
+    7: "Returned By MoHUA",
+    8: "Verification Not Started",
+    9: "Verification In Progress",
+    10: "Returned by PMU",
+    11: "Submission Acknowledged by PMU"
 };
 
 module.exports.FORMIDs = {
@@ -85,4 +103,16 @@ module.exports.MODEL_PATH = {
     5: "AnnualAccounts",
     6: "TwentyEightSlbsForm",
     4: "UtilizationReport"
+}
+
+module.exports.POPULATION_TYPE = {
+    1: "4M+",
+    2: "1M to 4M",
+    3: "100K to 1M",
+    4: "<100K"
+}
+module.exports.USER_ROLE = {
+    "MoHUA": "MoHUA",
+    "STATE": "STATE",
+    "ULB": "ULB"
 }

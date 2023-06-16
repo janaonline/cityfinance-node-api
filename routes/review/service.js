@@ -8,7 +8,8 @@ const Service = require('../../service');
 const List = require('../../util/15thFCstatus')
 const { calculateKeys } = require('../CommonActionAPI/service')
 const Ulb = require('../../models/Ulb')
-const State = require('../../models/State')
+const State = require('../../models/State');
+const MasterForm = require('../../models/MasterForm');
 
 
 function padTo2Digits(num) {
@@ -44,7 +45,7 @@ function createDynamicColumns(collectionName) {
       columns = `Financial Year, Form Status, Created, Submitted On, Filled Status, Tied grants for year,	Unutilised Tied Grants from previous installment (INR in lakhs),	15th F.C. Tied grant received during the year (1st & 2nd installment taken together) (INR in lakhs)	,Expenditure incurred during the year i.e. as on 31st March 2021 from Tied grant (INR in lakhs),	Closing balance at the end of year (INR in lakhs),	WM Rejuvenation of Water Bodies Total Tied Grant Utilised on WM(INR in lakhs),	WM Rejuvenation of Water Bodies Number of Projects Undertaken,	WM_Rejuvenation of Water Bodies_Total Project Cost Involved,	WM_Drinking Water_Total Tied Grant Utilised on WM(INR in lakhs),	WM_Drinking Water_Number of Projects Undertaken	,WM_Drinking Water_Total Project Cost Involved,	WM_Rainwater Harvesting_Total Tied Grant Utilised on WM(INR in lakhs),	WM_Rainwater Harvesting_Number of Projects Undertaken,	WM_Rainwater Harvesting_Total Project Cost Involved	,WM_Water Recycling_Total Tied Grant Utilised on WM(INR in lakhs),	WM_Water Recycling_Number of Projects Undertaken,	WM_Water Recycling_Total Project Cost Involved,	SWM_Sanitation_Total Tied Grant Utilised on SWM(INR in lakhs),	SWM_Sanitation_Number of Projects Undertaken,	SWM_Sanitation_Total Project Cost Involved(INR in lakhs),	SWM_Solid Waste Management_Total Tied Grant Utilised on SWM(INR in lakhs),	SWM_Solid Waste Management_Number of Projects Undertaken,	SWM_Solid Waste Management_Total Project Cost Involved(INR in lakhs),	Name, Designation, State_Review Status,	State_Comments,	MoHUA Review Status,	MoHUA_Comments,	State_File URL,	MoHUA_File URL `
       break;
     case CollectionNames['28SLB']:
-      columns = `Financial Year, Form Status, Created, Submitted On, Filled Status, Type, Year, Coverage of water supply connections,Per capita supply of water(lpcd) ,Extent of metering of water connections,Extent of non-revenue water (NRW), Continuity of water supply,Efficiency in redressal of customer complaints, Quality of water supplied, Cost recovery in water supply service , Efficiency in collection of water supply-related charges ,Coverage of toilets , Coverage of waste water network services ,Collection efficiency of waste water network , Adequacy of waste water treatment capacity , Quality of waste water treatment, Extent of reuse and recycling of waste water,Efficiency in redressal of customer complaints ,Extent of cost recovery in waste water management  ,Efficiency in collection of waste water charges  ,  Household level coverage of solid waste management services ,Efficiency of collection of municipal solid waste ,Extent of segregation of municipal solid waste ,Extent of municipal solid waste recovered,  Extent of scientific disposal of municipal solid waste  , Extent of cost recovery in SWM services ,Efficiency in redressal of customer complaints ,Efficiency in collection of SWM related user related charges,Coverage of storm water drainage network ,Incidence of water logging,State_Review Status,State_Comments,MoHUA Review Status,MoHUA_Comments,State_File URL,MoHUA_File URL `
+      columns = `Financial Year, Form Status, Created, Submitted On, Filled Status, Type, Year, Coverage of water supply connections,Per capita supply of water(lpcd),Extent of metering of water connections,Continuity of water supply,Quality of water supplied,Efficiency in redressal of customer complaints,Cost recovery in water supply service,Efficiency in collection of water supply-related charges,Extent of non-revenue water (NRW),Coverage of toilets,Coverage of waste water network services,Collection efficiency of waste water network,Adequacy of waste water treatment capacity,Quality of waste water treatment,Extent of reuse and recycling of waste water,Efficiency in collection of waste water charges,Efficiency in redressal of customer complaints,Extent of cost recovery in waste water management,Household level coverage of solid waste management services,Extent of segregation of municipal solid waste,Extent of municipal solid waste recovered,Extent of cost recovery in SWM services,Efficiency in collection of SWM related user related charges,Efficiency of collection of municipal solid waste,Extent of scientific disposal of municipal solid waste,Efficiency in redressal of customer complaints,Incidence of water logging,Coverage of storm water drainage network,State_Review Status,State_Comments,MoHUA Review Status,MoHUA_Comments,State_File URL,MoHUA_File URL `
       break;
     case CollectionNames.propTaxState:
       columns = `Financial Year, Form Status, Created, Submitted On, Filled Status,Notification Url , Notfication Name, Act Page Number,Minimum Floor Rate Url, Minimum Floor Rate Name,  Operationalization of the notification Url, Operationalization of the notification Name, Number of extant acts for municipal bodies, Names of all the extant acts, Extant Acts Url, Extant Acts Name, MoHUA Review Status, MoHUA Comments, MoHUA file Url`
@@ -1999,13 +2000,21 @@ module.exports.get = catchAsync(async (req, res) => {
   //  if(collectionName == CollectionNames.dur || collectionName == CollectionNames.gfc ||
   //     collectionName == CollectionNames.odf || collectionName == CollectionNames.slb || 
   //     collectionName === CollectionNames.sfc || collectionName === CollectionNames.propTaxState || collectionName === CollectionNames.annual )
+  let approvedUlbs = await masterForms2122(collectionName, data);
   data.forEach(el => {
     if (!el.formData) {
       el['formStatus'] = "Not Started";
       el['cantakeAction'] = false;
     } else {
       el['formStatus'] = calculateStatus(el.formData.status, el.formData.actionTakenByRole, el.formData.isDraft, formType);
-      el['cantakeAction'] = req.decoded.role === "ADMIN" ? false : canTakeActionOrViewOnly(el, loggedInUserRole)
+      if(collectionName === CollectionNames.dur || collectionName === CollectionNames['28SLB']){
+        el['cantakeAction'] = req.decoded.role === "ADMIN" ? false : canTakeActionOrViewOnly(el, loggedInUserRole);
+        if( !(approvedUlbs.find(ulb=> ulb.toString() === el.ulbId.toString())) && loggedInUserRole === "MoHUA"){
+          el['cantakeAction'] = false
+        }
+      }else{
+        el['cantakeAction'] = req.decoded.role === "ADMIN" ? false : canTakeActionOrViewOnly(el, loggedInUserRole)
+      }
     }
   })
 
@@ -2200,6 +2209,47 @@ module.exports.get = catchAsync(async (req, res) => {
 
 })
 
+async function masterForms2122(collectionName, data) {
+  try {
+    let ulbsArray = [], approvedUlbs = [];
+    let ulbsObject = {},
+      masterForms2122;
+    if (collectionName === CollectionNames.dur || collectionName === CollectionNames['28SLB']) {
+      ulbsArray = data.map((el) => {
+        return el.ulbId;
+      });
+      // for (let entity of ulbsArray) {
+      //   ulbsObject[entity] = false;
+      // }
+      if (Array.isArray(ulbsArray) && ulbsArray.length) {
+        masterForms2122 = await MasterForm.find(
+          {
+            ulb: { $in: ulbsArray },
+          },
+          { history: 0,steps:0 }
+        ).lean();
+      }
+      approvedUlbs = getUlbsApprovedByMoHUA(masterForms2122)
+    }
+    return approvedUlbs;
+  } catch (error) {
+    throw(`masterForms2122:: ${error.message}`)
+  }
+}
+
+function getUlbsApprovedByMoHUA(forms){
+  try {
+    let ulbArray = [];
+    for(let form of forms){
+      if(form.actionTakenByRole === "MoHUA" && form.isSubmit && form.status === "APPROVED" ){
+        ulbArray.push(form.ulb);
+      }
+    }
+    return ulbArray;
+  } catch (error) {
+    throw(`getUlbsApprovedByMoHUA:: ${error.message}`);
+  }
+}
 function countStatusData(element, collectionName) {
   let total = 0;
   let notStarted = 0;

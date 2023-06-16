@@ -16,7 +16,7 @@ const PropertyTaxFloorRate = require('../../models/PropertyTaxFloorRate');
 const StateFinanceCommissionFormation = require('../../models/StateFinanceCommissionFormation');
 const TwentyEightSlbsForm = require('../../models/TwentyEightSlbsForm');
 const GrantTransferCertificate = require('../../models/GrantTransferCertificate');
-const { FormNames, FORM_LEVEL, MASTER_STATUS, YEAR_CONSTANTS,ULB_ACCESSIBLE_YEARS } = require('../../util/FormNames');
+const { FormNames, FORM_LEVEL, MASTER_STATUS, YEAR_CONSTANTS,ULB_ACCESSIBLE_YEARS , USER_ROLE, MODEL_PATH} = require('../../util/FormNames');
 const { calculateTabwiseStatus } = require('../annual-accounts/utilFunc');
 const {modelPath} = require('../../util/masterFunctions')
 const Response = require("../../service").response;
@@ -248,7 +248,7 @@ const calculateStatus = (status, actionTakenByRole, isDraft, formType) => {
     switch (formType) {
         case "ULB":
             switch (true) {
-                case (status == 'PENDING' || !status || 'N/A') && actionTakenByRole == 'ULB' && isDraft:
+                case (status == 'PENDING' || !status || 'N/A') && (actionTakenByRole == 'ULB' || actionTakenByRole == "MoHUA") && isDraft:
                     return StatusList.In_Progress
                     break;
                 case (status == 'PENDING' || !status || 'N/A') && actionTakenByRole == 'ULB' && !isDraft:
@@ -409,13 +409,13 @@ module.exports.canTakenActionMaster = (params) => {
   switch (formType) {
     case "ULB":
       if (loggedInUser == "STATE") {
-        if (status === MASTER_STATUS["Under Review by State"]) {
+        if (status === MASTER_STATUS["Under Review By State"]) {
           return true;
         } else {
           return false;
         }
       } else if (loggedInUser == "MoHUA") {
-        if (status === MASTER_STATUS["Under Review by MoHUA"]) {
+        if (status === MASTER_STATUS["Under Review By MoHUA"]) {
           return true;
         } else {
           return false;
@@ -427,7 +427,7 @@ module.exports.canTakenActionMaster = (params) => {
 
     case "STATE":
       if (loggedInUser == "MoHUA") {
-        if (status === MASTER_STATUS["Under Review by MoHUA"]) {
+        if (status === MASTER_STATUS["Under Review By MoHUA"]) {
           return true;
         } else {
           return false;
@@ -1150,32 +1150,43 @@ module.exports.canTakeActionOrViewOnlyMasterForm = (params)=> {
         case status == MASTER_STATUS['In Progress']:
             return false;
             break;
-        case status == MASTER_STATUS['Under Review by State'] && userRole == 'STATE':
+        case status == MASTER_STATUS['Under Review By State'] && userRole == 'STATE':
             return true;
             break;
-        case status == MASTER_STATUS['Under Review by MoHUA'] && adminLevel && (userRole == 'MoHUA' || userRole == 'ADMIN'):
+        case status == MASTER_STATUS['Under Review By MoHUA'] && adminLevel && (userRole == 'MoHUA' || userRole == 'ADMIN'):
             console.log("adminglevel ::: ", adminLevel)
             return true
             break;
-        case status == MASTER_STATUS['Under Review by State'] && (userRole == 'MoHUA' || userRole == 'ADMIN'):
+        case status == MASTER_STATUS['Under Review By State'] && (userRole == 'MoHUA' || userRole == 'ADMIN'):
             return false;
             break;
-        case status == MASTER_STATUS['Rejected by State']:
+        case status == MASTER_STATUS['Returned By State']:
             return false;
             break;
-        case status == MASTER_STATUS['Rejected by MoHUA']:
+        case status == MASTER_STATUS['Returned By MoHUA']:
             return false;
             break;
-        case status == MASTER_STATUS['Under Review by MoHUA'] && userRole == 'STATE':
+        case status == MASTER_STATUS['Under Review By MoHUA'] && userRole == 'STATE':
             return false;
             break;
-        case status == MASTER_STATUS['Under Review by MoHUA'] && userRole == 'MoHUA':
+        case status == MASTER_STATUS['Under Review By MoHUA'] && userRole == 'MoHUA':
             return true;
             break;
-        case status == MASTER_STATUS['Approved by MoHUA']:
+        case status == MASTER_STATUS['Submission Acknowledged By MoHUA']:
             return false;
             break;
-
+        case status ==  MASTER_STATUS['Verification Not Started']:
+            return true;
+            break;
+        case status ==  MASTER_STATUS['Verification In Progress']:
+            return true;
+            break;
+        case status ==  MASTER_STATUS['Returned by PMU']:
+            return false;
+            break;
+        case status ==  MASTER_STATUS['Submission Acknowledged by PMU']:
+            return false;
+            break;
         default:
             break;
     }
@@ -1237,7 +1248,8 @@ class AggregationServices {
         return {
             "$dateToString": {
                 "date": field,
-                "format": this.dateFormat
+                "format": this.dateFormat,
+                "timezone" : "Asia/Kolkata"
             }
         }
     }
@@ -2191,12 +2203,14 @@ const handleNumericCase = async(question,obj,flattedForm,mainKey)=>{
         // console.log("question ",question.shortKey)
         if(mainKey){
             let key = mainKey + "."+question.shortKey
-            if(flattedForm[key]  == undefined){
+            if(flattedForm[key]  == undefined &&  flattedForm[key+".value"] == undefined){
                 value = ""
             }
             else{
-                value = flattedForm[key].toString()
+                value = flattedForm[key] === undefined ? flattedForm[key+".value"] : flattedForm[key]
+                value = value !== undefined  ? value.toString() : ""
             }
+            
             question['modelValue'] = value
             question['value'] = value
             obj['textValue'] = value
@@ -2204,11 +2218,12 @@ const handleNumericCase = async(question,obj,flattedForm,mainKey)=>{
         }
         else{
             let key = question.shortKey
-            if(flattedForm[key]  == undefined){
+            if(flattedForm[key]  == undefined && flattedForm[key+".value"] == undefined){
                 value = ""
             }
             else{
-                value = flattedForm[key].toString()
+                value = flattedForm[key] === undefined ? flattedForm[key+".value"] : flattedForm[key]
+                value = value !== undefined  ? value.toString() : ""
             }
             question['modelValue'] = value
             question['value'] = value
@@ -2418,7 +2433,7 @@ async function deleteExtraKeys(question){
 
 function manageDisabledQues(question,flattedForm){
     try{
-        let actionKeys = ['statusId','status','canTakeAction','rejectReason']
+        let actionKeys = ['statusId','status','canTakeAction','rejectReason', 'rejectReason_state']
         // let allowedStatuses = [StatusList.Rejected_By_MoHUA,StatusList.Rejected_By_State,StatusList.In_Progress,StatusList.Not_Started]
         let formType = flattedForm?.role
         // console.log("flattedForm ::: ",flattedForm)
@@ -2428,6 +2443,7 @@ function manageDisabledQues(question,flattedForm){
             let key = mainKey+"."+item
             let keyItem = question.shortKey + "." + item
             let included = Object.keys(flattedForm).includes(key) || Object.keys(flattedForm).includes(keyItem)
+            key = Object.keys(flattedForm).includes(key) ? key :keyItem
             if(included){
                 question[item] = flattedForm[key]
                 if(item === "status"){
@@ -2440,6 +2456,7 @@ function manageDisabledQues(question,flattedForm){
                     
                 }
             }
+
         })
         // console.log("question ::: shortKey ",question.shortKey)
     }
@@ -2459,7 +2476,7 @@ async function mutuateGetPayload(jsonFormat, flatForm, keysToBeDeleted,role) {
         for (let key in obj) {
             let questions = obj[key].question
             if (questions){
-                for (let question of questions) {    
+                for (let question of questions) {              
                     let answer = []
                     let obj = { ...answerObj }
                     let answerKey = inputType[question.input_type]
@@ -2730,8 +2747,8 @@ async function takeActionOnForms(params, res) {
             saveStatusResponse = await saveStatus(params);
             if (
               [
-                MASTER_STATUS["Rejected by MoHUA"],
-                MASTER_STATUS["Rejected by State"],
+                MASTER_STATUS["Returned By MoHUA"],
+                MASTER_STATUS["Returned By State"],
               ].includes(response.status)
             ) {
               rejectStatusCount++;
@@ -2740,8 +2757,8 @@ async function takeActionOnForms(params, res) {
           if (rejectStatusCount) {
             response.status =
               actionTakenByRole === "MoHUA"
-                ? MASTER_STATUS["Rejected by MoHUA"]
-                : MASTER_STATUS["Rejected by State"];
+                ? MASTER_STATUS["Returned By MoHUA"]
+                : MASTER_STATUS["Returned By State"];
             let updatedFormCurrentStatus = await updateFormCurrentStatus(
               model,
               form._id,
@@ -2753,8 +2770,8 @@ async function takeActionOnForms(params, res) {
           } else {
             response.status =
               actionTakenByRole === "MoHUA"
-                ? MASTER_STATUS["Approved by MoHUA"]
-                : MASTER_STATUS["Under Review by MoHUA"];
+                ? MASTER_STATUS["Submission Acknowledged By MoHUA"]
+                : MASTER_STATUS["Under Review By MoHUA"];
             let updatedFormCurrentStatus = await updateFormCurrentStatus(
               model,
               form._id,
@@ -2767,10 +2784,28 @@ async function takeActionOnForms(params, res) {
       } else if (form_level === FORM_LEVEL["tab"]) {
         if (multi) {
           let [response] = responses;
-        /* Getting the short keys from the short keys array and separating them into an array of arrays based on tab and questions */
-          let shortKeysResponse = await getSeparatedShortKeys({shortKeys});
+          response['status'] =  Number(response['status']);
+                 
+          /* Getting the short keys from the short keys array and separating them into an array of arrays based on tab and questions */
+          let currentStatusShortKeys = await CurrentStatus.find({
+            recordId: form._id,
+            actionTakenByRole,
+          },{
+            shortKey:1,
+            _id: 0
+          }).lean()
+          if(Array.isArray(currentStatusShortKeys) && !currentStatusShortKeys.length){
+            currentStatusShortKeys = await CurrentStatus.find({
+                recordId: form._id,
+                actionTakenByRole: "ULB",
+              },{
+                shortKey:1,
+                _id: 0
+              }).lean()
+          }
+          currentStatusShortKeys = currentStatusShortKeys.map(el=> el.shortKey)
           /* Saving the status of the form for questions */
-          for (let shortKey of shortKeysResponse["inner"]) {
+          for (let shortKey of currentStatusShortKeys) {
             let params = {
               formId,
               form,
@@ -2785,21 +2820,21 @@ async function takeActionOnForms(params, res) {
             saveStatusResponse = await saveStatus(params);
           }
             /* Saving the status of the form for tabs */
-          for (let shortKey of shortKeysResponse["outer"]) {
-            shortKey = `tab_${shortKey}`;
-            let params = {
-              formId,
-              form,
-              response,
-              form_level,
-              actionTakenByRole,
-              actionTakenBy,
-              multi,
-              shortKey,
-              res,
-            };
-            saveStatusResponse = await saveStatus(params);
-          }
+        //   for (let shortKey of shortKeysResponse["outer"]) {
+        //     shortKey = `tab_${shortKey}`;
+        //     let params = {
+        //       formId,
+        //       form,
+        //       response,
+        //       form_level,
+        //       actionTakenByRole,
+        //       actionTakenBy,
+        //       multi,
+        //       shortKey,
+        //       res,
+        //     };
+        //     saveStatusResponse = await saveStatus(params);
+        //   }
           //Updating form Level status
           let updatedFormCurrentStatus = await updateFormCurrentStatus(
             model,
@@ -2819,12 +2854,12 @@ async function takeActionOnForms(params, res) {
           }
           let separator = ".";
           const tabSeparator = "_";
+          const dotSeparator = "."
           const tabRegex = /^tab_/g;
           
           for (let response of responses) {
-            if (response.shortKey.match(tabRegex)){
-                separator =  tabSeparator
-            }
+            response['status'] =  Number(response['status']);
+            separator = response.shortKey.match(tabRegex) ?  tabSeparator : dotSeparator;
             let splitedArrayTab =
               response.shortKey.split(separator).length > 1
                 ? response.shortKey.split(separator)[0]
@@ -2837,8 +2872,8 @@ async function takeActionOnForms(params, res) {
             if (
               splitedArrayTab !== "" &&
               [
-                MASTER_STATUS["Rejected by MoHUA"],
-                MASTER_STATUS["Rejected by State"],
+                MASTER_STATUS["Returned By MoHUA"],
+                MASTER_STATUS["Returned By State"],
               ].includes(response.status)
             ) {
               tabShortKeyObj[splitedArrayTab] = tabShortKeyObj[
@@ -2870,8 +2905,8 @@ async function takeActionOnForms(params, res) {
             if (
               response &&
               [
-                MASTER_STATUS["Rejected by MoHUA"],
-                MASTER_STATUS["Rejected by State"],
+                MASTER_STATUS["Returned By MoHUA"],
+                MASTER_STATUS["Returned By State"],
               ].includes(response.status)
             ) {
               rejectStatusAllTab++;
@@ -2882,14 +2917,14 @@ async function takeActionOnForms(params, res) {
               if (tabShortKeyObj[obj]) {
                 status =
                   actionTakenByRole === "MoHUA"
-                    ? MASTER_STATUS["Rejected by MoHUA"]
-                    : MASTER_STATUS["Rejected by State"];
+                    ? MASTER_STATUS["Returned By MoHUA"]
+                    : MASTER_STATUS["Returned By State"];
                 rejectStatusAllTab++;
               } else {
                 status =
                   actionTakenByRole === "MoHUA"
-                    ? MASTER_STATUS["Approved by MoHUA"]
-                    : MASTER_STATUS["Under Review by MoHUA"];
+                    ? MASTER_STATUS["Submission Acknowledged By MoHUA"]
+                    : MASTER_STATUS["Under Review By MoHUA"];
               }
               response = {
                 status,
@@ -2917,8 +2952,8 @@ async function takeActionOnForms(params, res) {
 
             response.status =
               actionTakenByRole === "MoHUA"
-                ? MASTER_STATUS["Rejected by MoHUA"]
-                : MASTER_STATUS["Rejected by State"];
+                ? MASTER_STATUS["Returned By MoHUA"]
+                : MASTER_STATUS["Returned By State"];
             let updatedFormCurrentStatus = await updateFormCurrentStatus(
               model,
               form._id,
@@ -2930,8 +2965,8 @@ async function takeActionOnForms(params, res) {
             let response = {}
             response.status =
               actionTakenByRole === "MoHUA"
-                ? MASTER_STATUS["Approved by MoHUA"]
-                : MASTER_STATUS["Under Review by MoHUA"];
+                ? MASTER_STATUS["Submission Acknowledged By MoHUA"]
+                : MASTER_STATUS["Under Review By MoHUA"];
             let updatedFormCurrentStatus = await updateFormCurrentStatus(
               model,
               form._id,
@@ -2998,7 +3033,9 @@ async function saveStatus(params) {
             actionTakenBy: ObjectId(actionTakenBy),
           };
         
-          (multi && form_level === FORM_LEVEL["question"]) ? currentStatusData["shortKey"] = shortKey : ""
+          (multi && [FORM_LEVEL["question"] ,FORM_LEVEL['tab']].includes(form_level)) ? currentStatusData["shortKey"] = shortKey : "";
+        //   (multi && form_level === FORM_LEVEL["tab"]) ? currentStatusData["shortKey"] = shortKey : "";
+
           let currentStatus = await saveCurrentStatus({ body: currentStatusData });
           
           let statusHistory = {
@@ -3008,7 +3045,7 @@ async function saveStatus(params) {
             data: currentStatusData,
           };
         
-          (multi && form_level === FORM_LEVEL["question"]) ? statusHistory["shortKey"] = shortKey  : ""
+          (multi && [FORM_LEVEL["question"], FORM_LEVEL['tab']].includes(form_level)) ? statusHistory["shortKey"] = shortKey  : ""
 
           let statusHistoryData = await saveStatusHistory({ body: statusHistory });
           if (currentStatus === 1 && statusHistoryData === 1){
@@ -3060,7 +3097,11 @@ const getMasterAction = async (req, res) => {
     //   Object.assign(form, {
     //     canTakenAction: canTakenActionMaster(params),
     //   });
-    currentStatusResponse = filterStatusResponse(currentStatusResponse, currentFormStatus);
+      if(formId === FORMIDs['AnnualAccount']){
+        currentStatusResponse = filterStatusResponseTab(currentStatusResponse, currentFormStatus);
+      }else{
+          currentStatusResponse = filterStatusResponse(currentStatusResponse, currentFormStatus);
+      }
       for(let status of currentStatusResponse){
         status['statusId'] = status['status'];
         status['status'] = MASTER_STATUS_ID[parseInt(status['status'])]
@@ -3084,9 +3125,9 @@ const groupByKey = (list, key) => list.reduce((hash, obj) => ({ ...hash, [obj[ke
 function filterStatusResponse(statuses, formStatus){
     
     const STATUS_RESPONSE = {
-        ULB: [MASTER_STATUS['Not Started'],MASTER_STATUS["In Progress"],MASTER_STATUS["Under Review by State"]],
-        STATE: [MASTER_STATUS["Under Review by MoHUA"],MASTER_STATUS["Rejected by State"]],
-       MoHUA: [MASTER_STATUS['Approved by MoHUA'],MASTER_STATUS["Rejected by MoHUA"]]
+        ULB: [MASTER_STATUS['Not Started'],MASTER_STATUS["In Progress"],MASTER_STATUS["Under Review By State"]],
+        STATE: [MASTER_STATUS["Under Review By MoHUA"],MASTER_STATUS["Returned By State"]],
+       MoHUA: [MASTER_STATUS['Submission Acknowledged By MoHUA'],MASTER_STATUS["Returned By MoHUA"]]
     }
     
     for( let key in STATUS_RESPONSE){
@@ -3115,6 +3156,82 @@ function getCurrentStatus(key,statuses){
     }
 
     return statuses;
+}
+
+function filterStatusResponseTab(statuses, formStatus){
+    const STATUS_RESPONSE = {
+        ULB: [MASTER_STATUS['Not Started'],MASTER_STATUS["In Progress"],MASTER_STATUS["Under Review By State"]],
+        STATE: [MASTER_STATUS["Under Review By MoHUA"],MASTER_STATUS["Returned By State"]],
+       MoHUA: [MASTER_STATUS['Submission Acknowledged By MoHUA'],MASTER_STATUS["Returned By MoHUA"]]
+    }
+    
+    for( let key in STATUS_RESPONSE){
+
+        if(STATUS_RESPONSE[key].includes(formStatus)){
+           return getCurrentStatusTab(key,statuses);
+        }
+
+    }
+}
+const ROLE_PRIORITY ={
+    "ULB":1,
+    "STATE":2,
+    "MoHUA":3
+}
+function getCurrentStatusTab(key,statuses){
+    if (key === "ULB"){
+        statuses = statuses.filter(el=>{
+            return (el.status<= MASTER_STATUS['Under Review By State'] && el.status>MASTER_STATUS["Not Started"]);
+        });
+        
+        return filterStatusForTab(statuses);
+    }else if (key ==='STATE'){
+        statuses =  statuses.filter(el=>{
+            return (el.status< MASTER_STATUS['Submission Acknowledged By MoHUA'] && el.status>MASTER_STATUS['Under Review By State']);
+        })
+        return filterStatusForTab(statuses);
+
+    }else if(key === "MoHUA"){
+        statuses = statuses.filter(el=>{
+            return el.status> MASTER_STATUS['Under Review By State'] ;
+        })
+        return filterStatusForTab(statuses);
+
+    }
+
+    return statuses;
+}
+function filterStatusForTab(statuses) {
+    let output = []
+    statuses.forEach((el) => {
+        let idx;
+        let statusObj = output.find(entity => {
+            return entity.shortKey === el.shortKey;
+        });
+        if (statusObj) {
+            idx = output.findIndex(entity => {
+                return entity.shortKey === el.shortKey;
+            });
+        }
+        if (statusObj && ROLE_PRIORITY[statusObj.actionTakenByRole] < ROLE_PRIORITY[el.actionTakenByRole]) {
+            output.splice(idx, 1);
+            output.push(el);
+        } else if (!statusObj) {
+            output.push(el);
+        }
+    });
+    if(output.find(el=> el.actionTakenByRole === "MoHUA")){
+        let stateStatusResponse = appendStateStatus(statuses);
+        if(Array.isArray(stateStatusResponse) && stateStatusResponse.length){
+            output = [...output, ...stateStatusResponse]
+        }
+    }
+    return output;
+}
+function appendStateStatus(statuses){
+     return statuses.filter(el=>{
+        return el.actionTakenByRole === "STATE"
+    });
 }
 
 function appendKeysForAA(currentStatusResponse) {
@@ -3168,11 +3285,14 @@ async function getSeparatedShortKeys(params) {
       };
       let separator = ".";
       const tabSeparator = "_";
+      const dotSeparator = "."
       const tabRegex = /^tab_/g;
       for (let shortKey of shortKeys) {
-        if (shortKey.match(tabRegex)) {
-          separator = tabSeparator;
-        }
+        // if (shortKey.match(tabRegex)) {
+        //   separator = tabSeparator;
+        // };
+        separator = shortKey.match(tabRegex) ?  tabSeparator : dotSeparator;
+
         let splitedArray = shortKey.split(separator);
         let splitedArrayLength = splitedArray.length - 1;
         if (Array.isArray(splitedArray) && splitedArrayLength) {
@@ -3195,6 +3315,7 @@ async function getSeparatedShortKeys(params) {
   
 }
 
+module.exports.getSeparatedShortKeys = getSeparatedShortKeys
 
 function reverseKeyValues(originalObj){
     return  Object.entries(originalObj).reduce((acc, [key, value]) => {
@@ -3347,3 +3468,248 @@ module.exports.checkIfUlbHasAccess = checkIfUlbHasAccess
 module.exports.calculateStatus = calculateStatus
 module.exports.nestedObjectParser = nestedObjectParser
 module.exports.clearVariables = clearVariables
+
+
+let bodyData =  {
+    ulbs:[],
+    design_year: "",
+    status: "REJECTED",
+    formId: 4,
+    multi: true
+}
+const IGNORE_YEARS = {
+  [YEAR_CONSTANTS["21_22"]]: [
+    ObjectId(YEAR_CONSTANTS["20_21"]),
+    ObjectId(YEAR_CONSTANTS["21_22"]),
+  ],
+  [YEAR_CONSTANTS["22_23"]]: [
+    ObjectId(YEAR_CONSTANTS["20_21"]),
+    ObjectId(YEAR_CONSTANTS["21_22"]),
+    ObjectId(YEAR_CONSTANTS["22_23"]),
+  ],
+  [YEAR_CONSTANTS["23_24"]]: [
+    ObjectId(YEAR_CONSTANTS["20_21"]),
+    ObjectId(YEAR_CONSTANTS["21_22"]),
+    ObjectId(YEAR_CONSTANTS["22_23"]),
+    ObjectId(YEAR_CONSTANTS["23_24"]),
+  ],
+};
+async function sequentialReview(req, res) {
+  try {
+    let { decoded: user, body: bodyData } = req;
+    let { design_year, formId, ulbs, status, multi } = bodyData;
+    if (
+      user.role !== USER_ROLE["MoHUA"] ||
+      status !== "REJECTED"
+    ) {
+      return Response.BadRequest(
+        res,
+        {},
+        "Only MoHUA can sequentially reject!"
+      );
+    }
+    let designYear = "design_year";
+    formId === FORMIDs["dur"]
+      ? (designYear = "designYear")
+      : (designYear = "design_year");
+
+    const modelName = MODEL_PATH[formId];
+    let query = {
+      ulb: { $in: ulbs },
+      [designYear]: { $nin: IGNORE_YEARS[design_year] },
+    };
+    let forms = await moongose.model(modelName).find(query).lean();
+    if (!Array.isArray(forms) || !forms.length) {
+      return Response.BadRequest(res, {}, "No Forms Found!");
+    }
+    //   if (design_year === YEAR_CONSTANTS["21_22"]) {
+    let params = {
+      forms,
+      formId,
+      modelName,
+      res,
+      user,
+    };
+    let formsUpdated = await checkForms(params);
+    //   } else {
+    if(formsUpdated){
+        let msg =  `${formsUpdated} rejected`
+        return Response.OK(res,{} ,msg );
+    }else{
+      return Response.OK(res, {}, "No Forms Updated!");
+    }
+    //   }
+  } catch (error) {
+    return Response.BadRequest(res, {}, `${error.message}`);
+  }
+}
+module.exports.sequentialReview = sequentialReview;
+
+async function checkForms(params) {
+  try {
+    let { forms, formId, modelName, res, user } = params;
+    let designYear = "design_year";
+    formId === FORMIDs["dur"]
+      ? (designYear = "designYear")
+      : (designYear = "design_year");
+    let formCount = 0;
+    for (let form of forms) {
+      if (form[designYear].toString() === YEAR_CONSTANTS["22_23"]) {
+        if (!checkIfUlbCanEditForm2223(form)) {
+          let output = await rejectForm2223(form, modelName, user);
+          if (output) {
+            formCount++;
+          }
+        }
+      } else {
+        if (!checkIfUlbCanEditForm(form?.currentFormStatus)) {
+          let output = await rejectForm(form, formId, modelName, user);
+          if (output) {
+            formCount++;
+          }
+        }
+      }
+    }
+    return formCount;
+  } catch (error) {
+    return Response.BadRequest(res, {}, error.message);
+  }
+}
+
+async function rejectForm(form, formId, modelName, user) {
+  try {
+    let { role: actionTakenByRole, _id:actionTakenBy } = user;
+    let updateObj = {
+      currentFormStatus: MASTER_STATUS["In Progress"],
+      isDraft: true,
+      actionTakenByRole,
+      actionTakenBy: ObjectId(actionTakenBy),
+    };
+    let updatedForm = await moongose.model(modelName).findOneAndUpdate(
+      { _id: form._id },
+      {
+        $set: updateObj,
+      },
+      { new: true }
+    );
+    if (updatedForm) {
+      return await saveStatusAndHistory(formId, updatedForm, user);
+    }
+  } catch (error) {
+    throw `rejectForm:: ${error.message}`;
+  }
+}
+async function saveStatusAndHistory(formId, updatedForm, user) {
+  try {
+    let bodyData = {
+      formId,
+      recordId: ObjectId(updatedForm._id),
+      data: updatedForm,
+    };
+    /* Saving the form history of the user. */
+    let formHistoryStatus = await saveFormHistory({
+      body: bodyData,
+      // session
+    });
+
+    let currentStatusData = {
+      formId,
+      recordId: ObjectId(updatedForm._id),
+      status: MASTER_STATUS["In Progress"],
+      level: FORM_LEVEL["form"],
+      shortKey: "form_level",
+      rejectReason: "",
+      responseFile: "",
+      actionTakenByRole: user.role,
+      actionTakenBy: ObjectId(user._id),
+    };
+    let statusSaved = await saveCurrentStatus({
+      body: currentStatusData,
+    });
+    let statusHistory = {
+      formId,
+      recordId: ObjectId(updatedForm._id),
+      shortKey: "form_level",
+      data: currentStatusData,
+    };
+    let statusHistoryStatus = await saveStatusHistory({
+      body: statusHistory,
+      //  session
+    });
+
+    if (formHistoryStatus && statusSaved && statusHistoryStatus) {
+      return 1;
+    }
+    return 0;
+  } catch (error) {
+    throw `saveStatusAndHistory:: ${error.message}`;
+  }
+}
+
+async function rejectForm2223(form, modelName, user) {
+  try {
+    let updateObj = {
+      actionTakenByRole: user.role,
+      actionTakenBy: ObjectId(user._id),
+      status: "PENDING",
+      isDraft: true,
+      modifiedAt: new Date(),
+    };
+    delete form["history"];
+    let updatedForm = await moongose.model(modelName).findOneAndUpdate(
+      { _id: form._id },
+      {
+        $set: updateObj,
+        $push: { history: form },
+      },
+      { new: true }
+    );
+    if (updatedForm) {
+      return 1;
+    }
+    return 0;
+  } catch (error) {
+    throw `rejectForm2223:: ${error.message}`;
+  }
+}
+function checkIfUlbCanEditForm2223(form) {
+  try {
+    let { status, actionTakenByRole, isDraft } = form;
+    const formType = "ULB";
+    let formStatus = calculateStatus(
+      status,
+      actionTakenByRole,
+      isDraft,
+      formType
+    );
+    const ulbEditStatusArray = [
+      StatusList["In_Progress"],
+      StatusList["Not_Started"],
+      StatusList["Rejected_By_MoHUA"],
+      StatusList["Rejected_By_State"],
+    ];
+    if (ulbEditStatusArray.includes(formStatus)) {
+      return true;
+    }
+    return false;
+  } catch (error) {
+    throw `checkIfUlbCanEditForm2223 :: ${error.message}`;
+  }
+}
+
+function checkIfUlbCanEditForm(currentFormStatus) {
+  try {
+    const ulbEditStatusArray = [
+      MASTER_STATUS["Not Started"],
+      MASTER_STATUS["In Progress"],
+      MASTER_STATUS["Returned By MoHUA"],
+      MASTER_STATUS["Returned By State"],
+    ];
+    if (ulbEditStatusArray.includes(currentFormStatus)) {
+      return true;
+    }
+    return false;
+  } catch (error) {
+    throw `checkFormIfUlbCanEdit:: ${error.message}`;
+  }
+}
