@@ -15,9 +15,9 @@ function getChildQuestion(params){
         "key": key,
         "qusType": "",
         "disableMsg":getQuestions(getKeyByValue(years,year))[key]['disableMsg'] || "",
-        "fileName": file.name || "",
+        "fileName": "",
         "quesText":getQuestions(getKeyByValue(years,year))[key]['quesText'] || "",
-        "url": url || "",
+        "url": "",
         "template":template,
         "file": {
           "name": file.name || "",
