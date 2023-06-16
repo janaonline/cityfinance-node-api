@@ -1393,7 +1393,7 @@ function getGFCFormat(input) {
       data: [],
       gfcRatings: {
         name: "GFC Rating",
-        value: Number(input.score.toFixed()),
+        value: Number(input.score.toFixed(2)),
       },
     };
 
@@ -1447,7 +1447,7 @@ function getODFFormat(input) {
       data: [],
       odfRatings: {
         name: "ODF Rating",
-        value: Number(input.score.toFixed()),
+        value: Number(input.score.toFixed(2)),
       },
     };
 
