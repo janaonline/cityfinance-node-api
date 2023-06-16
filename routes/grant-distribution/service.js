@@ -454,7 +454,7 @@ const getRejectedFields = (currentFormStatus,formStatuses,installment,role)=>{
 
 
 const getSectionWiseJson = async(state, design_year,role) => {
-  let host = process.env.HOSTNAME
+let host = baseUrls[process.env.ENV]
   let formStatuses = {}
   let inputAllowed = [MASTER_STATUS['In Progress'],MASTER_STATUS['Not Started'],MASTER_STATUS['Rejected By MoHUA']]
   try {
