@@ -2,7 +2,7 @@
 const {getKeyByValue} = require("../../util/masterFunctions")
 const {years} = require("../../service/years");
 function getChildQuestion(params){
-    let {year,installment,type,key,quesType,file,url} = params 
+    let {year,installment,type,key,quesType,file,isDisableQues,template,url} = params 
     try{
       let childQuestion = {
         "installment": installment,
@@ -15,10 +15,10 @@ function getChildQuestion(params){
         "key": key,
         "qusType": "",
         "disableMsg":getQuestions(getKeyByValue(years,year))[key]['disableMsg'] || "",
-        "fileName": "",
-        "quesTxt":getQuestions(getKeyByValue(years,year))[key]['quesTxt'] || "",
-        "url": "",
-        "template":url,
+        "fileName": file.name || "",
+        "quesText":getQuestions(getKeyByValue(years,year))[key]['quesText'] || "",
+        "url": url || "",
+        "template":template,
         "file": {
           "name": file.name || "",
           "url": file.url || "",
@@ -41,22 +41,22 @@ function getChildQuestion(params){
     return {
       "nonmillion_tied_2023-24_1":{
         "question":`(A) Upload Grant Allocation to ULBs - 1st Installment (${year})`,
-        "quesTxt":"Upload Grant Allocation to ULBs",
+        "quesText":"Upload Grant Allocation to ULBs",
         "disableMsg":""
       },
       "nonmillion_tied_2023-24_2":{
         "question":`(B) Upload Grant Allocation to ULBs - 2nd Installment (${year})`,
-        "quesTxt":"Upload Grant Allocation to ULBs",
+        "quesText":"Upload Grant Allocation to ULBs",
         "disableMsg":`1st Installment (${year}) Grant allocation has to be uploaded first before uploading 2nd Installment (${year}) Grant allocation to ULBs`
       },
       "nonmillion_untied_2023-24_1":{
         "question":`(A) Upload Grant Allocation to ULBs - 1st Installment (${year})`,
-        "quesTxt":"Upload Grant Allocation to ULBs",
+        "quesText":"Upload Grant Allocation to ULBs",
         "disableMsg":""
       },
       "nonmillion_untied_2023-24_2":{
         "questions":`(B) Upload Grant Allocation to ULBs - 2nd Installment (${year})`,
-        "quesTxt":"Upload Grant Allocation to ULBs",
+        "quesText":"Upload Grant Allocation to ULBs",
         "disableMsg":`1st Installment (${year}) Grant allocation has to be uploaded first before uploading 2nd Installment (${year}) Grant allocation to ULBs`
       },
       "million_tied_2023-24_1" : {

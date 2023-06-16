@@ -21,7 +21,7 @@ let GtcFormTypes = [
     "nonmillion_tied"
 ]
 let alerts = {
-    "prevForm":"Your previous year's GTC form is not complete. <a href=https://democityfinance.dhwaniris.in/upload-annual-accounts target=\"_blank\">Click Here!</a> to access previous year form.",
+    "prevForm":`Your previous year's GTC form is not complete. <a href=${process.env.HOSTNAME}/stateform2223/gtCertificate">Click Here!</a> to access previous year form.`,
     "installmentMsg":(year)=>{
         return `1st Installment (${year}) GTC has to be uploaded first before uploading 2nd Installment (${year}) GTC`
     }
@@ -602,7 +602,8 @@ const getRejectedFields = (currentFormStatus,formStatuses,installment,inputAllow
     try{
         // console.log("formStatuses :: ",formStatuses)
         let prevInstallment = installment - 1
-        let allowedStatuses = [MASTER_STATUS['Under Review by MoHUA'],MASTER_STATUS['Rejected by MoHUA']]
+        let allowedStatuses = [MASTER_STATUS['Under Review By MoHUA'],MASTER_STATUS['Rejected By MoHUA']]
+        console.log("allowedStatuses ::: ",allowedStatuses)
         // console.log("prevInstallment :: ",prevInstallment)
         if(prevInstallment  && !allowedStatuses.includes(formStatuses?.[prevInstallment]) && role === userTypes.state){
             return true
@@ -653,7 +654,7 @@ const getManipulatedJson = async(installment,type,design_year,formJson,fieldsToh
         if(installmentForm?.transferGrantdetail && installmentForm?.transferGrantdetail.length === 0){
             delete installmentForm['transferGrantdetail']
         }
-        let inputAllowed = [MASTER_STATUS['In Progress'],MASTER_STATUS['Not Started'],MASTER_STATUS['Rejected by MoHUA']]
+        let inputAllowed = [MASTER_STATUS['In Progress'],MASTER_STATUS['Not Started'],MASTER_STATUS['Rejected By MoHUA']]
         installmentForm.installment_type = installment_types[installment]
         let installmentObj = {...installmentForm}
         let flattedForm = await getFlatObj(installmentObj)

@@ -2453,7 +2453,6 @@ function manageDisabledQues(question,flattedForm){
                     else{
                         question['isQuestionDisabled'] = true
                     }
-                    
                 }
             }
 

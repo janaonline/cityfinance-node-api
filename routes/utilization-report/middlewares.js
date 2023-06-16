@@ -73,8 +73,7 @@ module.exports.changeGetApiForm = async (req, res, next) => {
             response.data = req.form
             return res.status(200).json(response)
         }
-    }
-    catch (err) {
+    } catch (err) {
         response.success = false
         response.data = req.form
         response.message = "Some server error occured"

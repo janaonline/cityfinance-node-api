@@ -2730,8 +2730,8 @@ module.exports.multiUlbPost = async function (req, res) {
 module.exports.delete = async function (req, res) {
   // Delete ulb based
   let condition = {
-      _id: req.params._id,
-    },
+    _id: req.params._id,
+  },
     update = {
       isActive: false,
     };
@@ -3009,7 +3009,7 @@ module.exports.getAllULBSCSV = function (req, res) {
   // Set approrpiate download headers
   res.setHeader("Content-disposition", "attachment; filename=" + filename);
   res.writeHead(200, { "Content-Type": "text/csv;charset=utf-8,%EF%BB%BF" });
-  
+
   res.write(
     "ULB Name, City Finance Code,Census Code, Swatcha Bharat Code, ULB Type, Ulb Active ,State Name, State Code, Nature of ULB, Area, Ward, Population, AMRUT, Latitude,Longitude,isMillionPlus, UA, UA_code, Created On, Modified On \r\n"
   );
@@ -3057,7 +3057,7 @@ module.exports.getAllULBSCSV = function (req, res) {
         name: 1,
         code: 1,
         wards: 1,
-        isActive:1,
+        isActive: 1,
         location: 1,
         createdAt: 1,
         modifiedAt: 1,
@@ -3105,45 +3105,45 @@ module.exports.getAllULBSCSV = function (req, res) {
         el.location = el.location ? el.location : { lat: "NA", lng: "NA" };
         res.write(
           el.name +
-            "," +
-            el.code +
-            "," +
-            el.censusCode +
-            "," +
-            el.sbCode +
-            "," +
-            el.ulbtypes.name +
-            "," +
-            el.isActive +
-            "," +
-            el.state.name +
-            "," +
-            el.state.code +
-            "," +
-            el.natureOfUlb +
-            "," +
-            el.area +
-            "," +
-            el.wards +
-            "," +
-            el.population +
-            "," +
-            el.amrut +
-            "," +
-            el.location.lat +
-            "," +
-            el.location.lng +
-            "," +
-            el.isMillionPlus +
-            "," +
-            el.UA +
-            "," +
-            el.UA_Code +
-            "," +
-            el.createdAt +
-            "," +
-            el.modifiedAt +
-            "\r\n"
+          "," +
+          el.code +
+          "," +
+          el.censusCode +
+          "," +
+          el.sbCode +
+          "," +
+          el.ulbtypes.name +
+          "," +
+          el.isActive +
+          "," +
+          el.state.name +
+          "," +
+          el.state.code +
+          "," +
+          el.natureOfUlb +
+          "," +
+          el.area +
+          "," +
+          el.wards +
+          "," +
+          el.population +
+          "," +
+          el.amrut +
+          "," +
+          el.location.lat +
+          "," +
+          el.location.lng +
+          "," +
+          el.isMillionPlus +
+          "," +
+          el.UA +
+          "," +
+          el.UA_Code +
+          "," +
+          el.createdAt +
+          "," +
+          el.modifiedAt +
+          "\r\n"
         );
       }
       res.end();
@@ -3221,6 +3221,9 @@ module.exports.getUlbsWithAuditStatus = async (req, res) => {
       let commonUlbs = await getUlbs(financialYear);
       condition["ulb"] = { $in: commonUlbs };
     }
+    // if(auditLineItem){
+    //   condition["lineItem"] = auditLineItem._id;
+    // }
     let ulbs = await UlbLedger.aggregate([
       { $match: condition },
       {
@@ -3304,7 +3307,7 @@ module.exports.getUlbsWithAuditStatus = async (req, res) => {
           location: "$ulb.location",
         },
       },
-    ]);
+    ]).allowDiskUse(true);
     return res.status(200).json({
       message: "Ulb list with population and coordinates and population.",
       success: true,
@@ -3454,22 +3457,22 @@ module.exports.eligibleULBForms = async function (req, res) {
   });
 };
 
-module.exports.truncateSbCode = async (req, res)=>{
+module.exports.truncateSbCode = async (req, res) => {
   const query = {
-    createdAt:{
-    $gt: new Date("2022-11-17")
+    createdAt: {
+      $gt: new Date("2022-11-17")
     },
 
   };
-  let updatedUlbs=[]
+  let updatedUlbs = []
   let ulbs = await Ulb.find(query).lean();
-  for(let ulb of ulbs){
-  // ulbs.forEach(async (ulb)=>{
+  for (let ulb of ulbs) {
+    // ulbs.forEach(async (ulb)=>{
     let sbCode = Number(ulb.sbCode).toFixed();
     let x = await Ulb.findOneAndUpdate({
       _id: ulb._id
-    },{
-      $set:{
+    }, {
+      $set: {
         sbCode: sbCode
       }
     }).lean()
@@ -3480,6 +3483,6 @@ module.exports.truncateSbCode = async (req, res)=>{
 
   return res.status(200).json({
     updatedUlbs,
-    length:updatedUlbs.length
+    length: updatedUlbs.length
   })
 }
