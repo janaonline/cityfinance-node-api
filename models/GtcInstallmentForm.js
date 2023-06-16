@@ -52,7 +52,7 @@ const installmentFormSchema = new Schema(
         totalNmpc:limitValidationSchema("totalNmpc",0,1000,true),
         totalElectedMpc:limitValidationSchema("totalElectedMpc",0,1000),
         totalElectedNmpc:limitValidationSchema("totalElectedNmpc",0,1000,true),
-        recAmount:limitValidationSchema("recAmount",1,9999,true),
+        recAmount:limitValidationSchema("recAmount",1,999999,true),
         sfcNotification:radioSchema("sfcNotification","GtcInstallmentForm"),
         receiptDate:{
             type:Date,
