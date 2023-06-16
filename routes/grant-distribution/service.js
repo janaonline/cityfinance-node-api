@@ -439,9 +439,7 @@ const getRejectedFields = (currentFormStatus,formStatuses,installment,role)=>{
       let prevInstallment = installment - 1
       let inputAllowed = [MASTER_STATUS['In Progress'],MASTER_STATUS['Not Started'],MASTER_STATUS['Rejected By MoHUA']]
       let allowedStatuses = [MASTER_STATUS['Submission Acknowledged By MoHUA']]
-      // console.log(">>>>>>>>>>>>>>>>>>>",prevInstallment  && allowedStatuses.includes(formStatuses?.[prevInstallment]) && role === userTypes.state)
-      if(prevInstallment  && allowedStatuses.includes(formStatuses?.[prevInstallment]) && role === userTypes.state){
-        // console.log("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<")
+      if(prevInstallment  && !allowedStatuses.includes(formStatuses?.[prevInstallment]) && role === userTypes.state){
           return true
       }
       else{
