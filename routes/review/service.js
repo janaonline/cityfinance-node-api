@@ -1,7 +1,7 @@
 const catchAsync = require('../../util/catchAsync')
 const Sidemenu = require('../../models/Sidemenu')
 const CollectionNames = require('../../util/collectionName')
-const { calculateStatus,canTakeActionOrViewOnly } = require('../CommonActionAPI/service')
+const { calculateStatus, canTakeActionOrViewOnly } = require('../CommonActionAPI/service')
 const ObjectId = require("mongoose").Types.ObjectId;
 const STATUS_LIST = require('../../util/newStatusList')
 const Service = require('../../service');
@@ -27,7 +27,6 @@ function formatDate(date) {
 function createDynamicColumns(collectionName) {
   let columns = ``;
   switch (collectionName) {
-
     case CollectionNames.odf:
     case CollectionNames.gfc:
       columns = `Financial Year,Form Status, Created, Submitted On, Filled Status, Rating, Score, Certificate URL, Certificate Name, Certificate Issue Date,State Review Status, State Comments,MoHUA Review Status, MoHUA Comments, State Review File URL, MoHUA Review File URL `;
@@ -1020,6 +1019,7 @@ async function createDynamicElements(collectionName, formType, entity) {
   }
 
   let data = entity?.formData;
+  console.log("data",data);process.exit()
   switch (formType) {
     case "ULB":
       switch (collectionName) {
@@ -1033,7 +1033,6 @@ async function createDynamicElements(collectionName, formType, entity) {
           if (!entity?.formData.certDate) {
             entity.formData.certDate = "";
           }
-
           entity = ` ${data?.design_year?.year ?? ""}, ${entity?.formStatus ?? ""
             }, ${data?.createdAt ?? ""}, ${data?.ulbSubmit ?? ""},${entity.filled ?? ""
             }, ${data["rating"]["name"] ?? ""},${data["rating"]["marks"] ?? ""
@@ -1048,7 +1047,7 @@ async function createDynamicElements(collectionName, formType, entity) {
 
           data["cert"]["name"] = removeEscapeChars(data["cert"]["name"]);
           data["otherDocs"]["name"] = removeEscapeChars(data["otherDocs"]["name"]);
-           data["PFMSAccountNumber"] ? data["PFMSAccountNumber"] = `'${data["PFMSAccountNumber"]}'`: ""
+          data["PFMSAccountNumber"] ? data["PFMSAccountNumber"] = `'${data["PFMSAccountNumber"]}'` : ""
           entity = ` ${data?.design_year?.year ?? ""}, ${entity?.formStatus ?? ""}, ${data?.createdAt ?? ""}, ${data?.ulbSubmit ?? ""},${entity.filled ?? ""}, ${data["linkPFMS"] ?? ""},${data["PFMSAccountNumber"] ?? ""},${data["isUlbLinkedWithPFMS"] ?? ""},${data["cert"]["url"] ?? ""},${data["cert"]["name"] ?? ""},${data["otherDocs"]["url"] ?? ""},${data["otherDocs"]["name"] ?? ""},${actions["state_status"] ?? ""},${actions["rejectReason_state"] ?? ""},${actions["mohua_status"] ?? ""},${actions["rejectReason_mohua"] ?? ""},${actions["responseFile_state"]["url"] ?? ""},${actions["responseFile_mohua"]["url"] ?? ""} `;
           break;
 
@@ -1910,7 +1909,7 @@ module.exports.get = catchAsync(async (req, res) => {
   if ((loggedInUserRole == "MoHUA" || loggedInUserRole == "ADMIN") && title_value === "Review Grant Application") {
     delete ulbColumnNames['stateName']
   }
-  
+
   let dbCollectionName = formTab?.dbCollectionName
   let formType = formTab.role
   if (formType === "ULB") {
@@ -1983,7 +1982,7 @@ module.exports.get = catchAsync(async (req, res) => {
   let newFilter = await Service.mapFilterNew(filter);
   if (req.query.status === STATUS_LIST.Not_Started) {// to apply not started filter
     Object.assign(newFilter, { formData: "" });
-  }  
+  }
   let folderName = formTab?.folderName;
 
   let query = computeQuery(collectionName, formType, isFormOptional, state, design_year, csv, skip, limit, newFilter, dbCollectionName, folderName);
@@ -2007,12 +2006,12 @@ module.exports.get = catchAsync(async (req, res) => {
       el['cantakeAction'] = false;
     } else {
       el['formStatus'] = calculateStatus(el.formData.status, el.formData.actionTakenByRole, el.formData.isDraft, formType);
-      if(collectionName === CollectionNames.dur || collectionName === CollectionNames['28SLB']){
+      if (collectionName === CollectionNames.dur || collectionName === CollectionNames['28SLB']) {
         el['cantakeAction'] = req.decoded.role === "ADMIN" ? false : canTakeActionOrViewOnly(el, loggedInUserRole);
-        if( !(approvedUlbs.find(ulb=> ulb.toString() === el.ulbId.toString())) && loggedInUserRole === "MoHUA"){
+        if (!(approvedUlbs.find(ulb => ulb.toString() === el.ulbId.toString())) && loggedInUserRole === "MoHUA") {
           el['cantakeAction'] = false
         }
-      }else{
+      } else {
         el['cantakeAction'] = req.decoded.role === "ADMIN" ? false : canTakeActionOrViewOnly(el, loggedInUserRole)
       }
     }
@@ -2192,8 +2191,8 @@ module.exports.get = catchAsync(async (req, res) => {
   }
 
   //  console.log(data)
-  data.forEach(el=> {
-    if(el.formData || el.formData === "" ) delete el.formData;
+  data.forEach(el => {
+    if (el.formData || el.formData === "") delete el.formData;
 
   })
   return res.status(200).json({
@@ -2226,28 +2225,28 @@ async function masterForms2122(collectionName, data) {
           {
             ulb: { $in: ulbsArray },
           },
-          { history: 0,steps:0 }
+          { history: 0, steps: 0 }
         ).lean();
       }
       approvedUlbs = getUlbsApprovedByMoHUA(masterForms2122)
     }
     return approvedUlbs;
   } catch (error) {
-    throw(`masterForms2122:: ${error.message}`)
+    throw (`masterForms2122:: ${error.message}`)
   }
 }
 
-function getUlbsApprovedByMoHUA(forms){
+function getUlbsApprovedByMoHUA(forms) {
   try {
     let ulbArray = [];
-    for(let form of forms){
-      if(form.actionTakenByRole === "MoHUA" && form.isSubmit && form.status === "APPROVED" ){
+    for (let form of forms) {
+      if (form.actionTakenByRole === "MoHUA" && form.isSubmit && form.status === "APPROVED") {
         ulbArray.push(form.ulb);
       }
     }
     return ulbArray;
   } catch (error) {
-    throw(`getUlbsApprovedByMoHUA:: ${error.message}`);
+    throw (`getUlbsApprovedByMoHUA:: ${error.message}`);
   }
 }
 function countStatusData(element, collectionName) {
@@ -2683,14 +2682,14 @@ const computeQuery = (formName, userRole, isFormOptional, state, design_year, cs
 
       query_s = createDynamicQuery(formName, query_s, userRole, csv);
       /* Checking if the user role is STATE and the folder name is IndicatorForWaterSupply. */
-      if( folderName === List['FolderName']['IndicatorForWaterSupply'] ){
-        let startIndex = query_s.findIndex((el)=>{
+      if (folderName === List['FolderName']['IndicatorForWaterSupply']) {
+        let startIndex = query_s.findIndex((el) => {
           return el.hasOwnProperty("$lookup");
         })
 
-      /* Splicing the query_s string starting at the startIndex. */
-         query_s.splice(startIndex);
-         query_s.push({
+        /* Splicing the query_s string starting at the startIndex. */
+        query_s.splice(startIndex);
+        query_s.push({
           $project: {
             state: "$_id",
             stateName: "$name",
@@ -2698,8 +2697,8 @@ const computeQuery = (formName, userRole, isFormOptional, state, design_year, cs
             regionalName: 1,
             filled: "Not Applicable"
           },
-          
-         })
+
+        })
       }
       let filterApplied_s = Object.keys(filter).length > 0
       if (filterApplied_s) {
@@ -2998,4 +2997,9 @@ const computeQuery = (formName, userRole, isFormOptional, state, design_year, cs
   // }
 
 }
+
+module.exports.createDynamicColumns = createDynamicColumns
+module.exports.createDynamicElements = createDynamicElements
+
+
 
