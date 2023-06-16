@@ -12,6 +12,7 @@ const {grantsWithUlbTypes,installment_types,singleInstallmentTypes} = require(".
 const FormsJson = require("../../models/FormsJson");
 const { MASTER_STATUS, MASTER_STATUS_ID } = require('../../util/FormNames');
 const userTypes = require("../../util/userTypes");
+const {FORMIDs} = require("../../util/FormNames")
 
 let gtcYears = ["2018-19","2019-20","2021-22","2022-23"]
 let GtcFormTypes = [
@@ -694,7 +695,7 @@ const getJson = async(state,design_year,role)=>{
         },{isMillionPlus : 1})
         let stateIsMillion = ulb?.isMillionPlus === "Yes" ? true : false
         let forms = await FormsJson.find({
-            "formId":{"$in":[11.1,7]}
+            "formId":{"$in":[FORMIDs['GTC_STATE'],FORMIDs['GTC_TABLE_STRUCTURE']]}
         }).lean()
         let basicEmptyStructure = forms.find(item => item.formId === 11.1).data
         let formJson = forms.find(item => item.formId === 7)

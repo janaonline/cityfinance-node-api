@@ -4,14 +4,20 @@ const ObjectId = require("mongoose").Types.ObjectId;
 const ULB = require("../../models/Ulb");
 const STATE = require("../../models/State");
 const Response = require("../../service").response;
+const FormsJson = require("../../models/FormsJson");
 const Service = require("../../service");
+const {years} = require("../../service/years");
 const downloadFileToDisk = require("../file-upload/service").downloadFileToDisk;
 const GrantDistribution = require("../../models/GrantDistribution");
+const {getChildQuestion} = require("./constants")
+const { checkForUndefinedVaribales, mutuateGetPayload, getFlatObj } = require("../../routes/CommonActionAPI/service")
+const { getKeyByValue, saveFormHistory, grantDistributeOptions } = require("../../util/masterFunctions");
 const {
   UpdateStateMasterForm,
 } = require("../../service/updateStateMasterForm");
-const {YEAR_CONSTANTS} = require('../../util/FormNames')
+const { YEAR_CONSTANTS } = require('../../util/FormNames')
 const { BadRequest } = require("../../service/response");
+const userTypes = require("../../util/userTypes");
 exports.getGrantDistribution = async (req, res) => {
   const { state_id } = req.query;
   let state = req.decoded.state ?? state_id;
@@ -23,28 +29,28 @@ exports.getGrantDistribution = async (req, res) => {
     }).select({ history: 0 }).lean();
 
     grantDistribution = JSON.parse(JSON.stringify(grantDistribution))
-    if(design_year === YEAR_CONSTANTS["22_23"]){
-    grantDistribution.forEach((entity)=>{
-          if(entity.hasOwnProperty("year")){
-            if(entity.year.toString() == "606aadac4dff55e6c075c507"){
-                entity.key = `${entity.type}_2020-21_${entity.installment}`
-            } 
-
-            if(entity.year.toString() == ObjectId("606aaf854dff55e6c075d219")){
-                entity.key = `${entity.type}_2021-22_${entity.installment}`
-            } 
-            
-            if(entity.year.toString() == "606aafb14dff55e6c075d3ae"){
-                entity.key = `${entity.type}_2022-23_${entity.installment}`
-            }
+    if (design_year === YEAR_CONSTANTS["22_23"]) {
+      grantDistribution.forEach((entity) => {
+        if (entity.hasOwnProperty("year")) {
+          if (entity.year.toString() == "606aadac4dff55e6c075c507") {
+            entity.key = `${entity.type}_2020-21_${entity.installment}`
           }
-        })
-      }
+
+          if (entity.year.toString() == ObjectId("606aaf854dff55e6c075d219")) {
+            entity.key = `${entity.type}_2021-22_${entity.installment}`
+          }
+
+          if (entity.year.toString() == "606aafb14dff55e6c075d3ae") {
+            entity.key = `${entity.type}_2022-23_${entity.installment}`
+          }
+        }
+      })
+    }
     if (!grantDistribution) {
       return Response.BadRequest(res, null, "No GrantDistribution found");
     }
-    if(design_year !== YEAR_CONSTANTS['22_23']){
-        grantDistribution =  grantDistribution[grantDistribution.length-1];
+    if (design_year !== YEAR_CONSTANTS['22_23']) {
+      grantDistribution = grantDistribution[grantDistribution.length - 1];
     }
     return Response.OK(res, grantDistribution, "Success");
   } catch (err) {
@@ -57,7 +63,7 @@ exports.getTemplate = async (req, res) => {
   let { state } = req?.decoded;
   let formData = req.query;
   let amount = "grant amount";
-
+  formData.design_year = getKeyByValue(years,formData.design_year)
   if (formData.year === "606aafb14dff55e6c075d3ae") {
     formData.design_year = "2022-23";
   } else if (formData.year === "606aaf854dff55e6c075d219") {
@@ -108,6 +114,9 @@ exports.uploadTemplate = async (req, res) => {
   let { url, design_year } = req.query;
   let state = req.decoded?.state;
   let formData = req.query;
+  let outDatedYearIds = Object.entries(years).map(([key,value])=> {
+    return ['2017-18', '2018-19', '2019-20', '2020-21', '2021-22' ].includes(key) && value
+  } )
   try {
     downloadFileToDisk(url, async (err, file) => {
       if (err) {
@@ -120,38 +129,38 @@ exports.uploadTemplate = async (req, res) => {
       const XslData = await readXlsxFile(file);
       //count empty entries in exel file
       let emptyCensus = 0;
-      XslData.forEach((el)=>{
+      XslData.forEach((el) => {
         if (
           el["ulb census code/ulb code"] === "" &&
-          el["ulb name"] === "" 
+          el["ulb name"] === ""
         ) emptyCensus++;
       })
       if (XslData.length == 0)
         return Response.BadRequest(res, "No File Found/Data");
       let xslDataCensusCode = XslData[0]["ulb census code/ulb code"];
       // validate data
-      let queryState = [ 
+      let queryState = [
         {
-              $match:{
-                state: ObjectId(state),
-                isActive: true
-              }
+          $match: {
+            state: ObjectId(state),
+            isActive: true
+          }
         },
         {
-            $group:{
-                _id: "$state",
-                totalUlbs: {$sum:1}
-            }
+          $group: {
+            _id: "$state",
+            totalUlbs: { $sum: 1 }
+          }
         },
         {
-            $lookup: {
-                from: "states",
-                localField: "_id",
-                foreignField: "_id",
-                as: "state"
-            }
+          $lookup: {
+            from: "states",
+            localField: "_id",
+            foreignField: "_id",
+            as: "state"
+          }
         },
-        { $unwind: "$state"}
+        { $unwind: "$state" }
       ]
       let xslDataState = ULB.aggregate([
         {
@@ -159,47 +168,47 @@ exports.uploadTemplate = async (req, res) => {
             $or: [
               { censusCode: xslDataCensusCode },
               { sbCode: xslDataCensusCode },
-              
+
             ],
             isActive: true
           },
         },
         {
-          $lookup:{
+          $lookup: {
             from: "states",
             localField: "state",
             foreignField: "_id",
             as: "state"
-         }
+          }
         },
-        { $unwind: "$state"}
+        { $unwind: "$state" }
 
       ]);
-      if(formData.design_year === "606aafb14dff55e6c075d3ae"){
-      let  [xslDataStateInfo,stateInfo] =  await Promise.all([xslDataState ,ULB.aggregate(queryState)]);
-      let ulbCount = stateInfo[0].totalUlbs;
-      let xslDataStateName = xslDataStateInfo[0].state.name;
-      let stateName = stateInfo[0].state.name;
+      if (!outDatedYearIds.includes(formData.design_year)) {
+        let [xslDataStateInfo, stateInfo] = await Promise.all([xslDataState, ULB.aggregate(queryState)]);
+        let ulbCount = stateInfo[0].totalUlbs;
+        let xslDataStateName = xslDataStateInfo[0].state.name;
+        let stateName = stateInfo[0].state.name;
 
-        if(stateName !== xslDataStateName){
-          return res.status(400).xls("error_sheet.xlsx", [{"message": "Wrong state file"}]);
+        if (stateName !== xslDataStateName) {
+          return res.status(400).xls("error_sheet.xlsx", [{ "message": "Wrong state file" }]);
         }
-        if(ulbCount != (XslData.length- emptyCensus) ){
-          return res.status(400).xls("error_sheet.xlsx", [{"message": `${ulbCount- (XslData.length-emptyCensus)} ulb data missing`}]);
+        if (ulbCount != (XslData.length - emptyCensus)) {
+          return res.status(400).xls("error_sheet.xlsx", [{ "message": `${ulbCount - (XslData.length - emptyCensus)} ulb data missing` }]);
           // return BadRequest(res, null, `${ulbCount- (XslData.length-emptyCensus)} ulb data missing`);
         }
       }
       const notValid = await validate(XslData, formData);
       if (notValid) {
         let amount = "grant amount";
-        if(formData.design_year === "606aafb14dff55e6c075d3ae"){
+        formData.design_year = getKeyByValue(years,formData.design_year)
+        if (formData.design_year === "606aafb14dff55e6c075d3ae") {
           formData.design_year = '2022-23';
-        }else if( formData.design_year === "606aaf854dff55e6c075d219"){
+        } else if (formData.design_year === "606aaf854dff55e6c075d219") {
           formData.design_year = '2021-22';
         }
         let type = `${formData.type}_${formData.design_year}_${formData.installment}`
         amount = `${amount} - ${type}`
-
         /* Checking if the formData.design_year is equal to 2021-22 or undefined, if it is, then it sets the amount variable
         to "grant amount". */
         formData.design_year === undefined || formData.design_year === "2021-22"
@@ -224,25 +233,25 @@ exports.uploadTemplate = async (req, res) => {
 
 exports.saveData = async (req, res) => {
   try {
-    let { design_year, type, installment ,year} = req.body;
+    let { design_year, type, installment, year } = req.body;
     let state = req.decoded?.state;
     req.body.actionTakenBy = req.decoded._id;
     req.body.modifiedAt = new Date();
 
     let condition = {}
     condition["state"] = state;
-    condition["design_year"] =  design_year;
+    condition["design_year"] = design_year;
     condition["type"] = type;
     condition['installment'] = installment;
     condition['year'] = year;
 
     let form = await GrantDistribution.findOne(condition).lean();
-    
-    if(!form){
+
+    if (!form) {
       let formData = req.body;
       formData["state"] = state;
       let data = await GrantDistribution.create(formData);
-      if(!data){
+      if (!data) {
         return res.status(400).json({
           status: false,
           message: "Form not saved."
@@ -260,7 +269,7 @@ exports.saveData = async (req, res) => {
         new: true,
       }
     );
-    if(design_year === "606aaf854dff55e6c075d219"){
+    if (design_year === "606aaf854dff55e6c075d219") {
       await UpdateStateMasterForm(req, "grantAllocation");
     }
     return Response.OK(res, data, "file updated");
@@ -277,8 +286,8 @@ function readXlsxFile(file) {
       let fileInfo = file.path.split(".");
       exceltojson =
         fileInfo &&
-        fileInfo.length > 0 &&
-        fileInfo[fileInfo.length - 1] == "xlsx"
+          fileInfo.length > 0 &&
+          fileInfo[fileInfo.length - 1] == "xlsx"
           ? xlsxtojson
           : xlstojson;
       exceltojson(
@@ -312,21 +321,22 @@ async function validate(data, formData) {
   const code = "ulb census code/ulb code";
   const name = "ulb name";
   let amount = "grant amount";
-  if(formData.design_year === "606aafb14dff55e6c075d3ae"){
+  if (formData.design_year === "606aafb14dff55e6c075d3ae") {
     formData.design_year = '2022-23';
-  }else if( formData.design_year === "606aaf854dff55e6c075d219"){
+  } else if (formData.design_year === "606aaf854dff55e6c075d219") {
     formData.design_year = '2021-22';
   }
+  formData.design_year = getKeyByValue(years,formData.design_year)
   const type = `${formData.type}_${formData.design_year}_${formData.installment}`
   amount = `${amount} - ${type}`
   /* Checking if the formData.design_year is equal to 2021-22, if it is, then it sets the amount variable
   to "grant amount". */
-  formData.design_year === "2021-22" ? amount = "grant amount": ""
-const keys = Object.keys(data[0]);
+  formData.design_year === "2021-22" ? amount = "grant amount" : ""
+  const keys = Object.keys(data[0]);
   if (
-    !(keys.includes(code) && keys.includes(name) && keys.includes(amount) 
-       || keys.length !== 3
-  )) {
+    !(keys.includes(code) && keys.includes(name) && keys.includes(amount)
+      || keys.length !== 3
+    )) {
     data.forEach((element) => {
       element.Errors = "Incorrect Format,";
     });
@@ -346,7 +356,7 @@ const keys = Object.keys(data[0]);
   for (let index = 0; index < data.length; index++) {
     if (
       data[index][code] === "" ||
-      data[index][name] === "" 
+      data[index][name] === ""
     ) {
       errorFlag = true;
       if (data[index].Errors) data[index].Errors += "Code or Ulb name is blank,";
@@ -358,7 +368,7 @@ const keys = Object.keys(data[0]);
       else data[index].Errors = "Code Not Valid,";
     }
     if (
-      compareData[data[index][code]] != data[index][name] 
+      compareData[data[index][code]] != data[index][name]
     ) {
       errorFlag = true;
       if (data[index].Errors) data[index].Errors += "Name Not Valid,";
@@ -410,7 +420,91 @@ async function getUlbData(ulbCodes, ulbNames) {
   ulb.forEach((element) => {
     ulbDataMap[element?.sbCode ? element?.sbCode : element?.censusCode] =
       element.name;
-    ulbDataMap[element?.censusCode  ? element?.censusCode :  element?.sbCode] = element.name
+    ulbDataMap[element?.censusCode ? element?.censusCode : element?.sbCode] = element.name
   });
   return ulbDataMap;
+}
+
+const getSectionWiseJson = async(state, design_year) => {
+  let host = process.env.HOSTNAME
+
+  try {
+    let ulb = await ULB.findOne({
+      "state": ObjectId(state),
+      "isMillionPlus": "Yes"
+    }, { isMillionPlus: 1 })
+    let stateIsMillion = ulb?.isMillionPlus === "Yes" ? true : false
+    let tabularStructure = await FormsJson.findOne({
+      "formId":{"$in":[11.2]}
+  }).lean()
+  tabularStructure = tabularStructure?.data || []
+  let allocationForms = await GrantDistribution.find({
+    state:ObjectId(state),
+    design_year:design_year,
+  }).lean()
+  for(let section of tabularStructure){
+    let installments = section.installments
+    console.log(installments )
+    for(let i=1; i <= installments; i++){
+      let allocationForm = allocationForms.find(item => item.installment === i && item.year.toString() === years[section.yearCode])
+      let file = {
+        "name":"",
+        "url":""
+      }
+      file = allocationForm?.file && allocationForm?.file.url || file 
+      let params = {
+        installment : i,
+        year:years[section.yearCode],
+        type:section.type,
+        quesType:"",
+        url:`${host}/api/v1/grantDistribution/template?type=${section.type}&year=${years[section.yearCode]}&installment=${i}`,
+        key:`${section.type}_${section.yearCode}_${i}`,
+        file:file,
+       }
+       let question = await getChildQuestion(params)
+       section.quesArray.push(question)
+    }
+  }
+  return {json:tabularStructure,isStateMillion:stateIsMillion}
+  }
+  catch (err) {
+    console.log("error in getSectionWiseJson ::: ",err)
+    return{json:[],isStateMillion:true}
+  }
+}
+
+
+module.exports.getGrantDistributionForm = async (req, res, next) => {
+  let response = {
+    success: false,
+    message: "",
+    data: [],
+    errors: []
+  }
+  try {
+    let { state, design_year } = req.query
+    let { role } = req.decoded
+    if (![userTypes.mohua, userTypes.state].includes(role)) {
+      response.message = "Not allowed"
+      return res.status(405).json(response)
+    }
+    let validator = await checkForUndefinedVaribales({
+      "design year": design_year,
+      "state": state
+    })
+    if (!validator.valid) {
+      response.message = validator.message
+      return res.status(405).json(response)
+    }
+    let { json, isStateMillion } = await getSectionWiseJson(state, design_year)
+    response.message = "form fetched"
+    response.success = true
+    response.isStateMillion = isStateMillion
+    response.formName = "Grant Allocation to ULBs"
+    response.gtcFormData = json
+    return res.status(200).json(response)
+  }
+  catch (err) {
+    console.log("error in getGrantDistributionForm :::: ", err.message)
+  }
 }
