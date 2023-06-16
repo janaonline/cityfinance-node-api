@@ -28,14 +28,17 @@ var ignorableKeys = ["actionTakenByRole","actionTakenBy","ulb","design_year"]
 let groupedQuestions = {
     "location":['lat','long']
 }
-
-
 let addMoreFields = ["transferGrantdetail_tableview_addbutton"]
-
 let yearValueField = {
     "year":"",
     "value":""
 }
+
+let nestedTables = {
+    "GtcInstallmentForm" :"TransferGrantDetailForm"
+}
+
+
 let objectFields = {
     "waterSupply_actualIndicator":{"fieldName":"actualYear","object":{...yearValueField}},
     "waterSupply_targetIndicator":{"fieldName":"targetYear","object":{...yearValueField}},
@@ -243,7 +246,6 @@ var inputType = {
     "14":"value",
     "5":"value"
 }
-
 const calculateStatus = (status, actionTakenByRole, isDraft, formType) => {
     switch (formType) {
         case "ULB":
@@ -1961,10 +1963,12 @@ async function handleRangeIfExists(questionObj,formObj){
         }
         // get range from models if exists
         else if(formObj.modelName){
-            let schema = moongose.model(formObj.modelName).schema.obj[questionObj.shortKey]          
+            let schema = moongose.model(formObj.modelName).schema.obj[questionObj.shortKey] ||  moongose.model(nestedTables[formObj.modelName]).schema.obj[questionObj.shortKey]
             if(schema){
                 obj.minRange = Array.isArray(schema?.min) ? schema.min[0] : schema.min
                 obj.maxRange = Array.isArray(schema?.max) ? schema.max[0] : schema.max
+                obj.min = Array.isArray(schema?.min) ? schema.min[0] : schema.min
+                obj.max = Array.isArray(schema?.max) ? schema.max[0] : schema.max
                 if(obj.minRange != undefined  && obj.maxRange != undefined ){
                     obj.hint = obj?.minRange.toString() + "-"+ obj?.maxRange.toString()
                 }
@@ -1993,6 +1997,7 @@ async function handleArrOfObjects(question,flattedForm){
                 if(DurCase.includes(question.shortKey)){
                     obj.percProjectCost = ((obj.expenditure / obj.cost)*100).toFixed(2)
                 }
+                obj.modelName = flattedForm.modelName || ""
                 var nested_arr = [] 
                 for(let keys in obj){
                     let keysObj = customkeys[question.shortKey]
@@ -2119,7 +2124,6 @@ async function appendvalues(childQuestionData,flattedForm,shortKey,question){
                         "label":questionLength
                         
                     }
-                    console.log("question :: ",question.value)
 
                 }
             }
@@ -2354,14 +2358,26 @@ const handleValues = async(question,obj,flattedForm,mainKey=false)=>{
     }
 }
 
+
+function dateMinMax(flattedForm,shortKey,question){
+    try{
+        if(flattedForm.modelName){
+            let schema = moongose.model(flattedForm.modelName).schema.obj[shortKey]
+            if(schema){
+                question.min = Array.isArray(schema?.min) ? schema.min[0] : schema.min
+                question.max  = Array.isArray(schema?.max) ? schema.max[0] : schema.max
+            }
+        }
+    }
+    catch(err){
+        console.log("error in dateMinMax ::: ",err.message)
+    }
+}
+
 function handledateCase(question,obj,flattedForm){
     try{
         
         let mainKey = question.shortKey
-        // if(mainKey === "receiptDate"){
-        //     console.log(">>>>>>>>>.",flattedForm[mainKey])
-        // }
-        // console.log("flattedForm[mainKey] ::: ",flattedForm[mainKey].toISOString())
         if(flattedForm[mainKey] === undefined || flattedForm[mainKey] === null){
             flattedForm[mainKey] = ""
         }
@@ -2372,6 +2388,7 @@ function handledateCase(question,obj,flattedForm){
         question['value'] = flattedForm[mainKey]
         obj['textValue'] = flattedForm[mainKey]
         obj['value'] = flattedForm[mainKey]
+        // dateMinMax(flattedForm,mainKey,question)
     }
     catch(err){
         console.log("error in dateCase :::: ",err.message)

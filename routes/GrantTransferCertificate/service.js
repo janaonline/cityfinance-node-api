@@ -651,12 +651,14 @@ const getManipulatedJson = async (installment, type, design_year, formJson, fiel
             installmentForm.year = getKeyByValue(years, design_year)
         }
         if (installmentForm?.transferGrantdetail && installmentForm?.transferGrantdetail.length === 0) {
-            delete installmentForm['transferGrantdetail']
+            let transerGrantForm = await TransferGrantDetailForm().toObject({virtuals:true})
+            installmentForm['transferGrantdetail'] = [transerGrantForm]
         }
         let inputAllowed = [MASTER_STATUS['In Progress'], MASTER_STATUS['Not Started'], MASTER_STATUS['Rejected by MoHUA']]
         installmentForm.installment_type = installment_types[installment]
         let installmentObj = { ...installmentForm }
         let flattedForm = await getFlatObj(installmentObj)
+        flattedForm['modelName'] = "GtcInstallmentForm"
         flattedForm['fieldsTohide'] = fieldsTohide
         let shouldDisableFields = getRejectedFields(gtcForm?.currentFormStatus, formStatuses, installment, inputAllowed, role)
         formStatuses[installment] = gtcForm?.currentFormStatus
