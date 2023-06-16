@@ -15,6 +15,13 @@ const { getKeyByValue, saveFormHistory, grantDistributeOptions } = require("../.
 const {
   UpdateStateMasterForm,
 } = require("../../service/updateStateMasterForm");
+
+let baseUrls = {
+  "staging":"https://staging.cityfinance.in",
+  "demo":"https://democityfinance.dhwaniris.in",
+  "prod":"https://cityfinance.in"
+}
+
 const { YEAR_CONSTANTS, MASTER_STATUS } = require('../../util/FormNames')
 const { BadRequest } = require("../../service/response");
 const userTypes = require("../../util/userTypes");
