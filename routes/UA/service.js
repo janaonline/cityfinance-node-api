@@ -723,7 +723,8 @@ module.exports.get2223 = catchAsync(async (req, res) => {
     //     "waterSuppliedPerDay_actual2122": wtAvgSLB[2],
     //     "reduction_actual2122": wtAvgSLB[3]
     //   })
-    let scores = calculateSlbMarks(slbWeigthed)
+    slbWeigthed = roundOffToTwoDigits(slbWeigthed);
+    let scores = calculateSlbMarks(slbWeigthed, false)
     Object.assign(slbWeigthed, {
         "houseHoldCoveredWithSewerage_score": scores[2],
         "houseHoldCoveredPipedSupply_score": scores[3],
@@ -755,7 +756,7 @@ module.exports.get2223 = catchAsync(async (req, res) => {
     responseObj.fourSLB.data = slbWeigthed
 
     if(design_year === YEAR_CONSTANTS['23_24']){
-       responseObj.fourSLB.data = get2223TwentySlbData(TEslbdata2, slbWeigthed);
+       responseObj.fourSLB.data = get2223TwentySlbData(TEslbdata2, slbWeigthed, design_year);
        responseObj = updateResponse(responseObj, false)
     }
     return res.status(200).json({
@@ -966,7 +967,8 @@ function removeApproved(pending, approved) {
  * @returns the updated `slbWeigthed` object with calculated scores for four different indicators
  * related to water supply and sanitation.
  */
-function get2223TwentySlbData(TEslbdata2, slbWeigthed) {
+function get2223TwentySlbData(TEslbdata2, slbWeigthed, design_year) {
+  try {
     let arr1 = [];
     let filteredData2 = [];
     TEslbdata2.forEach((el) => {
@@ -992,45 +994,51 @@ function get2223TwentySlbData(TEslbdata2, slbWeigthed) {
         { id: "", value: 0 },
         { id: "", value: 0 },
       ];
-    arr1.forEach(el => {
-        el.data.forEach((el2, index) => {
-            numerator2[index]['id'] = el2.indicatorLineItem.toString();
-            numerator2[index]['value'] += el2.actual.value * el.population;
-            popData2[index]['value'] += el.population;
-            popData2[index]['id'] = el2.indicatorLineItem.toString();
-        });
+    arr1.forEach((el) => {
+      el.data.forEach((el2, index) => {
+        numerator2[index]["id"] = el2.indicatorLineItem.toString();
+        numerator2[index]["value"] += el2.actual.value * el.population;
+        popData2[index]["value"] += el.population;
+        popData2[index]["id"] = el2.indicatorLineItem.toString();
+      });
     });
 
     let wtAvgSLB2 = [];
     numerator2.forEach((el, index) => {
-        wtAvgSLB2.push({ value: numerator2[index].value / popData2[index].value, id: numerator2[index].id });
-        if (el.id == lineItemIndicatorIDs[0]) {
-            Object.assign(slbWeigthed, {
-                "houseHoldCoveredWithSewerage_actual2122": wtAvgSLB2[index].value,
-            });
-
-        } else if (el.id == lineItemIndicatorIDs[1]) {
-            Object.assign(slbWeigthed, {
-                "houseHoldCoveredPipedSupply_actual2122": wtAvgSLB2[index].value,
-            });
-        } else if (el.id == lineItemIndicatorIDs[2]) {
-            Object.assign(slbWeigthed, {
-                "waterSuppliedPerDay_actual2122": wtAvgSLB2[index].value,
-            });
-        } else if (el.id == lineItemIndicatorIDs[3]) {
-            Object.assign(slbWeigthed, {
-                "reduction_actual2122": wtAvgSLB2[index].value,
-            });
-        }
+      wtAvgSLB2.push({
+        value: numerator2[index].value / popData2[index].value,
+        id: numerator2[index].id,
+      });
+      if (el.id == lineItemIndicatorIDs[0]) {
+        Object.assign(slbWeigthed, {
+          houseHoldCoveredWithSewerage_actual2122: wtAvgSLB2[index].value,
+        });
+      } else if (el.id == lineItemIndicatorIDs[1]) {
+        Object.assign(slbWeigthed, {
+          houseHoldCoveredPipedSupply_actual2122: wtAvgSLB2[index].value,
+        });
+      } else if (el.id == lineItemIndicatorIDs[2]) {
+        Object.assign(slbWeigthed, {
+          waterSuppliedPerDay_actual2122: wtAvgSLB2[index].value,
+        });
+      } else if (el.id == lineItemIndicatorIDs[3]) {
+        Object.assign(slbWeigthed, {
+          reduction_actual2122: wtAvgSLB2[index].value,
+        });
+      }
     });
-    let scores2 = calculateSlbMarks(slbWeigthed);
+    slbWeigthed = roundOffToTwoDigits(slbWeigthed);
+    let scores2 = calculateSlbMarks(slbWeigthed, true);
     Object.assign(slbWeigthed, {
-        "houseHoldCoveredWithSewerage_score": scores2[2],
-        "houseHoldCoveredPipedSupply_score": scores2[3],
-        "waterSuppliedPerDay_score": scores2[0],
-        "reduction_score": scores2[1],
+      houseHoldCoveredWithSewerage_score: Number(scores2[2].toFixed(2)),
+      houseHoldCoveredPipedSupply_score: Number(scores2[3].toFixed(2)),
+      waterSuppliedPerDay_score: Number(scores2[0].toFixed(2)),
+      reduction_score: Number(scores2[1].toFixed(2)),
     });
     return slbWeigthed;
+  } catch (error) {
+    throw `get2223TwentySlbData:: ${error.message}`;
+  }
 }
 
 /**
@@ -1244,7 +1252,7 @@ function convertToRows(oldFormat) {
       {
         serviceLevelIndicators: "% of Non-revenue water",
         key: "reduction",
-        benchmark: "70 %",
+        benchmark: "20 %",
         wghtd_score: "reduction_score",
       },
       {
