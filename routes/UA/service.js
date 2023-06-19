@@ -1120,8 +1120,7 @@ function updateResponse(response, InsufficientFlag) {
           tables: getPerformanceAsstTable(),
           dataCount: {},
           uaScore: {
-            title: `On the basis of the total marks obtained by UA,
-                     proportionate grants shall be recommended by MOH&UA as per the table given below:`,
+            title: `Total UA Score:`,
             value: InsufficientFlag ? null :
               getUAScore(response["fourSLB"]['data']) +
               getindicators_swmScore(
