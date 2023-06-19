@@ -6,7 +6,7 @@ const {radioSchema,pdfSchema,limitValidationSchema} = require("../util/masterFun
 const mongooseLeanVirtuals = require('mongoose-lean-virtuals');
 const TransferGrantSchema = new Schema({
     installmentForm:{type:Schema.Types.ObjectId,ref:"GtcInstallmentForm"},
-    transAmount:limitValidationSchema("transAmount",1,9999),
+    transAmount:limitValidationSchema("transAmount",1,999999),
     transDelay:radioSchema("transDelay","GtcInstallmentForm"),
     transDate:{
         type:Date,
