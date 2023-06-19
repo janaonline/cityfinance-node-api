@@ -12,6 +12,7 @@ const gtcConstants = {
     nmpc_untied: "Non-Million Untied",
     nmpc_tied:"Non-Million Tied"
 }
+const {ELIGIBLITY, INSTALLMENT_TITLE,ROMAN_NUMERALS} = require('./constants')
 const {dashboard} = require('../../routes/FormDashboard/service');
 const UA = require('../../models/UA');
 const LOCALHOST = 'localhost:8080';
@@ -363,6 +364,12 @@ module.exports.get2223 = async (req, res)=>{
         nmpc_tied_2,
         mpc_tied_1,
       };
+      if((![YEAR_CONSTANTS['22_23']].includes(financialYear))){
+        submitClaim =  generateOutputObject(submitClaim)
+        return res.status(200).json({
+          data: submitClaim,
+        });
+      }
       return res.status(200).json({
         data: submitClaim,
       });
@@ -468,6 +475,12 @@ module.exports.get2223 = async (req, res)=>{
       //   state: ObjectId(stateId),
       //   financialYear: ObjectId(financialYear)
       // }).lean();
+      if([!YEAR_CONSTANTS['22_23']].includes(financialYear)){
+        let submitClaim =  generateOutputObject(submitClaim)
+        return res.status(200).json({
+          data: submitClaim,
+        });
+      }
       return res.status(200).json({
         data: submitClaim,
       });
@@ -480,6 +493,76 @@ module.exports.get2223 = async (req, res)=>{
       
     
     
+}
+
+function generateOutputObject(input) {
+  const output = {
+    formId: '',
+    formName: 'Final submission of claims for 15th FC Grants (FY 2023-24)',
+    previousYrMsg: '',
+    grantsType: ['nmpc_tied', 'nmpc_untied', 'mpc_tied'],
+    data: {}
+  };
+  let order = 0
+  for (const key in input) {
+    order++;
+    const grantData = input[key];
+    const grantType = key.replace(/_[0-9]/g, '');
+    const installment = key[key.length-1] ?  Number(key[key.length-1]) : 1 ;
+    if (!output.data[grantType]) {
+      output.data[grantType] = {
+        title: `${order}. ${INSTALLMENT_TITLE[grantType]}`,
+        yearData: [],
+        isClose: true,
+        id: (output.grantsType.findIndex(el=>el === grantType) +1)
+      };
+    }
+   
+    const yearData = {
+      key: '',
+      title: `${ROMAN_NUMERALS[order]} Installment (FY 2023-24):`,
+      installment,
+      year: '',
+      type: '',
+      position: 1,
+      conditionSuccess: input[key]['conditionSuccess'],
+      buttonName: 'Claim Grant - ',
+      amount: null,
+      info: '',
+      isShow: true,
+      status: input[key]['conditionSuccess'] ? ELIGIBLITY['YES'] : ELIGIBLITY['NO'],
+      conditions: []
+    };
+
+    for (const condition of grantData.conditions) {
+      const dashboardData = input[key]['dashboardData'];
+      let percent;
+      //  dashboardData.forEach(el=>{
+        for(el of dashboardData){
+         percent = findConditionKey(percent, el, condition);
+        if(percent){
+           break;
+        }
+      }
+      
+      yearData.conditions.push({
+        key: condition.key,
+        text: condition.text,
+        value: percent
+      });
+    }
+
+    output.data[grantType].yearData.push(yearData);
+  }
+
+  return output;
+}
+
+function findConditionKey(percent, el, condition) {
+  percent = el.formData.find(entity => {
+    return entity.key === condition.key;
+  });
+  return percent;
 }
 
 function removeLastThreeEntries(arr) {
