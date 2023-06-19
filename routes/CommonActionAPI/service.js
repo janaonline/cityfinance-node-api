@@ -2470,6 +2470,7 @@ async function mutuateGetPayload(jsonFormat, flatForm, keysToBeDeleted,role) {
     try {
         let obj = JSON.parse(JSON.stringify(jsonFormat))
         let flattedForm = JSON.parse(JSON.stringify(flatForm))
+        roleWiseJson(obj[0],role)
         const transDate = obj?.[0]?.question?.find(q => q.shortKey == 'transDate');
         if(transDate) {
             const [ maxDate ] = new Date().toISOString().split('T');
