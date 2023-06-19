@@ -17,8 +17,8 @@ const SLB = require('../../models/XVFcGrantForm');
 const State = require('../../models/State');
 const Sidemenu = require('../../models/Sidemenu');
 const ObjectId = require('mongoose').Types.ObjectId;
-const {CollectionNames} = require('../../util/15thFCstatus');
-const { YEAR_CONSTANTS, MASTER_STATUS } = require('../../util/FormNames');
+const {CollectionNames, ModelNames, FormPathMappings} = require('../../util/15thFCstatus');
+const { YEAR_CONSTANTS, MASTER_STATUS, FormNames } = require('../../util/FormNames');
 const UA = require('../../models/UA');
 
 const CUTOFF =  {
@@ -36,7 +36,7 @@ const CUTOFF =  {
         mpc_tied: {
             [CollectionNames.gtc]: 100,
             [CollectionNames.sfc]: 100,
-            [CollectionNames.pTAX]:100
+            [CollectionNames.pTAX]:100,
         }
     },
     ULB:{
@@ -75,18 +75,25 @@ const CUTOFF2324 =  {
         mpc_tied: {
             [CollectionNames.gtc]: 100,
             [CollectionNames.sfc]: 100,
-            [CollectionNames.pTAX]:100
+            [CollectionNames.pTAX]:100,
+            [CollectionNames.slbScoring]:100,
+            [CollectionNames.actionPlan]:100,
+            [CollectionNames.waterRej]:100
         }
     },
     ULB:{
         nmpc_untied: {
             [CollectionNames.annualAcc]: 100,
             [CollectionNames.linkPFMS]: 100,
+            [CollectionNames.propTaxOp]:100,
+
         },
         nmpc_tied : {
             [CollectionNames.annualAcc]: 100,
             [CollectionNames.linkPFMS]: 100,
             [CollectionNames.dur]: 100,
+            [CollectionNames.propTaxOp]:100,
+
         },
         mpc_tied: {
             [CollectionNames.annualAcc]: 100,
@@ -96,6 +103,8 @@ const CUTOFF2324 =  {
             [CollectionNames.slb]:100,
             [CollectionNames.odf]:100,
             [CollectionNames.gfc]:100,
+            [CollectionNames.propTaxOp]:100,
+
         }
     }
 }
@@ -359,97 +368,173 @@ function getCollections2324(type, installment){
     return collections;
 }  
 
-function getFormData(formCategory, modelName, sidemenuForms, reviewForm){
-    let formData = {};
-    if(formCategory === 'ULB'){
-        formData["approvedColor"] = '#E67E15';
-        formData['submittedColor'] = '#E67E1566';
-        formData['border'] ='#E67E15';
-    } else if( formCategory === 'STATE'){
-        formData["approvedColor"] = '#059B05';
-        formData['submittedColor'] = '#E67E1599';
-        formData['border'] ='#059B05'
+const COLORS = {
+    ULB: {
+      approvedColor: '#E67E15',
+      submittedColor: '#E67E1566',
+      border: '#E67E15'
+    },
+    STATE: {
+      approvedColor: '#059B05',
+      submittedColor: '#E67E1599',
+      border: '#059B05'
     }
-
-    for( let i = 0; i < sidemenuForms.length; i++){
-        let element = sidemenuForms[i];
-        let flag = false;
-        
-        //First 4 cases where ModelName is not equal to path in sidemenu form
-        if( modelName === CollectionNames.annualAcc && element._id === "AnnualAccounts"){
-            flag = true;
-            formData["formName"] = element.name;
-            formData['icon'] = element.icon;
-            formData['link'] = `/${reviewForm.url}/${FormObjectIds[CollectionNames.annualAcc]}`;
-            
-        }else if(modelName === CollectionNames.linkPFMS && element._id === "LinkPFMS"){
-            flag = true;
-            formData["formName"] = element.name;
-            formData['icon'] = element.icon;
-            formData['link'] = `/${reviewForm.url}/${FormObjectIds[CollectionNames.linkPFMS]}`;
-
-        }else if( modelName === CollectionNames.slb && element._id === "XVFcGrantForm"){
-            flag = true;
-            formData["formName"] = element.name;
-            formData['icon'] = element.icon;
-            formData['link'] = `/${reviewForm.url}/${FormObjectIds[CollectionNames.slb]}`;
-        }else if(modelName === CollectionNames.twentyEightSlbs && element._id === "TwentyEightSlbsForm"){
-            flag = true;
-            formData["formName"] = element.name;
-            formData['icon'] = element.icon;
-            formData['link'] = `/${reviewForm.url}/${FormObjectIds[CollectionNames.twentyEightSlbs]}`;
-
-        } else if (modelName === CollectionNames.dur && element._id === "UtilizationReport"){
-            flag = true;
-            formData["formName"] = element.name;
-            formData['icon'] = element.icon;
-            formData['link'] = `/${reviewForm.url}/${FormObjectIds[CollectionNames.dur]}`;
-            
-        }else if (modelName === CollectionNames.gtc && element._id === "GrantTransferCertificate"){
-            flag = true;
-            formData["formName"] = element.name;
-            formData['icon'] = element.icon;
-            formData['link'] = `/${element.url}`;
-                    
-        }else if (modelName === CollectionNames.twentyEightSlbs && element._id === "TwentyEightSlbsForm"){
-            flag = true;
-            formData["formName"] = element.name;
-            formData['icon'] = element.icon;
-            formData['link'] = `/${reviewForm.url}/${FormObjectIds[CollectionNames.twentyEightSlbs]}`;
-                    
-        }else if (modelName ===  CollectionNames.odf && element._id === "OdfFormCollection"){
-            flag = true;
-            formData["formName"] = element.name;
-            formData['icon'] = element.icon;
-            formData['link'] = `/${reviewForm.url}/${FormObjectIds[CollectionNames.odf]}`;
-                    
-        }else if (modelName === CollectionNames.gfc && element._id === "GfcFormCollection"){
-            flag = true;
-            formData["formName"] = element.name;
-            formData['icon'] = element.icon;
-            formData['link'] = `/${reviewForm.url}/${FormObjectIds[CollectionNames.gfc]}`;
-                
-        }else if (modelName === CollectionNames.sfc && element._id === "StateFinanceCommissionFormation"){
-            flag = true;
-            formData["formName"] = element.name;
-            formData['icon'] = element.icon;
-            formData['link'] = `/${element.url}`;
-                    
-        }else if (modelName === CollectionNames.pTAX && element._id === "PropertyTaxFloorRate" ){
-            flag = true;
-            formData["formName"] = element.name;
-            formData['icon'] = element.icon;
-            formData['link'] = `/${element.url}`;
-        }else if (modelName === CollectionNames.propTaxOp && element._id === "PropertyTaxOp" ){
-            flag = true;
-            formData["formName"] = element.name;
-            formData['icon'] = element.icon;
-            formData['link'] = `/${element.url}`;
-        }
-        if (flag) break;
-    }
-    return formData;
+  };
+const ELIGIBLITY = {
+    YES: "Eligible for Grant Claim",
+    NO: "Not yet eligible for Grant Claim",
 }
+/**
+ * The function takes in form data and returns a formatted object with specific properties based on the
+ * form category and model name.
+ * @param formCategory - A string indicating the category of the form, either "ULB" or "STATE".
+ * @param modelName - The name of the model for which the form data is being retrieved.
+ * @param sidemenuForms - An array of objects containing information about the forms displayed in the
+ * side menu.
+ * @param reviewForm - Unfortunately, I cannot provide a complete answer without knowing the data type
+ * and structure of the `reviewForm` parameter. However, based on the code snippet, it seems that
+ * `reviewForm` is an object that contains a `url` property used to construct the `formData` object's
+ * `link`
+ * @returns an object containing various properties related to the form data, such as the form
+ * category, approved and submitted colors, border, form name, icon, and link. The specific properties
+ * returned depend on the input parameters and the conditions met within the function.
+ */
+function getFormData(formCategory, modelName, sidemenuForms, reviewForm) {
+  let formData = {};
+  if (formCategory === "ULB") {
+    formData["approvedColor"] = "#E67E15";
+    formData["submittedColor"] = "#E67E1566";
+    formData["border"] = "#E67E15";
+  } else if (formCategory === "STATE") {
+    formData["approvedColor"] = "#059B05";
+    formData["submittedColor"] = "#E67E1599";
+    formData["border"] = "#059B05";
+  }
+  let element = sidemenuForms.find((el) => {
+    return el._id === FormPathMappings[modelName];
+  });
+
+  //First 4 cases where ModelName is not equal to path in sidemenu form
+  if (
+    modelName === CollectionNames.annualAcc &&
+    element._id === "AnnualAccounts"
+  ) {
+    formData["formName"] = element.name;
+    formData["icon"] = element.icon;
+    formData["link"] = `/${reviewForm.url}/${
+      FormObjectIds[CollectionNames.annualAcc]
+    }`;
+  } else if (
+    modelName === CollectionNames.linkPFMS &&
+    element._id === "LinkPFMS"
+  ) {
+    formData["formName"] = element.name;
+    formData["icon"] = element.icon;
+    formData["link"] = `/${reviewForm.url}/${
+      FormObjectIds[CollectionNames.linkPFMS]
+    }`;
+  } else if (
+    modelName === CollectionNames.slb &&
+    element._id === "XVFcGrantForm"
+  ) {
+    formData["formName"] = element.name;
+    formData["icon"] = element.icon;
+    formData["link"] = `/${reviewForm.url}/${
+      FormObjectIds[CollectionNames.slb]
+    }`;
+  } else if (
+    modelName === CollectionNames.twentyEightSlbs &&
+    element._id === "TwentyEightSlbsForm"
+  ) {
+    formData["formName"] = element.name;
+    formData["icon"] = element.icon;
+    formData["link"] = `/${reviewForm.url}/${
+      FormObjectIds[CollectionNames.twentyEightSlbs]
+    }`;
+  } else if (
+    modelName === CollectionNames.dur &&
+    element._id === "UtilizationReport"
+  ) {
+    formData["formName"] = element.name;
+    formData["icon"] = element.icon;
+    formData["link"] = `/${reviewForm.url}/${
+      FormObjectIds[CollectionNames.dur]
+    }`;
+  } else if (
+    modelName === CollectionNames.gtc &&
+    element._id === "GrantTransferCertificate"
+  ) {
+    formData["formName"] = element.name;
+    formData["icon"] = element.icon;
+    formData["link"] = `/${element.url}`;
+  } else if (
+    modelName === CollectionNames.twentyEightSlbs &&
+    element._id === "TwentyEightSlbsForm"
+  ) {
+    formData["formName"] = element.name;
+    formData["icon"] = element.icon;
+    formData["link"] = `/${reviewForm.url}/${
+      FormObjectIds[CollectionNames.twentyEightSlbs]
+    }`;
+  } else if (
+    modelName === CollectionNames.odf &&
+    element._id === "OdfFormCollection"
+  ) {
+    formData["formName"] = element.name;
+    formData["icon"] = element.icon;
+    formData["link"] = `/${reviewForm.url}/${
+      FormObjectIds[CollectionNames.odf]
+    }`;
+  } else if (
+    modelName === CollectionNames.gfc &&
+    element._id === "GfcFormCollection"
+  ) {
+    formData["formName"] = element.name;
+    formData["icon"] = element.icon;
+    formData["link"] = `/${reviewForm.url}/${
+      FormObjectIds[CollectionNames.gfc]
+    }`;
+  } else if (
+    modelName === CollectionNames.sfc &&
+    element._id === "StateFinanceCommissionFormation"
+  ) {
+    formData["formName"] = element.name;
+    formData["icon"] = element.icon;
+    formData["link"] = `/${element.url}`;
+  } else if (
+    modelName === CollectionNames.pTAX &&
+    element._id === "PropertyTaxFloorRate"
+  ) {
+    formData["formName"] = element.name;
+    formData["icon"] = element.icon;
+    formData["link"] = `/${element.url}`;
+  } else if (
+    modelName === CollectionNames.propTaxOp &&
+    element._id === "PropertyTaxOp"
+  ) {
+    formData["formName"] = element.name;
+    formData["icon"] = element.icon;
+    formData["link"] = `/${element.url}`;
+  } else if (
+    [CollectionNames.actionPlan, CollectionNames.waterRej].includes(modelName)
+  ) {
+    getFormsLinkIcon(element, formData);
+  }
+  return formData;
+}
+  
+function getFormsLinkIcon(element,  formData) {
+    if (element._id === "ActionPlans") {
+        formData["formName"] = element.name;
+        formData['icon'] = element.icon;
+        formData['link'] = `/${element.url}`;
+    } else if (element._id === "WaterRejenuvationRecycling") {
+        formData["formName"] = element.name;
+        formData['icon'] = element.icon;
+        formData['link'] = `/${element.url}`;
+    }
+}
+
 function approvedForms(forms, formCategory, design_year, modelName){
     let numOfApprovedForms = 0;
     for(let i =0 ; i < forms.length; i++){
@@ -496,7 +581,33 @@ function approvedForms(forms, formCategory, design_year, modelName){
     }
     return numOfApprovedForms;
 }
-
+function UASubmittedForms(forms, formCategory, design_year, modelName) {
+  try {
+    let numOfUAUlbSubmittedForms = 0;
+    for (let i = 0; i < forms.length; i++) {
+      let element = forms[i];
+      if (!element) {
+        break;
+      }
+      let { actionTakenByRole: role, currentFormStatus, ulb } = element;
+      if (!role) {
+        role = element?.["user"]["role"];
+      }
+        if (
+          [
+            MASTER_STATUS["Under Review By State"]
+          ].includes(currentFormStatus) &&
+            ulb.isUA === "Yes" &&
+            formCategory === "ULB"
+        ) {
+            numOfUAUlbSubmittedForms++;
+        }
+    }
+    return numOfUAUlbSubmittedForms;
+  } catch (error) {
+    throw `UASubmittedForms:: ${error.message}`;
+  }
+}
 function getQuery(modelName, formType, designYear, formCategory, stateId){
     let query = [];
     let condition = {};
@@ -895,6 +1006,8 @@ const dashboard = async (req, res) => {
             totalSubmittedUlbForm = {},
             totalApprovedStateForm = {},
             totalSubmittedStateForm = {},
+            totalUASubmittedUlbForm = {},
+            submitUAFormPercent = {},
             totalUlbs = {};
 
         let totalUlbMpcAndNmpcUAPipeline = [
@@ -998,6 +1111,7 @@ const dashboard = async (req, res) => {
         }else {
             totalForms = 0
         }
+        let cutOff;
         for(let i =0; i < collectionArr.length; i++){
             let stateResponse = {
                 formName: '',
@@ -1030,7 +1144,7 @@ const dashboard = async (req, res) => {
             let collection = collectionArr[i];
             let formCategory = "";
             let submitPercent = 0;
-            let cutOff = 0;
+            cutOff = 0;
             let totalApprovedForm = 0;
             let modelName = collection.collection.collectionName;
             if (
@@ -1079,6 +1193,14 @@ const dashboard = async (req, res) => {
                 approvedFormPercent[modelName] = Math.round((totalApprovedForm/totalForms)*100);
                 totalApprovedUlbForm[modelName] = totalApprovedForm;
                 totalSubmittedUlbForm[modelName] = submittedForms.length;
+                if([
+                    CollectionNames.twentyEightSlbs,
+                    CollectionNames.gfc,
+                    CollectionNames.odf,
+                  ].includes(modelName) && (![YEAR_CONSTANTS['22_23']].includes(data.design_year))){
+                      totalUASubmittedUlbForm[modelName] = UASubmittedForms(submittedForms, formCategory, data.design_year, modelName);
+                      submitUAFormPercent[modelName] = Math.round((totalUASubmittedUlbForm[modelName]/totalForms)*100);
+                  }
             } else if(formCategory === "STATE"){
                 if(submittedForms.length === 0){
                     submitPercent = 0;
@@ -1158,6 +1280,25 @@ const dashboard = async (req, res) => {
             }
         };
         if(data.flagFunction){
+                if(hasUA.length && data.formType === "mpc_tied"){
+              let {leastSubmitPercent, leastSubmitNumber} = addSlbScoringData(ulbResponseArray);
+              let slbScoring =  {
+                formName: FormNames["slbScoring"],
+                key: ModelNames['slbScoring'],
+                approvedColor: COLORS['STATE']['approvedColor'],
+                submittedColor: COLORS['STATE']['submittedColor'],
+                submittedValue: leastSubmitPercent ?? 0,
+                approvedValue: null,
+                totalApproved: null,
+                totalSubmitted: leastSubmitNumber ?? 0,
+                cutOff,
+                icon: null,
+                link: null,
+                border: COLORS['STATE']['border'] ?? null,
+                status: leastSubmitPercent === 100 ? ELIGIBLITY['YES'] : ELIGIBLITY['NO']
+            }
+            stateResponseArray.push(slbScoring);
+            }
             return{
                 data: [{
                     formHeader:'ULB Forms',
@@ -1196,5 +1337,24 @@ const dashboard = async (req, res) => {
         });
     }
 
+}
+
+function addSlbScoringData(ulbResponseArray){
+    try {
+        const maxPercent = 100;
+        const collectionNamesArr = [CollectionNames['twentyEightSlbs'],CollectionNames['odf'], CollectionNames['gfc']];
+        let leastSubmitPercent = maxPercent, leastSubmitNumber;
+        for(let ulbResponse of ulbResponseArray ){
+            if(collectionNamesArr.includes(ulbResponse.key)){
+                if(ulbResponse.submittedValue < leastSubmitPercent){    
+                    leastSubmitPercent = ulbResponse.submittedValue;
+                    leastSubmitNumber = ulbResponse.totalSubmitted;
+                }
+            }
+        }
+        return {leastSubmitPercent, leastSubmitNumber};
+    } catch (error) {
+        throw(`addSlbScoringData:: ${error.message}`)
+    }
 }
 module.exports.dashboard = dashboard

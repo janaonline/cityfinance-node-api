@@ -7,7 +7,8 @@ module.exports.FormNames = {
     annualAcc: "Annual Accounts",
     propTaxOp: "Property Tax Operationalisation",
     slb28: "28 SLBs",
-    indicatorForm: "Indicators for Water Supply and Sanitation"
+    indicatorForm: "Indicators for Water Supply and Sanitation",
+    slbScoring: "Submit Claims for 15th FC Grants"
 
 }
 
