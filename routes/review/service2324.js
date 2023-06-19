@@ -12,7 +12,7 @@ const { canTakeActionOrViewOnlyMasterForm } = require('../../routes/CommonAction
 const List = require('../../util/15thFCstatus')
 const MASTERSTATUS = require('../../models/MasterStatus');
 const Rating = require('../../models/Rating');
-const { roundValue } = require('../../util/helper')
+const { roundValue, convertValue, removeEscapeChars, formatDate } = require('../../util/helper')
 const { years } = require('../../service/years');
 const mongoose = require('mongoose');
 
@@ -289,6 +289,14 @@ const setRating = (el, ratingList) => {
   return el
 }
 
+/**
+ * This is an asynchronous function that retrieves the name and marks of a rating based on its ID.
+ * @param ratingId - The `ratingId` parameter is an array of MongoDB ObjectIds used to query the
+ * database for ratings with matching `_id` values.
+ * @returns The `getRating` function is returning a Promise that resolves to an array of objects
+ * containing the `name` and `marks` properties of the ratings with the specified `_id` values. The
+ * `_id` values are passed as an argument to the function.
+ */
 const getRating = async (ratingId) => {
   return new Promise(async (resolve, reject) => {
     try {
@@ -300,9 +308,14 @@ const getRating = async (ratingId) => {
   })
 }
 
-
-
-
+/**
+ * This function returns an array of ULBs (Urban Local Bodies) that have been approved by the Ministry
+ * of Housing and Urban Affairs (MoHUA) based on certain conditions.
+ * @param forms - an array of objects representing forms, where each object has the following
+ * properties:
+ * @returns an array of ULBs (Urban Local Bodies) that have been approved by the Ministry of Housing
+ * and Urban Affairs (MoHUA) based on the input parameter `forms`.
+ */
 function getUlbsApprovedByMoHUA(forms) {
   try {
     let ulbArray = [];
@@ -317,6 +330,12 @@ function getUlbsApprovedByMoHUA(forms) {
   }
 }
 
+/**
+ * @param params - The `params` object contains various parameters used to construct a MongoDB query
+ * pipeline. These parameters include `collectionName` (the name of the MongoDB collection to query),
+ * `formType` (the user role for which the query is being constructed), `isFormOptional` (a boolean
+ * indicating whether the
+ */
 const computeQuery = (params) => {
   const { collectionName: formName, formType: userRole, isFormOptional, state, design_year, csv, skip, limit, newFilter: filter, dbCollectionName, folderName } = params
   let filledQueryExpression = {};
@@ -337,7 +356,6 @@ const computeQuery = (params) => {
   let condition = {};
   if (state && state !== 'null') {
     condition['state'] = ObjectId(state)
-    // condition['censusCode'] = "802484"
   }
   condition["access_2223"] = true
   let pipeLine = [
@@ -377,7 +395,6 @@ const computeQuery = (params) => {
       }
     })
   }
-
   switch (userRole) {
     case "ULB":
       let query = [
@@ -672,6 +689,15 @@ const computeQuery = (params) => {
   }
 }
 
+/**
+ * @param formName - The name of the form for which the filled query expression is being generated.
+ * @param filledQueryExpression - The parameter filledQueryExpression is a query expression that is
+ * used to determine whether a form has been filled or not. It is updated based on the formName and
+ * design_year parameters passed to the function.
+ * @returns either a `filledQueryExpression` object or both `filledProvisionalExpression` and
+ * `filledAuditedExpression` objects, depending on the `formName` parameter and `design_year`
+ * parameter.
+ */
 function getFilledQueryExpression(formName, filledQueryExpression, design_year) {
   let filledAuditedExpression = {}, filledProvisionalExpression = {}
   switch (formName) {
@@ -722,7 +748,6 @@ function getFilledQueryExpression(formName, filledQueryExpression, design_year) 
         },
       };
       return { filledProvisionalExpression, filledAuditedExpression }
-      break;
     case CollectionNames.sfc:
       filledQueryExpression = {
         $cond: {
@@ -737,6 +762,10 @@ function getFilledQueryExpression(formName, filledQueryExpression, design_year) 
   return filledQueryExpression;
 }
 
+/**
+ * The function removes escape characters from specific properties of an object.
+ * @param element - an object that contains properties with values that may have escape characters
+ */
 function removeEscapesFromAnnual(element) {
   for (let key in element) {
     if (element[key] && typeof element[key] === "object") {
@@ -749,6 +778,16 @@ function removeEscapesFromAnnual(element) {
     }
   }
 }
+
+/**
+ * The function creates a dynamic query for MongoDB based on the collection name, user role, and
+ * existing query.
+ * @param collectionName - The name of the collection for which the dynamic query is being created.
+ * @param oldQuery - an array of MongoDB query objects that will be modified and returned
+ * @param userRole - The role of the user accessing the function. It can be either "ULB" or "STATE".
+ * @param csv - It is a boolean parameter that indicates whether the output should be in CSV format or
+ * not.
+ */
 
 function createDynamicQuery(collectionName, oldQuery, userRole, csv) {
   let query_2 = {};
@@ -948,7 +987,6 @@ async function createDynamicElements(collectionName, formType, entity) {
     );
   }
   let data = entity?.formData;
-  // console.log("data",data);process.exit()
   switch (formType) {
     case "ULB":
       switch (collectionName) {
@@ -1079,33 +1117,10 @@ async function createDynamicElements(collectionName, formType, entity) {
           let targetEntity = `${data?.design_year?.year ?? ""}, ${entity?.formStatus ?? ""}, ${data?.createdAt ?? ""}, ${data?.ulbSubmit ?? ""},${entity.filled ?? ""},Target,${targetYear || ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""}, ${actions["state_status"] ?? ""},${actions["rejectReason_state"] ?? ""},${actions["mohua_status"] ?? ""},${actions["rejectReason_mohua"] ?? ""},${actions["responseFile_state"]["url"] ?? ""},${actions["responseFile_mohua"]["url"] ?? ""} `
           return [actualEntity, targetEntity];
       };
-
       break;
   }
   return entity;
 }
-
-
-
-const convertValue = async (objData) => {
-  const { data, keyArr } = objData;
-  let arr = [];
-  if (data.length > 0) {
-    for (let el of data) {
-      if (keyArr.length) {
-        for (let pf of keyArr) {
-          if (el.hasOwnProperty(pf)) {
-            el[pf] =
-              el[pf] !== null && el[pf] !== "" ? Number(el[pf]).toFixed(2) : "";
-          }
-        }
-        arr.push(el);
-      }
-    }
-  }
-  return arr;
-};
-
 function createDynamicObject(collectionName, formType) {
   let obj = {};
   switch (formType) {
@@ -2079,18 +2094,4 @@ const getActionStatus = (obj, entity) => {
     }
   }
   return obj
-}
-
-function removeEscapeChars(entity) {
-  return !entity ? entity : entity.replace(/(\n|,)/gm, " ");
-}
-function formatDate(date) {
-  return [
-    padTo2Digits(date.getDate()),
-    padTo2Digits(date.getMonth() + 1),
-    date.getFullYear(),
-  ].join('/');
-}
-function padTo2Digits(num) {
-  return num.toString().padStart(2, '0');
 }

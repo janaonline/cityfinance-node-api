@@ -1019,7 +1019,6 @@ async function createDynamicElements(collectionName, formType, entity) {
   }
 
   let data = entity?.formData;
-  console.log("data",data);process.exit()
   switch (formType) {
     case "ULB":
       switch (collectionName) {
@@ -1105,7 +1104,6 @@ async function createDynamicElements(collectionName, formType, entity) {
           break;
 
         case CollectionNames.dur:
-
           if (
             data?.categoryWiseData_wm &&
             data?.categoryWiseData_wm.length > 0
@@ -1116,7 +1114,6 @@ async function createDynamicElements(collectionName, formType, entity) {
             });
             data.categoryWiseData_wm = wm;
           }
-          console.log("su", data);
           if (
             data?.categoryWiseData_swm &&
             data?.categoryWiseData_swm.length > 0
