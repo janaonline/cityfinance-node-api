@@ -1212,10 +1212,10 @@ function getColumnsIndicatorWss() {
       key: "achieved2223",
       display_name: "Achieved <br> 2022-23",
     },
-    {
-      key: "target2122",
-      display_name: "Target <br> 2021-22",
-    },
+    // {
+    //   key: "target2122",
+    //   display_name: "Target <br> 2021-22",
+    // },
     {
       key: "target2324",
       display_name: "Target <br> 2023-24",
@@ -1285,7 +1285,7 @@ function convertToRows(oldFormat) {
         achieved2122:  String(oldFormat.fourSLB.data[`${indicator.key}_actual2122`]) === "" ? null : String(oldFormat.fourSLB.data[`${indicator.key}_actual2122`]) ,
         target2223: String(oldFormat.fourSLB.data[`${indicator.key}2223`]) === "" ? null : String(oldFormat.fourSLB.data[`${indicator.key}2223`]) ,
         achieved2223: String(oldFormat.fourSLB.data[`${indicator.key}_actual2223`]) === "" ? null : String(oldFormat.fourSLB.data[`${indicator.key}_actual2223`]) ,
-        target2122: String(oldFormat.fourSLB.data[`${indicator.key}2122`]) === "" ? null : String(oldFormat.fourSLB.data[`${indicator.key}2122`]) ,
+        // target2122: String(oldFormat.fourSLB.data[`${indicator.key}2122`]) === "" ? null : String(oldFormat.fourSLB.data[`${indicator.key}2122`]) ,
         target2324: String(oldFormat.fourSLB.data[`${indicator.key}2324`]) === "" ? null : String(oldFormat.fourSLB.data[`${indicator.key}2324`]) ,
         target2425: String(oldFormat.fourSLB.data[`${indicator.key}2425`]) === "" ? null : String(oldFormat.fourSLB.data[`${indicator.key}2425`]),
         wghtd_score: String(oldFormat.fourSLB.data[indicator.wghtd_score]) === "" ? null : String(oldFormat.fourSLB.data[indicator.wghtd_score]) ,
