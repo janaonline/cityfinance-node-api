@@ -69,7 +69,7 @@ let priorTabsForFiscalRanking = {
 async function manageLedgerData(params) {
   let messages = []
   try {
-    let { ledgerData, ledgerKeys, responseData, formId, currentFormStatus, ulbRole } = params
+    let { ledgerData, ledgerKeys, responseData, formId, currentFormStatus, role } = params
     let formHistory = await FormHistory.find({
       recordId: formId,
       "data.0.actionTakenByRole":userTypes.ulb
@@ -78,6 +78,7 @@ async function manageLedgerData(params) {
     }).sort({
       "_id": -1
     }).limit(1).lean()
+    console.log("userRole :: ",role)
     let formHistoryData = formHistory[0] && formHistory[0].data.length ? formHistory[0]?.data[0]['fiscalMapperData'].filter(item => ledgerKeys.includes(item.type) && item.modelName === "ULBLedger") : []
     let errYears = new Set()
     let dps = new Set()
@@ -97,14 +98,16 @@ async function manageLedgerData(params) {
             let calculationFields =  Object.entries(responseData.financialInformation).reduce((result,[key,value]) => ({...result, ...(question?.calculatedFrom.includes(value.displayPriority)) && {[key]: value}}) ,{})
             Object.values(calculationFields).forEach((item)=>{
               item.yearData.forEach((childItem)=>{
-                let reason  = `Data for ${yearObj.displayPriority} has been changed. kindly revisit the calculations`
+                let reason  = `Data for ${question.displayPriority} has been changed. kindly revisit the calculations`
                 if(childItem.year.toString() ===  yearObj.year){
-                  childItem.readonly = [statusTracker.RBP,statusTracker.IP].includes(currentFormStatus) && [questionLevelStatus['1']].includes(childItem.status) ? false  : childItem.readonly
+                  childItem.readonly = [statusTracker.RBP,statusTracker.IP].includes(currentFormStatus) && [questionLevelStatus['1']].includes(childItem.status)  && role === userTypes.ulb ? false  : childItem.readonly
+                  console.log("childItem.readonly ::: ",childItem.readonly)
                   childItem.rejectReason = [statusTracker.RBP,statusTracker.IP].includes(currentFormStatus) && [questionLevelStatus['1']].includes(childItem.status) ? reason  : childItem.rejectReason
                   childItem.status = [statusTracker.RBP,statusTracker.IP].includes(currentFormStatus) && [questionLevelStatus['1']].includes(childItem.status)  ? "REJECTED"  :  childItem.status 
                 }
               })
             })
+            responseData.financialInformation = {...responseData.financialInformation,...calculationFields}
           }
         }
       }
@@ -1250,13 +1253,13 @@ exports.getView = async function (req, res, next) {
     let conditionForFeedbacks = {
       fiscal_ranking: data?._id || null,
     };
-    let ulbRole = req.decoded.role
+    let userRole = req.decoded.role
     let params = {
       ledgerData: ulbData,
       ledgerKeys: ledgerKeys,
       responseData: { ...fyDynemic },
       formId: viewOne._id,
-      ulbRole: ulbRole,
+      role: userRole,
       currentFormStatus: viewOne.currentFormStatus
     }
     /**
