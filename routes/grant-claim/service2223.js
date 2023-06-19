@@ -12,7 +12,7 @@ const gtcConstants = {
     nmpc_untied: "Non-Million Untied",
     nmpc_tied:"Non-Million Tied"
 }
-const {ELIGIBLITY, INSTALLMENT_TITLE,ROMAN_NUMERALS} = require('./constants')
+const {ELIGIBLITY, INSTALLMENT_TITLE,ROMAN_NUMERALS, ORDER} = require('./constants')
 const {dashboard} = require('../../routes/FormDashboard/service');
 const UA = require('../../models/UA');
 const LOCALHOST = 'localhost:8080';
@@ -511,7 +511,7 @@ function generateOutputObject(input) {
     const installment = key[key.length-1] ?  Number(key[key.length-1]) : 1 ;
     if (!output.data[grantType]) {
       output.data[grantType] = {
-        title: `${order}. ${INSTALLMENT_TITLE[grantType]}`,
+        title: `${ORDER[grantType]}. ${INSTALLMENT_TITLE[grantType]}`,
         yearData: [],
         isClose: true,
         id: (output.grantsType.findIndex(el=>el === grantType) +1)
@@ -520,7 +520,7 @@ function generateOutputObject(input) {
    
     const yearData = {
       key: '',
-      title: `${ROMAN_NUMERALS[order]} Installment (FY 2023-24):`,
+      title: `${ROMAN_NUMERALS[key]} Installment (FY 2023-24):`,
       installment,
       year: '',
       type: '',
@@ -548,7 +548,7 @@ function generateOutputObject(input) {
       yearData.conditions.push({
         key: condition.key,
         text: condition.text,
-        value: percent
+        value: percent['approvedValue']
       });
     }
 
