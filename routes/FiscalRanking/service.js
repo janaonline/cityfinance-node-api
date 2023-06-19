@@ -97,9 +97,10 @@ async function manageLedgerData(params) {
             let calculationFields =  Object.entries(responseData.financialInformation).reduce((result,[key,value]) => ({...result, ...(question?.calculatedFrom.includes(value.displayPriority)) && {[key]: value}}) ,{})
             Object.values(calculationFields).forEach((item)=>{
               item.yearData.forEach((childItem)=>{
+                let reason  = `Data for ${yearObj.displayPriority} has been changed. kindly revisit the calculations`
                 if(childItem.year.toString() ===  yearObj.year){
                   childItem.readonly = [statusTracker.RBP,statusTracker.IP].includes(currentFormStatus) && [questionLevelStatus['1']].includes(childItem.status) ? false  : childItem.readonly
-                  childItem.rejectReason = [statusTracker.RBP,statusTracker.IP].includes(currentFormStatus) && [questionLevelStatus['1']].includes(childItem.status) ? msg  : childItem.rejectReason
+                  childItem.rejectReason = [statusTracker.RBP,statusTracker.IP].includes(currentFormStatus) && [questionLevelStatus['1']].includes(childItem.status) ? reason  : childItem.rejectReason
                   childItem.status = [statusTracker.RBP,statusTracker.IP].includes(currentFormStatus) && [questionLevelStatus['1']].includes(childItem.status)  ? "REJECTED"  :  childItem.status 
                 }
               })
