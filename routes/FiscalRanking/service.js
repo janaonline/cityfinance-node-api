@@ -94,6 +94,16 @@ async function manageLedgerData(params) {
             catch(err){
               errorWithDps[question.displayPriority] = [yearName]
             }
+            let calculationFields =  Object.entries(responseData.financialInformation).reduce((result,[key,value]) => ({...result, ...(question?.calculatedFrom.includes(value.displayPriority)) && {[key]: value}}) ,{})
+            Object.values(calculationFields).forEach((item)=>{
+              item.yearData.forEach((childItem)=>{
+                if(childItem.year.toString() ===  yearObj.year){
+                  childItem.readonly = [statusTracker.RBP,statusTracker.IP].includes(currentFormStatus) && [questionLevelStatus['1']].includes(childItem.status) ? false  : childItem.readonly
+                  childItem.rejectReason = [statusTracker.RBP,statusTracker.IP].includes(currentFormStatus) && [questionLevelStatus['1']].includes(childItem.status) ? msg  : childItem.rejectReason
+                  childItem.status = [statusTracker.RBP,statusTracker.IP].includes(currentFormStatus) && [questionLevelStatus['1']].includes(childItem.status)  ? "REJECTED"  :  childItem.status 
+                }
+              })
+            })
           }
         }
       }
@@ -108,6 +118,7 @@ async function manageLedgerData(params) {
       str += " has been updated please revisit calculations"
       let msg =`Data for fields ${Array.from(dps).join(",")} and years ${Array.from(errYears).join(",")} has been updated. kindly revisit those calculations`
       messages.push(str)
+      
     }
     return {
       responseData,
