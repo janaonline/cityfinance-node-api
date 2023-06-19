@@ -15,9 +15,19 @@ const { getKeyByValue, saveFormHistory, grantDistributeOptions } = require("../.
 const {
   UpdateStateMasterForm,
 } = require("../../service/updateStateMasterForm");
-const { YEAR_CONSTANTS } = require('../../util/FormNames')
+
+let baseUrls = {
+  "staging":"https://staging.cityfinance.in",
+  "demo":"https://democityfinance.dhwaniris.in",
+  "prod":"https://cityfinance.in"
+}
+
+const { YEAR_CONSTANTS, MASTER_STATUS } = require('../../util/FormNames')
 const { BadRequest } = require("../../service/response");
 const userTypes = require("../../util/userTypes");
+var outDatedYearIds = Object.entries(years).map(([key,value])=> {
+  return ['2017-18', '2018-19', '2019-20', '2020-21', '2021-22' ].includes(key) && value
+} )
 exports.getGrantDistribution = async (req, res) => {
   const { state_id } = req.query;
   let state = req.decoded.state ?? state_id;
@@ -63,17 +73,17 @@ exports.getTemplate = async (req, res) => {
   let { state } = req?.decoded;
   let formData = req.query;
   let amount = "grant amount";
-  formData.design_year = getKeyByValue(years,formData.design_year)
+  
+  formData.design_year = getKeyByValue(years,formData.year)
   if (formData.year === "606aafb14dff55e6c075d3ae") {
     formData.design_year = "2022-23";
   } else if (formData.year === "606aaf854dff55e6c075d219") {
     formData.design_year = "2021-22";
   }
   const type = `${formData?.type}_${formData?.design_year}_${formData?.installment}`;
-
   /* Checking if the formData.year is equal to the string "606aafb14dff55e6c075d3ae" and if it is, it is
  value of the variable "type" to the variable amount. */
-  formData.year === "606aafb14dff55e6c075d3ae"
+ !outDatedYearIds.includes(formData.year)
     ? (amount = `${amount} - ${type}`)
     : "";
 
@@ -114,9 +124,7 @@ exports.uploadTemplate = async (req, res) => {
   let { url, design_year } = req.query;
   let state = req.decoded?.state;
   let formData = req.query;
-  let outDatedYearIds = Object.entries(years).map(([key,value])=> {
-    return ['2017-18', '2018-19', '2019-20', '2020-21', '2021-22' ].includes(key) && value
-  } )
+ 
   try {
     downloadFileToDisk(url, async (err, file) => {
       if (err) {
@@ -233,7 +241,7 @@ exports.uploadTemplate = async (req, res) => {
 
 exports.saveData = async (req, res) => {
   try {
-    let { design_year, type, installment, year } = req.body;
+    let { design_year, type, installment, year , } = req.body;
     let state = req.decoded?.state;
     req.body.actionTakenBy = req.decoded._id;
     req.body.modifiedAt = new Date();
@@ -425,9 +433,28 @@ async function getUlbData(ulbCodes, ulbNames) {
   return ulbDataMap;
 }
 
-const getSectionWiseJson = async(state, design_year) => {
-  let host = process.env.HOSTNAME
+const getRejectedFields = (currentFormStatus,formStatuses,installment,role)=>{
+  try{
+      // console.log("formStatuses :: ",formStatuses)
+      let prevInstallment = installment - 1
+      let inputAllowed = [MASTER_STATUS['In Progress'],MASTER_STATUS['Not Started'],MASTER_STATUS['Rejected By MoHUA']]
+      let allowedStatuses = [MASTER_STATUS['Submission Acknowledged By MoHUA']]
+      if(prevInstallment  && !allowedStatuses.includes(formStatuses?.[prevInstallment]) && role === userTypes.state){
+          return true
+      }
+      else{
+          return inputAllowed.includes(currentFormStatus) && role === userTypes.state ? false : true 
+      }
+  }
+  catch(err){
+      console.log("error in  getRejectedgetRejectedFieldsFields::::  ",err.message)
+  }
+}
 
+
+const getSectionWiseJson = async(state, design_year,role) => {
+let host = baseUrls[process.env.ENV]
+  let formStatuses = {}
   try {
     let ulb = await ULB.findOne({
       "state": ObjectId(state),
@@ -444,21 +471,28 @@ const getSectionWiseJson = async(state, design_year) => {
   }).lean()
   for(let section of tabularStructure){
     let installments = section.installments
-    console.log(installments )
     for(let i=1; i <= installments; i++){
-      let allocationForm = allocationForms.find(item => item.installment === i && item.year.toString() === years[section.yearCode])
       let file = {
         "name":"",
         "url":""
       }
-      file = allocationForm?.file && allocationForm?.file.url || file 
+      let allocationForm =  allocationForms.find(item => item.installment === i && item.year.toString() === years[section.yearCode] && item.type === section.type ) || {}
+      allocationForm.currentFormStatus = allocationForm?.currentFormStatus ? allocationForm?.currentFormStatus : 1
+      let url = ""
+      url = allocationForm?.url || ""
+      file.name  = allocationForm?.fileName || ""
+      file.url = allocationForm?.url || ""
+      let shouldDisableQues = await getRejectedFields(allocationForm?.currentFormStatus,formStatuses,i,role)
+      formStatuses[i] = allocationForm?.currentFormStatus || 1
       let params = {
         installment : i,
         year:years[section.yearCode],
         type:section.type,
         quesType:"",
-        url:`${host}/api/v1/grantDistribution/template?type=${section.type}&year=${years[section.yearCode]}&installment=${i}`,
+        template:`${host}/api/v1/grantDistribution/template?type=${section.type}&year=${years[section.yearCode]}&installment=${i}`,
         key:`${section.type}_${section.yearCode}_${i}`,
+        url:url,
+        isDisableQues:shouldDisableQues,
         file:file,
        }
        let question = await getChildQuestion(params)
@@ -496,7 +530,7 @@ module.exports.getGrantDistributionForm = async (req, res, next) => {
       response.message = validator.message
       return res.status(405).json(response)
     }
-    let { json, isStateMillion } = await getSectionWiseJson(state, design_year)
+    let { json, isStateMillion } = await getSectionWiseJson(state, design_year,role)
     response.message = "form fetched"
     response.success = true
     response.isStateMillion = isStateMillion
