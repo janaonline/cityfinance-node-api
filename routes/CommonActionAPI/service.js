@@ -2487,6 +2487,13 @@ async function mutuateGetPayload(jsonFormat, flatForm, keysToBeDeleted,role) {
         let obj = JSON.parse(JSON.stringify(jsonFormat))
         let flattedForm = JSON.parse(JSON.stringify(flatForm))
         roleWiseJson(obj[0],role)
+        // const transDate = obj?.[0]?.question?.find(q => q.shortKey == 'transDate');
+        // if(transDate) {
+        //     const [ maxDate ] = new Date().toISOString().split('T');
+        //     transDate['max'] = maxDate;
+        //     transDate['maxRange'] = maxDate;
+        // }
+        // console.log('transDate', transDate);
         obj[0] = await appendExtraKeys(keysToBeDeleted, obj[0], flattedForm)
         await deleteKeys(flattedForm, keysToBeDeleted)
         for (let key in obj) {
@@ -2502,7 +2509,13 @@ async function mutuateGetPayload(jsonFormat, flatForm, keysToBeDeleted,role) {
                     question['selectedValue'] = answer
                     await manageDisabledQues(question,flattedForm)
                     await deleteExtraKeys(question)
+                    let modifiedObj = await handleRangeIfExists(question, flattedForm)
+                    question.min = modifiedObj.min ? modifiedObj.min : question.min;
+                    question.max = modifiedObj.max ? modifiedObj.max : question.min;
+                    question.minRange = modifiedObj.minRange ? modifiedObj.minRange : question.minRange;
+                    question.maxRange = modifiedObj.maxRange ? modifiedObj.maxRange : question.minRange;
                 }
+
                 let modifiedKeys = Object.keys(modifiedShortKeys)
                 let modifiedObjects =  questions.filter(item => modifiedKeys.includes(item.shortKey))
             }
