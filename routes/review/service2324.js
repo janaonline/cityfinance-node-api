@@ -1841,8 +1841,8 @@ function createDynamicObject(collectionName, formType) {
 function annualAccountCsvFormat(data, auditedEntity, entity, auditedProvisional, auditedStandardized, actions, unAuditedEntity, unAuditedProvisional, unAuditedStandardized) {
 
   const { IN_PROGRESS, UNDER_REVIEW_BY_STATE } = MASTER_FORM_STATUS;
-  if (![IN_PROGRESS, UNDER_REVIEW_BY_STATE].includes(entity.currentFormStatus)) {
-    annualAccountSetCurrentStatus(data, entity.currentFormStatus)
+  if (![IN_PROGRESS, UNDER_REVIEW_BY_STATE].includes(entity?.formData?.currentFormStatus)) {
+    annualAccountSetCurrentStatus(data, entity?.formData?.currentFormStatus)
   }
   auditedEntity = auditedEntity = ` ${data?.design_year?.year ?? ""}, ${entity?.formStatus ?? ""
     }, ${data?.createdAt ?? ""}, ${data?.ulbSubmit ?? ""},${entity?.filled_audited ?? ""
@@ -1944,7 +1944,6 @@ const annualAccountSetCurrentStatus = (data, currentFormStatus) => {
     }
   }
   delete data.currentstatuse
-  console.log("data", data)
   return data;
 }
 const setCurrentStatusQuestionLevel = (statusList) => {
