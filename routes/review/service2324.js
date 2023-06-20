@@ -142,56 +142,12 @@ module.exports.get = async (req, res) => {
     await setCurrentStatus(req, data, approvedUlbs, collectionName, loggedInUserRole);
     // if users clicks on Download Button - the data gets downloaded as per the applied filter
     let ratingList = []
-    // console.log("sssss::::",collectionName)
-
     if (['ODF', 'GFC'].includes(collectionName)) {
       let ratingIds = [...new Set(data.map(e => e?.formData?.rating))].filter(e => e !== undefined)
       ratingList = ratingIds.length ? await getRating(ratingIds) : [];
     }
     if (csv) {
-      let filename = `Review_${formType}-${collectionName}.csv`;
-      // Set appropriate download headers
-      res.setHeader("Content-disposition", "attachment; filename=" + filename);
-      res.writeHead(200, { "Content-Type": "text/csv;charset=utf-8,%EF%BB%BF" });
-      let fixedColumns, dynamicColumns;
-      if (formType === 'ULB') {
-        fixedColumns = `State Name, ULB Name, City Finance Code, Census Code, Population Category, UA, UA Name,`;
-        dynamicColumns = createDynamicColumns(collectionName);
-        // console.log("dynamicColumns",dynamicColumns);process.exit()
-
-        if (collectionName !== CollectionNames.annual && collectionName !== CollectionNames['28SLB']) {
-          res.write("\ufeff" + `${fixedColumns.toString()} ${dynamicColumns.toString()} \r\n`);
-          for (let el of data) {
-            if (['ODF', 'GFC'].includes(collectionName)) await setRating(el, ratingList)
-            let dynamicElementData = await createDynamicElements(collectionName, formType, el);
-            el.UA = el.UA === "null" ? "NA" : el.UA;
-            el.isUA = el.UA === "NA" ? "No" : "Yes";
-            el.censusCode = el.censusCode || "NA";
-            const row = `${el.stateName},${el.ulbName},${el.ulbCode},${el.censusCode},${el.populationType},${el.isUA},${el.UA},${dynamicElementData.toString()}\r\n`;
-            res.write("\ufeff" + row);
-          }
-        } else {
-          res.write("\ufeff" + `State Name, ULB Name, City Finance Code, Census Code, Population Category, UA, UA Name, ${dynamicColumns.toString()}\r\n`);
-          for (let el of data) {
-            let [row1, row2] = await createDynamicElements(collectionName, formType, el);
-            el.UA = el.UA === "null" ? "NA" : el.UA;
-            el.isUA = el.UA === "NA" ? "No" : "Yes";
-            el.censusCode = el.censusCode || "NA";
-            const rowOne = `${el.stateName},${el.ulbName},${el.ulbCode},${el.censusCode},${el.populationType},${el.isUA},${el.UA},${row1.toString()}\r\n`;
-            const rowTwo = `${el.stateName},${el.ulbName},${el.ulbCode},${el.censusCode},${el.populationType},${el.isUA},${el.UA},${row2.toString()}\r\n`;
-            res.write("\ufeff" + rowOne + rowTwo);
-          }
-        }
-      } else if (formType === "STATE") {
-        fixedColumns = `State Name, City Finance Code, Regional Name,`;
-        dynamicColumns = createDynamicColumns(collectionName);
-        res.write("\ufeff" + `${fixedColumns.toString()} ${dynamicColumns.toString()} \r\n`);
-        for (let el of data) {
-          let dynamicElementData = await createDynamicElements(collectionName, formType, el);
-          const row = `${el.stateName},${el.stateCode},${el.regionalName},${dynamicElementData.toString()}\r\n`;
-          res.write("\ufeff" + row);
-        }
-      }
+      await createCSV(formType, collectionName, res, data, ratingList);
       res.end();
       return;
     }
@@ -206,10 +162,8 @@ module.exports.get = async (req, res) => {
     }
     //  console.log(data)
     data.forEach(el => { if (el.formData || el.formData === "") delete el.formData })
-
     const Query15FC = { $or: [{ type: "15thFC" }, { multi: { $in: ["15thFC"] } }] };
     const ulbFormStatus = await MASTERSTATUS.find(Query15FC, { statusId: 1, status: 1 }).lean()
-
     return res.status(200).json({
       success: true,
       data: data,
@@ -223,6 +177,52 @@ module.exports.get = async (req, res) => {
   } catch (error) {
     console.log("error", error)
     return Response.BadRequest(res, {}, error.message);
+  }
+}
+
+async function createCSV(formType, collectionName, res, data, ratingList) {
+  let filename = `Review_${formType}-${collectionName}.csv`;
+  // Set appropriate download headers
+  res.setHeader("Content-disposition", "attachment; filename=" + filename);
+  res.writeHead(200, { "Content-Type": "text/csv;charset=utf-8,%EF%BB%BF" });
+  let fixedColumns, dynamicColumns;
+  if (formType === 'ULB') {
+    fixedColumns = `State Name, ULB Name, City Finance Code, Census Code, Population Category, UA, UA Name,`;
+    dynamicColumns = createDynamicColumns(collectionName);
+    // console.log("dynamicColumns",dynamicColumns);process.exit()
+    if (collectionName !== CollectionNames.annual && collectionName !== CollectionNames['28SLB']) {
+      res.write("\ufeff" + `${fixedColumns.toString()} ${dynamicColumns.toString()} \r\n`);
+      for (let el of data) {
+        if (['ODF', 'GFC'].includes(collectionName))
+          await setRating(el, ratingList);
+        let dynamicElementData = await createDynamicElements(collectionName, formType, el);
+        el.UA = el.UA === "null" ? "NA" : el.UA;
+        el.isUA = el.UA === "NA" ? "No" : "Yes";
+        el.censusCode = el.censusCode || "NA";
+        const row = `${el.stateName},${el.ulbName},${el.ulbCode},${el.censusCode},${el.populationType},${el.isUA},${el.UA},${dynamicElementData.toString()}\r\n`;
+        res.write("\ufeff" + row);
+      }
+    } else {
+      res.write("\ufeff" + `State Name, ULB Name, City Finance Code, Census Code, Population Category, UA, UA Name, ${dynamicColumns.toString()}\r\n`);
+      for (let el of data) {
+        let [row1, row2] = await createDynamicElements(collectionName, formType, el);
+        el.UA = el.UA === "null" ? "NA" : el.UA;
+        el.isUA = el.UA === "NA" ? "No" : "Yes";
+        el.censusCode = el.censusCode || "NA";
+        const rowOne = `${el.stateName},${el.ulbName},${el.ulbCode},${el.censusCode},${el.populationType},${el.isUA},${el.UA},${row1.toString()}\r\n`;
+        const rowTwo = `${el.stateName},${el.ulbName},${el.ulbCode},${el.censusCode},${el.populationType},${el.isUA},${el.UA},${row2.toString()}\r\n`;
+        res.write("\ufeff" + rowOne + rowTwo);
+      }
+    }
+  } else if (formType === "STATE") {
+    fixedColumns = `State Name, City Finance Code, Regional Name,`;
+    dynamicColumns = createDynamicColumns(collectionName);
+    res.write("\ufeff" + `${fixedColumns.toString()} ${dynamicColumns.toString()} \r\n`);
+    for (let el of data) {
+      let dynamicElementData = await createDynamicElements(collectionName, formType, el);
+      const row = `${el.stateName},${el.stateCode},${el.regionalName},${dynamicElementData.toString()}\r\n`;
+      res.write("\ufeff" + row);
+    }
   }
 }
 
@@ -558,7 +558,6 @@ const computeQuery = (params) => {
         if (filter.sbCode) { delete Object.assign(filter, { ["censusCode"]: filter["sbCode"] })["sbCode"]; }
         query.push({ $match: filter })
       }
-
       let limitSkip = !csv ? [{ $limit: limit }, { "$skip": skip }] : [{ $match: {} }]
       let paginator = [
         { $addFields: { "dummy": [] } },
@@ -1841,12 +1840,10 @@ function createDynamicObject(collectionName, formType) {
 
 function annualAccountCsvFormat(data, auditedEntity, entity, auditedProvisional, auditedStandardized, actions, unAuditedEntity, unAuditedProvisional, unAuditedStandardized) {
 
-  const { IN_PROGRESS } = MASTER_FORM_STATUS;
-  if (![IN_PROGRESS].includes(entity.currentFormStatus)) {
-    annualAccountSetCurrentStatus(data)
+  const { IN_PROGRESS, UNDER_REVIEW_BY_STATE } = MASTER_FORM_STATUS;
+  if (![IN_PROGRESS, UNDER_REVIEW_BY_STATE].includes(entity.currentFormStatus)) {
+    annualAccountSetCurrentStatus(data, entity.currentFormStatus)
   }
-  // console.log("auditedProvisional?.auditor_report",data?.audited?.auditor_report);process.exit()
-
   auditedEntity = auditedEntity = ` ${data?.design_year?.year ?? ""}, ${entity?.formStatus ?? ""
     }, ${data?.createdAt ?? ""}, ${data?.ulbSubmit ?? ""},${entity?.filled_audited ?? ""
     }, Audited, ${data?.audited?.year ? YEAR_CONSTANTS_IDS[data?.audited?.year] : ""},${auditedProvisional?.bal_sheet?.pdf?.url ?? ""
@@ -1912,7 +1909,7 @@ function annualAccountCsvFormat(data, auditedEntity, entity, auditedProvisional,
   return { auditedEntity, unAuditedEntity };
 }
 
-const annualAccountSetCurrentStatus = (data) => {
+const annualAccountSetCurrentStatus = (data, currentFormStatus) => {
   let mainArr = ['unAudited', 'audited'];
   let subArr = ['provisional_data'];
   let sheetkey = [
@@ -1924,7 +1921,9 @@ const annualAccountSetCurrentStatus = (data) => {
     'cash_flow',
   ]
   const { currentstatuse } = data;
-  let currentStatusList = currentstatuse?.filter(e => ['STATE', 'MoHUA'].includes(e.actionTakenByRole));
+  const { UNDER_REVIEW_BY_MoHUA } = MASTER_FORM_STATUS;
+  let role = [UNDER_REVIEW_BY_MoHUA].includes(currentFormStatus) ? ['STATE'] : ['MoHUA', 'STATE'];
+  let currentStatusList = currentstatuse?.filter(e => role.includes(e.actionTakenByRole));
   if (currentStatusList?.length) {
     for (let key of mainArr) {
       let subObData = data[key];
@@ -2021,8 +2020,8 @@ function actionTakenByResponse(entity, formStatus, formType, collectionName) {
     }
   };
 
-  const { IN_PROGRESS } = MASTER_FORM_STATUS;
-  if (![IN_PROGRESS].includes(entity.currentFormStatus)) {
+  const { IN_PROGRESS, UNDER_REVIEW_BY_STATE } = MASTER_FORM_STATUS;
+  if (![IN_PROGRESS, UNDER_REVIEW_BY_STATE].includes(entity.currentFormStatus)) {
     getActionStatus(obj, entity);
   }
 
@@ -2102,7 +2101,9 @@ function actionTakenByResponse(entity, formStatus, formType, collectionName) {
 
 const getActionStatus = (obj, entity) => {
   if (entity?.currentstatuse) {
-    let statusList = entity?.currentstatuse.filter(e => e.shortKey == "form_level" && ['MoHUA', 'STATE'].includes(e.actionTakenByRole));
+    const { UNDER_REVIEW_BY_MoHUA } = MASTER_FORM_STATUS;
+    let role = [UNDER_REVIEW_BY_MoHUA].includes(entity?.currentstatuse) ? ['STATE'] : ['MoHUA', 'STATE'];
+    let statusList = entity?.currentstatuse.filter(e => e.shortKey == "form_level" && role.includes(e.actionTakenByRole));
     if (statusList) {
       for (let pf of statusList) {
         if (pf.actionTakenByRole == "STATE") {
