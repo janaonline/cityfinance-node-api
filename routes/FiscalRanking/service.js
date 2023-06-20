@@ -754,6 +754,7 @@ async function getPreviousYearValues(pf, ulbData) {
         }
       }
     }
+    console.log("temp ::: ",temp)
     if (
       temp[previousYearId].length == 2 &&
       temp[pf.year.toString()].length == 2
@@ -3299,6 +3300,8 @@ async function validateAccordingtoLedgers(
           years,
           financialInfo
         );
+        console.log("ulbValue ::: ",ulbValue)
+        console.log("sum ::: ",sum)
         if (ulbValue === sum) {
           validator.valid = true
           validator.value = years.value

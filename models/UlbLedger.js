@@ -83,11 +83,13 @@ LedgerSchema.post("findOneAndUpdate",async function (doc){
                 }
                 
             }   
-            let updateMapper = await Fiscalrankingmappers.findOneAndUpdate({
-                "_id":ObjectId(mapper._id)
-            },{
-                "$set":payload
-            })
+            if(Object.keys(payload).length > 1){
+                let updateMapper = await Fiscalrankingmappers.findOneAndUpdate({
+                    "_id":ObjectId(mapper._id)
+                },{
+                    "$set":payload
+                })
+            }
             if(rejectFields){
                 rejectMapperFields(calculatedFields,mapper.year,frObject._id,mapper.displayPriority)
             }
@@ -140,7 +142,7 @@ const getPreviousYearValues = async(mapperYear,codes,ulbId,obj)=>{
         }
         let containsZero = Object.values(yearWiseData).some(item => item.includes(0))
         if(containsZero) {return 0};
-        let sum = Object.values(yearWiseData).reduce((acc,[a,b])=>acc+(a+b),0)
+        let sum = Object.values(yearWiseData).reduce((acc,valueArr)=>(valueArr.reduce((a,b)=>(a+b),0) - acc),0)
         return sum
 
     }
