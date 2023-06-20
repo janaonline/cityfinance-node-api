@@ -335,39 +335,65 @@ function getCollections(type, installment){
     return collections;
 } 
 
-function getCollections2324(type, installment){
-    let collections = [];
-    let condition = `${type}_${installment}`;
-    
-    switch(condition){
-        case "nmpc_untied_1":
-            collections = [AnnualAccounts, LinkPFMS, GrantTransferCertificate, 
-                PropertyTaxFloorRate,StateFinanceCommission,PropertyTaxOp ];
-            break;
-        case "nmpc_untied_2":
-            collections = [AnnualAccounts, LinkPFMS, GrantTransferCertificate, 
-                PropertyTaxFloorRate,StateFinanceCommission,PropertyTaxOp ];
-            break;
-        case "nmpc_tied_1":
-            collections = [AnnualAccounts, LinkPFMS, GrantTransferCertificate, 
-                PropertyTaxFloorRate,StateFinanceCommission,PropertyTaxOp , DUR]
-            break;
-        case "nmpc_tied_2":
-            collections = [AnnualAccounts, LinkPFMS, GrantTransferCertificate, 
-                PropertyTaxFloorRate,StateFinanceCommission,PropertyTaxOp , DUR];
-            break;
-        case "mpc_tied_1":
-            collections = [AnnualAccounts, LinkPFMS, GrantTransferCertificate, 
-                PropertyTaxFloorRate,StateFinanceCommission,PropertyTaxOp , DUR, 
-                TwentyEightSlbsForm, OdfFormCollection, GfcFormCollection, SLB,
-                ActionPlan, WaterRejenuvation
-                
-            ]
-            break;            
-    }
-    return collections;
-}  
 
+function getCollections2324(type, installment) {
+  const collectionsMap = {
+    nmpc_untied_1: [
+      AnnualAccounts,
+      LinkPFMS,
+      GrantTransferCertificate,
+      PropertyTaxFloorRate,
+      StateFinanceCommission,
+      PropertyTaxOp,
+    ],
+    nmpc_untied_2: [
+      AnnualAccounts,
+      LinkPFMS,
+      GrantTransferCertificate,
+      PropertyTaxFloorRate,
+      StateFinanceCommission,
+      PropertyTaxOp,
+    ],
+    nmpc_tied_1: [
+      AnnualAccounts,
+      LinkPFMS,
+      GrantTransferCertificate,
+      PropertyTaxFloorRate,
+      StateFinanceCommission,
+      PropertyTaxOp,
+      DUR,
+    ],
+    nmpc_tied_2: [
+      AnnualAccounts,
+      LinkPFMS,
+      GrantTransferCertificate,
+      PropertyTaxFloorRate,
+      StateFinanceCommission,
+      PropertyTaxOp,
+      DUR,
+    ],
+    mpc_tied_1: [
+      AnnualAccounts,
+      LinkPFMS,
+      GrantTransferCertificate,
+      PropertyTaxFloorRate,
+      StateFinanceCommission,
+      PropertyTaxOp,
+      DUR,
+      TwentyEightSlbsForm,
+      OdfFormCollection,
+      GfcFormCollection,
+      SLB,
+      ActionPlan,
+      WaterRejenuvation,
+    ],
+  };
+
+  const condition = `${type}_${installment}`;
+
+  return collectionsMap[condition] || [];
+}
+  
 const COLORS = {
     ULB: {
       approvedColor: '#E67E15',
