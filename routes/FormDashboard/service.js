@@ -1279,40 +1279,33 @@ const dashboard = async (req, res) => {
                 stateResponseArray.push(stateResponse);
             }
         };
-        if(data.flagFunction){
-                if(hasUA.length && data.formType === "mpc_tied"){
-              let {leastSubmitPercent, leastSubmitNumber} = addSlbScoringData(ulbResponseArray);
-              let slbScoring =  {
-                formName: FormNames["slbScoring"],
-                key: ModelNames['slbScoring'],
-                approvedColor: COLORS['STATE']['approvedColor'],
-                submittedColor: COLORS['STATE']['submittedColor'],
-                submittedValue: leastSubmitPercent ?? 0,
-                approvedValue: null,
-                totalApproved: null,
-                totalSubmitted: leastSubmitNumber ?? 0,
-                cutOff,
-                icon: null,
-                link: null,
-                border: COLORS['STATE']['border'] ?? null,
-                status: leastSubmitPercent === 100 ? ELIGIBLITY['YES'] : ELIGIBLITY['NO']
-            }
+        if (data.flagFunction) {
+          if (hasUA.length && data.formType === "mpc_tied") {
+            let { leastSubmitPercent, leastSubmitNumber } =
+              addSlbScoringData(ulbResponseArray);
+            let slbScoring = getSlbScoringResponse(
+              leastSubmitPercent,
+              leastSubmitNumber,
+              cutOff
+            );
             stateResponseArray.push(slbScoring);
-            }
-            return{
-                data: [{
-                    formHeader:'ULB Forms',
-                    approvedColor:'#E67E15',
-                    submittedColor:'#E67E1566',
-                    formData: ulbResponseArray
-                },
-                {
-                    formHeader:'State Forms',
-                    approvedColor:'#059B05',
-                    submittedColor:'#E67E1566',
-                    formData : stateResponseArray
-                }]
-            } ;
+          }
+          return {
+            data: [
+              {
+                formHeader: "ULB Forms",
+                approvedColor: "#E67E15",
+                submittedColor: "#E67E1566",
+                formData: ulbResponseArray,
+              },
+              {
+                formHeader: "State Forms",
+                approvedColor: "#059B05",
+                submittedColor: "#E67E1566",
+                formData: stateResponseArray,
+              },
+            ],
+          };
         }
         return res. status(200).json({
             status: true,
@@ -1337,6 +1330,24 @@ const dashboard = async (req, res) => {
         });
     }
 
+}
+
+function getSlbScoringResponse(leastSubmitPercent, leastSubmitNumber, cutOff) {
+    return {
+        formName: FormNames["slbScoring"],
+        key: ModelNames['slbScoring'],
+        approvedColor: COLORS['STATE']['approvedColor'],
+        submittedColor: COLORS['STATE']['submittedColor'],
+        submittedValue: leastSubmitPercent ?? 0,
+        approvedValue: null,
+        totalApproved: null,
+        totalSubmitted: leastSubmitNumber ?? 0,
+        cutOff,
+        icon: null,
+        link: null,
+        border: COLORS['STATE']['border'] ?? null,
+        status: leastSubmitPercent === 100 ? ELIGIBLITY['YES'] : ELIGIBLITY['NO']
+    };
 }
 
 function addSlbScoringData(ulbResponseArray){
