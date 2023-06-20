@@ -54,6 +54,31 @@ module.exports.MASTER_STATUS = {
     "Submission Acknowledged by PMU": 11,
 }
 
+module.exports.MASTER_FORM_STATUS = {
+    NO_STATUS: -1,
+    NOT_STARTED: 1,
+    IN_PROGRESS: 2,
+    UNDER_REVIEW_BY_STATE: 3,
+    UNDER_REVIEW_BY_MoHUA: 4,
+    RETURNED_BY_STATE: 5,
+    SUBMISSION_ACKNOWLEDGED_BY_MoHUA: 6,
+    RETURNED_BY_MoHUA: 7,
+    VERIFICATION_NOT_STARTED: 8,
+    VERIFICATION_IN_PROGRESS: 9,
+    RETURNED_BY_PMU: 10,
+    SUBMISSION_ACKNOWLEDGED_BY_PMU: 11,
+}
+
+module.exports.MASTER_FORM_QUESTION_STATUS = {
+    4: "APPROVED",
+    5: "REJECTED",
+    6: "APPROVED",
+    7: "REJECTED",
+    10: "REJECTED",
+    11: "APPROVED",
+    "": ""
+}
+
 module.exports.MASTER_STATUS_ID = {
     "-1": "No Status",
     1: "Not Started",

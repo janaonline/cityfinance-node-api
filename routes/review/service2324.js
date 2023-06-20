@@ -6,7 +6,7 @@ const Sidemenu = require('../../models/Sidemenu');
 const ObjectId = require("mongoose").Types.ObjectId;
 const Service = require('../../service');
 const STATUS_LIST = require('../../util/newStatusList');
-const { MASTER_STATUS, MASTER_STATUS_ID, YEAR_CONSTANTS, YEAR_CONSTANTS_IDS } = require('../../util/FormNames');
+const { MASTER_STATUS, MASTER_STATUS_ID, YEAR_CONSTANTS, YEAR_CONSTANTS_IDS, MASTER_FORM_STATUS, MASTER_FORM_QUESTION_STATUS } = require('../../util/FormNames');
 const { canTakeActionOrViewOnlyMasterForm } = require('../../routes/CommonActionAPI/service')
 // const { createDynamicColumns } = require('./service')
 const List = require('../../util/15thFCstatus')
@@ -1840,7 +1840,13 @@ function createDynamicObject(collectionName, formType) {
 }
 
 function annualAccountCsvFormat(data, auditedEntity, entity, auditedProvisional, auditedStandardized, actions, unAuditedEntity, unAuditedProvisional, unAuditedStandardized) {
-  annualAccountSetCurrentStatus(data)
+
+  const { IN_PROGRESS } = MASTER_FORM_STATUS;
+  if (![IN_PROGRESS].includes(entity.currentFormStatus)) {
+    annualAccountSetCurrentStatus(data)
+  }
+  // console.log("auditedProvisional?.auditor_report",data?.audited?.auditor_report);process.exit()
+
   auditedEntity = auditedEntity = ` ${data?.design_year?.year ?? ""}, ${entity?.formStatus ?? ""
     }, ${data?.createdAt ?? ""}, ${data?.ulbSubmit ?? ""},${entity?.filled_audited ?? ""
     }, Audited, ${data?.audited?.year ? YEAR_CONSTANTS_IDS[data?.audited?.year] : ""},${auditedProvisional?.bal_sheet?.pdf?.url ?? ""
@@ -1870,7 +1876,7 @@ function annualAccountCsvFormat(data, auditedEntity, entity, auditedProvisional,
     } ,${data?.audited?.submit_annual_accounts === false
       ? (data?.audited?.rejectReason_mohua ?? "")
       : ""
-    },  ${actions["auditedResponseFile_state"]["url"] ?? ""},${actions["auditedResponseFile_mohua"]["url"] ?? ""
+    },  ${data?.audited?.responseFile_state?.url ?? ""},${data?.audited?.rejectReason_mohua?.url ?? "" ?? ""
     } `;
 
   unAuditedEntity = `${data?.design_year?.year ?? ""}, ${entity?.formStatus ?? ""
@@ -1901,7 +1907,7 @@ function annualAccountCsvFormat(data, auditedEntity, entity, auditedProvisional,
     }, ${data?.unAudited?.submit_annual_accounts === false
       ? (data?.unAudited?.rejectReason_mohua ?? "")
       : ""
-    }, ${actions["unAuditedResponseFile_state"]["url"] ?? ""},${actions["unAuditedResponseFile_mohua"]["url"] ?? ""
+    }, ${data?.unAudited?.responseFile_state?.url ?? ""},${data?.unAudited?.rejectReason_mohua?.url ?? ""
     } `;
   return { auditedEntity, unAuditedEntity };
 }
@@ -1912,46 +1918,59 @@ const annualAccountSetCurrentStatus = (data) => {
   let sheetkey = [
     'bal_sheet',
     'bal_sheet_schedules',
+    'auditor_report',
     'inc_exp',
     'inc_exp_schedules',
-    'cash_flow'
+    'cash_flow',
   ]
   const { currentstatuse } = data;
   let currentStatusList = currentstatuse?.filter(e => ['STATE', 'MoHUA'].includes(e.actionTakenByRole));
   if (currentStatusList?.length) {
     for (let key of mainArr) {
       let subObData = data[key];
+      let statusTab = currentStatusList.filter(e => e.shortKey == `tab_${key}`);
+      let tab = setCurrentStatusQuestionLevel(statusTab)
+      Object.assign(subObData, { ...tab })
       for (let subkey of subArr) {
         let d = subObData[subkey];
         for (let skey of sheetkey) {
           let sortkey = `${key}.${skey}`;
           let statusList = currentStatusList.filter(e => e.shortKey == sortkey);
-          let b = setCurrentStatusQuestionLevel(statusList)
-          Object.assign(d[skey], { ...b })
+          if (statusList.length) {
+            let b = setCurrentStatusQuestionLevel(statusList)
+            Object.assign(d[skey], { ...b })
+          }
         }
       }
     }
   }
   delete data.currentstatuse
+  console.log("data", data)
   return data;
 }
 const setCurrentStatusQuestionLevel = (statusList) => {
   let obj = {
     "state_status": "",
     "rejectReason_state": "",
-    "responseFile_state": "",
+    "responseFile_state": {
+      "url": "",
+      "name": ""
+    },
     "rejectReason_mohua": "",
     "mohua_status": "",
-    "responseFile_mohua": ""
+    "responseFile_mohua": {
+      "url": "",
+      "name": ""
+    }
   };
   if (statusList.length) {
     for (let statusObj of statusList) {
       if (statusObj.actionTakenByRole == "STATE") {
-        obj['state_status'] = MASTER_STATUS_ID[statusObj.status]
+        obj['state_status'] = MASTER_FORM_QUESTION_STATUS[statusObj.status]
         obj['rejectReason_state'] = statusObj.rejectReason
         obj['responseFile_state'] = statusObj.responseFile
       } else {
-        obj['mohua_status'] = MASTER_STATUS_ID[statusObj.status]
+        obj['mohua_status'] = MASTER_FORM_QUESTION_STATUS[statusObj.status]
         obj['rejectReason_mohua'] = statusObj.rejectReason
         obj['responseFile_mohua'] = statusObj.responseFile
       }
@@ -2001,7 +2020,12 @@ function actionTakenByResponse(entity, formStatus, formType, collectionName) {
       name: ""
     }
   };
-  getActionStatus(obj, entity);
+
+  const { IN_PROGRESS } = MASTER_FORM_STATUS;
+  if (![IN_PROGRESS].includes(entity.currentFormStatus)) {
+    getActionStatus(obj, entity);
+  }
+
   if (collectionName === CollectionNames['annual']) {
     obj.auditedResponseFile_state = {
       url: "",
@@ -2082,11 +2106,11 @@ const getActionStatus = (obj, entity) => {
     if (statusList) {
       for (let pf of statusList) {
         if (pf.actionTakenByRole == "STATE") {
-          obj['state_status'] = MASTER_STATUS_ID[pf.status]
+          obj['state_status'] = MASTER_FORM_QUESTION_STATUS[pf.status]
           obj['rejectReason_state'] = pf.rejectReason
           obj['responseFile_state'] = pf.responseFile
         } else {
-          obj['mohua_status'] = MASTER_STATUS_ID[pf.status]
+          obj['mohua_status'] = MASTER_FORM_QUESTION_STATUS[pf.status]
           obj['rejectReason_mohua'] = pf.rejectReason
           obj['responseFile_mohua'] = pf.responseFile
         }
