@@ -1002,7 +1002,7 @@ async function createDynamicElements(collectionName, formType, entity) {
           entity = ` ${data?.design_year?.year ?? ""}, ${entity?.formStatus ?? ""
             }, ${data?.createdAt ?? ""}, ${data?.ulbSubmit ?? ""},${entity.filled ?? ""
             }, ${data["rating"]["name"] ?? ""},${data["rating"]["marks"] ?? ""
-            },${data["cert"]["url"] ?? ""},${data["cert"]["name"] ?? ""},${data["certDate"] ?? ""
+            },${data?.cert?.url ? data?.cert?.url : data?.cert_declaration?.url ?? ""},${data?.cert?.name ? data?.cert?.name : data?.cert_declaration?.name ?? ""},${data["certDate"] ?? ""
             },${actions["state_status"] ?? ""},${actions["rejectReason_state"] ?? ""
             },${actions["mohua_status"] ?? ""},${actions["rejectReason_mohua"] ?? ""
             },${actions["responseFile_state"]["url"] ?? ""},${actions["responseFile_mohua"]["url"] ?? ""
