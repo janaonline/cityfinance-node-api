@@ -572,7 +572,7 @@ function approvedForms(forms, formCategory, design_year, modelName){
         if(!role){
             role = element?.["user"]["role"];
         }
-        if(design_year === YEAR_CONSTANTS['23_24'] && ![CollectionNames.linkPFMS, CollectionNames.sfc].includes(modelName)){
+        if( ![YEAR_CONSTANTS['22_23']].includes(design_year) && ![CollectionNames.linkPFMS, CollectionNames.sfc].includes(modelName)){
             switch(formCategory){
                 case "ULB":
                     if( [MASTER_STATUS['Under Review By State'],
@@ -1198,7 +1198,7 @@ const dashboard = async (req, res) => {
             //Pipeline query condition for Grant transfer cetificate
             if(modelName === CollectionNames.gtc){
                 pipeline = gtcSubmitCondition(data.formType, data.installment, state, data.design_year);
-                if(data.design_year === YEAR_CONSTANTS['23_24']){
+                if(![YEAR_CONSTANTS['22_23']].includes(data.design_year)){
                     pipeline = gtcSubmitCondition2324(data.formType, data.installment, state, data.design_year);
                 }
             }
