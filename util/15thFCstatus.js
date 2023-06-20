@@ -63,6 +63,7 @@ module.exports.CollectionNames = {
     slb: "xvfcgrantulbforms",
     waterRej: "waterrejenuvationrecyclings",
     actionPlan: "actionplans",
+    rating: "ratings",
     slbScoring: "slbScoring"
 }
 
