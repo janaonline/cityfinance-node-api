@@ -558,7 +558,7 @@ const computeQuery = (params) => {
         if (filter.sbCode) { delete Object.assign(filter, { ["censusCode"]: filter["sbCode"] })["sbCode"]; }
         query.push({ $match: filter })
       }
-      let limitSkip = !csv ? [{ $limit: limit }, { "$skip": skip }] : [{ $match: {} }]
+      let limitSkip = !csv ? [{ "$skip": skip }, { $limit: limit }] : [{ $match: {} }]
       let paginator = [
         { $addFields: { "dummy": [] } },
         {
@@ -674,7 +674,7 @@ const computeQuery = (params) => {
       let countQuery_s = query_s.slice()
       let paginator_s = [{
         $facet: {
-          data: [{ $limit: limit }, { "$skip": skip }],
+          data: [{ "$skip": skip }, { $limit: limit }],
           count: [{ $count: "totalRecords" }]
         }
       }]
