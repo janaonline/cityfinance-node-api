@@ -40,11 +40,26 @@ async function rejectMapperFields(calculatedFields,year,frId,displayPriority){
     }
 }
 
+async function sumOfCurrentObj(calculatedFields,year,frId,displayPriority){
+    try{
+        let mapperObjects = await Fiscalrankingmappers.find({
+            "fiscal_ranking":ObjectId(frId),
+                "year":ObjectId(year),
+                "type":{
+                    "$in":calculatedFields
+                },
+        }).lean()
+        let sum = mapperObjects.reduce((acc,iterator) => (acc+(+iterator.value)),0)
+        return sum
+    }
+    catch(err){
+        console.log("error in sumOfCurrentObj :::: ",err.message)
+    }
+}
+
 
 LedgerSchema.post("findOneAndUpdate",async function (doc){
     if(["2018-19","2019-20"].includes(doc.financialYear) && Object.values(ledgerCodes).includes(doc.lineItem.toString())){
-        console.log("doc :: ",doc.financialYear)
-        console.log("doc lineItem ::: ",doc.lineItem)
         let ledgerItem = await LineItem.findOne({"_id":doc.lineItem}).lean()
         let frObject = await FiscalRanking.findOne({
             "ulb":doc.ulb,
@@ -62,9 +77,6 @@ LedgerSchema.post("findOneAndUpdate",async function (doc){
         for(let mapper of mappersData){
             let payload = {}
             let lineItemCode = getKeyByValue(ledgerCodes,doc.lineItem.toString())
-            let yearName = getKeyByValue(years,mapper.year)
-            let grossBlock = doc.lineItem === ledgerCodes['410'] ? true : false
-            let captlWorkInProg = doc.lineItem === ledgerCodes['412'] ? true : false
             let calculatedFields = ledgerFields[mapper.type].calculatedFrom
             let codeValue = ledgerFields[mapper.type].codes.find(item => item === lineItemCode)
             let rejectFields = await ShouldReject(frObject.currentFormStatus,mapper.status)
@@ -76,12 +88,12 @@ LedgerSchema.post("findOneAndUpdate",async function (doc){
                }
             }
             else if(ledgerFields[mapper.type].logic && maximumValue.toString() === lineItemCode.toString() ){
-                let calculatedAmount = await getPreviousYearValues(mapper.year,ledgerFields[mapper.type].codes,mapper.ulb,this)
+                let {reject,sum:calculatedAmount} = await getPreviousYearValues(mapper.year,ledgerFields[mapper.type].codes,mapper.ulb,mapper,frObject,this)
                 if(doc.amount.toString() != mapper.value){
                     payload.value = calculatedAmount
                     payload.ledgerUpdated = true
+                    rejectFields = reject
                 }
-                
             }   
             if(Object.keys(payload).length > 1){
                 let updateMapper = await Fiscalrankingmappers.findOneAndUpdate({
@@ -91,7 +103,7 @@ LedgerSchema.post("findOneAndUpdate",async function (doc){
                 })
             }
             if(rejectFields){
-                rejectMapperFields(calculatedFields,mapper.year,frObject._id,mapper.displayPriority)
+                await rejectMapperFields(calculatedFields,mapper.year,frObject._id,mapper.displayPriority)
             }
         }
     }
@@ -114,8 +126,9 @@ const ShouldReject =(formStatus,fieldStatus)=>{
     return false
 }
 
-const getPreviousYearValues = async(mapperYear,codes,ulbId,obj)=>{
+const getPreviousYearValues = async(mapperYear,codes,ulbId,mapper,frObject,obj)=>{
     try{
+        let calculatedFields = ledgerFields[mapper.type].calculatedFrom
         let yearName = getKeyByValue(years, mapperYear.toString());
         let year = parseInt(yearName);
         let previousYear = year - 1;
@@ -135,16 +148,27 @@ const getPreviousYearValues = async(mapperYear,codes,ulbId,obj)=>{
                     amount:1,
                     _id:0
                 }).lean()
-                if(ledgerData.amount){
+                if(ledgerData?.amount){
                     yearWiseData[financialYear].push(parseFloat(ledgerData.amount))
+                }
+                else{
+                    yearWiseData[financialYear].push(0)
                 }
             }
         }
         let containsZero = Object.values(yearWiseData).some(item => item.includes(0))
-        if(containsZero) {return 0};
+        let sumOfChildFields = await sumOfCurrentObj(calculatedFields,mapper.year,frObject._id,mapper.displayPriority)
+        if(containsZero) {
+            return {
+                reject : false,
+                sum:sumOfChildFields
+            }
+        }
         let sum = Object.values(yearWiseData).reduce((acc,valueArr)=>(valueArr.reduce((a,b)=>(a+b),0) - acc),0)
-        return sum
-
+        return {
+            reject : true,
+            sum:sum
+        }
     }
     catch(err){
         console.log(">>>>>>>>",err)
