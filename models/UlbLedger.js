@@ -157,7 +157,10 @@ const getPreviousYearValues = async(mapperYear,codes,ulbId,mapper,frObject,obj)=
             }
         }
         let containsZero = Object.values(yearWiseData).some(item => item.includes(0))
+        console.log("containsZero :: ",containsZero)
+        console.log("yearWiseData ::: ",yearWiseData)
         let sumOfChildFields = await sumOfCurrentObj(calculatedFields,mapper.year,frObject._id,mapper.displayPriority)
+        console.log("sumOfChildFields :: ",sumOfChildFields)
         if(containsZero) {
             return {
                 reject : false,

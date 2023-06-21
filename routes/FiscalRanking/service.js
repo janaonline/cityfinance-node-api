@@ -64,8 +64,6 @@ let priorTabsForFiscalRanking = {
   selDec: "s5",
 };
 
-
-
 async function manageLedgerData(params) {
   let messages = []
   try {
@@ -101,7 +99,6 @@ async function manageLedgerData(params) {
                 let reason  = `Data for ${question.displayPriority} has been changed. kindly revisit the calculations`
                 if(childItem.year.toString() ===  yearObj.year){
                   childItem.readonly = [statusTracker.RBP,statusTracker.IP].includes(currentFormStatus) && [questionLevelStatus['1']].includes(childItem.status)  && role === userTypes.ulb ? false  : childItem.readonly
-                  console.log("childItem.readonly ::: ",childItem.readonly)
                   childItem.rejectReason = [statusTracker.RBP,statusTracker.IP].includes(currentFormStatus) && [questionLevelStatus['1']].includes(childItem.status) ? reason  : childItem.rejectReason
                   childItem.status = [statusTracker.RBP,statusTracker.IP].includes(currentFormStatus) && [questionLevelStatus['1']].includes(childItem.status)  ? "REJECTED"  :  childItem.status 
                 }
@@ -3290,8 +3287,6 @@ async function validateAccordingtoLedgers(
           years,
           financialInfo
         );
-        console.log("ulbValue ::: ",ulbValue)
-        console.log("sum ::: ",sum)
         if (ulbValue === sum) {
           validator.valid = true
           validator.value = years.value
