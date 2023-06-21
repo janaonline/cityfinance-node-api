@@ -193,8 +193,7 @@ async function createCSV(formType, collectionName, res, data, ratingList) {
     if (collectionName !== CollectionNames.annual && collectionName !== CollectionNames['28SLB']) {
       res.write("\ufeff" + `${fixedColumns.toString()} ${dynamicColumns.toString()} \r\n`);
       for (let el of data) {
-        if (['ODF', 'GFC'].includes(collectionName))
-          await setRating(el, ratingList);
+        if (['ODF', 'GFC'].includes(collectionName)) await setRating(el, ratingList);
         let dynamicElementData = await createDynamicElements(collectionName, formType, el);
         el.UA = el.UA === "null" ? "NA" : el.UA;
         el.isUA = el.UA === "NA" ? "No" : "Yes";
@@ -1873,7 +1872,7 @@ function annualAccountCsvFormat(data, auditedEntity, entity, auditedProvisional,
     } ,${data?.audited?.submit_annual_accounts === false
       ? (data?.audited?.rejectReason_mohua ?? "")
       : ""
-    },  ${data?.audited?.responseFile_state?.url ?? ""},${data?.audited?.rejectReason_mohua?.url ?? "" ?? ""
+    },  ${data?.audited?.responseFile_state?.url ?? ""},${data?.audited?.responseFile_mohua?.url ?? "" ?? ""
     } `;
 
   unAuditedEntity = `${data?.design_year?.year ?? ""}, ${entity?.formStatus ?? ""
@@ -1904,7 +1903,7 @@ function annualAccountCsvFormat(data, auditedEntity, entity, auditedProvisional,
     }, ${data?.unAudited?.submit_annual_accounts === false
       ? (data?.unAudited?.rejectReason_mohua ?? "")
       : ""
-    }, ${data?.unAudited?.responseFile_state?.url ?? ""},${data?.unAudited?.rejectReason_mohua?.url ?? ""
+    }, ${data?.unAudited?.responseFile_state?.url ?? ""},${data?.unAudited?.responseFile_mohua?.url ?? ""
     } `;
   return { auditedEntity, unAuditedEntity };
 }
@@ -1928,6 +1927,7 @@ const annualAccountSetCurrentStatus = (data, currentFormStatus) => {
     for (let key of mainArr) {
       let subObData = data[key];
       let statusTab = currentStatusList.filter(e => e.shortKey == `tab_${key}`);
+      statusTab = statusTab.length ? statusTab : currentStatusList;
       let tab = setCurrentStatusQuestionLevel(statusTab)
       Object.assign(subObData, { ...tab })
       for (let subkey of subArr) {
