@@ -334,12 +334,12 @@ async function validate(data, formData) {
   const code = "ulb census code/ulb code";
   const name = "ulb name";
   let amount = "grant amount";
+  formData.design_year = getKeyByValue(years,formData.design_year)
   if (formData.design_year === "606aafb14dff55e6c075d3ae") {
     formData.design_year = '2022-23';
   } else if (formData.design_year === "606aaf854dff55e6c075d219") {
     formData.design_year = '2021-22';
   }
-  formData.design_year = getKeyByValue(years,formData.design_year)
   const type = `${formData.type}_${formData.design_year}_${formData.installment}`
   amount = `${amount} - ${type}`
   /* Checking if the formData.design_year is equal to 2021-22, if it is, then it sets the amount variable
@@ -365,6 +365,8 @@ async function validate(data, formData) {
   }
   // get ulb data
   const compareData = await getUlbData(ulbCodes, ulbNames);
+  // console.log("data ::: ",JSON.stringify(data,2,3))
+  // console.log("compareData :: ",JSON.stringify(compareData,2,3))
   let errorFlag = false;
   for (let index = 0; index < data.length; index++) {
     if (
@@ -372,11 +374,15 @@ async function validate(data, formData) {
       data[index][name] === ""
     ) {
       errorFlag = true;
+      console.log("0")
       if (data[index].Errors) data[index].Errors += "Code or Ulb name is blank,";
       else data[index].Errors = "Code or Ulb name is blank,";
     }
     if (!compareData[data[index][code]]) {
       errorFlag = true;
+      console.log("1",code)
+      console.log("2 ::: ",index)
+      console.log("data :::: ",data[index][code])
       if (data[index].Errors) data[index].Errors += "Code Not Valid,";
       else data[index].Errors = "Code Not Valid,";
     }
@@ -384,15 +390,18 @@ async function validate(data, formData) {
       compareData[data[index][code]] != data[index][name]
     ) {
       errorFlag = true;
+      console.log("2")
       if (data[index].Errors) data[index].Errors += "Name Not Valid,";
       else data[index].Errors = "Name Not Valid,";
     }
     if (!Number(data[index][amount]) || data[index][amount] === "") {
       errorFlag = true;
+      console.log("3")
       if (data[index].Errors) data[index].Errors += "Amount Not valid,";
       else data[index].Errors = "Amount Not valid,";
     }
   }
+  console.log("errorFlag ::::",errorFlag)
   if (errorFlag) {
     data.forEach((object) => {
       let findKey = "Errors";
