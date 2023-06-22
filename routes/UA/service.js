@@ -737,7 +737,7 @@ module.exports.get2223 = catchAsync(async (req, res) => {
         popDataGFC += el2.population
     })
     if(gfcData.length){
-        responseObj.gfc.score = numeratorGFC / popDataGFC;
+        responseObj.gfc.score = Number((numeratorGFC / popDataGFC).toFixed(2));
     }else{
         responseObj.gfc.score = 0;
     }
@@ -748,7 +748,7 @@ module.exports.get2223 = catchAsync(async (req, res) => {
         popDataOdf += el2.population
     })
     if(odfData.length){
-        responseObj.odf.score = numeratorOdf / popDataOdf;
+        responseObj.odf.score = Number((numeratorOdf / popDataOdf).toFixed(2));
     }else{
         responseObj.odf.score = 0;
 
