@@ -122,7 +122,7 @@ module.exports.get2223 = async (req, res)=>{
         text: `State Finance Commission Notification form submission by State & Approval by MoHUA` 
       },
     ];
-     const conditions_nmpc_tied_2nd = [
+     let conditions_nmpc_tied_2nd = [
         { key: CollectionNames.dur,
           text: `${financialYear === YEAR_CONSTANTS['22_23']? expectedValues.dur : expectedValues2324[IdToYear].dur}% Detailed Utilisation Report form Submitted, and Approved by State` },
         {
@@ -206,6 +206,9 @@ module.exports.get2223 = async (req, res)=>{
       }
 
     ];
+    if(![YEAR_CONSTANTS['22_23']].includes(financialYear)){
+      conditions_nmpc_tied_2nd = updateConditions(conditions_nmpc_tied_2nd, CollectionNames.dur)
+    }
     const hasUA =  await UA.find({
       state : ObjectId(stateId)
     }).lean();
@@ -365,6 +368,7 @@ module.exports.get2223 = async (req, res)=>{
         mpc_tied_1,
       };
       if((![YEAR_CONSTANTS['22_23']].includes(financialYear))){
+        update2324Conditions(submitClaim);
         submitClaim =  generateOutputObject(submitClaim)
         return res.status(200).json({
           data: submitClaim,
@@ -475,7 +479,7 @@ module.exports.get2223 = async (req, res)=>{
       //   state: ObjectId(stateId),
       //   financialYear: ObjectId(financialYear)
       // }).lean();
-      if([!YEAR_CONSTANTS['22_23']].includes(financialYear)){
+      if(![YEAR_CONSTANTS['22_23']].includes(financialYear)){
         let submitClaim =  generateOutputObject(submitClaim)
         return res.status(200).json({
           data: submitClaim,
@@ -495,7 +499,27 @@ module.exports.get2223 = async (req, res)=>{
     
 }
 
+function update2324Conditions(submitClaim,collectionNames) {
+  for (let claims in submitClaim) {
+    submitClaim[claims]['conditions'] = submitClaim[claims]['conditions'].filter(el => {
+      return el.key !== CollectionNames.pTAX; 
+    });
+  }
+  
+}
+
+function updateConditions(condition, collectionName){
+  try {
+    return condition.filter(el=>{
+      return collectionName !== el.key
+    })
+  } catch (error) {
+    throw({message: `updateConditions:: ${error.message}`})
+  }
+}
+
 function generateOutputObject(input) {
+  try {
   const output = {
     formId: '',
     formName: 'Final submission of claims for 15th FC Grants (FY 2023-24)',
@@ -554,8 +578,10 @@ function generateOutputObject(input) {
 
     output.data[grantType].yearData.push(yearData);
   }
-
   return output;
+  } catch (error) {
+      throw({message: `${error.message}`})
+  }
 }
 
 function findConditionKey(percent, el, condition) {
