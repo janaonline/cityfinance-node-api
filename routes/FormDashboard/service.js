@@ -342,7 +342,6 @@ function getCollections2324(type, installment) {
       AnnualAccounts,
       LinkPFMS,
       GrantTransferCertificate,
-      PropertyTaxFloorRate,
       StateFinanceCommission,
       PropertyTaxOp,
     ],
@@ -350,7 +349,6 @@ function getCollections2324(type, installment) {
       AnnualAccounts,
       LinkPFMS,
       GrantTransferCertificate,
-      PropertyTaxFloorRate,
       StateFinanceCommission,
       PropertyTaxOp,
     ],
@@ -358,7 +356,6 @@ function getCollections2324(type, installment) {
       AnnualAccounts,
       LinkPFMS,
       GrantTransferCertificate,
-      PropertyTaxFloorRate,
       StateFinanceCommission,
       PropertyTaxOp,
       DUR,
@@ -367,16 +364,13 @@ function getCollections2324(type, installment) {
       AnnualAccounts,
       LinkPFMS,
       GrantTransferCertificate,
-      PropertyTaxFloorRate,
       StateFinanceCommission,
       PropertyTaxOp,
-      DUR,
     ],
     mpc_tied_1: [
       AnnualAccounts,
       LinkPFMS,
       GrantTransferCertificate,
-      PropertyTaxFloorRate,
       StateFinanceCommission,
       PropertyTaxOp,
       DUR,
@@ -1213,10 +1207,10 @@ const dashboard = async (req, res) => {
                 }
              }
             if(formCategory === "ULB"){
-                submitPercent = Math.round((submittedForms.length/totalForms)*100);
+                submitPercent = !isNaN(Math.round((submittedForms.length/totalForms)*100) ) ? Math.round((submittedForms.length/totalForms)*100) : 0 ;
                 submittedFormPercent[modelName] = submitPercent;
                 totalApprovedForm = approvedForms(submittedForms, formCategory, data.design_year, modelName);
-                approvedFormPercent[modelName] = Math.round((totalApprovedForm/totalForms)*100);
+                approvedFormPercent[modelName] = !isNaN(Math.round((totalApprovedForm/totalForms)*100) ) ?  Math.round((totalApprovedForm/totalForms)*100) : 0;
                 totalApprovedUlbForm[modelName] = totalApprovedForm;
                 totalSubmittedUlbForm[modelName] = submittedForms.length;
                 if([
