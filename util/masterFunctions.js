@@ -3,7 +3,7 @@ const CurrentStatus = require("../models/CurrentStatus");
 const StatusHistory = require("../models/StatusHistory");
 const FORMJSON  = require('../models/FormsJson');
 const { MODEL_PATH } = require("../util/FormNames");
-
+const {years} = require("../service/years")
 const grantDistributeOptions = {
   "Yes":"As per Census 2011",
   "No":"As per SFC Recommendations"
@@ -63,12 +63,14 @@ module.exports.ledgerFields = {
   "fixedAsset":{
     "codes":["410"],
     "logic":"",
-    "calculatedFrom":["faLandBuild","faOther"]
+    "calculatedFrom":["faLandBuild","faOther"],
+    "yearsApplicable":[years['2018-19'],years['2019-20']]
   },
   "CaptlExp":{
     "codes":["410","412"],
     "logic":"CurrentCodeYear - PreviousCodeYear",
-    "calculatedFrom":["CaptlExpWaterSupply","CaptlExpSanitation","CaptExpOther"]
+    "calculatedFrom":["CaptlExpWaterSupply","CaptlExpSanitation","CaptExpOther"],
+    "yearsApplicable":[years['2018-19'],years['2019-20']]
   }
 }
 module.exports.saveFormHistory = (params) => {

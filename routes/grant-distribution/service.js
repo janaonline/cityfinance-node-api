@@ -92,12 +92,12 @@ exports.getTemplate = async (req, res) => {
       state: ObjectId(state),
       isActive: true,
     }).select({ censusCode: 1, name: 1, sbCode: 1 });
-
     if (ulbs.length === 0) {
       return Response.BadRequest(res, "No ULB found");
     }
 
     let data = [];
+    let defectedUlb = 0
     ulbs.forEach((element) => {
       let obj = {
         name: element?.name,
@@ -106,7 +106,12 @@ exports.getTemplate = async (req, res) => {
       if (obj.code) {
         data.push(obj);
       }
+      else{
+        defectedUlb += 1
+        // console.log("element :: ",element)
+      }
     });
+    console.log("defectedUlb :: ",defectedUlb)
     let field = {
       code: "ULB Census Code/ULB Code",
       name: "ULB Name",

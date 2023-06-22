@@ -64,12 +64,10 @@ let priorTabsForFiscalRanking = {
   selDec: "s5",
 };
 
-
-
 async function manageLedgerData(params) {
   let messages = []
   try {
-    let { ledgerData, ledgerKeys, responseData, formId, currentFormStatus, ulbRole } = params
+    let { ledgerData, ledgerKeys, responseData, formId, currentFormStatus, role } = params
     let formHistory = await FormHistory.find({
       recordId: formId,
       "data.0.actionTakenByRole":userTypes.ulb
@@ -78,6 +76,7 @@ async function manageLedgerData(params) {
     }).sort({
       "_id": -1
     }).limit(1).lean()
+    console.log("userRole :: ",role)
     let formHistoryData = formHistory[0] && formHistory[0].data.length ? formHistory[0]?.data[0]['fiscalMapperData'].filter(item => ledgerKeys.includes(item.type) && item.modelName === "ULBLedger") : []
     let errYears = new Set()
     let dps = new Set()
@@ -94,6 +93,18 @@ async function manageLedgerData(params) {
             catch(err){
               errorWithDps[question.displayPriority] = [yearName]
             }
+            let calculationFields =  Object.entries(responseData.financialInformation).reduce((result,[key,value]) => ({...result, ...(question?.calculatedFrom.includes(value.displayPriority)) && {[key]: value}}) ,{})
+            Object.values(calculationFields).forEach((item)=>{
+              item.yearData.forEach((childItem)=>{
+                let reason  = `Data for ${question.displayPriority} has been changed. kindly revisit the calculations`
+                if(childItem.year.toString() ===  yearObj.year){
+                  childItem.readonly = [statusTracker.RBP,statusTracker.IP].includes(currentFormStatus) && [questionLevelStatus['1']].includes(childItem.status)  && role === userTypes.ulb ? false  : childItem.readonly
+                  childItem.rejectReason = [statusTracker.RBP,statusTracker.IP].includes(currentFormStatus) && [questionLevelStatus['1']].includes(childItem.status) ? reason  : childItem.rejectReason
+                  childItem.status = [statusTracker.RBP,statusTracker.IP].includes(currentFormStatus) && [questionLevelStatus['1']].includes(childItem.status)  ? "REJECTED"  :  childItem.status 
+                }
+              })
+            })
+            responseData.financialInformation = {...responseData.financialInformation,...calculationFields}
           }
         }
       }
@@ -108,6 +119,7 @@ async function manageLedgerData(params) {
       str += " has been updated please revisit calculations"
       let msg =`Data for fields ${Array.from(dps).join(",")} and years ${Array.from(errYears).join(",")} has been updated. kindly revisit those calculations`
       messages.push(str)
+      
     }
     return {
       responseData,
@@ -740,6 +752,7 @@ async function getPreviousYearValues(pf, ulbData) {
         }
       }
     }
+    console.log("temp ::: ",temp)
     if (
       temp[previousYearId].length == 2 &&
       temp[pf.year.toString()].length == 2
@@ -1238,22 +1251,24 @@ exports.getView = async function (req, res, next) {
     let conditionForFeedbacks = {
       fiscal_ranking: data?._id || null,
     };
-    let ulbRole = req.decoded.role
+    let userRole = req.decoded.role
     let params = {
       ledgerData: ulbData,
       ledgerKeys: ledgerKeys,
       responseData: { ...fyDynemic },
       formId: viewOne._id,
-      ulbRole: ulbRole,
+      role: userRole,
       currentFormStatus: viewOne.currentFormStatus
     }
     /**
      * This function always get latest data for ledgers
      */
     let modifiedLedgerData = fyDynemic
-    let { responseData, messages } = await manageLedgerData(params)
-    modifiedLedgerData = responseData
-    userMessages = messages
+    if(![statusTracker.SAP].includes(viewOne.currentFormStatus)){
+      let { responseData, messages } = await manageLedgerData(params)
+      modifiedLedgerData = responseData
+      userMessages = messages
+    }
     Object.assign(conditionForFeedbacks, condition);
     let modifiedTabs = await getModifiedTabsFiscalRanking(
       tabs,
@@ -1275,7 +1290,7 @@ exports.getView = async function (req, res, next) {
       financialYearTableHeader,
       messages: userMessages
     };
-    if (messages.length > 0) {
+    if (userMessages.length > 0) {
       let {approvedPerc,rejectedPerc} = calculatePercentage(modifiedLedgerData, requiredFields, viewOne)
       let {ulb,design_year} = req.query
       await updatePercentage(approvedPerc,rejectedPerc,ulb,design_year)
@@ -1301,7 +1316,6 @@ async function updatePercentage(approvedPerc,rejectedPerc,ulb,design_year){
       "progress.approvedProgress":approvedPerc < 100 && approvedPerc !== 0 ? approvedPerc.toFixed(2).toString() : parseInt(approvedPerc).toString() ,
       "progress.rejectedProgress":rejectedPerc < 100 && rejectedPerc !== 0 ? rejectedPerc.toFixed(2).toString() : parseInt(rejectedPerc).toString() 
     }
-    console.log("payload :: ",payload)
     let up = await FiscalRanking.findOneAndUpdate(filter,{
       "$set":payload
     })
