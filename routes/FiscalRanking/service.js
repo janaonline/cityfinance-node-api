@@ -1264,9 +1264,11 @@ exports.getView = async function (req, res, next) {
      * This function always get latest data for ledgers
      */
     let modifiedLedgerData = fyDynemic
-    let { responseData, messages } = await manageLedgerData(params)
-    modifiedLedgerData = responseData
-    userMessages = messages
+    if(![statusTracker.SAP].includes(viewOne.currentFormStatus)){
+      let { responseData, messages } = await manageLedgerData(params)
+      modifiedLedgerData = responseData
+      userMessages = messages
+    }
     Object.assign(conditionForFeedbacks, condition);
     let modifiedTabs = await getModifiedTabsFiscalRanking(
       tabs,
