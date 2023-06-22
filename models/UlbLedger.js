@@ -40,6 +40,37 @@ async function rejectMapperFields(calculatedFields,year,frId,displayPriority){
     }
 }
 
+async function updateNextTargetYear(mapperYear,codes,ulbId,mapper,frObject,obj){
+    try{
+        let calculatedFields = ledgerFields[mapper.type].calculatedFrom
+        let rejectFields = false
+        let payload = {}
+        let displayPriority = mapper.displayPriority
+        let targetYear = ledgerFields[mapper.type].yearsApplicable.find(item => mapperYear.toString() != item)
+        let {reject,sum:calculatedAmount} = await getPreviousYearValues(targetYear,codes,ulbId,mapper,frObject,obj)
+        let mapperData = await Fiscalrankingmappers.findOne({
+            type:mapper.type,
+            fiscal_ranking:frObject._id,
+            year:ObjectId(targetYear)
+        }).lean()
+        if(calculatedAmount != mapperData.value){
+            payload.value = calculatedAmount
+            payload.ledgerUpdated = true
+            rejectFields = reject
+        }
+        if(Object.keys(payload).length > 0){
+            await updateMainElementMapper(payload,mapperData)
+        }
+        if(rejectFields){
+            await rejectMapperFields(calculatedFields,targetYear,frObject._id,displayPriority)
+        }
+    }
+
+    catch(err){
+        console.log("error in updateNextTargetYear ::: ",err.message)
+    }
+}
+
 async function sumOfCurrentObj(calculatedFields,year,frId,displayPriority){
     try{
         let mapperObjects = await Fiscalrankingmappers.find({
@@ -54,6 +85,19 @@ async function sumOfCurrentObj(calculatedFields,year,frId,displayPriority){
     }
     catch(err){
         console.log("error in sumOfCurrentObj :::: ",err.message)
+    }
+}
+
+async function updateMainElementMapper(payload,mapper){
+    try{
+        let updateMapper = await Fiscalrankingmappers.findOneAndUpdate({
+            "_id":ObjectId(mapper._id)
+        },{
+            "$set":payload
+        })
+    }
+    catch(err){
+        console.log("error in updateMainMapperTable ::: ",err.message)
     }
 }
 
@@ -94,13 +138,10 @@ LedgerSchema.post("findOneAndUpdate",async function (doc){
                     payload.ledgerUpdated = true
                     rejectFields = reject
                 }
+                await updateNextTargetYear(mapper.year,ledgerFields[mapper.type].codes,mapper.ulb,mapper,frObject,this)
             }   
             if(Object.keys(payload).length > 1){
-                let updateMapper = await Fiscalrankingmappers.findOneAndUpdate({
-                    "_id":ObjectId(mapper._id)
-                },{
-                    "$set":payload
-                })
+                await updateMainElementMapper(payload,mapper)
             }
             if(rejectFields){
                 await rejectMapperFields(calculatedFields,mapper.year,frObject._id,mapper.displayPriority)
@@ -157,10 +198,7 @@ const getPreviousYearValues = async(mapperYear,codes,ulbId,mapper,frObject,obj)=
             }
         }
         let containsZero = Object.values(yearWiseData).some(item => item.includes(0))
-        console.log("containsZero :: ",containsZero)
-        console.log("yearWiseData ::: ",yearWiseData)
         let sumOfChildFields = await sumOfCurrentObj(calculatedFields,mapper.year,frObject._id,mapper.displayPriority)
-        console.log("sumOfChildFields :: ",sumOfChildFields)
         if(containsZero) {
             return {
                 reject : false,

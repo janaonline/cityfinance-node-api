@@ -1316,7 +1316,6 @@ async function updatePercentage(approvedPerc,rejectedPerc,ulb,design_year){
       "progress.approvedProgress":approvedPerc < 100 && approvedPerc !== 0 ? approvedPerc.toFixed(2).toString() : parseInt(approvedPerc).toString() ,
       "progress.rejectedProgress":rejectedPerc < 100 && rejectedPerc !== 0 ? rejectedPerc.toFixed(2).toString() : parseInt(rejectedPerc).toString() 
     }
-    console.log("payload :: ",payload)
     let up = await FiscalRanking.findOneAndUpdate(filter,{
       "$set":payload
     })
