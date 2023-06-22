@@ -2,7 +2,8 @@ const XVFcGrantForm = require('../../models/XVFcGrantForm');
 const GfcFormCollection = require('../../models/GfcFormCollection');
 const OdfFormCollection = require('../../models/OdfFormCollection');
 const Rating = require('../../models/Rating');
-const minMax = require('../../util/minMax')
+const minMax = require('../../util/minMax');
+const { YEAR_CONSTANTS } = require('../../util/FormNames');
 
 // let test1Data ={ 
 //     "_id" : ("5fce2bdeff874c1ad9774c4f"), 
@@ -113,7 +114,11 @@ const minMax = require('../../util/minMax')
 //     "design_year" : ("606aadac4dff55e6c075c507")
 // }
 
-module.exports.calculateSlbMarks = (data) => {
+module.exports.calculateSlbMarks = (data, flag) => {
+    if(flag){
+        const yearToCalculate = 2122;
+        return calculateSlbMarks2324(data, yearToCalculate);
+    }
     let obj = {
         waterSuppliedPerDay : {
             baseline : {
@@ -245,6 +250,98 @@ module.exports.calculateSlbMarks = (data) => {
     return obtainedMarks;
 }
 
+function calculateSlbMarks2324(data, year) {
+    try {
+      const slbCategories = [
+        "waterSuppliedPerDay",
+        "reduction",
+        "houseHoldCoveredWithSewerage",
+        "houseHoldCoveredPipedSupply",
+      ];
+      const obj = {};
+      const yearUpdateNumber = 101;
+      for (const category of slbCategories) {
+        obj[category] = {
+          baseline: {
+            [`${year}`]: "",
+          },
+          target: {
+            [`${year + yearUpdateNumber}`]: "",
+          },
+          achieved: {
+            [`${year + yearUpdateNumber}`]: "",
+          },
+        };
+        const ignoreKeys = ["_id", "total"]
+        let counter =0;
+        for (const el in data) {
+          if (typeof data[el] === "number" && !ignoreKeys.includes(el)) {
+            if (el.includes(category) && el.includes(year) && el.includes("actual")
+            ) {
+              obj[category].baseline[year] = data[el];
+              counter++;
+            } else if (
+              el.includes(category) &&
+              el.includes(`${year + yearUpdateNumber}`) &&
+              !el.includes("actual")
+            ) {
+              obj[category].target[`${year + yearUpdateNumber}`] = data[el];
+              counter++;
+            } else if (
+              el.includes(category) &&
+              el.includes(`${year + yearUpdateNumber}`) &&
+              el.includes("actual")
+            ) {
+              obj[category].achieved[`${year + yearUpdateNumber}`] = data[el];
+              counter++;
+            }
+          }
+          if (counter >= 3) break;
+        }
+      }
+      const obtainedMarks = [];
+      for (const category of slbCategories) {
+        const { baseline, target, achieved } = obj[category];
+
+        if (
+          baseline[`${year}`] &&
+          target[`${year + yearUpdateNumber}`] &&
+          achieved[`${year + yearUpdateNumber}`]
+        ) {
+          const x = Number(baseline[`${year}`]);
+          const y = Number(target[`${year + yearUpdateNumber}`]);
+          const z = Number(achieved[`${year + yearUpdateNumber}`]);
+
+          if (category === "reduction") {
+            obtainedMarks.push(
+              decrementFormula(
+                x,
+                y,
+                z,
+                minMax.reduction.min,
+                minMax.reduction.max
+              )
+            );
+          } else {
+            obtainedMarks.push(
+              incrementFormula(
+                x,
+                y,
+                z,
+                minMax[category].min,
+                minMax[category].max
+              )
+            );
+          }
+        }
+      }
+      return obtainedMarks;
+    } catch (error) {
+      throw `calculateSlbMarks2324:: ${error.message}`;
+    }
+};
+  
+  
 function incrementFormula(x, y, z, minMarks, maxMarks){
     let marks =0;
     if(z>=y){
@@ -252,7 +349,7 @@ function incrementFormula(x, y, z, minMarks, maxMarks){
     } else if(z<=x){
         marks = minMarks;
     } else if(z>x && z<y){
-        marks = ((z-x)/(y-x))*maxMarks;
+        marks = Number((((z-x)/(y-x))*maxMarks).toFixed(2));
     }
     return marks;
 }
@@ -264,7 +361,7 @@ function decrementFormula(x, y, z, minMarks, maxMarks){
     } else if(z>=x){
         marks = minMarks;
     } else if(z<x && z>y){
-        marks = ((x-z)/(x-y))*maxMarks;
+        marks = Number((((x-z)/(x-y))*maxMarks).toFixed(2));
     }
     return marks;
 }

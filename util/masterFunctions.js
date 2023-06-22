@@ -3,6 +3,13 @@ const CurrentStatus = require("../models/CurrentStatus");
 const StatusHistory = require("../models/StatusHistory");
 const FORMJSON  = require('../models/FormsJson');
 const { MODEL_PATH } = require("../util/FormNames");
+const {years} = require("../service/years")
+const grantDistributeOptions = {
+  "Yes":"As per Census 2011",
+  "No":"As per SFC Recommendations"
+}
+
+
 const getLabels = (formName)=>{
   try{
     switch (formName){
@@ -27,7 +34,8 @@ module.exports.radioSchema = (key,formName,options=["Yes","No"])=>{
   return {
       type:String,
       enum:options,
-      required:[true,`${keyName} is required`],
+      required:[false,`${keyName} is required`],
+      default:null
   }
 }
 module.exports.pdfSchema = (required = false)=>{
@@ -42,6 +50,7 @@ module.exports.limitValidationSchema = (keyName,min,max,mandatory=false)=>{
       min:min,
       max:[max,`${keyName} must not be greater than ${max}`],
       required : mandatory,
+      default:null,
   }
 }
 
@@ -54,12 +63,14 @@ module.exports.ledgerFields = {
   "fixedAsset":{
     "codes":["410"],
     "logic":"",
-    "calculatedFrom":["faLandBuild","faOther"]
+    "calculatedFrom":["faLandBuild","faOther"],
+    "yearsApplicable":[years['2018-19'],years['2019-20']]
   },
   "CaptlExp":{
     "codes":["410","412"],
     "logic":"CurrentCodeYear - PreviousCodeYear",
-    "calculatedFrom":["CaptlExpWaterSupply","CaptlExpSanitation","CaptExpOther"]
+    "calculatedFrom":["CaptlExpWaterSupply","CaptlExpSanitation","CaptExpOther"],
+    "yearsApplicable":[years['2018-19'],years['2019-20']]
   }
 }
 module.exports.saveFormHistory = (params) => {
@@ -76,7 +87,7 @@ module.exports.saveFormHistory = (params) => {
 
 module.exports.saveCurrentStatus = (params) => {
   return new Promise(async (resolve, reject) => {
-    try {
+    try {grantDistributeOptions
       const { body, session } = params;
       if (body.recordId) {
         let currentStatus = await CurrentStatus.findOneAndUpdate(
@@ -133,3 +144,5 @@ module.exports.getShortKeys = async (params) => {
     return error.message;
   }
 }
+
+module.exports.grantDistributeOptions = grantDistributeOptions

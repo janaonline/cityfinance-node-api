@@ -661,7 +661,8 @@ module.exports.get2223 = catchAsync(async (req, res) => {
         console.log("Not Fetched", error.message);
       });
 
-
+    //   return res.json(slbWeigthed);
+    slbWeigthed = roundOffToTwoDigits(slbWeigthed);
     Object.assign(responseObj.fourSLB.data, slbWeigthed)
     // let usableData = []
     let arr = []
@@ -722,7 +723,8 @@ module.exports.get2223 = catchAsync(async (req, res) => {
     //     "waterSuppliedPerDay_actual2122": wtAvgSLB[2],
     //     "reduction_actual2122": wtAvgSLB[3]
     //   })
-    let scores = calculateSlbMarks(slbWeigthed)
+    slbWeigthed = roundOffToTwoDigits(slbWeigthed);
+    let scores = calculateSlbMarks(slbWeigthed, false)
     Object.assign(slbWeigthed, {
         "houseHoldCoveredWithSewerage_score": scores[2],
         "houseHoldCoveredPipedSupply_score": scores[3],
@@ -735,7 +737,7 @@ module.exports.get2223 = catchAsync(async (req, res) => {
         popDataGFC += el2.population
     })
     if(gfcData.length){
-        responseObj.gfc.score = numeratorGFC / popDataGFC;
+        responseObj.gfc.score = Number((numeratorGFC / popDataGFC).toFixed(2));
     }else{
         responseObj.gfc.score = 0;
     }
@@ -746,7 +748,7 @@ module.exports.get2223 = catchAsync(async (req, res) => {
         popDataOdf += el2.population
     })
     if(odfData.length){
-        responseObj.odf.score = numeratorOdf / popDataOdf;
+        responseObj.odf.score = Number((numeratorOdf / popDataOdf).toFixed(2));
     }else{
         responseObj.odf.score = 0;
 
@@ -754,7 +756,7 @@ module.exports.get2223 = catchAsync(async (req, res) => {
     responseObj.fourSLB.data = slbWeigthed
 
     if(design_year === YEAR_CONSTANTS['23_24']){
-       responseObj.fourSLB.data = get2223TwentySlbData(TEslbdata2, slbWeigthed);
+       responseObj.fourSLB.data = get2223TwentySlbData(TEslbdata2, slbWeigthed, design_year);
        responseObj = updateResponse(responseObj, false)
     }
     return res.status(200).json({
@@ -762,6 +764,24 @@ module.exports.get2223 = catchAsync(async (req, res) => {
         data: responseObj
     })
 })
+
+function roundOffToTwoDigits(obj) {
+  try {
+    const newObj = {};
+
+    for (let key in obj) {
+      if (typeof obj[key] === "number") {
+        newObj[key] = Number(obj[key].toFixed(2));
+      } else {
+        newObj[key] = obj[key];
+      }
+    }
+
+    return newObj;
+  } catch (error) {
+    throw `roundOffToTwoDigits:: ${error.message}`;
+  }
+}
 
 /**
  * The function retrieves data related to SLB forms for ULBs based on the design year and updates the
@@ -947,7 +967,8 @@ function removeApproved(pending, approved) {
  * @returns the updated `slbWeigthed` object with calculated scores for four different indicators
  * related to water supply and sanitation.
  */
-function get2223TwentySlbData(TEslbdata2, slbWeigthed) {
+function get2223TwentySlbData(TEslbdata2, slbWeigthed, design_year) {
+  try {
     let arr1 = [];
     let filteredData2 = [];
     TEslbdata2.forEach((el) => {
@@ -973,45 +994,51 @@ function get2223TwentySlbData(TEslbdata2, slbWeigthed) {
         { id: "", value: 0 },
         { id: "", value: 0 },
       ];
-    arr1.forEach(el => {
-        el.data.forEach((el2, index) => {
-            numerator2[index]['id'] = el2.indicatorLineItem.toString();
-            numerator2[index]['value'] += el2.actual.value * el.population;
-            popData2[index]['value'] += el.population;
-            popData2[index]['id'] = el2.indicatorLineItem.toString();
-        });
+    arr1.forEach((el) => {
+      el.data.forEach((el2, index) => {
+        numerator2[index]["id"] = el2.indicatorLineItem.toString();
+        numerator2[index]["value"] += el2.actual.value * el.population;
+        popData2[index]["value"] += el.population;
+        popData2[index]["id"] = el2.indicatorLineItem.toString();
+      });
     });
 
     let wtAvgSLB2 = [];
     numerator2.forEach((el, index) => {
-        wtAvgSLB2.push({ value: numerator2[index].value / popData2[index].value, id: numerator2[index].id });
-        if (el.id == lineItemIndicatorIDs[0]) {
-            Object.assign(slbWeigthed, {
-                "houseHoldCoveredWithSewerage_actual2122": wtAvgSLB2[index].value,
-            });
-
-        } else if (el.id == lineItemIndicatorIDs[1]) {
-            Object.assign(slbWeigthed, {
-                "houseHoldCoveredPipedSupply_actual2122": wtAvgSLB2[index].value,
-            });
-        } else if (el.id == lineItemIndicatorIDs[2]) {
-            Object.assign(slbWeigthed, {
-                "waterSuppliedPerDay_actual2122": wtAvgSLB2[index].value,
-            });
-        } else if (el.id == lineItemIndicatorIDs[3]) {
-            Object.assign(slbWeigthed, {
-                "reduction_actual2122": wtAvgSLB2[index].value,
-            });
-        }
+      wtAvgSLB2.push({
+        value: numerator2[index].value / popData2[index].value,
+        id: numerator2[index].id,
+      });
+      if (el.id == lineItemIndicatorIDs[0]) {
+        Object.assign(slbWeigthed, {
+          houseHoldCoveredWithSewerage_actual2122: wtAvgSLB2[index].value,
+        });
+      } else if (el.id == lineItemIndicatorIDs[1]) {
+        Object.assign(slbWeigthed, {
+          houseHoldCoveredPipedSupply_actual2122: wtAvgSLB2[index].value,
+        });
+      } else if (el.id == lineItemIndicatorIDs[2]) {
+        Object.assign(slbWeigthed, {
+          waterSuppliedPerDay_actual2122: wtAvgSLB2[index].value,
+        });
+      } else if (el.id == lineItemIndicatorIDs[3]) {
+        Object.assign(slbWeigthed, {
+          reduction_actual2122: wtAvgSLB2[index].value,
+        });
+      }
     });
-    let scores2 = calculateSlbMarks(slbWeigthed);
+    slbWeigthed = roundOffToTwoDigits(slbWeigthed);
+    let scores2 = calculateSlbMarks(slbWeigthed, true);
     Object.assign(slbWeigthed, {
-        "houseHoldCoveredWithSewerage_score": scores2[2],
-        "houseHoldCoveredPipedSupply_score": scores2[3],
-        "waterSuppliedPerDay_score": scores2[0],
-        "reduction_score": scores2[1],
+      houseHoldCoveredWithSewerage_score: Number(scores2[2].toFixed(2)),
+      houseHoldCoveredPipedSupply_score: Number(scores2[3].toFixed(2)),
+      waterSuppliedPerDay_score: Number(scores2[0].toFixed(2)),
+      reduction_score: Number(scores2[1].toFixed(2)),
     });
     return slbWeigthed;
+  } catch (error) {
+    throw `get2223TwentySlbData:: ${error.message}`;
+  }
 }
 
 /**
@@ -1093,8 +1120,7 @@ function updateResponse(response, InsufficientFlag) {
           tables: getPerformanceAsstTable(),
           dataCount: {},
           uaScore: {
-            title: `On the basis of the total marks obtained by UA,
-                     proportionate grants shall be recommended by MOH&UA as per the table given below:`,
+            title: `Total UA Score:`,
             value: InsufficientFlag ? null :
               getUAScore(response["fourSLB"]['data']) +
               getindicators_swmScore(
@@ -1185,10 +1211,10 @@ function getColumnsIndicatorWss() {
       key: "achieved2223",
       display_name: "Achieved <br> 2022-23",
     },
-    {
-      key: "target2122",
-      display_name: "Target <br> 2021-22",
-    },
+    // {
+    //   key: "target2122",
+    //   display_name: "Target <br> 2021-22",
+    // },
     {
       key: "target2324",
       display_name: "Target <br> 2023-24",
@@ -1225,7 +1251,7 @@ function convertToRows(oldFormat) {
       {
         serviceLevelIndicators: "% of Non-revenue water",
         key: "reduction",
-        benchmark: "70 %",
+        benchmark: "20 %",
         wghtd_score: "reduction_score",
       },
       {
@@ -1258,7 +1284,7 @@ function convertToRows(oldFormat) {
         achieved2122:  String(oldFormat.fourSLB.data[`${indicator.key}_actual2122`]) === "" ? null : String(oldFormat.fourSLB.data[`${indicator.key}_actual2122`]) ,
         target2223: String(oldFormat.fourSLB.data[`${indicator.key}2223`]) === "" ? null : String(oldFormat.fourSLB.data[`${indicator.key}2223`]) ,
         achieved2223: String(oldFormat.fourSLB.data[`${indicator.key}_actual2223`]) === "" ? null : String(oldFormat.fourSLB.data[`${indicator.key}_actual2223`]) ,
-        target2122: String(oldFormat.fourSLB.data[`${indicator.key}2122`]) === "" ? null : String(oldFormat.fourSLB.data[`${indicator.key}2122`]) ,
+        // target2122: String(oldFormat.fourSLB.data[`${indicator.key}2122`]) === "" ? null : String(oldFormat.fourSLB.data[`${indicator.key}2122`]) ,
         target2324: String(oldFormat.fourSLB.data[`${indicator.key}2324`]) === "" ? null : String(oldFormat.fourSLB.data[`${indicator.key}2324`]) ,
         target2425: String(oldFormat.fourSLB.data[`${indicator.key}2425`]) === "" ? null : String(oldFormat.fourSLB.data[`${indicator.key}2425`]),
         wghtd_score: String(oldFormat.fourSLB.data[indicator.wghtd_score]) === "" ? null : String(oldFormat.fourSLB.data[indicator.wghtd_score]) ,
@@ -1366,7 +1392,7 @@ function getGFCFormat(input) {
       data: [],
       gfcRatings: {
         name: "GFC Rating",
-        value: Number(input.score.toFixed()),
+        value: Number(input.score.toFixed(2)),
       },
     };
 
@@ -1420,7 +1446,7 @@ function getODFFormat(input) {
       data: [],
       odfRatings: {
         name: "ODF Rating",
-        value: Number(input.score.toFixed()),
+        value: Number(input.score.toFixed(2)),
       },
     };
 

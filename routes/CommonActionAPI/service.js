@@ -28,14 +28,17 @@ var ignorableKeys = ["actionTakenByRole","actionTakenBy","ulb","design_year"]
 let groupedQuestions = {
     "location":['lat','long']
 }
-
-
-
-
+let addMoreFields = ["transferGrantdetail_tableview_addbutton"]
 let yearValueField = {
     "year":"",
     "value":""
 }
+
+let nestedTables = {
+    "GtcInstallmentForm" :"TransferGrantDetailForm"
+}
+
+
 let objectFields = {
     "waterSupply_actualIndicator":{"fieldName":"actualYear","object":{...yearValueField}},
     "waterSupply_targetIndicator":{"fieldName":"targetYear","object":{...yearValueField}},
@@ -243,7 +246,6 @@ var inputType = {
     "14":"value",
     "5":"value"
 }
-
 const calculateStatus = (status, actionTakenByRole, isDraft, formType) => {
     switch (formType) {
         case "ULB":
@@ -1539,8 +1541,12 @@ function traverseAndFlatten(currentNode, target, flattenedKey) {
         }
         if (currentNode.hasOwnProperty(key)) {
             var newKey;
+            if(key === "receiptDate"){
+                console.log(">>>>>> re >>>>",flattenedKey)
+            }
             if (flattenedKey === undefined) {
                 newKey = key;
+                
             } else {
                 let iteratorObjKey = flattenedKey.split(".")[0]
                 newKey = flattenedKey + '.' + key;
@@ -1551,11 +1557,14 @@ function traverseAndFlatten(currentNode, target, flattenedKey) {
             // }
             }
             var value = currentNode[key] === null ? "" : currentNode[key]
-            if (typeof value === "object" && !Array.isArray(value) && !ignorableKeys.includes(key)) {
+            let isDateInstance = (value instanceof Date)
+            if (typeof value === "object" && !Array.isArray(value) && !ignorableKeys.includes(key) && !isDateInstance) {
                 traverseAndFlatten(value, target, newKey);
             } else {
                 target[newKey] = value;
+                // console.log(">>>>>>>>>>>>>>>>>>>",newKey)
             }
+            
         }
     }
 }
@@ -1564,7 +1573,7 @@ module.exports.getFlatObj = (obj) => {
     let flattendObj = {}
     flattendObj['parent_arr'] = new Set()
     flattendObj['parent_obj'] = new Set()
-    traverseAndFlatten(obj, flattendObj)
+    traverseAndFlatten({...obj}, flattendObj)
     // let flattenArr = []
     flattendObj['parent_arr'] = Array.from(flattendObj['parent_arr'])
     flattendObj['parent_obj'] = Array.from(flattendObj['parent_obj'])
@@ -1966,10 +1975,12 @@ async function handleRangeIfExists(questionObj,formObj){
         }
         // get range from models if exists
         else if(formObj.modelName){
-            let schema = moongose.model(formObj.modelName).schema.obj[questionObj.shortKey]          
+            let schema = moongose.model(formObj.modelName).schema.obj[questionObj.shortKey] ||  moongose.model(nestedTables[formObj.modelName]).schema.obj[questionObj.shortKey]
             if(schema){
                 obj.minRange = Array.isArray(schema?.min) ? schema.min[0] : schema.min
                 obj.maxRange = Array.isArray(schema?.max) ? schema.max[0] : schema.max
+                obj.min = Array.isArray(schema?.min) ? schema.min[0] : schema.min
+                obj.max = Array.isArray(schema?.max) ? schema.max[0] : schema.max
                 if(obj.minRange != undefined  && obj.maxRange != undefined ){
                     obj.hint = obj?.minRange.toString() + "-"+ obj?.maxRange.toString()
                 }
@@ -1998,6 +2009,7 @@ async function handleArrOfObjects(question,flattedForm){
                 if(DurCase.includes(question.shortKey)){
                     obj.percProjectCost = ((obj.expenditure / obj.cost)*100).toFixed(2)
                 }
+                obj.modelName = flattedForm.modelName || ""
                 var nested_arr = [] 
                 for(let keys in obj){
                     let keysObj = customkeys[question.shortKey]
@@ -2012,6 +2024,7 @@ async function handleArrOfObjects(question,flattedForm){
                         questionObj =  await handleDbValues(questionObj,formObj,order) 
                         if(questionObj.isQuestionDisabled !== true){
                             questionObj.isQuestionDisabled = handleDisableFields({disableFields})
+                            
                             if(Object.keys(customDisableFields).includes(keys)){
                                 questionObj.isQuestionDisabled = obj[customDisableFields[keys]]
                             }
@@ -2112,6 +2125,19 @@ async function appendvalues(childQuestionData,flattedForm,shortKey,question){
         if(specialCases.includes(shortKey)){
             if(flattedForm[modelKey]){
                 childQuestionData = await handleArrOfObjects(question,flattedForm)
+                let questionLength = childQuestionData.length
+                if(addMoreFields.includes(shortKey)){
+                    console.log(">>>>>>>>>>>if conditipon :::",questionLength)
+                    question.value = questionLength
+                    question.modelValue = questionLength
+                    question.selectedValue = {
+                        "text":questionLength,
+                        "value":questionLength,
+                        "label":questionLength
+                        
+                    }
+
+                }
             }
         }
         return [...childQuestionData]
@@ -2347,11 +2373,26 @@ const handleValues = async(question,obj,flattedForm,mainKey=false)=>{
     }
 }
 
+
+function dateMinMax(flattedForm,shortKey,question){
+    try{
+        if(flattedForm.modelName){
+            let schema = moongose.model(flattedForm.modelName).schema.obj[shortKey]
+            if(schema){
+                question.min = Array.isArray(schema?.min) ? schema.min[0] : schema.min
+                question.max  = Array.isArray(schema?.max) ? schema.max[0] : schema.max
+            }
+        }
+    }
+    catch(err){
+        console.log("error in dateMinMax ::: ",err.message)
+    }
+}
+
 function handledateCase(question,obj,flattedForm){
     try{
         
         let mainKey = question.shortKey
-        // console.log("flattedForm[mainKey] ::: ",flattedForm[mainKey].toISOString())
         if(flattedForm[mainKey] === undefined || flattedForm[mainKey] === null){
             flattedForm[mainKey] = ""
         }
@@ -2362,6 +2403,7 @@ function handledateCase(question,obj,flattedForm){
         question['value'] = flattedForm[mainKey]
         obj['textValue'] = flattedForm[mainKey]
         obj['value'] = flattedForm[mainKey]
+        // dateMinMax(flattedForm,mainKey,question)
     }
     catch(err){
         console.log("error in dateCase :::: ",err.message)
@@ -2428,7 +2470,6 @@ function manageDisabledQues(question,flattedForm){
                     else{
                         question['isQuestionDisabled'] = true
                     }
-                    
                 }
             }
 
@@ -2441,10 +2482,18 @@ function manageDisabledQues(question,flattedForm){
     }
 }
 
-async function mutuateGetPayload(jsonFormat, flattedForm, keysToBeDeleted,role) {
+async function mutuateGetPayload(jsonFormat, flatForm, keysToBeDeleted,role) {
     try {
-        let obj = [...jsonFormat]
+        let obj = JSON.parse(JSON.stringify(jsonFormat))
+        let flattedForm = JSON.parse(JSON.stringify(flatForm))
         roleWiseJson(obj[0],role)
+        // const transDate = obj?.[0]?.question?.find(q => q.shortKey == 'transDate');
+        // if(transDate) {
+        //     const [ maxDate ] = new Date().toISOString().split('T');
+        //     transDate['max'] = maxDate;
+        //     transDate['maxRange'] = maxDate;
+        // }
+        // console.log('transDate', transDate);
         obj[0] = await appendExtraKeys(keysToBeDeleted, obj[0], flattedForm)
         await deleteKeys(flattedForm, keysToBeDeleted)
         for (let key in obj) {
@@ -2460,7 +2509,13 @@ async function mutuateGetPayload(jsonFormat, flattedForm, keysToBeDeleted,role) 
                     question['selectedValue'] = answer
                     await manageDisabledQues(question,flattedForm)
                     await deleteExtraKeys(question)
+                    let modifiedObj = await handleRangeIfExists(question, flattedForm)
+                    question.min = modifiedObj.min ? modifiedObj.min : question.min;
+                    question.max = modifiedObj.max ? modifiedObj.max : question.min;
+                    question.minRange = modifiedObj.minRange ? modifiedObj.minRange : question.minRange;
+                    question.maxRange = modifiedObj.maxRange ? modifiedObj.maxRange : question.minRange;
                 }
+
                 let modifiedKeys = Object.keys(modifiedShortKeys)
                 let modifiedObjects =  questions.filter(item => modifiedKeys.includes(item.shortKey))
             }
