@@ -1290,7 +1290,7 @@ exports.getView = async function (req, res, next) {
       financialYearTableHeader,
       messages: userMessages
     };
-    if (messages.length > 0) {
+    if (userMessages.length > 0) {
       let {approvedPerc,rejectedPerc} = calculatePercentage(modifiedLedgerData, requiredFields, viewOne)
       let {ulb,design_year} = req.query
       await updatePercentage(approvedPerc,rejectedPerc,ulb,design_year)
