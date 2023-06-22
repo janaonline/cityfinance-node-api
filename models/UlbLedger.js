@@ -82,14 +82,14 @@ LedgerSchema.post("findOneAndUpdate",async function (doc){
             let rejectFields = await ShouldReject(frObject.currentFormStatus,mapper.status)
             let maximumValue = ledgerFields[mapper.type].codes.reduce((a,b) => Math.max(parseInt(a),parseInt(b)) ,0)
             if(!ledgerFields[mapper.type].logic && codeValue){
-               if(doc.amount.toString() != mapper.value){
+               if(doc?.amount != mapper.value){
                     payload.value = doc.amount
                     payload.ledgerUpdated = true
                }
             }
             else if(ledgerFields[mapper.type].logic && maximumValue.toString() === lineItemCode.toString() ){
-                let calculatedAmount = await getPreviousYearValues(mapper.year,ledgerFields[mapper.type].codes,mapper.ulb,this)
-                if(calculatedAmount.toString() != mapper.value){
+                let {reject,sum:calculatedAmount} = await getPreviousYearValues(mapper.year,ledgerFields[mapper.type].codes,mapper.ulb,mapper,frObject,this)
+                if(calculatedAmount != mapper.value){
                     payload.value = calculatedAmount
                     payload.ledgerUpdated = true
                     rejectFields = reject
