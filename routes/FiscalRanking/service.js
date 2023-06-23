@@ -76,7 +76,7 @@ async function manageLedgerData(params) {
     }).sort({
       "_id": -1
     }).limit(1).lean()
-    console.log("userRole :: ",role)
+    console.log("userRole :: ", role)
     let formHistoryData = formHistory[0] && formHistory[0].data.length ? formHistory[0]?.data[0]['fiscalMapperData'].filter(item => ledgerKeys.includes(item.type) && item.modelName === "ULBLedger") : []
     let errYears = new Set()
     let dps = new Set()
@@ -93,18 +93,18 @@ async function manageLedgerData(params) {
             catch (err) {
               errorWithDps[question.displayPriority] = [yearName]
             }
-            let calculationFields =  Object.entries(responseData.financialInformation).reduce((result,[key,value]) => ({...result, ...(question?.calculatedFrom.includes(value.displayPriority)) && {[key]: value}}) ,{})
-            Object.values(calculationFields).forEach((item)=>{
-              item.yearData.forEach((childItem)=>{
-                let reason  = `Data for ${question.displayPriority} has been changed. kindly revisit the calculations`
-                if(childItem.year.toString() ===  yearObj.year){
-                  childItem.readonly = [statusTracker.RBP,statusTracker.IP].includes(currentFormStatus) && [questionLevelStatus['1']].includes(childItem.status)  && role === userTypes.ulb ? false  : childItem.readonly
-                  childItem.rejectReason = [statusTracker.RBP,statusTracker.IP].includes(currentFormStatus) && [questionLevelStatus['1']].includes(childItem.status) ? reason  : childItem.rejectReason
-                  childItem.status = [statusTracker.RBP,statusTracker.IP].includes(currentFormStatus) && [questionLevelStatus['1']].includes(childItem.status)  ? "REJECTED"  :  childItem.status 
+            let calculationFields = Object.entries(responseData.financialInformation).reduce((result, [key, value]) => ({ ...result, ...(question?.calculatedFrom.includes(value.displayPriority)) && { [key]: value } }), {})
+            Object.values(calculationFields).forEach((item) => {
+              item.yearData.forEach((childItem) => {
+                let reason = `Data for ${question.displayPriority} has been changed. kindly revisit the calculations`
+                if (childItem.year.toString() === yearObj.year) {
+                  childItem.readonly = [statusTracker.RBP, statusTracker.IP].includes(currentFormStatus) && [questionLevelStatus['1']].includes(childItem.status) && role === userTypes.ulb ? false : childItem.readonly
+                  childItem.rejectReason = [statusTracker.RBP, statusTracker.IP].includes(currentFormStatus) && [questionLevelStatus['1']].includes(childItem.status) ? reason : childItem.rejectReason
+                  childItem.status = [statusTracker.RBP, statusTracker.IP].includes(currentFormStatus) && [questionLevelStatus['1']].includes(childItem.status) ? "REJECTED" : childItem.status
                 }
               })
             })
-            responseData.financialInformation = {...responseData.financialInformation,...calculationFields}
+            responseData.financialInformation = { ...responseData.financialInformation, ...calculationFields }
           }
         }
       }
@@ -119,7 +119,7 @@ async function manageLedgerData(params) {
       str += " has been updated please revisit calculations"
       let msg = `Data for fields ${Array.from(dps).join(",")} and years ${Array.from(errYears).join(",")} has been updated. kindly revisit those calculations`
       messages.push(str)
-      
+
     }
     return {
       responseData,
@@ -752,7 +752,7 @@ async function getPreviousYearValues(pf, ulbData) {
         }
       }
     }
-    console.log("temp ::: ",temp)
+    console.log("temp ::: ", temp)
     if (
       temp[previousYearId].length == 2 &&
       temp[pf.year.toString()].length == 2
@@ -1264,7 +1264,7 @@ exports.getView = async function (req, res, next) {
      * This function always get latest data for ledgers
      */
     let modifiedLedgerData = fyDynemic
-    if(![statusTracker.SAP].includes(viewOne.currentFormStatus)){
+    if (![statusTracker.SAP].includes(viewOne.currentFormStatus)) {
       let { responseData, messages } = await manageLedgerData(params)
       modifiedLedgerData = responseData
       userMessages = messages
@@ -1291,9 +1291,9 @@ exports.getView = async function (req, res, next) {
       messages: userMessages
     };
     if (userMessages.length > 0) {
-      let {approvedPerc,rejectedPerc} = calculatePercentage(modifiedLedgerData, requiredFields, viewOne)
-      let {ulb,design_year} = req.query
-      await updatePercentage(approvedPerc,rejectedPerc,ulb,design_year)
+      let { approvedPerc, rejectedPerc } = calculatePercentage(modifiedLedgerData, requiredFields, viewOne)
+      let { ulb, design_year } = req.query
+      await updatePercentage(approvedPerc, rejectedPerc, ulb, design_year)
     }
     return res
       .status(200)
@@ -1316,8 +1316,8 @@ async function updatePercentage(approvedPerc, rejectedPerc, ulb, design_year) {
       "progress.approvedProgress": approvedPerc < 100 && approvedPerc !== 0 ? approvedPerc.toFixed(2).toString() : parseInt(approvedPerc).toString(),
       "progress.rejectedProgress": rejectedPerc < 100 && rejectedPerc !== 0 ? rejectedPerc.toFixed(2).toString() : parseInt(rejectedPerc).toString()
     }
-    let up = await FiscalRanking.findOneAndUpdate(filter,{
-      "$set":payload
+    let up = await FiscalRanking.findOneAndUpdate(filter, {
+      "$set": payload
     })
 
   }
@@ -2532,17 +2532,17 @@ function getProjectionQueries(
           stateName: "$stateName.name",
           populationType: getPopulationCondition(),
           populationCategory: "$population",
-          "ulbDataSubmitted": {
+          ulbDataSubmitted: {
             "$convert":
             {
-              input: "$formData.progress.ulbCompletion",
+              input: "$fiscalrankings.progress.ulbCompletion",
               to: "double"
             }
           },
-          "pmuVerificationProgress": {
+          pmuVerificationProgress: {
             "$convert":
             {
-              input: "$formData.progress.approvedProgress",
+              input: "$fiscalrankings.progress.approvedProgress",
               to: "double"
             }
           },
@@ -2895,7 +2895,6 @@ const getAggregateQuery = async (
     if (stateId !== null && stateId !== undefined) {
       match_ulb_with_access["$match"]["state"] = ObjectId(stateId);
     }
-
     query.push(match_ulb_with_access);
     query.push({
       "$lookup": {
@@ -2912,7 +2911,6 @@ const getAggregateQuery = async (
       }
     })
     // console.log("match_ulb_with_access", match_ulb_with_access)
-
     // stage 2 get all states realted to ulb
     if (csv) {
       get_state_query(query, stateId);
