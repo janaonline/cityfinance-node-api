@@ -45,7 +45,8 @@ module.exports.ModelNames = {
     gfc: "GfcFormCollection",
     slb: "XVFcGrantULBForm",
     waterRej : "WaterRejenuvationRecycling",
-    actionPlan: "ActionPlans"
+    actionPlan: "ActionPlans",
+    slbScoring: "slbScoring"
 }
 
 module.exports.CollectionNames = {
@@ -61,10 +62,26 @@ module.exports.CollectionNames = {
     gfc: "gfcformcollections",
     slb: "xvfcgrantulbforms",
     waterRej: "waterrejenuvationrecyclings",
-    actionPlan: "actionplans"
+    actionPlan: "actionplans",
+    rating: "ratings",
+    slbScoring: "slbScoring"
 }
 
-
+module.exports.FormPathMappings = {
+    "annualaccountdatas":"AnnualAccounts",
+    "pfmsaccounts":"LinkPFMS",
+    "xvfcgrantulbforms":"XVFcGrantForm",
+    "twentyeightslbforms":"TwentyEightSlbsForm",
+    "utilizationreports":"UtilizationReport",
+    "granttransfercertificates":"GrantTransferCertificate",
+    "odfformcollections":"OdfFormCollection",
+    "gfcformcollections":"GfcFormCollection",
+    "statefinancecommissionformations":"StateFinanceCommissionFormation",
+    "propertytaxfloorrates":"PropertyTaxFloorRate",
+    "propertytaxops":"PropertyTaxOp",
+    "waterrejenuvationrecyclings":"WaterRejenuvationRecycling",
+    "actionplans":"ActionPlans",
+ };
 module.exports.FolderName = {
     'IndicatorForWaterSupply': "indicators_wss",
 

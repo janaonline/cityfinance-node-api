@@ -7,7 +7,8 @@ module.exports.FormNames = {
     annualAcc: "Annual Accounts",
     propTaxOp: "Property Tax Operationalisation",
     slb28: "28 SLBs",
-    indicatorForm: "Indicators for Water Supply and Sanitation"
+    indicatorForm: "Indicators for Water Supply and Sanitation",
+    slbScoring: "Submit Claims for 15th FC Grants"
 
 }
 
@@ -53,6 +54,31 @@ module.exports.MASTER_STATUS = {
     "Submission Acknowledged by PMU": 11,
 }
 
+module.exports.MASTER_FORM_STATUS = {
+    NO_STATUS: -1,
+    NOT_STARTED: 1,
+    IN_PROGRESS: 2,
+    UNDER_REVIEW_BY_STATE: 3,
+    UNDER_REVIEW_BY_MoHUA: 4,
+    RETURNED_BY_STATE: 5,
+    SUBMISSION_ACKNOWLEDGED_BY_MoHUA: 6,
+    RETURNED_BY_MoHUA: 7,
+    VERIFICATION_NOT_STARTED: 8,
+    VERIFICATION_IN_PROGRESS: 9,
+    RETURNED_BY_PMU: 10,
+    SUBMISSION_ACKNOWLEDGED_BY_PMU: 11,
+}
+
+module.exports.MASTER_FORM_QUESTION_STATUS = {
+    4: "APPROVED",
+    5: "REJECTED",
+    6: "APPROVED",
+    7: "REJECTED",
+    10: "REJECTED",
+    11: "APPROVED",
+    "": ""
+}
+
 module.exports.MASTER_STATUS_ID = {
     "-1": "No Status",
     1: "Not Started",
@@ -76,14 +102,14 @@ module.exports.FORMIDs = {
     'dur': 4,
     "twentyEightSlb": 6,
     "fiscalRanking": 9,
-    "GTC_STATE": 10,
+    "GTC_STATE": 7,
+    "GTC_TABLE_STRUCTURE":11.1,
     "GTC_ULB": 11,
     "waterRej": 12,
     "actionPlan": 13,
-    "indicatorForm": 14
-
+    "indicatorForm": 14,
+    "GrantAllocation":11.2
 }
-
 module.exports.FORM_LEVEL_SHORTKEY = {
     form: "form_level",
     tab: "tab_level",
