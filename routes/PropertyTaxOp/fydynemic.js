@@ -1,6 +1,8 @@
 const { years } = require("../../service/years")
 const { apiUrls } = require("../CommonActionAPI/service")
-const propertyTaxOpFormJson = () => {
+
+const propertyTaxOpFormJson = (role) => {
+  let readOnly = role === "ULB" ? false : true
   return {
     "_id": null,
     "ulb": "5fa24660072dab780a6f141e",
@@ -35,7 +37,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "ulbCollectPtax",
                 "year": "63735a5bd44534713673c1ca",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "radio-toggle",
                 "bottomText": "",
                 "placeHolder": ""
@@ -65,7 +67,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "ulbFinancialYear",
                 "year": "63735a5bd44534713673c1ca",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -95,7 +97,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "ulbPassedResolPtax",
                 "year": "63735a5bd44534713673c1ca",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "radio-toggle",
                 "bottomText": "",
                 "placeHolder": ""
@@ -131,7 +133,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "resolutionFile",
                 "year": "63735a5bd44534713673c1ca",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "file",
                 "bottomText": "",
                 "placeHolder": ""
@@ -161,7 +163,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "notificationPropertyTax",
                 "year": "63735a5bd44534713673c1ca",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "radio-toggle",
                 "bottomText": "",
                 "placeHolder": ""
@@ -192,7 +194,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "notificationAdoptionDate",
                 "year": "63735a5bd44534713673c1ca",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "date",
                 "bottomText": "",
                 "placeHolder": ""
@@ -232,7 +234,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "notificationIssuedBy",
                 "year": "63735a5bd44534713673c1ca",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "select",
                 "bottomText": "",
                 "placeHolder": ""
@@ -268,7 +270,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "notificationFile",
                 "year": "63735a5bd44534713673c1ca",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "file",
                 "bottomText": "",
                 "placeHolder": ""
@@ -300,7 +302,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "dmdIncludingCess",
                 "year": "63735a5bd44534713673c1ca",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -319,7 +321,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "dmdIncludingCess",
                 "year": "607697074dff55e6c0be33ba",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -338,7 +340,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "dmdIncludingCess",
                 "year": "606aadac4dff55e6c075c507",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -357,7 +359,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "dmdIncludingCess",
                 "year": "606aaf854dff55e6c075d219",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -376,7 +378,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "dmdIncludingCess",
                 "year": "606aafb14dff55e6c075d3ae",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -404,7 +406,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "cdmdIncludingCess",
                 "year": "63735a5bd44534713673c1ca",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -423,7 +425,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "cdmdIncludingCess",
                 "year": "607697074dff55e6c0be33ba",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -442,7 +444,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "cdmdIncludingCess",
                 "year": "606aadac4dff55e6c075c507",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -461,7 +463,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "cdmdIncludingCess",
                 "year": "606aaf854dff55e6c075d219",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -480,7 +482,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "cdmdIncludingCess",
                 "year": "606aafb14dff55e6c075d3ae",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -508,7 +510,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "admdIncludingCess",
                 "year": "63735a5bd44534713673c1ca",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -527,7 +529,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "admdIncludingCess",
                 "year": "607697074dff55e6c0be33ba",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -546,7 +548,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "admdIncludingCess",
                 "year": "606aadac4dff55e6c075c507",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -565,7 +567,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "admdIncludingCess",
                 "year": "606aaf854dff55e6c075d219",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -584,7 +586,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "admdIncludingCess",
                 "year": "606aafb14dff55e6c075d3ae",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -612,7 +614,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "dmdexcludingCess",
                 "year": "63735a5bd44534713673c1ca",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -631,7 +633,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "dmdexcludingCess",
                 "year": "607697074dff55e6c0be33ba",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -650,7 +652,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "dmdexcludingCess",
                 "year": "606aadac4dff55e6c075c507",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -669,7 +671,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "dmdexcludingCess",
                 "year": "606aaf854dff55e6c075d219",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -688,7 +690,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "dmdexcludingCess",
                 "year": "606aafb14dff55e6c075d3ae",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -723,7 +725,7 @@ const propertyTaxOpFormJson = () => {
                     "type": "taxTypeDemandChild",
                     "year": "63735a5bd44534713673c1ca",
                     "code": [],
-                    "readonly": false,
+                    "readonly": readOnly,
                     "formFieldType": "number",
                     "bottomText": "",
                     "placeHolder": ""
@@ -742,7 +744,7 @@ const propertyTaxOpFormJson = () => {
                     "type": "taxTypeDemandChild",
                     "year": "607697074dff55e6c0be33ba",
                     "code": [],
-                    "readonly": false,
+                    "readonly": readOnly,
                     "formFieldType": "number",
                     "bottomText": "",
                     "placeHolder": ""
@@ -761,7 +763,7 @@ const propertyTaxOpFormJson = () => {
                     "type": "taxTypeDemandChild",
                     "year": "606aadac4dff55e6c075c507",
                     "code": [],
-                    "readonly": false,
+                    "readonly": readOnly,
                     "formFieldType": "number",
                     "bottomText": "",
                     "placeHolder": ""
@@ -780,7 +782,7 @@ const propertyTaxOpFormJson = () => {
                     "type": "taxTypeDemandChild",
                     "year": "606aaf854dff55e6c075d219",
                     "code": [],
-                    "readonly": false,
+                    "readonly": readOnly,
                     "formFieldType": "number",
                     "bottomText": "",
                     "placeHolder": ""
@@ -799,7 +801,7 @@ const propertyTaxOpFormJson = () => {
                     "type": "taxTypeDemandChild",
                     "year": "606aafb14dff55e6c075d3ae",
                     "code": [],
-                    "readonly": false,
+                    "readonly": readOnly,
                     "formFieldType": "number",
                     "bottomText": "",
                     "placeHolder": ""
@@ -846,7 +848,7 @@ const propertyTaxOpFormJson = () => {
                     "type": "cessDemandChild",
                     "year": "63735a5bd44534713673c1ca",
                     "code": [],
-                    "readonly": false,
+                    "readonly": readOnly,
                     "formFieldType": "number",
                     "bottomText": "",
                     "placeHolder": ""
@@ -865,7 +867,7 @@ const propertyTaxOpFormJson = () => {
                     "type": "cessDemandChild",
                     "year": "607697074dff55e6c0be33ba",
                     "code": [],
-                    "readonly": false,
+                    "readonly": readOnly,
                     "formFieldType": "number",
                     "bottomText": "",
                     "placeHolder": ""
@@ -884,7 +886,7 @@ const propertyTaxOpFormJson = () => {
                     "type": "cessDemandChild",
                     "year": "606aadac4dff55e6c075c507",
                     "code": [],
-                    "readonly": false,
+                    "readonly": readOnly,
                     "formFieldType": "number",
                     "bottomText": "",
                     "placeHolder": ""
@@ -903,7 +905,7 @@ const propertyTaxOpFormJson = () => {
                     "type": "cessDemandChild",
                     "year": "606aaf854dff55e6c075d219",
                     "code": [],
-                    "readonly": false,
+                    "readonly": readOnly,
                     "formFieldType": "number",
                     "bottomText": "",
                     "placeHolder": ""
@@ -922,7 +924,7 @@ const propertyTaxOpFormJson = () => {
                     "type": "cessDemandChild",
                     "year": "606aafb14dff55e6c075d3ae",
                     "code": [],
-                    "readonly": false,
+                    "readonly": readOnly,
                     "formFieldType": "number",
                     "bottomText": "",
                     "placeHolder": ""
@@ -960,7 +962,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "doesUserChargesDmnd",
                 "year": "63735a5bd44534713673c1ca",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "radio-toggle",
                 "bottomText": "",
                 "placeHolder": ""
@@ -999,7 +1001,7 @@ const propertyTaxOpFormJson = () => {
                     "type": "userChargesDmndChild",
                     "year": "63735a5bd44534713673c1ca",
                     "code": [],
-                    "readonly": false,
+                    "readonly": readOnly,
                     "formFieldType": "number",
                     "bottomText": "",
                     "placeHolder": ""
@@ -1018,7 +1020,7 @@ const propertyTaxOpFormJson = () => {
                     "type": "userChargesDmndChild",
                     "year": "607697074dff55e6c0be33ba",
                     "code": [],
-                    "readonly": false,
+                    "readonly": readOnly,
                     "formFieldType": "number",
                     "bottomText": "",
                     "placeHolder": ""
@@ -1037,7 +1039,7 @@ const propertyTaxOpFormJson = () => {
                     "type": "userChargesDmndChild",
                     "year": "606aadac4dff55e6c075c507",
                     "code": [],
-                    "readonly": false,
+                    "readonly": readOnly,
                     "formFieldType": "number",
                     "bottomText": "",
                     "placeHolder": ""
@@ -1056,7 +1058,7 @@ const propertyTaxOpFormJson = () => {
                     "type": "userChargesDmndChild",
                     "year": "606aaf854dff55e6c075d219",
                     "code": [],
-                    "readonly": false,
+                    "readonly": readOnly,
                     "formFieldType": "number",
                     "bottomText": "",
                     "placeHolder": ""
@@ -1075,7 +1077,7 @@ const propertyTaxOpFormJson = () => {
                     "type": "userChargesDmndChild",
                     "year": "606aafb14dff55e6c075d3ae",
                     "code": [],
-                    "readonly": false,
+                    "readonly": readOnly,
                     "formFieldType": "number",
                     "bottomText": "",
                     "placeHolder": ""
@@ -1142,7 +1144,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "collectIncludingCess",
                 "year": "63735a5bd44534713673c1ca",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -1161,7 +1163,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "collectIncludingCess",
                 "year": "607697074dff55e6c0be33ba",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -1180,7 +1182,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "collectIncludingCess",
                 "year": "606aadac4dff55e6c075c507",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -1199,7 +1201,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "collectIncludingCess",
                 "year": "606aaf854dff55e6c075d219",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -1218,7 +1220,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "collectIncludingCess",
                 "year": "606aafb14dff55e6c075d3ae",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -1246,7 +1248,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "cuCollectIncludingCess",
                 "year": "63735a5bd44534713673c1ca",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -1265,7 +1267,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "cuCollectIncludingCess",
                 "year": "607697074dff55e6c0be33ba",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -1284,7 +1286,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "cuCollectIncludingCess",
                 "year": "606aadac4dff55e6c075c507",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -1303,7 +1305,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "cuCollectIncludingCess",
                 "year": "606aaf854dff55e6c075d219",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -1322,7 +1324,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "cuCollectIncludingCess",
                 "year": "606aafb14dff55e6c075d3ae",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -1350,7 +1352,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "arCollectIncludingCess",
                 "year": "63735a5bd44534713673c1ca",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -1369,7 +1371,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "arCollectIncludingCess",
                 "year": "607697074dff55e6c0be33ba",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -1388,7 +1390,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "arCollectIncludingCess",
                 "year": "606aadac4dff55e6c075c507",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -1407,7 +1409,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "arCollectIncludingCess",
                 "year": "606aaf854dff55e6c075d219",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -1426,7 +1428,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "arCollectIncludingCess",
                 "year": "606aafb14dff55e6c075d3ae",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -1454,7 +1456,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "collectExcludingCess",
                 "year": "63735a5bd44534713673c1ca",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -1473,7 +1475,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "collectExcludingCess",
                 "year": "607697074dff55e6c0be33ba",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -1492,7 +1494,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "collectExcludingCess",
                 "year": "606aadac4dff55e6c075c507",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -1511,7 +1513,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "collectExcludingCess",
                 "year": "606aaf854dff55e6c075d219",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -1530,7 +1532,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "collectExcludingCess",
                 "year": "606aafb14dff55e6c075d3ae",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -1565,7 +1567,7 @@ const propertyTaxOpFormJson = () => {
                     "type": "taxTypeCollectionChild",
                     "year": "63735a5bd44534713673c1ca",
                     "code": [],
-                    "readonly": false,
+                    "readonly": readOnly,
                     "formFieldType": "number",
                     "bottomText": "",
                     "placeHolder": ""
@@ -1584,7 +1586,7 @@ const propertyTaxOpFormJson = () => {
                     "type": "taxTypeCollectionChild",
                     "year": "607697074dff55e6c0be33ba",
                     "code": [],
-                    "readonly": false,
+                    "readonly": readOnly,
                     "formFieldType": "number",
                     "bottomText": "",
                     "placeHolder": ""
@@ -1603,7 +1605,7 @@ const propertyTaxOpFormJson = () => {
                     "type": "taxTypeCollectionChild",
                     "year": "606aadac4dff55e6c075c507",
                     "code": [],
-                    "readonly": false,
+                    "readonly": readOnly,
                     "formFieldType": "number",
                     "bottomText": "",
                     "placeHolder": ""
@@ -1622,7 +1624,7 @@ const propertyTaxOpFormJson = () => {
                     "type": "taxTypeCollectionChild",
                     "year": "606aaf854dff55e6c075d219",
                     "code": [],
-                    "readonly": false,
+                    "readonly": readOnly,
                     "formFieldType": "number",
                     "bottomText": "",
                     "placeHolder": ""
@@ -1641,7 +1643,7 @@ const propertyTaxOpFormJson = () => {
                     "type": "taxTypeCollectionChild",
                     "year": "606aafb14dff55e6c075d3ae",
                     "code": [],
-                    "readonly": false,
+                    "readonly": readOnly,
                     "formFieldType": "number",
                     "bottomText": "",
                     "placeHolder": ""
@@ -1688,7 +1690,7 @@ const propertyTaxOpFormJson = () => {
                     "type": "cessCollectChild",
                     "year": "63735a5bd44534713673c1ca",
                     "code": [],
-                    "readonly": false,
+                    "readonly": readOnly,
                     "formFieldType": "number",
                     "bottomText": "",
                     "placeHolder": ""
@@ -1707,7 +1709,7 @@ const propertyTaxOpFormJson = () => {
                     "type": "cessCollectChild",
                     "year": "607697074dff55e6c0be33ba",
                     "code": [],
-                    "readonly": false,
+                    "readonly": readOnly,
                     "formFieldType": "number",
                     "bottomText": "",
                     "placeHolder": ""
@@ -1726,7 +1728,7 @@ const propertyTaxOpFormJson = () => {
                     "type": "cessCollectChild",
                     "year": "606aadac4dff55e6c075c507",
                     "code": [],
-                    "readonly": false,
+                    "readonly": readOnly,
                     "formFieldType": "number",
                     "bottomText": "",
                     "placeHolder": ""
@@ -1745,7 +1747,7 @@ const propertyTaxOpFormJson = () => {
                     "type": "cessCollectChild",
                     "year": "606aaf854dff55e6c075d219",
                     "code": [],
-                    "readonly": false,
+                    "readonly": readOnly,
                     "formFieldType": "number",
                     "bottomText": "",
                     "placeHolder": ""
@@ -1764,7 +1766,7 @@ const propertyTaxOpFormJson = () => {
                     "type": "cessCollectChild",
                     "year": "606aafb14dff55e6c075d3ae",
                     "code": [],
-                    "readonly": false,
+                    "readonly": readOnly,
                     "formFieldType": "number",
                     "bottomText": "",
                     "placeHolder": ""
@@ -1811,7 +1813,7 @@ const propertyTaxOpFormJson = () => {
                     "type": "userChargesCollectionChild",
                     "year": "63735a5bd44534713673c1ca",
                     "code": [],
-                    "readonly": false,
+                    "readonly": readOnly,
                     "formFieldType": "number",
                     "bottomText": "",
                     "placeHolder": ""
@@ -1830,7 +1832,7 @@ const propertyTaxOpFormJson = () => {
                     "type": "userChargesCollectionChild",
                     "year": "607697074dff55e6c0be33ba",
                     "code": [],
-                    "readonly": false,
+                    "readonly": readOnly,
                     "formFieldType": "number",
                     "bottomText": "",
                     "placeHolder": ""
@@ -1849,7 +1851,7 @@ const propertyTaxOpFormJson = () => {
                     "type": "userChargesCollectionChild",
                     "year": "606aadac4dff55e6c075c507",
                     "code": [],
-                    "readonly": false,
+                    "readonly": readOnly,
                     "formFieldType": "number",
                     "bottomText": "",
                     "placeHolder": ""
@@ -1868,7 +1870,7 @@ const propertyTaxOpFormJson = () => {
                     "type": "userChargesCollectionChild",
                     "year": "606aaf854dff55e6c075d219",
                     "code": [],
-                    "readonly": false,
+                    "readonly": readOnly,
                     "formFieldType": "number",
                     "bottomText": "",
                     "placeHolder": ""
@@ -1887,7 +1889,7 @@ const propertyTaxOpFormJson = () => {
                     "type": "userChargesCollectionChild",
                     "year": "606aafb14dff55e6c075d3ae",
                     "code": [],
-                    "readonly": false,
+                    "readonly": readOnly,
                     "formFieldType": "number",
                     "bottomText": "",
                     "placeHolder": ""
@@ -1952,7 +1954,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "totalMappedPropertiesUlb",
                 "year": "63735a5bd44534713673c1ca",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -1969,7 +1971,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "totalMappedPropertiesUlb",
                 "year": "607697074dff55e6c0be33ba",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -1986,7 +1988,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "totalMappedPropertiesUlb",
                 "year": "606aadac4dff55e6c075c507",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -2003,7 +2005,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "totalMappedPropertiesUlb",
                 "year": "606aaf854dff55e6c075d219",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -2020,7 +2022,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "totalMappedPropertiesUlb",
                 "year": "606aafb14dff55e6c075d3ae",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -2046,7 +2048,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "totalPropertiesTax",
                 "year": "63735a5bd44534713673c1ca",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -2063,7 +2065,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "totalPropertiesTax",
                 "year": "607697074dff55e6c0be33ba",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -2080,7 +2082,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "totalPropertiesTax",
                 "year": "606aadac4dff55e6c075c507",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -2097,7 +2099,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "totalPropertiesTax",
                 "year": "606aaf854dff55e6c075d219",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -2114,7 +2116,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "totalPropertiesTax",
                 "year": "606aafb14dff55e6c075d3ae",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -2140,7 +2142,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "totalPropertiesTaxDm",
                 "year": "63735a5bd44534713673c1ca",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -2157,7 +2159,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "totalPropertiesTaxDm",
                 "year": "607697074dff55e6c0be33ba",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -2174,7 +2176,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "totalPropertiesTaxDm",
                 "year": "606aadac4dff55e6c075c507",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -2191,7 +2193,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "totalPropertiesTaxDm",
                 "year": "606aaf854dff55e6c075d219",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -2208,7 +2210,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "totalPropertiesTaxDm",
                 "year": "606aafb14dff55e6c075d3ae",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -2234,7 +2236,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "totalPropertiesTaxDmCollected",
                 "year": "63735a5bd44534713673c1ca",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -2251,7 +2253,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "totalPropertiesTaxDmCollected",
                 "year": "607697074dff55e6c0be33ba",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -2268,7 +2270,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "totalPropertiesTaxDmCollected",
                 "year": "606aadac4dff55e6c075c507",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -2285,7 +2287,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "totalPropertiesTaxDmCollected",
                 "year": "606aaf854dff55e6c075d219",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -2302,7 +2304,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "totalPropertiesTaxDmCollected",
                 "year": "606aafb14dff55e6c075d3ae",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -2330,7 +2332,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "resValuePropertyTaxDm",
                 "year": "63735a5bd44534713673c1ca",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -2349,7 +2351,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "resValuePropertyTaxDm",
                 "year": "607697074dff55e6c0be33ba",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -2368,7 +2370,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "resValuePropertyTaxDm",
                 "year": "606aadac4dff55e6c075c507",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -2387,7 +2389,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "resValuePropertyTaxDm",
                 "year": "606aaf854dff55e6c075d219",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -2406,7 +2408,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "resValuePropertyTaxDm",
                 "year": "606aafb14dff55e6c075d3ae",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -2432,7 +2434,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "resNoPropertyTaxDm",
                 "year": "63735a5bd44534713673c1ca",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -2449,7 +2451,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "resNoPropertyTaxDm",
                 "year": "607697074dff55e6c0be33ba",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -2466,7 +2468,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "resNoPropertyTaxDm",
                 "year": "606aadac4dff55e6c075c507",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -2483,7 +2485,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "resNoPropertyTaxDm",
                 "year": "606aaf854dff55e6c075d219",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -2500,7 +2502,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "resNoPropertyTaxDm",
                 "year": "606aafb14dff55e6c075d3ae",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -2528,7 +2530,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "resValuePropertyTaxCollected",
                 "year": "63735a5bd44534713673c1ca",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -2547,7 +2549,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "resValuePropertyTaxCollected",
                 "year": "607697074dff55e6c0be33ba",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -2566,7 +2568,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "resValuePropertyTaxCollected",
                 "year": "606aadac4dff55e6c075c507",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -2585,7 +2587,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "resValuePropertyTaxCollected",
                 "year": "606aaf854dff55e6c075d219",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -2604,7 +2606,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "resValuePropertyTaxCollected",
                 "year": "606aafb14dff55e6c075d3ae",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -2630,7 +2632,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "resNoPropertyTaxCollected",
                 "year": "63735a5bd44534713673c1ca",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -2647,7 +2649,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "resNoPropertyTaxCollected",
                 "year": "607697074dff55e6c0be33ba",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -2664,7 +2666,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "resNoPropertyTaxCollected",
                 "year": "606aadac4dff55e6c075c507",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -2681,7 +2683,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "resNoPropertyTaxCollected",
                 "year": "606aaf854dff55e6c075d219",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -2698,7 +2700,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "resNoPropertyTaxCollected",
                 "year": "606aafb14dff55e6c075d3ae",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -2726,7 +2728,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "comValuePropertyTaxDm",
                 "year": "63735a5bd44534713673c1ca",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -2745,7 +2747,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "comValuePropertyTaxDm",
                 "year": "607697074dff55e6c0be33ba",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -2764,7 +2766,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "comValuePropertyTaxDm",
                 "year": "606aadac4dff55e6c075c507",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -2783,7 +2785,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "comValuePropertyTaxDm",
                 "year": "606aaf854dff55e6c075d219",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -2802,7 +2804,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "comValuePropertyTaxDm",
                 "year": "606aafb14dff55e6c075d3ae",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -2828,7 +2830,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "comNoPropertyTaxDm",
                 "year": "63735a5bd44534713673c1ca",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -2845,7 +2847,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "comNoPropertyTaxDm",
                 "year": "607697074dff55e6c0be33ba",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -2862,7 +2864,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "comNoPropertyTaxDm",
                 "year": "606aadac4dff55e6c075c507",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -2879,7 +2881,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "comNoPropertyTaxDm",
                 "year": "606aaf854dff55e6c075d219",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -2896,7 +2898,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "comNoPropertyTaxDm",
                 "year": "606aafb14dff55e6c075d3ae",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -2924,7 +2926,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "comValuePropertyTaxCollected",
                 "year": "63735a5bd44534713673c1ca",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -2943,7 +2945,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "comValuePropertyTaxCollected",
                 "year": "607697074dff55e6c0be33ba",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -2962,7 +2964,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "comValuePropertyTaxCollected",
                 "year": "606aadac4dff55e6c075c507",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -2981,7 +2983,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "comValuePropertyTaxCollected",
                 "year": "606aaf854dff55e6c075d219",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -3000,7 +3002,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "comValuePropertyTaxCollected",
                 "year": "606aafb14dff55e6c075d3ae",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -3026,7 +3028,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "comNoPropertyTaxCollected",
                 "year": "63735a5bd44534713673c1ca",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -3043,7 +3045,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "comNoPropertyTaxCollected",
                 "year": "607697074dff55e6c0be33ba",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -3060,7 +3062,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "comNoPropertyTaxCollected",
                 "year": "606aadac4dff55e6c075c507",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -3077,7 +3079,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "comNoPropertyTaxCollected",
                 "year": "606aaf854dff55e6c075d219",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -3094,7 +3096,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "comNoPropertyTaxCollected",
                 "year": "606aafb14dff55e6c075d3ae",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -3122,7 +3124,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "indValuePropertyTaxDm",
                 "year": "63735a5bd44534713673c1ca",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -3141,7 +3143,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "indValuePropertyTaxDm",
                 "year": "607697074dff55e6c0be33ba",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -3160,7 +3162,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "indValuePropertyTaxDm",
                 "year": "606aadac4dff55e6c075c507",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -3179,7 +3181,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "indValuePropertyTaxDm",
                 "year": "606aaf854dff55e6c075d219",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -3198,7 +3200,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "indValuePropertyTaxDm",
                 "year": "606aafb14dff55e6c075d3ae",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -3224,7 +3226,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "indNoPropertyTaxDm",
                 "year": "63735a5bd44534713673c1ca",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -3241,7 +3243,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "indNoPropertyTaxDm",
                 "year": "607697074dff55e6c0be33ba",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -3258,7 +3260,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "indNoPropertyTaxDm",
                 "year": "606aadac4dff55e6c075c507",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -3275,7 +3277,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "indNoPropertyTaxDm",
                 "year": "606aaf854dff55e6c075d219",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -3292,7 +3294,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "indNoPropertyTaxDm",
                 "year": "606aafb14dff55e6c075d3ae",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -3320,7 +3322,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "indValuePropertyTaxCollected",
                 "year": "63735a5bd44534713673c1ca",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -3339,7 +3341,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "indValuePropertyTaxCollected",
                 "year": "607697074dff55e6c0be33ba",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -3358,7 +3360,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "indValuePropertyTaxCollected",
                 "year": "606aadac4dff55e6c075c507",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -3377,7 +3379,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "indValuePropertyTaxCollected",
                 "year": "606aaf854dff55e6c075d219",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -3396,7 +3398,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "indValuePropertyTaxCollected",
                 "year": "606aafb14dff55e6c075d3ae",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -3422,7 +3424,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "indNoPropertyTaxCollected",
                 "year": "63735a5bd44534713673c1ca",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -3439,7 +3441,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "indNoPropertyTaxCollected",
                 "year": "607697074dff55e6c0be33ba",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -3456,7 +3458,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "indNoPropertyTaxCollected",
                 "year": "606aadac4dff55e6c075c507",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -3473,7 +3475,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "indNoPropertyTaxCollected",
                 "year": "606aaf854dff55e6c075d219",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -3490,7 +3492,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "indNoPropertyTaxCollected",
                 "year": "606aafb14dff55e6c075d3ae",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -3518,7 +3520,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "govValuePropertyTaxDm",
                 "year": "63735a5bd44534713673c1ca",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -3537,7 +3539,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "govValuePropertyTaxDm",
                 "year": "607697074dff55e6c0be33ba",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -3556,7 +3558,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "govValuePropertyTaxDm",
                 "year": "606aadac4dff55e6c075c507",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -3575,7 +3577,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "govValuePropertyTaxDm",
                 "year": "606aaf854dff55e6c075d219",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -3594,7 +3596,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "govValuePropertyTaxDm",
                 "year": "606aafb14dff55e6c075d3ae",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -3620,7 +3622,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "govNoPropertyTaxDm",
                 "year": "63735a5bd44534713673c1ca",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -3637,7 +3639,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "govNoPropertyTaxDm",
                 "year": "607697074dff55e6c0be33ba",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -3654,7 +3656,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "govNoPropertyTaxDm",
                 "year": "606aadac4dff55e6c075c507",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -3671,7 +3673,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "govNoPropertyTaxDm",
                 "year": "606aaf854dff55e6c075d219",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -3688,7 +3690,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "govNoPropertyTaxDm",
                 "year": "606aafb14dff55e6c075d3ae",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -3716,7 +3718,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "govValuePropertyTaxCollected",
                 "year": "63735a5bd44534713673c1ca",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -3735,7 +3737,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "govValuePropertyTaxCollected",
                 "year": "607697074dff55e6c0be33ba",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -3754,7 +3756,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "govValuePropertyTaxCollected",
                 "year": "606aadac4dff55e6c075c507",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -3773,7 +3775,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "govValuePropertyTaxCollected",
                 "year": "606aaf854dff55e6c075d219",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -3792,7 +3794,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "govValuePropertyTaxCollected",
                 "year": "606aafb14dff55e6c075d3ae",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -3818,7 +3820,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "govNoPropertyTaxCollected",
                 "year": "63735a5bd44534713673c1ca",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -3835,7 +3837,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "govNoPropertyTaxCollected",
                 "year": "607697074dff55e6c0be33ba",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -3852,7 +3854,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "govNoPropertyTaxCollected",
                 "year": "606aadac4dff55e6c075c507",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -3869,7 +3871,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "govNoPropertyTaxCollected",
                 "year": "606aaf854dff55e6c075d219",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -3886,7 +3888,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "govNoPropertyTaxCollected",
                 "year": "606aafb14dff55e6c075d3ae",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -3914,7 +3916,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "insValuePropertyTaxDm",
                 "year": "63735a5bd44534713673c1ca",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -3933,7 +3935,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "insValuePropertyTaxDm",
                 "year": "607697074dff55e6c0be33ba",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -3952,7 +3954,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "insValuePropertyTaxDm",
                 "year": "606aadac4dff55e6c075c507",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -3971,7 +3973,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "insValuePropertyTaxDm",
                 "year": "606aaf854dff55e6c075d219",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -3990,7 +3992,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "insValuePropertyTaxDm",
                 "year": "606aafb14dff55e6c075d3ae",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -4016,7 +4018,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "insNoPropertyTaxDm",
                 "year": "63735a5bd44534713673c1ca",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -4033,7 +4035,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "insNoPropertyTaxDm",
                 "year": "607697074dff55e6c0be33ba",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -4050,7 +4052,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "insNoPropertyTaxDm",
                 "year": "606aadac4dff55e6c075c507",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -4067,7 +4069,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "insNoPropertyTaxDm",
                 "year": "606aaf854dff55e6c075d219",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -4084,7 +4086,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "insNoPropertyTaxDm",
                 "year": "606aafb14dff55e6c075d3ae",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -4112,7 +4114,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "insValuePropertyTaxCollected",
                 "year": "63735a5bd44534713673c1ca",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -4131,7 +4133,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "insValuePropertyTaxCollected",
                 "year": "607697074dff55e6c0be33ba",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -4150,7 +4152,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "insValuePropertyTaxCollected",
                 "year": "606aadac4dff55e6c075c507",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -4169,7 +4171,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "insValuePropertyTaxCollected",
                 "year": "606aaf854dff55e6c075d219",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -4188,7 +4190,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "insValuePropertyTaxCollected",
                 "year": "606aafb14dff55e6c075d3ae",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -4214,7 +4216,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "insNoPropertyTaxCollected",
                 "year": "63735a5bd44534713673c1ca",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -4231,7 +4233,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "insNoPropertyTaxCollected",
                 "year": "607697074dff55e6c0be33ba",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -4248,7 +4250,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "insNoPropertyTaxCollected",
                 "year": "606aadac4dff55e6c075c507",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -4265,7 +4267,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "insNoPropertyTaxCollected",
                 "year": "606aaf854dff55e6c075d219",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -4282,7 +4284,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "insNoPropertyTaxCollected",
                 "year": "606aafb14dff55e6c075d3ae",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -4317,7 +4319,7 @@ const propertyTaxOpFormJson = () => {
                     "type": "otherValuePropertyTaxDm",
                     "year": "63735a5bd44534713673c1ca",
                     "code": [],
-                    "readonly": false,
+                    "readonly": readOnly,
                     "formFieldType": "number",
                     "bottomText": "",
                     "placeHolder": ""
@@ -4336,7 +4338,7 @@ const propertyTaxOpFormJson = () => {
                     "type": "otherValuePropertyTaxDm",
                     "year": "607697074dff55e6c0be33ba",
                     "code": [],
-                    "readonly": false,
+                    "readonly": readOnly,
                     "formFieldType": "number",
                     "bottomText": "",
                     "placeHolder": ""
@@ -4355,7 +4357,7 @@ const propertyTaxOpFormJson = () => {
                     "type": "otherValuePropertyTaxDm",
                     "year": "606aadac4dff55e6c075c507",
                     "code": [],
-                    "readonly": false,
+                    "readonly": readOnly,
                     "formFieldType": "number",
                     "bottomText": "",
                     "placeHolder": ""
@@ -4374,7 +4376,7 @@ const propertyTaxOpFormJson = () => {
                     "type": "otherValuePropertyTaxDm",
                     "year": "606aaf854dff55e6c075d219",
                     "code": [],
-                    "readonly": false,
+                    "readonly": readOnly,
                     "formFieldType": "number",
                     "bottomText": "",
                     "placeHolder": ""
@@ -4393,7 +4395,7 @@ const propertyTaxOpFormJson = () => {
                     "type": "otherValuePropertyTaxDm",
                     "year": "606aafb14dff55e6c075d3ae",
                     "code": [],
-                    "readonly": false,
+                    "readonly": readOnly,
                     "formFieldType": "number",
                     "bottomText": "",
                     "placeHolder": ""
@@ -4419,7 +4421,7 @@ const propertyTaxOpFormJson = () => {
                     "type": "otherNoPropertyTaxDm",
                     "year": "63735a5bd44534713673c1ca",
                     "code": [],
-                    "readonly": false,
+                    "readonly": readOnly,
                     "formFieldType": "number",
                     "bottomText": "",
                     "placeHolder": ""
@@ -4436,7 +4438,7 @@ const propertyTaxOpFormJson = () => {
                     "type": "otherNoPropertyTaxDm",
                     "year": "607697074dff55e6c0be33ba",
                     "code": [],
-                    "readonly": false,
+                    "readonly": readOnly,
                     "formFieldType": "number",
                     "bottomText": "",
                     "placeHolder": ""
@@ -4453,7 +4455,7 @@ const propertyTaxOpFormJson = () => {
                     "type": "otherNoPropertyTaxDm",
                     "year": "606aadac4dff55e6c075c507",
                     "code": [],
-                    "readonly": false,
+                    "readonly": readOnly,
                     "formFieldType": "number",
                     "bottomText": "",
                     "placeHolder": ""
@@ -4470,7 +4472,7 @@ const propertyTaxOpFormJson = () => {
                     "type": "otherNoPropertyTaxDm",
                     "year": "606aaf854dff55e6c075d219",
                     "code": [],
-                    "readonly": false,
+                    "readonly": readOnly,
                     "formFieldType": "number",
                     "bottomText": "",
                     "placeHolder": ""
@@ -4487,7 +4489,7 @@ const propertyTaxOpFormJson = () => {
                     "type": "otherNoPropertyTaxDm",
                     "year": "606aafb14dff55e6c075d3ae",
                     "code": [],
-                    "readonly": false,
+                    "readonly": readOnly,
                     "formFieldType": "number",
                     "bottomText": "",
                     "placeHolder": ""
@@ -4515,7 +4517,7 @@ const propertyTaxOpFormJson = () => {
                     "type": "otherValuePropertyTaxCollected",
                     "year": "63735a5bd44534713673c1ca",
                     "code": [],
-                    "readonly": false,
+                    "readonly": readOnly,
                     "formFieldType": "number",
                     "bottomText": "",
                     "placeHolder": ""
@@ -4534,7 +4536,7 @@ const propertyTaxOpFormJson = () => {
                     "type": "otherValuePropertyTaxCollected",
                     "year": "607697074dff55e6c0be33ba",
                     "code": [],
-                    "readonly": false,
+                    "readonly": readOnly,
                     "formFieldType": "number",
                     "bottomText": "",
                     "placeHolder": ""
@@ -4553,7 +4555,7 @@ const propertyTaxOpFormJson = () => {
                     "type": "otherValuePropertyTaxCollected",
                     "year": "606aadac4dff55e6c075c507",
                     "code": [],
-                    "readonly": false,
+                    "readonly": readOnly,
                     "formFieldType": "number",
                     "bottomText": "",
                     "placeHolder": ""
@@ -4572,7 +4574,7 @@ const propertyTaxOpFormJson = () => {
                     "type": "otherValuePropertyTaxCollected",
                     "year": "606aaf854dff55e6c075d219",
                     "code": [],
-                    "readonly": false,
+                    "readonly": readOnly,
                     "formFieldType": "number",
                     "bottomText": "",
                     "placeHolder": ""
@@ -4591,7 +4593,7 @@ const propertyTaxOpFormJson = () => {
                     "type": "otherValuePropertyTaxCollected",
                     "year": "606aafb14dff55e6c075d3ae",
                     "code": [],
-                    "readonly": false,
+                    "readonly": readOnly,
                     "formFieldType": "number",
                     "bottomText": "",
                     "placeHolder": ""
@@ -4617,7 +4619,7 @@ const propertyTaxOpFormJson = () => {
                     "type": "otherNoPropertyTaxCollected",
                     "year": "63735a5bd44534713673c1ca",
                     "code": [],
-                    "readonly": false,
+                    "readonly": readOnly,
                     "formFieldType": "number",
                     "bottomText": "",
                     "placeHolder": ""
@@ -4634,7 +4636,7 @@ const propertyTaxOpFormJson = () => {
                     "type": "otherNoPropertyTaxCollected",
                     "year": "607697074dff55e6c0be33ba",
                     "code": [],
-                    "readonly": false,
+                    "readonly": readOnly,
                     "formFieldType": "number",
                     "bottomText": "",
                     "placeHolder": ""
@@ -4651,7 +4653,7 @@ const propertyTaxOpFormJson = () => {
                     "type": "otherNoPropertyTaxCollected",
                     "year": "606aadac4dff55e6c075c507",
                     "code": [],
-                    "readonly": false,
+                    "readonly": readOnly,
                     "formFieldType": "number",
                     "bottomText": "",
                     "placeHolder": ""
@@ -4668,7 +4670,7 @@ const propertyTaxOpFormJson = () => {
                     "type": "otherNoPropertyTaxCollected",
                     "year": "606aaf854dff55e6c075d219",
                     "code": [],
-                    "readonly": false,
+                    "readonly": readOnly,
                     "formFieldType": "number",
                     "bottomText": "",
                     "placeHolder": ""
@@ -4685,7 +4687,7 @@ const propertyTaxOpFormJson = () => {
                     "type": "otherNoPropertyTaxCollected",
                     "year": "606aafb14dff55e6c075d3ae",
                     "code": [],
-                    "readonly": false,
+                    "readonly": readOnly,
                     "formFieldType": "number",
                     "bottomText": "",
                     "placeHolder": ""
@@ -4723,7 +4725,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "noOfPropertiesPaidOnline",
                 "year": "63735a5bd44534713673c1ca",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -4740,7 +4742,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "noOfPropertiesPaidOnline",
                 "year": "607697074dff55e6c0be33ba",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -4757,7 +4759,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "noOfPropertiesPaidOnline",
                 "year": "606aadac4dff55e6c075c507",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -4774,7 +4776,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "noOfPropertiesPaidOnline",
                 "year": "606aaf854dff55e6c075d219",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -4791,7 +4793,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "noOfPropertiesPaidOnline",
                 "year": "606aafb14dff55e6c075d3ae",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -4819,7 +4821,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "totalCollectionOnline",
                 "year": "63735a5bd44534713673c1ca",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -4838,7 +4840,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "totalCollectionOnline",
                 "year": "607697074dff55e6c0be33ba",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -4857,7 +4859,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "totalCollectionOnline",
                 "year": "606aadac4dff55e6c075c507",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -4876,7 +4878,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "totalCollectionOnline",
                 "year": "606aaf854dff55e6c075d219",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -4895,7 +4897,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "totalCollectionOnline",
                 "year": "606aafb14dff55e6c075d3ae",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -4930,7 +4932,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "propertyTaxValuationDetails",
                 "year": "63735a5bd44534713673c1ca",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "file",
                 "bottomText": "",
                 "placeHolder": ""
@@ -4960,7 +4962,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "notificationWaterCharges",
                 "year": "63735a5bd44534713673c1ca",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "radio-toggle",
                 "bottomText": "",
                 "placeHolder": ""
@@ -5008,7 +5010,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "entityWaterCharges",
                 "year": "63735a5bd44534713673c1ca",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "select",
                 "bottomText": "",
                 "placeHolder": ""
@@ -5038,7 +5040,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "entityNameWaterCharges",
                 "year": "63735a5bd44534713673c1ca",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "text",
                 "bottomText": "",
                 "placeHolder": ""
@@ -5074,7 +5076,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "notificationWaterChargesFile",
                 "year": "63735a5bd44534713673c1ca",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "file",
                 "bottomText": "",
                 "placeHolder": ""
@@ -5106,7 +5108,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "waterChrgDm",
                 "year": "63735a5bd44534713673c1ca",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -5125,7 +5127,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "waterChrgDm",
                 "year": "607697074dff55e6c0be33ba",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -5144,7 +5146,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "waterChrgDm",
                 "year": "606aadac4dff55e6c075c507",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -5163,7 +5165,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "waterChrgDm",
                 "year": "606aaf854dff55e6c075d219",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -5182,7 +5184,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "waterChrgDm",
                 "year": "606aafb14dff55e6c075d3ae",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -5210,7 +5212,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "cuWaterChrgDm",
                 "year": "63735a5bd44534713673c1ca",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -5229,7 +5231,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "cuWaterChrgDm",
                 "year": "607697074dff55e6c0be33ba",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -5248,7 +5250,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "cuWaterChrgDm",
                 "year": "606aadac4dff55e6c075c507",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -5267,7 +5269,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "cuWaterChrgDm",
                 "year": "606aaf854dff55e6c075d219",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -5286,7 +5288,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "cuWaterChrgDm",
                 "year": "606aafb14dff55e6c075d3ae",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -5314,7 +5316,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "arWaterChrgDm",
                 "year": "63735a5bd44534713673c1ca",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -5333,7 +5335,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "arWaterChrgDm",
                 "year": "607697074dff55e6c0be33ba",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -5352,7 +5354,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "arWaterChrgDm",
                 "year": "606aadac4dff55e6c075c507",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -5371,7 +5373,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "arWaterChrgDm",
                 "year": "606aaf854dff55e6c075d219",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -5390,7 +5392,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "arWaterChrgDm",
                 "year": "606aafb14dff55e6c075d3ae",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -5418,7 +5420,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "waterChrgCol",
                 "year": "63735a5bd44534713673c1ca",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -5437,7 +5439,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "waterChrgCol",
                 "year": "607697074dff55e6c0be33ba",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -5456,7 +5458,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "waterChrgCol",
                 "year": "606aadac4dff55e6c075c507",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -5475,7 +5477,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "waterChrgCol",
                 "year": "606aaf854dff55e6c075d219",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -5494,7 +5496,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "waterChrgCol",
                 "year": "606aafb14dff55e6c075d3ae",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -5522,7 +5524,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "cuWaterChrgCol",
                 "year": "63735a5bd44534713673c1ca",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -5541,7 +5543,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "cuWaterChrgCol",
                 "year": "607697074dff55e6c0be33ba",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -5560,7 +5562,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "cuWaterChrgCol",
                 "year": "606aadac4dff55e6c075c507",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -5579,7 +5581,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "cuWaterChrgCol",
                 "year": "606aaf854dff55e6c075d219",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -5598,7 +5600,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "cuWaterChrgCol",
                 "year": "606aafb14dff55e6c075d3ae",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -5626,7 +5628,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "arWaterChrgCol",
                 "year": "63735a5bd44534713673c1ca",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -5645,7 +5647,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "arWaterChrgCol",
                 "year": "607697074dff55e6c0be33ba",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -5664,7 +5666,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "arWaterChrgCol",
                 "year": "606aadac4dff55e6c075c507",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -5683,7 +5685,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "arWaterChrgCol",
                 "year": "606aaf854dff55e6c075d219",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -5702,7 +5704,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "arWaterChrgCol",
                 "year": "606aafb14dff55e6c075d3ae",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -5728,7 +5730,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "waterChrgConnectionDm",
                 "year": "63735a5bd44534713673c1ca",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -5745,7 +5747,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "waterChrgConnectionDm",
                 "year": "607697074dff55e6c0be33ba",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -5762,7 +5764,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "waterChrgConnectionDm",
                 "year": "606aadac4dff55e6c075c507",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -5779,7 +5781,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "waterChrgConnectionDm",
                 "year": "606aaf854dff55e6c075d219",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -5796,7 +5798,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "waterChrgConnectionDm",
                 "year": "606aafb14dff55e6c075d3ae",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -5822,7 +5824,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "waterChrgConnectionCol",
                 "year": "63735a5bd44534713673c1ca",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -5839,7 +5841,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "waterChrgConnectionCol",
                 "year": "607697074dff55e6c0be33ba",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -5856,7 +5858,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "waterChrgConnectionCol",
                 "year": "606aadac4dff55e6c075c507",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -5873,7 +5875,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "waterChrgConnectionCol",
                 "year": "606aaf854dff55e6c075d219",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -5890,7 +5892,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "waterChrgConnectionCol",
                 "year": "606aafb14dff55e6c075d3ae",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -5918,7 +5920,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "resValueWaterChrgDm",
                 "year": "63735a5bd44534713673c1ca",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -5937,7 +5939,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "resValueWaterChrgDm",
                 "year": "607697074dff55e6c0be33ba",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -5956,7 +5958,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "resValueWaterChrgDm",
                 "year": "606aadac4dff55e6c075c507",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -5975,7 +5977,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "resValueWaterChrgDm",
                 "year": "606aaf854dff55e6c075d219",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -5994,7 +5996,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "resValueWaterChrgDm",
                 "year": "606aafb14dff55e6c075d3ae",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -6020,7 +6022,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "resNoWaterChrgDm",
                 "year": "63735a5bd44534713673c1ca",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -6037,7 +6039,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "resNoWaterChrgDm",
                 "year": "607697074dff55e6c0be33ba",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -6054,7 +6056,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "resNoWaterChrgDm",
                 "year": "606aadac4dff55e6c075c507",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -6071,7 +6073,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "resNoWaterChrgDm",
                 "year": "606aaf854dff55e6c075d219",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -6088,7 +6090,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "resNoWaterChrgDm",
                 "year": "606aafb14dff55e6c075d3ae",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -6116,7 +6118,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "resValueWaterChrgCollected",
                 "year": "63735a5bd44534713673c1ca",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -6135,7 +6137,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "resValueWaterChrgCollected",
                 "year": "607697074dff55e6c0be33ba",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -6154,7 +6156,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "resValueWaterChrgCollected",
                 "year": "606aadac4dff55e6c075c507",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -6173,7 +6175,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "resValueWaterChrgCollected",
                 "year": "606aaf854dff55e6c075d219",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -6192,7 +6194,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "resValueWaterChrgCollected",
                 "year": "606aafb14dff55e6c075d3ae",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -6218,7 +6220,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "resNoWaterChrgCollected",
                 "year": "63735a5bd44534713673c1ca",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -6235,7 +6237,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "resNoWaterChrgCollected",
                 "year": "607697074dff55e6c0be33ba",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -6252,7 +6254,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "resNoWaterChrgCollected",
                 "year": "606aadac4dff55e6c075c507",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -6269,7 +6271,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "resNoWaterChrgCollected",
                 "year": "606aaf854dff55e6c075d219",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -6286,7 +6288,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "resNoWaterChrgCollected",
                 "year": "606aafb14dff55e6c075d3ae",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -6314,7 +6316,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "comValueWaterChrgDm",
                 "year": "63735a5bd44534713673c1ca",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -6333,7 +6335,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "comValueWaterChrgDm",
                 "year": "607697074dff55e6c0be33ba",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -6352,7 +6354,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "comValueWaterChrgDm",
                 "year": "606aadac4dff55e6c075c507",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -6371,7 +6373,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "comValueWaterChrgDm",
                 "year": "606aaf854dff55e6c075d219",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -6390,7 +6392,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "comValueWaterChrgDm",
                 "year": "606aafb14dff55e6c075d3ae",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -6416,7 +6418,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "comNoWaterChrgDm",
                 "year": "63735a5bd44534713673c1ca",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -6433,7 +6435,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "comNoWaterChrgDm",
                 "year": "607697074dff55e6c0be33ba",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -6450,7 +6452,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "comNoWaterChrgDm",
                 "year": "606aadac4dff55e6c075c507",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -6467,7 +6469,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "comNoWaterChrgDm",
                 "year": "606aaf854dff55e6c075d219",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -6484,7 +6486,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "comNoWaterChrgDm",
                 "year": "606aafb14dff55e6c075d3ae",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -6512,7 +6514,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "comValueWaterChrgCollected",
                 "year": "63735a5bd44534713673c1ca",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -6531,7 +6533,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "comValueWaterChrgCollected",
                 "year": "607697074dff55e6c0be33ba",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -6550,7 +6552,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "comValueWaterChrgCollected",
                 "year": "606aadac4dff55e6c075c507",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -6569,7 +6571,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "comValueWaterChrgCollected",
                 "year": "606aaf854dff55e6c075d219",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -6588,7 +6590,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "comValueWaterChrgCollected",
                 "year": "606aafb14dff55e6c075d3ae",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -6614,7 +6616,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "comNoWaterChrgCollected",
                 "year": "63735a5bd44534713673c1ca",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -6631,7 +6633,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "comNoWaterChrgCollected",
                 "year": "607697074dff55e6c0be33ba",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -6648,7 +6650,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "comNoWaterChrgCollected",
                 "year": "606aadac4dff55e6c075c507",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -6665,7 +6667,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "comNoWaterChrgCollected",
                 "year": "606aaf854dff55e6c075d219",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -6682,7 +6684,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "comNoWaterChrgCollected",
                 "year": "606aafb14dff55e6c075d3ae",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -6710,7 +6712,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "indValueWaterChrgDm",
                 "year": "63735a5bd44534713673c1ca",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -6729,7 +6731,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "indValueWaterChrgDm",
                 "year": "607697074dff55e6c0be33ba",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -6748,7 +6750,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "indValueWaterChrgDm",
                 "year": "606aadac4dff55e6c075c507",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -6767,7 +6769,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "indValueWaterChrgDm",
                 "year": "606aaf854dff55e6c075d219",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -6786,7 +6788,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "indValueWaterChrgDm",
                 "year": "606aafb14dff55e6c075d3ae",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -6812,7 +6814,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "indNoWaterChrgDm",
                 "year": "63735a5bd44534713673c1ca",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -6829,7 +6831,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "indNoWaterChrgDm",
                 "year": "607697074dff55e6c0be33ba",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -6846,7 +6848,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "indNoWaterChrgDm",
                 "year": "606aadac4dff55e6c075c507",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -6863,7 +6865,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "indNoWaterChrgDm",
                 "year": "606aaf854dff55e6c075d219",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -6880,7 +6882,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "indNoWaterChrgDm",
                 "year": "606aafb14dff55e6c075d3ae",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -6908,7 +6910,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "indValueWaterChrgCollected",
                 "year": "63735a5bd44534713673c1ca",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -6927,7 +6929,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "indValueWaterChrgCollected",
                 "year": "607697074dff55e6c0be33ba",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -6946,7 +6948,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "indValueWaterChrgCollected",
                 "year": "606aadac4dff55e6c075c507",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -6965,7 +6967,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "indValueWaterChrgCollected",
                 "year": "606aaf854dff55e6c075d219",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -6984,7 +6986,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "indValueWaterChrgCollected",
                 "year": "606aafb14dff55e6c075d3ae",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -7010,7 +7012,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "indNoWaterChrgCollected",
                 "year": "63735a5bd44534713673c1ca",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -7027,7 +7029,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "indNoWaterChrgCollected",
                 "year": "607697074dff55e6c0be33ba",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -7044,7 +7046,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "indNoWaterChrgCollected",
                 "year": "606aadac4dff55e6c075c507",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -7061,7 +7063,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "indNoWaterChrgCollected",
                 "year": "606aaf854dff55e6c075d219",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -7078,7 +7080,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "indNoWaterChrgCollected",
                 "year": "606aafb14dff55e6c075d3ae",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -7113,7 +7115,7 @@ const propertyTaxOpFormJson = () => {
                     "type": "othersValueWaterChrgDm",
                     "year": "63735a5bd44534713673c1ca",
                     "code": [],
-                    "readonly": false,
+                    "readonly": readOnly,
                     "formFieldType": "number",
                     "bottomText": "",
                     "placeHolder": ""
@@ -7132,7 +7134,7 @@ const propertyTaxOpFormJson = () => {
                     "type": "othersValueWaterChrgDm",
                     "year": "607697074dff55e6c0be33ba",
                     "code": [],
-                    "readonly": false,
+                    "readonly": readOnly,
                     "formFieldType": "number",
                     "bottomText": "",
                     "placeHolder": ""
@@ -7151,7 +7153,7 @@ const propertyTaxOpFormJson = () => {
                     "type": "othersValueWaterChrgDm",
                     "year": "606aadac4dff55e6c075c507",
                     "code": [],
-                    "readonly": false,
+                    "readonly": readOnly,
                     "formFieldType": "number",
                     "bottomText": "",
                     "placeHolder": ""
@@ -7170,7 +7172,7 @@ const propertyTaxOpFormJson = () => {
                     "type": "othersValueWaterChrgDm",
                     "year": "606aaf854dff55e6c075d219",
                     "code": [],
-                    "readonly": false,
+                    "readonly": readOnly,
                     "formFieldType": "number",
                     "bottomText": "",
                     "placeHolder": ""
@@ -7189,7 +7191,7 @@ const propertyTaxOpFormJson = () => {
                     "type": "othersValueWaterChrgDm",
                     "year": "606aafb14dff55e6c075d3ae",
                     "code": [],
-                    "readonly": false,
+                    "readonly": readOnly,
                     "formFieldType": "number",
                     "bottomText": "",
                     "placeHolder": ""
@@ -7215,7 +7217,7 @@ const propertyTaxOpFormJson = () => {
                     "type": "othersNoWaterChrgDm",
                     "year": "63735a5bd44534713673c1ca",
                     "code": [],
-                    "readonly": false,
+                    "readonly": readOnly,
                     "formFieldType": "number",
                     "bottomText": "",
                     "placeHolder": ""
@@ -7232,7 +7234,7 @@ const propertyTaxOpFormJson = () => {
                     "type": "othersNoWaterChrgDm",
                     "year": "607697074dff55e6c0be33ba",
                     "code": [],
-                    "readonly": false,
+                    "readonly": readOnly,
                     "formFieldType": "number",
                     "bottomText": "",
                     "placeHolder": ""
@@ -7249,7 +7251,7 @@ const propertyTaxOpFormJson = () => {
                     "type": "othersNoWaterChrgDm",
                     "year": "606aadac4dff55e6c075c507",
                     "code": [],
-                    "readonly": false,
+                    "readonly": readOnly,
                     "formFieldType": "number",
                     "bottomText": "",
                     "placeHolder": ""
@@ -7266,7 +7268,7 @@ const propertyTaxOpFormJson = () => {
                     "type": "othersNoWaterChrgDm",
                     "year": "606aaf854dff55e6c075d219",
                     "code": [],
-                    "readonly": false,
+                    "readonly": readOnly,
                     "formFieldType": "number",
                     "bottomText": "",
                     "placeHolder": ""
@@ -7283,7 +7285,7 @@ const propertyTaxOpFormJson = () => {
                     "type": "othersNoWaterChrgDm",
                     "year": "606aafb14dff55e6c075d3ae",
                     "code": [],
-                    "readonly": false,
+                    "readonly": readOnly,
                     "formFieldType": "number",
                     "bottomText": "",
                     "placeHolder": ""
@@ -7311,7 +7313,7 @@ const propertyTaxOpFormJson = () => {
                     "type": "othersValueWaterChrgCollected",
                     "year": "63735a5bd44534713673c1ca",
                     "code": [],
-                    "readonly": false,
+                    "readonly": readOnly,
                     "formFieldType": "number",
                     "bottomText": "",
                     "placeHolder": ""
@@ -7330,7 +7332,7 @@ const propertyTaxOpFormJson = () => {
                     "type": "othersValueWaterChrgCollected",
                     "year": "607697074dff55e6c0be33ba",
                     "code": [],
-                    "readonly": false,
+                    "readonly": readOnly,
                     "formFieldType": "number",
                     "bottomText": "",
                     "placeHolder": ""
@@ -7349,7 +7351,7 @@ const propertyTaxOpFormJson = () => {
                     "type": "othersValueWaterChrgCollected",
                     "year": "606aadac4dff55e6c075c507",
                     "code": [],
-                    "readonly": false,
+                    "readonly": readOnly,
                     "formFieldType": "number",
                     "bottomText": "",
                     "placeHolder": ""
@@ -7368,7 +7370,7 @@ const propertyTaxOpFormJson = () => {
                     "type": "othersValueWaterChrgCollected",
                     "year": "606aaf854dff55e6c075d219",
                     "code": [],
-                    "readonly": false,
+                    "readonly": readOnly,
                     "formFieldType": "number",
                     "bottomText": "",
                     "placeHolder": ""
@@ -7387,7 +7389,7 @@ const propertyTaxOpFormJson = () => {
                     "type": "othersValueWaterChrgCollected",
                     "year": "606aafb14dff55e6c075d3ae",
                     "code": [],
-                    "readonly": false,
+                    "readonly": readOnly,
                     "formFieldType": "number",
                     "bottomText": "",
                     "placeHolder": ""
@@ -7413,7 +7415,7 @@ const propertyTaxOpFormJson = () => {
                     "type": "othersNoWaterChrgCollected",
                     "year": "63735a5bd44534713673c1ca",
                     "code": [],
-                    "readonly": false,
+                    "readonly": readOnly,
                     "formFieldType": "number",
                     "bottomText": "",
                     "placeHolder": ""
@@ -7430,7 +7432,7 @@ const propertyTaxOpFormJson = () => {
                     "type": "othersNoWaterChrgCollected",
                     "year": "607697074dff55e6c0be33ba",
                     "code": [],
-                    "readonly": false,
+                    "readonly": readOnly,
                     "formFieldType": "number",
                     "bottomText": "",
                     "placeHolder": ""
@@ -7447,7 +7449,7 @@ const propertyTaxOpFormJson = () => {
                     "type": "othersNoWaterChrgCollected",
                     "year": "606aadac4dff55e6c075c507",
                     "code": [],
-                    "readonly": false,
+                    "readonly": readOnly,
                     "formFieldType": "number",
                     "bottomText": "",
                     "placeHolder": ""
@@ -7464,7 +7466,7 @@ const propertyTaxOpFormJson = () => {
                     "type": "othersNoWaterChrgCollected",
                     "year": "606aaf854dff55e6c075d219",
                     "code": [],
-                    "readonly": false,
+                    "readonly": readOnly,
                     "formFieldType": "number",
                     "bottomText": "",
                     "placeHolder": ""
@@ -7481,7 +7483,7 @@ const propertyTaxOpFormJson = () => {
                     "type": "othersNoWaterChrgCollected",
                     "year": "606aafb14dff55e6c075d3ae",
                     "code": [],
-                    "readonly": false,
+                    "readonly": readOnly,
                     "formFieldType": "number",
                     "bottomText": "",
                     "placeHolder": ""
@@ -7528,7 +7530,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "waterChrgTariffDetails",
                 "year": "63735a5bd44534713673c1ca",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "file",
                 "bottomText": "",
                 "placeHolder": ""
@@ -7560,7 +7562,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "omCostDeleveryWater",
                 "year": "63735a5bd44534713673c1ca",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -7579,7 +7581,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "omCostDeleveryWater",
                 "year": "607697074dff55e6c0be33ba",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -7598,7 +7600,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "omCostDeleveryWater",
                 "year": "606aadac4dff55e6c075c507",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -7617,7 +7619,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "omCostDeleveryWater",
                 "year": "606aaf854dff55e6c075d219",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -7636,7 +7638,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "omCostDeleveryWater",
                 "year": "606aafb14dff55e6c075d3ae",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -7671,7 +7673,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "omCostWaterService",
                 "year": "63735a5bd44534713673c1ca",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "file",
                 "bottomText": "",
                 "placeHolder": ""
@@ -7701,7 +7703,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "doesColSewerageCharges",
                 "year": "63735a5bd44534713673c1ca",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "radio-toggle",
                 "bottomText": "",
                 "placeHolder": ""
@@ -7749,7 +7751,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "entitySewerageCharges",
                 "year": "63735a5bd44534713673c1ca",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "select",
                 "bottomText": "",
                 "placeHolder": ""
@@ -7779,7 +7781,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "entityNaSewerageCharges",
                 "year": "63735a5bd44534713673c1ca",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "text",
                 "bottomText": "",
                 "placeHolder": ""
@@ -7815,7 +7817,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "copyGazetteNotificationSewerage",
                 "year": "63735a5bd44534713673c1ca",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "file",
                 "bottomText": "",
                 "placeHolder": ""
@@ -7847,7 +7849,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "totalSewergeChrgDm",
                 "year": "63735a5bd44534713673c1ca",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -7866,7 +7868,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "totalSewergeChrgDm",
                 "year": "607697074dff55e6c0be33ba",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -7885,7 +7887,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "totalSewergeChrgDm",
                 "year": "606aadac4dff55e6c075c507",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -7904,7 +7906,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "totalSewergeChrgDm",
                 "year": "606aaf854dff55e6c075d219",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -7923,7 +7925,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "totalSewergeChrgDm",
                 "year": "606aafb14dff55e6c075d3ae",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -7951,7 +7953,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "curSewergeChrgDm",
                 "year": "63735a5bd44534713673c1ca",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -7970,7 +7972,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "curSewergeChrgDm",
                 "year": "607697074dff55e6c0be33ba",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -7989,7 +7991,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "curSewergeChrgDm",
                 "year": "606aadac4dff55e6c075c507",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -8008,7 +8010,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "curSewergeChrgDm",
                 "year": "606aaf854dff55e6c075d219",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -8027,7 +8029,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "curSewergeChrgDm",
                 "year": "606aafb14dff55e6c075d3ae",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -8055,7 +8057,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "arrSewergeChrgDm",
                 "year": "63735a5bd44534713673c1ca",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -8074,7 +8076,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "arrSewergeChrgDm",
                 "year": "607697074dff55e6c0be33ba",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -8093,7 +8095,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "arrSewergeChrgDm",
                 "year": "606aadac4dff55e6c075c507",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -8112,7 +8114,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "arrSewergeChrgDm",
                 "year": "606aaf854dff55e6c075d219",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -8131,7 +8133,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "arrSewergeChrgDm",
                 "year": "606aafb14dff55e6c075d3ae",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -8159,7 +8161,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "totalSewergeChrgCol",
                 "year": "63735a5bd44534713673c1ca",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -8178,7 +8180,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "totalSewergeChrgCol",
                 "year": "607697074dff55e6c0be33ba",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -8197,7 +8199,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "totalSewergeChrgCol",
                 "year": "606aadac4dff55e6c075c507",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -8216,7 +8218,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "totalSewergeChrgCol",
                 "year": "606aaf854dff55e6c075d219",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -8235,7 +8237,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "totalSewergeChrgCol",
                 "year": "606aafb14dff55e6c075d3ae",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -8263,7 +8265,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "curSewergeChrgCol",
                 "year": "63735a5bd44534713673c1ca",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -8282,7 +8284,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "curSewergeChrgCol",
                 "year": "607697074dff55e6c0be33ba",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -8301,7 +8303,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "curSewergeChrgCol",
                 "year": "606aadac4dff55e6c075c507",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -8320,7 +8322,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "curSewergeChrgCol",
                 "year": "606aaf854dff55e6c075d219",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -8339,7 +8341,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "curSewergeChrgCol",
                 "year": "606aafb14dff55e6c075d3ae",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -8367,7 +8369,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "arrSewergeChrgCol",
                 "year": "63735a5bd44534713673c1ca",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -8386,7 +8388,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "arrSewergeChrgCol",
                 "year": "607697074dff55e6c0be33ba",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -8405,7 +8407,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "arrSewergeChrgCol",
                 "year": "606aadac4dff55e6c075c507",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -8424,7 +8426,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "arrSewergeChrgCol",
                 "year": "606aaf854dff55e6c075d219",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -8443,7 +8445,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "arrSewergeChrgCol",
                 "year": "606aafb14dff55e6c075d3ae",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -8469,7 +8471,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "totalSewergeConnectionDm",
                 "year": "63735a5bd44534713673c1ca",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -8486,7 +8488,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "totalSewergeConnectionDm",
                 "year": "607697074dff55e6c0be33ba",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -8503,7 +8505,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "totalSewergeConnectionDm",
                 "year": "606aadac4dff55e6c075c507",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -8520,7 +8522,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "totalSewergeConnectionDm",
                 "year": "606aaf854dff55e6c075d219",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -8537,7 +8539,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "totalSewergeConnectionDm",
                 "year": "606aafb14dff55e6c075d3ae",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -8563,7 +8565,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "totalSewergeConnectionCol",
                 "year": "63735a5bd44534713673c1ca",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -8580,7 +8582,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "totalSewergeConnectionCol",
                 "year": "607697074dff55e6c0be33ba",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -8597,7 +8599,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "totalSewergeConnectionCol",
                 "year": "606aadac4dff55e6c075c507",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -8614,7 +8616,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "totalSewergeConnectionCol",
                 "year": "606aaf854dff55e6c075d219",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -8631,7 +8633,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "totalSewergeConnectionCol",
                 "year": "606aafb14dff55e6c075d3ae",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -8659,7 +8661,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "resValueSewerageTaxDm",
                 "year": "63735a5bd44534713673c1ca",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -8678,7 +8680,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "resValueSewerageTaxDm",
                 "year": "607697074dff55e6c0be33ba",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -8697,7 +8699,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "resValueSewerageTaxDm",
                 "year": "606aadac4dff55e6c075c507",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -8716,7 +8718,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "resValueSewerageTaxDm",
                 "year": "606aaf854dff55e6c075d219",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -8735,7 +8737,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "resValueSewerageTaxDm",
                 "year": "606aafb14dff55e6c075d3ae",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -8761,7 +8763,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "resNoSewerageTaxDm",
                 "year": "63735a5bd44534713673c1ca",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -8778,7 +8780,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "resNoSewerageTaxDm",
                 "year": "607697074dff55e6c0be33ba",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -8795,7 +8797,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "resNoSewerageTaxDm",
                 "year": "606aadac4dff55e6c075c507",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -8812,7 +8814,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "resNoSewerageTaxDm",
                 "year": "606aaf854dff55e6c075d219",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -8829,7 +8831,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "resNoSewerageTaxDm",
                 "year": "606aafb14dff55e6c075d3ae",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -8857,7 +8859,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "resValueSewerageTaxCollected",
                 "year": "63735a5bd44534713673c1ca",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -8876,7 +8878,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "resValueSewerageTaxCollected",
                 "year": "607697074dff55e6c0be33ba",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -8895,7 +8897,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "resValueSewerageTaxCollected",
                 "year": "606aadac4dff55e6c075c507",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -8914,7 +8916,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "resValueSewerageTaxCollected",
                 "year": "606aaf854dff55e6c075d219",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -8933,7 +8935,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "resValueSewerageTaxCollected",
                 "year": "606aafb14dff55e6c075d3ae",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -8959,7 +8961,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "resNoSewerageTaxCollected",
                 "year": "63735a5bd44534713673c1ca",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -8976,7 +8978,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "resNoSewerageTaxCollected",
                 "year": "607697074dff55e6c0be33ba",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -8993,7 +8995,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "resNoSewerageTaxCollected",
                 "year": "606aadac4dff55e6c075c507",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -9010,7 +9012,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "resNoSewerageTaxCollected",
                 "year": "606aaf854dff55e6c075d219",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -9027,7 +9029,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "resNoSewerageTaxCollected",
                 "year": "606aafb14dff55e6c075d3ae",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -9055,7 +9057,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "comValueSewerageTaxDm",
                 "year": "63735a5bd44534713673c1ca",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -9074,7 +9076,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "comValueSewerageTaxDm",
                 "year": "607697074dff55e6c0be33ba",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -9093,7 +9095,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "comValueSewerageTaxDm",
                 "year": "606aadac4dff55e6c075c507",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -9112,7 +9114,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "comValueSewerageTaxDm",
                 "year": "606aaf854dff55e6c075d219",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -9131,7 +9133,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "comValueSewerageTaxDm",
                 "year": "606aafb14dff55e6c075d3ae",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -9157,7 +9159,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "comNoSewerageTaxDm",
                 "year": "63735a5bd44534713673c1ca",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -9174,7 +9176,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "comNoSewerageTaxDm",
                 "year": "607697074dff55e6c0be33ba",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -9191,7 +9193,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "comNoSewerageTaxDm",
                 "year": "606aadac4dff55e6c075c507",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -9208,7 +9210,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "comNoSewerageTaxDm",
                 "year": "606aaf854dff55e6c075d219",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -9225,7 +9227,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "comNoSewerageTaxDm",
                 "year": "606aafb14dff55e6c075d3ae",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -9253,7 +9255,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "comValueSewerageTaxCollected",
                 "year": "63735a5bd44534713673c1ca",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -9272,7 +9274,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "comValueSewerageTaxCollected",
                 "year": "607697074dff55e6c0be33ba",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -9291,7 +9293,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "comValueSewerageTaxCollected",
                 "year": "606aadac4dff55e6c075c507",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -9310,7 +9312,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "comValueSewerageTaxCollected",
                 "year": "606aaf854dff55e6c075d219",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -9329,7 +9331,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "comValueSewerageTaxCollected",
                 "year": "606aafb14dff55e6c075d3ae",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -9355,7 +9357,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "comNoSewerageTaxCollected",
                 "year": "63735a5bd44534713673c1ca",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -9372,7 +9374,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "comNoSewerageTaxCollected",
                 "year": "607697074dff55e6c0be33ba",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -9389,7 +9391,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "comNoSewerageTaxCollected",
                 "year": "606aadac4dff55e6c075c507",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -9406,7 +9408,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "comNoSewerageTaxCollected",
                 "year": "606aaf854dff55e6c075d219",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -9423,7 +9425,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "comNoSewerageTaxCollected",
                 "year": "606aafb14dff55e6c075d3ae",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -9451,7 +9453,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "indValueSewerageTaxDm",
                 "year": "63735a5bd44534713673c1ca",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -9470,7 +9472,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "indValueSewerageTaxDm",
                 "year": "607697074dff55e6c0be33ba",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -9489,7 +9491,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "indValueSewerageTaxDm",
                 "year": "606aadac4dff55e6c075c507",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -9508,7 +9510,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "indValueSewerageTaxDm",
                 "year": "606aaf854dff55e6c075d219",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -9527,7 +9529,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "indValueSewerageTaxDm",
                 "year": "606aafb14dff55e6c075d3ae",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -9553,7 +9555,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "indNoSewerageTaxDm",
                 "year": "63735a5bd44534713673c1ca",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -9570,7 +9572,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "indNoSewerageTaxDm",
                 "year": "607697074dff55e6c0be33ba",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -9587,7 +9589,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "indNoSewerageTaxDm",
                 "year": "606aadac4dff55e6c075c507",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -9604,7 +9606,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "indNoSewerageTaxDm",
                 "year": "606aaf854dff55e6c075d219",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -9621,7 +9623,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "indNoSewerageTaxDm",
                 "year": "606aafb14dff55e6c075d3ae",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -9649,7 +9651,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "indValueSewerageTaxCollected",
                 "year": "63735a5bd44534713673c1ca",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -9668,7 +9670,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "indValueSewerageTaxCollected",
                 "year": "607697074dff55e6c0be33ba",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -9687,7 +9689,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "indValueSewerageTaxCollected",
                 "year": "606aadac4dff55e6c075c507",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -9706,7 +9708,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "indValueSewerageTaxCollected",
                 "year": "606aaf854dff55e6c075d219",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -9725,7 +9727,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "indValueSewerageTaxCollected",
                 "year": "606aafb14dff55e6c075d3ae",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -9751,7 +9753,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "indNoSewerageTaxCollected",
                 "year": "63735a5bd44534713673c1ca",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -9768,7 +9770,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "indNoSewerageTaxCollected",
                 "year": "607697074dff55e6c0be33ba",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -9785,7 +9787,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "indNoSewerageTaxCollected",
                 "year": "606aadac4dff55e6c075c507",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -9802,7 +9804,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "indNoSewerageTaxCollected",
                 "year": "606aaf854dff55e6c075d219",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -9819,7 +9821,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "indNoSewerageTaxCollected",
                 "year": "606aafb14dff55e6c075d3ae",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -9854,7 +9856,7 @@ const propertyTaxOpFormJson = () => {
                     "type": "otherValueSewerageTaxDm",
                     "year": "63735a5bd44534713673c1ca",
                     "code": [],
-                    "readonly": false,
+                    "readonly": readOnly,
                     "formFieldType": "number",
                     "bottomText": "",
                     "placeHolder": ""
@@ -9873,7 +9875,7 @@ const propertyTaxOpFormJson = () => {
                     "type": "otherValueSewerageTaxDm",
                     "year": "607697074dff55e6c0be33ba",
                     "code": [],
-                    "readonly": false,
+                    "readonly": readOnly,
                     "formFieldType": "number",
                     "bottomText": "",
                     "placeHolder": ""
@@ -9892,7 +9894,7 @@ const propertyTaxOpFormJson = () => {
                     "type": "otherValueSewerageTaxDm",
                     "year": "606aadac4dff55e6c075c507",
                     "code": [],
-                    "readonly": false,
+                    "readonly": readOnly,
                     "formFieldType": "number",
                     "bottomText": "",
                     "placeHolder": ""
@@ -9911,7 +9913,7 @@ const propertyTaxOpFormJson = () => {
                     "type": "otherValueSewerageTaxDm",
                     "year": "606aaf854dff55e6c075d219",
                     "code": [],
-                    "readonly": false,
+                    "readonly": readOnly,
                     "formFieldType": "number",
                     "bottomText": "",
                     "placeHolder": ""
@@ -9930,7 +9932,7 @@ const propertyTaxOpFormJson = () => {
                     "type": "otherValueSewerageTaxDm",
                     "year": "606aafb14dff55e6c075d3ae",
                     "code": [],
-                    "readonly": false,
+                    "readonly": readOnly,
                     "formFieldType": "number",
                     "bottomText": "",
                     "placeHolder": ""
@@ -9956,7 +9958,7 @@ const propertyTaxOpFormJson = () => {
                     "type": "otherNoSewerageTaxDm",
                     "year": "63735a5bd44534713673c1ca",
                     "code": [],
-                    "readonly": false,
+                    "readonly": readOnly,
                     "formFieldType": "number",
                     "bottomText": "",
                     "placeHolder": ""
@@ -9973,7 +9975,7 @@ const propertyTaxOpFormJson = () => {
                     "type": "otherNoSewerageTaxDm",
                     "year": "607697074dff55e6c0be33ba",
                     "code": [],
-                    "readonly": false,
+                    "readonly": readOnly,
                     "formFieldType": "number",
                     "bottomText": "",
                     "placeHolder": ""
@@ -9990,7 +9992,7 @@ const propertyTaxOpFormJson = () => {
                     "type": "otherNoSewerageTaxDm",
                     "year": "606aadac4dff55e6c075c507",
                     "code": [],
-                    "readonly": false,
+                    "readonly": readOnly,
                     "formFieldType": "number",
                     "bottomText": "",
                     "placeHolder": ""
@@ -10007,7 +10009,7 @@ const propertyTaxOpFormJson = () => {
                     "type": "otherNoSewerageTaxDm",
                     "year": "606aaf854dff55e6c075d219",
                     "code": [],
-                    "readonly": false,
+                    "readonly": readOnly,
                     "formFieldType": "number",
                     "bottomText": "",
                     "placeHolder": ""
@@ -10024,7 +10026,7 @@ const propertyTaxOpFormJson = () => {
                     "type": "otherNoSewerageTaxDm",
                     "year": "606aafb14dff55e6c075d3ae",
                     "code": [],
-                    "readonly": false,
+                    "readonly": readOnly,
                     "formFieldType": "number",
                     "bottomText": "",
                     "placeHolder": ""
@@ -10052,7 +10054,7 @@ const propertyTaxOpFormJson = () => {
                     "type": "otherValueSewerageTaxCollected",
                     "year": "63735a5bd44534713673c1ca",
                     "code": [],
-                    "readonly": false,
+                    "readonly": readOnly,
                     "formFieldType": "number",
                     "bottomText": "",
                     "placeHolder": ""
@@ -10071,7 +10073,7 @@ const propertyTaxOpFormJson = () => {
                     "type": "otherValueSewerageTaxCollected",
                     "year": "607697074dff55e6c0be33ba",
                     "code": [],
-                    "readonly": false,
+                    "readonly": readOnly,
                     "formFieldType": "number",
                     "bottomText": "",
                     "placeHolder": ""
@@ -10090,7 +10092,7 @@ const propertyTaxOpFormJson = () => {
                     "type": "otherValueSewerageTaxCollected",
                     "year": "606aadac4dff55e6c075c507",
                     "code": [],
-                    "readonly": false,
+                    "readonly": readOnly,
                     "formFieldType": "number",
                     "bottomText": "",
                     "placeHolder": ""
@@ -10109,7 +10111,7 @@ const propertyTaxOpFormJson = () => {
                     "type": "otherValueSewerageTaxCollected",
                     "year": "606aaf854dff55e6c075d219",
                     "code": [],
-                    "readonly": false,
+                    "readonly": readOnly,
                     "formFieldType": "number",
                     "bottomText": "",
                     "placeHolder": ""
@@ -10128,7 +10130,7 @@ const propertyTaxOpFormJson = () => {
                     "type": "otherValueSewerageTaxCollected",
                     "year": "606aafb14dff55e6c075d3ae",
                     "code": [],
-                    "readonly": false,
+                    "readonly": readOnly,
                     "formFieldType": "number",
                     "bottomText": "",
                     "placeHolder": ""
@@ -10154,7 +10156,7 @@ const propertyTaxOpFormJson = () => {
                     "type": "otherNoSewerageTaxCollected",
                     "year": "63735a5bd44534713673c1ca",
                     "code": [],
-                    "readonly": false,
+                    "readonly": readOnly,
                     "formFieldType": "number",
                     "bottomText": "",
                     "placeHolder": ""
@@ -10171,7 +10173,7 @@ const propertyTaxOpFormJson = () => {
                     "type": "otherNoSewerageTaxCollected",
                     "year": "607697074dff55e6c0be33ba",
                     "code": [],
-                    "readonly": false,
+                    "readonly": readOnly,
                     "formFieldType": "number",
                     "bottomText": "",
                     "placeHolder": ""
@@ -10188,7 +10190,7 @@ const propertyTaxOpFormJson = () => {
                     "type": "otherNoSewerageTaxCollected",
                     "year": "606aadac4dff55e6c075c507",
                     "code": [],
-                    "readonly": false,
+                    "readonly": readOnly,
                     "formFieldType": "number",
                     "bottomText": "",
                     "placeHolder": ""
@@ -10205,7 +10207,7 @@ const propertyTaxOpFormJson = () => {
                     "type": "otherNoSewerageTaxCollected",
                     "year": "606aaf854dff55e6c075d219",
                     "code": [],
-                    "readonly": false,
+                    "readonly": readOnly,
                     "formFieldType": "number",
                     "bottomText": "",
                     "placeHolder": ""
@@ -10222,7 +10224,7 @@ const propertyTaxOpFormJson = () => {
                     "type": "otherNoSewerageTaxCollected",
                     "year": "606aafb14dff55e6c075d3ae",
                     "code": [],
-                    "readonly": false,
+                    "readonly": readOnly,
                     "formFieldType": "number",
                     "bottomText": "",
                     "placeHolder": ""
@@ -10269,7 +10271,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "sewerageChrgTarrifSheet",
                 "year": "63735a5bd44534713673c1ca",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "file",
                 "bottomText": "",
                 "placeHolder": ""
@@ -10301,7 +10303,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "omCostDeleverySewerage",
                 "year": "63735a5bd44534713673c1ca",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -10320,7 +10322,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "omCostDeleverySewerage",
                 "year": "607697074dff55e6c0be33ba",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -10339,7 +10341,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "omCostDeleverySewerage",
                 "year": "606aadac4dff55e6c075c507",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -10358,7 +10360,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "omCostDeleverySewerage",
                 "year": "606aaf854dff55e6c075d219",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -10377,7 +10379,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "omCostDeleverySewerage",
                 "year": "606aafb14dff55e6c075d3ae",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "number",
                 "bottomText": "",
                 "placeHolder": ""
@@ -10412,7 +10414,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "omCostSewerageService",
                 "year": "63735a5bd44534713673c1ca",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "file",
                 "bottomText": "",
                 "placeHolder": ""
@@ -10448,7 +10450,7 @@ const propertyTaxOpFormJson = () => {
                 "type": "signedPdf",
                 "year": "63735a5bd44534713673c1ca",
                 "code": [],
-                "readonly": false,
+                "readonly": readOnly,
                 "formFieldType": "file",
                 "bottomText": "",
                 "placeHolder": ""
