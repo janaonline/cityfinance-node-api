@@ -15,6 +15,11 @@ const Rating = require('../../models/Rating');
 const { roundValue, convertValue, removeEscapeChars, formatDate } = require('../../util/helper')
 const { years } = require('../../service/years');
 const mongoose = require('mongoose');
+const { canShow, decideDisplayPriority, getKeyByValue } = require("../PropertyTaxOp/service")
+const PropertyTaxOp = require('../../models/PropertyTaxOp')
+const { sortPosition, propertyTaxOpFormJson } = require('../PropertyTaxOp/fydynemic')
+const ExcelJS = require("exceljs")
+const fs = require("fs")
 
 module.exports.get = async (req, res) => {
   try {
@@ -2118,4 +2123,206 @@ const getActionStatus = (obj, entity) => {
     }
   }
   return obj
+}
+
+module.exports.getExcelCol = (index) => {
+  const ordA = 'A'.charCodeAt(0);
+  const ordZ = 'Z'.charCodeAt(0);
+  const len = ordZ - ordA + 1;
+
+  let s = "";
+  while (index >= 0) {
+    s = String.fromCharCode(index % len + ordA) + s;
+    index = Math.floor(index / len) - 1;
+  }
+  return s;
+}
+
+const getQuestionsMapping = (questions, counter = 0) => {
+  const questionColMapping = {}
+  for (const key in questions) {
+    const crrQuestion = questions[key]
+    if (crrQuestion.copyChildFrom?.length) {
+      if (["otherValuePropertyType", "otherValueSewerageType", "othersValueWaterType"].includes(key)) {
+        for (let i = 0; i < crrQuestion.maxChild; i++) {
+          for (const child of crrQuestion.copyChildFrom) {
+            questionColMapping[`${child.key}-textValue-${i}`] = this.getExcelCol(counter)
+            counter++
+            for (const year of child.yearData) {
+              if (Object.keys(year).length) {
+                questionColMapping[`${child.key}-${year.key.split("-")[1]}-${i}`] = this.getExcelCol(counter)
+                counter++
+              }
+            }
+          }
+        }
+      } else {
+        for (const child of crrQuestion.copyChildFrom) {
+          counter++
+          for (let i = 0; i < crrQuestion.maxChild; i++) {
+            if (!["userChargesDmndChild", "userChargesCollectionChild"].includes(child.key)) {
+              questionColMapping[`${child.key}-textValue-${i}`] = this.getExcelCol(counter)
+              counter++
+            }
+            for (const year of child.yearData) {
+              if (Object.keys(year).length) {
+                questionColMapping[`${child.key}-${year.key.split("-")[1]}-${i}`] = this.getExcelCol(counter)
+                counter++
+              }
+            }
+          }
+        }
+      }
+    } else {
+      if (crrQuestion.yearData?.length) {
+        for (const year of crrQuestion.yearData) {
+          if (year.key) {
+            questionColMapping[`${key}-${year.key.split("-")[1]}`] = this.getExcelCol(counter)
+            counter++
+          }
+        }
+      } else {
+        questionColMapping[`${key}`] = crrCol = this.getExcelCol(counter)
+        counter++
+      }
+    }
+  }
+
+  return questionColMapping
+}
+
+module.exports.downloadPTOExcel = async (req, res) => {
+  try {
+    const questions = propertyTaxOpFormJson()['tabs'][0]['data']
+    const startRowIndex = 5;
+    const questionColMapping = getQuestionsMapping(questions, 8)
+
+    let { getQuery } = req.query
+    getQuery = getQuery === "true"
+    const design_year = ObjectId(years['2023-24'])
+    if (getQuery) {
+      response.query = getQuery
+      return response
+    }
+
+    const cursor = await PropertyTaxOp.aggregate([
+      { $match: { "design_year": design_year } },
+      {
+        $lookup: {
+          from: "propertytaxopmappers",
+          localField: "_id",
+          foreignField: "ptoId",
+          as: "propertytaxopmapper"
+        }
+      },
+      {
+        $lookup: {
+          from: "propertymapperchilddatas",
+          localField: "_id",
+          foreignField: "ptoId",
+          as: "propertymapperchilddata"
+        }
+      },
+      {
+        $lookup: {
+          from: "ulbs",
+          localField: "ulb",
+          foreignField: "_id",
+          as: "ulb"
+        }
+      },
+      { $unwind: "$ulb" },
+      {
+        $lookup: {
+          from: "states",
+          localField: "ulb.state",
+          foreignField: "_id",
+          as: "state"
+        }
+      },
+      { $unwind: "$state" },
+      { $limit: 10 }
+    ]).allowDiskUse(true)
+      .cursor({ batchSize: 150 })
+      .addCursorFlag("noCursorTimeout", true)
+      .exec();
+
+    let counter = 0;
+    const timestamp = Date.now()
+
+    const tempFilePath = "uploads/p-tax"
+    if (!fs.existsSync(tempFilePath)) {
+      fs.mkdirSync(tempFilePath);
+    }
+
+    const template = fs.readFileSync(`p-tax/ptax-template.xlsx`)
+    fs.writeFileSync(`${tempFilePath}/${timestamp}_ptax_download.xlsx`, template)
+    const workbook = new ExcelJS.Workbook()
+    const crrWorkbook = await workbook.xlsx.readFile(`${tempFilePath}/${timestamp}_ptax_download.xlsx`)
+    const crrWorksheet = crrWorkbook.getWorksheet("Sheet 1")
+
+    cursor.on("data", (el) => {
+      const positionValuePair = {
+        [`A${startRowIndex + counter}`]: counter + 1,
+        [`B${startRowIndex + counter}`]: el.state.name,
+        [`C${startRowIndex + counter}`]: el.ulb.name,
+        [`D${startRowIndex + counter}`]: el.ulb.code,
+        [`E${startRowIndex + counter}`]: el.ulb.censusCode ?? el.ulb.sbCode,
+        [`F${startRowIndex + counter}`]: getKeyByValue(years, el.design_year.toString()),
+        [`G${startRowIndex + counter}`]: MASTER_STATUS_ID[el.currentFormStatus],
+      }
+
+      const updatedDatas = {}
+      const filteredResults = el.propertytaxopmapper;
+      const sortedResults = filteredResults.sort(sortPosition)
+      for (const result of sortedResults) {
+        if (result?.year && questionColMapping[`${result.type}-${YEAR_CONSTANTS_IDS[result?.year].split("-")[1]}`])
+          positionValuePair[`${questionColMapping[`${result.type}-${YEAR_CONSTANTS_IDS[result?.year].split("-")[1]}`]}${startRowIndex + counter}`] = result.value
+        if (!canShow(result.type, sortedResults, updatedDatas, el.ulb._id)) continue;
+        if (result.child && result.child.length) {
+          const childCounter = {}
+          for (const childId of result.child) {
+            const child = el?.propertymapperchilddata?.length > 0 ? el?.propertymapperchilddata.find(e => e._id.toString() == childId.toString()) : null
+            const number = decideDisplayPriority(0, child.type, result.displayPriority, child.replicaNumber, result.type)
+            child.displayPriority = number
+            if (child) {
+              if (!childCounter[child.type])
+                childCounter[child.type] = 0
+
+              if ((childCounter[child.type] % 5 === 0 || childCounter[child.type] === 0)) {
+                const textValueCounter = childCounter[child.type] ? childCounter[child.type] / 5 : 0
+                if (questionColMapping[`${child.type}-textValue-${textValueCounter}`])
+                  positionValuePair[`${questionColMapping[`${child.type}-textValue-${textValueCounter}`]}${startRowIndex + counter}`] = child.textValue
+              }
+
+              if (child?.year && questionColMapping[`${child.type}-${YEAR_CONSTANTS_IDS[child?.year].split("-")[1]}-${child.replicaNumber - 1}`]) {
+                positionValuePair[`${questionColMapping[`${child.type}-${YEAR_CONSTANTS_IDS[child?.year].split("-")[1]}-${child.replicaNumber - 1}`]}${startRowIndex + counter}`] = child.value
+              }
+              childCounter[child.type]++
+            }
+          }
+        }
+      }
+
+      for (const key in positionValuePair) {
+        crrWorksheet.getCell(key).value = positionValuePair[key]
+      }
+
+      crrWorkbook.xlsx.writeFile(`${tempFilePath}/${timestamp}_ptax_download.xlsx`);
+      counter++
+    });
+
+    cursor.on("end", async function (el) {
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      res.setHeader("Content-Disposition", "attachment; filename=" + `${timestamp}_ptax_download.xlsx`);
+
+      await crrWorkbook.xlsx.write(res);
+      fs.unlink(`${tempFilePath}/${timestamp}_ptax_download.xlsx`, (err) => console.log(err))
+      res.end();
+
+    });
+  } catch (err) {
+    console.log("err", err)
+    console.log("error in getCsvForPropertyTaxMapper ::::: ", err.message)
+  }
 }
