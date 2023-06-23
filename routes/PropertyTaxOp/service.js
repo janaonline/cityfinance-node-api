@@ -18,6 +18,7 @@ const { saveStatusAndHistory } = require("../CommonFormSubmission/service")
 const getKeyByValue = (object, value) => {
     return Object.keys(object).find(key => object[key] === value);
 }
+module.exports.getKeyByValue = getKeyByValue;
 
 module.exports.getForm = async (req, res) => {
     try {
@@ -1203,7 +1204,7 @@ function getTextValues(result,displayPriority){
     }
     return ""
 }
-
+module.exports.getTextValues = getTextValues
 
 function getSubHeaders(displayPriority) {
     try {
@@ -1310,6 +1311,7 @@ const getStringValue = (result, parentDp, ipValue = false) => {
     }
     return writableStr
 }
+module.exports.getStringValue = getStringValue
 
 const decideDisplayPriority = (index, type, dp, replicaNumber, parentType) => {
     try {
@@ -1323,7 +1325,7 @@ const decideDisplayPriority = (index, type, dp, replicaNumber, parentType) => {
     }
     return dp + "." + replicaNumber
 }
-
+module.exports.decideDisplayPriority = decideDisplayPriority
 
 
 const canShow = (key, results, updatedDatas,ulb) => {
@@ -1341,12 +1343,12 @@ const canShow = (key, results, updatedDatas,ulb) => {
             else{
                 element = updatedDatas[keyName]
             }
-            let show = element.value === "Yes" 
+            let show = element?.value === "Yes" 
             if(reverseKeys.includes(key)){
-                show = element.value === "No"
+                show = element?.value === "No"
             }
             if(["entityNameWaterCharges","entityNaSewerageCharges"].includes(key)){
-                show = element.value !== "ULB"
+                show = element?.value !== "ULB"
             }
             return show
         }
@@ -1358,6 +1360,8 @@ const canShow = (key, results, updatedDatas,ulb) => {
     }
     return true
 }
+module.exports.canShow = canShow
+
 // module.exports.getCsvForPropertyTaxMapper = async (req, res) => {
 //     let response = {
 //         "success": true,
