@@ -2242,7 +2242,7 @@ module.exports.downloadPTOExcel = async (req, res) => {
       },
       { $unwind: "$state" }
     ]).allowDiskUse(true)
-      .cursor({ batchSize: 150 })
+      .cursor({ batchSize: 100 })
       .addCursorFlag("noCursorTimeout", true)
       .exec();
 
