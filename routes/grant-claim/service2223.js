@@ -585,7 +585,8 @@ function generateOutputObject(input) {
   }
 }
 function sortInputById(input) {
-  const sortedEntries = Object.values(input).sort((a, b) => a.id - b.id)
+  // const sortedEntries = Object.values(input).sort((a, b) => a.id - b.id);
+  const sortedEntries = Object.fromEntries(Object.entries(input).sort(([, a], [, b]) => a.id - b.id) );
   return sortedEntries;
 }
 
