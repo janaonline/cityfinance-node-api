@@ -2205,24 +2205,15 @@ module.exports.downloadPTOExcel = async (req, res) => {
       return response
     }
 
+    if (!req.query.state_code)
+      return res.status(400).json({ success: false, message: "State code is mandatory" })
+
+    let stateCode = req.query.state_code.split(",").map(e => e.trim())
+
+    // let stateList = await State.find({ "code": { $in: req.query.state_code.split(",").map(e => e.trim()) } },{"_id" : })
+
     const cursor = await PropertyTaxOp.aggregate([
       { $match: { "design_year": design_year } },
-      {
-        $lookup: {
-          from: "propertytaxopmappers",
-          localField: "_id",
-          foreignField: "ptoId",
-          as: "propertytaxopmapper"
-        }
-      },
-      {
-        $lookup: {
-          from: "propertymapperchilddatas",
-          localField: "_id",
-          foreignField: "ptoId",
-          as: "propertymapperchilddata"
-        }
-      },
       {
         $lookup: {
           from: "ulbs",
@@ -2240,7 +2231,24 @@ module.exports.downloadPTOExcel = async (req, res) => {
           as: "state"
         }
       },
-      { $unwind: "$state" }
+      { $unwind: "$state" },
+      { $match: { "state.code": { $in: stateCode } } },
+      {
+        $lookup: {
+          from: "propertytaxopmappers",
+          localField: "_id",
+          foreignField: "ptoId",
+          as: "propertytaxopmapper"
+        }
+      },
+      {
+        $lookup: {
+          from: "propertymapperchilddatas",
+          localField: "_id",
+          foreignField: "ptoId",
+          as: "propertymapperchilddata"
+        }
+      }
     ]).allowDiskUse(true)
       .cursor({ batchSize: 100 })
       .addCursorFlag("noCursorTimeout", true)
