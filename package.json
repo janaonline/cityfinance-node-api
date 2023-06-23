@@ -19,7 +19,7 @@
     "cron": "^2.1.0",
     "csvtojson": "^2.0.10",
     "dotenv": "^8.2.0",
-    "exceljs": "^4.2.1",
+    "exceljs": "^4.3.0",
     "express": "4.16.4",
     "express-sanitizer": "^1.0.6",
     "express-validator": "^6.10.0",

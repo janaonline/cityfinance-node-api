@@ -7,7 +7,7 @@ const Service = require('../../service');
 const { FormNames, MASTER_STATUS_ID } = require('../../util/FormNames');
 const User = require('../../models/User');
 const { checkUndefinedValidations } = require('../../routes/FiscalRanking/service');
-const { propertyTaxOpFormJson, skippableKeys, financialYearTableHeader,indicatorsWithNoyears ,  specialHeaders, skipLogicDependencies,childKeys,reverseKeys ,questionIndicators,sortPosition} = require('./fydynemic')
+const { propertyTaxOpFormJson, skippableKeys, financialYearTableHeader, indicatorsWithNoyears, specialHeaders, skipLogicDependencies, childKeys, reverseKeys, questionIndicators, sortPosition } = require('./fydynemic')
 const { isEmptyObj, isReadOnly } = require('../../util/helper');
 const PropertyMapperChildData = require("../../models/PropertyTaxMapperChild");
 const { years } = require('../../service/years');
@@ -18,6 +18,7 @@ const { saveStatusAndHistory } = require("../CommonFormSubmission/service")
 const getKeyByValue = (object, value) => {
     return Object.keys(object).find(key => object[key] === value);
 }
+module.exports.getKeyByValue = getKeyByValue;
 
 module.exports.getForm = async (req, res) => {
     try {
@@ -553,7 +554,7 @@ function assignChildToMainKeys(data) {
             let element = { ...seperatedObject[key] }
             if (element.child) {
                 for (let childElement of keysWithChild[key]) {
-                    console.log("childElement :: ",childElement)
+                    console.log("childElement :: ", childElement)
                     let filteredChildren = element.child.filter(item => item.key === childElement)
                     let yearData = [...mergeChildObjectsYearData(filteredChildren)]
                     seperatedObject[childElement] = {
@@ -668,7 +669,7 @@ async function handleMultipleValidations(params) {
             let toCheckValidation = await checkIfFieldsAreNotEmpty(validationParams)
             // console.log("toCheckValidation :: ",toCheckValidation)
             if (toCheckValidation.checkForValidations) {
-                console.log("toCheckValidation 44:: ",keysToFind)
+                console.log("toCheckValidation 44:: ", keysToFind)
                 let sumOfrefVal = await getYearDataSumForValidations(keysToFind, data)
                 let sumOfCurrentKey = await yearWiseValues(dynamicObj.yearData)
                 let errorMessage = await createErrorMessage(validationObj, dynamicObj)
@@ -681,9 +682,9 @@ async function handleMultipleValidations(params) {
                     message: errorMessage
                 }
                 let compareValidator = compareValues(valueParams)
-                console.log("sumOfrefVal :: ",sumOfrefVal)
-                console.log("sumOfCurrentKey :: ",sumOfCurrentKey)
-                console.log("compareValidator :::: ",compareValidator)
+                console.log("sumOfrefVal :: ", sumOfrefVal)
+                console.log("sumOfCurrentKey :: ", sumOfCurrentKey)
+                console.log("compareValidator :::: ", compareValidator)
                 if (!compareValidator.valid) {
                     return compareValidator
                 }
@@ -830,7 +831,7 @@ async function handleNonSubmissionValidation(params) {
                 // console.log("sumOfrefVal ::: ",sumOfrefVal,"keystoFind ::: ",keysToFind)
                 // console.log("sumOfCurrentKey :::: ",sumOfCurrentKey,"keysToFind:::",keysToFind)
                 if (toCheckValidation.checkForValidations) {
-                    console.log("toCheckValidation  33:: ",keysToFind)
+                    console.log("toCheckValidation  33:: ", keysToFind)
                     let sumOfrefVal = await getYearDataSumForValidations(keysToFind, data)
                     let sumOfCurrentKey = await yearWiseValues(dynamicObj.yearData)
                     let errorMessage = await createErrorMessage(validationJson[dynamicObj.key], dynamicObj)
@@ -1147,7 +1148,7 @@ exports.getView = async function (req, res, next) {
 function getLabelName(type) {
     try {
         let indicators = questionIndicators
-          
+
         let labelName = indicators[type] ? indicators[type].split(",").join("") : ""
         return labelName
     }
@@ -1157,9 +1158,9 @@ function getLabelName(type) {
     }
 }
 
-function getTextValues(result,displayPriority){
-    try{
-        
+function getTextValues(result, displayPriority) {
+    try {
+
         let subHeaders = {
             "2.05-2.08": "Residential Properties",
             "2.09-2.12": "Commercial Properties",
@@ -1167,12 +1168,12 @@ function getTextValues(result,displayPriority){
             "2.17-2.20": "Government Properties",
             "2.21-2.24": "Institutional Properties",
             "2.25-2.29": "Other Properties",
-            "5.13-5.16" :"Residential connections",
-            "5.17-5.20":"Commercial connections",
-            "5.21-5.24" :"Industrial connections",
-            "6.13-6.16" :"Residential connections",
-            "6.17-6.20":"Commercial connections",
-            "6.21-6.24" :"Industrial connections",
+            "5.13-5.16": "Residential connections",
+            "5.17-5.20": "Commercial connections",
+            "5.21-5.24": "Industrial connections",
+            "6.13-6.16": "Residential connections",
+            "6.17-6.20": "Commercial connections",
+            "6.21-6.24": "Industrial connections",
         }
         for (let range in subHeaders) {
             let [integerA, integerB] = range.split("-")
@@ -1194,15 +1195,16 @@ function getTextValues(result,displayPriority){
             }
         }
     }
-    catch(err){
+    catch (err) {
         console.log(err)
-        console.log("ulb ::: ",result.ulb)
-        console.log("result.type ::: ",result.type ,"dp ::: ",result.displayPriority)
-        console.log("error in getIpValues :::: ",err.message)
+        console.log("ulb ::: ", result.ulb)
+        console.log("result.type ::: ", result.type, "dp ::: ", result.displayPriority)
+        console.log("error in getIpValues :::: ", err.message)
         return "NA"
     }
     return ""
 }
+module.exports.getTextValues = getTextValues
 
 
 function getSubHeaders(displayPriority) {
@@ -1284,7 +1286,7 @@ const getStringValue = (result, parentDp, ipValue = false) => {
     let writableStr = ""
     try {
         let dataYear = result?.year
-        if(indicatorsWithNoyears.includes(result.type)){
+        if (indicatorsWithNoyears.includes(result.type)) {
             dataYear = ""
         }
         let indicatorDpNumber = parentDp ? parentDp : result.displayPriority
@@ -1298,7 +1300,7 @@ const getStringValue = (result, parentDp, ipValue = false) => {
         writableStr += dataYear ? getKeyByValue(years, result?.year.toString()) + "," : " " + ","
         writableStr += indicatorHead + ","
         writableStr += indicatorSubHead + ","
-        writableStr +=  "'"+indicatorNumber + ","
+        writableStr += "'" + indicatorNumber + ","
         writableStr += ipValue ? result.textValue + "," : "NA" + ","
         writableStr += getLabelName(result.type) + ","
         // console.log("parentDp ::: ",parentDp)
@@ -1310,6 +1312,7 @@ const getStringValue = (result, parentDp, ipValue = false) => {
     }
     return writableStr
 }
+module.exports.getStringValue = getStringValue
 
 const decideDisplayPriority = (index, type, dp, replicaNumber, parentType) => {
     try {
@@ -1323,12 +1326,13 @@ const decideDisplayPriority = (index, type, dp, replicaNumber, parentType) => {
     }
     return dp + "." + replicaNumber
 }
+module.exports.decideDisplayPriority = decideDisplayPriority
 
 
 
-const canShow = (key, results, updatedDatas,ulb) => {
+const canShow = (key, results, updatedDatas, ulb) => {
     try {
-        
+
         if (Object.keys(skippableKeys).includes(key)) {
             let elementToFind = skippableKeys[key]
             let element = {}
@@ -1338,26 +1342,28 @@ const canShow = (key, results, updatedDatas,ulb) => {
                 element = results.find(item => item.type === elementToFind)
                 updatedDatas[keyName] = element
             }
-            else{
+            else {
                 element = updatedDatas[keyName]
             }
-            let show = element.value === "Yes" 
-            if(reverseKeys.includes(key)){
-                show = element.value === "No"
+            let show = element?.value === "Yes"
+            if (reverseKeys.includes(key)) {
+                show = element?.value === "No"
             }
-            if(["entityNameWaterCharges","entityNaSewerageCharges"].includes(key)){
-                show = element.value !== "ULB"
+            if (["entityNameWaterCharges", "entityNaSewerageCharges"].includes(key)) {
+                show = element?.value !== "ULB"
             }
             return show
         }
     }
     catch (err) {
-        console.log("ulb ::: ",ulb)
+        console.log("ulb ::: ", ulb)
         // notificationFile
         console.log("error in canSHow ::: ", err.message)
     }
     return true
 }
+module.exports.canShow = canShow
+
 // module.exports.getCsvForPropertyTaxMapper = async (req, res) => {
 //     let response = {
 //         "success": true,
@@ -1461,7 +1467,7 @@ module.exports.getCsvForPropertyTaxMapper = async (req, res) => {
         res.write("\ufeff" + `${csvCols.join(",").toString()}` + "\r\n");
 
         let cursor = await PropertyTaxOp.aggregate([
-            { $match: { "design_year": design_year} },
+            { $match: { "design_year": design_year } },
             // { $match: { "design_year": design_year,"ulb": ObjectId("5fa24661072dab780a6f150b")} },
             {
                 $lookup: {
@@ -1509,7 +1515,7 @@ module.exports.getCsvForPropertyTaxMapper = async (req, res) => {
             for (let result of sortedResults) {
                 let censusCode = el.ulb.censusCode != null ? el.ulb.censusCode : el.ulb.sbCode
                 let writableStr = el.state.name + "," + el.ulb.name + "," + el.ulb.natureOfUlb + "," + el.ulb.code + "," + censusCode + "," + MASTER_STATUS_ID[el.currentFormStatus] + "," + getKeyByValue(years, el.design_year.toString()) + ","
-                let modifiedTextValue = getTextValues(result,result.displayPriority).replace(",")
+                let modifiedTextValue = getTextValues(result, result.displayPriority).replace(",")
                 result.textValue = modifiedTextValue ? modifiedTextValue : " "
                 if (!canShow(result.type, sortedResults, updatedDatas, el.ulb._id)) continue;
                 writableStr += getStringValue(result, false, true)
@@ -1522,9 +1528,9 @@ module.exports.getCsvForPropertyTaxMapper = async (req, res) => {
                         child.displayPriority = number
                         if (child) {
                             writableStr = el.state.name + "," + el.ulb.name + "," + el.ulb.natureOfUlb + "," + el.ulb.code + "," + el.ulb.censusCode + "," + status + "," + getKeyByValue(years, el.design_year.toString()) + ","
-                         censusCode || ""
+                            censusCode || ""
                             child.textValue = child.textValue ? child.textValue : modifiedTextValue
-                            writableStr += getStringValue(child,result.displayPriority, true)
+                            writableStr += getStringValue(child, result.displayPriority, true)
                             res.write(writableStr)
                             writableStr = ""
                         }
@@ -1554,22 +1560,22 @@ const createDataStructureForCsv = (ulbs, results, res) => {
             let sortedResults = filteredResults.sort(sortPosition)
             for (let result of sortedResults) {
                 let status = MASTER_STATUS_ID[result.ptoId.currentFormStatus] || ""
-                let censusCode = result.ptoId.ulb.censusCode != null ? result.ptoId.ulb.censusCode : result.ptoId.ulb.sbCode 
+                let censusCode = result.ptoId.ulb.censusCode != null ? result.ptoId.ulb.censusCode : result.ptoId.ulb.sbCode
                 let writableStr = result.ptoId.ulb.state.name + "," + result.ptoId.ulb.name + "," + result.ptoId.ulb.natureOfUlb + "," + result.ptoId.ulb.code + "," + censusCode + "," + status + "," + getKeyByValue(years, result.ptoId.design_year.toString()) + ","
-                let modifiedTextValue = getTextValues(result,result.displayPriority).replace(",")
+                let modifiedTextValue = getTextValues(result, result.displayPriority).replace(",")
                 result.textValue = modifiedTextValue ? modifiedTextValue : " "
-                if (!canShow(result.type, sortedResults, updatedDatas,result.ptoId.ulb._id)) continue;
-                writableStr += getStringValue(result,false,true)
+                if (!canShow(result.type, sortedResults, updatedDatas, result.ptoId.ulb._id)) continue;
+                writableStr += getStringValue(result, false, true)
                 if (result.child && result.child.length) {
                     res.write(writableStr)
                     for (let child of result.child) {
-                        let number = decideDisplayPriority(0,child.type,result.displayPriority,child.replicaNumber,result.type)
+                        let number = decideDisplayPriority(0, child.type, result.displayPriority, child.replicaNumber, result.type)
                         child.displayPriority = number
-                        let censusCode = result.ptoId.ulb.censusCode != null ? result.ptoId.ulb.censusCode : result.ptoId.ulb.sbCode 
+                        let censusCode = result.ptoId.ulb.censusCode != null ? result.ptoId.ulb.censusCode : result.ptoId.ulb.sbCode
                         writableStr = result.ptoId.ulb.state.name + "," + result.ptoId.ulb.name + "," + result.ptoId.ulb.natureOfUlb + "," + result.ptoId.ulb.code + "," + result.ptoId.ulb.censusCode + "," + status + "," + getKeyByValue(years, result.ptoId.design_year.toString()) + ","
                         censusCode || ""
                         child.textValue = child.textValue ? child.textValue : modifiedTextValue
-                        writableStr += getStringValue(child,result.displayPriority,true)
+                        writableStr += getStringValue(child, result.displayPriority, true)
                         res.write(writableStr)
                         writableStr = ""
                     }

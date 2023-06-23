@@ -1084,7 +1084,7 @@ const propertyTaxOpFormJson = () => {
                 "info": ""
               }
             ],
-            "maxChild": 10,
+            "maxChild": 5,
             "copyOptions": [
               {
                 "id": "Water charges",
@@ -1896,7 +1896,7 @@ const propertyTaxOpFormJson = () => {
                 "info": ""
               }
             ],
-            "maxChild": 10,
+            "maxChild": 5,
             "copyOptions": [
               {
                 "id": "Water charges",
@@ -12016,7 +12016,7 @@ function sortPosition(itemA, itemB) {
   const [integerA, decimalA] = itemA.displayPriority.split('.').map(i => +i);
   const [integerB, decimalB] = itemB.displayPriority.split('.').map(i => +i);
   if (integerA != integerB) {
-      return integerA > integerB ? 1 : (integerB > integerA ? -1 : 0);;
+    return integerA > integerB ? 1 : (integerB > integerA ? -1 : 0);;
   }
   return decimalA > decimalB ? 1 : (decimalB > decimalA ? -1 : 0);;
 
@@ -12039,7 +12039,7 @@ function fetchIndicatorsOrDp(dynamicJson) {
       keysWithLabelObj[key] = obj.label
       keysWithLabel.push(temp)
       let multipleParameters = obj.yearData.filter(item => item?.type === obj.key)
-      if(multipleParameters.length === 1){
+      if (multipleParameters.length === 1) {
         indicatorsWithNoyears.push(obj.key)
       }
       if (obj.copyChildFrom) {
@@ -12059,12 +12059,12 @@ function fetchIndicatorsOrDp(dynamicJson) {
       }
     }
     let sortedArray = keysWithLabel.sort(sortPosition)
-      return {
-        childKeys:childELements,
-        questionIndicators:keysWithLabelObj,
-        indicatorsWithNoyears:indicatorsWithNoyears
+    return {
+      childKeys: childELements,
+      questionIndicators: keysWithLabelObj,
+      indicatorsWithNoyears: indicatorsWithNoyears
 
-      }
+    }
   }
   catch (err) {
     console.log("error in fetchIndicatorsOrDp ::: ", err.message)
@@ -12083,12 +12083,12 @@ function getSkippableKeys(skipLogics) {
 }
 
 let dynamicJson = propertyTaxOpFormJson()['tabs'][0]['data']
-let {childKeys, questionIndicators,indicatorsWithNoyears} = fetchIndicatorsOrDp(dynamicJson)
-module.exports.reverseKeys = ["ulbFinancialYear","ulbPassedResolPtax"]
+let { childKeys, questionIndicators, indicatorsWithNoyears } = fetchIndicatorsOrDp(dynamicJson)
+module.exports.reverseKeys = ["ulbFinancialYear", "ulbPassedResolPtax"]
 module.exports.skippableKeys = getSkippableKeys(skipLogicDependencies)
 module.exports.financialYearTableHeader = financialYearTableHeader
 module.exports.specialHeaders = specialHeaders
-module.exports.childKeys =childKeys
+module.exports.childKeys = childKeys
 module.exports.indicatorsWithNoyears = indicatorsWithNoyears
 module.exports.questionIndicators = questionIndicators
 module.exports.propertyTaxOpFormJson = propertyTaxOpFormJson;

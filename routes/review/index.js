@@ -5,7 +5,9 @@ const Review2324 = require('./service2324');
 const verifyToken = require('../auth/services/verifyToken').verifyToken;
 
 
-router.get('/review', verifyToken, Review.get) 
+router.get('/review', verifyToken, Review.get)
 router.get('/reviewForms', verifyToken, Review2324.get);
+router.get("/ptax-csv-download", Review2324.downloadPTOExcel);
+
 module.exports = router;
 
