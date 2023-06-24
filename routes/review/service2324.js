@@ -2187,7 +2187,6 @@ const getQuestionsMapping = (questions, counter = 0) => {
       }
     }
   }
-
   return questionColMapping
 }
 
@@ -2196,7 +2195,7 @@ module.exports.downloadPTOExcel = async (req, res) => {
     const questions = propertyTaxOpFormJson()['tabs'][0]['data']
     const startRowIndex = 5;
     const questionColMapping = getQuestionsMapping(questions, 8)
-
+    // console.log("questionColMapping", questionColMapping)
     let { getQuery } = req.query
     getQuery = getQuery === "true"
     const design_year = ObjectId(years['2023-24'])
@@ -2250,7 +2249,7 @@ module.exports.downloadPTOExcel = async (req, res) => {
         }
       }
     ]).allowDiskUse(true)
-      .cursor({ batchSize: 100 })
+      .cursor({ batchSize: 200 })
       .addCursorFlag("noCursorTimeout", true)
       .exec();
 
@@ -2265,9 +2264,14 @@ module.exports.downloadPTOExcel = async (req, res) => {
     const template = fs.readFileSync(`p-tax/ptax-template.xlsx`)
     fs.writeFileSync(`${tempFilePath}/${timestamp}_ptax_download.xlsx`, template)
     const workbook = new ExcelJS.Workbook()
+    workbook.calcProperties.fullCalcOnLoad = false;
+
     const crrWorkbook = await workbook.xlsx.readFile(`${tempFilePath}/${timestamp}_ptax_download.xlsx`)
     const crrWorksheet = crrWorkbook.getWorksheet("Sheet 1")
+    // crrWorksheet.properties.defaultRowHeight = null;
 
+    const outputStream = fs.createWriteStream(`${tempFilePath}/${timestamp}_ptax_download.xlsx`);
+    crrWorkbook.xlsx.write(outputStream);
     cursor.on("data", (el) => {
       const positionValuePair = {
         [`A${startRowIndex + counter}`]: counter + 1,
@@ -2275,61 +2279,232 @@ module.exports.downloadPTOExcel = async (req, res) => {
         [`C${startRowIndex + counter}`]: el.ulb.name,
         [`D${startRowIndex + counter}`]: el.ulb.code,
         [`E${startRowIndex + counter}`]: el.ulb.censusCode ?? el.ulb.sbCode,
-        [`F${startRowIndex + counter}`]: getKeyByValue(years, el.design_year.toString()),
+        // [`F${startRowIndex + counter}`]: getKeyByValue(years, el.design_year.toString()),
+        [`F${startRowIndex + counter}`]: YEAR_CONSTANTS_IDS[el.design_year],
         [`G${startRowIndex + counter}`]: MASTER_STATUS_ID[el.currentFormStatus],
       }
 
-      const updatedDatas = {}
-      const filteredResults = el.propertytaxopmapper;
-      const sortedResults = filteredResults.sort(sortPosition)
+      const sortedResults = el.propertytaxopmapper;
       for (const result of sortedResults) {
-        if (result?.year && questionColMapping[`${result.type}-${YEAR_CONSTANTS_IDS[result?.year].split("-")[1]}`])
-          positionValuePair[`${questionColMapping[`${result.type}-${YEAR_CONSTANTS_IDS[result?.year].split("-")[1]}`]}${startRowIndex + counter}`] = result.value
-        if (!canShow(result.type, sortedResults, updatedDatas, el.ulb._id)) continue;
+        if (result?.year && questionColMapping[`${result.type}-${YEAR_CONSTANTS_IDS[result?.year].split("-")[1]}`]) {
+          positionValuePair[`${questionColMapping[`${result.type}-${YEAR_CONSTANTS_IDS[result?.year].split("-")[1]}`]}${startRowIndex + counter}`] = result.value;
+        }
+        // if (!canShow(result.type, sortedResults, updatedDatas, el.ulb._id)) continue;
         if (result.child && result.child.length) {
-          const childCounter = {}
+          const childCounter = new Map();
           for (const childId of result.child) {
-            const child = el?.propertymapperchilddata?.length > 0 ? el?.propertymapperchilddata.find(e => e._id.toString() == childId.toString()) : null
-            const number = decideDisplayPriority(0, child.type, result.displayPriority, child.replicaNumber, result.type)
-            child.displayPriority = number
+            const child = el?.propertymapperchilddata?.length > 0 ? el?.propertymapperchilddata.find(e => e._id.toString() === childId.toString()) : null;
+            // const number = decideDisplayPriority(0, child.type, result.displayPriority, child.replicaNumber, result.type);
+            // child.displayPriority = number;
             if (child) {
-              if (!childCounter[child.type])
-                childCounter[child.type] = 0
+              if (!childCounter.has(child.type))
+                childCounter.set(child.type, 0);
 
-              if ((childCounter[child.type] % 5 === 0 || childCounter[child.type] === 0)) {
-                const textValueCounter = childCounter[child.type] ? childCounter[child.type] / 5 : 0
+              if ((childCounter.get(child.type) % 5 === 0 || childCounter.get(child.type) === 0)) {
+                const textValueCounter = childCounter.get(child.type) ? childCounter.get(child.type) / 5 : 0;
                 if (questionColMapping[`${child.type}-textValue-${textValueCounter}`])
-                  positionValuePair[`${questionColMapping[`${child.type}-textValue-${textValueCounter}`]}${startRowIndex + counter}`] = child.textValue
+                  positionValuePair[`${questionColMapping[`${child.type}-textValue-${textValueCounter}`]}${startRowIndex + counter}`] = child.textValue;
               }
 
               if (child?.year && questionColMapping[`${child.type}-${YEAR_CONSTANTS_IDS[child?.year].split("-")[1]}-${child.replicaNumber - 1}`]) {
-                positionValuePair[`${questionColMapping[`${child.type}-${YEAR_CONSTANTS_IDS[child?.year].split("-")[1]}-${child.replicaNumber - 1}`]}${startRowIndex + counter}`] = child.value
+                positionValuePair[`${questionColMapping[`${child.type}-${YEAR_CONSTANTS_IDS[child?.year].split("-")[1]}-${child.replicaNumber - 1}`]}${startRowIndex + counter}`] = child.value;
               }
-              childCounter[child.type]++
+              childCounter.set(child.type, childCounter.get(child.type) + 1);
             }
           }
         }
       }
-
       for (const key in positionValuePair) {
         crrWorksheet.getCell(key).value = positionValuePair[key]
       }
-
       crrWorkbook.xlsx.writeFile(`${tempFilePath}/${timestamp}_ptax_download.xlsx`);
+      // crrWorkbook.commit();
       counter++
+      console.log("counter", counter)
     });
 
     cursor.on("end", async function (el) {
       res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
       res.setHeader("Content-Disposition", "attachment; filename=" + `${timestamp}_ptax_download.xlsx`);
-
       await crrWorkbook.xlsx.write(res);
       fs.unlink(`${tempFilePath}/${timestamp}_ptax_download.xlsx`, (err) => console.log(err))
-      res.end();
-
+      return res.end();
     });
   } catch (err) {
     console.log("err", err)
     console.log("error in getCsvForPropertyTaxMapper ::::: ", err.message)
   }
 }
+
+// module.exports.downloadPTOExcel = async (req, res) => {
+//   try {
+//     const questions = propertyTaxOpFormJson()['tabs'][0]['data']
+//     const startRowIndex = 5;
+//     const questionColMapping = getQuestionsMapping(questions, 8)
+//     // console.log("questionColMapping", questionColMapping)
+//     let { getQuery } = req.query
+//     getQuery = getQuery === "true"
+//     const design_year = ObjectId(years['2023-24'])
+//     if (getQuery) {
+//       response.query = getQuery
+//       return response
+//     }
+
+//     if (!req.query.state_code)
+//       return res.status(400).json({ success: false, message: "State code is mandatory" })
+
+//     let stateCode = req.query.state_code.split(",").map(e => e.trim())
+
+//     // let stateList = await State.find({ "code": { $in: req.query.state_code.split(",").map(e => e.trim()) } },{"_id" : })
+
+//     const cursor = await PropertyTaxOp.aggregate([
+//       { $match: { "design_year": design_year } },
+//       {
+//         $lookup: {
+//           from: "ulbs",
+//           localField: "ulb",
+//           foreignField: "_id",
+//           as: "ulb"
+//         }
+//       },
+//       { $unwind: "$ulb" },
+//       {
+//         $lookup: {
+//           from: "states",
+//           localField: "ulb.state",
+//           foreignField: "_id",
+//           as: "state"
+//         }
+//       },
+//       { $unwind: "$state" },
+//       { $match: { "state.code": { $in: stateCode } } },
+//       {
+//         $lookup: {
+//           from: "propertytaxopmappers",
+//           localField: "_id",
+//           foreignField: "ptoId",
+//           as: "propertytaxopmapper"
+//         }
+//       },
+//       {
+//         $lookup: {
+//           from: "propertymapperchilddatas",
+//           localField: "_id",
+//           foreignField: "ptoId",
+//           as: "propertymapperchilddata"
+//         }
+//       }
+//     ]).allowDiskUse(true)
+//       .cursor({ batchSize: 100 })
+//       .addCursorFlag("noCursorTimeout", true)
+//       .exec();
+
+//     let counter = 0;
+//     const timestamp = Date.now()
+
+//     const tempFilePath = "uploads/p-tax"
+//     if (!fs.existsSync(tempFilePath)) {
+//       fs.mkdirSync(tempFilePath);
+//     }
+
+//     const template = fs.readFileSync(`p-tax/ptax-template.xlsx`)
+//     fs.writeFileSync(`${tempFilePath}/${timestamp}_ptax_download.xlsx`, template)
+//     const workbook = new ExcelJS.Workbook()
+//     workbook.calcProperties.fullCalcOnLoad = false;
+
+//     const crrWorkbook = await workbook.xlsx.readFile(`${tempFilePath}/${timestamp}_ptax_download.xlsx`)
+//     const crrWorksheet = crrWorkbook.getWorksheet("Sheet 1")
+//     crrWorksheet.properties.defaultRowHeight = null;
+
+//     cursor.on("data", (el) => {
+//       const positionValuePair = {
+//         [`A${startRowIndex + counter}`]: counter + 1,
+//         [`B${startRowIndex + counter}`]: el.state.name,
+//         [`C${startRowIndex + counter}`]: el.ulb.name,
+//         [`D${startRowIndex + counter}`]: el.ulb.code,
+//         [`E${startRowIndex + counter}`]: el.ulb.censusCode ?? el.ulb.sbCode,
+//         // [`F${startRowIndex + counter}`]: getKeyByValue(years, el.design_year.toString()),
+//         [`F${startRowIndex + counter}`]: YEAR_CONSTANTS_IDS[el.design_year],
+//         [`G${startRowIndex + counter}`]: MASTER_STATUS_ID[el.currentFormStatus],
+//       }
+
+//       const updatedDatas = {}
+//       const sortedResults = el.propertytaxopmapper;
+//       // const sortedResults = filteredResults.sort(sortPosition)
+//       // for (const result of sortedResults) {
+//       //   if (result?.year && questionColMapping[`${result.type}-${YEAR_CONSTANTS_IDS[result?.year].split("-")[1]}`])
+//       //     positionValuePair[`${questionColMapping[`${result.type}-${YEAR_CONSTANTS_IDS[result?.year].split("-")[1]}`]}${startRowIndex + counter}`] = result.value
+//       //   if (!canShow(result.type, sortedResults, updatedDatas, el.ulb._id)) continue;
+//       //   if (result.child && result.child.length) {
+//       //     const childCounter = {}
+//       //     for (const childId of result.child) {
+//       //       const child = el?.propertymapperchilddata?.length > 0 ? el?.propertymapperchilddata.find(e => e._id.toString() == childId.toString()) : null
+//       //       const number = decideDisplayPriority(0, child.type, result.displayPriority, child.replicaNumber, result.type)
+//       //       child.displayPriority = number
+//       //       if (child) {
+//       //         if (!childCounter[child.type])
+//       //           childCounter[child.type] = 0
+
+//       //         if ((childCounter[child.type] % 5 === 0 || childCounter[child.type] === 0)) {
+//       //           const textValueCounter = childCounter[child.type] ? childCounter[child.type] / 5 : 0
+//       //           if (questionColMapping[`${child.type}-textValue-${textValueCounter}`])
+//       //             positionValuePair[`${questionColMapping[`${child.type}-textValue-${textValueCounter}`]}${startRowIndex + counter}`] = child.textValue
+//       //         }
+
+//       //         if (child?.year && questionColMapping[`${child.type}-${YEAR_CONSTANTS_IDS[child?.year].split("-")[1]}-${child.replicaNumber - 1}`]) {
+//       //           positionValuePair[`${questionColMapping[`${child.type}-${YEAR_CONSTANTS_IDS[child?.year].split("-")[1]}-${child.replicaNumber - 1}`]}${startRowIndex + counter}`] = child.value
+//       //         }
+//       //         childCounter[child.type]++
+//       //       }
+//       //     }
+//       //   }
+//       // }
+//       for (const result of sortedResults) {
+//         if (result?.year && questionColMapping[`${result.type}-${YEAR_CONSTANTS_IDS[result?.year].split("-")[1]}`]) {
+//           positionValuePair[`${questionColMapping[`${result.type}-${YEAR_CONSTANTS_IDS[result?.year].split("-")[1]}`]}${startRowIndex + counter}`] = result.value;
+//         }
+//         // if (!canShow(result.type, sortedResults, updatedDatas, el.ulb._id)) continue;
+//         if (result.child && result.child.length) {
+//           const childCounter = new Map();
+//           for (const childId of result.child) {
+//             const child = el?.propertymapperchilddata?.length > 0 ? el?.propertymapperchilddata.find(e => e._id.toString() === childId.toString()) : null;
+//             // const number = decideDisplayPriority(0, child.type, result.displayPriority, child.replicaNumber, result.type);
+//             // child.displayPriority = number;
+//             if (child) {
+//               if (!childCounter.has(child.type))
+//                 childCounter.set(child.type, 0);
+
+//               if ((childCounter.get(child.type) % 5 === 0 || childCounter.get(child.type) === 0)) {
+//                 const textValueCounter = childCounter.get(child.type) ? childCounter.get(child.type) / 5 : 0;
+//                 if (questionColMapping[`${child.type}-textValue-${textValueCounter}`])
+//                   positionValuePair[`${questionColMapping[`${child.type}-textValue-${textValueCounter}`]}${startRowIndex + counter}`] = child.textValue;
+//               }
+
+//               if (child?.year && questionColMapping[`${child.type}-${YEAR_CONSTANTS_IDS[child?.year].split("-")[1]}-${child.replicaNumber - 1}`]) {
+//                 positionValuePair[`${questionColMapping[`${child.type}-${YEAR_CONSTANTS_IDS[child?.year].split("-")[1]}-${child.replicaNumber - 1}`]}${startRowIndex + counter}`] = child.value;
+//               }
+//               childCounter.set(child.type, childCounter.get(child.type) + 1);
+//             }
+//           }
+//         }
+//       }
+//       for (const key in positionValuePair) {
+//         crrWorksheet.getCell(key).value = positionValuePair[key]
+//       }
+//       crrWorkbook.xlsx.writeFile(`${tempFilePath}/${timestamp}_ptax_download.xlsx`);
+//       counter++
+//       console.log("counter", counter)
+//     });
+
+//     cursor.on("end", async function (el) {
+//       res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+//       res.setHeader("Content-Disposition", "attachment; filename=" + `${timestamp}_ptax_download.xlsx`);
+//       await crrWorkbook.xlsx.write(res);
+//       fs.unlink(`${tempFilePath}/${timestamp}_ptax_download.xlsx`, (err) => console.log(err))
+//        res.end();
+//     });
+//   } catch (err) {
+//     console.log("err", err)
+//     console.log("error in getCsvForPropertyTaxMapper ::::: ", err.message)
+//   }
+// }
