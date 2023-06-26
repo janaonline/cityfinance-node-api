@@ -145,11 +145,10 @@ module.exports.get = async (req, res) => {
     let allData = await Promise.all([data]);
     data = allData[0][0].data
     total = allData[0][0]['count']?.length ? allData[0][0]['count'][0].total : 0
-    if (!data.length) {
-      return res.status(200).json({ success: true, message: "Data not found" })
+    if (data.length) {
+      let approvedUlbs = await forms2223(collectionName, data);
+      await setCurrentStatus(req, data, approvedUlbs, collectionName, loggedInUserRole);
     }
-    let approvedUlbs = await forms2223(collectionName, data);
-    await setCurrentStatus(req, data, approvedUlbs, collectionName, loggedInUserRole);
     // if users clicks on Download Button - the data gets downloaded as per the applied filter
     let ratingList = []
     if (['ODF', 'GFC'].includes(collectionName)) {
