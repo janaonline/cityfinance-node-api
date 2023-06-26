@@ -6,15 +6,20 @@ const Sidemenu = require('../../models/Sidemenu');
 const ObjectId = require("mongoose").Types.ObjectId;
 const Service = require('../../service');
 const STATUS_LIST = require('../../util/newStatusList');
-const { MASTER_STATUS, MASTER_STATUS_ID, YEAR_CONSTANTS, YEAR_CONSTANTS_IDS } = require('../../util/FormNames');
+const { MASTER_STATUS, MASTER_STATUS_ID, YEAR_CONSTANTS, YEAR_CONSTANTS_IDS, MASTER_FORM_STATUS, MASTER_FORM_QUESTION_STATUS } = require('../../util/FormNames');
 const { canTakeActionOrViewOnlyMasterForm } = require('../../routes/CommonActionAPI/service')
 // const { createDynamicColumns } = require('./service')
 const List = require('../../util/15thFCstatus')
 const MASTERSTATUS = require('../../models/MasterStatus');
 const Rating = require('../../models/Rating');
-const { roundValue } = require('../../util/helper')
+const { roundValue, convertValue, removeEscapeChars, formatDate } = require('../../util/helper')
 const { years } = require('../../service/years');
 const mongoose = require('mongoose');
+const { canShow, decideDisplayPriority, getKeyByValue } = require("../PropertyTaxOp/service")
+const PropertyTaxOp = require('../../models/PropertyTaxOp')
+const { sortPosition, propertyTaxOpFormJson } = require('../PropertyTaxOp/fydynemic')
+const ExcelJS = require("exceljs")
+const fs = require("fs")
 
 module.exports.get = async (req, res) => {
   try {
@@ -142,56 +147,12 @@ module.exports.get = async (req, res) => {
     await setCurrentStatus(req, data, approvedUlbs, collectionName, loggedInUserRole);
     // if users clicks on Download Button - the data gets downloaded as per the applied filter
     let ratingList = []
-    // console.log("sssss::::",collectionName)
-
     if (['ODF', 'GFC'].includes(collectionName)) {
       let ratingIds = [...new Set(data.map(e => e?.formData?.rating))].filter(e => e !== undefined)
       ratingList = ratingIds.length ? await getRating(ratingIds) : [];
     }
     if (csv) {
-      let filename = `Review_${formType}-${collectionName}.csv`;
-      // Set appropriate download headers
-      res.setHeader("Content-disposition", "attachment; filename=" + filename);
-      res.writeHead(200, { "Content-Type": "text/csv;charset=utf-8,%EF%BB%BF" });
-      let fixedColumns, dynamicColumns;
-      if (formType === 'ULB') {
-        fixedColumns = `State Name, ULB Name, City Finance Code, Census Code, Population Category, UA, UA Name,`;
-        dynamicColumns = createDynamicColumns(collectionName);
-        // console.log("dynamicColumns",dynamicColumns);process.exit()
-
-        if (collectionName !== CollectionNames.annual && collectionName !== CollectionNames['28SLB']) {
-          res.write("\ufeff" + `${fixedColumns.toString()} ${dynamicColumns.toString()} \r\n`);
-          for (let el of data) {
-            if (['ODF', 'GFC'].includes(collectionName)) await setRating(el, ratingList)
-            let dynamicElementData = await createDynamicElements(collectionName, formType, el);
-            el.UA = el.UA === "null" ? "NA" : el.UA;
-            el.isUA = el.UA === "NA" ? "No" : "Yes";
-            el.censusCode = el.censusCode || "NA";
-            const row = `${el.stateName},${el.ulbName},${el.ulbCode},${el.censusCode},${el.populationType},${el.isUA},${el.UA},${dynamicElementData.toString()}\r\n`;
-            res.write("\ufeff" + row);
-          }
-        } else {
-          res.write("\ufeff" + `State Name, ULB Name, City Finance Code, Census Code, Population Category, UA, UA Name, ${dynamicColumns.toString()}\r\n`);
-          for (let el of data) {
-            let [row1, row2] = await createDynamicElements(collectionName, formType, el);
-            el.UA = el.UA === "null" ? "NA" : el.UA;
-            el.isUA = el.UA === "NA" ? "No" : "Yes";
-            el.censusCode = el.censusCode || "NA";
-            const rowOne = `${el.stateName},${el.ulbName},${el.ulbCode},${el.censusCode},${el.populationType},${el.isUA},${el.UA},${row1.toString()}\r\n`;
-            const rowTwo = `${el.stateName},${el.ulbName},${el.ulbCode},${el.censusCode},${el.populationType},${el.isUA},${el.UA},${row2.toString()}\r\n`;
-            res.write("\ufeff" + rowOne + rowTwo);
-          }
-        }
-      } else if (formType === "STATE") {
-        fixedColumns = `State Name, City Finance Code, Regional Name,`;
-        dynamicColumns = createDynamicColumns(collectionName);
-        res.write("\ufeff" + `${fixedColumns.toString()} ${dynamicColumns.toString()} \r\n`);
-        for (let el of data) {
-          let dynamicElementData = await createDynamicElements(collectionName, formType, el);
-          const row = `${el.stateName},${el.stateCode},${el.regionalName},${dynamicElementData.toString()}\r\n`;
-          res.write("\ufeff" + row);
-        }
-      }
+      await createCSV(formType, collectionName, res, data, ratingList);
       res.end();
       return;
     }
@@ -206,10 +167,8 @@ module.exports.get = async (req, res) => {
     }
     //  console.log(data)
     data.forEach(el => { if (el.formData || el.formData === "") delete el.formData })
-
     const Query15FC = { $or: [{ type: "15thFC" }, { multi: { $in: ["15thFC"] } }] };
     const ulbFormStatus = await MASTERSTATUS.find(Query15FC, { statusId: 1, status: 1 }).lean()
-
     return res.status(200).json({
       success: true,
       data: data,
@@ -223,6 +182,51 @@ module.exports.get = async (req, res) => {
   } catch (error) {
     console.log("error", error)
     return Response.BadRequest(res, {}, error.message);
+  }
+}
+
+async function createCSV(formType, collectionName, res, data, ratingList) {
+  let filename = `Review_${formType}-${collectionName}.csv`;
+  // Set appropriate download headers
+  res.setHeader("Content-disposition", "attachment; filename=" + filename);
+  res.writeHead(200, { "Content-Type": "text/csv;charset=utf-8,%EF%BB%BF" });
+  let fixedColumns, dynamicColumns;
+  if (formType === 'ULB') {
+    fixedColumns = `State Name, ULB Name, City Finance Code, Census Code, Population Category, UA, UA Name,`;
+    dynamicColumns = createDynamicColumns(collectionName);
+    // console.log("dynamicColumns",dynamicColumns);process.exit()
+    if (collectionName !== CollectionNames.annual && collectionName !== CollectionNames['28SLB']) {
+      res.write("\ufeff" + `${fixedColumns.toString()} ${dynamicColumns.toString()} \r\n`);
+      for (let el of data) {
+        if (['ODF', 'GFC'].includes(collectionName)) await setRating(el, ratingList);
+        let dynamicElementData = await createDynamicElements(collectionName, formType, el);
+        el.UA = el.UA === "null" ? "NA" : el.UA;
+        el.isUA = el.UA === "NA" ? "No" : "Yes";
+        el.censusCode = el.censusCode || "NA";
+        const row = `${el.stateName},${el.ulbName},${el.ulbCode},${el.censusCode},${el.populationType},${el.isUA},${el.UA},${dynamicElementData.toString()}\r\n`;
+        res.write("\ufeff" + row);
+      }
+    } else {
+      res.write("\ufeff" + `State Name, ULB Name, City Finance Code, Census Code, Population Category, UA, UA Name, ${dynamicColumns.toString()}\r\n`);
+      for (let el of data) {
+        let [row1, row2] = await createDynamicElements(collectionName, formType, el);
+        el.UA = el.UA === "null" ? "NA" : el.UA;
+        el.isUA = el.UA === "NA" ? "No" : "Yes";
+        el.censusCode = el.censusCode || "NA";
+        const rowOne = `${el.stateName},${el.ulbName},${el.ulbCode},${el.censusCode},${el.populationType},${el.isUA},${el.UA},${row1.toString()}\r\n`;
+        const rowTwo = `${el.stateName},${el.ulbName},${el.ulbCode},${el.censusCode},${el.populationType},${el.isUA},${el.UA},${row2.toString()}\r\n`;
+        res.write("\ufeff" + rowOne + rowTwo);
+      }
+    }
+  } else if (formType === "STATE") {
+    fixedColumns = `State Name, City Finance Code, Regional Name,`;
+    dynamicColumns = createDynamicColumns(collectionName);
+    res.write("\ufeff" + `${fixedColumns.toString()} ${dynamicColumns.toString()} \r\n`);
+    for (let el of data) {
+      let dynamicElementData = await createDynamicElements(collectionName, formType, el);
+      const row = `${el.stateName},${el.stateCode},${el.regionalName},${dynamicElementData.toString()}\r\n`;
+      res.write("\ufeff" + row);
+    }
   }
 }
 
@@ -289,6 +293,14 @@ const setRating = (el, ratingList) => {
   return el
 }
 
+/**
+ * This is an asynchronous function that retrieves the name and marks of a rating based on its ID.
+ * @param ratingId - The `ratingId` parameter is an array of MongoDB ObjectIds used to query the
+ * database for ratings with matching `_id` values.
+ * @returns The `getRating` function is returning a Promise that resolves to an array of objects
+ * containing the `name` and `marks` properties of the ratings with the specified `_id` values. The
+ * `_id` values are passed as an argument to the function.
+ */
 const getRating = async (ratingId) => {
   return new Promise(async (resolve, reject) => {
     try {
@@ -300,9 +312,14 @@ const getRating = async (ratingId) => {
   })
 }
 
-
-
-
+/**
+ * This function returns an array of ULBs (Urban Local Bodies) that have been approved by the Ministry
+ * of Housing and Urban Affairs (MoHUA) based on certain conditions.
+ * @param forms - an array of objects representing forms, where each object has the following
+ * properties:
+ * @returns an array of ULBs (Urban Local Bodies) that have been approved by the Ministry of Housing
+ * and Urban Affairs (MoHUA) based on the input parameter `forms`.
+ */
 function getUlbsApprovedByMoHUA(forms) {
   try {
     let ulbArray = [];
@@ -317,6 +334,12 @@ function getUlbsApprovedByMoHUA(forms) {
   }
 }
 
+/**
+ * @param params - The `params` object contains various parameters used to construct a MongoDB query
+ * pipeline. These parameters include `collectionName` (the name of the MongoDB collection to query),
+ * `formType` (the user role for which the query is being constructed), `isFormOptional` (a boolean
+ * indicating whether the
+ */
 const computeQuery = (params) => {
   const { collectionName: formName, formType: userRole, isFormOptional, state, design_year, csv, skip, limit, newFilter: filter, dbCollectionName, folderName } = params
   let filledQueryExpression = {};
@@ -337,7 +360,6 @@ const computeQuery = (params) => {
   let condition = {};
   if (state && state !== 'null') {
     condition['state'] = ObjectId(state)
-    // condition['censusCode'] = "802484"
   }
   condition["access_2223"] = true
   let pipeLine = [
@@ -377,7 +399,6 @@ const computeQuery = (params) => {
       }
     })
   }
-
   switch (userRole) {
     case "ULB":
       let query = [
@@ -541,8 +562,7 @@ const computeQuery = (params) => {
         if (filter.sbCode) { delete Object.assign(filter, { ["censusCode"]: filter["sbCode"] })["sbCode"]; }
         query.push({ $match: filter })
       }
-
-      let limitSkip = !csv ? [{ $limit: limit }, { "$skip": skip }] : [{ $match: {} }]
+      let limitSkip = !csv ? [{ "$skip": skip }, { $limit: limit }] : [{ $match: {} }]
       let paginator = [
         { $addFields: { "dummy": [] } },
         {
@@ -658,7 +678,7 @@ const computeQuery = (params) => {
       let countQuery_s = query_s.slice()
       let paginator_s = [{
         $facet: {
-          data: [{ $limit: limit }, { "$skip": skip }],
+          data: [{ "$skip": skip }, { $limit: limit }],
           count: [{ $count: "totalRecords" }]
         }
       }]
@@ -672,6 +692,15 @@ const computeQuery = (params) => {
   }
 }
 
+/**
+ * @param formName - The name of the form for which the filled query expression is being generated.
+ * @param filledQueryExpression - The parameter filledQueryExpression is a query expression that is
+ * used to determine whether a form has been filled or not. It is updated based on the formName and
+ * design_year parameters passed to the function.
+ * @returns either a `filledQueryExpression` object or both `filledProvisionalExpression` and
+ * `filledAuditedExpression` objects, depending on the `formName` parameter and `design_year`
+ * parameter.
+ */
 function getFilledQueryExpression(formName, filledQueryExpression, design_year) {
   let filledAuditedExpression = {}, filledProvisionalExpression = {}
   switch (formName) {
@@ -722,7 +751,6 @@ function getFilledQueryExpression(formName, filledQueryExpression, design_year) 
         },
       };
       return { filledProvisionalExpression, filledAuditedExpression }
-      break;
     case CollectionNames.sfc:
       filledQueryExpression = {
         $cond: {
@@ -737,6 +765,10 @@ function getFilledQueryExpression(formName, filledQueryExpression, design_year) 
   return filledQueryExpression;
 }
 
+/**
+ * The function removes escape characters from specific properties of an object.
+ * @param element - an object that contains properties with values that may have escape characters
+ */
 function removeEscapesFromAnnual(element) {
   for (let key in element) {
     if (element[key] && typeof element[key] === "object") {
@@ -749,6 +781,16 @@ function removeEscapesFromAnnual(element) {
     }
   }
 }
+
+/**
+ * The function creates a dynamic query for MongoDB based on the collection name, user role, and
+ * existing query.
+ * @param collectionName - The name of the collection for which the dynamic query is being created.
+ * @param oldQuery - an array of MongoDB query objects that will be modified and returned
+ * @param userRole - The role of the user accessing the function. It can be either "ULB" or "STATE".
+ * @param csv - It is a boolean parameter that indicates whether the output should be in CSV format or
+ * not.
+ */
 
 function createDynamicQuery(collectionName, oldQuery, userRole, csv) {
   let query_2 = {};
@@ -948,7 +990,6 @@ async function createDynamicElements(collectionName, formType, entity) {
     );
   }
   let data = entity?.formData;
-  // console.log("data",data);process.exit()
   switch (formType) {
     case "ULB":
       switch (collectionName) {
@@ -965,7 +1006,7 @@ async function createDynamicElements(collectionName, formType, entity) {
           entity = ` ${data?.design_year?.year ?? ""}, ${entity?.formStatus ?? ""
             }, ${data?.createdAt ?? ""}, ${data?.ulbSubmit ?? ""},${entity.filled ?? ""
             }, ${data["rating"]["name"] ?? ""},${data["rating"]["marks"] ?? ""
-            },${data["cert"]["url"] ?? ""},${data["cert"]["name"] ?? ""},${data["certDate"] ?? ""
+            },${data?.cert?.url ? data?.cert?.url : data?.cert_declaration?.url ?? ""},${data?.cert?.name ? data?.cert?.name : data?.cert_declaration?.name ?? ""},${data["certDate"] ?? ""
             },${actions["state_status"] ?? ""},${actions["rejectReason_state"] ?? ""
             },${actions["mohua_status"] ?? ""},${actions["rejectReason_mohua"] ?? ""
             },${actions["responseFile_state"]["url"] ?? ""},${actions["responseFile_mohua"]["url"] ?? ""
@@ -1079,33 +1120,10 @@ async function createDynamicElements(collectionName, formType, entity) {
           let targetEntity = `${data?.design_year?.year ?? ""}, ${entity?.formStatus ?? ""}, ${data?.createdAt ?? ""}, ${data?.ulbSubmit ?? ""},${entity.filled ?? ""},Target,${targetYear || ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""}, ${actions["state_status"] ?? ""},${actions["rejectReason_state"] ?? ""},${actions["mohua_status"] ?? ""},${actions["rejectReason_mohua"] ?? ""},${actions["responseFile_state"]["url"] ?? ""},${actions["responseFile_mohua"]["url"] ?? ""} `
           return [actualEntity, targetEntity];
       };
-
       break;
   }
   return entity;
 }
-
-
-
-const convertValue = async (objData) => {
-  const { data, keyArr } = objData;
-  let arr = [];
-  if (data.length > 0) {
-    for (let el of data) {
-      if (keyArr.length) {
-        for (let pf of keyArr) {
-          if (el.hasOwnProperty(pf)) {
-            el[pf] =
-              el[pf] !== null && el[pf] !== "" ? Number(el[pf]).toFixed(2) : "";
-          }
-        }
-        arr.push(el);
-      }
-    }
-  }
-  return arr;
-};
-
 function createDynamicObject(collectionName, formType) {
   let obj = {};
   switch (formType) {
@@ -1825,7 +1843,11 @@ function createDynamicObject(collectionName, formType) {
 }
 
 function annualAccountCsvFormat(data, auditedEntity, entity, auditedProvisional, auditedStandardized, actions, unAuditedEntity, unAuditedProvisional, unAuditedStandardized) {
-  annualAccountSetCurrentStatus(data)
+
+  const { IN_PROGRESS, UNDER_REVIEW_BY_STATE } = MASTER_FORM_STATUS;
+  if (![IN_PROGRESS, UNDER_REVIEW_BY_STATE].includes(entity?.formData?.currentFormStatus)) {
+    annualAccountSetCurrentStatus(data, entity?.formData?.currentFormStatus)
+  }
   auditedEntity = auditedEntity = ` ${data?.design_year?.year ?? ""}, ${entity?.formStatus ?? ""
     }, ${data?.createdAt ?? ""}, ${data?.ulbSubmit ?? ""},${entity?.filled_audited ?? ""
     }, Audited, ${data?.audited?.year ? YEAR_CONSTANTS_IDS[data?.audited?.year] : ""},${auditedProvisional?.bal_sheet?.pdf?.url ?? ""
@@ -1855,7 +1877,7 @@ function annualAccountCsvFormat(data, auditedEntity, entity, auditedProvisional,
     } ,${data?.audited?.submit_annual_accounts === false
       ? (data?.audited?.rejectReason_mohua ?? "")
       : ""
-    },  ${actions["auditedResponseFile_state"]["url"] ?? ""},${actions["auditedResponseFile_mohua"]["url"] ?? ""
+    },  ${data?.audited?.responseFile_state?.url ?? ""},${data?.audited?.responseFile_mohua?.url ?? "" ?? ""
     } `;
 
   unAuditedEntity = `${data?.design_year?.year ?? ""}, ${entity?.formStatus ?? ""
@@ -1886,33 +1908,42 @@ function annualAccountCsvFormat(data, auditedEntity, entity, auditedProvisional,
     }, ${data?.unAudited?.submit_annual_accounts === false
       ? (data?.unAudited?.rejectReason_mohua ?? "")
       : ""
-    }, ${actions["unAuditedResponseFile_state"]["url"] ?? ""},${actions["unAuditedResponseFile_mohua"]["url"] ?? ""
+    }, ${data?.unAudited?.responseFile_state?.url ?? ""},${data?.unAudited?.responseFile_mohua?.url ?? ""
     } `;
   return { auditedEntity, unAuditedEntity };
 }
 
-const annualAccountSetCurrentStatus = (data) => {
+const annualAccountSetCurrentStatus = (data, currentFormStatus) => {
   let mainArr = ['unAudited', 'audited'];
   let subArr = ['provisional_data'];
   let sheetkey = [
     'bal_sheet',
     'bal_sheet_schedules',
+    'auditor_report',
     'inc_exp',
     'inc_exp_schedules',
-    'cash_flow'
+    'cash_flow',
   ]
   const { currentstatuse } = data;
-  let currentStatusList = currentstatuse?.filter(e => ['STATE', 'MoHUA'].includes(e.actionTakenByRole));
+  const { UNDER_REVIEW_BY_MoHUA } = MASTER_FORM_STATUS;
+  let role = [UNDER_REVIEW_BY_MoHUA].includes(currentFormStatus) ? ['STATE'] : ['MoHUA', 'STATE'];
+  let currentStatusList = currentstatuse?.filter(e => role.includes(e.actionTakenByRole));
   if (currentStatusList?.length) {
     for (let key of mainArr) {
       let subObData = data[key];
+      let statusTab = currentStatusList.filter(e => e.shortKey == `tab_${key}`);
+      statusTab = statusTab.length ? statusTab : currentStatusList;
+      let tab = setCurrentStatusQuestionLevel(statusTab)
+      Object.assign(subObData, { ...tab })
       for (let subkey of subArr) {
         let d = subObData[subkey];
         for (let skey of sheetkey) {
           let sortkey = `${key}.${skey}`;
           let statusList = currentStatusList.filter(e => e.shortKey == sortkey);
-          let b = setCurrentStatusQuestionLevel(statusList)
-          Object.assign(d[skey], { ...b })
+          if (statusList.length) {
+            let b = setCurrentStatusQuestionLevel(statusList)
+            Object.assign(d[skey], { ...b })
+          }
         }
       }
     }
@@ -1924,19 +1955,25 @@ const setCurrentStatusQuestionLevel = (statusList) => {
   let obj = {
     "state_status": "",
     "rejectReason_state": "",
-    "responseFile_state": "",
+    "responseFile_state": {
+      "url": "",
+      "name": ""
+    },
     "rejectReason_mohua": "",
     "mohua_status": "",
-    "responseFile_mohua": ""
+    "responseFile_mohua": {
+      "url": "",
+      "name": ""
+    }
   };
   if (statusList.length) {
     for (let statusObj of statusList) {
       if (statusObj.actionTakenByRole == "STATE") {
-        obj['state_status'] = MASTER_STATUS_ID[statusObj.status]
+        obj['state_status'] = MASTER_FORM_QUESTION_STATUS[statusObj.status]
         obj['rejectReason_state'] = statusObj.rejectReason
         obj['responseFile_state'] = statusObj.responseFile
       } else {
-        obj['mohua_status'] = MASTER_STATUS_ID[statusObj.status]
+        obj['mohua_status'] = MASTER_FORM_QUESTION_STATUS[statusObj.status]
         obj['rejectReason_mohua'] = statusObj.rejectReason
         obj['responseFile_mohua'] = statusObj.responseFile
       }
@@ -1986,7 +2023,12 @@ function actionTakenByResponse(entity, formStatus, formType, collectionName) {
       name: ""
     }
   };
-  getActionStatus(obj, entity);
+
+  const { IN_PROGRESS, UNDER_REVIEW_BY_STATE } = MASTER_FORM_STATUS;
+  if (![IN_PROGRESS, UNDER_REVIEW_BY_STATE].includes(entity.currentFormStatus)) {
+    getActionStatus(obj, entity);
+  }
+
   if (collectionName === CollectionNames['annual']) {
     obj.auditedResponseFile_state = {
       url: "",
@@ -2063,15 +2105,17 @@ function actionTakenByResponse(entity, formStatus, formType, collectionName) {
 
 const getActionStatus = (obj, entity) => {
   if (entity?.currentstatuse) {
-    let statusList = entity?.currentstatuse.filter(e => e.shortKey == "form_level" && ['MoHUA', 'STATE'].includes(e.actionTakenByRole));
+    const { UNDER_REVIEW_BY_MoHUA } = MASTER_FORM_STATUS;
+    let role = [UNDER_REVIEW_BY_MoHUA].includes(entity?.currentstatuse) ? ['STATE'] : ['MoHUA', 'STATE'];
+    let statusList = entity?.currentstatuse.filter(e => e.shortKey == "form_level" && role.includes(e.actionTakenByRole));
     if (statusList) {
       for (let pf of statusList) {
         if (pf.actionTakenByRole == "STATE") {
-          obj['state_status'] = MASTER_STATUS_ID[pf.status]
+          obj['state_status'] = MASTER_FORM_QUESTION_STATUS[pf.status]
           obj['rejectReason_state'] = pf.rejectReason
           obj['responseFile_state'] = pf.responseFile
         } else {
-          obj['mohua_status'] = MASTER_STATUS_ID[pf.status]
+          obj['mohua_status'] = MASTER_FORM_QUESTION_STATUS[pf.status]
           obj['rejectReason_mohua'] = pf.rejectReason
           obj['responseFile_mohua'] = pf.responseFile
         }
@@ -2081,16 +2125,386 @@ const getActionStatus = (obj, entity) => {
   return obj
 }
 
-function removeEscapeChars(entity) {
-  return !entity ? entity : entity.replace(/(\n|,)/gm, " ");
+module.exports.getExcelCol = (index) => {
+  const ordA = 'A'.charCodeAt(0);
+  const ordZ = 'Z'.charCodeAt(0);
+  const len = ordZ - ordA + 1;
+
+  let s = "";
+  while (index >= 0) {
+    s = String.fromCharCode(index % len + ordA) + s;
+    index = Math.floor(index / len) - 1;
+  }
+  return s;
 }
-function formatDate(date) {
-  return [
-    padTo2Digits(date.getDate()),
-    padTo2Digits(date.getMonth() + 1),
-    date.getFullYear(),
-  ].join('/');
+
+const getQuestionsMapping = (questions, counter = 0) => {
+  const questionColMapping = {}
+  for (const key in questions) {
+    const crrQuestion = questions[key]
+    if (crrQuestion.copyChildFrom?.length) {
+      if (["otherValuePropertyType", "otherValueSewerageType", "othersValueWaterType"].includes(key)) {
+        for (let i = 0; i < crrQuestion.maxChild; i++) {
+          for (const child of crrQuestion.copyChildFrom) {
+            questionColMapping[`${child.key}-textValue-${i}`] = this.getExcelCol(counter)
+            counter++
+            for (const year of child.yearData) {
+              if (Object.keys(year).length) {
+                questionColMapping[`${child.key}-${year.key.split("-")[1]}-${i}`] = this.getExcelCol(counter)
+                counter++
+              }
+            }
+          }
+        }
+      } else {
+        for (const child of crrQuestion.copyChildFrom) {
+          counter++
+          for (let i = 0; i < crrQuestion.maxChild; i++) {
+            if (!["userChargesDmndChild", "userChargesCollectionChild"].includes(child.key)) {
+              questionColMapping[`${child.key}-textValue-${i}`] = this.getExcelCol(counter)
+              counter++
+            }
+            for (const year of child.yearData) {
+              if (Object.keys(year).length) {
+                questionColMapping[`${child.key}-${year.key.split("-")[1]}-${i}`] = this.getExcelCol(counter)
+                counter++
+              }
+            }
+          }
+        }
+      }
+    } else {
+      if (crrQuestion.yearData?.length) {
+        for (const year of crrQuestion.yearData) {
+          if (year.key) {
+            questionColMapping[`${key}-${year.key.split("-")[1]}`] = this.getExcelCol(counter)
+            counter++
+          }
+        }
+      } else {
+        questionColMapping[`${key}`] = crrCol = this.getExcelCol(counter)
+        counter++
+      }
+    }
+  }
+  return questionColMapping
 }
-function padTo2Digits(num) {
-  return num.toString().padStart(2, '0');
+
+module.exports.downloadPTOExcel = async (req, res) => {
+  try {
+    const questions = propertyTaxOpFormJson()['tabs'][0]['data']
+    const startRowIndex = 5;
+    const questionColMapping = getQuestionsMapping(questions, 8)
+    // console.log("questionColMapping", questionColMapping)
+    let { getQuery } = req.query
+    getQuery = getQuery === "true"
+    const design_year = ObjectId(years['2023-24'])
+    if (getQuery) {
+      response.query = getQuery
+      return response
+    }
+
+    if (!req.query.state_code)
+      return res.status(400).json({ success: false, message: "State code is mandatory" })
+
+    let stateCode = req.query.state_code.split(",").map(e => e.trim())
+
+    // let stateList = await State.find({ "code": { $in: req.query.state_code.split(",").map(e => e.trim()) } },{"_id" : })
+
+    const cursor = await PropertyTaxOp.aggregate([
+      { $match: { "design_year": design_year } },
+      {
+        $lookup: {
+          from: "ulbs",
+          localField: "ulb",
+          foreignField: "_id",
+          as: "ulb"
+        }
+      },
+      { $unwind: "$ulb" },
+      {
+        $lookup: {
+          from: "states",
+          localField: "ulb.state",
+          foreignField: "_id",
+          as: "state"
+        }
+      },
+      { $unwind: "$state" },
+      { $match: { "state.code": { $in: stateCode } } },
+      {
+        $lookup: {
+          from: "propertytaxopmappers",
+          localField: "_id",
+          foreignField: "ptoId",
+          as: "propertytaxopmapper"
+        }
+      },
+      {
+        $lookup: {
+          from: "propertymapperchilddatas",
+          localField: "_id",
+          foreignField: "ptoId",
+          as: "propertymapperchilddata"
+        }
+      }
+    ]).allowDiskUse(true)
+      .cursor({ batchSize: 200 })
+      .addCursorFlag("noCursorTimeout", true)
+      .exec();
+
+    let counter = 0;
+    const timestamp = Date.now()
+
+    const tempFilePath = "uploads/p-tax"
+    if (!fs.existsSync(tempFilePath)) {
+      fs.mkdirSync(tempFilePath);
+    }
+
+    const template = fs.readFileSync(`p-tax/ptax-template.xlsx`)
+    fs.writeFileSync(`${tempFilePath}/${timestamp}_ptax_download.xlsx`, template)
+    const workbook = new ExcelJS.Workbook()
+    workbook.calcProperties.fullCalcOnLoad = false;
+
+    const crrWorkbook = await workbook.xlsx.readFile(`${tempFilePath}/${timestamp}_ptax_download.xlsx`)
+    const crrWorksheet = crrWorkbook.getWorksheet("Sheet 1")
+    // crrWorksheet.properties.defaultRowHeight = null;
+
+    const outputStream = fs.createWriteStream(`${tempFilePath}/${timestamp}_ptax_download.xlsx`);
+    crrWorkbook.xlsx.write(outputStream);
+    cursor.on("data", (el) => {
+      const positionValuePair = {
+        [`A${startRowIndex + counter}`]: counter + 1,
+        [`B${startRowIndex + counter}`]: el.state.name,
+        [`C${startRowIndex + counter}`]: el.ulb.name,
+        [`D${startRowIndex + counter}`]: el.ulb.code,
+        [`E${startRowIndex + counter}`]: el.ulb.censusCode ?? el.ulb.sbCode,
+        // [`F${startRowIndex + counter}`]: getKeyByValue(years, el.design_year.toString()),
+        [`F${startRowIndex + counter}`]: YEAR_CONSTANTS_IDS[el.design_year],
+        [`G${startRowIndex + counter}`]: MASTER_STATUS_ID[el.currentFormStatus],
+      }
+
+      const sortedResults = el.propertytaxopmapper;
+      for (const result of sortedResults) {
+        if (result?.year && questionColMapping[`${result.type}-${YEAR_CONSTANTS_IDS[result?.year].split("-")[1]}`]) {
+          positionValuePair[`${questionColMapping[`${result.type}-${YEAR_CONSTANTS_IDS[result?.year].split("-")[1]}`]}${startRowIndex + counter}`] = result.value;
+        }
+        // if (!canShow(result.type, sortedResults, updatedDatas, el.ulb._id)) continue;
+        if (result.child && result.child.length) {
+          const childCounter = new Map();
+          for (const childId of result.child) {
+            const child = el?.propertymapperchilddata?.length > 0 ? el?.propertymapperchilddata.find(e => e._id.toString() === childId.toString()) : null;
+            // const number = decideDisplayPriority(0, child.type, result.displayPriority, child.replicaNumber, result.type);
+            // child.displayPriority = number;
+            if (child) {
+              if (!childCounter.has(child.type))
+                childCounter.set(child.type, 0);
+
+              if ((childCounter.get(child.type) % 5 === 0 || childCounter.get(child.type) === 0)) {
+                const textValueCounter = childCounter.get(child.type) ? childCounter.get(child.type) / 5 : 0;
+                if (questionColMapping[`${child.type}-textValue-${textValueCounter}`])
+                  positionValuePair[`${questionColMapping[`${child.type}-textValue-${textValueCounter}`]}${startRowIndex + counter}`] = child.textValue;
+              }
+
+              if (child?.year && questionColMapping[`${child.type}-${YEAR_CONSTANTS_IDS[child?.year].split("-")[1]}-${child.replicaNumber - 1}`]) {
+                positionValuePair[`${questionColMapping[`${child.type}-${YEAR_CONSTANTS_IDS[child?.year].split("-")[1]}-${child.replicaNumber - 1}`]}${startRowIndex + counter}`] = child.value;
+              }
+              childCounter.set(child.type, childCounter.get(child.type) + 1);
+            }
+          }
+        }
+      }
+      for (const key in positionValuePair) {
+        crrWorksheet.getCell(key).value = positionValuePair[key]
+      }
+      crrWorkbook.xlsx.writeFile(`${tempFilePath}/${timestamp}_ptax_download.xlsx`);
+      // crrWorkbook.commit();
+      counter++
+      console.log("counter", counter)
+    });
+
+    cursor.on("end", async function (el) {
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      res.setHeader("Content-Disposition", "attachment; filename=" + `${timestamp}_ptax_download.xlsx`);
+      await crrWorkbook.xlsx.write(res);
+      fs.unlink(`${tempFilePath}/${timestamp}_ptax_download.xlsx`, (err) => console.log(err))
+      return res.end();
+    });
+  } catch (err) {
+    console.log("err", err)
+    console.log("error in getCsvForPropertyTaxMapper ::::: ", err.message)
+  }
 }
+
+// module.exports.downloadPTOExcel = async (req, res) => {
+//   try {
+//     const questions = propertyTaxOpFormJson()['tabs'][0]['data']
+//     const startRowIndex = 5;
+//     const questionColMapping = getQuestionsMapping(questions, 8)
+//     // console.log("questionColMapping", questionColMapping)
+//     let { getQuery } = req.query
+//     getQuery = getQuery === "true"
+//     const design_year = ObjectId(years['2023-24'])
+//     if (getQuery) {
+//       response.query = getQuery
+//       return response
+//     }
+
+//     if (!req.query.state_code)
+//       return res.status(400).json({ success: false, message: "State code is mandatory" })
+
+//     let stateCode = req.query.state_code.split(",").map(e => e.trim())
+
+//     // let stateList = await State.find({ "code": { $in: req.query.state_code.split(",").map(e => e.trim()) } },{"_id" : })
+
+//     const cursor = await PropertyTaxOp.aggregate([
+//       { $match: { "design_year": design_year } },
+//       {
+//         $lookup: {
+//           from: "ulbs",
+//           localField: "ulb",
+//           foreignField: "_id",
+//           as: "ulb"
+//         }
+//       },
+//       { $unwind: "$ulb" },
+//       {
+//         $lookup: {
+//           from: "states",
+//           localField: "ulb.state",
+//           foreignField: "_id",
+//           as: "state"
+//         }
+//       },
+//       { $unwind: "$state" },
+//       { $match: { "state.code": { $in: stateCode } } },
+//       {
+//         $lookup: {
+//           from: "propertytaxopmappers",
+//           localField: "_id",
+//           foreignField: "ptoId",
+//           as: "propertytaxopmapper"
+//         }
+//       },
+//       {
+//         $lookup: {
+//           from: "propertymapperchilddatas",
+//           localField: "_id",
+//           foreignField: "ptoId",
+//           as: "propertymapperchilddata"
+//         }
+//       }
+//     ]).allowDiskUse(true)
+//       .cursor({ batchSize: 100 })
+//       .addCursorFlag("noCursorTimeout", true)
+//       .exec();
+
+//     let counter = 0;
+//     const timestamp = Date.now()
+
+//     const tempFilePath = "uploads/p-tax"
+//     if (!fs.existsSync(tempFilePath)) {
+//       fs.mkdirSync(tempFilePath);
+//     }
+
+//     const template = fs.readFileSync(`p-tax/ptax-template.xlsx`)
+//     fs.writeFileSync(`${tempFilePath}/${timestamp}_ptax_download.xlsx`, template)
+//     const workbook = new ExcelJS.Workbook()
+//     workbook.calcProperties.fullCalcOnLoad = false;
+
+//     const crrWorkbook = await workbook.xlsx.readFile(`${tempFilePath}/${timestamp}_ptax_download.xlsx`)
+//     const crrWorksheet = crrWorkbook.getWorksheet("Sheet 1")
+//     crrWorksheet.properties.defaultRowHeight = null;
+
+//     cursor.on("data", (el) => {
+//       const positionValuePair = {
+//         [`A${startRowIndex + counter}`]: counter + 1,
+//         [`B${startRowIndex + counter}`]: el.state.name,
+//         [`C${startRowIndex + counter}`]: el.ulb.name,
+//         [`D${startRowIndex + counter}`]: el.ulb.code,
+//         [`E${startRowIndex + counter}`]: el.ulb.censusCode ?? el.ulb.sbCode,
+//         // [`F${startRowIndex + counter}`]: getKeyByValue(years, el.design_year.toString()),
+//         [`F${startRowIndex + counter}`]: YEAR_CONSTANTS_IDS[el.design_year],
+//         [`G${startRowIndex + counter}`]: MASTER_STATUS_ID[el.currentFormStatus],
+//       }
+
+//       const updatedDatas = {}
+//       const sortedResults = el.propertytaxopmapper;
+//       // const sortedResults = filteredResults.sort(sortPosition)
+//       // for (const result of sortedResults) {
+//       //   if (result?.year && questionColMapping[`${result.type}-${YEAR_CONSTANTS_IDS[result?.year].split("-")[1]}`])
+//       //     positionValuePair[`${questionColMapping[`${result.type}-${YEAR_CONSTANTS_IDS[result?.year].split("-")[1]}`]}${startRowIndex + counter}`] = result.value
+//       //   if (!canShow(result.type, sortedResults, updatedDatas, el.ulb._id)) continue;
+//       //   if (result.child && result.child.length) {
+//       //     const childCounter = {}
+//       //     for (const childId of result.child) {
+//       //       const child = el?.propertymapperchilddata?.length > 0 ? el?.propertymapperchilddata.find(e => e._id.toString() == childId.toString()) : null
+//       //       const number = decideDisplayPriority(0, child.type, result.displayPriority, child.replicaNumber, result.type)
+//       //       child.displayPriority = number
+//       //       if (child) {
+//       //         if (!childCounter[child.type])
+//       //           childCounter[child.type] = 0
+
+//       //         if ((childCounter[child.type] % 5 === 0 || childCounter[child.type] === 0)) {
+//       //           const textValueCounter = childCounter[child.type] ? childCounter[child.type] / 5 : 0
+//       //           if (questionColMapping[`${child.type}-textValue-${textValueCounter}`])
+//       //             positionValuePair[`${questionColMapping[`${child.type}-textValue-${textValueCounter}`]}${startRowIndex + counter}`] = child.textValue
+//       //         }
+
+//       //         if (child?.year && questionColMapping[`${child.type}-${YEAR_CONSTANTS_IDS[child?.year].split("-")[1]}-${child.replicaNumber - 1}`]) {
+//       //           positionValuePair[`${questionColMapping[`${child.type}-${YEAR_CONSTANTS_IDS[child?.year].split("-")[1]}-${child.replicaNumber - 1}`]}${startRowIndex + counter}`] = child.value
+//       //         }
+//       //         childCounter[child.type]++
+//       //       }
+//       //     }
+//       //   }
+//       // }
+//       for (const result of sortedResults) {
+//         if (result?.year && questionColMapping[`${result.type}-${YEAR_CONSTANTS_IDS[result?.year].split("-")[1]}`]) {
+//           positionValuePair[`${questionColMapping[`${result.type}-${YEAR_CONSTANTS_IDS[result?.year].split("-")[1]}`]}${startRowIndex + counter}`] = result.value;
+//         }
+//         // if (!canShow(result.type, sortedResults, updatedDatas, el.ulb._id)) continue;
+//         if (result.child && result.child.length) {
+//           const childCounter = new Map();
+//           for (const childId of result.child) {
+//             const child = el?.propertymapperchilddata?.length > 0 ? el?.propertymapperchilddata.find(e => e._id.toString() === childId.toString()) : null;
+//             // const number = decideDisplayPriority(0, child.type, result.displayPriority, child.replicaNumber, result.type);
+//             // child.displayPriority = number;
+//             if (child) {
+//               if (!childCounter.has(child.type))
+//                 childCounter.set(child.type, 0);
+
+//               if ((childCounter.get(child.type) % 5 === 0 || childCounter.get(child.type) === 0)) {
+//                 const textValueCounter = childCounter.get(child.type) ? childCounter.get(child.type) / 5 : 0;
+//                 if (questionColMapping[`${child.type}-textValue-${textValueCounter}`])
+//                   positionValuePair[`${questionColMapping[`${child.type}-textValue-${textValueCounter}`]}${startRowIndex + counter}`] = child.textValue;
+//               }
+
+//               if (child?.year && questionColMapping[`${child.type}-${YEAR_CONSTANTS_IDS[child?.year].split("-")[1]}-${child.replicaNumber - 1}`]) {
+//                 positionValuePair[`${questionColMapping[`${child.type}-${YEAR_CONSTANTS_IDS[child?.year].split("-")[1]}-${child.replicaNumber - 1}`]}${startRowIndex + counter}`] = child.value;
+//               }
+//               childCounter.set(child.type, childCounter.get(child.type) + 1);
+//             }
+//           }
+//         }
+//       }
+//       for (const key in positionValuePair) {
+//         crrWorksheet.getCell(key).value = positionValuePair[key]
+//       }
+//       crrWorkbook.xlsx.writeFile(`${tempFilePath}/${timestamp}_ptax_download.xlsx`);
+//       counter++
+//       console.log("counter", counter)
+//     });
+
+//     cursor.on("end", async function (el) {
+//       res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+//       res.setHeader("Content-Disposition", "attachment; filename=" + `${timestamp}_ptax_download.xlsx`);
+//       await crrWorkbook.xlsx.write(res);
+//       fs.unlink(`${tempFilePath}/${timestamp}_ptax_download.xlsx`, (err) => console.log(err))
+//        res.end();
+//     });
+//   } catch (err) {
+//     console.log("err", err)
+//     console.log("error in getCsvForPropertyTaxMapper ::::: ", err.message)
+//   }
+// }

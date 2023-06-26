@@ -1084,7 +1084,7 @@ const propertyTaxOpFormJson = () => {
                 "info": ""
               }
             ],
-            "maxChild": 10,
+            "maxChild": 5,
             "copyOptions": [
               {
                 "id": "Water charges",
@@ -1896,7 +1896,7 @@ const propertyTaxOpFormJson = () => {
                 "info": ""
               }
             ],
-            "maxChild": 10,
+            "maxChild": 5,
             "copyOptions": [
               {
                 "id": "Water charges",
