@@ -139,6 +139,9 @@ LedgerSchema.post("findOneAndUpdate",async function (doc){
                     payload.ledgerUpdated = true
                     payload.modelName = !reject ? "ULBLedger" : "" 
                     rejectFields = reject
+                    if(!reject){
+                        payload.modelName = "ULBLedger"
+                    }
                 }
                 await updateNextTargetYear(mapper.year,ledgerFields[mapper.type].codes,mapper.ulb,mapper,frObject,this)
             }   
