@@ -23,8 +23,8 @@ const UtilizationReportProjectSchema = new Schema({
   //   },
   // ],
   location: {
-    lat: { type: String },
-    long: { type: String },
+    lat: { type: String ,default:""},
+    long: { type: String ,default:""},
   },
   cost: { type: Number, default: 0 },
   expenditure: { type: Number, default: 0 },

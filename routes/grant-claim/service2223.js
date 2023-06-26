@@ -520,7 +520,7 @@ function updateConditions(condition, collectionName){
 
 function generateOutputObject(input) {
   try {
-  const output = {
+  let output = {
     formId: '',
     formName: 'Final submission of claims for 15th FC Grants (FY 2023-24)',
     previousYrMsg: '',
@@ -578,10 +578,16 @@ function generateOutputObject(input) {
 
     output.data[grantType].yearData.push(yearData);
   }
+  output['data'] = sortInputById(output['data']);  
   return output;
   } catch (error) {
       throw({message: `${error.message}`})
   }
+}
+function sortInputById(input) {
+  // const sortedEntries = Object.values(input).sort((a, b) => a.id - b.id);
+  const sortedEntries = Object.fromEntries(Object.entries(input).sort(([, a], [, b]) => a.id - b.id) );
+  return sortedEntries;
 }
 
 function findConditionKey(percent, el, condition) {

@@ -349,7 +349,7 @@ function incrementFormula(x, y, z, minMarks, maxMarks){
     } else if(z<=x){
         marks = minMarks;
     } else if(z>x && z<y){
-        marks = ((z-x)/(y-x))*maxMarks;
+        marks = Number((((z-x)/(y-x))*maxMarks).toFixed(2));
     }
     return marks;
 }
@@ -361,7 +361,7 @@ function decrementFormula(x, y, z, minMarks, maxMarks){
     } else if(z>=x){
         marks = minMarks;
     } else if(z<x && z>y){
-        marks = ((x-z)/(x-y))*maxMarks;
+        marks = Number((((x-z)/(x-y))*maxMarks).toFixed(2));
     }
     return marks;
 }
