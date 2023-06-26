@@ -99,8 +99,8 @@ async function manageLedgerData(params) {
                 let reason = `Data for ${question.displayPriority} has been changed. kindly revisit the calculations`
                 if (childItem.year.toString() === yearObj.year) {
                   childItem.readonly = [statusTracker.RBP, statusTracker.IP].includes(currentFormStatus) && [questionLevelStatus['1']].includes(childItem.status) && role === userTypes.ulb ? false : childItem.readonly
-                  childItem.rejectReason = [statusTracker.RBP, statusTracker.IP].includes(currentFormStatus) && [questionLevelStatus['1']].includes(childItem.status) ? reason : childItem.rejectReason
-                  childItem.status = [statusTracker.RBP, statusTracker.IP].includes(currentFormStatus) && [questionLevelStatus['1']].includes(childItem.status) ? "REJECTED" : childItem.status
+                  childItem.rejectReason = [statusTracker.RBP, statusTracker.IP].includes(currentFormStatus) && [questionLevelStatus['1']].includes(childItem.status) && role === userTypes.ulb ? reason : childItem.rejectReason
+                  childItem.status = [statusTracker.RBP, statusTracker.IP].includes(currentFormStatus) && [questionLevelStatus['1']].includes(childItem.status) && role === userTypes.ulb ? "REJECTED" : childItem.status
                 }
               })
             })
