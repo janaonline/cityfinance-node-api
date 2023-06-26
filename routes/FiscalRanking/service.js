@@ -92,14 +92,14 @@ async function manageLedgerData(params) {
             catch(err){
               errorWithDps[question.displayPriority] = [yearName]
             }
-            let calculationFields =  Object.entries(responseData.financialInformation).reduce((result,[key,value]) => ({...result, ...(question?.calculatedFrom.includes(value.displayPriority)) && {[key]: value}}) ,{})
-            Object.values(calculationFields).forEach((item)=>{
-              item.yearData.forEach((childItem)=>{
-                let reason  = `Data for ${question.displayPriority} has been changed. kindly revisit the calculations`
-                if(childItem.year.toString() ===  yearObj.year){
-                  childItem.readonly = [statusTracker.RBP,statusTracker.IP].includes(currentFormStatus) && [questionLevelStatus['1']].includes(childItem.status)  && role === userTypes.ulb ? false  : childItem.readonly
-                  childItem.rejectReason = [statusTracker.RBP,statusTracker.IP].includes(currentFormStatus) && [questionLevelStatus['1']].includes(childItem.status) ? reason  : childItem.rejectReason
-                  childItem.status = [statusTracker.RBP,statusTracker.IP].includes(currentFormStatus) && [questionLevelStatus['1']].includes(childItem.status)  ? "REJECTED"  :  childItem.status 
+            let calculationFields = Object.entries(responseData.financialInformation).reduce((result, [key, value]) => ({ ...result, ...(question?.calculatedFrom.includes(value.displayPriority)) && { [key]: value } }), {})
+            Object.values(calculationFields).forEach((item) => {
+              item.yearData.forEach((childItem) => {
+                let reason = `Data for ${question.displayPriority} has been changed. kindly revisit the calculations`
+                if (childItem.year.toString() === yearObj.year) {
+                  childItem.readonly = [statusTracker.RBP, statusTracker.IP].includes(currentFormStatus) && [questionLevelStatus['1']].includes(childItem.status) && role === userTypes.ulb ? false : childItem.readonly
+                  childItem.rejectReason = [statusTracker.RBP, statusTracker.IP].includes(currentFormStatus) && [questionLevelStatus['1']].includes(childItem.status) && role === userTypes.ulb ? reason : childItem.rejectReason
+                  childItem.status = [statusTracker.RBP, statusTracker.IP].includes(currentFormStatus) && [questionLevelStatus['1']].includes(childItem.status) && role === userTypes.ulb ? "REJECTED" : childItem.status
                 }
               })
             })
