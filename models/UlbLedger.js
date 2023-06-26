@@ -129,6 +129,7 @@ LedgerSchema.post("findOneAndUpdate",async function (doc){
                if(doc?.amount != mapper.value){
                     payload.value = doc.amount
                     payload.ledgerUpdated = true
+                    payload.modelName = "ULBLedger"
                }
             }
             else if(ledgerFields[mapper.type].logic && maximumValue.toString() === lineItemCode.toString() ){
@@ -136,6 +137,7 @@ LedgerSchema.post("findOneAndUpdate",async function (doc){
                 if(calculatedAmount != mapper.value){
                     payload.value = calculatedAmount
                     payload.ledgerUpdated = true
+                    payload.modelName = !reject ? "ULBLedger" : "" 
                     rejectFields = reject
                 }
                 await updateNextTargetYear(mapper.year,ledgerFields[mapper.type].codes,mapper.ulb,mapper,frObject,this)
