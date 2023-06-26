@@ -55,7 +55,7 @@ function getChildQuestion(params){
         "disableMsg":""
       },
       "nonmillion_untied_2023-24_2":{
-        "questions":`(B) Upload Grant Allocation to ULBs - 2nd Installment (${year})`,
+        "question":`(B) Upload Grant Allocation to ULBs - 2nd Installment (${year})`,
         "quesText":"Upload Grant Allocation to ULBs",
         "disableMsg":`1st Installment (${year}) Grant allocation has to be uploaded first before uploading 2nd Installment (${year}) Grant allocation to ULBs`
       },
