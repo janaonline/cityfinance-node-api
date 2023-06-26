@@ -2233,10 +2233,10 @@ module.exports.downloadPTOExcel = async (req, res) => {
     const crrWorkbook = await workbook.xlsx.readFile(`${tempFilePath}/${timestamp}_ptax_download.xlsx`)
     const crrWorksheet = crrWorkbook.getWorksheet("Sheet 1")
 
-    if (!req.query.state_code)
-      return res.status(400).json({ success: false, message: "State code is mandatory" })
+    // if (!req.query.state_code)
+    //   return res.status(400).json({ success: false, message: "State code is mandatory" })
 
-    let stateCode = req.query.state_code.split(",").map(e => e.trim())
+    // let stateCode = req.query.state_code.split(",").map(e => e.trim())
 
     const cursor = await PropertyTaxOp.aggregate([
       { $match: { "design_year": design_year } },
@@ -2258,7 +2258,7 @@ module.exports.downloadPTOExcel = async (req, res) => {
         }
       },
       { $unwind: "$state" },
-      { $match: { "state.code": { $in: stateCode } } },
+      // { $match: { "state.code": { $in: stateCode } } },
       {
         $lookup: {
           from: "propertytaxopmappers",
@@ -2284,23 +2284,30 @@ module.exports.downloadPTOExcel = async (req, res) => {
     // const outputStream = fs.createWriteStream(`${tempFilePath}/${timestamp}_ptax_download.xlsx`);
     // crrWorkbook.xlsx.write(outputStream);
     cursor.on("data", (el) => {
-      console.log("counter", counter)
+      crrWorksheet.getCell(`A${startRowIndex + counter}`).value = counter + 1
+      crrWorksheet.getCell(`B${startRowIndex + counter}`).value = el.state.name
+      crrWorksheet.getCell(`C${startRowIndex + counter}`).value = el.ulb.name
+      crrWorksheet.getCell(`D${startRowIndex + counter}`).value = el.ulb.code
+      crrWorksheet.getCell(`E${startRowIndex + counter}`).value = el.ulb.censusCode ?? el.ulb.sbCode
+      crrWorksheet.getCell(`F${startRowIndex + counter}`).value = YEAR_CONSTANTS_IDS[el.design_year]
+      crrWorksheet.getCell(`G${startRowIndex + counter}`).value = MASTER_STATUS_ID[el.currentFormStatus]
 
-      let positionValuePair = {
-        [`A${startRowIndex + counter}`]: counter + 1,
-        [`B${startRowIndex + counter}`]: el.state.name,
-        [`C${startRowIndex + counter}`]: el.ulb.name,
-        [`D${startRowIndex + counter}`]: el.ulb.code,
-        [`E${startRowIndex + counter}`]: el.ulb.censusCode ?? el.ulb.sbCode,
-        // [`F${startRowIndex + counter}`]: getKeyByValue(years, el.design_year.toString()),
-        [`F${startRowIndex + counter}`]: YEAR_CONSTANTS_IDS[el.design_year],
-        [`G${startRowIndex + counter}`]: MASTER_STATUS_ID[el.currentFormStatus],
-      }
+      // const positionValuePair = {
+      //   [`A${startRowIndex + counter}`]: counter + 1,
+      //   [`B${startRowIndex + counter}`]: el.state.name,
+      //   [`C${startRowIndex + counter}`]: el.ulb.name,
+      //   [`D${startRowIndex + counter}`]: el.ulb.code,
+      //   [`E${startRowIndex + counter}`]: el.ulb.censusCode ?? el.ulb.sbCode,
+      //   // [`F${startRowIndex + counter}`]: getKeyByValue(years, el.design_year.toString()),
+      //   [`F${startRowIndex + counter}`]: YEAR_CONSTANTS_IDS[el.design_year],
+      //   [`G${startRowIndex + counter}`]: MASTER_STATUS_ID[el.currentFormStatus],
+      // }
 
       const sortedResults = el.propertytaxopmapper;
       for (const result of sortedResults) {
         if (result?.year && questionColMapping[`${result.type}-${YEAR_CONSTANTS_IDS[result?.year].split("-")[1]}`]) {
-          positionValuePair[`${questionColMapping[`${result.type}-${YEAR_CONSTANTS_IDS[result?.year].split("-")[1]}`]}${startRowIndex + counter}`] = result.value;
+          crrWorksheet.getCell(`${questionColMapping[`${result.type}-${YEAR_CONSTANTS_IDS[result?.year].split("-")[1]}`]}${startRowIndex + counter}`).value = result.value
+          // positionValuePair[`${questionColMapping[`${result.type}-${YEAR_CONSTANTS_IDS[result?.year].split("-")[1]}`]}${startRowIndex + counter}`] = result.value;
         }
         // if (!canShow(result.type, sortedResults, updatedDatas, el.ulb._id)) continue;
         if (result.child && result.child.length) {
@@ -2316,36 +2323,29 @@ module.exports.downloadPTOExcel = async (req, res) => {
               if ((childCounter.get(child.type) % 5 === 0 || childCounter.get(child.type) === 0)) {
                 const textValueCounter = childCounter.get(child.type) ? childCounter.get(child.type) / 5 : 0;
                 if (questionColMapping[`${child.type}-textValue-${textValueCounter}`])
-                  positionValuePair[`${questionColMapping[`${child.type}-textValue-${textValueCounter}`]}${startRowIndex + counter}`] = child.textValue;
+                  crrWorksheet.getCell(`${questionColMapping[`${child.type}-textValue-${textValueCounter}`]}${startRowIndex + counter}`).value = child.textValue
+                // positionValuePair[`${questionColMapping[`${child.type}-textValue-${textValueCounter}`]}${startRowIndex + counter}`] = child.textValue;
               }
 
               if (child?.year && questionColMapping[`${child.type}-${YEAR_CONSTANTS_IDS[child?.year].split("-")[1]}-${child.replicaNumber - 1}`]) {
-                positionValuePair[`${questionColMapping[`${child.type}-${YEAR_CONSTANTS_IDS[child?.year].split("-")[1]}-${child.replicaNumber - 1}`]}${startRowIndex + counter}`] = child.value;
+                crrWorksheet.getCell(`${questionColMapping[`${child.type}-${YEAR_CONSTANTS_IDS[child?.year].split("-")[1]}-${child.replicaNumber - 1}`]}${startRowIndex + counter}`).value = child.value
+                // positionValuePair[`${questionColMapping[`${child.type}-${YEAR_CONSTANTS_IDS[child?.year].split("-")[1]}-${child.replicaNumber - 1}`]}${startRowIndex + counter}`] = child.value;
               }
               childCounter.set(child.type, childCounter.get(child.type) + 1);
             }
           }
         }
       }
-      // console.log("positionValuePair", positionValuePair)
+      // for (const key in positionValuePair) {
+      //   crrWorksheet.getCell(key).value = positionValuePair[key]
+      // }
 
-
-      // const cellRefs = Object.keys(positionValuePair);
-      // const cells = cellRefs.map(ref => crrWorksheet.getCell(ref));
-
-      // cellRefs.forEach((ref, index) => {
-      //   cells[index].value = positionValuePair[ref];
-      // });
+      // const crrTime2 = Date.now()
       // crrWorkbook.xlsx.writeFile(`${tempFilePath}/${timestamp}_ptax_download.xlsx`);
-
-      for (const key in positionValuePair) {
-        crrWorksheet.getCell(key).value = positionValuePair[key]
-      }
-      crrWorkbook.xlsx.writeFile(`${tempFilePath}/${timestamp}_ptax_download.xlsx`);
-      positionValuePair = null
-
+      // console.log(Date.now() - crrTime2, "-------write time----------")
       // crrWorkbook.commit();
       counter++
+      console.log(counter, "---------loop time------")
     });
     cursor.on("end", async function (el) {
       res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
