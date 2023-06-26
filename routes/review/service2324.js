@@ -2305,7 +2305,7 @@ module.exports.downloadPTOExcel = async (req, res) => {
       const sortedResults = el.propertytaxopmapper;
       for (const result of sortedResults) {
         if (result?.year && questionColMapping[`${result.type}-${YEAR_CONSTANTS_IDS[result?.year].split("-")[1]}`]) {
-          crrWorksheet.getCell(`${questionColMapping[`${result.type}-${YEAR_CONSTANTS_IDS[result?.year].split("-")[1]}`]}${startRowIndex + counter}`).value = result.value
+          crrWorksheet.getCell(`${questionColMapping[`${result.type}-${YEAR_CONSTANTS_IDS[result?.year].split("-")[1]}`]}${startRowIndex + counter}`).value = result.file ? result.file.url : result.value
           // positionValuePair[`${questionColMapping[`${result.type}-${YEAR_CONSTANTS_IDS[result?.year].split("-")[1]}`]}${startRowIndex + counter}`] = result.value;
         }
         // if (!canShow(result.type, sortedResults, updatedDatas, el.ulb._id)) continue;
