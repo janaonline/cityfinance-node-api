@@ -48,6 +48,8 @@ module.exports.get2223 = async (req, res)=>{
         slbScoring: 100,
       }
   }
+  let conditionLastYear = financialYear === YEAR_CONSTANTS['22_23'] ? YEAR_CONSTANTS_IDS[YEAR_CONSTANTS['21_22']] : YEAR_CONSTANTS_IDS[YEAR_CONSTANTS['22_23']] ;
+  let conditionCurrentYear = financialYear === YEAR_CONSTANTS['22_23'] ? YEAR_CONSTANTS_IDS[YEAR_CONSTANTS['22_23']] : YEAR_CONSTANTS_IDS[YEAR_CONSTANTS['23_24']] 
     const conditions_nmpc_untied_1st = [
       { key: CollectionNames.annualAcc,
         text: `Minimum ${financialYear === YEAR_CONSTANTS['22_23']? expectedValues.annualAccounts : expectedValues2324[IdToYear].annualAccounts }% Annual Account form submission of Unstandardized data by ULBs and Approved by State ULB having data in Both Years should be considered in ${financialYear === YEAR_CONSTANTS['22_23'] ? expectedValues.annualAccounts : expectedValues2324[IdToYear].annualAccounts}%`,
@@ -62,7 +64,7 @@ module.exports.get2223 = async (req, res)=>{
       },
       {
         key: CollectionNames.gtc,
-        text: `Grant Transfer Certificate form submission of Previous installment document i.e. 2021-22 Untied 2nd Instalment`,
+        text: `Grant Transfer Certificate form submission of Previous installment document i.e. ${conditionLastYear} Untied 2nd Instalment`,
       },
       { key: CollectionNames.pTAX,
         text: `Property Tax Floor Rate form submission by State & Approval by MoHUA` },
@@ -87,7 +89,7 @@ module.exports.get2223 = async (req, res)=>{
       },
       {
         key: CollectionNames.gtc,
-        text: `Grant Transfer Certificate form submission of Previous installment document i.e. 2021-22 Tied 2nd Instalment`,
+        text: `Grant Transfer Certificate form submission of Previous installment document i.e. ${conditionLastYear } Tied 2nd Instalment`,
       },
       { 
         key: CollectionNames.pTAX,
@@ -111,7 +113,7 @@ module.exports.get2223 = async (req, res)=>{
       },
       {
         key: CollectionNames.gtc,
-        text: `Grant Transfer Certificate form submission of Previous installment document i.e. 2022-23 Untied 1st Instalment`,
+        text: `Grant Transfer Certificate form submission of Previous installment document i.e. ${conditionCurrentYear} Untied 1st Instalment`,
       },
       { 
         key: CollectionNames.pTAX,
@@ -139,7 +141,7 @@ module.exports.get2223 = async (req, res)=>{
         },
         {
           key: CollectionNames.gtc,
-          text: `Grant Transfer Certificate form submission of Previous installment document i.e. 2022-23 Tied 1st Instalment`,
+          text: `Grant Transfer Certificate form submission of Previous installment document i.e. ${conditionCurrentYear} Tied 1st Instalment`,
         },
         { 
           key: CollectionNames.pTAX,
@@ -178,11 +180,11 @@ module.exports.get2223 = async (req, res)=>{
       },
       {
         key: CollectionNames.propTaxOp,
-        text: `${expectedValues2324[IdToYear].propertyTaxOp}% Property Tax & UC form Filled, Submitted, and Approved by State`,
+        text: `${expectedValues2324[IdToYear].propertyTaxOp}% Details of Property Tax and User Charges form Filled, Submitted, and Approved by State`,
       },
       {
         key: CollectionNames.gtc,
-        text: `Grant Transfer Certificate Form Submission of Previous year document i.e. 2021-22`
+        text: `Grant Transfer Certificate Form Submission of Previous year document i.e. ${conditionLastYear}`
       },
       {
         key: CollectionNames.pTAX,
@@ -198,7 +200,7 @@ module.exports.get2223 = async (req, res)=>{
       },
       {
         key: CollectionNames.slbScoring,
-        text: `${expectedValues2324[IdToYear].slbScoring}% Submission by ULBs part of UA`
+        text: `${expectedValues2324[IdToYear].slbScoring}% Indicators for Water Supply and Sanitation Submission by ULBs part of UA`
       },
       {
         key: CollectionNames.waterRej,
@@ -499,7 +501,7 @@ module.exports.get2223 = async (req, res)=>{
     
 }
 
-function update2324Conditions(submitClaim,collectionNames) {
+function update2324Conditions(submitClaim) {
   for (let claims in submitClaim) {
     submitClaim[claims]['conditions'] = submitClaim[claims]['conditions'].filter(el => {
       return el.key !== CollectionNames.pTAX; 
@@ -585,7 +587,6 @@ function generateOutputObject(input) {
   }
 }
 function sortInputById(input) {
-  // const sortedEntries = Object.values(input).sort((a, b) => a.id - b.id);
   const sortedEntries = Object.fromEntries(Object.entries(input).sort(([, a], [, b]) => a.id - b.id) );
   return sortedEntries;
 }

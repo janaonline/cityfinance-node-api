@@ -185,13 +185,13 @@ function gtcSubmitCondition2324(type, installment, state, designYear){
             {
               type: 'nmpc_untied',
               installments: ['2', '1'],
-              years: [YEAR_CONSTANTS['22_23'], YEAR_CONSTANTS['23_24']],
+              years: [ YEAR_CONSTANTS['23_24'], YEAR_CONSTANTS['22_23'],],
               condition: 'nonmillion_untied',
             },
             {
               type: 'nmpc_tied',
               installments: ['2', '1'],
-              years: [ YEAR_CONSTANTS['22_23'], YEAR_CONSTANTS['23_24']],
+              years: [ YEAR_CONSTANTS['23_24'], YEAR_CONSTANTS['22_23']],
               condition: 'nonmillion_tied',
             },
             {
@@ -203,33 +203,37 @@ function gtcSubmitCondition2324(type, installment, state, designYear){
           ];
         
           const condition = {};
-          const submitConditionState = [
-            {
-              isDraft: false,
-              actionTakenByRole: 'STATE',
-              status: 'PENDING',
-            },
+          const submitConditionState2223 = [
             {
               isDraft: false,
               actionTakenByRole: 'MoHUA',
               status: 'APPROVED',
             },
           ];
-        
+          let submitConditionState = [
+            {
+                currentFormStatus:{
+                    $in:[
+                        MASTER_STATUS['Submission Acknowledged By MoHUA'],
+                    ]
+                }
+            }
+        ]
+        const firstInstallment = '1'
           for (const item of conditions) {
             if (item.type === type && item.installments.includes(installment)) {
               const index = item.installments.indexOf(installment);
         
-              condition.design_year = ObjectId(designYear);
+              condition.design_year = installment === firstInstallment ? ObjectId(YEAR_CONSTANTS['22_23']) : ObjectId(designYear);
               condition.state = ObjectId(state);
               condition.year = ObjectId(item.years[index]);
               condition.type = item.condition;
-              condition.installment = item.installments[index];
+              condition.installment = Number(item.installments[index])+1;
         
               break;
             }
           }
-          condition.$or = submitConditionState;
+          condition.$or = designYear === YEAR_CONSTANTS['22_23'] ? submitConditionState2223 :(installment === firstInstallment ? submitConditionState2223 : submitConditionState );
           return [{
             $match: condition,
           }];
@@ -858,7 +862,6 @@ function getQuery2324(modelName, formType, designYear, formCategory, stateId){
     let submitConditionUlb = [{
         currentFormStatus:{
             $in:[
-                MASTER_STATUS['Under Review By State'],
                 MASTER_STATUS['Submission Acknowledged By MoHUA'],
                 MASTER_STATUS['Under Review By MoHUA']
             ]
@@ -870,16 +873,11 @@ function getQuery2324(modelName, formType, designYear, formCategory, stateId){
             currentFormStatus:{
                 $in:[
                     MASTER_STATUS['Submission Acknowledged By MoHUA'],
-                    MASTER_STATUS['Under Review By MoHUA']
                 ]
             }
         }
     ]
     let submitConditionUlb2223 = [{
-        isDraft: false,
-        actionTakenByRole: "ULB",
-        status: "PENDING"
-    },{
         isDraft: false,
         actionTakenByRole: "STATE",
         status: "APPROVED"
@@ -890,11 +888,7 @@ function getQuery2324(modelName, formType, designYear, formCategory, stateId){
     }]
 
     let submitConditionState2223 = [
-        {
-            isDraft: false,
-            actionTakenByRole: "STATE",
-            status: "PENDING", 
-        },
+        
         {
             isDraft: false,
             actionTakenByRole: "MoHUA",
@@ -1194,6 +1188,7 @@ const dashboard = async (req, res) => {
                 pipeline = gtcSubmitCondition(data.formType, data.installment, state, data.design_year);
                 if(data.design_year === YEAR_CONSTANTS['23_24']){
                     pipeline = gtcSubmitCondition2324(data.formType, data.installment, state, data.design_year);
+                    // return res.json(pipeline);
                 }
             }
             //Get submitted forms            
