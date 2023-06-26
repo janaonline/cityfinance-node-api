@@ -2484,33 +2484,33 @@ const getApprovedQueries =(keyName = false)=>{
     try{
         queryObj = {
 
-            "$or":[
+            "$or": [
                 {
-                    "$and":[
+                    "$and": [
                         {
-                           "$eq":[ actionKeyName,
-                            "STATE"]
+                            "$eq": [`$${actionKeyName}`,
+                                "STATE"]
                         },
                         {
-                             "$eq":[ statusKeyName,
-                            "APPROVED"]
+                            "$eq": [`$${statusKeyName}`,
+                                "APPROVED"]
                         }
                     ]
                 },
                 {
-                    "$and":[
+                    "$and": [
                         {
-                           "$eq":[ actionKeyName,
-                            "MoHUA"]
+                            "$eq": [`$${actionKeyName}`,
+                                "MoHUA"]
                         },
                         {
-                             "$eq":[ statusKeyName,
-                            "APPROVED"]
+                            "$eq": [`$${statusKeyName}`,
+                                "APPROVED"]
                         }
                     ]
-                }
-                ]
-            
+                },
+            ]
+
         }
         return queryObj
     }
@@ -2537,7 +2537,7 @@ function lookupQueryForDur(service,designYear,project=false){
                                     service.getCommonEqObj("$ulb","$$ulb_id"),
                                     service.getCommonEqObj("$designYear","$$designYear"),
                                     service.getCommonEqObj("$isDraft",false),
-                                    // getApprovedQueries()
+                                    getApprovedQueries()
                                 ]
                             }
                         }
