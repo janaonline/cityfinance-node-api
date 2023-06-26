@@ -1747,6 +1747,8 @@ function durProjects(service,csv,ulbId){
         "projectId": "$projects._id",
         "implementationAgency":"$name",
         "totalProjectCost":"$projects.cost",
+        "lat" : "$projects.location.lat",
+        "long": "$projects.location.long",
         "expenditure": "$projects.expenditure",
         "ulbShare": "$ulbShare",
         "sectorId": "$projectCategory._id",
@@ -2088,13 +2090,13 @@ function getDataAccToFilters(filteredObj){
     }
 }
 
-function getPaginatedResults(skip,limit){
+function getPaginatedResults(skip,limit,csv){
     try{
         let obj = {
             "$addFields":{
-                "rows": {
+                "rows": csv ? "$results" : {
                     "$slice": ["$results", skip, limit]
-                }
+                } 
             }
         }
         return obj
@@ -2122,13 +2124,13 @@ function concatArrays(){
 }
 
 
-function filterNoUlbShare(){
+function filterNoUlbShare(inputArr){
     try{
         let obj = {
             "$addFields":{
                 "projects":{
                     "$filter":{
-                        "input":"$DUR.projects",
+                        "input":inputArr,
                         "as":"row",
                         "cond":{
                             "$and":[
@@ -2221,7 +2223,7 @@ async function getQueryForUtilizationReports(obj) {
         query.push(concatArrays())
         
         query.push(getDataAccToFilters(filteredObj))
-        query.push(getPaginatedResults(skip,limit))
+        query.push(getPaginatedResults(skip,limit,csv))
         query.push(projections)
         // stage 5 paginations
     }
@@ -2476,6 +2478,48 @@ function getProjectionForDur(service){
 }
 
 
+const getApprovedQueries =(keyName = false)=>{
+    let statusKeyName = (keyName) ? `${keyName}.status` : "status"
+    let actionKeyName = (keyName) ? `${keyName}.actionTakenByRole` : "actionTakenByRole" 
+    try{
+        queryObj = {
+
+            "$or":[
+                {
+                    "$and":[
+                        {
+                           "$eq":[ actionKeyName,
+                            "STATE"]
+                        },
+                        {
+                             "$eq":[ statusKeyName,
+                            "APPROVED"]
+                        }
+                    ]
+                },
+                {
+                    "$and":[
+                        {
+                           "$eq":[ actionKeyName,
+                            "MoHUA"]
+                        },
+                        {
+                             "$eq":[ statusKeyName,
+                            "APPROVED"]
+                        }
+                    ]
+                }
+                ]
+            
+        }
+        return queryObj
+    }
+    catch(err){
+        console.log("error in getStatusWiseQuery ::: ",err.message)
+    }
+}
+
+
 function lookupQueryForDur(service,designYear,project=false){
     try{
         let obj = {
@@ -2492,7 +2536,8 @@ function lookupQueryForDur(service,designYear,project=false){
                                 "$and":[
                                     service.getCommonEqObj("$ulb","$$ulb_id"),
                                     service.getCommonEqObj("$designYear","$$designYear"),
-                                    service.getCommonEqObj("$isDraft",false)
+                                    service.getCommonEqObj("$isDraft",false),
+                                    // getApprovedQueries()
                                 ]
                             }
                         }
@@ -2501,6 +2546,7 @@ function lookupQueryForDur(service,designYear,project=false){
                 "as":"DUR"
             }
         }
+        obj['$lookup']['pipeline'].push(filterNoUlbShare("$projects"))
         if(project){
             obj['$lookup']['pipeline'].push(
                 {
@@ -2573,7 +2619,7 @@ function getQueryCityRelated(obj){
         query.push(service.getUnwindObj("$DUR",true))
         query.push(service.getCommonLookupObj("amrutprojects", "_id", "ulb", "amrProjects"))
         query.push(service.getUnwindObj("$amrProjects",true))
-        query.push(filterNoUlbShare())
+        query.push(filterNoUlbShare("$DUR.projects"))
         // query.push(service.addFields("projects","$DUR.projects"))
         query.push(service.addFields("amrProjects","$amrProjects"))
         query.push(service.getUnwindObj("$projects",true))
@@ -2601,11 +2647,12 @@ function getQueryCityRelated(obj){
         query.push(concatArrays())
         query.push(getFilteredProjects(filteredObj))
         query.push(getDataAccToFilters(filteredObj))
-        query.push(getPaginatedResults(skip,limit))
+        query.push(getPaginatedResults(skip,limit,csv))
         query.push(projections)
         return query
     }
     catch(err){
+        console.log("error ::: ",err)
         console.log("error in getQueryCityRelated:::",err.message)
     }
 }
@@ -2682,7 +2729,8 @@ module.exports.getInfProjectsWithState = catchAsync(async(req,res,next)=>{
         let limit = parseInt(req.query.limit) || 10
         let {sortBy,order} = req.query
         let filters = {...req.query}
-        await deleteExtraKeys(["sortBy","order","skip","limit"],filters)
+        let getQuery = req.query.getQuery === "true" || false
+        await deleteExtraKeys(["sortBy","order","skip","limit","getQuery"],filters)
         filters = await GlobalService.mapFilter(filters)
         let filterObj = {
             "provided":Object.keys(filters).length > 0 ? true :false,
@@ -2691,6 +2739,10 @@ module.exports.getInfProjectsWithState = catchAsync(async(req,res,next)=>{
         let sortKey = getSortByKeys(sortBy, order)
         let designYear = years['2022-23']
         let query = await getQueryStateRelated(designYear,filterObj,sortKey,skip,limit)
+
+        if(["staging","demo"].includes(process.env.ENV) && getQuery){
+            return res.json(query)
+        }
         let dbResponse = await Ulb.aggregate(query)
         response.data = dbResponse[0]['data']
         response.total = dbResponse[0]['total'] || 0
