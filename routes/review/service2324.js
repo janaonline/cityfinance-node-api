@@ -263,25 +263,27 @@ async function forms2223(collectionName, data) {
     throw (`forms2223:: ${error.message}`)
   }
 }
-
+const sequentialReview = `Cannot review since last year form is not approved by MoHUA.`
 const setCurrentStatus = (req, data, approvedUlbs, collectionName, loggedInUserRole) => {
   data.forEach(el => {
+    el['info'] = ''
     if (!el.formData) {
       el['formStatus'] = "Not Started";
       el['cantakeAction'] = false;
     } else {
-      // if (collectionName === CollectionNames.dur || collectionName === CollectionNames['28SLB']) {
-      //   el['formStatus'] = MASTER_STATUS_ID[el.formData.currentFormStatus]
-      //   let params = { status: el.formData.currentFormStatus, userRole: loggedInUserRole }
-      //   el['cantakeAction'] = req.decoded.role === "ADMIN" ? false : canTakeActionOrViewOnlyMasterForm(params);
-      //   if (!(approvedUlbs.find(ulb => ulb.toString() === el.ulbId.toString())) && loggedInUserRole === "MoHUA") {
-      //     el['cantakeAction'] = false
-      //   }
-      // } else {
+      el['formStatus'] = MASTER_STATUS_ID[el.formData.currentFormStatus]
+      if (collectionName === CollectionNames.dur || collectionName === CollectionNames['28SLB']) {
         let params = { status: el.formData.currentFormStatus, userRole: loggedInUserRole }
         el['cantakeAction'] = req.decoded.role === "ADMIN" ? false : canTakeActionOrViewOnlyMasterForm(params);
-        el['formStatus'] = MASTER_STATUS_ID[el.formData.currentFormStatus]
-      // }
+        if (!(approvedUlbs.find(ulb => ulb.toString() === el.ulbId.toString())) && loggedInUserRole === "MoHUA") {
+          el['cantakeAction'] = false;
+          el['formData']['currentFormStatus'] === MASTER_STATUS['Under Review By MoHUA'] ? el['info'] = sequentialReview : ""
+        }
+      } else {
+        let params = { status: el.formData.currentFormStatus, userRole: loggedInUserRole }
+        el['cantakeAction'] = req.decoded.role === "ADMIN" ? false : canTakeActionOrViewOnlyMasterForm(params);
+        // el['formStatus'] = MASTER_STATUS_ID[el.formData.currentFormStatus]
+      }
     }
   })
   return data;
