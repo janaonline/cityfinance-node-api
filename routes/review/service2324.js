@@ -319,18 +319,18 @@ const setCurrentStatus = (req, data, approvedUlbs, collectionName, loggedInUserR
       el['formStatus'] = "Not Started";
       el['cantakeAction'] = false;
     } else {
-      if (collectionName === CollectionNames.dur || collectionName === CollectionNames['28SLB']) {
-        el['formStatus'] = MASTER_STATUS_ID[el.formData.currentFormStatus]
+      // if (collectionName === CollectionNames.dur || collectionName === CollectionNames['28SLB']) {
+      //   el['formStatus'] = MASTER_STATUS_ID[el.formData.currentFormStatus]
+      //   let params = { status: el.formData.currentFormStatus, userRole: loggedInUserRole }
+      //   el['cantakeAction'] = req.decoded.role === "ADMIN" ? false : canTakeActionOrViewOnlyMasterForm(params);
+      //   if (!(approvedUlbs.find(ulb => ulb.toString() === el.ulbId.toString())) && loggedInUserRole === "MoHUA") {
+      //     el['cantakeAction'] = false
+      //   }
+      // } else {
         let params = { status: el.formData.currentFormStatus, userRole: loggedInUserRole }
         el['cantakeAction'] = req.decoded.role === "ADMIN" ? false : canTakeActionOrViewOnlyMasterForm(params);
-        if (!(approvedUlbs.find(ulb => ulb.toString() === el.ulbId.toString())) && loggedInUserRole === "MoHUA") {
-          el['cantakeAction'] = false
-        }
-      } else {
-        let params = { status: el.formData.currentFormStatus, userRole: loggedInUserRole }
-        el['cantakeAction'] = req.decoded.role === "ADMIN" ? false : canTakeActionOrViewOnlyMasterForm(params);
         el['formStatus'] = MASTER_STATUS_ID[el.formData.currentFormStatus]
-      }
+      // }
     }
   })
   return data;
@@ -2368,7 +2368,8 @@ module.exports.downloadPTOExcel = async (req, res) => {
       const sortedResults = el.propertytaxopmapper;
       for (const result of sortedResults) {
         if (result?.year && questionColMapping[`${result.type}-${YEAR_CONSTANTS_IDS[result?.year].split("-")[1]}`]) {
-          crrWorksheet.getCell(`${questionColMapping[`${result.type}-${YEAR_CONSTANTS_IDS[result?.year].split("-")[1]}`]}${startRowIndex + counter}`).value = result.value
+          crrWorksheet.getCell(`${questionColMapping[`${result.type}-${YEAR_CONSTANTS_IDS[result?.year].split("-")[1]}`]}${startRowIndex + counter}`).value = result.file ? result.file.url : result.value
+          // positionValuePair[`${questionColMapping[`${result.type}-${YEAR_CONSTANTS_IDS[result?.year].split("-")[1]}`]}${startRowIndex + counter}`] = result.value;
         }
         if (result.child && result.child.length) {
           const childCounter = new Map();
