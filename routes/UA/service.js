@@ -2149,95 +2149,11 @@ function filterNoUlbShare(inputArr){
     }
 }
 
-/**
- * It takes an object as an argument and returns an array of objects
- * @param obj - {ulbId,skip,limit,filteredObj}
- */
-async function getQueryForUtilizationReports(obj) {
-    let { ulbId, skip, limit, filteredObj, sortKey,csv} = obj
-    let query = []
-    let design_year = years['2022-23']
-    try {
-        let service = AggregationServices
-        //stage 1 get matching query
-        let matchObj = {
-            "$match": {
-                "ulb": ObjectId(ulbId),
-                "designYear":ObjectId(design_year),
-                "isDraft":false,
-            }
-        }
-        query.push(matchObj)
-        // stage 2 get related ulbs and unwind
-        query.push(service.getCommonLookupObj("ulbs", "ulb", "_id", "ulb"))
-        query.push(service.getUnwindObj("$ulb", true))
-        query.push(service.getCommonLookupObj("creditratings", "ulb._id", "ulb", "links"))
-        query.push(queryPipelineLookup(service,"amrutprojects","amrProjects"))
-        query.push(service.getUnwindObj("$amrProjects", true))
-        // add state if query is for csv 
-        if(csv){
-            query.push(addCensusCode())
-            query.push(service.getCommonLookupObj("states", "ulb.state", "_id", "state"))
-            query.push(service.getUnwindObj("$state", true))
-        }
-        // stage3 unwind Projects array 
-        let condObj = {
-            "$and":[
-                {"$gt": ["$$item.cost","$$item.expenditure"]},
-                {"$gt": ["$$item.expenditure",0]},
-            ]
-        }
-        query.push(service.addFields("amrProjectCost","$amrProjects.cost"))
-        let fieldsForCalc = {
-            "fromValue":"$amrProjects.cost",
-            "toValue":"$amrProjects.expenditure"
-        }
-        query.push(service.addFields("amrUlbShare","$amrProjects.ulbShare"))
-        query.push(service.filterArr("projects","$projects",condObj))
-        query.push(service.getUnwindObj("$projects", true))
-        query.push(service.addFields("totalProjectCost","$projects.cost"))
-        // let fieldsToAdd = getExpendituresField()
-        // query = query.concat(service.addMultipleFields(fieldsToAdd,true))
-        let fieldstoCalculate = {
-            fromValue:"$totalProjectCost",
-            toValue: "$projects.expenditure"
-        }
-        query.push(addUlbShare(service,fieldstoCalculate))
-        // query.push(service.addConvertedAmount("$ulbShare","ulbShareInlkh","lakhs"))
-        // stage 4 lookup from category 
-        query.push(service.getCommonLookupObj("categories", "projects.category", "_id", "category"))
-        query.push(service.getUnwindObj("$category", true))
-        
-        if (sortKey.provided) {
-            query.push({
-                "$sort": {
-                    "ulbShare":1
-                }
-            })
-        }
-        //if filters provided
-        let groupBy = getGroupByQuery(service,ulbId,csv)
-        
-        let projections = getProjectionQueries(service, filteredObj, skip, limit, sortKey)
-        query.push(groupBy)
-        query.push(concatArrays())
-        
-        query.push(getDataAccToFilters(filteredObj))
-        query.push(getPaginatedResults(skip,limit,csv))
-        query.push(projections)
-        // stage 5 paginations
-    }
-    catch (err) {
-        console.log("error in getQueryForUtilizationReports ::::", err.message)
-    }
-    return query
-}
-
 function appendMultipleSorters(sortBy,order){
     try{
         let multipleKeys = {
-            "totalProjectCost":["totalProjectCost","amrProjectCost"],
-            "ulbShare":["amrUlbShare","ulbShare"]
+            "totalProjectCost":["totalProjectCost"],
+            "ulbShare":["ulbShare"]
         }
         let temp = {}
         let keysObj = multipleKeys[sortBy]
@@ -2255,10 +2171,6 @@ function getSortByKeysForMergedTable(sortBy, order) {
     let sortKey = {
         "provided": false
     }
-    let multipleKeys = {
-        "totalProjectCost":["totalProjectCost","amrProjectCost"],
-        "ulbShare":["amrUlbShare","ulbShare"]
-    }
     try {
         if ((sortBy != undefined) && (order != undefined)) {
             let temp = {}
@@ -2269,7 +2181,7 @@ function getSortByKeysForMergedTable(sortBy, order) {
                     let name = sortBy[key]
                     if(!isNaN(parseInt(order[key]))){
                         // console.log("sorter::",order[key])
-                        console.log("")
+                        console.log(">>>")
                         temp2 = appendMultipleSorters(name,order)
                         Object.assign(temp,temp2)
                         // temp[sortFilterKeys[name]] = parseInt(order[key])
@@ -2383,13 +2295,13 @@ module.exports.getInfrastructureProjects = catchAsync(async (req, res) => {
         let { getQuery, sortBy, order,csv } = filters
         csv = csv === "true" ? true :false;
         let redis_key = createRedisKeys(filters,ulbId)
-        let sortKey = getSortByKeysForMergedTable(sortBy,order)
+        let sortKey = getSortByKeysForMergedTable(sortBy, order)
         deleteExtraKeys(['getQuery','limit','skip','order','sortBy','csv'],filters)
         let filteredObj = getFiltersForModule(filters)
         if (ulbId === undefined) {
-            if (ulbId === undefined) {
+            // if (ulbId === undefined) {
                 response.message = "ulb id is missing"
-            }
+            // }
             return res.status(status).json(response)
         }
         let query = await getQueryCityRelated({ ulbId, skip, limit, filteredObj, sortKey,csv })
@@ -2597,6 +2509,82 @@ function facetQueryForPagination(skip,limit,sortKey){
         console.log("error in facetQueryForPagination :: ",err.message)
     }
 }
+// {
+//     "$unwind":{
+//         "path":"$data",
+//         "preserveNullAndEmptyArrays":true
+//     }
+// },
+// {
+//     "$sort":{
+//         "data.expenditure":1,
+//     }  
+// },
+// {
+//     "$group":{
+//         "_id":"data.projectId",
+//         "data":{
+//             "$push":"$data"
+//         },
+//         "implementationAgencies":{
+//             "$first" :"$implementationAgencies"
+//         },
+//         "sectors":{
+//             "$first":"$sectors"
+//         },
+//        "projects":{
+//            "$first":"$projects"
+//        }
+//     }
+// },
+
+
+function groupQuery(){
+    try{
+        let groupByQuery = {
+            "$group":{
+                "_id":"data.projectId",
+                "data":{
+                    "$push":"$data"
+                },
+                "implementationAgencies":{
+                    "$first" :"$implementationAgencies"
+                },
+                "sectors":{
+                    "$first":"$sectors"
+                },
+               "projects":{
+                   "$first":"$projects"
+               }
+            }
+        }
+        return groupByQuery
+    }
+    catch(err){
+        console.log("error in groupQUery ::: ",err.message)
+    }
+}
+
+
+function unWindForSort(service,sortKey){
+    try{
+        let queryObj = []
+        let sorters = Object.entries(sortKey.filters).reduce((acc,[key,value])=>(
+            {...acc,[`data.${key}`]:value}
+        ),{})
+        queryObj.push(service.getUnwindObj("$data",true)),
+        queryObj.push({
+            "$sort":sorters
+        })
+        queryObj.push(groupQuery())
+        return queryObj
+    }
+    catch(err){
+        console.log("error in unWindForSort ::: ",err.message)
+    }
+}
+
+
 // new Query >>>>>>>>>>>>>>>>>
 function getQueryCityRelated(obj){
     let service = AggregationServices
@@ -2646,6 +2634,10 @@ function getQueryCityRelated(obj){
         query.push(groupBy)
         query.push(concatArrays())
         query.push(getFilteredProjects(filteredObj))
+        if(sortKey.provided){
+            let unwindedSortedProject = unWindForSort(service,sortKey)
+            query = [...query,...unwindedSortedProject]
+        }
         query.push(getDataAccToFilters(filteredObj))
         query.push(getPaginatedResults(skip,limit,csv))
         query.push(projections)
