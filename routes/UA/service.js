@@ -1949,7 +1949,7 @@ function addUlbShare(service,fields,fieldName='ulbShare'){
         obj['$addFields'][fieldName] = {
             "$cond":{
                 "if":{
-                    "$gt":[toValue,0]
+                    "$gte":[toValue,0]
                 },
                 "then":service.getCommonSubtract([fromValue,toValue]),
                 "else":0
@@ -2134,7 +2134,7 @@ function filterNoUlbShare(inputArr){
                         "as":"row",
                         "cond":{
                             "$and":[
-                                {"$gt":["$$row.expenditure",0]},
+                                {"$gte":["$$row.expenditure",0]},
                                 {"$lt":["$$row.expenditure","$$row.cost"]},
                                 ]
                         }
@@ -2478,7 +2478,7 @@ function getProjectionForDur(service){
 }
 
 
-const getApprovedQueries =(keyName = false)=>{
+const getApprovedFormQuery =(keyName = false)=>{
     let statusKeyName = (keyName) ? `${keyName}.status` : "status"
     let actionKeyName = (keyName) ? `${keyName}.actionTakenByRole` : "actionTakenByRole" 
     try{
@@ -2515,7 +2515,7 @@ const getApprovedQueries =(keyName = false)=>{
         return queryObj
     }
     catch(err){
-        console.log("error in getStatusWiseQuery ::: ",err.message)
+        console.log("error in getApprovedFormQuery ::: ",err.message)
     }
 }
 
@@ -2537,7 +2537,7 @@ function lookupQueryForDur(service,designYear,project=false){
                                     service.getCommonEqObj("$ulb","$$ulb_id"),
                                     service.getCommonEqObj("$designYear","$$designYear"),
                                     service.getCommonEqObj("$isDraft",false),
-                                    getApprovedQueries()
+                                    getApprovedFormQuery()
                                 ]
                             }
                         }
