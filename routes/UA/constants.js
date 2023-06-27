@@ -1,3 +1,5 @@
+
+const { years } = require("../../service/years")
 let columns = [
     {
         label: "Project Name",
@@ -141,6 +143,17 @@ const sortFilterKeys = {
     "ulbName":"ulbName"
 }
 
+const filterYears = [
+    {
+        "label":"2022-23",
+        "id":years['2022-23']
+    },
+    {
+        "label":"2023-24",
+        "id":years['2023-24']
+    }
+]
+
 const dashboardColumns = [
     {
         "label":"State Name",
@@ -168,5 +181,6 @@ module.exports = {
     columns,
     csvCols,
     sortFilterKeys,
-    dashboardColumns
+    dashboardColumns,
+    filterYears
 }
