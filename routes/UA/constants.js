@@ -143,7 +143,7 @@ const sortFilterKeys = {
     "ulbName":"ulbName"
 }
 
-const filterYears = [
+const filterYears = [ // make this dynamic with the current financial year
     {
         "label":"2022-23",
         "id":years['2022-23']

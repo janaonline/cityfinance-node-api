@@ -1714,6 +1714,7 @@ function amrProjects(service,csv,ulbId){
                 "url": apiUrls[process.env.ENV] + "/UA/get-mou-project/"
             },
             "projectReport":getProjectReportDetail(csv),
+            "links":"$links.link",
             "creditRating": {
                     "name": "Credit rating",
                     "url": "https://democityfinance.in/creditRating.pdf"
@@ -1759,6 +1760,7 @@ function durProjects(service,csv,ulbId){
             "name": "Credit rating",
             "url": "https://democityfinance.in/creditRating.pdf"
         },
+        "links":"$links.link",
         "moreInformation": {
             "name": "More information",
             "url": apiUrls[process.env.ENV] + "/UA/get-mou-project/"
@@ -1821,7 +1823,7 @@ function getGroupByQuery(service,ulbId,csv) {
                 // "estimatedCompletionDate": service.getCommonDateTransformer("$projects.modifiedAt"),
                 
                 "links":{
-                    "$push":"$links.link"
+                    "$first":"$links.link"
                 }
                 // "projectReport": getProjectReportDetail(csv),
                 
@@ -1929,6 +1931,7 @@ function getProjectionQueries(service, filteredObj, skip, limit, sortKey) {
                 "rows": "$rows",
                 "sectors": 1,
                 "projects": 1,
+                
                 "implementationAgencies": 1
             }
         }
@@ -2260,11 +2263,16 @@ function deleteExtraKeys(arr,obj){
 
 function changeDocument(document){
     let obj = {...document}
+    if(!obj.projectName){
+        return {}
+    }
     if(obj['links'] && obj['links'].length){
         let arr = obj['links']
+       
         for(var  rating in arr){
             let r = parseInt(rating) + 1
             obj[`creditRating${r}`]  = arr[rating]
+            // console.log("arr[rating] :: ",arr[rating])
         }
     }
     else{
@@ -2624,7 +2632,7 @@ function getQueryCityRelated(obj){
         query.push(service.addFields("amrProjects","$amrProjects"))
         query.push(service.getUnwindObj("$projects",true))
         query.push(service.getCommonLookupObj("categories", "projects.category", "_id", "projectCategory"))
-        query.push(service.getCommonLookupObj("creditratings", "ulb._id", "ulb", "links"))
+        query.push(service.getCommonLookupObj("creditratings", "_id", "ulb", "links"))
         query.push(service.getUnwindObj("$projectCategory",true))
         query.push(service.getCommonLookupObj("categories", "amrProjects.category", "_id", "amrProjects.category"))
         query.push(service.getUnwindObj("$amrProjects.category",true))
@@ -2726,22 +2734,25 @@ module.exports.getInfProjectsWithState = catchAsync(async(req,res,next)=>{
         message:"",
         columns : dashboardColumns,
         total : 0,
-        data:[]
+        data:[],
+        filterYears:filterYears,
+        filterYear:years['2022-23']
     }
     try{
         let skip = parseInt(req.query.skip) || 0
         let limit = parseInt(req.query.limit) || 10
         let {sortBy,order} = req.query
         let filters = {...req.query}
+        let designYear = filters.filterYear || years['2022-23']
         let getQuery = req.query.getQuery === "true" || false
-        await deleteExtraKeys(["sortBy","order","skip","limit","getQuery"],filters)
+        
+        await deleteExtraKeys(["sortBy","order","skip","limit","getQuery","filterYear"],filters)
         filters = await GlobalService.mapFilter(filters)
         let filterObj = {
             "provided":Object.keys(filters).length > 0 ? true :false,
             "filters":Object.keys(filters).length > 0 ? {...filters} :"",
         }
         let sortKey = getSortByKeys(sortBy, order)
-        let designYear = years['2022-23']
         let query = await getQueryStateRelated(designYear,filterObj,sortKey,skip,limit)
 
         if(["staging","demo"].includes(process.env.ENV) && getQuery){
@@ -2750,7 +2761,7 @@ module.exports.getInfProjectsWithState = catchAsync(async(req,res,next)=>{
         let dbResponse = await Ulb.aggregate(query)
         response.data = dbResponse[0]['data']
         response.total = dbResponse[0]['total'] || 0
-        
+        response.filterYear = designYear
         response.message = "Fetched Successfully"
         response.success = true
         return res.status(200).json(response)
