@@ -288,7 +288,6 @@ async function createHistory(params) {
             formType: "PTO"
 
         }
-        console.log("working ::: ", role)
         await saveStatusAndHistory(historyParams)
 
     }

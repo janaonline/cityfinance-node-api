@@ -16,10 +16,11 @@ const axios = require('axios')
 const {sendCsv,apiUrls} = require("../../routes/CommonActionAPI/service")
 const { calculateSlbMarks } = require('../Scoring/service');
 const { ulb } = require('../../util/userTypes');
-const { columns,csvCols,sortFilterKeys,dashboardColumns } = require("./constants.js")
+const { columns,csvCols,sortFilterKeys,dashboardColumns,filterYears } = require("./constants.js")
 const Redis = require("../../service/redis")
 const { AggregationServices } = require("../../routes/CommonActionAPI/service");
-const { YEAR_CONSTANTS , FORMIDs, FormNames, MASTER_STATUS} = require('../../util/FormNames');
+const { YEAR_CONSTANTS , FORMIDs, FormNames, MASTER_STATUS,MASTER_FORM_STATUS} = require('../../util/FormNames');
+const { getKeyByValue } = require('../../util/masterFunctions');
 const lineItemIndicatorIDs = [
     "6284d6f65da0fa64b423b52a",
     "6284d6f65da0fa64b423b53a",
@@ -2294,9 +2295,10 @@ module.exports.getInfrastructureProjects = catchAsync(async (req, res) => {
         let limit = parseInt(filters.limit) || 10
         let { getQuery, sortBy, order,csv } = filters
         csv = csv === "true" ? true :false;
+        let design_year = filters.filterYear || years['2022-23']
         let redis_key = createRedisKeys(filters,ulbId)
         let sortKey = getSortByKeysForMergedTable(sortBy, order)
-        deleteExtraKeys(['getQuery','limit','skip','order','sortBy','csv'],filters)
+        deleteExtraKeys(['getQuery','limit','skip','order','sortBy','csv','filterYear'],filters)
         let filteredObj = getFiltersForModule(filters)
         if (ulbId === undefined) {
             // if (ulbId === undefined) {
@@ -2304,7 +2306,7 @@ module.exports.getInfrastructureProjects = catchAsync(async (req, res) => {
             // }
             return res.status(status).json(response)
         }
-        let query = await getQueryCityRelated({ ulbId, skip, limit, filteredObj, sortKey,csv })
+        let query = await getQueryCityRelated({ ulbId, skip, limit, filteredObj, sortKey,csv,design_year })
         
         if (getQuery === "true") {
             return res.status(200).json(query)
@@ -2337,10 +2339,12 @@ module.exports.getInfrastructureProjects = catchAsync(async (req, res) => {
         else {
             response.message = "No data for particular ulb"
             response.rows = []
-            response.columns = columns
             response.filters = []
         }
-
+        console.log("filterYears :: ",filterYears)
+        response.filterYears = filterYears
+        response.filterYear = design_year
+        response.columns = columns
         response.success = true
         return res.status(200).json(response)
     }
@@ -2390,12 +2394,13 @@ function getProjectionForDur(service){
 }
 
 
-const getApprovedFormQuery =(keyName = false)=>{
+const getApprovedFormQuery =(keyName = false,designYear)=>{
     let statusKeyName = (keyName) ? `${keyName}.status` : "status"
     let actionKeyName = (keyName) ? `${keyName}.actionTakenByRole` : "actionTakenByRole" 
+    let outDatedYears = ["2018-19", "2019-20", "2021-22", "2022-23"]
+    let queryObj = {}
     try{
-        queryObj = {
-
+        let stringStatusQuery = {
             "$or": [
                 {
                     "$and": [
@@ -2424,6 +2429,14 @@ const getApprovedFormQuery =(keyName = false)=>{
             ]
 
         }
+        let idWiseQuery = {
+            "$in":["$currentFormStatus",[MASTER_FORM_STATUS.SUBMISSION_ACKNOWLEDGED_BY_MoHUA,MASTER_FORM_STATUS.UNDER_REVIEW_BY_MoHUA]]
+                
+        
+        }
+        // queryObj = 
+        queryObj  = outDatedYears.includes(getKeyByValue(years,designYear)) ? stringStatusQuery : idWiseQuery
+        console.log("queryObj ::: ",queryObj)
         return queryObj
     }
     catch(err){
@@ -2449,7 +2462,7 @@ function lookupQueryForDur(service,designYear,project=false){
                                     service.getCommonEqObj("$ulb","$$ulb_id"),
                                     service.getCommonEqObj("$designYear","$$designYear"),
                                     service.getCommonEqObj("$isDraft",false),
-                                    getApprovedFormQuery()
+                                    getApprovedFormQuery(false,designYear)
                                 ]
                             }
                         }
@@ -2588,8 +2601,7 @@ function unWindForSort(service,sortKey){
 // new Query >>>>>>>>>>>>>>>>>
 function getQueryCityRelated(obj){
     let service = AggregationServices
-    let { ulbId, skip, limit, filteredObj, sortKey,csv} = obj
-    let designYear = years['2022-23']
+    let { ulbId, skip, limit, filteredObj, sortKey,csv,years,design_year:designYear} = obj
     try{
         let query = []
         let matchQuery = {
