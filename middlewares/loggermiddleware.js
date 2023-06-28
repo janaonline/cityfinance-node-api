@@ -6,7 +6,7 @@ const loggerModel = require("../models/RequestLogger")
  */
 const createLog = async (req, res) => {
     const apiUrl = req.originalUrl
-    const diff = (new Date(req._startTime) - new Date()) / 1000
+    const diff = (new Date() - new Date(req._startTime)) / 1000
     try {
         if (['PUT', 'POST'].includes(req.method) && !req.url.split("/").includes("login")) {
             const dataObj = {
