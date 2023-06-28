@@ -23,6 +23,7 @@ const Response = require("../../service").response;
 const {saveCurrentStatus, saveFormHistory, saveStatusHistory} = require('../../util/masterFunctions');
 const CurrentStatus = require('../../models/CurrentStatus');
 const {MASTER_STATUS_ID, FORM_LEVEL_SHORTKEY, FORMIDs} =  require('../../util/FormNames');
+const { ModelNames } = require('../../util/15thFCstatus');
 var allowedStatuses = [StatusList.Rejected_By_MoHUA,StatusList.STATE_REJECTED,StatusList.Rejected_By_State,StatusList.In_Progress,StatusList.Not_Started]
 var ignorableKeys = ["actionTakenByRole","actionTakenBy","ulb","design_year"]
 let groupedQuestions = {
@@ -3526,7 +3527,7 @@ const IGNORE_YEARS = {
 async function sequentialReview(req, res) {
   try {
     let { decoded: user, body: bodyData } = req;
-    let { design_year, formId, ulbs, status, multi } = bodyData;
+    let { design_year, formId, ulbs, status, multi, getReview } = bodyData;
     if (
       user.role !== USER_ROLE["MoHUA"] ||
       status !== "REJECTED"
@@ -3542,7 +3543,8 @@ async function sequentialReview(req, res) {
       ? (designYear = "designYear")
       : (designYear = "design_year");
 
-    const modelName = MODEL_PATH[formId];
+    const modelName = formId === FORMIDs['twentyEightSlb'] ? ModelNames['twentyEightSlbs'] : ModelNames['dur'];
+    
     let query = {
       ulb: { $in: ulbs },
       [designYear]: { $nin: IGNORE_YEARS[design_year] },
@@ -3558,14 +3560,20 @@ async function sequentialReview(req, res) {
       modelName,
       res,
       user,
+      getReview
     };
     let formsUpdated = await checkForms(params);
     //   } else {
     if(formsUpdated){
-        let msg =  `${formsUpdated} rejected`
-        return Response.OK(res,{} ,msg );
+        let msg = getReview ? `${formsUpdated} form will be rejected`: `${formsUpdated} form rejected`
+        return Response.OK(res,{
+            autoReject: true
+        } ,msg );
     }else{
-      return Response.OK(res, {}, "No Forms Updated!");
+      return Response.OK(res, {
+        autoReject: false
+
+      }, "No Forms Updated!");
     }
     //   }
   } catch (error) {
@@ -3576,27 +3584,35 @@ module.exports.sequentialReview = sequentialReview;
 
 async function checkForms(params) {
   try {
-    let { forms, formId, modelName, res, user } = params;
+    let { forms, formId, modelName, res, user, getReview } = params;
     let designYear = "design_year";
     formId === FORMIDs["dur"]
       ? (designYear = "designYear")
       : (designYear = "design_year");
     let formCount = 0;
     for (let form of forms) {
-      if (form[designYear].toString() === YEAR_CONSTANTS["22_23"]) {
-        if (!checkIfUlbCanEditForm2223(form)) {
-          let output = await rejectForm2223(form, modelName, user);
-          if (output) {
-            formCount++;
-          }
-        }
+      if (getReview) {
+        if (form[designYear].toString() === YEAR_CONSTANTS["22_23"]) {
+          !checkIfUlbCanEditForm2223(form) ? formCount++ : "";
+        }else{
+          !checkIfUlbCanEditForm(form?.currentFormStatus) ? formCount++ : "";
+        } 
       } else {
-        if (!checkIfUlbCanEditForm(form?.currentFormStatus)) {
-          let output = await rejectForm(form, formId, modelName, user);
-          if (output) {
-            formCount++;
+          if (form[designYear].toString() === YEAR_CONSTANTS["22_23"]) {
+            if (!checkIfUlbCanEditForm2223(form)) {
+              let output = await rejectForm2223(form, modelName, user);
+              if (output) {
+                formCount++;
+              }
+            }
+          } else {
+            if (!checkIfUlbCanEditForm(form?.currentFormStatus)) {
+              let output = await rejectForm(form, formId, modelName, user);
+              if (output) {
+                formCount++;
+              }
+            }
           }
-        }
       }
     }
     return formCount;
