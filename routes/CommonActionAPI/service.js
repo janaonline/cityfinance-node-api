@@ -2654,20 +2654,28 @@ module.exports.masterAction =  async (req, res) => {
       let { decoded: userData, body: bodyData } = req;
 
       let { role: actionTakenByRole, _id: actionTakenBy } = userData;
-      let {formId, multi, shortKeys, responses, ulbs, form_level, design_year} =  bodyData;
+      let {formId, multi, shortKeys, responses, ulbs, form_level, design_year, type, states} =  bodyData;
       
-      if(!formId || !bodyData.hasOwnProperty("multi") || !shortKeys || !responses || !ulbs || !ulbs.length || !design_year || !form_level){
+      if(!formId || !bodyData.hasOwnProperty("multi") || !shortKeys || !responses || !design_year || !form_level ){
         return Response.BadRequest(res, {}, "All fields are mandatory")
       }
+      let arr = [];
+      if(type === "STATE"){
+          if(!states  && !states.length) return Response.BadRequest(res, {}, "All fields are mandatory");
+          arr = states;
+      }else{
+          if( !ulbs && !ulbs.length) return Response.BadRequest(res, {}, "All fields are mandatory");
+          arr = ulbs;
+      }
+      let typeField = type === "STATE" ? 'state' : 'ulb';
       let path = modelPath(formId);
       let designYearField = "design_year";
-      
         
         if(Number(formId) === FORMIDs['dur']){
             designYearField = "designYear"   
         }
         let condition = {
-            ulb: {$in:ulbs},
+            [typeField]: {$in:arr},
             [designYearField]: design_year,
           }; 
 
@@ -2770,7 +2778,7 @@ async function takeActionOnForms(params, res) {
               actionTakenByRole,
               actionTakenBy,
               multi,
-              shortKey,
+              shortKey: "",
               res,
             };
             saveStatusResponse = await saveStatus(params);
@@ -2783,6 +2791,7 @@ async function takeActionOnForms(params, res) {
               rejectStatusCount++;
             }
           }
+          let response = {};
           if (rejectStatusCount) {
             response.status =
               actionTakenByRole === "MoHUA"
