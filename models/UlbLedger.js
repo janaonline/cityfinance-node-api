@@ -137,6 +137,7 @@ LedgerSchema.post("findOneAndUpdate",async function (doc){
                 if(calculatedAmount != mapper.value){
                     payload.value = calculatedAmount
                     payload.ledgerUpdated = true
+                    payload.modelName = !reject ? "ULBLedger" : "" 
                     rejectFields = reject
                     if(!reject){
                         payload.modelName = "ULBLedger"
