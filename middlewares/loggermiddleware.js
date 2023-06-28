@@ -8,7 +8,7 @@ const createLog = async (req, res) => {
     const apiUrl = req.originalUrl
     const diff = (new Date(req._startTime) - new Date()) / 1000
     try {
-        if (req.method === "POST" || req.method === "PUT") {
+        if (['PUT', 'POST'].includes(req.method) && !req.url.split("/").includes("login")) {
             const dataObj = {
                 "url": apiUrl,
                 "userRole": req?.decoded?.role || null,
