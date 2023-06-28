@@ -3568,9 +3568,14 @@ async function sequentialReview(req, res) {
     //   } else {
     if(formsUpdated){
         let msg = getReview ? `${formsUpdated} form will be rejected`: `${formsUpdated} form rejected`
-        return Response.OK(res,{} ,msg );
+        return Response.OK(res,{
+            autoReject: true
+        } ,msg );
     }else{
-      return Response.OK(res, {}, "No Forms Updated!");
+      return Response.OK(res, {
+        autoReject: false
+
+      }, "No Forms Updated!");
     }
     //   }
   } catch (error) {
