@@ -3195,7 +3195,39 @@ function getCurrentStatus(key,statuses){
 
     return statuses;
 }
+module.exports.getCurrentStatusState = getCurrentStatusState
+module.exports.filterStatusResponseState = filterStatusResponseState
 
+function filterStatusResponseState(statuses, formStatus){
+    
+    const STATUS_RESPONSE = {
+        STATE: [MASTER_STATUS['Not Started'],MASTER_STATUS["In Progress"],MASTER_STATUS["Under Review By MoHUA"]],
+       MoHUA: [MASTER_STATUS['Submission Acknowledged By MoHUA'],MASTER_STATUS["Returned By MoHUA"]]
+    }
+    
+    for( let key in STATUS_RESPONSE){
+
+        if(STATUS_RESPONSE[key].includes(formStatus)){
+           return getCurrentStatus(key,statuses);
+        }
+
+    }
+    
+}
+
+function getCurrentStatusState(key,statuses){
+     if (key ==='STATE'){
+        return statuses.filter(el=>{
+            return (el.status<4);
+        })
+    }else if(key === "MoHUA"){
+        return statuses.filter(el=>{
+            return el.status>=6 ;
+        })
+    }
+
+    return statuses;
+}
 function filterStatusResponseTab(statuses, formStatus){
     const STATUS_RESPONSE = {
         ULB: [MASTER_STATUS['Not Started'],MASTER_STATUS["In Progress"],MASTER_STATUS["Under Review By State"]],
