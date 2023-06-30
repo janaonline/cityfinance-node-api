@@ -148,7 +148,7 @@ module.exports.get = async (req, res) => {
     data = allData[0][0].data
     total = allData[0][0]['count']?.length ? allData[0][0]['count'][0].total : 0
     if (data.length) {
-      let approvedUlbs = await forms2223(collectionName, data);
+      let approvedUlbs = await fetchApprovedUlbsData(collectionName, data);
       await setCurrentStatus(req, data, approvedUlbs, collectionName, loggedInUserRole);
     }
     // if users clicks on Download Button - the data gets downloaded as per the applied filter
@@ -195,6 +195,8 @@ module.exports.get = async (req, res) => {
     return Response.BadRequest(res, {}, error.message);
   }
 }
+
+
 async function createCSV(params) {
   try {
     const { formType, collectionName, res, data, ratingList } = params
@@ -289,7 +291,7 @@ function countStatusData(element, collectionName) {
   }
 }
 
-async function forms2223(collectionName, data) {
+async function fetchApprovedUlbsData(collectionName, data) {
   try {
     let ulbsArray = [], approvedUlbs = [];
     let forms2223;
@@ -327,8 +329,18 @@ const setCurrentStatus = (req, data, approvedUlbs, collectionName, loggedInUserR
       el['cantakeAction'] = false;
     } else {
       el['formStatus'] = MASTER_STATUS_ID[el.formData.currentFormStatus]
+      // if (collectionName === CollectionNames.dur || collectionName === CollectionNames['28SLB']) {
+      //   let params = { status: el.formData.currentFormStatus, userRole: loggedInUserRole }
+      //   el['cantakeAction'] = req.decoded.role === "ADMIN" ? false : canTakeActionOrViewOnlyMasterForm(params);
+      //   if (!(approvedUlbs.find(ulb => ulb.toString() === el.ulbId.toString())) && loggedInUserRole === "MoHUA") {
+      //     el['cantakeAction'] = false;
+      //     el['formData']['currentFormStatus'] === MASTER_STATUS['Under Review By MoHUA'] ? el['info'] = sequentialReview : ""
+      //   }
+      // } else {
       let params = { status: el.formData.currentFormStatus, userRole: loggedInUserRole }
       el['cantakeAction'] = req.decoded.role === "ADMIN" ? false : canTakeActionOrViewOnlyMasterForm(params);
+      // el['formStatus'] = MASTER_STATUS_ID[el.formData.currentFormStatus]
+      // }
     }
   })
   return data;
@@ -848,23 +860,6 @@ function getFilledQueryExpression(formName, filledQueryExpression, design_year) 
 }
 
 /**
- * The function removes escape characters from specific properties of an object.
- * @param element - an object that contains properties with values that may have escape characters
- */
-function removeEscapesFromAnnual(element) {
-  for (let key in element) {
-    if (element[key] && typeof element[key] === "object") {
-      if (element[key].hasOwnProperty("rejectReason_state")) {
-        element[key]["rejectReason_state"] = removeEscapeChars(element[key]["rejectReason_state"]);
-      }
-      if (element[key].hasOwnProperty("rejectReason_mohua")) {
-        element[key]["rejectReason_mohua"] = removeEscapeChars(element[key]["rejectReason_mohua"]);
-      }
-    }
-  }
-}
-
-/**
  * The function creates a dynamic query for MongoDB based on the collection name, user role, and
  * existing query.
  * @param collectionName - The name of the collection for which the dynamic query is being created.
@@ -1027,7 +1022,7 @@ async function createDynamicElements(collectionName, formType, entity) {
     entity["filled"] = "No";
     entity['formData'] = createDynamicObject(collectionName, formType);
   }
-  let actions = actionTakenByResponse(entity.formData, entity.formStatus, formType, collectionName);
+  let actions = actionTakenByResponse(entity.formData);
 
 
   if (formType === "ULB") {
@@ -1095,10 +1090,6 @@ async function createDynamicElements(collectionName, formType, entity) {
           let auditedProvisional = data?.audited?.provisional_data;
           let unAuditedStandardized = data?.unAudited?.standardized_data;
           let auditedStandardized = data?.audited?.standardized_data;
-          removeEscapesFromAnnual(unAuditedProvisional);
-          removeEscapesFromAnnual(auditedProvisional);
-          removeEscapesFromAnnual(unAuditedStandardized);
-          removeEscapesFromAnnual(auditedStandardized);
           ({ auditedEntity, unAuditedEntity } = annualAccountCsvFormat(data, auditedEntity, entity, auditedProvisional, auditedStandardized, actions, unAuditedEntity, unAuditedProvisional, unAuditedStandardized));
           return [auditedEntity, unAuditedEntity];
         case CollectionNames.dur:
@@ -2067,7 +2058,7 @@ function createDynamicColumns(collectionName) {
   return columns;
 }
 
-function actionTakenByResponse(entity, formStatus, formType, collectionName) {
+function actionTakenByResponse(entity) {
   let obj = {
     state_status: "",
     mohua_status: "",
@@ -2082,83 +2073,84 @@ function actionTakenByResponse(entity, formStatus, formType, collectionName) {
       name: ""
     }
   };
-
   const { IN_PROGRESS, UNDER_REVIEW_BY_STATE } = MASTER_FORM_STATUS;
   if (![IN_PROGRESS, UNDER_REVIEW_BY_STATE].includes(entity.currentFormStatus)) {
     getActionStatus(obj, entity);
   }
 
-  if (collectionName === CollectionNames['annual']) {
-    obj.auditedResponseFile_state = {
-      url: "",
-      name: ""
-    };
-    obj.unAuditedResponseFile_state = {
-      url: "",
-      name: ""
-    };
-    obj.auditedResponseFile_mohua = {
-      url: "",
-      name: ""
-    };
-    obj.unAuditedResponseFile_mohua = {
-      url: "",
-      name: ""
-    };
-  }
+  // if (collectionName === CollectionNames['annual']) {
+  //   obj.auditedResponseFile_state = {
+  //     url: "",
+  //     name: ""
+  //   };
+  //   obj.unAuditedResponseFile_state = {
+  //     url: "",
+  //     name: ""
+  //   };
+  //   obj.auditedResponseFile_mohua = {
+  //     url: "",
+  //     name: ""
+  //   };
+  //   obj.unAuditedResponseFile_mohua = {
+  //     url: "",
+  //     name: ""
+  //   };
+  // }
 
-  if (
-    formStatus === STATUS_LIST.Under_Review_By_MoHUA ||
-    formStatus === STATUS_LIST.Rejected_By_State
-  ) {
-    if (entity["rejectReason_state"]) {
-      obj.rejectReason_state = removeEscapeChars(entity["rejectReason_state"]);
-    }
-    if (entity["responseFile_state"]) {
-      entity["responseFile_state"]["name"] = removeEscapeChars(entity["responseFile_state"]["name"])
-      obj.responseFile_state = entity["responseFile_state"];
-    }
-    if (entity["status"]) {
-      obj.state_status = entity["status"];
-    }
-    if (collectionName === CollectionNames['annual']) {
-      if (entity.audited.responseFile_state) {
-        entity.audited.responseFile_state.name = removeEscapeChars(entity.audited.responseFile_state?.name)
-        obj.auditedResponseFile_state = entity.audited.responseFile_state;
-      }
-      if (entity.unAudited.responseFile_state) {
-        entity.unAudited.responseFile_state.name = removeEscapeChars(entity.unAudited.responseFile_state?.name)
-        obj.unAuditedResponseFile_state = entity.unAudited.responseFile_state;
-      }
-    }
-  }
+  // if (
+  //   formStatus === STATUS_LIST.Under_Review_By_MoHUA ||
+  //   formStatus === STATUS_LIST.Rejected_By_State
+  // ) {
 
-  if (
-    formStatus === STATUS_LIST.Approved_By_MoHUA ||
-    formStatus === STATUS_LIST.Rejected_By_MoHUA
-  ) {
-    if (entity["rejectReason_mohua"]) {
-      obj.rejectReason_mohua = removeEscapeChars(entity["rejectReason_mohua"]);
-    }
-    if (entity["responseFile_mohua"]) {
-      entity["responseFile_mohua"]["name"] = removeEscapeChars(entity["responseFile_mohua"]["name"])
-      obj.responseFile_mohua = entity["responseFile_mohua"];
-    }
-    if (entity["status"]) {
-      obj.mohua_status = entity["status"];
-    }
-    if (collectionName === CollectionNames['annual']) {
-      if (entity.audited.responseFile_mohua) {
-        entity.audited.responseFile_mohua.name = removeEscapeChars(entity.audited.responseFile_mohua?.name)
-        obj.auditedResponseFile_mohua = entity.audited.responseFile_mohua;
-      }
-      if (entity.unAudited.responseFile_mohua) {
-        entity.unAudited.responseFile_mohua.name = removeEscapeChars(entity.unAudited.responseFile_mohua?.name)
-        obj.unAuditedResponseFile_mohua = entity.unAudited.responseFile_mohua;
-      }
-    }
-    mohuaFlag = false;
-  }
+  //   if (entity["rejectReason_state"]) {
+  //     obj.rejectReason_state = removeEscapeChars(entity["rejectReason_state"]);
+  //   }
+  //   if (entity["responseFile_state"]) {
+  //     entity["responseFile_state"]["name"] = removeEscapeChars(entity["responseFile_state"]["name"])
+  //     obj.responseFile_state = entity["responseFile_state"];
+  //   }
+  //   if (entity["status"]) {
+  //     obj.state_status = entity["status"];
+  //   }
+
+  //   if (collectionName === CollectionNames['annual']) {
+  //     if (entity.audited.responseFile_state) {
+  //       entity.audited.responseFile_state.name = removeEscapeChars(entity.audited.responseFile_state?.name)
+  //       obj.auditedResponseFile_state = entity.audited.responseFile_state;
+  //     }
+  //     if (entity.unAudited.responseFile_state) {
+  //       entity.unAudited.responseFile_state.name = removeEscapeChars(entity.unAudited.responseFile_state?.name)
+  //       obj.unAuditedResponseFile_state = entity.unAudited.responseFile_state;
+  //     }
+  //   }
+  // }
+
+  // if (
+  //   formStatus === STATUS_LIST.Approved_By_MoHUA ||
+  //   formStatus === STATUS_LIST.Rejected_By_MoHUA
+  // ) {
+  //   if (entity["rejectReason_mohua"]) {
+  //     obj.rejectReason_mohua = removeEscapeChars(entity["rejectReason_mohua"]);
+  //   }
+  //   if (entity["responseFile_mohua"]) {
+  //     entity["responseFile_mohua"]["name"] = removeEscapeChars(entity["responseFile_mohua"]["name"])
+  //     obj.responseFile_mohua = entity["responseFile_mohua"];
+  //   }
+  //   if (entity["status"]) {
+  //     obj.mohua_status = entity["status"];
+  //   }
+  //   if (collectionName === CollectionNames['annual']) {
+  //     if (entity.audited.responseFile_mohua) {
+  //       entity.audited.responseFile_mohua.name = removeEscapeChars(entity.audited.responseFile_mohua?.name)
+  //       obj.auditedResponseFile_mohua = entity.audited.responseFile_mohua;
+  //     }
+  //     if (entity.unAudited.responseFile_mohua) {
+  //       entity.unAudited.responseFile_mohua.name = removeEscapeChars(entity.unAudited.responseFile_mohua?.name)
+  //       obj.unAuditedResponseFile_mohua = entity.unAudited.responseFile_mohua;
+  //     }
+  //   }
+  //   mohuaFlag = false;
+  // }
   return obj;
 }
 
