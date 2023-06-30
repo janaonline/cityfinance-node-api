@@ -146,6 +146,7 @@ module.exports.get = async (req, res) => {
 
     let allData = await Promise.all([data]);
     data = allData[0][0].data
+    // console.log("data", data)
     total = allData[0][0]['count']?.length ? allData[0][0]['count'][0].total : 0
     if (data.length) {
       let approvedUlbs = await fetchApprovedUlbsData(collectionName, data);
@@ -198,8 +199,8 @@ module.exports.get = async (req, res) => {
 
 
 async function createCSV(params) {
+  const { formType, collectionName, res, data, ratingList } = params
   try {
-    const { formType, collectionName, res, data, ratingList } = params
     let filename = `Review_${formType}-${collectionName}.csv`;
     // Set appropriate download headers
     res.setHeader("Content-disposition", "attachment; filename=" + filename);
@@ -210,7 +211,9 @@ async function createCSV(params) {
       // dynamicColumns = createDynamicColumns(collectionName);
       res.write("\ufeff" + `${fixedColumns.toString()} ${createDynamicColumns(collectionName).toString()} \r\n`);
       let indiLineList = []
-      if (collectionName !== CollectionNames.annual && collectionName !== CollectionNames['28SLB']) indiLineList = await indicatorLineItemList();
+      if (!(collectionName !== CollectionNames.annual && collectionName !== CollectionNames['28SLB'])) {
+        indiLineList = await indicatorLineItemList();
+      }
       for (let el of data) {
         el.UA = el?.UA === "null" ? "NA" : el?.UA;
         el.isUA = el?.UA === "NA" ? "No" : "Yes";
@@ -329,18 +332,18 @@ const setCurrentStatus = (req, data, approvedUlbs, collectionName, loggedInUserR
       el['cantakeAction'] = false;
     } else {
       el['formStatus'] = MASTER_STATUS_ID[el.formData.currentFormStatus]
-      // if (collectionName === CollectionNames.dur || collectionName === CollectionNames['28SLB']) {
-      //   let params = { status: el.formData.currentFormStatus, userRole: loggedInUserRole }
-      //   el['cantakeAction'] = req.decoded.role === "ADMIN" ? false : canTakeActionOrViewOnlyMasterForm(params);
-      //   if (!(approvedUlbs.find(ulb => ulb.toString() === el.ulbId.toString())) && loggedInUserRole === "MoHUA") {
-      //     el['cantakeAction'] = false;
-      //     el['formData']['currentFormStatus'] === MASTER_STATUS['Under Review By MoHUA'] ? el['info'] = sequentialReview : ""
-      //   }
-      // } else {
-      let params = { status: el.formData.currentFormStatus, userRole: loggedInUserRole }
-      el['cantakeAction'] = req.decoded.role === "ADMIN" ? false : canTakeActionOrViewOnlyMasterForm(params);
-      // el['formStatus'] = MASTER_STATUS_ID[el.formData.currentFormStatus]
-      // }
+      if (collectionName === CollectionNames.dur || collectionName === CollectionNames['28SLB']) {
+        let params = { status: el.formData.currentFormStatus, userRole: loggedInUserRole }
+        el['cantakeAction'] = req.decoded.role === "ADMIN" ? false : canTakeActionOrViewOnlyMasterForm(params);
+        if (!(approvedUlbs.find(ulb => ulb.toString() === el.ulbId.toString())) && loggedInUserRole === "MoHUA") {
+          el['cantakeAction'] = false;
+          el['formData']['currentFormStatus'] === MASTER_STATUS['Under Review By MoHUA'] ? el['info'] = sequentialReview : ""
+        }
+      } else {
+        let params = { status: el.formData.currentFormStatus, userRole: loggedInUserRole }
+        el['cantakeAction'] = req.decoded.role === "ADMIN" ? false : canTakeActionOrViewOnlyMasterForm(params);
+        el['formStatus'] = MASTER_STATUS_ID[el.formData.currentFormStatus]
+      }
     }
   })
   return data;
