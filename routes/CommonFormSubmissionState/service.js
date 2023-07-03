@@ -4,6 +4,7 @@ const {
     MASTER_STATUS,
     FORMIDs,
     FORM_LEVEL,
+    USER_ROLE,
   } = require("../../util/FormNames");
   const CurrentStatus = require("../../models/CurrentStatus");
   const { ModelNames } = require("../../util/15thFCstatus");
@@ -175,48 +176,61 @@ async function getUAShortKeys(state) {
       },
     },
     {
-      $unwind: {
-        path: "$ulb",
-        preserveNullAndEmptyArrays: true,
-      },
-    },
-    {
-      $lookup: {
-        from: "ulbs",
-        let: {
-          firstUser: "$ulb",
-          uaCode: "$UACode",
-        },
-        pipeline: [
-          {
-            $match: {
-              $expr: { $eq: ["$_id", "$$firstUser"] },
-            },
-          },
-          {
-            $project: {
-              code: { $concat: ["$$uaCode", "_", "$code"] },
-              _id: 0,
-            },
-          },
-        ],
-        as: "ulb",
-      },
-    },
-    {
-      $unwind: {
-        path: "$ulb",
-        preserveNullAndEmptyArrays: true,
-      },
-    },
+      $group:{
+          _id: "$state",
+          uaCode: {$push: "$UACode"}
+      }
+  }
   ];
   let UasDataWithShortKey = await UA.aggregate(uaShortkeyQuery);
   let shortKeys = [];
   if(Array.isArray(UasDataWithShortKey) && UasDataWithShortKey.length){
-    shortKeys =  UasDataWithShortKey.map(el=>{
-      return el['ulb']['code'];
-    })
+    shortKeys =  UasDataWithShortKey['uaCode'];
   }
   return shortKeys;
 }
 
+/**
+ * The function `addActionKeys` takes in user agent data, short keys, status data, and a role, and adds
+ * additional properties to each user agent object based on the provided data.
+ * @param uaData - An object containing user agent data. It has a property "uaData" which is an array
+ * of user agent objects.
+ * @param shortKeys - The `shortKeys` parameter is an object that maps user actions to their
+ * corresponding short keys. It is used to assign a `uaCode` to each user action in the `uaData` array.
+ * @param statusData - statusData is an array of objects that contains information about the status of
+ * user actions. Each object in the array has the following properties:
+ * @param role - The `role` parameter represents the role of the logged-in user. It is used in the
+ * `params` object to determine the `loggedInUser` value for each `ua` object in the `uaData` array.
+ */
+function addActionKeys(uaData, shortKeys, statusData, role) {
+  try {
+    for (let ua of uaData["uaData"]) {
+      ua["uaCode"] = shortKeys[ua["ua"]];
+      let status = statusData.find((el) => el.shortKey === ua["uaCode"]);
+      ua["rejectReason"] = status["rejectReason"];
+      ua["responseFile"] = status["responseFile"];
+      let params = {
+        status: status["status"],
+        formType: USER_ROLE["STATE"],
+        loggedInUser: role,
+      };
+      ua["status"] = status["status"];
+      ua["canTakeAction"] = canTakenActionMaster(params);
+    }
+  } catch (error) {
+    throw { message: `addActionKeys:: ${error.message}` };
+  }
+}
+
+module.exports.addActionKeys = addActionKeys
+
+function createObjectFromArray(arr) {
+  var result = {};
+  for (var i = 0; i < arr.length; i++) {
+    var obj = arr[i];
+    result[obj._id] = obj.UACode;
+  }
+  return result;
+}
+
+module.exports.createObjectFromArray = createObjectFromArray

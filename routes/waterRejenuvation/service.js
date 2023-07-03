@@ -12,7 +12,7 @@ const StateMasterForm = require('../../models/StateMasterForm')
 const { YEAR_CONSTANTS, MASTER_STATUS, MASTER_STATUS_ID, USER_ROLE } = require("../../util/FormNames");
 const IndicatorLineItem = require('../../models/indicatorLineItems');
 const { ModelNames } = require("../../util/15thFCstatus");
-const {createAndUpdateFormMasterState} =  require('../../routes/CommonFormSubmissionState/service');
+const {createAndUpdateFormMasterState, addActionKeys, createObjectFromArray} =  require('../../routes/CommonFormSubmissionState/service');
 const CurrentStatus = require("../../models/CurrentStatus");
 const UA = require('../../models/UA')
 function response(form, res, successMsg ,errMsg){
@@ -314,8 +314,9 @@ exports.getWaterRejenuvation = async (req, res) => {
         }).lean()
         currentStatusData = filterStatusResponseState(currentStatusData, data2324.currentFormStatus)
         let uaCode =  await UA.find({state},{UACode:1}).lean();
+        uaCode = createObjectFromArray(uaCode);
         if(role === USER_ROLE['MoHUA']){
-          addActionKeys(data2324,uaCode)
+          addActionKeys(data2324,uaCode, currentStatusData, role);
         }
         return Response.OK(res, data2324, "Success");
       }
@@ -419,15 +420,7 @@ exports.getWaterRejenuvation = async (req, res) => {
   }
 };
 
-function addActionKeys(uaData, shortKeys){
-  try {
-    for(let ua of uaData){
 
-    }
-  } catch (error) {
-    throw({message: `addActionKeys:: ${error.message}`})
-  }
-}
 
 exports.action = async (req, res) => {
   try {
