@@ -342,7 +342,7 @@ const setCurrentStatus = (req, data, approvedUlbs, collectionName, loggedInUserR
       } else {
         let params = { status: el.formData.currentFormStatus, userRole: loggedInUserRole }
         el['cantakeAction'] = req.decoded.role === "ADMIN" ? false : canTakeActionOrViewOnlyMasterForm(params);
-        el['formStatus'] = MASTER_STATUS_ID[el.formData.currentFormStatus]
+        // el['formStatus'] = MASTER_STATUS_ID[el.formData.currentFormStatus]
       }
     }
   })
