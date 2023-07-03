@@ -1053,14 +1053,16 @@ function writeCsv(cols, csvCols, ele, res, cb) {
                 ele = cb(ele)
             }
             if (ele[key]) {
-                str += ele[key] + ","
+                str += ele[key].toString().split(",").join(" ") + ","
             }
             else {
                 str += " " + ","
             }
 
         }
-        res.write(str + "\r\n")
+        if(Object.keys(ele).length > 0){
+            res.write(str + "\r\n")
+        }
     }
     catch (err) {
         console.log("error in writeCsv :: ", err.message)
