@@ -2493,6 +2493,15 @@ let DurProjectJson = {
             {
                 "error_msg": "",
                 "_id": "2"
+            },
+            {
+                "_id": "3",
+                "error_msg": ""
+            },
+            {
+                "_id": "5",
+                "error_msg": "",
+                "value": "(transAmount * daysDelay * interest)"
             }
         ],
         "restrictions": [],
@@ -2502,7 +2511,7 @@ let DurProjectJson = {
         "input_type": "2",
         "weightage": [],
         "valueHolder": "",
-        "isQuestionDisabled": false,
+        "isQuestionDisabled": true,
         "value": "40",
         "acceptableType": "",
         "acceptableFileType": "",
@@ -2527,7 +2536,8 @@ let DurProjectJson = {
                 "value": "40"
             }
         ],
-        "errorMessage": ""
+        "errorMessage": "",
+        "formula": "(transAmount * daysDelay * interest)"
     },
     "totalTransAmount": {
         "information": "",
