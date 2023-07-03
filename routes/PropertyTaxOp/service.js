@@ -4,7 +4,7 @@ const { response } = require('../../util/response');
 const ObjectId = require('mongoose').Types.ObjectId
 const { canTakenAction, canTakenActionMaster } = require('../CommonActionAPI/service')
 const Service = require('../../service');
-const { FormNames, MASTER_STATUS_ID, MASTER_STATUS } = require('../../util/FormNames');
+const { FormNames, MASTER_STATUS_ID, MASTER_STATUS, MASTER_FORM_STATUS } = require('../../util/FormNames');
 const User = require('../../models/User');
 const { checkUndefinedValidations } = require('../../routes/FiscalRanking/service');
 const { propertyTaxOpFormJson, skippableKeys, financialYearTableHeader,indicatorsWithNoyears ,  specialHeaders, skipLogicDependencies,childKeys,reverseKeys ,questionIndicators,sortPosition} = require('./fydynemic')
@@ -258,7 +258,7 @@ async function removeIsDraft(params) {
         let condition = { ulb: ObjectId(ulbId), design_year: ObjectId(design_year) };
         await PropertyTaxOp.findOneAndUpdate(condition, {
             "isDraft": true,
-            "currentFormStatus": 2
+            "currentFormStatus": MASTER_FORM_STATUS['IN_PROGRESS']
         }).lean();
     }
     catch (err) {
