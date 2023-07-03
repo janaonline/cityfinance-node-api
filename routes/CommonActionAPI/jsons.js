@@ -2324,7 +2324,7 @@ let DurProjectJson = {
         "restrictions": [],
         "input_type": "5",
         "weightage": [],
-        "isQuestionDisabled": false,
+        "isQuestionDisabled": true,
         "value": "",
         "acceptableType": "",
         "acceptableFileType": "",
