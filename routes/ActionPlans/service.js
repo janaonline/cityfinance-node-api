@@ -338,9 +338,7 @@ exports.getActionPlans = async (req, res) => {
         currentStatusData = filterStatusResponseState(currentStatusData, data2324.currentFormStatus)
         let uaCode =  await UA.find({state},{UACode:1}).lean();
         uaCode = createObjectFromArray(uaCode);
-        if(role === USER_ROLE['MoHUA']){
           addActionKeys(data2324,uaCode, currentStatusData, role);
-        }
         return Response.OK(res, data2324, "Success");
       }
       if (data2223) {
