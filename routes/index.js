@@ -1,10 +1,26 @@
 const express = require("express");
+const morgan = require("morgan");
+const { logger } = require("../middlewares/loggermiddleware")
+
 const router = express.Router();
 // @Base Url
 router.use((req, res, next) => {
   req["currentUrl"] = `${req.protocol + "://" + req.headers.host}`;
   next();
 });
+
+// @Morgan logger
+router.use(logger.setResponseBody)
+morgan.token('request', function (req, res) {
+  try {
+    logger.createLog(req, res)
+  }
+  catch (err) {
+    console.log("token not created ::", err.message)
+  }
+})
+router.use(morgan(":request"))
+
 // @Auth
 const Auth = require("./auth");
 router.use(Auth);
@@ -170,9 +186,9 @@ const recentSearch = require("./recent-search-keyword");
 router.use(recentSearch);
 
 const newDashboards = require("./newDashboards");
-router.use( newDashboards );
+router.use(newDashboards);
 
-const scorePerformance = require( "./score-performance" );
+const scorePerformance = require("./score-performance");
 router.use(scorePerformance)
 
 const fileUpload = require("./fileUpload");
@@ -225,7 +241,7 @@ const TwentyEightSlbsForm = require('./TwentyEightSlbsForm');
 router.use('/28-slbs', TwentyEightSlbsForm);
 
 //dashboard
-const FormDashboard =  require('./FormDashboard');
+const FormDashboard = require('./FormDashboard');
 router.use('/dashboard', FormDashboard);
 
 //Property Tax Operationalisation
@@ -259,8 +275,8 @@ router.use('/fiscal-ranking', FiscalRanking);
 
 router.use(require('./s3ServerFile'));
 
-const FormJson  = require("./FormJsons")
-router.use('/form-json',FormJson)
+const FormJson = require("./FormJsons")
+router.use('/form-json', FormJson)
 
 const CommonHistory = require('./CommonHistory')
 router.use('/common-history', CommonHistory)
