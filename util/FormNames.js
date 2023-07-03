@@ -127,7 +127,10 @@ module.exports.MODEL_PATH = {
     3: "PropertyTaxOp",
     5: "AnnualAccounts",
     6: "TwentyEightSlbsForm",
-    4: "UtilizationReport"
+    4: "UtilizationReport",
+    12: "WaterRejenuvation&Recycling",
+    13: 'ActionPlans'
+    
 }
 
 module.exports.POPULATION_TYPE = {
