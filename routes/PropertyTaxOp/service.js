@@ -4,7 +4,7 @@ const { response } = require('../../util/response');
 const ObjectId = require('mongoose').Types.ObjectId
 const { canTakenAction, canTakenActionMaster } = require('../CommonActionAPI/service')
 const Service = require('../../service');
-const { FormNames, MASTER_STATUS_ID } = require('../../util/FormNames');
+const { FormNames, MASTER_STATUS_ID, MASTER_STATUS } = require('../../util/FormNames');
 const User = require('../../models/User');
 const { checkUndefinedValidations } = require('../../routes/FiscalRanking/service');
 const { propertyTaxOpFormJson, skippableKeys, financialYearTableHeader,indicatorsWithNoyears ,  specialHeaders, skipLogicDependencies,childKeys,reverseKeys ,questionIndicators,sortPosition} = require('./fydynemic')
@@ -258,7 +258,7 @@ async function removeIsDraft(params) {
         let condition = { ulb: ObjectId(ulbId), design_year: ObjectId(design_year) };
         await PropertyTaxOp.findOneAndUpdate(condition, {
             "isDraft": true,
-            "currentFormStatus": 1
+            "currentFormStatus": 2
         }).lean();
     }
     catch (err) {
@@ -1121,7 +1121,7 @@ exports.getView = async function (req, res, next) {
         fyDynemic['isDraft'] = ptoData?.isDraft || true
         fyDynemic['ulb'] = ptoData?.ulb || req.query.ulb
         fyDynemic['design_year'] = ptoData?.design_year || req.query.design_year
-        fyDynemic['statusId'] = ptoData?.currentFormStatus || 1
+        fyDynemic['statusId'] = ptoData?.currentFormStatus || MASTER_STATUS['Not Started']
         fyDynemic['status'] = MASTER_STATUS_ID[ptoData?.currentFormStatus] || MASTER_STATUS_ID[1]
         let params = {
             status: ptoData?.currentFormStatus,
