@@ -93,7 +93,6 @@ module.exports.MASTER_STATUS_ID = {
     10: "Returned by PMU",
     11: "Submission Acknowledged by PMU"
 };
-
 module.exports.FORMIDs = {
     "ODF": 1,
     "GFC": 2,
