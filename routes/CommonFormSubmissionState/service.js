@@ -207,15 +207,23 @@ function addActionKeys(uaData, shortKeys, statusData, role) {
     for (let ua of uaData["uaData"]) {
       ua["uaCode"] = shortKeys[ua["ua"]];
       let status = statusData.find((el) => el.shortKey === ua["uaCode"]);
-      ua["rejectReason"] = status["rejectReason"];
-      ua["responseFile"] = status["responseFile"];
-      let params = {
-        status: status["status"],
-        formType: USER_ROLE["STATE"],
-        loggedInUser: role,
-      };
-      ua["status"] = status["status"];
-      ua["canTakeAction"] = canTakenActionMaster(params);
+      if(status){
+        ua["rejectReason"] = status["rejectReason"];
+        ua["responseFile"] = status["responseFile"];
+        let params = {
+          status: status["status"],
+          formType: USER_ROLE["STATE"],
+          loggedInUser: role,
+        };
+        ua["status"] = status["status"];
+        ua["canTakeAction"] = canTakenActionMaster(params);
+      }else{
+        ua["rejectReason"] = "";
+        ua["responseFile"] = "";
+        ua["status"] = MASTER_STATUS['Not Started'];
+        ua["canTakeAction"] = false
+
+      }
     }
   } catch (error) {
     throw { message: `addActionKeys:: ${error.message}` };
