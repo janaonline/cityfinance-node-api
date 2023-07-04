@@ -1995,7 +1995,7 @@ module.exports.get = catchAsync(async (req, res) => {
   //  if(collectionName == CollectionNames.dur || collectionName == CollectionNames.gfc ||
   //     collectionName == CollectionNames.odf || collectionName == CollectionNames.slb || 
   //     collectionName === CollectionNames.sfc || collectionName === CollectionNames.propTaxState || collectionName === CollectionNames.annual )
-  // let approvedUlbs = await masterForms2122(collectionName, data);
+  let approvedUlbs = await masterForms2122(collectionName, data);
   const sequentialReview = `Cannot review since last year form is not approved by MoHUA.`
   data.forEach(el => {
     el['info']= '';

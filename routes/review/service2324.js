@@ -333,18 +333,18 @@ const setCurrentStatus = (req, data, approvedUlbs, collectionName, loggedInUserR
       el['cantakeAction'] = false;
     } else {
       el['formStatus'] = MASTER_STATUS_ID[el.formData.currentFormStatus]
-      if (collectionName === CollectionNames.dur || collectionName === CollectionNames['28SLB']) {
+      // if (collectionName === CollectionNames.dur || collectionName === CollectionNames['28SLB']) {
+      //   let params = { status: el.formData.currentFormStatus, userRole: loggedInUserRole }
+      //   el['cantakeAction'] = req.decoded.role === "ADMIN" ? false : canTakeActionOrViewOnlyMasterForm(params);
+      //   if (!(approvedUlbs.find(ulb => ulb.toString() === el.ulbId.toString())) && loggedInUserRole === "MoHUA") {
+      //     el['cantakeAction'] = false;
+      //     el['formData']['currentFormStatus'] === MASTER_STATUS['Under Review By MoHUA'] ? el['info'] = sequentialReview : ""
+      //   }
+      // } else {
         let params = { status: el.formData.currentFormStatus, userRole: loggedInUserRole }
         el['cantakeAction'] = req.decoded.role === "ADMIN" ? false : canTakeActionOrViewOnlyMasterForm(params);
-        if (!(approvedUlbs.find(ulb => ulb.toString() === el.ulbId.toString())) && loggedInUserRole === "MoHUA") {
-          el['cantakeAction'] = false;
-          el['formData']['currentFormStatus'] === MASTER_STATUS['Under Review By MoHUA'] ? el['info'] = sequentialReview : ""
-        }
-      } else {
-        let params = { status: el.formData.currentFormStatus, userRole: loggedInUserRole }
-        el['cantakeAction'] = req.decoded.role === "ADMIN" ? false : canTakeActionOrViewOnlyMasterForm(params);
-        el['formStatus'] = MASTER_STATUS_ID[el.formData.currentFormStatus]
-      }
+        // el['formStatus'] = MASTER_STATUS_ID[el.formData.currentFormStatus]
+      // }
     }
   })
   return data;
