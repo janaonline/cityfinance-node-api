@@ -225,6 +225,7 @@ async function createCSV(params) {
           row = `${el.stateName},${el.ulbName},${el.ulbCode},${el.censusCode},${el.populationType},${el.isUA},${el.UA},${dynamicElementData.toString()}\r\n`;
         } else {
           el.formData.data = setIndicatorSequense(indiLineList, el)
+          // console.log("el.formData", el.formData)
           let [row1, row2] = await createDynamicElements(collectionName, formType, el);
           const rowOne = `${el.stateName},${el.ulbName},${el.ulbCode},${el.censusCode},${el.populationType},${el.isUA},${el.UA},${row1.toString()}\r\n`;
           const rowTwo = `${el.stateName},${el.ulbName},${el.ulbCode},${el.censusCode},${el.populationType},${el.isUA},${el.UA},${row2.toString()}\r\n`;
@@ -398,16 +399,12 @@ const setIndicatorSequense = (indicatorList, el) => {
       let fData = indicatorList?.filter(e => e?.type == keysList[index]);
       for (let kf of fData) {
         let sequenceData = el?.formData?.data?.find(e => e.indicatorLineItem.toString() == kf._id.toString());
-        if (sequenceData)
-          mainArr.push(sequenceData)
+        if (sequenceData) mainArr.push(sequenceData)
       }
     }
   }
   return mainArr;
 }
-
-
-
 
 /**
  * This function returns an array of ULBs (Urban Local Bodies) that have been approved by the Ministry
@@ -2052,7 +2049,7 @@ function createDynamicColumns(collectionName) {
       columns = `Financial Year,Form Status,Created,Submitted On,Filled Status,Tied grants for year,Unutilised Tied Grants from previous installment (INR in lakhs),15th F.C. Tied grant received during the year (1st & 2nd installment taken together) (INR in lakhs),Expenditure incurred during the year i.e. as on 31st March 2021 from Tied grant (INR in lakhs),Closing balance at the end of year (INR in lakhs),WM Rejuvenation of Water Bodies Total Tied Grant Utilised on WM(INR in lakhs),WM Rejuvenation of Water Bodies Number of Projects Undertaken,WM_Rejuvenation of Water Bodies_Total Project Cost Involved,WM_Drinking Water_Total Tied Grant Utilised on WM(INR in lakhs),WM_Drinking Water_Number of Projects Undertaken,WM_Drinking Water_Total Project Cost Involved,WM_Rainwater Harvesting_Total Tied Grant Utilised on WM(INR in lakhs),WM_Rainwater Harvesting_Number of Projects Undertaken,WM_Rainwater Harvesting_Total Project Cost Involved,WM_Water Recycling_Total Tied Grant Utilised on WM(INR in lakhs),WM_Water Recycling_Number of Projects Undertaken,WM_Water Recycling_Total Project Cost Involved,SWM_Sanitation_Total Tied Grant Utilised on SWM(INR in lakhs),SWM_Sanitation_Number of Projects Undertaken,SWM_Sanitation_Total Project Cost Involved(INR in lakhs),SWM_Solid Waste Management_Total Tied Grant Utilised on SWM(INR in lakhs),SWM_Solid Waste Management_Number of Projects Undertaken,SWM_Solid Waste Management_Total Project Cost Involved(INR in lakhs),Name,Designation,State_Review Status,State_Comments,MoHUA Review Status,MoHUA_Comments,State_File URL,MoHUA_File URL`
       break;
     case CollectionNames['28SLB']:
-      columns = `Financial Year,Form Status,Created,Submitted On,Filled Status,Type,Year,Coverage of water supply connections,Per capita supply of water(lpcd),Extent of metering of water connections,Continuity of water supply,Quality of water supplied,Efficiency in redressal of customer complaints,Cost recovery in water supply service,Efficiency in collection of water supply-related charges,Extent of non-revenue water (NRW),Coverage of toilets,Coverage of waste water network services,Collection efficiency of waste water network,Adequacy of waste water treatment capacity,Quality of waste water treatment,Extent of reuse and recycling of waste water,Efficiency in collection of waste water charges,Efficiency in redressal of customer complaints,Extent of cost recovery in waste water management,Household level coverage of solid waste management services,Extent of segregation of municipal solid waste,Extent of municipal solid waste recovered,Extent of cost recovery in SWM services,Efficiency in collection of SWM related user related charges,Efficiency of collection of municipal solid waste,Extent of scientific disposal of municipal solid waste,Efficiency in redressal of customer complaints,Incidence of water logging,Coverage of storm water drainage network,State_Review Status,State_Comments,MoHUA Review Status,MoHUA_Comments,State_File URL,MoHUA_File URL `
+      columns = `Financial Year,Form Status,Created,Submitted On,Filled Status,Type,Year,Coverage of water supply connections,Per capita supply of water(lpcd),Extent of metering of water connections,Extent of non-revenue water (NRW),Continuity of water supply,Efficiency in redressal of customer complaints,Quality of water supplied,Cost recovery in water supply service,Efficiency in collection of water supply-related charges,Coverage of toilets,Coverage of waste water network services,Collection efficiency of waste water network,Adequacy of waste water treatment capacity,Extent of reuse and recycling of waste water,Quality of waste water treatment,Efficiency in redressal of customer complaints,Extent of cost recovery in waste water management,Efficiency in collection of waste water charges,Household level coverage of solid waste management services,Efficiency of collection of municipal solid waste,Extent of segregation of municipal solid waste,Extent of municipal solid waste recovered,Extent of scientific disposal of municipal solid waste,Extent of cost recovery in SWM services,Efficiency in collection of SWM related user related charges,Efficiency in redressal of customer complaints,Coverage of storm water drainage network,Incidence of water logging,State_Review Status,State_Comments,MoHUA Review Status,MoHUA_Comments,State_File URL,MoHUA_File URL `
       break;
     default:
       columns = '';
