@@ -976,7 +976,8 @@ module.exports.read2223 = catchAsync(async (req, res, next) => {
   if (!prevData) {
     status = 'Not Started'
   } else {
-    prevData = prevData?.history?.length > 0 ? prevData.history[prevData.history.length - 1] : prevData
+    prevData = prevData?.history?.length > 0 ? prevData.history[prevData.history.length - 1] : prevData;
+    isDraft = prevData && Object.keys(prevData).includes("isSubmit") ? !prevData.isSubmit : prevData?.isDraft
     status = calculateStatus(prevData.status, prevData.actionTakenByRole, isDraft, "ULB")
   }
   let host = "";
@@ -990,7 +991,6 @@ module.exports.read2223 = catchAsync(async (req, res, next) => {
     obj['url'] = ``;
   }
   else {
-    console.log("status :: ", status)
     if ([FORM_STATUS.Under_Review_By_MoHUA, FORM_STATUS.Approved_By_MoHUA, FORM_STATUS.Approved_By_State].includes(status)) {
       obj['action'] = 'not_show';
       obj['url'] = ``;
