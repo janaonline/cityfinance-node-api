@@ -333,14 +333,16 @@ module.exports.createAndUpdateFormMaster = async (params) => {
               MASTER_STATUS["Submission Acknowledged By MoHUA"],
               MASTER_STATUS["Under Review By MoHUA"],
               MASTER_STATUS["Under Review By State"],
-            ].includes(formCurrentStatus.status)
+            ].includes(formCurrentStatus?.status)
           ) {
             return res.status(200).json({
               status: true,
               message: "Form already submitted.",
             });
           }
+          return Response.BadRequest(res, {}, `form status not found in DUR form submission`);
         } catch (error) {
+          console.log(error)
           return Response.BadRequest(res, {}, `${error.message} in DUR form submission`);
         }
     }
