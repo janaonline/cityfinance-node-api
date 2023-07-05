@@ -3,7 +3,7 @@ const GrantTransferCertificate = require('../../models/GrantTransferCertificate'
 const StateGTCCertificate = require('../../models/StateGTCertificate');
 const ObjectId = require("mongoose").Types.ObjectId;
 const Ulb = require('../../models/Ulb')
-const { checkForUndefinedVaribales, mutuateGetPayload, getFlatObj } = require("../../routes/CommonActionAPI/service")
+const { checkForUndefinedVaribales, mutateResponse, getFlatObj } = require("../../routes/CommonActionAPI/service")
 const { getKeyByValue, saveFormHistory, grantDistributeOptions } = require("../../util/masterFunctions");
 const { years } = require('../../service/years');
 const GtcInstallmentForm = require("../../models/GtcInstallmentForm")
@@ -667,7 +667,7 @@ const getManipulatedJson = async (installment, type, design_year, formJson, fiel
             installmentForm.transferGrantdetail = installmentForm?.transferGrantdetail.map(item => item.disableFields = shouldDisableFields)
         }
         flattedForm['disableFields'] = shouldDisableFields
-        let questionJson = await mutuateGetPayload([...formJson.data], flattedForm, keysToBeDeleted, "STATE")
+        let questionJson = await mutateResponse([...formJson.data], flattedForm, keysToBeDeleted, "STATE")
         mformObject['language'] = questionJson
         mformObject['language'][0].isQuestionDisabled = shouldDisableFields
         mformObject['isQuestionDisabled'] = shouldDisableFields

@@ -10,7 +10,7 @@ const {years} = require("../../service/years");
 const downloadFileToDisk = require("../file-upload/service").downloadFileToDisk;
 const GrantDistribution = require("../../models/GrantDistribution");
 const {getChildQuestion} = require("./constants")
-const { checkForUndefinedVaribales, mutuateGetPayload, getFlatObj } = require("../../routes/CommonActionAPI/service")
+const { checkForUndefinedVaribales, mutateResponse, getFlatObj } = require("../../routes/CommonActionAPI/service")
 const { getKeyByValue, saveFormHistory, grantDistributeOptions } = require("../../util/masterFunctions");
 const {
   UpdateStateMasterForm,

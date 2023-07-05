@@ -4,7 +4,8 @@ const {canTakenAction} = require('../CommonActionAPI/service')
 const Service = require('../../service');
 const {FormNames} = require('../../util/FormNames');
 const User = require('../../models/User');
-
+const { years } = require("../../service/years")
+const { getKeyByValue } = require("../../util/masterFunctions")
 function response(form, res, successMsg ,errMsg){
     if(form){
         return res.status(200).json({
@@ -20,8 +21,12 @@ function response(form, res, successMsg ,errMsg){
    }
 }
 
-module.exports.getForm = async (req, res) =>{
+module.exports.getForm = async (req, res,next) =>{
     try {
+        let outDatedYears = ["2018-19", "2019-20", "2021-22", "2022-23"]
+        let yearId = req.query.design_year
+        let year = getKeyByValue(years, yearId)
+        let latestYear = !outDatedYears.includes(year)
         const data = req.query;
         let role = req.decoded.role
         const condition = {};
@@ -31,12 +36,17 @@ module.exports.getForm = async (req, res) =>{
         const form = await LinkPFMS.findOne(condition).lean();
         if (form){
             Object.assign(form, {canTakeAction: canTakenAction(form['status'], form['actionTakenByRole'], form['isDraft'], "ULB",role ) })
-            return res.status(200).json({
-                status: true,
-                message: "Form found.",
-                data:form,
-            });
+            req.form = form
+            return next()
+            // return res.status(200).json({
+            //     status: true,
+            //     message: "Form found.",
+            //     data:form,
+            // });
         } else {
+            if(latestYear){
+                return next()
+            }
             return res.status(400).json({
                 status: true,
                 message: "Form not found"
@@ -54,6 +64,7 @@ module.exports.createOrUpdateForm = async (req, res) =>{
     try {
         
         const data = req.body;
+        data['currentFormStatus'] = data.statusId
         const user = req.decoded;
         let formData = {};
         formData = {...data};

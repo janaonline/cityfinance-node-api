@@ -1,5 +1,5 @@
 
-const {payloadParser,nestedObjectParser,getFlatObj,mutateJson,mutuateGetPayload,decideDisabledFields} = require("../CommonActionAPI/service");
+const {payloadParser,nestedObjectParser,getFlatObj,mutateJson,mutateResponse,decideDisabledFields} = require("../CommonActionAPI/service");
 const {years} = require("../../service/years")
 let outDatedYears = ["2018-19","2019-20","2021-22","2022-23"]
 const {getKeyByValue} = require("../../util/masterFunctions")
@@ -92,7 +92,6 @@ module.exports.changeResponse = async(req,res,next) =>{
             if(mutatedJson[0].isDraft === ""){
                 mutatedJson[0].isDraft = true
             }
-            
             if(form){
                 formStatus = decideDisabledFields(form,req.decoded.role)
             }
@@ -105,7 +104,7 @@ module.exports.changeResponse = async(req,res,next) =>{
                 flattedForm['form_type'] = "annual"
                 flattedForm['isDraft'] = form.isDraft
                 flattedForm['role'] = req.decoded.role
-                mutatedJson =  await mutuateGetPayload(obj, flattedForm,keysToBeDeleted,role)
+                mutatedJson =  await mutateResponse(obj, flattedForm,keysToBeDeleted,role)
                 responseData[0]['language'] = mutatedJson
                 responseData[0]['isQuestionDisabled'] = formStatus
                 if(mutatedJson[0].isDraft === ""){
