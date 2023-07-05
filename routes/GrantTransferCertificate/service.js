@@ -703,7 +703,8 @@ const getJson = async (state, design_year, role) => {
         }, { isMillionPlus: 1 })
         let stateIsMillion = ulb?.isMillionPlus === "Yes" ? true : false
         let forms = await FormsJson.find({
-            "formId":{"$in":[FORMIDs['GTC_STATE'],FORMIDs['GTC_TABLE_STRUCTURE']]}
+            "formId":{"$in":[FORMIDs['GTC_STATE'],FORMIDs['GTC_TABLE_STRUCTURE']]},
+            "design_year":design_year
         }).lean()
         let basicEmptyStructure = forms.find(item => item.formId === 11.1).data
         let formJson = forms.find(item => item.formId === 7)
