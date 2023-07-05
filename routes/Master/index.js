@@ -3,7 +3,7 @@ const router = express.Router();
 const { verifyToken } = require('../auth/services/verifyToken')
 const ObjectId = require("mongoose").Types.ObjectId;
 // const =('mongoose').Types.ObjectId;
-const { categoryList, subCategoryList, categoryFileUploadList, fileUpload } = require('./service');
+const { categoryList, subCategoryList, categoryFileUploadList, fileUpload, videoGallaryList } = require('./service');
 const {
     create, update
 } = require("../../service/crud");
@@ -30,5 +30,6 @@ router.get('/municipalBondRepository/list', categoryFileUploadList);
 router.post('/municipalBondRepository/create', verifyToken, create("CategoryFileUpload"));
 router.post('/municipalBondRepository/fileUpload', fileUpload);
 
+router.get('/video-gallary/list', videoGallaryList)
 
 module.exports = router;

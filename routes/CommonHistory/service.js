@@ -14,10 +14,14 @@ module.exports.getHistory = catchAsync(async (req, res) => {
     let user = req.decoded;
     let { formId, ulbId, stateId, design_year } = req.query;
 
+    let condition = { formId };
+    if ([YEAR_CONSTANTS['20_21'], YEAR_CONSTANTS['21_22'], YEAR_CONSTANTS['22_23']].includes(design_year)) condition = { _id: ObjectId(formId) }
+
+    console.log("condition",condition)
     /* Checking if formId is present or not. If not present then it will return error. */
     if ((!ulbId && !stateId) || !design_year || !formId) return Response.BadRequest(res, {}, "Required fields missing");
 
-    const formTabData = await Sidemenu.findOne({ _id: ObjectId(formId) }).lean()
+    const formTabData = await Sidemenu.findOne(condition).lean()
     if (user.role != "ULB" && formTabData) {
       let query = {}
       if (formTabData.role === "ULB") {
@@ -86,6 +90,7 @@ const getHistoryNew = (params) => {
       }
       resolve(outputArr);
     } catch (error) {
+      console.log("Catch Error ", error);
       reject(error)
     }
   })

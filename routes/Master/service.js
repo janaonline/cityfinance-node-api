@@ -22,6 +22,24 @@ module.exports.categoryList = async (req, res, next) => {
     }
 }
 
+module.exports.videoGallaryList = async (req, res, next) => {
+    let condition = { ...req.query };
+    try {
+        let data = await dbModels['Video'].find(condition).lean();
+        return res.status(200).json({
+            status: true,
+            message: "Successfully fetched data!",
+            data: data,
+        });
+    } catch (error) {
+        return res.status(400).json({
+            status: true,
+            message: "Something went wrong!",
+            err: error.message,
+        });
+    }
+}
+
 module.exports.subCategoryList = async (req, res, next) => {
     let condition = { ...req.query };
     try {
