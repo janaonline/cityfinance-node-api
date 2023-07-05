@@ -73,7 +73,7 @@ let DurProjectJson = {
         "modelFilter": {},
         "answer_option": [
             {
-                "name": "Rejuvination of Water Bodies",
+                "name": "Rejuvenation of Water Bodies",
                 "did": [],
                 "viewSequence": "1",
                 "_id": "1"

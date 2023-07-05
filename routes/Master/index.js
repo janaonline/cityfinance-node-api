@@ -5,7 +5,7 @@ const ObjectId = require("mongoose").Types.ObjectId;
 // const =('mongoose').Types.ObjectId;
 const { categoryList, subCategoryList, categoryFileUploadList, fileUpload, videoGallaryList } = require('./service');
 const {
-    create, update
+    create, update, list
 } = require("../../service/crud");
 
 router.post('/main_category/create', verifyToken, create("MainCategory"))
@@ -30,6 +30,6 @@ router.get('/municipalBondRepository/list', categoryFileUploadList);
 router.post('/municipalBondRepository/create', verifyToken, create("CategoryFileUpload"));
 router.post('/municipalBondRepository/fileUpload', fileUpload);
 
-router.get('/video-gallary/list', videoGallaryList)
+router.get('/video-gallary/list', list('Video'));
 
 module.exports = router;
