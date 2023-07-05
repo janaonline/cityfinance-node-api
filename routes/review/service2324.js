@@ -167,7 +167,7 @@ module.exports.get = async (req, res) => {
           el['formStatus'] = MASTER_STATUS_ID[el.formData.currentFormStatus]
           let params = {status: el.formData.currentFormStatus, userRole: loggedInUserRole}
           el['cantakeAction'] = req.decoded.role === "ADMIN" ? false : canTakeActionOrViewOnlyMasterForm(params);
-          if( !(approvedUlbs.find(ulb=> ulb.toString() === el.ulbId.toString())) && loggedInUserRole === "MoHUA"){
+          if( !(approvedUlbs.find(ulb=> ulb.toString() === el.ulbId.toString())) && loggedInUserRole === "MoHUA" && el.access){
             el['cantakeAction'] = false
           }
         }else{
@@ -548,6 +548,7 @@ const computeQuery = (params) => {
               ulbName: "$name",
               ulbId: "$_id",
               ulbCode: "$code",
+              access : "$access_2223",
               censusCode: {
                 $cond: {
                   if: {
@@ -593,6 +594,7 @@ const computeQuery = (params) => {
             $project: {
               ulbName: 1,
               ulbId: 1,
+              access:1,
               ulbCode: 1,
               censusCode: 1,
               UA: 1,
