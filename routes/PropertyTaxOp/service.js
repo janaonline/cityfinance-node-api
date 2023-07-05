@@ -978,7 +978,7 @@ function createChildObjectsYearData(params) {
         for (let child of childs) {
             let yearName = getKeyByValue(years, child?.year.toString())
             let copiedFrom = childCopyFrom.find(item => item.key === child.type)
-            let yearJson = copiedFrom.yearData.find(yearItem => yearItem.year === child.year.toString())
+            let yearJson = copiedFrom?.yearData.find(yearItem => yearItem.year === child.year.toString())
             let json = { ...yearJson }
             json['key'] = json['key'] + yearName
             json['label'] = child.label ? child.label : json['label'] + " " + yearName
@@ -1077,7 +1077,7 @@ exports.getView = async function (req, res, next) {
         if (ptoData) {
             ptoMaper = await PropertyTaxOpMapper.find({ ulb: ObjectId(req.query.ulb), ptoId: ObjectId(ptoData._id) }).populate("child").lean();
         }
-        let fyDynemic = { ...await propertyTaxOpFormJson() };
+        let fyDynemic = { ...await propertyTaxOpFormJson(role) };
         if (ptoData) {
             const { isDraft, status, currentFormStatus } = ptoData;
             for (let sortKey in fyDynemic) {
