@@ -337,7 +337,7 @@ const setCurrentStatus = (req, data, approvedUlbs, collectionName, loggedInUserR
       if (collectionName === CollectionNames.dur || collectionName === CollectionNames['28SLB']) {
         let params = { status: el.formData.currentFormStatus, userRole: loggedInUserRole }
         el['cantakeAction'] = req.decoded.role === "ADMIN" ? false : canTakeActionOrViewOnlyMasterForm(params);
-        if (!(approvedUlbs.find(ulb => ulb.toString() === el.ulbId.toString())) && loggedInUserRole === "MoHUA") {
+        if (!(approvedUlbs.find(ulb => ulb.toString() === el.ulbId.toString())) && loggedInUserRole === "MoHUA" && el.access) {
           el['cantakeAction'] = false;
           el['formData']['currentFormStatus'] === MASTER_STATUS['Under Review By MoHUA'] ? el['info'] = sequentialReview : ""
         }
@@ -558,6 +558,7 @@ const computeQuery = (params) => {
             ulbName: "$name",
             ulbId: "$_id",
             ulbCode: "$code",
+            access : "$access_2223",
             censusCode: {
               $cond: {
                 if: {
@@ -604,6 +605,7 @@ const computeQuery = (params) => {
             ulbName: 1,
             ulbId: 1,
             ulbCode: 1,
+            access:1,
             censusCode: 1,
             UA: 1,
             UA_id: 1,
