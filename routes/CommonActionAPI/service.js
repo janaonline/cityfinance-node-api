@@ -2786,7 +2786,7 @@ async function takeActionOnForms(params, res) {
               [
                 MASTER_STATUS["Returned By MoHUA"],
                 MASTER_STATUS["Returned By State"],
-              ].includes(response.status)
+              ].includes(Number(response.status))
             ) {
               rejectStatusCount++;
             }
