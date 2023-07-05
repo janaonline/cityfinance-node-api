@@ -2006,7 +2006,7 @@ module.exports.get = catchAsync(async (req, res) => {
       el['formStatus'] = calculateStatus(el.formData.status, el.formData.actionTakenByRole, el.formData.isDraft, formType);
       if (collectionName === CollectionNames.dur || collectionName === CollectionNames['28SLB']) {
         el['cantakeAction'] = req.decoded.role === "ADMIN" ? false : canTakeActionOrViewOnly(el, loggedInUserRole);
-        if (!(approvedUlbs.find(ulb => ulb.toString() === el.ulbId.toString())) && loggedInUserRole === "MoHUA") {
+        if (!(approvedUlbs.find(ulb => ulb.toString() === el.ulbId.toString())) && loggedInUserRole === "MoHUA" && el.access) {
           el['cantakeAction'] = false
           el['formStatus'] === STATUS_LIST['Under_Review_By_MoHUA'] ? el['info'] = sequentialReview : ""
         }
@@ -2467,6 +2467,7 @@ const computeQuery = (formName, userRole, isFormOptional, state, design_year, cs
           ulbName: "$name",
           ulbId: "$_id",
           ulbCode: "$code",
+          access : "$access_2122",
           censusCode: {
             $cond: {
               if: {
@@ -2514,6 +2515,7 @@ const computeQuery = (formName, userRole, isFormOptional, state, design_year, cs
         $project: {
           ulbName: 1,
           ulbId: 1,
+          access : 1,
           ulbCode: 1,
           censusCode: 1,
           UA: 1,
