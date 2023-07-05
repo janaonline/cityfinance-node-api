@@ -3208,7 +3208,7 @@ function filterStatusResponseState(statuses, formStatus){
     for( let key in STATUS_RESPONSE){
 
         if(STATUS_RESPONSE[key].includes(formStatus)){
-           return getCurrentStatus(key,statuses);
+           return getCurrentStatusState(key,statuses);
         }
 
     }
