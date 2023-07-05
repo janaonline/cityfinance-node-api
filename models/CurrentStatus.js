@@ -27,10 +27,8 @@ const CurrentStatusSchema = new Schema(
         ref: 'User',
         required: true,
     },
-    modifiedAt: { type: Date, default: Date.now },
-    createdAt: { type: Date, default: Date.now },
   },
-  { timestamp: { createdAt: "createdAt", updatedAt: "modifiedAt" } }
+  { timestamps: { createdAt: "createdAt", updatedAt: "modifiedAt" } }
 );
 CurrentStatusSchema.index({ recordId: 1, shortKey:1, actionTakenByRole:1 }, { unique: true });
 module.exports = mongoose.model("CurrentStatus", CurrentStatusSchema);
