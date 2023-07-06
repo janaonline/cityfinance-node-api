@@ -74,8 +74,13 @@ const previousFormsAggregation = (params) => {
                                 "$and": [
                                     {
                                         "$eq": ["$design_year", "$$design_year"],
+                                        
+                                    },
+                                    {
                                         "$eq": ["$state", "$$state"],
-                                        "$eq": ["$isDraft", false]
+                                    },
+                                    {
+                                         "$eq": ["$isDraft", false]
                                     }
                                 ]
                             }
@@ -99,8 +104,13 @@ const previousFormsAggregation = (params) => {
                                 "$and": [
                                     {
                                         "$eq": ["$design_year", "$$design_year"],
+                                        
+                                    },
+                                    {
                                         "$eq": ["$state", "$$state"],
-                                        "$eq": ["$isDraft", false]
+                                    },
+                                    {
+                                         "$eq": ["$isDraft", false]
                                     }
                                 ]
                             }
@@ -141,7 +151,15 @@ const previousFormsAggregation = (params) => {
             "$project": {
                 "isPfrFilled": 1,
                 "IsSfcFormFilled": 1,
-                "pfrFile":{ $arrayElemAt: [ "$pfrForm.stateNotification", 0 ] },
+                "pfrFile":{ 
+                    "$cond":{
+                        "if":{
+                            "$eq":["$isPfrFilled","Yes"]
+                        },
+                        "then":{ $arrayElemAt: [ "$pfrForm.stateNotification.url", 0 ] },
+                        "else":""
+                    }
+                },
                 "pfmsFilledPerc": {
                     "$cond": {
                         "if": {
@@ -161,6 +179,7 @@ const previousFormsAggregation = (params) => {
             }
         }
     ]
+    return query
 }
 
 module.exports.previousFormsAggregation = previousFormsAggregation

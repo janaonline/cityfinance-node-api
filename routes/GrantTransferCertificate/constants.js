@@ -14,6 +14,13 @@ let grantDistributeOptions = {
     "No":"As per SFC Recommendations"
 }
 
+let warningkeys = {
+    "sfcNotification":"IsSfcFormFilled",
+    "propertyTaxNotif":"isPfrFilled",
+    "propertyTaxNotifCopy":"pfrFile",
+    "accountLinked":"pfmsFilledPerc"
+}
+
 let singleInstallmentTypes = ["million_tied"]
 
 

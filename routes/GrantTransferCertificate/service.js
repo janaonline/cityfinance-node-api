@@ -11,7 +11,7 @@ const TransferGrantDetailForm = require("../../models/TransferGrantDetailForm")
 const { grantsWithUlbTypes, installment_types, singleInstallmentTypes } = require("./constants")
 const FormsJson = require("../../models/FormsJson");
 const {previousFormsAggregation} = require("./aggregation")
-const { MASTER_STATUS, MASTER_STATUS_ID } = require('../../util/FormNames');
+const { MASTER_STATUS, MASTER_STATUS_ID ,MASTER_FORM_STATUS} = require('../../util/FormNames');
 const userTypes = require("../../util/userTypes");
 const {findPreviousYear} = require("../../util/findPreviousYear")
 const {FORMIDs} = require("../../util/FormNames")
@@ -604,8 +604,7 @@ const getRejectedFields = (currentFormStatus, formStatuses, installment, inputAl
     try {
         // console.log("formStatuses :: ",formStatuses)
         let prevInstallment = installment - 1
-        let allowedStatuses = [MASTER_STATUS['Under Review By MoHUA'],MASTER_STATUS['Rejected By MoHUA']]
-        console.log("allowedStatuses ::: ",allowedStatuses)
+        let allowedStatuses = [MASTER_FORM_STATUS['UNDER_REVIEW_BY_MoHUA'],MASTER_FORM_STATUS['RETURNED_BY_MoHUA']]
         // console.log("prevInstallment :: ",prevInstallment)
         if (prevInstallment && !allowedStatuses.includes(formStatuses?.[prevInstallment]) && role === userTypes.state) {
             return true
@@ -742,15 +741,24 @@ async function getPreviousYearData(state,design_year){
         let params = {
             state:ObjectId(state),
             design_year:ObjectId(design_year),
-            prevYear :years[findPreviousYear(getKeyByValue(design_year))],
+            prevYear :years[findPreviousYear(getKeyByValue(years,design_year))],
         }
-        let query = previousFormsAggregation(params)
+        let query = await previousFormsAggregation(params)
         response = await Ulb.aggregate(query).allowDiskUse(true)
     }
     catch(err){
         console.log("error in getPreviousYearData :: ",err.message)
     }
     return response
+}
+
+async function addWarnings(previousYearData){
+    try{
+        let warnings = {}
+    }
+    catch(err){
+        console.log("error in addWarnings ::: ",err.message)
+    }
 }
 module.exports.getInstallmentForm = async (req, res, next) => {
     let response = {
@@ -769,6 +777,7 @@ module.exports.getInstallmentForm = async (req, res, next) => {
             "state": state
         })
         let previousYearData = await getPreviousYearData(state,design_year)
+        console.log("previousYearData :: ",previousYearData)
         if (!validator.valid) {
             response.message = validator.message
             return res.json(response)
