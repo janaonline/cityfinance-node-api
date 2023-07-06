@@ -1,18 +1,36 @@
 const { years } = require("../../service/years")
-const { getFlatObj, payloadParser, mutateResponse, mutateJson, nestedObjectParser, clearVariables, decideDisabledFields } = require("../CommonActionAPI/service")
+const { getFlatObj, payloadParser, mutateResponse, mutateJson, nestedObjectParser, clearVariables, decideDisabledFields,checkIfUlbHasAccess } = require("../CommonActionAPI/service")
 const FormsJson = require("../../models/FormsJson");
 const { getKeyByValue } = require("../../util/masterFunctions")
 // const Sidemenu = require("../../models/Sidemenu");
 const ObjectId = require("mongoose").Types.ObjectId;
+const { findPreviousYear } = require('../../util/findPreviousYear')
 let outDatedYears = ["2018-19", "2019-20", "2021-22", "2022-23"]
+const ULB = require("../../models/Ulb")
 const { MASTER_STATUS_ID, MASTER_STATUS } = require("../../util/FormNames");
 
+
+async function checkForUlbCreation(req){
+    try{
+        let ulbData = await ULB.findOne({
+            "_id":ObjectId(req.decoded.ulb)
+        }).lean()
+        let prevYear = getKeyByValue(years,req.query.design_year)
+        let ifUlbIsFromLastYear = await checkIfUlbHasAccess(ulbData,{year:prevYear})
+        return ifUlbIsFromLastYear
+
+    }
+    catch(err){
+        console.log("error in checkForUlbCreation ::: ",err.message)
+    }
+}
 
 const transformResponse = async(req,res,next)=>{
     let response = {
         "success":true,
         "data":"",
-        "message":""
+        "message":"",
+        "hideForm":false
     }
     try{
         let responseData = [
@@ -29,6 +47,8 @@ const transformResponse = async(req,res,next)=>{
                "getDynamicOption": [],
             }
           ]
+        let  ifUlbIsFromLastYear = await checkForUlbCreation(req)
+        // console.log("ifUlbIsFromLastYear :: ",ifUlbIsFromLastYear)
         let yearId = req.query.design_year
         let year = getKeyByValue(years, yearId)
         let form = { ...req.form }
@@ -49,6 +69,7 @@ const transformResponse = async(req,res,next)=>{
         let obj = formJson ? formJson.data : {}
         let keysToBeDeleted = []
         let formResponse = {}
+        response.hideForm = ifUlbIsFromLastYear ? true : false
         if(form && Object.keys(form).length > 1){
             let flattedForm = getFlatObj(form)
             flattedForm['isDraft'] = form?.isDraft
