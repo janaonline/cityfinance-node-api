@@ -34,9 +34,14 @@ const transformResponse = async(req,res,next)=>{
         let form = { ...req.form }
         let { name, role } = req.decoded
         let latestYear = !outDatedYears.includes(year)
-        let jsonFormId = 8
+        let jsonFormId = req?.query?.formId
         if(!latestYear){
             response.data = req.form
+            return res.json(response)
+        }
+        if(!jsonFormId){
+            response.message = "form Id is required"
+            response.success = false
             return res.json(response)
         }
         let condition = { formId: parseInt(jsonFormId) ,design_year:ObjectId(yearId) }
