@@ -102,6 +102,7 @@ module.exports.FORMIDs = {
     "twentyEightSlb": 6,
     "fiscalRanking": 9,
     "GTC_STATE": 7,
+    "PFMS":8,
     "GTC_TABLE_STRUCTURE":11.1,
     "GTC_ULB": 11,
     "waterRej": 12,
