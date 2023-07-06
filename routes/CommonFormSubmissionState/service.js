@@ -186,7 +186,7 @@ async function getUAShortKeys(state) {
   let UasDataWithShortKey = await UA.aggregate(uaShortkeyQuery);
   let shortKeys = [];
   if(Array.isArray(UasDataWithShortKey) && UasDataWithShortKey.length){
-    shortKeys =  UasDataWithShortKey['uaCode'];
+    shortKeys =  UasDataWithShortKey[0]['uaCode'];
   }
   return shortKeys;
 }
