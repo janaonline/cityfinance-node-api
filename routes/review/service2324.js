@@ -146,8 +146,9 @@ module.exports.get = async (req, res) => {
 
     let allData = await Promise.all([data]);
     data = allData[0][0].data
-    // console.log("data", data)
     total = allData[0][0]['count']?.length ? allData[0][0]['count'][0].total : 0
+    console.log("data", allData)
+
     if (data.length) {
       let approvedUlbs = await fetchApprovedUlbsData(collectionName, data);
       await setCurrentStatus(req, data, approvedUlbs, collectionName, loggedInUserRole);
@@ -605,6 +606,7 @@ const computeQuery = (params) => {
             ulbId: 1,
             access:1,
             ulbCode: 1,
+            access:1,
             censusCode: 1,
             UA: 1,
             UA_id: 1,
@@ -774,7 +776,7 @@ const computeQuery = (params) => {
       let paginator_s = [{
         $facet: {
           data: [{ "$skip": skip }, { $limit: limit }],
-          count: [{ $count: "totalRecords" }]
+          count: [{ $count: "total" }]
         }
       }]
       if (!csv) {

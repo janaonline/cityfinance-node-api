@@ -2467,7 +2467,7 @@ const computeQuery = (formName, userRole, isFormOptional, state, design_year, cs
           ulbName: "$name",
           ulbId: "$_id",
           ulbCode: "$code",
-          access : "$access_2122",
+          access: "$access_2122",
           censusCode: {
             $cond: {
               if: {
@@ -2517,6 +2517,7 @@ const computeQuery = (formName, userRole, isFormOptional, state, design_year, cs
           ulbId: 1,
           access : 1,
           ulbCode: 1,
+          access: 1,
           censusCode: 1,
           UA: 1,
           UA_id: 1,
