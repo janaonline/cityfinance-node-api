@@ -10,8 +10,10 @@ const GtcInstallmentForm = require("../../models/GtcInstallmentForm")
 const TransferGrantDetailForm = require("../../models/TransferGrantDetailForm")
 const { grantsWithUlbTypes, installment_types, singleInstallmentTypes } = require("./constants")
 const FormsJson = require("../../models/FormsJson");
+const {previousFormsAggregation} = require("./aggregation")
 const { MASTER_STATUS, MASTER_STATUS_ID } = require('../../util/FormNames');
 const userTypes = require("../../util/userTypes");
+const {findPreviousYear} = require("../../util/findPreviousYear")
 const {FORMIDs} = require("../../util/FormNames")
 
 let gtcYears = ["2018-19", "2019-20", "2021-22", "2022-23"]
@@ -725,7 +727,6 @@ const getJson = async (state, design_year, role) => {
                 question.responseFile_mohua = responseFile_mohua;
             }
             returnableJson.push({ ...carousel })
-
         }
         return { json: [...returnableJson], stateIsMillion: stateIsMillion }
     }
@@ -733,6 +734,23 @@ const getJson = async (state, design_year, role) => {
         console.log("error in getJson ::: ", err.message)
         return []
     }
+}
+
+async function getPreviousYearData(state,design_year){
+    let response = {}
+    try{
+        let params = {
+            state:ObjectId(state),
+            design_year:ObjectId(design_year),
+            prevYear :years[findPreviousYear(getKeyByValue(design_year))],
+        }
+        let query = previousFormsAggregation(params)
+        response = await Ulb.aggregate(query).allowDiskUse(true)
+    }
+    catch(err){
+        console.log("error in getPreviousYearData :: ",err.message)
+    }
+    return response
 }
 module.exports.getInstallmentForm = async (req, res, next) => {
     let response = {
@@ -745,10 +763,12 @@ module.exports.getInstallmentForm = async (req, res, next) => {
         let responseData = []
         let { design_year, state, formType } = req.query
         let { role } = req.decoded
+        
         let validator = await checkForUndefinedVaribales({
             "design year": design_year,
             "state": state
         })
+        let previousYearData = await getPreviousYearData(state,design_year)
         if (!validator.valid) {
             response.message = validator.message
             return res.json(response)
@@ -881,9 +901,6 @@ async function handleInstallmentForm(params) {
         Object.assign(payload, data)
         payload.grantDistribute = grantDistributeOptions[payload.grantDistribute] || null
         let installmentValidatior = await checkValidationsInstallmentForm(payload, transferGrantData)
-        /**
-         * Uncomment this code before giving to testing
-         */
         if (!installmentValidatior.valid && runValidators) {
             validator.message = "Not valid"
             validator.valid = false
