@@ -444,6 +444,7 @@ module.exports.createOrUpdate = async (req, res) => {
     }
 
   } catch (err) {
+    console.log(err)
     console.error(err.message);
     return Response.BadRequest(res, {}, err.message);
   }

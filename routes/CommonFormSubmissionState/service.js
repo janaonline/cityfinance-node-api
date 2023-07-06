@@ -5,6 +5,7 @@ const {
     FORMIDs,
     FORM_LEVEL,
     USER_ROLE,
+    MASTER_STATUS_ID,
   } = require("../../util/FormNames");
   const CurrentStatus = require("../../models/CurrentStatus");
   const { ModelNames } = require("../../util/15thFCstatus");
@@ -215,12 +216,14 @@ function addActionKeys(uaData, shortKeys, statusData, role) {
           formType: USER_ROLE["STATE"],
           loggedInUser: role,
         };
-        ua["status"] = status["status"];
+        ua["status"] = MASTER_STATUS_ID[status["status"]];
+        ua['statusId'] = status['status']
         ua["canTakeAction"] = canTakenActionMaster(params);
       }else{
         ua["rejectReason"] = "";
         ua["responseFile"] = "";
-        ua["status"] = MASTER_STATUS['Not Started'];
+        ua["status"] = MASTER_STATUS_ID[MASTER_STATUS['Not Started']];
+        ua['statusId'] = MASTER_STATUS['Not Started']
         ua["canTakeAction"] = false
 
       }
