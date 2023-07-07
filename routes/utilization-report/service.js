@@ -9,8 +9,8 @@ const Category = require("../../models/Category");
 const FORM_STATUS = require("../../util/newStatusList");
 const Year = require('../../models/Year')
 const catchAsync = require('../../util/catchAsync')
-const { calculateStatus, checkForUndefinedVaribales, canTakenAction, mutuateGetPayload, changePayloadFormat, decideDisabledFields, checkIfUlbHasAccess } = require('../CommonActionAPI/service')
-const { getKeyByValue } = require("../../util/masterFunctions")
+const { calculateStatus, checkForUndefinedVaribales, canTakenAction, mutateResponse, changePayloadFormat, decideDisabledFields, checkIfUlbHasAccess } = require('../CommonActionAPI/service')
+const { getKeyByValue,checkForCalculations } = require("../../util/masterFunctions")
 const Service = require('../../service');
 const { FormNames, ULB_ACCESSIBLE_YEARS, MASTER_STATUS_ID } = require('../../util/FormNames');
 const MasterForm = require('../../models/MasterForm')
@@ -37,60 +37,6 @@ let validationMessages = {
   "negativeBal": "Closing balance is negative because Expenditure amount is greater than total tied grants amount available. Please recheck the amounts entered."
 }
 
-function checkForCalculations(reports) {
-  let validator = {
-    valid: false,
-    messages: [],
-    errors: []
-  }
-  try {
-    let exp = parseFloat(reports.grantPosition.expDuringYr)
-    let projectSum = 0
-
-    if (reports?.projects?.length > 0) {
-      projectSum = reports.projects.reduce((a, b) => parseFloat(a) + parseFloat(b.expenditure), 0)
-    }
-
-    let closingBal = reports.grantPosition.closingBal
-    let expWm = 0
-    for (let a of reports.categoryWiseData_wm) {
-      expWm += parseFloat(a.grantUtilised)
-    }
-    let expSwm = reports.categoryWiseData_swm.reduce((a, b) => parseFloat(a.grantUtilised) + parseFloat(b.grantUtilised))
-    let sumWmSm = expWm + expSwm
-    sumWmSm = sumWmSm ? parseFloat(sumWmSm.toFixed(2)) : sumWmSm
-    if (closingBal < 0) {
-      console.log("1")
-      validator.errors.push(false)
-      validator.messages.push(validationMessages['negativeBal'])
-    }
-    // console.log("closingBal",projectSum, "dd", exp);
-
-    if (sumWmSm !== exp) {
-      console.log("2")
-      validator.errors.push(false)
-      validator.messages.push(validationMessages['expWmSwm'])
-    }
-    if (exp !== projectSum) {
-      console.log("3")
-      validator.errors.push(false)
-      validator.messages.push(validationMessages['projectExpMatch'])
-    }
-
-    if (validator.errors.every(item => item === true)) {
-      validator.valid = true
-    }
-    else {
-      validator.valid = false
-    }
-
-
-  }
-  catch (err) {
-    console.log("error in checkForCalculations ::: ", err.message)
-  }
-  return validator
-}
 const BackendHeaderHost = {
   Demo: "democityfinanceapi.dhwaniris.in",
   Staging: "staging.cityfinance.in",

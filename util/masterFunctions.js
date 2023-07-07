@@ -127,6 +127,63 @@ module.exports.getKeyByValue = (object, value)=>{
   return Object.keys(object).find(key => object[key] === value);
 }
 
+function checkForCalculations(reports){
+  let validator = {
+    valid : false,
+    messages : [],
+    errors : []
+  }
+  try{
+   
+    let exp = (parseFloat(reports.grantPosition.expDuringYr)).toFixed(2)
+    let projectSum = 0
+    
+    if(reports?.projects?.length > 0){
+      projectSum = reports.projects.reduce((a,b)=> parseFloat(a) + parseFloat(b.expenditure),0).toFixed(2)
+    }
+    
+    let closingBal = reports.grantPosition.closingBal
+    let expWm = 0
+    for(let a of reports.categoryWiseData_wm){
+      expWm += parseFloat(a.grantUtilised)
+    }
+    let expSwm =  reports.categoryWiseData_swm.reduce((a,b)=> parseFloat(a.grantUtilised) + parseFloat(b.grantUtilised))
+    let sumWmSm = (expWm + expSwm).toFixed(2)
+    console.log("")
+    console.log("exp ::: ",exp)
+    console.log("projectSum :: ",projectSum)
+    console.log("3")
+    if(closingBal < 0){
+      console.log("1")
+      validator.errors.push(false)
+      validator.messages.push(validationMessages['negativeBal'])
+    }
+    if(sumWmSm !== exp){
+      console.log("2")
+      validator.errors.push(false)
+      validator.messages.push(validationMessages['expWmSwm'])
+    }
+    if(exp !== projectSum){
+      
+      validator.errors.push(false)
+      validator.messages.push(validationMessages['projectExpMatch'])
+    }
+
+    if(validator.errors.every(item => item === true)){
+      validator.valid = true
+    }
+    else{
+      validator.valid = false
+    }
+
+
+  }
+  catch(err){
+    console.log("error in checkForCalculations ::: ",err.message)
+  }
+  return validator
+}
+
 module.exports.getShortKeys = async (params) => {
   try {
     let {formId} = params;
@@ -146,3 +203,4 @@ module.exports.getShortKeys = async (params) => {
 }
 
 module.exports.grantDistributeOptions = grantDistributeOptions
+module.exports.checkForCalculations = checkForCalculations
