@@ -11,12 +11,12 @@ const {
   saveCurrentStatus,
   saveFormHistory,
   saveStatusHistory,
+  checkForCalculationsForDurForm
 } = require("../../util/masterFunctions");
 const moongose = require("mongoose");
 const ObjectId = require('mongoose').Types.ObjectId;
 const Response = require("../../service").response;
 const {canTakenActionMaster} = require('../CommonActionAPI/service')
-// const {checkForCalculations } =  require('../../routes/utilization-report/service');
 // const UtilizationReport =  require('../../models/UtilizationReport');
 const { years } = require("../../service/years");
 
@@ -235,7 +235,7 @@ module.exports.createAndUpdateFormMaster = async (params) => {
                     formData.projects = formData2324.projects
                   }
 
-                  let validation =  checkForCalculations(formData)
+                  let validation =  checkForCalculationsForDurForm(formData)
                   if(!validation.valid){
                     return Response.BadRequest(res, {}, validation.messages);
                   }
@@ -378,57 +378,6 @@ let validationMessages = {
   "negativeBal":"Closing balance is negative because Expenditure amount is greater than total tied grants amount available. Please recheck the amounts entered."
 }
 
-function checkForCalculations(reports){
-  let validator = {
-    valid : false,
-    messages : [],
-    errors : []
-  }
-  try{
-    let exp = parseFloat(reports.grantPosition.expDuringYr)
-    let projectSum = 0
-    
-    if(reports?.projects?.length > 0){
-      projectSum = reports.projects.reduce((a,b)=> parseFloat(a) + parseFloat(b.expenditure),0)
-    }
-    
-    let closingBal = reports.grantPosition.closingBal
-    let expWm = 0
-    for(let a of reports.categoryWiseData_wm){
-      expWm += parseFloat(a.grantUtilised)
-    }
-    let expSwm =  reports.categoryWiseData_swm.reduce((a,b)=> parseFloat(a.grantUtilised) + parseFloat(b.grantUtilised))
-    let sumWmSm = expWm + expSwm
-    if(closingBal < 0){
-      console.log("1")
-      validator.errors.push(false)
-      validator.messages.push(validationMessages['negativeBal'])
-    }
-    if(sumWmSm !== exp){
-      console.log("2")
-      validator.errors.push(false)
-      validator.messages.push(validationMessages['expWmSwm'])
-    }
-    if(exp !== projectSum){
-      console.log("3")
-      validator.errors.push(false)
-      validator.messages.push(validationMessages['projectExpMatch'])
-    }
-
-    if(validator.errors.every(item => item === true)){
-      validator.valid = true
-    }
-    else{
-      validator.valid = false
-    }
-
-
-  }
-  catch(err){
-    console.log("error in checkForCalculations ::: ",err.message)
-  }
-  return validator
-}
 
 async function saveStatusAndHistory(params){
   let validation = {
