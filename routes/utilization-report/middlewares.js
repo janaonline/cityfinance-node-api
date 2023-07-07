@@ -1,5 +1,5 @@
 const { years } = require("../../service/years")
-const { getFlatObj, payloadParser, mutuateGetPayload, mutateJson, nestedObjectParser, clearVariables, decideDisabledFields } = require("../CommonActionAPI/service")
+const { getFlatObj, payloadParser, mutateResponse, mutateJson, nestedObjectParser, clearVariables, decideDisabledFields } = require("../CommonActionAPI/service")
 const FormsJson = require("../../models/FormsJson");
 const { getKeyByValue } = require("../../util/masterFunctions")
 // const Sidemenu = require("../../models/Sidemenu");
@@ -59,7 +59,7 @@ module.exports.changeGetApiForm = async (req, res, next) => {
             let keysToBeDeleted = ["_id", "createdAt", "modifiedAt", "actionTakenByRole", "actionTakenBy", "ulb", "design_year"]
             let closingBalance = round((+form.grantPosition.unUtilizedPrevYr) + (+form.grantPosition.receivedDuringYr), 2) - (+form.grantPosition.expDuringYr);
             flattedForm['grantPosition.closingBal'] = closingBalance ? round(closingBalance, 2) : closingBalance
-            obj = await mutuateGetPayload(obj, flattedForm, keysToBeDeleted, role)
+            obj = await mutateResponse(obj, flattedForm, keysToBeDeleted, role)
             obj[0].isDraft = form.isDraft
             responseData[0]['language'] = obj
             response.success = true
