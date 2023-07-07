@@ -5,7 +5,8 @@ const Response = require('../../service').response;
 const { calculateStatus } = require('../../routes/CommonActionAPI/service');
 const { CollectionNames } = require('../../util/15thFCstatus');
 const FormHistory = require('../../models/FormHistory');
-const { MASTER_STATUS_ID, YEAR_CONSTANTS } = require('../../util/FormNames');
+const StatusHistory = require('../../models/StatusHistory');
+const { MASTER_STATUS_ID, YEAR_CONSTANTS, FORM_LEVEL_SHORTKEY } = require('../../util/FormNames');
 
 
 module.exports.getHistory = catchAsync(async (req, res) => {
@@ -74,14 +75,14 @@ const getHistoryNew = (params) => {
   return new Promise(async (resolve, reject) => {
     try {
       const { getData, formTabData } = params
-      let historyQuery = { recordId: { $in: ObjectId(getData._id) }, formId: formTabData?.formId };
-      let history = await FormHistory.find(historyQuery, { "data": 1, createdAt: 1 }).lean();
+      let historyQuery = { recordId: { $in: ObjectId(getData._id) }, formId: formTabData?.formId, shortKey: FORM_LEVEL_SHORTKEY["form"], };
+      let history = await StatusHistory.find(historyQuery, { "data": 1, createdAt: 1 }).lean();
       let outputArr = [];
       if (history.length) {
         for (let el of history) {
           const historyObj = el?.data ? el?.data[0] : {}
           let output = {};
-          output.status = MASTER_STATUS_ID[historyObj?.currentFormStatus]
+          output.status = MASTER_STATUS_ID[historyObj?.status]
           output['time'] = el.createdAt
           if (Object.keys(output).length > 0) {
             outputArr.push(output);
