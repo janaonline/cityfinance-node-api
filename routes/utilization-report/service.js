@@ -10,7 +10,7 @@ const FORM_STATUS = require("../../util/newStatusList");
 const Year = require('../../models/Year')
 const catchAsync = require('../../util/catchAsync')
 const { calculateStatus, checkForUndefinedVaribales, canTakenAction, mutateResponse, changePayloadFormat, decideDisabledFields, checkIfUlbHasAccess } = require('../CommonActionAPI/service')
-const { getKeyByValue,checkForCalculations } = require("../../util/masterFunctions")
+const { getKeyByValue,checkForCalculationsForDurForm } = require("../../util/masterFunctions")
 const Service = require('../../service');
 const { FormNames, ULB_ACCESSIBLE_YEARS, MASTER_STATUS_ID } = require('../../util/FormNames');
 const MasterForm = require('../../models/MasterForm')
@@ -272,7 +272,7 @@ module.exports.createOrUpdate = async (req, res) => {
 
       if (!submittedForm && !isDraft) {// final submit in first attempt
         formData['ulbSubmit'] = new Date();
-        let validation = await checkForCalculations(req.body)
+        let validation = await checkForCalculationsForDurForm(req.body)
         if (!validation.valid) {
           return Response.BadRequest(res, {}, validation.messages);
         }
@@ -346,7 +346,7 @@ module.exports.createOrUpdate = async (req, res) => {
         if (req.body.projects.length === 0) {
           body.projects = currentSavedUtilRep.projects
         }
-        let validation = await checkForCalculations(body)
+        let validation = await checkForCalculationsForDurForm(body)
         if (!validation.valid) {
           return Response.BadRequest(res, {}, validation.messages);
         }

@@ -11,7 +11,7 @@ const {
   saveCurrentStatus,
   saveFormHistory,
   saveStatusHistory,
-  checkForCalculations
+  checkForCalculationsForDurForm
 } = require("../../util/masterFunctions");
 const moongose = require("mongoose");
 const ObjectId = require('mongoose').Types.ObjectId;
@@ -235,7 +235,7 @@ module.exports.createAndUpdateFormMaster = async (params) => {
                     formData.projects = formData2324.projects
                   }
 
-                  let validation =  checkForCalculations(formData)
+                  let validation =  checkForCalculationsForDurForm(formData)
                   if(!validation.valid){
                     return Response.BadRequest(res, {}, validation.messages);
                   }
