@@ -127,11 +127,16 @@ module.exports.getKeyByValue = (object, value)=>{
   return Object.keys(object).find(key => object[key] === value);
 }
 
-function checkForCalculations(reports){
+function checkForCalculationsForDurForm(reports){
   let validator = {
     valid : false,
     messages : [],
     errors : []
+  }
+  let validationMessages = {
+    "projectExpMatch": "Sum of all project wise expenditure amount does not match total expenditure amount provided in the XVFC summary section. Kindly recheck the amounts.",
+    "expWmSwm": " The total expenditure in the component wise grants must not exceed the amount of expenditure incurred during the year.",
+    "negativeBal": "Closing balance is negative because Expenditure amount is greater than total tied grants amount available. Please recheck the amounts entered."
   }
   try{
    
@@ -179,7 +184,7 @@ function checkForCalculations(reports){
 
   }
   catch(err){
-    console.log("error in checkForCalculations ::: ",err.message)
+    console.log("error in checkForCalculationsForDurForm ::: ",err.message)
   }
   return validator
 }
@@ -203,4 +208,4 @@ module.exports.getShortKeys = async (params) => {
 }
 
 module.exports.grantDistributeOptions = grantDistributeOptions
-module.exports.checkForCalculations = checkForCalculations
+module.exports.checkForCalculationsForDurForm = checkForCalculationsForDurForm
