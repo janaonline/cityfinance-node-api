@@ -72,7 +72,7 @@ exports.getGrantDistribution = async (req, res) => {
 exports.getTemplate = async (req, res) => {
   let { state } = req?.decoded;
   let formData = req.query;
-  let amount = "grant amount";
+  let amount = "grant amount (Lakhs)";
   
   formData.design_year = getKeyByValue(years,formData.year)
   if (formData.year === "606aafb14dff55e6c075d3ae") {
@@ -84,7 +84,7 @@ exports.getTemplate = async (req, res) => {
   /* Checking if the formData.year is equal to the string "606aafb14dff55e6c075d3ae" and if it is, it is
  value of the variable "type" to the variable amount. */
  !outDatedYearIds.includes(formData.year)
-    ? (amount = `${amount} - ${type}`)
+    ? (amount = `${amount} - ${type} (Lakhs)`)
     : "";
 
   try {
@@ -213,7 +213,7 @@ exports.uploadTemplate = async (req, res) => {
       }
       const notValid = await validate(XslData, formData);
       if (notValid) {
-        let amount = "grant amount";
+        let amount = "grant amount (Lakhs)";
         formData.design_year = getKeyByValue(years,formData.design_year)
         if (formData.design_year === "606aafb14dff55e6c075d3ae") {
           formData.design_year = '2022-23';
@@ -221,11 +221,11 @@ exports.uploadTemplate = async (req, res) => {
           formData.design_year = '2021-22';
         }
         let type = `${formData.type}_${formData.design_year}_${formData.installment}`
-        amount = `${amount} - ${type}`
+        amount = `${amount} - ${type} (Lakhs)`
         /* Checking if the formData.design_year is equal to 2021-22 or undefined, if it is, then it sets the amount variable
         to "grant amount". */
         formData.design_year === undefined || formData.design_year === "2021-22"
-          ? amount = "grant amount"
+          ? amount = "grant amount (Lakhs)"
           : "";
         let field = {
           ["ulb census code/ulb code"]: "ULB Census Code/ULB Code",
