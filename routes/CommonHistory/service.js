@@ -2,138 +2,91 @@ const catchAsync = require('../../util/catchAsync');
 const Sidemenu = require('../../models/Sidemenu');
 const ObjectId = require("mongoose").Types.ObjectId;
 const Response = require('../../service').response;
-const {calculateStatus} = require('../../routes/CommonActionAPI/service');
+const { calculateStatus } = require('../../routes/CommonActionAPI/service');
 const { CollectionNames } = require('../../util/15thFCstatus');
 const FormHistory = require('../../models/FormHistory');
+const { MASTER_STATUS_ID, YEAR_CONSTANTS } = require('../../util/FormNames');
+
 
 module.exports.getHistory = catchAsync(async (req, res) => {
+
+  try {
     let user = req.decoded;
-    let { formId , ulbId, stateId, design_year } = req.query;
+    let { formId, ulbId, stateId, design_year } = req.query;
 
     /* Checking if formId is present or not. If not present then it will return error. */
-    if((!ulbId && !stateId) || !design_year || !formId) return Response.BadRequest(res, {}, "Required fields missing");
+    if ((!ulbId && !stateId) || !design_year || !formId) return Response.BadRequest(res, {}, "Required fields missing");
 
-    const formTabData = await Sidemenu.findOne({_id: ObjectId(formId)}).lean()
+    const formTabData = await Sidemenu.findOne({ _id: ObjectId(formId) }).lean()
     if (user.role != "ULB" && formTabData) {
       let query = {}
-      if(formTabData.role ==="ULB"){
-       query =  {
-            ulb: ObjectId(ulbId),
-            design_year: ObjectId(design_year)
+      if (formTabData.role === "ULB") {
+        query = {
+          ulb: ObjectId(ulbId),
+          design_year: ObjectId(design_year)
         };
-        if(formTabData.dbCollectionName ==  CollectionNames['dur']){
-            query['designYear'] = ObjectId(design_year)
-            delete query['design_year'];
+        if (formTabData.dbCollectionName == CollectionNames['dur']) {
+          query['designYear'] = ObjectId(design_year)
+          delete query['design_year'];
         }
-      }else if(formTabData.role === "STATE"){
-        query =  {
-            state: ObjectId(stateId),
-            design_year: ObjectId(design_year)
-          };
-      }else {
+      } else if (formTabData.role === "STATE") {
+        query = {
+          state: ObjectId(stateId),
+          design_year: ObjectId(design_year)
+        };
+      } else {
         return Response.BadRequest(res, {}, "Wrong Form Id");
       }
       let path = formTabData?.path;
       const model = require(`../../models/${path}`);
-      let getData = await model.findOne(query, { history: 1 }).lean();
       let outputArr = [];
-      if (getData) {
-        for(let el of getData['history']){
-        // getData["history"].forEach((el) => {
+      if ([YEAR_CONSTANTS['20_21'], YEAR_CONSTANTS['21_22'], YEAR_CONSTANTS['22_23']].includes(design_year)) {
+        let getData = await model.findOne(query, { history: 1 }).lean();
+        if (!getData) throw new Error(`${user.role} + " Not Authorized to Access this Data"`)
+        for (let el of getData['history']) {
           let output = {};
-
-            output.status =  calculateStatus(el.status, el.actionTakenByRole, el.isDraft, formTabData.role )
-            output['time'] = el.modifiedAt;
-            if(Object.keys(output).length> 0){
-                outputArr.push(output);
-            }
-        };
-        return res.status(200).json({
-          success: true,
-          message: "Data Fetched Successfully!",
-          data: outputArr,
-        });
-      } else {
-        return res.status(400).json({
-          success: false,
-          message: "No Data Found",
-        });
-      }
-    } else {
-      return res.status("403").json({
-        success: false,
-        message: user.role + " Not Authorized to Access this Data",
-      });
-    }
-  });
-
-  module.exports.getHistory2324 = catchAsync(async (req, res) => {
-    let user = req.decoded;
-    let { formId , ulbId, design_year } = req.query;
-
-    /* Checking if formId is present or not. If not present then it will return error. */
-    if(!ulbId || !design_year || !formId) return Response.BadRequest(res, {}, "Required fields missing");
-
-    const formTabData = await Sidemenu.findOne({ _id : ObjectId(formId)}).lean()
-
-    if (user.role != "ULB" && formTabData) {
-      let query = {}
-      if(formTabData.role ==="ULB"){
-       query =  {
-            ulb: ObjectId(ulbId),
-            design_year: ObjectId(design_year)
-        };
-        if(formTabData.dbCollectionName ==  CollectionNames['dur']){
-            query['designYear'] = ObjectId(design_year)
-            delete query['design_year'];
+          output.status = calculateStatus(el.status, el.actionTakenByRole, el.isDraft, formTabData.role)
+          output['time'] = el.modifiedAt;
+          if (Object.keys(output).length > 0) {
+            outputArr.push(output);
+          }
         }
-      }else if(formTabData.role === "STATE"){
-        query =  {
-            state: ObjectId(stateId),
-            design_year: ObjectId(design_year)
-          };
-      }else {
-        return Response.BadRequest(res, {}, "Wrong Form Id");
-      }
-
-      
-      let path = formTabData?.path;
-      
-      const model = require(`../../models/${path}`);
-     
-      let getData = await model.findOne(query, { _id: 1 }).lean();
-      let historyQuery = {recordId:{$in : ObjectId(getData._id)} , formId : formTabData?.formId};
-      let history = await FormHistory.find(historyQuery,{"data":1}).lean();
-      
-      let outputArr = [];
-     // console.log("fdsafdsa",history);
-      if (history) {
-        for(let el of history['data']){
-        // getData["history"].forEach((el) => {
-          let output = {};
-
-            output.status =  calculateStatus(el.status, el.actionTakenByRole, el.isDraft, formTabData.role )
-            output['time'] = el.modifiedAt;
-            if(Object.keys(output).length> 0){
-                outputArr.push(output);
-            }
-        };
-        return res.status(200).json({
-          success: true,
-          message: "Data Fetched Successfully!",
-          data: outputArr,
-        });
       } else {
-        return res.status(400).json({
-          success: false,
-          message: "No Data Found",
-        });
+        let getData = await model.findOne(query, { _id: 1 }).lean();
+        if (!getData) throw new Error(`${user.role} + " Not Authorized to Access this Data"`)
+        outputArr = await getHistoryNew({ getData, formTabData });
       }
+      return res.status(200).json({ success: true, message: "Data Fetched Successfully!", data: outputArr });
     } else {
-      return res.status("403").json({
-        success: false,
-        message: user.role + " Not Authorized to Access this Data",
-      });
+      return res.status(400).json({ success: false, message: "No Data Found" });
     }
-  });
+  } catch (error) {
+    console.log("error", error)
+    return res.status(400).json({ success: false, message: error.message });
+  }
+});
 
+const getHistoryNew = (params) => {
+  return new Promise(async (resolve, reject) => {
+    try {
+      const { getData, formTabData } = params
+      let historyQuery = { recordId: { $in: ObjectId(getData._id) }, formId: formTabData?.formId };
+      let history = await FormHistory.find(historyQuery, { "data": 1, createdAt: 1 }).lean();
+      let outputArr = [];
+      if (history.length) {
+        for (let el of history) {
+          const historyObj = el?.data ? el?.data[0] : {}
+          let output = {};
+          output.status = MASTER_STATUS_ID[historyObj?.currentFormStatus]
+          output['time'] = el.createdAt
+          if (Object.keys(output).length > 0) {
+            outputArr.push(output);
+          }
+        }
+      }
+      resolve(outputArr);
+    } catch (error) {
+      reject(error)
+    }
+  })
+}

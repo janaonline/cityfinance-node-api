@@ -10,7 +10,7 @@ const {years} = require("../../service/years");
 const downloadFileToDisk = require("../file-upload/service").downloadFileToDisk;
 const GrantDistribution = require("../../models/GrantDistribution");
 const {getChildQuestion} = require("./constants")
-const { checkForUndefinedVaribales, mutuateGetPayload, getFlatObj } = require("../../routes/CommonActionAPI/service")
+const { checkForUndefinedVaribales, mutateResponse, getFlatObj } = require("../../routes/CommonActionAPI/service")
 const { getKeyByValue, saveFormHistory, grantDistributeOptions } = require("../../util/masterFunctions");
 const {
   UpdateStateMasterForm,
@@ -476,7 +476,8 @@ let host = baseUrls[process.env.ENV]
     }, { isMillionPlus: 1 })
     let stateIsMillion = ulb?.isMillionPlus === "Yes" ? true : false
     let tabularStructure = await FormsJson.findOne({
-      "formId":{"$in":[11.2]}
+      "formId":{"$in":[11.2]},
+      "design_year":design_year
   }).lean()
   tabularStructure = tabularStructure?.data || []
   let allocationForms = await GrantDistribution.find({

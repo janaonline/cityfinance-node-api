@@ -1,6 +1,25 @@
 const { dbModels } = require("./../models/Master/index");
 const ObjectId = require("mongoose").Types.ObjectId;
 module.exports = {
+    list: (modelName) => {
+        return async (req, res, next) => {
+            try {
+                let condition = { ...req.query };
+                let data = await dbModels[modelName].find(condition);
+                return res.status(200).json({
+                    status: true,
+                    message: "Successfully saved data!",
+                    data: data,
+                });
+            } catch (error) {
+                return res.status(400).json({
+                    status: false,
+                    message: "Something went wrong!",
+                    err: error.message,
+                });
+            }
+        }
+    },
     create: (modelName) => {
         return async (req, res, next) => {
             try {

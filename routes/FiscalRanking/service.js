@@ -64,6 +64,12 @@ let priorTabsForFiscalRanking = {
   selDec: "s5",
 };
 
+function getMessages(params){
+  let {ulbName} = params
+  return {
+    "freeze" :`Dear ${ulbName} , your data input form for City Finance Rankings has been put on hold. Cityfinance Rankings Module is no longer accepting submissions. Please email rankings@cityfinance.in for any queries.`
+  }
+}
 async function manageLedgerData(params) {
   let messages = []
   try {
@@ -99,8 +105,8 @@ async function manageLedgerData(params) {
                 let reason = `Data for ${question.displayPriority} has been changed. kindly revisit the calculations`
                 if (childItem.year.toString() === yearObj.year) {
                   childItem.readonly = [statusTracker.RBP, statusTracker.IP].includes(currentFormStatus) && [questionLevelStatus['1']].includes(childItem.status) && role === userTypes.ulb ? false : childItem.readonly
-                  childItem.rejectReason = [statusTracker.RBP, statusTracker.IP].includes(currentFormStatus) && [questionLevelStatus['1']].includes(childItem.status) ? reason : childItem.rejectReason
-                  childItem.status = [statusTracker.RBP, statusTracker.IP].includes(currentFormStatus) && [questionLevelStatus['1']].includes(childItem.status) ? "REJECTED" : childItem.status
+                  childItem.rejectReason = [statusTracker.RBP, statusTracker.IP].includes(currentFormStatus) && [questionLevelStatus['1']].includes(childItem.status) && role === userTypes.ulb ? reason : childItem.rejectReason
+                  childItem.status = [statusTracker.RBP, statusTracker.IP].includes(currentFormStatus) && [questionLevelStatus['1']].includes(childItem.status) && role === userTypes.ulb ? "REJECTED" : childItem.status
                 }
               })
             })
@@ -811,28 +817,34 @@ exports.getView = async function (req, res, next) {
   try {
     let condition = {};
     let { role } = req.decoded
-    console.log("role :: ", role)
+    let hideForm = false
     if (req.query.ulb && req.query.design_year) {
       condition = {
         ulb: ObjectId(req.query.ulb),
         design_year: ObjectId(req.query.design_year),
       };
     }
+    let notice = ""
     let data = await FiscalRanking.findOne(condition, { history: 0 }).lean();
     data = manageNullValuesInMainTable(data)
+    
     let twEightSlbs = await TwentyEightSlbsForm.findOne(condition, {
       population: 1,
     }).lean();
     let ulbPData = await Ulb.findOne(
       { _id: ObjectId(req.query.ulb) },
       { population: 1, name: 1, state: 1 }
-    ).populate("state").lean();
-    let viewOne = {};
-    let fyData = [];
-    if (data) {
-      fyData = await FiscalRankingMapper.find({
-        fiscal_ranking: data._id,
-      }).lean();
+      ).populate("state").lean();
+      let viewOne = {};
+      let fyData = [];
+      notice = await getMessages({
+        ulbName:ulbPData.name
+      })['freeze']
+      if (data) {
+        
+        fyData = await FiscalRankingMapper.find({
+          fiscal_ranking: data._id,
+        }).lean();
       data["populationFr"] = {
         ...data.populationFr,
         value: data?.populationFr?.value
@@ -964,7 +976,7 @@ exports.getView = async function (req, res, next) {
         );
       }
     }
-
+    hideForm = viewOne?.currentFormStatus === 1 && role === "ULB" ? true : false
     let fyDynemic = await fiscalRankingFormJson();
     // await assignCalculatedValues(fyDynemic, viewOne)
 
@@ -1251,6 +1263,7 @@ exports.getView = async function (req, res, next) {
     let conditionForFeedbacks = {
       fiscal_ranking: data?._id || null,
     };
+  
     let userRole = req.decoded.role
     let params = {
       ledgerData: ulbData,
@@ -1276,6 +1289,10 @@ exports.getView = async function (req, res, next) {
       modifiedLedgerData,
       conditionForFeedbacks
     );
+    if(viewOne.currentFormStatus === statusTracker.IP && role === userTypes.ulb){
+      let actionTaken = await checkIfActionTaken(modifiedTabs)
+      hideForm = !actionTaken 
+    }
     let viewData = {
       _id: viewOne._id ? viewOne._id : null,
       ulb: viewOne.ulb ? viewOne.ulb : req.query.ulb,
@@ -1288,7 +1305,9 @@ exports.getView = async function (req, res, next) {
       tabs: modifiedTabs,
       currentFormStatus: viewOne.currentFormStatus,
       financialYearTableHeader,
-      messages: userMessages
+      messages: userMessages,
+      hideForm,
+      notice
     };
     if (userMessages.length > 0) {
       let { approvedPerc, rejectedPerc } = calculatePercentage(modifiedLedgerData, requiredFields, viewOne)
