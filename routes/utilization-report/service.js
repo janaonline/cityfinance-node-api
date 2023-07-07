@@ -9,7 +9,7 @@ const Category = require("../../models/Category");
 const FORM_STATUS = require("../../util/newStatusList");
 const Year = require('../../models/Year')
 const catchAsync = require('../../util/catchAsync')
-const { calculateStatus, checkForUndefinedVaribales, canTakenAction, mutuateGetPayload, changePayloadFormat, decideDisabledFields, checkIfUlbHasAccess } = require('../CommonActionAPI/service')
+const { calculateStatus, checkForUndefinedVaribales, canTakenAction, mutateResponse, changePayloadFormat, decideDisabledFields, checkIfUlbHasAccess } = require('../CommonActionAPI/service')
 const { getKeyByValue } = require("../../util/masterFunctions")
 const Service = require('../../service');
 const { FormNames, ULB_ACCESSIBLE_YEARS, MASTER_STATUS_ID } = require('../../util/FormNames');
@@ -444,6 +444,7 @@ module.exports.createOrUpdate = async (req, res) => {
     }
 
   } catch (err) {
+    console.log(err)
     console.error(err.message);
     return Response.BadRequest(res, {}, err.message);
   }
@@ -976,7 +977,8 @@ module.exports.read2223 = catchAsync(async (req, res, next) => {
   if (!prevData) {
     status = 'Not Started'
   } else {
-    prevData = prevData?.history?.length > 0 ? prevData.history[prevData.history.length - 1] : prevData
+    prevData = prevData?.history?.length > 0 ? prevData.history[prevData.history.length - 1] : prevData;
+    isDraft = prevData && Object.keys(prevData).includes("isSubmit") ? !prevData.isSubmit : prevData?.isDraft
     status = calculateStatus(prevData.status, prevData.actionTakenByRole, isDraft, "ULB")
   }
   let host = "";
@@ -990,7 +992,6 @@ module.exports.read2223 = catchAsync(async (req, res, next) => {
     obj['url'] = ``;
   }
   else {
-    console.log("status :: ", status)
     if ([FORM_STATUS.Under_Review_By_MoHUA, FORM_STATUS.Approved_By_MoHUA, FORM_STATUS.Approved_By_State].includes(status)) {
       obj['action'] = 'not_show';
       obj['url'] = ``;
@@ -1461,7 +1462,7 @@ module.exports.getProjects = catchAsync(async (req, res, next) => {
     let questions = projectJson.data[index].question.filter(item => item.shortKey === "projectDetails_tableView_addButton")
     projectJson.data[0].question = questions
     let keysToBeDeleted = ["_id", "createdAt", "modifiedAt", "actionTakenByRole", "actionTakenBy", "ulb", "design_year", "isDraft"]
-    projectJson = await mutuateGetPayload(projectJson.data, projectObj, keysToBeDeleted, role)
+    projectJson = await mutateResponse(projectJson.data, projectObj, keysToBeDeleted, role)
     response.data = projectJson[0].question[0].childQuestionData
     response.success = true
     return res.json(response)

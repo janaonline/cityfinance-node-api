@@ -29,7 +29,7 @@ var ignorableKeys = ["actionTakenByRole","actionTakenBy","ulb","design_year"]
 let groupedQuestions = {
     "location":['lat','long']
 }
-let addMoreFields = ["transferGrantdetail_tableview_addbutton"]
+let addMoreFields = ["transferGrantdetail_tableview_addbutton","projectDetails_tableView_addButton"]
 let yearValueField = {
     "year":"",
     "value":""
@@ -1733,7 +1733,7 @@ class PayloadManager{
 }
 
 
-async function decideValues(temp,shortKey,objects,req){
+async function decideValuesByInputType(temp,shortKey,objects,req){
     try{
         let service = new PayloadManager(temp,shortKey,objects,req,shortKeysWithModelName)
         let inputName = inputType[objects.input_type]
@@ -1768,11 +1768,10 @@ async function decideValues(temp,shortKey,objects,req){
                 break
         }
         temp[shortKey] = value
-        // console.log("value :::: ",value)
         return value
     }
     catch(err){
-        console.log("error in decideValues ::: ",err.message)
+        console.log("error in decideValuesByInputType ::: ",err.message)
     }
 }
 
@@ -1805,7 +1804,7 @@ async function returnParsedObj(objects,req) {
             if(modifiedKeys.includes(shortKey)){
                 shortKey = modifiedShortKeys[shortKey]
             }
-            await decideValues(temp,shortKey,objects,req)
+            await decideValuesByInputType(temp,shortKey,objects,req)
             return temp
         }
     }
@@ -2485,7 +2484,7 @@ function manageDisabledQues(question,flattedForm){
     }
 }
 
-async function mutuateGetPayload(jsonFormat, flatForm, keysToBeDeleted,role) {
+async function mutateResponse(jsonFormat, flatForm, keysToBeDeleted,role) {
     try {
         let obj = JSON.parse(JSON.stringify(jsonFormat))
         let flattedForm = JSON.parse(JSON.stringify(flatForm))
@@ -2526,7 +2525,7 @@ async function mutuateGetPayload(jsonFormat, flatForm, keysToBeDeleted,role) {
         return obj
     }
     catch (err) {
-        console.log("mutuateGetPayload ::: ", err.message)
+        console.log("mutateResponse ::: ", err.message)
     }
 }
 
@@ -2620,7 +2619,7 @@ function checkForUndefinedVaribales(obj) {
     return validator
 }
 module.exports.checkForUndefinedVaribales = checkForUndefinedVaribales
-module.exports.mutuateGetPayload = mutuateGetPayload
+module.exports.mutateResponse = mutateResponse
 
 function appendExtraKeys(keys, jsonObj, form) {
     let obj = { ...jsonObj }
@@ -2789,7 +2788,7 @@ async function takeActionOnForms(params, res) {
               [
                 MASTER_STATUS["Returned By MoHUA"],
                 MASTER_STATUS["Returned By State"],
-              ].includes(response.status)
+              ].includes(Number(response.status))
             ) {
               rejectStatusCount++;
             }
@@ -3211,7 +3210,7 @@ function filterStatusResponseState(statuses, formStatus){
     for( let key in STATUS_RESPONSE){
 
         if(STATUS_RESPONSE[key].includes(formStatus)){
-           return getCurrentStatus(key,statuses);
+           return getCurrentStatusState(key,statuses);
         }
 
     }
@@ -3488,7 +3487,7 @@ async function nestedObjectParser(data,req){
                 //         }
                 //     ]
                 // }
-                let value = await decideValues(temp,shortKey,item,req)
+                let value = await decideValuesByInputType(temp,shortKey,item,req)
                 await keys.forEach((key, index) => {
                         if (!pointer.hasOwnProperty(key)) {
                         pointer[key] = {};
@@ -3514,6 +3513,7 @@ function checkIfUlbHasAccess(ulbData,userYear){
       let prevYearArr = currentYear.split("-")
       let prevYear = `${(prevYearArr[0]-1).toString().slice(-2)}${(prevYearArr[1]-1).toString().slice(-2)}`
       ulbVariable += prevYear
+      console.log({prevYear,userYear})
       return ulbData[ulbVariable]
     }
     catch(err){

@@ -5,6 +5,7 @@ const {
     FORMIDs,
     FORM_LEVEL,
     USER_ROLE,
+    MASTER_STATUS_ID,
   } = require("../../util/FormNames");
   const CurrentStatus = require("../../models/CurrentStatus");
   const { ModelNames } = require("../../util/15thFCstatus");
@@ -185,7 +186,7 @@ async function getUAShortKeys(state) {
   let UasDataWithShortKey = await UA.aggregate(uaShortkeyQuery);
   let shortKeys = [];
   if(Array.isArray(UasDataWithShortKey) && UasDataWithShortKey.length){
-    shortKeys =  UasDataWithShortKey['uaCode'];
+    shortKeys =  UasDataWithShortKey[0]['uaCode'];
   }
   return shortKeys;
 }
@@ -215,12 +216,14 @@ function addActionKeys(uaData, shortKeys, statusData, role) {
           formType: USER_ROLE["STATE"],
           loggedInUser: role,
         };
-        ua["status"] = status["status"];
+        ua["status"] = MASTER_STATUS_ID[status["status"]];
+        ua['statusId'] = status['status']
         ua["canTakeAction"] = canTakenActionMaster(params);
       }else{
         ua["rejectReason"] = "";
         ua["responseFile"] = "";
-        ua["status"] = MASTER_STATUS['Not Started'];
+        ua["status"] = MASTER_STATUS_ID[MASTER_STATUS['Not Started']];
+        ua['statusId'] = MASTER_STATUS['Not Started']
         ua["canTakeAction"] = false
 
       }
