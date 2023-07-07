@@ -8,7 +8,7 @@ const { getKeyByValue, saveFormHistory, grantDistributeOptions } = require("../.
 const { years } = require('../../service/years');
 const GtcInstallmentForm = require("../../models/GtcInstallmentForm")
 const TransferGrantDetailForm = require("../../models/TransferGrantDetailForm")
-const { grantsWithUlbTypes, installment_types, singleInstallmentTypes } = require("./constants")
+const { grantsWithUlbTypes, installment_types, singleInstallmentTypes,warningkeys } = require("./constants")
 const FormsJson = require("../../models/FormsJson");
 const {previousFormsAggregation} = require("./aggregation")
 const { MASTER_STATUS, MASTER_STATUS_ID ,MASTER_FORM_STATUS} = require('../../util/FormNames');
@@ -754,7 +754,9 @@ async function getPreviousYearData(state,design_year){
 
 async function addWarnings(previousYearData){
     try{
-        let warnings = {}
+        let filledValues = Object.entries(warningkeys).reduce((acc,[key,value])=>(
+            {...acc, ...(Object.keys(previousYearData).includes(value) && {[key]:previousYearData[value]})}
+        ),{})
     }
     catch(err){
         console.log("error in addWarnings ::: ",err.message)
@@ -777,7 +779,7 @@ module.exports.getInstallmentForm = async (req, res, next) => {
             "state": state
         })
         let previousYearData = await getPreviousYearData(state,design_year)
-        console.log("previousYearData :: ",previousYearData)
+        let alreadyFilledData = await addWarnings(previousYearData[0])
         if (!validator.valid) {
             response.message = validator.message
             return res.json(response)

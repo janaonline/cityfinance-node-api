@@ -15,15 +15,28 @@ let grantDistributeOptions = {
 }
 
 let warningkeys = {
-    "sfcNotification":"IsSfcFormFilled",
+    "recomAvail":"IsSfcFormFilled",
     "propertyTaxNotif":"isPfrFilled",
     "propertyTaxNotifCopy":"pfrFile",
     "accountLinked":"pfmsFilledPerc"
 }
 
+const getMessagesForRadioButton = (sfcLink)=>{
+    return {
+        "recomAvail":{
+            "1":"",
+            "2":`States are advised to set up SFC in such a way that the SFC recommendations will be available for laying in State legislature on or before 2024, and it will be taken as a pre-condition for States to claim grants from 2024-25 onwards ${sfcLink}`
+        },
+        "propertyTaxNotif":{
+            "1":"",
+            "2":"States need to notify their property tax floor rates by 2022-23 as this will be a pre-condition for claiming grants from 2022-23 onwards"
+        }
+    }
+}
 let singleInstallmentTypes = ["million_tied"]
 
-
+module.exports.warningkeys = warningkeys
+module.exports.getMessagesForRadioButton = getMessagesForRadioButton
 module.exports.grantDistributeOptions = grantDistributeOptions
 module.exports.grantsWithUlbTypes = grantsWithUlbTypes
 module.exports.installment_types = installment_types
