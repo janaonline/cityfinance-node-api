@@ -29,7 +29,7 @@ var ignorableKeys = ["actionTakenByRole","actionTakenBy","ulb","design_year"]
 let groupedQuestions = {
     "location":['lat','long']
 }
-let addMoreFields = ["transferGrantdetail_tableview_addbutton"]
+let addMoreFields = ["transferGrantdetail_tableview_addbutton","projectDetails_tableView_addButton"]
 let yearValueField = {
     "year":"",
     "value":""
@@ -1733,7 +1733,7 @@ class PayloadManager{
 }
 
 
-async function decideValues(temp,shortKey,objects,req){
+async function decideValuesByInputType(temp,shortKey,objects,req){
     try{
         let service = new PayloadManager(temp,shortKey,objects,req,shortKeysWithModelName)
         let inputName = inputType[objects.input_type]
@@ -1768,11 +1768,10 @@ async function decideValues(temp,shortKey,objects,req){
                 break
         }
         temp[shortKey] = value
-        // console.log("value :::: ",value)
         return value
     }
     catch(err){
-        console.log("error in decideValues ::: ",err.message)
+        console.log("error in decideValuesByInputType ::: ",err.message)
     }
 }
 
@@ -1805,7 +1804,7 @@ async function returnParsedObj(objects,req) {
             if(modifiedKeys.includes(shortKey)){
                 shortKey = modifiedShortKeys[shortKey]
             }
-            await decideValues(temp,shortKey,objects,req)
+            await decideValuesByInputType(temp,shortKey,objects,req)
             return temp
         }
     }
@@ -2485,7 +2484,7 @@ function manageDisabledQues(question,flattedForm){
     }
 }
 
-async function mutuateGetPayload(jsonFormat, flatForm, keysToBeDeleted,role) {
+async function mutateResponse(jsonFormat, flatForm, keysToBeDeleted,role) {
     try {
         let obj = JSON.parse(JSON.stringify(jsonFormat))
         let flattedForm = JSON.parse(JSON.stringify(flatForm))
@@ -2526,7 +2525,7 @@ async function mutuateGetPayload(jsonFormat, flatForm, keysToBeDeleted,role) {
         return obj
     }
     catch (err) {
-        console.log("mutuateGetPayload ::: ", err.message)
+        console.log("mutateResponse ::: ", err.message)
     }
 }
 
@@ -2620,7 +2619,7 @@ function checkForUndefinedVaribales(obj) {
     return validator
 }
 module.exports.checkForUndefinedVaribales = checkForUndefinedVaribales
-module.exports.mutuateGetPayload = mutuateGetPayload
+module.exports.mutateResponse = mutateResponse
 
 function appendExtraKeys(keys, jsonObj, form) {
     let obj = { ...jsonObj }
@@ -2657,20 +2656,28 @@ module.exports.masterAction =  async (req, res) => {
       let { decoded: userData, body: bodyData } = req;
 
       let { role: actionTakenByRole, _id: actionTakenBy } = userData;
-      let {formId, multi, shortKeys, responses, ulbs, form_level, design_year} =  bodyData;
+      let {formId, multi, shortKeys, responses, ulbs, form_level, design_year, type, states} =  bodyData;
       
-      if(!formId || !bodyData.hasOwnProperty("multi") || !shortKeys || !responses || !ulbs || !ulbs.length || !design_year || !form_level){
+      if(!formId || !bodyData.hasOwnProperty("multi") || !shortKeys || !responses || !design_year || !form_level ){
         return Response.BadRequest(res, {}, "All fields are mandatory")
       }
+      let arr = [];
+      if(type === "STATE"){
+          if(!states  && !states.length) return Response.BadRequest(res, {}, "All fields are mandatory");
+          arr = states;
+      }else{
+          if( !ulbs && !ulbs.length) return Response.BadRequest(res, {}, "All fields are mandatory");
+          arr = ulbs;
+      }
+      let typeField = type === "STATE" ? 'state' : 'ulb';
       let path = modelPath(formId);
       let designYearField = "design_year";
-      
         
         if(Number(formId) === FORMIDs['dur']){
             designYearField = "designYear"   
         }
         let condition = {
-            ulb: {$in:ulbs},
+            [typeField]: {$in:arr},
             [designYearField]: design_year,
           }; 
 
@@ -2773,7 +2780,7 @@ async function takeActionOnForms(params, res) {
               actionTakenByRole,
               actionTakenBy,
               multi,
-              shortKey,
+              shortKey: "",
               res,
             };
             saveStatusResponse = await saveStatus(params);
@@ -2781,11 +2788,12 @@ async function takeActionOnForms(params, res) {
               [
                 MASTER_STATUS["Returned By MoHUA"],
                 MASTER_STATUS["Returned By State"],
-              ].includes(response.status)
+              ].includes(Number(response.status))
             ) {
               rejectStatusCount++;
             }
           }
+          let response = {};
           if (rejectStatusCount) {
             response.status =
               actionTakenByRole === "MoHUA"
@@ -3189,7 +3197,39 @@ function getCurrentStatus(key,statuses){
 
     return statuses;
 }
+module.exports.getCurrentStatusState = getCurrentStatusState
+module.exports.filterStatusResponseState = filterStatusResponseState
 
+function filterStatusResponseState(statuses, formStatus){
+    
+    const STATUS_RESPONSE = {
+        STATE: [MASTER_STATUS['Not Started'],MASTER_STATUS["In Progress"],MASTER_STATUS["Under Review By MoHUA"]],
+       MoHUA: [MASTER_STATUS['Submission Acknowledged By MoHUA'],MASTER_STATUS["Returned By MoHUA"]]
+    }
+    
+    for( let key in STATUS_RESPONSE){
+
+        if(STATUS_RESPONSE[key].includes(formStatus)){
+           return getCurrentStatusState(key,statuses);
+        }
+
+    }
+    
+}
+
+function getCurrentStatusState(key,statuses){
+     if (key ==='STATE'){
+        return statuses.filter(el=>{
+            return (el.status<=4);
+        })
+    }else if(key === "MoHUA"){
+        return statuses.filter(el=>{
+            return el.status>=6 ;
+        })
+    }
+
+    return statuses;
+}
 function filterStatusResponseTab(statuses, formStatus){
     const STATUS_RESPONSE = {
         ULB: [MASTER_STATUS['Not Started'],MASTER_STATUS["In Progress"],MASTER_STATUS["Under Review By State"]],
@@ -3447,7 +3487,7 @@ async function nestedObjectParser(data,req){
                 //         }
                 //     ]
                 // }
-                let value = await decideValues(temp,shortKey,item,req)
+                let value = await decideValuesByInputType(temp,shortKey,item,req)
                 await keys.forEach((key, index) => {
                         if (!pointer.hasOwnProperty(key)) {
                         pointer[key] = {};
@@ -3473,6 +3513,7 @@ function checkIfUlbHasAccess(ulbData,userYear){
       let prevYearArr = currentYear.split("-")
       let prevYear = `${(prevYearArr[0]-1).toString().slice(-2)}${(prevYearArr[1]-1).toString().slice(-2)}`
       ulbVariable += prevYear
+      console.log({prevYear,userYear})
       return ulbData[ulbVariable]
     }
     catch(err){

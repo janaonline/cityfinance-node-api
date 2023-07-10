@@ -1,5 +1,5 @@
 const { years } = require("../../service/years")
-const { getFlatObj,payloadParser,mutuateGetPayload,mutateJson,modifiedShortKeys } = require("../CommonActionAPI/service")
+const { getFlatObj,payloadParser,mutateResponse,mutateJson,modifiedShortKeys } = require("../CommonActionAPI/service")
 const FormsJson = require("../../models/FormsJson");
 // const Sidemenu = require("../../models/Sidemenu");
 const {MASTER_STATUS_ID, MASTER_STATUS} = require("../../util/FormNames")
@@ -52,7 +52,7 @@ module.exports.changeRequestBody = async (req,res,next)=>{
   }
 }
 
-// function mutuateGetPayload(jsonFormat, flattedForm) {
+// function mutateResponse(jsonFormat, flattedForm) {
 //   let answerObj = {
 //     "label": "",
 //     "textValue": "",
@@ -124,7 +124,7 @@ module.exports.changeFormGetStructure = async (req, res, next) => {
         flattedForm = getFlatObj(form)
         // console.log("flattedForm >>>>>>",flattedForm)
         responseData[0].canTakeAction = req.form.canTakeAction
-        obj  = await mutuateGetPayload(obj, flattedForm,keysToBeDeleted,role)
+        obj  = await mutateResponse(obj, flattedForm,keysToBeDeleted,role)
       }
       else{
         obj = await mutateJson(obj,keysToBeDeleted,req.query,role)

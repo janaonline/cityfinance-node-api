@@ -7,12 +7,14 @@ const Response = require("../../service").response;
 const ExcelJS = require("exceljs");
 const User = require('../../models/User')
 const Year = require('../../models/Year');
-const {canTakenAction, canTakenActionMaster} = require('../CommonActionAPI/service');
+const {canTakenAction, canTakenActionMaster, filterStatusResponseState} = require('../CommonActionAPI/service');
 const {BackendHeaderHost, FrontendHeaderHost} = require('../../util/envUrl')
 const StateMasterForm = require('../../models/StateMasterForm')
-const { YEAR_CONSTANTS, MASTER_STATUS, MASTER_STATUS_ID } = require("../../util/FormNames");
+const { YEAR_CONSTANTS, MASTER_STATUS, MASTER_STATUS_ID, USER_ROLE } = require("../../util/FormNames");
 const { ModelNames } = require("../../util/15thFCstatus");
-const {createAndUpdateFormMasterState} =  require('../../routes/CommonFormSubmissionState/service')
+const {createAndUpdateFormMasterState, createObjectFromArray, addActionKeys} =  require('../../routes/CommonFormSubmissionState/service');
+const CurrentStatus = require("../../models/CurrentStatus");
+const UA = require("../../models/UA");
 
 
 function response(form, res, successMsg ,errMsg){
@@ -330,6 +332,13 @@ exports.getActionPlans = async (req, res) => {
           statusId: data2324['currentFormStatus'],
           status: MASTER_STATUS_ID[data2324['currentFormStatus']]
         });
+        let currentStatusData =  await CurrentStatus.find({
+          recordId: data2324._id,
+        }).lean()
+        currentStatusData = filterStatusResponseState(currentStatusData, data2324.currentFormStatus)
+        let uaCode =  await UA.find({state},{UACode:1}).lean();
+        uaCode = createObjectFromArray(uaCode);
+          addActionKeys(data2324,uaCode, currentStatusData, role);
         return Response.OK(res, data2324, "Success");
       }
       if (data2223) {
