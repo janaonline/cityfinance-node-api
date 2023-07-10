@@ -159,7 +159,6 @@ module.exports.get = async (req, res) => {
       let ratingIds = [...new Set(data.map(e => e?.formData?.rating))].filter(e => e !== undefined)
       ratingList = ratingIds.length ? await getRating(ratingIds) : [];
     }
-
     /* CSV DOWNLOAD */
     if (csv) {
       await createCSV({ formType, collectionName, res, data, ratingList });
@@ -235,7 +234,6 @@ async function createCSV(params) {
         res.write("\ufeff" + row);
       }
     } else if (formType === "STATE") {
-      console.log("data",data);process.exit()
       if (collectionName == "waterrejenuvationrecyclings") {
         await waterSenitationXlsDownload(data, res);
       }
@@ -260,6 +258,7 @@ const sortKeysWaterSenitation = (key) => {
       return []
   }
 }
+
 const waterSenitationXlsDownload = async (data, res) => {
   try {
     const tempFilePath = "uploads/excel";
@@ -288,8 +287,8 @@ const waterSenitationXlsDownload = async (data, res) => {
       "Latitude", "Longitude", "Proposed water quantity  to be reused(MLD)",
       "Target customers/ consumer for  reuse of  water", "Preparation of  DPR", "Completion of tendering process", "%  of  work completion"
     ]);
-    
-    let counter = { waterBodies: 2, serviceLevelIndicators: 2, reuseWater: 2 }
+
+    let counter = { waterBodies: 2, serviceLevelIndicators: 2, reuseWater: 2 } // counter
     for (let pf of data) {
       let { uaData } = pf.formData;
       let rowsArr = [pf.stateName, pf.stateCode, pf.formStatus];
@@ -401,6 +400,7 @@ async function fetchApprovedUlbsData(collectionName, data) {
     throw (`forms2223:: ${error.message}`)
   }
 }
+
 const sequentialReview = `Cannot review since last year form is not approved by MoHUA.`
 const setCurrentStatus = (req, data, approvedUlbs, collectionName, loggedInUserRole) => {
   data.forEach(el => {
@@ -413,7 +413,7 @@ const setCurrentStatus = (req, data, approvedUlbs, collectionName, loggedInUserR
       if (collectionName === CollectionNames.dur || collectionName === CollectionNames['28SLB']) {
         let params = { status: el.formData.currentFormStatus, userRole: loggedInUserRole }
         el['cantakeAction'] = req.decoded.role === "ADMIN" ? false : canTakeActionOrViewOnlyMasterForm(params);
-        if (!(approvedUlbs.find(ulb => ulb.toString() === el.ulbId.toString())) && loggedInUserRole === "MoHUA" && el.access) {
+        if (!(approvedUlbs.find(ulb => ulb.toString() === el.ulbId.toString())) && loggedInUserRole === "MoHUA") {
           el['cantakeAction'] = false;
           el['formData']['currentFormStatus'] === MASTER_STATUS['Under Review By MoHUA'] ? el['info'] = sequentialReview : ""
         }
@@ -456,6 +456,7 @@ const getRating = async (ratingId) => {
   })
 }
 
+/// Master Form Indicator LineItmem
 const indicatorLineItemList = async () => {
   return new Promise(async (resolve, reject) => {
     try {
@@ -467,6 +468,8 @@ const indicatorLineItemList = async () => {
     }
   })
 }
+
+
 const setIndicatorSequense = (indicatorList, el) => {
   let mainArr = []
   if (indicatorList?.length) {
@@ -634,7 +637,6 @@ const computeQuery = (params) => {
             ulbName: "$name",
             ulbId: "$_id",
             ulbCode: "$code",
-            access : "$access_2223",
             censusCode: {
               $cond: {
                 if: {
@@ -680,9 +682,7 @@ const computeQuery = (params) => {
           $project: {
             ulbName: 1,
             ulbId: 1,
-            access:1,
             ulbCode: 1,
-            access:1,
             censusCode: 1,
             UA: 1,
             UA_id: 1,
@@ -762,74 +762,88 @@ const computeQuery = (params) => {
             accessToXVFC: true,
           },
         },
-        {
-          $lookup: {
-            from: dbCollectionName,
-            let: {
-              firstUser: ObjectId(design_year),
-              secondUser: "$_id",
-            },
-            pipeline: [
-              {
-                $match: {
-                  $expr: {
-                    $and: [
-                      {
-                        $eq: ["$design_year", "$$firstUser"],
-                      },
-                      {
-                        $eq: ["$state", "$$secondUser"],
-                      },
-                    ],
+      ];
+
+      if (dbCollectionName) {
+        query_s.push(...[
+          {
+            $lookup: {
+              from: dbCollectionName,
+              let: {
+                firstUser: ObjectId(design_year),
+                secondUser: "$_id",
+              },
+              pipeline: [
+                {
+                  $match: {
+                    $expr: {
+                      $and: [
+                        {
+                          $eq: ["$design_year", "$$firstUser"],
+                        },
+                        {
+                          $eq: ["$state", "$$secondUser"],
+                        },
+                      ],
+                    },
                   },
                 },
-              },
-              {
-                $lookup: {
-                  from: "years",
-                  localField: "design_year",
-                  foreignField: "_id",
-                  as: "design_year",
+                {
+                  $lookup: {
+                    from: "years",
+                    localField: "design_year",
+                    foreignField: "_id",
+                    as: "design_year",
+                  },
                 },
-              },
+                {
+                  $unwind: "$design_year",
+                },
+              ],
+              as: dbCollectionName,
+            },
+          },
+          {
+            $unwind: {
+              path: `$${dbCollectionName}`,
+              preserveNullAndEmptyArrays: true,
+            },
+          },
+          {
+            $project: {
+              state: "$_id",
+              stateName: "$name",
+              stateCode: "$code",
+              regionalName: 1,
+              formData: { $ifNull: [`$${dbCollectionName}`, ""] },
+              filled:
               {
-                $unwind: "$design_year",
-              },
-            ],
-            as: dbCollectionName,
+                $cond: { if: { $or: [{ $eq: ["$formData", ""] }, { $eq: ["$formData.isDraft", true] }] }, then: "No", else: isFormOptional ? filledQueryExpression : "Yes" }
+              }
+            },
           },
-        },
-        {
-          $unwind: {
-            path: `$${dbCollectionName}`,
-            preserveNullAndEmptyArrays: true,
-          },
-        },
-        {
-          $project: {
-            state: "$_id",
-            stateName: "$name",
-            stateCode: "$code",
-            regionalName: 1,
-            formData: { $ifNull: [`$${dbCollectionName}`, ""] },
-            filled:
-            {
-              $cond: { if: { $or: [{ $eq: ["$formData", ""] }, { $eq: ["$formData.isDraft", true] }] }, then: "No", else: isFormOptional ? filledQueryExpression : "Yes" }
-            }
-          },
-        },
-        {
-          $sort: { formData: -1 },
-        },
-      ];
-      query_s = createDynamicQuery(formName, query_s, userRole, csv);
-      /* Checking if the user role is STATE and the folder name is IndicatorForWaterSupply. */
-      if (folderName === List['FolderName']['IndicatorForWaterSupply']) {
-        let startIndex = query_s.findIndex((el) => {
-          return el.hasOwnProperty("$lookup");
-        })
-        /* Splicing the query_s string starting at the startIndex. */
-        query_s.splice(startIndex);
+          {
+            $sort: { formData: -1 },
+          }
+        ])
+        query_s = createDynamicQuery(formName, query_s, userRole, csv);
+        if (folderName === List['FolderName']['IndicatorForWaterSupply']) {
+          let startIndex = query_s.findIndex((el) => {
+            return el.hasOwnProperty("$lookup");
+          })
+          /* Splicing the query_s string starting at the startIndex. */
+          query_s.splice(startIndex);
+          query_s.push({
+            $project: {
+              state: "$_id",
+              stateName: "$name",
+              stateCode: "$code",
+              regionalName: 1,
+              filled: "Not Applicable"
+            },
+          })
+        }
+      } else {
         query_s.push({
           $project: {
             state: "$_id",
@@ -838,9 +852,10 @@ const computeQuery = (params) => {
             regionalName: 1,
             filled: "Not Applicable"
           },
-
         })
       }
+
+      /* Checking if the user role is STATE and the folder name is IndicatorForWaterSupply. */
       let filterApplied_s = Object.keys(filter).length > 0
       if (filterApplied_s) {
         query_s.push({
