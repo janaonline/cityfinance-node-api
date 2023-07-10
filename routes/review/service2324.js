@@ -197,7 +197,6 @@ module.exports.get = async (req, res) => {
   }
 }
 
-
 async function createCSV(params) {
   const { formType, collectionName, res, data, ratingList } = params
   try {
