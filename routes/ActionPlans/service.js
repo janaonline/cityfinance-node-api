@@ -327,6 +327,7 @@ exports.getActionPlans = async (req, res) => {
           formType:"STATE",
           loggedInUser: role,
         };
+        
         Object.assign(data2324, {
           canTakeAction: canTakenActionMaster(params),
           statusId: data2324['currentFormStatus'],
@@ -477,7 +478,7 @@ exports.getActionPlans = async (req, res) => {
     // Object.assign(actionPlan, {canTakeAction: canTakenAction(actionPlan['status'], actionPlan['actionTakenByRole'], actionPlan['isDraft'], "STATE",role ) })
     // return Response.OK(res, actionPlan, "Success");
   } catch (err) {
-    console.error(err.message);
+    console.error(err);
     return Response.BadRequest(res, {}, err.message);
   }
 };

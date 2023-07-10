@@ -1,30 +1,29 @@
 const {
-    FormNames,
-    YEAR_CONSTANTS,
-    MASTER_STATUS,
-    FORMIDs,
-    FORM_LEVEL,
-    USER_ROLE,
-    MASTER_STATUS_ID,
-  } = require("../../util/FormNames");
-  const CurrentStatus = require("../../models/CurrentStatus");
-  const { ModelNames } = require("../../util/15thFCstatus");
-  const {
-    saveCurrentStatus,
-    saveFormHistory,
-    saveStatusHistory,
-  } = require("../../util/masterFunctions");
-  const moongose = require("mongoose");
-  const ObjectId = require('mongoose').Types.ObjectId;
-  const Response = require("../../service").response;
-  const UA = require('../../models/UA');
-  const {canTakenActionMaster} = require('../CommonActionAPI/service')
-
-  const { years } = require("../../service/years");
+  FormNames,
+  YEAR_CONSTANTS,
+  MASTER_STATUS,
+  FORMIDs,
+  FORM_LEVEL,
+  USER_ROLE,
+  MASTER_STATUS_ID,
+} = require("../../util/FormNames");
+const CurrentStatus = require("../../models/CurrentStatus");
+const { ModelNames } = require("../../util/15thFCstatus");
+const {
+  saveCurrentStatus,
+  saveFormHistory,
+  saveStatusHistory,
+} = require("../../util/masterFunctions");
+const moongose = require("mongoose");
+const ObjectId = require('mongoose').Types.ObjectId;
+const Response = require("../../service").response;
+const UA = require('../../models/UA');
+const { years } = require("../../service/years");
+const { canTakenActionMaster, getUAShortKeys } = require('../CommonActionAPI/service')
 
 module.exports.createAndUpdateFormMasterState = async (params) => {
   try {
-    let { modelName, formData, res , actionTakenByRole, actionTakenBy} = params;
+    let { modelName, formData, res, actionTakenByRole, actionTakenBy } = params;
 
     let masterFormId = modelName === ModelNames['waterRej'] ? FORMIDs['waterRej'] : FORMIDs['actionPlan'];
 
@@ -78,12 +77,11 @@ module.exports.createAndUpdateFormMasterState = async (params) => {
               );
             };
             let shortKeys = await getUAShortKeys(formData.state);
-            if(!Array.isArray(shortKeys)|| !shortKeys.length)
-            {
+            if (!Array.isArray(shortKeys) || !shortKeys.length) {
               return Response.BadRequest(res, {}, `UA shortkeys not found`);
             }
             if (formBodyStatus === MASTER_STATUS["In Progress"]) {
-              for(let shortKey of shortKeys){
+              for (let shortKey of shortKeys) {
                 let currentStatusData = {
                   formId: masterFormId,
                   recordId: ObjectId(formSubmit._id),
@@ -115,7 +113,7 @@ module.exports.createAndUpdateFormMasterState = async (params) => {
                 body: bodyData,
                 // session
               });
-              for(let shortKey of shortKeys){
+              for (let shortKey of shortKeys) {
                 let currentStatusData = {
                   formId: masterFormId,
                   recordId: ObjectId(formSubmit._id),
@@ -131,7 +129,7 @@ module.exports.createAndUpdateFormMasterState = async (params) => {
                   body: currentStatusData,
                   // session
                 });
-  
+
                 let statusHistory = {
                   formId: masterFormId,
                   recordId: ObjectId(formSubmit._id),
@@ -169,28 +167,9 @@ module.exports.createAndUpdateFormMasterState = async (params) => {
     return Response.BadRequest(res, {}, error.message);
   }
 };
-async function getUAShortKeys(state) {
-  const uaShortkeyQuery = [
-    {
-      $match: {
-        state: ObjectId(state),
-      },
-    },
-    {
-      $group:{
-          _id: "$state",
-          uaCode: {$push: "$UACode"}
-      }
-  }
-  ];
-  let UasDataWithShortKey = await UA.aggregate(uaShortkeyQuery);
-  let shortKeys = [];
-  if(Array.isArray(UasDataWithShortKey) && UasDataWithShortKey.length){
-    shortKeys =  UasDataWithShortKey[0]['uaCode'];
-  }
-  return shortKeys;
-}
-module.exports.getUAShortKeys = getUAShortKeys;
+
+
+
 /**
  * The function `addActionKeys` takes in user agent data, short keys, status data, and a role, and adds
  * additional properties to each user agent object based on the provided data.
@@ -208,7 +187,7 @@ function addActionKeys(uaData, shortKeys, statusData, role) {
     for (let ua of uaData["uaData"]) {
       ua["uaCode"] = shortKeys[ua["ua"]];
       let status = statusData.find((el) => el.shortKey === ua["uaCode"]);
-      if(status){
+      if (status) {
         ua["rejectReason"] = status["rejectReason"];
         ua["responseFile"] = status["responseFile"];
         let params = {
@@ -219,7 +198,7 @@ function addActionKeys(uaData, shortKeys, statusData, role) {
         ua["status"] = MASTER_STATUS_ID[status["status"]];
         ua['statusId'] = status['status']
         ua["canTakeAction"] = canTakenActionMaster(params);
-      }else{
+      } else {
         ua["rejectReason"] = "";
         ua["responseFile"] = "";
         ua["status"] = MASTER_STATUS_ID[MASTER_STATUS['Not Started']];
@@ -229,6 +208,7 @@ function addActionKeys(uaData, shortKeys, statusData, role) {
       }
     }
   } catch (error) {
+    console.log("error", error)
     throw { message: `addActionKeys:: ${error.message}` };
   }
 }
