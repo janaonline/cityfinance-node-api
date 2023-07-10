@@ -3220,7 +3220,7 @@ function filterStatusResponseState(statuses, formStatus){
 function getCurrentStatusState(key,statuses){
      if (key ==='STATE'){
         return statuses.filter(el=>{
-            return (el.status<4);
+            return (el.status<=4);
         })
     }else if(key === "MoHUA"){
         return statuses.filter(el=>{
