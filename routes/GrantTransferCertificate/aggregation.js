@@ -11,7 +11,8 @@ const previousFormsAggregation = (params) => {
                 "from": "pfmsaccounts",
                 "let": {
                     "design_year": design_year,
-                    "ulb": "$_id"
+                    "ulb": "$_id",
+                    "prevYear":prevYear
                 },
                 "pipeline": [
                     {
@@ -19,7 +20,12 @@ const previousFormsAggregation = (params) => {
                             "$expr": {
                                 "$and": [
                                     { "$eq": ["$ulb", "$$ulb"] },
-                                    { "$eq": ["$design_year", "$$design_year"] },
+                                    {
+                                        "$or":[
+                                            { "$eq": ["$design_year", "$$design_year"] },
+                                            { "$eq": ["$design_year", "$$prevYear"] },
+                                        ]
+                                    }
                                 ]
                             }
                         }
@@ -104,7 +110,6 @@ const previousFormsAggregation = (params) => {
                                 "$and": [
                                     {
                                         "$eq": ["$design_year", "$$design_year"],
-                                        
                                     },
                                     {
                                         "$eq": ["$state", "$$state"],
@@ -149,14 +154,26 @@ const previousFormsAggregation = (params) => {
         },
         {
             "$project": {
+                "_id":0,
                 "isPfrFilled": 1,
                 "IsSfcFormFilled": 1,
+                "sfcFile":{
+                    "$cond": {
+                        "if": {
+                            "$gte": [{
+                                "$size": "$sfcForm"
+                            }, 1]
+                        },
+                       "then":{ $arrayElemAt: [ "$sfcForm.stateNotification", 0 ] },    
+                       "else": ""
+                    }
+                },
                 "pfrFile":{ 
                     "$cond":{
                         "if":{
                             "$eq":["$isPfrFilled","Yes"]
                         },
-                        "then":{ $arrayElemAt: [ "$pfrForm.stateNotification.url", 0 ] },
+                        "then":{ $arrayElemAt: [ "$pfrForm.stateNotification", 0 ] },
                         "else":""
                     }
                 },
