@@ -190,7 +190,7 @@ async function getUAShortKeys(state) {
   }
   return shortKeys;
 }
-
+module.exports.getUAShortKeys = getUAShortKeys;
 /**
  * The function `addActionKeys` takes in user agent data, short keys, status data, and a role, and adds
  * additional properties to each user agent object based on the provided data.

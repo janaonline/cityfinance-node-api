@@ -108,7 +108,8 @@ module.exports.FORMIDs = {
     "waterRej": 12,
     "actionPlan": 13,
     "indicatorForm": 14,
-    "GrantAllocation":11.2
+    "GrantAllocation":11.2,
+    "submitClaim": 18
 }
 module.exports.FORM_LEVEL_SHORTKEY = {
     form: "form_level",
