@@ -93,7 +93,6 @@ module.exports.MASTER_STATUS_ID = {
     10: "Returned by PMU",
     11: "Submission Acknowledged by PMU"
 };
-
 module.exports.FORMIDs = {
     "ODF": 1,
     "GFC": 2,
@@ -103,12 +102,16 @@ module.exports.FORMIDs = {
     "twentyEightSlb": 6,
     "fiscalRanking": 9,
     "GTC_STATE": 7,
+    "PFMS":8,
     "GTC_TABLE_STRUCTURE":11.1,
     "GTC_ULB": 11,
     "waterRej": 12,
     "actionPlan": 13,
     "indicatorForm": 14,
-    "GrantAllocation":11.2
+    "GrantAllocation":11.2,
+    "SFC": 15,
+    "SubmitClaim":16,
+    "PTOFloorRate":17
 }
 module.exports.FORM_LEVEL_SHORTKEY = {
     form: "form_level",

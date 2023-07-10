@@ -1,3 +1,5 @@
+
+const { years } = require("../../service/years")
 let columns = [
     {
         label: "Project Name",
@@ -121,13 +123,13 @@ let csvCols = {
     "lat":"Latitude",
     "long":"Longitude",
     "ulbShare":"ULB Share(Funding Potential)",
-    "capitalExpenditureState":"Capital Expentiture (State Share)",
-    "capitalExpenditureUlb":"Capital Expentiture (ULB Share)",
-    "omExpensesState":"O&M Expenses (State Share)",
-    "omExpensesUlb":"O&M Expenses (ULB Share)",
-    "startDate":"Project Start Date",
-    "estimatedCompletionDate":"Estimated Project Completion Date",
-    "projectReport":"Detailed Project Report",
+    // "capitalExpenditureState":"Capital Expentiture (State Share)",
+    // "capitalExpenditureUlb":"Capital Expentiture (ULB Share)",
+    // "omExpensesState":"O&M Expenses (State Share)",
+    // "omExpensesUlb":"O&M Expenses (ULB Share)",
+    // "startDate":"Project Start Date",
+    // "estimatedCompletionDate":"Estimated Project Completion Date",
+    // "projectReport":"Detailed Project Report",
     "creditRating1":"Credit Rating 1",
     "creditRating2":"Credit Rating 2"
 }
@@ -140,6 +142,17 @@ const sortFilterKeys = {
     "stateName":"stateName",
     "ulbName":"ulbName"
 }
+
+const filterYears = [ // make this dynamic with the current financial year
+    {
+        "label":"2022-23",
+        "id":years['2022-23']
+    },
+    {
+        "label":"2023-24",
+        "id":years['2023-24']
+    }
+]
 
 const dashboardColumns = [
     {
@@ -168,5 +181,6 @@ module.exports = {
     columns,
     csvCols,
     sortFilterKeys,
-    dashboardColumns
+    dashboardColumns,
+    filterYears
 }

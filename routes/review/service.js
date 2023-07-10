@@ -1995,21 +1995,24 @@ module.exports.get = catchAsync(async (req, res) => {
   //  if(collectionName == CollectionNames.dur || collectionName == CollectionNames.gfc ||
   //     collectionName == CollectionNames.odf || collectionName == CollectionNames.slb || 
   //     collectionName === CollectionNames.sfc || collectionName === CollectionNames.propTaxState || collectionName === CollectionNames.annual )
-  // let approvedUlbs = await masterForms2122(collectionName, data);
+  let approvedUlbs = await masterForms2122(collectionName, data);
+  const sequentialReview = `Cannot review since last year form is not approved by MoHUA.`
   data.forEach(el => {
+    el['info']= '';
     if (!el.formData) {
       el['formStatus'] = "Not Started";
       el['cantakeAction'] = false;
     } else {
       el['formStatus'] = calculateStatus(el.formData.status, el.formData.actionTakenByRole, el.formData.isDraft, formType);
-      // if (collectionName === CollectionNames.dur || collectionName === CollectionNames['28SLB']) {
-      //   el['cantakeAction'] = req.decoded.role === "ADMIN" ? false : canTakeActionOrViewOnly(el, loggedInUserRole);
-      //   if (!(approvedUlbs.find(ulb => ulb.toString() === el.ulbId.toString())) && loggedInUserRole === "MoHUA") {
-      //     el['cantakeAction'] = false
-      //   }
-      // } else {
+      if (collectionName === CollectionNames.dur || collectionName === CollectionNames['28SLB']) {
+        el['cantakeAction'] = req.decoded.role === "ADMIN" ? false : canTakeActionOrViewOnly(el, loggedInUserRole);
+        if (!(approvedUlbs.find(ulb => ulb.toString() === el.ulbId.toString())) && loggedInUserRole === "MoHUA" && el.access) {
+          el['cantakeAction'] = false
+          el['formStatus'] === STATUS_LIST['Under_Review_By_MoHUA'] ? el['info'] = sequentialReview : ""
+        }
+      } else {
         el['cantakeAction'] = req.decoded.role === "ADMIN" ? false : canTakeActionOrViewOnly(el, loggedInUserRole)
-      // }
+      }
     }
   })
 
@@ -2464,6 +2467,7 @@ const computeQuery = (formName, userRole, isFormOptional, state, design_year, cs
           ulbName: "$name",
           ulbId: "$_id",
           ulbCode: "$code",
+          access: "$access_2122",
           censusCode: {
             $cond: {
               if: {
@@ -2511,7 +2515,9 @@ const computeQuery = (formName, userRole, isFormOptional, state, design_year, cs
         $project: {
           ulbName: 1,
           ulbId: 1,
+          access : 1,
           ulbCode: 1,
+          access: 1,
           censusCode: 1,
           UA: 1,
           UA_id: 1,

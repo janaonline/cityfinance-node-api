@@ -4,7 +4,7 @@ const { response } = require('../../util/response');
 const ObjectId = require('mongoose').Types.ObjectId
 const { canTakenAction, canTakenActionMaster } = require('../CommonActionAPI/service')
 const Service = require('../../service');
-const { FormNames, MASTER_STATUS_ID } = require('../../util/FormNames');
+const { FormNames, MASTER_STATUS_ID, MASTER_STATUS, MASTER_FORM_STATUS } = require('../../util/FormNames');
 const User = require('../../models/User');
 const { checkUndefinedValidations } = require('../../routes/FiscalRanking/service');
 const { propertyTaxOpFormJson, skippableKeys, financialYearTableHeader,indicatorsWithNoyears ,  specialHeaders, skipLogicDependencies,childKeys,reverseKeys ,questionIndicators,sortPosition} = require('./fydynemic')
@@ -258,7 +258,7 @@ async function removeIsDraft(params) {
         let condition = { ulb: ObjectId(ulbId), design_year: ObjectId(design_year) };
         await PropertyTaxOp.findOneAndUpdate(condition, {
             "isDraft": true,
-            "currentFormStatus": 1
+            "currentFormStatus": MASTER_FORM_STATUS['IN_PROGRESS']
         }).lean();
     }
     catch (err) {
@@ -288,7 +288,6 @@ async function createHistory(params) {
             formType: "PTO"
 
         }
-        console.log("working ::: ", role)
         await saveStatusAndHistory(historyParams)
 
     }
@@ -979,7 +978,7 @@ function createChildObjectsYearData(params) {
         for (let child of childs) {
             let yearName = getKeyByValue(years, child?.year.toString())
             let copiedFrom = childCopyFrom.find(item => item.key === child.type)
-            let yearJson = copiedFrom.yearData.find(yearItem => yearItem.year === child.year.toString())
+            let yearJson = copiedFrom?.yearData.find(yearItem => yearItem.year === child.year.toString())
             let json = { ...yearJson }
             json['key'] = json['key'] + yearName
             json['label'] = child.label ? child.label : json['label'] + " " + yearName
@@ -1078,7 +1077,7 @@ exports.getView = async function (req, res, next) {
         if (ptoData) {
             ptoMaper = await PropertyTaxOpMapper.find({ ulb: ObjectId(req.query.ulb), ptoId: ObjectId(ptoData._id) }).populate("child").lean();
         }
-        let fyDynemic = { ...await propertyTaxOpFormJson() };
+        let fyDynemic = { ...await propertyTaxOpFormJson(role) };
         if (ptoData) {
             const { isDraft, status, currentFormStatus } = ptoData;
             for (let sortKey in fyDynemic) {
@@ -1122,7 +1121,7 @@ exports.getView = async function (req, res, next) {
         fyDynemic['isDraft'] = ptoData?.isDraft || true
         fyDynemic['ulb'] = ptoData?.ulb || req.query.ulb
         fyDynemic['design_year'] = ptoData?.design_year || req.query.design_year
-        fyDynemic['statusId'] = ptoData?.currentFormStatus || 1
+        fyDynemic['statusId'] = ptoData?.currentFormStatus || MASTER_STATUS['Not Started']
         fyDynemic['status'] = MASTER_STATUS_ID[ptoData?.currentFormStatus] || MASTER_STATUS_ID[1]
         let params = {
             status: ptoData?.currentFormStatus,

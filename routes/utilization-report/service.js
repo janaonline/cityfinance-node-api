@@ -9,8 +9,8 @@ const Category = require("../../models/Category");
 const FORM_STATUS = require("../../util/newStatusList");
 const Year = require('../../models/Year')
 const catchAsync = require('../../util/catchAsync')
-const { calculateStatus, checkForUndefinedVaribales, canTakenAction, mutuateGetPayload, changePayloadFormat, decideDisabledFields, checkIfUlbHasAccess } = require('../CommonActionAPI/service')
-const { getKeyByValue } = require("../../util/masterFunctions")
+const { calculateStatus, checkForUndefinedVaribales, canTakenAction, mutateResponse, changePayloadFormat, decideDisabledFields, checkIfUlbHasAccess } = require('../CommonActionAPI/service')
+const { getKeyByValue,checkForCalculationsForDurForm } = require("../../util/masterFunctions")
 const Service = require('../../service');
 const { FormNames, ULB_ACCESSIBLE_YEARS, MASTER_STATUS_ID } = require('../../util/FormNames');
 const MasterForm = require('../../models/MasterForm')
@@ -37,60 +37,6 @@ let validationMessages = {
   "negativeBal": "Closing balance is negative because Expenditure amount is greater than total tied grants amount available. Please recheck the amounts entered."
 }
 
-function checkForCalculations(reports) {
-  let validator = {
-    valid: false,
-    messages: [],
-    errors: []
-  }
-  try {
-    let exp = parseFloat(reports.grantPosition.expDuringYr)
-    let projectSum = 0
-
-    if (reports?.projects?.length > 0) {
-      projectSum = reports.projects.reduce((a, b) => parseFloat(a) + parseFloat(b.expenditure), 0)
-    }
-
-    let closingBal = reports.grantPosition.closingBal
-    let expWm = 0
-    for (let a of reports.categoryWiseData_wm) {
-      expWm += parseFloat(a.grantUtilised)
-    }
-    let expSwm = reports.categoryWiseData_swm.reduce((a, b) => parseFloat(a.grantUtilised) + parseFloat(b.grantUtilised))
-    let sumWmSm = expWm + expSwm
-    sumWmSm = sumWmSm ? parseFloat(sumWmSm.toFixed(2)) : sumWmSm
-    if (closingBal < 0) {
-      console.log("1")
-      validator.errors.push(false)
-      validator.messages.push(validationMessages['negativeBal'])
-    }
-    // console.log("closingBal",projectSum, "dd", exp);
-
-    if (sumWmSm !== exp) {
-      console.log("2")
-      validator.errors.push(false)
-      validator.messages.push(validationMessages['expWmSwm'])
-    }
-    if (exp !== projectSum) {
-      console.log("3")
-      validator.errors.push(false)
-      validator.messages.push(validationMessages['projectExpMatch'])
-    }
-
-    if (validator.errors.every(item => item === true)) {
-      validator.valid = true
-    }
-    else {
-      validator.valid = false
-    }
-
-
-  }
-  catch (err) {
-    console.log("error in checkForCalculations ::: ", err.message)
-  }
-  return validator
-}
 const BackendHeaderHost = {
   Demo: "democityfinanceapi.dhwaniris.in",
   Staging: "staging.cityfinance.in",
@@ -326,7 +272,7 @@ module.exports.createOrUpdate = async (req, res) => {
 
       if (!submittedForm && !isDraft) {// final submit in first attempt
         formData['ulbSubmit'] = new Date();
-        let validation = await checkForCalculations(req.body)
+        let validation = await checkForCalculationsForDurForm(req.body)
         if (!validation.valid) {
           return Response.BadRequest(res, {}, validation.messages);
         }
@@ -400,7 +346,7 @@ module.exports.createOrUpdate = async (req, res) => {
         if (req.body.projects.length === 0) {
           body.projects = currentSavedUtilRep.projects
         }
-        let validation = await checkForCalculations(body)
+        let validation = await checkForCalculationsForDurForm(body)
         if (!validation.valid) {
           return Response.BadRequest(res, {}, validation.messages);
         }
@@ -444,6 +390,7 @@ module.exports.createOrUpdate = async (req, res) => {
     }
 
   } catch (err) {
+    console.log(err)
     console.error(err.message);
     return Response.BadRequest(res, {}, err.message);
   }
@@ -976,7 +923,8 @@ module.exports.read2223 = catchAsync(async (req, res, next) => {
   if (!prevData) {
     status = 'Not Started'
   } else {
-    prevData = prevData?.history?.length > 0 ? prevData.history[prevData.history.length - 1] : prevData
+    prevData = prevData?.history?.length > 0 ? prevData.history[prevData.history.length - 1] : prevData;
+    isDraft = prevData && Object.keys(prevData).includes("isSubmit") ? !prevData.isSubmit : prevData?.isDraft
     status = calculateStatus(prevData.status, prevData.actionTakenByRole, isDraft, "ULB")
   }
   let host = "";
@@ -990,7 +938,6 @@ module.exports.read2223 = catchAsync(async (req, res, next) => {
     obj['url'] = ``;
   }
   else {
-    console.log("status :: ", status)
     if ([FORM_STATUS.Under_Review_By_MoHUA, FORM_STATUS.Approved_By_MoHUA, FORM_STATUS.Approved_By_State].includes(status)) {
       obj['action'] = 'not_show';
       obj['url'] = ``;
@@ -1461,7 +1408,7 @@ module.exports.getProjects = catchAsync(async (req, res, next) => {
     let questions = projectJson.data[index].question.filter(item => item.shortKey === "projectDetails_tableView_addButton")
     projectJson.data[0].question = questions
     let keysToBeDeleted = ["_id", "createdAt", "modifiedAt", "actionTakenByRole", "actionTakenBy", "ulb", "design_year", "isDraft"]
-    projectJson = await mutuateGetPayload(projectJson.data, projectObj, keysToBeDeleted, role)
+    projectJson = await mutateResponse(projectJson.data, projectObj, keysToBeDeleted, role)
     response.data = projectJson[0].question[0].childQuestionData
     response.success = true
     return res.json(response)

@@ -23,12 +23,14 @@ const Response = require("../../service").response;
 const { saveCurrentStatus, saveFormHistory, saveStatusHistory } = require('../../util/masterFunctions');
 const CurrentStatus = require('../../models/CurrentStatus');
 const { MASTER_STATUS_ID, FORM_LEVEL_SHORTKEY, FORMIDs } = require('../../util/FormNames');
+const { ModelNames } = require('../../util/15thFCstatus');
+// const { getUAShortKeys } = require('../CommonFormSubmissionState/service');
 var allowedStatuses = [StatusList.Rejected_By_MoHUA, StatusList.STATE_REJECTED, StatusList.Rejected_By_State, StatusList.In_Progress, StatusList.Not_Started]
 var ignorableKeys = ["actionTakenByRole", "actionTakenBy", "ulb", "design_year"]
 let groupedQuestions = {
     "location": ['lat', 'long']
 }
-let addMoreFields = ["transferGrantdetail_tableview_addbutton"]
+let addMoreFields = ["transferGrantdetail_tableview_addbutton", "projectDetails_tableView_addButton"]
 let yearValueField = {
     "year": "",
     "value": ""
@@ -1073,14 +1075,16 @@ function writeCsv(cols, csvCols, ele, res, cb) {
                 ele = cb(ele)
             }
             if (ele[key]) {
-                str += ele[key] + ","
+                str += ele[key].toString().split(",").join(" ") + ","
             }
             else {
                 str += " " + ","
             }
 
         }
-        res.write(str + "\r\n")
+        if (Object.keys(ele).length > 0) {
+            res.write(str + "\r\n")
+        }
     }
     catch (err) {
         console.log("error in writeCsv :: ", err.message)
@@ -1751,7 +1755,7 @@ class PayloadManager {
 }
 
 
-async function decideValues(temp, shortKey, objects, req) {
+async function decideValuesByInputType(temp, shortKey, objects, req) {
     try {
         let service = new PayloadManager(temp, shortKey, objects, req, shortKeysWithModelName)
         let inputName = inputType[objects.input_type]
@@ -1786,11 +1790,10 @@ async function decideValues(temp, shortKey, objects, req) {
                 break
         }
         temp[shortKey] = value
-        // console.log("value :::: ",value)
         return value
     }
     catch (err) {
-        console.log("error in decideValues ::: ", err.message)
+        console.log("error in decideValuesByInputType ::: ", err.message)
     }
 }
 
@@ -1823,7 +1826,7 @@ async function returnParsedObj(objects, req) {
             if (modifiedKeys.includes(shortKey)) {
                 shortKey = modifiedShortKeys[shortKey]
             }
-            await decideValues(temp, shortKey, objects, req)
+            await decideValuesByInputType(temp, shortKey, objects, req)
             return temp
         }
     }
@@ -2503,7 +2506,7 @@ function manageDisabledQues(question, flattedForm) {
     }
 }
 
-async function mutuateGetPayload(jsonFormat, flatForm, keysToBeDeleted, role) {
+async function mutateResponse(jsonFormat, flatForm, keysToBeDeleted,role) {
     try {
         let obj = JSON.parse(JSON.stringify(jsonFormat))
         let flattedForm = JSON.parse(JSON.stringify(flatForm))
@@ -2544,7 +2547,7 @@ async function mutuateGetPayload(jsonFormat, flatForm, keysToBeDeleted, role) {
         return obj
     }
     catch (err) {
-        console.log("mutuateGetPayload ::: ", err.message)
+        console.log("mutateResponse ::: ", err.message)
     }
 }
 
@@ -2638,7 +2641,7 @@ function checkForUndefinedVaribales(obj) {
     return validator
 }
 module.exports.checkForUndefinedVaribales = checkForUndefinedVaribales
-module.exports.mutuateGetPayload = mutuateGetPayload
+module.exports.mutateResponse = mutateResponse
 
 function appendExtraKeys(keys, jsonObj, form) {
     let obj = { ...jsonObj }
@@ -3507,7 +3510,7 @@ async function nestedObjectParser(data, req) {
                 //         }
                 //     ]
                 // }
-                let value = await decideValues(temp, shortKey, item, req)
+                let value = await decideValuesByInputType(temp,shortKey,item,req)
                 await keys.forEach((key, index) => {
                     if (!pointer.hasOwnProperty(key)) {
                         pointer[key] = {};
@@ -3526,14 +3529,15 @@ async function nestedObjectParser(data, req) {
     }
 }
 
-function checkIfUlbHasAccess(ulbData, userYear) {
-    try {
-        let ulbVariable = "access_"
-        let currentYear = userYear.year
-        let prevYearArr = currentYear.split("-")
-        let prevYear = `${(prevYearArr[0] - 1).toString().slice(-2)}${(prevYearArr[1] - 1).toString().slice(-2)}`
-        ulbVariable += prevYear
-        return ulbData[ulbVariable]
+function checkIfUlbHasAccess(ulbData,userYear){
+    try{
+      let ulbVariable = "access_"
+      let currentYear = userYear.year
+      let prevYearArr = currentYear.split("-")
+      let prevYear = `${(prevYearArr[0]-1).toString().slice(-2)}${(prevYearArr[1]-1).toString().slice(-2)}`
+      ulbVariable += prevYear
+      console.log({prevYear,userYear})
+      return ulbData[ulbVariable]
     }
     catch (err) {
         console.log("error in checkIfUlbHasAccess ::: ", err.message)
@@ -3589,7 +3593,7 @@ const IGNORE_YEARS = {
 async function sequentialReview(req, res) {
     try {
         let { decoded: user, body: bodyData } = req;
-        let { design_year, formId, ulbs, status, multi } = bodyData;
+        let { design_year, formId, ulbs, status, multi, getReview } = bodyData;
         if (
             user.role !== USER_ROLE["MoHUA"] ||
             status !== "REJECTED"
@@ -3605,7 +3609,8 @@ async function sequentialReview(req, res) {
             ? (designYear = "designYear")
             : (designYear = "design_year");
 
-        const modelName = MODEL_PATH[formId];
+        const modelName = formId === FORMIDs['twentyEightSlb'] ? ModelNames['twentyEightSlbs'] : ModelNames['dur'];
+
         let query = {
             ulb: { $in: ulbs },
             [designYear]: { $nin: IGNORE_YEARS[design_year] },
@@ -3621,14 +3626,20 @@ async function sequentialReview(req, res) {
             modelName,
             res,
             user,
+            getReview
         };
         let formsUpdated = await checkForms(params);
         //   } else {
         if (formsUpdated) {
-            let msg = `${formsUpdated} rejected`
-            return Response.OK(res, {}, msg);
+            let msg = getReview ? `${formsUpdated} form will be rejected` : `${formsUpdated} form rejected`
+            return Response.OK(res, {
+                autoReject: true
+            }, msg);
         } else {
-            return Response.OK(res, {}, "No Forms Updated!");
+            return Response.OK(res, {
+                autoReject: false
+
+            }, "No Forms Updated!");
         }
         //   }
     } catch (error) {
@@ -3639,25 +3650,33 @@ module.exports.sequentialReview = sequentialReview;
 
 async function checkForms(params) {
     try {
-        let { forms, formId, modelName, res, user } = params;
+        let { forms, formId, modelName, res, user, getReview } = params;
         let designYear = "design_year";
         formId === FORMIDs["dur"]
             ? (designYear = "designYear")
             : (designYear = "design_year");
         let formCount = 0;
         for (let form of forms) {
-            if (form[designYear].toString() === YEAR_CONSTANTS["22_23"]) {
-                if (!checkIfUlbCanEditForm2223(form)) {
-                    let output = await rejectForm2223(form, modelName, user);
-                    if (output) {
-                        formCount++;
-                    }
+            if (getReview) {
+                if (form[designYear].toString() === YEAR_CONSTANTS["22_23"]) {
+                    !checkIfUlbCanEditForm2223(form) ? formCount++ : "";
+                } else {
+                    !checkIfUlbCanEditForm(form?.currentFormStatus) ? formCount++ : "";
                 }
             } else {
-                if (!checkIfUlbCanEditForm(form?.currentFormStatus)) {
-                    let output = await rejectForm(form, formId, modelName, user);
-                    if (output) {
-                        formCount++;
+                if (form[designYear].toString() === YEAR_CONSTANTS["22_23"]) {
+                    if (!checkIfUlbCanEditForm2223(form)) {
+                        let output = await rejectForm2223(form, modelName, user);
+                        if (output) {
+                            formCount++;
+                        }
+                    }
+                } else {
+                    if (!checkIfUlbCanEditForm(form?.currentFormStatus)) {
+                        let output = await rejectForm(form, formId, modelName, user);
+                        if (output) {
+                            formCount++;
+                        }
                     }
                 }
             }
