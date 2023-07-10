@@ -145,11 +145,11 @@ module.exports.get = async (req, res) => {
     let data = formType == "ULB" ? Ulb.aggregate(query[0]).allowDiskUse(true) : State.aggregate(query[0]).allowDiskUse(true)
 
     let allData = await Promise.all([data]);
+
     data = allData[0][0].data
     total = allData[0][0]['count']?.length ? allData[0][0]['count'][0].total : 0
-    console.log("data", allData)
 
-    if (data.length) {
+    if (data?.length) {
       let approvedUlbs = await fetchApprovedUlbsData(collectionName, data);
       await setCurrentStatus(req, data, approvedUlbs, collectionName, loggedInUserRole);
     }
@@ -159,7 +159,6 @@ module.exports.get = async (req, res) => {
       let ratingIds = [...new Set(data.map(e => e?.formData?.rating))].filter(e => e !== undefined)
       ratingList = ratingIds.length ? await getRating(ratingIds) : [];
     }
-
     /* CSV DOWNLOAD */
     if (csv) {
       await createCSV({ formType, collectionName, res, data, ratingList });
@@ -202,12 +201,12 @@ module.exports.get = async (req, res) => {
 async function createCSV(params) {
   const { formType, collectionName, res, data, ratingList } = params
   try {
-    let filename = `Review_${formType}-${collectionName}.csv`;
-    // Set appropriate download headers
-    res.setHeader("Content-disposition", "attachment; filename=" + filename);
-    res.writeHead(200, { "Content-Type": "text/csv;charset=utf-8,%EF%BB%BF" });
     let fixedColumns, dynamicColumns;
     if (formType === 'ULB') {
+      let filename = `Review_${formType}-${collectionName}.csv`;
+      // Set appropriate download headers
+      res.setHeader("Content-disposition", "attachment; filename=" + filename);
+      res.writeHead(200, { "Content-Type": "text/csv;charset=utf-8,%EF%BB%BF" });
       fixedColumns = `State Name, ULB Name, City Finance Code, Census Code, Population Category, UA, UA Name,`;
       // dynamicColumns = createDynamicColumns(collectionName);
       res.write("\ufeff" + `${fixedColumns.toString()} ${createDynamicColumns(collectionName).toString()} \r\n`);
@@ -235,15 +234,101 @@ async function createCSV(params) {
         res.write("\ufeff" + row);
       }
     } else if (formType === "STATE") {
-      fixedColumns = `State Name, City Finance Code, Regional Name,`;
-      dynamicColumns = createDynamicColumns(collectionName);
-      res.write("\ufeff" + `${fixedColumns.toString()} ${dynamicColumns.toString()} \r\n`);
-      for (let el of data) {
-        let dynamicElementData = await createDynamicElements(collectionName, formType, el);
-        const row = `${el.stateName},${el.stateCode},${el.regionalName},${dynamicElementData.toString()}\r\n`;
-        res.write("\ufeff" + row);
+      if (collectionName == "waterrejenuvationrecyclings") {
+        await waterSenitationXlsDownload(data, res);
+      } else {
+        fixedColumns = `State Name, City Finance Code, Regional Name,`;
+        dynamicColumns = createDynamicColumns(collectionName);
+        res.write("\ufeff" + `${fixedColumns.toString()} ${dynamicColumns.toString()} \r\n`);
+        for (let el of data) {
+          let dynamicElementData = await createDynamicElements(collectionName, formType, el);
+          const row = `${el.stateName},${el.stateCode},${el.regionalName},${dynamicElementData.toString()}\r\n`;
+          res.write("\ufeff" + row);
+        }
       }
     }
+  } catch (error) {
+    console.log("CSV Download Error", error);
+    return Response.BadRequest(res, {}, error.message);
+  }
+}
+const sortKeysWaterSenitation = (key) => {
+  switch (key) {
+    case 'waterBodies':
+      return [
+        "name", "nameOfBody", "area", "lat", "long", "bod", "bod_expected", "cod", "do", "do_expected",
+        "tds", "tds_expected", "turbidity", "turbidity_expected", "details", "dprPreparation", "dprCompletion", "workCompletion"
+      ]
+    case "serviceLevelIndicators":
+      return ["name", "component", "indicator", "existing", "after", "cost", "dprPreparation", "dprCompletion", "workCompletion"]
+    case "reuseWater":
+      return ["name", "treatmentPlant", "lat", "long", "stp", "targetCust", "dprPreparation", "dprCompletion", "workCompletion"]
+    default:
+      return []
+  }
+}
+const waterSenitationXlsDownload = async (data, res) => {
+  try {
+    const tempFilePath = "uploads/excel";
+    if (!fs.existsSync(tempFilePath)) {
+      fs.mkdirSync(tempFilePath);
+    }
+    const filename = `${Date.now()}__waterSupplyAndSanitation.xlsx`;
+    const workbook = new ExcelJS.Workbook();
+    const waterBodies = workbook.addWorksheet('waterBodies');
+    const serviceLevelIndicators = workbook.addWorksheet('serviceLevelIndicators');
+    const reuseWater = workbook.addWorksheet('reuseWater');
+    waterBodies.addRow([
+      "State Name", "State Code", "Form Status", "Project Name", "Name of water body", "Area",
+      "Latitude", "Longitude", "BOD in mg/L (Current)", "BOD in mg/L (Expected)",
+      "COD in mg/L (Current)", "COD in mg/L (Expected)", "DO in mg/L (Current)", "DO in mg/L(Expected)", "TDS in mg/L (Current)",
+      "TDS in mg/L(Expected)", "Turbidity in  NTU (Current)", "Turbidity in  NTU(Expected)", "Project Details", "Preparation of  DPR",
+      "Completion  of tendering process", "%  of  work completion"
+    ]);
+    serviceLevelIndicators.addRow([
+      "State Name", "State Code", "Form Status", "Project Name", "Physical  Components",
+      "Indicator", "Existing  (As- is)", "After  (To-be)", "Estimated  Cost (Amount  in  INR Lakhs)",
+      "Preparation of  DPR", "Completion of tendering process", "%  of  work completion"
+    ]);
+    reuseWater.addRow([
+      "State Name", "State Code", "Form Status", "Project Name", "Name  of  Water Treatment  Plant",
+      "Latitude", "Longitude", "Proposed water quantity  to be reused(MLD)",
+      "Target customers/ consumer for  reuse of  water", "Preparation of  DPR", "Completion of tendering process", "%  of  work completion"
+    ]);
+    console.log("data", data)
+    let counter = { waterBodies: 2, serviceLevelIndicators: 2, reuseWater: 2 } // counter
+    if (data?.length) {
+      for (let pf of data) {
+        let { uaData } = pf.formData;
+        let rowsArr = [pf.stateName, pf.stateCode, pf.formStatus];
+        for (let ua of uaData) {
+          let sortKeys = { waterBodies, serviceLevelIndicators, reuseWater };
+          for (let key in sortKeys) {
+            let projData = ua[key];
+            let keysArr = sortKeysWaterSenitation(key)
+            for (let proj of projData) {
+              let projArr = [];
+              for (let k of keysArr) {
+                projArr.push(proj[k])
+              }
+              sortKeys[key].addRow([...rowsArr, ...projArr]);
+              sortKeys[key].getRow(counter[key])
+              counter[key]++
+            }
+          }
+        }
+      }
+    }
+    // Create a write stream
+    const writeStream = fs.createWriteStream(`${tempFilePath}/${filename}`);
+    // Write the stream to the file
+    await workbook.xlsx.write(writeStream);
+    // Set response headers for downloading the file
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader("Content-Disposition", "attachment; filename=" + `${filename}`);
+    // Write the stream to the response object
+    fs.unlink(`${tempFilePath}/${filename}`, (err) => console.log(err))
+    await workbook.xlsx.write(res);
   } catch (error) {
     console.log("CSV Download Error", error);
     return Response.BadRequest(res, {}, error.message);
@@ -558,7 +643,7 @@ const computeQuery = (params) => {
             ulbName: "$name",
             ulbId: "$_id",
             ulbCode: "$code",
-            access : "$access_2223",
+            access: "$access_2223",
             censusCode: {
               $cond: {
                 if: {
@@ -605,7 +690,7 @@ const computeQuery = (params) => {
             ulbName: 1,
             ulbId: 1,
             ulbCode: 1,
-            access:1,
+            access: 1,
             censusCode: 1,
             UA: 1,
             UA_id: 1,
@@ -685,74 +770,88 @@ const computeQuery = (params) => {
             accessToXVFC: true,
           },
         },
-        {
-          $lookup: {
-            from: dbCollectionName,
-            let: {
-              firstUser: ObjectId(design_year),
-              secondUser: "$_id",
-            },
-            pipeline: [
-              {
-                $match: {
-                  $expr: {
-                    $and: [
-                      {
-                        $eq: ["$design_year", "$$firstUser"],
-                      },
-                      {
-                        $eq: ["$state", "$$secondUser"],
-                      },
-                    ],
+      ];
+
+      if (dbCollectionName) {
+        query_s.push(...[
+          {
+            $lookup: {
+              from: dbCollectionName,
+              let: {
+                firstUser: ObjectId(design_year),
+                secondUser: "$_id",
+              },
+              pipeline: [
+                {
+                  $match: {
+                    $expr: {
+                      $and: [
+                        {
+                          $eq: ["$design_year", "$$firstUser"],
+                        },
+                        {
+                          $eq: ["$state", "$$secondUser"],
+                        },
+                      ],
+                    },
                   },
                 },
-              },
-              {
-                $lookup: {
-                  from: "years",
-                  localField: "design_year",
-                  foreignField: "_id",
-                  as: "design_year",
+                {
+                  $lookup: {
+                    from: "years",
+                    localField: "design_year",
+                    foreignField: "_id",
+                    as: "design_year",
+                  },
                 },
-              },
+                {
+                  $unwind: "$design_year",
+                },
+              ],
+              as: dbCollectionName,
+            },
+          },
+          {
+            $unwind: {
+              path: `$${dbCollectionName}`,
+              preserveNullAndEmptyArrays: true,
+            },
+          },
+          {
+            $project: {
+              state: "$_id",
+              stateName: "$name",
+              stateCode: "$code",
+              regionalName: 1,
+              formData: { $ifNull: [`$${dbCollectionName}`, ""] },
+              filled:
               {
-                $unwind: "$design_year",
-              },
-            ],
-            as: dbCollectionName,
+                $cond: { if: { $or: [{ $eq: ["$formData", ""] }, { $eq: ["$formData.isDraft", true] }] }, then: "No", else: isFormOptional ? filledQueryExpression : "Yes" }
+              }
+            },
           },
-        },
-        {
-          $unwind: {
-            path: `$${dbCollectionName}`,
-            preserveNullAndEmptyArrays: true,
-          },
-        },
-        {
-          $project: {
-            state: "$_id",
-            stateName: "$name",
-            stateCode: "$code",
-            regionalName: 1,
-            formData: { $ifNull: [`$${dbCollectionName}`, ""] },
-            filled:
-            {
-              $cond: { if: { $or: [{ $eq: ["$formData", ""] }, { $eq: ["$formData.isDraft", true] }] }, then: "No", else: isFormOptional ? filledQueryExpression : "Yes" }
-            }
-          },
-        },
-        {
-          $sort: { formData: -1 },
-        },
-      ];
-      query_s = createDynamicQuery(formName, query_s, userRole, csv);
-      /* Checking if the user role is STATE and the folder name is IndicatorForWaterSupply. */
-      if (folderName === List['FolderName']['IndicatorForWaterSupply']) {
-        let startIndex = query_s.findIndex((el) => {
-          return el.hasOwnProperty("$lookup");
-        })
-        /* Splicing the query_s string starting at the startIndex. */
-        query_s.splice(startIndex);
+          {
+            $sort: { formData: -1 },
+          }
+        ])
+        query_s = createDynamicQuery(formName, query_s, userRole, csv);
+        if (folderName === List['FolderName']['IndicatorForWaterSupply']) {
+          let startIndex = query_s.findIndex((el) => {
+            return el.hasOwnProperty("$lookup");
+          })
+          /* Splicing the query_s string starting at the startIndex. */
+          query_s.splice(startIndex);
+          query_s.push({
+            $project: {
+              state: "$_id",
+              stateName: "$name",
+              stateCode: "$code",
+              regionalName: 1,
+              filled: "Not Applicable"
+            },
+          })
+        }
+      } else {
         query_s.push({
           $project: {
             state: "$_id",
@@ -761,9 +860,10 @@ const computeQuery = (params) => {
             regionalName: 1,
             filled: "Not Applicable"
           },
-
         })
       }
+
+      /* Checking if the user role is STATE and the folder name is IndicatorForWaterSupply. */
       let filterApplied_s = Object.keys(filter).length > 0
       if (filterApplied_s) {
         query_s.push({
@@ -771,18 +871,15 @@ const computeQuery = (params) => {
         },
         )
       }
-      let countQuery_s = query_s.slice()
-      let paginator_s = [{
+      // let countQuery_s = query_s
+      let limitSkipk = !csv ? [{ "$skip": skip }, { $limit: limit }] : [{ $match: {} }]
+      query_s.push({
         $facet: {
-          data: [{ "$skip": skip }, { $limit: limit }],
+          data: limitSkipk,
           count: [{ $count: "total" }]
         }
-      }]
-      if (!csv) {
-        console.log("ssss")
-        query_s.push(...paginator_s)
-      }
-      return [query_s, countQuery_s]
+      })
+      return [query_s]
     default:
       break;
   }
