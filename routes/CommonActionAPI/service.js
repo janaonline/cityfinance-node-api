@@ -24,6 +24,7 @@ const {saveCurrentStatus, saveFormHistory, saveStatusHistory} = require('../../u
 const CurrentStatus = require('../../models/CurrentStatus');
 const {MASTER_STATUS_ID, FORM_LEVEL_SHORTKEY, FORMIDs} =  require('../../util/FormNames');
 const { ModelNames } = require('../../util/15thFCstatus');
+const { getUAShortKeys } = require('../CommonFormSubmissionState/service');
 var allowedStatuses = [StatusList.Rejected_By_MoHUA,StatusList.STATE_REJECTED,StatusList.Rejected_By_State,StatusList.In_Progress,StatusList.Not_Started]
 var ignorableKeys = ["actionTakenByRole","actionTakenBy","ulb","design_year"]
 let groupedQuestions = {
@@ -2748,6 +2749,7 @@ async function takeActionOnForms(params, res) {
         //multi = true=>> review table action
         if (multi) {
           let [response] = responses;
+          let shortKeys = await  getUAShortKeys(form.state); 
           for (let shortKey of shortKeys) {
             let params = {
               formId,
