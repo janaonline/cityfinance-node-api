@@ -664,7 +664,7 @@ const getManipulatedJson = async (installment, type, design_year, formJson, fiel
         let installmentObj = { ...installmentForm }
         installmentObj['warnings'] = {
             "accountLinked" : {
-                "2":await getMessagesForRadioButton("")['accountLinked']['2']
+                "2":await getMessagesForRadioButton()['accountLinked']['2']
             }
         }
         installmentObj['accountLinked'] = previousYearData.pfmsFilledPerc ? "Yes" : "No"
@@ -766,7 +766,10 @@ async function getPreviousYearData(state,design_year){
 }
 async function addWarnings(previousYearData){
     try{
-        let warnings = getMessagesForRadioButton(`<a href="stateform2223/fc-formation" target="_blank"> Click here to fill previous form</a>`)
+        let sfcLink = `<a href="stateform2223/fc-formation" target="_blank"> Click here to fill previous form</a>`
+        let propertyTaxLink = `<a href="stateform2223/property-tax" target="_blank"> Click here to fill previous form</a>`
+        let reviewPfmsLink = `<a href="stateform2223/review-ulb-form" target="_blank"> Click here to check for the ulbs</a>`
+        let warnings = await getMessagesForRadioButton(sfcLink,propertyTaxLink,reviewPfmsLink)
         let errors = []
         if(previousYearData[0].IsSfcFormFilled === 'No'){
             errors.push(warnings['recomAvail']['2'])
@@ -1060,7 +1063,7 @@ module.exports.createOrUpdateInstallmentForm = async (req, res) => {
         req.body.gtcFormId = gtcFormId
 
         let installmentFormValidator = await handleInstallmentForm(req.body)
-        console.log("installmentFormValidator ::: ", installmentFormValidator)
+        // console.log("installmentFormValidator ::: ", installmentFormValidator)
         if (!installmentFormValidator.valid && runValidators) {
             response.success = false
             response.message = installmentFormValidator.errors

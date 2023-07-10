@@ -21,7 +21,7 @@ let warningkeys = {
     "accountLinked":"pfmsFilledPerc"
 }
 
-const getMessagesForRadioButton = (sfcLink)=>{
+const getMessagesForRadioButton = (sfcLink="",propertyFrLink="",prevAccountLink="")=>{
     return {
         "recomAvail":{
             "1":"",
@@ -29,12 +29,12 @@ const getMessagesForRadioButton = (sfcLink)=>{
         },
         "propertyTaxNotif":{
             "1":"",
-            "2":"States need to notify their property tax floor rates by 2022-23 as this will be a pre-condition for claiming grants from 2022-23 onwards"
+            "2":`States need to notify their property tax floor rates by 2022-23 as this will be a pre-condition for claiming grants from 2022-23 onwards. ${propertyFrLink}`
         },
         "accountLinked":{
             "1":"",
-            "2":`States need to ensure 100% PFMS linkage of their ULBs as linking of ULB account for XVFC Grant with PFMS or any other e-governance system fully integrated with PFMS will be a pre-condition for release of grant from 2022-23`
-        }
+            "2":`States need to ensure 100% PFMS linkage of their ULBs as linking of ULB account for XVFC Grant with PFMS or any other e-governance system fully integrated with PFMS will be a pre-condition for release of grant from 2022-23 ${prevAccountLink}`
+        },
     }
 }
 let singleInstallmentTypes = ["million_tied"]
