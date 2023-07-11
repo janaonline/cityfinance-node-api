@@ -658,6 +658,16 @@ const getManipulatedJson = async (installment, type, design_year, formJson, fiel
         let inputAllowed = [MASTER_STATUS['In Progress'],MASTER_STATUS['Not Started'],MASTER_STATUS['Rejected By MoHUA']]
         installmentForm.installment_type = installment_types[installment]
         let installmentObj = { ...installmentForm }
+        installmentObj['warnings'] = {
+            "accountLinked" : {
+                "2":await getMessagesForRadioButton()['accountLinked']['2']
+            }
+        }
+        installmentObj['accountLinked'] = previousYearData.pfmsFilledPerc === 100 ? "Yes" : "No"
+        installmentObj['propertyTaxNotif']  = previousYearData?.isPfrFilled
+        installmentObj['sfcNotification'] = previousYearData?.IsSfcFormFilled
+        installmentObj['sfcNotificationCopy'] = previousYearData.sfcFile || {...fileSchema}
+        installmentObj['propertyTaxNotifCopy'] = previousYearData.pfrFile || {...fileSchema}
         let flattedForm = await getFlatObj(installmentObj)
         flattedForm['modelName'] = "GtcInstallmentForm"
         flattedForm['fieldsTohide'] = fieldsTohide
