@@ -82,7 +82,6 @@ async function manageLedgerData(params) {
     }).sort({
       "_id": -1
     }).limit(1).lean()
-    console.log("userRole :: ", role)
     let formHistoryData = formHistory[0] && formHistory[0].data.length ? formHistory[0]?.data[0]['fiscalMapperData'].filter(item => ledgerKeys.includes(item.type) && item.modelName === "ULBLedger") : []
     let errYears = new Set()
     let dps = new Set()
@@ -99,14 +98,28 @@ async function manageLedgerData(params) {
             catch (err) {
               errorWithDps[question.displayPriority] = [yearName]
             }
-            let calculationFields = Object.entries(responseData.financialInformation).reduce((result, [key, value]) => ({ ...result, ...(question?.calculatedFrom.includes(value.displayPriority)) && { [key]: value } }), {})
-            Object.values(calculationFields).forEach((item) => {
-              item.yearData.forEach((childItem) => {
-                let reason = `Data for ${question.displayPriority} has been changed. kindly revisit the calculations`
-                if (childItem.year.toString() === yearObj.year) {
-                  childItem.readonly = [statusTracker.RBP, statusTracker.IP].includes(currentFormStatus) && [questionLevelStatus['1']].includes(childItem.status) && role === userTypes.ulb ? false : childItem.readonly
-                  childItem.rejectReason = [statusTracker.RBP, statusTracker.IP].includes(currentFormStatus) && [questionLevelStatus['1']].includes(childItem.status) && role === userTypes.ulb ? reason : childItem.rejectReason
-                  childItem.status = [statusTracker.RBP, statusTracker.IP].includes(currentFormStatus) && [questionLevelStatus['1']].includes(childItem.status) && role === userTypes.ulb ? "REJECTED" : childItem.status
+            let calculationFields =  Object.entries(responseData.financialInformation).reduce((result,[key,value]) => ({...result, ...(question?.calculatedFrom.includes(value.displayPriority)) && {[key]: value}}) ,{})
+            Object.values(calculationFields).forEach((item)=>{
+              item.yearData.forEach(async(childItem)=>{
+                let reason  = `Data for ${question.displayPriority} has been changed. kindly revisit the calculations`
+                let statusBefore = childItem.status
+                if(childItem.year.toString() ===  yearObj.year){
+                  childItem.readonly = [statusTracker.RBP,statusTracker.IP].includes(currentFormStatus) && [questionLevelStatus['1']].includes(childItem.status)  && role === userTypes.ulb ? false  : childItem.readonly
+                  childItem.rejectReason = [statusTracker.RBP,statusTracker.IP].includes(currentFormStatus) && [questionLevelStatus['1']].includes(childItem.status) ? reason  : childItem.rejectReason
+                  childItem.status = [statusTracker.RBP,statusTracker.IP].includes(currentFormStatus) && [questionLevelStatus['1']].includes(childItem.status)  ? "REJECTED"  :  childItem.status 
+                }
+                if(statusBefore !==  childItem.status){
+                  await fiscalrankingmapper.findOneAndUpdate({
+                    year:ObjectId(childItem.year),
+                    type:childItem.type,
+                    fiscal_ranking:formId
+                  },{
+                    "$set":{
+                      readonly:childItem.readonly,
+                      rejectReason:childItem.rejectReason,
+                      status:childItem.status
+                    }
+                  })
                 }
               })
             })
