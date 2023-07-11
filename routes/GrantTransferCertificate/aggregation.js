@@ -12,7 +12,7 @@ const previousFormsAggregation = (params) => {
                 "let": {
                     "design_year": design_year,
                     "ulb": "$_id",
-                    "prevYear":prevYear
+                    "prevYear": prevYear
                 },
                 "pipeline": [
                     {
@@ -21,10 +21,47 @@ const previousFormsAggregation = (params) => {
                                 "$and": [
                                     { "$eq": ["$ulb", "$$ulb"] },
                                     {
-                                        "$or":[
+                                        "$or": [
                                             { "$eq": ["$design_year", "$$design_year"] },
                                             { "$eq": ["$design_year", "$$prevYear"] },
                                         ]
+                                    },
+                                    {
+
+                                        "$or": [
+                                            { "$eq": ["$currentFormStatus", 4] },
+
+                                            {
+                                                "$eq": ["$currentFormStatus", 6],
+                                            },
+                                            {
+                                                "$or": [{
+                                                    "$and": [
+                                                        {
+                                                            "$eq": [`$actionTakenByRole`,
+                                                                "STATE"]
+                                                        },
+                                                        {
+                                                            "$eq": [`$status`,
+                                                                "APPROVED"]
+                                                        }
+                                                    ]
+                                                },
+                                                {
+                                                    "$and": [
+                                                        {
+                                                            "$eq": [`$actionTakenByRole`,
+                                                                "MoHUA"]
+                                                        },
+                                                        {
+                                                            "$eq": [`$status`,
+                                                                "APPROVED"]
+                                                        }
+                                                    ]
+                                                },]
+                                            }
+                                        ]
+
                                     }
                                 ]
                             }
@@ -80,13 +117,13 @@ const previousFormsAggregation = (params) => {
                                 "$and": [
                                     {
                                         "$eq": ["$design_year", "$$design_year"],
-                                        
+
                                     },
                                     {
                                         "$eq": ["$state", "$$state"],
                                     },
                                     {
-                                         "$eq": ["$isDraft", false]
+                                        "$eq": ["$isDraft", false]
                                     }
                                 ]
                             }
@@ -115,7 +152,7 @@ const previousFormsAggregation = (params) => {
                                         "$eq": ["$state", "$$state"],
                                     },
                                     {
-                                         "$eq": ["$isDraft", false]
+                                        "$eq": ["$isDraft", false]
                                     }
                                 ]
                             }
@@ -154,27 +191,27 @@ const previousFormsAggregation = (params) => {
         },
         {
             "$project": {
-                "_id":0,
+                "_id": 0,
                 "isPfrFilled": 1,
                 "IsSfcFormFilled": 1,
-                "sfcFile":{
+                "sfcFile": {
                     "$cond": {
                         "if": {
                             "$gte": [{
                                 "$size": "$sfcForm"
                             }, 1]
                         },
-                       "then":{ $arrayElemAt: [ "$sfcForm.stateNotification", 0 ] },    
-                       "else": ""
+                        "then": { $arrayElemAt: ["$sfcForm.stateNotification", 0] },
+                        "else": ""
                     }
                 },
-                "pfrFile":{ 
-                    "$cond":{
-                        "if":{
-                            "$eq":["$isPfrFilled","Yes"]
+                "pfrFile": {
+                    "$cond": {
+                        "if": {
+                            "$eq": ["$isPfrFilled", "Yes"]
                         },
-                        "then":{ $arrayElemAt: [ "$pfrForm.stateNotification", 0 ] },
-                        "else":""
+                        "then": { $arrayElemAt: ["$pfrForm.stateNotification", 0] },
+                        "else": ""
                     }
                 },
                 "pfmsFilledPerc": {

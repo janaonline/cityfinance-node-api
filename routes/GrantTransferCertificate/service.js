@@ -667,7 +667,7 @@ const getManipulatedJson = async (installment, type, design_year, formJson, fiel
                 "2":await getMessagesForRadioButton()['accountLinked']['2']
             }
         }
-        installmentObj['accountLinked'] = previousYearData.pfmsFilledPerc ? "Yes" : "No"
+        installmentObj['accountLinked'] = previousYearData.pfmsFilledPerc === 100 ? "Yes" : "No"
         installmentObj['sfcNotificationCopy'] = previousYearData.sfcFile || {...fileSchema}
         installmentObj['propertyTaxNotifCopy'] = previousYearData.pfrFile || {...fileSchema}
         let flattedForm = await getFlatObj(installmentObj)
@@ -777,7 +777,7 @@ async function addWarnings(previousYearData){
         if(previousYearData[0].isPfrFilled === "No"){
             errors.push(warnings['propertyTaxNotif']['2'])
         }
-        if(previousYearData[0].pfmsFilledPerc === 0){
+        if(previousYearData[0].pfmsFilledPerc < 100){
             errors.push(warnings['accountLinked']['2'])
         }
         return errors
