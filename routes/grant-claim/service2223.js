@@ -3,7 +3,7 @@ const ObjectId = require('mongoose').Types.ObjectId;
 const GrantTransferMohua = require('../../models/grantTransferMohua');
 const {BackendHeaderHost} =  require('../../util/envUrl');
 const GrantTypes = require('../../models/GrantType');
-const {CollectionNames} = require('../../util/15thFCstatus');
+const {CollectionNames, ModelNames} = require('../../util/15thFCstatus');
 const GrantClaim = require('../../models/GrantClaim');
 const moment = require("moment");
 const { YEAR_CONSTANTS,  YEAR_CONSTANTS_IDS } = require('../../util/FormNames');
@@ -574,7 +574,7 @@ function generateOutputObject(input) {
       yearData.conditions.push({
         key: condition.key,
         text: condition.text,
-        value: percent['approvedValue']
+        value: condition.key !== ModelNames['slbScoring'] ? percent['approvedValue'] : percent['submittedValue']
       });
     }
 

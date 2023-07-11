@@ -108,6 +108,12 @@ const CUTOFF2324 =  {
         }
     }
 }
+
+const TYPE = {
+     "million_tied": "mpc_tied",
+     "nonmillion_tied": "nmpc_tied",
+     "nonmillion_untied": "nmpc_untied"
+}
 function gtcSubmitCondition(type, installment, state, designYear){
     let condition = {};
     let query = [];
@@ -228,8 +234,10 @@ function gtcSubmitCondition2324(type, installment, state, designYear){
               condition.state = ObjectId(state);
               condition.year = ObjectId(item.years[index]);
               condition.type = item.condition;
-              condition.installment = Number(item.installments[index])+1;
-        
+              condition.installment = installment === firstInstallment ? Number(item.installments[index])+1 : Number(firstInstallment);
+            if(type === TYPE['million_tied']){
+                condition.installment = Number(firstInstallment);
+            }
               break;
             }
           }
@@ -570,7 +578,11 @@ function approvedForms(forms, formCategory, design_year, modelName){
         if(!role){
             role = element?.["user"]["role"];
         }
-        if( ![YEAR_CONSTANTS['22_23']].includes(design_year) && ![CollectionNames.linkPFMS, CollectionNames.sfc].includes(modelName)){
+        if(
+            ![ YEAR_CONSTANTS['22_23']].includes(design_year) && 
+            ![CollectionNames.linkPFMS, CollectionNames.sfc].includes(modelName) &&
+            currentFormStatus
+        ){
             switch(formCategory){
                 case "ULB":
                     if( [MASTER_STATUS['Under Review By State'],
@@ -948,7 +960,7 @@ function getQuery2324(modelName, formType, designYear, formCategory, stateId){
                     }
                     query.push({
                         $match:{
-                            design_year: ObjectId(designYear),
+                            design_year: ObjectId(YEAR_CONSTANTS['21_22']),
                             "ulb.state": ObjectId(stateId),
                             $or:[...submitConditionUlb2223, condition]
                     }
@@ -1349,7 +1361,7 @@ const dashboard = async (req, res) => {
 
 function getSlbScoringResponse(leastSubmitPercent, leastSubmitNumber, cutOff) {
     return {
-        formName: FormNames["slbScoring"],
+        formName: FormNames["indicatorForm"],
         key: ModelNames['slbScoring'],
         approvedColor: COLORS['STATE']['approvedColor'],
         submittedColor: COLORS['STATE']['submittedColor'],
@@ -1372,7 +1384,7 @@ function addSlbScoringData(ulbResponseArray){
         let leastSubmitPercent = maxPercent, leastSubmitNumber;
         for(let ulbResponse of ulbResponseArray ){
             if(collectionNamesArr.includes(ulbResponse.key)){
-                if(ulbResponse.submittedValue < leastSubmitPercent){    
+                if(ulbResponse.submittedValue <= leastSubmitPercent){    
                     leastSubmitPercent = ulbResponse.submittedValue;
                     leastSubmitNumber = ulbResponse.totalSubmitted;
                 }
