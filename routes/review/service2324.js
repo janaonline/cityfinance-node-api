@@ -48,7 +48,6 @@ module.exports.get = async (req, res) => {
       sNo: "S No.",
       stateName: "State Name",
       formStatus: "Form Status"
-
     }
     //    formId --> sidemenu collection --> e.g Annual Accounts --> _id = formId
     let total;
@@ -113,6 +112,7 @@ module.exports.get = async (req, res) => {
       filter['formData.currentFormStatus'] = req.query.status != 'null' ? Number(req.query.status) : "";
       filter['state'] = req.query.state != 'null' ? req.query.state : ""
     }
+
     let state = req.query.state ?? req.decoded.state
     if (req.decoded.role === "STATE") { state = req.decoded.state }
 
@@ -182,6 +182,10 @@ module.exports.get = async (req, res) => {
     const Query15FC = { $or: [{ type: "15thFC" }, { multi: { $in: ["15thFC"] } }] };
     const ulbFormStatus = await MASTERSTATUS.find(Query15FC, { statusId: 1, status: 1 }).lean()
 
+    if (formType == "STATE" && ['GrantClaim'].includes(collectionName)) {
+      delete stateColumnNames.formStatus
+    }
+    
     return res.status(200).json({
       success: true,
       data: data,
