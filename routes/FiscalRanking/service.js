@@ -109,13 +109,13 @@ async function manageLedgerData(params) {
                   childItem.status = [statusTracker.RBP,statusTracker.IP].includes(currentFormStatus) && [questionLevelStatus['1']].includes(childItem.status)  ? "REJECTED"  :  childItem.status 
                 }
                 if(statusBefore !==  childItem.status){
-                  await fiscalrankingmapper.findOneAndUpdate({
+                  // updating values on get api because of requirement to change the data only when ulb view the form.
+                  await FiscalRankingMapper.findOneAndUpdate({
                     year:ObjectId(childItem.year),
                     type:childItem.type,
                     fiscal_ranking:formId
                   },{
                     "$set":{
-                      readonly:childItem.readonly,
                       rejectReason:childItem.rejectReason,
                       status:childItem.status
                     }
