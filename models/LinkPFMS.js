@@ -94,6 +94,9 @@ const PFMSAccountSchema = new Schema(
                 message: "ERROR: STATUS BE EITHER 'PENDING'/ 'APPROVED' / 'REJECTED'",
             }
         },
+        currentFormStatus:{
+            type:Number,
+        },
         otherDocs: pdfSchema(),
         rejectReason: { type: String, default: "" },
         responseFile: pdfSchema(),

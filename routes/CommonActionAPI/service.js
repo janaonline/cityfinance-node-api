@@ -2484,7 +2484,7 @@ function manageDisabledQues(question,flattedForm){
     }
 }
 
-async function mutuateGetPayload(jsonFormat, flatForm, keysToBeDeleted,role) {
+async function mutateResponse(jsonFormat, flatForm, keysToBeDeleted,role) {
     try {
         let obj = JSON.parse(JSON.stringify(jsonFormat))
         let flattedForm = JSON.parse(JSON.stringify(flatForm))
@@ -2525,7 +2525,7 @@ async function mutuateGetPayload(jsonFormat, flatForm, keysToBeDeleted,role) {
         return obj
     }
     catch (err) {
-        console.log("mutuateGetPayload ::: ", err.message)
+        console.log("mutateResponse ::: ", err.message)
     }
 }
 
@@ -2619,7 +2619,7 @@ function checkForUndefinedVaribales(obj) {
     return validator
 }
 module.exports.checkForUndefinedVaribales = checkForUndefinedVaribales
-module.exports.mutuateGetPayload = mutuateGetPayload
+module.exports.mutateResponse = mutateResponse
 
 function appendExtraKeys(keys, jsonObj, form) {
     let obj = { ...jsonObj }
@@ -3472,6 +3472,7 @@ function checkIfUlbHasAccess(ulbData,userYear){
       let prevYearArr = currentYear.split("-")
       let prevYear = `${(prevYearArr[0]-1).toString().slice(-2)}${(prevYearArr[1]-1).toString().slice(-2)}`
       ulbVariable += prevYear
+      console.log({prevYear,userYear})
       return ulbData[ulbVariable]
     }
     catch(err){
