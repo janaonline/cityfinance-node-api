@@ -160,7 +160,6 @@ module.exports.get = async (req, res) => {
       let ratingIds = [...new Set(data.map(e => e?.formData?.rating))].filter(e => e !== undefined)
       ratingList = ratingIds.length ? await getRating(ratingIds) : [];
     }
-    // console.log("collectionName >>>>>>>>", collectionName)
     /* CSV DOWNLOAD */
     if (csv) {
       await createCSV({ formType, collectionName, res, data, ratingList });
@@ -207,10 +206,10 @@ module.exports.get = async (req, res) => {
 async function createCSV(params) {
   const { formType, collectionName, res, data, ratingList } = params
   try {
+    // Set appropriate download headers
     let fixedColumns, dynamicColumns;
     if (formType === 'ULB') {
       let filename = `Review_${formType}-${collectionName}.csv`;
-      // Set appropriate download headers
       res.setHeader("Content-disposition", "attachment; filename=" + filename);
       res.writeHead(200, { "Content-Type": "text/csv;charset=utf-8,%EF%BB%BF" });
       fixedColumns = `State Name, ULB Name, City Finance Code, Census Code, Population Category, UA, UA Name,`;
@@ -422,6 +421,7 @@ async function fetchApprovedUlbsData(collectionName, data) {
     throw (`forms2223:: ${error.message}`)
   }
 }
+
 const sequentialReview = `Cannot review since last year form is not approved by MoHUA.`
 const setCurrentStatus = (req, data, approvedUlbs, collectionName, loggedInUserRole) => {
   data.forEach(el => {
@@ -434,7 +434,7 @@ const setCurrentStatus = (req, data, approvedUlbs, collectionName, loggedInUserR
       if (collectionName === CollectionNames.dur || collectionName === CollectionNames['28SLB']) {
         let params = { status: el.formData.currentFormStatus, userRole: loggedInUserRole }
         el['cantakeAction'] = req.decoded.role === "ADMIN" ? false : canTakeActionOrViewOnlyMasterForm(params);
-        if (!(approvedUlbs.find(ulb => ulb.toString() === el.ulbId.toString())) && loggedInUserRole === "MoHUA" && el.access) {
+        if (!(approvedUlbs.find(ulb => ulb.toString() === el.ulbId.toString())) && loggedInUserRole === "MoHUA") {
           el['cantakeAction'] = false;
           el['formData']['currentFormStatus'] === MASTER_STATUS['Under Review By MoHUA'] ? el['info'] = sequentialReview : ""
         }
@@ -477,6 +477,7 @@ const getRating = async (ratingId) => {
   })
 }
 
+/// Master Form Indicator LineItmem
 const indicatorLineItemList = async () => {
   return new Promise(async (resolve, reject) => {
     try {
@@ -488,6 +489,8 @@ const indicatorLineItemList = async () => {
     }
   })
 }
+
+
 const setIndicatorSequense = (indicatorList, el) => {
   let mainArr = []
   if (indicatorList?.length) {
@@ -1136,7 +1139,6 @@ async function createDynamicElements(collectionName, formType, entity) {
   }
   let actions = actionTakenByResponse(entity.formData);
 
-
   if (formType === "ULB") {
     if (!entity["formData"]["rejectReason_state"]) {
       entity["formData"]["rejectReason_state"] = ""
@@ -1162,7 +1164,6 @@ async function createDynamicElements(collectionName, formType, entity) {
       );
     }
   }
-
   if (!entity["formData"]["design_year"]) {
     entity["formData"]["design_year"] = {
       year: ""
@@ -1179,6 +1180,8 @@ async function createDynamicElements(collectionName, formType, entity) {
     );
   }
   let data = entity?.formData;
+
+
   switch (formType) {
     case "ULB":
       switch (collectionName) {
@@ -1283,6 +1286,12 @@ async function createDynamicElements(collectionName, formType, entity) {
           let targetYear = data?.data?.[0]?.target_1?.year ? YEAR_CONSTANTS_IDS[data.data[0].target_1.year] : "";
           let targetEntity = `${data?.design_year?.year ?? ""}, ${entity?.formStatus ?? ""}, ${data?.createdAt ?? ""}, ${data?.ulbSubmit ?? ""},${entity.filled ?? ""},Target,${targetYear || ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""}, ${actions["state_status"] ?? ""},${actions["rejectReason_state"] ?? ""},${actions["mohua_status"] ?? ""},${actions["rejectReason_mohua"] ?? ""},${actions["responseFile_state"]["url"] ?? ""},${actions["responseFile_mohua"]["url"] ?? ""} `
           return [actualEntity, targetEntity];
+      };
+      break;
+    case "STATE":
+      switch (collectionName) {
+        case CollectionNames.odf:
+
       };
       break;
   }
@@ -2192,80 +2201,6 @@ function actionTakenByResponse(entity) {
   if (![IN_PROGRESS, UNDER_REVIEW_BY_STATE].includes(entity.currentFormStatus)) {
     getActionStatus(obj, entity);
   }
-
-  // if (collectionName === CollectionNames['annual']) {
-  //   obj.auditedResponseFile_state = {
-  //     url: "",
-  //     name: ""
-  //   };
-  //   obj.unAuditedResponseFile_state = {
-  //     url: "",
-  //     name: ""
-  //   };
-  //   obj.auditedResponseFile_mohua = {
-  //     url: "",
-  //     name: ""
-  //   };
-  //   obj.unAuditedResponseFile_mohua = {
-  //     url: "",
-  //     name: ""
-  //   };
-  // }
-
-  // if (
-  //   formStatus === STATUS_LIST.Under_Review_By_MoHUA ||
-  //   formStatus === STATUS_LIST.Rejected_By_State
-  // ) {
-
-  //   if (entity["rejectReason_state"]) {
-  //     obj.rejectReason_state = removeEscapeChars(entity["rejectReason_state"]);
-  //   }
-  //   if (entity["responseFile_state"]) {
-  //     entity["responseFile_state"]["name"] = removeEscapeChars(entity["responseFile_state"]["name"])
-  //     obj.responseFile_state = entity["responseFile_state"];
-  //   }
-  //   if (entity["status"]) {
-  //     obj.state_status = entity["status"];
-  //   }
-
-  //   if (collectionName === CollectionNames['annual']) {
-  //     if (entity.audited.responseFile_state) {
-  //       entity.audited.responseFile_state.name = removeEscapeChars(entity.audited.responseFile_state?.name)
-  //       obj.auditedResponseFile_state = entity.audited.responseFile_state;
-  //     }
-  //     if (entity.unAudited.responseFile_state) {
-  //       entity.unAudited.responseFile_state.name = removeEscapeChars(entity.unAudited.responseFile_state?.name)
-  //       obj.unAuditedResponseFile_state = entity.unAudited.responseFile_state;
-  //     }
-  //   }
-  // }
-
-  // if (
-  //   formStatus === STATUS_LIST.Approved_By_MoHUA ||
-  //   formStatus === STATUS_LIST.Rejected_By_MoHUA
-  // ) {
-  //   if (entity["rejectReason_mohua"]) {
-  //     obj.rejectReason_mohua = removeEscapeChars(entity["rejectReason_mohua"]);
-  //   }
-  //   if (entity["responseFile_mohua"]) {
-  //     entity["responseFile_mohua"]["name"] = removeEscapeChars(entity["responseFile_mohua"]["name"])
-  //     obj.responseFile_mohua = entity["responseFile_mohua"];
-  //   }
-  //   if (entity["status"]) {
-  //     obj.mohua_status = entity["status"];
-  //   }
-  //   if (collectionName === CollectionNames['annual']) {
-  //     if (entity.audited.responseFile_mohua) {
-  //       entity.audited.responseFile_mohua.name = removeEscapeChars(entity.audited.responseFile_mohua?.name)
-  //       obj.auditedResponseFile_mohua = entity.audited.responseFile_mohua;
-  //     }
-  //     if (entity.unAudited.responseFile_mohua) {
-  //       entity.unAudited.responseFile_mohua.name = removeEscapeChars(entity.unAudited.responseFile_mohua?.name)
-  //       obj.unAuditedResponseFile_mohua = entity.unAudited.responseFile_mohua;
-  //     }
-  //   }
-  //   mohuaFlag = false;
-  // }
   return obj;
 }
 
@@ -2508,10 +2443,8 @@ const excelPTOMapping = async (query) => {
             }
           }
         }
-
         counter++
       });
-
       cursor.on("end", () => {
         resolve({ crrWorkbook, filename, tempFilePath })
       });

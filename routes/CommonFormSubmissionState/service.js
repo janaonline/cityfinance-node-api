@@ -1,28 +1,29 @@
 const {
-    FormNames,
-    YEAR_CONSTANTS,
-    MASTER_STATUS,
-    FORMIDs,
-    FORM_LEVEL,
-  } = require("../../util/FormNames");
-  const CurrentStatus = require("../../models/CurrentStatus");
-  const { ModelNames } = require("../../util/15thFCstatus");
-  const {
-    saveCurrentStatus,
-    saveFormHistory,
-    saveStatusHistory,
-  } = require("../../util/masterFunctions");
-  const moongose = require("mongoose");
-  const ObjectId = require('mongoose').Types.ObjectId;
-  const Response = require("../../service").response;
-  const UA = require('../../models/UA');
-  const {canTakenActionMaster} = require('../CommonActionAPI/service')
-
-  const { years } = require("../../service/years");
+  FormNames,
+  YEAR_CONSTANTS,
+  MASTER_STATUS,
+  FORMIDs,
+  FORM_LEVEL,
+  USER_ROLE,
+  MASTER_STATUS_ID,
+} = require("../../util/FormNames");
+const CurrentStatus = require("../../models/CurrentStatus");
+const { ModelNames } = require("../../util/15thFCstatus");
+const {
+  saveCurrentStatus,
+  saveFormHistory,
+  saveStatusHistory,
+} = require("../../util/masterFunctions");
+const moongose = require("mongoose");
+const ObjectId = require('mongoose').Types.ObjectId;
+const Response = require("../../service").response;
+const UA = require('../../models/UA');
+const { years } = require("../../service/years");
+const { canTakenActionMaster, getUAShortKeys } = require('../CommonActionAPI/service')
 
 module.exports.createAndUpdateFormMasterState = async (params) => {
   try {
-    let { modelName, formData, res , actionTakenByRole, actionTakenBy} = params;
+    let { modelName, formData, res, actionTakenByRole, actionTakenBy } = params;
 
     let masterFormId = modelName === ModelNames['waterRej'] ? FORMIDs['waterRej'] : FORMIDs['actionPlan'];
 
@@ -76,12 +77,11 @@ module.exports.createAndUpdateFormMasterState = async (params) => {
               );
             };
             let shortKeys = await getUAShortKeys(formData.state);
-            if(!Array.isArray(shortKeys)|| !shortKeys.length)
-            {
+            if (!Array.isArray(shortKeys) || !shortKeys.length) {
               return Response.BadRequest(res, {}, `UA shortkeys not found`);
             }
             if (formBodyStatus === MASTER_STATUS["In Progress"]) {
-              for(let shortKey of shortKeys){
+              for (let shortKey of shortKeys) {
                 let currentStatusData = {
                   formId: masterFormId,
                   recordId: ObjectId(formSubmit._id),
@@ -113,7 +113,7 @@ module.exports.createAndUpdateFormMasterState = async (params) => {
                 body: bodyData,
                 // session
               });
-              for(let shortKey of shortKeys){
+              for (let shortKey of shortKeys) {
                 let currentStatusData = {
                   formId: masterFormId,
                   recordId: ObjectId(formSubmit._id),
@@ -129,7 +129,7 @@ module.exports.createAndUpdateFormMasterState = async (params) => {
                   body: currentStatusData,
                   // session
                 });
-  
+
                 let statusHistory = {
                   formId: masterFormId,
                   recordId: ObjectId(formSubmit._id),
@@ -167,56 +167,61 @@ module.exports.createAndUpdateFormMasterState = async (params) => {
     return Response.BadRequest(res, {}, error.message);
   }
 };
-async function getUAShortKeys(state) {
-  const uaShortkeyQuery = [
-    {
-      $match: {
-        state: ObjectId(state),
-      },
-    },
-    {
-      $unwind: {
-        path: "$ulb",
-        preserveNullAndEmptyArrays: true,
-      },
-    },
-    {
-      $lookup: {
-        from: "ulbs",
-        let: {
-          firstUser: "$ulb",
-          uaCode: "$UACode",
-        },
-        pipeline: [
-          {
-            $match: {
-              $expr: { $eq: ["$_id", "$$firstUser"] },
-            },
-          },
-          {
-            $project: {
-              code: { $concat: ["$$uaCode", "_", "$code"] },
-              _id: 0,
-            },
-          },
-        ],
-        as: "ulb",
-      },
-    },
-    {
-      $unwind: {
-        path: "$ulb",
-        preserveNullAndEmptyArrays: true,
-      },
-    },
-  ];
-  let UasDataWithShortKey = await UA.aggregate(uaShortkeyQuery);
-  let shortKeys = [];
-  if(Array.isArray(UasDataWithShortKey) && UasDataWithShortKey.length){
-    shortKeys =  UasDataWithShortKey.map(el=>{
-      return el['ulb']['code'];
-    })
+
+
+
+/**
+ * The function `addActionKeys` takes in user agent data, short keys, status data, and a role, and adds
+ * additional properties to each user agent object based on the provided data.
+ * @param uaData - An object containing user agent data. It has a property "uaData" which is an array
+ * of user agent objects.
+ * @param shortKeys - The `shortKeys` parameter is an object that maps user actions to their
+ * corresponding short keys. It is used to assign a `uaCode` to each user action in the `uaData` array.
+ * @param statusData - statusData is an array of objects that contains information about the status of
+ * user actions. Each object in the array has the following properties:
+ * @param role - The `role` parameter represents the role of the logged-in user. It is used in the
+ * `params` object to determine the `loggedInUser` value for each `ua` object in the `uaData` array.
+ */
+function addActionKeys(uaData, shortKeys, statusData, role) {
+  try {
+    for (let ua of uaData["uaData"]) {
+      ua["uaCode"] = shortKeys[ua["ua"]];
+      let status = statusData.find((el) => el.shortKey === ua["uaCode"]);
+      if (status) {
+        ua["rejectReason"] = status["rejectReason"];
+        ua["responseFile"] = status["responseFile"];
+        let params = {
+          status: status["status"],
+          formType: USER_ROLE["STATE"],
+          loggedInUser: role,
+        };
+        ua["status"] = MASTER_STATUS_ID[status["status"]];
+        ua['statusId'] = status['status']
+        ua["canTakeAction"] = canTakenActionMaster(params);
+      } else {
+        ua["rejectReason"] = "";
+        ua["responseFile"] = "";
+        ua["status"] = MASTER_STATUS_ID[MASTER_STATUS['Not Started']];
+        ua['statusId'] = MASTER_STATUS['Not Started']
+        ua["canTakeAction"] = false
+
+      }
+    }
+  } catch (error) {
+    console.log("error", error)
+    throw { message: `addActionKeys:: ${error.message}` };
   }
-  return shortKeys;
 }
 
+module.exports.addActionKeys = addActionKeys
+
+function createObjectFromArray(arr) {
+  var result = {};
+  for (var i = 0; i < arr.length; i++) {
+    var obj = arr[i];
+    result[obj._id] = obj.UACode;
+  }
+  return result;
+}
+
+module.exports.createObjectFromArray = createObjectFromArray

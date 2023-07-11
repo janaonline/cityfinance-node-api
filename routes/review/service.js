@@ -2515,6 +2515,7 @@ const computeQuery = (formName, userRole, isFormOptional, state, design_year, cs
         $project: {
           ulbName: 1,
           ulbId: 1,
+          access : 1,
           ulbCode: 1,
           access: 1,
           censusCode: 1,
