@@ -222,8 +222,9 @@ const previousFormsAggregation = (params) => {
                         "then": {
                             "$multiply": [{
                                 "$divide": [
+                                    "$pfmsFilledCount",
                                     "$totalUlbs",
-                                    "$pfmsFilledCount"
+                                    
                                 ]
                             }, 100]
                         },
