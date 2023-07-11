@@ -668,6 +668,8 @@ const getManipulatedJson = async (installment, type, design_year, formJson, fiel
             }
         }
         installmentObj['accountLinked'] = previousYearData.pfmsFilledPerc === 100 ? "Yes" : "No"
+        installmentObj['propertyTaxNotif']  = previousYearData?.isPfrFilled
+        installmentObj['sfcNotification'] = previousYearData?.IsSfcFormFilled
         installmentObj['sfcNotificationCopy'] = previousYearData.sfcFile || {...fileSchema}
         installmentObj['propertyTaxNotifCopy'] = previousYearData.pfrFile || {...fileSchema}
         let flattedForm = await getFlatObj(installmentObj)
