@@ -160,6 +160,7 @@ module.exports.get = async (req, res) => {
       let ratingIds = [...new Set(data.map(e => e?.formData?.rating))].filter(e => e !== undefined)
       ratingList = ratingIds.length ? await getRating(ratingIds) : [];
     }
+    // console.log("collectionName >>>>>>>>", collectionName)
     /* CSV DOWNLOAD */
     if (csv) {
       await createCSV({ formType, collectionName, res, data, ratingList });
@@ -185,7 +186,7 @@ module.exports.get = async (req, res) => {
     if (formType == "STATE" && ['GrantClaim'].includes(collectionName)) {
       delete stateColumnNames.formStatus
     }
-    
+
     return res.status(200).json({
       success: true,
       data: data,
@@ -244,6 +245,7 @@ async function createCSV(params) {
       } else {
         fixedColumns = `State Name, City Finance Code, Regional Name,`;
         dynamicColumns = createDynamicColumns(collectionName);
+
         res.write("\ufeff" + `${fixedColumns.toString()} ${dynamicColumns.toString()} \r\n`);
         for (let el of data) {
           let dynamicElementData = await createDynamicElements(collectionName, formType, el);
@@ -2160,6 +2162,9 @@ function createDynamicColumns(collectionName) {
       break;
     case CollectionNames['28SLB']:
       columns = `Financial Year,Form Status,Created,Submitted On,Filled Status,Type,Year,Coverage of water supply connections,Per capita supply of water(lpcd),Extent of metering of water connections,Extent of non-revenue water (NRW),Continuity of water supply,Efficiency in redressal of customer complaints,Quality of water supplied,Cost recovery in water supply service,Efficiency in collection of water supply-related charges,Coverage of toilets,Coverage of waste water network services,Collection efficiency of waste water network,Adequacy of waste water treatment capacity,Extent of reuse and recycling of waste water,Quality of waste water treatment,Efficiency in redressal of customer complaints,Extent of cost recovery in waste water management,Efficiency in collection of waste water charges,Household level coverage of solid waste management services,Efficiency of collection of municipal solid waste,Extent of segregation of municipal solid waste,Extent of municipal solid waste recovered,Extent of scientific disposal of municipal solid waste,Extent of cost recovery in SWM services,Efficiency in collection of SWM related user related charges,Efficiency in redressal of customer complaints,Coverage of storm water drainage network,Incidence of water logging,State_Review Status,State_Comments,MoHUA Review Status,MoHUA_Comments,State_File URL,MoHUA_File URL `
+      break;
+    case CollectionNames['GrantClaim']:
+      columns = `State Name, City Finance Code, Regional Name, `
       break;
     default:
       columns = '';
