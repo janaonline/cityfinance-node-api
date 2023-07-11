@@ -954,15 +954,22 @@ function getQuery2324(modelName, formType, designYear, formCategory, stateId){
                     });
                     break;
                 case CollectionNames.slb:
-                    condition = {
-                        blank: false,
-                        isDraft: false
-                    }
+                    // condition = {
+                    //     blank: false,
+                    //     isCompleted : true,
+                    // }
+                    // query.push({
+                    //     $match:{
+                    //         design_year: ObjectId(YEAR_CONSTANTS['21_22']),
+                    //         "ulb.state": ObjectId(stateId),
+                    //         $or:[...submitConditionUlb2223, condition]
+                    // }
+                    // });
                     query.push({
                         $match:{
-                            design_year: ObjectId(YEAR_CONSTANTS['21_22']),
+                            design_year: ObjectId(designYear),
                             "ulb.state": ObjectId(stateId),
-                            $or:[...submitConditionUlb2223, condition]
+                            $or:[...submitConditionUlb]
                     }
                     });
                     break;
@@ -1205,6 +1212,9 @@ const dashboard = async (req, res) => {
             }
             //Get submitted forms            
             //Get Approved forms percent
+            if(![YEAR_CONSTANTS['22_23']].includes(data.design_year)){
+                modelName ===  CollectionNames.slb ? collection = TwentyEightSlbsForm : "";
+            }
             let submittedForms = await collection.aggregate(pipeline);
             if(modelName === CollectionNames.gtc && data.installment === '1' && ![YEAR_CONSTANTS['23_24']].includes(data.design_year)){
                 let query = stateGtcCertificateSubmmitedForms(data.formType, data.installment, state);
