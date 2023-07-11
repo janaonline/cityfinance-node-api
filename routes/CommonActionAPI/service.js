@@ -428,7 +428,7 @@ module.exports.canTakenAction = (status, actionTakenByRole, isDraft, formType, l
     }
 
 }
-async function canTakenActionMaster(params) {
+function canTakenActionMaster(params) {
     let { status, formType, loggedInUser } = params;
     switch (formType) {
         case "ULB":
@@ -2054,10 +2054,10 @@ async function handleArrOfObjects(question, flattedForm) {
                             }
                         }
                         questionObj.forParentValue = index
-                        let modifiedObj  = await handleRangeIfExists({...questionObj},obj)
-                        let warnings = await handleWarningsIfExists(questionObj,flattedForm)
+                        let modifiedObj = await handleRangeIfExists({ ...questionObj }, obj)
+                        let warnings = await handleWarningsIfExists(questionObj, flattedForm)
                         questionObj.warnings = warnings
-                        nested_arr.push({...modifiedObj})
+                        nested_arr.push({ ...modifiedObj })
                     }
                 }
                 a += 1
@@ -2116,8 +2116,8 @@ async function handleArrayFields(shortKey, flattedForm, childQuestionData) {
                 let answer = { label: '', textValue: '', value: '' }
                 handleValues(question, answer, formObj)
                 question.selectedValue = [answer]
-                let modifiedObj =await handleRangeIfExists(question,flattedForm)
-                let warnings = await handleWarningsIfExists(question,flattedForm)
+                let modifiedObj = await handleRangeIfExists(question, flattedForm)
+                let warnings = await handleWarningsIfExists(question, flattedForm)
                 question.warnings = warnings
                 question.minRange = modifiedObj.minRange ? modifiedObj.minRange : question.minRange
                 question.maxRange = modifiedObj.maxRange ? modifiedObj.maxRange : question.maxRange
@@ -2192,7 +2192,7 @@ async function handleSectionStructure(childArr, shortKey, flattedForm) {
                     }
                     obj.answer = { ...obj.answer, answer: { ...answer } };
                     let modifiedObj = { ...await handleRangeIfExists(obj, flattedForm) };
-                    let warnings = await handleWarningsIfExists(obj,flattedForm)
+                    let warnings = await handleWarningsIfExists(obj, flattedForm)
                     obj.warnings = warnings
                     obj.minRange = modifiedObj.minRange ? modifiedObj.minRange : obj.minRange;
                     obj.maxRange = modifiedObj.maxRange ? modifiedObj.maxRange : obj.minRange;
@@ -2359,27 +2359,27 @@ const handleRadioButtonCase = async (question, obj, flattedForm, mainKey) => {
     }
 }
 
-const handleWarningsIfExists = (question,flattedForm)=>{
-    try{
-        if(!question.warnings){return []};
+const handleWarningsIfExists = (question, flattedForm) => {
+    try {
+        if (!question.warnings) { return [] };
         let warnings = [...question?.warnings]
-        if(Object.keys(flattedForm).some(key => key.startsWith("warnings"))){
-            let warningKey = Object.keys(flattedForm).find(key => key.includes(`.`+question.shortKey))
-            if(warningKey){
+        if (Object.keys(flattedForm).some(key => key.startsWith("warnings"))) {
+            let warningKey = Object.keys(flattedForm).find(key => key.includes(`.` + question.shortKey))
+            if (warningKey) {
                 let dependentOn = warningKey.split(".")[warningKey.split(".").length - 1]
-                warnings = question.warnings.map((warningObj)=>{
-                    return {...warningObj, message:warningObj.on === dependentOn ? flattedForm[warningKey] : warningObj.messge }
+                warnings = question.warnings.map((warningObj) => {
+                    return { ...warningObj, message: warningObj.on === dependentOn ? flattedForm[warningKey] : warningObj.messge }
                 })
             }
         }
         return warnings
     }
-    catch(err){
-        console.log("error in handleWarningsIfExists ::: ",err.message)
+    catch (err) {
+        console.log("error in handleWarningsIfExists ::: ", err.message)
     }
 }
 
-const handleValues = async(question,obj,flattedForm,mainKey=false)=>{
+const handleValues = async (question, obj, flattedForm, mainKey = false) => {
     let answerKey = inputType[question.input_type]
     try {
         switch (question.input_type) {
@@ -2532,7 +2532,7 @@ function manageDisabledQues(question, flattedForm) {
     }
 }
 
-async function mutateResponse(jsonFormat, flatForm, keysToBeDeleted,role) {
+async function mutateResponse(jsonFormat, flatForm, keysToBeDeleted, role) {
     try {
         let obj = JSON.parse(JSON.stringify(jsonFormat))
         let flattedForm = JSON.parse(JSON.stringify(flatForm))
@@ -2560,7 +2560,7 @@ async function mutateResponse(jsonFormat, flatForm, keysToBeDeleted,role) {
                     await manageDisabledQues(question, flattedForm)
                     await deleteExtraKeys(question)
                     let modifiedObj = await handleRangeIfExists(question, flattedForm)
-                    let warnings = await handleWarningsIfExists(question,flattedForm)
+                    let warnings = await handleWarningsIfExists(question, flattedForm)
                     question.warnings = warnings
                     question.min = modifiedObj.min ? modifiedObj.min : question.min;
                     question.max = modifiedObj.max ? modifiedObj.max : question.min;
@@ -3538,7 +3538,7 @@ async function nestedObjectParser(data, req) {
                 //         }
                 //     ]
                 // }
-                let value = await decideValuesByInputType(temp,shortKey,item,req)
+                let value = await decideValuesByInputType(temp, shortKey, item, req)
                 await keys.forEach((key, index) => {
                     if (!pointer.hasOwnProperty(key)) {
                         pointer[key] = {};
@@ -3557,15 +3557,15 @@ async function nestedObjectParser(data, req) {
     }
 }
 
-function checkIfUlbHasAccess(ulbData,userYear){
-    try{
-      let ulbVariable = "access_"
-      let currentYear = userYear.year
-      let prevYearArr = currentYear.split("-")
-      let prevYear = `${(prevYearArr[0]-1).toString().slice(-2)}${(prevYearArr[1]-1).toString().slice(-2)}`
-      ulbVariable += prevYear
-      console.log({prevYear,userYear})
-      return ulbData[ulbVariable]
+function checkIfUlbHasAccess(ulbData, userYear) {
+    try {
+        let ulbVariable = "access_"
+        let currentYear = userYear.year
+        let prevYearArr = currentYear.split("-")
+        let prevYear = `${(prevYearArr[0] - 1).toString().slice(-2)}${(prevYearArr[1] - 1).toString().slice(-2)}`
+        ulbVariable += prevYear
+        console.log({ prevYear, userYear })
+        return ulbData[ulbVariable]
     }
     catch (err) {
         console.log("error in checkIfUlbHasAccess ::: ", err.message)

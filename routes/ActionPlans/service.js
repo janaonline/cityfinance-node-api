@@ -327,9 +327,8 @@ exports.getActionPlans = async (req, res) => {
           formType:"STATE",
           loggedInUser: role,
         };
-        
         Object.assign(data2324, {
-          canTakeAction: canTakenActionMaster(params),
+          canTakeAction:  canTakenActionMaster(params),
           statusId: data2324['currentFormStatus'],
           status: MASTER_STATUS_ID[data2324['currentFormStatus']]
         });
