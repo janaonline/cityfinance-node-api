@@ -1,4 +1,5 @@
 const Ulb = require('../../models/Ulb')
+const UA = require('../../models/UA')
 const State = require('../../models/State');
 const IndicatorLineItems = require('../../models/indicatorLineItems');
 const CollectionNames = require('../../util/collectionName')
@@ -47,7 +48,6 @@ module.exports.get = async (req, res) => {
       sNo: "S No.",
       stateName: "State Name",
       formStatus: "Form Status"
-
     }
     //    formId --> sidemenu collection --> e.g Annual Accounts --> _id = formId
     let total;
@@ -67,14 +67,14 @@ module.exports.get = async (req, res) => {
     if (loggedInUserRole == "STATE") {
       delete ulbColumnNames['stateName']
     }
-    let title_value = formTab.role == 'ULB' ? 'Review Grant Application' : 'Review State Forms';
+    let title_value = formTab?.role == 'ULB' ? 'Review Grant Application' : 'Review State Forms';
 
     if ((loggedInUserRole == "MoHUA" || loggedInUserRole == "ADMIN") && title_value === "Review Grant Application") {
       delete ulbColumnNames['stateName']
     }
 
     let dbCollectionName = formTab?.dbCollectionName
-    let formType = formTab.role
+    let formType = formTab?.role
     if (formType === "ULB") {
       filter['ulbName'] = req.query.ulbName != 'null' ? req.query.ulbName : ""
       filter['censusCode'] = req.query.censusCode != 'null' ? req.query.censusCode : ""
@@ -112,6 +112,7 @@ module.exports.get = async (req, res) => {
       filter['formData.currentFormStatus'] = req.query.status != 'null' ? Number(req.query.status) : "";
       filter['state'] = req.query.state != 'null' ? req.query.state : ""
     }
+
     let state = req.query.state ?? req.decoded.state
     if (req.decoded.role === "STATE") { state = req.decoded.state }
 
@@ -145,11 +146,11 @@ module.exports.get = async (req, res) => {
     let data = formType == "ULB" ? Ulb.aggregate(query[0]).allowDiskUse(true) : State.aggregate(query[0]).allowDiskUse(true)
 
     let allData = await Promise.all([data]);
+
     data = allData[0][0].data
     total = allData[0][0]['count']?.length ? allData[0][0]['count'][0].total : 0
-    console.log("data", allData[0])
 
-    if (data.length) {
+    if (data?.length) {
       let approvedUlbs = await fetchApprovedUlbsData(collectionName, data);
       await setCurrentStatus(req, data, approvedUlbs, collectionName, loggedInUserRole);
     }
@@ -180,6 +181,10 @@ module.exports.get = async (req, res) => {
     data.forEach(el => { if (el.formData || el.formData === "") delete el.formData })
     const Query15FC = { $or: [{ type: "15thFC" }, { multi: { $in: ["15thFC"] } }] };
     const ulbFormStatus = await MASTERSTATUS.find(Query15FC, { statusId: 1, status: 1 }).lean()
+
+    if (formType == "STATE" && ['GrantClaim'].includes(collectionName)) {
+      delete stateColumnNames.formStatus
+    }
 
     return res.status(200).json({
       success: true,
@@ -236,6 +241,16 @@ async function createCSV(params) {
     } else if (formType === "STATE") {
       if (collectionName == "waterrejenuvationrecyclings") {
         await waterSenitationXlsDownload(data, res);
+      } else {
+        fixedColumns = `State Name, City Finance Code, Regional Name,`;
+        dynamicColumns = createDynamicColumns(collectionName);
+
+        res.write("\ufeff" + `${fixedColumns.toString()} ${dynamicColumns.toString()} \r\n`);
+        for (let el of data) {
+          let dynamicElementData = await createDynamicElements(collectionName, formType, el);
+          const row = `${el.stateName},${el.stateCode},${el.regionalName},${dynamicElementData.toString()}\r\n`;
+          res.write("\ufeff" + row);
+        }
       }
     }
   } catch (error) {
@@ -258,7 +273,6 @@ const sortKeysWaterSenitation = (key) => {
       return []
   }
 }
-
 const waterSenitationXlsDownload = async (data, res) => {
   try {
     const tempFilePath = "uploads/excel";
@@ -270,41 +284,48 @@ const waterSenitationXlsDownload = async (data, res) => {
     const waterBodies = workbook.addWorksheet('waterBodies');
     const serviceLevelIndicators = workbook.addWorksheet('serviceLevelIndicators');
     const reuseWater = workbook.addWorksheet('reuseWater');
+    let uaFormData = await UA.find({}).lean();
     waterBodies.addRow([
-      "State Name", "State Code", "Form Status", "Project Name", "Name of water body", "Area",
+      "State Name", "State Code", "Form Status", "UA Name", "Project Name", "Name of water body", "Area",
       "Latitude", "Longitude", "BOD in mg/L (Current)", "BOD in mg/L (Expected)",
       "COD in mg/L (Current)", "COD in mg/L (Expected)", "DO in mg/L (Current)", "DO in mg/L(Expected)", "TDS in mg/L (Current)",
       "TDS in mg/L(Expected)", "Turbidity in  NTU (Current)", "Turbidity in  NTU(Expected)", "Project Details", "Preparation of  DPR",
       "Completion  of tendering process", "%  of  work completion"
     ]);
     serviceLevelIndicators.addRow([
-      "State Name", "State Code", "Form Status", "Project Name", "Physical  Components",
+      "State Name", "State Code", "Form Status", "UA Name", "Project Name", "Physical  Components",
       "Indicator", "Existing  (As- is)", "After  (To-be)", "Estimated  Cost (Amount  in  INR Lakhs)",
       "Preparation of  DPR", "Completion of tendering process", "%  of  work completion"
     ]);
     reuseWater.addRow([
-      "State Name", "State Code", "Form Status", "Project Name", "Name  of  Water Treatment  Plant",
+      "State Name", "State Code", "Form Status", "UA Name", "Project Name", "Name  of  Water Treatment  Plant",
       "Latitude", "Longitude", "Proposed water quantity  to be reused(MLD)",
       "Target customers/ consumer for  reuse of  water", "Preparation of  DPR", "Completion of tendering process", "%  of  work completion"
     ]);
-
     let counter = { waterBodies: 2, serviceLevelIndicators: 2, reuseWater: 2 } // counter
-    for (let pf of data) {
-      let { uaData } = pf.formData;
-      let rowsArr = [pf.stateName, pf.stateCode, pf.formStatus];
-      for (let ua of uaData) {
-        let sortKeys = { waterBodies, serviceLevelIndicators, reuseWater };
-        for (let key in sortKeys) {
-          let projData = ua[key];
-          let keysArr = sortKeysWaterSenitation(key)
-          for (let proj of projData) {
-            let projArr = [];
-            for (let k of keysArr) {
-              projArr.push(proj[k])
+    if (data?.length) {
+      for (const pf of data) {
+        if (pf?.formData) {
+          let { uaData } = pf?.formData;
+          let rowsArr = [pf?.stateName, pf?.stateCode, pf?.formStatus];
+          for (const ua of uaData) {
+            let sortKeys = { waterBodies, serviceLevelIndicators, reuseWater };
+            let UAName = uaFormData?.length ? uaFormData.find(e => e?._id?.toString() == ua?.ua?.toString()) : {}
+            rowsArr[3] = UAName?.name
+            // console.log("rowsArr[3]",rowsArr[3])
+            for (const key in sortKeys) {
+              let projData = ua[key];
+              let keysArr = sortKeysWaterSenitation(key)
+              for (const proj of projData) {
+                let projArr = [];
+                for (const k of keysArr) {
+                  projArr.push(proj[k])
+                }
+                sortKeys[key].addRow([...rowsArr, ...projArr]);
+                sortKeys[key].getRow(counter[key])
+                counter[key]++
+              }
             }
-            sortKeys[key].addRow([...rowsArr, ...projArr]);
-            sortKeys[key].getRow(counter[key])
-            counter[key]++
           }
         }
       }
@@ -339,12 +360,12 @@ function countStatusData(element, collectionName) {
     notStarted = 5;
   }
   let pending = 0, rejected = 0, approved = 0;
-  if (arr.length <= 0) {
+  if (arr?.length <= 0) {
     status = collectionName === CollectionNames.state_gtc ? `${notStarted} Not Started` : `${notStarted} Not Submitted`;
     return { status, pending };
   } else {
     if (collectionName === CollectionNames.state_gtc) {
-      for (let i = 0; i < arr.length; i++) {
+      for (let i = 0; i < arr?.length; i++) {
         if (arr[i] === "PENDING") {
           pending++;
         } else if (arr[i] === "APPROVED") {
@@ -572,7 +593,9 @@ const computeQuery = (params) => {
       }
     })
   }
+
   switch (userRole) {
+
     case "ULB":
       let query = [
         { $match: condition },
@@ -637,6 +660,7 @@ const computeQuery = (params) => {
             ulbName: "$name",
             ulbId: "$_id",
             ulbCode: "$code",
+            access: "$access_2223",
             censusCode: {
               $cond: {
                 if: {
@@ -683,6 +707,7 @@ const computeQuery = (params) => {
             ulbName: 1,
             ulbId: 1,
             ulbCode: 1,
+            access: 1,
             censusCode: 1,
             UA: 1,
             UA_id: 1,
@@ -763,7 +788,6 @@ const computeQuery = (params) => {
           },
         },
       ];
-
       if (dbCollectionName) {
         query_s.push(...[
           {
@@ -2147,6 +2171,9 @@ function createDynamicColumns(collectionName) {
       break;
     case CollectionNames['28SLB']:
       columns = `Financial Year,Form Status,Created,Submitted On,Filled Status,Type,Year,Coverage of water supply connections,Per capita supply of water(lpcd),Extent of metering of water connections,Extent of non-revenue water (NRW),Continuity of water supply,Efficiency in redressal of customer complaints,Quality of water supplied,Cost recovery in water supply service,Efficiency in collection of water supply-related charges,Coverage of toilets,Coverage of waste water network services,Collection efficiency of waste water network,Adequacy of waste water treatment capacity,Extent of reuse and recycling of waste water,Quality of waste water treatment,Efficiency in redressal of customer complaints,Extent of cost recovery in waste water management,Efficiency in collection of waste water charges,Household level coverage of solid waste management services,Efficiency of collection of municipal solid waste,Extent of segregation of municipal solid waste,Extent of municipal solid waste recovered,Extent of scientific disposal of municipal solid waste,Extent of cost recovery in SWM services,Efficiency in collection of SWM related user related charges,Efficiency in redressal of customer complaints,Coverage of storm water drainage network,Incidence of water logging,State_Review Status,State_Comments,MoHUA Review Status,MoHUA_Comments,State_File URL,MoHUA_File URL `
+      break;
+    case CollectionNames['GrantClaim']:
+      columns = `State Name, City Finance Code, Regional Name, `
       break;
     default:
       columns = '';
