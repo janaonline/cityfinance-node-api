@@ -68,14 +68,14 @@ module.exports.get = async (req, res) => {
     if (loggedInUserRole == "STATE") {
       delete ulbColumnNames['stateName']
     }
-    let title_value = formTab.role == 'ULB' ? 'Review Grant Application' : 'Review State Forms';
+    let title_value = formTab?.role == 'ULB' ? 'Review Grant Application' : 'Review State Forms';
 
     if ((loggedInUserRole == "MoHUA" || loggedInUserRole == "ADMIN") && title_value === "Review Grant Application") {
       delete ulbColumnNames['stateName']
     }
 
     let dbCollectionName = formTab?.dbCollectionName
-    let formType = formTab.role
+    let formType = formTab?.role
     if (formType === "ULB") {
       filter['ulbName'] = req.query.ulbName != 'null' ? req.query.ulbName : ""
       filter['censusCode'] = req.query.censusCode != 'null' ? req.query.censusCode : ""
@@ -355,12 +355,12 @@ function countStatusData(element, collectionName) {
     notStarted = 5;
   }
   let pending = 0, rejected = 0, approved = 0;
-  if (arr.length <= 0) {
+  if (arr?.length <= 0) {
     status = collectionName === CollectionNames.state_gtc ? `${notStarted} Not Started` : `${notStarted} Not Submitted`;
     return { status, pending };
   } else {
     if (collectionName === CollectionNames.state_gtc) {
-      for (let i = 0; i < arr.length; i++) {
+      for (let i = 0; i < arr?.length; i++) {
         if (arr[i] === "PENDING") {
           pending++;
         } else if (arr[i] === "APPROVED") {
@@ -584,7 +584,9 @@ const computeQuery = (params) => {
       }
     })
   }
+
   switch (userRole) {
+
     case "ULB":
       let query = [
         { $match: condition },
@@ -777,7 +779,6 @@ const computeQuery = (params) => {
           },
         },
       ];
-
       if (dbCollectionName) {
         query_s.push(...[
           {
