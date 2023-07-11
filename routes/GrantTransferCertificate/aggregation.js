@@ -124,6 +124,18 @@ const previousFormsAggregation = (params) => {
                                     },
                                     {
                                         "$eq": ["$isDraft", false]
+                                    },
+                                    {
+                                        "$and": [
+                                            {
+                                                "$eq": [`$actionTakenByRole`,
+                                                    "MoHUA"]
+                                            },
+                                            {
+                                                "$eq": [`$status`,
+                                                    "APPROVED"]
+                                            }
+                                        ]
                                     }
                                 ]
                             }
@@ -153,6 +165,18 @@ const previousFormsAggregation = (params) => {
                                     },
                                     {
                                         "$eq": ["$isDraft", false]
+                                    },
+                                    {
+                                        "$and": [
+                                            {
+                                                "$eq": [`$actionTakenByRole`,
+                                                    "MoHUA"]
+                                            },
+                                            {
+                                                "$eq": [`$status`,
+                                                    "APPROVED"]
+                                            }
+                                        ]
                                     }
                                 ]
                             }
