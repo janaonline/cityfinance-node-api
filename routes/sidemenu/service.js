@@ -210,9 +210,12 @@ const findStatusAndTooltipMaster = (params) => {
   let { formData, formId, loggedInUserRole, viewFor } = params;
   let status = formData.currentFormStatus
   let tooltip = calculateStatusMaster(status);
-  console.log("tooltip: :: ", tooltip)
+  console.log("formData :: ",formData)
+  if(formData.linkPFMS === "Yes"){
+    console.log("tooltip ::: ",tooltip)
+  }
   let tick = calculateTick(tooltip, loggedInUserRole, viewFor)
-
+  console.log("tick :: ",tick)
   return {
     [formId]: {
       tooltip: tooltip,
@@ -260,7 +263,7 @@ module.exports.get = catchAsync(async (req, res) => {
   let output = []
   if (role == 'ULB') {
     let ulbInfo = await Ulb.findOne({ _id: ObjectId(_id) }).lean();
-    isUA = ulbInfo.isUA
+    isUA = ulbInfo?.isUA
     FormModelMapping["GfcFormCollection"] = isUA == 'Yes' ? ObjectId("62aa1d82c9a98b2254632a9e") : ObjectId("62aa1dd6c9a98b2254632aae")
     FormModelMapping["OdfFormCollection"] = isUA == 'Yes' ? ObjectId("62aa1d6ec9a98b2254632a9a") : ObjectId("62aa1dc0c9a98b2254632aaa")
     FormModelMapping["XVFcGrantULBForm"] = isUA == 'Yes' ? ObjectId("62aa1d4fc9a98b2254632a96") : ObjectId("62aa1dadc9a98b2254632aa6")
