@@ -960,7 +960,7 @@ function getQuery2324(modelName, formType, designYear, formCategory, stateId){
                     }
                     query.push({
                         $match:{
-                            design_year: ObjectId(designYear),
+                            design_year: ObjectId(YEAR_CONSTANTS['21_22']),
                             "ulb.state": ObjectId(stateId),
                             $or:[...submitConditionUlb2223, condition]
                     }
@@ -1361,7 +1361,7 @@ const dashboard = async (req, res) => {
 
 function getSlbScoringResponse(leastSubmitPercent, leastSubmitNumber, cutOff) {
     return {
-        formName: FormNames["slbScoring"],
+        formName: FormNames["indicatorForm"],
         key: ModelNames['slbScoring'],
         approvedColor: COLORS['STATE']['approvedColor'],
         submittedColor: COLORS['STATE']['submittedColor'],
@@ -1384,7 +1384,7 @@ function addSlbScoringData(ulbResponseArray){
         let leastSubmitPercent = maxPercent, leastSubmitNumber;
         for(let ulbResponse of ulbResponseArray ){
             if(collectionNamesArr.includes(ulbResponse.key)){
-                if(ulbResponse.submittedValue < leastSubmitPercent){    
+                if(ulbResponse.submittedValue <= leastSubmitPercent){    
                     leastSubmitPercent = ulbResponse.submittedValue;
                     leastSubmitNumber = ulbResponse.totalSubmitted;
                 }
