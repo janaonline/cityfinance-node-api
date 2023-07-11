@@ -2034,6 +2034,8 @@ async function handleArrOfObjects(question,flattedForm){
                         }
                         questionObj.forParentValue = index
                         let modifiedObj  = await handleRangeIfExists({...questionObj},obj)
+                        let warnings = await handleWarningsIfExists(questionObj,flattedForm)
+                        questionObj.warnings = warnings
                         nested_arr.push({...modifiedObj})
                     }
                 }
@@ -2094,6 +2096,8 @@ async function handleArrayFields(shortKey,flattedForm,childQuestionData){
                 handleValues(question,answer,formObj)
                 question.selectedValue = [answer]
                 let modifiedObj =await handleRangeIfExists(question,flattedForm)
+                let warnings = await handleWarningsIfExists(question,flattedForm)
+                question.warnings = warnings
                 question.minRange = modifiedObj.minRange ? modifiedObj.minRange : question.minRange
                 question.maxRange = modifiedObj.maxRange  ? modifiedObj.maxRange : question.maxRange
                 question.hint = modifiedObj.hint || ""
@@ -2167,6 +2171,8 @@ async function handleSectionStructure(childArr, shortKey, flattedForm) {
                     }
                     obj.answer = { ...obj.answer, answer:{...answer} };
                     let modifiedObj = { ...await handleRangeIfExists(obj, flattedForm) };
+                    let warnings = await handleWarningsIfExists(obj,flattedForm)
+                    obj.warnings = warnings
                     obj.minRange = modifiedObj.minRange ? modifiedObj.minRange : obj.minRange;
                     obj.maxRange = modifiedObj.maxRange ? modifiedObj.maxRange : obj.minRange;
                     obj.hint = modifiedObj.hint || "";
@@ -2329,6 +2335,26 @@ const handleRadioButtonCase = async(question,obj,flattedForm,mainKey) =>{
     }
     catch(err){
         console.log("error in handleRadioButtonCase ::: ",err.message)
+    }
+}
+
+const handleWarningsIfExists = (question,flattedForm)=>{
+    try{
+        if(!question.warnings){return []};
+        let warnings = [...question?.warnings]
+        if(Object.keys(flattedForm).some(key => key.startsWith("warnings"))){
+            let warningKey = Object.keys(flattedForm).find(key => key.includes(`.`+question.shortKey))
+            if(warningKey){
+                let dependentOn = warningKey.split(".")[warningKey.split(".").length - 1]
+                warnings = question.warnings.map((warningObj)=>{
+                    return {...warningObj, message:warningObj.on === dependentOn ? flattedForm[warningKey] : warningObj.messge }
+                })
+            }
+        }
+        return warnings
+    }
+    catch(err){
+        console.log("error in handleWarningsIfExists ::: ",err.message)
     }
 }
 
@@ -2513,6 +2539,8 @@ async function mutateResponse(jsonFormat, flatForm, keysToBeDeleted,role) {
                     await manageDisabledQues(question,flattedForm)
                     await deleteExtraKeys(question)
                     let modifiedObj = await handleRangeIfExists(question, flattedForm)
+                    let warnings = await handleWarningsIfExists(question,flattedForm)
+                    question.warnings = warnings
                     question.min = modifiedObj.min ? modifiedObj.min : question.min;
                     question.max = modifiedObj.max ? modifiedObj.max : question.min;
                     question.minRange = modifiedObj.minRange ? modifiedObj.minRange : question.minRange;

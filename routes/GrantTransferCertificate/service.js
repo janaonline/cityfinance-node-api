@@ -8,11 +8,16 @@ const { getKeyByValue, saveFormHistory, grantDistributeOptions } = require("../.
 const { years } = require('../../service/years');
 const GtcInstallmentForm = require("../../models/GtcInstallmentForm")
 const TransferGrantDetailForm = require("../../models/TransferGrantDetailForm")
-const { grantsWithUlbTypes, installment_types, singleInstallmentTypes } = require("./constants")
+const { grantsWithUlbTypes, installment_types, singleInstallmentTypes,warningkeys,getMessagesForRadioButton } = require("./constants")
 const FormsJson = require("../../models/FormsJson");
-const { MASTER_STATUS, MASTER_STATUS_ID } = require('../../util/FormNames');
+const {previousFormsAggregation} = require("./aggregation")
+const { MASTER_STATUS, MASTER_STATUS_ID ,MASTER_FORM_STATUS} = require('../../util/FormNames');
 const userTypes = require("../../util/userTypes");
+const {findPreviousYear} = require("../../util/findPreviousYear")
 const {FORMIDs} = require("../../util/FormNames")
+
+
+
 
 let gtcYears = ["2018-19", "2019-20", "2021-22", "2022-23"]
 let GtcFormTypes = [
@@ -586,7 +591,6 @@ const checkForPreviousForms = async (design_year, state) => {
             "design_year": yearId,
             "state": ObjectId(state),
         }).countDocuments()
-        console.log("gtcFormsLength :: ", gtcFormsLength)
         if (gtcFormsLength < 8) {
             validator.valid = false
             validator.message = alerts['prevForm']
@@ -602,8 +606,7 @@ const getRejectedFields = (currentFormStatus, formStatuses, installment, inputAl
     try {
         // console.log("formStatuses :: ",formStatuses)
         let prevInstallment = installment - 1
-        let allowedStatuses = [MASTER_STATUS['Under Review By MoHUA'],MASTER_STATUS['Rejected By MoHUA']]
-        console.log("allowedStatuses ::: ",allowedStatuses)
+        let allowedStatuses = [MASTER_FORM_STATUS['UNDER_REVIEW_BY_MoHUA'],MASTER_FORM_STATUS['RETURNED_BY_MoHUA']]
         // console.log("prevInstallment :: ",prevInstallment)
         if (prevInstallment && !allowedStatuses.includes(formStatuses?.[prevInstallment]) && role === userTypes.state) {
             return true
@@ -617,16 +620,17 @@ const getRejectedFields = (currentFormStatus, formStatuses, installment, inputAl
     }
 }
 
-const getManipulatedJson = async (installment, type, design_year, formJson, fieldsTohide, state, role, formStatuses) => {
+const getManipulatedJson = async (installment, type, design_year, formJson, fieldsTohide, state, role, formStatuses,previousYearData) => {
     let keysToBeDeleted = ["_id", "createdAt", "modifiedAt", "actionTakenByRole", "actionTakenBy", "ulb", "design_year"]
     let mformObject = {
         "language": [],
     }
+    let fileSchema = {
+        "name": "",
+        "url": ""
+    }
     try {
-        let file = {
-            "name": "",
-            "url": ""
-        }
+        let file = {...fileSchema}
         let gtcForm = await GrantTransferCertificate.findOne({
             year: ObjectId(design_year),
             installment,
@@ -658,6 +662,14 @@ const getManipulatedJson = async (installment, type, design_year, formJson, fiel
         let inputAllowed = [MASTER_STATUS['In Progress'],MASTER_STATUS['Not Started'],MASTER_STATUS['Rejected By MoHUA']]
         installmentForm.installment_type = installment_types[installment]
         let installmentObj = { ...installmentForm }
+        installmentObj['warnings'] = {
+            "accountLinked" : {
+                "2":await getMessagesForRadioButton()['accountLinked']['2']
+            }
+        }
+        installmentObj['accountLinked'] = previousYearData.pfmsFilledPerc === 100 ? "Yes" : "No"
+        installmentObj['sfcNotificationCopy'] = previousYearData.sfcFile || {...fileSchema}
+        installmentObj['propertyTaxNotifCopy'] = previousYearData.pfrFile || {...fileSchema}
         let flattedForm = await getFlatObj(installmentObj)
         flattedForm['modelName'] = "GtcInstallmentForm"
         flattedForm['fieldsTohide'] = fieldsTohide
@@ -693,7 +705,7 @@ const getManipulatedJson = async (installment, type, design_year, formJson, fiel
     }
 }
 
-const getJson = async (state, design_year, role) => {
+const getJson = async (state, design_year, role,previousYearData) => {
     try {
         var formStatuses = {}
         let fieldsTohide = []
@@ -706,8 +718,8 @@ const getJson = async (state, design_year, role) => {
             "formId":{"$in":[FORMIDs['GTC_STATE'],FORMIDs['GTC_TABLE_STRUCTURE']]},
             "design_year":design_year
         }).lean()
-        let basicEmptyStructure = forms.find(item => item.formId === 11.1).data
-        let formJson = forms.find(item => item.formId === 7)
+        let basicEmptyStructure = forms.find(item => item.formId === FORMIDs['GTC_TABLE_STRUCTURE']).data
+        let formJson = forms.find(item => item.formId === FORMIDs['GTC_STATE'])
         if (!stateIsMillion) {
             basicEmptyStructure = basicEmptyStructure.filter(item => item.type != "million")
             fieldsTohide = ["totalMpc", "totalElectedMpc"]
@@ -716,7 +728,7 @@ const getJson = async (state, design_year, role) => {
         for (let carousel of basicEmptyStructure) {
             for (let question of carousel.questions) {
                 question.questionresponse = ""
-                let { questionResponse, file, status, statusId, rejectReason_mohua, responseFile_mohua, canTakeAction } = await getManipulatedJson(question.installment, question.type, design_year, { ...formJson }, fieldsTohide, ObjectId(state), role, formStatuses)
+                let { questionResponse, file, status, statusId, rejectReason_mohua, responseFile_mohua, canTakeAction } = await getManipulatedJson(question.installment, question.type, design_year, { ...formJson }, fieldsTohide, ObjectId(state), role, formStatuses,previousYearData)
                 question.status = status
                 question.statusId = statusId
                 question.questionresponse = JSON.parse(JSON.stringify(questionResponse))
@@ -726,7 +738,6 @@ const getJson = async (state, design_year, role) => {
                 question.responseFile_mohua = responseFile_mohua;
             }
             returnableJson.push({ ...carousel })
-
         }
         return { json: [...returnableJson], stateIsMillion: stateIsMillion }
     }
@@ -735,6 +746,49 @@ const getJson = async (state, design_year, role) => {
         return []
     }
 }
+
+async function getPreviousYearData(state,design_year){
+    let response = {}
+    try{
+        let params = {
+            state:ObjectId(state),
+            design_year:ObjectId(design_year),
+            prevYear :ObjectId(years[findPreviousYear(getKeyByValue(years,design_year))]),
+        }
+        console.log("params :: ",params)
+        let query = await previousFormsAggregation(params)
+        response = await Ulb.aggregate(query).allowDiskUse(true)
+    }
+    catch(err){
+        console.log("error in getPreviousYearData :: ",err.message)
+    }
+    return response
+}
+async function addWarnings(previousYearData){
+    try{
+        let sfcLink = `<a href="stateform2223/fc-formation" target="_blank"> Click here to fill previous form</a>`
+        let propertyTaxLink = `<a href="stateform2223/property-tax" target="_blank"> Click here to fill previous form</a>`
+        let reviewPfmsLink = `<a href="stateform2223/review-ulb-form" target="_blank"> Click here to check for the ulbs</a>`
+        let warnings = await getMessagesForRadioButton(sfcLink,propertyTaxLink,reviewPfmsLink)
+        let errors = []
+        if(previousYearData[0].IsSfcFormFilled === 'No'){
+            errors.push(warnings['recomAvail']['2'])
+        }
+        if(previousYearData[0].isPfrFilled === "No"){
+            errors.push(warnings['propertyTaxNotif']['2'])
+        }
+        if(previousYearData[0].pfmsFilledPerc < 100){
+            errors.push(warnings['accountLinked']['2'])
+        }
+        return errors
+    }
+    catch(err){
+        console.log("error in addWarnings ::: ",err.message)
+    }
+}
+
+
+
 module.exports.getInstallmentForm = async (req, res, next) => {
     let response = {
         success: false,
@@ -746,6 +800,8 @@ module.exports.getInstallmentForm = async (req, res, next) => {
         let responseData = []
         let { design_year, state, formType } = req.query
         let { role } = req.decoded
+        let previousYearData = await getPreviousYearData(state,design_year)
+        response.errors = await addWarnings(previousYearData)
         let validator = await checkForUndefinedVaribales({
             "design year": design_year,
             "state": state
@@ -758,11 +814,12 @@ module.exports.getInstallmentForm = async (req, res, next) => {
         if (!formValidator.valid) {
             response.success = false;
             response.message = formValidator.message
+            response.errors = [formValidator.message]
             return res.json(response)
         }
-        response.success = true
+        response.success = !response.errors.length 
         response.message = ""
-        let { json, stateIsMillion } = await getJson(state, design_year, role)
+        let { json, stateIsMillion } = await getJson(state, design_year, role,previousYearData[0])
         response.data = json
         response.stateIsMillion = stateIsMillion
     }
@@ -882,9 +939,6 @@ async function handleInstallmentForm(params) {
         Object.assign(payload, data)
         payload.grantDistribute = grantDistributeOptions[payload.grantDistribute] || null
         let installmentValidatior = await checkValidationsInstallmentForm(payload, transferGrantData)
-        /**
-         * Uncomment this code before giving to testing
-         */
         if (!installmentValidatior.valid && runValidators) {
             validator.message = "Not valid"
             validator.valid = false
@@ -997,7 +1051,6 @@ module.exports.createOrUpdateInstallmentForm = async (req, res) => {
             return res.status(405).json(response)
         }
         let installmentValidator = await checkPreviousInstallment(req.body)
-        console.log("installmentValidator :: ", installmentValidator)
         if (!installmentValidator.valid && runValidators) {
             response.message = installmentValidator.message
             response.success = false
@@ -1010,7 +1063,7 @@ module.exports.createOrUpdateInstallmentForm = async (req, res) => {
         req.body.gtcFormId = gtcFormId
 
         let installmentFormValidator = await handleInstallmentForm(req.body)
-        console.log("installmentFormValidator ::: ", installmentFormValidator)
+        // console.log("installmentFormValidator ::: ", installmentFormValidator)
         if (!installmentFormValidator.valid && runValidators) {
             response.success = false
             response.message = installmentFormValidator.errors

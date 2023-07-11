@@ -18,7 +18,7 @@ module.exports.changeGetApiForm = async (req, res, next) => {
         let form = { ...req.form }
         let { name, role } = req.decoded
         // form['ulbName'] = name
-        delete form['projects']
+        // delete form['projects']
         let latestYear = !outDatedYears.includes(year)
         let jsonFormId = req.query.formId || 0
         let condition = { formId: parseInt(jsonFormId), design_year: ObjectId(yearId) }
