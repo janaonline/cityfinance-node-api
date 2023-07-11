@@ -281,43 +281,45 @@ const waterSenitationXlsDownload = async (data, res) => {
     const reuseWater = workbook.addWorksheet('reuseWater');
     let uaFormData = await UA.find({}).lean();
     waterBodies.addRow([
-      "State Name", "State Code", "UA Name", "Form Status", "Project Name", "Name of water body", "Area",
+      "State Name", "State Code", "Form Status", "UA Name", "Project Name", "Name of water body", "Area",
       "Latitude", "Longitude", "BOD in mg/L (Current)", "BOD in mg/L (Expected)",
       "COD in mg/L (Current)", "COD in mg/L (Expected)", "DO in mg/L (Current)", "DO in mg/L(Expected)", "TDS in mg/L (Current)",
       "TDS in mg/L(Expected)", "Turbidity in  NTU (Current)", "Turbidity in  NTU(Expected)", "Project Details", "Preparation of  DPR",
       "Completion  of tendering process", "%  of  work completion"
     ]);
     serviceLevelIndicators.addRow([
-      "State Name", "State Code", "UA Name", "Form Status", "Project Name", "Physical  Components",
+      "State Name", "State Code", "Form Status", "UA Name", "Project Name", "Physical  Components",
       "Indicator", "Existing  (As- is)", "After  (To-be)", "Estimated  Cost (Amount  in  INR Lakhs)",
       "Preparation of  DPR", "Completion of tendering process", "%  of  work completion"
     ]);
     reuseWater.addRow([
-      "State Name", "State Code", "UA Name", "Form Status", "Project Name", "Name  of  Water Treatment  Plant",
+      "State Name", "State Code", "Form Status", "UA Name", "Project Name", "Name  of  Water Treatment  Plant",
       "Latitude", "Longitude", "Proposed water quantity  to be reused(MLD)",
       "Target customers/ consumer for  reuse of  water", "Preparation of  DPR", "Completion of tendering process", "%  of  work completion"
     ]);
     let counter = { waterBodies: 2, serviceLevelIndicators: 2, reuseWater: 2 } // counter
     if (data?.length) {
       for (const pf of data) {
-        let { uaData } = pf.formData;
-        let rowsArr = [pf.stateName, pf.stateCode];
-        for (const ua of uaData) {
-          let sortKeys = { waterBodies, serviceLevelIndicators, reuseWater };
-          let UAName = uaFormData?.length ? uaFormData.find(e => e?._id?.toString() == ua?.ua?.toString()) : {}
-          rowsArr.push(UAName?.name)
-          rowsArr.push(pf.formStatus)
-          for (const key in sortKeys) {
-            let projData = ua[key];
-            let keysArr = sortKeysWaterSenitation(key)
-            for (const proj of projData) {
-              let projArr = [];
-              for (const k of keysArr) {
-                projArr.push(proj[k])
+        if (pf?.formData) {
+          let { uaData } = pf?.formData;
+          let rowsArr = [pf?.stateName, pf?.stateCode, pf?.formStatus];
+          for (const ua of uaData) {
+            let sortKeys = { waterBodies, serviceLevelIndicators, reuseWater };
+            let UAName = uaFormData?.length ? uaFormData.find(e => e?._id?.toString() == ua?.ua?.toString()) : {}
+            rowsArr[3] = UAName?.name
+            // console.log("rowsArr[3]",rowsArr[3])
+            for (const key in sortKeys) {
+              let projData = ua[key];
+              let keysArr = sortKeysWaterSenitation(key)
+              for (const proj of projData) {
+                let projArr = [];
+                for (const k of keysArr) {
+                  projArr.push(proj[k])
+                }
+                sortKeys[key].addRow([...rowsArr, ...projArr]);
+                sortKeys[key].getRow(counter[key])
+                counter[key]++
               }
-              sortKeys[key].addRow([...rowsArr, ...projArr]);
-              sortKeys[key].getRow(counter[key])
-              counter[key]++
             }
           }
         }
