@@ -17,7 +17,7 @@ const PropTax = require('../../models/PropertyTaxOp')
 const { calculateStatus, calculateStatusMaster } = require('../CommonActionAPI/service')
 const SLB28 = require('../../models/TwentyEightSlbsForm')
 const PropertyTaxOp = require('../../models/PropertyTaxOp')
-const { YEAR_CONSTANTS } = require('../../util/FormNames');
+const { YEAR_CONSTANTS, MASTER_STATUS_ID, MASTER_FORM_STATUS } = require('../../util/FormNames');
 
 //STate Forms
 const SFC = require('../../models/StateFinanceCommissionFormation')
@@ -108,10 +108,15 @@ const calculateTick = (tooltip, loggedInUserRole, viewFor) => {
       ) {
         return ticks["red"];
       } else if (
-        tooltip == StatusList.Rejected_By_State ||
-        tooltip == StatusList.Rejected_By_MoHUA ||
-        tooltip == StatusList.Under_Review_By_MoHUA ||
-        tooltip == StatusList.Approved_By_MoHUA
+        [
+          StatusList.Rejected_By_State,
+          StatusList.Rejected_By_MoHUA,
+          StatusList.Under_Review_By_MoHUA,
+          StatusList.Approved_By_MoHUA,
+          MASTER_STATUS_ID[
+            MASTER_FORM_STATUS["SUBMISSION_ACKNOWLEDGED_BY_MoHUA"]
+          ],
+        ].includes(tooltip)
       ) {
         return ticks["green"];
       }
@@ -128,8 +133,13 @@ const calculateTick = (tooltip, loggedInUserRole, viewFor) => {
       ) {
         return ticks["red"];
       } else if (
-        tooltip == StatusList.Rejected_By_MoHUA ||
-        tooltip == StatusList.Approved_By_MoHUA
+        [
+          StatusList.Rejected_By_MoHUA,
+          StatusList.Approved_By_MoHUA,
+          MASTER_STATUS_ID[
+            MASTER_FORM_STATUS["SUBMISSION_ACKNOWLEDGED_BY_MoHUA"]
+          ],
+        ].includes(tooltip)
       ) {
         return ticks["green"];
       }
@@ -144,8 +154,13 @@ const calculateTick = (tooltip, loggedInUserRole, viewFor) => {
       ) {
         return ticks["red"];
       } else if (
-        tooltip == StatusList.Under_Review_By_MoHUA ||
-        tooltip == StatusList.Approved_By_MoHUA
+        [
+            (StatusList.Under_Review_By_MoHUA,
+            StatusList.Approved_By_MoHUA,
+            MASTER_STATUS_ID[
+              MASTER_FORM_STATUS["SUBMISSION_ACKNOWLEDGED_BY_MoHUA"]
+            ])
+          ].includes(tooltip)
       ) {
         return ticks["green"];
       }
@@ -160,8 +175,13 @@ const calculateTick = (tooltip, loggedInUserRole, viewFor) => {
       ) {
         return ticks["red"];
       } else if (
-        tooltip == StatusList.Rejected_By_MoHUA ||
-        tooltip == StatusList.Approved_By_MoHUA
+        [
+          StatusList.Rejected_By_MoHUA,
+          StatusList.Approved_By_MoHUA,
+          MASTER_STATUS_ID[
+            MASTER_FORM_STATUS["SUBMISSION_ACKNOWLEDGED_BY_MoHUA"]
+          ],
+        ].includes(tooltip)
       ) {
         return ticks["green"];
       }
@@ -182,9 +202,7 @@ const calculateTick = (tooltip, loggedInUserRole, viewFor) => {
       }
     }
   }
-
-
-}
+};
 
 
 
