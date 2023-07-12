@@ -262,7 +262,7 @@ const sortKeysWaterSenitation = (key) => {
   switch (key) {
     case 'waterBodies':
       return [
-        "name", "nameOfBody", "area", "lat", "long", "bod", "bod_expected", "cod", "do", "do_expected",
+        "name", "nameOfBody", "area", "lat", "long", "bod", "bod_expected", "cod", "cod_expected", "do", "do_expected",
         "tds", "tds_expected", "turbidity", "turbidity_expected", "details", "dprPreparation", "dprCompletion", "workCompletion"
       ]
     case "serviceLevelIndicators":
@@ -285,6 +285,7 @@ const waterSenitationXlsDownload = async (data, res) => {
     const serviceLevelIndicators = workbook.addWorksheet('serviceLevelIndicators');
     const reuseWater = workbook.addWorksheet('reuseWater');
     let uaFormData = await UA.find({}).lean();
+    let indicatorLineItems = await IndicatorLineItems.find({ "type": "water supply" }).lean();
     waterBodies.addRow([
       "State Name", "State Code", "Form Status", "UA Name", "Project Name", "Name of water body", "Area",
       "Latitude", "Longitude", "BOD in mg/L (Current)", "BOD in mg/L (Expected)",
@@ -310,16 +311,21 @@ const waterSenitationXlsDownload = async (data, res) => {
           let rowsArr = [pf?.stateName, pf?.stateCode, pf?.formStatus];
           for (const ua of uaData) {
             let sortKeys = { waterBodies, serviceLevelIndicators, reuseWater };
-            let UAName = uaFormData?.length ? uaFormData.find(e => e?._id?.toString() == ua?.ua?.toString()) : {}
+            let UAName = uaFormData?.length ? uaFormData.find(e => e?._id?.toString() == ua?.ua?.toString()) : null
             rowsArr[3] = UAName?.name
-            // console.log("rowsArr[3]",rowsArr[3])
             for (const key in sortKeys) {
               let projData = ua[key];
               let keysArr = sortKeysWaterSenitation(key)
               for (const proj of projData) {
                 let projArr = [];
                 for (const k of keysArr) {
-                  projArr.push(proj[k])
+                  if (k == "indicator") {
+                    let indiData = indicatorLineItems?.length ? indicatorLineItems.find(e => e?.lineItemId?.toString() == proj[k]) : null
+                    let indicatorName = indiData ? indiData?.name : ""
+                    projArr.push(indicatorName)
+                  } else {
+                    projArr.push(proj[k])
+                  }
                 }
                 sortKeys[key].addRow([...rowsArr, ...projArr]);
                 sortKeys[key].getRow(counter[key])
