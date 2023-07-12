@@ -1029,6 +1029,7 @@ module.exports.createOrUpdateInstallmentForm = async (req, res) => {
     try {
         let { installment, type, isDraft, status, financialYear, year, state, statusId: currentFormStatus, installment_type } = req.body
         let role = req.decoded.role
+        let userId = req.decoded._id
         if (role !== userTypes.state) {
             response.success = false
             response.message = "Not Permitted"
@@ -1063,7 +1064,8 @@ module.exports.createOrUpdateInstallmentForm = async (req, res) => {
             throw { message: "something went wrong" }
         }
         req.body.gtcFormId = gtcFormId
-
+        req.body._id =  gtcFormId
+        req.body.formSubmit = [...req.body]
         let installmentFormValidator = await handleInstallmentForm(req.body)
         // console.log("installmentFormValidator ::: ", installmentFormValidator)
         if (!installmentFormValidator.valid && runValidators) {
@@ -1072,7 +1074,11 @@ module.exports.createOrUpdateInstallmentForm = async (req, res) => {
             // response.errors = installmentFormValidator.errors
             return res.status(405).json(response)
         }
-        await createHistory({ isDraft, currentFormStatus, gtcFormId })
+        let formSubmit = [...req.body]
+        let actionTakenByRole = role
+        let actionTakenBy = userId
+        let formBodyStatus = currentFormStatus
+        await createHistory({ isDraft, currentFormStatus, gtcFormId ,formSubmit , actionTakenByRole , actionTakenBy , formBodyStatus })
         response.success = true
         response.message = "Success"
         return res.status(200).json(response)
@@ -1135,23 +1141,18 @@ module.exports.installmentAction = async (req, res) => {
 
 async function createHistory(params) {
     try {
-        let { isDraft, currentFormStatus, gtcFormId } = params
-        if (!isDraft || currentFormStatus === 7) {
-            let payload = {
-                "recordId": gtcFormId,
-                "data": []
+        let {formBodyStatus,actionTakenBy,actionTakenByRole,formSubmit,formType} = params
+        let formData = formSubmit[0]
+        let shortKey = `${formData.type}_${years[formData.financialYear]}_${formData.installment}`
+            let params = {
+                formBodyStatus:currentFormStatus,
+                actionTakenBy:actionTakenBy,
+                actionTakenByRole:actionTakenByRole,
+                formSubmit:formSubmit,
+                formType:"GTC_STATE",
+                shortKey:shortKey
             }
-            let gtcForm = await GrantTransferCertificate.findOne({
-                "_id": gtcFormId,
-            }).lean()
-            gtcForm['installmentForm'] = {}
-            let installmentForm = await GtcInstallmentForm.findOne({
-                "gtcForm": gtcForm._id
-            }).populate("transferGrantdetail").lean()
-            gtcForm['installmentForm'] = installmentForm
-            payload['data'] = [gtcForm]
-            await saveFormHistory({ body: payload })
-        }
+            await saveStatusAndHistory(params)
     }
     catch (err) {
         console.log("error in createHistory ::: ", err.message)
