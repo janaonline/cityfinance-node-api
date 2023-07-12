@@ -350,7 +350,6 @@ module.exports = function (req, res) {
                     console.log("validateOverview : data.length < 2")
                     reject({ message: "Overview sheet has less than two rows, Please check" });
                 } else {
-                    console.log('1')
                     let d = Object.keys(data[0]);
                     var filtered = d.filter(function (el) { return el; });
                     console.log(filtered)
@@ -359,7 +358,6 @@ module.exports = function (req, res) {
                         reject({ message: "Overview header is missing" });
                     }
                     else {
-                        console.log('2')
                         for (let i = 0; i < overviewHeader.length; i++) {
                             let name = overviewHeader[i].toLowerCase();
                             if (filtered.indexOf(name) === -1) {
@@ -494,7 +492,8 @@ fieldsWithNoAmount variable. */
                             dataArr.push({
                                 query,
                                 update: {
-                                    amount: objOfSheet.ledger[el]
+                                    amount: objOfSheet.ledger[el],
+                                    audit_status:objOfSheet.audit_status
                                 }, options: {
                                     upsert: true,
                                     setDefaultsOnInsert: true,
