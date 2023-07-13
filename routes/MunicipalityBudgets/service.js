@@ -24,6 +24,8 @@ module.exports.getDocuments = async (req, res) => {
                             $match: {
                                 ...(year && {year: ObjectId(year)}),
                                 type: "appAnnualBudget",
+                                'file.name': { $exists: true},
+                                'file.url': { $exists: true},
                                 $expr: { "$eq": ["$ulb", "$$ulbId"] },
                             }
                         },
@@ -45,6 +47,23 @@ module.exports.getDocuments = async (req, res) => {
             { $limit: 10 },
         ];
         const response = await Ulb.aggregate(query).allowDiskUse(true);
+
+        return Response.OK(res, response, "Success")
+    } catch (error) {
+        console.log(error);
+        return Response.BadRequest(res, {}, error.message);
+    }
+}
+module.exports.getInsights = async (req, res) => {
+    try {
+        const response = {
+            ulbCount: 4788,
+            atLeastOneYearCount: 2633,
+            fy2020_21: '53%', 
+            fy2021_22: '55%', 
+            fy2022_23: '51%', 
+            fy2023_24: '53%', 
+        };
 
         return Response.OK(res, response, "Success")
     } catch (error) {
