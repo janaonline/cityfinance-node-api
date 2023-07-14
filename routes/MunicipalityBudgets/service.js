@@ -54,15 +54,147 @@ module.exports.getDocuments = async (req, res) => {
         return Response.BadRequest(res, {}, error.message);
     }
 }
+
+const fakeInsights = [
+    {
+        state: '',
+        type: '',
+        ulbCount: 4788,
+        atLeastOneYearCount: 2633,
+        fy2020_21: 53, 
+        fy2021_22: 55, 
+        fy2022_23: 51, 
+        fy2023_24: 53, 
+    },
+    {
+        state: '5dcf9d7316a06aed41c748eb',
+        type: '',
+        ulbCount: 50,
+        atLeastOneYearCount: 45,
+        fy2020_21: 84, 
+        fy2021_22: 90, 
+        fy2022_23: 86, 
+        fy2023_24: 84, 
+    },
+    {
+        state: '5dcf9d7516a06aed41c748fa',
+        type: '',
+        ulbCount: 666,
+        atLeastOneYearCount: 628,
+        fy2020_21: 93, 
+        fy2021_22: 94, 
+        fy2022_23: 94, 
+        fy2023_24: 92, 
+    },
+    //--------------------------Municipal Corporation
+    {
+        state: '',
+        type: '5dcfa67543263a0e75c71697',
+        ulbCount: 252,
+        atLeastOneYearCount: 224,
+        fy2020_21: 72, 
+        fy2021_22: 89, 
+        fy2022_23: 58, 
+        fy2023_24: 72, 
+    },
+    {
+        state: '5dcf9d7316a06aed41c748eb',
+        type: '5dcfa67543263a0e75c71697',
+        ulbCount: 9,
+        atLeastOneYearCount: 9,
+        fy2020_21: 100, 
+        fy2021_22: 100, 
+        fy2022_23: 100, 
+        fy2023_24: 100, 
+    },
+    {
+        state: '5dcf9d7516a06aed41c748fa',
+        type: '5dcfa67543263a0e75c71697',
+        ulbCount: 21,
+        atLeastOneYearCount: 21,
+        fy2020_21: 100, 
+        fy2021_22: 100, 
+        fy2022_23: 100, 
+        fy2023_24: 100, 
+    },
+    //---------------------------Town Panchayat----------
+    {
+        state: '',
+        type: '5dcfa66b43263a0e75c71696',
+        ulbCount: 2450,
+        atLeastOneYearCount: 1241,
+        fy2020_21: 49, 
+        fy2021_22: 51, 
+        fy2022_23: 48, 
+        fy2023_24: 49, 
+    },
+    {
+        state: '5dcf9d7316a06aed41c748eb',
+        type: '5dcfa66b43263a0e75c71696',
+        ulbCount: 29,
+        atLeastOneYearCount: 24,
+        fy2020_21: 72, 
+        fy2021_22: 83, 
+        fy2022_23: 76, 
+        fy2023_24: 72, 
+    },
+    {
+        state: '5dcf9d7516a06aed41c748fa',
+        type: '5dcfa66b43263a0e75c71696',
+        ulbCount: 501,
+        atLeastOneYearCount: 476,
+        fy2020_21: 94, 
+        fy2021_22: 95, 
+        fy2022_23: 94, 
+        fy2023_24: 94, 
+    },
+    //---------------------------Municipality----------
+    {
+        state: '',
+        type: '5dcfa64e43263a0e75c71695',
+        ulbCount: 2086,
+        atLeastOneYearCount: 1168,
+        fy2020_21: 56, 
+        fy2021_22: 56, 
+        fy2022_23: 54, 
+        fy2023_24: 56, 
+    },
+    {
+        state: '5dcf9d7316a06aed41c748eb',
+        type: '5dcfa64e43263a0e75c71695',
+        ulbCount: 12,
+        atLeastOneYearCount: 12,
+        fy2020_21: 100, 
+        fy2021_22: 100, 
+        fy2022_23: 100, 
+        fy2023_24: 100, 
+    },
+    {
+        state: '5dcf9d7516a06aed41c748fa',
+        type: '5dcfa64e43263a0e75c71695',
+        ulbCount: 144,
+        atLeastOneYearCount: 134,
+        fy2020_21: 89, 
+        fy2021_22: 89, 
+        fy2022_23: 93, 
+        fy2023_24: 83, 
+    },
+]
 module.exports.getInsights = async (req, res) => {
     try {
-        const response = {
-            ulbCount: 4788,
-            atLeastOneYearCount: 2633,
-            fy2020_21: '53%', 
-            fy2021_22: '55%', 
-            fy2022_23: '51%', 
-            fy2023_24: '53%', 
+        const {
+            state = '', category = ''
+        } = req.query;
+        
+        const response = fakeInsights.find(insight => insight.state == state && insight.type == category) || {
+            state: '',
+            category: '',
+            ulbCount: 0,
+            atLeastOneYearCount: 0,
+            fy2020_21: 0, 
+            fy2021_22: 0, 
+            fy2022_23: 0, 
+            fy2023_24: 0, 
         };
 
         return Response.OK(res, response, "Success")
