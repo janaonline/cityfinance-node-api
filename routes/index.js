@@ -286,6 +286,8 @@ router.use('/master-status', MasterStatus)
 const MasterSkipValue = require('./MasterSkipValues');
 router.use('/master-skip-value', MasterSkipValue)
 
+const MunicipalityBudgets = require("./MunicipalityBudgets");
+router.use('/municipality-budgets', MunicipalityBudgets);
 
 router.use(require('./Master'))
 
