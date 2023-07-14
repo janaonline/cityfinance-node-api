@@ -373,7 +373,7 @@ function countStatusData(element, collectionName) {
   } else {
     if (collectionName === CollectionNames.state_gtc) {
       for (let i = 0; i < arr?.length; i++) {
-        if (arr[i] === MASTER_FORM_STATUS['IN_PROGRESS']) {
+        if (arr[i] === MASTER_FORM_STATUS["UNDER_REVIEW_BY_MoHUA"]) {
           pending++;
         } else if (arr[i] === MASTER_FORM_STATUS['SUBMISSION_ACKNOWLEDGED_BY_MoHUA']) {
           approved++;
