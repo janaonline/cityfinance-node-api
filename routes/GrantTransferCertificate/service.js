@@ -3,6 +3,7 @@ const GrantTransferCertificate = require('../../models/GrantTransferCertificate'
 const StateGTCCertificate = require('../../models/StateGTCertificate');
 const ObjectId = require("mongoose").Types.ObjectId;
 const Ulb = require('../../models/Ulb')
+const {saveStatusAndHistory} = require("../CommonFormSubmission/service")
 const { checkForUndefinedVaribales, mutateResponse, getFlatObj } = require("../../routes/CommonActionAPI/service")
 const { getKeyByValue, saveFormHistory, grantDistributeOptions } = require("../../util/masterFunctions");
 const { years } = require('../../service/years');
@@ -947,8 +948,7 @@ async function handleInstallmentForm(params) {
             validator.errors = installmentValidatior.errors
             return validator
         }
-        console.log("payload :: ", payload)
-        console.log("transferGrantData", transferGrantData)
+        // console.log("transferGrantData", transferGrantData)
         let gtcInstallment = await GtcInstallmentForm.findOneAndUpdate({
             installment,
             year,
@@ -1036,6 +1036,7 @@ module.exports.createOrUpdateInstallmentForm = async (req, res) => {
             response.message = ["Not Permitted"]
             return response.status(405).json(response)
         }
+        let formSubmit = [JSON.parse(JSON.stringify(req.body))]
         let params = {
             "installment id": installment,
             "year id ": year,
@@ -1060,12 +1061,13 @@ module.exports.createOrUpdateInstallmentForm = async (req, res) => {
             return res.status(405).json(response)
         }
         let gtcFormId = await getOrCreateFormId(req.body)
+        formSubmit[0]['_id'] = gtcFormId
         if (!gtcFormId) {
             throw { message: "something went wrong" }
         }
         req.body.gtcFormId = gtcFormId
         req.body._id =  gtcFormId
-        req.body.formSubmit = [...req.body]
+        req.body.formSubmit = [JSON.parse(JSON.stringify(req.body))]
         let installmentFormValidator = await handleInstallmentForm(req.body)
         // console.log("installmentFormValidator ::: ", installmentFormValidator)
         if (!installmentFormValidator.valid && runValidators) {
@@ -1074,11 +1076,11 @@ module.exports.createOrUpdateInstallmentForm = async (req, res) => {
             // response.errors = installmentFormValidator.errors
             return res.status(405).json(response)
         }
-        let formSubmit = [...req.body]
+        
         let actionTakenByRole = role
         let actionTakenBy = userId
         let formBodyStatus = currentFormStatus
-        await createHistory({ isDraft, currentFormStatus, gtcFormId ,formSubmit , actionTakenByRole , actionTakenBy , formBodyStatus })
+        await createHistory({ currentFormStatus, gtcFormId ,formSubmit , actionTakenByRole , actionTakenBy , formBodyStatus })
         response.success = true
         response.message = "Success"
         return res.status(200).json(response)
@@ -1098,8 +1100,13 @@ module.exports.createOrUpdateInstallmentForm = async (req, res) => {
 module.exports.installmentAction = async (req, res) => {
 
     try {
-        console.log('payload', req.body);
-
+        let {role,mohua} = req.decoded
+        if(role !== userTypes.mohua){
+            return res.json({
+                "success":true,
+                "message":"Not permitted"
+            })
+        }
         const {
             key,
             rejectReason_mohua,
@@ -1114,19 +1121,22 @@ module.exports.installmentAction = async (req, res) => {
             installment,
             // year: ObjectId(year),
             // type,
+            type:key,
             design_year: ObjectId(design_year),
             state: ObjectId(state)
         }, {
             $set: {
+                actionTakenBy: mohua || state,
+                actionTakenByRole:role,
                 currentFormStatus: statusId,
                 rejectReason_mohua,
                 responseFile_mohua
             }
         });
-
+        req.body._id = found?._id
+        let formSubmit = [{...req.body,type:key,currentFormStatus:statusId}]
+        await createHistory({ formBodyStatus : Number(statusId),formSubmit, actionTakenByRole:role , actionTakenBy: mohua || state  })
         if(!found) return res.status(404).json({ message: 'Installment not found'});
-
-
         return res.status(200).json({
             success: true,
             message: 'Action recorded'
@@ -1135,7 +1145,11 @@ module.exports.installmentAction = async (req, res) => {
 
     }
     catch (err) {
-        console.log("error in installmentAction ::: ", err.message)
+        let message = ["demo","staging"].includes(process.env.ENV) ? err.message : "something went wrong"
+         return res.status(404).json({
+            success : true,
+            message,
+        })
     }
 }
 
@@ -1144,15 +1158,16 @@ async function createHistory(params) {
         let {formBodyStatus,actionTakenBy,actionTakenByRole,formSubmit,formType} = params
         let formData = formSubmit[0]
         let shortKey = `${formData.type}_${years[formData.financialYear]}_${formData.installment}`
-            let params = {
-                formBodyStatus:currentFormStatus,
+            let historyParams = {
+                formBodyStatus,
                 actionTakenBy:actionTakenBy,
                 actionTakenByRole:actionTakenByRole,
                 formSubmit:formSubmit,
                 formType:"GTC_STATE",
                 shortKey:shortKey
             }
-            await saveStatusAndHistory(params)
+            
+            await saveStatusAndHistory(historyParams)
     }
     catch (err) {
         console.log("error in createHistory ::: ", err.message)
