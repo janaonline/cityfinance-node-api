@@ -11,7 +11,8 @@ const STATUS_LIST = require('../../util/newStatusList');
 const { MASTER_STATUS, MASTER_STATUS_ID, YEAR_CONSTANTS, YEAR_CONSTANTS_IDS, MASTER_FORM_STATUS, MASTER_FORM_QUESTION_STATUS } = require('../../util/FormNames');
 const { canTakeActionOrViewOnlyMasterForm } = require('../../routes/CommonActionAPI/service')
 // const { createDynamicColumns } = require('./service')
-const List = require('../../util/15thFCstatus')
+const List = require('../../util/15thFCstatus');
+let outDatedYears = ["2018-19","2019-20","2021-22","2022-23"]
 const MASTERSTATUS = require('../../models/MasterStatus');
 const Rating = require('../../models/Rating');
 const { roundValue, convertValue, removeEscapeChars, formatDate } = require('../../util/helper')
@@ -373,11 +374,11 @@ function countStatusData(element, collectionName) {
   } else {
     if (collectionName === CollectionNames.state_gtc) {
       for (let i = 0; i < arr?.length; i++) {
-        if (arr[i] === "PENDING") {
+        if (arr[i] === MASTER_FORM_STATUS['IN_PROGRESS']) {
           pending++;
-        } else if (arr[i] === "APPROVED") {
+        } else if (arr[i] === MASTER_FORM_STATUS['SUBMISSION_ACKNOWLEDGED_BY_MoHUA']) {
           approved++;
-        } else if (arr[i] === "REJECTED") {
+        } else if (arr[i] === MASTER_FORM_STATUS['RETURNED_BY_MoHUA']) {
           rejected++;
         }
       }
@@ -1113,7 +1114,7 @@ function createDynamicQuery(collectionName, oldQuery, userRole, csv) {
             query_2 = {
               $group: {
                 _id: "$state",
-                status: { $push: "$formData.status" },
+                status: { $push: "$formData.currentFormStatus" },
                 stateName: { $first: "$stateName" },
                 state: { $first: "$state" },
                 stateCode: { $first: "$stateCode" },
