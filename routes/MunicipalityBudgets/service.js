@@ -7,10 +7,13 @@ const Response = require('../../service/response')
 module.exports.getDocuments = async (req, res) => {
     try {
         const {
-            ulbName, year, state
+            ulbName, year, state, category 
         } = req.query;
         const $match = {
-            ...(state && { state: ObjectId(state) }),
+            ...(state ? { state: ObjectId(state) } : {
+                state: {$in: [ObjectId('5dcf9d7316a06aed41c748eb'), ObjectId('5dcf9d7316a06aed41c748eb')]}
+            }),
+            ...(category && { ulbType: ObjectId(category) }),
             ...(ulbName && { name: { $regex: ulbName, '$options' : 'i' } }),
         }
         const query = [
@@ -24,8 +27,8 @@ module.exports.getDocuments = async (req, res) => {
                             $match: {
                                 ...(year && {year: ObjectId(year)}),
                                 type: "appAnnualBudget",
-                                'file.name': { $exists: true},
-                                'file.url': { $exists: true},
+                                'file.name': { $ne: ''},
+                                'file.url': { $ne: ''},
                                 $expr: { "$eq": ["$ulb", "$$ulbId"] },
                             }
                         },
@@ -44,7 +47,7 @@ module.exports.getDocuments = async (req, res) => {
             },
             { $unwind: '$documents' },
             { $replaceRoot: { newRoot: '$documents' } },
-            { $limit: 10 },
+            // { $limit: 10 },
         ];
         const response = await Ulb.aggregate(query).allowDiskUse(true);
 
