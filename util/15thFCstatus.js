@@ -46,7 +46,7 @@ module.exports.ModelNames = {
     slb: "XVFcGrantULBForm",
     waterRej : "WaterRejenuvationRecycling",
     actionPlan: "ActionPlans",
-    slbScoring: "slbScoring"
+    slbScoring: "slbScoring",
 }
 
 module.exports.CollectionNames = {
