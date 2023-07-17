@@ -15,7 +15,9 @@ module.exports.changeGetApiForm = async (req, res, next) => {
         "cost" : "",
         "expenditure" : "",
         "category" : ObjectId("60783e454dff55e6c0cb80c8"),
-        "name" : ""
+        "name" : "",
+        "startDate":"",
+        "completionDate":""
     }
     let response = {
         "success": false,
@@ -29,8 +31,8 @@ module.exports.changeGetApiForm = async (req, res, next) => {
         let { name, role } = req.decoded
         // form['ulbName'] = name
         // delete form['projects']
-        if(form.projects.length < 0){
-            if(form?.createdAt > new Date('2023-07-12T11:45:58.550Z') ){
+        if(form.projects.length < 1){
+            if(form?.createdAt < new Date('2023-07-12T11:45:58.550Z') ){
                 form['projects'] = [dummyProjectSample]
             }
         }
