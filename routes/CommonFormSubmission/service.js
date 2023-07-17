@@ -4,6 +4,7 @@ const {
   MASTER_STATUS,
   FORMIDs,
   FORM_LEVEL,
+  MASTER_FORM_STATUS,
 } = require("../../util/FormNames");
 const CurrentStatus = require("../../models/CurrentStatus");
 const { ModelNames } = require("../../util/15thFCstatus");
@@ -384,18 +385,17 @@ async function saveStatusAndHistory(params){
     "message":"",
     "valid":true
   }
-  let {formBodyStatus,actionTakenBy,actionTakenByRole,formSubmit,formType} = params
+  let {formBodyStatus,actionTakenBy,actionTakenByRole,formSubmit,formType,shortKey} = params
   let masterFormId = FORMIDs[formType]
+  let reviewAllowedStatuses = [MASTER_FORM_STATUS['RETURNED_BY_MoHUA'],MASTER_FORM_STATUS['SUBMISSION_ACKNOWLEDGED_BY_MoHUA'],MASTER_FORM_STATUS['SUBMISSION_ACKNOWLEDGED_BY_PMU'],MASTER_FORM_STATUS['UNDER_REVIEW_BY_MoHUA'],MASTER_FORM_STATUS['UNDER_REVIEW_BY_STATE']]
   try{
-    console.log("formBodyStatu ",formBodyStatus === MASTER_STATUS["In Progress"])
     if (formBodyStatus === MASTER_STATUS["In Progress"]) {
-      console.log("masterFormId ::: ",masterFormId)
       let currentStatusData = {
         formId: masterFormId,
         recordId: ObjectId(formSubmit[0]._id),
         status: MASTER_STATUS["In Progress"],
         level: FORM_LEVEL["form"],
-        shortKey: "form_level",
+        shortKey: shortKey || 'form_level',
         rejectReason: "",
         responseFile: "",
         actionTakenByRole: actionTakenByRole,
@@ -407,7 +407,7 @@ async function saveStatusAndHistory(params){
       });
       // return Response.OK(res, {}, "Form Submitted");
     } else if (
-      formBodyStatus === MASTER_STATUS["Under Review By State"]
+      reviewAllowedStatuses.includes(formBodyStatus)
     ) {
       let bodyData = {
         formId: masterFormId,
@@ -440,9 +440,10 @@ async function saveStatusAndHistory(params){
         shortKey: "form_level",
         data: currentStatusData,
       };
-      await saveStatusHistory({
-        body: statusHistory,
-      });
+      
+        await saveStatusHistory({
+          body: statusHistory,
+        });
     }
   }
   catch(err){

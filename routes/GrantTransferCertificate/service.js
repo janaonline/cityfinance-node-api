@@ -3,6 +3,7 @@ const GrantTransferCertificate = require('../../models/GrantTransferCertificate'
 const StateGTCCertificate = require('../../models/StateGTCertificate');
 const ObjectId = require("mongoose").Types.ObjectId;
 const Ulb = require('../../models/Ulb')
+const {saveStatusAndHistory} = require("../CommonFormSubmission/service")
 const { checkForUndefinedVaribales, mutateResponse, getFlatObj } = require("../../routes/CommonActionAPI/service")
 const { getKeyByValue, saveFormHistory, grantDistributeOptions } = require("../../util/masterFunctions");
 const { years } = require('../../service/years');
@@ -26,7 +27,7 @@ let GtcFormTypes = [
     "nonmillion_tied"
 ]
 let alerts = {
-    "prevForm":`Your previous year's GTC form is not complete. <a href=${process.env.HOSTNAME}/stateform2223/gtCertificate">Click Here!</a> to access previous year form.`,
+    "prevForm":`Your previous year's GTC form is not complete. <a href="${process.env.HOSTNAME}/stateform2223/gtCertificate">Click Here!</a> to access previous year form.`,
     "installmentMsg":(year)=>{
         return `1st Installment (${year}) GTC has to be uploaded first before uploading 2nd Installment (${year}) GTC`
     }
@@ -947,8 +948,7 @@ async function handleInstallmentForm(params) {
             validator.errors = installmentValidatior.errors
             return validator
         }
-        console.log("payload :: ", payload)
-        console.log("transferGrantData", transferGrantData)
+        // console.log("transferGrantData", transferGrantData)
         let gtcInstallment = await GtcInstallmentForm.findOneAndUpdate({
             installment,
             year,
@@ -1029,12 +1029,14 @@ module.exports.createOrUpdateInstallmentForm = async (req, res) => {
     try {
         let { installment, type, isDraft, status, financialYear, year, state, statusId: currentFormStatus, installment_type } = req.body
         let role = req.decoded.role
+        let userId = req.decoded._id
         if (role !== userTypes.state) {
             response.success = false
             response.message = "Not Permitted"
             response.message = ["Not Permitted"]
             return response.status(405).json(response)
         }
+        let formSubmit = [JSON.parse(JSON.stringify(req.body))]
         let params = {
             "installment id": installment,
             "year id ": year,
@@ -1059,11 +1061,13 @@ module.exports.createOrUpdateInstallmentForm = async (req, res) => {
             return res.status(405).json(response)
         }
         let gtcFormId = await getOrCreateFormId(req.body)
+        formSubmit[0]['_id'] = gtcFormId
         if (!gtcFormId) {
             throw { message: "something went wrong" }
         }
         req.body.gtcFormId = gtcFormId
-
+        req.body._id =  gtcFormId
+        req.body.formSubmit = [JSON.parse(JSON.stringify(req.body))]
         let installmentFormValidator = await handleInstallmentForm(req.body)
         // console.log("installmentFormValidator ::: ", installmentFormValidator)
         if (!installmentFormValidator.valid && runValidators) {
@@ -1072,7 +1076,11 @@ module.exports.createOrUpdateInstallmentForm = async (req, res) => {
             // response.errors = installmentFormValidator.errors
             return res.status(405).json(response)
         }
-        await createHistory({ isDraft, currentFormStatus, gtcFormId })
+        
+        let actionTakenByRole = role
+        let actionTakenBy = userId
+        let formBodyStatus = currentFormStatus
+        await createHistory({ currentFormStatus, gtcFormId ,formSubmit , actionTakenByRole , actionTakenBy , formBodyStatus })
         response.success = true
         response.message = "Success"
         return res.status(200).json(response)
@@ -1092,8 +1100,13 @@ module.exports.createOrUpdateInstallmentForm = async (req, res) => {
 module.exports.installmentAction = async (req, res) => {
 
     try {
-        console.log('payload', req.body);
-
+        let {role,mohua} = req.decoded
+        if(role !== userTypes.mohua){
+            return res.json({
+                "success":true,
+                "message":"Not permitted"
+            })
+        }
         const {
             key,
             rejectReason_mohua,
@@ -1108,19 +1121,22 @@ module.exports.installmentAction = async (req, res) => {
             installment,
             // year: ObjectId(year),
             // type,
+            type:key,
             design_year: ObjectId(design_year),
             state: ObjectId(state)
         }, {
             $set: {
+                actionTakenBy: mohua || state,
+                actionTakenByRole:role,
                 currentFormStatus: statusId,
                 rejectReason_mohua,
                 responseFile_mohua
             }
         });
-
+        req.body._id = found?._id
+        let formSubmit = [{...req.body,type:key,currentFormStatus:statusId}]
+        await createHistory({ formBodyStatus : Number(statusId),formSubmit, actionTakenByRole:role , actionTakenBy: mohua || state  })
         if(!found) return res.status(404).json({ message: 'Installment not found'});
-
-
         return res.status(200).json({
             success: true,
             message: 'Action recorded'
@@ -1129,29 +1145,29 @@ module.exports.installmentAction = async (req, res) => {
 
     }
     catch (err) {
-        console.log("error in installmentAction ::: ", err.message)
+        let message = ["demo","staging"].includes(process.env.ENV) ? err.message : "something went wrong"
+         return res.status(404).json({
+            success : true,
+            message,
+        })
     }
 }
 
 async function createHistory(params) {
     try {
-        let { isDraft, currentFormStatus, gtcFormId } = params
-        if (!isDraft || currentFormStatus === 7) {
-            let payload = {
-                "recordId": gtcFormId,
-                "data": []
+        let {formBodyStatus,actionTakenBy,actionTakenByRole,formSubmit,formType} = params
+        let formData = formSubmit[0]
+        let shortKey = `${formData.type}_${years[formData.financialYear]}_${formData.installment}`
+            let historyParams = {
+                formBodyStatus,
+                actionTakenBy:actionTakenBy,
+                actionTakenByRole:actionTakenByRole,
+                formSubmit:formSubmit,
+                formType:"GTC_STATE",
+                shortKey:shortKey
             }
-            let gtcForm = await GrantTransferCertificate.findOne({
-                "_id": gtcFormId,
-            }).lean()
-            gtcForm['installmentForm'] = {}
-            let installmentForm = await GtcInstallmentForm.findOne({
-                "gtcForm": gtcForm._id
-            }).populate("transferGrantdetail").lean()
-            gtcForm['installmentForm'] = installmentForm
-            payload['data'] = [gtcForm]
-            await saveFormHistory({ body: payload })
-        }
+            
+            await saveStatusAndHistory(historyParams)
     }
     catch (err) {
         console.log("error in createHistory ::: ", err.message)
