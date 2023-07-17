@@ -2128,8 +2128,7 @@ async function appendvalues(childQuestionData,flattedForm,shortKey,question){
             if(flattedForm[modelKey]){
                 childQuestionData = await handleArrOfObjects(question,flattedForm)
                 let questionLength = childQuestionData.length
-                if(addMoreFields.includes(shortKey)){
-                    console.log(">>>>>>>>>>>if conditipon :::",questionLength)
+                if (addMoreFields.includes(shortKey)) {
                     question.value = questionLength
                     question.modelValue = questionLength
                     question.selectedValue = {

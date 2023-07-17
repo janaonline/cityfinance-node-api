@@ -29,11 +29,12 @@ module.exports.changeGetApiForm = async (req, res, next) => {
         let { name, role } = req.decoded
         // form['ulbName'] = name
         // delete form['projects']
-        if(form.projects.length < 0){
-            if(form?.createdAt > new Date('2023-07-12T11:45:58.550Z') ){
+        if(form.projects.length < 1){
+            if(form?.createdAt < new Date('2023-07-12T11:45:58.550Z') ){
                 form['projects'] = [dummyProjectSample]
             }
         }
+        console.log("dummyProjectSample :::: ",form['projects'])
         let latestYear = !outDatedYears.includes(year)
         let jsonFormId = req.query.formId || 0
         let condition = { formId: parseInt(jsonFormId), design_year: ObjectId(yearId) }
