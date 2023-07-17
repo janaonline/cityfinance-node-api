@@ -360,8 +360,8 @@ function countStatusData(element, collectionName) {
   let arr = collectionName === CollectionNames.state_gtc ? element.status : element.draft
 
   if (collectionName === CollectionNames.state_gtc) {
-    total = 8;
-    notStarted = 8;
+    total = 5;
+    notStarted = 5;
   } else if (collectionName === CollectionNames.state_grant_alloc) {
     total = 5;
     notStarted = 5;
