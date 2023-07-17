@@ -16,7 +16,8 @@ module.exports.changeGetApiForm = async (req, res, next) => {
         "expenditure" : "",
         "category" : ObjectId("60783e454dff55e6c0cb80c8"),
         "name" : "",
-        "startDate":""
+        "startDate":"",
+        "completionDate":""
     }
     let response = {
         "success": false,
@@ -35,7 +36,6 @@ module.exports.changeGetApiForm = async (req, res, next) => {
                 form['projects'] = [dummyProjectSample]
             }
         }
-        console.log("dummyProjectSample :::: ",form['projects'])
         let latestYear = !outDatedYears.includes(year)
         let jsonFormId = req.query.formId || 0
         let condition = { formId: parseInt(jsonFormId), design_year: ObjectId(yearId) }
