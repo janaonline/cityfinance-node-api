@@ -39,6 +39,17 @@ module.exports.getForm = async (req, res,next) =>{
         const form = await LinkPFMS.findOne(condition).lean();
         if (form){
             Object.assign(form, {canTakeAction: canTakenAction(form['status'], form['actionTakenByRole'], form['isDraft'], "ULB",role ) })
+            if(latestYear){
+                let params = {
+                    modelName: ModelNames["twentyEightSlbs"],
+                    currentFormStatus: form.currentFormStatus,
+                    formType: "ULB",
+                    actionTakenByRole: role,
+                  };
+                  const canTakeActionOnMasterForm = await getMasterForm(params);
+                  Object.assign(form, canTakeActionOnMasterForm);
+            }
+            console.log("req.form ::: ",req.form)
             req.form = form
             return next()
             // return res.status(200).json({
