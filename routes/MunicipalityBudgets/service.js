@@ -11,7 +11,7 @@ module.exports.getDocuments = async (req, res) => {
         } = req.query;
         const $match = {
             ...(state ? { state: ObjectId(state) } : {
-                state: { $in: [ObjectId('5dcf9d7316a06aed41c748eb'), ObjectId('5dcf9d7316a06aed41c748eb')] }
+                state: { $in: [ObjectId('5dcf9d7316a06aed41c748eb'), ObjectId('5dcf9d7516a06aed41c748fa')] }
             }),
             ...(category && { ulbType: ObjectId(category) }),
             ...(ulbName && { name: { $regex: ulbName, '$options': 'i' } }),
@@ -47,7 +47,7 @@ module.exports.getDocuments = async (req, res) => {
             },
             { $unwind: '$documents' },
             { $replaceRoot: { newRoot: '$documents' } },
-            // { $limit: 10 },
+            { $limit: 20 },
         ];
         const response = await Ulb.aggregate(query).allowDiskUse(true);
 
