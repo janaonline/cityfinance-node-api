@@ -2356,7 +2356,7 @@ const excelPTOMapping = async (query) => {
       if (!fs.existsSync(tempFilePath)) {
         fs.mkdirSync(tempFilePath);
       }
-      const filename = `${Date.now()}__ptax_download.xlsx`
+      const filename = `PropertyTaxCSV.xlsx`
 
       // copying the template in new workbook and sheet in excel
       const template = fs.readFileSync(`p-tax/ptax-template.xlsx`)
@@ -2366,30 +2366,67 @@ const excelPTOMapping = async (query) => {
       const crrWorkbook = await workbook.xlsx.readFile(`${tempFilePath}/${filename}`)
       const crrWorksheet = crrWorkbook.getWorksheet("Sheet 1")
 
-      const cursor = await PropertyTaxOp.aggregate([
-        { $match: { "design_year": design_year } },
+      const cursor = await Ulb.aggregate([
         {
-          $lookup: {
-            from: "ulbs",
-            localField: "ulb",
-            foreignField: "_id",
-            as: "ulb"
-          }
+          $match: { access_2324: true }
         },
-        { $unwind: "$ulb" },
         {
           $lookup: {
             from: "states",
-            localField: "ulb.state",
+            localField: "state",
             foreignField: "_id",
             as: "state"
           }
         },
-        { $unwind: "$state" },
+        {
+          $unwind: "$state"
+        },
+        {
+          $match: { "state.accessToXVFC": true }
+        },
+        {
+          $lookup: {
+            from: "propertytaxops",
+            let: {
+              firstUser: design_year,
+              secondUser: "$_id"
+            },
+            pipeline: [
+              {
+                $match: {
+                  $expr: {
+                    $and: [
+                      { $eq: ["$design_year", "$$firstUser"] },
+                      { $eq: ["$ulb", "$$secondUser"] }
+                    ]
+                  }
+                }
+              }
+            ],
+            as: "propertytaxop"
+          }
+        },
+        {
+          $unwind: {
+            path: "$propertytaxop",
+            preserveNullAndEmptyArrays: true
+          }
+        },
+        {
+          $addFields: {
+            currentFormStatus: {
+              $cond: {
+                if: { $ne: [{ $type: "$propertytaxop" }, "object"] },
+                then: "1",
+                else: "$propertytaxop.currentFormStatus"
+              }
+            }
+          }
+        },
         {
           $lookup: {
             from: "propertytaxopmappers",
-            localField: "_id",
+            localField: "propertytaxop._id",
             foreignField: "ptoId",
             as: "propertytaxopmapper"
           }
@@ -2397,13 +2434,13 @@ const excelPTOMapping = async (query) => {
         {
           $lookup: {
             from: "propertymapperchilddatas",
-            localField: "_id",
+            localField: "propertytaxop._id",
             foreignField: "ptoId",
             as: "propertymapperchilddata"
           }
-        },
+        }
       ]).allowDiskUse(true)
-        .cursor({ batchSize: 100 })
+        .cursor({ batchSize: 75 })
         .addCursorFlag("noCursorTimeout", true)
         .exec();
 
@@ -2411,10 +2448,10 @@ const excelPTOMapping = async (query) => {
         // mapping these fields manually as they aren't available in the fydynamic.js file
         crrWorksheet.getCell(`A${startRowIndex + counter}`).value = counter + 1
         crrWorksheet.getCell(`B${startRowIndex + counter}`).value = el.state.name
-        crrWorksheet.getCell(`C${startRowIndex + counter}`).value = el.ulb.name
-        crrWorksheet.getCell(`D${startRowIndex + counter}`).value = el.ulb.code
-        crrWorksheet.getCell(`E${startRowIndex + counter}`).value = el.ulb.censusCode ?? el.ulb.sbCode
-        crrWorksheet.getCell(`F${startRowIndex + counter}`).value = YEAR_CONSTANTS_IDS[el.design_year]
+        crrWorksheet.getCell(`C${startRowIndex + counter}`).value = el.name
+        crrWorksheet.getCell(`D${startRowIndex + counter}`).value = el.code
+        crrWorksheet.getCell(`E${startRowIndex + counter}`).value = el.censusCode ?? el.sbCode
+        crrWorksheet.getCell(`F${startRowIndex + counter}`).value = YEAR_CONSTANTS_IDS[design_year]
         crrWorksheet.getCell(`G${startRowIndex + counter}`).value = MASTER_STATUS_ID[el.currentFormStatus]
 
         const sortedResults = el.propertytaxopmapper;
