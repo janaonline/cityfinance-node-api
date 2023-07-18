@@ -6,6 +6,7 @@ const {
   FORM_LEVEL,
   USER_ROLE,
   MASTER_STATUS_ID,
+  MASTER_FORM_STATUS,
 } = require("../../util/FormNames");
 const CurrentStatus = require("../../models/CurrentStatus");
 const { ModelNames } = require("../../util/15thFCstatus");
@@ -80,6 +81,7 @@ module.exports.createAndUpdateFormMasterState = async (params) => {
             if (!Array.isArray(shortKeys) || !shortKeys.length) {
               return Response.BadRequest(res, {}, `UA shortkeys not found`);
             }
+           shortKeys =  await filterApprovedShortKeys(shortKeys, formSubmit._id);
             if (formBodyStatus === MASTER_STATUS["In Progress"]) {
               for (let shortKey of shortKeys) {
                 let currentStatusData = {
@@ -170,6 +172,32 @@ module.exports.createAndUpdateFormMasterState = async (params) => {
 
 
 
+/**
+ * The function filters out short keys that have been approved by the Ministry of Housing and Urban
+ * Affairs (MoHUA).
+ * @param shortKeys - An array of short keys.
+ */
+async function filterApprovedShortKeys(shortKeys, formId) {
+  try {
+    let updateShortKeys = await CurrentStatus.find(
+      {
+        recordId: ObjectId(formId),
+        actionTakenByRole: "MoHUA",
+        status: MASTER_FORM_STATUS['SUBMISSION_ACKNOWLEDGED_BY_MoHUA'],
+      },
+      { shortKey: 1, _id: 0 }
+    ).lean();
+    updateShortKeys = updateShortKeys.map(el=> el.shortKey);
+    if (updateShortKeys.length) {
+      shortKeys = shortKeys.filter((el) => {
+        return !updateShortKeys.includes(el);
+      });
+    }
+    return shortKeys;
+  } catch (error) {
+    throw {message:`filterApprovedShortKeys:: ${error.message}` }
+  }
+}
 /**
  * The function `addActionKeys` takes in user agent data, short keys, status data, and a role, and adds
  * additional properties to each user agent object based on the provided data.
