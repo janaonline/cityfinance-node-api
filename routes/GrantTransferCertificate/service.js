@@ -694,7 +694,7 @@ const getManipulatedJson = async (installment, type, design_year, formJson, fiel
         }
         flattedForm = {}
         const statusId = gtcForm.currentFormStatus;
-        const canTakeAction = (statusId == MASTER_STATUS['Under Review by MoHUA'] && role == userTypes.mohua);
+        const canTakeAction = (statusId == MASTER_FORM_STATUS['UNDER_REVIEW_BY_MoHUA'] && role == userTypes.mohua);
         const rejectReason_mohua = gtcForm?.rejectReason_mohua || '';
         const responseFile_mohua = gtcForm?.responseFile_mohua || {
             name: '',
@@ -1047,7 +1047,7 @@ module.exports.createOrUpdateInstallmentForm = async (req, res) => {
             "year": year,
             "state": state
         }
-        let runValidators = [MASTER_STATUS['In Progress']].includes(currentFormStatus) ? false : true
+        let runValidators = [MASTER_FORM_STATUS['IN_PROGRESS']].includes(currentFormStatus) ? false : true
         let validator = await checkForUndefinedVaribales(params)
         if (!validator.valid) {
             response.success = false
