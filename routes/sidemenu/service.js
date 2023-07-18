@@ -17,7 +17,7 @@ const PropTax = require('../../models/PropertyTaxOp')
 const { calculateStatus, calculateStatusMaster } = require('../CommonActionAPI/service')
 const SLB28 = require('../../models/TwentyEightSlbsForm')
 const PropertyTaxOp = require('../../models/PropertyTaxOp')
-const { YEAR_CONSTANTS, MASTER_STATUS_ID, MASTER_FORM_STATUS } = require('../../util/FormNames');
+const { YEAR_CONSTANTS, MASTER_STATUS_ID, MASTER_FORM_STATUS, MASTER_STATUS } = require('../../util/FormNames');
 var outDatedYears = ["2018-19","2019-20","2021-22","2022-23"]
 //STate Forms
 const SFC = require('../../models/StateFinanceCommissionFormation')
@@ -254,6 +254,20 @@ const UA_FORM_MODEL = {
   XVFcGrantULBForm_UA_NO: ObjectId("63ff31d63ae39326f4b2f469")
 }
 
+const getformStatus = (data)=>{
+  try{
+    const formData = {}
+    const statusPriorities = [1, 2, 4, 7, 6];
+    const minStatusIndex = Math.min(...data.map(item => statusPriorities.indexOf(item.currentFormStatus))) 
+    const result = statusPriorities[minStatusIndex < 0 ? 1: minStatusIndex];
+    formData['currentFormStatus'] = result
+    return formData
+  }
+  catch(err){
+    console.log("error in findStatuses :: ",err.message)
+  }
+}
+
 module.exports.get = catchAsync(async (req, res) => {
   let user = req.decoded;
   let role = req.query.role;
@@ -346,7 +360,8 @@ module.exports.get = catchAsync(async (req, res) => {
             output.push(findStatusAndTooltip(formData, FormModelMapping_State[el['modelName']], el['modelName'], user.role, role))
           }
           else{
-            formData = {currentFormStatus:Math.min(... new Set(formDataArray.map(item => item.currentFormStatus || 2)))}
+            formData = await getformStatus(formDataArray)
+            console.log("formData :: ",formData)
             output.push(findStatusAndTooltipMaster({ formData, formId: FormModelMappingMaster_State[el['modelName']], loggedInUserRole: user.role, viewFor: role }))
           }
         }
