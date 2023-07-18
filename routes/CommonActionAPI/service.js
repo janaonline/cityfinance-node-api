@@ -326,6 +326,7 @@ const calculateStatus = (status, actionTakenByRole, isDraft, formType) => {
 }
 
 module.exports.calculateStatusMaster = (status) => {
+    console.log("status ::",status)
     if (MASTER_STATUS_ID.hasOwnProperty(status)) {
         return MASTER_STATUS_ID[status];
     } else {
