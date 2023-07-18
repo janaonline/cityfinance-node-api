@@ -6,6 +6,7 @@ const {
   FORM_LEVEL,
   USER_ROLE,
   MASTER_STATUS_ID,
+  MASTER_FORM_STATUS,
 } = require("../../util/FormNames");
 const CurrentStatus = require("../../models/CurrentStatus");
 const { ModelNames } = require("../../util/15thFCstatus");
@@ -182,7 +183,7 @@ async function filterApprovedShortKeys(shortKeys, formId) {
       {
         recordId: ObjectId(formId),
         actionTakenByRole: "MoHUA",
-        status: MASTER_STATUS["Submission Acknowledged By MoHUA"],
+        status: MASTER_FORM_STATUS['SUBMISSION_ACKNOWLEDGED_BY_MoHUA'],
       },
       { shortKey: 1, _id: 0 }
     ).lean();
