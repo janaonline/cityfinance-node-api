@@ -2,10 +2,13 @@ const LinkPFMS = require('../../models/LinkPFMS');
 const ObjectId = require("mongoose").Types.ObjectId;
 const {canTakenAction} = require('../CommonActionAPI/service')
 const Service = require('../../service');
+const {createAndUpdateFormMaster} = require("../CommonFormSubmission/service")
 const {FormNames} = require('../../util/FormNames');
 const User = require('../../models/User');
 const { years } = require("../../service/years")
 const { getKeyByValue } = require("../../util/masterFunctions")
+var outDatedYears = ["2018-19", "2019-20", "2021-22", "2022-23"]
+const { ModelNames } = require("../../util/15thFCstatus");
 function response(form, res, successMsg ,errMsg){
     if(form){
         return res.status(200).json({
@@ -23,7 +26,7 @@ function response(form, res, successMsg ,errMsg){
 
 module.exports.getForm = async (req, res,next) =>{
     try {
-        let outDatedYears = ["2018-19", "2019-20", "2021-22", "2022-23"]
+        
         let yearId = req.query.design_year
         let year = getKeyByValue(years, yearId)
         let latestYear = !outDatedYears.includes(year)
@@ -36,6 +39,17 @@ module.exports.getForm = async (req, res,next) =>{
         const form = await LinkPFMS.findOne(condition).lean();
         if (form){
             Object.assign(form, {canTakeAction: canTakenAction(form['status'], form['actionTakenByRole'], form['isDraft'], "ULB",role ) })
+            if(latestYear){
+                let params = {
+                    modelName: ModelNames["twentyEightSlbs"],
+                    currentFormStatus: form.currentFormStatus,
+                    formType: "ULB",
+                    actionTakenByRole: role,
+                  };
+                  const canTakeActionOnMasterForm = await getMasterForm(params);
+                  Object.assign(form, canTakeActionOnMasterForm);
+            }
+            console.log("req.form ::: ",req.form)
             req.form = form
             return next()
             // return res.status(200).json({
@@ -149,7 +163,20 @@ module.exports.createOrUpdateForm = async (req, res) =>{
           /* required */
           ReplyToAddresses: [process.env.EMAIL],
         };
-        
+        if (!outDatedYears.includes(getKeyByValue(formData.design_year))  && formData.ulb) {
+            console.log("formData :: ",formData)
+            let userFormData = {...formData}
+            userFormData.status = formData.currentFormStatus
+            let params = {
+              modelName: ModelNames["linkPFMS"],
+              formData:userFormData,
+              res,
+              actionTakenByRole,
+              actionTakenBy
+            };
+            return await createAndUpdateFormMaster(params);
+        }
+
 
         if(data.ulb && data.design_year){
             const submittedForm = await LinkPFMS.findOne(condition);

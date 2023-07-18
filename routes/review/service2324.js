@@ -269,7 +269,7 @@ const sortKeysWaterSenitation = (key) => {
     case "serviceLevelIndicators":
       return ["name", "component", "indicator", "existing", "after", "cost", "dprPreparation", "dprCompletion", "workCompletion"]
     case "reuseWater":
-      return ["name", "treatmentPlant", "lat", "long", "stp", "targetCust", "dprPreparation", "dprCompletion", "workCompletion"]
+      return ["name", "lat", "long", "stp", "treatmentPlant", "targetCust", "dprPreparation", "dprCompletion", "workCompletion"]
     default:
       return []
   }
@@ -283,8 +283,8 @@ const waterSenitationXlsDownload = async (data, res) => {
     const filename = `${Date.now()}__waterSupplyAndSanitation.xlsx`;
     const workbook = new ExcelJS.Workbook();
     const waterBodies = workbook.addWorksheet('waterBodies');
-    const serviceLevelIndicators = workbook.addWorksheet('serviceLevelIndicators');
     const reuseWater = workbook.addWorksheet('reuseWater');
+    const serviceLevelIndicators = workbook.addWorksheet('serviceLevelIndicators');
     let uaFormData = await UA.find({}).lean();
     let indicatorLineItems = await IndicatorLineItems.find({ "type": "water supply" }).lean();
     waterBodies.addRow([
@@ -294,16 +294,17 @@ const waterSenitationXlsDownload = async (data, res) => {
       "TDS in mg/L(Expected)", "Turbidity in  NTU (Current)", "Turbidity in  NTU(Expected)", "Project Details", "Preparation of  DPR",
       "Completion  of tendering process", "%  of  work completion"
     ]);
+    reuseWater.addRow([
+      "State Name", "State Code", "Form Status", "UA Name", "Project Name",
+      "Latitude", "Longitude", "Proposed capacity of STP(MLD)", "Proposed water quantity  to be reused(MLD)",
+      "Target customers/ consumer for  reuse of  water", "Preparation of  DPR", "Completion of tendering process", "%  of  work completion"
+    ]);
     serviceLevelIndicators.addRow([
       "State Name", "State Code", "Form Status", "UA Name", "Project Name", "Physical  Components",
       "Indicator", "Existing  (As- is)", "After  (To-be)", "Estimated  Cost (Amount  in  INR Lakhs)",
       "Preparation of  DPR", "Completion of tendering process", "%  of  work completion"
     ]);
-    reuseWater.addRow([
-      "State Name", "State Code", "Form Status", "UA Name", "Project Name", "Name  of  Water Treatment  Plant",
-      "Latitude", "Longitude", "Proposed water quantity  to be reused(MLD)",
-      "Target customers/ consumer for  reuse of  water", "Preparation of  DPR", "Completion of tendering process", "%  of  work completion"
-    ]);
+
     let counter = { waterBodies: 2, serviceLevelIndicators: 2, reuseWater: 2 } // counter
     if (data?.length) {
       for (const pf of data) {
@@ -311,7 +312,7 @@ const waterSenitationXlsDownload = async (data, res) => {
           let { uaData } = pf?.formData;
           let rowsArr = [pf?.stateName, pf?.stateCode, pf?.formStatus];
           for (const ua of uaData) {
-            let sortKeys = { waterBodies, serviceLevelIndicators, reuseWater };
+            let sortKeys = { waterBodies, reuseWater, serviceLevelIndicators };
             let UAName = uaFormData?.length ? uaFormData.find(e => e?._id?.toString() == ua?.ua?.toString()) : null
             rowsArr[3] = UAName?.name
             for (const key in sortKeys) {
