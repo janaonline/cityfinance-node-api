@@ -2,6 +2,7 @@ const Ulb = require('../../models/Ulb')
 const UA = require('../../models/UA')
 const State = require('../../models/State');
 const IndicatorLineItems = require('../../models/indicatorLineItems');
+const GtcInstallmentForm = require('../../models/GtcInstallmentForm');
 const CollectionNames = require('../../util/collectionName')
 const Response = require("../../service").response;
 const Sidemenu = require('../../models/Sidemenu');
@@ -9,10 +10,11 @@ const ObjectId = require("mongoose").Types.ObjectId;
 const Service = require('../../service');
 const STATUS_LIST = require('../../util/newStatusList');
 const { MASTER_STATUS, MASTER_STATUS_ID, YEAR_CONSTANTS, YEAR_CONSTANTS_IDS, MASTER_FORM_STATUS, MASTER_FORM_QUESTION_STATUS } = require('../../util/FormNames');
+const { getCurrentYear, getAccessYear, getFinancialYear } = require('../../util/masterFunctions');
 const { canTakeActionOrViewOnlyMasterForm, checkUlbAccess } = require('../../routes/CommonActionAPI/service')
 // const { createDynamicColumns } = require('./service')
 const List = require('../../util/15thFCstatus');
-let outDatedYears = ["2018-19","2019-20","2021-22","2022-23"]
+let outDatedYears = ["2018-19", "2019-20", "2021-22", "2022-23"]
 const MASTERSTATUS = require('../../models/MasterStatus');
 const Rating = require('../../models/Rating');
 const { roundValue, convertValue, removeEscapeChars, formatDate } = require('../../util/helper')
@@ -271,14 +273,19 @@ async function createCSV(params) {
       if (collectionName == "waterrejenuvationrecyclings") {
         await waterSenitationXlsDownload(data, res);
       } else {
-        fixedColumns = `State Name, City Finance Code, Regional Name,`;
+        let filename = `Review_${formType}-${collectionName}.csv`;
+        res.setHeader("Content-disposition", "attachment; filename=" + filename);
+        res.writeHead(200, { "Content-Type": "text/csv;charset=utf-8,%EF%BB%BF" });
         dynamicColumns = createDynamicColumns(collectionName);
-
-        res.write("\ufeff" + `${fixedColumns.toString()} ${dynamicColumns.toString()} \r\n`);
+        // console.log("dynamicColumns",dynamicColumns);process.exit()
+        res.write("\ufeff" + `${dynamicColumns.toString()} \r\n`);
         for (let el of data) {
-          let dynamicElementData = await createDynamicElements(collectionName, formType, el);
-          const row = `${el.stateName},${el.stateCode},${el.regionalName},${dynamicElementData.toString()}\r\n`;
-          res.write("\ufeff" + row);
+          if (collectionName == "GTC") {
+            let gtcData = await gtcInstallmentForms([...new Set(data.map(e => e._id))]);
+            let GTC = gtcData?.length ? gtcData?.filter(e => (e.state.toString() == el._id.toString() && e.gtcForm.toString() == el?.formData?._id?.toString() && e.installment == el.formData.installment)) : []
+            el['formData']['installment_form'] = GTC;
+            gtcStateFormCSVFormat(el, res)
+          }
         }
       }
     }
@@ -287,6 +294,68 @@ async function createCSV(params) {
     return Response.BadRequest(res, {}, error.message);
   }
 }
+const gtcInstallmentForms = (stateId) => {
+  return new Promise(async (resolve, reject) => {
+    try {
+      let data = await GtcInstallmentForm.find({ "state": { $in: stateId } }).populate("transferGrantdetail").lean();
+      resolve(data)
+    } catch (error) {
+      reject(error)
+    }
+  })
+}
+
+/* GTC Manupulate data */
+function gtcStateFormCSVFormat(obj, res) {
+  const { stateName, stateCode, formData, formStatus } = obj;
+  const { design_year, type, installment, file, installment_form, rejectReason_mohua } = formData;
+  let row = [stateName, stateCode, formStatus, design_year?.year, "", type, installment];
+  if (installment_form) {
+    let installment = installment_form;
+    if (installment?.length) {
+      let mainArr = [];
+      let sortKey = ["totalMpc", "totalNmpc", "totalElectedMpc", "totalElectedNmpc", "recAmount", "receiptDate", "totalTransAmount", "totalIntTransfer", "transferGrantdetail"]
+      let transSortKey = ["transDate", "transDelay", "daysDelay", "interest", "intTransfer", "recomAvail", "sfcNotificationCopy", "projectUndtkn", "propertyTaxNotif", "accountLinked", "file", "rejectReason_mohua"]
+      for (const el of installment) {
+        row[4] = el?.ulbType;
+        for (const key of sortKey) {
+          if (key == "transferGrantdetail") {
+            let transferGrantdetail = el[key];
+            if (transferGrantdetail?.length) {
+              for (const tfgObj of transferGrantdetail) {
+                let tArr = detailsGrantTransferredManipulate({ transSortKey, tfgObj, file, el, rejectReason_mohua })
+                let str = [...row, ...mainArr, ...tArr].join(',') + "\r\n"
+                res.write("\ufeff" + str);
+              }
+            } else {
+              let tArr = detailsGrantTransferredManipulate({ transSortKey, tfgObj, file, el, rejectReason_mohua })
+              let str = [...row, ...mainArr, ...tArr].join(',') + "\r\n"
+              res.write("\ufeff" + str);
+            }
+          } else {
+            key !== "receiptDate" ? mainArr.push(el[key]) : el[key] ? mainArr.push(formatDate(el[key])) : ""
+          }
+        }
+      }
+    }
+  }
+}
+
+function detailsGrantTransferredManipulate(params) {
+  const { transSortKey, tfgObj, file, el, rejectReason_mohua } = params;
+  let tArr = []
+  for (const tKey of transSortKey) {
+    if (["recomAvail", "sfcNotificationCopy", "projectUndtkn", "propertyTaxNotif", "accountLinked",].includes(tKey)) {
+      tArr.push(el[tKey]?.url ? el[tKey]?.url : el[tKey])
+    } else if (["file", "rejectReason_mohua"].includes(tKey)) {
+      tKey == "file" ? tArr.push(file?.url) : tArr.push(rejectReason_mohua)
+    } else {
+      tKey !== "transDate" ? tArr.push(tfgObj[tKey]) : tfgObj[tKey] ? tArr.push(formatDate(tfgObj[tKey])) : ""
+    }
+  }
+  return tArr;
+}
+
 const sortKeysWaterSenitation = (key) => {
   switch (key) {
     case 'waterBodies':
@@ -302,6 +371,7 @@ const sortKeysWaterSenitation = (key) => {
       return []
   }
 }
+
 const waterSenitationXlsDownload = async (data, res) => {
   try {
     const tempFilePath = "uploads/excel";
@@ -1172,6 +1242,7 @@ function createDynamicQuery(collectionName, oldQuery, userRole, csv) {
 }
 
 async function createDynamicElements(collectionName, formType, entity) {
+  // console.log("entity",entity);process.exit()
   if (!entity.formData) {
     entity["filled"] = "No";
     entity['formData'] = createDynamicObject(collectionName, formType);
@@ -1219,7 +1290,6 @@ async function createDynamicElements(collectionName, formType, entity) {
     );
   }
   let data = entity?.formData;
-
 
   switch (formType) {
     case "ULB":
@@ -1329,13 +1399,15 @@ async function createDynamicElements(collectionName, formType, entity) {
       break;
     case "STATE":
       switch (collectionName) {
-        case CollectionNames.odf:
-
+        case CollectionNames.state_gtc:
+          entity = ""
+          break;
       };
       break;
   }
   return entity;
 }
+
 function createDynamicObject(collectionName, formType) {
   let obj = {};
   switch (formType) {
@@ -2214,6 +2286,9 @@ function createDynamicColumns(collectionName) {
     case CollectionNames['GrantClaim']:
       columns = `State Name, City Finance Code, Regional Name, `
       break;
+    case CollectionNames['state_gtc']:
+      columns = `State Name,City Finance Code,Form Status,Year,Type of ULB,Type of Grant Received (Tied/Untied),Installment Type,Total No: of MPCs,Total No: of NMPCS,Total No: of Duly Elected MPCS,Total No: of Duly Elected NMPCS,Amount Received(In Lakhs),Date of Receipt,Amount Transferred, excluding interest (in lakhs),Date of Transfer,Was there any delay in transfer?,No. of days delayed,Rate of interest (annual rate),Amount of interest transferred - If there's any delay (in lakhs),Whether State Finance Commission recommendations available? (Yes/No),If No Upload notification for constitution of SFC issued,Whether Project works undertaken are uploaded on the website (Yes/No),Upload copy of Property Tax Notification issued,% of ULB accounts for 15th FC Grants which are linked to PFMS for all transactions,Upload Signed Grant Transfer Certificate,MoHUA Comments`
+      break;
     default:
       columns = '';
       break;
@@ -2344,7 +2419,7 @@ const getQuestionsMapping = (questions, counter = 0) => {
 
 module.exports.downloadPTOExcel = async (req, res) => {
   try {
-    const { crrWorkbook, filename, tempFilePath } = await excelPTOMapping(req.query)
+    const { crrWorkbook, filename, tempFilePath, year } = await excelPTOMapping(req.query)
 
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     res.setHeader("Content-Disposition", "attachment; filename=" + `${filename}`);
@@ -2373,10 +2448,17 @@ const excelPTOMapping = async (query) => {
       // map form questions with excel columns
       const userCharges = ["userChargesDmndChild", "userChargesCollectionChild"]
       const questionColMapping = getQuestionsMapping(questions, 8)
+      let design_year, accessYear = null;
+      let { getQuery, year } = query;
 
-      let { getQuery } = query
+      if (year && mongoose.isValidObjectId(year)) {
+        design_year = ObjectId(year);
+      } else {
+        const financialYear = getFinancialYear();
+        design_year = getCurrentYear(financialYear, design_year);
+      }
+      accessYear = getAccessYear(design_year, accessYear);
       getQuery = getQuery === "true"
-      const design_year = ObjectId(years['2023-24'])
       if (getQuery) {
         response.query = getQuery
         return response
@@ -2387,7 +2469,7 @@ const excelPTOMapping = async (query) => {
       if (!fs.existsSync(tempFilePath)) {
         fs.mkdirSync(tempFilePath);
       }
-      const filename = `${Date.now()}__ptax_download.xlsx`
+      const filename = `PropertyTaxCSV.xlsx`
 
       // copying the template in new workbook and sheet in excel
       const template = fs.readFileSync(`p-tax/ptax-template.xlsx`)
@@ -2397,30 +2479,67 @@ const excelPTOMapping = async (query) => {
       const crrWorkbook = await workbook.xlsx.readFile(`${tempFilePath}/${filename}`)
       const crrWorksheet = crrWorkbook.getWorksheet("Sheet 1")
 
-      const cursor = await PropertyTaxOp.aggregate([
-        { $match: { "design_year": design_year } },
+      const cursor = await Ulb.aggregate([
         {
-          $lookup: {
-            from: "ulbs",
-            localField: "ulb",
-            foreignField: "_id",
-            as: "ulb"
-          }
+          $match: { [accessYear]: true }
         },
-        { $unwind: "$ulb" },
         {
           $lookup: {
             from: "states",
-            localField: "ulb.state",
+            localField: "state",
             foreignField: "_id",
             as: "state"
           }
         },
-        { $unwind: "$state" },
+        {
+          $unwind: "$state"
+        },
+        {
+          $match: { "state.accessToXVFC": true }
+        },
+        {
+          $lookup: {
+            from: "propertytaxops",
+            let: {
+              firstUser: design_year,
+              secondUser: "$_id"
+            },
+            pipeline: [
+              {
+                $match: {
+                  $expr: {
+                    $and: [
+                      { $eq: ["$design_year", "$$firstUser"] },
+                      { $eq: ["$ulb", "$$secondUser"] }
+                    ]
+                  }
+                }
+              }
+            ],
+            as: "propertytaxop"
+          }
+        },
+        {
+          $unwind: {
+            path: "$propertytaxop",
+            preserveNullAndEmptyArrays: true
+          }
+        },
+        {
+          $addFields: {
+            currentFormStatus: {
+              $cond: {
+                if: { $ne: [{ $type: "$propertytaxop" }, "object"] },
+                then: "1",
+                else: "$propertytaxop.currentFormStatus"
+              }
+            }
+          }
+        },
         {
           $lookup: {
             from: "propertytaxopmappers",
-            localField: "_id",
+            localField: "propertytaxop._id",
             foreignField: "ptoId",
             as: "propertytaxopmapper"
           }
@@ -2428,13 +2547,13 @@ const excelPTOMapping = async (query) => {
         {
           $lookup: {
             from: "propertymapperchilddatas",
-            localField: "_id",
+            localField: "propertytaxop._id",
             foreignField: "ptoId",
             as: "propertymapperchilddata"
           }
-        },
+        }
       ]).allowDiskUse(true)
-        .cursor({ batchSize: 100 })
+        .cursor({ batchSize: 75 })
         .addCursorFlag("noCursorTimeout", true)
         .exec();
 
@@ -2442,10 +2561,10 @@ const excelPTOMapping = async (query) => {
         // mapping these fields manually as they aren't available in the fydynamic.js file
         crrWorksheet.getCell(`A${startRowIndex + counter}`).value = counter + 1
         crrWorksheet.getCell(`B${startRowIndex + counter}`).value = el.state.name
-        crrWorksheet.getCell(`C${startRowIndex + counter}`).value = el.ulb.name
-        crrWorksheet.getCell(`D${startRowIndex + counter}`).value = el.ulb.code
-        crrWorksheet.getCell(`E${startRowIndex + counter}`).value = el.ulb.censusCode ?? el.ulb.sbCode
-        crrWorksheet.getCell(`F${startRowIndex + counter}`).value = YEAR_CONSTANTS_IDS[el.design_year]
+        crrWorksheet.getCell(`C${startRowIndex + counter}`).value = el.name
+        crrWorksheet.getCell(`D${startRowIndex + counter}`).value = el.code
+        crrWorksheet.getCell(`E${startRowIndex + counter}`).value = el.censusCode ?? el.sbCode
+        crrWorksheet.getCell(`F${startRowIndex + counter}`).value = YEAR_CONSTANTS_IDS[design_year]
         crrWorksheet.getCell(`G${startRowIndex + counter}`).value = MASTER_STATUS_ID[el.currentFormStatus]
 
         const sortedResults = el.propertytaxopmapper;

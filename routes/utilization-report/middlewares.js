@@ -29,11 +29,14 @@ module.exports.changeGetApiForm = async (req, res, next) => {
         let year = getKeyByValue(years, yearId)
         let form = { ...req.form }
         let { name, role } = req.decoded
+        let latest = true
         // form['ulbName'] = name
         // delete form['projects']
         if(form.projects.length < 1){
             if(form?.createdAt < new Date('2023-07-12T11:45:58.550Z') ){
                 form['projects'] = [dummyProjectSample]
+                form['disabledShortKeys'] = ['category']
+                latest = false
             }
         }
         let latestYear = !outDatedYears.includes(year)
@@ -81,6 +84,7 @@ module.exports.changeGetApiForm = async (req, res, next) => {
             response.success = true
             responseData[0]['isQuestionDisabled'] = formStatus
             response.data = responseData
+            response.latest = latest
             response.message = 'Form Questionare!'
             return res.status(200).json(response)
         }

@@ -2056,6 +2056,7 @@ async function handleArrOfObjects(question, flattedForm) {
                             }
                         }
                         questionObj.forParentValue = index
+                        questionObj.isQuestionDisabled = flattedForm['disabledShortKeys'] && flattedForm['disabledShortKeys'].includes(questionObj.shortKey) ? true : questionObj.isQuestionDisabled
                         let modifiedObj = await handleRangeIfExists({ ...questionObj }, obj)
                         let warnings = await handleWarningsIfExists(questionObj, flattedForm)
                         questionObj.warnings = warnings
@@ -2563,6 +2564,7 @@ async function mutateResponse(jsonFormat, flatForm, keysToBeDeleted, role) {
                     let modifiedObj = await handleRangeIfExists(question, flattedForm)
                     let warnings = await handleWarningsIfExists(question, flattedForm)
                     question.warnings = warnings
+                    questionObj.isQuestionDisabled = flattedForm['disabledShortKeys'] && flattedForm['disabledShortKeys'].includes(question.shortKey) ? true : questionObj.isQuestionDisabled
                     question.min = modifiedObj.min ? modifiedObj.min : question.min;
                     question.max = modifiedObj.max ? modifiedObj.max : question.min;
                     question.minRange = modifiedObj.minRange ? modifiedObj.minRange : question.minRange;
