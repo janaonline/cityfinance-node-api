@@ -699,7 +699,7 @@ const computeQuery = (params) => {
             ulbName: "$name",
             ulbId: "$_id",
             ulbCode: "$code",
-            access: "$access_2223",
+            access: `$${accessYear}`,
             censusCode: {
               $cond: {
                 if: {
