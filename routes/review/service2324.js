@@ -9,7 +9,7 @@ const ObjectId = require("mongoose").Types.ObjectId;
 const Service = require('../../service');
 const STATUS_LIST = require('../../util/newStatusList');
 const { MASTER_STATUS, MASTER_STATUS_ID, YEAR_CONSTANTS, YEAR_CONSTANTS_IDS, MASTER_FORM_STATUS, MASTER_FORM_QUESTION_STATUS } = require('../../util/FormNames');
-const { canTakeActionOrViewOnlyMasterForm } = require('../../routes/CommonActionAPI/service')
+const { canTakeActionOrViewOnlyMasterForm, checkUlbAccess } = require('../../routes/CommonActionAPI/service')
 // const { createDynamicColumns } = require('./service')
 const List = require('../../util/15thFCstatus')
 const MASTERSTATUS = require('../../models/MasterStatus');
@@ -24,6 +24,7 @@ const ExcelJS = require("exceljs")
 const fs = require("fs")
 var path = require('path');
 var request = require('request');
+const Year = require('../../models/Year');
 
 module.exports.get = async (req, res) => {
   try {
@@ -137,8 +138,11 @@ module.exports.get = async (req, res) => {
       Object.assign(newFilter, { formData: "" });
       delete newFilter['formData.currentFormStatus']
     }
+    const yearData = await Year.findOne({
+      _id: ObjectId(design_year)
+    },{year:1, _id:0}).lean()
     let folderName = formTab?.folderName;
-    let params = { collectionName, formType, isFormOptional, state, design_year, csv, skip, limit, newFilter, dbCollectionName, folderName }
+    let params = { collectionName, formType, isFormOptional, state, design_year, csv, skip, limit, newFilter, dbCollectionName, folderName, yearData }
     let query = computeQuery(params);
 
     if (getQuery) return res.json({ query: query[0] })
@@ -535,7 +539,7 @@ function getUlbsApprovedByMoHUA(forms) {
  * indicating whether the
  */
 const computeQuery = (params) => {
-  const { collectionName: formName, formType: userRole, isFormOptional, state, design_year, csv, skip, limit, newFilter: filter, dbCollectionName, folderName } = params
+  const { collectionName: formName, formType: userRole, isFormOptional, state, design_year, csv, skip, limit, newFilter: filter, dbCollectionName, folderName, yearData } = params
   let filledQueryExpression = {};
   let filledProvisionalExpression = {}, filledAuditedExpression = {};
   if (isFormOptional) {
@@ -555,7 +559,8 @@ const computeQuery = (params) => {
   if (state && state !== 'null') {
     condition['state'] = ObjectId(state)
   }
-  condition["access_2324"] = true
+  const accessYear = checkUlbAccess(yearData.year);
+  condition[accessYear] = true
   let pipeLine = [
     {
       $match: {
