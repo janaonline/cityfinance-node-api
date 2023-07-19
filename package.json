@@ -2,10 +2,10 @@
   "name": "test",
   "version": "1.0.0",
   "description": "test project",
-  "main": "server.js",
+  "main": "app.js",
   "scripts": {
-    "dev": "nodemon server.js",
-    "start": "node server"
+    "dev": "nodemon app.js",
+    "start": "node app"
   },
   "dependencies": {
     "adm-zip": "^0.5.1",
@@ -49,6 +49,7 @@
     "request": "^2.88.2",
     "sanitize-filename": "^1.6.3",
     "sendotp": "^1.2.9",
+    "tunnel-ssh": "^4.1.6",
     "urlencode": "^1.1.0",
     "util": "^0.12.3",
     "uuid": "^9.0.0",
