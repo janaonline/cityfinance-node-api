@@ -482,7 +482,7 @@ module.exports.get2223 = async (req, res)=>{
       //   financialYear: ObjectId(financialYear)
       // }).lean();
       if(![YEAR_CONSTANTS['22_23']].includes(financialYear)){
-        let submitClaim =  generateOutputObject(submitClaim)
+        submitClaim =  generateOutputObject(submitClaim)
         return res.status(200).json({
           data: submitClaim,
         });
@@ -553,7 +553,7 @@ function generateOutputObject(input) {
       position: 1,
       conditionSuccess: input[key]['conditionSuccess'],
       buttonName: 'Claim Grant - ',
-      amount: null,
+      amount: input[key][`${key}_GrantData`]['amountAssigned'],
       info: '',
       isShow: true,
       status: input[key]['conditionSuccess'] ? ELIGIBLITY['YES'] : ELIGIBLITY['NO'],
@@ -574,7 +574,7 @@ function generateOutputObject(input) {
       yearData.conditions.push({
         key: condition.key,
         text: condition.text,
-        value: condition.key !== ModelNames['slbScoring'] ? percent['approvedValue'] : percent['submittedValue']
+        value: condition.key !== ModelNames['slbScoring'] ? percent?.approvedValue : percent?.submittedValue
       });
     }
 
