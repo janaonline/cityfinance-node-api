@@ -2156,7 +2156,6 @@ async function appendvalues(childQuestionData, flattedForm, shortKey, question) 
                 childQuestionData = await handleArrOfObjects(question, flattedForm)
                 let questionLength = childQuestionData.length
                 if (addMoreFields.includes(shortKey)) {
-                    console.log(">>>>>>>>>>>if conditipon :::", questionLength)
                     question.value = questionLength
                     question.modelValue = questionLength
                     question.selectedValue = {
@@ -3837,6 +3836,13 @@ function checkIfUlbCanEditForm2223(form) {
     }
 }
 
+function checkUlbAccess(input, customSlice) {
+  let ulbVariable = "access_";
+  let year = input.split("").slice(customSlice).join("").replace("-", "");
+  return ulbVariable + year;
+}
+
+module.exports.checkUlbAccess = checkUlbAccess;
 function checkIfUlbCanEditForm(currentFormStatus) {
     try {
         const ulbEditStatusArray = [
