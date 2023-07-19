@@ -107,14 +107,14 @@ const calculateTick = (tooltip, loggedInUserRole, viewFor) => {
         tooltip == StatusList.Not_Started ||
         tooltip == StatusList.In_Progress ||
         tooltip == StatusList.Under_Review_By_State ||
-        tooltip == StatusList.Rejected_By_MoHUA,
+        tooltip == StatusList.Rejected_By_MoHUA
       ) {
         return ticks["red"];
       } else if (
         [
-          StatusList.Rejected_By_State ||
+          StatusList.Rejected_By_State ,
           StatusList.Under_Review_By_MoHUA,
-          StatusList.Approved_By_MoHUA,
+          StatusList.Approved_By_MoHUA ,
           MASTER_STATUS_ID[
             MASTER_FORM_STATUS["SUBMISSION_ACKNOWLEDGED_BY_MoHUA"]
           ],
