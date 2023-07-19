@@ -108,6 +108,12 @@ const CUTOFF2324 =  {
         }
     }
 }
+
+const TYPE = {
+     "million_tied": "mpc_tied",
+     "nonmillion_tied": "nmpc_tied",
+     "nonmillion_untied": "nmpc_untied"
+}
 function gtcSubmitCondition(type, installment, state, designYear){
     let condition = {};
     let query = [];
@@ -228,8 +234,10 @@ function gtcSubmitCondition2324(type, installment, state, designYear){
               condition.state = ObjectId(state);
               condition.year = ObjectId(item.years[index]);
               condition.type = item.condition;
-              condition.installment = Number(item.installments[index])+1;
-        
+              condition.installment = installment === firstInstallment ? Number(item.installments[index])+1 : Number(firstInstallment);
+            if(type === TYPE['million_tied']){
+                condition.installment = Number(firstInstallment);
+            }
               break;
             }
           }
@@ -570,7 +578,11 @@ function approvedForms(forms, formCategory, design_year, modelName){
         if(!role){
             role = element?.["user"]["role"];
         }
-        if( ![YEAR_CONSTANTS['22_23']].includes(design_year) && ![CollectionNames.linkPFMS, CollectionNames.sfc].includes(modelName)){
+        if(
+            ![ YEAR_CONSTANTS['22_23']].includes(design_year) && 
+            ![CollectionNames.linkPFMS, CollectionNames.sfc].includes(modelName) &&
+            currentFormStatus
+        ){
             switch(formCategory){
                 case "ULB":
                     if( [MASTER_STATUS['Under Review By State'],
@@ -942,15 +954,22 @@ function getQuery2324(modelName, formType, designYear, formCategory, stateId){
                     });
                     break;
                 case CollectionNames.slb:
-                    condition = {
-                        blank: false,
-                        isDraft: false
-                    }
+                    // condition = {
+                    //     blank: false,
+                    //     isCompleted : true,
+                    // }
+                    // query.push({
+                    //     $match:{
+                    //         design_year: ObjectId(YEAR_CONSTANTS['21_22']),
+                    //         "ulb.state": ObjectId(stateId),
+                    //         $or:[...submitConditionUlb2223, condition]
+                    // }
+                    // });
                     query.push({
                         $match:{
                             design_year: ObjectId(designYear),
                             "ulb.state": ObjectId(stateId),
-                            $or:[...submitConditionUlb2223, condition]
+                            $or:[...submitConditionUlb]
                     }
                     });
                     break;
@@ -1193,6 +1212,9 @@ const dashboard = async (req, res) => {
             }
             //Get submitted forms            
             //Get Approved forms percent
+            if(![YEAR_CONSTANTS['22_23']].includes(data.design_year)){
+                modelName ===  CollectionNames.slb ? collection = TwentyEightSlbsForm : "";
+            }
             let submittedForms = await collection.aggregate(pipeline);
             if(modelName === CollectionNames.gtc && data.installment === '1' && ![YEAR_CONSTANTS['23_24']].includes(data.design_year)){
                 let query = stateGtcCertificateSubmmitedForms(data.formType, data.installment, state);
@@ -1349,7 +1371,7 @@ const dashboard = async (req, res) => {
 
 function getSlbScoringResponse(leastSubmitPercent, leastSubmitNumber, cutOff) {
     return {
-        formName: FormNames["slbScoring"],
+        formName: FormNames["indicatorForm"],
         key: ModelNames['slbScoring'],
         approvedColor: COLORS['STATE']['approvedColor'],
         submittedColor: COLORS['STATE']['submittedColor'],
@@ -1372,7 +1394,7 @@ function addSlbScoringData(ulbResponseArray){
         let leastSubmitPercent = maxPercent, leastSubmitNumber;
         for(let ulbResponse of ulbResponseArray ){
             if(collectionNamesArr.includes(ulbResponse.key)){
-                if(ulbResponse.submittedValue < leastSubmitPercent){    
+                if(ulbResponse.submittedValue <= leastSubmitPercent){    
                     leastSubmitPercent = ulbResponse.submittedValue;
                     leastSubmitNumber = ulbResponse.totalSubmitted;
                 }

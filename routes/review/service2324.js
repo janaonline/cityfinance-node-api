@@ -1,6 +1,8 @@
 const Ulb = require('../../models/Ulb')
+const UA = require('../../models/UA')
 const State = require('../../models/State');
 const IndicatorLineItems = require('../../models/indicatorLineItems');
+const GtcInstallmentForm = require('../../models/GtcInstallmentForm');
 const CollectionNames = require('../../util/collectionName')
 const Response = require("../../service").response;
 const Sidemenu = require('../../models/Sidemenu');
@@ -8,9 +10,11 @@ const ObjectId = require("mongoose").Types.ObjectId;
 const Service = require('../../service');
 const STATUS_LIST = require('../../util/newStatusList');
 const { MASTER_STATUS, MASTER_STATUS_ID, YEAR_CONSTANTS, YEAR_CONSTANTS_IDS, MASTER_FORM_STATUS, MASTER_FORM_QUESTION_STATUS } = require('../../util/FormNames');
-const { canTakeActionOrViewOnlyMasterForm } = require('../../routes/CommonActionAPI/service')
+const { getCurrentYear, getAccessYear, getFinancialYear } = require('../../util/masterFunctions');
+const { canTakeActionOrViewOnlyMasterForm, checkUlbAccess } = require('../../routes/CommonActionAPI/service')
 // const { createDynamicColumns } = require('./service')
-const List = require('../../util/15thFCstatus')
+const List = require('../../util/15thFCstatus');
+let outDatedYears = ["2018-19", "2019-20", "2021-22", "2022-23"]
 const MASTERSTATUS = require('../../models/MasterStatus');
 const Rating = require('../../models/Rating');
 const { roundValue, convertValue, removeEscapeChars, formatDate } = require('../../util/helper')
@@ -23,6 +27,30 @@ const ExcelJS = require("exceljs")
 const fs = require("fs")
 var path = require('path');
 var request = require('request');
+const Year = require('../../models/Year');
+
+
+const isMillionPlus = async(data)=>{
+  try{
+    for(let  element of data){
+      let ulb = await Ulb.findOne({
+        "state":ObjectId(element.state),
+        "isMillionPlus":"Yes"
+      })
+      console.log("")
+      if(ulb){
+        element.isMillionPlus = true
+      }
+      else{
+        element.isMillionPlus = false
+      }
+    }
+    return data
+  }
+  catch(err){
+    console.log("error in isMillionPlus ::: ",err.message)
+  }
+}
 
 module.exports.get = async (req, res) => {
   try {
@@ -47,7 +75,6 @@ module.exports.get = async (req, res) => {
       sNo: "S No.",
       stateName: "State Name",
       formStatus: "Form Status"
-
     }
     //    formId --> sidemenu collection --> e.g Annual Accounts --> _id = formId
     let total;
@@ -67,14 +94,14 @@ module.exports.get = async (req, res) => {
     if (loggedInUserRole == "STATE") {
       delete ulbColumnNames['stateName']
     }
-    let title_value = formTab.role == 'ULB' ? 'Review Grant Application' : 'Review State Forms';
+    let title_value = formTab?.role == 'ULB' ? 'Review Grant Application' : 'Review State Forms';
 
     if ((loggedInUserRole == "MoHUA" || loggedInUserRole == "ADMIN") && title_value === "Review Grant Application") {
       delete ulbColumnNames['stateName']
     }
 
     let dbCollectionName = formTab?.dbCollectionName
-    let formType = formTab.role
+    let formType = formTab?.role
     if (formType === "ULB") {
       filter['ulbName'] = req.query.ulbName != 'null' ? req.query.ulbName : ""
       filter['censusCode'] = req.query.censusCode != 'null' ? req.query.censusCode : ""
@@ -112,6 +139,7 @@ module.exports.get = async (req, res) => {
       filter['formData.currentFormStatus'] = req.query.status != 'null' ? Number(req.query.status) : "";
       filter['state'] = req.query.state != 'null' ? req.query.state : ""
     }
+
     let state = req.query.state ?? req.decoded.state
     if (req.decoded.role === "STATE") { state = req.decoded.state }
 
@@ -136,8 +164,11 @@ module.exports.get = async (req, res) => {
       Object.assign(newFilter, { formData: "" });
       delete newFilter['formData.currentFormStatus']
     }
+    const yearData = await Year.findOne({
+      _id: ObjectId(design_year)
+    },{year:1, _id:0}).lean()
     let folderName = formTab?.folderName;
-    let params = { collectionName, formType, isFormOptional, state, design_year, csv, skip, limit, newFilter, dbCollectionName, folderName }
+    let params = { collectionName, formType, isFormOptional, state, design_year, csv, skip, limit, newFilter, dbCollectionName, folderName, yearData }
     let query = computeQuery(params);
 
     if (getQuery) return res.json({ query: query[0] })
@@ -145,11 +176,11 @@ module.exports.get = async (req, res) => {
     let data = formType == "ULB" ? Ulb.aggregate(query[0]).allowDiskUse(true) : State.aggregate(query[0]).allowDiskUse(true)
 
     let allData = await Promise.all([data]);
+
     data = allData[0][0].data
     total = allData[0][0]['count']?.length ? allData[0][0]['count'][0].total : 0
-    console.log("data", allData)
 
-    if (data.length) {
+    if (data?.length) {
       let approvedUlbs = await fetchApprovedUlbsData(collectionName, data);
       await setCurrentStatus(req, data, approvedUlbs, collectionName, loggedInUserRole);
     }
@@ -159,7 +190,6 @@ module.exports.get = async (req, res) => {
       let ratingIds = [...new Set(data.map(e => e?.formData?.rating))].filter(e => e !== undefined)
       ratingList = ratingIds.length ? await getRating(ratingIds) : [];
     }
-
     /* CSV DOWNLOAD */
     if (csv) {
       await createCSV({ formType, collectionName, res, data, ratingList });
@@ -169,6 +199,7 @@ module.exports.get = async (req, res) => {
     /* End */
 
     if (collectionName === CollectionNames.state_gtc || collectionName === CollectionNames.state_grant_alloc) {
+      data = await isMillionPlus(data)
       data.forEach((element) => {
         let { status, pending } = countStatusData(element, collectionName);
         element.formStatus = status;
@@ -181,6 +212,10 @@ module.exports.get = async (req, res) => {
     data.forEach(el => { if (el.formData || el.formData === "") delete el.formData })
     const Query15FC = { $or: [{ type: "15thFC" }, { multi: { $in: ["15thFC"] } }] };
     const ulbFormStatus = await MASTERSTATUS.find(Query15FC, { statusId: 1, status: 1 }).lean()
+
+    if (formType == "STATE" && ['GrantClaim'].includes(collectionName)) {
+      delete stateColumnNames.formStatus
+    }
 
     return res.status(200).json({
       success: true,
@@ -202,12 +237,12 @@ module.exports.get = async (req, res) => {
 async function createCSV(params) {
   const { formType, collectionName, res, data, ratingList } = params
   try {
-    let filename = `Review_${formType}-${collectionName}.csv`;
     // Set appropriate download headers
-    res.setHeader("Content-disposition", "attachment; filename=" + filename);
-    res.writeHead(200, { "Content-Type": "text/csv;charset=utf-8,%EF%BB%BF" });
     let fixedColumns, dynamicColumns;
     if (formType === 'ULB') {
+      let filename = `Review_${formType}-${collectionName}.csv`;
+      res.setHeader("Content-disposition", "attachment; filename=" + filename);
+      res.writeHead(200, { "Content-Type": "text/csv;charset=utf-8,%EF%BB%BF" });
       fixedColumns = `State Name, ULB Name, City Finance Code, Census Code, Population Category, UA, UA Name,`;
       // dynamicColumns = createDynamicColumns(collectionName);
       res.write("\ufeff" + `${fixedColumns.toString()} ${createDynamicColumns(collectionName).toString()} \r\n`);
@@ -235,13 +270,23 @@ async function createCSV(params) {
         res.write("\ufeff" + row);
       }
     } else if (formType === "STATE") {
-      fixedColumns = `State Name, City Finance Code, Regional Name,`;
-      dynamicColumns = createDynamicColumns(collectionName);
-      res.write("\ufeff" + `${fixedColumns.toString()} ${dynamicColumns.toString()} \r\n`);
-      for (let el of data) {
-        let dynamicElementData = await createDynamicElements(collectionName, formType, el);
-        const row = `${el.stateName},${el.stateCode},${el.regionalName},${dynamicElementData.toString()}\r\n`;
-        res.write("\ufeff" + row);
+      if (collectionName == "waterrejenuvationrecyclings") {
+        await waterSenitationXlsDownload(data, res);
+      } else {
+        let filename = `Review_${formType}-${collectionName}.csv`;
+        res.setHeader("Content-disposition", "attachment; filename=" + filename);
+        res.writeHead(200, { "Content-Type": "text/csv;charset=utf-8,%EF%BB%BF" });
+        dynamicColumns = createDynamicColumns(collectionName);
+        // console.log("dynamicColumns",dynamicColumns);process.exit()
+        res.write("\ufeff" + `${dynamicColumns.toString()} \r\n`);
+        for (let el of data) {
+          if (collectionName == "GTC") {
+            let gtcData = await gtcInstallmentForms([...new Set(data.map(e => e._id))]);
+            let GTC = gtcData?.length ? gtcData?.filter(e => (e.state.toString() == el._id.toString() && e.gtcForm.toString() == el?.formData?._id?.toString() && e.installment == el.formData.installment)) : []
+            el['formData']['installment_form'] = GTC;
+            gtcStateFormCSVFormat(el, res)
+          }
+        }
       }
     }
   } catch (error) {
@@ -249,32 +294,190 @@ async function createCSV(params) {
     return Response.BadRequest(res, {}, error.message);
   }
 }
+const gtcInstallmentForms = (stateId) => {
+  return new Promise(async (resolve, reject) => {
+    try {
+      let data = await GtcInstallmentForm.find({ "state": { $in: stateId } }).populate("transferGrantdetail").lean();
+      resolve(data)
+    } catch (error) {
+      reject(error)
+    }
+  })
+}
+
+/* GTC Manupulate data */
+function gtcStateFormCSVFormat(obj, res) {
+  const { stateName, stateCode, formData, formStatus } = obj;
+  const { design_year, type, installment, file, installment_form, rejectReason_mohua } = formData;
+  let row = [stateName, stateCode, formStatus, design_year?.year, "", type, installment];
+  if (installment_form) {
+    let installment = installment_form;
+    if (installment?.length) {
+      let mainArr = [];
+      let sortKey = ["totalMpc", "totalNmpc", "totalElectedMpc", "totalElectedNmpc", "recAmount", "receiptDate", "totalTransAmount", "totalIntTransfer", "transferGrantdetail"]
+      let transSortKey = ["transDate", "transDelay", "daysDelay", "interest", "intTransfer", "recomAvail", "sfcNotificationCopy", "projectUndtkn", "propertyTaxNotif", "accountLinked", "file", "rejectReason_mohua"]
+      for (const el of installment) {
+        row[4] = el?.ulbType;
+        for (const key of sortKey) {
+          if (key == "transferGrantdetail") {
+            let transferGrantdetail = el[key];
+            if (transferGrantdetail?.length) {
+              for (const tfgObj of transferGrantdetail) {
+                let tArr = detailsGrantTransferredManipulate({ transSortKey, tfgObj, file, el, rejectReason_mohua })
+                let str = [...row, ...mainArr, ...tArr].join(',') + "\r\n"
+                res.write("\ufeff" + str);
+              }
+            } else {
+              let tArr = detailsGrantTransferredManipulate({ transSortKey, tfgObj, file, el, rejectReason_mohua })
+              let str = [...row, ...mainArr, ...tArr].join(',') + "\r\n"
+              res.write("\ufeff" + str);
+            }
+          } else {
+            key !== "receiptDate" ? mainArr.push(el[key]) : el[key] ? mainArr.push(formatDate(el[key])) : ""
+          }
+        }
+      }
+    }
+  }
+}
+
+function detailsGrantTransferredManipulate(params) {
+  const { transSortKey, tfgObj, file, el, rejectReason_mohua } = params;
+  let tArr = []
+  for (const tKey of transSortKey) {
+    if (["recomAvail", "sfcNotificationCopy", "projectUndtkn", "propertyTaxNotif", "accountLinked",].includes(tKey)) {
+      tArr.push(el[tKey]?.url ? el[tKey]?.url : el[tKey])
+    } else if (["file", "rejectReason_mohua"].includes(tKey)) {
+      tKey == "file" ? tArr.push(file?.url) : tArr.push(rejectReason_mohua)
+    } else {
+      tKey !== "transDate" ? tArr.push(tfgObj[tKey]) : tfgObj[tKey] ? tArr.push(formatDate(tfgObj[tKey])) : ""
+    }
+  }
+  return tArr;
+}
+
+const sortKeysWaterSenitation = (key) => {
+  switch (key) {
+    case 'waterBodies':
+      return [
+        "name", "nameOfBody", "area", "lat", "long", "bod", "bod_expected", "cod", "cod_expected", "do", "do_expected",
+        "tds", "tds_expected", "turbidity", "turbidity_expected", "details", "dprPreparation", "dprCompletion", "workCompletion"
+      ]
+    case "serviceLevelIndicators":
+      return ["name", "component", "indicator", "existing", "after", "cost", "dprPreparation", "dprCompletion", "workCompletion"]
+    case "reuseWater":
+      return ["name", "lat", "long", "stp", "treatmentPlant", "targetCust", "dprPreparation", "dprCompletion", "workCompletion"]
+    default:
+      return []
+  }
+}
+
+const waterSenitationXlsDownload = async (data, res) => {
+  try {
+    const tempFilePath = "uploads/excel";
+    if (!fs.existsSync(tempFilePath)) {
+      fs.mkdirSync(tempFilePath);
+    }
+    const filename = `${Date.now()}__waterSupplyAndSanitation.xlsx`;
+    const workbook = new ExcelJS.Workbook();
+    const waterBodies = workbook.addWorksheet('waterBodies');
+    const reuseWater = workbook.addWorksheet('reuseWater');
+    const serviceLevelIndicators = workbook.addWorksheet('serviceLevelIndicators');
+    let uaFormData = await UA.find({}).lean();
+    let indicatorLineItems = await IndicatorLineItems.find({ "type": "water supply" }).lean();
+    waterBodies.addRow([
+      "State Name", "State Code", "Form Status", "UA Name", "Project Name", "Name of water body", "Area",
+      "Latitude", "Longitude", "BOD in mg/L (Current)", "BOD in mg/L (Expected)",
+      "COD in mg/L (Current)", "COD in mg/L (Expected)", "DO in mg/L (Current)", "DO in mg/L(Expected)", "TDS in mg/L (Current)",
+      "TDS in mg/L(Expected)", "Turbidity in  NTU (Current)", "Turbidity in  NTU(Expected)", "Project Details", "Preparation of  DPR",
+      "Completion  of tendering process", "%  of  work completion"
+    ]);
+    reuseWater.addRow([
+      "State Name", "State Code", "Form Status", "UA Name", "Project Name",
+      "Latitude", "Longitude", "Proposed capacity of STP(MLD)", "Proposed water quantity  to be reused(MLD)",
+      "Target customers/ consumer for  reuse of  water", "Preparation of  DPR", "Completion of tendering process", "%  of  work completion"
+    ]);
+    serviceLevelIndicators.addRow([
+      "State Name", "State Code", "Form Status", "UA Name", "Project Name", "Physical  Components",
+      "Indicator", "Existing  (As- is)", "After  (To-be)", "Estimated  Cost (Amount  in  INR Lakhs)",
+      "Preparation of  DPR", "Completion of tendering process", "%  of  work completion"
+    ]);
+
+    let counter = { waterBodies: 2, serviceLevelIndicators: 2, reuseWater: 2 } // counter
+    if (data?.length) {
+      for (const pf of data) {
+        if (pf?.formData) {
+          let { uaData } = pf?.formData;
+          let rowsArr = [pf?.stateName, pf?.stateCode, pf?.formStatus];
+          for (const ua of uaData) {
+            let sortKeys = { waterBodies, reuseWater, serviceLevelIndicators };
+            let UAName = uaFormData?.length ? uaFormData.find(e => e?._id?.toString() == ua?.ua?.toString()) : null
+            rowsArr[3] = UAName?.name
+            for (const key in sortKeys) {
+              let projData = ua[key];
+              let keysArr = sortKeysWaterSenitation(key)
+              for (const proj of projData) {
+                let projArr = [];
+                for (const k of keysArr) {
+                  if (k == "indicator") {
+                    let indiData = indicatorLineItems?.length ? indicatorLineItems.find(e => e?.lineItemId?.toString() == proj[k]) : null
+                    let indicatorName = indiData ? indiData?.name : ""
+                    projArr.push(indicatorName)
+                  } else {
+                    projArr.push(proj[k])
+                  }
+                }
+                sortKeys[key].addRow([...rowsArr, ...projArr]);
+                sortKeys[key].getRow(counter[key])
+                counter[key]++
+              }
+            }
+          }
+        }
+      }
+    }
+    // Create a write stream
+    const writeStream = fs.createWriteStream(`${tempFilePath}/${filename}`);
+    // Write the stream to the file
+    await workbook.xlsx.write(writeStream);
+    // Set response headers for downloading the file
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader("Content-Disposition", "attachment; filename=" + `${filename}`);
+    // Write the stream to the response object
+    fs.unlink(`${tempFilePath}/${filename}`, (err) => console.log(err))
+    await workbook.xlsx.write(res);
+  } catch (error) {
+    console.log("CSV Download Error", error);
+    return Response.BadRequest(res, {}, error.message);
+  }
+}
+
 
 function countStatusData(element, collectionName) {
   let total = 0;
   let notStarted = 0;
   let status = "";
   let arr = collectionName === CollectionNames.state_gtc ? element.status : element.draft
-
+  let totalGtcForms = element.isMillionPlus ? 5 : 4
   if (collectionName === CollectionNames.state_gtc) {
-    total = 8;
-    notStarted = 8;
+    total = totalGtcForms
+    notStarted = totalGtcForms;
   } else if (collectionName === CollectionNames.state_grant_alloc) {
     total = 5;
     notStarted = 5;
   }
   let pending = 0, rejected = 0, approved = 0;
-  if (arr.length <= 0) {
+  if (arr?.length <= 0) {
     status = collectionName === CollectionNames.state_gtc ? `${notStarted} Not Started` : `${notStarted} Not Submitted`;
     return { status, pending };
   } else {
     if (collectionName === CollectionNames.state_gtc) {
-      for (let i = 0; i < arr.length; i++) {
-        if (arr[i] === "PENDING") {
+      for (let i = 0; i < arr?.length; i++) {
+        if (arr[i] === MASTER_FORM_STATUS["UNDER_REVIEW_BY_MoHUA"]) {
           pending++;
-        } else if (arr[i] === "APPROVED") {
+        } else if (arr[i] === MASTER_FORM_STATUS['SUBMISSION_ACKNOWLEDGED_BY_MoHUA']) {
           approved++;
-        } else if (arr[i] === "REJECTED") {
+        } else if (arr[i] === MASTER_FORM_STATUS['RETURNED_BY_MoHUA']) {
           rejected++;
         }
       }
@@ -325,6 +528,7 @@ async function fetchApprovedUlbsData(collectionName, data) {
     throw (`forms2223:: ${error.message}`)
   }
 }
+
 const sequentialReview = `Cannot review since last year form is not approved by MoHUA.`
 const setCurrentStatus = (req, data, approvedUlbs, collectionName, loggedInUserRole) => {
   data.forEach(el => {
@@ -337,7 +541,7 @@ const setCurrentStatus = (req, data, approvedUlbs, collectionName, loggedInUserR
       if (collectionName === CollectionNames.dur || collectionName === CollectionNames['28SLB']) {
         let params = { status: el.formData.currentFormStatus, userRole: loggedInUserRole }
         el['cantakeAction'] = req.decoded.role === "ADMIN" ? false : canTakeActionOrViewOnlyMasterForm(params);
-        if (!(approvedUlbs.find(ulb => ulb.toString() === el.ulbId.toString())) && loggedInUserRole === "MoHUA" && el.access) {
+        if (!(approvedUlbs.find(ulb => ulb.toString() === el.ulbId.toString())) && loggedInUserRole === "MoHUA") {
           el['cantakeAction'] = false;
           el['formData']['currentFormStatus'] === MASTER_STATUS['Under Review By MoHUA'] ? el['info'] = sequentialReview : ""
         }
@@ -380,6 +584,7 @@ const getRating = async (ratingId) => {
   })
 }
 
+/// Master Form Indicator LineItmem
 const indicatorLineItemList = async () => {
   return new Promise(async (resolve, reject) => {
     try {
@@ -391,6 +596,8 @@ const indicatorLineItemList = async () => {
     }
   })
 }
+
+
 const setIndicatorSequense = (indicatorList, el) => {
   let mainArr = []
   if (indicatorList?.length) {
@@ -435,7 +642,7 @@ function getUlbsApprovedByMoHUA(forms) {
  * indicating whether the
  */
 const computeQuery = (params) => {
-  const { collectionName: formName, formType: userRole, isFormOptional, state, design_year, csv, skip, limit, newFilter: filter, dbCollectionName, folderName } = params
+  const { collectionName: formName, formType: userRole, isFormOptional, state, design_year, csv, skip, limit, newFilter: filter, dbCollectionName, folderName, yearData } = params
   let filledQueryExpression = {};
   let filledProvisionalExpression = {}, filledAuditedExpression = {};
   if (isFormOptional) {
@@ -455,7 +662,9 @@ const computeQuery = (params) => {
   if (state && state !== 'null') {
     condition['state'] = ObjectId(state)
   }
-  condition["access_2223"] = true
+  const decadePrefixtoSlice = 2;
+  const accessYear = checkUlbAccess(yearData.year, decadePrefixtoSlice);
+  condition[accessYear] = true
   let pipeLine = [
     {
       $match: {
@@ -493,7 +702,9 @@ const computeQuery = (params) => {
       }
     })
   }
+
   switch (userRole) {
+
     case "ULB":
       let query = [
         { $match: condition },
@@ -558,7 +769,7 @@ const computeQuery = (params) => {
             ulbName: "$name",
             ulbId: "$_id",
             ulbCode: "$code",
-            access : "$access_2223",
+            access: `$${accessYear}`,
             censusCode: {
               $cond: {
                 if: {
@@ -605,7 +816,7 @@ const computeQuery = (params) => {
             ulbName: 1,
             ulbId: 1,
             ulbCode: 1,
-            access:1,
+            access: 1,
             censusCode: 1,
             UA: 1,
             UA_id: 1,
@@ -685,74 +896,87 @@ const computeQuery = (params) => {
             accessToXVFC: true,
           },
         },
-        {
-          $lookup: {
-            from: dbCollectionName,
-            let: {
-              firstUser: ObjectId(design_year),
-              secondUser: "$_id",
-            },
-            pipeline: [
-              {
-                $match: {
-                  $expr: {
-                    $and: [
-                      {
-                        $eq: ["$design_year", "$$firstUser"],
-                      },
-                      {
-                        $eq: ["$state", "$$secondUser"],
-                      },
-                    ],
+      ];
+      if (dbCollectionName) {
+        query_s.push(...[
+          {
+            $lookup: {
+              from: dbCollectionName,
+              let: {
+                firstUser: ObjectId(design_year),
+                secondUser: "$_id",
+              },
+              pipeline: [
+                {
+                  $match: {
+                    $expr: {
+                      $and: [
+                        {
+                          $eq: ["$design_year", "$$firstUser"],
+                        },
+                        {
+                          $eq: ["$state", "$$secondUser"],
+                        },
+                      ],
+                    },
                   },
                 },
-              },
-              {
-                $lookup: {
-                  from: "years",
-                  localField: "design_year",
-                  foreignField: "_id",
-                  as: "design_year",
+                {
+                  $lookup: {
+                    from: "years",
+                    localField: "design_year",
+                    foreignField: "_id",
+                    as: "design_year",
+                  },
                 },
-              },
+                {
+                  $unwind: "$design_year",
+                },
+              ],
+              as: dbCollectionName,
+            },
+          },
+          {
+            $unwind: {
+              path: `$${dbCollectionName}`,
+              preserveNullAndEmptyArrays: true,
+            },
+          },
+          {
+            $project: {
+              state: "$_id",
+              stateName: "$name",
+              stateCode: "$code",
+              regionalName: 1,
+              formData: { $ifNull: [`$${dbCollectionName}`, ""] },
+              filled:
               {
-                $unwind: "$design_year",
-              },
-            ],
-            as: dbCollectionName,
+                $cond: { if: { $or: [{ $eq: ["$formData", ""] }, { $eq: ["$formData.isDraft", true] }] }, then: "No", else: isFormOptional ? filledQueryExpression : "Yes" }
+              }
+            },
           },
-        },
-        {
-          $unwind: {
-            path: `$${dbCollectionName}`,
-            preserveNullAndEmptyArrays: true,
-          },
-        },
-        {
-          $project: {
-            state: "$_id",
-            stateName: "$name",
-            stateCode: "$code",
-            regionalName: 1,
-            formData: { $ifNull: [`$${dbCollectionName}`, ""] },
-            filled:
-            {
-              $cond: { if: { $or: [{ $eq: ["$formData", ""] }, { $eq: ["$formData.isDraft", true] }] }, then: "No", else: isFormOptional ? filledQueryExpression : "Yes" }
-            }
-          },
-        },
-        {
-          $sort: { formData: -1 },
-        },
-      ];
-      query_s = createDynamicQuery(formName, query_s, userRole, csv);
-      /* Checking if the user role is STATE and the folder name is IndicatorForWaterSupply. */
-      if (folderName === List['FolderName']['IndicatorForWaterSupply']) {
-        let startIndex = query_s.findIndex((el) => {
-          return el.hasOwnProperty("$lookup");
-        })
-        /* Splicing the query_s string starting at the startIndex. */
-        query_s.splice(startIndex);
+          {
+            $sort: { formData: -1 },
+          }
+        ])
+        query_s = createDynamicQuery(formName, query_s, userRole, csv);
+        if (folderName === List['FolderName']['IndicatorForWaterSupply']) {
+          let startIndex = query_s.findIndex((el) => {
+            return el.hasOwnProperty("$lookup");
+          })
+          /* Splicing the query_s string starting at the startIndex. */
+          query_s.splice(startIndex);
+          query_s.push({
+            $project: {
+              state: "$_id",
+              stateName: "$name",
+              stateCode: "$code",
+              regionalName: 1,
+              filled: "Not Applicable"
+            },
+          })
+        }
+      } else {
         query_s.push({
           $project: {
             state: "$_id",
@@ -761,9 +985,10 @@ const computeQuery = (params) => {
             regionalName: 1,
             filled: "Not Applicable"
           },
-
         })
       }
+
+      /* Checking if the user role is STATE and the folder name is IndicatorForWaterSupply. */
       let filterApplied_s = Object.keys(filter).length > 0
       if (filterApplied_s) {
         query_s.push({
@@ -771,18 +996,15 @@ const computeQuery = (params) => {
         },
         )
       }
-      let countQuery_s = query_s.slice()
-      let paginator_s = [{
+      // let countQuery_s = query_s
+      let limitSkipk = !csv ? [{ "$skip": skip }, { $limit: limit }] : [{ $match: {} }]
+      query_s.push({
         $facet: {
-          data: [{ "$skip": skip }, { $limit: limit }],
+          data: limitSkipk,
           count: [{ $count: "total" }]
         }
-      }]
-      if (!csv) {
-        console.log("ssss")
-        query_s.push(...paginator_s)
-      }
-      return [query_s, countQuery_s]
+      })
+      return [query_s]
     default:
       break;
   }
@@ -993,7 +1215,7 @@ function createDynamicQuery(collectionName, oldQuery, userRole, csv) {
             query_2 = {
               $group: {
                 _id: "$state",
-                status: { $push: "$formData.status" },
+                status: { $push: "$formData.currentFormStatus" },
                 stateName: { $first: "$stateName" },
                 state: { $first: "$state" },
                 stateCode: { $first: "$stateCode" },
@@ -1020,12 +1242,12 @@ function createDynamicQuery(collectionName, oldQuery, userRole, csv) {
 }
 
 async function createDynamicElements(collectionName, formType, entity) {
+  // console.log("entity",entity);process.exit()
   if (!entity.formData) {
     entity["filled"] = "No";
     entity['formData'] = createDynamicObject(collectionName, formType);
   }
   let actions = actionTakenByResponse(entity.formData);
-
 
   if (formType === "ULB") {
     if (!entity["formData"]["rejectReason_state"]) {
@@ -1052,7 +1274,6 @@ async function createDynamicElements(collectionName, formType, entity) {
       );
     }
   }
-
   if (!entity["formData"]["design_year"]) {
     entity["formData"]["design_year"] = {
       year: ""
@@ -1069,6 +1290,7 @@ async function createDynamicElements(collectionName, formType, entity) {
     );
   }
   let data = entity?.formData;
+
   switch (formType) {
     case "ULB":
       switch (collectionName) {
@@ -1175,9 +1397,17 @@ async function createDynamicElements(collectionName, formType, entity) {
           return [actualEntity, targetEntity];
       };
       break;
+    case "STATE":
+      switch (collectionName) {
+        case CollectionNames.state_gtc:
+          entity = ""
+          break;
+      };
+      break;
   }
   return entity;
 }
+
 function createDynamicObject(collectionName, formType) {
   let obj = {};
   switch (formType) {
@@ -2053,6 +2283,12 @@ function createDynamicColumns(collectionName) {
     case CollectionNames['28SLB']:
       columns = `Financial Year,Form Status,Created,Submitted On,Filled Status,Type,Year,Coverage of water supply connections,Per capita supply of water(lpcd),Extent of metering of water connections,Extent of non-revenue water (NRW),Continuity of water supply,Efficiency in redressal of customer complaints,Quality of water supplied,Cost recovery in water supply service,Efficiency in collection of water supply-related charges,Coverage of toilets,Coverage of waste water network services,Collection efficiency of waste water network,Adequacy of waste water treatment capacity,Extent of reuse and recycling of waste water,Quality of waste water treatment,Efficiency in redressal of customer complaints,Extent of cost recovery in waste water management,Efficiency in collection of waste water charges,Household level coverage of solid waste management services,Efficiency of collection of municipal solid waste,Extent of segregation of municipal solid waste,Extent of municipal solid waste recovered,Extent of scientific disposal of municipal solid waste,Extent of cost recovery in SWM services,Efficiency in collection of SWM related user related charges,Efficiency in redressal of customer complaints,Coverage of storm water drainage network,Incidence of water logging,State_Review Status,State_Comments,MoHUA Review Status,MoHUA_Comments,State_File URL,MoHUA_File URL `
       break;
+    case CollectionNames['GrantClaim']:
+      columns = `State Name, City Finance Code, Regional Name, `
+      break;
+    case CollectionNames['state_gtc']:
+      columns = `State Name,City Finance Code,Form Status,Year,Type of ULB,Type of Grant Received (Tied/Untied),Installment Type,Total No: of MPCs,Total No: of NMPCS,Total No: of Duly Elected MPCS,Total No: of Duly Elected NMPCS,Amount Received(In Lakhs),Date of Receipt,Amount Transferred, excluding interest (in lakhs),Date of Transfer,Was there any delay in transfer?,No. of days delayed,Rate of interest (annual rate),Amount of interest transferred - If there's any delay (in lakhs),Whether State Finance Commission recommendations available? (Yes/No),If No Upload notification for constitution of SFC issued,Whether Project works undertaken are uploaded on the website (Yes/No),Upload copy of Property Tax Notification issued,% of ULB accounts for 15th FC Grants which are linked to PFMS for all transactions,Upload Signed Grant Transfer Certificate,MoHUA Comments`
+      break;
     default:
       columns = '';
       break;
@@ -2079,80 +2315,6 @@ function actionTakenByResponse(entity) {
   if (![IN_PROGRESS, UNDER_REVIEW_BY_STATE].includes(entity.currentFormStatus)) {
     getActionStatus(obj, entity);
   }
-
-  // if (collectionName === CollectionNames['annual']) {
-  //   obj.auditedResponseFile_state = {
-  //     url: "",
-  //     name: ""
-  //   };
-  //   obj.unAuditedResponseFile_state = {
-  //     url: "",
-  //     name: ""
-  //   };
-  //   obj.auditedResponseFile_mohua = {
-  //     url: "",
-  //     name: ""
-  //   };
-  //   obj.unAuditedResponseFile_mohua = {
-  //     url: "",
-  //     name: ""
-  //   };
-  // }
-
-  // if (
-  //   formStatus === STATUS_LIST.Under_Review_By_MoHUA ||
-  //   formStatus === STATUS_LIST.Rejected_By_State
-  // ) {
-
-  //   if (entity["rejectReason_state"]) {
-  //     obj.rejectReason_state = removeEscapeChars(entity["rejectReason_state"]);
-  //   }
-  //   if (entity["responseFile_state"]) {
-  //     entity["responseFile_state"]["name"] = removeEscapeChars(entity["responseFile_state"]["name"])
-  //     obj.responseFile_state = entity["responseFile_state"];
-  //   }
-  //   if (entity["status"]) {
-  //     obj.state_status = entity["status"];
-  //   }
-
-  //   if (collectionName === CollectionNames['annual']) {
-  //     if (entity.audited.responseFile_state) {
-  //       entity.audited.responseFile_state.name = removeEscapeChars(entity.audited.responseFile_state?.name)
-  //       obj.auditedResponseFile_state = entity.audited.responseFile_state;
-  //     }
-  //     if (entity.unAudited.responseFile_state) {
-  //       entity.unAudited.responseFile_state.name = removeEscapeChars(entity.unAudited.responseFile_state?.name)
-  //       obj.unAuditedResponseFile_state = entity.unAudited.responseFile_state;
-  //     }
-  //   }
-  // }
-
-  // if (
-  //   formStatus === STATUS_LIST.Approved_By_MoHUA ||
-  //   formStatus === STATUS_LIST.Rejected_By_MoHUA
-  // ) {
-  //   if (entity["rejectReason_mohua"]) {
-  //     obj.rejectReason_mohua = removeEscapeChars(entity["rejectReason_mohua"]);
-  //   }
-  //   if (entity["responseFile_mohua"]) {
-  //     entity["responseFile_mohua"]["name"] = removeEscapeChars(entity["responseFile_mohua"]["name"])
-  //     obj.responseFile_mohua = entity["responseFile_mohua"];
-  //   }
-  //   if (entity["status"]) {
-  //     obj.mohua_status = entity["status"];
-  //   }
-  //   if (collectionName === CollectionNames['annual']) {
-  //     if (entity.audited.responseFile_mohua) {
-  //       entity.audited.responseFile_mohua.name = removeEscapeChars(entity.audited.responseFile_mohua?.name)
-  //       obj.auditedResponseFile_mohua = entity.audited.responseFile_mohua;
-  //     }
-  //     if (entity.unAudited.responseFile_mohua) {
-  //       entity.unAudited.responseFile_mohua.name = removeEscapeChars(entity.unAudited.responseFile_mohua?.name)
-  //       obj.unAuditedResponseFile_mohua = entity.unAudited.responseFile_mohua;
-  //     }
-  //   }
-  //   mohuaFlag = false;
-  // }
   return obj;
 }
 
@@ -2257,7 +2419,7 @@ const getQuestionsMapping = (questions, counter = 0) => {
 
 module.exports.downloadPTOExcel = async (req, res) => {
   try {
-    const { crrWorkbook, filename, tempFilePath } = await excelPTOMapping(req.query)
+    const { crrWorkbook, filename, tempFilePath, year } = await excelPTOMapping(req.query)
 
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     res.setHeader("Content-Disposition", "attachment; filename=" + `${filename}`);
@@ -2286,10 +2448,17 @@ const excelPTOMapping = async (query) => {
       // map form questions with excel columns
       const userCharges = ["userChargesDmndChild", "userChargesCollectionChild"]
       const questionColMapping = getQuestionsMapping(questions, 8)
+      let design_year, accessYear = null;
+      let { getQuery, year } = query;
 
-      let { getQuery } = query
+      if (year && mongoose.isValidObjectId(year)) {
+        design_year = ObjectId(year);
+      } else {
+        const financialYear = getFinancialYear();
+        design_year = getCurrentYear(financialYear, design_year);
+      }
+      accessYear = getAccessYear(design_year, accessYear);
       getQuery = getQuery === "true"
-      const design_year = ObjectId(years['2023-24'])
       if (getQuery) {
         response.query = getQuery
         return response
@@ -2300,7 +2469,7 @@ const excelPTOMapping = async (query) => {
       if (!fs.existsSync(tempFilePath)) {
         fs.mkdirSync(tempFilePath);
       }
-      const filename = `${Date.now()}__ptax_download.xlsx`
+      const filename = `PropertyTaxCSV.xlsx`
 
       // copying the template in new workbook and sheet in excel
       const template = fs.readFileSync(`p-tax/ptax-template.xlsx`)
@@ -2310,30 +2479,67 @@ const excelPTOMapping = async (query) => {
       const crrWorkbook = await workbook.xlsx.readFile(`${tempFilePath}/${filename}`)
       const crrWorksheet = crrWorkbook.getWorksheet("Sheet 1")
 
-      const cursor = await PropertyTaxOp.aggregate([
-        { $match: { "design_year": design_year } },
+      const cursor = await Ulb.aggregate([
         {
-          $lookup: {
-            from: "ulbs",
-            localField: "ulb",
-            foreignField: "_id",
-            as: "ulb"
-          }
+          $match: { [accessYear]: true }
         },
-        { $unwind: "$ulb" },
         {
           $lookup: {
             from: "states",
-            localField: "ulb.state",
+            localField: "state",
             foreignField: "_id",
             as: "state"
           }
         },
-        { $unwind: "$state" },
+        {
+          $unwind: "$state"
+        },
+        {
+          $match: { "state.accessToXVFC": true }
+        },
+        {
+          $lookup: {
+            from: "propertytaxops",
+            let: {
+              firstUser: design_year,
+              secondUser: "$_id"
+            },
+            pipeline: [
+              {
+                $match: {
+                  $expr: {
+                    $and: [
+                      { $eq: ["$design_year", "$$firstUser"] },
+                      { $eq: ["$ulb", "$$secondUser"] }
+                    ]
+                  }
+                }
+              }
+            ],
+            as: "propertytaxop"
+          }
+        },
+        {
+          $unwind: {
+            path: "$propertytaxop",
+            preserveNullAndEmptyArrays: true
+          }
+        },
+        {
+          $addFields: {
+            currentFormStatus: {
+              $cond: {
+                if: { $ne: [{ $type: "$propertytaxop" }, "object"] },
+                then: "1",
+                else: "$propertytaxop.currentFormStatus"
+              }
+            }
+          }
+        },
         {
           $lookup: {
             from: "propertytaxopmappers",
-            localField: "_id",
+            localField: "propertytaxop._id",
             foreignField: "ptoId",
             as: "propertytaxopmapper"
           }
@@ -2341,13 +2547,13 @@ const excelPTOMapping = async (query) => {
         {
           $lookup: {
             from: "propertymapperchilddatas",
-            localField: "_id",
+            localField: "propertytaxop._id",
             foreignField: "ptoId",
             as: "propertymapperchilddata"
           }
-        },
+        }
       ]).allowDiskUse(true)
-        .cursor({ batchSize: 100 })
+        .cursor({ batchSize: 75 })
         .addCursorFlag("noCursorTimeout", true)
         .exec();
 
@@ -2355,10 +2561,10 @@ const excelPTOMapping = async (query) => {
         // mapping these fields manually as they aren't available in the fydynamic.js file
         crrWorksheet.getCell(`A${startRowIndex + counter}`).value = counter + 1
         crrWorksheet.getCell(`B${startRowIndex + counter}`).value = el.state.name
-        crrWorksheet.getCell(`C${startRowIndex + counter}`).value = el.ulb.name
-        crrWorksheet.getCell(`D${startRowIndex + counter}`).value = el.ulb.code
-        crrWorksheet.getCell(`E${startRowIndex + counter}`).value = el.ulb.censusCode ?? el.ulb.sbCode
-        crrWorksheet.getCell(`F${startRowIndex + counter}`).value = YEAR_CONSTANTS_IDS[el.design_year]
+        crrWorksheet.getCell(`C${startRowIndex + counter}`).value = el.name
+        crrWorksheet.getCell(`D${startRowIndex + counter}`).value = el.code
+        crrWorksheet.getCell(`E${startRowIndex + counter}`).value = el.censusCode ?? el.sbCode
+        crrWorksheet.getCell(`F${startRowIndex + counter}`).value = YEAR_CONSTANTS_IDS[design_year]
         crrWorksheet.getCell(`G${startRowIndex + counter}`).value = MASTER_STATUS_ID[el.currentFormStatus]
 
         const sortedResults = el.propertytaxopmapper;
@@ -2395,10 +2601,8 @@ const excelPTOMapping = async (query) => {
             }
           }
         }
-
         counter++
       });
-
       cursor.on("end", () => {
         resolve({ crrWorkbook, filename, tempFilePath })
       });

@@ -68,12 +68,13 @@ let DurProjectJson = {
         "information": "",
         "_id": "64097e1e3b2eb509dc61e5ba",
         "order": "6.002",
+        "isQuestionDisabled": false,
         "modelName": "Category",
         "type": "referenceById",
         "modelFilter": {},
         "answer_option": [
             {
-                "name": "Rejuvination of Water Bodies",
+                "name": "Rejuvenation of Water Bodies",
                 "did": [],
                 "viewSequence": "1",
                 "_id": "1"

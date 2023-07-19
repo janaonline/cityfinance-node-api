@@ -84,8 +84,8 @@ exports.getTemplate = async (req, res) => {
   /* Checking if the formData.year is equal to the string "606aafb14dff55e6c075d3ae" and if it is, it is
  value of the variable "type" to the variable amount. */
  !outDatedYearIds.includes(formData.year)
-    ? (amount = `${amount} - ${type}`)
-    : "";
+    ? (amount = `${amount} - ${type} (Lakhs)`)
+    : (amount = `${amount} (Lakhs)`);
 
   try {
     const ulbs = await ULB.find({
@@ -221,11 +221,11 @@ exports.uploadTemplate = async (req, res) => {
           formData.design_year = '2021-22';
         }
         let type = `${formData.type}_${formData.design_year}_${formData.installment}`
-        amount = `${amount} - ${type}`
+        amount = `${amount} - ${type} (Lakhs)`
         /* Checking if the formData.design_year is equal to 2021-22 or undefined, if it is, then it sets the amount variable
         to "grant amount". */
         formData.design_year === undefined || formData.design_year === "2021-22"
-          ? amount = "grant amount"
+          ? amount = "grant amount (Lakhs)"
           : "";
         let field = {
           ["ulb census code/ulb code"]: "ULB Census Code/ULB Code",
@@ -341,10 +341,10 @@ async function validate(data, formData) {
     formData.design_year = '2021-22';
   }
   const type = `${formData.type}_${formData.design_year}_${formData.installment}`
-  amount = `${amount} - ${type}`
+  amount = `${amount} - ${type} (Lakhs)`
   /* Checking if the formData.design_year is equal to 2021-22, if it is, then it sets the amount variable
   to "grant amount". */
-  formData.design_year === "2021-22" ? amount = "grant amount" : ""
+  formData.design_year === "2021-22" ? amount = "grant amount (Lakhs)" : ""
   const keys = Object.keys(data[0]);
   if (
     !(keys.includes(code) && keys.includes(name) && keys.includes(amount)

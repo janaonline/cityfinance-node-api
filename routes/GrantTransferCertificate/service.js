@@ -3,16 +3,22 @@ const GrantTransferCertificate = require('../../models/GrantTransferCertificate'
 const StateGTCCertificate = require('../../models/StateGTCertificate');
 const ObjectId = require("mongoose").Types.ObjectId;
 const Ulb = require('../../models/Ulb')
+const {saveStatusAndHistory} = require("../CommonFormSubmission/service")
 const { checkForUndefinedVaribales, mutateResponse, getFlatObj } = require("../../routes/CommonActionAPI/service")
 const { getKeyByValue, saveFormHistory, grantDistributeOptions } = require("../../util/masterFunctions");
 const { years } = require('../../service/years');
 const GtcInstallmentForm = require("../../models/GtcInstallmentForm")
 const TransferGrantDetailForm = require("../../models/TransferGrantDetailForm")
-const { grantsWithUlbTypes, installment_types, singleInstallmentTypes } = require("./constants")
+const { grantsWithUlbTypes, installment_types, singleInstallmentTypes,warningkeys,getMessagesForRadioButton } = require("./constants")
 const FormsJson = require("../../models/FormsJson");
-const { MASTER_STATUS, MASTER_STATUS_ID } = require('../../util/FormNames');
+const {previousFormsAggregation} = require("./aggregation")
+const { MASTER_STATUS, MASTER_STATUS_ID ,MASTER_FORM_STATUS} = require('../../util/FormNames');
 const userTypes = require("../../util/userTypes");
+const {findPreviousYear} = require("../../util/findPreviousYear")
 const {FORMIDs} = require("../../util/FormNames")
+
+
+
 
 let gtcYears = ["2018-19", "2019-20", "2021-22", "2022-23"]
 let GtcFormTypes = [
@@ -21,7 +27,7 @@ let GtcFormTypes = [
     "nonmillion_tied"
 ]
 let alerts = {
-    "prevForm":`Your previous year's GTC form is not complete. <a href=${process.env.HOSTNAME}/stateform2223/gtCertificate">Click Here!</a> to access previous year form.`,
+    "prevForm":`Your previous year's GTC form is not complete. <a href="${process.env.HOSTNAME}/stateform2223/gtCertificate">Click Here!</a> to access previous year form.`,
     "installmentMsg":(year)=>{
         return `1st Installment (${year}) GTC has to be uploaded first before uploading 2nd Installment (${year}) GTC`
     }
@@ -586,7 +592,6 @@ const checkForPreviousForms = async (design_year, state) => {
             "design_year": yearId,
             "state": ObjectId(state),
         }).countDocuments()
-        console.log("gtcFormsLength :: ", gtcFormsLength)
         if (gtcFormsLength < 8) {
             validator.valid = false
             validator.message = alerts['prevForm']
@@ -602,8 +607,7 @@ const getRejectedFields = (currentFormStatus, formStatuses, installment, inputAl
     try {
         // console.log("formStatuses :: ",formStatuses)
         let prevInstallment = installment - 1
-        let allowedStatuses = [MASTER_STATUS['Under Review By MoHUA'],MASTER_STATUS['Rejected By MoHUA']]
-        console.log("allowedStatuses ::: ",allowedStatuses)
+        let allowedStatuses = [MASTER_FORM_STATUS['UNDER_REVIEW_BY_MoHUA'],MASTER_FORM_STATUS['RETURNED_BY_MoHUA']]
         // console.log("prevInstallment :: ",prevInstallment)
         if (prevInstallment && !allowedStatuses.includes(formStatuses?.[prevInstallment]) && role === userTypes.state) {
             return true
@@ -617,16 +621,17 @@ const getRejectedFields = (currentFormStatus, formStatuses, installment, inputAl
     }
 }
 
-const getManipulatedJson = async (installment, type, design_year, formJson, fieldsTohide, state, role, formStatuses) => {
+const getManipulatedJson = async (installment, type, design_year, formJson, fieldsTohide, state, role, formStatuses,previousYearData) => {
     let keysToBeDeleted = ["_id", "createdAt", "modifiedAt", "actionTakenByRole", "actionTakenBy", "ulb", "design_year"]
     let mformObject = {
         "language": [],
     }
+    let fileSchema = {
+        "name": "",
+        "url": ""
+    }
     try {
-        let file = {
-            "name": "",
-            "url": ""
-        }
+        let file = {...fileSchema}
         let gtcForm = await GrantTransferCertificate.findOne({
             year: ObjectId(design_year),
             installment,
@@ -658,6 +663,16 @@ const getManipulatedJson = async (installment, type, design_year, formJson, fiel
         let inputAllowed = [MASTER_STATUS['In Progress'],MASTER_STATUS['Not Started'],MASTER_STATUS['Rejected By MoHUA']]
         installmentForm.installment_type = installment_types[installment]
         let installmentObj = { ...installmentForm }
+        installmentObj['warnings'] = {
+            "accountLinked" : {
+                "2":await getMessagesForRadioButton()['accountLinked']['2']
+            }
+        }
+        installmentObj['accountLinked'] = previousYearData.pfmsFilledPerc === 100 ? "Yes" : "No"
+        installmentObj['propertyTaxNotif']  = previousYearData?.isPfrFilled
+        installmentObj['sfcNotification'] = previousYearData?.IsSfcFormFilled
+        installmentObj['sfcNotificationCopy'] = previousYearData.sfcFile || {...fileSchema}
+        installmentObj['propertyTaxNotifCopy'] = previousYearData.pfrFile || {...fileSchema}
         let flattedForm = await getFlatObj(installmentObj)
         flattedForm['modelName'] = "GtcInstallmentForm"
         flattedForm['fieldsTohide'] = fieldsTohide
@@ -679,7 +694,7 @@ const getManipulatedJson = async (installment, type, design_year, formJson, fiel
         }
         flattedForm = {}
         const statusId = gtcForm.currentFormStatus;
-        const canTakeAction = (statusId == MASTER_STATUS['Under Review by MoHUA'] && role == userTypes.mohua);
+        const canTakeAction = (statusId == MASTER_FORM_STATUS['UNDER_REVIEW_BY_MoHUA'] && role == userTypes.mohua);
         const rejectReason_mohua = gtcForm?.rejectReason_mohua || '';
         const responseFile_mohua = gtcForm?.responseFile_mohua || {
             name: '',
@@ -693,7 +708,7 @@ const getManipulatedJson = async (installment, type, design_year, formJson, fiel
     }
 }
 
-const getJson = async (state, design_year, role) => {
+const getJson = async (state, design_year, role,previousYearData) => {
     try {
         var formStatuses = {}
         let fieldsTohide = []
@@ -706,8 +721,8 @@ const getJson = async (state, design_year, role) => {
             "formId":{"$in":[FORMIDs['GTC_STATE'],FORMIDs['GTC_TABLE_STRUCTURE']]},
             "design_year":design_year
         }).lean()
-        let basicEmptyStructure = forms.find(item => item.formId === 11.1).data
-        let formJson = forms.find(item => item.formId === 7)
+        let basicEmptyStructure = forms.find(item => item.formId === FORMIDs['GTC_TABLE_STRUCTURE']).data
+        let formJson = forms.find(item => item.formId === FORMIDs['GTC_STATE'])
         if (!stateIsMillion) {
             basicEmptyStructure = basicEmptyStructure.filter(item => item.type != "million")
             fieldsTohide = ["totalMpc", "totalElectedMpc"]
@@ -716,7 +731,7 @@ const getJson = async (state, design_year, role) => {
         for (let carousel of basicEmptyStructure) {
             for (let question of carousel.questions) {
                 question.questionresponse = ""
-                let { questionResponse, file, status, statusId, rejectReason_mohua, responseFile_mohua, canTakeAction } = await getManipulatedJson(question.installment, question.type, design_year, { ...formJson }, fieldsTohide, ObjectId(state), role, formStatuses)
+                let { questionResponse, file, status, statusId, rejectReason_mohua, responseFile_mohua, canTakeAction } = await getManipulatedJson(question.installment, question.type, design_year, { ...formJson }, fieldsTohide, ObjectId(state), role, formStatuses,previousYearData)
                 question.status = status
                 question.statusId = statusId
                 question.questionresponse = JSON.parse(JSON.stringify(questionResponse))
@@ -726,7 +741,6 @@ const getJson = async (state, design_year, role) => {
                 question.responseFile_mohua = responseFile_mohua;
             }
             returnableJson.push({ ...carousel })
-
         }
         return { json: [...returnableJson], stateIsMillion: stateIsMillion }
     }
@@ -735,6 +749,49 @@ const getJson = async (state, design_year, role) => {
         return []
     }
 }
+
+async function getPreviousYearData(state,design_year){
+    let response = {}
+    try{
+        let params = {
+            state:ObjectId(state),
+            design_year:ObjectId(design_year),
+            prevYear :ObjectId(years[findPreviousYear(getKeyByValue(years,design_year))]),
+        }
+        console.log("params :: ",params)
+        let query = await previousFormsAggregation(params)
+        response = await Ulb.aggregate(query).allowDiskUse(true)
+    }
+    catch(err){
+        console.log("error in getPreviousYearData :: ",err.message)
+    }
+    return response
+}
+async function addWarnings(previousYearData){
+    try{
+        let sfcLink = `<a href="stateform2223/fc-formation" target="_blank"> Click here to fill previous form</a>`
+        let propertyTaxLink = `<a href="stateform2223/property-tax" target="_blank"> Click here to fill previous form</a>`
+        let reviewPfmsLink = `<a href="stateform2223/review-ulb-form" target="_blank"> Click here to check for the ulbs</a>`
+        let warnings = await getMessagesForRadioButton(sfcLink,propertyTaxLink,reviewPfmsLink)
+        let errors = []
+        if(previousYearData[0].IsSfcFormFilled === 'No'){
+            errors.push(warnings['recomAvail']['2'])
+        }
+        if(previousYearData[0].isPfrFilled === "No"){
+            errors.push(warnings['propertyTaxNotif']['2'])
+        }
+        if(previousYearData[0].pfmsFilledPerc < 100){
+            errors.push(warnings['accountLinked']['2'])
+        }
+        return errors
+    }
+    catch(err){
+        console.log("error in addWarnings ::: ",err.message)
+    }
+}
+
+
+
 module.exports.getInstallmentForm = async (req, res, next) => {
     let response = {
         success: false,
@@ -746,6 +803,8 @@ module.exports.getInstallmentForm = async (req, res, next) => {
         let responseData = []
         let { design_year, state, formType } = req.query
         let { role } = req.decoded
+        let previousYearData = await getPreviousYearData(state,design_year)
+        response.errors = await addWarnings(previousYearData)
         let validator = await checkForUndefinedVaribales({
             "design year": design_year,
             "state": state
@@ -758,11 +817,12 @@ module.exports.getInstallmentForm = async (req, res, next) => {
         if (!formValidator.valid) {
             response.success = false;
             response.message = formValidator.message
+            response.errors = [formValidator.message]
             return res.json(response)
         }
-        response.success = true
+        response.success = !response.errors.length 
         response.message = ""
-        let { json, stateIsMillion } = await getJson(state, design_year, role)
+        let { json, stateIsMillion } = await getJson(state, design_year, role,previousYearData[0])
         response.data = json
         response.stateIsMillion = stateIsMillion
     }
@@ -882,17 +942,13 @@ async function handleInstallmentForm(params) {
         Object.assign(payload, data)
         payload.grantDistribute = grantDistributeOptions[payload.grantDistribute] || null
         let installmentValidatior = await checkValidationsInstallmentForm(payload, transferGrantData)
-        /**
-         * Uncomment this code before giving to testing
-         */
         if (!installmentValidatior.valid && runValidators) {
             validator.message = "Not valid"
             validator.valid = false
             validator.errors = installmentValidatior.errors
             return validator
         }
-        console.log("payload :: ", payload)
-        console.log("transferGrantData", transferGrantData)
+        // console.log("transferGrantData", transferGrantData)
         let gtcInstallment = await GtcInstallmentForm.findOneAndUpdate({
             installment,
             year,
@@ -973,12 +1029,14 @@ module.exports.createOrUpdateInstallmentForm = async (req, res) => {
     try {
         let { installment, type, isDraft, status, financialYear, year, state, statusId: currentFormStatus, installment_type } = req.body
         let role = req.decoded.role
+        let userId = req.decoded._id
         if (role !== userTypes.state) {
             response.success = false
             response.message = "Not Permitted"
             response.message = ["Not Permitted"]
             return response.status(405).json(response)
         }
+        let formSubmit = [JSON.parse(JSON.stringify(req.body))]
         let params = {
             "installment id": installment,
             "year id ": year,
@@ -989,7 +1047,7 @@ module.exports.createOrUpdateInstallmentForm = async (req, res) => {
             "year": year,
             "state": state
         }
-        let runValidators = [MASTER_STATUS['In Progress']].includes(currentFormStatus) ? false : true
+        let runValidators = [MASTER_FORM_STATUS['IN_PROGRESS']].includes(currentFormStatus) ? false : true
         let validator = await checkForUndefinedVaribales(params)
         if (!validator.valid) {
             response.success = false
@@ -997,27 +1055,32 @@ module.exports.createOrUpdateInstallmentForm = async (req, res) => {
             return res.status(405).json(response)
         }
         let installmentValidator = await checkPreviousInstallment(req.body)
-        console.log("installmentValidator :: ", installmentValidator)
         if (!installmentValidator.valid && runValidators) {
             response.message = installmentValidator.message
             response.success = false
             return res.status(405).json(response)
         }
         let gtcFormId = await getOrCreateFormId(req.body)
+        formSubmit[0]['_id'] = gtcFormId
         if (!gtcFormId) {
             throw { message: "something went wrong" }
         }
         req.body.gtcFormId = gtcFormId
-
+        req.body._id =  gtcFormId
+        req.body.formSubmit = [JSON.parse(JSON.stringify(req.body))]
         let installmentFormValidator = await handleInstallmentForm(req.body)
-        console.log("installmentFormValidator ::: ", installmentFormValidator)
+        // console.log("installmentFormValidator ::: ", installmentFormValidator)
         if (!installmentFormValidator.valid && runValidators) {
             response.success = false
             response.message = installmentFormValidator.errors
             // response.errors = installmentFormValidator.errors
             return res.status(405).json(response)
         }
-        await createHistory({ isDraft, currentFormStatus, gtcFormId })
+        
+        let actionTakenByRole = role
+        let actionTakenBy = userId
+        let formBodyStatus = currentFormStatus
+        await createHistory({ currentFormStatus, gtcFormId ,formSubmit , actionTakenByRole , actionTakenBy , formBodyStatus })
         response.success = true
         response.message = "Success"
         return res.status(200).json(response)
@@ -1037,8 +1100,13 @@ module.exports.createOrUpdateInstallmentForm = async (req, res) => {
 module.exports.installmentAction = async (req, res) => {
 
     try {
-        console.log('payload', req.body);
-
+        let {role,mohua} = req.decoded
+        if(role !== userTypes.mohua){
+            return res.json({
+                "success":true,
+                "message":"Not permitted"
+            })
+        }
         const {
             key,
             rejectReason_mohua,
@@ -1053,19 +1121,22 @@ module.exports.installmentAction = async (req, res) => {
             installment,
             // year: ObjectId(year),
             // type,
+            type:key,
             design_year: ObjectId(design_year),
             state: ObjectId(state)
         }, {
             $set: {
+                actionTakenBy: mohua || state,
+                actionTakenByRole:role,
                 currentFormStatus: statusId,
                 rejectReason_mohua,
                 responseFile_mohua
             }
         });
-
+        req.body._id = found?._id
+        let formSubmit = [{...req.body,type:key,currentFormStatus:statusId}]
+        await createHistory({ formBodyStatus : Number(statusId),formSubmit, actionTakenByRole:role , actionTakenBy: mohua || state  })
         if(!found) return res.status(404).json({ message: 'Installment not found'});
-
-
         return res.status(200).json({
             success: true,
             message: 'Action recorded'
@@ -1074,29 +1145,29 @@ module.exports.installmentAction = async (req, res) => {
 
     }
     catch (err) {
-        console.log("error in installmentAction ::: ", err.message)
+        let message = ["demo","staging"].includes(process.env.ENV) ? err.message : "something went wrong"
+         return res.status(404).json({
+            success : true,
+            message,
+        })
     }
 }
 
 async function createHistory(params) {
     try {
-        let { isDraft, currentFormStatus, gtcFormId } = params
-        if (!isDraft || currentFormStatus === 7) {
-            let payload = {
-                "recordId": gtcFormId,
-                "data": []
+        let {formBodyStatus,actionTakenBy,actionTakenByRole,formSubmit,formType} = params
+        let formData = formSubmit[0]
+        let shortKey = `${formData.type}_${years[formData.financialYear]}_${formData.installment}`
+            let historyParams = {
+                formBodyStatus,
+                actionTakenBy:actionTakenBy,
+                actionTakenByRole:actionTakenByRole,
+                formSubmit:formSubmit,
+                formType:"GTC_STATE",
+                shortKey:shortKey
             }
-            let gtcForm = await GrantTransferCertificate.findOne({
-                "_id": gtcFormId,
-            }).lean()
-            gtcForm['installmentForm'] = {}
-            let installmentForm = await GtcInstallmentForm.findOne({
-                "gtcForm": gtcForm._id
-            }).populate("transferGrantdetail").lean()
-            gtcForm['installmentForm'] = installmentForm
-            payload['data'] = [gtcForm]
-            await saveFormHistory({ body: payload })
-        }
+            
+            await saveStatusAndHistory(historyParams)
     }
     catch (err) {
         console.log("error in createHistory ::: ", err.message)

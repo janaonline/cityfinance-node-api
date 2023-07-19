@@ -62,15 +62,6 @@ const TwentyEightSlbFormSchema = new Schema({
         ],
     },
     
-
-    createdAt:{
-        type: Date, 
-        default: Date.now()
-    },
-    modifiedAt:{
-        type: Date,
-        default: Date.now()
-    },
     isDraft:{ 
         type: Boolean, 
         default: true 

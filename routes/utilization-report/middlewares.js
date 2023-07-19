@@ -7,6 +7,18 @@ const ObjectId = require("mongoose").Types.ObjectId;
 let outDatedYears = ["2018-19", "2019-20", "2021-22", "2022-23"]
 const { MASTER_STATUS_ID, MASTER_STATUS } = require("../../util/FormNames")
 module.exports.changeGetApiForm = async (req, res, next) => {
+    let dummyProjectSample = {
+        "location" : {
+            "lat" : "",
+            "long" : ""
+        },
+        "cost" : "",
+        "expenditure" : "",
+        "category" : ObjectId("60783e454dff55e6c0cb80c8"),
+        "name" : "",
+        "startDate":"",
+        "completionDate":""
+    }
     let response = {
         "success": false,
         "data": [],
@@ -17,8 +29,14 @@ module.exports.changeGetApiForm = async (req, res, next) => {
         let year = getKeyByValue(years, yearId)
         let form = { ...req.form }
         let { name, role } = req.decoded
-        // form['ulbName'] = name
-        delete form['projects']
+        let latest = form?.createdAt > new Date('2023-07-12T11:45:58.550Z')
+        form['disabledShortKeys'] = ['category']
+        if(!latest){     
+            if(form.projects.length < 1){
+                form['projects'] = [dummyProjectSample]
+                }
+                form['disabledShortKeys'] = []
+        }
         let latestYear = !outDatedYears.includes(year)
         let jsonFormId = req.query.formId || 0
         let condition = { formId: parseInt(jsonFormId), design_year: ObjectId(yearId) }
@@ -54,7 +72,6 @@ module.exports.changeGetApiForm = async (req, res, next) => {
             }
             let flattedForm = await getFlatObj(form)
             flattedForm.disableFields = formStatus
-            console.log("form ::: ", form.ulbName)
             flattedForm['name_'] = flattedForm['name']
             let keysToBeDeleted = ["_id", "createdAt", "modifiedAt", "actionTakenByRole", "actionTakenBy", "ulb", "design_year"]
             let closingBalance = round((+form.grantPosition.unUtilizedPrevYr) + (+form.grantPosition.receivedDuringYr), 2) - (+form.grantPosition.expDuringYr);
@@ -65,6 +82,7 @@ module.exports.changeGetApiForm = async (req, res, next) => {
             response.success = true
             responseData[0]['isQuestionDisabled'] = formStatus
             response.data = responseData
+            response.latest = latest
             response.message = 'Form Questionare!'
             return res.status(200).json(response)
         }
