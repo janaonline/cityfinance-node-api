@@ -27,8 +27,8 @@ module.exports.createAndUpdateFormMaster = async (params) => {
 
     let masterFormId = "";
     switch (modelName) {
-      case ModelNames["twentyEightSlbs"]:
-        masterFormId = FORMIDs["twentyEightSlb"];
+      case [ModelNames["twentyEightSlbs"],ModelNames["linkPFMS"]].find(item => item === modelName):
+        masterFormId = modelName === ModelNames["twentyEightSlbs"] ? FORMIDs["twentyEightSlbs"] :FORMIDs['PFMS']
         // if (formData.design_year === YEAR_CONSTANTS["23_24"] && formData.ulb) {
         try {
           const formBodyStatus = formData.status;
@@ -56,7 +56,7 @@ module.exports.createAndUpdateFormMaster = async (params) => {
               MASTER_STATUS["In Progress"],
               MASTER_STATUS["Returned By State"],
               MASTER_STATUS["Returned By MoHUA"],
-            ].includes(formCurrentStatus.status)
+            ].includes(formCurrentStatus?.status)
           ) {
             let formSubmit;
             formData["ulbSubmit"] =
@@ -151,7 +151,7 @@ module.exports.createAndUpdateFormMaster = async (params) => {
               MASTER_STATUS["Submission Acknowledged By MoHUA"],
               MASTER_STATUS["Under Review By MoHUA"],
               MASTER_STATUS["Under Review By State"],
-            ].includes(formCurrentStatus.status)
+            ].includes(formCurrentStatus?.status)
           ) {
             return res.status(200).json({
               status: true,
@@ -159,6 +159,7 @@ module.exports.createAndUpdateFormMaster = async (params) => {
             });
           }
         } catch (error) {
+          console.log(error)
           return Response.BadRequest(res, {}, `${error.message} in 28 slb form submission`);
         }
         // }
@@ -175,6 +176,7 @@ module.exports.createAndUpdateFormMaster = async (params) => {
             .findOne({ ulb: formData.ulb, designYear: formData.designYear })
             .lean();
           let formCurrentStatus;
+          console.log("formData2324 ::: ",formData2324)
           if (!formData2324) {
             formCurrentStatus = {
               status: MASTER_STATUS["Not Started"],
@@ -191,9 +193,9 @@ module.exports.createAndUpdateFormMaster = async (params) => {
               MASTER_STATUS["In Progress"],
               MASTER_STATUS["Returned By State"],
               MASTER_STATUS["Returned By MoHUA"],
-            ].includes(formCurrentStatus.status)
+            ].includes(formCurrentStatus?.status)
           ) {
-            if(formCurrentStatus.status === MASTER_STATUS['Not Started']){
+            if(formCurrentStatus?.status === MASTER_STATUS['Not Started']){
               // const form = await new UtilizationReport(formData);
               // if (form) {
               //   formData.createdAt = form.createdAt;
@@ -216,7 +218,7 @@ module.exports.createAndUpdateFormMaster = async (params) => {
               // }
               // formData = form;
             }
-            if(formCurrentStatus.status === MASTER_STATUS['In Progress']){
+            if(formCurrentStatus?.status === MASTER_STATUS['In Progress']){
               if(!formData.isProjectLoaded && years['2023-24']){
                 delete formData['projects']
               }
@@ -241,7 +243,7 @@ module.exports.createAndUpdateFormMaster = async (params) => {
                     return Response.BadRequest(res, {}, validation.messages);
                   }
                 }
-                if(formCurrentStatus.status === MASTER_STATUS['Returned By State'] && formBodyStatus === MASTER_STATUS['In Progress'] ){
+                if(formCurrentStatus?.status === MASTER_STATUS['Returned By State'] && formBodyStatus === MASTER_STATUS['In Progress'] ){
                   if(!formData.isProjectLoaded && years['2023-24']){
                     delete formData['projects']
                   }

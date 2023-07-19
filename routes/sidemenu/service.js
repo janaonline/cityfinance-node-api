@@ -17,8 +17,8 @@ const PropTax = require('../../models/PropertyTaxOp')
 const { calculateStatus, calculateStatusMaster } = require('../CommonActionAPI/service')
 const SLB28 = require('../../models/TwentyEightSlbsForm')
 const PropertyTaxOp = require('../../models/PropertyTaxOp')
-const { YEAR_CONSTANTS, MASTER_STATUS_ID, MASTER_FORM_STATUS } = require('../../util/FormNames');
-
+const { YEAR_CONSTANTS, MASTER_STATUS_ID, MASTER_FORM_STATUS, MASTER_STATUS } = require('../../util/FormNames');
+var outDatedYears = ["2018-19","2019-20","2021-22","2022-23"]
 //STate Forms
 const SFC = require('../../models/StateFinanceCommissionFormation')
 const PTFR = require('../../models/PropertyTaxFloorRate')
@@ -27,6 +27,8 @@ const ActionPlan = require('../../models/ActionPlans')
 const WaterRejuvenation = require('../../models/WaterRejenuvation&Recycling')
 const USER_TYPES = require('../../util/userTypes');
 const { years } = require('../../service/years');
+const { getKeyByValue } = require('../../util/masterFunctions');
+const { stat } = require('fs');
 const ticks = {
   "green": "../../../assets/form-icon/checked.svg",
   "red": "../../../assets/form-icon/cancel.svg"
@@ -104,15 +106,15 @@ const calculateTick = (tooltip, loggedInUserRole, viewFor) => {
       if (
         tooltip == StatusList.Not_Started ||
         tooltip == StatusList.In_Progress ||
-        tooltip == StatusList.Under_Review_By_State
+        tooltip == StatusList.Under_Review_By_State ||
+        tooltip == StatusList.Rejected_By_MoHUA
       ) {
         return ticks["red"];
       } else if (
         [
-          StatusList.Rejected_By_State,
-          StatusList.Rejected_By_MoHUA,
+          StatusList.Rejected_By_State ,
           StatusList.Under_Review_By_MoHUA,
-          StatusList.Approved_By_MoHUA,
+          StatusList.Approved_By_MoHUA ,
           MASTER_STATUS_ID[
             MASTER_FORM_STATUS["SUBMISSION_ACKNOWLEDGED_BY_MoHUA"]
           ],
@@ -155,11 +157,11 @@ const calculateTick = (tooltip, loggedInUserRole, viewFor) => {
         return ticks["red"];
       } else if (
         [
-            (StatusList.Under_Review_By_MoHUA,
+            StatusList.Under_Review_By_MoHUA,
             StatusList.Approved_By_MoHUA,
             MASTER_STATUS_ID[
               MASTER_FORM_STATUS["SUBMISSION_ACKNOWLEDGED_BY_MoHUA"]
-            ])
+            ]
           ].includes(tooltip)
       ) {
         return ticks["green"];
@@ -183,6 +185,7 @@ const calculateTick = (tooltip, loggedInUserRole, viewFor) => {
           ],
         ].includes(tooltip)
       ) {
+        
         return ticks["green"];
       }
     }
@@ -228,10 +231,10 @@ const findStatusAndTooltipMaster = (params) => {
   let { formData, formId, loggedInUserRole, viewFor } = params;
   let status = formData.currentFormStatus
   let tooltip = calculateStatusMaster(status);
-  console.log("formData :: ",formData)
   if(formData.linkPFMS === "Yes"){
     console.log("tooltip ::: ",tooltip)
   }
+  console.log("tooltip :: ",tooltip)
   let tick = calculateTick(tooltip, loggedInUserRole, viewFor)
   console.log("tick :: ",tick)
   return {
@@ -249,6 +252,20 @@ const UA_FORM_MODEL = {
   ODF_UA_NO: ObjectId("63ff31d63ae39326f4b2f46a"),
   XVFcGrantULBForm_UA_YES: ObjectId("63ff31d63ae39326f4b2f465"),
   XVFcGrantULBForm_UA_NO: ObjectId("63ff31d63ae39326f4b2f469")
+}
+
+const getformStatus = (data)=>{
+  try{
+    const formData = {}
+    const statusPriorities = [MASTER_FORM_STATUS['NOT_STARTED'], MASTER_FORM_STATUS['IN_PROGRESS'], MASTER_FORM_STATUS['UNDER_REVIEW_BY_MoHUA'], MASTER_FORM_STATUS['RETURNED_BY_MoHUA'], MASTER_FORM_STATUS['SUBMISSION_ACKNOWLEDGED_BY_MoHUA']];
+    const minStatusIndex = Math.min(...data.map(item => statusPriorities.indexOf(item.currentFormStatus))) 
+    const result = statusPriorities[minStatusIndex < 0 ? 1: minStatusIndex];
+    formData['currentFormStatus'] = result
+    return formData
+  }
+  catch(err){
+    console.log("error in findStatuses :: ",err.message)
+  }
 }
 
 module.exports.get = catchAsync(async (req, res) => {
@@ -336,9 +353,17 @@ module.exports.get = catchAsync(async (req, res) => {
         }
       } else {
         let formDataArray = await el.find(condition).lean();
+        let formData = formDataArray
         if (formDataArray.length > 0) {
-          let formData = getGTCFinalForm(formDataArray);
-          output.push(findStatusAndTooltip(formData, FormModelMapping_State[el['modelName']], el['modelName'], user.role, role))
+          if(outDatedYears.includes(getKeyByValue(year))){
+            formData = getGTCFinalForm(formDataArray); 
+            output.push(findStatusAndTooltip(formData, FormModelMapping_State[el['modelName']], el['modelName'], user.role, role))
+          }
+          else{
+            formData = await getformStatus(formDataArray)
+            console.log("formData :: ",formData)
+            output.push(findStatusAndTooltipMaster({ formData, formId: FormModelMappingMaster_State[el['modelName']], loggedInUserRole: user.role, viewFor: role }))
+          }
         }
       }
     }

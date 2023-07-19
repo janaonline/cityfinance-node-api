@@ -28,6 +28,29 @@ var path = require('path');
 var request = require('request');
 const Year = require('../../models/Year');
 
+
+const isMillionPlus = async(data)=>{
+  try{
+    for(let  element of data){
+      let ulb = await Ulb.findOne({
+        "state":ObjectId(element.state),
+        "isMillionPlus":"Yes"
+      })
+      console.log("")
+      if(ulb){
+        element.isMillionPlus = true
+      }
+      else{
+        element.isMillionPlus = false
+      }
+    }
+    return data
+  }
+  catch(err){
+    console.log("error in isMillionPlus ::: ",err.message)
+  }
+}
+
 module.exports.get = async (req, res) => {
   try {
 
@@ -175,6 +198,7 @@ module.exports.get = async (req, res) => {
     /* End */
 
     if (collectionName === CollectionNames.state_gtc || collectionName === CollectionNames.state_grant_alloc) {
+      data = await isMillionPlus(data)
       data.forEach((element) => {
         let { status, pending } = countStatusData(element, collectionName);
         element.formStatus = status;
@@ -427,15 +451,16 @@ const waterSenitationXlsDownload = async (data, res) => {
   }
 }
 
+
 function countStatusData(element, collectionName) {
   let total = 0;
   let notStarted = 0;
   let status = "";
   let arr = collectionName === CollectionNames.state_gtc ? element.status : element.draft
-
+  let totalGtcForms = element.isMillionPlus ? 5 : 4
   if (collectionName === CollectionNames.state_gtc) {
-    total = 5;
-    notStarted = 5;
+    total = totalGtcForms
+    notStarted = totalGtcForms;
   } else if (collectionName === CollectionNames.state_grant_alloc) {
     total = 5;
     notStarted = 5;
@@ -743,7 +768,7 @@ const computeQuery = (params) => {
             ulbName: "$name",
             ulbId: "$_id",
             ulbCode: "$code",
-            access: "$access_2223",
+            access: `$${accessYear}`,
             censusCode: {
               $cond: {
                 if: {

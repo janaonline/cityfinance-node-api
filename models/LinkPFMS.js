@@ -90,7 +90,7 @@ const PFMSAccountSchema = new Schema(
         status:{
             type: String,
             enum: {
-                values: ['APPROVED', 'REJECTED', 'PENDING'],
+                values: ['APPROVED', 'REJECTED', 'PENDING',''],
                 message: "ERROR: STATUS BE EITHER 'PENDING'/ 'APPROVED' / 'REJECTED'",
             }
         },
