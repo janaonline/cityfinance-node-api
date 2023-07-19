@@ -9,6 +9,7 @@ const ObjectId = require("mongoose").Types.ObjectId;
 const Service = require('../../service');
 const STATUS_LIST = require('../../util/newStatusList');
 const { MASTER_STATUS, MASTER_STATUS_ID, YEAR_CONSTANTS, YEAR_CONSTANTS_IDS, MASTER_FORM_STATUS, MASTER_FORM_QUESTION_STATUS } = require('../../util/FormNames');
+const { getCurrentYear, getAccessYear } = require('../../util/masterFunctions');
 const { canTakeActionOrViewOnlyMasterForm } = require('../../routes/CommonActionAPI/service')
 // const { createDynamicColumns } = require('./service')
 const List = require('../../util/15thFCstatus');
@@ -2313,7 +2314,7 @@ const getQuestionsMapping = (questions, counter = 0) => {
 
 module.exports.downloadPTOExcel = async (req, res) => {
   try {
-    const { crrWorkbook, filename, tempFilePath } = await excelPTOMapping(req.query)
+    const { crrWorkbook, filename, tempFilePath, year } = await excelPTOMapping(req.query)
 
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     res.setHeader("Content-Disposition", "attachment; filename=" + `${filename}`);
@@ -2342,10 +2343,17 @@ const excelPTOMapping = async (query) => {
       // map form questions with excel columns
       const userCharges = ["userChargesDmndChild", "userChargesCollectionChild"]
       const questionColMapping = getQuestionsMapping(questions, 8)
+      let design_year, accessYear = null;
+      let { getQuery, year } = query;
 
-      let { getQuery } = query
+      if (year && mongoose.isValidObjectId(year)) {
+        design_year = ObjectId(year);
+      } else {
+        const currentYear = new Date().getFullYear();
+        design_year = getCurrentYear(currentYear, design_year);
+      }
+      accessYear = getAccessYear(design_year, accessYear);
       getQuery = getQuery === "true"
-      const design_year = ObjectId(years['2023-24'])
       if (getQuery) {
         response.query = getQuery
         return response
@@ -2368,7 +2376,7 @@ const excelPTOMapping = async (query) => {
 
       const cursor = await Ulb.aggregate([
         {
-          $match: { access_2324: true }
+          $match: { [accessYear]: true }
         },
         {
           $lookup: {

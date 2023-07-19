@@ -2,7 +2,8 @@ const FormHistory = require("../models/FormHistory");
 const CurrentStatus = require("../models/CurrentStatus");
 const StatusHistory = require("../models/StatusHistory");
 const FORMJSON  = require('../models/FormsJson');
-const { MODEL_PATH } = require("../util/FormNames");
+const { MODEL_PATH, YEAR_CONSTANTS_IDS } = require("../util/FormNames");
+const ObjectId = require("mongoose").Types.ObjectId;
 const {years} = require("../service/years")
 const grantDistributeOptions = {
   "Yes":"As per Census 2011",
@@ -207,5 +208,24 @@ module.exports.getShortKeys = async (params) => {
   }
 }
 
+function getCurrentYear(currentYear, design_year) {
+  for (const key in years) {
+    if (key.startsWith(currentYear)) {
+      design_year = ObjectId(years[key]);
+      break;
+    }
+  }
+  return design_year;
+}
+
+function getAccessYear(design_year, accessYear) {
+  let yearConstraint = YEAR_CONSTANTS_IDS[design_year];
+  accessYear = "access_" + yearConstraint.split("-")[0].slice(-2) + yearConstraint.split("-")[1].slice(-2);
+  return accessYear;
+}
+
+
 module.exports.grantDistributeOptions = grantDistributeOptions
+module.exports.getCurrentYear = getCurrentYear;
+module.exports.getAccessYear = getAccessYear;
 module.exports.checkForCalculationsForDurForm = checkForCalculationsForDurForm
