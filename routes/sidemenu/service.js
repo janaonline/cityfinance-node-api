@@ -257,7 +257,7 @@ const UA_FORM_MODEL = {
 const getformStatus = (data)=>{
   try{
     const formData = {}
-    const statusPriorities = [1, 2, 4, 7, 6];
+    const statusPriorities = [MASTER_FORM_STATUS['NOT_STARTED'], MASTER_FORM_STATUS['IN_PROGRESS'], MASTER_FORM_STATUS['UNDER_REVIEW_BY_MoHUA'], MASTER_FORM_STATUS['RETURNED_BY_MoHUA'], MASTER_FORM_STATUS['SUBMISSION_ACKNOWLEDGED_BY_MoHUA']];
     const minStatusIndex = Math.min(...data.map(item => statusPriorities.indexOf(item.currentFormStatus))) 
     const result = statusPriorities[minStatusIndex < 0 ? 1: minStatusIndex];
     formData['currentFormStatus'] = result
