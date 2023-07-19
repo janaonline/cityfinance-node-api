@@ -2546,6 +2546,7 @@ async function mutateResponse(jsonFormat, flatForm, keysToBeDeleted, role) {
         //     transDate['maxRange'] = maxDate;
         // }
         // console.log('transDate', transDate);
+        console.log("flattedForm['disabledShortKeys'] >>",flattedForm['disabledShortKeys'] )
         obj[0] = await appendExtraKeys(keysToBeDeleted, obj[0], flattedForm)
         await deleteKeys(flattedForm, keysToBeDeleted)
         for (let key in obj) {
@@ -2564,7 +2565,7 @@ async function mutateResponse(jsonFormat, flatForm, keysToBeDeleted, role) {
                     let modifiedObj = await handleRangeIfExists(question, flattedForm)
                     let warnings = await handleWarningsIfExists(question, flattedForm)
                     question.warnings = warnings
-                    questionObj.isQuestionDisabled = flattedForm['disabledShortKeys'] && flattedForm['disabledShortKeys'].includes(question.shortKey) ? true : questionObj.isQuestionDisabled
+                    question.isQuestionDisabled = flattedForm['disabledShortKeys'] && flattedForm['disabledShortKeys'].includes(question.shortKey) ? true : question.isQuestionDisabled
                     question.min = modifiedObj.min ? modifiedObj.min : question.min;
                     question.max = modifiedObj.max ? modifiedObj.max : question.min;
                     question.minRange = modifiedObj.minRange ? modifiedObj.minRange : question.minRange;
