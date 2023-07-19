@@ -68,7 +68,7 @@ let DurProjectJson = {
         "information": "",
         "_id": "64097e1e3b2eb509dc61e5ba",
         "order": "6.002",
-        "isQuestionDisabled": true,
+        "isQuestionDisabled": false,
         "modelName": "Category",
         "type": "referenceById",
         "modelFilter": {},
