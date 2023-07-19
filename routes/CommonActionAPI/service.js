@@ -3837,9 +3837,9 @@ function checkIfUlbCanEditForm2223(form) {
     }
 }
 
-function checkUlbAccess(input) {
+function checkUlbAccess(input, customSlice) {
   let ulbVariable = "access_";
-  let year = input.split("").slice(2).join("").replace("-", "");
+  let year = input.split("").slice(customSlice).join("").replace("-", "");
   return ulbVariable + year;
 }
 

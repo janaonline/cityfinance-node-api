@@ -559,7 +559,8 @@ const computeQuery = (params) => {
   if (state && state !== 'null') {
     condition['state'] = ObjectId(state)
   }
-  const accessYear = checkUlbAccess(yearData.year);
+  const decadePrefixtoSlice = 2;
+  const accessYear = checkUlbAccess(yearData.year, decadePrefixtoSlice);
   condition[accessYear] = true
   let pipeLine = [
     {
