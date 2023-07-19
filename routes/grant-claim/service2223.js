@@ -553,7 +553,7 @@ function generateOutputObject(input) {
       position: 1,
       conditionSuccess: input[key]['conditionSuccess'],
       buttonName: 'Claim Grant - ',
-      amount: input[key][`${key}_GrantData`]['amountReleased'],
+      amount: input[key][`${key}_GrantData`]['amountAssigned'],
       info: '',
       isShow: true,
       status: input[key]['conditionSuccess'] ? ELIGIBLITY['YES'] : ELIGIBLITY['NO'],
