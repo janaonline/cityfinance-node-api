@@ -9,7 +9,7 @@ const ObjectId = require("mongoose").Types.ObjectId;
 const Service = require('../../service');
 const STATUS_LIST = require('../../util/newStatusList');
 const { MASTER_STATUS, MASTER_STATUS_ID, YEAR_CONSTANTS, YEAR_CONSTANTS_IDS, MASTER_FORM_STATUS, MASTER_FORM_QUESTION_STATUS } = require('../../util/FormNames');
-const { getCurrentYear, getAccessYear } = require('../../util/masterFunctions');
+const { getCurrentYear, getAccessYear, getFinancialYear } = require('../../util/masterFunctions');
 const { canTakeActionOrViewOnlyMasterForm } = require('../../routes/CommonActionAPI/service')
 // const { createDynamicColumns } = require('./service')
 const List = require('../../util/15thFCstatus');
@@ -2349,8 +2349,8 @@ const excelPTOMapping = async (query) => {
       if (year && mongoose.isValidObjectId(year)) {
         design_year = ObjectId(year);
       } else {
-        const currentYear = new Date().getFullYear();
-        design_year = getCurrentYear(currentYear, design_year);
+        const financialYear = getFinancialYear();
+        design_year = getCurrentYear(financialYear, design_year);
       }
       accessYear = getAccessYear(design_year, accessYear);
       getQuery = getQuery === "true"

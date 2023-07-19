@@ -209,12 +209,9 @@ module.exports.getShortKeys = async (params) => {
 }
 
 function getCurrentYear(currentYear, design_year) {
-  for (const key in years) {
-    if (key.startsWith(currentYear)) {
-      design_year = ObjectId(years[key]);
-      break;
-    }
-  }
+  const lastYear = (currentYear % 100) + 1;
+  design_year = ObjectId(years[`${currentYear}-${lastYear}`])
+
   return design_year;
 }
 
@@ -224,8 +221,20 @@ function getAccessYear(design_year, accessYear) {
   return accessYear;
 }
 
+function getFinancialYear() {
+  const currentDate = new Date();
+  const currentMonth = currentDate.getMonth();
+  const currentYear = currentDate.getFullYear();
+
+  // Calculate the financial year based on the current month
+  const financialYear = (currentMonth <= 3) ? currentYear - 1 : currentYear;
+  return financialYear;
+}
+
+
 
 module.exports.grantDistributeOptions = grantDistributeOptions
 module.exports.getCurrentYear = getCurrentYear;
 module.exports.getAccessYear = getAccessYear;
+module.exports.getFinancialYear = getFinancialYear;
 module.exports.checkForCalculationsForDurForm = checkForCalculationsForDurForm
