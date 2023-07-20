@@ -12,7 +12,10 @@ module.exports.login = async (req, res) => {
   try {
 
     let ulb, role;
+    // console.log("isMatch", role)
+
     let user = await getUSer(req.body);
+
     let state;
     if (user?.state) state = await State.findOne({ _id: ObjectId(user.state) }).lean();
 
@@ -22,10 +25,10 @@ module.exports.login = async (req, res) => {
         message: "Sorry! You are not Authorized To Access XV FC Grants Module"
       })
     }
-    if(user.role === "PMU" && req.body.type === "15thFC"){
+    if ((user.role === "PMU" || user.role === "AAINA") && req.body.type === "15thFC") {
       return res.status(403).json({
         success: false,
-        message: "PMU user not allowed login from 15th Fc, Please login with Ranking 2022."
+        message: `${user.role} user not allowed login from 15th Fc, Please login with Ranking 2022.`
       })
     }
     if (user.role === "ULB") {
@@ -44,7 +47,7 @@ module.exports.login = async (req, res) => {
     }
 
     if (isMatch) {
-      let token = await createToken(user, sessionId,req.body);
+      let token = await createToken(user, sessionId, req.body);
       const allYears = await getYears();
       return res.status(200).json({
         success: true,

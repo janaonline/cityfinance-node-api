@@ -27,14 +27,15 @@ module.exports.createToken = (user, sessionId, body) => {
             }
 
             let inactiveTime = Date.now() + Helper.INACTIVETIME.TIME;
+
             let loginHistory = new LoginHistory({
                 user: user._id,
                 loggedInAt: new Date(),
                 visitSession: ObjectId(sessionId),
                 inactiveSessionTime: inactiveTime,
-                loginType: body?.type == "fiscalRankings" ? "fiscalRankings" : "15thFC"
+                loginType: body?.type ? body?.type : "15thFC"
             });
-            
+
             let lh = await loginHistory.save();
             data['purpose'] = 'WEB';
             data['lh_id'] = lh._id;
