@@ -356,7 +356,6 @@ function getCollections2324(type, installment) {
       GrantTransferCertificate,
       StateFinanceCommission,
       PropertyTaxOp,
-      PropertyTaxFloorRate
     ],
     nmpc_untied_2: [
       AnnualAccounts,
@@ -364,7 +363,6 @@ function getCollections2324(type, installment) {
       GrantTransferCertificate,
       StateFinanceCommission,
       PropertyTaxOp,
-      PropertyTaxFloorRate
     ],
     nmpc_tied_1: [
       AnnualAccounts,
@@ -373,7 +371,6 @@ function getCollections2324(type, installment) {
       StateFinanceCommission,
       PropertyTaxOp,
       DUR,
-      PropertyTaxFloorRate
     ],
     nmpc_tied_2: [
       AnnualAccounts,
@@ -381,7 +378,6 @@ function getCollections2324(type, installment) {
       GrantTransferCertificate,
       StateFinanceCommission,
       PropertyTaxOp,
-      PropertyTaxFloorRate
     ],
     mpc_tied_1: [
       AnnualAccounts,
@@ -396,10 +392,11 @@ function getCollections2324(type, installment) {
       SLB,
       ActionPlan,
       WaterRejenuvation,
-      PropertyTaxFloorRate
     ],
   };
-
+  for(let key in collectionsMap){
+    collectionsMap[key].push(PropertyTaxFloorRate)
+  }
   const condition = `${type}_${installment}`;
 
   return collectionsMap[condition] || [];
