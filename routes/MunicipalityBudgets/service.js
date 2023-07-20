@@ -2,8 +2,8 @@
 
 const ObjectId = require("mongoose").Types.ObjectId;
 const Ulb = require('../../models/Ulb');
-const Response = require('../../service/response')
-
+const Response = require('../../service/response');
+const { years } = require('../../service/years')
 module.exports.getDocuments = async (req, res) => {
     try {
         const {
@@ -47,25 +47,21 @@ module.exports.getDocuments = async (req, res) => {
                             }
                         },
                         {
-                            $lookup: {
-                                from: 'years',
-                                localField: 'year',
-                                foreignField: '_id',
-                                as: 'year'
-                            }
-                        },
-                        {
-                            $unwind: {
-                                "path": "$year",
-                                "preserveNullAndEmptyArrays": true
+                            $addFields: {
+                                years: {
+                                    $filter: {
+                                        input: Object.entries(years).map(([label, id]) => ({label, id})),
+                                        as: 'year',
+                                        cond: { $eq: [{ $toObjectId: '$$year.id'}, '$year'] }
+                                    }
+                                }
                             }
                         },
                         {
                             $project: {
                                 _id: 0,
                                 state: 1,
-                                year: '$year.year',
-                                name: { $concat: ['$$state.name', '_', '$$ulbName', '_', '$year.year']},
+                                name: { $concat: ['$$state.name', '_', '$$ulbName', '_', { $arrayElemAt: ['$years.label', 0] }] },
                                 url: '$file.url',
                                 type: 'pdf',
                                 modifiedAt: { $toDate: "$_id" }
