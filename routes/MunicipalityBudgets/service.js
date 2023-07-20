@@ -38,7 +38,7 @@ module.exports.getDocuments = async (req, res) => {
                                 name: "$file.name",
                                 url: '$file.url',
                                 type: 'pdf',
-                                modifiedAt: { $toDate: "$$ulbId" }
+                                modifiedAt: { $toDate: "$_id" }
                             }
                         },
                     ],
