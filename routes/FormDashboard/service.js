@@ -356,6 +356,7 @@ function getCollections2324(type, installment) {
       GrantTransferCertificate,
       StateFinanceCommission,
       PropertyTaxOp,
+      PropertyTaxFloorRate
     ],
     nmpc_untied_2: [
       AnnualAccounts,
@@ -363,6 +364,7 @@ function getCollections2324(type, installment) {
       GrantTransferCertificate,
       StateFinanceCommission,
       PropertyTaxOp,
+      PropertyTaxFloorRate
     ],
     nmpc_tied_1: [
       AnnualAccounts,
@@ -371,6 +373,7 @@ function getCollections2324(type, installment) {
       StateFinanceCommission,
       PropertyTaxOp,
       DUR,
+      PropertyTaxFloorRate
     ],
     nmpc_tied_2: [
       AnnualAccounts,
@@ -378,6 +381,7 @@ function getCollections2324(type, installment) {
       GrantTransferCertificate,
       StateFinanceCommission,
       PropertyTaxOp,
+      PropertyTaxFloorRate
     ],
     mpc_tied_1: [
       AnnualAccounts,
@@ -392,6 +396,7 @@ function getCollections2324(type, installment) {
       SLB,
       ActionPlan,
       WaterRejenuvation,
+      PropertyTaxFloorRate
     ],
   };
 
@@ -997,6 +1002,7 @@ function getQuery2324(modelName, formType, designYear, formCategory, stateId){
         case "STATE":
             switch(modelName){
                 case CollectionNames.sfc:
+                case CollectionNames.pTAX:
                     query.push({
                         $match:{
                             design_year: ObjectId(YEAR_CONSTANTS['22_23']),
@@ -1005,7 +1011,6 @@ function getQuery2324(modelName, formType, designYear, formCategory, stateId){
                     }
                     })  
                     break;
-                case CollectionNames.pTAX:
                 case CollectionNames.actionPlan:
                 case CollectionNames.waterRej:
                     query.push({
