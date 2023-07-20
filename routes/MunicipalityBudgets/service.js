@@ -20,6 +20,20 @@ module.exports.getDocuments = async (req, res) => {
             ...(Object.keys($match).length ? [{ $match }] : []),
             {
                 $lookup: {
+                    from: 'states',
+                    localField: 'state',
+                    foreignField: '_id',
+                    as: 'state'
+                }
+            },
+            {
+                $unwind: {
+                    "path": "$state",
+                    "preserveNullAndEmptyArrays": true
+                }
+            },
+            {
+                $lookup: {
                     from: 'fiscalrankingmappers',
                     let: { ulbId: "$_id", ulbName: "$name", state: '$state' },
                     pipeline: [
@@ -33,9 +47,25 @@ module.exports.getDocuments = async (req, res) => {
                             }
                         },
                         {
+                            $lookup: {
+                                from: 'years',
+                                localField: 'year',
+                                foreignField: '_id',
+                                as: 'year'
+                            }
+                        },
+                        {
+                            $unwind: {
+                                "path": "$year",
+                                "preserveNullAndEmptyArrays": true
+                            }
+                        },
+                        {
                             $project: {
                                 _id: 0,
-                                name: "$file.name",
+                                state: 1,
+                                year: '$year.year',
+                                name: { $concat: ['$$state.name', '_', '$$ulbName', '_', '$year.year']},
                                 url: '$file.url',
                                 type: 'pdf',
                                 modifiedAt: { $toDate: "$_id" }
@@ -47,7 +77,7 @@ module.exports.getDocuments = async (req, res) => {
             },
             { $unwind: '$documents' },
             { $replaceRoot: { newRoot: '$documents' } },
-            { $limit: 20 },
+            { $limit: 12 },
         ];
         const response = await Ulb.aggregate(query).allowDiskUse(true);
 
