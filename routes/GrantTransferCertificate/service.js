@@ -660,7 +660,7 @@ const getManipulatedJson = async (installment, type, design_year, formJson, fiel
             let transerGrantForm = await TransferGrantDetailForm().toObject({virtuals:true})
             installmentForm['transferGrantdetail'] = [transerGrantForm]
         }
-        let inputAllowed = [MASTER_STATUS['In Progress'],MASTER_STATUS['Not Started'],MASTER_STATUS['Rejected By MoHUA']]
+        let inputAllowed = [MASTER_FORM_STATUS['IN_PROGRESS'],MASTER_FORM_STATUS['NOT_STARTED'],MASTER_FORM_STATUS['RETURNED_BY_MoHUA']]
         installmentForm.installment_type = installment_types[installment]
         let installmentObj = { ...installmentForm }
         installmentObj['warnings'] = {
