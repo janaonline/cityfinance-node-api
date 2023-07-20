@@ -166,7 +166,7 @@ module.exports.get = async (req, res) => {
     }
     const yearData = await Year.findOne({
       _id: ObjectId(design_year)
-    },{year:1, _id:0}).lean()
+    }, { year: 1, _id: 0 }).lean()
     let folderName = formTab?.folderName;
     let params = { collectionName, formType, isFormOptional, state, design_year, csv, skip, limit, newFilter, dbCollectionName, folderName, yearData }
     let query = computeQuery(params);
@@ -346,9 +346,9 @@ function detailsGrantTransferredManipulate(params) {
   let tArr = []
   for (const tKey of transSortKey) {
     if (["recomAvail", "sfcNotificationCopy", "projectUndtkn", "propertyTaxNotif", "accountLinked",].includes(tKey)) {
-      tArr.push(el[tKey]?.url ? el[tKey]?.url : el[tKey])
+      tArr.push(el[tKey]?.url || el[tKey])
     } else if (["file", "rejectReason_mohua"].includes(tKey)) {
-      tKey == "file" ? tArr.push(file?.url) : tArr.push(rejectReason_mohua)
+      tKey == "file" ? tArr.push(file?.url || "") : tArr.push(rejectReason_mohua)
     } else {
       tKey !== "transDate" ? tArr.push(tfgObj[tKey]) : tfgObj[tKey] ? tArr.push(formatDate(tfgObj[tKey])) : ""
     }
