@@ -605,14 +605,16 @@ const checkForPreviousForms = async (design_year, state) => {
 
 const getRejectedFields = (currentFormStatus, formStatuses, installment, inputAllowed, role) => {
     try {
-        // console.log("formStatuses :: ",formStatuses)
+        console.log("formStatuses :: ",formStatuses)
         let prevInstallment = installment - 1
         let allowedStatuses = [MASTER_FORM_STATUS['UNDER_REVIEW_BY_MoHUA'],MASTER_FORM_STATUS['RETURNED_BY_MoHUA']]
-        // console.log("prevInstallment :: ",prevInstallment)
+        console.log("prevInstallment :: ",prevInstallment)
         if (prevInstallment && !allowedStatuses.includes(formStatuses?.[prevInstallment]) && role === userTypes.state) {
+            console.log(">>>>>>>>>>>>>>>if >>>>>")
             return true
         }
         else {
+            console.log("inputAllowed >>>>>>>>>>>>>>> else >>>>>>>>>>>>>",inputAllowed,currentFormStatus)
             return inputAllowed.includes(currentFormStatus) && role === userTypes.state ? false : true
         }
     }
@@ -695,10 +697,15 @@ const getManipulatedJson = async (installment, type, design_year, formJson, fiel
         flattedForm = {}
         const statusId = gtcForm.currentFormStatus;
         const canTakeAction = (statusId == MASTER_FORM_STATUS['UNDER_REVIEW_BY_MoHUA'] && role == userTypes.mohua);
-        const rejectReason_mohua = gtcForm?.rejectReason_mohua || '';
-        const responseFile_mohua = gtcForm?.responseFile_mohua || {
+        let rejectReason_mohua = gtcForm?.rejectReason_mohua || '';
+        let responseFile_mohua = gtcForm?.responseFile_mohua || {
             name: '',
             url: ''
+        }
+        if(statusId === MASTER_FORM_STATUS['UNDER_REVIEW_BY_MoHUA']){
+            rejectReason_mohua = ''
+            responseFile_mohua = ''
+
         }
         let status = MASTER_STATUS_ID[gtcForm.currentFormStatus]
         return { questionResponse: data, file, status, statusId, rejectReason_mohua, responseFile_mohua, canTakeAction };
@@ -804,7 +811,7 @@ module.exports.getInstallmentForm = async (req, res, next) => {
         let { design_year, state, formType } = req.query
         let { role } = req.decoded
         let previousYearData = await getPreviousYearData(state,design_year)
-        response.errors = await addWarnings(previousYearData)
+        // response.errors = await addWarnings(previousYearData)
         let validator = await checkForUndefinedVaribales({
             "design year": design_year,
             "state": state
@@ -813,13 +820,13 @@ module.exports.getInstallmentForm = async (req, res, next) => {
             response.message = validator.message
             return res.json(response)
         }
-        let formValidator = await checkForPreviousForms(design_year, state)
-        if (!formValidator.valid) {
-            response.success = false;
-            response.message = formValidator.message
-            response.errors = [formValidator.message]
-            return res.json(response)
-        }
+        // let formValidator = await checkForPreviousForms(design_year, state)
+        // if (!formValidator.valid) {
+        //     response.success = false;
+        //     response.message = formValidator.message
+        //     response.errors = [formValidator.message]
+        //     return res.json(response)
+        // }
         response.success = !response.errors.length 
         response.message = ""
         let { json, stateIsMillion } = await getJson(state, design_year, role,previousYearData[0])
@@ -1134,6 +1141,8 @@ module.exports.installmentAction = async (req, res) => {
             }
         });
         req.body._id = found?._id
+        req.body.rejectReason = rejectReason_mohua
+        req.body.responseFile = responseFile_mohua
         let formSubmit = [{...req.body,type:key,currentFormStatus:statusId}]
         await createHistory({ formBodyStatus : Number(statusId),formSubmit, actionTakenByRole:role , actionTakenBy: mohua || state  })
         if(!found) return res.status(404).json({ message: 'Installment not found'});
