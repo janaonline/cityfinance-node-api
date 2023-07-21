@@ -390,17 +390,19 @@ const waterSenitationXlsDownload = async (data, res) => {
       "Latitude", "Longitude", "BOD in mg/L (Current)", "BOD in mg/L (Expected)",
       "COD in mg/L (Current)", "COD in mg/L (Expected)", "DO in mg/L (Current)", "DO in mg/L(Expected)", "TDS in mg/L (Current)",
       "TDS in mg/L(Expected)", "Turbidity in  NTU (Current)", "Turbidity in  NTU(Expected)", "Project Details", "Preparation of  DPR",
-      "Completion  of tendering process", "%  of  work completion"
+      "Completion  of tendering process", "%  of  work completion", "MoHUA Review Status", "MoHUA Review Comments", "MoHUA Review Files"
     ]);
     reuseWater.addRow([
       "State Name", "State Code", "Form Status", "UA Name", "Project Name",
       "Latitude", "Longitude", "Proposed capacity of STP(MLD)", "Proposed water quantity  to be reused(MLD)",
-      "Target customers/ consumer for  reuse of  water", "Preparation of  DPR", "Completion of tendering process", "%  of  work completion"
+      "Target customers/ consumer for  reuse of  water", "Preparation of  DPR", "Completion of tendering process", "%  of  work completion",
+      "MoHUA Review Status", "MoHUA Review Comments", "MoHUA Review Files"
     ]);
     serviceLevelIndicators.addRow([
       "State Name", "State Code", "Form Status", "UA Name", "Project Name", "Physical  Components",
       "Indicator", "Existing  (As- is)", "After  (To-be)", "Estimated  Cost (Amount  in  INR Lakhs)",
-      "Preparation of  DPR", "Completion of tendering process", "%  of  work completion"
+      "Preparation of  DPR", "Completion of tendering process", "%  of  work completion",
+      "MoHUA Review Status", "MoHUA Review Comments", "MoHUA Review Files"
     ]);
 
     let counter = { waterBodies: 2, serviceLevelIndicators: 2, reuseWater: 2 } // counter
@@ -409,6 +411,11 @@ const waterSenitationXlsDownload = async (data, res) => {
         if (pf?.formData) {
           let { uaData } = pf?.formData;
           let rowsArr = [pf?.stateName, pf?.stateCode, pf?.formStatus];
+          if(!['Returned By MoHUA', 'Submission Acknowledged By MoHUA'].includes(pf?.formStatus)){
+            delete pf?.MohuaStatus
+          }
+          let get_status_by_value = pf?.MohuaStatus ? MASTER_STATUS_ID[pf?.MohuaStatus?.status] : ""
+          let commentArr = [get_status_by_value, pf?.MohuaStatus?.rejectReason, pf?.MohuaStatus?.responseFile?.url]
           for (const ua of uaData) {
             let sortKeys = { waterBodies, reuseWater, serviceLevelIndicators };
             let UAName = uaFormData?.length ? uaFormData.find(e => e?._id?.toString() == ua?.ua?.toString()) : null
@@ -427,7 +434,7 @@ const waterSenitationXlsDownload = async (data, res) => {
                     projArr.push(proj[k])
                   }
                 }
-                sortKeys[key].addRow([...rowsArr, ...projArr]);
+                sortKeys[key].addRow([...rowsArr, ...projArr, ...commentArr]);
                 sortKeys[key].getRow(counter[key])
                 counter[key]++
               }
@@ -943,12 +950,32 @@ const computeQuery = (params) => {
             },
           },
           {
+            $lookup: {
+              from: "currentstatuses",
+              localField: `${dbCollectionName}._id`,
+              foreignField: "recordId",
+              as: "currentstatus"
+            }
+          },
+          {
             $project: {
               state: "$_id",
               stateName: "$name",
               stateCode: "$code",
               regionalName: 1,
               formData: { $ifNull: [`$${dbCollectionName}`, ""] },
+              MohuaStatus: {
+                $arrayElemAt: [
+                  {
+                    $filter: {
+                      input: "$currentstatus",
+                      as: "cs",
+                      cond: { $eq: ["$$cs.actionTakenByRole", "MoHUA"] }
+                    }
+                  },
+                  0
+                ]
+              },
               filled:
               {
                 $cond: { if: { $or: [{ $eq: ["$formData", ""] }, { $eq: ["$formData.isDraft", true] }] }, then: "No", else: isFormOptional ? filledQueryExpression : "Yes" }
