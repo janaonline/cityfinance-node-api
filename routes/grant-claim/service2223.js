@@ -370,7 +370,7 @@ module.exports.get2223 = async (req, res)=>{
         mpc_tied_1,
       };
       if((![YEAR_CONSTANTS['22_23']].includes(financialYear))){
-        update2324Conditions(submitClaim);
+        // update2324Conditions(submitClaim);
         submitClaim =  generateOutputObject(submitClaim)
         return res.status(200).json({
           data: submitClaim,
@@ -482,6 +482,7 @@ module.exports.get2223 = async (req, res)=>{
       //   financialYear: ObjectId(financialYear)
       // }).lean();
       if(![YEAR_CONSTANTS['22_23']].includes(financialYear)){
+        // update2324Conditions(submitClaim);
         submitClaim =  generateOutputObject(submitClaim)
         return res.status(200).json({
           data: submitClaim,
