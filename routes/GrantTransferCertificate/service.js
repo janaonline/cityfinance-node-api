@@ -702,11 +702,6 @@ const getManipulatedJson = async (installment, type, design_year, formJson, fiel
             name: '',
             url: ''
         }
-        if(statusId === MASTER_FORM_STATUS['UNDER_REVIEW_BY_MoHUA']){
-            rejectReason_mohua = ''
-            responseFile_mohua = ''
-
-        }
         let status = MASTER_STATUS_ID[gtcForm.currentFormStatus]
         return { questionResponse: data, file, status, statusId, rejectReason_mohua, responseFile_mohua, canTakeAction };
     }
@@ -979,7 +974,9 @@ async function handleInstallmentForm(params) {
         }, {
             "transferGrantdetail": grantDetailIds,
             "totalIntTransfer": totalIntTransfer,
-            "totalTransAmount": totalTransAmount
+            "totalTransAmount": totalTransAmount,
+            "rejectReason_mohua" : '',
+            "responseFile_mohua"  :''
         })
 
         validator.valid = true
