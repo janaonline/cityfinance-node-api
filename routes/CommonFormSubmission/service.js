@@ -398,7 +398,7 @@ async function saveStatusAndHistory(params){
         status: MASTER_STATUS["In Progress"],
         level: FORM_LEVEL["form"],
         shortKey: shortKey || 'form_level',
-        rejectReason: "",
+        rejectReason:  "",
         responseFile: "",
         actionTakenByRole: actionTakenByRole,
         actionTakenBy: ObjectId(actionTakenBy),
@@ -409,7 +409,7 @@ async function saveStatusAndHistory(params){
       });
       // return Response.OK(res, {}, "Form Submitted");
     } else if (
-      reviewAllowedStatuses.includes(formBodyStatus)
+      reviewAllowedStatuses.includes(formBodyStatus) 
     ) {
       let bodyData = {
         formId: masterFormId,
@@ -423,11 +423,11 @@ async function saveStatusAndHistory(params){
       let currentStatusData = {
         formId: masterFormId,
         recordId: ObjectId(formSubmit[0]._id),
-        status: MASTER_STATUS["Under Review By State"],
+        status: formBodyStatus,
         level: FORM_LEVEL["form"],
-        shortKey: "form_level",
-        rejectReason: "",
-        responseFile: "",
+        shortKey: shortKey || "form_level",
+        rejectReason: formSubmit[0].rejectReason || "",
+        responseFile:  formSubmit[0].responseFile || "",
         actionTakenByRole: actionTakenByRole,
         actionTakenBy: ObjectId(actionTakenBy),
       };
@@ -439,7 +439,7 @@ async function saveStatusAndHistory(params){
       let statusHistory = {
         formId: masterFormId,
         recordId: ObjectId(formSubmit[0]._id),
-        shortKey: "form_level",
+        shortKey: shortKey || "form_level",
         data: currentStatusData,
       };
       

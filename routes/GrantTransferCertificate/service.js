@@ -605,14 +605,16 @@ const checkForPreviousForms = async (design_year, state) => {
 
 const getRejectedFields = (currentFormStatus, formStatuses, installment, inputAllowed, role) => {
     try {
-        // console.log("formStatuses :: ",formStatuses)
+        console.log("formStatuses :: ",formStatuses)
         let prevInstallment = installment - 1
         let allowedStatuses = [MASTER_FORM_STATUS['UNDER_REVIEW_BY_MoHUA'],MASTER_FORM_STATUS['RETURNED_BY_MoHUA']]
-        // console.log("prevInstallment :: ",prevInstallment)
+        console.log("prevInstallment :: ",prevInstallment)
         if (prevInstallment && !allowedStatuses.includes(formStatuses?.[prevInstallment]) && role === userTypes.state) {
+            console.log(">>>>>>>>>>>>>>>if >>>>>")
             return true
         }
         else {
+            console.log("inputAllowed >>>>>>>>>>>>>>> else >>>>>>>>>>>>>",inputAllowed,currentFormStatus)
             return inputAllowed.includes(currentFormStatus) && role === userTypes.state ? false : true
         }
     }
@@ -695,8 +697,8 @@ const getManipulatedJson = async (installment, type, design_year, formJson, fiel
         flattedForm = {}
         const statusId = gtcForm.currentFormStatus;
         const canTakeAction = (statusId == MASTER_FORM_STATUS['UNDER_REVIEW_BY_MoHUA'] && role == userTypes.mohua);
-        const rejectReason_mohua = gtcForm?.rejectReason_mohua || '';
-        const responseFile_mohua = gtcForm?.responseFile_mohua || {
+        let rejectReason_mohua = gtcForm?.rejectReason_mohua || '';
+        let responseFile_mohua = gtcForm?.responseFile_mohua || {
             name: '',
             url: ''
         }
@@ -804,7 +806,7 @@ module.exports.getInstallmentForm = async (req, res, next) => {
         let { design_year, state, formType } = req.query
         let { role } = req.decoded
         let previousYearData = await getPreviousYearData(state,design_year)
-        response.errors = await addWarnings(previousYearData)
+        // response.errors = await addWarnings(previousYearData)
         let validator = await checkForUndefinedVaribales({
             "design year": design_year,
             "state": state
@@ -813,13 +815,13 @@ module.exports.getInstallmentForm = async (req, res, next) => {
             response.message = validator.message
             return res.json(response)
         }
-        let formValidator = await checkForPreviousForms(design_year, state)
-        if (!formValidator.valid) {
-            response.success = false;
-            response.message = formValidator.message
-            response.errors = [formValidator.message]
-            return res.json(response)
-        }
+        // let formValidator = await checkForPreviousForms(design_year, state)
+        // if (!formValidator.valid) {
+        //     response.success = false;
+        //     response.message = formValidator.message
+        //     response.errors = [formValidator.message]
+        //     return res.json(response)
+        // }
         response.success = !response.errors.length 
         response.message = ""
         let { json, stateIsMillion } = await getJson(state, design_year, role,previousYearData[0])
@@ -937,7 +939,8 @@ async function handleInstallmentForm(params) {
             installment,
             year,
             formType: type,
-            gtcForm: ObjectId(gtcFormId)
+            gtcForm: ObjectId(gtcFormId),
+            
         }
         Object.assign(payload, data)
         payload.grantDistribute = grantDistributeOptions[payload.grantDistribute] || null
@@ -972,7 +975,8 @@ async function handleInstallmentForm(params) {
         }, {
             "transferGrantdetail": grantDetailIds,
             "totalIntTransfer": totalIntTransfer,
-            "totalTransAmount": totalTransAmount
+            "totalTransAmount": totalTransAmount,
+           
         })
 
         validator.valid = true
@@ -1010,7 +1014,9 @@ async function getOrCreateFormId(params) {
             design_year: ObjectId(design_year),
             state: ObjectId(state),
             currentFormStatus: currentFormStatus,
-            file: file
+            file: file,
+            "rejectReason_mohua" : '',
+            "responseFile_mohua"  :''
         }, { upsert: true, new: true })
         return gtcForm._id
     }
@@ -1134,6 +1140,9 @@ module.exports.installmentAction = async (req, res) => {
             }
         });
         req.body._id = found?._id
+        req.body.rejectReason = rejectReason_mohua
+        req.body.responseFile = responseFile_mohua
+        req.body.financialYear = design_year
         let formSubmit = [{...req.body,type:key,currentFormStatus:statusId}]
         await createHistory({ formBodyStatus : Number(statusId),formSubmit, actionTakenByRole:role , actionTakenBy: mohua || state  })
         if(!found) return res.status(404).json({ message: 'Installment not found'});
@@ -1157,7 +1166,9 @@ async function createHistory(params) {
     try {
         let {formBodyStatus,actionTakenBy,actionTakenByRole,formSubmit,formType} = params
         let formData = formSubmit[0]
-        let shortKey = `${formData.type}_${years[formData.financialYear]}_${formData.installment}`
+        console.log("formData :: ",getKeyByValue(years,formData.financialYear))
+        let shortKey = `${formData.type}_${getKeyByValue(years,formData.financialYear)}_${formData.installment}`
+        console.log("shortKey :: ",shortKey)
             let historyParams = {
                 formBodyStatus,
                 actionTakenBy:actionTakenBy,

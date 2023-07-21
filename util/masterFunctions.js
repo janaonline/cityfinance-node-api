@@ -95,6 +95,7 @@ module.exports.saveCurrentStatus = (params) => {
           { recordId: body.recordId, shortKey: body.shortKey , actionTakenByRole: body.actionTakenByRole},
           { $set: body },
           { upsert: true,
+            new :true,
             //  session
              }
         );
