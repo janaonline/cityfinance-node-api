@@ -3847,6 +3847,13 @@ function checkUlbAccess(input, customSlice) {
 }
 
 module.exports.checkUlbAccess = checkUlbAccess;
+
+function getLastYearUlbAccess(input){
+    let year = input.split('-');
+    let lastYear =  `${String(Number(year[0])-1)}-${String(Number(year[1])-1)}`;
+    return checkUlbAccess(lastYear, 2);
+}
+module.exports.getLastYearUlbAccess = getLastYearUlbAccess
 function checkIfUlbCanEditForm(currentFormStatus) {
     try {
         const ulbEditStatusArray = [
