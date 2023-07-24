@@ -2153,7 +2153,8 @@ async function addCanTakeActionKeys(annualAccountData, statuses=[], role, stateR
     
     return data;
   } catch (error) {
-     throw `addActionKeys:: ${error.message}`;
+    console.log("error in addCanTakeActionKeys ::: ",error.message)
+     return {}
   }
 }
 const TAB_OBJ = {
