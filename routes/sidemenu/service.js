@@ -23,6 +23,7 @@ var outDatedYears = ["2018-19","2019-20","2021-22","2022-23"]
 const SFC = require('../../models/StateFinanceCommissionFormation')
 const PTFR = require('../../models/PropertyTaxFloorRate')
 const GTC_STATE = require('../../models/GrantTransferCertificate')
+const GrantDistribution = require('../../models/GrantDistribution')
 const ActionPlan = require('../../models/ActionPlans')
 const WaterRejuvenation = require('../../models/WaterRejenuvation&Recycling')
 const USER_TYPES = require('../../util/userTypes');
@@ -62,7 +63,7 @@ let FormModelMapping_State = {
   "PropertyTaxFloorRate": ObjectId("62c5534e2954384b44b3c38a"),
   "StateFinanceCommissionFormation": ObjectId("62c553822954384b44b3c38e"),
   "ActionPlans": ObjectId("62c554772954384b44b3c39a"),
-  "GrantAllocation": ObjectId("62c554932954384b44b3c39e"),
+  "GrantDistribution": ObjectId("62c554932954384b44b3c39e"),
   "GrantClaim": ObjectId("62c554cb2954384b44b3c3a2"),
   "WaterRejenuvationRecycling": ObjectId("62c554382954384b44b3c396")
 
@@ -72,7 +73,7 @@ let FormModelMappingMaster_State = {
   "PropertyTaxFloorRate": ObjectId("63ff31d63ae39326f4b2f474"),
   "StateFinanceCommissionFormation": ObjectId("63ff31d73ae39326f4b2f475"),
   "ActionPlans": ObjectId("63ff31d73ae39326f4b2f478"),
-  "GrantAllocation": ObjectId("63ff31d73ae39326f4b2f479"),
+  "GrantDistribution": ObjectId("63ff31d73ae39326f4b2f479"),
   "GrantClaim": ObjectId("63ff31d73ae39326f4b2f47a"),
   "WaterRejenuvationRecycling": ObjectId("63ff31d73ae39326f4b2f477")
 }
@@ -231,12 +232,13 @@ const findStatusAndTooltipMaster = (params) => {
   let { formData, formId, loggedInUserRole, viewFor } = params;
   let status = formData.currentFormStatus
   let tooltip = calculateStatusMaster(status);
-  if(formData.linkPFMS === "Yes"){
-    console.log("tooltip ::: ",tooltip)
-  }
-  console.log("tooltip :: ",tooltip)
   let tick = calculateTick(tooltip, loggedInUserRole, viewFor)
-  console.log("tick :: ",tick)
+  console.log({
+    [formId]: {
+      tooltip: tooltip,
+      tick: tick
+    }
+  })
   return {
     [formId]: {
       tooltip: tooltip,
@@ -339,9 +341,9 @@ module.exports.get = catchAsync(async (req, res) => {
       state: ObjectId(_id),
       design_year: ObjectId(year)
     }
-    let formArr = [SFC, PTFR, GTC_STATE, ActionPlan, WaterRejuvenation]
+    let formArr = [SFC, PTFR, GTC_STATE,GrantDistribution ,ActionPlan, WaterRejuvenation,GrantDistribution]
     for (el of formArr) {
-      if (el !== GTC_STATE) {
+      if (![GTC_STATE,GrantDistribution].includes(el)) {
         let formData = await el.findOne(condition).lean()
         if (formData) {
           if (formData.design_year.toString() === YEAR_CONSTANTS['23_24']) {
@@ -356,12 +358,12 @@ module.exports.get = catchAsync(async (req, res) => {
         let formData = formDataArray
         if (formDataArray.length > 0) {
           if(outDatedYears.includes(getKeyByValue(year))){
-            formData = getGTCFinalForm(formDataArray); 
+            formData = getGTCFinalForm(formDataArray);
+           
             output.push(findStatusAndTooltip(formData, FormModelMapping_State[el['modelName']], el['modelName'], user.role, role))
           }
           else{
             formData = await getformStatus(formDataArray)
-            console.log("formData :: ",formData)
             output.push(findStatusAndTooltipMaster({ formData, formId: FormModelMappingMaster_State[el['modelName']], loggedInUserRole: user.role, viewFor: role }))
           }
         }
