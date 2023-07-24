@@ -669,7 +669,7 @@ exports.createUpdate = async (req, res) => {
             }
 
             // Save Form Level History
-            await saveFormLevelHistory(masterFormId, formSubmit, actionTakenByRole, actionTakenBy);
+            await saveFormLevelHistory(masterFormId, formSubmit, actionTakenByRole, actionTakenBy,MASTER_STATUS["Under Review By State"]);
             // await session.commitTransaction();
             return Response.OK(res, {}, "Form Submitted");
           }
@@ -850,11 +850,11 @@ exports.createUpdate = async (req, res) => {
   }
 };
 
-async function saveFormLevelHistory(masterFormId, formSubmit, actionTakenByRole, actionTakenBy) {
+module.exports.saveFormLevelHistory = async (masterFormId, formSubmit, actionTakenByRole, actionTakenBy,currentStatus) => {
   let currentStatusData = {
     formId: masterFormId,
     recordId: ObjectId(formSubmit._id),
-    status: MASTER_STATUS["Under Review By State"],
+    status: currentStatus,
     level: FORM_LEVEL["form"],
     shortKey: FORM_LEVEL_SHORTKEY["form"],
     rejectReason: "",
