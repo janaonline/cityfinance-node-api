@@ -2127,7 +2127,7 @@ async function addActionKeys(annualAccountData, body, res, role, req){
   }
 }
 
-async function addCanTakeActionKeys(annualAccountData, statuses, role, stateResponse){
+async function addCanTakeActionKeys(annualAccountData, statuses=[], role, stateResponse=[]){
   try {
     const tabRegex = /^tab_/g;
     const keyArray = ["audited", "unAudited"];
