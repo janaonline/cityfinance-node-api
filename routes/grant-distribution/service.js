@@ -26,8 +26,8 @@ const { YEAR_CONSTANTS, MASTER_STATUS } = require('../../util/FormNames')
 const { BadRequest } = require("../../service/response");
 const userTypes = require("../../util/userTypes");
 var outDatedYearIds = Object.entries(years).map(([key,value])=> {
-  return ['2017-18', '2018-19', '2019-20', '2020-21', '2021-22' ].includes(key) && value
-} )
+  return ['2017-18', '2018-19', '2019-20', '2020-21', '2021-22' ].includes(key) ? value : ""
+}).filter(item => item != "")
 exports.getGrantDistribution = async (req, res) => {
   const { state_id } = req.query;
   let state = req.decoded.state ?? state_id;
@@ -128,6 +128,7 @@ exports.getTemplate = async (req, res) => {
 exports.uploadTemplate = async (req, res) => {
   let { url, design_year } = req.query;
   let state = req.decoded?.state;
+  console.log("req.decoded?.state :: ",req.decoded)
   let formData = req.query;
  
   try {
@@ -204,9 +205,11 @@ exports.uploadTemplate = async (req, res) => {
         let stateName = stateInfo[0].state.name;
 
         if (stateName !== xslDataStateName) {
+          console.log("1")
           return res.status(400).xls("error_sheet.xlsx", [{ "message": "Wrong state file" }]);
         }
         if (ulbCount != (XslData.length - emptyCensus)) {
+          console.log("2")
           return res.status(400).xls("error_sheet.xlsx", [{ "message": `${ulbCount - (XslData.length - emptyCensus)} ulb data missing` }]);
           // return BadRequest(res, null, `${ulbCount- (XslData.length-emptyCensus)} ulb data missing`);
         }
@@ -341,15 +344,17 @@ async function validate(data, formData) {
     formData.design_year = '2021-22';
   }
   const type = `${formData.type}_${formData.design_year}_${formData.installment}`
-  amount = `${amount} - ${type} (Lakhs)`
+  amount = `${amount} - ${type} (lakhs)`
   /* Checking if the formData.design_year is equal to 2021-22, if it is, then it sets the amount variable
   to "grant amount". */
-  formData.design_year === "2021-22" ? amount = "grant amount (Lakhs)" : ""
+  formData.design_year === "2021-22" ? amount = "grant amount (lakhs)" : ""
   const keys = Object.keys(data[0]);
   if (
     !(keys.includes(code) && keys.includes(name) && keys.includes(amount)
       || keys.length !== 3
     )) {
+      console.log(keys)
+      console.log(keys.length)
     data.forEach((element) => {
       element.Errors = "Incorrect Format,";
     });
@@ -401,7 +406,6 @@ async function validate(data, formData) {
       else data[index].Errors = "Amount Not valid,";
     }
   }
-  console.log("errorFlag ::::",errorFlag)
   if (errorFlag) {
     data.forEach((object) => {
       let findKey = "Errors";
