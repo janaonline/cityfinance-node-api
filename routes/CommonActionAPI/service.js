@@ -24,6 +24,7 @@ const { saveCurrentStatus, saveFormHistory, saveStatusHistory } = require('../..
 const CurrentStatus = require('../../models/CurrentStatus');
 const { MASTER_STATUS_ID, FORM_LEVEL_SHORTKEY, FORMIDs } = require('../../util/FormNames');
 const { ModelNames } = require('../../util/15thFCstatus');
+const { saveFormLevelHistory } = require('../annual-accounts/service');
 const UA = require('../../models/UA');
 // const { getUAShortKeys } = require('../CommonFormSubmissionState/service');
 var allowedStatuses = [StatusList.Rejected_By_MoHUA, StatusList.STATE_REJECTED, StatusList.Rejected_By_State, StatusList.In_Progress, StatusList.Not_Started]
@@ -3042,9 +3043,8 @@ async function takeActionOnForms(params, res) {
                         saveStatusResponse = await saveStatus(params);
                     }
                     //form level status  updation
+                    let response = {}
                     if (rejectStatusAllTab) {
-                        let response = {}
-
                         response.status =
                             actionTakenByRole === "MoHUA"
                                 ? MASTER_STATUS["Returned By MoHUA"]
@@ -3057,7 +3057,6 @@ async function takeActionOnForms(params, res) {
                         if (updatedFormCurrentStatus !== 1)
                             throw "Action failed to update form current Status!";
                     } else {
-                        let response = {}
                         response.status =
                             actionTakenByRole === "MoHUA"
                                 ? MASTER_STATUS["Submission Acknowledged By MoHUA"]
@@ -3070,6 +3069,9 @@ async function takeActionOnForms(params, res) {
                         if (updatedFormCurrentStatus !== 1)
                             throw "Action failed to update form current Status!";
                     }
+
+                    // Save Form Level History
+                    await saveFormLevelHistory(formId, form, actionTakenByRole, actionTakenBy,response.status);
                 }
             }
             if (saveStatusResponse !== 1) {
