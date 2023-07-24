@@ -2509,7 +2509,7 @@ let DurProjectJson = {
         "weightage": [],
         "valueHolder": "",
         "formula" : "(transAmount * daysDelay * interest)",
-        "isQuestionDisabled": false,
+        "isQuestionDisabled": true,
         "value": "40",
         "acceptableType": "",
         "acceptableFileType": "",
