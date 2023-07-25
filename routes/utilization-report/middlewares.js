@@ -73,6 +73,7 @@ module.exports.changeGetApiForm = async (req, res, next) => {
             let flattedForm = await getFlatObj(form)
             flattedForm.disableFields = formStatus
             flattedForm['name_'] = flattedForm['name']
+            delete flattedForm['name']
             let keysToBeDeleted = ["_id", "createdAt", "modifiedAt", "actionTakenByRole", "actionTakenBy", "ulb", "design_year"]
             let closingBalance = round((+form.grantPosition.unUtilizedPrevYr) + (+form.grantPosition.receivedDuringYr), 2) - (+form.grantPosition.expDuringYr);
             flattedForm['grantPosition.closingBal'] = closingBalance ? round(closingBalance, 2) : closingBalance

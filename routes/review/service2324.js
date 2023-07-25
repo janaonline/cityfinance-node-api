@@ -12,6 +12,7 @@ const STATUS_LIST = require('../../util/newStatusList');
 const { MASTER_STATUS, MASTER_STATUS_ID, YEAR_CONSTANTS, YEAR_CONSTANTS_IDS, MASTER_FORM_STATUS, MASTER_FORM_QUESTION_STATUS } = require('../../util/FormNames');
 const { getCurrentYear, getAccessYear, getFinancialYear } = require('../../util/masterFunctions');
 const { canTakeActionOrViewOnlyMasterForm, checkUlbAccess , getLastYearUlbAccess} = require('../../routes/CommonActionAPI/service')
+const { createObjectFromArray, addActionKeys } = require('../CommonFormSubmissionState/service');
 // const { createDynamicColumns } = require('./service')
 const List = require('../../util/15thFCstatus');
 let outDatedYears = ["2018-19", "2019-20", "2021-22", "2022-23"]
@@ -192,7 +193,7 @@ module.exports.get = async (req, res) => {
     }
     /* CSV DOWNLOAD */
     if (csv) {
-      await createCSV({ formType, collectionName, res, data, ratingList });
+      await createCSV({ formType, collectionName, res, data, ratingList, loggedInUserRole });
       res.end();
       return;
     }
@@ -235,7 +236,7 @@ module.exports.get = async (req, res) => {
 
 
 async function createCSV(params) {
-  const { formType, collectionName, res, data, ratingList } = params
+  const { formType, collectionName, res, data, ratingList, loggedInUserRole } = params;
   try {
     // Set appropriate download headers
     let fixedColumns, dynamicColumns;
@@ -271,7 +272,7 @@ async function createCSV(params) {
       }
     } else if (formType === "STATE") {
       if (collectionName == "waterrejenuvationrecyclings") {
-        await waterSenitationXlsDownload(data, res);
+        await waterSenitationXlsDownload(data, res, loggedInUserRole);
       } else {
         let filename = `Review_${formType}-${collectionName}.csv`;
         res.setHeader("Content-disposition", "attachment; filename=" + filename);
@@ -285,6 +286,20 @@ async function createCSV(params) {
             let GTC = gtcData?.length ? gtcData?.filter(e => (e.state.toString() == el._id.toString() && e.gtcForm.toString() == el?.formData?._id?.toString() && e.installment == el.formData.installment)) : []
             el['formData']['installment_form'] = GTC;
             gtcStateFormCSVFormat(el, res)
+          }
+          if (collectionName == 'GrantAllocation') {
+            let { stateName, stateCode, formData } = el;
+            let row = [stateName, stateCode];
+            if (formData && formData.length && (formData[0] !== "")) {
+              for (let pf of formData) {
+                let tempArr = [pf?.type, pf?.installment, pf?.url];
+                let str = [...row, ...tempArr].join(',') + "\r\n";
+                res.write("\ufeff" + str);
+              }
+            } else {
+              let str = [...row].join(',') + "\r\n";
+              res.write("\ufeff" + str);
+            }
           }
         }
       }
@@ -372,7 +387,7 @@ const sortKeysWaterSenitation = (key) => {
   }
 }
 
-const waterSenitationXlsDownload = async (data, res) => {
+const waterSenitationXlsDownload = async (data, res, role) => {
   try {
     const tempFilePath = "uploads/excel";
     if (!fs.existsSync(tempFilePath)) {
@@ -390,19 +405,19 @@ const waterSenitationXlsDownload = async (data, res) => {
       "Latitude", "Longitude", "BOD in mg/L (Current)", "BOD in mg/L (Expected)",
       "COD in mg/L (Current)", "COD in mg/L (Expected)", "DO in mg/L (Current)", "DO in mg/L(Expected)", "TDS in mg/L (Current)",
       "TDS in mg/L(Expected)", "Turbidity in  NTU (Current)", "Turbidity in  NTU(Expected)", "Project Details", "Preparation of  DPR",
-      "Completion  of tendering process", "%  of  work completion", "MoHUA Review Status", "MoHUA Review Comments", "MoHUA Review Files"
+      "Completion  of tendering process", "%  of  work completion", "MoHUA Review For UA Wise Status", "MoHUA Review Comments", "MoHUA Review Files"
     ]);
     reuseWater.addRow([
       "State Name", "State Code", "Form Status", "UA Name", "Project Name",
       "Latitude", "Longitude", "Proposed capacity of STP(MLD)", "Proposed water quantity  to be reused(MLD)",
       "Target customers/ consumer for  reuse of  water", "Preparation of  DPR", "Completion of tendering process", "%  of  work completion",
-      "MoHUA Review Status", "MoHUA Review Comments", "MoHUA Review Files"
+      "MoHUA Review For UA Wise Status", "MoHUA Review Comments", "MoHUA Review Files"
     ]);
     serviceLevelIndicators.addRow([
       "State Name", "State Code", "Form Status", "UA Name", "Project Name", "Physical  Components",
       "Indicator", "Existing  (As- is)", "After  (To-be)", "Estimated  Cost (Amount  in  INR Lakhs)",
       "Preparation of  DPR", "Completion of tendering process", "%  of  work completion",
-      "MoHUA Review Status", "MoHUA Review Comments", "MoHUA Review Files"
+      "MoHUA Review For UA Wise Status", "MoHUA Review Comments", "MoHUA Review Files"
     ]);
 
     let counter = { waterBodies: 2, serviceLevelIndicators: 2, reuseWater: 2 } // counter
@@ -411,12 +426,15 @@ const waterSenitationXlsDownload = async (data, res) => {
         if (pf?.formData) {
           let { uaData } = pf?.formData;
           let rowsArr = [pf?.stateName, pf?.stateCode, pf?.formStatus];
-          if(!['Returned By MoHUA', 'Submission Acknowledged By MoHUA'].includes(pf?.formStatus)){
-            delete pf?.MohuaStatus
-          }
-          let get_status_by_value = pf?.MohuaStatus ? MASTER_STATUS_ID[pf?.MohuaStatus?.status] : ""
-          let commentArr = [get_status_by_value, pf?.MohuaStatus?.rejectReason, pf?.MohuaStatus?.responseFile?.url]
+          let uaCode = await UA.find({ state: ObjectId(pf?.state) }, { UACode: 1 }).lean();
+          uaCode = createObjectFromArray(uaCode);
+          addActionKeys(pf?.formData, uaCode, pf?.MohuaStatus, role);
+
           for (const ua of uaData) {
+            let commentArr = [];
+            if (['Returned By MoHUA', 'Submission Acknowledged By MoHUA'].includes(pf?.formStatus)) {
+              commentArr.push(ua?.status, ua?.rejectReason, ua?.responseFile ? ua?.responseFile.url : "");
+            }
             let sortKeys = { waterBodies, reuseWater, serviceLevelIndicators };
             let UAName = uaFormData?.length ? uaFormData.find(e => e?._id?.toString() == ua?.ua?.toString()) : null
             rowsArr[3] = UAName?.name
@@ -968,17 +986,17 @@ const computeQuery = (params) => {
               stateCode: "$code",
               regionalName: 1,
               formData: { $ifNull: [`$${dbCollectionName}`, ""] },
-              MohuaStatus: {
-                $arrayElemAt: [
-                  {
-                    $filter: {
-                      input: "$currentstatus",
-                      as: "cs",
-                      cond: { $eq: ["$$cs.actionTakenByRole", "MoHUA"] }
-                    }
-                  },
-                  0
-                ]
+              "MohuaStatus": {
+                "$filter": {
+                  "input": "$currentstatus",
+                  "as": "cs",
+                  "cond": {
+                    "$eq": [
+                      "$$cs.actionTakenByRole",
+                      "MoHUA"
+                    ]
+                  }
+                }
               },
               filled:
               {
@@ -1263,6 +1281,7 @@ function createDynamicQuery(collectionName, oldQuery, userRole, csv) {
               stateName: { $first: "$stateName" },
               state: { $first: "$state" },
               stateCode: { $first: "$stateCode" },
+              formData: { $push: "$formData" }
             }
           }
           oldQuery.push(query_2);
@@ -2319,6 +2338,9 @@ function createDynamicColumns(collectionName) {
       break;
     case CollectionNames['state_gtc']:
       columns = `State Name,City Finance Code,Form Status,Year,Type of ULB,Type of Grant Received (Tied/Untied),Installment Type,Total No: of MPCs,Total No: of NMPCS,Total No: of Duly Elected MPCS,Total No: of Duly Elected NMPCS,Amount Received(In Lakhs),Date of Receipt,Amount Transferred, excluding interest (in lakhs),Date of Transfer,Was there any delay in transfer?,No. of days delayed,Rate of interest (annual rate),Amount of interest transferred - If there's any delay (in lakhs),Whether State Finance Commission recommendations available? (Yes/No),If No Upload notification for constitution of SFC issued,Whether Project works undertaken are uploaded on the website (Yes/No),Upload copy of Property Tax Notification issued,% of ULB accounts for 15th FC Grants which are linked to PFMS for all transactions,Upload Signed Grant Transfer Certificate,MoHUA Comments`
+      break;
+    case CollectionNames['state_grant_alloc']:
+      columns = `State Name,City Finance Code,Type of Grant,Installment No,Grant Allocation to ULBs (FY23-24),Review Status,MoHUA Comments,Review Documents`
       break;
     default:
       columns = '';
