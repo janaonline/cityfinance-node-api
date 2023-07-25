@@ -24,7 +24,7 @@ const { saveCurrentStatus, saveFormHistory, saveStatusHistory } = require('../..
 const CurrentStatus = require('../../models/CurrentStatus');
 const { MASTER_STATUS_ID, FORM_LEVEL_SHORTKEY, FORMIDs } = require('../../util/FormNames');
 const { ModelNames } = require('../../util/15thFCstatus');
-const { saveFormLevelHistory } = require('../annual-accounts/service');
+// const { saveFormLevelHistory } = require('../annual-accounts/service');
 const UA = require('../../models/UA');
 // const { getUAShortKeys } = require('../CommonFormSubmissionState/service');
 var allowedStatuses = [StatusList.Rejected_By_MoHUA, StatusList.STATE_REJECTED, StatusList.Rejected_By_State, StatusList.In_Progress, StatusList.Not_Started]
@@ -3071,7 +3071,7 @@ async function takeActionOnForms(params, res) {
                     }
 
                     // Save Form Level History
-                    await saveFormLevelHistory(formId, form, actionTakenByRole, actionTakenBy,response.status);
+                    // await saveFormLevelHistory(formId, form, actionTakenByRole, actionTakenBy,response.status);
                 }
             }
             if (saveStatusResponse !== 1) {

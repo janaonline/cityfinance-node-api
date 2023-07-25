@@ -17,13 +17,12 @@ const { UpdateMasterSubmitForm } = require("../../service/updateMasterForm");
 const GTC = require('../../models/StateGTCertificate')
 const { findPreviousYear } = require('../../util/findPreviousYear')
 const { calculateTabwiseStatus } = require('./utilFunc')
-const { calculateStatus,checkIfUlbHasAccess } = require('../CommonActionAPI/service')
 const UlbLedger = require('../../models/UlbLedger')
 const STATUS_LIST = require('../../util/newStatusList')
 const LineItem = require('../../models/LineItem')
 const { groupByKey } = require('../../util/group_list_by_key')
 const ExcelJS = require("exceljs");
-const { canTakenAction, canTakenActionMaster, getMasterAction } = require('../CommonActionAPI/service')
+const { canTakenAction, canTakenActionMaster, getMasterAction,checkIfUlbHasAccess,calculateStatus } = require('../CommonActionAPI/service')
 const fs = require("fs");
 const Service = require('../../service');
 const { FormNames, YEAR_CONSTANTS,  MASTER_STATUS, FORMIDs, FORM_LEVEL, FORM_LEVEL_SHORTKEY, MASTER_STATUS_ID } = require('../../util/FormNames');
@@ -49,7 +48,7 @@ var request = require('request')
 // module.exports.fileDeFuncFiles = async (req, res) => {
 //   let query = [
 //     {
-//       $lookup: {
+//       $lookup: {checkIfUlbHasAccess
 //         from: "ulbs",
 //         localField: "ulb",
 //         foreignField: "_id",
@@ -669,7 +668,7 @@ exports.createUpdate = async (req, res) => {
             }
 
             // Save Form Level History
-            await saveFormLevelHistory(masterFormId, formSubmit, actionTakenByRole, actionTakenBy,MASTER_STATUS["Under Review By State"]);
+            // await saveFormLevelHistory(masterFormId, formSubmit, actionTakenByRole, actionTakenBy,MASTER_STATUS["Under Review By State"]);
             // await session.commitTransaction();
             return Response.OK(res, {}, "Form Submitted");
           }
@@ -850,32 +849,32 @@ exports.createUpdate = async (req, res) => {
   }
 };
 
-module.exports.saveFormLevelHistory = async (masterFormId, formSubmit, actionTakenByRole, actionTakenBy,currentStatus) => {
-  let currentStatusData = {
-    formId: masterFormId,
-    recordId: ObjectId(formSubmit._id),
-    status: currentStatus,
-    level: FORM_LEVEL["form"],
-    shortKey: FORM_LEVEL_SHORTKEY["form"],
-    rejectReason: "",
-    responseFile: "",
-    actionTakenByRole: actionTakenByRole,
-    actionTakenBy: ObjectId(actionTakenBy),
-  };
-  await saveCurrentStatus({
-    body: currentStatusData,
-  });
+// module.exports.saveFormLevelHistory = async (masterFormId, formSubmit, actionTakenByRole, actionTakenBy,currentStatus) => {
+//   let currentStatusData = {
+//     formId: masterFormId,
+//     recordId: ObjectId(formSubmit._id),
+//     status: currentStatus,
+//     level: FORM_LEVEL["form"],
+//     shortKey: FORM_LEVEL_SHORTKEY["form"],
+//     rejectReason: "",
+//     responseFile: "",
+//     actionTakenByRole: actionTakenByRole,
+//     actionTakenBy: ObjectId(actionTakenBy),
+//   };
+//   await saveCurrentStatus({
+//     body: currentStatusData,
+//   });
 
-  let statusHistory = {
-    formId: masterFormId,
-    recordId: ObjectId(formSubmit._id),
-    shortKey: FORM_LEVEL_SHORTKEY["form"],
-    data: currentStatusData,
-  };
-  await saveStatusHistory({
-    body: statusHistory,
-  });
-}
+//   let statusHistory = {
+//     formId: masterFormId,
+//     recordId: ObjectId(formSubmit._id),
+//     shortKey: FORM_LEVEL_SHORTKEY["form"],
+//     data: currentStatusData,
+//   };
+//   await saveStatusHistory({
+//     body: statusHistory,
+//   });
+// }
 
 async function filterApprovedShortKeys(shortKeys, recordId, formStatus){
   let statuses , statusesShortKeys;
