@@ -11,7 +11,7 @@ const Service = require('../../service');
 const STATUS_LIST = require('../../util/newStatusList');
 const { MASTER_STATUS, MASTER_STATUS_ID, YEAR_CONSTANTS, YEAR_CONSTANTS_IDS, MASTER_FORM_STATUS, MASTER_FORM_QUESTION_STATUS } = require('../../util/FormNames');
 const { getCurrentYear, getAccessYear, getFinancialYear } = require('../../util/masterFunctions');
-const { canTakeActionOrViewOnlyMasterForm, checkUlbAccess } = require('../../routes/CommonActionAPI/service')
+const { canTakeActionOrViewOnlyMasterForm, checkUlbAccess , getLastYearUlbAccess} = require('../../routes/CommonActionAPI/service')
 const { createObjectFromArray, addActionKeys } = require('../CommonFormSubmissionState/service');
 // const { createDynamicColumns } = require('./service')
 const List = require('../../util/15thFCstatus');
@@ -689,7 +689,11 @@ const computeQuery = (params) => {
   }
   const decadePrefixtoSlice = 2;
   const accessYear = checkUlbAccess(yearData.year, decadePrefixtoSlice);
-  condition[accessYear] = true
+  condition[accessYear] = true;
+  if([CollectionNames.pfms].includes(formName)){
+    let lastYearAccess = getLastYearUlbAccess(yearData.year);
+    condition[lastYearAccess] = false;
+  }
   let pipeLine = [
     {
       $match: {

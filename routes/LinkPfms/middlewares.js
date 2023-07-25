@@ -30,7 +30,7 @@ const transformResponse = async(req,res,next)=>{
         "success":true,
         "data":"",
         "message":"",
-        "hideForm":true, // to do when form goes live change this variable to false
+        "hideForm":false, // to do when form goes live change this variable to false
     }
     try{
         let responseData = [
@@ -69,7 +69,8 @@ const transformResponse = async(req,res,next)=>{
         let obj = formJson ? formJson.data : {}
         let keysToBeDeleted = []
         let formResponse = {}
-        // response.hideForm = ifUlbIsFromLastYear ? true : false  to do when pfms goes live uncomment this code
+        // to do when pfms goes live uncomment this code
+        response.hideForm = ifUlbIsFromLastYear ? true : false  
         if(form && Object.keys(form).length > 1){
             let flattedForm = getFlatObj(form)
             flattedForm['isDraft'] = form?.isDraft
