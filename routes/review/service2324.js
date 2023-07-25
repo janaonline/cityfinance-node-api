@@ -287,6 +287,20 @@ async function createCSV(params) {
             el['formData']['installment_form'] = GTC;
             gtcStateFormCSVFormat(el, res)
           }
+          if (collectionName == 'GrantAllocation') {
+            let { stateName, stateCode, formData } = el;
+            let row = [stateName, stateCode];
+            if (formData && formData.length && (formData[0] !== "")) {
+              for (let pf of formData) {
+                let tempArr = [pf?.type, pf?.installment, pf?.url];
+                let str = [...row, ...tempArr].join(',') + "\r\n";
+                res.write("\ufeff" + str);
+              }
+            } else {
+              let str = [...row].join(',') + "\r\n";
+              res.write("\ufeff" + str);
+            }
+          }
         }
       }
     }
@@ -412,13 +426,13 @@ const waterSenitationXlsDownload = async (data, res, role) => {
         if (pf?.formData) {
           let { uaData } = pf?.formData;
           let rowsArr = [pf?.stateName, pf?.stateCode, pf?.formStatus];
-          let uaCode =  await UA.find({state: ObjectId(pf?.state)},{UACode:1}).lean();
+          let uaCode = await UA.find({ state: ObjectId(pf?.state) }, { UACode: 1 }).lean();
           uaCode = createObjectFromArray(uaCode);
-          addActionKeys(pf?.formData,uaCode, pf?.MohuaStatus, role);
+          addActionKeys(pf?.formData, uaCode, pf?.MohuaStatus, role);
 
           for (const ua of uaData) {
             let commentArr = [];
-            if(['Returned By MoHUA', 'Submission Acknowledged By MoHUA'].includes(pf?.formStatus)){
+            if (['Returned By MoHUA', 'Submission Acknowledged By MoHUA'].includes(pf?.formStatus)) {
               commentArr.push(ua?.status, ua?.rejectReason, ua?.responseFile ? ua?.responseFile.url : "");
             }
             let sortKeys = { waterBodies, reuseWater, serviceLevelIndicators };
@@ -1263,6 +1277,7 @@ function createDynamicQuery(collectionName, oldQuery, userRole, csv) {
               stateName: { $first: "$stateName" },
               state: { $first: "$state" },
               stateCode: { $first: "$stateCode" },
+              formData: { $push: "$formData" }
             }
           }
           oldQuery.push(query_2);
@@ -2319,6 +2334,9 @@ function createDynamicColumns(collectionName) {
       break;
     case CollectionNames['state_gtc']:
       columns = `State Name,City Finance Code,Form Status,Year,Type of ULB,Type of Grant Received (Tied/Untied),Installment Type,Total No: of MPCs,Total No: of NMPCS,Total No: of Duly Elected MPCS,Total No: of Duly Elected NMPCS,Amount Received(In Lakhs),Date of Receipt,Amount Transferred, excluding interest (in lakhs),Date of Transfer,Was there any delay in transfer?,No. of days delayed,Rate of interest (annual rate),Amount of interest transferred - If there's any delay (in lakhs),Whether State Finance Commission recommendations available? (Yes/No),If No Upload notification for constitution of SFC issued,Whether Project works undertaken are uploaded on the website (Yes/No),Upload copy of Property Tax Notification issued,% of ULB accounts for 15th FC Grants which are linked to PFMS for all transactions,Upload Signed Grant Transfer Certificate,MoHUA Comments`
+      break;
+    case CollectionNames['state_grant_alloc']:
+      columns = `State Name,City Finance Code,Type of Grant,Installment No,Grant Allocation to ULBs (FY23-24),Review Status,MoHUA Comments,Review Documents`
       break;
     default:
       columns = '';
