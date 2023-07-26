@@ -294,6 +294,11 @@ module.exports.get = catchAsync(async (req, res) => {
   let year = req.query.year;
   let _id = req.query._id;
   let cardArr = [], tempData;
+  let singleYearForms =  [PTFR,SFC,PFMS]
+  let collectionNames = {
+    "LinkPFMS" :" PFMSAccount"
+  }
+  let singleYearFormCollections = ['StateFinanceCommissionFormation','PropertyTaxFloorRate','PFMSAccount']
   let cardObj = {
     label: "",
     key: "",
@@ -315,10 +320,15 @@ module.exports.get = catchAsync(async (req, res) => {
       message: "Data missing"
     })
   let isUA;
+  let isLatestCreated;
   let output = []
   if (role == 'ULB') {
     let ulbInfo = await Ulb.findOne({ _id: ObjectId(_id) }).lean();
     isUA = ulbInfo?.isUA
+    let accessVariable = await getKeyByValue(years,year)
+    accessVariable = `access_${accessVariable.split("-")[0].slice(-2)-1}${accessVariable.split("-")[1].slice(-2)-1}`
+    isLatestCreated = !ulbInfo[accessVariable]
+    console.log("accessVariable :: ",accessVariable,isLatestCreated)
     FormModelMapping["GfcFormCollection"] = isUA == 'Yes' ? ObjectId("62aa1d82c9a98b2254632a9e") : ObjectId("62aa1dd6c9a98b2254632aae")
     FormModelMapping["OdfFormCollection"] = isUA == 'Yes' ? ObjectId("62aa1d6ec9a98b2254632a9a") : ObjectId("62aa1dc0c9a98b2254632aaa")
     FormModelMapping["XVFcGrantULBForm"] = isUA == 'Yes' ? ObjectId("62aa1d4fc9a98b2254632a96") : ObjectId("62aa1dadc9a98b2254632aa6")
@@ -342,11 +352,13 @@ module.exports.get = catchAsync(async (req, res) => {
         delete condition['designYear'];
         condition['design_year'] = ObjectId(year)
         designYearCond = "design_year";
-
+      }
+      if(singleYearForms.includes(el) && !isLatestCreated){
+        condition = await changeConditionsFor2223Forms(condition,year)
       }
       let formData = await el.findOne(condition).lean()
       if (formData) {
-        if (formData[designYearCond].toString() === YEAR_CONSTANTS['23_24']) {
+        if (formData[designYearCond].toString() === YEAR_CONSTANTS['23_24'] ) {
           output.push(findStatusAndTooltipMaster({ formData, formId: FormModelMapping_Master_23_24[el['modelName']], loggedInUserRole: user.role, viewFor: role }))
         } else {
           output.push(findStatusAndTooltip(formData, FormModelMapping[el['modelName']], el['modelName'], user.role, role))
@@ -363,8 +375,8 @@ module.exports.get = catchAsync(async (req, res) => {
     for (el of formArr) {
       dbCondition = {...condition}
       if (![GTC_STATE,GrantDistribution].includes(el)) {
-        if([PTFR,SFC].includes(el)){
-          dbCondition = await changeConditionsFor2223Forms(condition,year)
+        if(singleYearForms.includes(el)){
+          condition = await changeConditionsFor2223Forms(condition,year)
       }
         let formData = await el.findOne(dbCondition).lean()
         if (formData) {
@@ -405,6 +417,10 @@ module.exports.get = catchAsync(async (req, res) => {
       data.forEach((el,) => {
         if (el.category && el.collectionName != "GTC" && el.collectionName != "SLB") {
           let flag = 0;
+          if(singleYearFormCollections.includes(el.path) && !isLatestCreated){
+            let variableName = collectionNames[el.path] || el.path
+            el._id = FormModelMapping[variableName]
+          }
           output.forEach(el2 => {
             if ((el._id).toString() == (Object.keys(el2)[0])) {
               Object.assign(el, el2[Object.keys(el2)[0]])
@@ -427,7 +443,7 @@ module.exports.get = catchAsync(async (req, res) => {
           && !(["GrantClaim"].includes(`${el.collectionName}`)) && !(el.name === "Dashboard")
         ) {
           let flag = 0;
-          if(['StateFinanceCommissionFormation','PropertyTaxFloorRate'].includes(el.path)){
+          if(singleYearFormCollections.includes(el.path)){
             el._id = FormModelMapping_State[el.path]
           }
           output.forEach(el2 => {
