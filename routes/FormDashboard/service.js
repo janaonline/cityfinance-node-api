@@ -231,7 +231,7 @@ function gtcSubmitCondition2324(type, installment, state, designYear){
               const index = item.installments.indexOf(installment);
         
               condition.design_year = installment === firstInstallment ? ObjectId(YEAR_CONSTANTS['22_23']) : ObjectId(designYear);
-              condition.state = ObjectId(state);
+            //   condition.state = ObjectId(state);
               condition.year = ObjectId(item.years[index]);
               condition.type = item.condition;
               condition.installment = installment === firstInstallment ? Number(item.installments[index])+1 : Number(firstInstallment);
@@ -925,7 +925,6 @@ function getQuery2324(modelName, formType, designYear, formCategory, stateId){
                     query.push({
                         $match: {
                             design_year: ObjectId(designYear),
-                            "ulb.state": ObjectId(stateId),
                             $or:[...submitConditionUlb,condition]
                         }
                     });
@@ -939,7 +938,6 @@ function getQuery2324(modelName, formType, designYear, formCategory, stateId){
                     query.push({
                         $match: {
                             design_year: ObjectId(YEAR_CONSTANTS['22_23']),
-                            "ulb.state": ObjectId(stateId),
                             $or:[...submitConditionUlb2223,condition]
                         }
                     });
@@ -950,7 +948,6 @@ function getQuery2324(modelName, formType, designYear, formCategory, stateId){
                     query.push({
                         $match:{
                             design_year: ObjectId(designYear),
-                            "ulb.state": ObjectId(stateId),
                             $or:[...submitConditionUlb]
                     }
                     });
@@ -970,7 +967,6 @@ function getQuery2324(modelName, formType, designYear, formCategory, stateId){
                     query.push({
                         $match:{
                             design_year: ObjectId(designYear),
-                            "ulb.state": ObjectId(stateId),
                             $or:[...submitConditionUlb]
                     }
                     });
@@ -979,7 +975,6 @@ function getQuery2324(modelName, formType, designYear, formCategory, stateId){
                     query.push({
                         $match: {
                             designYear: ObjectId(designYear),
-                            "ulb.state": ObjectId(stateId),
                             $or: [...submitConditionUlb]
                     }
                     })  
@@ -988,7 +983,6 @@ function getQuery2324(modelName, formType, designYear, formCategory, stateId){
                 query.push({
                     $match: {
                         design_year: ObjectId(designYear),
-                        "ulb.state": ObjectId(stateId),
                         $or: [...submitConditionUlb]
                 }
                 })  
@@ -1003,7 +997,6 @@ function getQuery2324(modelName, formType, designYear, formCategory, stateId){
                     query.push({
                         $match:{
                             design_year: ObjectId(YEAR_CONSTANTS['22_23']),
-                            state: ObjectId(stateId),
                             $or:[...submitConditionState2223]
                     }
                     })  
@@ -1013,13 +1006,20 @@ function getQuery2324(modelName, formType, designYear, formCategory, stateId){
                     query.push({
                         $match:{
                             design_year: ObjectId(designYear),
-                            state: ObjectId(stateId),
                             $or:[...submitConditionState]
                     }
                     })  
                     break;
                 }
             break;
+    }
+    if(formCategory === "ULB"){
+        query.push({
+            $group:{
+                _id:"$ulb.state",
+                forms: {$push:"$$ROOT"}
+            } 
+        })
     }
     return query;
 }
@@ -1029,12 +1029,18 @@ const dashboard = async (req, res) => {
         let data = req.query;
         let user = req.decoded;
         const {_id:actionTakenBy, role: actionTakenByRole, state } = user;
-        let stateResponseArray = [], ulbResponseArray = [];
         let collectionArr = getCollections(data.formType, data.installment);
         if(data.design_year === YEAR_CONSTANTS['23_24']){
             collectionArr = getCollections2324(data.formType, data.installment);
         }
-    
+        // let {states} = data;
+        let states = await State.find({
+            "accessToXVFC" : true,
+            "isActive": true
+         }).lean();
+         states = states.map((el)=> {
+            return el._id.toString()
+            })
         let approvedFormPercent = {} ,
             submittedFormPercent = {},
             totalApprovedUlbForm = {},
@@ -1045,303 +1051,229 @@ const dashboard = async (req, res) => {
             submitUAFormPercent = {},
             totalUlbs = {};
 
-        let totalUlbMpcAndNmpcUAPipeline = [
-          {
-            $match: {
-              _id: ObjectId(state),
-            },
-          },
-          {
-            $lookup: {
-              from: "ulbs",
-              localField: "_id",
-              foreignField: "state",
-              as: "ulb",
-            },
-          },
-          { $unwind: "$ulb" },
-          {
-            $match: {
-              "ulb.state": ObjectId(state),
-              $or: [
-                { "ulb.isMillionPlus": "Yes", "ulb.isUA": "Yes" },
-                {
-                  "ulb.isMillionPlus": "No",
-                  "ulb.isUA": "Yes",
-                },
-              ],
-            },
-          },
-
-          {
-            $group: {
-              _id: null,
-              totalUlb: { $sum: 1 },
-            },
-          },
-        ];
-        let totalUlbNonMillionPlusPipeline = [
-          {
-            $match: {
-              _id: ObjectId(state),
-            },
-          },
-          {
-            $lookup: {
-              from: "ulbs",
-              localField: "_id",
-              foreignField: "state",
-              as: "ulb",
-            },
-          },
-          { $unwind: "$ulb" },
-          {
-            $match: {
-              "ulb.state": ObjectId(state),
-              "ulb.isMillionPlus": "No",
-            },
-          },
-          {
-            $group: {
-              _id: null,
-              totalUlb: { $sum: 1 },
-            },
-          },
-        ];
-        let sidemenuPipeline = [
-          {
-            $match: {
-              role: { $in: ["ULB", "STATE"] },
-            },
-          },
-          {
-            $group: {
-              _id: "$path",
-              icon: { $first: "$icon" },
-              url: { $first: "$url" },
-              name: { $first: "$name" },
-            },
-          },
-        ];
-        let hasUA = []; 
+        let { totalUlbNonMillionPlusPipeline, totalUlbMpcAndNmpcUAPipeline, sidemenuPipeline, reviewUlbCondition } = getQueries(states);
+        let hasUA =  await UA.aggregate([{
+            $group:{
+                _id:"$state"
+            }}]
+            );
+        let hasUAS = JSON.parse(JSON.stringify(hasUA));
         if(data.formType !== "mpc_tied"){
             totalUlbs = await State.aggregate(totalUlbNonMillionPlusPipeline);
-            hasUA =  await UA.find({
-                state: ObjectId(state)
-            }).lean();
         }else{
-            hasUA =  await UA.find({
-                state: ObjectId(state)
-            }).lean();
             totalUlbs = await State.aggregate(totalUlbMpcAndNmpcUAPipeline);
         }
         let [sidemenuForms, reviewSidemenuForm] = await Promise.all([
             Sidemenu.aggregate(sidemenuPipeline),
-            Sidemenu.findOne({_id:ObjectId("62c55f9c3671152ee4198dc5")}).lean()
+            Sidemenu.findOne(reviewUlbCondition).lean()
         ]);
-        
-        let totalForms;
-        if(totalUlbs.length){
-            totalForms = totalUlbs[0]["totalUlb"];
-        }else {
-            totalForms = 0
+        if(!Boolean(data.multi)){
+            states = [state];
         }
-        let cutOff;
-        for(let i =0; i < collectionArr.length; i++){
-            let stateResponse = {
-                formName: '',
-                approvedColor:'',
-                submittedColor:'',
-                submittedValue:0,
+        let indicatorFormValidationCount = 3;
+        let cutOff, statesFormData = {};
+        let indicatorFormCount = 0;
+            for (let i = 0; i < collectionArr.length; i++) {
+              let totalForms = totalUlbs.length ? totalUlbs[0]["totalUlb"] : 0;
+              let stateResponse = {
+                formName: "",
+                approvedColor: "",
+                submittedColor: "",
+                submittedValue: 0,
                 approvedValue: 0,
-                totalApproved:0,
-                totalSubmitted: 0,
-                cutOff: ``,
-                icon:'',
-                link:'',
-                border:'',
-                status:''
-            };
-            let ulbResponse = {
-                formName: '',
-                approvedColor:'',
-                submittedColor:'',
                 totalApproved: 0,
                 totalSubmitted: 0,
-                submittedValue:0,
+                cutOff: ``,
+                icon: "",
+                link: "",
+                border: "",
+                status: "",
+              };
+              let ulbResponse = {
+                formName: "",
+                approvedColor: "",
+                submittedColor: "",
+                totalApproved: 0,
+                totalSubmitted: 0,
+                submittedValue: 0,
                 approvedValue: 0,
                 cutOff: ``,
-                icon: '',
-                link: '',
-                border:'',
-                status:''
-            };
-            let collection = collectionArr[i];
-            let formCategory = "";
-            let submitPercent = 0;
-            cutOff = 0;
-            let totalApprovedForm = 0;
-            let modelName = collection.collection.collectionName;
-            if (
-              ![
-                CollectionNames.pTAX,
-                CollectionNames.sfc,
-                CollectionNames.gtc,
-                CollectionNames.actionPlan,
-                CollectionNames.waterRej,
-              ].includes(modelName)
-            ) {
-              formCategory = "ULB";
-            } else {
-              formCategory = "STATE";
-            }
-            if([CollectionNames.actionPlan, CollectionNames.waterRej].includes(modelName) && !hasUA.length){
-                continue;
-            }
-            //Get pipeline query, using modelName
-            let pipeline = getQuery(modelName,data.formType, data.design_year, formCategory, state);
-            if(data.design_year === YEAR_CONSTANTS['23_24']){
-             pipeline = getQuery2324(modelName,data.formType, data.design_year, formCategory, state);
-            }
-            // return res.json(pipeline)
-            //Pipeline query condition for Grant transfer cetificate
-            if(modelName === CollectionNames.gtc){
-                pipeline = gtcSubmitCondition(data.formType, data.installment, state, data.design_year);
-                if(![YEAR_CONSTANTS['22_23']].includes(data.design_year)){
-                    pipeline = gtcSubmitCondition2324(data.formType, data.installment, state, data.design_year);
-                    // return res.json(pipeline);
+                icon: "",
+                link: "",
+                border: "",
+                status: "",
+              };
+              let collection = collectionArr[i];
+              let formCategory = "";
+              let submitPercent = 0;
+              cutOff = 0;
+              let totalApprovedForm = 0;
+              let modelName = collection.collection.collectionName;
+              formCategory = getFormCategory(modelName, formCategory);
+
+              //Get pipeline query, using modelName
+              let pipeline = getQuery(
+                modelName,
+                data.formType,
+                data.design_year,
+                formCategory,
+                state
+              );
+              if (data.design_year === YEAR_CONSTANTS["23_24"]) {
+                pipeline = getQuery2324(
+                  modelName,
+                  data.formType,
+                  data.design_year,
+                  formCategory,
+                  states
+                );
+              }
+              // return res.json(pipeline)
+              //Pipeline query condition for Grant transfer cetificate
+              if (modelName === CollectionNames.gtc) {
+                pipeline = gtcSubmitCondition(
+                  data.formType,
+                  data.installment,
+                  state,
+                  data.design_year
+                );
+                if (![YEAR_CONSTANTS["22_23"]].includes(data.design_year)) {
+                  pipeline = gtcSubmitCondition2324(
+                    data.formType,
+                    data.installment,
+                    states,
+                    data.design_year
+                  );
+                  // return res.json(pipeline);
                 }
-            }
-            //Get submitted forms            
-            //Get Approved forms percent
-            if(![YEAR_CONSTANTS['22_23']].includes(data.design_year)){
-                modelName ===  CollectionNames.slb ? collection = TwentyEightSlbsForm : "";
-            }
-            let submittedForms = await collection.aggregate(pipeline);
-            if(modelName === CollectionNames.gtc && data.installment === '1' && ![YEAR_CONSTANTS['23_24']].includes(data.design_year)){
-                let query = stateGtcCertificateSubmmitedForms(data.formType, data.installment, state);
+              }
+              //Get submitted forms
+              //Get Approved forms percent
+              if (![YEAR_CONSTANTS["22_23"]].includes(data.design_year)) {
+                modelName === CollectionNames.slb
+                  ? (collection = TwentyEightSlbsForm)
+                  : "";
+              }
+              let submittedForms = await collection.aggregate(pipeline).allowDiskUse(true);
+              if (
+                modelName === CollectionNames.gtc &&
+                data.installment === "1" &&
+                ![YEAR_CONSTANTS["23_24"]].includes(data.design_year)
+              ) {
+                let query = stateGtcCertificateSubmmitedForms(
+                  data.formType,
+                  data.installment,
+                  state
+                );
                 let forms = await StateGTCCertificate.aggregate(query);
-                if(forms && submittedForms.length === 0 && forms.length>0){
-                    submittedForms.push(forms[0]);
+                if (forms && submittedForms.length === 0 && forms.length > 0) {
+                  submittedForms.push(forms[0]);
                 }
-             }
-            if(formCategory === "ULB"){
-                submitPercent = !isNaN(Math.round((submittedForms.length/totalForms)*100) ) ? Math.round((submittedForms.length/totalForms)*100) : 0 ;
-                submittedFormPercent[modelName] = submitPercent;
-                totalApprovedForm = approvedForms(submittedForms, formCategory, data.design_year, modelName);
-                approvedFormPercent[modelName] = !isNaN(Math.round((totalApprovedForm/totalForms)*100) ) ?  Math.round((totalApprovedForm/totalForms)*100) : 0;
-                totalApprovedUlbForm[modelName] = totalApprovedForm;
-                totalSubmittedUlbForm[modelName] = submittedForms.length;
-                if([
-                    CollectionNames.twentyEightSlbs,
-                    CollectionNames.gfc,
-                    CollectionNames.odf,
-                  ].includes(modelName) && (![YEAR_CONSTANTS['22_23']].includes(data.design_year))){
-                      totalUASubmittedUlbForm[modelName] = UASubmittedForms(submittedForms, formCategory, data.design_year, modelName);
-                      submitUAFormPercent[modelName] = Math.round((totalUASubmittedUlbForm[modelName]/totalForms)*100);
+              }
+              let allSubmittedForms = JSON.parse(
+                JSON.stringify(submittedForms)
+              );
+              [
+                CollectionNames["twentyEightSlbs"],
+                CollectionNames["odf"],
+                CollectionNames["gfc"],
+              ].includes(modelName) && data.formType === "mpc_tied"
+                ? indicatorFormCount++
+                : "";
+              for (let state of states) {
+                let stateResponseArray = [],
+                  ulbResponseArray = [];
+                hasUA = hasUAS.find((el) => el._id.toString() === state)
+                  ? [hasUAS.find((el) => el._id.toString() === state)]
+                  : [];
+                if (
+                  [
+                    CollectionNames.actionPlan,
+                    CollectionNames.waterRej,
+                  ].includes(modelName) &&
+                  !hasUA.length
+                ) {
+                  continue;
+                }
+                if(![YEAR_CONSTANTS['22_23']].includes(data.design_year)){
+                    submittedForms = getSubmittedForms(formCategory, submittedForms, allSubmittedForms, state);
+                }
+                totalForms = totalUlbs.find((el) => el._id.toString() === state)
+                  ? totalUlbs.find((el) => el._id.toString() === state)[
+                      "totalUlb"
+                    ]
+                  : [];
+                ({ submitPercent, totalApprovedForm } = calculateFormStatistics(formCategory, submitPercent, submittedForms, totalForms, submittedFormPercent, modelName, totalApprovedForm, data, approvedFormPercent, totalApprovedUlbForm, totalSubmittedUlbForm, totalUASubmittedUlbForm, submitUAFormPercent, totalApprovedStateForm, totalSubmittedStateForm));
+
+                let formData = getFormData(
+                  formCategory,
+                  modelName,
+                  sidemenuForms,
+                  reviewSidemenuForm
+                );
+
+                cutOff = getCutOff(data, formCategory, modelName, cutOff);
+                //Adding status to formData
+                if (approvedFormPercent[modelName] >= cutOff) {
+                  formData.status = "Eligible for Grant Claim";
+                } else if (approvedFormPercent[modelName] < cutOff) {
+                  formData.status = "Not yet eligible for Grant Claim";
+                }
+                ({ ulbResponse, stateResponse } = createFormResponseObjects(formCategory, ulbResponse, formData, modelName, submittedFormPercent, approvedFormPercent, totalApprovedUlbForm, totalSubmittedUlbForm, totalForms, cutOff, ulbResponseArray, stateResponse, totalApprovedStateForm, totalSubmittedStateForm, stateResponseArray));
+                // if (Boolean(data.multi)) {
+                  if (hasUA.length && data.formType === "mpc_tied") {
+                    if (indicatorFormCount === indicatorFormValidationCount && ![YEAR_CONSTANTS['22_23']].includes(data.design_year)) {
+                      let { leastSubmitPercent, leastSubmitNumber } =
+                        addSlbScoringData(ulbResponseArray);
+                      let slbScoring = getSlbScoringResponse(
+                        leastSubmitPercent,
+                        leastSubmitNumber,
+                        cutOff
+                      );
+                      stateResponseArray.push(slbScoring);
+                    }
                   }
-            } else if(formCategory === "STATE"){
-                if(submittedForms.length === 0){
-                    submitPercent = 0;
-                    submittedFormPercent[modelName] = submitPercent;
-                    totalApprovedForm = approvedForms(submittedForms, formCategory, data.design_year, modelName);
-                    approvedFormPercent[modelName] = 0;
-                    totalApprovedStateForm[modelName] = (totalApprovedForm*100)/1;
-                    totalSubmittedStateForm[modelName] = submittedForms.length;
-
-                } else if(submittedForms.length === 1){
-                    submitPercent = 100;
-                    submittedFormPercent[modelName] = submitPercent;
-                    totalApprovedForm = approvedForms(submittedForms, formCategory, data.design_year, modelName);
-                    approvedFormPercent[modelName] = (totalApprovedForm*100)/1;
-                    totalApprovedStateForm[modelName] = totalApprovedForm;
-                    totalSubmittedStateForm[modelName] = submittedForms.length;
-                }
+                  statesFormData[state] = {
+                    ulbResponse: (
+                      statesFormData[state]?.ulbResponse || []
+                    ).concat(ulbResponseArray),
+                    stateResponse: (
+                      statesFormData[state]?.stateResponse || []
+                    ).concat(stateResponseArray),
+                  };
+                // }
+              }
             }
-
-            let formData = getFormData(formCategory, modelName, sidemenuForms, reviewSidemenuForm);
-            
-            if(data.design_year === YEAR_CONSTANTS['23_24']){
-                if(!(CUTOFF2324[formCategory][data.formType][modelName])){
-                    cutOff = "NA"
-                } else {
-                    cutOff = CUTOFF2324[formCategory][data.formType][modelName]
-                }
-            }
-            else{
-                if(!(CUTOFF[formCategory][data.formType][modelName])){
-                    cutOff = "NA"
-                } else {
-                    cutOff = CUTOFF[formCategory][data.formType][modelName]
-                }
-            }
-            //Adding status to formData
-            if(approvedFormPercent[modelName] >= cutOff){
-                formData.status = "Eligible for Grant Claim"
-            }else if(approvedFormPercent[modelName] < cutOff){
-                formData.status = "Not yet eligible for Grant Claim"
-            }
-            if(formCategory === "ULB"){
-                ulbResponse = {
-                    formName: formData["formName"],
-                    key: modelName,
-                    approvedColor: formData["approvedColor"],
-                    submittedColor: formData["submittedColor"],
-                    submittedValue: submittedFormPercent[modelName],
-                    approvedValue: approvedFormPercent[modelName],
-                    totalApproved: totalApprovedUlbForm[modelName],
-                    totalSubmitted: totalSubmittedUlbForm[modelName],
-                    totalForms,
-                    cutOff,
-                    icon: formData["icon"],
-                    link: formData["link"],
-                    border:formData.border,
-                    status:formData.status
-                };
-                ulbResponseArray.push(ulbResponse);
-            } else if( formCategory === "STATE") {
-                stateResponse = {
-                    formName: formData["formName"],
-                    key: modelName,
-                    approvedColor: formData["approvedColor"],
-                    submittedColor: formData["submittedColor"],
-                    submittedValue: submittedFormPercent[modelName],
-                    approvedValue: approvedFormPercent[modelName],
-                    totalApproved: totalApprovedStateForm[modelName],
-                    totalSubmitted: totalSubmittedStateForm[modelName],
-                    cutOff,
-                    icon: formData["icon"],
-                    link: formData["link"],
-                    border: formData.border,
-                    status: formData.status
-                };
-                stateResponseArray.push(stateResponse);
-            }
-        };
+        
+        if(Boolean(data.multi)){
+            return statesFormData;
+        }
+        let ulbFormsResponse = statesFormData[state]['ulbResponse'];
+        let stateFormsResponse = statesFormData[state]['stateResponse'];
         if (data.flagFunction) {
-          if (hasUA.length && data.formType === "mpc_tied") {
-            let { leastSubmitPercent, leastSubmitNumber } =
-              addSlbScoringData(ulbResponseArray);
-            let slbScoring = getSlbScoringResponse(
-              leastSubmitPercent,
-              leastSubmitNumber,
-              cutOff
-            );
-            stateResponseArray.push(slbScoring);
-          }
+        //   if (hasUA.length && data.formType === "mpc_tied") {
+        //     let { leastSubmitPercent, leastSubmitNumber } =
+        //       addSlbScoringData(ulbResponseArray);
+        //     let slbScoring = getSlbScoringResponse(
+        //       leastSubmitPercent,
+        //       leastSubmitNumber,
+        //       cutOff
+        //     );
+        //     stateResponseArray.push(slbScoring);
+        //   }
           return {
             data: [
               {
                 formHeader: "ULB Forms",
                 approvedColor: "#E67E15",
                 submittedColor: "#E67E1566",
-                formData: ulbResponseArray,
+                formData: ulbFormsResponse,
               },
               {
                 formHeader: "State Forms",
                 approvedColor: "#059B05",
                 submittedColor: "#E67E1566",
-                formData: stateResponseArray,
+                formData: stateFormsResponse,
               },
             ],
           };
@@ -1352,13 +1284,13 @@ const dashboard = async (req, res) => {
                 formHeader:'ULB Forms',
                 approvedColor:'#E67E15',
                 submittedColor:'#E67E1566',
-                formData: ulbResponseArray
+                formData: ulbFormsResponse
             },
             {
                 formHeader:'State Forms',
                 approvedColor:'#059B05',
                 submittedColor:'#E67E1566',
-                formData : stateResponseArray
+                formData : stateFormsResponse
             }]
         })
 
@@ -1371,6 +1303,363 @@ const dashboard = async (req, res) => {
 
 }
 
+/**
+ * The function creates response objects based on the form category and stores them in respective
+ * arrays.
+ * @param formCategory - The category of the form, either "ULB" or "STATE".
+ * @param ulbResponse - An object that represents the response for ULB forms. It contains the following
+ * properties:
+ * @param formData - The `formData` parameter is an object that contains information about a form. It
+ * includes properties such as `formName`, `approvedColor`, `submittedColor`, `icon`, `link`, `border`,
+ * and `status`.
+ * @param modelName - The `modelName` parameter represents the name of the model or form.
+ * @param submittedFormPercent - The parameter "submittedFormPercent" is an object that contains the
+ * percentage of submitted forms for each model. The keys of the object represent the model names, and
+ * the values represent the corresponding percentage of submitted forms.
+ * @param approvedFormPercent - The `approvedFormPercent` parameter is an object that contains the
+ * percentage of approved forms for each form model. The keys of the object represent the form model
+ * names, and the values represent the corresponding percentage of approved forms.
+ * @param totalApprovedUlbForm - An object that contains the total number of approved forms for each
+ * ULB (Urban Local Body). The keys of the object are the ULB names and the values are the
+ * corresponding total approved forms.
+ * @param totalSubmittedUlbForm - The parameter `totalSubmittedUlbForm` represents the total number of
+ * ULB forms that have been submitted.
+ * @param totalForms - The total number of forms available in the system.
+ * @param cutOff - The `cutOff` parameter is a value that represents the threshold or limit for a
+ * certain condition or criteria. It is used in the `createFormResponseObjects` function to determine
+ * if a form response meets the cutoff or not.
+ * @param ulbResponseArray - An array that stores the response objects for ULB forms.
+ * @param stateResponse - The `stateResponse` parameter is an object that contains information about a
+ * form response for the "STATE" category. It includes the following properties:
+ * @param totalApprovedStateForm - The parameter "totalApprovedStateForm" is an object that contains
+ * the total number of approved forms for each form model in the state category.
+ * @param totalSubmittedStateForm - The parameter "totalSubmittedStateForm" represents the total number
+ * of forms submitted by the state.
+ * @param stateResponseArray - An array that stores the response objects for forms belonging to the
+ * state category.
+ * @returns an object that contains the `ulbResponse` and `stateResponse` variables.
+ */
+function createFormResponseObjects(formCategory, ulbResponse, formData, modelName, submittedFormPercent, approvedFormPercent, totalApprovedUlbForm, totalSubmittedUlbForm, totalForms, cutOff, ulbResponseArray, stateResponse, totalApprovedStateForm, totalSubmittedStateForm, stateResponseArray) {
+    if (formCategory === "ULB") {
+        ulbResponse = {
+            formName: formData["formName"],
+            key: modelName,
+            approvedColor: formData["approvedColor"],
+            submittedColor: formData["submittedColor"],
+            submittedValue: submittedFormPercent[modelName],
+            approvedValue: approvedFormPercent[modelName],
+            totalApproved: totalApprovedUlbForm[modelName],
+            totalSubmitted: totalSubmittedUlbForm[modelName],
+            totalForms,
+            cutOff,
+            icon: formData["icon"],
+            link: formData["link"],
+            border: formData.border,
+            status: formData.status,
+        };
+        ulbResponseArray.push(ulbResponse);
+    } else if (formCategory === "STATE") {
+        stateResponse = {
+            formName: formData["formName"],
+            key: modelName,
+            approvedColor: formData["approvedColor"],
+            submittedColor: formData["submittedColor"],
+            submittedValue: submittedFormPercent[modelName],
+            approvedValue: approvedFormPercent[modelName],
+            totalApproved: totalApprovedStateForm[modelName],
+            totalSubmitted: totalSubmittedStateForm[modelName],
+            cutOff,
+            icon: formData["icon"],
+            link: formData["link"],
+            border: formData.border,
+            status: formData.status,
+        };
+        stateResponseArray.push(stateResponse);
+    }
+    return { ulbResponse, stateResponse };
+}
+
+/**
+ * The function calculates form statistics based on the form category, submission percentage, submitted
+ * forms, total forms, model name, and other data.
+ * @param formCategory - The form category, which can be either "ULB" or "STATE".
+ * @param submitPercent - The percentage of submitted forms out of total forms.
+ * @param submittedForms - An array of submitted forms.
+ * @param totalForms - The total number of forms in the category (either ULB or STATE).
+ * @param submittedFormPercent - An object that stores the percentage of submitted forms for each model
+ * name.
+ * @param modelName - The `modelName` parameter represents the name of the model or form being
+ * processed.
+ * @param totalApprovedForm - The total number of approved forms for the given form category and model
+ * name.
+ * @param data - The "data" parameter is an object that contains various properties related to the form
+ * data. It is used to retrieve information such as the design year and other relevant data for
+ * calculations in the function.
+ * @param approvedFormPercent - An object that stores the percentage of approved forms for each model.
+ * @param totalApprovedUlbForm - The parameter `totalApprovedUlbForm` represents the total number of
+ * approved forms for the ULB category.
+ * @param totalSubmittedUlbForm - The parameter `totalSubmittedUlbForm` represents the total number of
+ * ULB forms that have been submitted.
+ * @param totalUASubmittedUlbForm - The parameter `totalUASubmittedUlbForm` represents the total number
+ * of User Acceptance (UA) submitted forms for the ULB category.
+ * @param submitUAFormPercent - The parameter `submitUAFormPercent` is used to store the percentage of
+ * forms submitted by Urban Local Bodies (ULBs) that have also been submitted to the Urban Affairs
+ * department.
+ * @param totalApprovedStateForm - The parameter `totalApprovedStateForm` is an object that stores the
+ * total number of approved forms for each state form model. The keys of the object represent the model
+ * names, and the values represent the total number of approved forms for each model.
+ * @param totalSubmittedStateForm - The parameter "totalSubmittedStateForm" represents the total number
+ * of forms that have been submitted for the given state category.
+ * @returns an object with two properties: "submitPercent" and "totalApprovedForm".
+ */
+function calculateFormStatistics(formCategory, submitPercent, submittedForms, totalForms, submittedFormPercent, modelName, totalApprovedForm, data, approvedFormPercent, totalApprovedUlbForm, totalSubmittedUlbForm, totalUASubmittedUlbForm, submitUAFormPercent, totalApprovedStateForm, totalSubmittedStateForm) {
+    if (formCategory === "ULB") {
+        submitPercent = !isNaN(
+            Math.round((submittedForms.length / totalForms) * 100)
+        )
+            ? Math.round((submittedForms.length / totalForms) * 100)
+            : 0;
+        submittedFormPercent[modelName] = submitPercent;
+        totalApprovedForm = approvedForms(
+            submittedForms,
+            formCategory,
+            data.design_year,
+            modelName
+        );
+        approvedFormPercent[modelName] = !isNaN(
+            Math.round((totalApprovedForm / totalForms) * 100)
+        )
+            ? Math.round((totalApprovedForm / totalForms) * 100)
+            : 0;
+        totalApprovedUlbForm[modelName] = totalApprovedForm;
+        totalSubmittedUlbForm[modelName] = submittedForms.length;
+        if ([
+            CollectionNames.twentyEightSlbs,
+            CollectionNames.gfc,
+            CollectionNames.odf,
+        ].includes(modelName) &&
+            ![YEAR_CONSTANTS["22_23"]].includes(data.design_year)) {
+            totalUASubmittedUlbForm[modelName] = UASubmittedForms(
+                submittedForms,
+                formCategory,
+                data.design_year,
+                modelName
+            );
+            submitUAFormPercent[modelName] = Math.round(
+                (totalUASubmittedUlbForm[modelName] / totalForms) * 100
+            );
+        }
+    } else if (formCategory === "STATE") {
+        if (submittedForms.length === 0) {
+            submitPercent = 0;
+            submittedFormPercent[modelName] = submitPercent;
+            totalApprovedForm = approvedForms(
+                submittedForms,
+                formCategory,
+                data.design_year,
+                modelName
+            );
+            approvedFormPercent[modelName] = 0;
+            totalApprovedStateForm[modelName] =
+                (totalApprovedForm * 100) / 1;
+            totalSubmittedStateForm[modelName] = submittedForms.length;
+        } else if (submittedForms.length === 1) {
+            submitPercent = 100;
+            submittedFormPercent[modelName] = submitPercent;
+            totalApprovedForm = approvedForms(
+                submittedForms,
+                formCategory,
+                data.design_year,
+                modelName
+            );
+            approvedFormPercent[modelName] =
+                (totalApprovedForm * 100) / 1;
+            totalApprovedStateForm[modelName] = totalApprovedForm;
+            totalSubmittedStateForm[modelName] = submittedForms.length;
+        }
+    }
+    return { submitPercent, totalApprovedForm };
+}
+
+/**
+ * The function `getSubmittedForms` retrieves submitted forms based on the form category, state, and
+ * all submitted forms data.
+ * @param formCategory - The form category is a string that specifies the category of the form. It can
+ * be either "ULB" or any other category.
+ * @param submittedForms - The `submittedForms` parameter is an array that contains the submitted
+ * forms.
+ * @param allSubmittedForms - An array of objects representing all submitted forms. Each object has
+ * properties such as "_id" and "state".
+ * @param state - The `state` parameter is a string that represents the state of the form.
+ * @returns the value of the variable "submittedForms".
+ */
+function getSubmittedForms(formCategory, submittedForms, allSubmittedForms, state) {
+    if (formCategory === "ULB") {
+        submittedForms = allSubmittedForms.find(
+            (el) => el._id.toString() === state
+        )
+            ? allSubmittedForms.find(
+                (el) => el._id.toString() === state
+            )["forms"]
+            : [];
+    } else {
+        submittedForms = allSubmittedForms.find(
+            (el) => el.state.toString() === state
+        )
+            ? [
+                allSubmittedForms.find(
+                    (el) => el.state.toString() === state
+                ),
+            ]
+            : [];
+    }
+    return submittedForms;
+}
+
+/**
+ * The function `getCutOff` returns the cut-off value based on the given data, form category, model
+ * name, and design year.
+ * @param data - An object containing information about the data.
+ * @param formCategory - The `formCategory` parameter is a string that represents the category of the
+ * form. It is used to access the appropriate cutoff values from the `CUTOFF` or `CUTOFF2324` object.
+ * @param modelName - The `modelName` parameter is a string that represents the name of a model.
+ * @param cutOff - The `cutOff` parameter is a variable that will store the value of the cutoff for a
+ * specific form category, form type, and model name.
+ * @returns The value of the variable "cutOff" is being returned.
+ */
+function getCutOff(data, formCategory, modelName, cutOff) {
+    if (data.design_year === YEAR_CONSTANTS['23_24']) {
+        if (!(CUTOFF2324[formCategory][data.formType][modelName])) {
+            cutOff = "NA";
+        } else {
+            cutOff = CUTOFF2324[formCategory][data.formType][modelName];
+        }
+    }
+    else {
+        if (!(CUTOFF[formCategory][data.formType][modelName])) {
+            cutOff = "NA";
+        } else {
+            cutOff = CUTOFF[formCategory][data.formType][modelName];
+        }
+    }
+    return cutOff;
+}
+
+/**
+ * The function `getFormCategory` determines the form category based on the provided `modelName`.
+ * @param modelName - The `modelName` parameter is a string that represents the name of a model.
+ * @param formCategory - The `formCategory` parameter is a string that represents the category of a
+ * form.
+ * @returns The value of the variable `formCategory` is being returned.
+ */
+function getFormCategory(modelName, formCategory) {
+    if (![
+        CollectionNames.pTAX,
+        CollectionNames.sfc,
+        CollectionNames.gtc,
+        CollectionNames.actionPlan,
+        CollectionNames.waterRej,
+    ].includes(modelName)) {
+        formCategory = "ULB";
+    } else {
+        formCategory = "STATE";
+    }
+    return formCategory;
+}
+
+/**
+ * The function `getQueries` returns an object containing pipelines and a condition for querying data
+ * related to ULBs (Urban Local Bodies) in different states.
+ * @param states - An array of states.
+ * @returns an object that contains four properties: totalUlbNonMillionPlusPipeline,
+ * totalUlbMpcAndNmpcUAPipeline, sidemenuPipeline, and reviewUlbCondition.
+ */
+function getQueries(states) {
+    let totalUlbMpcAndNmpcUAPipeline = [
+        
+        {
+            $lookup: {
+                from: "ulbs",
+                localField: "_id",
+                foreignField: "state",
+                as: "ulb",
+            },
+        },
+        { $unwind: "$ulb" },
+        {
+            $match: {
+                $or: [
+                    { "ulb.isMillionPlus": "Yes", "ulb.isUA": "Yes" },
+                    {
+                        "ulb.isMillionPlus": "No",
+                        "ulb.isUA": "Yes",
+                    },
+                ],
+            },
+        },
+
+        {
+            $group: {
+                _id: "$_id",
+                totalUlb: { $sum: 1 },
+            },
+        },
+    ];
+    let totalUlbNonMillionPlusPipeline = [
+        
+        {
+            $lookup: {
+                from: "ulbs",
+                localField: "_id",
+                foreignField: "state",
+                as: "ulb",
+            },
+        },
+        { $unwind: "$ulb" },
+        {
+            $match: {
+                "ulb.isMillionPlus": "No",
+            },
+        },
+        {
+            $group: {
+                _id: "$_id",
+                totalUlb: { $sum: 1 },
+            },
+        },
+    ];
+    let sidemenuPipeline = [
+        {
+            $match: {
+                role: { $in: ["ULB", "STATE"] },
+            },
+        },
+        {
+            $group: {
+                _id: "$path",
+                icon: { $first: "$icon" },
+                url: { $first: "$url" },
+                name: { $first: "$name" },
+            },
+        },
+    ];
+    const reviewUlbCondition = {
+        "isActive": true,
+        "name": "Review Grant Application"
+    };
+    return { totalUlbNonMillionPlusPipeline, totalUlbMpcAndNmpcUAPipeline, sidemenuPipeline, reviewUlbCondition };
+}
+
+/**
+ * The function returns an object with scoring information based on the least submit percent, least
+ * submit number, and cutoff values provided.
+ * @param leastSubmitPercent - The percentage of submissions required for eligibility.
+ * @param leastSubmitNumber - The `leastSubmitNumber` parameter represents the minimum number of
+ * submissions required for a certain condition or criteria.
+ * @param cutOff - The `cutOff` parameter is a value that represents the minimum score required for a
+ * submission to be considered as approved.
+ * @returns an object with the following properties:
+ */
 function getSlbScoringResponse(leastSubmitPercent, leastSubmitNumber, cutOff) {
     return {
         formName: FormNames["indicatorForm"],
@@ -1389,6 +1678,14 @@ function getSlbScoringResponse(leastSubmitPercent, leastSubmitNumber, cutOff) {
     };
 }
 
+/**
+ * The function `addSlbScoringData` calculates the least submitted percentage and the corresponding
+ * number for a given array of ULB responses.
+ * @param ulbResponseArray - The `ulbResponseArray` parameter is an array of objects. Each object
+ * represents the response data for a specific ULB (Urban Local Body). The objects in the array have
+ * the following properties:
+ * @returns an object with two properties: leastSubmitPercent and leastSubmitNumber.
+ */
 function addSlbScoringData(ulbResponseArray){
     try {
         const maxPercent = 100;
