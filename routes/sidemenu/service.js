@@ -247,6 +247,28 @@ const findStatusAndTooltipMaster = (params) => {
   }
 }
 
+const getPreviousYear = (currentYearId,no)=>{
+  try{
+    let yearName = getKeyByValue(years,currentYearId)
+    let previousYear = `${yearName.split("-")[0]-no}-${yearName.split("-")[1]-no}`
+    return years[previousYear]
+  }
+  catch(err){
+    console.log("error in getPreviousYear :: ",err.message)
+  }
+}
+
+const changeConditionsFor2223Forms = (conditions,year)=>{
+let notFormYear = !outDatedYears.includes(getKeyByValue(years,year))
+let cond = {...conditions}
+if (notFormYear){
+  let formYear = getPreviousYear(year,1)
+  cond['design_year'] = ObjectId(formYear)
+}
+return cond
+}
+
+
 const UA_FORM_MODEL = {
   GFC_UA_YES: ObjectId("63ff31d63ae39326f4b2f467"),
   GFC_UA_NO: ObjectId("63ff31d63ae39326f4b2f46b"),
@@ -344,6 +366,9 @@ module.exports.get = catchAsync(async (req, res) => {
     let formArr = [SFC, PTFR, GTC_STATE,GrantDistribution ,ActionPlan, WaterRejuvenation,GrantDistribution]
     for (el of formArr) {
       if (![GTC_STATE,GrantDistribution].includes(el)) {
+        if([PTFR,SFC].includes(el)){
+          condition = await changeConditionsFor2223Forms(condition,year)
+      }
         let formData = await el.findOne(condition).lean()
         if (formData) {
           if (formData.design_year.toString() === YEAR_CONSTANTS['23_24']) {
@@ -405,6 +430,9 @@ module.exports.get = catchAsync(async (req, res) => {
           && !(["GrantClaim"].includes(`${el.collectionName}`)) && !(el.name === "Dashboard")
         ) {
           let flag = 0;
+          if(['StateFinanceCommissionFormation','PropertyTaxFloorRate'].includes(el.path)){
+            el._id = FormModelMapping_State[el.path]
+          }
           output.forEach(el2 => {
             if ((el._id).toString() == (Object.keys(el2)[0])) {
               Object.assign(el, el2[Object.keys(el2)[0]])
