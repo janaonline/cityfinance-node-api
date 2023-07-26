@@ -29,7 +29,7 @@ const { FormNames, YEAR_CONSTANTS,  MASTER_STATUS, FORMIDs, FORM_LEVEL, FORM_LEV
 const {BackendHeaderHost, FrontendHeaderHost} = require('../../util/envUrl');
 const {saveCurrentStatus, saveFormHistory, saveStatusHistory, getShortKeys} = require('../../util/masterFunctions');
 const CurrentStatus = require("../../models/CurrentStatus");
-const {getSeparatedShortKeys} = require('../../routes/CommonActionAPI/service')
+const {getSeparatedShortKeys, saveFormLevelHistory} = require('../../routes/CommonActionAPI/service')
 var https = require('https');
 var request = require('request')
 
@@ -668,7 +668,7 @@ exports.createUpdate = async (req, res) => {
             }
 
             // Save Form Level History
-            // await saveFormLevelHistory(masterFormId, formSubmit, actionTakenByRole, actionTakenBy,MASTER_STATUS["Under Review By State"]);
+            await saveFormLevelHistory(masterFormId, formSubmit, actionTakenByRole, actionTakenBy,MASTER_STATUS["Under Review By State"]);
             // await session.commitTransaction();
             return Response.OK(res, {}, "Form Submitted");
           }
@@ -848,33 +848,6 @@ exports.createUpdate = async (req, res) => {
     return Response.BadRequest(res, {}, err.message);
   }
 };
-
-// module.exports.saveFormLevelHistory = async (masterFormId, formSubmit, actionTakenByRole, actionTakenBy,currentStatus) => {
-//   let currentStatusData = {
-//     formId: masterFormId,
-//     recordId: ObjectId(formSubmit._id),
-//     status: currentStatus,
-//     level: FORM_LEVEL["form"],
-//     shortKey: FORM_LEVEL_SHORTKEY["form"],
-//     rejectReason: "",
-//     responseFile: "",
-//     actionTakenByRole: actionTakenByRole,
-//     actionTakenBy: ObjectId(actionTakenBy),
-//   };
-//   await saveCurrentStatus({
-//     body: currentStatusData,
-//   });
-
-//   let statusHistory = {
-//     formId: masterFormId,
-//     recordId: ObjectId(formSubmit._id),
-//     shortKey: FORM_LEVEL_SHORTKEY["form"],
-//     data: currentStatusData,
-//   };
-//   await saveStatusHistory({
-//     body: statusHistory,
-//   });
-// }
 
 async function filterApprovedShortKeys(shortKeys, recordId, formStatus){
   let statuses , statusesShortKeys;

@@ -24,7 +24,6 @@ const { saveCurrentStatus, saveFormHistory, saveStatusHistory } = require('../..
 const CurrentStatus = require('../../models/CurrentStatus');
 const { MASTER_STATUS_ID, FORM_LEVEL_SHORTKEY, FORMIDs } = require('../../util/FormNames');
 const { ModelNames } = require('../../util/15thFCstatus');
-// const { saveFormLevelHistory } = require('../annual-accounts/service');
 const UA = require('../../models/UA');
 // const { getUAShortKeys } = require('../CommonFormSubmissionState/service');
 var allowedStatuses = [StatusList.Rejected_By_MoHUA, StatusList.STATE_REJECTED, StatusList.Rejected_By_State, StatusList.In_Progress, StatusList.Not_Started]
@@ -3071,7 +3070,7 @@ async function takeActionOnForms(params, res) {
                     }
 
                     // Save Form Level History
-                    // await saveFormLevelHistory(formId, form, actionTakenByRole, actionTakenBy,response.status);
+                    await saveFormLevelHistory(formId, form, actionTakenByRole, actionTakenBy,response.status);
                 }
             }
             if (saveStatusResponse !== 1) {
@@ -3872,3 +3871,31 @@ function checkIfUlbCanEditForm(currentFormStatus) {
         throw `checkFormIfUlbCanEdit:: ${error.message}`;
     }
 }
+
+async function saveFormLevelHistory(masterFormId, formSubmit, actionTakenByRole, actionTakenBy,currentStatus) {
+    let currentStatusData = {
+        formId: masterFormId,
+        recordId: ObjectId(formSubmit._id),
+        status: currentStatus,
+        level: FORM_LEVEL["form"],
+        shortKey: FORM_LEVEL_SHORTKEY["form"],
+        rejectReason: "",
+        responseFile: "",
+        actionTakenByRole: actionTakenByRole,
+        actionTakenBy: ObjectId(actionTakenBy),
+    };
+    await saveCurrentStatus({
+        body: currentStatusData,
+    });
+
+    let statusHistory = {
+        formId: masterFormId,
+        recordId: ObjectId(formSubmit._id),
+        shortKey: FORM_LEVEL_SHORTKEY["form"],
+        data: currentStatusData,
+    };
+    await saveStatusHistory({
+        body: statusHistory,
+    });
+}
+module.exports.saveFormLevelHistory = saveFormLevelHistory
