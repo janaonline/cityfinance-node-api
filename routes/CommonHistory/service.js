@@ -47,19 +47,21 @@ module.exports.getHistory = catchAsync(async (req, res) => {
       let outputArr = [];
       if ([YEAR_CONSTANTS['20_21'], YEAR_CONSTANTS['21_22'], YEAR_CONSTANTS['22_23']].includes(design_year)) {
         let getData = await model.findOne(query, { history: 1 }).lean();
-        if (!getData) throw new Error(`${user.role} + " Not Authorized to Access this Data"`)
-        for (let el of getData['history']) {
-          let output = {};
-          output.status = calculateStatus(el.status, el.actionTakenByRole, el.isDraft, formTabData.role)
-          output['time'] = el.modifiedAt;
-          if (Object.keys(output).length > 0) {
-            outputArr.push(output);
+        //if (!getData) throw new Error(`${user.role} + " Not Authorized to Access this Data"`)
+        if(getData){
+          for (let el of getData['history']) {
+            let output = {};
+            output.status = calculateStatus(el.status, el.actionTakenByRole, el.isDraft, formTabData.role)
+            output['time'] = el.modifiedAt;
+            if (Object.keys(output).length > 0) {
+              outputArr.push(output);
+            }
           }
         }
       } else {
         let getData = await model.findOne(query, { _id: 1 }).lean();
-        if (!getData) throw new Error(`${user.role} + " Not Authorized to Access this Data"`)
-        outputArr = await getHistoryNew({ getData, formTabData });
+        // if (!getData) throw new Error(`${user.role} + " Not Authorized to Access this Data"`)
+        if(getData) outputArr = await getHistoryNew({ getData, formTabData });
       }
       return res.status(200).json({ success: true, message: "Data Fetched Successfully!", data: outputArr });
     } else {
