@@ -232,7 +232,9 @@ const findStatusAndTooltipMaster = (params) => {
   let { formData, formId, loggedInUserRole, viewFor } = params;
   let status = formData.currentFormStatus
   let tooltip = calculateStatusMaster(status);
+  
   let tick = calculateTick(tooltip, loggedInUserRole, viewFor)
+ 
   return {
     [formId]: {
       tooltip: tooltip,
@@ -359,14 +361,12 @@ module.exports.get = catchAsync(async (req, res) => {
     }
     let formArr = [SFC, PTFR, GTC_STATE,GrantDistribution ,ActionPlan, WaterRejuvenation,GrantDistribution]
     for (el of formArr) {
+      dbCondition = {...condition}
       if (![GTC_STATE,GrantDistribution].includes(el)) {
         if([PTFR,SFC].includes(el)){
-          condition = await changeConditionsFor2223Forms(condition,year)
+          dbCondition = await changeConditionsFor2223Forms(condition,year)
       }
-      else{
-        condition['design_year'] = ObjectId(year)
-      }
-        let formData = await el.findOne(condition).lean()
+        let formData = await el.findOne(dbCondition).lean()
         if (formData) {
           if (formData.design_year.toString() === YEAR_CONSTANTS['23_24']) {
             output.push(findStatusAndTooltipMaster({ formData, formId: FormModelMappingMaster_State[el['modelName']], loggedInUserRole: user.role, viewFor: role }))
@@ -376,12 +376,12 @@ module.exports.get = catchAsync(async (req, res) => {
 
         }
       } else {
-        let formDataArray = await el.find(condition).lean();
+        let formDataArray = await el.find(dbCondition).lean();
         let formData = formDataArray
         if (formDataArray.length > 0) {
           if(outDatedYears.includes(getKeyByValue(year))){
             formData = getGTCFinalForm(formDataArray);
-            
+
             output.push(findStatusAndTooltip(formData, FormModelMapping_State[el['modelName']], el['modelName'], user.role, role))
           }
           else{
