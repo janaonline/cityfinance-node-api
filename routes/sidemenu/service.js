@@ -233,12 +233,6 @@ const findStatusAndTooltipMaster = (params) => {
   let status = formData.currentFormStatus
   let tooltip = calculateStatusMaster(status);
   let tick = calculateTick(tooltip, loggedInUserRole, viewFor)
-  console.log({
-    [formId]: {
-      tooltip: tooltip,
-      tick: tick
-    }
-  })
   return {
     [formId]: {
       tooltip: tooltip,
@@ -369,6 +363,9 @@ module.exports.get = catchAsync(async (req, res) => {
         if([PTFR,SFC].includes(el)){
           condition = await changeConditionsFor2223Forms(condition,year)
       }
+      else{
+        condition['design_year'] = ObjectId(year)
+      }
         let formData = await el.findOne(condition).lean()
         if (formData) {
           if (formData.design_year.toString() === YEAR_CONSTANTS['23_24']) {
@@ -384,7 +381,7 @@ module.exports.get = catchAsync(async (req, res) => {
         if (formDataArray.length > 0) {
           if(outDatedYears.includes(getKeyByValue(year))){
             formData = getGTCFinalForm(formDataArray);
-           
+            
             output.push(findStatusAndTooltip(formData, FormModelMapping_State[el['modelName']], el['modelName'], user.role, role))
           }
           else{
