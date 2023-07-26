@@ -394,7 +394,9 @@ function getCollections2324(type, installment) {
       WaterRejenuvation,
     ],
   };
-
+  for(let key in collectionsMap){
+    collectionsMap[key].push(PropertyTaxFloorRate)
+  }
   const condition = `${type}_${installment}`;
 
   return collectionsMap[condition] || [];
@@ -991,6 +993,7 @@ function getQuery2324(modelName, formType, designYear, formCategory, stateId){
         case "STATE":
             switch(modelName){
                 case CollectionNames.sfc:
+                case CollectionNames.pTAX:
                     query.push({
                         $match:{
                             design_year: ObjectId(YEAR_CONSTANTS['22_23']),
@@ -998,7 +1001,6 @@ function getQuery2324(modelName, formType, designYear, formCategory, stateId){
                     }
                     })  
                     break;
-                case CollectionNames.pTAX:
                 case CollectionNames.actionPlan:
                 case CollectionNames.waterRej:
                     query.push({
