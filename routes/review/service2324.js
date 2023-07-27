@@ -31,25 +31,25 @@ var request = require('request');
 const Year = require('../../models/Year');
 
 
-const isMillionPlus = async(data)=>{
-  try{
-    for(let  element of data){
+const isMillionPlus = async (data) => {
+  try {
+    for (let element of data) {
       let ulb = await Ulb.findOne({
-        "state":ObjectId(element.state),
-        "isMillionPlus":"Yes"
+        "state": ObjectId(element.state),
+        "isMillionPlus": "Yes"
       })
       console.log("")
-      if(ulb){
+      if (ulb) {
         element.isMillionPlus = true
       }
-      else{
+      else {
         element.isMillionPlus = false
       }
     }
     return data
   }
-  catch(err){
-    console.log("error in isMillionPlus ::: ",err.message)
+  catch (err) {
+    console.log("error in isMillionPlus ::: ", err.message)
   }
 }
 
@@ -358,7 +358,7 @@ function detailsGrantTransferredManipulate(params) {
   const { transSortKey, tfgObj, el, formData } = params;
   let tArr = []
   for (const tKey of transSortKey) {
-    if (["recomAvail", "sfcNotificationCopy", "projectUndtkn", "propertyTaxNotifCopy", "accountLinked"].includes(tKey)) {
+    if (["recomAvail", "grantDistribute", "sfcNotificationCopy", "projectUndtkn", "propertyTaxNotifCopy", "accountLinked"].includes(tKey)) {
       tArr.push(el[tKey]?.url || el[tKey])
     } else if (["file", "rejectReason_mohua", "responseFile_mohua"].includes(tKey)) {
       let fData = formData[tKey]?.url ? formData[tKey]?.url : formData[tKey] ? formData[tKey] : ""
