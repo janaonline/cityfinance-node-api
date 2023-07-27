@@ -347,6 +347,7 @@ function gtcStateFormCSVFormat(obj, res) {
             let str = [...row, ...mainArr, ...tArr].join(',') + "\r\n"
             res.write("\ufeff" + str);
           }
+          
         } else {
           key !== "receiptDate" ? mainArr.push(el[key]) : el[key] ? mainArr.push(formatDate(el[key])) : ""
         }
