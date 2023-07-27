@@ -958,11 +958,21 @@ async function handleInstallmentForm(params) {
         let totalIntTransfer = transferGrantData.reduce((result, value) => parseFloat(result) + parseFloat(value.intTransfer), 0) || 0
         transferGrantData = await appendFormId(transferGrantData, gtcInstallment)
         //delete Previous data
-        await TransferGrantDetailForm.deleteMany({
+        let idsTobeDeleted = await TransferGrantDetailForm.find({
             installmentForm: gtcInstallment._id
-        })
+        },{
+            "_id":1
+        }).lean()
+        console.log("idsTobeDeleted :: ",idsTobeDeleted)
+        idsTobeDeleted = idsTobeDeleted.map( item=> item._id)
+        console.log("idsTobeDeleted ::: ",idsTobeDeleted)
         // insert new Data
         let insertedData = await TransferGrantDetailForm.bulkWrite(transferGrantData, { runValidators })
+        await TransferGrantDetailForm.deleteMany({
+            "_id":{
+                "$in":idsTobeDeleted
+            }
+        })
         let grantDetailIds = Object.values(insertedData.insertedIds)
         // updateIds and total
         let ele = await GtcInstallmentForm.findOneAndUpdate({
