@@ -2,10 +2,10 @@
   "name": "test",
   "version": "1.0.0",
   "description": "test project",
-  "main": "server.js",
+  "main": "app.js",
   "scripts": {
-    "dev": "nodemon server.js",
-    "start": "node server"
+    "dev": "nodemon app.js",
+    "start": "node app"
   },
   "dependencies": {
     "adm-zip": "^0.5.1",
@@ -54,7 +54,8 @@
     "util": "^0.12.3",
     "uuid": "^9.0.0",
     "xls-to-json-lc": "0.3.4",
-    "xlsx-to-json-lc": "0.5.0"
+    "xlsx-to-json-lc": "0.5.0",
+    "tunnel-ssh": "^4.1.6"
   },
   "author": "vivek sharma",
   "license": "ISC",
