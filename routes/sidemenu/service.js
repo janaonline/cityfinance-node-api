@@ -211,13 +211,17 @@ const calculateTick = (tooltip, loggedInUserRole, viewFor) => {
 
 
 const findStatusAndTooltip = (formData, formId, modelName, loggedInUserRole, viewFor) => {
-
+  
+ 
   let status = modelName == 'XVFcGrantULBForm' ? formData?.waterManagement?.status : formData.status;
   let actionTakenByRole = formData.actionTakenByRole;
   let isDraft = modelName == 'XVFcGrantULBForm' ? !formData.isCompleted : formData.isDraft;
   let tooltip = calculateStatus(status, actionTakenByRole, isDraft, viewFor);
   let tick = calculateTick(tooltip, loggedInUserRole, viewFor)
-
+  // if(formId.toString() === "63ff31d63ae39326f4b2f464"){
+  //   console.log("tick :: ",tick)
+  //   console.log("tooltip :: ",tooltip)
+  // }
   return {
     [formId]: {
       tooltip: tooltip,
@@ -296,7 +300,7 @@ module.exports.get = catchAsync(async (req, res) => {
   let cardArr = [], tempData;
   let singleYearForms =  [PTFR,SFC,PFMS]
   let collectionNames = {
-    "LinkPFMS" :" PFMSAccount"
+    "LinkPFMS" :"PFMSAccount"
   }
   let singleYearFormCollections = ['StateFinanceCommissionFormation','PropertyTaxFloorRate','PFMSAccount']
   let cardObj = {
@@ -314,13 +318,14 @@ module.exports.get = catchAsync(async (req, res) => {
       color_2: ""
     }
   }
+  let isLatestCreated;
   if ((role == 'ULB' || role == 'STATE') && (!role || !year || !_id))
     return res.status(400).json({
       success: false,
       message: "Data missing"
     })
   let isUA;
-  let isLatestCreated;
+  
   let output = []
   if (role == 'ULB') {
     let ulbInfo = await Ulb.findOne({ _id: ObjectId(_id) }).lean();
@@ -357,6 +362,7 @@ module.exports.get = catchAsync(async (req, res) => {
         condition = await changeConditionsFor2223Forms(condition,year)
       }
       let formData = await el.findOne(condition).lean()
+      
       if (formData) {
         if (formData[designYearCond].toString() === YEAR_CONSTANTS['23_24'] ) {
           output.push(findStatusAndTooltipMaster({ formData, formId: FormModelMapping_Master_23_24[el['modelName']], loggedInUserRole: user.role, viewFor: role }))
@@ -417,8 +423,8 @@ module.exports.get = catchAsync(async (req, res) => {
       data.forEach((el,) => {
         if (el.category && el.collectionName != "GTC" && el.collectionName != "SLB") {
           let flag = 0;
-          if(singleYearFormCollections.includes(el.path) && !isLatestCreated){
-            let variableName = collectionNames[el.path] || el.path
+          let variableName = collectionNames[el.path] || el.path
+          if(singleYearFormCollections.includes(variableName) && !isLatestCreated){
             el._id = FormModelMapping[variableName]
           }
           output.forEach(el2 => {
