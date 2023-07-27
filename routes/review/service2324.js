@@ -348,6 +348,7 @@ function gtcStateFormCSVFormat(obj, res) {
             res.write("\ufeff" + str);
           }
         } else {
+          
           key !== "receiptDate" ? mainArr.push(el[key]) : el[key] ? mainArr.push(formatDate(el[key])) : ""
         }
       }
