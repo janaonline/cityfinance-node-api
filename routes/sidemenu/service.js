@@ -382,9 +382,7 @@ module.exports.get = catchAsync(async (req, res) => {
       dbCondition = {...condition}
       if (![GTC_STATE,GrantDistribution].includes(el)) {
         if(singleYearForms.includes(el)){
-          console.log("StateFinanceCommissionFormation ::: ",)
           dbCondition = await changeConditionsFor2223Forms(condition,year)
-          console.log("condition ::: ",dbCondition)
       }
         let formData = await el.findOne(dbCondition).lean()
         if (formData) {
