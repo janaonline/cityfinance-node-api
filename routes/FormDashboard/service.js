@@ -1067,7 +1067,8 @@ const dashboard = async (req, res) => {
             Sidemenu.aggregate(sidemenuPipeline),
             Sidemenu.findOne(reviewUlbCondition).lean()
         ]);
-        if(!Boolean(data.multi)){
+        let multi = states.length > 1 ? true :  false; 
+        if(!Boolean(multi)){
             states = [state];
         }
         let indicatorFormValidationCount = 3;
@@ -1220,7 +1221,7 @@ const dashboard = async (req, res) => {
                   formData.status = "Not yet eligible for Grant Claim";
                 }
                 ({ ulbResponse, stateResponse } = createFormResponseObjects(formCategory, ulbResponse, formData, modelName, submittedFormPercent, approvedFormPercent, totalApprovedUlbForm, totalSubmittedUlbForm, totalForms, cutOff, ulbResponseArray, stateResponse, totalApprovedStateForm, totalSubmittedStateForm, stateResponseArray));
-                // if (Boolean(data.multi)) {
+                // if (Boolean(multi)) {
                   if (hasUA.length && data.formType === "mpc_tied") {
                     if (indicatorFormCount === indicatorFormValidationCount && ![YEAR_CONSTANTS['22_23']].includes(data.design_year)) {
                       let { leastSubmitPercent, leastSubmitNumber } =
@@ -1245,7 +1246,7 @@ const dashboard = async (req, res) => {
               }
             }
         
-        if(Boolean(data.multi)){
+        if(Boolean(multi)){
             return statesFormData;
         }
         let ulbFormsResponse = statesFormData[state]['ulbResponse'];
