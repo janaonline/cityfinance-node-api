@@ -153,6 +153,7 @@ module.exports.createAndUpdateFormMaster = async (params) => {
               MASTER_STATUS["Under Review By State"],
             ].includes(formCurrentStatus?.status)
           ) {
+            console.log(">>>>>>>>>>>>>>>>>>>>>")
             return res.status(200).json({
               status: true,
               message: "Form already submitted.",

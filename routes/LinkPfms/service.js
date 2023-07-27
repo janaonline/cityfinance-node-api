@@ -163,8 +163,7 @@ module.exports.createOrUpdateForm = async (req, res) =>{
           /* required */
           ReplyToAddresses: [process.env.EMAIL],
         };
-        if (!outDatedYears.includes(getKeyByValue(formData.design_year))  && formData.ulb) {
-            console.log("formData :: ",formData)
+        if (!outDatedYears.includes(getKeyByValue(years,formData.design_year.toString()))  && formData.ulb) {
             let userFormData = {...formData}
             userFormData.status = formData.currentFormStatus
             let params = {
