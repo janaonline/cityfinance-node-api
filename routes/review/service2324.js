@@ -9,7 +9,7 @@ const Sidemenu = require('../../models/Sidemenu');
 const ObjectId = require("mongoose").Types.ObjectId;
 const Service = require('../../service');
 const STATUS_LIST = require('../../util/newStatusList');
-const { MASTER_STATUS, MASTER_STATUS_ID, YEAR_CONSTANTS, YEAR_CONSTANTS_IDS, MASTER_FORM_STATUS, MASTER_FORM_QUESTION_STATUS } = require('../../util/FormNames');
+const { MASTER_STATUS, MASTER_STATUS_ID, YEAR_CONSTANTS, YEAR_CONSTANTS_IDS, MASTER_FORM_STATUS, MASTER_FORM_QUESTION_STATUS, MASTER_FORM_QUESTION_STATUS_STATE } = require('../../util/FormNames');
 const { getCurrentYear, getAccessYear, getFinancialYear } = require('../../util/masterFunctions');
 const { canTakeActionOrViewOnlyMasterForm, checkUlbAccess, getLastYearUlbAccess } = require('../../routes/CommonActionAPI/service')
 const { createObjectFromArray, addActionKeys } = require('../CommonFormSubmissionState/service');
@@ -270,6 +270,7 @@ async function createCSV(params) {
         res.write("\ufeff" + row);
       }
     } else if (formType === "STATE") {
+      // console.log("collectionName", collectionName); process.exit();
       if (collectionName == "waterrejenuvationrecyclings") {
         await waterSenitationXlsDownload(data, res, loggedInUserRole);
       } else {
@@ -284,8 +285,7 @@ async function createCSV(params) {
             let GTC = gtcData?.length ? gtcData?.filter(e => (e.state.toString() == el._id.toString() && e.gtcForm.toString() == el?.formData?._id?.toString() && e.installment == el.formData.installment)) : []
             el['formData']['installment_form'] = GTC;
             gtcStateFormCSVFormat(el, res)
-          }
-          if (collectionName == 'GrantAllocation') {
+          } else if (collectionName == 'GrantAllocation') {
             let { stateName, stateCode, formData } = el;
             let row = [stateName, stateCode];
             if (formData && formData.length && (formData[0] !== "")) {
@@ -298,6 +298,8 @@ async function createCSV(params) {
               let str = [...row].join(',') + "\r\n";
               res.write("\ufeff" + str);
             }
+          } else if (collectionName == 'state_action_plan') {
+
           }
         }
       }
@@ -318,6 +320,7 @@ const gtcInstallmentForms = (stateId) => {
   })
 }
 
+
 /* GTC Manupulate data */
 function gtcStateFormCSVFormat(obj, res) {
   const { stateName, stateCode, formData, formStatus } = obj;
@@ -325,10 +328,9 @@ function gtcStateFormCSVFormat(obj, res) {
   let row = [stateName, stateCode, formStatus, design_year?.year, "", type, installment];
   if (installment_form?.length) {
     let installment = installment_form;
-<<<<<<< HEAD
     let mainArr = [];
     let sortKey = ["totalMpc", "totalNmpc", "totalElectedMpc", "totalElectedNmpc", "recAmount", "receiptDate", "transferGrantdetail"]
-    let transSortKey = ["transAmount", "transDate", "transDelay", "daysDelay", "interest", "intTransfer", "recomAvail", "sfcNotificationCopy", "grantDistribute", "projectUndtkn", "propertyTaxNotifCopy", "accountLinked", "file", "rejectReason_mohua", "responseFile_mohua"]
+    let transSortKey = ["transAmount", "transDate", "transDelay", "daysDelay", "interest", "intTransfer", "recomAvail", "sfcNotificationCopy", "grantDistribute", "projectUndtkn", "propertyTaxNotifCopy", "accountLinked", "file", "rejectReason_mohua", "responseFile_mohua", "currentFormStatus"]
     for (const el of installment) {
       row[4] = el?.ulbType;
       for (const key of sortKey) {
@@ -336,24 +338,6 @@ function gtcStateFormCSVFormat(obj, res) {
           let transferGrantdetail = el[key];
           if (transferGrantdetail?.length) {
             for (const tfgObj of transferGrantdetail) {
-=======
-    if (installment?.length) {
-      let mainArr = [];
-      let sortKey = ["totalMpc", "totalNmpc", "totalElectedMpc", "totalElectedNmpc", "recAmount", "receiptDate", "totalTransAmount", "transferGrantdetail"]
-      let transSortKey = ["transDate", "transDelay", "daysDelay", "interest", "intTransfer", "recomAvail", "sfcNotificationCopy", "grantDistribute", "projectUndtkn", "propertyTaxNotifCopy", "accountLinked", "file", "rejectReason_mohua", "responseFile_mohua"]
-      for (const el of installment) {
-        row[4] = el?.ulbType;
-        for (const key of sortKey) {
-          if (key == "transferGrantdetail") {
-            let transferGrantdetail = el[key];
-            if (transferGrantdetail?.length) {
-              for (const tfgObj of transferGrantdetail) {
-                let tArr = detailsGrantTransferredManipulate({ transSortKey, tfgObj, el, formData })
-                let str = [...row, ...mainArr, ...tArr].join(',') + "\r\n"
-                res.write("\ufeff" + str);
-              }
-            } else {
->>>>>>> c281df9c (conflict resolve)
               let tArr = detailsGrantTransferredManipulate({ transSortKey, tfgObj, el, formData })
               let str = [...row, ...mainArr, ...tArr].join(',') + "\r\n"
               res.write("\ufeff" + str);
@@ -373,25 +357,53 @@ function gtcStateFormCSVFormat(obj, res) {
   }
 }
 
+// function detailsGrantTransferredManipulate(params) {
+//   const { transSortKey, tfgObj, el, formData } = params;
+//   let tArr = []
+//   for (const tKey of transSortKey) {
+//     if (["recomAvail", "grantDistribute", "sfcNotificationCopy", "projectUndtkn", "propertyTaxNotifCopy", "accountLinked"].includes(tKey)) {
+//       tArr.push(el[tKey]?.url || el[tKey])
+//     } else if (["file", "rejectReason_mohua", "responseFile_mohua", "currentFormStatus"].includes(tKey)) {
+//       let fData = formData[tKey]?.url || formData[tKey] || "";
+//       if (tKey === "currentFormStatus") {
+//         tArr.push(MASTER_FORM_QUESTION_STATUS_STATE[formData[tKey]] || "");
+//       } else {
+//         tArr.push(fData);
+//       }
+//     } else {
+//       if (["transDate"].includes(tKey)) {
+//         tfgObj && tfgObj[tKey] ? tArr.push(formatDate(tfgObj[tKey])) : tArr.push("");
+//       } else {
+//         tArr.push(tfgObj && tfgObj[tKey]?.url ? tfgObj[tKey]?.url : tfgObj && tfgObj[tKey] ? tfgObj[tKey] : "");
+//       }
+//     }
+//   }
+//   return tArr;
+// }
+
+
 function detailsGrantTransferredManipulate(params) {
   const { transSortKey, tfgObj, el, formData } = params;
-  let tArr = []
+  const tArr = [];
   for (const tKey of transSortKey) {
-    if (["recomAvail", "sfcNotificationCopy", "projectUndtkn", "propertyTaxNotifCopy", "accountLinked"].includes(tKey)) {
-      tArr.push(el[tKey]?.url || el[tKey])
-    } else if (["file", "rejectReason_mohua", "responseFile_mohua"].includes(tKey)) {
-      let fData = formData[tKey]?.url ? formData[tKey]?.url : formData[tKey] ? formData[tKey] : ""
-      tArr.push(fData)
-    } else {
-      if (["transDate"].includes(tKey)) {
-        tfgObj && tfgObj[tKey] ? tArr.push(formatDate(tfgObj[tKey])) : tArr.push("");
+    if (["recomAvail", "grantDistribute", "sfcNotificationCopy", "projectUndtkn", "propertyTaxNotifCopy", "accountLinked"].includes(tKey)) {
+      tArr.push(el[tKey]?.url || el[tKey] || "");
+    } else if (["file", "rejectReason_mohua", "responseFile_mohua", "currentFormStatus"].includes(tKey)) {
+      let fData = formData[tKey]?.url || formData[tKey] || "";
+      if (tKey === "currentFormStatus") {
+        tArr.push(MASTER_FORM_QUESTION_STATUS_STATE[formData[tKey]] || "");
       } else {
-        tArr.push(tfgObj && tfgObj[tKey]?.url ? tfgObj[tKey]?.url : tfgObj && tfgObj[tKey] ? tfgObj[tKey] : "");
+        tArr.push(fData);
       }
+    } else if (["transDate"].includes(tKey)) {
+      tArr.push(tfgObj && tfgObj[tKey] ? formatDate(tfgObj[tKey]) : "");
+    } else {
+      tArr.push(tfgObj && tfgObj[tKey]?.url || tfgObj && tfgObj[tKey] || "");
     }
   }
   return tArr;
 }
+
 
 const sortKeysWaterSenitation = (key) => {
   switch (key) {
@@ -2366,13 +2378,32 @@ function createDynamicColumns(collectionName) {
       columns = `State Name, City Finance Code, Regional Name, `
       break;
     case CollectionNames['state_gtc']:
-      columns = `State Name,City Finance Code,Form Status,Year,Type of ULB,Type of Grant Received (Tied/Untied),Installment Type,Total No: of MPCs,Total No: of NMPCS,Total No: of Duly Elected MPCS,Total No: of Duly Elected NMPCS,Amount Received(In Lakhs),Date of Receipt,Amount Transferred excluding interest (in lakhs),Date of Transfer,Was there any delay in transfer?,No. of days delayed,Rate of interest (annual rate),Amount of interest transferred - If there's any delay (in lakhs),Whether State Finance Commission recommendations available? (Yes/No),If No Upload notification for constitution of SFC issued,If Yes-Whether Grants distributed as per Census 2011 or as per SFC recommendations?,Whether Project works undertaken are uploaded on the website (Yes/No),Upload copy of Property Tax Notification issued,% of ULB accounts for 15th FC Grants which are linked to PFMS for all transactions,Upload Signed Grant Transfer Certificate,MoHUA Comments,Supporting Document`
+      columns = `State Name,City Finance Code,Form Status,Year,Type of ULB,Type of Grant Received (Tied/Untied),Installment Type,Total No: of MPCs,Total No: of NMPCS,Total No: of Duly Elected MPCS,Total No: of Duly Elected NMPCS,Amount Received(In Lakhs),Date of Receipt,Amount Transferred excluding interest (in lakhs),Date of Transfer,Was there any delay in transfer?,No. of days delayed,Rate of interest (annual rate),Amount of interest transferred - If there's any delay (in lakhs),Whether State Finance Commission recommendations available? (Yes/No),If No Upload notification for constitution of SFC issued,If Yes-Whether Grants distributed as per Census 2011 or as per SFC recommendations?,Whether Project works undertaken are uploaded on the website (Yes/No),Upload copy of Property Tax Notification issued,% of ULB accounts for 15th FC Grants which are linked to PFMS for all transactions,Upload Signed Grant Transfer Certificate,MoHUA Comments,Supporting Document,Review Status`
       break;
     case CollectionNames['state_grant_alloc']:
       columns = `State Name,City Finance Code,Type of Grant,Installment No,Grant Allocation to ULBs (FY23-24),Review Status,MoHUA Comments,Review Documents`
       break;
-    case CollectionNames['state_grant_alloc']:
-      columns = `State Name,City Finance Code,Type of Grant,Installment No,Grant Allocation to ULBs (FY23-24),Review Status,MoHUA Comments,Review Documents`
+    // case CollectionNames['state_grant_alloc']:
+    //   columns = `State Name,City Finance Code,Type of Grant,Installment No,Grant Allocation to ULBs (FY23-24),Review Status,MoHUA Comments,Review Documents`
+    //   break;
+    case CollectionNames['state_action_plan']:
+      columns = `Claim Non-Million Plus Cities Tied Grants: 1st Installment (FY 2023-24) - Detailed Utilisation Report,Claim Non-Million Plus Cities Tied Grants: 1st Installment (FY 2023-24) - Annual Account,
+      Claim Non-Million Plus Cities Tied Grants: 1st Installment (FY 2023-24) - Linking of PFMS Account,Claim Non-Million Plus Cities Tied Grants: 1st Installment (FY 2023-24) - Property Tax & UC form,
+      Claim Non-Million Plus Cities Tied Grants: 1st Installment (FY 2023-24) - Grant Transfer Certificate,Claim Non-Million Plus Cities Tied Grants: 1st Installment (FY 2023-24) - Property Tax Floor Rate form,
+      Claim Non-Million Plus Cities Tied Grants: 1st Installment (FY 2023-24) - State Finance Commission Notification,Claim Non-Million Plus Cities Tied Grants: 1st Installment (FY 2023-24) - Claim Grants status,
+      Claim Non-Million Plus Cities Tied Grants: 2nd Installment (FY 2023-24) - Annual Account,Claim Non-Million Plus Cities Tied Grants: 2nd Installment (FY 2023-24) - Linking of PFMS Account,
+      Claim Non-Million Plus Cities Tied Grants: 2nd Installment (FY 2023-24) - Property Tax & UC form,Claim Non-Million Plus Cities Tied Grants: 2nd Installment (FY 2023-24) - Grant Transfer Certificate,
+      Claim Non-Million Plus Cities Tied Grants: 2nd Installment (FY 2023-24) - Property Tax Floor Rate form,Claim Non-Million Plus Cities Tied Grants: 2nd Installment (FY 2023-24) - State Finance Commission Notification,
+      Claim Non-Million Plus Cities Tied Grants: 2nd Installment (FY 2023-24) - Claim Grants status,Claim Non-Million Plus Cities Untied Grants: 1st Installment (FY 2023-24) - Annual Account,
+      Claim Non-Million Plus Cities Untied Grants: 1st Installment (FY 2023-24) - Linking of PFMS Account,Claim Non-Million Plus Cities Untied Grants: 1st Installment (FY 2023-24) - Property Tax & UC form,
+      Claim Non-Million Plus Cities Untied Grants: 1st Installment (FY 2023-24) - Grant Transfer Certificate,Claim Non-Million Plus Cities Untied Grants: 1st Installment (FY 2023-24) - Property Tax Floor Rate form,
+      Claim Non-Million Plus Cities Untied Grants: 1st Installment (FY 2023-24) - State Finance Commission Notification,Claim Non-Million Plus Cities Untied Grants: 1st Installment (FY 2023-24) - Claim Grants status,Claim Non-Million Plus Cities Untied Grants: 2nd Installment (FY 2023-24) - Annual Account,
+      Claim Non-Million Plus Cities Untied Grants: 2nd Installment (FY 2023-24) - Linking of PFMS Account,Claim Non-Million Plus Cities Untied Grants: 2nd Installment (FY 2023-24) - Property Tax & UC form,
+      Claim Non-Million Plus Cities Untied Grants: 2nd Installment (FY 2023-24) - Grant Transfer Certificate,Claim Non-Million Plus Cities Untied Grants: 2nd Installment (FY 2023-24) - Property Tax Floor Rate form,
+      Claim Non-Million Plus Cities Untied Grants: 2nd Installment (FY 2023-24) - State Finance Commission Notification,Claim Non-Million Plus Cities Untied Grants: 2nd Installment (FY 2023-24) - Claim Grants status,Claim Million Plus Cities Tied Grants: 1st Installment (FY 2023-24) - Detailed Utilisation Report,
+      Claim Million Plus Cities Tied Grants: 1st Installment (FY 2023-24) - Annual Account,Claim Million Plus Cities Tied Grants: 1st Installment (FY 2023-24) - Linking of PFMS Account,Claim Million Plus Cities Tied Grants: 1st Installment (FY 2023-24) - 28 SLBs,Claim Million Plus Cities Tied Grants: 1st Installment (FY 2023-24) - Garbage Free City,
+      Claim Million Plus Cities Tied Grants: 1st Installment (FY 2023-24) - SLBs for Water Supply and Sanitation,Claim Million Plus Cities Tied Grants: 1st Installment (FY 2023-24) - Property Tax & UC form,Claim Million Plus Cities Tied Grants: 1st Installment (FY 2023-24) - Grant Transfer Certificate,Claim Million Plus Cities Tied Grants: 1st Installment (FY 2023-24) - Property Tax Floor Rate form,Claim Million Plus Cities Tied Grants: 1st Installment (FY 2023-24) - State Finance Commission Notification,Claim Million Plus Cities Tied Grants: 1st Installment (FY 2023-24) - Action Plan,
+      Claim Million Plus Cities Tied Grants: 1st Installment (FY 2023-24) - Indicators for Water Supply and Sanitation,Claim Million Plus Cities Tied Grants: 1st Installment (FY 2023-24) - Projects for Water Supply,Claim Million Plus Cities Tied Grants: 1st Installment (FY 2023-24) - Claim Grants status`
       break;
     default:
       columns = '';

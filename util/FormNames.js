@@ -78,7 +78,15 @@ module.exports.MASTER_FORM_QUESTION_STATUS = {
     11: "APPROVED",
     "": ""
 }
-
+module.exports.MASTER_FORM_QUESTION_STATUS_STATE = {
+    4: "PENDING",
+    5: "REJECTED",
+    6: "APPROVED",
+    7: "REJECTED",
+    10: "REJECTED",
+    11: "APPROVED",
+    "": ""
+}
 module.exports.MASTER_STATUS_ID = {
     "-1": "No Status",
     1: "Not Started",
@@ -102,16 +110,16 @@ module.exports.FORMIDs = {
     "twentyEightSlb": 6,
     "fiscalRanking": 9,
     "GTC_STATE": 7,
-    "PFMS":8,
-    "GTC_TABLE_STRUCTURE":11.1,
+    "PFMS": 8,
+    "GTC_TABLE_STRUCTURE": 11.1,
     "GTC_ULB": 11,
     "waterRej": 12,
     "actionPlan": 13,
     "indicatorForm": 14,
-    "GrantAllocation":11.2,
+    "GrantAllocation": 11.2,
     "SFC": 15,
-    "SubmitClaim":16,
-    "PTOFloorRate":17
+    "SubmitClaim": 16,
+    "PTOFloorRate": 17
 }
 module.exports.FORM_LEVEL_SHORTKEY = {
     form: "form_level",
@@ -134,8 +142,8 @@ module.exports.MODEL_PATH = {
     4: "UtilizationReport",
     12: "WaterRejenuvation&Recycling",
     13: 'ActionPlans',
-    8:"LinkPFMS"
-    
+    8: "LinkPFMS"
+
 }
 
 module.exports.POPULATION_TYPE = {
