@@ -802,7 +802,7 @@ module.exports.getInstallmentForm = async (req, res, next) => {
         let { design_year, state, formType } = req.query
         let { role } = req.decoded
         let previousYearData = await getPreviousYearData(state,design_year)
-        // response.errors = await addWarnings(previousYearData)
+        response.errors = await addWarnings(previousYearData)
         let validator = await checkForUndefinedVaribales({
             "design year": design_year,
             "state": state
@@ -811,13 +811,13 @@ module.exports.getInstallmentForm = async (req, res, next) => {
             response.message = validator.message
             return res.json(response)
         }
-        // let formValidator = await checkForPreviousForms(design_year, state)
-        // if (!formValidator.valid) {
-        //     response.success = false;
-        //     response.message = formValidator.message
-        //     response.errors = [formValidator.message]
-        //     return res.json(response)
-        // }
+        let formValidator = await checkForPreviousForms(design_year, state)
+        if (!formValidator.valid) {
+            response.success = false;
+            response.message = formValidator.message
+            response.errors = [formValidator.message]
+            return res.json(response)
+        }
         response.success = !response.errors.length 
         response.message = ""
         let { json, stateIsMillion } = await getJson(state, design_year, role,previousYearData[0])
