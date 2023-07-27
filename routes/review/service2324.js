@@ -357,12 +357,37 @@ function gtcStateFormCSVFormat(obj, res) {
   }
 }
 
+function detailsGrantTransferredManipulate(params) {
+  const { transSortKey, tfgObj, el, formData } = params;
+  let tArr = []
+  for (const tKey of transSortKey) {
+    if (["recomAvail", "grantDistribute", "sfcNotificationCopy", "projectUndtkn", "propertyTaxNotifCopy", "accountLinked"].includes(tKey)) {
+      tArr.push(el[tKey]?.url || el[tKey])
+    } else if (["file", "rejectReason_mohua", "responseFile_mohua", "currentFormStatus"].includes(tKey)) {
+      let fData = formData[tKey]?.url || Object.keys(formData[tKey]).length ? "" : formData[tKey] || "";
+      if (tKey === "currentFormStatus") {
+        tArr.push(MASTER_FORM_QUESTION_STATUS_STATE[formData[tKey]] || "");
+      } else {
+        tArr.push(fData);
+      }
+    } else {
+      if (["transDate"].includes(tKey)) {
+        tfgObj && tfgObj[tKey] ? tArr.push(formatDate(tfgObj[tKey])) : tArr.push("");
+      } else {
+        tArr.push(tfgObj && tfgObj[tKey]?.url ? tfgObj[tKey]?.url : tfgObj && tfgObj[tKey] ? tfgObj[tKey] : "");
+      }
+    }
+  }
+  return tArr;
+}
+
+
 // function detailsGrantTransferredManipulate(params) {
 //   const { transSortKey, tfgObj, el, formData } = params;
-//   let tArr = []
+//   const tArr = [];
 //   for (const tKey of transSortKey) {
 //     if (["recomAvail", "grantDistribute", "sfcNotificationCopy", "projectUndtkn", "propertyTaxNotifCopy", "accountLinked"].includes(tKey)) {
-//       tArr.push(el[tKey]?.url || el[tKey])
+//       tArr.push(el[tKey]?.url || el[tKey] || "");
 //     } else if (["file", "rejectReason_mohua", "responseFile_mohua", "currentFormStatus"].includes(tKey)) {
 //       let fData = formData[tKey]?.url || formData[tKey] || "";
 //       if (tKey === "currentFormStatus") {
@@ -370,39 +395,14 @@ function gtcStateFormCSVFormat(obj, res) {
 //       } else {
 //         tArr.push(fData);
 //       }
+//     } else if (["transDate"].includes(tKey)) {
+//       tArr.push(tfgObj && tfgObj[tKey] ? formatDate(tfgObj[tKey]) : "");
 //     } else {
-//       if (["transDate"].includes(tKey)) {
-//         tfgObj && tfgObj[tKey] ? tArr.push(formatDate(tfgObj[tKey])) : tArr.push("");
-//       } else {
-//         tArr.push(tfgObj && tfgObj[tKey]?.url ? tfgObj[tKey]?.url : tfgObj && tfgObj[tKey] ? tfgObj[tKey] : "");
-//       }
+//       tArr.push(tfgObj && tfgObj[tKey]?.url || tfgObj && tfgObj[tKey] || "");
 //     }
 //   }
 //   return tArr;
 // }
-
-
-function detailsGrantTransferredManipulate(params) {
-  const { transSortKey, tfgObj, el, formData } = params;
-  const tArr = [];
-  for (const tKey of transSortKey) {
-    if (["recomAvail", "grantDistribute", "sfcNotificationCopy", "projectUndtkn", "propertyTaxNotifCopy", "accountLinked"].includes(tKey)) {
-      tArr.push(el[tKey]?.url || el[tKey] || "");
-    } else if (["file", "rejectReason_mohua", "responseFile_mohua", "currentFormStatus"].includes(tKey)) {
-      let fData = formData[tKey]?.url || formData[tKey] || "";
-      if (tKey === "currentFormStatus") {
-        tArr.push(MASTER_FORM_QUESTION_STATUS_STATE[formData[tKey]] || "");
-      } else {
-        tArr.push(fData);
-      }
-    } else if (["transDate"].includes(tKey)) {
-      tArr.push(tfgObj && tfgObj[tKey] ? formatDate(tfgObj[tKey]) : "");
-    } else {
-      tArr.push(tfgObj && tfgObj[tKey]?.url || tfgObj && tfgObj[tKey] || "");
-    }
-  }
-  return tArr;
-}
 
 
 const sortKeysWaterSenitation = (key) => {
