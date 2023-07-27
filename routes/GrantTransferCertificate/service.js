@@ -743,7 +743,7 @@ const getJson = async (state, design_year, role,previousYearData) => {
         return { json: [...returnableJson], stateIsMillion: stateIsMillion }
     }
     catch (err) {
-        console.log("error in getJson ::: ", err.message)
+        console.log("error in getJson :::  ", err.message)
         return []
     }
 }
