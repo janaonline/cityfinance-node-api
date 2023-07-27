@@ -11,7 +11,7 @@ const Service = require('../../service');
 const STATUS_LIST = require('../../util/newStatusList');
 const { MASTER_STATUS, MASTER_STATUS_ID, YEAR_CONSTANTS, YEAR_CONSTANTS_IDS, MASTER_FORM_STATUS, MASTER_FORM_QUESTION_STATUS } = require('../../util/FormNames');
 const { getCurrentYear, getAccessYear, getFinancialYear } = require('../../util/masterFunctions');
-const { canTakeActionOrViewOnlyMasterForm, checkUlbAccess , getLastYearUlbAccess} = require('../../routes/CommonActionAPI/service')
+const { canTakeActionOrViewOnlyMasterForm, checkUlbAccess, getLastYearUlbAccess } = require('../../routes/CommonActionAPI/service')
 const { createObjectFromArray, addActionKeys } = require('../CommonFormSubmissionState/service');
 // const { createDynamicColumns } = require('./service')
 const List = require('../../util/15thFCstatus');
@@ -262,7 +262,6 @@ async function createCSV(params) {
           row = `${el.stateName},${el.ulbName},${el.ulbCode},${el.censusCode},${el.populationType},${el.isUA},${el.UA},${dynamicElementData.toString()}\r\n`;
         } else {
           el.formData.data = setIndicatorSequense(indiLineList, el)
-          // console.log("el.formData", el.formData)
           let [row1, row2] = await createDynamicElements(collectionName, formType, el);
           const rowOne = `${el.stateName},${el.ulbName},${el.ulbCode},${el.censusCode},${el.populationType},${el.isUA},${el.UA},${row1.toString()}\r\n`;
           const rowTwo = `${el.stateName},${el.ulbName},${el.ulbCode},${el.censusCode},${el.populationType},${el.isUA},${el.UA},${row2.toString()}\r\n`;
@@ -278,7 +277,6 @@ async function createCSV(params) {
         res.setHeader("Content-disposition", "attachment; filename=" + filename);
         res.writeHead(200, { "Content-Type": "text/csv;charset=utf-8,%EF%BB%BF" });
         dynamicColumns = createDynamicColumns(collectionName);
-        // console.log("dynamicColumns",dynamicColumns);process.exit()
         res.write("\ufeff" + `${dynamicColumns.toString()} \r\n`);
         for (let el of data) {
           if (collectionName == "GTC") {
@@ -323,49 +321,54 @@ const gtcInstallmentForms = (stateId) => {
 /* GTC Manupulate data */
 function gtcStateFormCSVFormat(obj, res) {
   const { stateName, stateCode, formData, formStatus } = obj;
-  const { design_year, type, installment, file, installment_form, rejectReason_mohua } = formData;
+  const { design_year, type, installment, installment_form } = formData;
   let row = [stateName, stateCode, formStatus, design_year?.year, "", type, installment];
-  if (installment_form) {
+  if (installment_form?.length) {
     let installment = installment_form;
-    if (installment?.length) {
-      let mainArr = [];
-      let sortKey = ["totalMpc", "totalNmpc", "totalElectedMpc", "totalElectedNmpc", "recAmount", "receiptDate", "totalTransAmount", "totalIntTransfer", "transferGrantdetail"]
-      let transSortKey = ["transDate", "transDelay", "daysDelay", "interest", "intTransfer", "recomAvail", "sfcNotificationCopy", "projectUndtkn", "propertyTaxNotif", "accountLinked", "file", "rejectReason_mohua"]
-      for (const el of installment) {
-        row[4] = el?.ulbType;
-        for (const key of sortKey) {
-          if (key == "transferGrantdetail") {
-            let transferGrantdetail = el[key];
-            if (transferGrantdetail?.length) {
-              for (const tfgObj of transferGrantdetail) {
-                let tArr = detailsGrantTransferredManipulate({ transSortKey, tfgObj, file, el, rejectReason_mohua })
-                let str = [...row, ...mainArr, ...tArr].join(',') + "\r\n"
-                res.write("\ufeff" + str);
-              }
-            } else {
-              let tArr = detailsGrantTransferredManipulate({ transSortKey, tfgObj, file, el, rejectReason_mohua })
+    let mainArr = [];
+    let sortKey = ["totalMpc", "totalNmpc", "totalElectedMpc", "totalElectedNmpc", "recAmount", "receiptDate", "transferGrantdetail"]
+    let transSortKey = ["transAmount", "transDate", "transDelay", "daysDelay", "interest", "intTransfer", "recomAvail", "sfcNotificationCopy", "grantDistribute", "projectUndtkn", "propertyTaxNotifCopy", "accountLinked", "file", "rejectReason_mohua", "responseFile_mohua"]
+    for (const el of installment) {
+      row[4] = el?.ulbType;
+      for (const key of sortKey) {
+        if (key == "transferGrantdetail") {
+          let transferGrantdetail = el[key];
+          if (transferGrantdetail?.length) {
+            for (const tfgObj of transferGrantdetail) {
+              let tArr = detailsGrantTransferredManipulate({ transSortKey, tfgObj, el, formData })
               let str = [...row, ...mainArr, ...tArr].join(',') + "\r\n"
               res.write("\ufeff" + str);
             }
           } else {
-            key !== "receiptDate" ? mainArr.push(el[key]) : el[key] ? mainArr.push(formatDate(el[key])) : ""
+            let tArr = detailsGrantTransferredManipulate({ transSortKey, tfgObj, el, formData })
+            let str = [...row, ...mainArr, ...tArr].join(',') + "\r\n"
+            res.write("\ufeff" + str);
           }
+        } else {
+          key !== "receiptDate" ? mainArr.push(el[key]) : el[key] ? mainArr.push(formatDate(el[key])) : ""
         }
       }
     }
+  } else {
+    res.write("\ufeff" + [...row].join(',') + "\r\n");
   }
 }
 
 function detailsGrantTransferredManipulate(params) {
-  const { transSortKey, tfgObj, file, el, rejectReason_mohua } = params;
+  const { transSortKey, tfgObj, el, formData } = params;
   let tArr = []
   for (const tKey of transSortKey) {
-    if (["recomAvail", "sfcNotificationCopy", "projectUndtkn", "propertyTaxNotif", "accountLinked",].includes(tKey)) {
+    if (["recomAvail", "sfcNotificationCopy", "projectUndtkn", "propertyTaxNotifCopy", "accountLinked"].includes(tKey)) {
       tArr.push(el[tKey]?.url || el[tKey])
-    } else if (["file", "rejectReason_mohua"].includes(tKey)) {
-      tKey == "file" ? tArr.push(file?.url || "") : tArr.push(rejectReason_mohua)
+    } else if (["file", "rejectReason_mohua", "responseFile_mohua"].includes(tKey)) {
+      let fData = formData[tKey]?.url ? formData[tKey]?.url : formData[tKey] ? formData[tKey] : ""
+      tArr.push(fData)
     } else {
-      tKey !== "transDate" ? tArr.push(tfgObj[tKey]) : tfgObj[tKey] ? tArr.push(formatDate(tfgObj[tKey])) : ""
+      if (["transDate"].includes(tKey)) {
+        tfgObj[tKey] ? tArr.push(formatDate(tfgObj[tKey])) : ""
+      } else {
+        tArr.push(tfgObj[tKey]?.url ? tfgObj[tKey]?.url : tfgObj[tKey] ? tfgObj[tKey] : "");
+      }
     }
   }
   return tArr;
@@ -690,7 +693,7 @@ const computeQuery = (params) => {
   const decadePrefixtoSlice = 2;
   const accessYear = checkUlbAccess(yearData.year, decadePrefixtoSlice);
   condition[accessYear] = true;
-  if([CollectionNames.pfms].includes(formName)){
+  if ([CollectionNames.pfms].includes(formName)) {
     let lastYearAccess = getLastYearUlbAccess(yearData.year);
     condition[lastYearAccess] = false;
   }
@@ -733,7 +736,6 @@ const computeQuery = (params) => {
   }
 
   switch (userRole) {
-
     case "ULB":
       let query = [
         { $match: condition },
@@ -798,7 +800,7 @@ const computeQuery = (params) => {
             ulbName: "$name",
             ulbId: "$_id",
             ulbCode: "$code",
-            access: "$access_2223",
+            access: `$${accessYear}`,
             censusCode: {
               $cond: {
                 if: {
@@ -998,16 +1000,14 @@ const computeQuery = (params) => {
                   }
                 }
               },
-              filled:
-              {
+              filled: {
                 $cond: { if: { $or: [{ $eq: ["$formData", ""] }, { $eq: ["$formData.isDraft", true] }] }, then: "No", else: isFormOptional ? filledQueryExpression : "Yes" }
               }
             },
           },
-          {
-            $sort: { formData: -1 },
-          }
+          { $sort: csv ? sortingData(formName) : { formData: -1 } }
         ])
+
         query_s = createDynamicQuery(formName, query_s, userRole, csv);
         if (folderName === List['FolderName']['IndicatorForWaterSupply']) {
           let startIndex = query_s.findIndex((el) => {
@@ -1058,6 +1058,16 @@ const computeQuery = (params) => {
       break;
   }
 }
+
+const sortingData = (dbCollectionName) => {
+  switch (dbCollectionName) {
+    case CollectionNames['state_gtc']:
+      return { "formData.installment": 1 }
+    default:
+      return { "formData": -1 }
+  }
+}
+
 
 /**
  * @param formName - The name of the form for which the filled query expression is being generated.
@@ -2337,7 +2347,10 @@ function createDynamicColumns(collectionName) {
       columns = `State Name, City Finance Code, Regional Name, `
       break;
     case CollectionNames['state_gtc']:
-      columns = `State Name,City Finance Code,Form Status,Year,Type of ULB,Type of Grant Received (Tied/Untied),Installment Type,Total No: of MPCs,Total No: of NMPCS,Total No: of Duly Elected MPCS,Total No: of Duly Elected NMPCS,Amount Received(In Lakhs),Date of Receipt,Amount Transferred, excluding interest (in lakhs),Date of Transfer,Was there any delay in transfer?,No. of days delayed,Rate of interest (annual rate),Amount of interest transferred - If there's any delay (in lakhs),Whether State Finance Commission recommendations available? (Yes/No),If No Upload notification for constitution of SFC issued,Whether Project works undertaken are uploaded on the website (Yes/No),Upload copy of Property Tax Notification issued,% of ULB accounts for 15th FC Grants which are linked to PFMS for all transactions,Upload Signed Grant Transfer Certificate,MoHUA Comments`
+      columns = `State Name,City Finance Code,Form Status,Year,Type of ULB,Type of Grant Received (Tied/Untied),Installment Type,Total No: of MPCs,Total No: of NMPCS,Total No: of Duly Elected MPCS,Total No: of Duly Elected NMPCS,Amount Received(In Lakhs),Date of Receipt,Amount Transferred excluding interest (in lakhs),Date of Transfer,Was there any delay in transfer?,No. of days delayed,Rate of interest (annual rate),Amount of interest transferred - If there's any delay (in lakhs),Whether State Finance Commission recommendations available? (Yes/No),If No Upload notification for constitution of SFC issued,If Yes-Whether Grants distributed as per Census 2011 or as per SFC recommendations?,Whether Project works undertaken are uploaded on the website (Yes/No),Upload copy of Property Tax Notification issued,% of ULB accounts for 15th FC Grants which are linked to PFMS for all transactions,Upload Signed Grant Transfer Certificate,MoHUA Comments,Supporting Document`
+      break;
+    case CollectionNames['state_grant_alloc']:
+      columns = `State Name,City Finance Code,Type of Grant,Installment No,Grant Allocation to ULBs (FY23-24),Review Status,MoHUA Comments,Review Documents`
       break;
     case CollectionNames['state_grant_alloc']:
       columns = `State Name,City Finance Code,Type of Grant,Installment No,Grant Allocation to ULBs (FY23-24),Review Status,MoHUA Comments,Review Documents`
@@ -2408,8 +2421,8 @@ module.exports.getExcelCol = (index) => {
 
 /**
  * creating a map of questions and excel column (sequential)
- * @param {*} questions 
- * @param {*} counter 
+ * @param {*} questions
+ * @param {*} counter
  * @returns mapped object
  */
 const getQuestionsMapping = (questions, counter = 0) => {
@@ -2489,7 +2502,7 @@ module.exports.downloadPTOExcel = async (req, res) => {
 
 /**
  * creates an excel workbook with mapped cell position and answers
- * @returns 
+ * @returns
  */
 const excelPTOMapping = async (query) => {
   return new Promise(async (resolve, reject) => {
@@ -2729,4 +2742,3 @@ function currentStatusFilter(el) {
     delete el?.mohuaStatusData;
   }
 }
-
