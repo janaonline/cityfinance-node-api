@@ -218,10 +218,10 @@ const findStatusAndTooltip = (formData, formId, modelName, loggedInUserRole, vie
   let isDraft = modelName == 'XVFcGrantULBForm' ? !formData.isCompleted : formData.isDraft;
   let tooltip = calculateStatus(status, actionTakenByRole, isDraft, viewFor);
   let tick = calculateTick(tooltip, loggedInUserRole, viewFor)
-  // if(formId.toString() === "63ff31d63ae39326f4b2f464"){
-  //   console.log("tick :: ",tick)
-  //   console.log("tooltip :: ",tooltip)
-  // }
+  if("62c553822954384b44b3c38e" === formId.toString()){
+    console.log("tick :: ",tick)
+    console.log("toll ::",tooltip)
+  }
   return {
     [formId]: {
       tooltip: tooltip,
@@ -382,7 +382,9 @@ module.exports.get = catchAsync(async (req, res) => {
       dbCondition = {...condition}
       if (![GTC_STATE,GrantDistribution].includes(el)) {
         if(singleYearForms.includes(el)){
-          condition = await changeConditionsFor2223Forms(condition,year)
+          console.log("StateFinanceCommissionFormation ::: ",)
+          dbCondition = await changeConditionsFor2223Forms(condition,year)
+          console.log("condition ::: ",dbCondition)
       }
         let formData = await el.findOne(dbCondition).lean()
         if (formData) {
