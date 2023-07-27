@@ -17,20 +17,19 @@ const { UpdateMasterSubmitForm } = require("../../service/updateMasterForm");
 const GTC = require('../../models/StateGTCertificate')
 const { findPreviousYear } = require('../../util/findPreviousYear')
 const { calculateTabwiseStatus } = require('./utilFunc')
-const { calculateStatus,checkIfUlbHasAccess } = require('../CommonActionAPI/service')
 const UlbLedger = require('../../models/UlbLedger')
 const STATUS_LIST = require('../../util/newStatusList')
 const LineItem = require('../../models/LineItem')
 const { groupByKey } = require('../../util/group_list_by_key')
 const ExcelJS = require("exceljs");
-const { canTakenAction, canTakenActionMaster, getMasterAction } = require('../CommonActionAPI/service')
+const { canTakenAction, canTakenActionMaster, getMasterAction,checkIfUlbHasAccess,calculateStatus } = require('../CommonActionAPI/service')
 const fs = require("fs");
 const Service = require('../../service');
 const { FormNames, YEAR_CONSTANTS,  MASTER_STATUS, FORMIDs, FORM_LEVEL, FORM_LEVEL_SHORTKEY, MASTER_STATUS_ID } = require('../../util/FormNames');
 const {BackendHeaderHost, FrontendHeaderHost} = require('../../util/envUrl');
 const {saveCurrentStatus, saveFormHistory, saveStatusHistory, getShortKeys} = require('../../util/masterFunctions');
 const CurrentStatus = require("../../models/CurrentStatus");
-const {getSeparatedShortKeys} = require('../../routes/CommonActionAPI/service')
+const {getSeparatedShortKeys, saveFormLevelHistory} = require('../../routes/CommonActionAPI/service')
 var https = require('https');
 var request = require('request')
 
@@ -49,7 +48,7 @@ var request = require('request')
 // module.exports.fileDeFuncFiles = async (req, res) => {
 //   let query = [
 //     {
-//       $lookup: {
+//       $lookup: {checkIfUlbHasAccess
 //         from: "ulbs",
 //         localField: "ulb",
 //         foreignField: "_id",
@@ -667,6 +666,9 @@ exports.createUpdate = async (req, res) => {
                 //  session
               });
             }
+
+            // Save Form Level History
+            await saveFormLevelHistory(masterFormId, formSubmit, actionTakenByRole, actionTakenBy,MASTER_STATUS["Under Review By State"]);
             // await session.commitTransaction();
             return Response.OK(res, {}, "Form Submitted");
           }
@@ -819,7 +821,7 @@ exports.createUpdate = async (req, res) => {
     if (currentAnnualAccounts) {
       annualAccountData = await AnnualAccountData.findOneAndUpdate(
         { ulb: ObjectId(ulb), design_year: ObjectId(design_year), isActive: true },
-        { $set: req.body, $push: { history: currentAnnualAccounts } },
+        { $set: req.body, $push: { history: req.body } },
         { new: true, runValidators: true }
       );
     } else {
@@ -2097,7 +2099,7 @@ async function addActionKeys(annualAccountData, body, res, role, req){
   }
 }
 
-async function addCanTakeActionKeys(annualAccountData, statuses, role, stateResponse){
+async function addCanTakeActionKeys(annualAccountData, statuses=[], role, stateResponse=[]){
   try {
     const tabRegex = /^tab_/g;
     const keyArray = ["audited", "unAudited"];
@@ -2123,7 +2125,8 @@ async function addCanTakeActionKeys(annualAccountData, statuses, role, stateResp
     
     return data;
   } catch (error) {
-     throw `addActionKeys:: ${error.message}`;
+    console.log("error in addCanTakeActionKeys ::: ",error.message)
+     return {}
   }
 }
 const TAB_OBJ = {

@@ -605,10 +605,8 @@ const checkForPreviousForms = async (design_year, state) => {
 
 const getRejectedFields = (currentFormStatus, formStatuses, installment, inputAllowed, role) => {
     try {
-        // console.log("formStatuses :: ",formStatuses)
         let prevInstallment = installment - 1
-        let allowedStatuses = [MASTER_FORM_STATUS['UNDER_REVIEW_BY_MoHUA'],MASTER_FORM_STATUS['RETURNED_BY_MoHUA']]
-        // console.log("prevInstallment :: ",prevInstallment)
+        let allowedStatuses = [MASTER_FORM_STATUS['UNDER_REVIEW_BY_MoHUA'],MASTER_FORM_STATUS['RETURNED_BY_MoHUA'],MASTER_FORM_STATUS['SUBMISSION_ACKNOWLEDGED_BY_MoHUA']]
         if (prevInstallment && !allowedStatuses.includes(formStatuses?.[prevInstallment]) && role === userTypes.state) {
             return true
         }
@@ -660,7 +658,7 @@ const getManipulatedJson = async (installment, type, design_year, formJson, fiel
             let transerGrantForm = await TransferGrantDetailForm().toObject({virtuals:true})
             installmentForm['transferGrantdetail'] = [transerGrantForm]
         }
-        let inputAllowed = [MASTER_STATUS['In Progress'],MASTER_STATUS['Not Started'],MASTER_STATUS['Rejected By MoHUA']]
+        let inputAllowed = [MASTER_FORM_STATUS['IN_PROGRESS'],MASTER_FORM_STATUS['NOT_STARTED'],MASTER_FORM_STATUS['RETURNED_BY_MoHUA']]
         installmentForm.installment_type = installment_types[installment]
         let installmentObj = { ...installmentForm }
         installmentObj['warnings'] = {
@@ -695,8 +693,8 @@ const getManipulatedJson = async (installment, type, design_year, formJson, fiel
         flattedForm = {}
         const statusId = gtcForm.currentFormStatus;
         const canTakeAction = (statusId == MASTER_FORM_STATUS['UNDER_REVIEW_BY_MoHUA'] && role == userTypes.mohua);
-        const rejectReason_mohua = gtcForm?.rejectReason_mohua || '';
-        const responseFile_mohua = gtcForm?.responseFile_mohua || {
+        let rejectReason_mohua = gtcForm?.rejectReason_mohua || '';
+        let responseFile_mohua = gtcForm?.responseFile_mohua || {
             name: '',
             url: ''
         }
@@ -937,7 +935,8 @@ async function handleInstallmentForm(params) {
             installment,
             year,
             formType: type,
-            gtcForm: ObjectId(gtcFormId)
+            gtcForm: ObjectId(gtcFormId),
+            
         }
         Object.assign(payload, data)
         payload.grantDistribute = grantDistributeOptions[payload.grantDistribute] || null
@@ -959,11 +958,21 @@ async function handleInstallmentForm(params) {
         let totalIntTransfer = transferGrantData.reduce((result, value) => parseFloat(result) + parseFloat(value.intTransfer), 0) || 0
         transferGrantData = await appendFormId(transferGrantData, gtcInstallment)
         //delete Previous data
-        await TransferGrantDetailForm.deleteMany({
+        let idsTobeDeleted = await TransferGrantDetailForm.find({
             installmentForm: gtcInstallment._id
-        })
+        },{
+            "_id":1
+        }).lean()
+        console.log("idsTobeDeleted :: ",idsTobeDeleted)
+        idsTobeDeleted = idsTobeDeleted.map( item=> item._id)
+        console.log("idsTobeDeleted ::: ",idsTobeDeleted)
         // insert new Data
         let insertedData = await TransferGrantDetailForm.bulkWrite(transferGrantData, { runValidators })
+        await TransferGrantDetailForm.deleteMany({
+            "_id":{
+                "$in":idsTobeDeleted
+            }
+        })
         let grantDetailIds = Object.values(insertedData.insertedIds)
         // updateIds and total
         let ele = await GtcInstallmentForm.findOneAndUpdate({
@@ -972,7 +981,8 @@ async function handleInstallmentForm(params) {
         }, {
             "transferGrantdetail": grantDetailIds,
             "totalIntTransfer": totalIntTransfer,
-            "totalTransAmount": totalTransAmount
+            "totalTransAmount": totalTransAmount,
+           
         })
 
         validator.valid = true
@@ -1010,7 +1020,9 @@ async function getOrCreateFormId(params) {
             design_year: ObjectId(design_year),
             state: ObjectId(state),
             currentFormStatus: currentFormStatus,
-            file: file
+            file: file,
+            "rejectReason_mohua" : '',
+            "responseFile_mohua"  :''
         }, { upsert: true, new: true })
         return gtcForm._id
     }
@@ -1134,6 +1146,9 @@ module.exports.installmentAction = async (req, res) => {
             }
         });
         req.body._id = found?._id
+        req.body.rejectReason = rejectReason_mohua
+        req.body.responseFile = responseFile_mohua
+        req.body.financialYear = design_year
         let formSubmit = [{...req.body,type:key,currentFormStatus:statusId}]
         await createHistory({ formBodyStatus : Number(statusId),formSubmit, actionTakenByRole:role , actionTakenBy: mohua || state  })
         if(!found) return res.status(404).json({ message: 'Installment not found'});
@@ -1157,7 +1172,9 @@ async function createHistory(params) {
     try {
         let {formBodyStatus,actionTakenBy,actionTakenByRole,formSubmit,formType} = params
         let formData = formSubmit[0]
-        let shortKey = `${formData.type}_${years[formData.financialYear]}_${formData.installment}`
+        console.log("formData :: ",getKeyByValue(years,formData.financialYear))
+        let shortKey = `${formData.type}_${getKeyByValue(years,formData.financialYear)}_${formData.installment}`
+        console.log("shortKey :: ",shortKey)
             let historyParams = {
                 formBodyStatus,
                 actionTakenBy:actionTakenBy,

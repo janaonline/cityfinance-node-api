@@ -6,7 +6,7 @@ const {radioSchema,pdfSchema,limitValidationSchema} = require("../util/masterFun
 const mongooseLeanVirtuals = require('mongoose-lean-virtuals');
 const TransferGrantSchema = new Schema({
     installmentForm:{type:Schema.Types.ObjectId,ref:"GtcInstallmentForm"},
-    transAmount:limitValidationSchema("transAmount",1,999999),
+    transAmount:limitValidationSchema("transAmount",0,999999),
     transDelay:radioSchema("transDelay","GtcInstallmentForm"),
     transDate:{
         type:Date,
@@ -15,7 +15,8 @@ const TransferGrantSchema = new Schema({
     },
     daysDelay:limitValidationSchema("daysDelay",0,999),
     interest:limitValidationSchema("interest",0,100),
-    intTransfer:limitValidationSchema("intTransfer",0,9999),
+    // intTransfer:{type:Number}
+     intTransfer: limitValidationSchema("intTransfer",0,9999999),
 },
 { timestamp: { createdAt: "createdAt", updatedAt: "modifiedAt" } })
 TransferGrantSchema.virtual("modelName").get(function(){

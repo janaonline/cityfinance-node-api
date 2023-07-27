@@ -326,7 +326,6 @@ const calculateStatus = (status, actionTakenByRole, isDraft, formType) => {
 }
 
 module.exports.calculateStatusMaster = (status) => {
-    console.log("status ::",status)
     if (MASTER_STATUS_ID.hasOwnProperty(status)) {
         return MASTER_STATUS_ID[status];
     } else {
@@ -2013,6 +2012,12 @@ async function handleRangeIfExists(questionObj, formObj) {
             }
             // console.log("question.dbKey",questionObj.shortKey)
         }
+        else if(formObj.validations && Object.keys(formObj.validations).includes(questionObj.shortKey)){
+            obj.minRange = formObj.validations[questionObj.shortKey].min || ""
+            obj.maxRange = formObj.validations[questionObj.shortKey].max || ""
+            obj.min = obj.minRange
+            obj.max = obj.maxRange
+        }
         return { ...obj }
     }
     catch (err) {
@@ -3042,9 +3047,8 @@ async function takeActionOnForms(params, res) {
                         saveStatusResponse = await saveStatus(params);
                     }
                     //form level status  updation
+                    let response = {}
                     if (rejectStatusAllTab) {
-                        let response = {}
-
                         response.status =
                             actionTakenByRole === "MoHUA"
                                 ? MASTER_STATUS["Returned By MoHUA"]
@@ -3057,7 +3061,6 @@ async function takeActionOnForms(params, res) {
                         if (updatedFormCurrentStatus !== 1)
                             throw "Action failed to update form current Status!";
                     } else {
-                        let response = {}
                         response.status =
                             actionTakenByRole === "MoHUA"
                                 ? MASTER_STATUS["Submission Acknowledged By MoHUA"]
@@ -3070,6 +3073,9 @@ async function takeActionOnForms(params, res) {
                         if (updatedFormCurrentStatus !== 1)
                             throw "Action failed to update form current Status!";
                     }
+
+                    // Save Form Level History
+                    await saveFormLevelHistory(formId, form, actionTakenByRole, actionTakenBy,response.status);
                 }
             }
             if (saveStatusResponse !== 1) {
@@ -3847,6 +3853,13 @@ function checkUlbAccess(input, customSlice) {
 }
 
 module.exports.checkUlbAccess = checkUlbAccess;
+
+function getLastYearUlbAccess(input){
+    let year = input.split('-');
+    let lastYear =  `${String(Number(year[0])-1)}-${String(Number(year[1])-1)}`;
+    return checkUlbAccess(lastYear, 2);
+}
+module.exports.getLastYearUlbAccess = getLastYearUlbAccess
 function checkIfUlbCanEditForm(currentFormStatus) {
     try {
         const ulbEditStatusArray = [
@@ -3863,3 +3876,31 @@ function checkIfUlbCanEditForm(currentFormStatus) {
         throw `checkFormIfUlbCanEdit:: ${error.message}`;
     }
 }
+
+async function saveFormLevelHistory(masterFormId, formSubmit, actionTakenByRole, actionTakenBy,currentStatus) {
+    let currentStatusData = {
+        formId: masterFormId,
+        recordId: ObjectId(formSubmit._id),
+        status: currentStatus,
+        level: FORM_LEVEL["form"],
+        shortKey: FORM_LEVEL_SHORTKEY["form"],
+        rejectReason: "",
+        responseFile: "",
+        actionTakenByRole: actionTakenByRole,
+        actionTakenBy: ObjectId(actionTakenBy),
+    };
+    await saveCurrentStatus({
+        body: currentStatusData,
+    });
+
+    let statusHistory = {
+        formId: masterFormId,
+        recordId: ObjectId(formSubmit._id),
+        shortKey: FORM_LEVEL_SHORTKEY["form"],
+        data: currentStatusData,
+    };
+    await saveStatusHistory({
+        body: statusHistory,
+    });
+}
+module.exports.saveFormLevelHistory = saveFormLevelHistory

@@ -95,6 +95,7 @@ module.exports.saveCurrentStatus = (params) => {
           { recordId: body.recordId, shortKey: body.shortKey , actionTakenByRole: body.actionTakenByRole},
           { $set: body },
           { upsert: true,
+            new :true,
             //  session
              }
         );
@@ -141,24 +142,20 @@ function checkForCalculationsForDurForm(reports){
   }
   try{
    
-    let exp = (parseFloat(reports.grantPosition.expDuringYr)).toFixed(2)
+    let exp = +(parseFloat(reports.grantPosition.expDuringYr)).toFixed(2)
     let projectSum = 0
     
     if(reports?.projects?.length > 0){
-      projectSum = reports.projects.reduce((a,b)=> parseFloat(a) + parseFloat(b.expenditure),0).toFixed(2)
+      projectSum = +(reports.projects.reduce((a,b)=> parseFloat(a) + parseFloat(b.expenditure),0).toFixed(2))
     }
     
-    let closingBal = reports.grantPosition.closingBal
+    let closingBal = +reports.grantPosition.closingBal
     let expWm = 0
     for(let a of reports.categoryWiseData_wm){
       expWm += parseFloat(a.grantUtilised)
     }
     let expSwm =  reports.categoryWiseData_swm.reduce((a,b)=> parseFloat(a.grantUtilised) + parseFloat(b.grantUtilised))
-    let sumWmSm = (expWm + expSwm).toFixed(2)
-    console.log("")
-    console.log("exp ::: ",exp)
-    console.log("projectSum :: ",projectSum)
-    console.log("3")
+    let sumWmSm = +(expWm + expSwm).toFixed(2)
     if(closingBal < 0){
       console.log("1")
       validator.errors.push(false)
