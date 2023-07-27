@@ -340,7 +340,7 @@ function gtcStateFormCSVFormat(obj, res) {
               res.write("\ufeff" + str);
             }
           } else {
-            let tArr = detailsGrantTransferredManipulate({ transSortKey, tfgObj, el, formData })
+            let tArr = detailsGrantTransferredManipulate({ transSortKey, tfgObj: null, el, formData })
             let str = [...row, ...mainArr, ...tArr].join(',') + "\r\n"
             res.write("\ufeff" + str);
           }
@@ -365,9 +365,9 @@ function detailsGrantTransferredManipulate(params) {
       tArr.push(fData)
     } else {
       if (["transDate"].includes(tKey)) {
-        tfgObj[tKey] ? tArr.push(formatDate(tfgObj[tKey])) : ""
+        tfgObj && tfgObj[tKey] ? tArr.push(formatDate(tfgObj[tKey])) : tArr.push("");
       } else {
-        tArr.push(tfgObj[tKey]?.url ? tfgObj[tKey]?.url : tfgObj[tKey] ? tfgObj[tKey] : "");
+        tArr.push(tfgObj && tfgObj[tKey]?.url ? tfgObj[tKey]?.url : tfgObj && tfgObj[tKey] ? tfgObj[tKey] : "");
       }
     }
   }
