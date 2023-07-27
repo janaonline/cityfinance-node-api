@@ -4,6 +4,7 @@ const {
   MASTER_STATUS,
   FORMIDs,
   FORM_LEVEL,
+  FORM_LEVEL_SHORTKEY,
   MASTER_FORM_STATUS,
 } = require("../../util/FormNames");
 const CurrentStatus = require("../../models/CurrentStatus");
@@ -28,7 +29,7 @@ module.exports.createAndUpdateFormMaster = async (params) => {
     let masterFormId = "";
     switch (modelName) {
       case [ModelNames["twentyEightSlbs"],ModelNames["linkPFMS"]].find(item => item === modelName):
-        masterFormId = modelName === ModelNames["twentyEightSlbs"] ? FORMIDs["twentyEightSlbs"] :FORMIDs['PFMS']
+        masterFormId = modelName === ModelNames["twentyEightSlbs"] ? FORMIDs["twentyEightSlb"] :FORMIDs['PFMS']
         // if (formData.design_year === YEAR_CONSTANTS["23_24"] && formData.ulb) {
         try {
           const formBodyStatus = formData.status;
@@ -89,7 +90,7 @@ module.exports.createAndUpdateFormMaster = async (params) => {
                 recordId: ObjectId(formSubmit._id),
                 status: MASTER_STATUS["In Progress"],
                 level: FORM_LEVEL["form"],
-                shortKey: "form_level",
+                shortKey: FORM_LEVEL_SHORTKEY["form"],
                 rejectReason: "",
                 responseFile: "",
                 actionTakenByRole: actionTakenByRole,
@@ -121,7 +122,7 @@ module.exports.createAndUpdateFormMaster = async (params) => {
                 recordId: ObjectId(formSubmit._id),
                 status: MASTER_STATUS["Under Review By State"],
                 level: FORM_LEVEL["form"],
-                shortKey: "form_level",
+                shortKey: FORM_LEVEL_SHORTKEY["form"],
                 rejectReason: "",
                 responseFile: "",
                 actionTakenByRole: actionTakenByRole,
@@ -135,7 +136,7 @@ module.exports.createAndUpdateFormMaster = async (params) => {
               let statusHistory = {
                 formId: masterFormId,
                 recordId: ObjectId(formSubmit._id),
-                shortKey: "form_level",
+                shortKey: FORM_LEVEL_SHORTKEY["form"],
                 data: currentStatusData,
               };
               await saveStatusHistory({
@@ -274,7 +275,7 @@ module.exports.createAndUpdateFormMaster = async (params) => {
                 recordId: ObjectId(formSubmit._id),
                 status: MASTER_STATUS["In Progress"],
                 level: FORM_LEVEL["form"],
-                shortKey: "form_level",
+                shortKey: FORM_LEVEL_SHORTKEY["form"],
                 rejectReason: "",
                 responseFile: "",
                 actionTakenByRole: actionTakenByRole,
@@ -306,7 +307,7 @@ module.exports.createAndUpdateFormMaster = async (params) => {
                 recordId: ObjectId(formSubmit._id),
                 status: MASTER_STATUS["Under Review By State"],
                 level: FORM_LEVEL["form"],
-                shortKey: "form_level",
+                shortKey: FORM_LEVEL_SHORTKEY["form"],
                 rejectReason: "",
                 responseFile: "",
                 actionTakenByRole: actionTakenByRole,
@@ -320,7 +321,7 @@ module.exports.createAndUpdateFormMaster = async (params) => {
               let statusHistory = {
                 formId: masterFormId,
                 recordId: ObjectId(formSubmit._id),
-                shortKey: "form_level",
+                shortKey: FORM_LEVEL_SHORTKEY["form"],
                 data: currentStatusData,
               };
               await saveStatusHistory({
@@ -425,7 +426,7 @@ async function saveStatusAndHistory(params){
         recordId: ObjectId(formSubmit[0]._id),
         status: formBodyStatus,
         level: FORM_LEVEL["form"],
-        shortKey: shortKey || "form_level",
+        shortKey: shortKey || FORM_LEVEL_SHORTKEY["form"],
         rejectReason: formSubmit[0].rejectReason || "",
         responseFile:  formSubmit[0].responseFile || "",
         actionTakenByRole: actionTakenByRole,
@@ -439,7 +440,7 @@ async function saveStatusAndHistory(params){
       let statusHistory = {
         formId: masterFormId,
         recordId: ObjectId(formSubmit[0]._id),
-        shortKey: shortKey || "form_level",
+        shortKey: shortKey || FORM_LEVEL_SHORTKEY["form"],
         data: currentStatusData,
       };
       
