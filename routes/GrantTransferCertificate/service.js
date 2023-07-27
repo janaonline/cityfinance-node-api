@@ -605,16 +605,12 @@ const checkForPreviousForms = async (design_year, state) => {
 
 const getRejectedFields = (currentFormStatus, formStatuses, installment, inputAllowed, role) => {
     try {
-        console.log("formStatuses :: ",formStatuses)
         let prevInstallment = installment - 1
-        let allowedStatuses = [MASTER_FORM_STATUS['UNDER_REVIEW_BY_MoHUA'],MASTER_FORM_STATUS['RETURNED_BY_MoHUA']]
-        console.log("prevInstallment :: ",prevInstallment)
+        let allowedStatuses = [MASTER_FORM_STATUS['UNDER_REVIEW_BY_MoHUA'],MASTER_FORM_STATUS['RETURNED_BY_MoHUA'],MASTER_FORM_STATUS['SUBMISSION_ACKNOWLEDGED_BY_MoHUA']]
         if (prevInstallment && !allowedStatuses.includes(formStatuses?.[prevInstallment]) && role === userTypes.state) {
-            console.log(">>>>>>>>>>>>>>>if >>>>>")
             return true
         }
         else {
-            console.log("inputAllowed >>>>>>>>>>>>>>> else >>>>>>>>>>>>>",inputAllowed,currentFormStatus)
             return inputAllowed.includes(currentFormStatus) && role === userTypes.state ? false : true
         }
     }
