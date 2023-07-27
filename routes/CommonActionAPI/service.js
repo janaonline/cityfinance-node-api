@@ -326,7 +326,6 @@ const calculateStatus = (status, actionTakenByRole, isDraft, formType) => {
 }
 
 module.exports.calculateStatusMaster = (status) => {
-    console.log("status ::",status)
     if (MASTER_STATUS_ID.hasOwnProperty(status)) {
         return MASTER_STATUS_ID[status];
     } else {
@@ -2012,6 +2011,12 @@ async function handleRangeIfExists(questionObj, formObj) {
                 }
             }
             // console.log("question.dbKey",questionObj.shortKey)
+        }
+        else if(formObj.validations && Object.keys(formObj.validations).includes(questionObj.shortKey)){
+            obj.minRange = formObj.validations[questionObj.shortKey].min || ""
+            obj.maxRange = formObj.validations[questionObj.shortKey].max || ""
+            obj.min = obj.minRange
+            obj.max = obj.maxRange
         }
         return { ...obj }
     }
