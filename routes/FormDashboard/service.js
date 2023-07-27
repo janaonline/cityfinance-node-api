@@ -1067,7 +1067,7 @@ const dashboard = async (req, res) => {
             Sidemenu.aggregate(sidemenuPipeline),
             Sidemenu.findOne(reviewUlbCondition).lean()
         ]);
-        let multi = states.length > 1 ? true :  false; 
+        let multi = states?.length > 1 ? true :  false; 
         if(!Boolean(multi)){
             states = [state];
         }
