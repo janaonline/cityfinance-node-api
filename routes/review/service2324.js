@@ -570,7 +570,7 @@ const setCurrentStatus = (req, data, approvedUlbs, collectionName, loggedInUserR
           el['cantakeAction'] = false;
           el['formData']['currentFormStatus'] === MASTER_STATUS['Under Review By MoHUA'] ? el['info'] = sequentialReview : ""
         }
-      } else {
+      } else { 
         let params = { status: el.formData.currentFormStatus, userRole: loggedInUserRole }
         el['cantakeAction'] = req.decoded.role === "ADMIN" ? false : canTakeActionOrViewOnlyMasterForm(params);
       }
