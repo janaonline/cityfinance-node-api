@@ -1033,14 +1033,14 @@ const dashboard = async (req, res) => {
         if(data.design_year === YEAR_CONSTANTS['23_24']){
             collectionArr = getCollections2324(data.formType, data.installment);
         }
-        // let {states} = data;
-        let states = await State.find({
-            "accessToXVFC" : true,
-            "isActive": true
-         }).lean();
-         states = states.map((el)=> {
-            return el._id.toString()
-            })
+        let {states} = data;
+       // let states = await State.find({
+        //     "accessToXVFC" : true,
+        //     "isActive": true
+        //  }).lean();
+        //  states = states.map((el)=> {
+        //     return el._id.toString()
+        //     })
         let approvedFormPercent = {} ,
             submittedFormPercent = {},
             totalApprovedUlbForm = {},
