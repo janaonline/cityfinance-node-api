@@ -81,7 +81,7 @@ module.exports.MASTER_FORM_QUESTION_STATUS = {
 module.exports.MASTER_FORM_QUESTION_STATUS_STATE = {
     4: "PENDING",
     5: "REJECTED",
-    6: "APPROVED",
+    6: "Submission Acknowledged By MoHUA",
     7: "REJECTED",
     10: "REJECTED",
     11: "APPROVED",
