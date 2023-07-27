@@ -325,6 +325,7 @@ function gtcStateFormCSVFormat(obj, res) {
   let row = [stateName, stateCode, formStatus, design_year?.year, "", type, installment];
   if (installment_form?.length) {
     let installment = installment_form;
+<<<<<<< HEAD
     let mainArr = [];
     let sortKey = ["totalMpc", "totalNmpc", "totalElectedMpc", "totalElectedNmpc", "recAmount", "receiptDate", "transferGrantdetail"]
     let transSortKey = ["transAmount", "transDate", "transDelay", "daysDelay", "interest", "intTransfer", "recomAvail", "sfcNotificationCopy", "grantDistribute", "projectUndtkn", "propertyTaxNotifCopy", "accountLinked", "file", "rejectReason_mohua", "responseFile_mohua"]
@@ -335,6 +336,24 @@ function gtcStateFormCSVFormat(obj, res) {
           let transferGrantdetail = el[key];
           if (transferGrantdetail?.length) {
             for (const tfgObj of transferGrantdetail) {
+=======
+    if (installment?.length) {
+      let mainArr = [];
+      let sortKey = ["totalMpc", "totalNmpc", "totalElectedMpc", "totalElectedNmpc", "recAmount", "receiptDate", "totalTransAmount", "transferGrantdetail"]
+      let transSortKey = ["transDate", "transDelay", "daysDelay", "interest", "intTransfer", "recomAvail", "sfcNotificationCopy", "grantDistribute", "projectUndtkn", "propertyTaxNotifCopy", "accountLinked", "file", "rejectReason_mohua", "responseFile_mohua"]
+      for (const el of installment) {
+        row[4] = el?.ulbType;
+        for (const key of sortKey) {
+          if (key == "transferGrantdetail") {
+            let transferGrantdetail = el[key];
+            if (transferGrantdetail?.length) {
+              for (const tfgObj of transferGrantdetail) {
+                let tArr = detailsGrantTransferredManipulate({ transSortKey, tfgObj, el, formData })
+                let str = [...row, ...mainArr, ...tArr].join(',') + "\r\n"
+                res.write("\ufeff" + str);
+              }
+            } else {
+>>>>>>> c281df9c (conflict resolve)
               let tArr = detailsGrantTransferredManipulate({ transSortKey, tfgObj, el, formData })
               let str = [...row, ...mainArr, ...tArr].join(',') + "\r\n"
               res.write("\ufeff" + str);
@@ -358,7 +377,7 @@ function detailsGrantTransferredManipulate(params) {
   const { transSortKey, tfgObj, el, formData } = params;
   let tArr = []
   for (const tKey of transSortKey) {
-    if (["recomAvail", "grantDistribute", "sfcNotificationCopy", "projectUndtkn", "propertyTaxNotifCopy", "accountLinked"].includes(tKey)) {
+    if (["recomAvail", "sfcNotificationCopy", "projectUndtkn", "propertyTaxNotifCopy", "accountLinked"].includes(tKey)) {
       tArr.push(el[tKey]?.url || el[tKey])
     } else if (["file", "rejectReason_mohua", "responseFile_mohua"].includes(tKey)) {
       let fData = formData[tKey]?.url ? formData[tKey]?.url : formData[tKey] ? formData[tKey] : ""
