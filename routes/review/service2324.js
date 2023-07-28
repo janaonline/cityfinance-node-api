@@ -347,9 +347,9 @@ function gtcStateFormCSVFormat(obj, res) {
             let str = [...row, ...mainArr, ...tArr].join(',') + "\r\n"
             res.write("\ufeff" + str);
           }
-          
+
         } else {
-          key !== "receiptDate" ? mainArr.push(el[key]) : el[key] ? mainArr.push(formatDate(el[key])) : ""
+          key !== "receiptDate" ? mainArr.push(el[key]) :  mainArr.push(formatDate(el[key]))
         }
       }
     }
@@ -365,7 +365,7 @@ function detailsGrantTransferredManipulate(params) {
     if (["recomAvail", "grantDistribute", "sfcNotificationCopy", "projectUndtkn", "propertyTaxNotifCopy", "accountLinked"].includes(tKey)) {
       tArr.push(el[tKey]?.url || el[tKey])
     } else if (["file", "rejectReason_mohua", "responseFile_mohua", "currentFormStatus"].includes(tKey)) {
-      let fData = formData[tKey]?.url || Object.keys(formData[tKey]).length ? "" : formData[tKey] || "";
+      let fData = getObjValue(formData[tKey]);
       if (tKey === "currentFormStatus") {
         tArr.push(MASTER_FORM_QUESTION_STATUS_STATE[formData[tKey]] || "");
       } else {
@@ -380,6 +380,14 @@ function detailsGrantTransferredManipulate(params) {
     }
   }
   return tArr;
+}
+
+function getObjValue(keyValue) {
+  if (keyValue && Object.keys(keyValue)) {
+    return keyValue?.url || ""
+  } else {
+    return keyValue || "";
+  }
 }
 
 
