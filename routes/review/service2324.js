@@ -347,7 +347,7 @@ function gtcStateFormCSVFormat(obj, res) {
             let str = [...row, ...mainArr, ...tArr].join(',') + "\r\n"
             res.write("\ufeff" + str);
           }
-          
+
         } else {
           key !== "receiptDate" ? mainArr.push(el[key]) : el[key] ? mainArr.push(formatDate(el[key])) : ""
         }
@@ -458,19 +458,18 @@ const waterSenitationXlsDownload = async (data, res, role) => {
     let counter = { waterBodies: 2, serviceLevelIndicators: 2, reuseWater: 2 } // counter
     if (data?.length) {
       for (const pf of data) {
+        let rowsArr = [pf?.stateName, pf?.stateCode, pf?.formStatus];
+        let sortKeys = { waterBodies, reuseWater, serviceLevelIndicators };
         if (pf?.formData) {
           let { uaData } = pf?.formData;
-          let rowsArr = [pf?.stateName, pf?.stateCode, pf?.formStatus];
           let uaCode = await UA.find({ state: ObjectId(pf?.state) }, { UACode: 1 }).lean();
           uaCode = createObjectFromArray(uaCode);
           addActionKeys(pf?.formData, uaCode, pf?.MohuaStatus, role);
-
           for (const ua of uaData) {
             let commentArr = [];
             if (['Returned By MoHUA', 'Submission Acknowledged By MoHUA'].includes(pf?.formStatus)) {
               commentArr.push(ua?.status, ua?.rejectReason, ua?.responseFile ? ua?.responseFile.url : "");
             }
-            let sortKeys = { waterBodies, reuseWater, serviceLevelIndicators };
             let UAName = uaFormData?.length ? uaFormData.find(e => e?._id?.toString() == ua?.ua?.toString()) : null
             rowsArr[3] = UAName?.name
             for (const key in sortKeys) {
@@ -493,9 +492,16 @@ const waterSenitationXlsDownload = async (data, res, role) => {
               }
             }
           }
+        } else {
+          for (const key in sortKeys) {
+            sortKeys[key].addRow([...rowsArr]);
+            sortKeys[key].getRow(counter[key])
+            counter[key]++
+          }
         }
       }
     }
+
     // Create a write stream
     const writeStream = fs.createWriteStream(`${tempFilePath}/${filename}`);
     // Write the stream to the file
