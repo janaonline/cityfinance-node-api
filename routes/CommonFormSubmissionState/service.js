@@ -245,7 +245,7 @@ module.exports.addActionKeys = addActionKeys
 
 function createObjectFromArray(arr) {
   var result = {};
-  for (var i = 0; i < arr.length; i++) {
+  for (var i = 0; i < arr?.length; i++) {
     var obj = arr[i];
     result[obj._id] = obj.UACode;
   }
