@@ -3906,7 +3906,7 @@ module.exports.actionTakenByMoHua = catchAsync(async (req, res) => {
       }
 
     }
-    await createHistory(params)
+    
     let feedBackResp = await saveFeedbacksAndForm(
       calculationsTabWise,
       ulbId,
@@ -3919,11 +3919,13 @@ module.exports.actionTakenByMoHua = catchAsync(async (req, res) => {
     if (feedBackResp.success) {
       response.success = true;
       response.message = "Details submitted successfully";
+       await createHistory(params)
       return res.status(200).json(response);
     } else {
       response.success = false;
       response.message = "Some server error occured";
     }
+   
   } catch (err) {
     // await session.abortTransaction()
     // await session.endSession()
