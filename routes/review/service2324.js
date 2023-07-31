@@ -282,7 +282,7 @@ async function createCSV(params) {
         let mainArrData = stateArrData = []
         if (collectionName == CollectionNames.state_grant_claim) {
           stateArrData = data;
-          let states = stateArrData.map(e => e._id);
+          let states = stateArrData.map(e => e._id.toString());
           for(let key in FORM_TYPE_SUBMIT_CLAIM){
             const {installment,formType} = getFormTypeInstallment(FORM_TYPE_SUBMIT_CLAIM[key]); 
             Object.assign(req.query, {
@@ -306,31 +306,8 @@ async function createCSV(params) {
         }
         if (mainArrData?.length) {
           if (collectionName == CollectionNames.state_grant_claim) {
-            let output = {};
-            mainArrData.forEach(item => {
-                const [installmentKey, obj] = Object.entries(item)[0];
-                const { installment, formType } = getFormTypeInstallment(installmentKey);
-                const headerLabel = `${FORM_TYPE_NAME[formType]}: ${INSTALLMENT_NAME[installment]} (FY ${YEAR_CONSTANTS_IDS[req.query.design_year]})`;
-
-                Object.entries(obj).forEach(([key, value]) => {
-                    const resArray = Object.values(value).flat(1).map(item => ({ ...item, headerLabel }));
-                    output[key] = output[key] ? [...output[key], ...resArray] : resArray;
-                });
-            });
-
-            Object.entries(output).forEach(([key, items], index) => {
-                const { stateName, stateCode } = stateArrData.find((state) => state._id == Object.keys(output)[index]);
-                let row = 'State Name,State Code,';
-                let row1 = `${stateName},${stateCode},`;
-                if (index === 0) {
-                    row += items.map(item => `${item.headerLabel}-${item.formName}`).join(',');
-                    row1 += items.map(item => item.submittedValue).join(',');
-                    res.write(`\ufeff${row}\r\n\ufeff${row1}\r\n`);
-                } else {
-                    row1 += items.map(item => item.submittedValue).join(',');
-                    res.write(`\ufeff${row1}\r\n`);
-                }
-            });
+            let output = extractDataForCSV(mainArrData, req);
+            writeSubmitClaimCSV(output, res);
           }else {
             for (let el of mainArrData) {
               if (collectionName == "GTC") {
@@ -374,6 +351,54 @@ const gtcInstallmentForms = (stateId) => {
     }
   })
 }
+
+/**
+ * The function `writeSubmitClaimCSV` writes the output data in CSV format, including state name, state
+ * code, and submitted values for each item.
+ */
+function writeSubmitClaimCSV(output, res) {
+  try {
+    Object.entries(output).forEach(([key, items], index) => {
+      const { stateName, stateCode } = stateArrData.find((state) => state._id == Object.keys(output)[index]);
+      let row = 'State Name,State Code,';
+      let row1 = `${stateName},${stateCode},`;
+      if (index === 0) {
+        row += items.map(item => `${item.headerLabel}-${item.formName}`).join(',');
+        row1 += items.map(item => item.submittedValue).join(',');
+        res.write(`\ufeff${row}\r\n\ufeff${row1}\r\n`);
+      } else {
+        row1 += items.map(item => item.submittedValue).join(',');
+        res.write(`\ufeff${row1}\r\n`);
+      }
+    });
+  } catch (error) {
+    throw {message:`writeSubmitClaimCSV:: ${error.message}`}
+  }
+}
+
+/**
+ * The function `extractDataForCSV` takes in an array of data and a request object, and returns an
+ * object with the extracted data for CSV formatting.
+ */
+function extractDataForCSV(mainArrData, req) {
+ try {
+    let output = {};
+    mainArrData.forEach(item => {
+      const [installmentKey, obj] = Object.entries(item)[0];
+      const { installment, formType } = getFormTypeInstallment(installmentKey);
+      const headerLabel = `${FORM_TYPE_NAME[formType]}: ${INSTALLMENT_NAME[installment]} (FY ${YEAR_CONSTANTS_IDS[req.query.design_year]})`;
+  
+      Object.entries(obj).forEach(([key, value]) => {
+        const resArray = Object.values(value).flat(1).map(item => ({ ...item, headerLabel }));
+        output[key] = output[key] ? [...output[key], ...resArray] : resArray;
+      });
+    });
+    return output;
+  } catch (error) {
+    throw {message:`extractDataForCSV:: ${error.message}`}
+  }
+}
+
 async function actionPlanCSVDownload(obj, res, role, uaFormData) {
   let rowsArr = [obj?.stateName || "", obj?.stateCode || "", "", obj?.formStatus || ""];
   if (obj?.formData) {
