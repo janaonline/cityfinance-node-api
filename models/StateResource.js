@@ -10,6 +10,6 @@ const StateResourceSchema = new Schema(
         modifiedAt: { type: Date, default: Date.now() },
         createdAt: { type: Date, default: Date.now() },
     },
-    { timestamp: { createdAt: "createdAt", updatedAt: "modifiedAt" } }
+    { timestamps: { createdAt: "createdAt", updatedAt: "modifiedAt" } }
 );
 module.exports = mongoose.model("StateResource", StateResourceSchema);

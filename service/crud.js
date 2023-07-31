@@ -22,10 +22,10 @@ module.exports = {
     },
     createOrUpdate: (modelName) => {
         return async (req, res, next) => {
+            const id = req.body.id;
+            delete req.body.id;
             try {
-                // console.log("req.body",req.body);process.exit();
-
-                let data = await dbModels[modelName].update({_id: req.body.id}, req.body, { upsert: true });
+                let data = await dbModels[modelName].updateOne({_id: ObjectId(id)}, req.body, { upsert: true });
                 return res.status(200).json({
                     status: true,
                     message: "Successfully saved data!",
