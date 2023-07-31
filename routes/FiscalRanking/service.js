@@ -3870,7 +3870,6 @@ module.exports.actionTakenByMoHua = catchAsync(async (req, res) => {
     let { ulbId, formId, actions, design_year, isDraft, currentFormStatus } = req.body;
     console.log("currentFormStatus :: ", currentFormStatus)
     let { role, _id: userId } = req.decoded;
-    console.log("role :: ", role)
     let validation = await checkUndefinedValidations({
       ulb: ulbId,
       actions: actions,
@@ -5446,3 +5445,52 @@ function calculateReviewCount(item) {
   return [completedIndicator, approvedIndicator, rejectedIndicator]
 }
 
+
+
+module.exports.getTrackingHistory = async(req,res)=>{
+  let response = {
+    success:false,
+    data:[]
+  }
+  try{
+    let _id = req.query.id
+    if(!_id){
+      response.message = "Id is required"
+      return res.status(400).json(response)
+    }
+    let form = await FiscalRanking.findOne({_id})
+    let history = await FormHistory.find({
+      "recordId":_id
+    },{
+      "data.fiscalMapperData":0
+  }).sort({
+      "createdAt":1
+    }).lean()
+    let maxSrNo = 1
+    let histories = history.map((item ,index)=> {
+      maxSrNo += 1
+      delete item.data[0]['fiscalMapperData']
+      return {
+        "srNo":index+1,
+        "action":statusList[item.data[0]['currentFormStatus']],
+        "date":item?.createdAt.toLocaleDateString() +" "+ item?.createdAt.toLocaleTimeString() || "null"
+      }
+    })
+    let formModified = form.modifiedAt  ? form.modifiedAt.toLocaleDateString()+" "+form?.createdAt.toLocaleTimeString():  histories[histories.length -1].date
+    histories.push(
+      {
+        "srNo":maxSrNo,
+        "action":statusList[form['currentFormStatus']],
+        "date":formModified
+      }
+    )
+    response.success = true
+    response.data = histories
+    return res.status(200).json(response)
+
+  }
+  catch(err){
+    console.log("error in getTrackingHistory :: ",err.message)
+    return res.status(400).json(response)
+  }
+}
