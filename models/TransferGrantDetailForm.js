@@ -15,7 +15,8 @@ const TransferGrantSchema = new Schema({
     },
     daysDelay:limitValidationSchema("daysDelay",0,999),
     interest:limitValidationSchema("interest",0,100),
-    intTransfer:limitValidationSchema("intTransfer",0,9999),
+    // intTransfer:{type:Number}
+     intTransfer: limitValidationSchema("intTransfer",0,9999999),
 },
 { timestamp: { createdAt: "createdAt", updatedAt: "modifiedAt" } })
 TransferGrantSchema.virtual("modelName").get(function(){

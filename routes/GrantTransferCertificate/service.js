@@ -605,16 +605,12 @@ const checkForPreviousForms = async (design_year, state) => {
 
 const getRejectedFields = (currentFormStatus, formStatuses, installment, inputAllowed, role) => {
     try {
-        console.log("formStatuses :: ",formStatuses)
         let prevInstallment = installment - 1
-        let allowedStatuses = [MASTER_FORM_STATUS['UNDER_REVIEW_BY_MoHUA'],MASTER_FORM_STATUS['RETURNED_BY_MoHUA']]
-        console.log("prevInstallment :: ",prevInstallment)
+        let allowedStatuses = [MASTER_FORM_STATUS['UNDER_REVIEW_BY_MoHUA'],MASTER_FORM_STATUS['RETURNED_BY_MoHUA'],MASTER_FORM_STATUS['SUBMISSION_ACKNOWLEDGED_BY_MoHUA']]
         if (prevInstallment && !allowedStatuses.includes(formStatuses?.[prevInstallment]) && role === userTypes.state) {
-            console.log(">>>>>>>>>>>>>>>if >>>>>")
             return true
         }
         else {
-            console.log("inputAllowed >>>>>>>>>>>>>>> else >>>>>>>>>>>>>",inputAllowed,currentFormStatus)
             return inputAllowed.includes(currentFormStatus) && role === userTypes.state ? false : true
         }
     }
@@ -747,7 +743,7 @@ const getJson = async (state, design_year, role,previousYearData) => {
         return { json: [...returnableJson], stateIsMillion: stateIsMillion }
     }
     catch (err) {
-        console.log("error in getJson ::: ", err.message)
+        console.log("error in getJson :::  ", err.message)
         return []
     }
 }
@@ -806,7 +802,7 @@ module.exports.getInstallmentForm = async (req, res, next) => {
         let { design_year, state, formType } = req.query
         let { role } = req.decoded
         let previousYearData = await getPreviousYearData(state,design_year)
-        // response.errors = await addWarnings(previousYearData)
+        response.errors = await addWarnings(previousYearData)
         let validator = await checkForUndefinedVaribales({
             "design year": design_year,
             "state": state
@@ -815,13 +811,13 @@ module.exports.getInstallmentForm = async (req, res, next) => {
             response.message = validator.message
             return res.json(response)
         }
-        // let formValidator = await checkForPreviousForms(design_year, state)
-        // if (!formValidator.valid) {
-        //     response.success = false;
-        //     response.message = formValidator.message
-        //     response.errors = [formValidator.message]
-        //     return res.json(response)
-        // }
+        let formValidator = await checkForPreviousForms(design_year, state)
+        if (!formValidator.valid) {
+            response.success = false;
+            response.message = formValidator.message
+            response.errors = [formValidator.message]
+            return res.json(response)
+        }
         response.success = !response.errors.length 
         response.message = ""
         let { json, stateIsMillion } = await getJson(state, design_year, role,previousYearData[0])
@@ -962,11 +958,21 @@ async function handleInstallmentForm(params) {
         let totalIntTransfer = transferGrantData.reduce((result, value) => parseFloat(result) + parseFloat(value.intTransfer), 0) || 0
         transferGrantData = await appendFormId(transferGrantData, gtcInstallment)
         //delete Previous data
-        await TransferGrantDetailForm.deleteMany({
+        let idsTobeDeleted = await TransferGrantDetailForm.find({
             installmentForm: gtcInstallment._id
-        })
+        },{
+            "_id":1
+        }).lean()
+        console.log("idsTobeDeleted :: ",idsTobeDeleted)
+        idsTobeDeleted = idsTobeDeleted.map( item=> item._id)
+        console.log("idsTobeDeleted ::: ",idsTobeDeleted)
         // insert new Data
         let insertedData = await TransferGrantDetailForm.bulkWrite(transferGrantData, { runValidators })
+        await TransferGrantDetailForm.deleteMany({
+            "_id":{
+                "$in":idsTobeDeleted
+            }
+        })
         let grantDetailIds = Object.values(insertedData.insertedIds)
         // updateIds and total
         let ele = await GtcInstallmentForm.findOneAndUpdate({

@@ -72,6 +72,12 @@ module.exports.changeGetApiForm = async (req, res, next) => {
             }
             let flattedForm = await getFlatObj(form)
             flattedForm.disableFields = formStatus
+            flattedForm['validations'] = {
+                "startDate" : {
+                    "max":new Date().toISOString().slice(0, 10),
+                    "min":""
+                },
+            }
             flattedForm['name_'] = flattedForm['name']
             delete flattedForm['name']
             let keysToBeDeleted = ["_id", "createdAt", "modifiedAt", "actionTakenByRole", "actionTakenBy", "ulb", "design_year"]

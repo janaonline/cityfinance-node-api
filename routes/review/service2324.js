@@ -270,6 +270,7 @@ async function createCSV(params) {
         res.write("\ufeff" + row);
       }
     } else if (formType === "STATE") {
+      // console.log("collectionName", collectionName); process.exit();
       if (collectionName == "waterrejenuvationrecyclings") {
         await waterSenitationXlsDownload(data, res, loggedInUserRole);
       } else {
@@ -374,6 +375,7 @@ async function actionPlanCSVDownload(obj, res, role, uaFormData) {
   }
 }
 
+
 /* GTC Manupulate data */
 function gtcStateFormCSVFormat(obj, res) {
   const { stateName, stateCode, formData, formStatus } = obj;
@@ -400,8 +402,9 @@ function gtcStateFormCSVFormat(obj, res) {
             let str = [...row, ...mainArr, ...tArr].join(',') + "\r\n"
             res.write("\ufeff" + str);
           }
+
         } else {
-          key !== "receiptDate" ? mainArr.push(el[key]) : el[key] ? mainArr.push(formatDate(el[key])) : ""
+          key !== "receiptDate" ? mainArr.push(el[key]) :  mainArr.push(formatDate(el[key]))
         }
       }
     }
@@ -412,25 +415,58 @@ function gtcStateFormCSVFormat(obj, res) {
 
 function detailsGrantTransferredManipulate(params) {
   const { transSortKey, tfgObj, el, formData } = params;
-  const tArr = [];
+  let tArr = []
   for (const tKey of transSortKey) {
     if (["recomAvail", "grantDistribute", "sfcNotificationCopy", "projectUndtkn", "propertyTaxNotifCopy", "accountLinked"].includes(tKey)) {
-      tArr.push(el[tKey]?.url || el[tKey] || "");
+      tArr.push(el[tKey]?.url || el[tKey])
     } else if (["file", "rejectReason_mohua", "responseFile_mohua", "currentFormStatus"].includes(tKey)) {
-      let fData = formData[tKey]?.url || formData[tKey] || "";
+      let fData = getObjValue(formData[tKey]);
       if (tKey === "currentFormStatus") {
         tArr.push(MASTER_FORM_QUESTION_STATUS_STATE[formData[tKey]] || "");
       } else {
         tArr.push(fData);
       }
-    } else if (["transDate"].includes(tKey)) {
-      tArr.push(tfgObj && tfgObj[tKey] ? formatDate(tfgObj[tKey]) : "");
     } else {
-      tArr.push(tfgObj && tfgObj[tKey]?.url || tfgObj && tfgObj[tKey] || "");
+      if (["transDate"].includes(tKey)) {
+        tfgObj && tfgObj[tKey] ? tArr.push(formatDate(tfgObj[tKey])) : tArr.push("");
+      } else {
+        tArr.push(tfgObj && tfgObj[tKey]?.url ? tfgObj[tKey]?.url : tfgObj && tfgObj[tKey] ? tfgObj[tKey] : "");
+      }
     }
   }
   return tArr;
 }
+
+function getObjValue(keyValue) {
+  if (keyValue && Object.keys(keyValue)) {
+    return keyValue?.url || ""
+  } else {
+    return keyValue || "";
+  }
+}
+
+
+// function detailsGrantTransferredManipulate(params) {
+//   const { transSortKey, tfgObj, el, formData } = params;
+//   const tArr = [];
+//   for (const tKey of transSortKey) {
+//     if (["recomAvail", "grantDistribute", "sfcNotificationCopy", "projectUndtkn", "propertyTaxNotifCopy", "accountLinked"].includes(tKey)) {
+//       tArr.push(el[tKey]?.url || el[tKey] || "");
+//     } else if (["file", "rejectReason_mohua", "responseFile_mohua", "currentFormStatus"].includes(tKey)) {
+//       let fData = formData[tKey]?.url || formData[tKey] || "";
+//       if (tKey === "currentFormStatus") {
+//         tArr.push(MASTER_FORM_QUESTION_STATUS_STATE[formData[tKey]] || "");
+//       } else {
+//         tArr.push(fData);
+//       }
+//     } else if (["transDate"].includes(tKey)) {
+//       tArr.push(tfgObj && tfgObj[tKey] ? formatDate(tfgObj[tKey]) : "");
+//     } else {
+//       tArr.push(tfgObj && tfgObj[tKey]?.url || tfgObj && tfgObj[tKey] || "");
+//     }
+//   }
+//   return tArr;
+// }
 
 
 const sortKeysWaterSenitation = (key) => {
@@ -485,19 +521,18 @@ const waterSenitationXlsDownload = async (data, res, role) => {
     let counter = { waterBodies: 2, serviceLevelIndicators: 2, reuseWater: 2 } // counter
     if (data?.length) {
       for (const pf of data) {
+        let rowsArr = [pf?.stateName, pf?.stateCode, pf?.formStatus];
+        let sortKeys = { waterBodies, reuseWater, serviceLevelIndicators };
         if (pf?.formData) {
           let { uaData } = pf?.formData;
-          let rowsArr = [pf?.stateName, pf?.stateCode, pf?.formStatus];
           let uaCode = await UA.find({ state: ObjectId(pf?.state) }, { UACode: 1 }).lean();
           uaCode = createObjectFromArray(uaCode);
           addActionKeys(pf?.formData, uaCode, pf?.MohuaStatus, role);
-
           for (const ua of uaData) {
             let commentArr = [];
             if (['Returned By MoHUA', 'Submission Acknowledged By MoHUA'].includes(pf?.formStatus)) {
               commentArr.push(ua?.status, ua?.rejectReason, ua?.responseFile ? ua?.responseFile.url : "");
             }
-            let sortKeys = { waterBodies, reuseWater, serviceLevelIndicators };
             let UAName = uaFormData?.length ? uaFormData.find(e => e?._id?.toString() == ua?.ua?.toString()) : null
             rowsArr[3] = UAName?.name
             for (const key in sortKeys) {
@@ -520,9 +555,16 @@ const waterSenitationXlsDownload = async (data, res, role) => {
               }
             }
           }
+        } else {
+          for (const key in sortKeys) {
+            sortKeys[key].addRow([...rowsArr]);
+            sortKeys[key].getRow(counter[key])
+            counter[key]++
+          }
         }
       }
     }
+
     // Create a write stream
     const writeStream = fs.createWriteStream(`${tempFilePath}/${filename}`);
     // Write the stream to the file
@@ -2502,8 +2544,8 @@ module.exports.getExcelCol = (index) => {
 
 /**
  * creating a map of questions and excel column (sequential)
- * @param {*} questions 
- * @param {*} counter 
+ * @param {*} questions
+ * @param {*} counter
  * @returns mapped object
  */
 const getQuestionsMapping = (questions, counter = 0) => {
@@ -2583,7 +2625,7 @@ module.exports.downloadPTOExcel = async (req, res) => {
 
 /**
  * creates an excel workbook with mapped cell position and answers
- * @returns 
+ * @returns
  */
 const excelPTOMapping = async (query) => {
   return new Promise(async (resolve, reject) => {
@@ -2823,4 +2865,3 @@ function currentStatusFilter(el) {
     delete el?.mohuaStatusData;
   }
 }
-
