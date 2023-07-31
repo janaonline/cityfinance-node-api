@@ -208,6 +208,9 @@ module.exports.get = async (req, res) => {
         if (pending > 0 && [CollectionNames.state_gtc,CollectionNames.state_grant_alloc].includes(collectionName) ) {
           element.cantakeAction = true;
         }
+        else{
+          element.cantakeAction = false;
+        }
       });
     }
 
