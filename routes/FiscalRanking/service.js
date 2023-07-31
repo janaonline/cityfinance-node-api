@@ -10,6 +10,8 @@ const { FORMIDs, MASTER_STATUS, MASTER_STATUS_ID, FORM_LEVEL, POPULATION_TYPE, Y
 const { saveCurrentStatus, saveFormHistory, saveStatusHistory } = require("../../util/masterFunctions");
 const FeedBackFiscalRanking = require("../../models/FeedbackFiscalRanking");
 const TwentyEightSlbsForm = require("../../models/TwentyEightSlbsForm");
+const StatusHistory = require("../../models/StatusHistory");
+
 const Ulb = require("../../models/Ulb");
 const Service = require("../../service");
 const Users = require("../../models/User");
@@ -3868,7 +3870,6 @@ module.exports.actionTakenByMoHua = catchAsync(async (req, res) => {
   };
   try {
     let { ulbId, formId, actions, design_year, isDraft, currentFormStatus } = req.body;
-    console.log("currentFormStatus :: ", currentFormStatus)
     let { role, _id: userId } = req.decoded;
     let validation = await checkUndefinedValidations({
       ulb: ulbId,
@@ -3887,7 +3888,7 @@ module.exports.actionTakenByMoHua = catchAsync(async (req, res) => {
     await session.startTransaction();
     let masterFormId = FORMIDs['fiscalRanking'];
     let params = { isDraft, role, userId, formId, masterFormId, formBodyStatus: currentFormStatus, actionTakenBy: userId, actionTakenByRole: role }
-    await createHistory(params)
+    
     let calculationsTabWise = await calculateAndUpdateStatusForMappers(
       session,
       actions,
@@ -3905,6 +3906,7 @@ module.exports.actionTakenByMoHua = catchAsync(async (req, res) => {
       }
 
     }
+    await createHistory(params)
     let feedBackResp = await saveFeedbacksAndForm(
       calculationsTabWise,
       ulbId,
@@ -5450,16 +5452,17 @@ function calculateReviewCount(item) {
 module.exports.getTrackingHistory = async(req,res)=>{
   let response = {
     success:false,
-    data:[]
+    data:[],
+    message:""
   }
   try{
-    let _id = req.query.id
-    if(!_id){
+    let _id =  req.query.id
+    if(!_id || _id === "null"){
       response.message = "Id is required"
       return res.status(400).json(response)
     }
     let form = await FiscalRanking.findOne({_id})
-    let history = await FormHistory.find({
+    let history = await StatusHistory.find({
       "recordId":_id
     },{
       "data.fiscalMapperData":0
@@ -5472,7 +5475,7 @@ module.exports.getTrackingHistory = async(req,res)=>{
       delete item.data[0]['fiscalMapperData']
       return {
         "srNo":index+1,
-        "action":statusList[item.data[0]['currentFormStatus']],
+        "action":statusList[item['data'][0]['status']],
         "date":item?.createdAt.toLocaleDateString() +" "+ item?.createdAt.toLocaleTimeString() || "null"
       }
     })
@@ -5486,10 +5489,14 @@ module.exports.getTrackingHistory = async(req,res)=>{
     )
     response.success = true
     response.data = histories
+    response.message = histories.length ? "" : "No history found"
     return res.status(200).json(response)
 
   }
   catch(err){
+    if(["staging","demo"].includes((process.env.ENV))){
+      response.message = err.message
+    }
     console.log("error in getTrackingHistory :: ",err.message)
     return res.status(400).json(response)
   }
