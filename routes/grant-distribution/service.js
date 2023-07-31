@@ -489,7 +489,9 @@ let host = baseUrls[process.env.ENV]
     "$in": (allocationForms.length ? allocationForms.map(item=>item._id):[]),
     
   },
-  "actionTakenByRole":"MoHUA"})
+  "actionTakenByRole":"MoHUA"}).sort({
+    "createdAt":-1
+  })
   for(let section of tabularStructure){
     let installments = section.installments
     for(let i=1; i <= installments; i++){
