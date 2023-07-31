@@ -270,7 +270,6 @@ async function createCSV(params) {
         res.write("\ufeff" + row);
       }
     } else if (formType === "STATE") {
-      // console.log("collectionName", collectionName); process.exit();
       if (collectionName == "waterrejenuvationrecyclings") {
         await waterSenitationXlsDownload(data, res, loggedInUserRole);
       } else {
@@ -279,6 +278,7 @@ async function createCSV(params) {
         res.writeHead(200, { "Content-Type": "text/csv;charset=utf-8,%EF%BB%BF" });
         dynamicColumns = createDynamicColumns(collectionName);
         res.write("\ufeff" + `${dynamicColumns.toString()} \r\n`);
+        let uaFormData = await UA.find({}).lean();
         for (let el of data) {
           if (collectionName == "GTC") {
             let gtcData = await gtcInstallmentForms([...new Set(data.map(e => e._id))]);
@@ -298,8 +298,8 @@ async function createCSV(params) {
               let str = [...row].join(',') + "\r\n";
               res.write("\ufeff" + str);
             }
-          } else if (collectionName == 'state_action_plan') {
-
+          } else if (collectionName == 'ActionPlan') {
+            await actionPlanCSVDownload(el, res, loggedInUserRole, uaFormData)
           }
         }
       }
@@ -319,7 +319,60 @@ const gtcInstallmentForms = (stateId) => {
     }
   })
 }
-
+async function actionPlanCSVDownload(obj, res, role, uaFormData) {
+  let rowsArr = [obj?.stateName || "", obj?.stateCode || "", "", obj?.formStatus || ""];
+  if (obj?.formData) {
+    const { uaData } = obj?.formData
+    let uaStateObj = uaFormData?.find(e => e.state.toString() == obj?.state.toString());
+    uaStateObj = createObjectFromArray(uaStateObj);
+    addActionKeys(obj?.formData, uaStateObj, obj?.MohuaStatus, role);
+    for (const ua of uaData) {
+      let commentArr = [];
+      if (['Returned By MoHUA', 'Submission Acknowledged By MoHUA'].includes(obj?.formStatus)) {
+        commentArr.push(ua?.status || "", ua?.rejectReason || "", ua?.responseFile?.url || "");
+      }
+      let UAName = uaFormData?.length ? uaFormData.find(e => e?._id?.toString() == ua?.ua?.toString()) : null
+      rowsArr[2] = UAName?.name
+      let projectExecute = ua?.projectExecute;
+      let sourceFund = ua?.sourceFund;
+      let yearOutlay = ua?.yearOutlay;
+      if (projectExecute?.length) {
+        for (const el of projectExecute) {
+          let sourceObj = sourceFund?.find(e => e?.Project_Code == el?.Project_Code);
+          let yearOutlayObj = yearOutlay?.find(e => e?.Project_Code == el?.Project_Code);
+          let mainArr = [
+            {
+              "data": el,
+              "sortKey": ["Project_Code", "Project_Name", "Details", "Cost", "Executing_Agency", "Parastatal_Agency", "Sector", "Type", "Estimated_Outcome"]
+            },
+            {
+              "data": sourceObj,
+              "sortKey": ["Project_Code", "Project_Name", "Cost", "XV_FC", "Other", "Total", "2021-22", "2022-23", "2023-24", "2024-25", "2025-26"]
+            },
+            {
+              "data": yearOutlayObj,
+              "sortKey": ["Project_Code", "Project_Name", "Cost", "Funding", "Amount", "2021-22", "2022-23", "2023-24", "2024-25", "2025-26"]
+            },
+          ]
+          let arr = []
+          for (const singleObj of mainArr) {
+            const { sortKey, data } = singleObj;
+            for (let index = 0; index < sortKey.length; index++) {
+              const key = sortKey[index];
+              if (data[key] && typeof data[key] !== 'number') data[key].split(',').join('')
+              arr.push(data[key])
+            }
+          }
+          let str = [...rowsArr, ...arr, ...commentArr].join(",") + "\r\n";
+          res.write("\ufeff" + str);
+        }
+      }
+    }
+  } else {
+    let str = [...rowsArr].join(",") + "\r\n";
+    res.write("\ufeff" + str);
+  }
+}
 
 /* GTC Manupulate data */
 function gtcStateFormCSVFormat(obj, res) {
@@ -349,7 +402,7 @@ function gtcStateFormCSVFormat(obj, res) {
           }
 
         } else {
-          key !== "receiptDate" ? mainArr.push(el[key]) :  mainArr.push(formatDate(el[key]))
+          key !== "receiptDate" ? mainArr.push(el[key]) : mainArr.push(formatDate(el[key]))
         }
       }
     }
@@ -360,58 +413,25 @@ function gtcStateFormCSVFormat(obj, res) {
 
 function detailsGrantTransferredManipulate(params) {
   const { transSortKey, tfgObj, el, formData } = params;
-  let tArr = []
+  const tArr = [];
   for (const tKey of transSortKey) {
     if (["recomAvail", "grantDistribute", "sfcNotificationCopy", "projectUndtkn", "propertyTaxNotifCopy", "accountLinked"].includes(tKey)) {
-      tArr.push(el[tKey]?.url || el[tKey])
+      tArr.push(el[tKey]?.url || el[tKey] || "");
     } else if (["file", "rejectReason_mohua", "responseFile_mohua", "currentFormStatus"].includes(tKey)) {
-      let fData = getObjValue(formData[tKey]);
+      let fData = formData[tKey]?.url || formData[tKey] || "";
       if (tKey === "currentFormStatus") {
         tArr.push(MASTER_FORM_QUESTION_STATUS_STATE[formData[tKey]] || "");
       } else {
         tArr.push(fData);
       }
+    } else if (["transDate"].includes(tKey)) {
+      tArr.push(tfgObj && tfgObj[tKey] ? formatDate(tfgObj[tKey]) : "");
     } else {
-      if (["transDate"].includes(tKey)) {
-        tfgObj && tfgObj[tKey] ? tArr.push(formatDate(tfgObj[tKey])) : tArr.push("");
-      } else {
-        tArr.push(tfgObj && tfgObj[tKey]?.url ? tfgObj[tKey]?.url : tfgObj && tfgObj[tKey] ? tfgObj[tKey] : "");
-      }
+      tArr.push(tfgObj && tfgObj[tKey]?.url || tfgObj && tfgObj[tKey] || "");
     }
   }
   return tArr;
 }
-
-function getObjValue(keyValue) {
-  if (keyValue && Object.keys(keyValue)) {
-    return keyValue?.url || ""
-  } else {
-    return keyValue || "";
-  }
-}
-
-
-// function detailsGrantTransferredManipulate(params) {
-//   const { transSortKey, tfgObj, el, formData } = params;
-//   const tArr = [];
-//   for (const tKey of transSortKey) {
-//     if (["recomAvail", "grantDistribute", "sfcNotificationCopy", "projectUndtkn", "propertyTaxNotifCopy", "accountLinked"].includes(tKey)) {
-//       tArr.push(el[tKey]?.url || el[tKey] || "");
-//     } else if (["file", "rejectReason_mohua", "responseFile_mohua", "currentFormStatus"].includes(tKey)) {
-//       let fData = formData[tKey]?.url || formData[tKey] || "";
-//       if (tKey === "currentFormStatus") {
-//         tArr.push(MASTER_FORM_QUESTION_STATUS_STATE[formData[tKey]] || "");
-//       } else {
-//         tArr.push(fData);
-//       }
-//     } else if (["transDate"].includes(tKey)) {
-//       tArr.push(tfgObj && tfgObj[tKey] ? formatDate(tfgObj[tKey]) : "");
-//     } else {
-//       tArr.push(tfgObj && tfgObj[tKey]?.url || tfgObj && tfgObj[tKey] || "");
-//     }
-//   }
-//   return tArr;
-// }
 
 
 const sortKeysWaterSenitation = (key) => {
@@ -2401,7 +2421,7 @@ function createDynamicColumns(collectionName) {
     // case CollectionNames['state_grant_alloc']:
     //   columns = `State Name,City Finance Code,Type of Grant,Installment No,Grant Allocation to ULBs (FY23-24),Review Status,MoHUA Comments,Review Documents`
     //   break;
-    case CollectionNames['state_action_plan']:
+    case CollectionNames['state_action_plan_s']:
       columns = `Claim Non-Million Plus Cities Tied Grants: 1st Installment (FY 2023-24) - Detailed Utilisation Report,Claim Non-Million Plus Cities Tied Grants: 1st Installment (FY 2023-24) - Annual Account,
       Claim Non-Million Plus Cities Tied Grants: 1st Installment (FY 2023-24) - Linking of PFMS Account,Claim Non-Million Plus Cities Tied Grants: 1st Installment (FY 2023-24) - Property Tax & UC form,
       Claim Non-Million Plus Cities Tied Grants: 1st Installment (FY 2023-24) - Grant Transfer Certificate,Claim Non-Million Plus Cities Tied Grants: 1st Installment (FY 2023-24) - Property Tax Floor Rate form,
@@ -2419,6 +2439,9 @@ function createDynamicColumns(collectionName) {
       Claim Million Plus Cities Tied Grants: 1st Installment (FY 2023-24) - Annual Account,Claim Million Plus Cities Tied Grants: 1st Installment (FY 2023-24) - Linking of PFMS Account,Claim Million Plus Cities Tied Grants: 1st Installment (FY 2023-24) - 28 SLBs,Claim Million Plus Cities Tied Grants: 1st Installment (FY 2023-24) - Garbage Free City,
       Claim Million Plus Cities Tied Grants: 1st Installment (FY 2023-24) - SLBs for Water Supply and Sanitation,Claim Million Plus Cities Tied Grants: 1st Installment (FY 2023-24) - Property Tax & UC form,Claim Million Plus Cities Tied Grants: 1st Installment (FY 2023-24) - Grant Transfer Certificate,Claim Million Plus Cities Tied Grants: 1st Installment (FY 2023-24) - Property Tax Floor Rate form,Claim Million Plus Cities Tied Grants: 1st Installment (FY 2023-24) - State Finance Commission Notification,Claim Million Plus Cities Tied Grants: 1st Installment (FY 2023-24) - Action Plan,
       Claim Million Plus Cities Tied Grants: 1st Installment (FY 2023-24) - Indicators for Water Supply and Sanitation,Claim Million Plus Cities Tied Grants: 1st Installment (FY 2023-24) - Projects for Water Supply,Claim Million Plus Cities Tied Grants: 1st Installment (FY 2023-24) - Claim Grants status`
+      break;
+    case CollectionNames['state_action_plan']:
+      columns = `State Name,CF Code,UA Name,Form Status,executed with 15th: Project_Code,Executed with 15th: Project_Name,Executed with 15th :Project_Details,Executed with 15th:Project_Cost,Executed with 15th : Executing_Agency,Executed with 15th:Parastatal_Agency,Executed with 15th: : Sector,Executed with 15th : Project_Type,Executed with 15th :Estimated_Outcome,Project List and Source of Funds (Annual In INR Lakhs) : Project_Code,Project List and Source of Funds (Annual In INR Lakhs) :Project_Name,Project List and Source of Funds (Annual In INR Lakhs) : Project_Cost,Project List and Source of Funds (Annual In INR Lakhs) : XV_FC,Project List and Source of Funds (Annual In INR Lakhs) : Other,Project List and Source of Funds (Annual In INR Lakhs) : Total,Project List and Source of Funds (Annual In INR Lakhs) :2021-22,Project List and Source of Funds (Annual In INR Lakhs) :2022-23,Project List and Source of Funds (Annual In INR Lakhs) :2023-24,Project List and Source of Funds (Annual In INR Lakhs) :2024-25,Project List and Source of Funds (Annual In INR Lakhs) :2025-26,Year wise Outlay for 15th FC Grants(Annual In INR Lakhs) : Project_Code,Year wise Outlay for 15th FC Grants(Annual In INR Lakhs) : Project_Name,Year wise Outlay for 15th FC Grants(Annual In INR Lakhs) : Project_Cost,Year wise Outlay for 15th FC Grants(Annual In INR Lakhs) : Funding,Year wise Outlay for 15th FC Grants(Annual In INR Lakhs) : Amount,Year wise Outlay for 15th FC Grants(Annual In INR Lakhs) : 2021-22,Year wise Outlay for 15th FC Grants(Annual In INR Lakhs):2022-23,Year wise Outlay for 15th FC Grants(Annual In INR Lakhs): 2023-24,Year wise Outlay for 15th FC Grants(Annual In INR Lakhs):2024-25,Year wise Outlay for 15th FC Grants(Annual In INR Lakhs):2025-26,Review Status,MoHUA Comments,Review Documents`
       break;
     default:
       columns = '';
