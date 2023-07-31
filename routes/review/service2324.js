@@ -75,7 +75,8 @@ module.exports.get = async (req, res) => {
     const stateColumnNames = {
       sNo: "S No.",
       stateName: "State Name",
-      formStatus: "Form Status"
+      formStatus: "Form Status",
+      action: "Action"
     }
     //    formId --> sidemenu collection --> e.g Annual Accounts --> _id = formId
     let total;
@@ -200,7 +201,7 @@ module.exports.get = async (req, res) => {
     /* End */
 
     if (collectionName === CollectionNames.state_gtc || collectionName === CollectionNames.state_grant_alloc) {
-      stateColumnNames['canTakeAction'] = 'Action'
+      // stateColumnNames['action'] = 'Action'
       data = await isMillionPlus(data)
       data.forEach((element) => {
         let { status, pending } = countStatusData(element, collectionName);
