@@ -310,20 +310,21 @@ async function createCSV(params) {
 
                 Object.entries(obj).forEach(([key, value]) => {
                     const resArray = Object.values(value).flat(1).map(item => ({ ...item, headerLabel }));
-                    const {stateName, stateCode} = stateArrData.find((state) => state._id == key);
-                    output[key] = output[key] ? [...output[key],stateName,stateCode,...resArray] : resArray;
+                    output[key] = output[key] ? [...output[key], ...resArray] : resArray;
                 });
             });
 
             Object.entries(output).forEach(([key, items], index) => {
-                let row = row1 = '';
+                const { stateName, stateCode } = stateArrData.find((state) => state._id == Object.keys(output)[index]);
+                let row = 'State Name,State Code,';
+                let row1 = `${stateName},${stateCode},`;
                 if (index === 0) {
-                    row = items.map(item => `${item.headerLabel}-${item.formName}`).join(',');
-                    row1 = items.map(item => item.submittedValue).join(',');
+                    row += items.map(item => `${item.headerLabel}-${item.formName}`).join(',');
+                    row1 += items.map(item => item.submittedValue).join(',');
                     res.write(`\ufeff${row}\r\n\ufeff${row1}\r\n`);
                 } else {
-                    row = items.map(item => item.submittedValue).join(',');
-                    res.write(`\ufeff${row}\r\n`);
+                    row1 += items.map(item => item.submittedValue).join(',');
+                    res.write(`\ufeff${row1}\r\n`);
                 }
             });
           }else {
@@ -2448,25 +2449,25 @@ function createDynamicColumns(collectionName) {
     // case CollectionNames['state_grant_alloc']:
     //   columns = `State Name,City Finance Code,Type of Grant,Installment No,Grant Allocation to ULBs (FY23-24),Review Status,MoHUA Comments,Review Documents`
     //   break;
-    case CollectionNames.state_grant_claim:
-      columns = `Claim Non-Million Plus Cities Tied Grants: 1st Installment (FY 2023-24) - Detailed Utilisation Report,Claim Non-Million Plus Cities Tied Grants: 1st Installment (FY 2023-24) - Annual Account,
-      Claim Non-Million Plus Cities Tied Grants: 1st Installment (FY 2023-24) - Linking of PFMS Account,Claim Non-Million Plus Cities Tied Grants: 1st Installment (FY 2023-24) - Property Tax & UC form,
-      Claim Non-Million Plus Cities Tied Grants: 1st Installment (FY 2023-24) - Grant Transfer Certificate,Claim Non-Million Plus Cities Tied Grants: 1st Installment (FY 2023-24) - Property Tax Floor Rate form,
-      Claim Non-Million Plus Cities Tied Grants: 1st Installment (FY 2023-24) - State Finance Commission Notification,Claim Non-Million Plus Cities Tied Grants: 1st Installment (FY 2023-24) - Claim Grants status,
-      Claim Non-Million Plus Cities Tied Grants: 2nd Installment (FY 2023-24) - Annual Account,Claim Non-Million Plus Cities Tied Grants: 2nd Installment (FY 2023-24) - Linking of PFMS Account,
-      Claim Non-Million Plus Cities Tied Grants: 2nd Installment (FY 2023-24) - Property Tax & UC form,Claim Non-Million Plus Cities Tied Grants: 2nd Installment (FY 2023-24) - Grant Transfer Certificate,
-      Claim Non-Million Plus Cities Tied Grants: 2nd Installment (FY 2023-24) - Property Tax Floor Rate form,Claim Non-Million Plus Cities Tied Grants: 2nd Installment (FY 2023-24) - State Finance Commission Notification,
-      Claim Non-Million Plus Cities Tied Grants: 2nd Installment (FY 2023-24) - Claim Grants status,Claim Non-Million Plus Cities Untied Grants: 1st Installment (FY 2023-24) - Annual Account,
-      Claim Non-Million Plus Cities Untied Grants: 1st Installment (FY 2023-24) - Linking of PFMS Account,Claim Non-Million Plus Cities Untied Grants: 1st Installment (FY 2023-24) - Property Tax & UC form,
-      Claim Non-Million Plus Cities Untied Grants: 1st Installment (FY 2023-24) - Grant Transfer Certificate,Claim Non-Million Plus Cities Untied Grants: 1st Installment (FY 2023-24) - Property Tax Floor Rate form,
-      Claim Non-Million Plus Cities Untied Grants: 1st Installment (FY 2023-24) - State Finance Commission Notification,Claim Non-Million Plus Cities Untied Grants: 1st Installment (FY 2023-24) - Claim Grants status,Claim Non-Million Plus Cities Untied Grants: 2nd Installment (FY 2023-24) - Annual Account,
-      Claim Non-Million Plus Cities Untied Grants: 2nd Installment (FY 2023-24) - Linking of PFMS Account,Claim Non-Million Plus Cities Untied Grants: 2nd Installment (FY 2023-24) - Property Tax & UC form,
-      Claim Non-Million Plus Cities Untied Grants: 2nd Installment (FY 2023-24) - Grant Transfer Certificate,Claim Non-Million Plus Cities Untied Grants: 2nd Installment (FY 2023-24) - Property Tax Floor Rate form,
-      Claim Non-Million Plus Cities Untied Grants: 2nd Installment (FY 2023-24) - State Finance Commission Notification,Claim Non-Million Plus Cities Untied Grants: 2nd Installment (FY 2023-24) - Claim Grants status,Claim Million Plus Cities Tied Grants: 1st Installment (FY 2023-24) - Detailed Utilisation Report,
-      Claim Million Plus Cities Tied Grants: 1st Installment (FY 2023-24) - Annual Account,Claim Million Plus Cities Tied Grants: 1st Installment (FY 2023-24) - Linking of PFMS Account,Claim Million Plus Cities Tied Grants: 1st Installment (FY 2023-24) - 28 SLBs,Claim Million Plus Cities Tied Grants: 1st Installment (FY 2023-24) - Garbage Free City,
-      Claim Million Plus Cities Tied Grants: 1st Installment (FY 2023-24) - SLBs for Water Supply and Sanitation,Claim Million Plus Cities Tied Grants: 1st Installment (FY 2023-24) - Property Tax & UC form,Claim Million Plus Cities Tied Grants: 1st Installment (FY 2023-24) - Grant Transfer Certificate,Claim Million Plus Cities Tied Grants: 1st Installment (FY 2023-24) - Property Tax Floor Rate form,Claim Million Plus Cities Tied Grants: 1st Installment (FY 2023-24) - State Finance Commission Notification,Claim Million Plus Cities Tied Grants: 1st Installment (FY 2023-24) - Action Plan,
-      Claim Million Plus Cities Tied Grants: 1st Installment (FY 2023-24) - Indicators for Water Supply and Sanitation,Claim Million Plus Cities Tied Grants: 1st Installment (FY 2023-24) - Projects for Water Supply,Claim Million Plus Cities Tied Grants: 1st Installment (FY 2023-24) - Claim Grants status`
-      break;
+    // case CollectionNames.state_grant_claim:
+    //   columns = `Claim Non-Million Plus Cities Tied Grants: 1st Installment (FY 2023-24) - Detailed Utilisation Report,Claim Non-Million Plus Cities Tied Grants: 1st Installment (FY 2023-24) - Annual Account,
+    //   Claim Non-Million Plus Cities Tied Grants: 1st Installment (FY 2023-24) - Linking of PFMS Account,Claim Non-Million Plus Cities Tied Grants: 1st Installment (FY 2023-24) - Property Tax & UC form,
+    //   Claim Non-Million Plus Cities Tied Grants: 1st Installment (FY 2023-24) - Grant Transfer Certificate,Claim Non-Million Plus Cities Tied Grants: 1st Installment (FY 2023-24) - Property Tax Floor Rate form,
+    //   Claim Non-Million Plus Cities Tied Grants: 1st Installment (FY 2023-24) - State Finance Commission Notification,Claim Non-Million Plus Cities Tied Grants: 1st Installment (FY 2023-24) - Claim Grants status,
+    //   Claim Non-Million Plus Cities Tied Grants: 2nd Installment (FY 2023-24) - Annual Account,Claim Non-Million Plus Cities Tied Grants: 2nd Installment (FY 2023-24) - Linking of PFMS Account,
+    //   Claim Non-Million Plus Cities Tied Grants: 2nd Installment (FY 2023-24) - Property Tax & UC form,Claim Non-Million Plus Cities Tied Grants: 2nd Installment (FY 2023-24) - Grant Transfer Certificate,
+    //   Claim Non-Million Plus Cities Tied Grants: 2nd Installment (FY 2023-24) - Property Tax Floor Rate form,Claim Non-Million Plus Cities Tied Grants: 2nd Installment (FY 2023-24) - State Finance Commission Notification,
+    //   Claim Non-Million Plus Cities Tied Grants: 2nd Installment (FY 2023-24) - Claim Grants status,Claim Non-Million Plus Cities Untied Grants: 1st Installment (FY 2023-24) - Annual Account,
+    //   Claim Non-Million Plus Cities Untied Grants: 1st Installment (FY 2023-24) - Linking of PFMS Account,Claim Non-Million Plus Cities Untied Grants: 1st Installment (FY 2023-24) - Property Tax & UC form,
+    //   Claim Non-Million Plus Cities Untied Grants: 1st Installment (FY 2023-24) - Grant Transfer Certificate,Claim Non-Million Plus Cities Untied Grants: 1st Installment (FY 2023-24) - Property Tax Floor Rate form,
+    //   Claim Non-Million Plus Cities Untied Grants: 1st Installment (FY 2023-24) - State Finance Commission Notification,Claim Non-Million Plus Cities Untied Grants: 1st Installment (FY 2023-24) - Claim Grants status,Claim Non-Million Plus Cities Untied Grants: 2nd Installment (FY 2023-24) - Annual Account,
+    //   Claim Non-Million Plus Cities Untied Grants: 2nd Installment (FY 2023-24) - Linking of PFMS Account,Claim Non-Million Plus Cities Untied Grants: 2nd Installment (FY 2023-24) - Property Tax & UC form,
+    //   Claim Non-Million Plus Cities Untied Grants: 2nd Installment (FY 2023-24) - Grant Transfer Certificate,Claim Non-Million Plus Cities Untied Grants: 2nd Installment (FY 2023-24) - Property Tax Floor Rate form,
+    //   Claim Non-Million Plus Cities Untied Grants: 2nd Installment (FY 2023-24) - State Finance Commission Notification,Claim Non-Million Plus Cities Untied Grants: 2nd Installment (FY 2023-24) - Claim Grants status,Claim Million Plus Cities Tied Grants: 1st Installment (FY 2023-24) - Detailed Utilisation Report,
+    //   Claim Million Plus Cities Tied Grants: 1st Installment (FY 2023-24) - Annual Account,Claim Million Plus Cities Tied Grants: 1st Installment (FY 2023-24) - Linking of PFMS Account,Claim Million Plus Cities Tied Grants: 1st Installment (FY 2023-24) - 28 SLBs,Claim Million Plus Cities Tied Grants: 1st Installment (FY 2023-24) - Garbage Free City,
+    //   Claim Million Plus Cities Tied Grants: 1st Installment (FY 2023-24) - SLBs for Water Supply and Sanitation,Claim Million Plus Cities Tied Grants: 1st Installment (FY 2023-24) - Property Tax & UC form,Claim Million Plus Cities Tied Grants: 1st Installment (FY 2023-24) - Grant Transfer Certificate,Claim Million Plus Cities Tied Grants: 1st Installment (FY 2023-24) - Property Tax Floor Rate form,Claim Million Plus Cities Tied Grants: 1st Installment (FY 2023-24) - State Finance Commission Notification,Claim Million Plus Cities Tied Grants: 1st Installment (FY 2023-24) - Action Plan,
+    //   Claim Million Plus Cities Tied Grants: 1st Installment (FY 2023-24) - Indicators for Water Supply and Sanitation,Claim Million Plus Cities Tied Grants: 1st Installment (FY 2023-24) - Projects for Water Supply,Claim Million Plus Cities Tied Grants: 1st Installment (FY 2023-24) - Claim Grants status`
+    //   break;
     default:
       columns = '';
       break;
