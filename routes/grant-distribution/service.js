@@ -25,6 +25,7 @@ let baseUrls = {
 const { YEAR_CONSTANTS, MASTER_STATUS,MASTER_FORM_STATUS,MASTER_STATUS_ID } = require('../../util/FormNames')
 const { BadRequest } = require("../../service/response");
 const userTypes = require("../../util/userTypes");
+const CurrentStatus = require("../../models/CurrentStatus");
 var outDatedYearIds = Object.entries(years).map(([key,value])=> {
   return ['2017-18', '2018-19', '2019-20', '2020-21', '2021-22' ].includes(key) ? value : ""
 }).filter(item => item != "")
@@ -451,7 +452,7 @@ const getRejectedFields = (currentFormStatus,formStatuses,installment,role)=>{
   try{
       // console.log("formStatuses :: ",formStatuses)
       let prevInstallment = installment - 1
-      let inputAllowed = [MASTER_STATUS['In Progress'],MASTER_STATUS['Not Started'],MASTER_STATUS['Rejected By MoHUA']]
+      let inputAllowed = [MASTER_FORM_STATUS['IN_PROGRESS'],MASTER_FORM_STATUS['NOT_STARTED'],MASTER_FORM_STATUS['RETURNED_BY_MoHUA']]
       let allowedStatuses = [MASTER_STATUS['Submission Acknowledged By MoHUA']]
       if(prevInstallment  && !allowedStatuses.includes(formStatuses?.[prevInstallment]) && role === userTypes.state){
           return true
@@ -461,19 +462,10 @@ const getRejectedFields = (currentFormStatus,formStatuses,installment,role)=>{
       }
   }
   catch(err){
-      console.log("error in  getRejectedgetRejectedFieldsFields::::  ",err.message)
+      console.log("error in  getRejectedFields::::  ",err.message)
   }
 }
 
-const canTakeAction = (currentFormStatus,role)=>{
-  try{
-    let stateCanTakeAction = [MASTER_FORM_STATUS]
-    let mohuaCanTakeAction = []
-  }
-  catch(err){
-    console.log("error in canTakeAction :: ",err.message)
-  }
-}
 
 const getSectionWiseJson = async(state, design_year,role) => {
 let host = baseUrls[process.env.ENV]
@@ -493,6 +485,13 @@ let host = baseUrls[process.env.ENV]
     state:ObjectId(state),
     design_year:design_year,
   }).lean()
+  let currentStatuses = await CurrentStatus.find({recordId:{
+    "$in": (allocationForms.length ? allocationForms.map(item=>item._id):[]),
+    
+  },
+  "actionTakenByRole":"MoHUA"}).sort({
+    "createdAt":-1
+  })
   for(let section of tabularStructure){
     let installments = section.installments
     for(let i=1; i <= installments; i++){
@@ -501,6 +500,7 @@ let host = baseUrls[process.env.ENV]
         "url":""
       }
       let allocationForm =  allocationForms.find(item => item.installment === i && item.year.toString() === years[section.yearCode] && item.type === section.type ) || {}
+      let currentStatus = currentStatuses.find(item => item.recordId.toString() === allocationForm._id.toString() && item.status === allocationForm.currentFormStatus)
       allocationForm.currentFormStatus = allocationForm?.currentFormStatus ? allocationForm?.currentFormStatus : 1
       let url = ""
       url = allocationForm?.url || ""
@@ -519,9 +519,12 @@ let host = baseUrls[process.env.ENV]
         url:url,
         isDisableQues:shouldDisableQues,
         file:file,
+        type:section.type,
         canTakeAction,
         status:MASTER_STATUS_ID[allocationForm.currentFormStatus],
-        statusId:allocationForm.currentFormStatus
+        statusId:allocationForm.currentFormStatus,
+        responseFile_mohua:currentStatus?.responseFile || "",
+        rejectReason_mohua:currentStatus?.rejectReason || ""
        }
        let question = await getChildQuestion(params)
        section.quesArray.push(question)
