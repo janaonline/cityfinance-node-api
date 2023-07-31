@@ -200,11 +200,12 @@ module.exports.get = async (req, res) => {
     /* End */
 
     if (collectionName === CollectionNames.state_gtc || collectionName === CollectionNames.state_grant_alloc) {
+      stateColumnNames['canTakeAction'] = 'Action'
       data = await isMillionPlus(data)
       data.forEach((element) => {
         let { status, pending } = countStatusData(element, collectionName);
         element.formStatus = status;
-        if (pending > 0 && collectionName === CollectionNames.state_gtc) {
+        if (pending > 0 && [CollectionNames.state_gtc,CollectionNames.state_grant_alloc].includes(collectionName) ) {
           element.cantakeAction = true;
         }
       });
@@ -531,7 +532,7 @@ function countStatusData(element, collectionName) {
   let total = 0;
   let notStarted = 0;
   let status = "";
-  let arr = collectionName === CollectionNames.state_gtc ? element.status : element.draft
+  let arr = [CollectionNames.state_gtc,CollectionNames.state_grant_alloc].includes(collectionName) ? element.status : element.draft
   let totalGtcForms = element.isMillionPlus ? 5 : 4
   if (collectionName === CollectionNames.state_gtc) {
     total = totalGtcForms
@@ -545,7 +546,7 @@ function countStatusData(element, collectionName) {
     status = collectionName === CollectionNames.state_gtc ? `${notStarted} Not Started` : `${notStarted} Not Submitted`;
     return { status, pending };
   } else {
-    if (collectionName === CollectionNames.state_gtc) {
+    if ([CollectionNames.state_gtc,CollectionNames.state_grant_alloc].includes(collectionName)) {
       for (let i = 0; i < arr?.length; i++) {
         if (arr[i] === MASTER_FORM_STATUS["UNDER_REVIEW_BY_MoHUA"]) {
           pending++;
@@ -561,15 +562,16 @@ function countStatusData(element, collectionName) {
         status = `${status}, ${notStarted} Not Started`;
       }
       return { status, pending };
-    } else if (collectionName === CollectionNames.state_grant_alloc) {
-      for (let i = 0; i < arr.length; i++) {
-        if (arr[i] === false) {
-          notStarted--;
-        }
-      }
-      status = `${total - notStarted} submitted`
-      return { status, pending };
-    }
+    } 
+    // else if (collectionName === CollectionNames.state_grant_alloc) {
+    //   for (let i = 0; i < arr.length; i++) {
+    //     if (arr[i] === false) {
+    //       notStarted--;
+    //     }
+    //   }
+    //   status = `${total - notStarted} submitted`
+    //   return { status, pending };
+    // }
   }
 }
 
@@ -1337,6 +1339,7 @@ function createDynamicQuery(collectionName, oldQuery, userRole, csv) {
               stateName: { $first: "$stateName" },
               state: { $first: "$state" },
               stateCode: { $first: "$stateCode" },
+              status: { $push: "$formData.currentFormStatus" },
               formData: { $push: "$formData" }
             }
           }
