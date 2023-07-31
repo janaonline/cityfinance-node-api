@@ -347,9 +347,9 @@ function gtcStateFormCSVFormat(obj, res) {
             let str = [...row, ...mainArr, ...tArr].join(',') + "\r\n"
             res.write("\ufeff" + str);
           }
-          
+
         } else {
-          key !== "receiptDate" ? mainArr.push(el[key]) : el[key] ? mainArr.push(formatDate(el[key])) : ""
+          key !== "receiptDate" ? mainArr.push(el[key]) :  mainArr.push(formatDate(el[key]))
         }
       }
     }
@@ -358,12 +358,45 @@ function gtcStateFormCSVFormat(obj, res) {
   }
 }
 
+function detailsGrantTransferredManipulate(params) {
+  const { transSortKey, tfgObj, el, formData } = params;
+  let tArr = []
+  for (const tKey of transSortKey) {
+    if (["recomAvail", "grantDistribute", "sfcNotificationCopy", "projectUndtkn", "propertyTaxNotifCopy", "accountLinked"].includes(tKey)) {
+      tArr.push(el[tKey]?.url || el[tKey])
+    } else if (["file", "rejectReason_mohua", "responseFile_mohua", "currentFormStatus"].includes(tKey)) {
+      let fData = getObjValue(formData[tKey]);
+      if (tKey === "currentFormStatus") {
+        tArr.push(MASTER_FORM_QUESTION_STATUS_STATE[formData[tKey]] || "");
+      } else {
+        tArr.push(fData);
+      }
+    } else {
+      if (["transDate"].includes(tKey)) {
+        tfgObj && tfgObj[tKey] ? tArr.push(formatDate(tfgObj[tKey])) : tArr.push("");
+      } else {
+        tArr.push(tfgObj && tfgObj[tKey]?.url ? tfgObj[tKey]?.url : tfgObj && tfgObj[tKey] ? tfgObj[tKey] : "");
+      }
+    }
+  }
+  return tArr;
+}
+
+function getObjValue(keyValue) {
+  if (keyValue && Object.keys(keyValue)) {
+    return keyValue?.url || ""
+  } else {
+    return keyValue || "";
+  }
+}
+
+
 // function detailsGrantTransferredManipulate(params) {
 //   const { transSortKey, tfgObj, el, formData } = params;
-//   let tArr = []
+//   const tArr = [];
 //   for (const tKey of transSortKey) {
 //     if (["recomAvail", "grantDistribute", "sfcNotificationCopy", "projectUndtkn", "propertyTaxNotifCopy", "accountLinked"].includes(tKey)) {
-//       tArr.push(el[tKey]?.url || el[tKey])
+//       tArr.push(el[tKey]?.url || el[tKey] || "");
 //     } else if (["file", "rejectReason_mohua", "responseFile_mohua", "currentFormStatus"].includes(tKey)) {
 //       let fData = formData[tKey]?.url || formData[tKey] || "";
 //       if (tKey === "currentFormStatus") {
@@ -371,39 +404,14 @@ function gtcStateFormCSVFormat(obj, res) {
 //       } else {
 //         tArr.push(fData);
 //       }
+//     } else if (["transDate"].includes(tKey)) {
+//       tArr.push(tfgObj && tfgObj[tKey] ? formatDate(tfgObj[tKey]) : "");
 //     } else {
-//       if (["transDate"].includes(tKey)) {
-//         tfgObj && tfgObj[tKey] ? tArr.push(formatDate(tfgObj[tKey])) : tArr.push("");
-//       } else {
-//         tArr.push(tfgObj && tfgObj[tKey]?.url ? tfgObj[tKey]?.url : tfgObj && tfgObj[tKey] ? tfgObj[tKey] : "");
-//       }
+//       tArr.push(tfgObj && tfgObj[tKey]?.url || tfgObj && tfgObj[tKey] || "");
 //     }
 //   }
 //   return tArr;
 // }
-
-
-function detailsGrantTransferredManipulate(params) {
-  const { transSortKey, tfgObj, el, formData } = params;
-  const tArr = [];
-  for (const tKey of transSortKey) {
-    if (["recomAvail", "grantDistribute", "sfcNotificationCopy", "projectUndtkn", "propertyTaxNotifCopy", "accountLinked"].includes(tKey)) {
-      tArr.push(el[tKey]?.url || el[tKey] || "");
-    } else if (["file", "rejectReason_mohua", "responseFile_mohua", "currentFormStatus"].includes(tKey)) {
-      let fData = formData[tKey]?.url || formData[tKey] || "";
-      if (tKey === "currentFormStatus") {
-        tArr.push(MASTER_FORM_QUESTION_STATUS_STATE[formData[tKey]] || "");
-      } else {
-        tArr.push(fData);
-      }
-    } else if (["transDate"].includes(tKey)) {
-      tArr.push(tfgObj && tfgObj[tKey] ? formatDate(tfgObj[tKey]) : "");
-    } else {
-      tArr.push(tfgObj && tfgObj[tKey]?.url || tfgObj && tfgObj[tKey] || "");
-    }
-  }
-  return tArr;
-}
 
 
 const sortKeysWaterSenitation = (key) => {
@@ -458,19 +466,18 @@ const waterSenitationXlsDownload = async (data, res, role) => {
     let counter = { waterBodies: 2, serviceLevelIndicators: 2, reuseWater: 2 } // counter
     if (data?.length) {
       for (const pf of data) {
+        let rowsArr = [pf?.stateName, pf?.stateCode, pf?.formStatus];
+        let sortKeys = { waterBodies, reuseWater, serviceLevelIndicators };
         if (pf?.formData) {
           let { uaData } = pf?.formData;
-          let rowsArr = [pf?.stateName, pf?.stateCode, pf?.formStatus];
           let uaCode = await UA.find({ state: ObjectId(pf?.state) }, { UACode: 1 }).lean();
           uaCode = createObjectFromArray(uaCode);
           addActionKeys(pf?.formData, uaCode, pf?.MohuaStatus, role);
-
           for (const ua of uaData) {
             let commentArr = [];
             if (['Returned By MoHUA', 'Submission Acknowledged By MoHUA'].includes(pf?.formStatus)) {
               commentArr.push(ua?.status, ua?.rejectReason, ua?.responseFile ? ua?.responseFile.url : "");
             }
-            let sortKeys = { waterBodies, reuseWater, serviceLevelIndicators };
             let UAName = uaFormData?.length ? uaFormData.find(e => e?._id?.toString() == ua?.ua?.toString()) : null
             rowsArr[3] = UAName?.name
             for (const key in sortKeys) {
@@ -493,9 +500,16 @@ const waterSenitationXlsDownload = async (data, res, role) => {
               }
             }
           }
+        } else {
+          for (const key in sortKeys) {
+            sortKeys[key].addRow([...rowsArr]);
+            sortKeys[key].getRow(counter[key])
+            counter[key]++
+          }
         }
       }
     }
+
     // Create a write stream
     const writeStream = fs.createWriteStream(`${tempFilePath}/${filename}`);
     // Write the stream to the file

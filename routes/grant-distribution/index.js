@@ -5,7 +5,8 @@ const {
   uploadTemplate,
   getGrantDistribution,
   saveData,
-  getGrantDistributionForm
+  getGrantDistributionForm,
+  installmentAction
 } = require("./service");
 const verifyToken = require("../auth/services/verifyToken").verifyToken;
 
@@ -26,5 +27,5 @@ router.get("/upload", verifyToken, uploadTemplate);
 router.post("/save", verifyToken, saveData);
 
 router.get("/getGrantDistributionForm",verifyToken,getGrantDistributionForm)
-
+router.post("/installmentAction",verifyToken,installmentAction)
 module.exports = router;

@@ -15,14 +15,14 @@ const { getKeyByValue, saveFormHistory, grantDistributeOptions } = require("../.
 const {
   UpdateStateMasterForm,
 } = require("../../service/updateStateMasterForm");
-
+const {saveStatusAndHistory} = require("../CommonFormSubmission/service")
 let baseUrls = {
   "staging":"https://staging.cityfinance.in",
   "demo":"https://democityfinance.dhwaniris.in",
   "prod":"https://cityfinance.in"
 }
 
-const { YEAR_CONSTANTS, MASTER_STATUS } = require('../../util/FormNames')
+const { YEAR_CONSTANTS, MASTER_STATUS,MASTER_FORM_STATUS,MASTER_STATUS_ID } = require('../../util/FormNames')
 const { BadRequest } = require("../../service/response");
 const userTypes = require("../../util/userTypes");
 var outDatedYearIds = Object.entries(years).map(([key,value])=> {
@@ -201,11 +201,11 @@ exports.uploadTemplate = async (req, res) => {
       if (!outDatedYearIds.includes(formData.design_year)) {
         let [xslDataStateInfo, stateInfo] = await Promise.all([xslDataState, ULB.aggregate(queryState)]);
         let ulbCount = stateInfo[0].totalUlbs;
+        
         let xslDataStateName = xslDataStateInfo[0].state.name;
         let stateName = stateInfo[0].state.name;
 
         if (stateName !== xslDataStateName) {
-          console.log("1")
           return res.status(400).xls("error_sheet.xlsx", [{ "message": "Wrong state file" }]);
         }
         if (ulbCount != (XslData.length - emptyCensus)) {
@@ -353,8 +353,6 @@ async function validate(data, formData) {
     !(keys.includes(code) && keys.includes(name) && keys.includes(amount)
       || keys.length !== 3
     )) {
-      console.log(keys)
-      console.log(keys.length)
     data.forEach((element) => {
       element.Errors = "Incorrect Format,";
     });
@@ -363,6 +361,7 @@ async function validate(data, formData) {
   for (let index = 0; index < data.length; index++) {
     const keys = Object.keys(data[index]).length;
     if (keys !== 3) {
+      console.log(keys.length)
       data[index].Errors = "Incorrect Format,";
     }
     if (data[index][code]) ulbCodes.push(data[index][code]);
@@ -385,9 +384,6 @@ async function validate(data, formData) {
     }
     if (!compareData[data[index][code]]) {
       errorFlag = true;
-      console.log("1",code)
-      console.log("2 ::: ",index)
-      console.log("data :::: ",data[index][code])
       if (data[index].Errors) data[index].Errors += "Code Not Valid,";
       else data[index].Errors = "Code Not Valid,";
     }
@@ -469,6 +465,15 @@ const getRejectedFields = (currentFormStatus,formStatuses,installment,role)=>{
   }
 }
 
+const canTakeAction = (currentFormStatus,role)=>{
+  try{
+    let stateCanTakeAction = [MASTER_FORM_STATUS]
+    let mohuaCanTakeAction = []
+  }
+  catch(err){
+    console.log("error in canTakeAction :: ",err.message)
+  }
+}
 
 const getSectionWiseJson = async(state, design_year,role) => {
 let host = baseUrls[process.env.ENV]
@@ -499,6 +504,7 @@ let host = baseUrls[process.env.ENV]
       allocationForm.currentFormStatus = allocationForm?.currentFormStatus ? allocationForm?.currentFormStatus : 1
       let url = ""
       url = allocationForm?.url || ""
+      const canTakeAction = (allocationForm.currentFormStatus == MASTER_FORM_STATUS['UNDER_REVIEW_BY_MoHUA'] && role == userTypes.mohua);
       file.name  = allocationForm?.fileName || ""
       file.url = allocationForm?.url || ""
       let shouldDisableQues = await getRejectedFields(allocationForm?.currentFormStatus,formStatuses,i,role)
@@ -513,6 +519,9 @@ let host = baseUrls[process.env.ENV]
         url:url,
         isDisableQues:shouldDisableQues,
         file:file,
+        canTakeAction,
+        status:MASTER_STATUS_ID[allocationForm.currentFormStatus],
+        statusId:allocationForm.currentFormStatus
        }
        let question = await getChildQuestion(params)
        section.quesArray.push(question)
@@ -559,5 +568,87 @@ module.exports.getGrantDistributionForm = async (req, res, next) => {
   }
   catch (err) {
     console.log("error in getGrantDistributionForm :::: ", err.message)
+  }
+}
+
+
+module.exports.installmentAction = async (req, res) => {
+
+  try {
+      let {role,mohua} = req.decoded
+      if(role !== userTypes.mohua){
+          return res.json({
+              "success":true,
+              "message":"Not permitted"
+          })
+      }
+      const {
+          key,
+          rejectReason_mohua,
+          responseFile_mohua,
+          statusId,
+          installment,
+          design_year,
+          state,
+      } = req.body;
+
+      const found = await GrantDistribution.findOneAndUpdate({
+          installment,
+          // year: ObjectId(year),
+          // type,
+          type:key,
+          design_year: ObjectId(design_year),
+          state: ObjectId(state)
+      }, {
+          $set: {
+              actionTakenBy: mohua || state,
+              actionTakenByRole:role,
+              currentFormStatus: statusId,
+              rejectReason_mohua,
+              responseFile_mohua
+          }
+      });
+      req.body._id = found?._id
+      req.body.rejectReason = rejectReason_mohua
+      req.body.responseFile = responseFile_mohua
+      req.body.financialYear = design_year
+      let formSubmit = [{...req.body,type:key,currentFormStatus:statusId}]
+      await createHistory({ formBodyStatus : Number(statusId),formSubmit, actionTakenByRole:role , actionTakenBy: mohua || state  })
+      if(!found) return res.status(404).json({ message: 'Installment not found'});
+      return res.status(200).json({
+          success: true,
+          message: 'Action recorded'
+      });
+
+
+  }
+  catch (err) {
+      let message = ["demo","staging"].includes(process.env.ENV) ? err.message : "something went wrong"
+       return res.status(404).json({
+          success : true,
+          message,
+      })
+  }
+}
+
+
+async function createHistory(params) {
+  try {
+      let {formBodyStatus,actionTakenBy,actionTakenByRole,formSubmit,formType} = params
+      let formData = formSubmit[0]
+      let shortKey = `${formData.type}_${getKeyByValue(years,formData.financialYear)}_${formData.installment}`
+          let historyParams = {
+              formBodyStatus,
+              actionTakenBy:actionTakenBy,
+              actionTakenByRole:actionTakenByRole,
+              formSubmit:formSubmit,
+              formType:"Grant_allocation",
+              shortKey:shortKey
+          }
+          
+          await saveStatusAndHistory(historyParams)
+  }
+  catch (err) {
+      console.log("error in createHistory ::: ", err.message)
   }
 }

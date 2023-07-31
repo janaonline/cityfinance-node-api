@@ -2,7 +2,7 @@
 const {getKeyByValue} = require("../../util/masterFunctions")
 const {years} = require("../../service/years");
 function getChildQuestion(params){
-    let {year,installment,type,key,quesType,file,isDisableQues,template,url} = params 
+    let {year,installment,type,key,quesType,file,isDisableQues,template,url,canTakeAction,status,statusId} = params 
     try{
       let childQuestion = {
         "installment": installment,
@@ -24,7 +24,10 @@ function getChildQuestion(params){
           "url": file.url || "",
           "progress": null,
           "error": null,
-        }
+        },
+        status,
+        canTakeAction,
+        statusId
       }
       return childQuestion
     }
