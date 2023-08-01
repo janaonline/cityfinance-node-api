@@ -16,7 +16,7 @@ const PropertyTaxFloorRate = require('../../models/PropertyTaxFloorRate');
 const StateFinanceCommissionFormation = require('../../models/StateFinanceCommissionFormation');
 const TwentyEightSlbsForm = require('../../models/TwentyEightSlbsForm');
 const GrantTransferCertificate = require('../../models/GrantTransferCertificate');
-const { FormNames, FORM_LEVEL, MASTER_STATUS, YEAR_CONSTANTS, ULB_ACCESSIBLE_YEARS, USER_ROLE, MODEL_PATH } = require('../../util/FormNames');
+const { FormNames, FORM_LEVEL, MASTER_STATUS, YEAR_CONSTANTS, ULB_ACCESSIBLE_YEARS, USER_ROLE, MODEL_PATH, MASTER_FORM_STATUS } = require('../../util/FormNames');
 const { calculateTabwiseStatus } = require('../annual-accounts/utilFunc');
 const { modelPath } = require('../../util/masterFunctions')
 const Response = require("../../service").response;
@@ -2012,7 +2012,7 @@ async function handleRangeIfExists(questionObj, formObj) {
             }
             // console.log("question.dbKey",questionObj.shortKey)
         }
-        else if(formObj.validations && Object.keys(formObj.validations).includes(questionObj.shortKey)){
+        else if (formObj.validations && Object.keys(formObj.validations).includes(questionObj.shortKey)) {
             obj.minRange = formObj.validations[questionObj.shortKey].min || ""
             obj.maxRange = formObj.validations[questionObj.shortKey].max || ""
             obj.min = obj.minRange
@@ -2808,6 +2808,9 @@ async function takeActionOnForms(params, res) {
                 if (multi) {
                     let [response] = responses;
                     let shortKeys = await getUAShortKeys(form.state);
+                    if ([FORMIDs['GrantAllocation'], FORMIDs['GTC_STATE']].includes(formId)) {
+                        shortKeys = await getMultipleInstallmentShortKeys(formId, form, shortKeys);
+                    }
                     for (let shortKey of shortKeys) {
                         let params = {
                             formId,
@@ -3075,11 +3078,11 @@ async function takeActionOnForms(params, res) {
                     }
 
                     // Save Form Level History
-                    await saveFormLevelHistory(formId, form, actionTakenByRole, actionTakenBy,response.status);
+                    await saveFormLevelHistory(formId, form, actionTakenByRole, actionTakenBy, response.status);
                 }
             }
             if (saveStatusResponse !== 1) {
-                throw "Action failed to save status!";
+                throw { message: "Action failed to save status!" };
             } else {
                 count++;
             }
@@ -3088,6 +3091,17 @@ async function takeActionOnForms(params, res) {
     } catch (error) {
         return error.message;
     }
+}
+
+async function getMultipleInstallmentShortKeys(formId, form, shortKeys) {
+    let condition = {
+        formId,
+        recordId: ObjectId(form._id),
+        status: MASTER_FORM_STATUS['UNDER_REVIEW_BY_MoHUA']
+    };
+    let statusData = await CurrentStatus.find(condition).lean();
+    shortKeys = statusData.map(el => el.shortKey);
+    return shortKeys;
 }
 
 async function updateFormCurrentStatus(model, formId, response) {
@@ -3103,7 +3117,7 @@ async function updateFormCurrentStatus(model, formId, response) {
             )
             .lean();
         if (!updatedFormResponse) {
-            throw ("Action failed to update form current Status!");
+            throw { message: "Action failed to update form current Status!" };
         }
         return 1;
     } catch (error) {
@@ -3847,16 +3861,16 @@ function checkIfUlbCanEditForm2223(form) {
 }
 
 function checkUlbAccess(input, customSlice) {
-  let ulbVariable = "access_";
-  let year = input.split("").slice(customSlice).join("").replace("-", "");
-  return ulbVariable + year;
+    let ulbVariable = "access_";
+    let year = input.split("").slice(customSlice).join("").replace("-", "");
+    return ulbVariable + year;
 }
 
 module.exports.checkUlbAccess = checkUlbAccess;
 
-function getLastYearUlbAccess(input){
+function getLastYearUlbAccess(input) {
     let year = input.split('-');
-    let lastYear =  `${String(Number(year[0])-1)}-${String(Number(year[1])-1)}`;
+    let lastYear = `${String(Number(year[0]) - 1)}-${String(Number(year[1]) - 1)}`;
     return checkUlbAccess(lastYear, 2);
 }
 module.exports.getLastYearUlbAccess = getLastYearUlbAccess
@@ -3877,7 +3891,7 @@ function checkIfUlbCanEditForm(currentFormStatus) {
     }
 }
 
-async function saveFormLevelHistory(masterFormId, formSubmit, actionTakenByRole, actionTakenBy,currentStatus) {
+async function saveFormLevelHistory(masterFormId, formSubmit, actionTakenByRole, actionTakenBy, currentStatus) {
     let currentStatusData = {
         formId: masterFormId,
         recordId: ObjectId(formSubmit._id),
