@@ -357,7 +357,13 @@ const gtcInstallmentForms = (stateId) => {
 function writeSubmitClaimCSV(output, res) {
   try {
     Object.entries(output).forEach(([key, items], index) => {
-      const { stateName, stateCode } = stateArrData.find((state) => state._id == Object.keys(output)[index]);
+      let stateObj = {};
+      if (stateArrData.length == 1) {
+        stateObj = stateArrData[0]
+      } else {
+        stateObj = stateArrData.find((state) => state._id == Object.keys(output)[index]);
+      }
+      const { stateName, stateCode } = stateObj
       let row = 'State Name,State Code,';
       let row1 = `${stateName},${stateCode},`;
       if (index === 0) {
@@ -370,6 +376,7 @@ function writeSubmitClaimCSV(output, res) {
       }
     });
   } catch (error) {
+    console.log(error)
     throw { message: `writeSubmitClaimCSV:: ${error.message}` }
   }
 }
