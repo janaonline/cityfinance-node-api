@@ -16,7 +16,7 @@ const PropertyTaxFloorRate = require('../../models/PropertyTaxFloorRate');
 const StateFinanceCommissionFormation = require('../../models/StateFinanceCommissionFormation');
 const TwentyEightSlbsForm = require('../../models/TwentyEightSlbsForm');
 const GrantTransferCertificate = require('../../models/GrantTransferCertificate');
-const { FormNames, FORM_LEVEL, MASTER_STATUS, YEAR_CONSTANTS, ULB_ACCESSIBLE_YEARS, USER_ROLE, MODEL_PATH } = require('../../util/FormNames');
+const { FormNames, FORM_LEVEL, MASTER_STATUS, YEAR_CONSTANTS, ULB_ACCESSIBLE_YEARS, USER_ROLE, MODEL_PATH, MASTER_FORM_STATUS } = require('../../util/FormNames');
 const { calculateTabwiseStatus } = require('../annual-accounts/utilFunc');
 const { modelPath } = require('../../util/masterFunctions')
 const Response = require("../../service").response;
@@ -2808,6 +2808,9 @@ async function takeActionOnForms(params, res) {
                 if (multi) {
                     let [response] = responses;
                     let shortKeys = await getUAShortKeys(form.state);
+                    if ([FORMIDs['GrantAllocation'], FORMIDs['GTC_STATE']].includes(formId)) {
+                        shortKeys = await getMultipleInstallmentShortKeys(formId, form, shortKeys);
+                    }
                     for (let shortKey of shortKeys) {
                         let params = {
                             formId,
@@ -3088,6 +3091,17 @@ async function takeActionOnForms(params, res) {
     } catch (error) {
         return error.message;
     }
+}
+
+async function getMultipleInstallmentShortKeys(formId, form, shortKeys) {
+    let condition = {
+        formId,
+        recordId: ObjectId(form._id),
+        status: MASTER_FORM_STATUS['UNDER_REVIEW_BY_MoHUA']
+    };
+    let statusData = await CurrentStatus.find(condition).lean();
+    shortKeys = statusData.map(el => el.shortKey);
+    return shortKeys;
 }
 
 async function updateFormCurrentStatus(model, formId, response) {
