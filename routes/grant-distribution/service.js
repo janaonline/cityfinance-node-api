@@ -523,8 +523,8 @@ let host = baseUrls[process.env.ENV]
         canTakeAction,
         status:MASTER_STATUS_ID[allocationForm.currentFormStatus],
         statusId:allocationForm.currentFormStatus,
-        responseFile_mohua:currentStatus?.responseFile || "",
-        rejectReason_mohua:currentStatus?.rejectReason || ""
+        responseFile:currentStatus?.responseFile || "",
+        rejectReason:currentStatus?.rejectReason || ""
        }
        let question = await getChildQuestion(params)
        section.quesArray.push(question)
