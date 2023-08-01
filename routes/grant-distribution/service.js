@@ -22,7 +22,7 @@ let baseUrls = {
   "prod":"https://cityfinance.in"
 }
 
-const { YEAR_CONSTANTS, MASTER_STATUS,MASTER_FORM_STATUS,MASTER_STATUS_ID } = require('../../util/FormNames')
+const { YEAR_CONSTANTS, MASTER_STATUS,MASTER_FORM_STATUS,MASTER_STATUS_ID,FORMIDs } = require('../../util/FormNames')
 const { BadRequest } = require("../../service/response");
 const userTypes = require("../../util/userTypes");
 const CurrentStatus = require("../../models/CurrentStatus");
@@ -477,7 +477,7 @@ let host = baseUrls[process.env.ENV]
     }, { isMillionPlus: 1 })
     let stateIsMillion = ulb?.isMillionPlus === "Yes" ? true : false
     let tabularStructure = await FormsJson.findOne({
-      "formId":{"$in":[11.2]},
+      "formId":{"$in":[FORMIDs['GrantAllocation']]},
       "design_year":design_year
   }).lean()
   tabularStructure = tabularStructure?.data || []
