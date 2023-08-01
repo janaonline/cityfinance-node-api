@@ -1319,8 +1319,8 @@ exports.getView = async function (req, res, next) {
       currentFormStatus: viewOne.currentFormStatus,
       financialYearTableHeader,
       messages: userMessages,
-      hideForm,
-      notice
+      // hideForm,
+      // notice
     };
     if (userMessages.length > 0) {
       let { approvedPerc, rejectedPerc } = calculatePercentage(modifiedLedgerData, requiredFields, viewOne)
@@ -3887,7 +3887,6 @@ module.exports.actionTakenByMoHua = catchAsync(async (req, res) => {
     const session = await mongoose.startSession();
     await session.startTransaction();
     let masterFormId = FORMIDs['fiscalRanking'];
-    let params = { isDraft, role, userId, formId, masterFormId, formBodyStatus: currentFormStatus, actionTakenBy: userId, actionTakenByRole: role }
     
     let calculationsTabWise = await calculateAndUpdateStatusForMappers(
       session,
@@ -3906,7 +3905,8 @@ module.exports.actionTakenByMoHua = catchAsync(async (req, res) => {
       }
 
     }
-    
+    let params = { isDraft, role, userId, formId, masterFormId, formBodyStatus: formStatus, actionTakenBy: userId, actionTakenByRole: role }
+    await createHistory(params)
     let feedBackResp = await saveFeedbacksAndForm(
       calculationsTabWise,
       ulbId,
@@ -3919,7 +3919,6 @@ module.exports.actionTakenByMoHua = catchAsync(async (req, res) => {
     if (feedBackResp.success) {
       response.success = true;
       response.message = "Details submitted successfully";
-       await createHistory(params)
       return res.status(200).json(response);
     } else {
       response.success = false;
@@ -4053,7 +4052,7 @@ module.exports.createForm = catchAsync(async (req, res) => {
     }
     let masterFormId = FORMIDs['fiscalRanking'];
     let params = { isDraft, role, userId, formId, masterFormId, formBodyStatus: currentFormStatus, actionBy: ulbId }
-    // await createHistory(params)
+    await createHistory(params)
     let calculationsTabWise = await calculateAndUpdateStatusForMappers(
       session,
       actions,
@@ -4063,8 +4062,6 @@ module.exports.createForm = catchAsync(async (req, res) => {
       true,
       isDraft
     );
-    console.log(">>>>>>~>>>>>>>>>>>")
-    await createHistory(params)
     if (!statusTracker.IP === currentFormStatus) {
       await FiscalRanking.findOneAndUpdate({
         ulb: ObjectId(req.body.ulbId),
@@ -4401,7 +4398,6 @@ async function createHistory(params) {
       // await session.commitTransaction();
       // return Response.OK(res, {}, "Form Submitted");
     } else if (
-
       [MASTER_STATUS["Submission Acknowledged by PMU"], MASTER_STATUS["Verification Not Started"], MASTER_STATUS["Verification In Progress"], MASTER_STATUS["Returned by PMU"]].includes(formBodyStatus)
     ) {
       let data = await FiscalRanking.find({ "_id": formId }).lean()
@@ -5497,13 +5493,13 @@ module.exports.getTrackingHistory = async(req,res)=>{
       }
     })
     let formModified = form.modifiedAt  ? form.modifiedAt.toLocaleDateString()+" "+form?.createdAt.toLocaleTimeString():  histories[histories.length -1].date
-    histories.push(
-      {
-        "srNo":maxSrNo,
-        "action":statusList[form['currentFormStatus']],
-        "date":formModified
-      }
-    )
+    // histories.push(
+    //   {
+    //     "srNo":maxSrNo,
+    //     "action":statusList[form['currentFormStatus']],
+    //     "date":formModified
+    //   }
+    // )
     response.success = true
     response.data = histories
     response.message = histories.length ? "" : "No history found"
