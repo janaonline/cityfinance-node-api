@@ -157,3 +157,21 @@ module.exports.USER_ROLE = {
     "STATE": "STATE",
     "ULB": "ULB"
 }
+module.exports.FORM_TYPE_SUBMIT_CLAIM = {  // submit grant claim 
+    1:"1_nmpc_tied", // combination of installment and form Type
+    2:"2_nmpc_tied",
+    3:"1_nmpc_untied",
+    4:"2_nmpc_untied", 
+    5:"1_mpc_tied"
+ };
+
+ module.exports.FORM_TYPE_NAME = {  // submit grant claim 
+    "nmpc_tied" : "Claim Non-Million Plus Cities Tied Grants", 
+    "nmpc_untied" : "Claim Non-Million Plus Cities Untied Grants" ,
+    "mpc_tied" : "Claim Million Plus Cities Tied Grants"
+ };
+
+ module.exports.INSTALLMENT_NAME = {  // submit grant claim 
+    1 : "1st Installment", 
+    2 : "2nd Installment" ,
+ };
