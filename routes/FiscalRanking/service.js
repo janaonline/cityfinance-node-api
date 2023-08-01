@@ -4053,6 +4053,7 @@ module.exports.createForm = catchAsync(async (req, res) => {
     }
     let masterFormId = FORMIDs['fiscalRanking'];
     let params = { isDraft, role, userId, formId, masterFormId, formBodyStatus: currentFormStatus, actionBy: ulbId }
+    // await createHistory(params)
     let calculationsTabWise = await calculateAndUpdateStatusForMappers(
       session,
       actions,
@@ -4249,7 +4250,8 @@ async function columnsForCSV(params) {
       "Copy of Audited Annual Financial Statements preferably in English FY 2019-20",
       "Copy of Audited Annual Financial Statements preferably in English FY 2018-19",
       "Any other information that you would like to provide us?",
-      "Upload Signed Copy"
+      "Upload Signed Copy",
+      "Form Rejection Count"
     ];
     output["dbCols"] = [
       "stateName",
@@ -4302,7 +4304,8 @@ async function columnsForCSV(params) {
       "FR_auditedAnnualFySt_2019-20",
       "FR_auditedAnnualFySt_2018-19",
       "otherUpload",
-      "signedCopyOfFile"
+      "signedCopyOfFile",
+      "formRejectedTimes"
     ];
     output["FRShortKeyObj"] = {};
   } else if (FRUlbFinancialData) {
@@ -4798,6 +4801,17 @@ function computeQuery(params, cond = null) {
       },
       {
         $addFields: {
+          "formRejectedTimes":{
+            "$sum":{
+                "$cond":{
+                    "if":{
+                        "$eq":["$fiscalrankings.currentFormStatus",statusTracker['RBP']]
+                    },
+                    "then":1,
+                    "else":0
+                }
+            }
+        },
           currentFormStatus: {
             $cond: {
               if: {
@@ -5094,6 +5108,7 @@ function computeQuery(params, cond = null) {
           signedCopyOfFile: {
             $ifNull: ["$fiscalrankings.signedCopyOfFile.url", ""],
           },
+          formRejectedTimes:1,
           fiscalrankingmappers: 1,
           arrayOfMandatoryField: "$fiscalrankings.arrayOfMandatoryField",
           completionPercentFR: {
