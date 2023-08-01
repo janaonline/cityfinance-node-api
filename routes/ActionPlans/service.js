@@ -351,6 +351,9 @@ exports.getActionPlans = async (req, res) => {
       }
     }
     if (data2223) {
+      if (![YEAR_CONSTANTS["21_22"], YEAR_CONSTANTS["22_23"]].includes(design_year)) {
+        data2223['canTakeAction'] = false
+      } else {
       Object.assign(data2223, {
         canTakeAction: canTakenAction(
           data2223["status"],
@@ -363,6 +366,7 @@ exports.getActionPlans = async (req, res) => {
         status: MASTER_STATUS_ID[MASTER_STATUS["Not Started"]],
         isDraft: null
       });
+    }
       // data2223.status = null
       
       return Response.OK(res, data2223, "Success");
