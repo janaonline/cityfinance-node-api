@@ -283,8 +283,8 @@ async function createCSV(params) {
         if (collectionName == CollectionNames.state_grant_claim) {
           stateArrData = data;
           let states = stateArrData.map(e => e._id.toString());
-          for(let key in FORM_TYPE_SUBMIT_CLAIM){
-            const {installment,formType} = getFormTypeInstallment(FORM_TYPE_SUBMIT_CLAIM[key]); 
+          for (let key in FORM_TYPE_SUBMIT_CLAIM) {
+            const { installment, formType } = getFormTypeInstallment(FORM_TYPE_SUBMIT_CLAIM[key]);
             Object.assign(req.query, {
               formType: formType,
               states: states,
@@ -292,7 +292,7 @@ async function createCSV(params) {
               flagFunction: true
             });
             let installmentData = await dashboard(req, res);
-            mainArrData.push({[`${req?.query?.installment}_${req?.query?.formType}`]: installmentData});
+            mainArrData.push({ [`${req?.query?.installment}_${req?.query?.formType}`]: installmentData });
           }
         } else {
           mainArrData = data;
@@ -304,11 +304,12 @@ async function createCSV(params) {
           dynamicColumns = createDynamicColumns(collectionName);
           res.write("\ufeff" + `${dynamicColumns.toString()} \r\n`);
         }
+        let uaFormData = await UA.find({}).lean();
         if (mainArrData?.length) {
           if (collectionName == CollectionNames.state_grant_claim) {
             let output = extractDataForCSV(mainArrData, req);
             writeSubmitClaimCSV(output, res);
-          }else {
+          } else {
             for (let el of mainArrData) {
               if (collectionName == "GTC") {
                 let gtcData = await gtcInstallmentForms([...new Set(mainArrData.map(e => e._id))]);
@@ -328,7 +329,9 @@ async function createCSV(params) {
                   let str = [...row].join(',') + "\r\n";
                   res.write("\ufeff" + str);
                 }
-              } 
+              } else if (collectionName == 'ActionPlan') {
+                await actionPlanCSVDownload(el, res, loggedInUserRole, uaFormData)
+              }
             }
           }
         } else {
@@ -354,12 +357,18 @@ const gtcInstallmentForms = (stateId) => {
 
 /**
  * The function `writeSubmitClaimCSV` writes the output data in CSV format, including state name, state
- * code, and submitted values for each item.
+ * code, and submitted values for each item. 
  */
 function writeSubmitClaimCSV(output, res) {
   try {
     Object.entries(output).forEach(([key, items], index) => {
-      const { stateName, stateCode } = stateArrData.find((state) => state._id == Object.keys(output)[index]);
+      let stateObj = {};
+      if (stateArrData.length == 1) {
+        stateObj = stateArrData[0]
+      } else {
+        stateObj = stateArrData.find((state) => state._id == Object.keys(output)[index]);
+      }
+      const { stateName, stateCode } = stateObj
       let row = 'State Name,State Code,';
       let row1 = `${stateName},${stateCode},`;
       if (index === 0) {
@@ -372,7 +381,8 @@ function writeSubmitClaimCSV(output, res) {
       }
     });
   } catch (error) {
-    throw {message:`writeSubmitClaimCSV:: ${error.message}`}
+    console.log(error)
+    throw { message: `writeSubmitClaimCSV:: ${error.message}` }
   }
 }
 
@@ -381,13 +391,12 @@ function writeSubmitClaimCSV(output, res) {
  * object with the extracted data for CSV formatting.
  */
 function extractDataForCSV(mainArrData, req) {
- try {
+  try {
     let output = {};
     mainArrData.forEach(item => {
       const [installmentKey, obj] = Object.entries(item)[0];
       const { installment, formType } = getFormTypeInstallment(installmentKey);
       const headerLabel = `${FORM_TYPE_NAME[formType]}: ${INSTALLMENT_NAME[installment]} (FY ${YEAR_CONSTANTS_IDS[req.query.design_year]})`;
-  
       Object.entries(obj).forEach(([key, value]) => {
         const resArray = Object.values(value).flat(1).map(item => ({ ...item, headerLabel }));
         output[key] = output[key] ? [...output[key], ...resArray] : resArray;
@@ -395,7 +404,7 @@ function extractDataForCSV(mainArrData, req) {
     });
     return output;
   } catch (error) {
-    throw {message:`extractDataForCSV:: ${error.message}`}
+    throw { message: `extractDataForCSV:: ${error.message}` }
   }
 }
 
@@ -403,11 +412,13 @@ async function actionPlanCSVDownload(obj, res, role, uaFormData) {
   let rowsArr = [obj?.stateName || "", obj?.stateCode || "", "", obj?.formStatus || ""];
   if (obj?.formData) {
     const { uaData } = obj?.formData
-    let uaStateObj = uaFormData?.find(e => e.state.toString() == obj?.state.toString());
+    let uaStateObj = uaFormData?.filter(e => e.state.toString() == obj?.state.toString());
+    // console.log("uaStateObj",uaStateObj);process.exit()
     uaStateObj = createObjectFromArray(uaStateObj);
     addActionKeys(obj?.formData, uaStateObj, obj?.MohuaStatus, role);
     for (const ua of uaData) {
       let commentArr = [];
+      // console.log("obj?.formStatus",ua)
       if (['Returned By MoHUA', 'Submission Acknowledged By MoHUA'].includes(obj?.formStatus)) {
         commentArr.push(ua?.status || "", ua?.rejectReason || "", ua?.responseFile?.url || "");
       }
@@ -439,7 +450,9 @@ async function actionPlanCSVDownload(obj, res, role, uaFormData) {
             const { sortKey, data } = singleObj;
             for (let index = 0; index < sortKey.length; index++) {
               const key = sortKey[index];
-              if (data[key] && typeof data[key] !== 'number') data[key].split(',').join('')
+              if (data[key] && typeof data[key] !== 'number') {
+                data[key] = data[key].split(',').join(' ')
+              }
               arr.push(data[key])
             }
           }
@@ -459,8 +472,8 @@ function getFormTypeInstallment(str) {
   if (typeInstallent !== -1) {
     const installment = str.substring(0, typeInstallent);
     const formType = str.substring(typeInstallent + 1);
-    return {installment,formType};
-  }else {
+    return { installment, formType };
+  } else {
     return null;
   }
 }
@@ -2511,28 +2524,9 @@ function createDynamicColumns(collectionName) {
     case CollectionNames['state_grant_alloc']:
       columns = `State Name,City Finance Code,Type of Grant,Installment No,Grant Allocation to ULBs (FY23-24),Review Status,MoHUA Comments,Review Documents`
       break;
-    // case CollectionNames['state_grant_alloc']:
-    //   columns = `State Name,City Finance Code,Type of Grant,Installment No,Grant Allocation to ULBs (FY23-24),Review Status,MoHUA Comments,Review Documents`
-    //   break;
-    // case CollectionNames.state_grant_claim:
-    //   columns = `Claim Non-Million Plus Cities Tied Grants: 1st Installment (FY 2023-24) - Detailed Utilisation Report,Claim Non-Million Plus Cities Tied Grants: 1st Installment (FY 2023-24) - Annual Account,
-    //   Claim Non-Million Plus Cities Tied Grants: 1st Installment (FY 2023-24) - Linking of PFMS Account,Claim Non-Million Plus Cities Tied Grants: 1st Installment (FY 2023-24) - Property Tax & UC form,
-    //   Claim Non-Million Plus Cities Tied Grants: 1st Installment (FY 2023-24) - Grant Transfer Certificate,Claim Non-Million Plus Cities Tied Grants: 1st Installment (FY 2023-24) - Property Tax Floor Rate form,
-    //   Claim Non-Million Plus Cities Tied Grants: 1st Installment (FY 2023-24) - State Finance Commission Notification,Claim Non-Million Plus Cities Tied Grants: 1st Installment (FY 2023-24) - Claim Grants status,
-    //   Claim Non-Million Plus Cities Tied Grants: 2nd Installment (FY 2023-24) - Annual Account,Claim Non-Million Plus Cities Tied Grants: 2nd Installment (FY 2023-24) - Linking of PFMS Account,
-    //   Claim Non-Million Plus Cities Tied Grants: 2nd Installment (FY 2023-24) - Property Tax & UC form,Claim Non-Million Plus Cities Tied Grants: 2nd Installment (FY 2023-24) - Grant Transfer Certificate,
-    //   Claim Non-Million Plus Cities Tied Grants: 2nd Installment (FY 2023-24) - Property Tax Floor Rate form,Claim Non-Million Plus Cities Tied Grants: 2nd Installment (FY 2023-24) - State Finance Commission Notification,
-    //   Claim Non-Million Plus Cities Tied Grants: 2nd Installment (FY 2023-24) - Claim Grants status,Claim Non-Million Plus Cities Untied Grants: 1st Installment (FY 2023-24) - Annual Account,
-    //   Claim Non-Million Plus Cities Untied Grants: 1st Installment (FY 2023-24) - Linking of PFMS Account,Claim Non-Million Plus Cities Untied Grants: 1st Installment (FY 2023-24) - Property Tax & UC form,
-    //   Claim Non-Million Plus Cities Untied Grants: 1st Installment (FY 2023-24) - Grant Transfer Certificate,Claim Non-Million Plus Cities Untied Grants: 1st Installment (FY 2023-24) - Property Tax Floor Rate form,
-    //   Claim Non-Million Plus Cities Untied Grants: 1st Installment (FY 2023-24) - State Finance Commission Notification,Claim Non-Million Plus Cities Untied Grants: 1st Installment (FY 2023-24) - Claim Grants status,Claim Non-Million Plus Cities Untied Grants: 2nd Installment (FY 2023-24) - Annual Account,
-    //   Claim Non-Million Plus Cities Untied Grants: 2nd Installment (FY 2023-24) - Linking of PFMS Account,Claim Non-Million Plus Cities Untied Grants: 2nd Installment (FY 2023-24) - Property Tax & UC form,
-    //   Claim Non-Million Plus Cities Untied Grants: 2nd Installment (FY 2023-24) - Grant Transfer Certificate,Claim Non-Million Plus Cities Untied Grants: 2nd Installment (FY 2023-24) - Property Tax Floor Rate form,
-    //   Claim Non-Million Plus Cities Untied Grants: 2nd Installment (FY 2023-24) - State Finance Commission Notification,Claim Non-Million Plus Cities Untied Grants: 2nd Installment (FY 2023-24) - Claim Grants status,Claim Million Plus Cities Tied Grants: 1st Installment (FY 2023-24) - Detailed Utilisation Report,
-    //   Claim Million Plus Cities Tied Grants: 1st Installment (FY 2023-24) - Annual Account,Claim Million Plus Cities Tied Grants: 1st Installment (FY 2023-24) - Linking of PFMS Account,Claim Million Plus Cities Tied Grants: 1st Installment (FY 2023-24) - 28 SLBs,Claim Million Plus Cities Tied Grants: 1st Installment (FY 2023-24) - Garbage Free City,
-    //   Claim Million Plus Cities Tied Grants: 1st Installment (FY 2023-24) - SLBs for Water Supply and Sanitation,Claim Million Plus Cities Tied Grants: 1st Installment (FY 2023-24) - Property Tax & UC form,Claim Million Plus Cities Tied Grants: 1st Installment (FY 2023-24) - Grant Transfer Certificate,Claim Million Plus Cities Tied Grants: 1st Installment (FY 2023-24) - Property Tax Floor Rate form,Claim Million Plus Cities Tied Grants: 1st Installment (FY 2023-24) - State Finance Commission Notification,Claim Million Plus Cities Tied Grants: 1st Installment (FY 2023-24) - Action Plan,
-    //   Claim Million Plus Cities Tied Grants: 1st Installment (FY 2023-24) - Indicators for Water Supply and Sanitation,Claim Million Plus Cities Tied Grants: 1st Installment (FY 2023-24) - Projects for Water Supply,Claim Million Plus Cities Tied Grants: 1st Installment (FY 2023-24) - Claim Grants status`
-    //   break;
+    case CollectionNames['state_action_plan']:
+      columns = `State Name,CF Code,UA Name,Form Status,executed with 15th: Project_Code,Executed with 15th: Project_Name,Executed with 15th :Project_Details,Executed with 15th:Project_Cost,Executed with 15th : Executing_Agency,Executed with 15th:Parastatal_Agency,Executed with 15th: : Sector,Executed with 15th : Project_Type,Executed with 15th :Estimated_Outcome,Project List and Source of Funds (Annual In INR Lakhs) : Project_Code,Project List and Source of Funds (Annual In INR Lakhs) :Project_Name,Project List and Source of Funds (Annual In INR Lakhs) : Project_Cost,Project List and Source of Funds (Annual In INR Lakhs) : XV_FC,Project List and Source of Funds (Annual In INR Lakhs) : Other,Project List and Source of Funds (Annual In INR Lakhs) : Total,Project List and Source of Funds (Annual In INR Lakhs) :2021-22,Project List and Source of Funds (Annual In INR Lakhs) :2022-23,Project List and Source of Funds (Annual In INR Lakhs) :2023-24,Project List and Source of Funds (Annual In INR Lakhs) :2024-25,Project List and Source of Funds (Annual In INR Lakhs) :2025-26,Year wise Outlay for 15th FC Grants(Annual In INR Lakhs) : Project_Code,Year wise Outlay for 15th FC Grants(Annual In INR Lakhs) : Project_Name,Year wise Outlay for 15th FC Grants(Annual In INR Lakhs) : Project_Cost,Year wise Outlay for 15th FC Grants(Annual In INR Lakhs) : Funding,Year wise Outlay for 15th FC Grants(Annual In INR Lakhs) : Amount,Year wise Outlay for 15th FC Grants(Annual In INR Lakhs) : 2021-22,Year wise Outlay for 15th FC Grants(Annual In INR Lakhs):2022-23,Year wise Outlay for 15th FC Grants(Annual In INR Lakhs): 2023-24,Year wise Outlay for 15th FC Grants(Annual In INR Lakhs):2024-25,Year wise Outlay for 15th FC Grants(Annual In INR Lakhs):2025-26,Review Status,MoHUA Comments,Review Documents`
+      break;
     default:
       columns = '';
       break;
