@@ -578,7 +578,7 @@ function approvedForms(forms, formCategory, design_year, modelName){
         }
         let {status, actionTakenByRole: role, isDraft, currentFormStatus} = element
         if(!role){
-            role = element?.["user"]["role"];
+            role = element?.user?.role;
         }
         if(
             ![ YEAR_CONSTANTS['22_23']].includes(design_year) && 
@@ -1067,7 +1067,7 @@ const dashboard = async (req, res) => {
             Sidemenu.aggregate(sidemenuPipeline),
             Sidemenu.findOne(reviewUlbCondition).lean()
         ]);
-        let multi = states?.length > 1 ? true :  false; 
+        let multi = states?.length >= 1 ? true :  false; 
         if(!Boolean(multi)){
             states = [state];
         }
@@ -1222,7 +1222,8 @@ const dashboard = async (req, res) => {
                 }
                 ({ ulbResponse, stateResponse } = createFormResponseObjects(formCategory, ulbResponse, formData, modelName, submittedFormPercent, approvedFormPercent, totalApprovedUlbForm, totalSubmittedUlbForm, totalForms, cutOff, ulbResponseArray, stateResponse, totalApprovedStateForm, totalSubmittedStateForm, stateResponseArray));
                 // if (Boolean(multi)) {
-                  if (hasUA.length && data.formType === "mpc_tied") {
+                  const slbScoringEntry = statesFormData[state]?.stateResponse.find(el=> el.key === CollectionNames.slbScoring)
+                  if (hasUA.length && data.formType === "mpc_tied" && !slbScoringEntry) {
                     if (indicatorFormCount === indicatorFormValidationCount && ![YEAR_CONSTANTS['22_23']].includes(data.design_year)) {
                       let { leastSubmitPercent, leastSubmitNumber } =
                         addSlbScoringData(ulbResponseArray);
@@ -1231,7 +1232,7 @@ const dashboard = async (req, res) => {
                         leastSubmitNumber,
                         cutOff
                       );
-                      stateResponseArray.push(slbScoring);
+                       stateResponseArray.push(slbScoring);
                     }
                   }
                   statesFormData[state] = {
