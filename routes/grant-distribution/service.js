@@ -499,8 +499,9 @@ let host = baseUrls[process.env.ENV]
         "name":"",
         "url":""
       }
+      let shortKey = `${section.type}_${section.yearCode}_${i}`
       let allocationForm =  allocationForms.find(item => item.installment === i && item.year.toString() === years[section.yearCode] && item.type === section.type ) || {}
-      let currentStatus = currentStatuses.find(item => item.recordId.toString() === allocationForm._id.toString() && item.status === allocationForm.currentFormStatus)
+      let currentStatus = currentStatuses.find(item => item.recordId.toString() === allocationForm._id.toString() && item.shortKey === shortKey)
       allocationForm.currentFormStatus = allocationForm?.currentFormStatus ? allocationForm?.currentFormStatus : 1
       let url = ""
       url = allocationForm?.url || ""
@@ -515,7 +516,7 @@ let host = baseUrls[process.env.ENV]
         type:section.type,
         quesType:"",
         template:`${host}/api/v1/grantDistribution/template?type=${section.type}&year=${years[section.yearCode]}&installment=${i}`,
-        key:`${section.type}_${section.yearCode}_${i}`,
+        key:shortKey,
         url:url,
         isDisableQues:shouldDisableQues,
         file:file,
@@ -587,8 +588,8 @@ module.exports.installmentAction = async (req, res) => {
       }
       const {
           key,
-          rejectReason_mohua,
-          responseFile_mohua,
+          rejectReason,
+          responseFile,
           statusId,
           installment,
           design_year,
@@ -607,13 +608,11 @@ module.exports.installmentAction = async (req, res) => {
               actionTakenBy: mohua || state,
               actionTakenByRole:role,
               currentFormStatus: statusId,
-              rejectReason_mohua,
-              responseFile_mohua
+              rejectReason_mohua:rejectReason,
+              responseFile_mohua:responseFile
           }
       });
       req.body._id = found?._id
-      req.body.rejectReason = rejectReason_mohua
-      req.body.responseFile = responseFile_mohua
       req.body.financialYear = design_year
       let formSubmit = [{...req.body,type:key,currentFormStatus:statusId}]
       await createHistory({ formBodyStatus : Number(statusId),formSubmit, actionTakenByRole:role , actionTakenBy: mohua || state  })
