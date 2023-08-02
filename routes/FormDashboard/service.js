@@ -1222,7 +1222,8 @@ const dashboard = async (req, res) => {
                 }
                 ({ ulbResponse, stateResponse } = createFormResponseObjects(formCategory, ulbResponse, formData, modelName, submittedFormPercent, approvedFormPercent, totalApprovedUlbForm, totalSubmittedUlbForm, totalForms, cutOff, ulbResponseArray, stateResponse, totalApprovedStateForm, totalSubmittedStateForm, stateResponseArray));
                 // if (Boolean(multi)) {
-                  if (hasUA.length && data.formType === "mpc_tied") {
+                  const slbScoringEntry = statesFormData[state]?.stateResponse.find(el=> el.key === CollectionNames.slbScoring)
+                  if (hasUA.length && data.formType === "mpc_tied" && !slbScoringEntry) {
                     if (indicatorFormCount === indicatorFormValidationCount && ![YEAR_CONSTANTS['22_23']].includes(data.design_year)) {
                       let { leastSubmitPercent, leastSubmitNumber } =
                         addSlbScoringData(ulbResponseArray);
@@ -1231,7 +1232,7 @@ const dashboard = async (req, res) => {
                         leastSubmitNumber,
                         cutOff
                       );
-                      stateResponseArray.push(slbScoring);
+                       stateResponseArray.push(slbScoring);
                     }
                   }
                   statesFormData[state] = {
