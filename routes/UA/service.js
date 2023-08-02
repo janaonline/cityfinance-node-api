@@ -1966,6 +1966,43 @@ function addUlbShare(service,fields,fieldName='ulbShare'){
     }
 }
 
+function addUlbAndAmrutFields(service,fields,fieldName='ulbShare'){
+    let {fromValue,toValue} = fields
+    try{
+        let obj = {
+            "$addFields":{}
+        }
+        obj['$addFields']['totalAmrutProjectCost'] = { "$sum": "$AMRUT.cost" }
+        obj['$addFields']['totalDurProjectCost'] = {"$sum": {"$sum": "$DUR.projects.cost"}}
+        obj['$addFields']['totalAmrutProjects'] = {"$size": "$AMRUT"}
+        obj['$addFields']['totalDurProjects'] = {
+            "$cond": {
+                "if": {
+                    "$isArray": "$DUR.projects"
+                },
+                "then": {
+                    "$size": "$DUR.projects"
+                },
+                "else": 0
+            }
+        },
+        obj['$addFields']['totalAmrutUlbShare'] = {"$sum": "$AMRUT.ulbShare"}
+        obj['$addFields'][fieldName] = {
+            "$cond":{
+                "if":{
+                    "$gte":[toValue,0]
+                },
+                "then":service.getCommonSubtract([fromValue,toValue]),
+                "else":0
+            }
+        }
+        return obj
+    }
+    catch(err){
+        console.log("error while getting ulbShare",err.message)
+    }
+}
+
 function addCensusCode(){
     let obj = {
         "$addFields":{
@@ -2379,15 +2416,17 @@ const redisStoreData = (redis_key) => {
 }
 
 function getProjectionForDur(service){
-    let sumQuery = service.getCommonSumObj(service.getCommonSumObj("$DUR.projects.cost"))
+    let totalProjectCostSum = service.addTwoFieldData("$totalDurProjectCost", "$totalAmrutProjectCost"); 
+    let totalProjectSum = service.addTwoFieldData("$totalAmrutProjects", "$totalDurProjects");
+    let totalUlbShareSum = service.addTwoFieldData(service.getCommonConvertor("$ulbShare","int"), "$totalAmrutUlbShare"); 
     try{
         const obj = {
             "$project":{
                 "ulbName":"$name",
                 "stateName":"$state.name",
-                "totalProjectCost":sumQuery,
-                "totalProjects":service.getCommonTotalObj("$DUR.projects"),
-                "ulbShare" :service.getCommonConvertor("$ulbShare","int"),
+                "totalProjectCost":totalProjectCostSum,
+                "totalProjects":totalProjectSum,
+                "ulbShare" :totalUlbShareSum,
                 "expenditureTotal":{
                     $sum :"$DUR.projects.expenditure"
                 },
@@ -2452,6 +2491,36 @@ const getApprovedFormQuery =(keyName = false,designYear)=>{
     }
 }
 
+function lookupQueryForAmrut(service,designYear,project=false){
+    try{
+        let obj = {
+            "$lookup":{
+                "from":"amrutprojects",
+                "let":{
+                    "ulb_id":"$_id",
+                    "designYear":ObjectId(designYear)
+                },
+                "pipeline":[
+                    {
+                        "$match":{
+                            "$expr":{
+                                "$and":[
+                                    service.getCommonEqObj("$ulb","$$ulb_id"),
+                                    service.getCommonEqObj("$designYear","$$designYear")
+                                ]
+                            }
+                        }
+                    }
+                ],
+                "as":"AMRUT"
+            }
+        }
+        return obj
+    }
+    catch(err){
+        console.log("error in lookupQUery :: ",err.message)
+    }
+}
 
 function lookupQueryForDur(service,designYear,project=false){
     try{
@@ -2682,6 +2751,8 @@ function getQueryStateRelated(designYear,filterObj,sortKey,skip,limit){
         query.push(service.getCommonLookupObj("states","state","_id","state"))
         query.push(service.getUnwindObj("$state",true))
         // stage 2
+        query.push(lookupQueryForAmrut(service,designYear))
+        //stage 3
         query.push(lookupQueryForDur(service,designYear,true))
         query.push(service.getUnwindObj("$DUR",true))
 
@@ -2698,8 +2769,8 @@ function getQueryStateRelated(designYear,filterObj,sortKey,skip,limit){
                 }
             }
         }
-        query.push(addUlbShare(service,fields))
-        //stage 3
+        query.push(addUlbAndAmrutFields(service,fields))
+        //stage 4
         query.push(getProjectionForDur(service))
         // stage match if filters provided
         let matchObj = {
