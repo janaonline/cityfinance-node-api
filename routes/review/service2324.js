@@ -372,7 +372,7 @@ function writeSubmitClaimCSV(output, res) {
       let row = 'State Name,State Code,';
       let row1 = `${stateName},${stateCode},`;
       if (index === 0) {
-        row += items.map(item => `${item.headerLabel}-${item.formName}`).join(',');
+        row += items.map(item => item.hideFormName ? `${item.headerLabel}` :`${item.headerLabel}-${item.formName}`).join(',');
         row1 += items.map(item => item.submittedValue).join(',');
         res.write(`\ufeff${row}\r\n\ufeff${row1}\r\n`);
       } else {
@@ -397,8 +397,11 @@ function extractDataForCSV(mainArrData, req) {
       const [installmentKey, obj] = Object.entries(item)[0];
       const { installment, formType } = getFormTypeInstallment(installmentKey);
       const headerLabel = `${FORM_TYPE_NAME[formType]}: ${INSTALLMENT_NAME[installment]} (FY ${YEAR_CONSTANTS_IDS[req.query.design_year]})`;
+      
       Object.entries(obj).forEach(([key, value]) => {
+        const grantStatus = { headerLabel: "Claim Grants status",submittedValue: "",hideFormName:true};// temp added to show blank grant status
         const resArray = Object.values(value).flat(1).map(item => ({ ...item, headerLabel }));
+        resArray.push(grantStatus); // temp added to show blank grant status
         output[key] = output[key] ? [...output[key], ...resArray] : resArray;
       });
     });
