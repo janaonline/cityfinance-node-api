@@ -2110,8 +2110,9 @@ async function addCanTakeActionKeys(annualAccountData, statuses=[], role, stateR
 
     let tabShortKeys = statuses.map(el=>{
         separator = el.shortKey.match(tabRegex) ?  tabSeparator : dotSeparator;
-        let splittedArray = el.shortKey.split(separator)
+        let splittedArray = el.shortKey.split(separator);
         el.shortKey = splittedArray[splittedArray.length - 1];
+        el.tabKey = splittedArray[0]
         return el;
     })
     stateResponse = stateResponse.map(el=>{
@@ -2196,7 +2197,7 @@ async function appendKeys(keyArray, data, provisionalKey, tabShortKeys, role, st
     
     for (let entity in tabData) {
       let statusData = tabShortKeys.find(el => {
-        return el.shortKey === entity;
+        return el.shortKey === entity && key === el.tabKey;
       });
       let stateStatusData;
       if (statusData) {
