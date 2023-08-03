@@ -502,14 +502,14 @@ let host = baseUrls[process.env.ENV]
       let shortKey = `${section.type}_${section.yearCode}_${i}`
       let allocationForm =  allocationForms.find(item => item.installment === i && item.year.toString() === years[section.yearCode] && item.type === section.type ) || {}
       let currentStatus = currentStatuses.find(item => item.recordId.toString() === allocationForm._id.toString() && item.shortKey === shortKey)
-      allocationForm.currentFormStatus = allocationForm?.currentFormStatus ? allocationForm?.currentFormStatus : 1
+      allocationForm.currentFormStatus = allocationForm?.currentFormStatus ? allocationForm?.currentFormStatus : MASTER_FORM_STATUS['NOT_STARTED']
       let url = ""
       url = allocationForm?.url || ""
       const canTakeAction = (allocationForm.currentFormStatus == MASTER_FORM_STATUS['UNDER_REVIEW_BY_MoHUA'] && role == userTypes.mohua);
       file.name  = allocationForm?.fileName || ""
       file.url = allocationForm?.url || ""
       let shouldDisableQues = await getRejectedFields(allocationForm?.currentFormStatus,formStatuses,i,role)
-      formStatuses[i] = allocationForm?.currentFormStatus || 1
+      formStatuses[i] = allocationForm?.currentFormStatus || MASTER_FORM_STATUS['NOT_STARTED']
       let params = {
         installment : i,
         year:years[section.yearCode],
