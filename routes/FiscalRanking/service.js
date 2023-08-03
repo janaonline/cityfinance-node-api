@@ -5419,7 +5419,7 @@ function createCsv(params) {
                 FRMapperKey = "file"
               }
               if (fiscalrankingmappersDocument[FRMapperKey]) {
-                str += fiscalrankingmappersDocument[FRMapperKey] + ",";
+                str += fiscalrankingmappersDocument[FRMapperKey].split(",").join("-") + ",";
               } else {
                 str += " " + ",";
               }
