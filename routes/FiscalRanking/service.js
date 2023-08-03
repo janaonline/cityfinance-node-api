@@ -1318,8 +1318,8 @@ exports.getView = async function (req, res, next) {
       currentFormStatus: viewOne.currentFormStatus,
       financialYearTableHeader,
       messages: userMessages,
-      // hideForm,
-      // notice
+      hideForm,
+      notice
     };
     if (userMessages.length > 0) {
       let { approvedPerc, rejectedPerc } = calculatePercentage(modifiedLedgerData, requiredFields, viewOne)
@@ -5523,7 +5523,7 @@ module.exports.getTrackingHistory = async(req,res)=>{
       return {
         "srNo":index+1,
         "action":statusList[status],
-        "date":(item?.createdAt.toLocaleDateString() +" "+ item?.createdAt.toLocaleTimeString()) || ""
+        "date": item.createdAt  ? (item?.createdAt.toLocaleDateString() +" "+ item?.createdAt.toLocaleTimeString()) : ""
       }
     })
     // let formModified = form.modifiedAt  ? form.modifiedAt.toLocaleDateString()+" "+form?.createdAt.toLocaleTimeString():  histories[histories.length -1].date
