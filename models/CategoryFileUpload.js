@@ -11,6 +11,11 @@ const CategoryFileUpload = new Schema(
         modifiedAt: { type: Date, default: Date.now() },
         createdAt: { type: Date, default: Date.now() },
         isActive: { type: Boolean, default: 1 },
+        module: {
+            required: true,
+            type: String,
+            enum: ['municipalBondRepository', 'StateResource']
+        },
     },
     { timestamp: { createdAt: "createdAt", updatedAt: "modifiedAt" } }
 );
