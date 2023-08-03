@@ -4818,7 +4818,32 @@ function computeQuery(params, cond = null) {
       {
         $addFields: {
           "formRejectedTimes":{
-            "$size":"$statuses"
+            
+            "$cond":{
+              "if":{
+                 "$gt":[
+                 {
+                     "$size":"$statuses"
+                 },
+                 0
+                 ]
+              },
+              "then":{
+                  "$size":"$statuses"
+              },
+              "else":{
+                  "$sum":{
+                      "$cond":{
+                          "if":{
+                              "$eq":["$fiscalrankings.currentFormStatus",statusTracker['RBP']]
+                          },
+                          "then":1,
+                          "else":0
+                      }
+                  }
+              }
+          }
+      
         },
           currentFormStatus: {
             $cond: {
