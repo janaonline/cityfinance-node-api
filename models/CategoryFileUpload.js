@@ -16,6 +16,10 @@ const CategoryFileUpload = new Schema(
             type: String,
             enum: ['municipalBondRepository', 'StateResource']
         },
+        relatedIds: {
+            type: [mongoose.Schema.Types.ObjectId],
+            default: []
+        }
     },
     { timestamp: { createdAt: "createdAt", updatedAt: "modifiedAt" } }
 );

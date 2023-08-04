@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { handleDatabaseUpload, getMainCategory } = require('./service');
+const { handleDatabaseUpload, getMainCategory, getResourceList } = require('./service');
 
 const {
     createOrUpdate, list, deleteById
@@ -8,6 +8,7 @@ const {
 
 
 router.get('/getCategories', getMainCategory)
+router.get('/getResourceList', getResourceList);
 router.get('/list', list('CategoryFileUpload', { module: 'state_resource' }));
 router.post('/createOrUpdate', handleDatabaseUpload, createOrUpdate('CategoryFileUpload', { module: 'state_resource' }))
 router.delete('/deleteById/:id', deleteById('StateResource'))
