@@ -453,7 +453,7 @@ const getRejectedFields = (currentFormStatus,formStatuses,installment,role)=>{
       // console.log("formStatuses :: ",formStatuses)
       let prevInstallment = installment - 1
       let inputAllowed = [MASTER_FORM_STATUS['IN_PROGRESS'],MASTER_FORM_STATUS['NOT_STARTED'],MASTER_FORM_STATUS['RETURNED_BY_MoHUA']]
-      let allowedStatuses = [MASTER_FORM_STATUS['UNDER_REVIEW_BY_MoHUA'],MASTER_FORM_STATUS['SUBMISSION_ACKNOWLEDGED_BY_MoHUA']]
+      let allowedStatuses = [MASTER_FORM_STATUS['UNDER_REVIEW_BY_MoHUA'],MASTER_FORM_STATUS['SUBMISSION_ACKNOWLEDGED_BY_MoHUA'],MASTER_FORM_STATUS['RETURNED_BY_MoHUA']]
       if(prevInstallment  && !allowedStatuses.includes(formStatuses?.[prevInstallment]) && role === userTypes.state){
           return true
       }
