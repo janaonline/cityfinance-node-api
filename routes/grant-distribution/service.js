@@ -453,7 +453,7 @@ const getRejectedFields = (currentFormStatus,formStatuses,installment,role)=>{
       // console.log("formStatuses :: ",formStatuses)
       let prevInstallment = installment - 1
       let inputAllowed = [MASTER_FORM_STATUS['IN_PROGRESS'],MASTER_FORM_STATUS['NOT_STARTED'],MASTER_FORM_STATUS['RETURNED_BY_MoHUA']]
-      let allowedStatuses = [MASTER_STATUS['Submission Acknowledged By MoHUA']]
+      let allowedStatuses = [MASTER_FORM_STATUS['UNDER_REVIEW_BY_MoHUA'],MASTER_FORM_STATUS['SUBMISSION_ACKNOWLEDGED_BY_MoHUA']]
       if(prevInstallment  && !allowedStatuses.includes(formStatuses?.[prevInstallment]) && role === userTypes.state){
           return true
       }
@@ -502,14 +502,14 @@ let host = baseUrls[process.env.ENV]
       let shortKey = `${section.type}_${section.yearCode}_${i}`
       let allocationForm =  allocationForms.find(item => item.installment === i && item.year.toString() === years[section.yearCode] && item.type === section.type ) || {}
       let currentStatus = currentStatuses.find(item => item.recordId.toString() === allocationForm._id.toString() && item.shortKey === shortKey)
-      allocationForm.currentFormStatus = allocationForm?.currentFormStatus ? allocationForm?.currentFormStatus : 1
+      allocationForm.currentFormStatus = allocationForm?.currentFormStatus ? allocationForm?.currentFormStatus : MASTER_FORM_STATUS['NOT_STARTED']
       let url = ""
       url = allocationForm?.url || ""
       const canTakeAction = (allocationForm.currentFormStatus == MASTER_FORM_STATUS['UNDER_REVIEW_BY_MoHUA'] && role == userTypes.mohua);
       file.name  = allocationForm?.fileName || ""
       file.url = allocationForm?.url || ""
       let shouldDisableQues = await getRejectedFields(allocationForm?.currentFormStatus,formStatuses,i,role)
-      formStatuses[i] = allocationForm?.currentFormStatus || 1
+      formStatuses[i] = allocationForm?.currentFormStatus || MASTER_FORM_STATUS['NOT_STARTED']
       let params = {
         installment : i,
         year:years[section.yearCode],
