@@ -254,7 +254,6 @@ exports.saveData = async (req, res) => {
     let state = req.decoded?.state;
     req.body.actionTakenBy = req.decoded._id;
     req.body.modifiedAt = new Date();
-
     let condition = {}
     condition["state"] = state;
     condition["design_year"] = design_year;
@@ -289,6 +288,9 @@ exports.saveData = async (req, res) => {
     if (design_year === "606aaf854dff55e6c075d219") {
       await UpdateStateMasterForm(req, "grantAllocation");
     }
+    let formSubmit = [{...req.body,_id:data._id,currentFormStatus:req.body.currentFormStatus}]
+    await createHistory({ formBodyStatus : Number(req.body.currentFormStatus),formSubmit, actionTakenByRole:req.decoded.role , actionTakenBy: req.body.actionTakenBy  })
+
     return Response.OK(res, data, "file updated");
   } catch (err) {
     console.error(err.message);
@@ -638,14 +640,14 @@ async function createHistory(params) {
   try {
       let {formBodyStatus,actionTakenBy,actionTakenByRole,formSubmit,formType} = params
       let formData = formSubmit[0]
-      let shortKey = `${formData.type}_${getKeyByValue(years,formData.financialYear)}_${formData.installment}`
+      let shortKey = `${formData.type}_${getKeyByValue(years,formData.design_year)}_${formData.installment}`
           let historyParams = {
               formBodyStatus,
               actionTakenBy:actionTakenBy,
               actionTakenByRole:actionTakenByRole,
               formSubmit:formSubmit,
-              formType:"Grant_allocation",
-              shortKey:shortKey
+              formType:"GrantAllocation",
+              shortKey:shortKey,
           }
           
           await saveStatusAndHistory(historyParams)

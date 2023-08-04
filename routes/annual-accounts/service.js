@@ -2199,7 +2199,7 @@ async function appendKeys(keyArray, data, provisionalKey, tabShortKeys, role, st
       let statusData = tabShortKeys.find(el => {
         return el.shortKey === entity && key === el.tabKey;
       });
-      let stateStatusData;
+      let stateStatusData;  
       if (statusData) {
         let params = {
           status: statusData.statusId,
