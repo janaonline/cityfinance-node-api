@@ -77,11 +77,23 @@ const getResourceList = async (req, res, next) => {
                 $unwind: '$subCategory'
             },
             {
+                $group: { _id: {
+                    state: '$state',
+                    category: '$category',
+                    subCategory: '$subCategory',
+                
+                },
+                    documents: { $push: "$$ROOT" },
+                }  
+            },
+            {
                 $project: {
+                    _id: 0,
                     file: 1,
-                    stateName: '$state.name',
-                    categoryName: '$category.name',
-                    subCategoryName: '$subCategory.name'
+                    stateName: '$_id.state.name',
+                    categoryName: '$_id.category.name',
+                    subCategoryName: '$_id.subCategory.name',
+                    "documents": '$documents.file',
                 }
             }
         ]);
