@@ -1978,7 +1978,7 @@ function addUlbAndAmrutFields(service,fields,fieldName='ulbShare'){
         let obj = {
             "$addFields":{}
         }
-        obj['$addFields']['totalAmrutProjectCost'] = { "$sum": "$AMRUT.cost" }
+        obj['$addFields']['totalAmrutProjectCost'] = { "$multiply" : [{"$sum": "$AMRUT.cost"}, 100] }
         obj['$addFields']['totalDurProjectCost'] = {"$sum": {"$sum": "$DUR.projects.cost"}}
         obj['$addFields']['totalAmrutProjects'] = {"$size": "$AMRUT"}
         obj['$addFields']['totalDurProjects'] = {
@@ -1992,7 +1992,7 @@ function addUlbAndAmrutFields(service,fields,fieldName='ulbShare'){
                 "else": 0
             }
         },
-        obj['$addFields']['totalAmrutUlbShare'] = {"$sum": "$AMRUT.ulbShare"}
+        obj['$addFields']['totalAmrutUlbShare'] = { "$multiply" : [{"$sum": "$AMRUT.ulbShare"}, 100] }
         obj['$addFields'][fieldName] = {
             "$cond":{
                 "if":{
