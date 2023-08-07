@@ -25,7 +25,7 @@ const handleDatabaseUpload = async (req, res, next) => {
 
 const getResourceList = async (req, res, next) => {
     try {
-        const data = await CategoryFileUpload.aggregate([
+        const query = [
             {
                 $match:
                     { module: 'state_resource' }
@@ -77,14 +77,15 @@ const getResourceList = async (req, res, next) => {
                 $unwind: '$subCategory'
             },
             {
-                $group: { _id: {
-                    state: '$state',
-                    category: '$category',
-                    subCategory: '$subCategory',
-                
-                },
+                $group: {
+                    _id: {
+                        state: '$state',
+                        category: '$category',
+                        subCategory: '$subCategory',
+
+                    },
                     documents: { $push: "$$ROOT" },
-                }  
+                }
             },
             {
                 $project: {
@@ -96,21 +97,10 @@ const getResourceList = async (req, res, next) => {
                     "documents": '$documents.file',
                 }
             }
-        ]);
-        return res.status(200).json({
-            status: true,
-            message: "Successfully saved data!",
-            data: data,
-        });
-    }
-    catch (err) {
-        console.log(err);
-    }
-}
-
-const getMainCategory = async (req, res, next) => {
-    try {
-        const data = await MainCategory.aggregate([
+        ];
+        const documents = await CategoryFileUpload.aggregate(query);
+        const states = await State.find().select('name _id');
+        const categories = await MainCategory.aggregate([
             {
                 $match: { typeOfCategory: "state_resource", isActive: true }
             },
@@ -132,7 +122,11 @@ const getMainCategory = async (req, res, next) => {
         return res.status(200).json({
             status: true,
             message: "Successfully saved data!",
-            data: data,
+            data: {
+                documents,
+                states,
+                categories
+            },
         });
     }
     catch (err) {
@@ -144,8 +138,8 @@ const getMainCategory = async (req, res, next) => {
 
 
 
+
 module.exports = {
     handleDatabaseUpload,
-    getMainCategory,
     getResourceList
 }
