@@ -20,6 +20,9 @@ const ObjectId = require('mongoose').Types.ObjectId;
 const {CollectionNames, ModelNames, FormPathMappings} = require('../../util/15thFCstatus');
 const { YEAR_CONSTANTS, MASTER_STATUS, FormNames } = require('../../util/FormNames');
 const UA = require('../../models/UA');
+const {getPopulationDataQueries} = require('./query')
+const Response = require('../../service/response');
+const response = require('../../service/response');
 
 const CUTOFF =  {
     STATE:{
@@ -1029,6 +1032,7 @@ const dashboard = async (req, res) => {
         let data = req.query;
         let user = req.decoded;
         const {_id:actionTakenBy, role: actionTakenByRole, state } = user;
+        const singleState = 1;
         let collectionArr = getCollections(data.formType, data.installment);
         if(data.design_year === YEAR_CONSTANTS['23_24']){
             collectionArr = getCollections2324(data.formType, data.installment);
@@ -1067,7 +1071,7 @@ const dashboard = async (req, res) => {
             Sidemenu.aggregate(sidemenuPipeline),
             Sidemenu.findOne(reviewUlbCondition).lean()
         ]);
-        let multi = states?.length >= 1 ? true :  false; 
+        let multi = states?.length >= 1 ? true : false
         if(!Boolean(multi)){
             states = [state];
         }
@@ -1129,7 +1133,6 @@ const dashboard = async (req, res) => {
                   states
                 );
               }
-              // return res.json(pipeline)
               //Pipeline query condition for Grant transfer cetificate
               if (modelName === CollectionNames.gtc) {
                 pipeline = gtcSubmitCondition(
@@ -1145,7 +1148,6 @@ const dashboard = async (req, res) => {
                     states,
                     data.design_year
                   );
-                  // return res.json(pipeline);
                 }
               }
               //Get submitted forms
@@ -1221,7 +1223,6 @@ const dashboard = async (req, res) => {
                   formData.status = "Not yet eligible for Grant Claim";
                 }
                 ({ ulbResponse, stateResponse } = createFormResponseObjects(formCategory, ulbResponse, formData, modelName, submittedFormPercent, approvedFormPercent, totalApprovedUlbForm, totalSubmittedUlbForm, totalForms, cutOff, ulbResponseArray, stateResponse, totalApprovedStateForm, totalSubmittedStateForm, stateResponseArray));
-                // if (Boolean(multi)) {
                   const slbScoringEntry = statesFormData[state]?.stateResponse.find(el=> el.key === CollectionNames.slbScoring)
                   if (hasUA.length && data.formType === "mpc_tied" && !slbScoringEntry) {
                     if (indicatorFormCount === indicatorFormValidationCount && ![YEAR_CONSTANTS['22_23']].includes(data.design_year)) {
@@ -1243,7 +1244,6 @@ const dashboard = async (req, res) => {
                       statesFormData[state]?.stateResponse || []
                     ).concat(stateResponseArray),
                   };
-                // }
               }
             }
         
@@ -1253,16 +1253,6 @@ const dashboard = async (req, res) => {
         let ulbFormsResponse = statesFormData[state]['ulbResponse'];
         let stateFormsResponse = statesFormData[state]['stateResponse'];
         if (data.flagFunction) {
-        //   if (hasUA.length && data.formType === "mpc_tied") {
-        //     let { leastSubmitPercent, leastSubmitNumber } =
-        //       addSlbScoringData(ulbResponseArray);
-        //     let slbScoring = getSlbScoringResponse(
-        //       leastSubmitPercent,
-        //       leastSubmitNumber,
-        //       cutOff
-        //     );
-        //     stateResponseArray.push(slbScoring);
-        //   }
           return {
             data: [
               {
@@ -1280,7 +1270,11 @@ const dashboard = async (req, res) => {
             ],
           };
         }
-        return res. status(200).json({
+        if(![YEAR_CONSTANTS['22_23']].includes(data.design_year)){
+         let data = await updateResponseFormat(ulbFormsResponse, stateFormsResponse)
+            return Response.OK(res,data)
+        }
+        return res.status(200).json({
             status: true,
             data: [{
                 formHeader:'ULB Forms',
@@ -1305,6 +1299,182 @@ const dashboard = async (req, res) => {
 
 }
 
+/**
+ * The function retrieves population data for a specific state and returns it as a response..
+ */
+async function getPopulationData(req, res) {
+    try {
+        let state = req.decoded.state;
+        const pipeline = getPopulationDataQueries(state);
+        const data = await State.aggregate(pipeline);
+         const populationData =  buildStateInfo(...data);
+         return response.OK(res, populationData)
+    } catch (error) {
+        return response.BadRequest(res, [])
+    }
+}
+
+module.exports.getPopulationData = getPopulationData
+
+/**
+ * The function `buildStateInfo` takes an input object and populates the values from the input object
+ * into an output object, which includes an array of data items with keys, labels, icons, values,
+ * positions, tooltips, and links.
+ */
+function buildStateInfo(input) {
+  try {
+    let output = {
+      title: "",
+      name: "",
+      id: "",
+      data: [
+        {
+          key: "totalUlbs",
+          label: "Total ULBs",
+          icon: "../../../../assets/dashboard-state/16-location.svg",
+        },
+        {
+          key: "TotalofNMPCs",
+          label: "Total no. of NMPCs",
+          icon: "../../../../assets/dashboard-state/XMLID_1248_.svg",
+        },
+        {
+          key: "TotalofMPCs",
+          label: "Total No. of MPCs ",
+          icon: "../../../../assets/dashboard-state/sustainable.svg",
+        },
+        {
+          label: "Total ULBs in UAs ",
+          key: "TotalULBsUAs",
+          icon: "../../../../assets/dashboard-state/16-location.svg",
+        },
+        {
+          key: "totalDulyElectedNMPCs",
+          label: "Total Duly Elected NMPCs ",
+          icon: "../../../../assets/dashboard-state/XMLID_1248_.svg",
+        },
+        {
+          key: "totalDulyElectedULBsInUA",
+          label: "Total Duly Elected ULBs in UAs",
+          icon: "../../../../assets/dashboard-state/sustainable.svg",
+        },
+        {
+          key: "totalEligibleULBsOnPTaxGSDP",
+          label: "Total Eligible ULBs based on Property Tax GSDP",
+          icon: "../../../../assets/dashboard-state/16-location.svg",
+        },
+      ],
+    };
+
+    // Populate the values from the input object into the output.data array
+    for (const item of output.data) {
+      const inputValue = input?.[item.key];
+      item.value = inputValue !== undefined ? inputValue : 0;
+    
+    }
+
+    // Set dynamic positions based on the number of items
+    output.data.forEach((item, index) => {
+      item.position = (index + 1).toString();
+      item.tooltip = "";
+      item.link = "";
+    });
+
+    return output;
+  } catch (error) {
+    throw { message: `buildStateInfo:: ${error.message}` };
+  }
+}
+
+
+async function updateResponseFormat(ulbForm, stateForm){
+    try {
+        const data = [
+            {
+              title: 'NMPC - UnTied',
+              formType: 'nmpc_untied',
+              installments: [
+                {
+                  installment: '1',
+                  key: 'nmpc_untied_1',
+                  label: '1st Installment',
+                  isActive: true
+                },
+                {
+                  installment: '2',
+                  key: 'nmpc_untied_2',
+                  label: '2nd Installment',
+                  isActive: false
+                }
+              ]
+            },
+            {
+              title: 'NMPC - Tied',
+              formType: 'nmpc_tied',
+              installments: [
+                {
+                  installment: '1',
+                  key: 'nmpc_tied_1',
+                  label: '1st Installment',
+                  isActive: true
+                },
+                {
+                  installment: '2',
+                  key: 'nmpc_tied_2',
+                  label: '2nd Installment',
+                  isActive: false
+                }
+              ]
+            },
+            {
+              title: 'MPC',
+              formType: 'mpc_tied',
+              installments: [],
+            }
+        ];
+        const cityTypeInState = getCityTypeData(data);
+        const formData = {
+            ulbForm,
+            stateForm
+        };
+        return {
+            cityTypeInState,
+            formData,
+        }
+    } catch (error) {
+        throw { message: `updateResponseFormat:: ${error.message}`}
+    }
+}
+
+
+/**
+ * The function `getCityTypeData` returns an object containing an array of city types with their
+ * corresponding view modes, form types, and installment availability.
+  */
+function getCityTypeData(data) {
+  try {
+    const result = {
+      title: "",
+      name: "",
+      id: "",
+      data: [],
+    };
+    for (let i = 0; i < data.length; i++) {
+      const cityType = data[i];
+      const cityTypeObj = {
+        title: cityType.title,
+        isActive: Boolean(cityType.installments.length),
+        viewMode: `tab${i + 1}`,
+        formType: cityType.formType,
+        isInstallmentAvailable: Boolean(cityType.installments.length),
+        installments: cityType.installments.slice(), // Create a shallow copy of the installments array
+      };
+      result.data.push(cityTypeObj);
+    }
+    
+    return result;
+  } catch (error) {}
+}
 /**
  * The function creates response objects based on the form category and stores them in respective
  * arrays.
