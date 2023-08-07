@@ -273,6 +273,8 @@ exports.saveData = async (req, res) => {
           message: "Form not saved."
         })
       }
+      let formSubmit = [{...req.body,_id:data._id,currentFormStatus:req.body.currentFormStatus}]
+    await createHistory({ formBodyStatus : Number(req.body.currentFormStatus),formSubmit, actionTakenByRole:req.decoded.role , actionTakenBy: req.body.actionTakenBy  })
       return Response.OK(res, data, "file submitted");
     }
 
