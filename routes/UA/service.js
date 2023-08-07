@@ -1689,7 +1689,7 @@ function addCsvFields(dataObj,fieldName){
 function getProjectReportDetail(csv){
     let obj = {
         "name": "Project Report file",
-        "url": "https://jana-cityfinance.s3.ap-south-1.amazonaws.com/objects/94d21e52-3439-4221-9844-2d76972c7107.pdf"
+        "url": "$amrProjects.dprDocument.url"
     }
     if(csv){
         return "https://jana-cityfinance.s3.ap-south-1.amazonaws.com/objects/94d21e52-3439-4221-9844-2d76972c7107.pdf"
@@ -1703,9 +1703,19 @@ function amrProjects(service,csv,ulbId){
             "projectId": "$amrProjects._id",
             "totalProjectCost":"$amrProjects.cost",
             "implementationAgency":"$name",
-            "capitalExpenditureState": "$amrProjects.capitalExpenditureState",
+            "capitalExpenditureState": {
+                "$add": [
+                    "$amrProjects.capitalExpenditureState",
+                    "$amrProjects.capitalExpenditureCentralAssist"
+                ]
+            },
             "capitalExpenditureUlb": "$amrProjects.capitalExpenditureUlb",
-            "omExpensesState": "$amrProjects.omExpensesState",
+            "omExpensesState": {
+                "$add": [
+                    "$amrProjects.omExpensesState",
+                    "$amrProjects.omExpensesCentralAssist"
+                ]
+            },
             "omExpensesUlb": "$amrProjects.omExpensesUlb",
             "stateShare": "$amrProjects.stateShare",
             "expenditure": "$amrProjects.expenditure",
@@ -1937,7 +1947,6 @@ function getProjectionQueries(service, filteredObj, skip, limit, sortKey) {
                 "rows": "$rows",
                 "sectors": 1,
                 "projects": 1,
-                
                 "implementationAgencies": 1
             }
         }
@@ -2969,7 +2978,10 @@ function transformData(data) {
             location: { lat: item['latitude'], lng: item['longitude'] },
             dprPrepared: item['is dpr prepared?'],
             dprPrepDate: new Date(item['dpr preparation date'].split("-").reverse().join("-")),
-            dprDocument: item['dpr (pdf)']
+            dprDocument: {
+                name: "",
+                url: item['dpr (pdf)']
+            }
         };
     });
 }
