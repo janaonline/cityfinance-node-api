@@ -2865,7 +2865,11 @@ module.exports.bulkUpload = catchAsync(async (req, res, next) => {
         const fileContent = fs.readFileSync(filePath);
         const data = await readXlsxFile({ path: filePath, buffer: fileContent });
         //perform validation of the fields in the xls or xlsx
-        await validateBulkUpload(data, res)
+        const validationErrors = await validateBulkUpload(data, res)
+
+        if (validationErrors.length > 0) {
+            return res.status(400).send({ status: false, errors: validationErrors });
+        }
 
         // Apply the mapping to transform the data keys
         const transformedData = transformData(data);
@@ -2945,9 +2949,7 @@ async function validateBulkUpload(data, res) {
                 }
             }
         }
-        if (errors.length > 0) {
-            throw new Error(errors.join("; "));
-        }
+        return errors;
     } catch (error) {
         console.log("readXlsxFile: Exception", error);
         throw {
