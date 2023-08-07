@@ -17,7 +17,7 @@ const AmrutProjectsSchema = new Schema({
   ulbShare: { type: Number, default: 0 },
   location: {
     lat: { type: String, default: "" },
-    long: { type: String, default: "" },
+    lng: { type: String, default: "" },
   },
   startDate: { type: Date },
   endDate: { type: Date, },
