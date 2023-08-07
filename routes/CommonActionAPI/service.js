@@ -2741,12 +2741,15 @@ module.exports.masterAction = async (req, res) => {
         };
 
         const model = require(`../../models/${path}`);
-        const formData = await model.find(condition).lean();
+        let formData = await model.find(condition).lean();
         //   let level = form_level;
         if (!formData || !formData.length) {
             return Response.BadRequest(res, {}, "No Form Found!")
         }
         //   if(multi){
+        if ([FORMIDs['GrantAllocation'], FORMIDs['GTC_STATE']].includes(formId)) {
+            formData =  formData.filter(item => item.currentFormStatus ===  MASTER_FORM_STATUS['UNDER_REVIEW_BY_MoHUA'])
+        }
         let params = { formData, actionTakenByRole, actionTakenBy, bodyData }
         let actionResponse = await takeActionOnForms(params, res)
         //   } else {
@@ -2769,6 +2772,7 @@ async function takeActionOnForms(params, res) {
         let count = 0;
         let path = modelPath(formId);
         const model = require(`../../models/${path}`);
+        
         for (let form of formData) {
             let bodyData = {
                 formId,
