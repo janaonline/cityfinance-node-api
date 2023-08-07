@@ -1275,9 +1275,11 @@ const dashboard = async (req, res) => {
                 formHeader: "ULB Forms",
                 approvedColor: "#E67E15",
                 submittedColor: "#E67E1566",
+                key: 'ulbforms',
                 formData: ulbFormsResponse,
               };
             let stateForms = {
+                key: 'stateForms',
                 formHeader: "State Forms",
                 approvedColor: "#059B05",
                 submittedColor: "#E67E1566",
@@ -1292,11 +1294,9 @@ const dashboard = async (req, res) => {
                 formHeader:'ULB Forms',
                 approvedColor:'#E67E15',
                 submittedColor:'#E67E1566',
-                key: 'ulbforms',
                 formData: ulbFormsResponse
             },
             {
-                key: 'stateForms',
                 formHeader:'State Forms',
                 approvedColor:'#059B05',
                 submittedColor:'#E67E1566',
