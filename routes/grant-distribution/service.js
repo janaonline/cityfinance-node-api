@@ -501,7 +501,7 @@ let host = baseUrls[process.env.ENV]
       }
       let shortKey = `${section.type}_${section.yearCode}_${i}`
       let allocationForm =  allocationForms.find(item => item.installment === i && item?.year?.toString() === years[section.yearCode] && item?.type === section?.type ) || {}
-      let currentStatus = currentStatuses.find(item => item.recordId.toString() === allocationForm._id.toString() && item.shortKey === shortKey)
+      let currentStatus = currentStatuses.find(item => item.recordId.toString() === allocationForm?._id?.toString() && item.shortKey === shortKey)
       allocationForm.currentFormStatus = allocationForm?.currentFormStatus ? allocationForm?.currentFormStatus : MASTER_FORM_STATUS['NOT_STARTED']
       let url = ""
       url = allocationForm?.url || ""
