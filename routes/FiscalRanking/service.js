@@ -10,6 +10,8 @@ const { FORMIDs, MASTER_STATUS, MASTER_STATUS_ID, FORM_LEVEL, POPULATION_TYPE, Y
 const { saveCurrentStatus, saveFormHistory, saveStatusHistory } = require("../../util/masterFunctions");
 const FeedBackFiscalRanking = require("../../models/FeedbackFiscalRanking");
 const TwentyEightSlbsForm = require("../../models/TwentyEightSlbsForm");
+const StatusHistory = require("../../models/StatusHistory");
+
 const Ulb = require("../../models/Ulb");
 const Service = require("../../service");
 const Users = require("../../models/User");
@@ -266,7 +268,6 @@ function getLogicalValues(dp, year, dynamicData) {
     // console.log("dynamicData :: ",dynamicData)
     for (let key in dynamicData) {
       let obj = dynamicData[key];
-      // console.log("key ::::",dp)
       if (dp.includes(obj.displayPriority)) {
         for (let yearObj of obj.yearData) {
           if (yearObj.year === year) {
@@ -1317,8 +1318,8 @@ exports.getView = async function (req, res, next) {
       currentFormStatus: viewOne.currentFormStatus,
       financialYearTableHeader,
       messages: userMessages,
-      hideForm,
-      notice
+      // hideForm,
+      // notice
     };
     if (userMessages.length > 0) {
       let { approvedPerc, rejectedPerc } = calculatePercentage(modifiedLedgerData, requiredFields, viewOne)
@@ -3267,7 +3268,7 @@ async function sendCsv(res, aggregateQuery) {
           if (key == "filled") {
             el[key] = el[key] === "Yes" ? "filled" : "Not filled";
           }
-          str += el[key] + ",";
+          str += el[key].split(",").join("-") + ",";
         } else {
           str += " " + ",";
         }
@@ -3868,9 +3869,7 @@ module.exports.actionTakenByMoHua = catchAsync(async (req, res) => {
   };
   try {
     let { ulbId, formId, actions, design_year, isDraft, currentFormStatus } = req.body;
-    console.log("currentFormStatus :: ", currentFormStatus)
     let { role, _id: userId } = req.decoded;
-    console.log("role :: ", role)
     let validation = await checkUndefinedValidations({
       ulb: ulbId,
       actions: actions,
@@ -3887,8 +3886,7 @@ module.exports.actionTakenByMoHua = catchAsync(async (req, res) => {
     const session = await mongoose.startSession();
     await session.startTransaction();
     let masterFormId = FORMIDs['fiscalRanking'];
-    let params = { isDraft, role, userId, formId, masterFormId, formBodyStatus: currentFormStatus, actionTakenBy: userId, actionTakenByRole: role }
-    await createHistory(params)
+    
     let calculationsTabWise = await calculateAndUpdateStatusForMappers(
       session,
       actions,
@@ -3906,6 +3904,8 @@ module.exports.actionTakenByMoHua = catchAsync(async (req, res) => {
       }
 
     }
+    let params = { isDraft, role, userId, formId, masterFormId, formBodyStatus: formStatus, actionTakenBy: userId, actionTakenByRole: role }
+    await createHistory(params)
     let feedBackResp = await saveFeedbacksAndForm(
       calculationsTabWise,
       ulbId,
@@ -3923,6 +3923,7 @@ module.exports.actionTakenByMoHua = catchAsync(async (req, res) => {
       response.success = false;
       response.message = "Some server error occured";
     }
+   
   } catch (err) {
     // await session.abortTransaction()
     // await session.endSession()
@@ -4050,6 +4051,7 @@ module.exports.createForm = catchAsync(async (req, res) => {
     }
     let masterFormId = FORMIDs['fiscalRanking'];
     let params = { isDraft, role, userId, formId, masterFormId, formBodyStatus: currentFormStatus, actionBy: ulbId }
+    await createHistory(params)
     let calculationsTabWise = await calculateAndUpdateStatusForMappers(
       session,
       actions,
@@ -4059,8 +4061,6 @@ module.exports.createForm = catchAsync(async (req, res) => {
       true,
       isDraft
     );
-    console.log(">>>>>>~>>>>>>>>>>>")
-    await createHistory(params)
     if (!statusTracker.IP === currentFormStatus) {
       await FiscalRanking.findOneAndUpdate({
         ulb: ObjectId(req.body.ulbId),
@@ -4246,7 +4246,8 @@ async function columnsForCSV(params) {
       "Copy of Audited Annual Financial Statements preferably in English FY 2019-20",
       "Copy of Audited Annual Financial Statements preferably in English FY 2018-19",
       "Any other information that you would like to provide us?",
-      "Upload Signed Copy"
+      "Upload Signed Copy",
+      "Form Rejection Count"
     ];
     output["dbCols"] = [
       "stateName",
@@ -4299,7 +4300,8 @@ async function columnsForCSV(params) {
       "FR_auditedAnnualFySt_2019-20",
       "FR_auditedAnnualFySt_2018-19",
       "otherUpload",
-      "signedCopyOfFile"
+      "signedCopyOfFile",
+      "formRejectedTimes"
     ];
     output["FRShortKeyObj"] = {};
   } else if (FRUlbFinancialData) {
@@ -4395,7 +4397,6 @@ async function createHistory(params) {
       // await session.commitTransaction();
       // return Response.OK(res, {}, "Form Submitted");
     } else if (
-
       [MASTER_STATUS["Submission Acknowledged by PMU"], MASTER_STATUS["Verification Not Started"], MASTER_STATUS["Verification In Progress"], MASTER_STATUS["Returned by PMU"]].includes(formBodyStatus)
     ) {
       let data = await FiscalRanking.find({ "_id": formId }).lean()
@@ -4632,6 +4633,9 @@ function computeQuery(params, cond = null) {
           preserveNullAndEmptyArrays: true,
         },
       },
+
+      
+
       {
         $project: {
           stateName: "$ulb.state.name",
@@ -4794,7 +4798,53 @@ function computeQuery(params, cond = null) {
         },
       },
       {
+        "$lookup":{
+            "from":"statushistories",
+            "let":{
+                "recordId":"$fiscalrankings._id",
+                "status":10
+            },
+            "pipeline":[
+            {
+                "$match":{
+                    "recordId":"$$recordId",
+                    "data.0.status":"$$status"
+                }
+            }
+            ],
+            "as":"statuses"
+        }
+    },
+      {
         $addFields: {
+          "formRejectedTimes":{
+            
+            "$cond":{
+              "if":{
+                 "$gt":[
+                 {
+                     "$size":"$statuses"
+                 },
+                 0
+                 ]
+              },
+              "then":{
+                  "$size":"$statuses"
+              },
+              "else":{
+                  "$sum":{
+                      "$cond":{
+                          "if":{
+                              "$eq":["$fiscalrankings.currentFormStatus",statusTracker['RBP']]
+                          },
+                          "then":1,
+                          "else":0
+                      }
+                  }
+              }
+          }
+      
+        },
           currentFormStatus: {
             $cond: {
               if: {
@@ -5091,6 +5141,7 @@ function computeQuery(params, cond = null) {
           signedCopyOfFile: {
             $ifNull: ["$fiscalrankings.signedCopyOfFile.url", ""],
           },
+          formRejectedTimes:1,
           fiscalrankingmappers: 1,
           arrayOfMandatoryField: "$fiscalrankings.arrayOfMandatoryField",
           completionPercentFR: {
@@ -5393,7 +5444,7 @@ function createCsv(params) {
                 FRMapperKey = "file"
               }
               if (fiscalrankingmappersDocument[FRMapperKey]) {
-                str += fiscalrankingmappersDocument[FRMapperKey] + ",";
+                str += fiscalrankingmappersDocument[FRMapperKey].split(",").join("-") + ",";
               } else {
                 str += " " + ",";
               }
@@ -5446,3 +5497,55 @@ function calculateReviewCount(item) {
   return [completedIndicator, approvedIndicator, rejectedIndicator]
 }
 
+
+
+module.exports.getTrackingHistory = async(req,res)=>{
+  let response = {
+    success:false,
+    data:[],
+    message:""
+  }
+  try{
+    let _id =  req.query.id
+    if(!_id || _id === "null"){
+      response.message = "Id is required"
+      return res.status(400).json(response)
+    }
+    let history = await StatusHistory.find({
+      "recordId":ObjectId(_id)
+    }).sort({
+      "createdAt":1
+    }).lean()
+    let maxSrNo = 1
+    let histories = history.map((item ,index)=> {
+      maxSrNo += 1
+      let status = item?.data?.status|| item['data'][0]['status'] 
+      return {
+        "srNo":index+1,
+        "action":statusList[status],
+        "date": item.createdAt  ? (item?.createdAt.toLocaleDateString() +" "+ item?.createdAt.toLocaleTimeString()) : ""
+      }
+    })
+    // let formModified = form.modifiedAt  ? form.modifiedAt.toLocaleDateString()+" "+form?.createdAt.toLocaleTimeString():  histories[histories.length -1].date
+    // histories.push(
+    //   {
+    //     "srNo":maxSrNo,
+    //     "action":statusList[form['currentFormStatus']],
+    //     "date":formModified
+    //   }
+    // )
+    response.success = true
+    response.data = histories
+    response.message = histories.length ? "" : "No history found"
+    return res.status(200).json(response)
+
+  }
+  catch(err){
+    if(["staging","demo"].includes((process.env.ENV))){
+      response.message = err.message
+    }
+    console.log(err)
+    console.log("error in getTrackingHistory :: ",err.message)
+    return res.status(400).json(response)
+  }
+}
