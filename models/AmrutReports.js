@@ -29,7 +29,12 @@ const AmrutProjectsSchema = new Schema({
     },
   },
   dprPrepDate: { type: Date },
-  dprDocument: { type: String },
+  dprDocument: {
+    type: {
+      name: { type: String },
+      url: { type: String }
+    }
+  },
   isActive: { type: Boolean, default: 1 },
 },
   { timestamps: { createdAt: 'createdAt', updatedAt: 'modifiedAt' } }
