@@ -2864,6 +2864,7 @@ module.exports.bulkUpload = catchAsync(async (req, res, next) => {
         const filePath = req.file.path;
         const fileContent = fs.readFileSync(filePath);
         const data = await readXlsxFile({ path: filePath, buffer: fileContent });
+        //perform validation of the fields in the xls or xlsx
         await validateBulkUpload(data, res)
 
         // Apply the mapping to transform the data keys
@@ -2872,8 +2873,8 @@ module.exports.bulkUpload = catchAsync(async (req, res, next) => {
         await performBulkUpload(req, res, transformedData)
     }
     catch (err) {
-        // response.message = "Something went wrong"
         console.log("error in amrutBulkUpload :: ", err.message)
+        return res.status(500).send({ status: false, message: "Something went wrong" });
     }
 })
 
@@ -2921,6 +2922,8 @@ async function validateBulkUpload(data, res) {
         { field: 'dpr preparation date', isDate: true },
         { field: 'estimated project award date', isDate: true },
         { field: 'estimated project completion date', isDate: true },
+        { field: 'latitude' },
+        { field: 'longitude' },
         { field: 'total project cost (in cr.)' },
         { field: 'project central assistance  (in cr.)' },
         { field: 'project state share (in cr.)' },
@@ -2943,7 +2946,7 @@ async function validateBulkUpload(data, res) {
             }
         }
         if (errors.length > 0) {
-            return res.status(400).send({ status: false, errors });
+            throw new Error(errors.join("; "));
         }
     } catch (error) {
         console.log("readXlsxFile: Exception", error);
