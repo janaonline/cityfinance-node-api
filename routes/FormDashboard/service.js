@@ -1271,7 +1271,19 @@ const dashboard = async (req, res) => {
           };
         }
         if(![YEAR_CONSTANTS['22_23']].includes(data.design_year)){
-         let data = await updateResponseFormat(ulbFormsResponse, stateFormsResponse)
+            let ulbForms = {
+                formHeader: "ULB Forms",
+                approvedColor: "#E67E15",
+                submittedColor: "#E67E1566",
+                formData: ulbFormsResponse,
+              };
+            let stateForms = {
+                formHeader: "State Forms",
+                approvedColor: "#059B05",
+                submittedColor: "#E67E1566",
+                formData: stateFormsResponse,
+              }
+         let data = await updateResponseFormat(ulbForms, stateForms)
             return Response.OK(res,data)
         }
         return res.status(200).json({
@@ -1280,9 +1292,11 @@ const dashboard = async (req, res) => {
                 formHeader:'ULB Forms',
                 approvedColor:'#E67E15',
                 submittedColor:'#E67E1566',
+                key: 'ulbforms',
                 formData: ulbFormsResponse
             },
             {
+                key: 'stateForms',
                 formHeader:'State Forms',
                 approvedColor:'#059B05',
                 submittedColor:'#E67E1566',
