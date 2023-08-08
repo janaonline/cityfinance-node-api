@@ -210,8 +210,8 @@ module.exports.get = async (req, res) => {
     data.forEach(el => { if (el.formData || el.formData === "") delete el.formData })
     const Query15FC = { $or: [{ type: "15thFC" }, { multi: { $in: ["15thFC"] } }] };
     const ulbFormStatus = await MASTERSTATUS.find(Query15FC, { statusId: 1, status: 1 }).lean()
-
-    if (formType == "STATE" && ['GrantClaim'].includes(collectionName)) {
+    console.log("collectionName", collectionName)
+    if (formType == "STATE" && ['GrantClaim', ''].includes(collectionName)) {
       delete stateColumnNames.formStatus
     }
 
