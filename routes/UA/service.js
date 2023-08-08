@@ -1,26 +1,32 @@
 const catchAsync = require('../../util/catchAsync')
 const UA = require('../../models/UA')
+const ExcelJS = require("exceljs")
 const ObjectId = require('mongoose').Types.ObjectId;
 const State = require('../../models/State')
 const Ulb = require('../../models/Ulb')
+const Category = require('../../models/Category')
 const DUR = require("../../models/UtilizationReport")
 const SLBData = require('../../models/XVFcGrantForm')
 const GFC = require('../../models/GfcFormCollection')
 const ODF = require('../../models/OdfFormCollection')
 const Year = require("../../models/Year")
 const SLB28 = require('../../models/TwentyEightSlbsForm')
+const fs = require("fs")
+const xlstojson = require("xls-to-json-lc")
+const xlsxtojson = require("xlsx-to-json-lc")
 const UaFileList = require("../../models/UAFileList")
 const { years } = require("../../service/years")
 const GlobalService = require('../../service');
 const axios = require('axios')
-const {sendCsv,apiUrls} = require("../../routes/CommonActionAPI/service")
+const { sendCsv, apiUrls } = require("../../routes/CommonActionAPI/service")
 const { calculateSlbMarks } = require('../Scoring/service');
 const { ulb } = require('../../util/userTypes');
-const { columns,csvCols,sortFilterKeys,dashboardColumns,filterYears } = require("./constants.js")
+const { columns, csvCols, sortFilterKeys, dashboardColumns, filterYears } = require("./constants.js")
 const Redis = require("../../service/redis")
 const { AggregationServices } = require("../../routes/CommonActionAPI/service");
-const { YEAR_CONSTANTS , FORMIDs, FormNames, MASTER_STATUS,MASTER_FORM_STATUS} = require('../../util/FormNames');
+const { YEAR_CONSTANTS, FORMIDs, FormNames, MASTER_STATUS, MASTER_FORM_STATUS } = require('../../util/FormNames');
 const { getKeyByValue } = require('../../util/masterFunctions');
+const AmrutReports = require('../../models/AmrutReports');
 const lineItemIndicatorIDs = [
     "6284d6f65da0fa64b423b52a",
     "6284d6f65da0fa64b423b53a",
@@ -1683,7 +1689,7 @@ function addCsvFields(dataObj,fieldName){
 function getProjectReportDetail(csv){
     let obj = {
         "name": "Project Report file",
-        "url": "https://jana-cityfinance.s3.ap-south-1.amazonaws.com/objects/94d21e52-3439-4221-9844-2d76972c7107.pdf"
+        "url": "$amrProjects.dprDocument.url"
     }
     if(csv){
         return "https://jana-cityfinance.s3.ap-south-1.amazonaws.com/objects/94d21e52-3439-4221-9844-2d76972c7107.pdf"
@@ -1697,16 +1703,26 @@ function amrProjects(service,csv,ulbId){
             "projectId": "$amrProjects._id",
             "totalProjectCost":"$amrProjects.cost",
             "implementationAgency":"$name",
-            "capitalExpenditureState": "$amrProjects.capitalExpenditureState",
+            "capitalExpenditureState": {
+                "$add": [
+                    "$amrProjects.capitalExpenditureState",
+                    "$amrProjects.capitalExpenditureCentralAssist"
+                ]
+            },
             "capitalExpenditureUlb": "$amrProjects.capitalExpenditureUlb",
-            "omExpensesState": "$amrProjects.omExpensesState",
+            "omExpensesState": {
+                "$add": [
+                    "$amrProjects.omExpensesState",
+                    "$amrProjects.omExpensesCentralAssist"
+                ]
+            },
             "omExpensesUlb": "$amrProjects.omExpensesUlb",
             "stateShare": "$amrProjects.stateShare",
             "expenditure": "$amrProjects.expenditure",
             "ulbShare":"$amrUlbShare",
             "sectorId": "$amrProjects.category._id",
             "sector":"$amrProjects.category.name",
-            "divideTo":100,
+            "divideTo":1,
             "startDate":service.getCommonDateTransformer("$amrProjects.startDate"),
             "estimatedCompletionDate":service.getCommonDateTransformer("$amrProjects.endDate"),
             "moreInformation": {
@@ -1931,7 +1947,6 @@ function getProjectionQueries(service, filteredObj, skip, limit, sortKey) {
                 "rows": "$rows",
                 "sectors": 1,
                 "projects": 1,
-                
                 "implementationAgencies": 1
             }
         }
@@ -1950,6 +1965,43 @@ function addUlbShare(service,fields,fieldName='ulbShare'){
         let obj = {
             "$addFields":{}
         }
+        obj['$addFields'][fieldName] = {
+            "$cond":{
+                "if":{
+                    "$gte":[toValue,0]
+                },
+                "then":service.getCommonSubtract([fromValue,toValue]),
+                "else":0
+            }
+        }
+        return obj
+    }
+    catch(err){
+        console.log("error while getting ulbShare",err.message)
+    }
+}
+
+function addUlbAndAmrutFields(service,fields,fieldName='ulbShare'){
+    let {fromValue,toValue} = fields
+    try{
+        let obj = {
+            "$addFields":{}
+        }
+        obj['$addFields']['totalAmrutProjectCost'] = { "$multiply" : [{"$sum": "$AMRUT.cost"}, 100] }
+        obj['$addFields']['totalDurProjectCost'] = {"$sum": {"$sum": "$DUR.projects.cost"}}
+        obj['$addFields']['totalAmrutProjects'] = {"$size": "$AMRUT"}
+        obj['$addFields']['totalDurProjects'] = {
+            "$cond": {
+                "if": {
+                    "$isArray": "$DUR.projects"
+                },
+                "then": {
+                    "$size": "$DUR.projects"
+                },
+                "else": 0
+            }
+        },
+        obj['$addFields']['totalAmrutUlbShare'] = { "$multiply" : [{"$sum": "$AMRUT.ulbShare"}, 100] }
         obj['$addFields'][fieldName] = {
             "$cond":{
                 "if":{
@@ -2379,15 +2431,17 @@ const redisStoreData = (redis_key) => {
 }
 
 function getProjectionForDur(service){
-    let sumQuery = service.getCommonSumObj(service.getCommonSumObj("$DUR.projects.cost"))
+    let totalProjectCostSum = service.addTwoFieldData("$totalDurProjectCost", "$totalAmrutProjectCost"); 
+    let totalProjectSum = service.addTwoFieldData("$totalAmrutProjects", "$totalDurProjects");
+    let totalUlbShareSum = service.addTwoFieldData(service.getCommonConvertor("$ulbShare","int"), "$totalAmrutUlbShare"); 
     try{
         const obj = {
             "$project":{
                 "ulbName":"$name",
                 "stateName":"$state.name",
-                "totalProjectCost":sumQuery,
-                "totalProjects":service.getCommonTotalObj("$DUR.projects"),
-                "ulbShare" :service.getCommonConvertor("$ulbShare","int"),
+                "totalProjectCost":totalProjectCostSum,
+                "totalProjects":totalProjectSum,
+                "ulbShare" :totalUlbShareSum,
                 "expenditureTotal":{
                     $sum :"$DUR.projects.expenditure"
                 },
@@ -2452,6 +2506,36 @@ const getApprovedFormQuery =(keyName = false,designYear)=>{
     }
 }
 
+function lookupQueryForAmrut(service,designYear,project=false){
+    try{
+        let obj = {
+            "$lookup":{
+                "from":"amrutprojects",
+                "let":{
+                    "ulb_id":"$_id",
+                    "designYear":ObjectId(designYear)
+                },
+                "pipeline":[
+                    {
+                        "$match":{
+                            "$expr":{
+                                "$and":[
+                                    service.getCommonEqObj("$ulb","$$ulb_id"),
+                                    service.getCommonEqObj("$designYear","$$designYear")
+                                ]
+                            }
+                        }
+                    }
+                ],
+                "as":"AMRUT"
+            }
+        }
+        return obj
+    }
+    catch(err){
+        console.log("error in lookupQUery :: ",err.message)
+    }
+}
 
 function lookupQueryForDur(service,designYear,project=false){
     try{
@@ -2682,6 +2766,8 @@ function getQueryStateRelated(designYear,filterObj,sortKey,skip,limit){
         query.push(service.getCommonLookupObj("states","state","_id","state"))
         query.push(service.getUnwindObj("$state",true))
         // stage 2
+        query.push(lookupQueryForAmrut(service,designYear))
+        //stage 3
         query.push(lookupQueryForDur(service,designYear,true))
         query.push(service.getUnwindObj("$DUR",true))
 
@@ -2698,8 +2784,8 @@ function getQueryStateRelated(designYear,filterObj,sortKey,skip,limit){
                 }
             }
         }
-        query.push(addUlbShare(service,fields))
-        //stage 3
+        query.push(addUlbAndAmrutFields(service,fields))
+        //stage 4
         query.push(getProjectionForDur(service))
         // stage match if filters provided
         let matchObj = {
@@ -2772,3 +2858,187 @@ module.exports.getInfProjectsWithState = catchAsync(async(req,res,next)=>{
     }
     res.status(500).json(response)
 })
+
+module.exports.bulkUpload = catchAsync(async (req, res, next) => {
+    try {
+        const filePath = req.file.path;
+        const fileContent = fs.readFileSync(filePath);
+        const data = await readXlsxFile({ path: filePath, buffer: fileContent });
+        //perform validation of the fields in the xls or xlsx
+        await validateBulkUpload(data, res)
+
+        // Apply the mapping to transform the data keys
+        const transformedData = transformData(data);
+
+        await performBulkUpload(req, res, transformedData)
+    }
+    catch (err) {
+        console.log("error in amrutBulkUpload :: ", err.message)
+        return res.status(500).send({ status: false, message: "Something went wrong" });
+    }
+})
+
+async function readXlsxFile(file) {
+    try {
+        const fileInfo = file.path.split(".");
+        let exceltojson = xlstojson;
+
+        if (fileInfo && fileInfo.length > 0 && fileInfo[fileInfo.length - 1] === "xlsx") {
+            exceltojson = xlsxtojson
+        }
+
+        return sheet = await new Promise((resolve, reject) => {
+            exceltojson({ input: file.path, output: null, lowerCaseHeaders: true },
+                function (err, sheet) {
+                    if (err) {
+                        reject({ message: "Error: sheet1" });
+                    } else {
+                        resolve(sheet);
+                    }
+                }
+            );
+        });
+
+    } catch (error) {
+        console.log("readXlsxFile: Exception", error);
+        throw {
+            message: "Caught Exception while reading file.",
+            errMessage: error.message,
+        };
+    }
+}
+function isValidDateOrNumber(value, isDate = false) {
+    if (isDate) {
+        const datePattern = /^\d{2}-\d{2}-\d{4}$/;
+        return datePattern.test(value);
+    } else {
+        const numberPattern = /^\d+(\.\d+)?$/;
+        return numberPattern.test(value);
+    }
+}
+
+async function validateBulkUpload(data, res) {
+    const validationFields = [
+        { field: 'dpr preparation date', isDate: true },
+        { field: 'estimated project award date', isDate: true },
+        { field: 'estimated project completion date', isDate: true },
+        { field: 'latitude' },
+        { field: 'longitude' },
+        { field: 'total project cost (in cr.)' },
+        { field: 'project central assistance  (in cr.)' },
+        { field: 'project state share (in cr.)' },
+        { field: 'project ulb share (in cr.)' },
+        { field: 'project central assistance  (in cr.)' },
+        { field: 'capex ulb share (in cr.)' },
+        { field: 'o&m central assistance  (in cr.)' },
+        { field: 'o&m state share  (in cr.)' },
+        { field: 'o&m ulb share  (in cr.)' }
+    ];
+    const errors = [];
+    try {
+        for (const item of data) {
+            for (const fieldInfo of validationFields) {
+                const fieldValue = item[fieldInfo.field];
+
+                if (fieldValue && !isValidDateOrNumber(fieldValue, fieldInfo.isDate)) {
+                    errors.push(`${fieldInfo.field} is invalid`);
+                }
+            }
+        }
+        if (errors.length > 0) {
+            throw new Error(errors.join("; "));
+        }
+    } catch (error) {
+        console.log("readXlsxFile: Exception", error);
+        throw {
+            message: "Caught Exception while reading file.",
+            errMessage: error.message,
+        };
+    }
+}
+
+// Function to change keys and transform the data to match the model fields.
+function transformData(data) {
+    return data.map((item) => {
+        return {
+            name: item['project title'],
+            categoriesName: item['form type/ sector'],
+            cost: item['total project cost (in cr.)'],
+            code: item['project code'],
+            ulbName: item['ulb'],
+            designYear: ObjectId("606aafb14dff55e6c075d3ae"),
+            stateShare: item['project state share (in cr.)'],
+            capitalExpenditureState: item['capex state share  (in cr.)'],
+            capitalExpenditureUlb: item['capex ulb share (in cr.)'],
+            capitalExpenditureCentralAssist: item['capex central assistance  (in cr.)'],
+            CentralAssistCost: item['project central assistance  (in cr.)'],
+            omExpensesUlb: item['o&m ulb share  (in cr.)'],
+            omExpensesState: item['o&m state share  (in cr.)'],
+            omExpensesCentralAssist: item['o&m central assistance  (in cr.)'],
+            ulbShare: item['project ulb share (in cr.)'],
+            startDate: new Date(item['estimated project award date'].split("-").reverse().join("-")),
+            endDate: new Date(item['estimated project completion date'].split("-").reverse().join("-")),
+            location: { lat: item['latitude'], lng: item['longitude'] },
+            dprPrepared: item['is dpr prepared?'],
+            dprPrepDate: new Date(item['dpr preparation date'].split("-").reverse().join("-")),
+            dprDocument: {
+                name: "",
+                url: item['dpr (pdf)']
+            }
+        };
+    });
+}
+
+async function performBulkUpload(req, res, data) {
+    try {
+        const bulkOps = [];
+        const ulbMap = new Map();
+        const categoryMap = new Map();
+
+        for (const itemData of data) {
+            const findUlbName = itemData['ulbName'].toLowerCase();
+            if (!ulbMap.has(findUlbName)) {
+                const findUlb = await Ulb.findOne({
+                    name: { $regex: new RegExp(`^${findUlbName}`, 'i') }
+                });
+                ulbMap.set(findUlbName, findUlb);
+            }
+
+            const findCategoryName = itemData['categoriesName'].toLowerCase();
+            if (!categoryMap.has(findCategoryName)) {
+                const findCategory = await Category.findOne({
+                    name: { $regex: new RegExp(`^${findCategoryName}`, 'i') }
+                });
+                categoryMap.set(findCategoryName, findCategory);
+            }
+
+            const ulb = ulbMap.get(findUlbName);
+            if (ulb) {
+                itemData['ulb'] = ulb._id;
+            } else {
+                return res.status(400).send({ status: false, message: `ULB not found with this name: ${itemData.ulbName}` })
+            }
+
+            const category = categoryMap.get(findCategoryName);
+            if (category) {
+                itemData['category'] = category._id;
+            } else {
+                return res.status(400).send({ status: false, message: `Category not found with this name: ${itemData.categoriesName}` })
+            }
+            bulkOps.push(itemData)
+            // bulkOps.push({ insertOne: { document: itemData } });
+        }
+
+        if (bulkOps.length > 0) {
+            await AmrutReports.insertMany(bulkOps, { ordered: false });
+        }
+
+        return res.status(201).send({ status: true, message: `Data Uploaded successfully!` })
+    } catch (error) {
+        console.log("performBulkUpload: Exception", error);
+        throw {
+            message: "Caught Exception while saving file.",
+            errMessage: error.message,
+        };
+    }
+}
