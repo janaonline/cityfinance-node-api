@@ -4061,8 +4061,8 @@ module.exports.createForm = catchAsync(async (req, res) => {
       true,
       isDraft
     );
-    if (!statusTracker.IP === currentFormStatus) {
-      await FiscalRanking.findOneAndUpdate({
+    if (!(statusTracker.IP === currentFormStatus)) {
+      let a = await FiscalRanking.findOneAndUpdate({
         ulb: ObjectId(req.body.ulbId),
         design_year: ObjectId(req.body.design_year),
       }, {
@@ -5532,7 +5532,7 @@ module.exports.getTrackingHistory = async(req,res)=>{
       return {
         "srNo":index+1,
         "action":statusList[status],
-        "date": item.createdAt  ? (item?.createdAt.toLocaleDateString() +" "+ item?.createdAt.toLocaleTimeString()) : ""
+        "date": item.createdAt  ? (item?.createdAt.toLocaleDateString('en-GB') +" "+ item?.createdAt.toLocaleTimeString()) : ""
       }
     })
     // let formModified = form.modifiedAt  ? form.modifiedAt.toLocaleDateString()+" "+form?.createdAt.toLocaleTimeString():  histories[histories.length -1].date
