@@ -208,7 +208,6 @@ module.exports.get = async (req, res) => {
         }
       });
     }
-
     data.forEach(el => { if (el.formData || el.formData === "") delete el.formData })
     const Query15FC = { $or: [{ type: "15thFC" }, { multi: { $in: ["15thFC"] } }] };
     const ulbFormStatus = await MASTERSTATUS.find(Query15FC, { statusId: 1, status: 1 }).lean()
@@ -268,7 +267,7 @@ async function createCSV(params) {
         }
         let row = "";
         if (collectionName !== CollectionNames.annual && collectionName !== CollectionNames['28SLB']) {
-          if (['ODF', 'GFC'].includes(collectionName)) await setRating(el, ratingList);
+          if (['ODF', 'GFC'].includes(collectionName)) setRating(el, ratingList);
           let dynamicElementData = createDynamicElements(collectionName, formType, el);
           row = `${el.stateName},${el.ulbName},${el.ulbCode},${el.censusCode},${el.populationType},${el.isUA},${el.UA},${dynamicElementData.toString()}\r\n`;
         } else {
