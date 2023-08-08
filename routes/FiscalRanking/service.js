@@ -268,7 +268,6 @@ function getLogicalValues(dp, year, dynamicData) {
     // console.log("dynamicData :: ",dynamicData)
     for (let key in dynamicData) {
       let obj = dynamicData[key];
-      // console.log("key ::::",dp)
       if (dp.includes(obj.displayPriority)) {
         for (let yearObj of obj.yearData) {
           if (yearObj.year === year) {
@@ -3269,7 +3268,7 @@ async function sendCsv(res, aggregateQuery) {
           if (key == "filled") {
             el[key] = el[key] === "Yes" ? "filled" : "Not filled";
           }
-          str += el[key] + ",";
+          str += el[key].split(",").join("-") + ",";
         } else {
           str += " " + ",";
         }
@@ -4634,6 +4633,9 @@ function computeQuery(params, cond = null) {
           preserveNullAndEmptyArrays: true,
         },
       },
+
+      
+
       {
         $project: {
           stateName: "$ulb.state.name",
@@ -4796,17 +4798,52 @@ function computeQuery(params, cond = null) {
         },
       },
       {
-        $addFields: {
-          "formRejectedTimes":{
-            "$sum":{
-                "$cond":{
-                    "if":{
-                        "$eq":["$fiscalrankings.currentFormStatus",statusTracker['RBP']]
-                    },
-                    "then":1,
-                    "else":0
+        "$lookup":{
+            "from":"statushistories",
+            "let":{
+                "recordId":"$fiscalrankings._id",
+                "status":10
+            },
+            "pipeline":[
+            {
+                "$match":{
+                    "recordId":"$$recordId",
+                    "data.0.status":"$$status"
                 }
             }
+            ],
+            "as":"statuses"
+        }
+    },
+      {
+        $addFields: {
+          "formRejectedTimes":{
+            
+            "$cond":{
+              "if":{
+                 "$gt":[
+                 {
+                     "$size":"$statuses"
+                 },
+                 0
+                 ]
+              },
+              "then":{
+                  "$size":"$statuses"
+              },
+              "else":{
+                  "$sum":{
+                      "$cond":{
+                          "if":{
+                              "$eq":["$fiscalrankings.currentFormStatus",statusTracker['RBP']]
+                          },
+                          "then":1,
+                          "else":0
+                      }
+                  }
+              }
+          }
+      
         },
           currentFormStatus: {
             $cond: {
@@ -5407,7 +5444,7 @@ function createCsv(params) {
                 FRMapperKey = "file"
               }
               if (fiscalrankingmappersDocument[FRMapperKey]) {
-                str += fiscalrankingmappersDocument[FRMapperKey] + ",";
+                str += fiscalrankingmappersDocument[FRMapperKey].split(",").join("-") + ",";
               } else {
                 str += " " + ",";
               }
@@ -5474,25 +5511,22 @@ module.exports.getTrackingHistory = async(req,res)=>{
       response.message = "Id is required"
       return res.status(400).json(response)
     }
-    let form = await FiscalRanking.findOne({_id})
     let history = await StatusHistory.find({
-      "recordId":_id
-    },{
-      "data.fiscalMapperData":0
-  }).sort({
+      "recordId":ObjectId(_id)
+    }).sort({
       "createdAt":1
     }).lean()
     let maxSrNo = 1
     let histories = history.map((item ,index)=> {
       maxSrNo += 1
-      delete item.data[0]['fiscalMapperData']
+      let status = item?.data?.status|| item['data'][0]['status'] 
       return {
         "srNo":index+1,
-        "action":statusList[item['data'][0]['status']],
-        "date":item?.createdAt.toLocaleDateString() +" "+ item?.createdAt.toLocaleTimeString() || "null"
+        "action":statusList[status],
+        "date": item.createdAt  ? (item?.createdAt.toLocaleDateString() +" "+ item?.createdAt.toLocaleTimeString()) : ""
       }
     })
-    let formModified = form.modifiedAt  ? form.modifiedAt.toLocaleDateString()+" "+form?.createdAt.toLocaleTimeString():  histories[histories.length -1].date
+    // let formModified = form.modifiedAt  ? form.modifiedAt.toLocaleDateString()+" "+form?.createdAt.toLocaleTimeString():  histories[histories.length -1].date
     // histories.push(
     //   {
     //     "srNo":maxSrNo,
@@ -5510,6 +5544,7 @@ module.exports.getTrackingHistory = async(req,res)=>{
     if(["staging","demo"].includes((process.env.ENV))){
       response.message = err.message
     }
+    console.log(err)
     console.log("error in getTrackingHistory :: ",err.message)
     return res.status(400).json(response)
   }

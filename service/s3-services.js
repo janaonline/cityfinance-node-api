@@ -417,6 +417,24 @@ function fileValidation(filePath) {
 function getObjectStream(params) {
     return s3.getObject(params).createReadStream();
 }
+
+async function getheadObject(params) {
+    return new Promise((resolve, reject) => {
+    s3.headObject(params, function(err, data) {
+        if (err) {
+            if (err.code === 'NotFound') {
+                reject(new Error(`Object not found: ${params.Key}`));
+            } else {
+                reject(err);
+            }
+            } else {
+                const creationDate = data.LastModified;
+                resolve(creationDate);
+            }
+        });
+    });
+}
+module.exports.getheadObject = getheadObject;
 module.exports.getObjectStream = getObjectStream;
 module.exports.initBucket = initBucket;
 module.exports.initBackupBucket = initBackupBucket;
