@@ -2709,11 +2709,11 @@ function getQueryCityRelated(obj){
     }
         query.push(lookupQueryForDur(service,designYear,true))
         query.push(service.getUnwindObj("$DUR",true))
-        query.push(service.getCommonLookupObj("amrutprojects", "_id", "ulb", "amrProjects"))
-        query.push(service.getUnwindObj("$amrProjects",true))
+        query.push(lookupQueryForAmrut(service, designYear))
+        query.push(service.getUnwindObj("$AMRUT",true))
         query.push(filterNoUlbShare("$DUR.projects"))
         // query.push(service.addFields("projects","$DUR.projects"))
-        query.push(service.addFields("amrProjects","$amrProjects"))
+        query.push(service.addFields("amrProjects","$AMRUT"))
         query.push(service.getUnwindObj("$projects",true))
         query.push(service.getCommonLookupObj("categories", "projects.category", "_id", "projectCategory"))
         query.push(service.getCommonLookupObj("creditratings", "_id", "ulb", "links"))
@@ -2948,6 +2948,9 @@ async function validateBulkUpload(data, res) {
                     errors.push(`${fieldInfo.field} is invalid`);
                 }
             }
+            if (item['year'] && !years[item['year']]) {
+                errors.push(`year is invalid of this for the project having code: ${item['project code']} it should be in the format of YYYY-YY (Ex:-2023-24)`) 
+            }
         }
         return errors;
     } catch (error) {
@@ -2968,7 +2971,7 @@ function transformData(data) {
             cost: item['total project cost (in cr.)'],
             code: item['project code'],
             ulbName: item['ulb'],
-            designYear: ObjectId("606aafb14dff55e6c075d3ae"),
+            designYear: years[item['year']],
             stateShare: item['project state share (in cr.)'],
             capitalExpenditureState: item['capex state share  (in cr.)'],
             capitalExpenditureUlb: item['capex ulb share (in cr.)'],
