@@ -252,7 +252,7 @@ async function createCSV(params) {
       fixedColumns = `State Name, ULB Name, City Finance Code, Census Code, Population Category, UA, UA Name,`;
       // dynamicColumns = createDynamicColumns(collectionName);
       res.write("\ufeff" + `${fixedColumns.toString()} ${createDynamicColumns(collectionName).toString()} \r\n`);
-      res.flushHeaders();
+      // res.flushHeaders();
       let indiLineList = []
       if (!(collectionName !== CollectionNames.annual && collectionName !== CollectionNames['28SLB'])) {
         indiLineList = await indicatorLineItemList();
@@ -264,32 +264,32 @@ async function createCSV(params) {
         if (!el?.formData) {
           el['formStatus'] = "Not Started";
         } else {
-          el['formStatus'] = MASTER_STATUS_ID[el.formData.currentFormStatus]
+          el['formStatus'] = MASTER_STATUS_ID[el?.formData?.currentFormStatus]
         }
         let row = "";
         if (collectionName !== CollectionNames.annual && collectionName !== CollectionNames['28SLB']) {
           if (['ODF', 'GFC'].includes(collectionName)) await setRating(el, ratingList);
-          let dynamicElementData = await createDynamicElements(collectionName, formType, el);
+          let dynamicElementData = createDynamicElements(collectionName, formType, el);
           row = `${el.stateName},${el.ulbName},${el.ulbCode},${el.censusCode},${el.populationType},${el.isUA},${el.UA},${dynamicElementData.toString()}\r\n`;
         } else {
-          if (el.formData) {
+          if (el?.formData) {
             el.formData.data = setIndicatorSequense(indiLineList, el)
           }
-          let [row1, row2] = await createDynamicElements(collectionName, formType, el);
-          const rowOne = `${el.stateName},${el.ulbName},${el.ulbCode},${el.censusCode},${el.populationType},${el.isUA},${el.UA},${row1.toString()}\r\n`;
-          const rowTwo = `${el.stateName},${el.ulbName},${el.ulbCode},${el.censusCode},${el.populationType},${el.isUA},${el.UA},${row2.toString()}\r\n`;
+          let [row1, row2] = createDynamicElements(collectionName, formType, el);
+          const rowOne = `${el?.stateName},${el?.ulbName},${el?.ulbCode},${el?.censusCode},${el?.populationType},${el?.isUA},${el?.UA},${row1?.toString()}\r\n`;
+          const rowTwo = `${el?.stateName},${el?.ulbName},${el?.ulbCode},${el?.censusCode},${el?.populationType},${el?.isUA},${el?.UA},${row2?.toString()}\r\n`;
           row = rowOne + rowTwo
         }
         res.write("\ufeff" + row);
       })
-      data.on("end", (el) => {
+      data.on("end", (pl) => {
         res.end();
       });
     } else if (formType === "STATE") {
       if (collectionName == "waterrejenuvationrecyclings") {
-        await waterSenitationXlsDownload(data, res, loggedInUserRole);
+        await waterSenitationXlsDownload(data, res, loggedInUserRole); // xls
       } else if (collectionName == 'ActionPlan') {
-        await actionPlanXlsDownload(data, res, loggedInUserRole)
+        await actionPlanXlsDownload(data, res, loggedInUserRole)   // xls
       } else {
         let mainArrData = stateArrData = []
         if (collectionName == CollectionNames.state_grant_claim) {
@@ -336,9 +336,6 @@ async function createCSV(params) {
               } else if (collectionName == 'GrantAllocation') {
                 await grantAllCsvDownload(el, res);
               }
-              // else if (collectionName == 'ActionPlan') {
-              //   await actionPlanCSVDownload(el, res, loggedInUserRole, uaFormData)
-              // }
             }
           }
         } else {
@@ -550,9 +547,9 @@ function detailsGrantTransferredManipulate(params) {
   const tArr = [];
   for (const tKey of transSortKey) {
     if (["recomAvail", "grantDistribute", "sfcNotificationCopy", "projectUndtkn", "propertyTaxNotifCopy", "accountLinked"].includes(tKey)) {
-      tArr.push(el[tKey]?.url || el[tKey] || "");
+      tArr.push(getToValueInObj(el[tKey]));
     } else if (["file", "rejectReason_mohua", "responseFile_mohua", "currentFormStatus"].includes(tKey)) {
-      let fData = formData[tKey]?.url || formData[tKey] || "";
+      let fData = getToValueInObj(formData[tKey]);
       if (tKey === "currentFormStatus") {
         tArr.push(MASTER_FORM_QUESTION_STATUS_STATE[formData[tKey]] || "");
       } else {
@@ -561,10 +558,18 @@ function detailsGrantTransferredManipulate(params) {
     } else if (["transDate"].includes(tKey)) {
       tArr.push(tfgObj && tfgObj[tKey] ? formatDate(tfgObj[tKey]) : "");
     } else {
-      tArr.push(tfgObj && tfgObj[tKey]?.url || tfgObj && tfgObj[tKey] || "");
+      tArr.push(getToValueInObj(tfgObj[tKey]));
     }
   }
   return tArr;
+}
+
+function getToValueInObj(value) {
+  if (value && Object.keys(value).length !== 0 && value.constructor === Object) {
+    return value?.url || ""
+  } else {
+    return value || ""
+  }
 }
 
 
@@ -1603,171 +1608,174 @@ function createDynamicQuery(collectionName, oldQuery, userRole, csv) {
   return oldQuery;
 }
 
-async function createDynamicElements(collectionName, formType, entity) {
-  // console.log("entity",entity);process.exit()
-  if (!entity.formData) {
-    entity["filled"] = "No";
-    entity['formData'] = createDynamicObject(collectionName, formType);
-  }
-  let actions = actionTakenByResponse(entity.formData);
+function createDynamicElements(collectionName, formType, entity) {
+  try {
+    if (!entity.formData) {
+      entity["filled"] = "No";
+      entity['formData'] = createDynamicObject(collectionName, formType);
+    }
+    let actions = actionTakenByResponse(entity.formData);
 
-  if (formType === "ULB") {
-    if (!entity["formData"]["rejectReason_state"]) {
-      entity["formData"]["rejectReason_state"] = ""
-    }
-    if (!entity["formData"]["rejectReason_mohua"]) {
-      entity["formData"]["rejectReason_mohua"] = ""
-    }
-    if (!entity["formData"]["responseFile_state"]) {
-      entity["formData"]["responseFile_state"] = {
-        url: "",
-        name: ""
+    if (formType === "ULB") {
+      if (!entity["formData"]["rejectReason_state"]) {
+        entity["formData"]["rejectReason_state"] = ""
+      }
+      if (!entity["formData"]["rejectReason_mohua"]) {
+        entity["formData"]["rejectReason_mohua"] = ""
+      }
+      if (!entity["formData"]["responseFile_state"]) {
+        entity["formData"]["responseFile_state"] = {
+          url: "",
+          name: ""
+        }
+      }
+      if (!entity["formData"]["responseFile_mohua"]) {
+        entity["formData"]["responseFile_mohua"] = {
+          url: "",
+          name: ""
+        }
+      }
+      if (entity?.formData.ulbSubmit) {
+        entity["formData"]["ulbSubmit"] = formatDate(
+          entity?.formData.ulbSubmit
+        );
       }
     }
-    if (!entity["formData"]["responseFile_mohua"]) {
-      entity["formData"]["responseFile_mohua"] = {
-        url: "",
-        name: ""
+    if (!entity["formData"]["design_year"]) {
+      entity["formData"]["design_year"] = {
+        year: ""
       }
     }
-    if (entity?.formData.ulbSubmit) {
-      entity["formData"]["ulbSubmit"] = formatDate(
-        entity?.formData.ulbSubmit
+    if (entity?.formData.createdAt) {
+      entity["formData"]["createdAt"] = formatDate(
+        entity?.formData.createdAt
       );
     }
-  }
-  if (!entity["formData"]["design_year"]) {
-    entity["formData"]["design_year"] = {
-      year: ""
+    if (entity?.formData.modifiedAt) {
+      entity["formData"]["modifiedAt"] = formatDate(
+        entity?.formData.modifiedAt
+      );
     }
-  }
-  if (entity?.formData.createdAt) {
-    entity["formData"]["createdAt"] = formatDate(
-      entity?.formData.createdAt
-    );
-  }
-  if (entity?.formData.modifiedAt) {
-    entity["formData"]["modifiedAt"] = formatDate(
-      entity?.formData.modifiedAt
-    );
-  }
-  let data = entity?.formData;
+    let data = entity?.formData;
 
-  switch (formType) {
-    case "ULB":
-      switch (collectionName) {
-        case CollectionNames.odf:
-        case CollectionNames.gfc:
-          if (entity?.formData?.certDate) entity["formData"]["certDate"] = formatDate(entity?.formData.certDate)
-          // if (!entity?.formData.certDate) entity.formData.certDate = ""
+    switch (formType) {
+      case "ULB":
+        switch (collectionName) {
+          case CollectionNames.odf:
+          case CollectionNames.gfc:
+            if (entity?.formData?.certDate) entity["formData"]["certDate"] = formatDate(entity?.formData.certDate)
+            // if (!entity?.formData.certDate) entity.formData.certDate = ""
 
-          entity = ` ${data?.design_year?.year ?? ""}, ${entity?.formStatus ?? ""
-            }, ${data?.createdAt ?? ""}, ${data?.ulbSubmit ?? ""},${entity.filled ?? ""
-            }, ${data["rating"]["name"] ?? ""},${data["rating"]["marks"] ?? ""
-            },${data?.cert?.url ? data?.cert?.url : data?.cert_declaration?.url ?? ""},${data?.cert?.name ? data?.cert?.name : data?.cert_declaration?.name ?? ""},${data["certDate"] ?? ""
-            },${actions["state_status"] ?? ""},${actions["rejectReason_state"] ?? ""
-            },${actions["mohua_status"] ?? ""},${actions["rejectReason_mohua"] ?? ""
-            },${actions["responseFile_state"]["url"] ?? ""},${actions["responseFile_mohua"]["url"] ?? ""
-            } `;
-          break;
-        case CollectionNames.annual:
-          let auditedEntity, unAuditedEntity;
-          let unAuditedProvisional = data?.unAudited?.provisional_data;
-          let auditedProvisional = data?.audited?.provisional_data;
-          let unAuditedStandardized = data?.unAudited?.standardized_data;
-          let auditedStandardized = data?.audited?.standardized_data;
-          ({ auditedEntity, unAuditedEntity } = annualAccountCsvFormat(data, auditedEntity, entity, auditedProvisional, auditedStandardized, actions, unAuditedEntity, unAuditedProvisional, unAuditedStandardized));
-          return [auditedEntity, unAuditedEntity];
-        case CollectionNames.dur:
-          const {
-            design_year,
-            createdAt,
-            ulbSubmit,
-            financialYear,
-            grantPosition,
-            categoryWiseData_wm,
-            categoryWiseData_swm,
-            name,
-            designation
-          } = data;
+            entity = ` ${data?.design_year?.year ?? ""}, ${entity?.formStatus ?? ""
+              }, ${data?.createdAt ?? ""}, ${data?.ulbSubmit ?? ""},${entity.filled ?? ""
+              }, ${data["rating"]["name"] ?? ""},${data["rating"]["marks"] ?? ""
+              },${data?.cert?.url ? data?.cert?.url : data?.cert_declaration?.url ?? ""},${data?.cert?.name ? data?.cert?.name : data?.cert_declaration?.name ?? ""},${data["certDate"] ?? ""
+              },${actions["state_status"] ?? ""},${actions["rejectReason_state"] ?? ""
+              },${actions["mohua_status"] ?? ""},${actions["rejectReason_mohua"] ?? ""
+              },${actions["responseFile_state"]["url"] ?? ""},${actions["responseFile_mohua"]["url"] ?? ""
+              } `;
+            break;
+          case CollectionNames.annual:
+            let auditedEntity, unAuditedEntity;
+            let unAuditedProvisional = data?.unAudited?.provisional_data;
+            let auditedProvisional = data?.audited?.provisional_data;
+            let unAuditedStandardized = data?.unAudited?.standardized_data;
+            let auditedStandardized = data?.audited?.standardized_data;
+            ({ auditedEntity, unAuditedEntity } = annualAccountCsvFormat(data, auditedEntity, entity, auditedProvisional, auditedStandardized, actions, unAuditedEntity, unAuditedProvisional, unAuditedStandardized));
+            return [auditedEntity, unAuditedEntity];
+          case CollectionNames.dur:
+            const {
+              design_year,
+              createdAt,
+              ulbSubmit,
+              financialYear,
+              grantPosition,
+              categoryWiseData_wm,
+              categoryWiseData_swm,
+              name,
+              designation
+            } = data;
 
-          let wmData = [];
-          let swmData = [];
-          if (categoryWiseData_wm && categoryWiseData_wm.length > 0) {
-            wmData = await convertValue({ data: categoryWiseData_wm, keyArr: ["grantUtilised", "numberOfProjects", "totalProjectCost"] });
-          }
-          if (categoryWiseData_swm && categoryWiseData_swm.length > 0) {
-            swmData = await convertValue({ data: categoryWiseData_swm, keyArr: ["grantUtilised", "numberOfProjects", "totalProjectCost"] });
-          }
-          entity = ` ${design_year?.year ?? ""}, ${entity?.formStatus ?? ""
-            }, ${createdAt ?? ""}, ${ulbSubmit ?? ""},${entity.filled ?? ""
-            },${YEAR_CONSTANTS_IDS[financialYear] || ""}, ${(roundValue(grantPosition?.unUtilizedPrevYr)) ?? ""
-            } ,${(roundValue(grantPosition?.receivedDuringYr)) ?? ""
-            }, ${(roundValue(grantPosition?.expDuringYr)) ?? ""
-            },${(roundValue(grantPosition?.closingBal)) ?? ""
-            },${wmData[0]?.["grantUtilised"] ?? ""
-            },${wmData[0]?.["numberOfProjects"] ?? ""
-            }, ${wmData[0]?.["totalProjectCost"] ?? ""
-            },${wmData[1]?.["grantUtilised"] ?? ""
-            },${wmData[1]?.["numberOfProjects"] ?? ""
-            }, ${wmData[1]?.["totalProjectCost"] ?? ""
-            },${wmData[2]?.["grantUtilised"] ?? ""
-            },${wmData[2]?.["numberOfProjects"] ?? ""
-            }, ${wmData[2]?.["totalProjectCost"] ?? ""
-            },${wmData[3]?.["grantUtilised"] ?? ""
-            },${wmData[3]?.["numberOfProjects"] ?? ""
-            }, ${wmData[3]?.["totalProjectCost"] ?? ""
-            },${swmData[0]?.["grantUtilised"] ?? ""
-            },${swmData[0]?.["numberOfProjects"] ?? ""
-            }, ${swmData[0]?.["totalProjectCost"] ?? ""
-            },${swmData[1]?.["grantUtilised"] ?? ""
-            },${swmData[1]?.["numberOfProjects"] ?? ""
-            }, ${swmData[1]?.["totalProjectCost"] ?? ""
-            }, ${removeEscapeChars(name) ?? ""
-            }, ${removeEscapeChars(designation) ?? ""
-            }, ${actions["state_status"] ?? ""},${actions["rejectReason_state"] ?? ""
-            },${actions["mohua_status"] ?? ""},${actions["rejectReason_mohua"] ?? ""
-            },${actions["responseFile_state"]["url"] ?? ""},${actions["responseFile_mohua"]["url"] ?? ""
-            }`;
-          break;
-        case CollectionNames['28SLB']:
-          let actualYear = data?.data?.[0]?.actual?.year ? YEAR_CONSTANTS_IDS[data.data[0].actual.year] : "";
-          let i = 0;
-          let actualEntity = `${data?.design_year?.year ?? ""}, ${entity?.formStatus ?? ""
-            }, ${data?.createdAt ?? ""}, ${data?.ulbSubmit ?? ""},${entity.filled ?? ""
-            },Actual,${actualYear || ""},${data["data"][i++]["actual"]["value"] ?? ""
-            },${data["data"][i++]["actual"]["value"] ?? ""},${data["data"][i++]["actual"]["value"] ?? ""
-            },${data["data"][i++]["actual"]["value"] ?? ""},${data["data"][i++]["actual"]["value"] ?? ""
-            },${data["data"][i++]["actual"]["value"] ?? ""},${data["data"][i++]["actual"]["value"] ?? ""
-            },${data["data"][i++]["actual"]["value"] ?? ""},${data["data"][i++]["actual"]["value"] ?? ""
-            },${data["data"][i++]["actual"]["value"] ?? ""},${data["data"][i++]["actual"]["value"] ?? ""
-            },${data["data"][i++]["actual"]["value"] ?? ""},${data["data"][i++]["actual"]["value"] ?? ""
-            },${data["data"][i++]["actual"]["value"] ?? ""},${data["data"][i++]["actual"]["value"] ?? ""
-            },${data["data"][i++]["actual"]["value"] ?? ""},${data["data"][i++]["actual"]["value"] ?? ""
-            },${data["data"][i++]["actual"]["value"] ?? ""},${data["data"][i++]["actual"]["value"] ?? ""
-            },${data["data"][i++]["actual"]["value"] ?? ""},${data["data"][i++]["actual"]["value"] ?? ""
-            },${data["data"][i++]["actual"]["value"] ?? ""},${data["data"][i++]["actual"]["value"] ?? ""
-            },${data["data"][i++]["actual"]["value"] ?? ""},${data["data"][i++]["actual"]["value"] ?? ""
-            },${data["data"][i++]["actual"]["value"] ?? ""},${data["data"][i++]["actual"]["value"] ?? ""
-            },${data["data"][i++]["actual"]["value"] ?? ""}, ${actions["state_status"] ?? ""
-            },${actions["rejectReason_state"] ?? ""},${actions["mohua_status"] ?? ""
-            },${actions["rejectReason_mohua"] ?? ""},${actions["responseFile_state"]["url"] ?? ""
-            },${actions["responseFile_mohua"]["url"] ?? ""} `;
-          i = 0;
-          let targetYear = data?.data?.[0]?.target_1?.year ? YEAR_CONSTANTS_IDS[data.data[0].target_1.year] : "";
-          let targetEntity = `${data?.design_year?.year ?? ""}, ${entity?.formStatus ?? ""}, ${data?.createdAt ?? ""}, ${data?.ulbSubmit ?? ""},${entity.filled ?? ""},Target,${targetYear || ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""}, ${actions["state_status"] ?? ""},${actions["rejectReason_state"] ?? ""},${actions["mohua_status"] ?? ""},${actions["rejectReason_mohua"] ?? ""},${actions["responseFile_state"]["url"] ?? ""},${actions["responseFile_mohua"]["url"] ?? ""} `
-          return [actualEntity, targetEntity];
-      };
-      break;
-    case "STATE":
-      switch (collectionName) {
-        case CollectionNames.state_gtc:
-          entity = ""
-          break;
-      };
-      break;
+            let wmData = [];
+            let swmData = [];
+            if (categoryWiseData_wm && categoryWiseData_wm.length > 0) {
+              wmData = convertValue({ data: categoryWiseData_wm, keyArr: ["grantUtilised", "numberOfProjects", "totalProjectCost"] });
+            }
+            if (categoryWiseData_swm && categoryWiseData_swm.length > 0) {
+              swmData = convertValue({ data: categoryWiseData_swm, keyArr: ["grantUtilised", "numberOfProjects", "totalProjectCost"] });
+            }
+            entity = ` ${design_year?.year ?? ""}, ${entity?.formStatus ?? ""
+              }, ${createdAt ?? ""}, ${ulbSubmit ?? ""},${entity.filled ?? ""
+              },${YEAR_CONSTANTS_IDS[financialYear] || ""}, ${(roundValue(grantPosition?.unUtilizedPrevYr)) ?? ""
+              } ,${(roundValue(grantPosition?.receivedDuringYr)) ?? ""
+              }, ${(roundValue(grantPosition?.expDuringYr)) ?? ""
+              },${(roundValue(grantPosition?.closingBal)) ?? ""
+              },${wmData[0]?.["grantUtilised"] ?? ""
+              },${wmData[0]?.["numberOfProjects"] ?? ""
+              }, ${wmData[0]?.["totalProjectCost"] ?? ""
+              },${wmData[1]?.["grantUtilised"] ?? ""
+              },${wmData[1]?.["numberOfProjects"] ?? ""
+              }, ${wmData[1]?.["totalProjectCost"] ?? ""
+              },${wmData[2]?.["grantUtilised"] ?? ""
+              },${wmData[2]?.["numberOfProjects"] ?? ""
+              }, ${wmData[2]?.["totalProjectCost"] ?? ""
+              },${wmData[3]?.["grantUtilised"] ?? ""
+              },${wmData[3]?.["numberOfProjects"] ?? ""
+              }, ${wmData[3]?.["totalProjectCost"] ?? ""
+              },${swmData[0]?.["grantUtilised"] ?? ""
+              },${swmData[0]?.["numberOfProjects"] ?? ""
+              }, ${swmData[0]?.["totalProjectCost"] ?? ""
+              },${swmData[1]?.["grantUtilised"] ?? ""
+              },${swmData[1]?.["numberOfProjects"] ?? ""
+              }, ${swmData[1]?.["totalProjectCost"] ?? ""
+              }, ${removeEscapeChars(name) ?? ""
+              }, ${removeEscapeChars(designation) ?? ""
+              }, ${actions["state_status"] ?? ""},${actions["rejectReason_state"] ?? ""
+              },${actions["mohua_status"] ?? ""},${actions["rejectReason_mohua"] ?? ""
+              },${actions["responseFile_state"]["url"] ?? ""},${actions["responseFile_mohua"]["url"] ?? ""
+              }`;
+            break;
+          case CollectionNames['28SLB']:
+            let actualYear = data?.data?.[0]?.actual?.year ? YEAR_CONSTANTS_IDS[data.data[0].actual.year] : "";
+            let i = 0;
+            let actualEntity = `${data?.design_year?.year ?? ""}, ${entity?.formStatus ?? ""
+              }, ${data?.createdAt ?? ""}, ${data?.ulbSubmit ?? ""},${entity.filled ?? ""
+              },Actual,${actualYear || ""},${data["data"][i++]["actual"]["value"] ?? ""
+              },${data["data"][i++]["actual"]["value"] ?? ""},${data["data"][i++]["actual"]["value"] ?? ""
+              },${data["data"][i++]["actual"]["value"] ?? ""},${data["data"][i++]["actual"]["value"] ?? ""
+              },${data["data"][i++]["actual"]["value"] ?? ""},${data["data"][i++]["actual"]["value"] ?? ""
+              },${data["data"][i++]["actual"]["value"] ?? ""},${data["data"][i++]["actual"]["value"] ?? ""
+              },${data["data"][i++]["actual"]["value"] ?? ""},${data["data"][i++]["actual"]["value"] ?? ""
+              },${data["data"][i++]["actual"]["value"] ?? ""},${data["data"][i++]["actual"]["value"] ?? ""
+              },${data["data"][i++]["actual"]["value"] ?? ""},${data["data"][i++]["actual"]["value"] ?? ""
+              },${data["data"][i++]["actual"]["value"] ?? ""},${data["data"][i++]["actual"]["value"] ?? ""
+              },${data["data"][i++]["actual"]["value"] ?? ""},${data["data"][i++]["actual"]["value"] ?? ""
+              },${data["data"][i++]["actual"]["value"] ?? ""},${data["data"][i++]["actual"]["value"] ?? ""
+              },${data["data"][i++]["actual"]["value"] ?? ""},${data["data"][i++]["actual"]["value"] ?? ""
+              },${data["data"][i++]["actual"]["value"] ?? ""},${data["data"][i++]["actual"]["value"] ?? ""
+              },${data["data"][i++]["actual"]["value"] ?? ""},${data["data"][i++]["actual"]["value"] ?? ""
+              },${data["data"][i++]["actual"]["value"] ?? ""}, ${actions["state_status"] ?? ""
+              },${actions["rejectReason_state"] ?? ""},${actions["mohua_status"] ?? ""
+              },${actions["rejectReason_mohua"] ?? ""},${actions["responseFile_state"]["url"] ?? ""
+              },${actions["responseFile_mohua"]["url"] ?? ""} `;
+            i = 0;
+            let targetYear = data?.data?.[0]?.target_1?.year ? YEAR_CONSTANTS_IDS[data.data[0].target_1.year] : "";
+            let targetEntity = `${data?.design_year?.year ?? ""}, ${entity?.formStatus ?? ""}, ${data?.createdAt ?? ""}, ${data?.ulbSubmit ?? ""},${entity.filled ?? ""},Target,${targetYear || ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""}, ${actions["state_status"] ?? ""},${actions["rejectReason_state"] ?? ""},${actions["mohua_status"] ?? ""},${actions["rejectReason_mohua"] ?? ""},${actions["responseFile_state"]["url"] ?? ""},${actions["responseFile_mohua"]["url"] ?? ""} `
+            return [actualEntity, targetEntity];
+        };
+        break;
+      case "STATE":
+        switch (collectionName) {
+          case CollectionNames.state_gtc:
+            entity = ""
+            break;
+        };
+        break;
+    }
+    return entity;
+  } catch (error) {
+    console.log("erro", error)
   }
-  return entity;
 }
 
 function createDynamicObject(collectionName, formType) {

@@ -97,7 +97,7 @@ let columns = [
         label: "Detailed Project Report",
         key: "projectReport",
         get databaseKey(){
-            return false
+            return "dprDocument.url"
         }
     },
     {
