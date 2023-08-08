@@ -5542,7 +5542,7 @@ module.exports.getTrackingHistory = async(req,res)=>{
         "action":statusList[status],
         "date": item.createdAt  ? (item?.createdAt.toLocaleDateString('en-GB',{
           timeZone: 'Asia/Kolkata',
-        }) +" "+ item?.createdAt.toLocaleTimeString('en-GB',{
+        }) +" "+ item?.createdAt.toLocaleTimeString('en-US',{
           timeZone: 'Asia/Kolkata',
         })) : ""
       }
