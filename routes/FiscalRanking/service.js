@@ -5542,7 +5542,9 @@ module.exports.getTrackingHistory = async(req,res)=>{
         "action":statusList[status],
         "date": item.createdAt  ? (item?.createdAt.toLocaleDateString('en-GB',{
           timeZone: 'Asia/Kolkata',
-        }) +" "+ item?.createdAt.toLocaleTimeString()) : ""
+        }) +" "+ item?.createdAt.toLocaleTimeString('en-GB',{
+          timeZone: 'Asia/Kolkata',
+        })) : ""
       }
     })
     // let formModified = form.modifiedAt  ? form.modifiedAt.toLocaleDateString()+" "+form?.createdAt.toLocaleTimeString():  histories[histories.length -1].date
