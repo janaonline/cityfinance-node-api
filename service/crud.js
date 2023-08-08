@@ -1,10 +1,11 @@
 const { dbModels } = require("./../models/Master/index");
 const ObjectId = require("mongoose").Types.ObjectId;
 module.exports = {
-    list: (modelName) => {
+    list: (modelName, filter = {}) => {
         return async (req, res, next) => {
             try {
-                let condition = { ...req.query };
+                let condition = { ...filter, ...req.query };
+                console.log({ condition });
                 let data = await dbModels[modelName].find(condition);
                 return res.status(200).json({
                     status: true,
@@ -20,12 +21,12 @@ module.exports = {
             }
         }
     },
-    createOrUpdate: (modelName) => {
+    createOrUpdate: (modelName, defaultData = {}) => {
         return async (req, res, next) => {
             const id = req.body.id;
             delete req.body.id;
             try {
-                let data = await dbModels[modelName].updateOne({_id: ObjectId(id)}, req.body, { upsert: true });
+                let data = await dbModels[modelName].updateOne({_id: ObjectId(id)}, {...defaultData, ...req.body}, { upsert: true });
                 return res.status(200).json({
                     status: true,
                     message: "Successfully saved data!",
