@@ -273,6 +273,8 @@ exports.saveData = async (req, res) => {
           message: "Form not saved."
         })
       }
+      let formSubmit = [{...req.body,_id:data._id,currentFormStatus:req.body.currentFormStatus}]
+    await createHistory({ formBodyStatus : Number(req.body.currentFormStatus),formSubmit, actionTakenByRole:req.decoded.role , actionTakenBy: req.body.actionTakenBy  })
       return Response.OK(res, data, "file submitted");
     }
 
@@ -502,8 +504,8 @@ let host = baseUrls[process.env.ENV]
         "url":""
       }
       let shortKey = `${section.type}_${section.yearCode}_${i}`
-      let allocationForm =  allocationForms.find(item => item.installment === i && item.year.toString() === years[section.yearCode] && item.type === section.type ) || {}
-      let currentStatus = currentStatuses.find(item => item.recordId.toString() === allocationForm._id.toString() && item.shortKey === shortKey)
+      let allocationForm =  allocationForms.find(item => item.installment === i && item?.year?.toString() === years[section.yearCode] && item?.type === section?.type ) || {}
+      let currentStatus = currentStatuses.find(item => item.recordId.toString() === allocationForm?._id?.toString() && item.shortKey === shortKey)
       allocationForm.currentFormStatus = allocationForm?.currentFormStatus ? allocationForm?.currentFormStatus : MASTER_FORM_STATUS['NOT_STARTED']
       let url = ""
       url = allocationForm?.url || ""
