@@ -4,7 +4,8 @@ const MainCategory = require('../../models/Master/MainCategory');
 const State = require('../../models/State');
 const CategoryFileUpload = require('../../models/CategoryFileUpload');
 const { stateFormSubmission } = require('../../service/email-template');
-const { loadExcelByUrl } = require('../../util/worksheet')
+const ObjectId = require("mongoose").Types.ObjectId;
+const { loadExcelByUrl } = require('../../util/worksheet');
 
 const handleDatabaseUpload = async (req, res, next) => {
     return next();
@@ -26,18 +27,28 @@ const handleDatabaseUpload = async (req, res, next) => {
 const getResourceList = async (req, res, next) => {
     const skip = +req.query.skip || 0;
     const limit = +req.query.limit || 2;
+    const { categoryId, stateId } = req.query;
 
     try {
         const query = [
             {
-                $match:
-                    { module: 'state_resource' }
+                $match: { 
+                    module: 'state_resource',
+                }
             },
             {
                 $unwind: {
                     path: "$relatedIds",
                 }
             },
+            ...(categoryId || stateId ? [
+                {
+                    $match: { 
+                        ...(categoryId && { categoryId: ObjectId(categoryId)}),
+                        ...(stateId && { relatedIds: ObjectId(stateId)})
+                    }
+                },
+            ] : []),
             {
                 $lookup: {
                     from: 'states',
@@ -112,7 +123,7 @@ const getResourceList = async (req, res, next) => {
         ];
         const [ categoryResult ] = await CategoryFileUpload.aggregate(query);
         const documents  = categoryResult.documents || {};
-        const totalDocuments = categoryResult?.totalCount[0].count || 0;
+        const totalDocuments = categoryResult?.totalCount?.[0]?.count || 0;
         const states = await State.find().select('name _id');
         const categories = await MainCategory.aggregate([
             {
