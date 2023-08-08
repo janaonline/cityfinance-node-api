@@ -5525,8 +5525,8 @@ module.exports.getTrackingHistory = async(req,res)=>{
       let nextStatus = (nextItem?.data?.status|| nextItem['data'][0]['status'])
       item.createdAt = nextItem.createdAt || item.createdAt
       return(status !== nextStatus)
-    },[])
-    let histories = history.map((item ,index)=> {
+    })
+    let histories = filteredHistory.map((item ,index)=> {
       maxSrNo += 1
       let status = item?.data?.status|| item['data'][0]['status'] 
       return {
