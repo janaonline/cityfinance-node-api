@@ -366,7 +366,10 @@ async function grantAllCsvDownload(el, res) {
     for (let pf of formData) {
       let currentStatus = await CurrentStatus.findOne({ recordId: ObjectId(pf?._id) });
       let MohuaformStatus = MASTER_STATUS_ID[currentStatus?.status];
-      let mohuaStatusComment = [MASTER_STATUS_ID[pf?.currentFormStatus], MohuaformStatus, currentStatus?.rejectReason, currentStatus?.responseFile?.url];
+      let mohuaStatusComment = [MASTER_STATUS_ID[pf?.currentFormStatus]];
+      if (['Returned By MoHUA', 'Submission Acknowledged By MoHUA'].includes(MASTER_STATUS_ID[pf?.currentFormStatus])) {
+        mohuaStatusComment.push(MohuaformStatus, currentStatus?.rejectReason, currentStatus?.responseFile?.url);
+      }
       let tempArr = [pf?.type, pf?.installment, pf?.url];
       let str = [...row, ...tempArr, ...mohuaStatusComment].join(',') + "\r\n";
       res.write("\ufeff" + str);
