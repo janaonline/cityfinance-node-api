@@ -23,6 +23,50 @@ const handleDatabaseUpload = async (req, res, next) => {
     })
 }
 
+const getCategoryWiseResource = async (req, res, next) => {
+    try {
+        const query = [
+            {
+                $match: {
+                    module: 'state_resource',
+                },
+            },
+            {
+                $unwind: {
+                    path: "$relatedIds",
+                }
+            },
+            {
+                $group: {
+                    _id: '$categoryId',
+                    documents: { $push: "$$ROOT.file" }
+                }
+            },
+            {
+                $lookup: {
+                    from: 'maincategories',
+                    localField: '_id',
+                    foreignField: '_id',
+                    as: 'category'
+                }
+            },
+            {
+                $project: {
+                    name: { $arrayElemAt: ['$category.name', 0] },
+                    documents: 1
+                }
+            }
+        ];
+        const data = await CategoryFileUpload.aggregate(query);
+        return res.status(200).json({
+            status: true,
+            message: "Successfully saved data!",
+            data,
+        });
+    } catch(err) { 
+        console.log(err);
+    }
+}
 
 const getResourceList = async (req, res, next) => {
     const skip = +req.query.skip || 0;
@@ -167,5 +211,6 @@ const getResourceList = async (req, res, next) => {
 
 module.exports = {
     handleDatabaseUpload,
-    getResourceList
+    getResourceList,
+    getCategoryWiseResource
 }
