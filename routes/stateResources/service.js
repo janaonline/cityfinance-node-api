@@ -24,6 +24,9 @@ const handleDatabaseUpload = async (req, res, next) => {
 
 
 const getResourceList = async (req, res, next) => {
+    const skip = +req.query.skip || 0;
+    const limit = +req.query.limit || 2;
+
     try {
         const query = [
             {
@@ -96,9 +99,20 @@ const getResourceList = async (req, res, next) => {
                     subCategoryName: '$_id.subCategory.name',
                     "documents": '$documents.file',
                 }
+            },
+            {
+                $facet: {
+                    totalCount: [{ $count: "count" }],
+                    documents: [
+                        { $limit: skip + limit },
+                        { $skip: skip },
+                    ]
+                }
             }
         ];
-        const documents = await CategoryFileUpload.aggregate(query);
+        const [ categoryResult ] = await CategoryFileUpload.aggregate(query);
+        const documents  = categoryResult.documents || {};
+        const totalDocuments = categoryResult?.totalCount[0].count || 0;
         const states = await State.find().select('name _id');
         const categories = await MainCategory.aggregate([
             {
@@ -125,7 +139,8 @@ const getResourceList = async (req, res, next) => {
             data: {
                 documents,
                 states,
-                categories
+                categories,
+                totalDocuments
             },
         });
     }
