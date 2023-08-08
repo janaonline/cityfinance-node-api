@@ -1322,7 +1322,52 @@ async function getPopulationData(req, res) {
         const pipeline = getPopulationDataQueries(state);
         const data = await State.aggregate(pipeline);
          const populationData =  buildStateInfo(...data);
-         return response.OK(res, populationData)
+         const installmentData = [
+            {
+              title: 'NMPC - UnTied',
+              formType: 'nmpc_untied',
+              installments: [
+                {
+                  installment: '1',
+                  key: 'nmpc_untied_1',
+                  label: '1st Installment',
+                  isActive: true
+                },
+                {
+                  installment: '2',
+                  key: 'nmpc_untied_2',
+                  label: '2nd Installment',
+                  isActive: false
+                }
+              ]
+            },
+            {
+              title: 'NMPC - Tied',
+              formType: 'nmpc_tied',
+              installments: [
+                {
+                  installment: '1',
+                  key: 'nmpc_tied_1',
+                  label: '1st Installment',
+                  isActive: true
+                },
+                {
+                  installment: '2',
+                  key: 'nmpc_tied_2',
+                  label: '2nd Installment',
+                  isActive: false
+                }
+              ]
+            },
+            {
+              title: 'MPC',
+              formType: 'mpc_tied',
+              installments: [],
+            }
+        ];
+        const cityTypeInState = getCityTypeData(installmentData);
+
+         return response.OK(res, {populationData,cityTypeInState})
     } catch (error) {
         return response.BadRequest(res, [])
     }
@@ -1403,56 +1448,11 @@ function buildStateInfo(input) {
 
 async function updateResponseFormat(ulbForm, stateForm){
     try {
-        const data = [
-            {
-              title: 'NMPC - UnTied',
-              formType: 'nmpc_untied',
-              installments: [
-                {
-                  installment: '1',
-                  key: 'nmpc_untied_1',
-                  label: '1st Installment',
-                  isActive: true
-                },
-                {
-                  installment: '2',
-                  key: 'nmpc_untied_2',
-                  label: '2nd Installment',
-                  isActive: false
-                }
-              ]
-            },
-            {
-              title: 'NMPC - Tied',
-              formType: 'nmpc_tied',
-              installments: [
-                {
-                  installment: '1',
-                  key: 'nmpc_tied_1',
-                  label: '1st Installment',
-                  isActive: true
-                },
-                {
-                  installment: '2',
-                  key: 'nmpc_tied_2',
-                  label: '2nd Installment',
-                  isActive: false
-                }
-              ]
-            },
-            {
-              title: 'MPC',
-              formType: 'mpc_tied',
-              installments: [],
-            }
-        ];
-        const cityTypeInState = getCityTypeData(data);
         const formData = {
             ulbForm,
             stateForm
         };
         return {
-            cityTypeInState,
             formData,
         }
     } catch (error) {
