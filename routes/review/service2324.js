@@ -1,6 +1,7 @@
 const Ulb = require('../../models/Ulb')
 const UA = require('../../models/UA')
 const State = require('../../models/State');
+const CurrentStatus = require('../../models/CurrentStatus');
 const IndicatorLineItems = require('../../models/indicatorLineItems');
 const GtcInstallmentForm = require('../../models/GtcInstallmentForm');
 const CollectionNames = require('../../util/collectionName')
@@ -333,18 +334,7 @@ async function createCSV(params) {
                 el['formData']['installment_form'] = GTC;
                 gtcStateFormCSVFormat(el, res)
               } else if (collectionName == 'GrantAllocation') {
-                let { stateName, stateCode, formData } = el;
-                let row = [stateName, stateCode];
-                if (formData && formData.length && (formData[0] !== "")) {
-                  for (let pf of formData) {
-                    let tempArr = [pf?.type, pf?.installment, pf?.url];
-                    let str = [...row, ...tempArr].join(',') + "\r\n";
-                    res.write("\ufeff" + str);
-                  }
-                } else {
-                  let str = [...row].join(',') + "\r\n";
-                  res.write("\ufeff" + str);
-                }
+                await grantAllCsvDownload(el, res);
               }
               // else if (collectionName == 'ActionPlan') {
               //   await actionPlanCSVDownload(el, res, loggedInUserRole, uaFormData)
@@ -371,6 +361,24 @@ const gtcInstallmentForms = (stateId) => {
       reject(error)
     }
   })
+}
+
+async function grantAllCsvDownload(el, res) {
+  let { stateName, stateCode, formData } = el;
+  let row = [stateName, stateCode];
+  if (formData && formData.length && (formData[0] !== "")) {
+    for (let pf of formData) {
+      let currentStatus = await CurrentStatus.findOne({ recordId: ObjectId(pf?._id) });
+      let MohuaformStatus = MASTER_STATUS_ID[currentStatus?.status];
+      let mohuaStatusComment = [MASTER_STATUS_ID[pf?.currentFormStatus], MohuaformStatus, currentStatus?.rejectReason, currentStatus?.responseFile?.url];
+      let tempArr = [pf?.type, pf?.installment, pf?.url];
+      let str = [...row, ...tempArr, ...mohuaStatusComment].join(',') + "\r\n";
+      res.write("\ufeff" + str);
+    }
+  } else {
+    let str = [...row].join(',') + "\r\n";
+    res.write("\ufeff" + str);
+  }
 }
 
 /**
@@ -2644,7 +2652,7 @@ function createDynamicColumns(collectionName) {
       columns = `State Name,City Finance Code,Form Status,Year,Type of ULB,Type of Grant Received (Tied/Untied),Installment Type,Total No: of MPCs,Total No: of NMPCS,Total No: of Duly Elected MPCS,Total No: of Duly Elected NMPCS,Amount Received(In Lakhs),Date of Receipt,Amount Transferred excluding interest (in lakhs),Date of Transfer,Was there any delay in transfer?,No. of days delayed,Rate of interest (annual rate),Amount of interest transferred - If there's any delay (in lakhs),Whether State Finance Commission recommendations available? (Yes/No),If No Upload notification for constitution of SFC issued,If Yes-Whether Grants distributed as per Census 2011 or as per SFC recommendations?,Whether Project works undertaken are uploaded on the website (Yes/No),Upload copy of Property Tax Notification issued,Whether the ULB accounts   for 15th FC Grants linked to PFMS for all transactions,Upload Signed Grant Transfer Certificate,MoHUA Comments,Supporting Document,Review Status`
       break;
     case CollectionNames['state_grant_alloc']:
-      columns = `State Name,City Finance Code,Type of Grant,Installment No,Grant Allocation to ULBs (FY23-24),Review Status,MoHUA Comments,Review Documents`
+      columns = `State Name,City Finance Code,Type of Grant,Installment No,Grant Allocation to ULBs (FY23-24),Form Status,Review Status,MoHUA Comments,Review Documents`
       break;
     case CollectionNames['state_action_plan']:
       columns = `State Name,CF Code,UA Name,Form Status,executed with 15th: Project_Code,Executed with 15th: Project_Name,Executed with 15th :Project_Details,Executed with 15th:Project_Cost,Executed with 15th : Executing_Agency,Executed with 15th:Parastatal_Agency,Executed with 15th: : Sector,Executed with 15th : Project_Type,Executed with 15th :Estimated_Outcome,Project List and Source of Funds (Annual In INR Lakhs) : Project_Code,Project List and Source of Funds (Annual In INR Lakhs) :Project_Name,Project List and Source of Funds (Annual In INR Lakhs) : Project_Cost,Project List and Source of Funds (Annual In INR Lakhs) : XV_FC,Project List and Source of Funds (Annual In INR Lakhs) : Other,Project List and Source of Funds (Annual In INR Lakhs) : Total,Project List and Source of Funds (Annual In INR Lakhs) :2021-22,Project List and Source of Funds (Annual In INR Lakhs) :2022-23,Project List and Source of Funds (Annual In INR Lakhs) :2023-24,Project List and Source of Funds (Annual In INR Lakhs) :2024-25,Project List and Source of Funds (Annual In INR Lakhs) :2025-26,Year wise Outlay for 15th FC Grants(Annual In INR Lakhs) : Project_Code,Year wise Outlay for 15th FC Grants(Annual In INR Lakhs) : Project_Name,Year wise Outlay for 15th FC Grants(Annual In INR Lakhs) : Project_Cost,Year wise Outlay for 15th FC Grants(Annual In INR Lakhs) : Funding,Year wise Outlay for 15th FC Grants(Annual In INR Lakhs) : Amount,Year wise Outlay for 15th FC Grants(Annual In INR Lakhs) : 2021-22,Year wise Outlay for 15th FC Grants(Annual In INR Lakhs):2022-23,Year wise Outlay for 15th FC Grants(Annual In INR Lakhs): 2023-24,Year wise Outlay for 15th FC Grants(Annual In INR Lakhs):2024-25,Year wise Outlay for 15th FC Grants(Annual In INR Lakhs):2025-26,Review Status,MoHUA Comments,Review Documents`
