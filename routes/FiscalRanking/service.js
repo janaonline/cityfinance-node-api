@@ -4804,15 +4804,23 @@ function computeQuery(params, cond = null) {
             "from":"statushistories",
             "let":{
                 "recordId":"$fiscalrankings._id",
-                "status":10
+                "status":statusTracker.RBP
             },
             "pipeline":[
-            {
-                "$match":{
-                    "recordId":"$$recordId",
-                    "data.0.status":"$$status"
+              {
+                "$match": {
+                    "$expr": {
+                        "$and": [
+                            {"$eq":[ "$recordId", "$$recordId"]},
+                            {
+                               "$eq": [{ $arrayElemAt: ['$data.status', 0] }, "$$status"]
+                            }
+                           
+                        ]
+                    }
                 }
             }
+        
             ],
             "as":"statuses"
         }
@@ -5532,7 +5540,9 @@ module.exports.getTrackingHistory = async(req,res)=>{
       return {
         "srNo":index+1,
         "action":statusList[status],
-        "date": item.createdAt  ? (item?.createdAt.toLocaleDateString('en-GB') +" "+ item?.createdAt.toLocaleTimeString()) : ""
+        "date": item.createdAt  ? (item?.createdAt.toLocaleDateString('en-GB',{
+          timeZone: 'Asia/Kolkata',
+        }) +" "+ item?.createdAt.toLocaleTimeString()) : ""
       }
     })
     // let formModified = form.modifiedAt  ? form.modifiedAt.toLocaleDateString()+" "+form?.createdAt.toLocaleTimeString():  histories[histories.length -1].date
