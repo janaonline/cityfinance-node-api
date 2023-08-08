@@ -4066,7 +4066,9 @@ module.exports.createForm = catchAsync(async (req, res) => {
         ulb: ObjectId(req.body.ulbId),
         design_year: ObjectId(req.body.design_year),
       }, {
-        submittedDate: new Date()
+        "$set":{
+          submittedDate: new Date()
+        }
       })
     }
     response.success = true;
@@ -5428,7 +5430,7 @@ function createCsv(params) {
                 document,
                 labelObj
               );
-              str += document[key] + ",";
+              str += document[key].toString().split(",").join("-") + ",";
             } else {
               str += " " + ",";
             }
