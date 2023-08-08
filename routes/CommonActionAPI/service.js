@@ -1291,6 +1291,11 @@ class AggregationServices {
             "$limit": number
         }
     }
+    static addTwoFieldData(firstField, secondField) {
+        return {
+            "$add": [firstField, secondField]
+        }
+    }
     static getCommonSliceObj(arr, from, to) {
         return {
             "$slice": [arr, from, to]
