@@ -17,8 +17,8 @@ const SLB = require('../../models/XVFcGrantForm');
 const State = require('../../models/State');
 const Sidemenu = require('../../models/Sidemenu');
 const ObjectId = require('mongoose').Types.ObjectId;
-const {CollectionNames, ModelNames, FormPathMappings} = require('../../util/15thFCstatus');
-const { YEAR_CONSTANTS, MASTER_STATUS, FormNames } = require('../../util/FormNames');
+const {CollectionNames, ModelNames, FormPathMappings, ModelNamesToFormId} = require('../../util/15thFCstatus');
+const { YEAR_CONSTANTS, MASTER_STATUS, FormNames, USER_ROLE } = require('../../util/FormNames');
 const UA = require('../../models/UA');
 const {getPopulationDataQueries} = require('./query')
 const Response = require('../../service/response');
@@ -436,7 +436,7 @@ const ELIGIBLITY = {
  * category, approved and submitted colors, border, form name, icon, and link. The specific properties
  * returned depend on the input parameters and the conditions met within the function.
  */
-function getFormData(formCategory, modelName, sidemenuForms, reviewForm) {
+function getFormData(formCategory, modelName, sidemenuForms, reviewForm, design_year) {
   let formData = {};
   if (formCategory === "ULB") {
     formData["approvedColor"] = "#E67E15";
@@ -557,9 +557,28 @@ function getFormData(formCategory, modelName, sidemenuForms, reviewForm) {
   ) {
     getFormsLinkIcon(element, formData);
   }
+  if(
+    ![YEAR_CONSTANTS['22_23']].includes(design_year) &&
+    [USER_ROLE['ULB']].includes(formCategory)
+   ){
+    updateFormData(modelName,formData,reviewForm)
+  }
   return formData;
 }
-  
+
+/**
+ * The function updates the link property of the formData object based on the modelName and reviewForm
+ * parameters.
+ */
+function updateFormData(modelName,formData,reviewForm){
+    let modelExist = Object.values(CollectionNames).includes(modelName)
+    if(modelExist){
+        formData.link = `/${reviewForm.url}?formId=${ModelNamesToFormId[modelName]}`
+    } else {
+        formData.link = `/${reviewForm.url}`
+    }
+}
+ 
 function getFormsLinkIcon(element,  formData) {
     if (element._id === "ActionPlans") {
         formData["formName"] = element.name;
@@ -1212,7 +1231,8 @@ const dashboard = async (req, res) => {
                   formCategory,
                   modelName,
                   sidemenuForms,
-                  reviewSidemenuForm
+                  reviewSidemenuForm,
+                  data.design_year
                 );
 
                 cutOff = getCutOff(data, formCategory, modelName, cutOff);
