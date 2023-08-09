@@ -68,6 +68,33 @@ const getCategoryWiseResource = async (req, res, next) => {
     }
 }
 
+const removeStateFromFiles = async (req, res, next) => {
+    try {
+        const {
+            stateId,
+            fileIds
+        } = req.body;
+        console.log('deletable ids', req.body);
+
+        const data = await CategoryFileUpload.findOneAndUpdate({
+            _id: { $in: fileIds }
+        }, {
+            $pull: {
+                relatedIds: stateId
+            }
+        });
+        return res.status(200).json({
+            status: true,
+            message: "State removed!",
+            data,
+        });
+
+    }
+    catch (err) {
+        console.log(err);
+    }
+}
+
 const getResourceList = async (req, res, next) => {
     const skip = +req.query.skip || 0;
     const limit = +req.query.limit || 2;
@@ -150,6 +177,7 @@ const getResourceList = async (req, res, next) => {
                     _id: 0,
                     file: 1,
                     stateName: '$_id.state.name',
+                    stateId: '$_id.state._id',
                     categoryName: '$_id.category.name',
                     subCategoryName: '$_id.subCategory.name',
                     files: {
@@ -222,5 +250,6 @@ const getResourceList = async (req, res, next) => {
 module.exports = {
     handleDatabaseUpload,
     getResourceList,
-    getCategoryWiseResource
+    getCategoryWiseResource,
+    removeStateFromFiles
 }
