@@ -266,7 +266,7 @@ async function removeIsDraft(params) {
     }
 }
 
-async function createHistory(params) {
+async function createHistory(params,ptoForm,mapperForm) {
     try {
         let { ulbId, actions, design_year, isDraft, formId, currentFormStatus } = params
         let { role, _id } = params.decoded
@@ -274,8 +274,6 @@ async function createHistory(params) {
             "recordId": formId,
             "data": []
         }
-        let ptoForm = await PropertyTaxOp.find({ "_id": formId }).lean()
-        let mapperForm = await PropertyTaxOpMapper.find({ ptoId: ObjectId(formId) }).populate("child").lean();
         ptoForm[0]['ptoMapperData'] = mapperForm
         payload['data'] = ptoForm
         let historyParams = {
@@ -306,9 +304,11 @@ module.exports.createOrUpdate = async (req, res) => {
         let params = { ...req.body }
         params['formId'] = formId
         params['decoded'] = req.decoded
-        await createHistory(params)
+        let ptoForm = await PropertyTaxOp.find({ "_id": formId }).lean()
+        let mapperForm = await PropertyTaxOpMapper.find({ ptoId: ObjectId(formId) }).populate("child").lean();
         await checkUndefinedValidations({ "ulb": ulbId, "formId": formId, "actions": actions, "design_year": design_year });
         await calculateAndUpdateStatusForMappers(actions, ulbId, formId, design_year, true, isDraft)
+        await createHistory(params,ptoForm,mapperForm)
         response.success = true
         response.formId = formId
         response.message = "Form submitted successfully"
