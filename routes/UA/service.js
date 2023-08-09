@@ -1717,14 +1717,23 @@ function amrProjects(service,csv,ulbId){
                 ]
             },
             "omExpensesUlb": "$amrProjects.omExpensesUlb",
-            "stateShare": "$amrProjects.stateShare",
+            "stateShare": {
+                "$add": [
+                    "$amrProjects.stateShare",
+                    "$amrProjects.CentralAssistCost"
+                ]
+            },
             "expenditure": "$amrProjects.expenditure",
             "ulbShare":"$amrUlbShare",
             "sectorId": "$amrProjects.category._id",
             "sector":"$amrProjects.category.name",
-            "divideTo":1,
+            "divideTo":100,
+            "lat":"$amrProjects.location.lat",
+            "long":"$amrProjects.location.lng",
             "startDate":service.getCommonDateTransformer("$amrProjects.startDate"),
             "estimatedCompletionDate":service.getCommonDateTransformer("$amrProjects.endDate"),
+            "dprPrepared":"$amrProjects.dprPrepared",
+            "dprPrepationDate": service.getCommonDateTransformer("$amrProjects.dprPrepDate"),
             "moreInformation": {
                 "name": "More information",
                 "url": apiUrls[process.env.ENV] + "/UA/get-mou-project/"
@@ -2709,11 +2718,11 @@ function getQueryCityRelated(obj){
     }
         query.push(lookupQueryForDur(service,designYear,true))
         query.push(service.getUnwindObj("$DUR",true))
-        query.push(service.getCommonLookupObj("amrutprojects", "_id", "ulb", "amrProjects"))
-        query.push(service.getUnwindObj("$amrProjects",true))
+        query.push(lookupQueryForAmrut(service, designYear))
+        query.push(service.getUnwindObj("$AMRUT",true))
         query.push(filterNoUlbShare("$DUR.projects"))
         // query.push(service.addFields("projects","$DUR.projects"))
-        query.push(service.addFields("amrProjects","$amrProjects"))
+        query.push(service.addFields("amrProjects","$AMRUT"))
         query.push(service.getUnwindObj("$projects",true))
         query.push(service.getCommonLookupObj("categories", "projects.category", "_id", "projectCategory"))
         query.push(service.getCommonLookupObj("creditratings", "_id", "ulb", "links"))
@@ -2865,7 +2874,11 @@ module.exports.bulkUpload = catchAsync(async (req, res, next) => {
         const fileContent = fs.readFileSync(filePath);
         const data = await readXlsxFile({ path: filePath, buffer: fileContent });
         //perform validation of the fields in the xls or xlsx
-        await validateBulkUpload(data, res)
+        const validationErrors = await validateBulkUpload(data, res)
+
+        if (validationErrors.length > 0) {
+            return res.status(400).send({ status: false, errors: validationErrors });
+        }
 
         // Apply the mapping to transform the data keys
         const transformedData = transformData(data);
@@ -2944,10 +2957,11 @@ async function validateBulkUpload(data, res) {
                     errors.push(`${fieldInfo.field} is invalid`);
                 }
             }
+            if (item['year'] && !years[item['year']]) {
+                errors.push(`year is invalid of this for the project having code: ${item['project code']} it should be in the format of YYYY-YY (Ex:-2023-24)`) 
+            }
         }
-        if (errors.length > 0) {
-            throw new Error(errors.join("; "));
-        }
+        return errors;
     } catch (error) {
         console.log("readXlsxFile: Exception", error);
         throw {
@@ -2963,19 +2977,19 @@ function transformData(data) {
         return {
             name: item['project title'],
             categoriesName: item['form type/ sector'],
-            cost: item['total project cost (in cr.)'],
+            cost: croreToLakh(item['total project cost (in cr.)']),
             code: item['project code'],
             ulbName: item['ulb'],
-            designYear: ObjectId("606aafb14dff55e6c075d3ae"),
-            stateShare: item['project state share (in cr.)'],
-            capitalExpenditureState: item['capex state share  (in cr.)'],
-            capitalExpenditureUlb: item['capex ulb share (in cr.)'],
-            capitalExpenditureCentralAssist: item['capex central assistance  (in cr.)'],
-            CentralAssistCost: item['project central assistance  (in cr.)'],
-            omExpensesUlb: item['o&m ulb share  (in cr.)'],
-            omExpensesState: item['o&m state share  (in cr.)'],
-            omExpensesCentralAssist: item['o&m central assistance  (in cr.)'],
-            ulbShare: item['project ulb share (in cr.)'],
+            designYear: years[item['year']],
+            stateShare: croreToLakh(item['project state share (in cr.)']),
+            capitalExpenditureState: croreToLakh(item['capex state share  (in cr.)']),
+            capitalExpenditureUlb: croreToLakh(item['capex ulb share (in cr.)']),
+            capitalExpenditureCentralAssist: croreToLakh(item['capex central assistance  (in cr.)']),
+            CentralAssistCost: croreToLakh(item['project central assistance  (in cr.)']),
+            omExpensesUlb: croreToLakh(item['o&m ulb share  (in cr.)']),
+            omExpensesState: croreToLakh(item['o&m state share  (in cr.)']),
+            omExpensesCentralAssist: croreToLakh(item['o&m central assistance  (in cr.)']),
+            ulbShare: croreToLakh(item['project ulb share (in cr.)']),
             startDate: new Date(item['estimated project award date'].split("-").reverse().join("-")),
             endDate: new Date(item['estimated project completion date'].split("-").reverse().join("-")),
             location: { lat: item['latitude'], lng: item['longitude'] },
@@ -2987,6 +3001,11 @@ function transformData(data) {
             }
         };
     });
+}
+
+function croreToLakh(crore) {
+    var lakh = crore * 100;
+    return lakh;
 }
 
 async function performBulkUpload(req, res, data) {

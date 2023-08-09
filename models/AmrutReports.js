@@ -40,8 +40,4 @@ const AmrutProjectsSchema = new Schema({
   { timestamps: { createdAt: 'createdAt', updatedAt: 'modifiedAt' } }
 );
 
-// AmrutProjectsSchema.pre('find', function (next, doc) {
-//   console.log(doc, "kjsadlk;jask")
-// })
-
 module.exports = mongoose.model("Amrutproject", AmrutProjectsSchema);
