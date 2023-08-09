@@ -108,6 +108,11 @@ const getResourceList = async (req, res, next) => {
                 }
             },
             {
+                $addFields: {
+                    relatedIdsCopy: "$relatedIds"
+                }
+            },
+            {
                 $unwind: {
                     path: "$relatedIds",
                 }
@@ -185,7 +190,9 @@ const getResourceList = async (req, res, next) => {
                             in: {
                                 name: '$$doc.file.name',
                                 url: '$$doc.file.url',
-                                _id: '$$doc._id'
+                                relatedIds: '$$doc.relatedIdsCopy',
+                                relatedId: '$$doc.relatedIds',
+                                _id: '$$doc._id',
                             }
                         }
                     }
