@@ -5531,7 +5531,7 @@ module.exports.getTrackingHistory = async(req,res)=>{
       let nextItem = history[idx+1] || {data:{status:"null"}}
       let status = item?.data?.status|| item['data'][0]['status'] 
       let nextStatus = (nextItem?.data?.status|| nextItem['data'][0]['status'])
-      if(status === statusTracker['VIP']){
+      if(status === statusTracker['VIP'] && nextStatus === statusTracker['VIP']){
         item.createdAt = nextItem.createdAt || item.createdAt
       }
       return(status !== nextStatus)
