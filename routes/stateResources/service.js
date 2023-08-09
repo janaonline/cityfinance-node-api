@@ -167,7 +167,6 @@ const getResourceList = async (req, res, next) => {
                         state: '$state',
                         category: '$category',
                         subCategory: '$subCategory',
-
                     },
                     documents: { $push: "$$ROOT" },
                 }
@@ -176,10 +175,9 @@ const getResourceList = async (req, res, next) => {
                 $project: {
                     _id: 0,
                     file: 1,
-                    stateName: '$_id.state.name',
-                    stateId: '$_id.state._id',
-                    categoryName: '$_id.category.name',
-                    subCategoryName: '$_id.subCategory.name',
+                    state: '$_id.state',
+                    category: '$_id.category',
+                    subCategory: '$_id.subCategory',
                     files: {
                         $map: {
                             input: '$documents',

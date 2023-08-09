@@ -8,7 +8,7 @@ const {
 } = require('./service');
 
 const {
-    createOrUpdate, list, deleteByIds
+    createOrUpdate
 } = require("../../service/crud");
 
 
