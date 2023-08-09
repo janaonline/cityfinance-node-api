@@ -63,7 +63,7 @@ const getCategoryWiseResource = async (req, res, next) => {
             message: "Successfully saved data!",
             data,
         });
-    } catch(err) { 
+    } catch (err) {
         console.log(err);
     }
 }
@@ -76,7 +76,7 @@ const getResourceList = async (req, res, next) => {
     try {
         const query = [
             {
-                $match: { 
+                $match: {
                     module: 'state_resource',
                 }
             },
@@ -87,9 +87,9 @@ const getResourceList = async (req, res, next) => {
             },
             ...(categoryId || stateId ? [
                 {
-                    $match: { 
-                        ...(categoryId && { categoryId: ObjectId(categoryId)}),
-                        ...(stateId && { relatedIds: ObjectId(stateId)})
+                    $match: {
+                        ...(categoryId && { categoryId: ObjectId(categoryId) }),
+                        ...(stateId && { relatedIds: ObjectId(stateId) })
                     }
                 },
             ] : []),
@@ -152,7 +152,17 @@ const getResourceList = async (req, res, next) => {
                     stateName: '$_id.state.name',
                     categoryName: '$_id.category.name',
                     subCategoryName: '$_id.subCategory.name',
-                    "documents": '$documents.file',
+                    files: {
+                        $map: {
+                            input: '$documents',
+                            as: 'doc',
+                            in: {
+                                name: '$$doc.file.name',
+                                url: '$$doc.file.url',
+                                _id: '$$doc._id'
+                            }
+                        }
+                    }
                 }
             },
             {
@@ -165,8 +175,8 @@ const getResourceList = async (req, res, next) => {
                 }
             }
         ];
-        const [ categoryResult ] = await CategoryFileUpload.aggregate(query);
-        const documents  = categoryResult.documents || {};
+        const [categoryResult] = await CategoryFileUpload.aggregate(query);
+        const documents = categoryResult.documents || {};
         const totalDocuments = categoryResult?.totalCount?.[0]?.count || 0;
         const states = await State.find().select('name _id');
         const categories = await MainCategory.aggregate([
