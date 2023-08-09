@@ -1036,12 +1036,7 @@ function getQuery2324(modelName, formType, designYear, formCategory, stateId){
             break;
     }
     if(formCategory === "ULB"){
-        query.push({
-            $group:{
-                _id:"$ulb.state",
-                forms: {$push:"$$ROOT"}
-            } 
-        })
+        addStatusData(modelName, query);  
     }
     return query;
 }
@@ -1331,6 +1326,38 @@ const dashboard = async (req, res) => {
         });
     }
 
+}
+
+function addStatusData(modelName, query) {
+    if ([CollectionNames.linkPFMS].includes(modelName)) {
+        query.push({
+            $group: {
+                _id: "$ulb.state",
+                forms: {
+                    $push: {
+                        actionTakenByRole: "$actionTakenByRole",
+                        isDraft: "$isDraft",
+                        status: "$status",
+                        currentFormStatus: { $ifNull:["$currentFormStatus",""]}
+                    }
+                }
+            }
+        });
+    } else {
+        query.push({
+            $group: {
+                _id: "$ulb.state",
+                forms: {
+                    $push: {
+                        actionTakenByRole: "$actionTakenByRole",
+                        isDraft: "$isDraft",
+                        status: "$status",
+                        currentFormStatus: "$currentFormStatus",
+                    }
+                }
+            }
+        });
+    }
 }
 
 /**
