@@ -25,6 +25,7 @@ const handleDatabaseUpload = async (req, res, next) => {
 }
 
 const dulyElectedTemplate = async (req, res, next) => {
+    const templateName = req.params.templateName;
     try {
 
         const startingRow = 3;
@@ -32,15 +33,15 @@ const dulyElectedTemplate = async (req, res, next) => {
         const worksheet = workbook.addWorksheet('My Sheet');
 
         worksheet.columns = [
-            { header: 'S no', key: 'sno',  },
+            { header: 'S no', key: 'sno', },
             { header: 'State Name', key: 'stateName', width: 20 },
-            { header: 'State Code', key: 'stateCode',  },
+            { header: 'State Code', key: 'stateCode', },
             { header: 'ULB Name', key: 'name', width: 30, hidden: true },
             { header: 'ULB City Finance Code', key: 'code' },
             { header: 'Census Code', key: 'censusCode' },
             { header: 'Area (As per Census 2011)', key: 'area' },
             { header: 'Population (As per Census 2011)', key: 'population', width: 20 },
-            { header: 'Status of ULBs (Duly Elected/Not elected)', key: 'isDulyElected', width: 20,  },
+            { header: 'Status of ULBs (Duly Elected/Not elected)', key: 'isDulyElected', width: 20, },
             { header: 'Elected Date as per the State', key: 'electedDate', width: 20 },
             { header: 'untiedGrantAmount', key: 'untiedGrantAmount', width: 20 },
             { header: 'untiedGrantPercent', key: 'untiedGrantPercent', width: 20 },
@@ -54,7 +55,7 @@ const dulyElectedTemplate = async (req, res, next) => {
 
         const columnsToHide = [2]; // Index of the column to hide (columns are 0-indexed)
         columnsToHide.forEach(columnIndex => {
-          worksheet.getColumn(columnIndex + 1).header.hidden = true;
+            worksheet.getColumn(columnIndex + 1).header.hidden = true;
         });
 
         worksheet.getRows(1, startingRow).forEach(row => {
@@ -103,7 +104,106 @@ const dulyElectedTemplate = async (req, res, next) => {
         // console.log('worksheet', worksheet);
 
         const buffer = await workbook.xlsx.writeBuffer();
-        res.setHeader('Content-Disposition', 'attachment; filename=example.xlsx');
+        res.setHeader('Content-Disposition', `attachment; filename=${templateName}.xlsx`);
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+
+        res.send(buffer);
+
+
+    } catch (err) {
+        console.log(err)
+    }
+}
+
+const gsdpTemplate = async (req, res, next) => {
+    const templateName = req.params.templateName;
+    try {
+
+        const startingRow = 1;
+        const workbook = new ExcelJS.Workbook();
+        const worksheet = workbook.addWorksheet('My Sheet');
+
+        worksheet.columns = [
+            { header: 'S no', key: 'sno', },
+            { header: 'State Name', key: 'stateName', width: 20 },
+            { header: 'State Code', key: 'stateCode', },
+            { header: 'ULB Name', key: 'name', width: 30, hidden: true },
+            { header: 'ULB Code', key: 'code' },
+            { header: 'ULB type', key: 'ulbType' },
+            { header: 'Census Code', key: 'censusCode' },
+            { header: 'Population (As per Census 2011)', key: 'population', width: 20 },
+            { header: 'Is it Million Plus (Yes/No)', key: 'isMillionPlus', width: 20 },
+            { header: 'Is it a part of UA (Yes/No)', key: 'isUA', width: 20 },
+            { header: 'Name of UA', key: 'uaName', width: 20 },
+            { header: 'GSDP Eligibility Condition (Eligible/Not Eligible)', key: 'isGsdpEligible', width: 20 },
+        ];
+
+        worksheet.getRows(1, startingRow).forEach(row => {
+            row.eachCell({ includeEmpty: true }, cell => {
+                cell.fill = {
+                    type: 'pattern',
+                    pattern: 'solid',
+                    fgColor: { argb: 'ffbdd7ee' }
+                };
+            });
+        });
+
+        const ulbData = await Ulb.aggregate([
+            {
+                $lookup: {
+                    from: "states",
+                    localField: "state",
+                    foreignField: "_id",
+                    as: "state"
+                }
+            },
+            {
+                $lookup: {
+                    from: 'ulbtypes',
+                    localField: 'ulbType',
+                    foreignField: '_id',
+                    as: 'ulbType'
+                }
+            },
+            {
+                $lookup: {
+                    from: 'uas',
+                    localField: 'UA',
+                    foreignField: '_id',
+                    as: 'ua'
+                }
+            },
+            {
+                $unwind: '$state'
+            },
+            {
+                $project: {
+                    sno: 'sno',
+                    stateName: '$state.name',
+                    stateCode: '$state.code',
+                    name: 1,
+                    code: 1,
+                    ulbType: { $arrayElemAt: ['$ulbType.name', 0]},
+                    censusCode: 1,
+                    area: 1,
+                    population: 1,
+                    isMillionPlus: 1,
+                    isUA: 1,
+                    uaName: { $arrayElemAt: ['$ua.name', 0]},
+                    isDulyElected: 1,
+                    electedDate: 1
+                }
+            }
+        ]);
+
+
+
+        worksheet.addRows(ulbData, { startingRow, properties: { outlineLevel: 1 } });
+
+        // console.log('worksheet', worksheet);
+
+        const buffer = await workbook.xlsx.writeBuffer();
+        res.setHeader('Content-Disposition', `attachment; filename=${templateName}.xlsx`);
         res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
 
         res.send(buffer);
@@ -115,8 +215,9 @@ const dulyElectedTemplate = async (req, res, next) => {
 }
 
 const getTemplate = async (req, res, next) => {
-    const templateName = req.body.templateName;
-    if(templateName == 'dulyElected') return dulyElectedTemplate(req, res, next);
+    const templateName = req.params.templateName;
+    if (templateName == 'dulyElected') return dulyElectedTemplate(req, res, next);
+    if (templateName == 'gsdp') return gsdpTemplate(req, res, next);
 }
 
 const getCategoryWiseResource = async (req, res, next) => {
