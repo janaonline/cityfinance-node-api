@@ -1717,14 +1717,23 @@ function amrProjects(service,csv,ulbId){
                 ]
             },
             "omExpensesUlb": "$amrProjects.omExpensesUlb",
-            "stateShare": "$amrProjects.stateShare",
+            "stateShare": {
+                "$add": [
+                    "$amrProjects.stateShare",
+                    "$amrProjects.CentralAssistCost"
+                ]
+            },
             "expenditure": "$amrProjects.expenditure",
             "ulbShare":"$amrUlbShare",
             "sectorId": "$amrProjects.category._id",
             "sector":"$amrProjects.category.name",
-            "divideTo":1,
+            "divideTo":100,
+            "lat":"$amrProjects.location.lat",
+            "long":"$amrProjects.location.lng",
             "startDate":service.getCommonDateTransformer("$amrProjects.startDate"),
             "estimatedCompletionDate":service.getCommonDateTransformer("$amrProjects.endDate"),
+            "dprPrepared":"$amrProjects.dprPrepared",
+            "dprPrepationDate": service.getCommonDateTransformer("$amrProjects.dprPrepDate"),
             "moreInformation": {
                 "name": "More information",
                 "url": apiUrls[process.env.ENV] + "/UA/get-mou-project/"
@@ -2340,8 +2349,9 @@ module.exports.getInfrastructureProjects = catchAsync(async (req, res) => {
         success: false,
         message: "Something went wrong"
     }
-    let menuNames = ['implementationAgencies', 'sectors', 'projects']
+    let menuNames = ['year', 'implementationAgencies', 'sectors', 'projects']
     let keysDisplayName = {
+        "year": "Year",
         'sectors': "Sectors",
         'projects': "Projects",
         'implementationAgencies': "Implemenation Agency"
@@ -2391,7 +2401,7 @@ module.exports.getInfrastructureProjects = catchAsync(async (req, res) => {
             response.filters = menuNames.map(el => ({
                 key: el,
                 name: keysDisplayName[el],
-                options: dbResponse[0][el]
+                options: el==="year" ? filterYears.map(item => ({name:item.label,_id:item.id})) : dbResponse[0][el]
             }))
             response.columns = columns
             response.message = "Fetched Successfully"
@@ -2968,19 +2978,19 @@ function transformData(data) {
         return {
             name: item['project title'],
             categoriesName: item['form type/ sector'],
-            cost: item['total project cost (in cr.)'],
+            cost: croreToLakh(item['total project cost (in cr.)']),
             code: item['project code'],
             ulbName: item['ulb'],
             designYear: years[item['year']],
-            stateShare: item['project state share (in cr.)'],
-            capitalExpenditureState: item['capex state share  (in cr.)'],
-            capitalExpenditureUlb: item['capex ulb share (in cr.)'],
-            capitalExpenditureCentralAssist: item['capex central assistance  (in cr.)'],
-            CentralAssistCost: item['project central assistance  (in cr.)'],
-            omExpensesUlb: item['o&m ulb share  (in cr.)'],
-            omExpensesState: item['o&m state share  (in cr.)'],
-            omExpensesCentralAssist: item['o&m central assistance  (in cr.)'],
-            ulbShare: item['project ulb share (in cr.)'],
+            stateShare: croreToLakh(item['project state share (in cr.)']),
+            capitalExpenditureState: croreToLakh(item['capex state share  (in cr.)']),
+            capitalExpenditureUlb: croreToLakh(item['capex ulb share (in cr.)']),
+            capitalExpenditureCentralAssist: croreToLakh(item['capex central assistance  (in cr.)']),
+            CentralAssistCost: croreToLakh(item['project central assistance  (in cr.)']),
+            omExpensesUlb: croreToLakh(item['o&m ulb share  (in cr.)']),
+            omExpensesState: croreToLakh(item['o&m state share  (in cr.)']),
+            omExpensesCentralAssist: croreToLakh(item['o&m central assistance  (in cr.)']),
+            ulbShare: croreToLakh(item['project ulb share (in cr.)']),
             startDate: new Date(item['estimated project award date'].split("-").reverse().join("-")),
             endDate: new Date(item['estimated project completion date'].split("-").reverse().join("-")),
             location: { lat: item['latitude'], lng: item['longitude'] },
@@ -2992,6 +3002,11 @@ function transformData(data) {
             }
         };
     });
+}
+
+function croreToLakh(crore) {
+    var lakh = crore * 100;
+    return lakh;
 }
 
 async function performBulkUpload(req, res, data) {
