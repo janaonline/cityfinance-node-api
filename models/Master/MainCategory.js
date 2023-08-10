@@ -13,6 +13,6 @@ const MainCategorySchema = new Schema(
         createdAt: { type: Date, default: Date.now() },
         isActive: { type: Boolean, default: 1 },
     },
-    { timestamp: { createdAt: "createdAt", updatedAt: "modifiedAt" } }
+    { strict: false, timestamp: { createdAt: "createdAt", updatedAt: "modifiedAt" } }
 );
 module.exports = mongoose.model("MainCategory", MainCategorySchema);

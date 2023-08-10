@@ -4,7 +4,8 @@ const {
     handleDatabaseUpload, 
     getResourceList, 
     removeStateFromFiles,
-    getCategoryWiseResource
+    getCategoryWiseResource,
+    getTemplate
 } = require('./service');
 
 const {
@@ -15,6 +16,8 @@ const {
 router.get('/getResourceList', getResourceList);
 router.get('/list',  getCategoryWiseResource );
 router.post('/createOrUpdate', handleDatabaseUpload, createOrUpdate('CategoryFileUpload', { module: 'state_resource' }));
+
+router.get('/template/:templateName', getTemplate);
 
 router.post('/removeStateFromFiles',  removeStateFromFiles );
 

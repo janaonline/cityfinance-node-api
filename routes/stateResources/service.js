@@ -1,10 +1,11 @@
-
+const ExcelJS = require("exceljs");
+const ObjectId = require("mongoose").Types.ObjectId;
 
 const MainCategory = require('../../models/Master/MainCategory');
+const Ulb = require('../../models/Ulb');
 const State = require('../../models/State');
 const CategoryFileUpload = require('../../models/CategoryFileUpload');
 const { stateFormSubmission } = require('../../service/email-template');
-const ObjectId = require("mongoose").Types.ObjectId;
 const { loadExcelByUrl } = require('../../util/worksheet');
 
 const handleDatabaseUpload = async (req, res, next) => {
@@ -21,6 +22,101 @@ const handleDatabaseUpload = async (req, res, next) => {
         });
 
     })
+}
+
+const dulyElectedTemplate = async (req, res, next) => {
+    try {
+
+        const startingRow = 3;
+        const workbook = new ExcelJS.Workbook();
+        const worksheet = workbook.addWorksheet('My Sheet');
+
+        worksheet.columns = [
+            { header: 'S no', key: 'sno',  },
+            { header: 'State Name', key: 'stateName', width: 20 },
+            { header: 'State Code', key: 'stateCode',  },
+            { header: 'ULB Name', key: 'name', width: 30, hidden: true },
+            { header: 'ULB City Finance Code', key: 'code' },
+            { header: 'Census Code', key: 'censusCode' },
+            { header: 'Area (As per Census 2011)', key: 'area' },
+            { header: 'Population (As per Census 2011)', key: 'population', width: 20 },
+            { header: 'Status of ULBs (Duly Elected/Not elected)', key: 'isDulyElected', width: 20,  },
+            { header: 'Elected Date as per the State', key: 'electedDate', width: 20 },
+            { header: 'untiedGrantAmount', key: 'untiedGrantAmount', width: 20 },
+            { header: 'untiedGrantPercent', key: 'untiedGrantPercent', width: 20 },
+            { header: 'tiedGrantAmount', key: 'tiedGrantAmount', width: 20 },
+            { header: 'tiedGrantPercent', key: 'tiedGrantPercent', width: 20 },
+        ];
+
+        const emptyRowsArray = Array.from({ length: startingRow - 1 }, () => Array.from({ length: worksheet.columnCount }, () => ''));
+        console.log('emptyRowsArray', emptyRowsArray);
+        worksheet.addRows(emptyRowsArray);
+
+        const columnsToHide = [2]; // Index of the column to hide (columns are 0-indexed)
+        columnsToHide.forEach(columnIndex => {
+          worksheet.getColumn(columnIndex + 1).header.hidden = true;
+        });
+
+        worksheet.getRows(1, startingRow).forEach(row => {
+            row.eachCell({ includeEmpty: true }, cell => {
+                cell.fill = {
+                    type: 'pattern',
+                    pattern: 'solid',
+                    fgColor: { argb: 'ffbdd7ee' }
+                };
+            });
+        });
+
+        const ulbData = await Ulb.aggregate([
+            {
+                $lookup: {
+                    from: "states",
+                    localField: "state",
+                    foreignField: "_id",
+                    as: "state"
+                }
+            },
+            {
+                $unwind: '$state'
+            },
+            { $limit: 10 },
+            {
+                $project: {
+                    sno: 'sno',
+                    stateName: '$state.name',
+                    stateCode: '$state.code',
+                    name: 1,
+                    code: 1,
+                    censusCode: 1,
+                    area: 1,
+                    population: 1,
+                    isDulyElected: 1,
+                    electedDate: 1
+                }
+            }
+        ]);
+
+
+
+        worksheet.addRows(ulbData, { startingRow, properties: { outlineLevel: 1 } });
+
+        // console.log('worksheet', worksheet);
+
+        const buffer = await workbook.xlsx.writeBuffer();
+        res.setHeader('Content-Disposition', 'attachment; filename=example.xlsx');
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+
+        res.send(buffer);
+
+
+    } catch (err) {
+        console.log(err)
+    }
+}
+
+const getTemplate = async (req, res, next) => {
+    const templateName = req.body.templateName;
+    if(templateName == 'dulyElected') return dulyElectedTemplate(req, res, next);
 }
 
 const getCategoryWiseResource = async (req, res, next) => {
@@ -255,6 +351,7 @@ const getResourceList = async (req, res, next) => {
 module.exports = {
     handleDatabaseUpload,
     getResourceList,
+    getTemplate,
     getCategoryWiseResource,
     removeStateFromFiles
 }
