@@ -4810,6 +4810,23 @@ function computeQuery(params, cond = null) {
           preserveNullAndEmptyArrays: true,
         },
       },
+      {
+        $addFields: {
+          currentFormStatus: {
+            $cond: {
+              if: {
+                $and: [
+                  { $eq: [{ $type: "$fiscalrankings" }, "object"] },
+                ]
+              },
+              then: "$fiscalrankings.currentFormStatus",
+              else: 1
+            }
+          },
+          populationType: getPopulationCondition()
+        }
+      },
+      
       { $match: condition_one },
       {
         $lookup: {
