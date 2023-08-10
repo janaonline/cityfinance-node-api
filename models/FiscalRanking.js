@@ -219,7 +219,7 @@ const fiscalRankingSchema = new Schema(
             approvedProgress:{type:Schema.Types.Mixed,default:"0"},
             rejectedProgress:{type:Schema.Types.Mixed,default:"0"},
         },
-        rejectedCount: {type:Schema.Types.Mixed,default:"0"},
+        rejectedCount: {type:Number,default:0},
         // createdAt: { type: Date, default: Date.now },
         // modifiedAt: { type: Date, default: Date.now },
         isActive: { type: Boolean, default: 1 },
