@@ -92,7 +92,7 @@ const dulyElectedTemplate = async (req, res, next) => {
             {
                 $unwind: '$state'
             },
-            { $limit: 10 },
+            // { $limit: 10 },
             {
                 $project: {
                     sno: '',
@@ -143,20 +143,31 @@ const updateDulyElectedTemplate = async (req, res, next, worksheet) => {
     try {
         const censusCodes = worksheet.getColumn(6).values.slice(3);
         const dulyElectedsColumns = worksheet.getColumn(9).values.slice(3);
+        const dulyElectedsDateColumns = worksheet.getColumn(10).values.slice(3);
 
-        const dulyElected = [];
-        const dulyNotElected = [];
-        censusCodes.forEach((censusCode, index) => {
-            if (dulyElectedsColumns[index] === 'Duly Elected') {
-                dulyElected.push(censusCode);
+        const updateOperations = censusCodes.map((censusCode, index) => {
+            if(!censusCode) return;
+            const isDulyElected = dulyElectedsColumns[index] ? (dulyElectedsColumns[index] == 'Duly Elected') : null;
+            const electedDate = dulyElectedsDateColumns[index];
+            const result = {
+                updateOne: {
+                    filter: { censusCode: censusCode },
+                    update: {
+                        $set: {
+                            isDulyElected ,
+                            ...(isDulyElected == true && { 
+                                electedDate: new Date()
+                            })
+                        }
+                    }
+                }
             }
-            else if (dulyElectedsColumns[index] === 'Not Elected') {
-                dulyNotElected.push(censusCode);
-            }
-        });
+            return result;
+        }).filter(i => i);
 
-        await Ulb.updateMany({ censusCode: { $in: dulyElected } }, { $set: { isDulyElected: true } })
-        await Ulb.updateMany({ censusCode: { $in: dulyNotElected } }, { $set: { isDulyElected: false } });
+
+        const result = await Ulb.bulkWrite(updateOperations);
+        console.log('result', result);
         Promise.resolve("Data updated");
     } catch (err) {
         console.log(err);
