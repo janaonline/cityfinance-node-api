@@ -1,13 +1,11 @@
 const ExcelJS = require("exceljs");
 const ObjectId = require("mongoose").Types.ObjectId;
-const fs = require('fs');
-const path = require('path');
 
 const MainCategory = require('../../models/Master/MainCategory');
 const Ulb = require('../../models/Ulb');
+const GrantAllocation2324 = require('../../models/GrantAllocation2324');
 const State = require('../../models/State');
 const CategoryFileUpload = require('../../models/CategoryFileUpload');
-const { stateFormSubmission } = require('../../service/email-template');
 const { loadExcelByUrl } = require('../../util/worksheet');
 
 const handleDatabaseUpload = async (req, res, next) => {
@@ -31,6 +29,10 @@ const handleDatabaseUpload = async (req, res, next) => {
         });
     } catch (err) {
         console.log(err);
+        return res.status(500).json({
+            status: true,
+            message: err || "Something went wront",
+        });
     }
 }
 
@@ -45,6 +47,7 @@ const dulyElectedTemplate = async (req, res, next) => {
 
         })
         worksheet.columns = [
+            { header: '_id', key: '_id', width: 20, hidden: true },
             { header: 'S no', key: 'sno', },
             { header: 'State Name', key: 'stateName', width: 20 },
             { header: 'State Code', key: 'stateCode', },
@@ -95,6 +98,7 @@ const dulyElectedTemplate = async (req, res, next) => {
             // { $limit: 10 },
             {
                 $project: {
+                    _id: { $toString: '$_id' },
                     sno: '',
                     stateName: '$state.name',
                     stateCode: '$state.code',
@@ -141,21 +145,27 @@ const dulyElectedTemplate = async (req, res, next) => {
 
 const updateDulyElectedTemplate = async (req, res, next, worksheet) => {
     try {
-        const censusCodes = worksheet.getColumn(6).values.slice(3);
-        const dulyElectedsColumns = worksheet.getColumn(9).values.slice(3);
-        const dulyElectedsDateColumns = worksheet.getColumn(10).values.slice(3);
+        const dataStartsFrom = 3;
+        const _ids = worksheet.getColumn(1).values.slice(dataStartsFrom);
+        const censusCodes = worksheet.getColumn(7).values.slice(dataStartsFrom);
+        const dulyElectedsColumns = worksheet.getColumn(10).values.slice(dataStartsFrom);
+        const dulyElectedsDateColumns = worksheet.getColumn(11).values.slice(dataStartsFrom);
+        const untiedGrantAmountColumns = worksheet.getColumn(12).values.slice(dataStartsFrom);
+        const untiedGrantPercentColumns = worksheet.getColumn(13).values.slice(dataStartsFrom);
+        const tiedGrantAmountColumns = worksheet.getColumn(14).values.slice(dataStartsFrom);
+        const tiedGrantPercentColumns = worksheet.getColumn(15).values.slice(dataStartsFrom);
 
-        const updateOperations = censusCodes.map((censusCode, index) => {
-            if(!censusCode) return;
+        const dulyElectedUpdateQuery = _ids.map((_id, index) => {
+            if (!_id) return;
             const isDulyElected = dulyElectedsColumns[index] ? (dulyElectedsColumns[index] == 'Duly Elected') : null;
             const electedDate = dulyElectedsDateColumns[index];
             const result = {
                 updateOne: {
-                    filter: { censusCode: censusCode },
+                    filter: { _id: ObjectId(_id) },
                     update: {
                         $set: {
-                            isDulyElected ,
-                            ...(isDulyElected == true && { 
+                            isDulyElected,
+                            ...(isDulyElected == true && {
                                 electedDate: new Date()
                             })
                         }
@@ -165,9 +175,32 @@ const updateDulyElectedTemplate = async (req, res, next, worksheet) => {
             return result;
         }).filter(i => i);
 
+        const grantAllocation2324UpdateQuery = _ids.map((_id, index) => {
+            if (!_id) return;
+            const untiedGrantAmount = untiedGrantAmountColumns[index];
+            const untiedGrantPercent = untiedGrantPercentColumns[index];
+            const tiedGrantAmount = tiedGrantAmountColumns[index];
+            const tiedGrantPercent = tiedGrantPercentColumns[index];
+            const result = {
+                updateOne: {
+                    filter: { ulbId: ObjectId(_id) },
+                    update: {
+                        $set: {
 
-        const result = await Ulb.bulkWrite(updateOperations);
-        console.log('result', result);
+                            untiedGrantAmount,
+                            untiedGrantPercent,
+                            tiedGrantAmount,
+                            tiedGrantPercent
+                        }
+                    },
+                    upsert: true
+                }
+            };
+            return result;
+        }).filter(i => i);
+        const result = await Ulb.bulkWrite(dulyElectedUpdateQuery);
+        const result2 = await GrantAllocation2324.bulkWrite(grantAllocation2324UpdateQuery);
+        console.log('result', result, result2);
         Promise.resolve("Data updated");
     } catch (err) {
         console.log(err);
