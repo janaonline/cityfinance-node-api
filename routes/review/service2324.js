@@ -696,7 +696,7 @@ const waterSenitationXlsDownload = async (data, res, role) => {
     if (!fs.existsSync(tempFilePath)) {
       fs.mkdirSync(tempFilePath);
     }
-    const filename = `${Date.now()} __waterSupplyAndSanitation.xlsx`;
+    const filename = `${Date.now()}__waterSupplyAndSanitation.xlsx`;
     const workbook = new ExcelJS.Workbook();
     const waterBodies = workbook.addWorksheet('waterBodies');
     const reuseWater = workbook.addWorksheet('reuseWater');
@@ -776,7 +776,7 @@ const waterSenitationXlsDownload = async (data, res, role) => {
     }
 
     // Create a write stream
-    const writeStream = fs.createWriteStream(`${tempFilePath} /${filename}`);
+    const writeStream = fs.createWriteStream(`${tempFilePath}/${filename}`);
     // Write the stream to the file
     await workbook.xlsx.write(writeStream);
     // Set response headers for downloading the file
