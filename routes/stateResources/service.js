@@ -103,7 +103,19 @@ const dulyElectedTemplate = async (req, res, next) => {
                     censusCode: 1,
                     area: 1,
                     population: 1,
-                    isDulyElected: 1,
+                    isDulyElected: {
+                        $cond: {
+                            if: { $eq: ["$isDulyElected", true] },
+                            then: 'Duly Elected',
+                            else: {
+                                $cond: {
+                                    if: { $eq: ["$isDulyElected", false] },
+                                    then: 'Not Elected',
+                                    else: ''
+                                }
+                            }
+                        }
+                    },
                     electedDate: 1
                 }
             }
@@ -129,9 +141,25 @@ const dulyElectedTemplate = async (req, res, next) => {
 
 const updateDulyElectedTemplate = async (req, res, next, worksheet) => {
     try {
-        console.log('updateDulyElectedTemplate');
+        const censusCodes = worksheet.getColumn(6).values.slice(3);
+        const dulyElectedsColumns = worksheet.getColumn(9).values.slice(3);
+
+        const dulyElected = [];
+        const dulyNotElected = [];
+        censusCodes.forEach((censusCode, index) => {
+            if (dulyElectedsColumns[index] === 'Duly Elected') {
+                dulyElected.push(censusCode);
+            }
+            else if (dulyElectedsColumns[index] === 'Not Elected') {
+                dulyNotElected.push(censusCode);
+            }
+        });
+
+        await Ulb.updateMany({ censusCode: { $in: dulyElected } }, { $set: { isDulyElected: true } })
+        await Ulb.updateMany({ censusCode: { $in: dulyNotElected } }, { $set: { isDulyElected: false } });
         Promise.resolve("Data updated");
     } catch (err) {
+        console.log(err);
         Promise.reject("Something went wrong");
     }
 }
