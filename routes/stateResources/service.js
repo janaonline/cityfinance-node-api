@@ -13,6 +13,8 @@ const { loadExcelByUrl } = require('../../util/worksheet');
 const handleDatabaseUpload = async (req, res, next) => {
     // return next();
 
+    const templateName = req.body.templateName;
+
     try {
         console.log(req.body.file);
         const remoteUrl = req.body.file.url;
@@ -20,25 +22,8 @@ const handleDatabaseUpload = async (req, res, next) => {
         const workbook = await loadExcelByUrl(remoteUrl);
         const worksheet = workbook.getWorksheet(1);
 
-        const censusCodes = worksheet.getColumn(7).values.slice(1);
-        const gdsps = worksheet.getColumn(12).values.slice(1);
-
-        const eligibleUlbs = [];
-        const notEligibleUlbs = [];
-        censusCodes.forEach((censusCode, index) => {
-            if(gdsps[index] === 'Eligible') {
-                eligibleUlbs.push(censusCode);
-            }
-            else if(gdsps[index] === 'Not Eligible') {
-                notEligibleUlbs.push(censusCode);
-            }
-        });
-
-        console.log('eligibleUlbs', eligibleUlbs);
-
-        await Ulb.updateMany({ censusCode: { $in: eligibleUlbs}}, { $set: { isGsdpEligible: true } })
-        await Ulb.updateMany({ censusCode: { $in: notEligibleUlbs}}, { $set: { isGsdpEligible: true} });
-
+        if (templateName == 'dulyElected') await updateDulyElectedTemplate(req, res, next, worksheet);
+        if (templateName == 'gsdp') await updateGsdpTemplate(req, res, next, worksheet);
 
         return res.status(200).json({
             status: true,
@@ -142,6 +127,15 @@ const dulyElectedTemplate = async (req, res, next) => {
     }
 }
 
+const updateDulyElectedTemplate = async (req, res, next, worksheet) => {
+    try {
+        console.log('updateDulyElectedTemplate');
+        Promise.resolve("Data updated");
+    } catch (err) {
+        Promise.reject("Something went wrong");
+    }
+}
+
 const gsdpTemplate = async (req, res, next) => {
     const templateName = req.params.templateName;
     try {
@@ -218,6 +212,19 @@ const gsdpTemplate = async (req, res, next) => {
                     isUA: 1,
                     uaName: { $arrayElemAt: ['$ua.name', 0] },
                     isDulyElected: 1,
+                    isGsdpEligible: {
+                        $cond: {
+                            if: { $eq: ["$isGsdpEligible", true] },
+                            then: 'Eligible',
+                            else: {
+                                $cond: {
+                                    if: { $eq: ["$isGsdpEligible", false] },
+                                    then: 'Not Eligible',
+                                    else: ''
+                                }
+                            }
+                        }
+                    },
                     electedDate: 1
                 }
             }
@@ -238,6 +245,32 @@ const gsdpTemplate = async (req, res, next) => {
 
     } catch (err) {
         console.log(err)
+    }
+}
+
+
+const updateGsdpTemplate = async (req, res, next, worksheet) => {
+    try {
+        const censusCodes = worksheet.getColumn(7).values.slice(1);
+        const gdsps = worksheet.getColumn(12).values.slice(1);
+
+        const eligibleUlbs = [];
+        const notEligibleUlbs = [];
+        censusCodes.forEach((censusCode, index) => {
+            if (gdsps[index] === 'Eligible') {
+                eligibleUlbs.push(censusCode);
+            }
+            else if (gdsps[index] === 'Not Eligible') {
+                notEligibleUlbs.push(censusCode);
+            }
+        });
+
+        await Ulb.updateMany({ censusCode: { $in: eligibleUlbs } }, { $set: { isGsdpEligible: true } })
+        await Ulb.updateMany({ censusCode: { $in: notEligibleUlbs } }, { $set: { isGsdpEligible: false } });
+        Promise.resolve("Data updated");
+    } catch (err) {
+        console.log(err);
+        Promise.reject("Something went wrong");
     }
 }
 
