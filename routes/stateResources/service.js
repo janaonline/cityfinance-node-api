@@ -95,7 +95,7 @@ const dulyElectedTemplate = async (req, res, next) => {
             { $limit: 10 },
             {
                 $project: {
-                    sno: 'sno',
+                    sno: '',
                     stateName: '$state.name',
                     stateCode: '$state.code',
                     name: 1,
@@ -111,7 +111,7 @@ const dulyElectedTemplate = async (req, res, next) => {
 
 
 
-        worksheet.addRows(ulbData, { startingRow, properties: { outlineLevel: 1 } });
+        worksheet.addRows(ulbData.map((value, sno) => ({ ...value, sno: sno + 1 })), { startingRow, properties: { outlineLevel: 1 } });
 
         // console.log('worksheet', worksheet);
 
@@ -195,11 +195,11 @@ const gsdpTemplate = async (req, res, next) => {
                 }
             },
             {
-                $unwind: '$state'
+                $unwind: '$state',
             },
             {
                 $project: {
-                    sno: 'sno',
+                    sno: '',
                     stateName: '$state.name',
                     stateCode: '$state.code',
                     name: 1,
@@ -232,7 +232,7 @@ const gsdpTemplate = async (req, res, next) => {
 
 
 
-        worksheet.addRows(ulbData, { startingRow, properties: { outlineLevel: 1 } });
+        worksheet.addRows(ulbData.map((value, sno) => ({ ...value, sno: sno + 1 })), { startingRow, properties: { outlineLevel: 1 } });
 
         // console.log('worksheet', worksheet);
 
