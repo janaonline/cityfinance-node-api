@@ -210,7 +210,14 @@ module.exports.get = async (req, res) => {
     }
     data.forEach(el => { if (el.formData || el.formData === "") delete el.formData })
     const Query15FC = { $or: [{ type: "15thFC" }, { multi: { $in: ["15thFC"] } }] };
-    const ulbFormStatus = await MASTERSTATUS.find(Query15FC, { statusId: 1, status: 1 }).lean()
+    const ulbFormStatus = await MASTERSTATUS.find(Query15FC, { statusId: 1, status: 1 }).lean();
+    let stateFormStatus = [];
+    if(ulbFormStatus.length){
+      stateFormStatus = ulbFormStatus.filter(el=>{
+        return ![MASTER_FORM_STATUS['RETURNED_BY_STATE'], MASTER_FORM_STATUS['UNDER_REVIEW_BY_STATE']].includes(el.statusId)
+      })
+    }
+
     console.log("collectionName", collectionName)
     if (formType == "STATE" && ['GrantClaim', ''].includes(collectionName)) {
       delete stateColumnNames.formStatus
@@ -221,7 +228,7 @@ module.exports.get = async (req, res) => {
       data: data,
       total: total,
       columnNames: formType == 'ULB' ? ulbColumnNames : stateColumnNames,
-      statusList: formType == 'ULB' ? ulbFormStatus : List.stateFormStatus,
+      statusList: formType == 'ULB' ? ulbFormStatus : stateFormStatus,
       ulbType: formType == 'ULB' ? List.ulbType : {},
       populationType: formType == 'ULB' ? List.populationType : {},
       title: formType == 'ULB' ? 'Review Grant Application' : 'Review State Forms'
