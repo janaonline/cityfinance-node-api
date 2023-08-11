@@ -1,5 +1,7 @@
 const ExcelJS = require("exceljs");
 const ObjectId = require("mongoose").Types.ObjectId;
+const fs = require('fs');
+const path = require('path');
 
 const MainCategory = require('../../models/Master/MainCategory');
 const Ulb = require('../../models/Ulb');
@@ -9,19 +11,42 @@ const { stateFormSubmission } = require('../../service/email-template');
 const { loadExcelByUrl } = require('../../util/worksheet');
 
 const handleDatabaseUpload = async (req, res, next) => {
-    return next();
+    // return next();
 
-    console.log(req.body.file);
-    const remoteUrl = req.body.file.url;
+    try {
+        console.log(req.body.file);
+        const remoteUrl = req.body.file.url;
 
-    loadExcelByUrl(remoteUrl).then(workbook => {
+        const workbook = await loadExcelByUrl(remoteUrl);
         const worksheet = workbook.getWorksheet(1);
-        worksheet.eachRow((row, rowNumber) => {
-            // Process each row of the worksheet
-            console.log(`Row ${rowNumber}: ${row.values}`);
+
+        const censusCodes = worksheet.getColumn(7).values.slice(1);
+        const gdsps = worksheet.getColumn(12).values.slice(1);
+
+        const eligibleUlbs = [];
+        const notEligibleUlbs = [];
+        censusCodes.forEach((censusCode, index) => {
+            if(gdsps[index] === 'Eligible') {
+                eligibleUlbs.push(censusCode);
+            }
+            else if(gdsps[index] === 'Not Eligible') {
+                notEligibleUlbs.push(censusCode);
+            }
         });
 
-    })
+        console.log('eligibleUlbs', eligibleUlbs);
+
+        await Ulb.updateMany({ censusCode: { $in: eligibleUlbs}}, { $set: { isGsdpEligible: true } })
+        await Ulb.updateMany({ censusCode: { $in: notEligibleUlbs}}, { $set: { isGsdpEligible: true} });
+
+
+        return res.status(200).json({
+            status: true,
+            message: "Data updated",
+        });
+    } catch (err) {
+        console.log(err);
+    }
 }
 
 const dulyElectedTemplate = async (req, res, next) => {
@@ -31,7 +56,9 @@ const dulyElectedTemplate = async (req, res, next) => {
         const startingRow = 3;
         const workbook = new ExcelJS.Workbook();
         const worksheet = workbook.addWorksheet('My Sheet');
+        worksheet.getColumn(2).eachCell(cell => {
 
+        })
         worksheet.columns = [
             { header: 'S no', key: 'sno', },
             { header: 'State Name', key: 'stateName', width: 20 },
@@ -183,13 +210,13 @@ const gsdpTemplate = async (req, res, next) => {
                     stateCode: '$state.code',
                     name: 1,
                     code: 1,
-                    ulbType: { $arrayElemAt: ['$ulbType.name', 0]},
+                    ulbType: { $arrayElemAt: ['$ulbType.name', 0] },
                     censusCode: 1,
                     area: 1,
                     population: 1,
                     isMillionPlus: 1,
                     isUA: 1,
-                    uaName: { $arrayElemAt: ['$ua.name', 0]},
+                    uaName: { $arrayElemAt: ['$ua.name', 0] },
                     isDulyElected: 1,
                     electedDate: 1
                 }

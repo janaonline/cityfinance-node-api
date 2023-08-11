@@ -29,6 +29,8 @@ const UlbSchema = new Schema({
     amrut: { type: String, default: "" },
     modifiedAt: { type: Date, default: Date.now() },
     createdAt: { type: Date, default: Date.now() },
+    isGsdpEligible: { type: Boolean, defualt: false},
+    isDulyElected: { type: Boolean, defualt: false},
     isActive: { type: Boolean, default: 1 },
     access_2021:{ type: Boolean, default: 1 },
     access_2122:{ type: Boolean, default: 1 },
