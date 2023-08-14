@@ -1371,11 +1371,11 @@ function addStatusData(modelName, query) {
  */
 async function getPopulationData(req, res) {
     try {
-        let state = req.decoded.state;
+        let state = req.query.state ?? req.decoded.state;
         const pipeline = getPopulationDataQueries(state);
         const data = await State.aggregate(pipeline);
-         const populationData =  buildStateInfo(...data);
-         const installmentData = [
+        const populationData =  buildStateInfo(...data);
+        const installmentData = [
             {
               title: 'NMPC - UnTied',
               formType: 'nmpc_untied',
@@ -1420,7 +1420,7 @@ async function getPopulationData(req, res) {
         ];
         const cityTypeInState = getCityTypeData(installmentData);
 
-         return response.OK(res, {populationData,cityTypeInState})
+        return response.OK(res, {populationData,cityTypeInState})
     } catch (error) {
         return response.BadRequest(res, [])
     }
