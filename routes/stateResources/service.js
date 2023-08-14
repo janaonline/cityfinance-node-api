@@ -9,6 +9,11 @@ const CategoryFileUpload = require('../../models/CategoryFileUpload');
 const { loadExcelByUrl } = require('../../util/worksheet');
 const { isValidObjectId } = require("mongoose");
 
+
+const isValidNumber = str => {
+    return !isNaN(Number(str));
+}
+
 const handleDatabaseUpload = async (req, res, next) => {
     // return next();
     let workbook;
@@ -31,7 +36,7 @@ const handleDatabaseUpload = async (req, res, next) => {
         });
     } catch (err) {
         console.log(err);
-        if (err.validationErrors.length) {
+        if (err.validationErrors?.length) {
             err.validationErrors.forEach(({ r, c, message = 'Some error' }) => {
                 const cell = worksheet.getCell(r, c);
                 cell.fill = {
@@ -44,7 +49,7 @@ const handleDatabaseUpload = async (req, res, next) => {
                 };
             })
             const buffer = await workbook.xlsx.writeBuffer();
-            res.setHeader('Content-Disposition', `attachment; filename=${templateName}.xlsx`);
+            res.setHeader('Content-Disposition', `attachment; filename=${templateName}-errors.xlsx`);
             res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
             return res.send(buffer);
         }
@@ -177,20 +182,19 @@ const dulyElectedTemplate = async (req, res, next) => {
 }
 
 const updateDulyElectedTemplate = async (req, res, next, worksheet, workbook) => {
-    const templateName = req.body.templateName;
     try {
         const validationErrors = [];
         const columnId = 1;
-        const columnDulyElecteds = 10;
-        const columnDulyElectedsDate = 11;
+        const columnDulyElected = 10;
+        const columnDulyElectedDate = 11;
         const columnUntiedGrantAmount = 12;
         const columnUntiedGrantPercent = 13;
         const columnTiedGrantAmount = 14;
         const columnTiedGrantPercent = 15;
 
         const _ids = worksheet.getColumn(columnId).values;
-        const dulyElectedsColumns = worksheet.getColumn(columnDulyElecteds).values;
-        const dulyElectedsDateColumns = worksheet.getColumn(columnDulyElectedsDate).values;
+        const dulyElectedsColumns = worksheet.getColumn(columnDulyElected).values;
+        const dulyElectedsDateColumns = worksheet.getColumn(columnDulyElectedDate).values;
         const untiedGrantAmountColumns = worksheet.getColumn(columnUntiedGrantAmount).values;
         const untiedGrantPercentColumns = worksheet.getColumn(columnUntiedGrantPercent).values;
         const tiedGrantAmountColumns = worksheet.getColumn(columnTiedGrantAmount).values;
@@ -198,8 +202,20 @@ const updateDulyElectedTemplate = async (req, res, next, worksheet, workbook) =>
 
 
 
+
+
         const dulyElectedUpdateQuery = _ids.map((_id, index) => {
             if (!_id || !isValidObjectId(_id)) return;
+
+            if (dulyElectedsColumns[index] && !['Duly Elected', 'Not Elected'].includes(dulyElectedsColumns[index])) {
+                validationErrors.push({
+                    r: index,
+                    c: columnDulyElected,
+                    message: `Please selected "Duly Elected" or "Not Elected"`
+                });
+            }
+
+
             const isDulyElected = dulyElectedsColumns[index] ? (dulyElectedsColumns[index] == 'Duly Elected') : null;
             const electedDate = dulyElectedsDateColumns[index];
             const result = {
@@ -218,13 +234,43 @@ const updateDulyElectedTemplate = async (req, res, next, worksheet, workbook) =>
             return result;
         }).filter(i => i);
 
-        
+
         const grantAllocation2324UpdateQuery = _ids.map((_id, index) => {
             if (!_id || !isValidObjectId(_id)) return;
             const untiedGrantAmount = untiedGrantAmountColumns[index];
             const untiedGrantPercent = untiedGrantPercentColumns[index];
             const tiedGrantAmount = tiedGrantAmountColumns[index];
             const tiedGrantPercent = tiedGrantPercentColumns[index];
+
+            if (tiedGrantAmount && !isValidNumber(tiedGrantAmount)) {
+                validationErrors.push({ r: index, c: columnTiedGrantAmount, message: `Please enter a valid number` });
+            }
+            if (tiedGrantPercent && !isValidNumber(tiedGrantPercent)) {
+                validationErrors.push({ r: index, c: columnTiedGrantPercent, message: `Please enter a valid number` });
+            }
+            if (untiedGrantAmount && !isValidNumber(untiedGrantAmount)) {
+                validationErrors.push({ r: index, c: columnUntiedGrantAmount, message: `Please enter a valid number` });
+            }
+            if (untiedGrantPercent && !isValidNumber(untiedGrantPercent)) {
+                validationErrors.push({ r: index, c: columnUntiedGrantPercent, message: `Please enter a valid number` });
+            }
+
+            if (tiedGrantPercent && (+tiedGrantPercent < 0 || +tiedGrantPercent > 100)) {
+                validationErrors.push({
+                    r: index,
+                    c: columnTiedGrantPercent,
+                    message: `Should be in range 0-100`
+                });
+            }
+
+            if (untiedGrantPercent && (+untiedGrantPercent < 0 || +untiedGrantPercent > 100)) {
+                validationErrors.push({
+                    r: index,
+                    c: columnUntiedGrantPercent,
+                    message: `Should be in range 0-100`
+                });
+            }
+
             const result = {
                 updateOne: {
                     filter: { ulbId: ObjectId(_id) },
@@ -242,7 +288,11 @@ const updateDulyElectedTemplate = async (req, res, next, worksheet, workbook) =>
             };
             return result;
         }).filter(i => i);
-        // return console.log('query', JSON.stringify(grantAllocation2324UpdateQuery.slice(0, 10), 3, 3));
+        
+        if (validationErrors.length) {
+            return Promise.reject({ validationErrors });
+        }
+
         const result = await Ulb.bulkWrite(dulyElectedUpdateQuery);
         const result2 = await GrantAllocation2324.bulkWrite(grantAllocation2324UpdateQuery);
         console.log('result', result, result2);
