@@ -1301,7 +1301,13 @@ const dashboard = async (req, res) => {
                 formData: stateFormsResponse,
               }
          let data = await updateResponseFormat(ulbForms, stateForms)
-            return Response.OK(res,data)
+         const isAvailableForGrant = calculateGrantAvailable(ulbForms, stateForms);
+
+        return res.status(200).json({
+            success: true,
+            data,
+            isAvailableForGrant
+        })
         }
         return res.status(200).json({
             status: true,
@@ -1507,6 +1513,19 @@ async function updateResponseFormat(ulbForm, stateForm){
     }
 }
 
+function calculateGrantAvailable(ulbForm, stateForm){
+    try { 
+        for(let form of [...ulbForm['formData'],stateForm['formData']]){
+            if(form?.status !== ELIGIBLITY['YES']){
+                return false;
+            }
+        }
+        return true;
+    } catch (error) {
+        throw { message: `calculateGrantAvailable:: ${error.message}`}
+        
+    }
+}
 
 /**
  * The function `getCityTypeData` returns an object containing an array of city types with their
