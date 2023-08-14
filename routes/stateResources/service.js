@@ -11,18 +11,19 @@ const { isValidObjectId } = require("mongoose");
 
 const handleDatabaseUpload = async (req, res, next) => {
     // return next();
-
+    let workbook;
+    let worksheet;
     const templateName = req.body.templateName;
 
     try {
         console.log(req.body.file);
         const remoteUrl = req.body.file.url;
 
-        const workbook = await loadExcelByUrl(remoteUrl);
-        const worksheet = workbook.getWorksheet(1);
+        workbook = await loadExcelByUrl(remoteUrl);
+        worksheet = workbook.getWorksheet(1);
 
-        if (templateName == 'dulyElected') await updateDulyElectedTemplate(req, res, next, worksheet);
-        if (templateName == 'gsdp') await updateGsdpTemplate(req, res, next, worksheet);
+        if (templateName == 'dulyElected') await updateDulyElectedTemplate(req, res, next, worksheet, workbook);
+        if (templateName == 'gsdp') await updateGsdpTemplate(req, res, next, worksheet, workbook);
 
         return res.status(200).json({
             status: true,
@@ -30,6 +31,24 @@ const handleDatabaseUpload = async (req, res, next) => {
         });
     } catch (err) {
         console.log(err);
+        if (err.validationErrors.length) {
+            err.validationErrors.forEach(({ r, c, message = 'Some error' }) => {
+                const cell = worksheet.getCell(r, c);
+                cell.fill = {
+                    type: 'pattern',
+                    pattern: 'solid',
+                    fgColor: { argb: 'FFFF0000' }
+                };
+                cell.note = {
+                    texts: [{ text: message }]
+                };
+            })
+            const buffer = await workbook.xlsx.writeBuffer();
+            res.setHeader('Content-Disposition', `attachment; filename=${templateName}.xlsx`);
+            res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+            return res.send(buffer);
+        }
+
         return res.status(500).json({
             status: true,
             message: err || "Something went wront",
@@ -157,15 +176,26 @@ const dulyElectedTemplate = async (req, res, next) => {
     }
 }
 
-const updateDulyElectedTemplate = async (req, res, next, worksheet) => {
+const updateDulyElectedTemplate = async (req, res, next, worksheet, workbook) => {
+    const templateName = req.body.templateName;
     try {
-        const _ids = worksheet.getColumn(1).values;
-        const dulyElectedsColumns = worksheet.getColumn(10).values;
-        const dulyElectedsDateColumns = worksheet.getColumn(11).values;
-        const untiedGrantAmountColumns = worksheet.getColumn(12).values;
-        const untiedGrantPercentColumns = worksheet.getColumn(13).values;
-        const tiedGrantAmountColumns = worksheet.getColumn(14).values;
-        const tiedGrantPercentColumns = worksheet.getColumn(15).values;
+        const validationErrors = [];
+        const columnId = 1;
+        const columnDulyElecteds = 10;
+        const columnDulyElectedsDate = 11;
+        const columnUntiedGrantAmount = 12;
+        const columnUntiedGrantPercent = 13;
+        const columnTiedGrantAmount = 14;
+        const columnTiedGrantPercent = 15;
+
+        const _ids = worksheet.getColumn(columnId).values;
+        const dulyElectedsColumns = worksheet.getColumn(columnDulyElecteds).values;
+        const dulyElectedsDateColumns = worksheet.getColumn(columnDulyElectedsDate).values;
+        const untiedGrantAmountColumns = worksheet.getColumn(columnUntiedGrantAmount).values;
+        const untiedGrantPercentColumns = worksheet.getColumn(columnUntiedGrantPercent).values;
+        const tiedGrantAmountColumns = worksheet.getColumn(columnTiedGrantAmount).values;
+        const tiedGrantPercentColumns = worksheet.getColumn(columnTiedGrantPercent).values;
+
 
 
         const dulyElectedUpdateQuery = _ids.map((_id, index) => {
@@ -200,7 +230,7 @@ const updateDulyElectedTemplate = async (req, res, next, worksheet) => {
                     filter: { ulbId: ObjectId(_id) },
                     update: {
                         $set: {
-                            
+
                             untiedGrantAmount,
                             untiedGrantPercent,
                             tiedGrantAmount,
@@ -320,7 +350,6 @@ const gsdpTemplate = async (req, res, next) => {
         ]);
 
 
-
         worksheet.addRows(ulbData.map((value, sno) => ({ ...value, sno: sno + 1 })), { startingRow, properties: { outlineLevel: 1 } });
 
         // console.log('worksheet', worksheet);
@@ -338,13 +367,26 @@ const gsdpTemplate = async (req, res, next) => {
 }
 
 
-const updateGsdpTemplate = async (req, res, next, worksheet) => {
+const updateGsdpTemplate = async (req, res, next, worksheet, workbook) => {
     try {
-        const _ids = worksheet.getColumn(1).values;
-        const gdsps = worksheet.getColumn(13).values;
+        const validationErrors = [];
+        const columnId = 1;
+        const columnGdspElected = 13;
+
+        const _ids = worksheet.getColumn(columnId).values;
+        const gdsps = worksheet.getColumn(columnGdspElected).values;
 
         const gsdpUpdateQuery = _ids.map((_id, index) => {
             if (!_id || !isValidObjectId(_id)) return;
+
+            if (gdsps[index] && !['Eligible', 'Not Eligible'].includes(gdsps[index])) {
+                validationErrors.push({
+                    r: index,
+                    c: columnGdspElected,
+                    message: `Please selected "Eligible" or "Not Eligible"`
+                });
+            }
+
             const isGsdpEligible = gdsps[index] ? (gdsps[index] == 'Eligible') : null;
             const result = {
                 updateOne: {
@@ -358,7 +400,11 @@ const updateGsdpTemplate = async (req, res, next, worksheet) => {
             }
             return result;
         }).filter(i => i);
-        
+
+        if (validationErrors.length) {
+            return Promise.reject({ validationErrors });
+        }
+
         await Ulb.bulkWrite(gsdpUpdateQuery);
         Promise.resolve("Data updated");
     } catch (err) {
