@@ -7,6 +7,7 @@ const GrantAllocation2324 = require('../../models/GrantAllocation2324');
 const State = require('../../models/State');
 const CategoryFileUpload = require('../../models/CategoryFileUpload');
 const { loadExcelByUrl } = require('../../util/worksheet');
+const { isValidObjectId } = require("mongoose");
 
 const handleDatabaseUpload = async (req, res, next) => {
     // return next();
@@ -82,7 +83,6 @@ const dulyElectedTemplate = async (req, res, next) => {
                 };
             });
         });
-
         const ulbData = await Ulb.aggregate([
             {
                 $lookup: {
@@ -95,7 +95,17 @@ const dulyElectedTemplate = async (req, res, next) => {
             {
                 $unwind: '$state'
             },
-            // { $limit: 10 },
+            {
+                $lookup: {
+                    from: "grantallocation2324",
+                    localField: "_id",
+                    foreignField: "ulbId",
+                    as: "grantallocation2324"
+                }
+            },
+            {
+                $unwind: '$grantallocation2324'
+            },
             {
                 $project: {
                     _id: { $toString: '$_id' },
@@ -120,7 +130,11 @@ const dulyElectedTemplate = async (req, res, next) => {
                             }
                         }
                     },
-                    electedDate: 1
+                    electedDate: 1,
+                    untiedGrantAmount: '$grantallocation2324.untiedGrantAmount',
+                    untiedGrantPercent: '$grantallocation2324.untiedGrantPercent',
+                    tiedGrantAmount: '$grantallocation2324.tiedGrantAmount',
+                    tiedGrantPercent: '$grantallocation2324.tiedGrantPercent',
                 }
             }
         ]);
@@ -145,18 +159,17 @@ const dulyElectedTemplate = async (req, res, next) => {
 
 const updateDulyElectedTemplate = async (req, res, next, worksheet) => {
     try {
-        const dataStartsFrom = 3;
-        const _ids = worksheet.getColumn(1).values.slice(dataStartsFrom);
-        const censusCodes = worksheet.getColumn(7).values.slice(dataStartsFrom);
-        const dulyElectedsColumns = worksheet.getColumn(10).values.slice(dataStartsFrom);
-        const dulyElectedsDateColumns = worksheet.getColumn(11).values.slice(dataStartsFrom);
-        const untiedGrantAmountColumns = worksheet.getColumn(12).values.slice(dataStartsFrom);
-        const untiedGrantPercentColumns = worksheet.getColumn(13).values.slice(dataStartsFrom);
-        const tiedGrantAmountColumns = worksheet.getColumn(14).values.slice(dataStartsFrom);
-        const tiedGrantPercentColumns = worksheet.getColumn(15).values.slice(dataStartsFrom);
+        const _ids = worksheet.getColumn(1).values;
+        const dulyElectedsColumns = worksheet.getColumn(10).values;
+        const dulyElectedsDateColumns = worksheet.getColumn(11).values;
+        const untiedGrantAmountColumns = worksheet.getColumn(12).values;
+        const untiedGrantPercentColumns = worksheet.getColumn(13).values;
+        const tiedGrantAmountColumns = worksheet.getColumn(14).values;
+        const tiedGrantPercentColumns = worksheet.getColumn(15).values;
+
 
         const dulyElectedUpdateQuery = _ids.map((_id, index) => {
-            if (!_id) return;
+            if (!_id || !isValidObjectId(_id)) return;
             const isDulyElected = dulyElectedsColumns[index] ? (dulyElectedsColumns[index] == 'Duly Elected') : null;
             const electedDate = dulyElectedsDateColumns[index];
             const result = {
@@ -175,8 +188,9 @@ const updateDulyElectedTemplate = async (req, res, next, worksheet) => {
             return result;
         }).filter(i => i);
 
+        
         const grantAllocation2324UpdateQuery = _ids.map((_id, index) => {
-            if (!_id) return;
+            if (!_id || !isValidObjectId(_id)) return;
             const untiedGrantAmount = untiedGrantAmountColumns[index];
             const untiedGrantPercent = untiedGrantPercentColumns[index];
             const tiedGrantAmount = tiedGrantAmountColumns[index];
@@ -186,7 +200,7 @@ const updateDulyElectedTemplate = async (req, res, next, worksheet) => {
                     filter: { ulbId: ObjectId(_id) },
                     update: {
                         $set: {
-
+                            
                             untiedGrantAmount,
                             untiedGrantPercent,
                             tiedGrantAmount,
@@ -198,6 +212,7 @@ const updateDulyElectedTemplate = async (req, res, next, worksheet) => {
             };
             return result;
         }).filter(i => i);
+        // return console.log('query', JSON.stringify(grantAllocation2324UpdateQuery.slice(0, 10), 3, 3));
         const result = await Ulb.bulkWrite(dulyElectedUpdateQuery);
         const result2 = await GrantAllocation2324.bulkWrite(grantAllocation2324UpdateQuery);
         console.log('result', result, result2);
@@ -217,6 +232,7 @@ const gsdpTemplate = async (req, res, next) => {
         const worksheet = workbook.addWorksheet('My Sheet');
 
         worksheet.columns = [
+            { header: '_id', key: '_id', width: 20, hidden: true },
             { header: 'S no', key: 'sno', },
             { header: 'State Name', key: 'stateName', width: 20 },
             { header: 'State Code', key: 'stateCode', },
@@ -271,6 +287,7 @@ const gsdpTemplate = async (req, res, next) => {
             },
             {
                 $project: {
+                    _id: { $toString: '$_id' },
                     sno: '',
                     stateName: '$state.name',
                     stateCode: '$state.code',
@@ -323,22 +340,26 @@ const gsdpTemplate = async (req, res, next) => {
 
 const updateGsdpTemplate = async (req, res, next, worksheet) => {
     try {
-        const censusCodes = worksheet.getColumn(7).values.slice(1);
-        const gdsps = worksheet.getColumn(12).values.slice(1);
+        const _ids = worksheet.getColumn(1).values;
+        const gdsps = worksheet.getColumn(13).values;
 
-        const eligibleUlbs = [];
-        const notEligibleUlbs = [];
-        censusCodes.forEach((censusCode, index) => {
-            if (gdsps[index] === 'Eligible') {
-                eligibleUlbs.push(censusCode);
+        const gsdpUpdateQuery = _ids.map((_id, index) => {
+            if (!_id || !isValidObjectId(_id)) return;
+            const isGsdpEligible = gdsps[index] ? (gdsps[index] == 'Eligible') : null;
+            const result = {
+                updateOne: {
+                    filter: { _id: ObjectId(_id) },
+                    update: {
+                        $set: {
+                            isGsdpEligible,
+                        }
+                    }
+                }
             }
-            else if (gdsps[index] === 'Not Eligible') {
-                notEligibleUlbs.push(censusCode);
-            }
-        });
-
-        await Ulb.updateMany({ censusCode: { $in: eligibleUlbs } }, { $set: { isGsdpEligible: true } })
-        await Ulb.updateMany({ censusCode: { $in: notEligibleUlbs } }, { $set: { isGsdpEligible: false } });
+            return result;
+        }).filter(i => i);
+        
+        await Ulb.bulkWrite(gsdpUpdateQuery);
         Promise.resolve("Data updated");
     } catch (err) {
         console.log(err);
