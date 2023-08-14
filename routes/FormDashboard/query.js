@@ -38,7 +38,7 @@ function getPopulationDataQueries(state) {
         };
 
         const hasGSDPMatch = {
-            "ulb.hasGSDP": true,
+            "ulb.isGsdpEligible": true,
         };
 
         const ulbPipeline = [
@@ -77,7 +77,7 @@ function getPopulationDataQueries(state) {
               totalUlbsInUA: [
                 ulbLookup,
                 ulbUnwind,
-                { $match: isUAMatch },
+                { $match: { $and: [isActiveMatch, isUAMatch] } },
                 countUlb,
               ],
               totalDulyElectedNMPCs: [
@@ -88,7 +88,7 @@ function getPopulationDataQueries(state) {
                     $and: [
                       isActiveMatch,
                       isDulyElectedMatch,
-                      isMillionPlusMatch,
+                      isNonMillionMatch,
                     ],
                   },
                 },
@@ -102,7 +102,7 @@ function getPopulationDataQueries(state) {
                     $and: [
                       isActiveMatch,
                       isDulyElectedMatch,
-                      isMillionPlusMatch,
+                      // isMillionPlusMatch,
                       isUAMatch,
                     ],
                   },
@@ -114,7 +114,9 @@ function getPopulationDataQueries(state) {
                 ulbUnwind,
                 {
                   $match: {
-                    $and: [isActiveMatch, isDulyElectedMatch, hasGSDPMatch],
+                    $and: [isActiveMatch, 
+                      // isDulyElectedMatch, 
+                      hasGSDPMatch],
                   },
                 },
                 countUlb,
