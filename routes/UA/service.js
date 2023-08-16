@@ -2922,7 +2922,7 @@ async function readXlsxFile(file) {
 }
 function isValidDateOrNumber(value, isDate = false) {
     if (isDate) {
-        const datePattern = /^\d{2}-\d{2}-\d{4}$/;
+        const datePattern = /^(\d{2}-\d{2}-\d{4})|(\d{1,2}\/\d{1,2}\/\d{2})$/;
         return datePattern.test(value);
     } else {
         const numberPattern = /^\d+(\.\d+)?$/;
@@ -2960,6 +2960,9 @@ async function validateBulkUpload(data, res) {
             if (item['year'] && !years[item['year']]) {
                 errors.push(`year is invalid of this for the project having code: ${item['project code']} it should be in the format of YYYY-YY (Ex:-2023-24)`) 
             }
+            if (item['is dpr prepared?'] && !['yes', 'no'].includes(item['is dpr prepared?'].toLowerCase())) {
+                errors.push(`Dpr prepration is invalid (only Yes or No allowed) of this ulb  :- ${item['ulb']}`) 
+            }
         }
         return errors;
     } catch (error) {
@@ -2993,7 +2996,7 @@ function transformData(data) {
             startDate: new Date(item['estimated project award date'].split("-").reverse().join("-")),
             endDate: new Date(item['estimated project completion date'].split("-").reverse().join("-")),
             location: { lat: item['latitude'], lng: item['longitude'] },
-            dprPrepared: item['is dpr prepared?'],
+            dprPrepared: item['is dpr prepared?'].toLowerCase() == "yes" ? "Yes" : "No",
             dprPrepDate: new Date(item['dpr preparation date'].split("-").reverse().join("-")),
             dprDocument: {
                 name: "",
@@ -3047,9 +3050,8 @@ async function performBulkUpload(req, res, data) {
             bulkOps.push(itemData)
             // bulkOps.push({ insertOne: { document: itemData } });
         }
-
         if (bulkOps.length > 0) {
-            await AmrutReports.insertMany(bulkOps, { ordered: false });
+            await AmrutReports.insertMany(bulkOps);
         }
 
         return res.status(201).send({ status: true, message: `Data Uploaded successfully!` })
