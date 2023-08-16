@@ -1,3 +1,6 @@
+const mongoose = require("mongoose");
+const { Schema } = mongoose;
+
 require("./dbConnect");
 const CategoryFileUpload = new Schema(
     {
@@ -21,6 +24,6 @@ const CategoryFileUpload = new Schema(
             default: []
         }
     },
-    { timestamp: { createdAt: "createdAt", updatedAt: "modifiedAt" } }
+    { timestamps: { createdAt: "createdAt", updatedAt: "modifiedAt" } }
 );
 module.exports = mongoose.model("CategoryFileUpload", CategoryFileUpload);

@@ -15,7 +15,7 @@ const isValidNumber = str => {
 }
 
 const handleDatabaseUpload = async (req, res, next) => {
-    // return next();
+    return next();
     let workbook;
     let worksheet;
     const templateName = req.body.templateName;
@@ -288,7 +288,7 @@ const updateDulyElectedTemplate = async (req, res, next, worksheet, workbook) =>
             };
             return result;
         }).filter(i => i);
-        
+
         if (validationErrors.length) {
             return Promise.reject({ validationErrors });
         }
@@ -485,7 +485,14 @@ const getCategoryWiseResource = async (req, res, next) => {
             {
                 $group: {
                     _id: '$categoryId',
-                    documents: { $push: "$$ROOT.file" }
+                    documents: {
+                        $push: {
+                            $mergeObjects: [
+                                '$$ROOT.file',
+                                { createdAt: '$$ROOT.createdAt' }
+                            ]
+                        }
+                    }
                 }
             },
             {
@@ -638,6 +645,7 @@ const getResourceList = async (req, res, next) => {
                                 url: '$$doc.file.url',
                                 relatedIds: '$$doc.relatedIdsCopy',
                                 relatedId: '$$doc.relatedIds',
+                                createdAt: '$$doc.createdAt',
                                 _id: '$$doc._id',
                             }
                         }
