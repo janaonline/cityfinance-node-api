@@ -2923,11 +2923,42 @@ async function readXlsxFile(file) {
 }
 function isValidDateOrNumber(value, isDate = false) {
     if (isDate) {
-        const datePattern = /^\d{2}-\d{2}-\d{4}$/;
+        const datePattern = /^(\d{2}-\d{2}-\d{4})|(\d{1,2}\/\d{1,2}\/\d{2})$/;
         return datePattern.test(value);
     } else {
         const numberPattern = /^\d+(\.\d+)?$/;
         return numberPattern.test(value);
+    }
+}
+function validateAWSS3Link(link) {
+    const prefix = "https://";
+    const suffix = ".s3.ap-south-1.amazonaws.com";
+    const pdfSuffix = ".pdf";
+  
+    return link.startsWith(prefix) && link.includes(suffix) && link.endsWith(pdfSuffix);
+  }
+  
+
+async function validateFileSize(awsS3Link, maxSizeInMB) {
+    try {
+        const response = await axios.head(awsS3Link);
+        const contentLength = response.headers['content-length'];
+
+        if (contentLength) {
+            const fileSizeInBytes = parseInt(contentLength);
+            const fileSizeInMB = fileSizeInBytes / (1024 * 1024); // Convert to MB
+
+            console.log({ fileSizeInMB })
+            if (fileSizeInMB > maxSizeInMB) {
+                return false;
+            }
+            return true;
+        } else {
+            throw new Error('Content-Length header not found in response');
+        }
+    } catch (error) {
+        console.error(error);
+        return false;
     }
 }
 
@@ -2959,7 +2990,22 @@ async function validateBulkUpload(data, res) {
                 }
             }
             if (item['year'] && !years[item['year']]) {
-                errors.push(`year is invalid of this for the project having code: ${item['project code']} it should be in the format of YYYY-YY (Ex:-2023-24)`) 
+                errors.push(`year is invalid of this for the project having code: ${item['project code']} it should be in the format of YYYY-YY (Ex:-2023-24)`)
+            }
+            if (item['is dpr prepared?'] && !['yes', 'no'].includes(item['is dpr prepared?'].toLowerCase())) {
+                errors.push(`Dpr prepration is invalid (only Yes or No allowed) of this ulb  :- ${item['ulb']}`)
+            }
+            if (item['dpr (pdf)'] && !validateAWSS3Link(item['dpr (pdf)'])) {
+                errors.push(`dpr document link is invalid of this ulb :- ${item['ulb']}`)
+            }
+
+            if (!item['dpr (pdf)']) {
+                errors.push(`DPR (pdf) file is can't be empty for this ulb:- ${item['ulb']}`);
+            } else {
+                let validFileSize = await validateFileSize(item['dpr (pdf)'], 5)
+                if (!validFileSize) {
+                    errors.push(`DPR (pdf) file size exceeds 5MB for this ulb: ${item['ulb']}`);
+                }
             }
         }
         return errors;
@@ -2994,7 +3040,7 @@ function transformData(data) {
             startDate: new Date(item['estimated project award date'].split("-").reverse().join("-")),
             endDate: new Date(item['estimated project completion date'].split("-").reverse().join("-")),
             location: { lat: item['latitude'], lng: item['longitude'] },
-            dprPrepared: item['is dpr prepared?'],
+            dprPrepared: item['is dpr prepared?'].toLowerCase() == "yes" ? "Yes" : "No",
             dprPrepDate: new Date(item['dpr preparation date'].split("-").reverse().join("-")),
             dprDocument: {
                 name: "",
@@ -3043,14 +3089,13 @@ async function performBulkUpload(req, res, data) {
             if (category) {
                 itemData['category'] = category._id;
             } else {
-                return res.status(400).send({ status: false, message: `Category not found with this name: ${itemData.categoriesName}` })
+                return res.status(400).send({ status: false, message: `Form Type/ Sector not found with this name: ${itemData.categoriesName}` })
             }
             bulkOps.push(itemData)
             // bulkOps.push({ insertOne: { document: itemData } });
         }
-
         if (bulkOps.length > 0) {
-            await AmrutReports.insertMany(bulkOps, { ordered: false });
+            await AmrutReports.insertMany(bulkOps);
         }
 
         return res.status(201).send({ status: true, message: `Data Uploaded successfully!` })
