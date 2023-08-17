@@ -1318,8 +1318,8 @@ exports.getView = async function (req, res, next) {
       currentFormStatus: viewOne.currentFormStatus,
       financialYearTableHeader,
       messages: userMessages,
-      // hideForm,
-      // notice
+      hideForm,
+      notice
     };
     if (userMessages.length > 0) {
       let { approvedPerc, rejectedPerc } = calculatePercentage(modifiedLedgerData, requiredFields, viewOne)
@@ -4061,12 +4061,14 @@ module.exports.createForm = catchAsync(async (req, res) => {
       true,
       isDraft
     );
-    if (!statusTracker.IP === currentFormStatus) {
-      await FiscalRanking.findOneAndUpdate({
+    if (!(statusTracker.IP === currentFormStatus)) {
+      let a = await FiscalRanking.findOneAndUpdate({
         ulb: ObjectId(req.body.ulbId),
         design_year: ObjectId(req.body.design_year),
       }, {
-        submittedDate: new Date()
+        "$set":{
+          submittedDate: new Date()
+        }
       })
     }
     response.success = true;
@@ -4802,15 +4804,23 @@ function computeQuery(params, cond = null) {
             "from":"statushistories",
             "let":{
                 "recordId":"$fiscalrankings._id",
-                "status":10
+                "status":statusTracker.RBP
             },
             "pipeline":[
-            {
-                "$match":{
-                    "recordId":"$$recordId",
-                    "data.0.status":"$$status"
+              {
+                "$match": {
+                    "$expr": {
+                        "$and": [
+                            {"$eq":[ "$recordId", "$$recordId"]},
+                            {
+                               "$eq": [{ $arrayElemAt: ['$data.status', 0] }, "$$status"]
+                            }
+                           
+                        ]
+                    }
                 }
             }
+        
             ],
             "as":"statuses"
         }
@@ -5428,7 +5438,7 @@ function createCsv(params) {
                 document,
                 labelObj
               );
-              str += document[key] + ",";
+              str += document[key].toString().split(",").join("-") + ",";
             } else {
               str += " " + ",";
             }
@@ -5517,13 +5527,24 @@ module.exports.getTrackingHistory = async(req,res)=>{
       "createdAt":1
     }).lean()
     let maxSrNo = 1
-    let histories = history.map((item ,index)=> {
+    let filteredHistory =  history.filter((item,idx)=>{
+      let nextItem = history[idx+1] || {data:{status:"null"}}
+      let status = item?.data?.status|| item['data'][0]['status'] 
+      let nextStatus = (nextItem?.data?.status|| nextItem['data'][0]['status'])
+      item.createdAt = nextItem.createdAt || item.createdAt
+      return(status !== nextStatus)
+    })
+    let histories = filteredHistory.map((item ,index)=> {
       maxSrNo += 1
       let status = item?.data?.status|| item['data'][0]['status'] 
       return {
         "srNo":index+1,
         "action":statusList[status],
-        "date":(item?.createdAt.toLocaleDateString() +" "+ item?.createdAt.toLocaleTimeString()) || ""
+        "date": item.createdAt  ? (item?.createdAt.toLocaleDateString('en-GB',{
+          timeZone: 'Asia/Kolkata',
+        }) +" "+ item?.createdAt.toLocaleTimeString('en-US',{
+          timeZone: 'Asia/Kolkata',
+        })) : ""
       }
     })
     // let formModified = form.modifiedAt  ? form.modifiedAt.toLocaleDateString()+" "+form?.createdAt.toLocaleTimeString():  histories[histories.length -1].date

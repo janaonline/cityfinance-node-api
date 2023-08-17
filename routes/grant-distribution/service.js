@@ -254,7 +254,6 @@ exports.saveData = async (req, res) => {
     let state = req.decoded?.state;
     req.body.actionTakenBy = req.decoded._id;
     req.body.modifiedAt = new Date();
-
     let condition = {}
     condition["state"] = state;
     condition["design_year"] = design_year;
@@ -274,6 +273,8 @@ exports.saveData = async (req, res) => {
           message: "Form not saved."
         })
       }
+      let formSubmit = [{...req.body,_id:data._id,currentFormStatus:req.body.currentFormStatus}]
+    await createHistory({ formBodyStatus : Number(req.body.currentFormStatus),formSubmit, actionTakenByRole:req.decoded.role , actionTakenBy: req.body.actionTakenBy  })
       return Response.OK(res, data, "file submitted");
     }
 
@@ -289,6 +290,9 @@ exports.saveData = async (req, res) => {
     if (design_year === "606aaf854dff55e6c075d219") {
       await UpdateStateMasterForm(req, "grantAllocation");
     }
+    let formSubmit = [{...req.body,_id:data._id,currentFormStatus:req.body.currentFormStatus}]
+    await createHistory({ formBodyStatus : Number(req.body.currentFormStatus),formSubmit, actionTakenByRole:req.decoded.role , actionTakenBy: req.body.actionTakenBy  })
+
     return Response.OK(res, data, "file updated");
   } catch (err) {
     console.error(err.message);
@@ -453,7 +457,7 @@ const getRejectedFields = (currentFormStatus,formStatuses,installment,role)=>{
       // console.log("formStatuses :: ",formStatuses)
       let prevInstallment = installment - 1
       let inputAllowed = [MASTER_FORM_STATUS['IN_PROGRESS'],MASTER_FORM_STATUS['NOT_STARTED'],MASTER_FORM_STATUS['RETURNED_BY_MoHUA']]
-      let allowedStatuses = [MASTER_STATUS['Submission Acknowledged By MoHUA']]
+      let allowedStatuses = [MASTER_FORM_STATUS['UNDER_REVIEW_BY_MoHUA'],MASTER_FORM_STATUS['SUBMISSION_ACKNOWLEDGED_BY_MoHUA'],MASTER_FORM_STATUS['RETURNED_BY_MoHUA']]
       if(prevInstallment  && !allowedStatuses.includes(formStatuses?.[prevInstallment]) && role === userTypes.state){
           return true
       }
@@ -489,8 +493,8 @@ let host = baseUrls[process.env.ENV]
     "$in": (allocationForms.length ? allocationForms.map(item=>item._id):[]),
     
   },
-  "actionTakenByRole":"MoHUA"}).sort({
-    "createdAt":-1
+  }).sort({
+    "modifiedAt":-1
   })
   for(let section of tabularStructure){
     let installments = section.installments
@@ -500,8 +504,8 @@ let host = baseUrls[process.env.ENV]
         "url":""
       }
       let shortKey = `${section.type}_${section.yearCode}_${i}`
-      let allocationForm =  allocationForms.find(item => item.installment === i && item.year.toString() === years[section.yearCode] && item.type === section.type ) || {}
-      let currentStatus = currentStatuses.find(item => item.recordId.toString() === allocationForm._id.toString() && item.shortKey === shortKey)
+      let allocationForm =  allocationForms.find(item => item.installment === i && item?.year?.toString() === years[section.yearCode] && item?.type === section?.type ) || {}
+      let currentStatus = currentStatuses.find(item => item.recordId.toString() === allocationForm?._id?.toString() && item.shortKey === shortKey)
       allocationForm.currentFormStatus = allocationForm?.currentFormStatus ? allocationForm?.currentFormStatus : MASTER_FORM_STATUS['NOT_STARTED']
       let url = ""
       url = allocationForm?.url || ""
@@ -638,14 +642,14 @@ async function createHistory(params) {
   try {
       let {formBodyStatus,actionTakenBy,actionTakenByRole,formSubmit,formType} = params
       let formData = formSubmit[0]
-      let shortKey = `${formData.type}_${getKeyByValue(years,formData.financialYear)}_${formData.installment}`
+      let shortKey = `${formData.type}_${getKeyByValue(years,formData.design_year)}_${formData.installment}`
           let historyParams = {
               formBodyStatus,
               actionTakenBy:actionTakenBy,
               actionTakenByRole:actionTakenByRole,
               formSubmit:formSubmit,
-              formType:"Grant_allocation",
-              shortKey:shortKey
+              formType:"GrantAllocation",
+              shortKey:shortKey,
           }
           
           await saveStatusAndHistory(historyParams)

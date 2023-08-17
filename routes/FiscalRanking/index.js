@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const { verifyToken } = require('../auth/services/verifyToken')
 const { CreateorUpdate, getView, approvedByMohua, getFRforms, createTabsFiscalRanking, actionTakenByMoHua, FRUlbFinancialData, FROverAllUlbData, getTrackingHistory,heatMapReport, overview, createForm, getAll } = require('./service')
+const { updateSubmittedDate } = require('./update-submitted-date')
 
 router.post("/create", verifyToken, CreateorUpdate);
 router.get("/getAll", verifyToken, getAll);
@@ -17,5 +18,6 @@ router.get('/overview/:type', verifyToken, overview)
 router.get("/getStateWiseForm", heatMapReport)
 router.get("/tracking-history",getTrackingHistory)
 
+router.patch("/update-submitted-date", verifyToken, updateSubmittedDate);
 
 module.exports = router;

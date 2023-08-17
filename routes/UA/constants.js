@@ -41,7 +41,7 @@ let columns = [
         }
     },
     {
-        label: "Capital Expenditure (State State & Central Assistance)",
+        label: "Capital Expenditure (State Share & Central Assistance)",
         key: "capitalExpenditureState",
         get databaseKey(){
             return "cpExp"
@@ -55,7 +55,7 @@ let columns = [
         }
     },
     {
-        label: "O&M Expenses (State State & Central Assistance)",
+        label: "O&M Expenses (State Share & Central Assistance)",
         key: "omExpensesState",
         get databaseKey(){
             return "omExpState"
@@ -97,7 +97,7 @@ let columns = [
         label: "Detailed Project Report",
         key: "projectReport",
         get databaseKey(){
-            return false
+            return "dprDocument.url"
         }
     },
     {
@@ -119,17 +119,19 @@ let csvCols = {
     "implementationAgency":"Implementation Agency",
     "sector":"Sector",
     "totalProjectCost":"Total Project cost INR (in lakhs)",
-    "stateShare":"State Share",
+    "stateShare":"State Share & Central Assistance",
     "lat":"Latitude",
     "long":"Longitude",
     "ulbShare":"ULB Share(Funding Potential)",
-    // "capitalExpenditureState":"Capital Expentiture (State Share)",
-    // "capitalExpenditureUlb":"Capital Expentiture (ULB Share)",
-    // "omExpensesState":"O&M Expenses (State Share)",
-    // "omExpensesUlb":"O&M Expenses (ULB Share)",
-    // "startDate":"Project Start Date",
-    // "estimatedCompletionDate":"Estimated Project Completion Date",
-    // "projectReport":"Detailed Project Report",
+    "capitalExpenditureState":"Capital Expenditure (State Share & Central Assistance)",
+    "capitalExpenditureUlb":"Capital Expentiture (ULB Share)",
+    "omExpensesState":"O&M Expenses (State Share & Central Assistance)",
+    "omExpensesUlb":"O&M Expenses (ULB Share)",
+    "startDate":"Project Start Date",
+    "estimatedCompletionDate":"Estimated Project Completion Date",
+    "dprPrepared": "Is DPR Prepared",
+    "dprPrepationDate": "DPR Preparation Date",
+    "projectReport":"Detailed Project Report",
     "creditRating1":"Credit Rating 1",
     "creditRating2":"Credit Rating 2"
 }
