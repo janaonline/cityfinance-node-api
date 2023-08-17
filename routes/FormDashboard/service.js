@@ -407,11 +407,13 @@ function getCollections2324(type, installment) {
   
 const COLORS = {
     ULB: {
+      formName: "ULB Forms",
       approvedColor: '#E67E15',
       submittedColor: '#E67E1566',
       border: '#E67E15'
     },
     STATE: {
+      formName: "State Forms",
       approvedColor: '#059B05',
       submittedColor: '#E67E1599',
       border: '#059B05'
@@ -1287,17 +1289,17 @@ const dashboard = async (req, res) => {
         }
         if(![YEAR_CONSTANTS['22_23']].includes(data.design_year)){
             let ulbForms = {
-                formHeader: "ULB Forms",
-                approvedColor: "#E67E15",
-                submittedColor: "#E67E1566",
-                key: 'ulbforms',
+                formHeader: COLORS['ULB']['formName'],
+                approvedColor: COLORS['ULB']['approvedColor'],
+                submittedColor: COLORS['ULB']['submittedColor'],
+                key: COLORS['ULB']['formName'].split(" ").join("").toLowerCase() ,
                 formData: ulbFormsResponse,
               };
             let stateForms = {
-                key: 'stateForms',
-                formHeader: "State Forms",
-                approvedColor: "#059B05",
-                submittedColor: "#E67E1566",
+                key: COLORS['STATE']['formName'].split(" ").join("").toLowerCase() ,
+                formHeader: COLORS['STATE']['formName'],
+                approvedColor: COLORS['STATE']['approvedColor'],
+                submittedColor: COLORS['STATE']['submittedColor'],
                 formData: stateFormsResponse,
               }
          let data = await updateResponseFormat(ulbForms, stateForms)
