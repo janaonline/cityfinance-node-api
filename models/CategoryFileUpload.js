@@ -12,7 +12,6 @@ const CategoryFileUpload = new Schema(
             ref: "SubCategory", required: true,
             validate: {
                 async validator(id) {
-                    console.log('id', id);
                     const category = await SubCategory.findById(id);
                     const maxUploads = category?.maxUploads;
                     if(!maxUploads) return true;

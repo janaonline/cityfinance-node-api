@@ -30,7 +30,7 @@ module.exports = {
                 let data = await dbModels[modelName].updateOne({
                     _id: ObjectId(id)}, 
                     {...defaultData, ...req.body}, 
-                    { upsert: true, runValidators: !isValidObjectId(id) });
+                    { upsert: true, runValidators: !(id !== undefined && isValidObjectId(id)) });
                 return res.status(200).json({
                     status: true,
                     message: "Successfully saved data!",

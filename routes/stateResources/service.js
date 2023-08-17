@@ -15,13 +15,12 @@ const isValidNumber = str => {
 }
 
 const handleDatabaseUpload = async (req, res, next) => {
-    return next();
     let workbook;
     let worksheet;
     const templateName = req.body.templateName;
     const uploadType = req.body.uploadType;
 
-    if(uploadType != 'database') return next();
+    if (uploadType != 'database') return next();
 
     try {
         console.log(req.body.file);
@@ -33,10 +32,14 @@ const handleDatabaseUpload = async (req, res, next) => {
         if (templateName == 'dulyElected') await updateDulyElectedTemplate(req, res, next, worksheet, workbook);
         if (templateName == 'gsdp') await updateGsdpTemplate(req, res, next, worksheet, workbook);
 
-        return res.status(200).json({
-            status: true,
-            message: "Data updated",
+        const uploaded = await CategoryFileUpload.findOne({
+            subCategoryId: ObjectId(req.body?.subCategoryId)
         });
+
+        if(uploaded) {
+            req.body.id = uploaded._id;
+        }
+        next();
     } catch (err) {
         console.log(err);
         if (err.validationErrors?.length) {
