@@ -2958,7 +2958,7 @@ async function validateFileSize(awsS3Link, maxSizeInMB) {
         }
     } catch (error) {
         console.error(error);
-        return false;
+        return 'from catch';
     }
 }
 
