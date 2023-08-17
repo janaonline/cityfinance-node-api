@@ -19,6 +19,9 @@ const handleDatabaseUpload = async (req, res, next) => {
     let workbook;
     let worksheet;
     const templateName = req.body.templateName;
+    const uploadType = req.body.uploadType;
+
+    if(uploadType != 'database') return next();
 
     try {
         console.log(req.body.file);

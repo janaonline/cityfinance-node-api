@@ -1,11 +1,27 @@
 const mongoose = require("mongoose");
+const SubCategory = require("./Master/SubCategory");
 const { Schema } = mongoose;
+const ObjectId = require("mongoose").Types.ObjectId;
 
 require("./dbConnect");
 const CategoryFileUpload = new Schema(
     {
         categoryId: { type: Schema.Types.ObjectId, ref: "MainCategory", required: true },
-        subCategoryId: { type: Schema.Types.ObjectId, ref: "SubCategory", required: true },
+        subCategoryId: {
+            type: Schema.Types.ObjectId,
+            ref: "SubCategory", required: true,
+            validate: {
+                async validator(id) {
+                    console.log('id', id);
+                    const category = await SubCategory.findById(id);
+                    const maxUploads = category?.maxUploads;
+                    if(!maxUploads) return true;
+                    const currentCount = await mongoose.model('CategoryFileUpload').countDocuments({ subCategoryId: ObjectId(id)});
+                    return currentCount < maxUploads;
+                },
+                message: 'Exceeding maximum limit'
+            }
+        },
         title: { type: String, required: true },
         file: {
             url: { type: String, require: true },
@@ -17,7 +33,7 @@ const CategoryFileUpload = new Schema(
         module: {
             required: true,
             type: String,
-            enum: ['municipalBondRepository', 'StateResource']
+            enum: ['municipal_bond_repository', 'state_resource']
         },
         relatedIds: {
             type: [mongoose.Schema.Types.ObjectId],

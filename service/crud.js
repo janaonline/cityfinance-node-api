@@ -1,5 +1,6 @@
 const { dbModels } = require("./../models/Master/index");
 const ObjectId = require("mongoose").Types.ObjectId;
+const { isValidObjectId } = require("mongoose");
 module.exports = {
     list: (modelName, filter = {}) => {
         return async (req, res, next) => {
@@ -26,7 +27,10 @@ module.exports = {
             const id = req.body.id;
             delete req.body.id;
             try {
-                let data = await dbModels[modelName].updateOne({_id: ObjectId(id)}, {...defaultData, ...req.body}, { upsert: true });
+                let data = await dbModels[modelName].updateOne({
+                    _id: ObjectId(id)}, 
+                    {...defaultData, ...req.body}, 
+                    { upsert: true, runValidators: !isValidObjectId(id) });
                 return res.status(200).json({
                     status: true,
                     message: "Successfully saved data!",
