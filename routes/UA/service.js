@@ -2929,6 +2929,37 @@ function isValidDateOrNumber(value, isDate = false) {
         return numberPattern.test(value);
     }
 }
+function validateAWSS3Link(link) {
+    const prefix = "https://";
+    const suffix = ".s3.ap-south-1.amazonaws.com";
+    const pdfSuffix = ".pdf";
+  
+    return link.startsWith(prefix) && link.includes(suffix) && link.endsWith(pdfSuffix);
+  }
+  
+
+async function validateFileSize(awsS3Link, maxSizeInMB) {
+    try {
+        const response = await axios.head(awsS3Link);
+        const contentLength = response.headers['content-length'];
+
+        if (contentLength) {
+            const fileSizeInBytes = parseInt(contentLength);
+            const fileSizeInMB = fileSizeInBytes / (1024 * 1024); // Convert to MB
+
+            console.log({ fileSizeInMB })
+            if (fileSizeInMB > maxSizeInMB) {
+                return false;
+            }
+            return true;
+        } else {
+            throw new Error('Content-Length header not found in response');
+        }
+    } catch (error) {
+        console.error(error);
+        return false;
+    }
+}
 
 async function validateBulkUpload(data, res) {
     const validationFields = [
@@ -2958,10 +2989,22 @@ async function validateBulkUpload(data, res) {
                 }
             }
             if (item['year'] && !years[item['year']]) {
-                errors.push(`year is invalid of this for the project having code: ${item['project code']} it should be in the format of YYYY-YY (Ex:-2023-24)`) 
+                errors.push(`year is invalid of this for the project having code: ${item['project code']} it should be in the format of YYYY-YY (Ex:-2023-24)`)
             }
             if (item['is dpr prepared?'] && !['yes', 'no'].includes(item['is dpr prepared?'].toLowerCase())) {
-                errors.push(`Dpr prepration is invalid (only Yes or No allowed) of this ulb  :- ${item['ulb']}`) 
+                errors.push(`Dpr prepration is invalid (only Yes or No allowed) of this ulb  :- ${item['ulb']}`)
+            }
+            if (item['dpr (pdf)'] && !validateAWSS3Link(item['dpr (pdf)'])) {
+                errors.push(`dpr document link is invalid of this ulb :- ${item['ulb']}`)
+            }
+
+            if (!item['dpr (pdf)']) {
+                errors.push(`DPR (pdf) file is can't be empty for this ulb:- ${item['ulb']}`);
+            } else {
+                let validFileSize = await validateFileSize(item['dpr (pdf)'], 5)
+                if (!validFileSize) {
+                    errors.push(`DPR (pdf) file size exceeds 5MB for this ulb: ${item['ulb']}`);
+                }
             }
         }
         return errors;
@@ -3045,7 +3088,7 @@ async function performBulkUpload(req, res, data) {
             if (category) {
                 itemData['category'] = category._id;
             } else {
-                return res.status(400).send({ status: false, message: `Category not found with this name: ${itemData.categoriesName}` })
+                return res.status(400).send({ status: false, message: `Form Type/ Sector not found with this name: ${itemData.categoriesName}` })
             }
             bulkOps.push(itemData)
             // bulkOps.push({ insertOne: { document: itemData } });
