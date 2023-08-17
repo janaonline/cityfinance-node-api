@@ -997,7 +997,9 @@ const computeQuery = (params) => {
     dY = "$designYear";
     designYearField = "designYear";
   }
-  let condition = {};
+  let condition = {
+    isActive: true
+  };
   if (state && state !== 'null') {
     condition['state'] = ObjectId(state)
   }

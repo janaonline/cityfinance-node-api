@@ -2367,7 +2367,8 @@ const computeQuery = (formName, userRole, isFormOptional, state, design_year, cs
       let query = [
         {
           $match: {
-            "access_2223": true
+            "access_2223": true,
+            "isActive": true,
           }
         },
         {
