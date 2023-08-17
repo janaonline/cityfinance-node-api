@@ -1,10 +1,12 @@
 const { dbModels } = require("./../models/Master/index");
 const ObjectId = require("mongoose").Types.ObjectId;
+const { isValidObjectId } = require("mongoose");
 module.exports = {
-    list: (modelName) => {
+    list: (modelName, filter = {}) => {
         return async (req, res, next) => {
             try {
-                let condition = { ...req.query };
+                let condition = { ...filter, ...req.query };
+                console.log({ condition });
                 let data = await dbModels[modelName].find(condition);
                 return res.status(200).json({
                     status: true,
@@ -20,15 +22,38 @@ module.exports = {
             }
         }
     },
-    create: (modelName) => {
+    createOrUpdate: (modelName, defaultData = {}) => {
         return async (req, res, next) => {
+            const id = req.body.id;
+            delete req.body.id;
             try {
-                // console.log("req.body",req.body);process.exit();
-
-                let data = await dbModels[modelName].create(req.body);
+                let data = await dbModels[modelName].updateOne({
+                    _id: ObjectId(id)}, 
+                    {...defaultData, ...req.body}, 
+                    { upsert: true, runValidators: !(id !== undefined && isValidObjectId(id)) });
                 return res.status(200).json({
                     status: true,
                     message: "Successfully saved data!",
+                    data: data,
+                });
+            } catch (error) {
+                return res.status(400).json({
+                    status: false,
+                    message: "Something went wrong!",
+                    err: error.message,
+                });
+            }
+        }
+    },
+    deleteById: (modelName) => {
+        return async (req, res, next) => {
+            const id = req.params.id;
+            console.log('deleted', id);
+            try {
+                let data = await dbModels[modelName].findByIdAndDelete(id);
+                return res.status(200).json({
+                    status: true,
+                    message: "Item deleted!",
                     data: data,
                 });
             } catch (error) {
