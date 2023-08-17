@@ -66,7 +66,20 @@ module.exports.CollectionNames = {
     rating: "ratings",
     slbScoring: "slbScoring"
 }
-
+module.exports.ModelNamesToFormId = {
+     "annualaccountdatas":5,
+     "pfmsaccounts":8,
+     "granttransfercertificates":7,
+     "statefinancecommissionformations":15,
+     "propertytaxfloorrates":17,
+     "utilizationreports":4,
+    "propertytaxops":3,
+     "twentyeightslbforms":6,
+     "odfformcollections":1,
+     "gfcformcollections":2,
+     "waterrejenuvationrecyclings":12,
+     "actionplans":13,
+}
 module.exports.FormPathMappings = {
     "annualaccountdatas":"AnnualAccounts",
     "pfmsaccounts":"LinkPFMS",
