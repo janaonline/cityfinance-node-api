@@ -1,15 +1,25 @@
 const express = require('express');
 const router = express.Router();
-const { handleDatabaseUpload, getResourceList } = require('./service');
+const { 
+    handleDatabaseUpload, 
+    getResourceList, 
+    removeStateFromFiles,
+    getCategoryWiseResource,
+    getTemplate
+} = require('./service');
 
 const {
-    createOrUpdate, list, deleteById
+    createOrUpdate
 } = require("../../service/crud");
 
 
 router.get('/getResourceList', getResourceList);
-router.get('/list', list('CategoryFileUpload', { module: 'state_resource' }));
-router.post('/createOrUpdate', handleDatabaseUpload, createOrUpdate('CategoryFileUpload', { module: 'state_resource' }))
-router.delete('/deleteById/:id', deleteById('StateResource'))
+router.get('/list',  getCategoryWiseResource );
+router.post('/createOrUpdate', handleDatabaseUpload, createOrUpdate('CategoryFileUpload', { module: 'state_resource' }));
+
+router.get('/template/:templateName', getTemplate);
+
+router.post('/removeStateFromFiles',  removeStateFromFiles );
+
 
 module.exports = router;

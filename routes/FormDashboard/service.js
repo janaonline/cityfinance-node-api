@@ -407,11 +407,13 @@ function getCollections2324(type, installment) {
   
 const COLORS = {
     ULB: {
+      formName: "ULB Forms",
       approvedColor: '#E67E15',
       submittedColor: '#E67E1566',
       border: '#E67E15'
     },
     STATE: {
+      formName: "State Forms",
       approvedColor: '#059B05',
       submittedColor: '#E67E1599',
       border: '#059B05'
@@ -1287,21 +1289,27 @@ const dashboard = async (req, res) => {
         }
         if(![YEAR_CONSTANTS['22_23']].includes(data.design_year)){
             let ulbForms = {
-                formHeader: "ULB Forms",
-                approvedColor: "#E67E15",
-                submittedColor: "#E67E1566",
-                key: 'ulbforms',
+                formHeader: COLORS['ULB']['formName'],
+                approvedColor: COLORS['ULB']['approvedColor'],
+                submittedColor: COLORS['ULB']['submittedColor'],
+                key: COLORS['ULB']['formName'].split(" ").join("").toLowerCase() ,
                 formData: ulbFormsResponse,
               };
             let stateForms = {
-                key: 'stateForms',
-                formHeader: "State Forms",
-                approvedColor: "#059B05",
-                submittedColor: "#E67E1566",
+                key: COLORS['STATE']['formName'].split(" ").join("").toLowerCase() ,
+                formHeader: COLORS['STATE']['formName'],
+                approvedColor: COLORS['STATE']['approvedColor'],
+                submittedColor: COLORS['STATE']['submittedColor'],
                 formData: stateFormsResponse,
               }
          let data = await updateResponseFormat(ulbForms, stateForms)
-            return Response.OK(res,data)
+         const isAvailableForGrant = calculateGrantAvailable(ulbForms, stateForms);
+
+        return res.status(200).json({
+            success: true,
+            data,
+            isAvailableForGrant
+        })
         }
         return res.status(200).json({
             status: true,
@@ -1365,11 +1373,11 @@ function addStatusData(modelName, query) {
  */
 async function getPopulationData(req, res) {
     try {
-        let state = req.decoded.state;
+        let state = req.query.state ?? req.decoded.state;
         const pipeline = getPopulationDataQueries(state);
         const data = await State.aggregate(pipeline);
-         const populationData =  buildStateInfo(...data);
-         const installmentData = [
+        const populationData =  buildStateInfo(...data);
+        const installmentData = [
             {
               title: 'NMPC - UnTied',
               formType: 'nmpc_untied',
@@ -1414,7 +1422,7 @@ async function getPopulationData(req, res) {
         ];
         const cityTypeInState = getCityTypeData(installmentData);
 
-         return response.OK(res, {populationData,cityTypeInState})
+        return response.OK(res, {populationData,cityTypeInState})
     } catch (error) {
         return response.BadRequest(res, [])
     }
@@ -1507,6 +1515,19 @@ async function updateResponseFormat(ulbForm, stateForm){
     }
 }
 
+function calculateGrantAvailable(ulbForm, stateForm){
+    try { 
+        for(let form of [...ulbForm['formData'],stateForm['formData']]){
+            if(form?.status !== ELIGIBLITY['YES']){
+                return false;
+            }
+        }
+        return true;
+    } catch (error) {
+        throw { message: `calculateGrantAvailable:: ${error.message}`}
+        
+    }
+}
 
 /**
  * The function `getCityTypeData` returns an object containing an array of city types with their

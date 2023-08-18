@@ -1318,8 +1318,8 @@ exports.getView = async function (req, res, next) {
       currentFormStatus: viewOne.currentFormStatus,
       financialYearTableHeader,
       messages: userMessages,
-      hideForm,
-      notice
+      // hideForm,
+      // notice
     };
     if (userMessages.length > 0) {
       let { approvedPerc, rejectedPerc } = calculatePercentage(modifiedLedgerData, requiredFields, viewOne)
@@ -4810,6 +4810,23 @@ function computeQuery(params, cond = null) {
           preserveNullAndEmptyArrays: true,
         },
       },
+      {
+        $addFields: {
+          currentFormStatus: {
+            $cond: {
+              if: {
+                $and: [
+                  { $eq: [{ $type: "$fiscalrankings" }, "object"] },
+                ]
+              },
+              then: "$fiscalrankings.currentFormStatus",
+              else: 1
+            }
+          },
+          populationType: getPopulationCondition()
+        }
+      },
+      
       { $match: condition_one },
       {
         $lookup: {
