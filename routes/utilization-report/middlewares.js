@@ -5,7 +5,8 @@ const { getKeyByValue } = require("../../util/masterFunctions")
 // const Sidemenu = require("../../models/Sidemenu");
 const ObjectId = require("mongoose").Types.ObjectId;
 let outDatedYears = ["2018-19", "2019-20", "2021-22", "2022-23"]
-const { MASTER_STATUS_ID, MASTER_STATUS } = require("../../util/FormNames")
+const { MASTER_STATUS_ID, MASTER_STATUS } = require("../../util/FormNames");
+const { minifyMFormResponse } = require("../../util/mForm");
 module.exports.changeGetApiForm = async (req, res, next) => {
     let dummyProjectSample = {
         "location" : {
@@ -88,7 +89,7 @@ module.exports.changeGetApiForm = async (req, res, next) => {
             responseData[0]['language'] = obj
             response.success = true
             responseData[0]['isQuestionDisabled'] = formStatus
-            response.data = responseData
+            response.data =  minifyMFormResponse(responseData);
             response.latest = latest
             response.message = 'Form Questionare!'
             return res.status(200).json(response)
