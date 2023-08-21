@@ -17,7 +17,8 @@ const PropTax = require('../../models/PropertyTaxOp')
 const { calculateStatus, calculateStatusMaster } = require('../CommonActionAPI/service')
 const SLB28 = require('../../models/TwentyEightSlbsForm')
 const PropertyTaxOp = require('../../models/PropertyTaxOp')
-const { YEAR_CONSTANTS, MASTER_STATUS_ID, MASTER_FORM_STATUS, MASTER_STATUS } = require('../../util/FormNames');
+const CollectionName = require('../../util/collectionName')
+const { YEAR_CONSTANTS, MASTER_STATUS_ID, MASTER_FORM_STATUS, YEAR_CONSTANTS_IDS } = require('../../util/FormNames');
 var outDatedYears = ["2018-19","2019-20","2021-22","2022-23"]
 //STate Forms
 const SFC = require('../../models/StateFinanceCommissionFormation')
@@ -314,7 +315,7 @@ module.exports.get = catchAsync(async (req, res) => {
       color_2: ""
     }
   }
-  let isLatestCreated;
+  let isLatestCreated, checkBaseYearAccess, baseYear;
   if ((role == 'ULB' || role == 'STATE') && (!role || !year || !_id))
     return res.status(400).json({
       success: false,
@@ -325,10 +326,12 @@ module.exports.get = catchAsync(async (req, res) => {
   let output = []
   if (role == 'ULB') {
     let ulbInfo = await Ulb.findOne({ _id: ObjectId(_id) }).lean();
-    isUA = ulbInfo?.isUA
+    isUA = ulbInfo?.isUA;
     let accessVariable = await getKeyByValue(years,year)
     accessVariable = `access_${accessVariable.split("-")[0].slice(-2)-1}${accessVariable.split("-")[1].slice(-2)-1}`
-    isLatestCreated = !ulbInfo[accessVariable]
+    isLatestCreated = !ulbInfo[accessVariable];
+    baseYear = `access_${YEAR_CONSTANTS_IDS[YEAR_CONSTANTS['21_22']].split("-")[0].slice(-2)}${YEAR_CONSTANTS_IDS[YEAR_CONSTANTS['21_22']].split("-")[1]}`;
+    checkBaseYearAccess = ulbInfo[baseYear]
     console.log("accessVariable :: ",accessVariable,isLatestCreated)
     FormModelMapping["GfcFormCollection"] = isUA == 'Yes' ? ObjectId("62aa1d82c9a98b2254632a9e") : ObjectId("62aa1dd6c9a98b2254632aae")
     FormModelMapping["OdfFormCollection"] = isUA == 'Yes' ? ObjectId("62aa1d6ec9a98b2254632a9a") : ObjectId("62aa1dc0c9a98b2254632aaa")
@@ -406,7 +409,9 @@ module.exports.get = catchAsync(async (req, res) => {
     }
   }
 
-  let data = await Sidemenu.find({ year: ObjectId(year), role: role, isActive: true }).lean()
+  let data = await Sidemenu.find({ year: ObjectId(year), role: role, isActive: true }).lean();
+  let baseYearForms = [CollectionName.slb]
+   data.length && (data = filterResponseOnBaseYear(data,checkBaseYearAccess,baseYearForms))
   if (data.length) {
     if (role == "ULB") {
       if (isUA == 'Yes') {
@@ -560,6 +565,13 @@ module.exports.list = catchAsync(async (req, res) => {
   })
 })
 
+function filterResponseOnBaseYear(data,checkBaseYearAccess,baseYearForms){
+  try {
+    return !checkBaseYearAccess ? data.filter(el => !baseYearForms.includes(el.collectionName)) : data;
+  } catch (error) {
+    throw {message: `filterResponseOnBaseYear: ${error.message}`}
+  }
+}
 module.exports.post = catchAsync(async (req, res) => {
   let data = req.body;
   if (!data.name || !data.url || !data.role || !data.position || !data.year) {
