@@ -1703,7 +1703,7 @@ function amrProjects(service,csv,ulbId){
             "projectName":"$amrProjects.name",
             "projectId": "$amrProjects._id",
             "totalProjectCost":"$amrProjects.cost",
-            "type": "Amrut",
+            "type": "amrut",
             "implementationAgency":"$name",
             "capitalExpenditureState": {
                 "$add": [
@@ -1775,7 +1775,7 @@ function durProjects(service,csv,ulbId){
         "projectName":"$projects.name",
         "projectId": "$projects._id",
         "implementationAgency":"$name",
-        "type": "Dur",
+        "type": "dur",
         "totalProjectCost":"$projects.cost",
         "lat" : "$projects.location.lat",
         "long": "$projects.location.long",
@@ -2477,7 +2477,9 @@ const getApprovedFormQuery =(keyName = false,designYear)=>{
     let statusKeyName = (keyName) ? `${keyName}.status` : "status"
     let actionKeyName = (keyName) ? `${keyName}.actionTakenByRole` : "actionTakenByRole" 
     let outDatedYears = ["2018-19", "2019-20", "2021-22", "2022-23"]
-    let queryObj = {}
+    let queryObj = {
+        "$or": []
+    }
     try{
         let stringStatusQuery = {
             "$or": [
@@ -2509,13 +2511,15 @@ const getApprovedFormQuery =(keyName = false,designYear)=>{
 
         }
         let idWiseQuery = {
-            "$in":["$currentFormStatus",[MASTER_FORM_STATUS.SUBMISSION_ACKNOWLEDGED_BY_MoHUA,MASTER_FORM_STATUS.UNDER_REVIEW_BY_MoHUA]]
-                
-        
+            "$in":["$currentFormStatus",[MASTER_FORM_STATUS.SUBMISSION_ACKNOWLEDGED_BY_MoHUA,MASTER_FORM_STATUS.UNDER_REVIEW_BY_MoHUA]]       
         }
-        // queryObj = 
-        queryObj  = outDatedYears.includes(getKeyByValue(years,designYear)) ? stringStatusQuery : idWiseQuery
-        console.log("queryObj ::: ",queryObj)
+
+        for (const year of designYear) {
+            const yearKey = getKeyByValue(years, year.toString());
+            const queryForYear = outDatedYears.includes(yearKey) ? stringStatusQuery : idWiseQuery;
+            queryObj["$or"].push(queryForYear);
+        }
+
         return queryObj
     }
     catch(err){
@@ -2530,7 +2534,7 @@ function lookupQueryForAmrut(service,designYear,project=false){
                 "from":"amrutprojects",
                 "let":{
                     "ulb_id":"$_id",
-                    "designYear":ObjectId(designYear)
+                    "designYearArray": Array.isArray(designYear) ? designYear.map(year => ObjectId(year)) : [ObjectId(designYear)]
                 },
                 "pipeline":[
                     {
@@ -2538,7 +2542,8 @@ function lookupQueryForAmrut(service,designYear,project=false){
                             "$expr":{
                                 "$and":[
                                     service.getCommonEqObj("$ulb","$$ulb_id"),
-                                    service.getCommonEqObj("$designYear","$$designYear")
+                                    // service.getCommonEqObj("$designYear","$$designYear")
+                                    { "$in": ["$designYear", "$$designYearArray"] },
                                 ]
                             }
                         }
@@ -2556,12 +2561,13 @@ function lookupQueryForAmrut(service,designYear,project=false){
 
 function lookupQueryForDur(service,designYear,project=false){
     try{
+        designYear = Array.isArray(designYear) ? designYear.map(year => ObjectId(year)) : [ObjectId(designYear)]
         let obj = {
             "$lookup":{
                 "from":"utilizationreports",
                 "let":{
                     "ulb_id":"$_id",
-                    "designYear":ObjectId(designYear)
+                    "designYearArray": designYear
                 },
                 "pipeline":[
                     {
@@ -2569,7 +2575,7 @@ function lookupQueryForDur(service,designYear,project=false){
                             "$expr":{
                                 "$and":[
                                     service.getCommonEqObj("$ulb","$$ulb_id"),
-                                    service.getCommonEqObj("$designYear","$$designYear"),
+                                    { "$in": ["$designYear", "$$designYearArray"] },
                                     service.getCommonEqObj("$isDraft",false),
                                     getApprovedFormQuery(false,designYear)
                                 ]
