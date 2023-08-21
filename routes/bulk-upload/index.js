@@ -10,12 +10,16 @@ const BulkUpload = {
     ulbUlpload: require('./ulb-upload'),
     overallUlbUlpload: require('./overall-ulb-upload'),
     resourceUpload: require('./resource-upload'),
-    getResource: require('./resource-upload').getResource
+    getResource: require('./resource-upload').getResource,
+    waterrejenuvation: require('./water-rejenuvation'),
+    excelToJSON: require('./excel-to-json'),
 
 }
-const { readCSV, uploadGrantData, grantStatusCSV,  updateLatLong, updatepopulation, updateyearkeys } = require('../grant-claim/service')
+const { readCSV, uploadGrantData, grantStatusCSV, updateLatLong, updatepopulation, updateyearkeys } = require('../grant-claim/service')
+const { userAuth } = require("../../middlewares/actionUserAuth");
 const express = require('express');
 const multer = require('multer');
+const path = require('path');
 const storage1 = multer.diskStorage({
     destination: function (req, file, cb) {
         cb(null, 'uploads')
@@ -34,8 +38,19 @@ const storage2 = multer.diskStorage({
         cb(null, file.originalname.replace(/ /g, '_'))
     }
 });
+
+const fileFilter = (allowedExtensions) => (req, file, cb) => {
+    const extension = path.extname(file.originalname);
+    if (allowedExtensions.includes(extension)) {
+        cb(null, true);
+    } else {
+        cb(new Error('Invalid file extension'));
+    }
+};
+
 const multerUpload = multer({ storage: storage1 });
 const resourceMulterUpload = multer({ storage: storage2 });
+const multerUploadEXCEL = multer({ storage: storage1, fileFilter: fileFilter(['.xls', '.xlsx'])});
 const router = express.Router();
 
 router.post('/upload-resource', resourceMulterUpload.fields([{ name: 'pdf' }, { name: 'image' }]), BulkUpload.resourceUpload);
@@ -72,5 +87,8 @@ router.post('/grant-claim/grantStatusCSV', multerUpload.single('csv'), BulkUploa
 router.post('/updateLatLong', multerUpload.single('csv'), BulkUpload.csvToJSON, updateLatLong)
 router.post('/updatepopulation', multerUpload.single('csv'), BulkUpload.csvToJSON, updatepopulation)
 router.post('/updateyearkeys', multerUpload.single('csv'), BulkUpload.csvToJSON, updateyearkeys)
+
+const expectedSheetNames = ['stateDetails', 'waterBodies', 'reuseWater', 'serviceLevelIndicators'];
+router.post('/bulk/water-rejenuvation-22-23', verifyToken, userAuth, multerUploadEXCEL.single('excelFile'), BulkUpload.excelToJSON(expectedSheetNames), BulkUpload.waterrejenuvation)
 
 module.exports = router;
