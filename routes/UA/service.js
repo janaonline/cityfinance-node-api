@@ -2355,9 +2355,9 @@ module.exports.getInfrastructureProjects = catchAsync(async (req, res) => {
         success: false,
         message: "Something went wrong"
     }
-    let menuNames = ['year','implementationAgencies', 'sectors', 'projects']
+    let menuNames = ['filterYear','implementationAgencies', 'sectors', 'projects']
     let keysDisplayName = {
-        "year": "filterYear",
+        "filterYear": "Year",
         'sectors': "Sectors",
         'projects': "Projects",
         'implementationAgencies': "Implemenation Agency"
@@ -2408,7 +2408,7 @@ module.exports.getInfrastructureProjects = catchAsync(async (req, res) => {
                 key: el,
                 name: keysDisplayName[el],
                 options: dbResponse[0][el],
-                 options: el==="year" ? filterYears.map(item => ({name:item.label,_id:item.id})) : dbResponse[0][el]
+                 options: el==="filterYear" ? filterYears.map(item => ({name:item.label,_id:item.id})) : dbResponse[0][el]
             }))
             response.columns = columns
             response.message = "Fetched Successfully"
