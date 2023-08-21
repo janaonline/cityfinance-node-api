@@ -1,5 +1,6 @@
 const catchAsync = require('../../util/catchAsync')
 const UA = require('../../models/UA')
+const {debugPipeline} = require('pipeline-debugger')
 const ExcelJS = require("exceljs")
 const ObjectId = require('mongoose').Types.ObjectId;
 const State = require('../../models/State')
@@ -1702,6 +1703,7 @@ function amrProjects(service,csv,ulbId){
             "projectName":"$amrProjects.name",
             "projectId": "$amrProjects._id",
             "totalProjectCost":"$amrProjects.cost",
+            "type": "Amrut",
             "implementationAgency":"$name",
             "capitalExpenditureState": {
                 "$add": [
@@ -1773,6 +1775,7 @@ function durProjects(service,csv,ulbId){
         "projectName":"$projects.name",
         "projectId": "$projects._id",
         "implementationAgency":"$name",
+        "type": "Dur",
         "totalProjectCost":"$projects.cost",
         "lat" : "$projects.location.lat",
         "long": "$projects.location.long",
@@ -1896,6 +1899,7 @@ function getFilterConditions(filters) {
    let filtersName = {
         "implementationAgencies": "ulbId",
         "sectors": "sectorId",
+        "type": "type",
         "projects": "projectId"
     }
     try {
@@ -1908,15 +1912,17 @@ function getFilterConditions(filters) {
             let tempObj = {}
             tempObj["$or"] = []
             let filter_arr = filters[filter]
-            for (let id of filter_arr) {
+            for (let elem of filter_arr) {
                 let temp = {
                     "$eq": [`$$row.${filtersName[filter]}`]
                 }
-                temp["$eq"].push(ObjectId(id))
+                
+                temp["$eq"].push(mongoose.isValidObjectId(elem) ? ObjectId(elem) : elem);
                 tempObj["$or"].push(temp)
                 
             }
             obj["$and"].push(tempObj)
+
         }
         return obj
     }
@@ -1943,7 +1949,7 @@ function getFilteredObjects(filteredObj, arrName) {
 
 
 function getProjectionQueries(service, filteredObj, skip, limit, sortKey) {
-    let { sectors: sectorObj } = { ...filteredObj.filters }
+    let { sectors: sectorObj, type } = { ...filteredObj.filters }
     let sectorialObj = { "filters": { "sectors": sectorObj } }
     
     // slicing is used for pagination as data structure is totally created with mongodb aggregation
@@ -2117,8 +2123,8 @@ function queryPipelineLookup(service,fromTable,as){
 }
 
 function getFilteredProjects(filteredObj){
-    let { sectors: sectorObj } = { ...filteredObj.filters }
-    let sectorialObj = { "filters": { "sectors": sectorObj } }
+    let { sectors: sectorObj, type } = { ...filteredObj.filters }
+    let sectorialObj = { "filters": { "sectors": sectorObj, type } }
     try{
         let obj = {
             "$addFields":{
@@ -2349,8 +2355,9 @@ module.exports.getInfrastructureProjects = catchAsync(async (req, res) => {
         success: false,
         message: "Something went wrong"
     }
-    let menuNames = ['implementationAgencies', 'sectors', 'projects']
+    let menuNames = ['year','implementationAgencies', 'sectors', 'projects']
     let keysDisplayName = {
+        "year": "filterYear",
         'sectors': "Sectors",
         'projects': "Projects",
         'implementationAgencies': "Implemenation Agency"
@@ -2400,7 +2407,8 @@ module.exports.getInfrastructureProjects = catchAsync(async (req, res) => {
             response.filters = menuNames.map(el => ({
                 key: el,
                 name: keysDisplayName[el],
-                options: dbResponse[0][el]
+                options: dbResponse[0][el],
+                 options: el==="year" ? filterYears.map(item => ({name:item.label,_id:item.id})) : dbResponse[0][el]
             }))
             response.columns = columns
             response.message = "Fetched Successfully"
