@@ -1,6 +1,5 @@
 const catchAsync = require('../../util/catchAsync')
 const UA = require('../../models/UA')
-const {debugPipeline} = require('pipeline-debugger')
 const ExcelJS = require("exceljs")
 const ObjectId = require('mongoose').Types.ObjectId;
 const State = require('../../models/State')
