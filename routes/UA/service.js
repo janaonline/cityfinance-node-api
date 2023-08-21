@@ -22,7 +22,7 @@ const axios = require('axios')
 const { sendCsv, apiUrls } = require("../../routes/CommonActionAPI/service")
 const { calculateSlbMarks } = require('../Scoring/service');
 const { ulb } = require('../../util/userTypes');
-const { columns, csvCols, sortFilterKeys, dashboardColumns, filterYears } = require("./constants.js")
+const { columns, csvCols, sortFilterKeys, dashboardColumns, filterYears, types } = require("./constants.js")
 const Redis = require("../../service/redis")
 const { AggregationServices } = require("../../routes/CommonActionAPI/service");
 const { YEAR_CONSTANTS, FORMIDs, FormNames, MASTER_STATUS, MASTER_FORM_STATUS } = require('../../util/FormNames');
@@ -2355,9 +2355,10 @@ module.exports.getInfrastructureProjects = catchAsync(async (req, res) => {
         success: false,
         message: "Something went wrong"
     }
-    let menuNames = ['filterYear','implementationAgencies', 'sectors', 'projects']
+    let menuNames = ['filterYear','type','implementationAgencies', 'sectors', 'projects']
     let keysDisplayName = {
         "filterYear": "Year",
+        'type': "Type",
         'sectors': "Sectors",
         'projects': "Projects",
         'implementationAgencies': "Implemenation Agency"
@@ -2401,18 +2402,30 @@ module.exports.getInfrastructureProjects = catchAsync(async (req, res) => {
              return;
         }
         if (dbResponse.length) {
-            response.total = dbResponse[0].total
-            response.rows = dbResponse[0]['rows'] || []
-            response.filters = []
-            response.filters = menuNames.map(el => ({
-                key: el,
-                name: keysDisplayName[el],
-                options: dbResponse[0][el],
-                 options: el==="filterYear" ? filterYears.map(item => ({name:item.label,_id:item.id})) : dbResponse[0][el]
-            }))
-            response.columns = columns
-            response.message = "Fetched Successfully"
+            response.total = dbResponse[0].total;
+            response.rows = dbResponse[0]['rows'] || [];
+            response.filters = menuNames.map(el => {
+                let options = null;
+                if (el === "filterYear") {
+                    options = filterYears.map(item => ({
+                        name: item.label,
+                        _id: item.id
+                    }));
+                } else if (el === "type") {
+                    options = types;
+                } else {
+                    options = dbResponse[0][el];
+                }
+                return {
+                    key: el,
+                    name: keysDisplayName[el],
+                    options
+                };
+            });
+            response.columns = columns;
+            response.message = "Fetched Successfully";
         }
+        
         else {
             response.message = "No data for particular ulb"
             response.rows = []
