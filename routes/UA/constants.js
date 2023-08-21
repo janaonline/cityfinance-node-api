@@ -155,6 +155,16 @@ const filterYears = [ // make this dynamic with the current financial year
         "id":years['2023-24']
     }
 ]
+const types = [
+    {
+        name: 'Dur',
+        _id: 'dur'
+    },
+    {
+        name: "Amrut",
+        _id: 'amrut'
+    }
+];
 
 const dashboardColumns = [
     {
@@ -184,5 +194,6 @@ module.exports = {
     csvCols,
     sortFilterKeys,
     dashboardColumns,
-    filterYears
+    filterYears,
+    types
 }
