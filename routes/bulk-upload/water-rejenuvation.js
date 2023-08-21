@@ -3,7 +3,7 @@ const State = require("../../models/State")
 const UA = require("../../models/UA")
 const IndicatorLineItems = require("../../models/indicatorLineItems");
 const Year = require('../../models/Year')
-
+const {saveWaterRejenuvation} = require("../waterRejenuvation/service");
 
 const waterBodiesKeyMap = {
     "Project Name": "name",
@@ -101,12 +101,16 @@ module.exports = async function (req, res) {
                 message: 'No row Found!'
             })
         }
+        mergedStateData.forEach(async (item) => {
+            Object.assign(req.body, {...item});
+            await saveWaterRejenuvation(req, res);
+        });
 
-        return res.status(200).json({
-            success: true,
-            data: mergedStateData,
-            message: 'User Found!'
-        })
+        // return res.status(200).json({
+        //     success: true,
+        //     data: mergedStateData,
+        //     message: 'User Found!'
+        // })
     } catch (e) {
         return res.json({
             success: false,
@@ -115,7 +119,9 @@ module.exports = async function (req, res) {
     }
 }
 
-
+/**
+ * The function create a JSON object with specific data structure and values.
+ */
 async function createWSSJson(mergedStateData, entries, lineItemsKeyValue) {
     for (const element of mergedStateData) {
         for (const entry of entries) {
