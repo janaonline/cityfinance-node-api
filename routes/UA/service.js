@@ -2355,16 +2355,10 @@ module.exports.getInfrastructureProjects = catchAsync(async (req, res) => {
         success: false,
         message: "Something went wrong"
     }
-<<<<<<< HEAD
-    let menuNames = ['year', 'implementationAgencies', 'sectors', 'projects']
-    let keysDisplayName = {
-        "year": "Year",
-=======
     let menuNames = ['filterYear','type','implementationAgencies', 'sectors', 'projects']
     let keysDisplayName = {
         "filterYear": "Year",
         'type': "Type",
->>>>>>> e319b3408507c5c2e011160c446e9dcdb56d9aad
         'sectors': "Sectors",
         'projects': "Projects",
         'implementationAgencies': "Implemenation Agency"
