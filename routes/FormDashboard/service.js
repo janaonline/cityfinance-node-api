@@ -18,7 +18,7 @@ const State = require('../../models/State');
 const Sidemenu = require('../../models/Sidemenu');
 const ObjectId = require('mongoose').Types.ObjectId;
 const {CollectionNames, ModelNames, FormPathMappings, ModelNamesToFormId} = require('../../util/15thFCstatus');
-const { YEAR_CONSTANTS, MASTER_STATUS, FormNames, USER_ROLE } = require('../../util/FormNames');
+const { YEAR_CONSTANTS, MASTER_STATUS, FormNames, USER_ROLE, FormURL } = require('../../util/FormNames');
 const UA = require('../../models/UA');
 const {getPopulationDataQueries} = require('./query')
 const Response = require('../../service/response');
@@ -408,14 +408,14 @@ function getCollections2324(type, installment) {
 const COLORS = {
     ULB: {
       formName: "ULB Forms",
-      approvedColor: '#059B05',
-      submittedColor: '#E67E1566',
+      approvedColor: '#E67E15',
+      submittedColor: '#f7bf88',
       border: '#E67E15'
     },
     STATE: {
       formName: "State Forms",
       approvedColor: '#059B05',
-      submittedColor: '#E67E1599',
+      submittedColor: '#f7bf88',
       border: '#059B05'
     }
   };
@@ -442,11 +442,11 @@ function getFormData(formCategory, modelName, sidemenuForms, reviewForm, design_
   let formData = {};
   if (formCategory === "ULB") {
     formData["approvedColor"] = "#E67E15";
-    formData["submittedColor"] = "#E67E1566";
+    formData["submittedColor"] = "#f7bf88";
     formData["border"] = "#E67E15";
   } else if (formCategory === "STATE") {
     formData["approvedColor"] = "#059B05";
-    formData["submittedColor"] = "#E67E1599";
+    formData["submittedColor"] = "#f7bf88";
     formData["border"] = "#059B05";
   }
   let element = sidemenuForms.find((el) => {
@@ -505,7 +505,7 @@ function getFormData(formCategory, modelName, sidemenuForms, reviewForm, design_
   ) {
     formData["formName"] = element.name;
     formData["icon"] = element.icon;
-    formData["link"] = `/${element.url}`;
+    formData["link"] = ![YEAR_CONSTANTS['22_23']].includes(design_year) ? FormURL['23_24']['GTC_STATE'] : `/${element.url}`;
   } else if (
     modelName === CollectionNames.twentyEightSlbs &&
     element._id === "TwentyEightSlbsForm"
@@ -1275,13 +1275,13 @@ const dashboard = async (req, res) => {
               {
                 formHeader: "ULB Forms",
                 approvedColor: "#E67E15",
-                submittedColor: "#E67E1566",
+                submittedColor: "#f7bf88",
                 formData: ulbFormsResponse,
               },
               {
                 formHeader: "State Forms",
                 approvedColor: "#059B05",
-                submittedColor: "#E67E1566",
+                submittedColor: "#f7bf88",
                 formData: stateFormsResponse,
               },
             ],
@@ -1316,13 +1316,13 @@ const dashboard = async (req, res) => {
             data: [{
                 formHeader:'ULB Forms',
                 approvedColor:'#E67E15',
-                submittedColor:'#E67E1566',
+                submittedColor:'#f7bf88',
                 formData: ulbFormsResponse
             },
             {
                 formHeader:'State Forms',
                 approvedColor:'#059B05',
-                submittedColor:'#E67E1566',
+                submittedColor:'#f7bf88',
                 formData : stateFormsResponse
             }]
         })
