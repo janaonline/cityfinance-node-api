@@ -449,7 +449,7 @@ module.exports.get = catchAsync(async (req, res) => {
 
       })
     } else if (role == "STATE") {
-      let stateWithUAForms = [CollectionName.state_action_plan,CollectionNames.waterRej, FolderName['IndicatorForWaterSupply']]
+      let stateWithUAForms = [CollectionName.state_action_plan,CollectionNames.waterRej,CollectionName.waterRej , FolderName['IndicatorForWaterSupply']]
       data = filterResponseForms(data,!statesWithUA.length,stateWithUAForms)
       data.forEach((el,) => {
         if (el.category.toLowerCase() != "ulb management" && el.url !== "water-supply"
