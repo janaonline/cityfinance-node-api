@@ -124,17 +124,30 @@ function getPopulationDataQueries(state) {
             },
           },
           {
-            $unwind: "$totalUlbs",
+            $unwind: {
+              path: "$totalUlbs",
+              preserveNullAndEmptyArrays: true,
+            },
           },
           {
-            $unwind: "$totalUlbMpcAndNmpcUAPipeline",
+            $unwind: {
+              path: "$totalUlbMpcAndNmpcUAPipeline",
+              preserveNullAndEmptyArrays: true,
+            },
           },
           {
-            $unwind: "$totalUlbNonMillionPlusPipeline",
+            $unwind: {
+              path: "$totalUlbNonMillionPlusPipeline",
+              preserveNullAndEmptyArrays: true,
+            },
           },
           {
-            $unwind: "$totalUlbsInUA",
+            $unwind: {
+              path: "$totalUlbsInUA",
+              preserveNullAndEmptyArrays: true,
+            },
           },
+
           {
             $unwind: {
               path: "$totalDulyElectedNMPCs",
