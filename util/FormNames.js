@@ -12,6 +12,11 @@ module.exports.FormNames = {
 
 }
 
+module.exports.FormURL = {
+    "23_24":{
+        "GTC_STATE": "/gtCertificate"
+    }
+}
 // values: ["Grant Transfer Certificate", "Detailed Utilisation Report",
 // "Annual Accounts", "Linking of PFMS Account", "Property Tax Operationalisation",
 // "SLBs for Water Supply and Sanitation", "Open Defecation Free (ODF)", 

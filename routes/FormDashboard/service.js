@@ -18,7 +18,7 @@ const State = require('../../models/State');
 const Sidemenu = require('../../models/Sidemenu');
 const ObjectId = require('mongoose').Types.ObjectId;
 const {CollectionNames, ModelNames, FormPathMappings, ModelNamesToFormId} = require('../../util/15thFCstatus');
-const { YEAR_CONSTANTS, MASTER_STATUS, FormNames, USER_ROLE } = require('../../util/FormNames');
+const { YEAR_CONSTANTS, MASTER_STATUS, FormNames, USER_ROLE, FormURL, MASTER_STATUS_ID, MASTER_FORM_STATUS } = require('../../util/FormNames');
 const UA = require('../../models/UA');
 const {getPopulationDataQueries} = require('./query')
 const Response = require('../../service/response');
@@ -218,11 +218,17 @@ function gtcSubmitCondition2324(type, installment, state, designYear){
               actionTakenByRole: 'MoHUA',
               status: 'APPROVED',
             },
+            {
+                isDraft: false,
+                actionTakenByRole: 'STATE',
+                status: 'PENDING',
+              },
           ];
           let submitConditionState = [
             {
                 currentFormStatus:{
                     $in:[
+                        MASTER_STATUS['Under Review By MoHUA'],
                         MASTER_STATUS['Submission Acknowledged By MoHUA'],
                     ]
                 }
@@ -409,13 +415,13 @@ const COLORS = {
     ULB: {
       formName: "ULB Forms",
       approvedColor: '#E67E15',
-      submittedColor: '#E67E1566',
+      submittedColor: '#f7bf88',
       border: '#E67E15'
     },
     STATE: {
       formName: "State Forms",
       approvedColor: '#059B05',
-      submittedColor: '#E67E1599',
+      submittedColor: '#f7bf88',
       border: '#059B05'
     }
   };
@@ -442,11 +448,11 @@ function getFormData(formCategory, modelName, sidemenuForms, reviewForm, design_
   let formData = {};
   if (formCategory === "ULB") {
     formData["approvedColor"] = "#E67E15";
-    formData["submittedColor"] = "#E67E1566";
+    formData["submittedColor"] = "#f7bf88";
     formData["border"] = "#E67E15";
   } else if (formCategory === "STATE") {
     formData["approvedColor"] = "#059B05";
-    formData["submittedColor"] = "#E67E1599";
+    formData["submittedColor"] = "#f7bf88";
     formData["border"] = "#059B05";
   }
   let element = sidemenuForms.find((el) => {
@@ -505,7 +511,7 @@ function getFormData(formCategory, modelName, sidemenuForms, reviewForm, design_
   ) {
     formData["formName"] = element.name;
     formData["icon"] = element.icon;
-    formData["link"] = `/${element.url}`;
+    formData["link"] = ![YEAR_CONSTANTS['22_23']].includes(design_year) ? FormURL['23_24']['GTC_STATE'] : `/${element.url}`;
   } else if (
     modelName === CollectionNames.twentyEightSlbs &&
     element._id === "TwentyEightSlbsForm"
@@ -611,7 +617,7 @@ function approvedForms(forms, formCategory, design_year, modelName){
         ){
             switch(formCategory){
                 case "ULB":
-                    if( [MASTER_STATUS['Under Review By State'],
+                    if( [
                     MASTER_STATUS['Submission Acknowledged By MoHUA'],
                     MASTER_STATUS['Under Review By MoHUA']].includes(currentFormStatus)){
                         numOfApprovedForms++;
@@ -659,7 +665,7 @@ function UASubmittedForms(forms, formCategory, design_year, modelName) {
           [
             MASTER_STATUS["Under Review By State"]
           ].includes(currentFormStatus) &&
-            ulb.isUA === "Yes" &&
+            ulb?.isUA === "Yes" &&
             formCategory === "ULB"
         ) {
             numOfUAUlbSubmittedForms++;
@@ -901,7 +907,8 @@ function getQuery2324(modelName, formType, designYear, formCategory, stateId){
         currentFormStatus:{
             $in:[
                 MASTER_STATUS['Submission Acknowledged By MoHUA'],
-                MASTER_STATUS['Under Review By MoHUA']
+                MASTER_STATUS['Under Review By MoHUA'],
+                MASTER_FORM_STATUS['UNDER_REVIEW_BY_STATE']
             ]
         }
     }]
@@ -911,11 +918,18 @@ function getQuery2324(modelName, formType, designYear, formCategory, stateId){
             currentFormStatus:{
                 $in:[
                     MASTER_STATUS['Submission Acknowledged By MoHUA'],
+                MASTER_FORM_STATUS['UNDER_REVIEW_BY_MoHUA']
+
                 ]
             }
         }
     ]
-    let submitConditionUlb2223 = [{
+    let submitConditionUlb2223 = [
+        {
+            isDraft: false,
+            actionTakenByRole: "STATE",
+            status: "PENDING"
+        },{
         isDraft: false,
         actionTakenByRole: "STATE",
         status: "APPROVED"
@@ -926,7 +940,11 @@ function getQuery2324(modelName, formType, designYear, formCategory, stateId){
     }]
 
     let submitConditionState2223 = [
-        
+        {
+            isDraft: false,
+            actionTakenByRole: "STATE",
+            status: "PENDING"
+        },
         {
             isDraft: false,
             actionTakenByRole: "MoHUA",
@@ -1275,13 +1293,13 @@ const dashboard = async (req, res) => {
               {
                 formHeader: "ULB Forms",
                 approvedColor: "#E67E15",
-                submittedColor: "#E67E1566",
+                submittedColor: "#f7bf88",
                 formData: ulbFormsResponse,
               },
               {
                 formHeader: "State Forms",
                 approvedColor: "#059B05",
-                submittedColor: "#E67E1566",
+                submittedColor: "#f7bf88",
                 formData: stateFormsResponse,
               },
             ],
@@ -1316,13 +1334,13 @@ const dashboard = async (req, res) => {
             data: [{
                 formHeader:'ULB Forms',
                 approvedColor:'#E67E15',
-                submittedColor:'#E67E1566',
+                submittedColor:'#f7bf88',
                 formData: ulbFormsResponse
             },
             {
                 formHeader:'State Forms',
                 approvedColor:'#059B05',
-                submittedColor:'#E67E1566',
+                submittedColor:'#f7bf88',
                 formData : stateFormsResponse
             }]
         })
