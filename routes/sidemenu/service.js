@@ -32,7 +32,7 @@ const { years } = require('../../service/years');
 const { getKeyByValue } = require('../../util/masterFunctions');
 const { stat } = require('fs');
 const UA = require('../../models/UA');
-const { FolderName } = require('../../util/15thFCstatus');
+const { FolderName, CollectionNames } = require('../../util/15thFCstatus');
 const ticks = {
   "green": "../../../assets/form-icon/checked.svg",
   "red": "../../../assets/form-icon/cancel.svg"
@@ -449,7 +449,7 @@ module.exports.get = catchAsync(async (req, res) => {
 
       })
     } else if (role == "STATE") {
-      let stateWithUAForms = [CollectionName.state_action_plan,CollectionName.waterRej, FolderName['IndicatorForWaterSupply']]
+      let stateWithUAForms = [CollectionName.state_action_plan,CollectionNames.waterRej, FolderName['IndicatorForWaterSupply']]
       data = filterResponseForms(data,!statesWithUA.length,stateWithUAForms)
       data.forEach((el,) => {
         if (el.category.toLowerCase() != "ulb management" && el.url !== "water-supply"
