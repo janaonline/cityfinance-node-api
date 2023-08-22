@@ -217,7 +217,7 @@ module.exports.get = async (req, res) => {
         return ![MASTER_FORM_STATUS['RETURNED_BY_STATE'], MASTER_FORM_STATUS['UNDER_REVIEW_BY_STATE']].includes(el.statusId)
       })
     }
-    if (formType == "STATE" && ['GrantClaim'].includes(collectionName)) {
+    if (formType == "STATE" && ['GrantClaim', ''].includes(collectionName)) {
       delete stateColumnNames.formStatus
     }
 
