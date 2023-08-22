@@ -458,7 +458,7 @@ module.exports.get = catchAsync(async (req, res) => {
           let flag = 0;
           if(singleYearFormCollections.includes(el.path)){
             el._id = FormModelMapping_State[el.path]
-          }
+          } 
           output.forEach(el2 => {
             if ((el._id).toString() == (Object.keys(el2)[0])) {
               Object.assign(el, el2[Object.keys(el2)[0]])
