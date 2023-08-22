@@ -18,7 +18,7 @@ const State = require('../../models/State');
 const Sidemenu = require('../../models/Sidemenu');
 const ObjectId = require('mongoose').Types.ObjectId;
 const {CollectionNames, ModelNames, FormPathMappings, ModelNamesToFormId} = require('../../util/15thFCstatus');
-const { YEAR_CONSTANTS, MASTER_STATUS, FormNames, USER_ROLE, FormURL } = require('../../util/FormNames');
+const { YEAR_CONSTANTS, MASTER_STATUS, FormNames, USER_ROLE, FormURL, MASTER_STATUS_ID, MASTER_FORM_STATUS } = require('../../util/FormNames');
 const UA = require('../../models/UA');
 const {getPopulationDataQueries} = require('./query')
 const Response = require('../../service/response');
@@ -218,11 +218,17 @@ function gtcSubmitCondition2324(type, installment, state, designYear){
               actionTakenByRole: 'MoHUA',
               status: 'APPROVED',
             },
+            {
+                isDraft: false,
+                actionTakenByRole: 'STATE',
+                status: 'PENDING',
+              },
           ];
           let submitConditionState = [
             {
                 currentFormStatus:{
                     $in:[
+                        MASTER_STATUS['Under Review By MoHUA'],
                         MASTER_STATUS['Submission Acknowledged By MoHUA'],
                     ]
                 }
@@ -611,7 +617,7 @@ function approvedForms(forms, formCategory, design_year, modelName){
         ){
             switch(formCategory){
                 case "ULB":
-                    if( [MASTER_STATUS['Under Review By State'],
+                    if( [
                     MASTER_STATUS['Submission Acknowledged By MoHUA'],
                     MASTER_STATUS['Under Review By MoHUA']].includes(currentFormStatus)){
                         numOfApprovedForms++;
@@ -659,7 +665,7 @@ function UASubmittedForms(forms, formCategory, design_year, modelName) {
           [
             MASTER_STATUS["Under Review By State"]
           ].includes(currentFormStatus) &&
-            ulb.isUA === "Yes" &&
+            ulb?.isUA === "Yes" &&
             formCategory === "ULB"
         ) {
             numOfUAUlbSubmittedForms++;
@@ -901,7 +907,8 @@ function getQuery2324(modelName, formType, designYear, formCategory, stateId){
         currentFormStatus:{
             $in:[
                 MASTER_STATUS['Submission Acknowledged By MoHUA'],
-                MASTER_STATUS['Under Review By MoHUA']
+                MASTER_STATUS['Under Review By MoHUA'],
+                MASTER_FORM_STATUS['UNDER_REVIEW_BY_STATE']
             ]
         }
     }]
@@ -911,11 +918,18 @@ function getQuery2324(modelName, formType, designYear, formCategory, stateId){
             currentFormStatus:{
                 $in:[
                     MASTER_STATUS['Submission Acknowledged By MoHUA'],
+                MASTER_FORM_STATUS['UNDER_REVIEW_BY_MoHUA']
+
                 ]
             }
         }
     ]
-    let submitConditionUlb2223 = [{
+    let submitConditionUlb2223 = [
+        {
+            isDraft: false,
+            actionTakenByRole: "STATE",
+            status: "PENDING"
+        },{
         isDraft: false,
         actionTakenByRole: "STATE",
         status: "APPROVED"
@@ -926,7 +940,11 @@ function getQuery2324(modelName, formType, designYear, formCategory, stateId){
     }]
 
     let submitConditionState2223 = [
-        
+        {
+            isDraft: false,
+            actionTakenByRole: "STATE",
+            status: "PENDING"
+        },
         {
             isDraft: false,
             actionTakenByRole: "MoHUA",
