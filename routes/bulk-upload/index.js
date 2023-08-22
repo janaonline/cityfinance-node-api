@@ -89,6 +89,6 @@ router.post('/updatepopulation', multerUpload.single('csv'), BulkUpload.csvToJSO
 router.post('/updateyearkeys', multerUpload.single('csv'), BulkUpload.csvToJSON, updateyearkeys)
 
 const expectedSheetNames = ['stateDetails', 'waterBodies', 'reuseWater', 'serviceLevelIndicators'];
-router.post('/bulk/water-rejenuvation-22-23', verifyToken, userAuth, multerUploadEXCEL.single('excelFile'), BulkUpload.excelToJSON(expectedSheetNames), BulkUpload.waterrejenuvation)
+router.post('/bulk/water-rejenuvation', verifyToken, userAuth, multerUploadEXCEL.single('excelFile'), BulkUpload.excelToJSON(expectedSheetNames), BulkUpload.waterrejenuvation)
 
 module.exports = router;
