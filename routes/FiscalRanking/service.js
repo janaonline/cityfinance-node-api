@@ -1318,8 +1318,8 @@ exports.getView = async function (req, res, next) {
       currentFormStatus: viewOne.currentFormStatus,
       financialYearTableHeader,
       messages: userMessages,
-      hideForm,
-      notice
+      // hideForm,
+      // notice
     };
     if (userMessages.length > 0) {
       let { approvedPerc, rejectedPerc } = calculatePercentage(modifiedLedgerData, requiredFields, viewOne)
@@ -3901,6 +3901,8 @@ module.exports.actionTakenByMoHua = catchAsync(async (req, res) => {
       formStatus = await decideOverAllStatus(calculationsTabWise)
       if (formStatus === statusTracker['RBP']) {
         await sendEmailToUlb(ulbId)
+        console.log({formId})
+        await updateRejectCount(ulbId,design_year);
       }
 
     }
@@ -3932,6 +3934,14 @@ module.exports.actionTakenByMoHua = catchAsync(async (req, res) => {
   }
   return res.status(500).json(response);
 });
+
+const updateRejectCount = async(ulb, design_year)=> {
+  try {
+    await FiscalRanking.findOneAndUpdate({ulb, design_year},{$inc: {rejectedCount : 1}})
+  } catch (error) {
+    console.log("error:::", error)
+  }
+}
 
 async function checkIfFormIdExistsOrNot(
   formId,
@@ -4762,6 +4772,7 @@ function computeQuery(params, cond = null) {
                 propertySanitationTax: 1,
                 fy_21_22_cash: 1,
                 otherUpload: 1,
+                rejectedCount:1,
                 signedCopyOfFile: 1,
                 currentFormStatus: 1,
                 ulbDataSubmitted: "$progress.ulbCompletion",
@@ -4800,61 +4811,7 @@ function computeQuery(params, cond = null) {
         },
       },
       {
-        "$lookup":{
-            "from":"statushistories",
-            "let":{
-                "recordId":"$fiscalrankings._id",
-                "status":statusTracker.RBP
-            },
-            "pipeline":[
-              {
-                "$match": {
-                    "$expr": {
-                        "$and": [
-                            {"$eq":[ "$recordId", "$$recordId"]},
-                            {
-                               "$eq": [{ $arrayElemAt: ['$data.status', 0] }, "$$status"]
-                            }
-                           
-                        ]
-                    }
-                }
-            }
-        
-            ],
-            "as":"statuses"
-        }
-    },
-      {
         $addFields: {
-          "formRejectedTimes":{
-            
-            "$cond":{
-              "if":{
-                 "$gt":[
-                 {
-                     "$size":"$statuses"
-                 },
-                 0
-                 ]
-              },
-              "then":{
-                  "$size":"$statuses"
-              },
-              "else":{
-                  "$sum":{
-                      "$cond":{
-                          "if":{
-                              "$eq":["$fiscalrankings.currentFormStatus",statusTracker['RBP']]
-                          },
-                          "then":1,
-                          "else":0
-                      }
-                  }
-              }
-          }
-      
-        },
           currentFormStatus: {
             $cond: {
               if: {
@@ -4869,6 +4826,7 @@ function computeQuery(params, cond = null) {
           populationType: getPopulationCondition()
         }
       },
+      
       { $match: condition_one },
       {
         $lookup: {
@@ -5151,7 +5109,7 @@ function computeQuery(params, cond = null) {
           signedCopyOfFile: {
             $ifNull: ["$fiscalrankings.signedCopyOfFile.url", ""],
           },
-          formRejectedTimes:1,
+          formRejectedTimes:"$fiscalrankings.rejectedCount",
           fiscalrankingmappers: 1,
           arrayOfMandatoryField: "$fiscalrankings.arrayOfMandatoryField",
           completionPercentFR: {
@@ -5531,7 +5489,9 @@ module.exports.getTrackingHistory = async(req,res)=>{
       let nextItem = history[idx+1] || {data:{status:"null"}}
       let status = item?.data?.status|| item['data'][0]['status'] 
       let nextStatus = (nextItem?.data?.status|| nextItem['data'][0]['status'])
-      item.createdAt = nextItem.createdAt || item.createdAt
+      if(status === statusTracker['VIP'] && nextStatus === statusTracker['VIP']){
+        item.createdAt = nextItem.createdAt || item.createdAt
+      }
       return(status !== nextStatus)
     })
     let histories = filteredHistory.map((item ,index)=> {
