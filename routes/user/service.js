@@ -238,17 +238,17 @@ module.exports.getAll = async (req, res) => {
                             stateName: "$state.name",
                             stateCode: "$state.code",
                             stateIsActive: "$state.isActive",
-                            ulb: '$_id',
-                            ulbName: '$name',
-                            ulbCode: '$code',
-                            sbCode: '$sbCode',
-                            censusCode: '$censusCode',
-                            ulbType: '$ulbType.name',
+                            ulb: "$_id",
+                            ulbName: "$name",
+                            ulbCode: "$code",
+                            sbCode: "$sbCode",
+                            censusCode: "$censusCode",
+                            ulbType: "$ulbType.name",
                             status: {
                                 $cond: [
-                                    { $ifNull: ['$user.status', false] },
-                                    '$status',
-                                    'NA'
+                                    { $ifNull: ["$user.status", false] },
+                                    "$user.status",
+                                    "NA"
                                 ]
                             },
                             rejectReason: "$user.rejectReason",
@@ -259,7 +259,8 @@ module.exports.getAll = async (req, res) => {
                             accountantConatactNumber: "$user.accountantConatactNumber",
                             accountantEmail: "$user.accountantEmail",
                             accountantName: "$user.accountantName",
-                            user: { $ifNull: ["$user._id", "false"] }
+                            user: { $ifNull: ["$user._id", false] },
+                            isDeleted: "$user.isDeleted"
                         }
                     },
   
@@ -390,7 +391,8 @@ module.exports.getAll = async (req, res) => {
                             accountantConatactNumber: 1,
                             accountantEmail: 1,
                             accountantName: 1,
-                            mobile: 1
+                            mobile: 1,
+                            isDeleted:1
                         }
                     },
 
