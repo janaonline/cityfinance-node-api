@@ -408,7 +408,7 @@ function getCollections2324(type, installment) {
 const COLORS = {
     ULB: {
       formName: "ULB Forms",
-      approvedColor: '#E67E15',
+      approvedColor: '#059B05',
       submittedColor: '#E67E1566',
       border: '#E67E15'
     },
