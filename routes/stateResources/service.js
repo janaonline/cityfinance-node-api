@@ -36,7 +36,7 @@ const handleDatabaseUpload = async (req, res, next) => {
             subCategoryId: ObjectId(req.body?.subCategoryId)
         });
 
-        if(uploaded) {
+        if (uploaded) {
             req.body.id = uploaded._id;
         }
         next();
@@ -565,6 +565,11 @@ const getResourceList = async (req, res, next) => {
             {
                 $match: {
                     module: 'state_resource',
+                }
+            },
+            {
+                $sort: {
+                    createdAt: -1
                 }
             },
             {
