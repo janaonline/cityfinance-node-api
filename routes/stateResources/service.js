@@ -36,7 +36,7 @@ const handleDatabaseUpload = async (req, res, next) => {
             subCategoryId: ObjectId(req.body?.subCategoryId)
         });
 
-        if(uploaded) {
+        if (uploaded) {
             req.body.id = uploaded._id;
         }
         next();
@@ -481,6 +481,7 @@ const getCategoryWiseResource = async (req, res, next) => {
             {
                 $match: {
                     module: 'state_resource',
+                    relatedIds: ObjectId(req.decoded.state)
                 },
             },
             {
@@ -557,13 +558,18 @@ const removeStateFromFiles = async (req, res, next) => {
 const getResourceList = async (req, res, next) => {
     const skip = +req.query.skip || 0;
     const limit = +req.query.limit || 2;
-    const { categoryId, stateId } = req.query;
+    const { categoryId, stateId, subCategoryId } = req.query;
 
     try {
         const query = [
             {
                 $match: {
                     module: 'state_resource',
+                }
+            },
+            {
+                $sort: {
+                    createdAt: -1
                 }
             },
             {
@@ -576,10 +582,11 @@ const getResourceList = async (req, res, next) => {
                     path: "$relatedIds",
                 }
             },
-            ...(categoryId || stateId ? [
+            ...(categoryId || stateId || subCategoryId ? [
                 {
                     $match: {
                         ...(categoryId && { categoryId: ObjectId(categoryId) }),
+                        ...(subCategoryId && { subCategoryId: ObjectId(subCategoryId) }),
                         ...(stateId && { relatedIds: ObjectId(stateId) })
                     }
                 },

@@ -18,7 +18,7 @@ const CategoryFileUpload = new Schema(
                     const currentCount = await mongoose.model('CategoryFileUpload').countDocuments({ subCategoryId: ObjectId(id)});
                     return currentCount < maxUploads;
                 },
-                message: 'Exceeding maximum limit'
+                message: 'Maximum upload limit exceeded for this subcategory.'
             }
         },
         title: { type: String, required: true },
