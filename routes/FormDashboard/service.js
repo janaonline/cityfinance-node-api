@@ -1536,7 +1536,8 @@ async function updateResponseFormat(ulbForm, stateForm){
 
 function calculateGrantAvailable(ulbForm, stateForm){
     try { 
-        for(let form of [...ulbForm['formData'],...stateForm['formData']]){
+        let formList = [...ulbForm['formData'],...stateForm['formData']]
+        for(let form of formList){
             if(form?.status !== ELIGIBLITY['YES']){
                 return false;
             }
