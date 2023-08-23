@@ -387,6 +387,7 @@ function getCollections2324(type, installment) {
       GrantTransferCertificate,
       StateFinanceCommission,
       PropertyTaxOp,
+      DUR
     ],
     mpc_tied_1: [
       AnnualAccounts,
