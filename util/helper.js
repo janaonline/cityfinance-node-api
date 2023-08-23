@@ -94,6 +94,9 @@ function Helper() {
             return ""
         }
     }
+    this.isValidDate = (d) => {
+        return d instanceof Date && !isNaN(d);
+    }
 }
 function padTo2Digits(num) {
     return num.toString().padStart(2, '0');
