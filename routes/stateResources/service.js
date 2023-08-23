@@ -8,6 +8,7 @@ const State = require('../../models/State');
 const CategoryFileUpload = require('../../models/CategoryFileUpload');
 const { loadExcelByUrl } = require('../../util/worksheet');
 const { isValidObjectId } = require("mongoose");
+const { isValidDate } = require("../../util/helper");
 
 
 const isValidNumber = str => {
@@ -113,7 +114,7 @@ const dulyElectedTemplate = async (req, res, next) => {
                 };
             });
         });
-        const ulbData = await Ulb.aggregate([
+        const query = [
             {
                 $lookup: {
                     from: "states",
@@ -132,9 +133,6 @@ const dulyElectedTemplate = async (req, res, next) => {
                     foreignField: "ulbId",
                     as: "grantallocation2324"
                 }
-            },
-            {
-                $unwind: '$grantallocation2324'
             },
             {
                 $project: {
@@ -161,14 +159,15 @@ const dulyElectedTemplate = async (req, res, next) => {
                         }
                     },
                     electedDate: 1,
-                    untiedGrantAmount: '$grantallocation2324.untiedGrantAmount',
-                    untiedGrantPercent: '$grantallocation2324.untiedGrantPercent',
-                    tiedGrantAmount: '$grantallocation2324.tiedGrantAmount',
-                    tiedGrantPercent: '$grantallocation2324.tiedGrantPercent',
+                    untiedGrantAmount: { $arrayElemAt: ['$grantallocation2324.untiedGrantAmount', 0] },
+                    untiedGrantPercent: { $arrayElemAt: ['$grantallocation2324.untiedGrantPercent', 0] },
+                    tiedGrantAmount: { $arrayElemAt: ['$grantallocation2324.tiedGrantAmount', 0] },
+                    tiedGrantPercent: { $arrayElemAt: ['$grantallocation2324.tiedGrantPercent', 0] },
                 }
             }
-        ]);
+        ];
 
+        const ulbData = await Ulb.aggregate(query);
 
 
         worksheet.addRows(ulbData.map((value, sno) => ({ ...value, sno: sno + 1 })), { startingRow, properties: { outlineLevel: 1 } });
@@ -223,15 +222,23 @@ const updateDulyElectedTemplate = async (req, res, next, worksheet, workbook) =>
 
 
             const isDulyElected = dulyElectedsColumns[index] ? (dulyElectedsColumns[index] == 'Duly Elected') : null;
-            const electedDate = dulyElectedsDateColumns[index];
+            const electedDate = new Date(dulyElectedsDateColumns[index]);
+
+            if (isDulyElected  && !isValidDate(electedDate)) {
+                validationErrors.push({
+                    r: index,
+                    c: columnDulyElectedDate,
+                    message: `Please selected a valid date in format dd/mm/yyyy`
+                });
+            }
             const result = {
                 updateOne: {
                     filter: { _id: ObjectId(_id) },
                     update: {
                         $set: {
                             isDulyElected,
-                            ...(isDulyElected == true && {
-                                electedDate: new Date()
+                            ...(isDulyElected == true && isValidDate(electedDate) && {
+                                electedDate
                             })
                         }
                     }
