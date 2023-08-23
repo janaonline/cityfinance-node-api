@@ -1090,7 +1090,7 @@ const dashboard = async (req, res) => {
             submitUAFormPercent = {},
             totalUlbs = {};
 
-        let { totalUlbNonMillionPlusPipeline, totalUlbMpcAndNmpcUAPipeline, sidemenuPipeline, reviewUlbCondition } = getQueries(states);
+        let { totalUlbNonMillionPlusPipeline, totalUlbMpcAndNmpcUAPipeline, sidemenuPipeline, reviewUlbCondition, indicatorFormCondition } = getQueries(states);
         let hasUA =  await UA.aggregate([{
             $group:{
                 _id:"$state"
@@ -1102,9 +1102,10 @@ const dashboard = async (req, res) => {
         }else{
             totalUlbs = await State.aggregate(totalUlbMpcAndNmpcUAPipeline);
         }
-        let [sidemenuForms, reviewSidemenuForm] = await Promise.all([
+        let [sidemenuForms, reviewSidemenuForm, indicatorSidemenuForm] = await Promise.all([
             Sidemenu.aggregate(sidemenuPipeline),
-            Sidemenu.findOne(reviewUlbCondition).lean()
+            Sidemenu.findOne(reviewUlbCondition).lean(),
+            Sidemenu.findOne(indicatorFormCondition).lean()
         ]);
         let multi = states?.length >= 1 ? true : false
         if(!Boolean(multi)){
@@ -1262,12 +1263,15 @@ const dashboard = async (req, res) => {
                   const slbScoringEntry = statesFormData[state]?.stateResponse.find(el=> el.key === CollectionNames.slbScoring)
                   if (hasUA.length && data.formType === "mpc_tied" && !slbScoringEntry) {
                     if (indicatorFormCount === indicatorFormValidationCount && ![YEAR_CONSTANTS['22_23']].includes(data.design_year)) {
-                      let { leastSubmitPercent, leastSubmitNumber } =
+                      let { leastSubmitPercent, leastSubmitNumber, leastApprovedNumber, leastApprovedPercent } =
                         addSlbScoringData(ulbResponseArray);
                       let slbScoring = getSlbScoringResponse(
                         leastSubmitPercent,
                         leastSubmitNumber,
-                        cutOff
+                        leastApprovedNumber,
+                        leastApprovedPercent,
+                        cutOff,
+                        indicatorSidemenuForm
                       );
                        stateResponseArray.push(slbScoring);
                     }
@@ -1921,7 +1925,10 @@ function getQueries(states) {
         "isActive": true,
         "name": "Review Grant Application"
     };
-    return { totalUlbNonMillionPlusPipeline, totalUlbMpcAndNmpcUAPipeline, sidemenuPipeline, reviewUlbCondition };
+    const indicatorFormCondition = {
+        "folderName" : "indicators_wss",
+    }
+    return { totalUlbNonMillionPlusPipeline, totalUlbMpcAndNmpcUAPipeline, sidemenuPipeline, reviewUlbCondition, indicatorFormCondition };
 }
 
 /**
@@ -1934,19 +1941,19 @@ function getQueries(states) {
  * submission to be considered as approved.
  * @returns an object with the following properties:
  */
-function getSlbScoringResponse(leastSubmitPercent, leastSubmitNumber, cutOff) {
+function getSlbScoringResponse(leastSubmitPercent, leastSubmitNumber,leastApprovedNumber, leastApprovedPercent, cutOff,indicatorSidemenuForm) {
     return {
         formName: FormNames["indicatorForm"],
         key: ModelNames['slbScoring'],
         approvedColor: COLORS['STATE']['approvedColor'],
         submittedColor: COLORS['STATE']['submittedColor'],
         submittedValue: leastSubmitPercent ?? 0,
-        approvedValue: null,
-        totalApproved: null,
+        approvedValue: leastApprovedPercent ?? 0,
+        totalApproved: leastApprovedNumber ?? 0,
         totalSubmitted: leastSubmitNumber ?? 0,
         cutOff,
-        icon: null,
-        link: null,
+        icon: indicatorSidemenuForm['icon'],
+        link: `/${indicatorSidemenuForm['url']}`,
         border: COLORS['STATE']['border'] ?? null,
         status: leastSubmitPercent === 100 ? ELIGIBLITY['YES'] : ELIGIBLITY['NO']
     };
@@ -1964,16 +1971,20 @@ function addSlbScoringData(ulbResponseArray){
     try {
         const maxPercent = 100;
         const collectionNamesArr = [CollectionNames['twentyEightSlbs'],CollectionNames['odf'], CollectionNames['gfc']];
-        let leastSubmitPercent = maxPercent, leastSubmitNumber;
+        let leastSubmitPercent = maxPercent, leastSubmitNumber,leastApprovedPercent = maxPercent, leastApprovedNumber ;
         for(let ulbResponse of ulbResponseArray ){
             if(collectionNamesArr.includes(ulbResponse.key)){
                 if(ulbResponse.submittedValue <= leastSubmitPercent){    
                     leastSubmitPercent = ulbResponse.submittedValue;
                     leastSubmitNumber = ulbResponse.totalSubmitted;
                 }
+                if(ulbResponse.approvedValue <= leastApprovedPercent){
+                    leastApprovedPercent = ulbResponse.approvedValue;
+                    leastApprovedNumber = ulbResponse.totalApproved;
+                }
             }
         }
-        return {leastSubmitPercent, leastSubmitNumber};
+        return {leastSubmitPercent, leastSubmitNumber, leastApprovedPercent, leastApprovedNumber};
     } catch (error) {
         throw(`addSlbScoringData:: ${error.message}`)
     }
