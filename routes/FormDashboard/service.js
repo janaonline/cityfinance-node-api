@@ -387,6 +387,7 @@ function getCollections2324(type, installment) {
       GrantTransferCertificate,
       StateFinanceCommission,
       PropertyTaxOp,
+      DUR
     ],
     mpc_tied_1: [
       AnnualAccounts,
@@ -1535,7 +1536,7 @@ async function updateResponseFormat(ulbForm, stateForm){
 
 function calculateGrantAvailable(ulbForm, stateForm){
     try { 
-        for(let form of [...ulbForm['formData'],stateForm['formData']]){
+        for(let form of [...ulbForm['formData'],...stateForm['formData']]){
             if(form?.status !== ELIGIBLITY['YES']){
                 return false;
             }
