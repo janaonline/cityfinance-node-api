@@ -1,3 +1,4 @@
+const axios = require('axios');
 const { MASTER_STATUS, YEAR_CONSTANTS, } = require("../../util/FormNames");
 const State = require("../../models/State")
 const UA = require("../../models/UA")
@@ -65,12 +66,17 @@ module.exports = async function (req, res) {
         const lineItemsKeyValue = Object.fromEntries(lineItems.map(item => [item.name, item.lineItemId]));  
         if (data) {
             mergedStateData = await Promise.all(data.stateDetails.map(async stateDetail => {
+                let declarationUrl = {}
+                // if(stateDetail['declaration']){
+                //     retriveS3Url(stateDetail);
+                // }
                 const statedata = await State.findOne({ code: stateDetail["State Code"] }).lean();
                 if (statedata) {
                     return {
                         state: statedata._id,
                         state_code: stateDetail["State Code"],
                         design_year: YEAR_CONSTANTS['22_23'],
+                        declaration:declarationUrl,
                         uaData: [],
                         status: MASTER_STATUS["Submission Acknowledged By MoHUA"],
                         isDraft: false
@@ -118,6 +124,40 @@ module.exports = async function (req, res) {
         })
     }
 }
+
+// function retriveS3Url(stateDetail) {
+//     axios({ method: 'get', url: stateDetail['declaration'], responseType: 'stream' }).then(response => {
+//         // Create a temporary file to store the fetched content
+//         const tempFilePath = 'temp-file.tmp';
+//         const writer = fs.createWriteStream(tempFilePath);
+
+//         response.data.pipe(writer);
+
+//         writer.on('finish', () => {
+//             // Upload the temporary file to S3
+//             const fileStream = fs.createReadStream(tempFilePath);
+
+//             const params = {
+//                 Bucket: bucketName,
+//                 Key: objectKey,
+//                 Body: fileStream
+//             };
+
+//             s3.upload(params, (err, data) => {
+//                 if (err) {
+//                     console.error('Error uploading to S3:', err);
+//                 } else {
+//                     console.log('File uploaded to S3 successfully:', data.Location);
+
+//                     // Clean up the temporary file
+//                     fs.unlinkSync(tempFilePath);
+//                 }
+//             });
+//         });
+//     }).catch(error => {
+//         console.error('Error fetching file from URL:', error);
+//     });
+// }
 
 /**
  * The function create a JSON object with specific data structure and values.
