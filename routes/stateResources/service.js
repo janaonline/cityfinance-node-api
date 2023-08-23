@@ -212,7 +212,7 @@ const updateDulyElectedTemplate = async (req, res, next, worksheet, workbook) =>
         const dulyElectedUpdateQuery = _ids.map((_id, index) => {
             if (!_id || !isValidObjectId(_id)) return;
 
-            if (dulyElectedsColumns[index] && !['Duly Elected', 'Not Elected'].includes(dulyElectedsColumns[index])) {
+            if (dulyElectedsColumns[index] && !['duly elected', 'not elected'].includes(dulyElectedsColumns[index])?.toLowerCase()) {
                 validationErrors.push({
                     r: index,
                     c: columnDulyElected,
@@ -442,7 +442,7 @@ const updateGsdpTemplate = async (req, res, next, worksheet, workbook) => {
         const gsdpUpdateQuery = _ids.map((_id, index) => {
             if (!_id || !isValidObjectId(_id)) return;
 
-            if (gdsps[index] && !['Eligible', 'Not Eligible'].includes(gdsps[index])) {
+            if (gdsps[index] && !['eligible', 'not eligible'].includes(gdsps[index]?.toLowerCase())) {
                 validationErrors.push({
                     r: index,
                     c: columnGdspElected,
