@@ -212,7 +212,7 @@ const updateDulyElectedTemplate = async (req, res, next, worksheet, workbook) =>
         const dulyElectedUpdateQuery = _ids.map((_id, index) => {
             if (!_id || !isValidObjectId(_id)) return;
 
-            if (dulyElectedsColumns[index] && !['duly elected', 'not elected'].includes(dulyElectedsColumns[index])?.toLowerCase()) {
+            if (dulyElectedsColumns[index] && !['duly elected', 'not elected'].includes(dulyElectedsColumns[index]?.toLowerCase())) {
                 validationErrors.push({
                     r: index,
                     c: columnDulyElected,
@@ -222,9 +222,13 @@ const updateDulyElectedTemplate = async (req, res, next, worksheet, workbook) =>
 
 
             const isDulyElected = dulyElectedsColumns[index] ? (dulyElectedsColumns[index] == 'Duly Elected') : null;
-            const electedDate = new Date(dulyElectedsDateColumns[index]);
-
-            if (isDulyElected  && !isValidDate(electedDate)) {
+            let electedDate = dulyElectedsDateColumns[index];
+            if (typeof dulyElectedsDateColumns[index] == 'string') {
+                electedDate = new Date(dulyElectedsDateColumns[index]?.split('/')?.reverse()?.join('-'));
+            } else if (isValidDate(dulyElectedsDateColumns[index])) {
+                electedDate = dulyElectedsDateColumns[index];
+            }
+            if (isDulyElected && !isValidDate(electedDate)) {
                 validationErrors.push({
                     r: index,
                     c: columnDulyElectedDate,
