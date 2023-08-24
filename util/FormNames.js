@@ -8,8 +8,8 @@ module.exports.FormNames = {
     propTaxOp: "Property Tax Operationalisation",
     slb28: "28 SLBs",
     indicatorForm: "Indicators for Water Supply and Sanitation",
-    slbScoring: "Submit Claims for 15th FC Grants"
-
+    slbScoring: "Submit Claims for 15th FC Grants",
+    detailPTaxOp : "Details of Property Tax and User Charges"
 }
 
 module.exports.FormURL = {
