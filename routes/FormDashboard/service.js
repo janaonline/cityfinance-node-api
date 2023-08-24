@@ -558,7 +558,7 @@ function getFormData(formCategory, modelName, sidemenuForms, reviewForm, design_
     modelName === CollectionNames.propTaxOp &&
     element._id === "PropertyTaxOp"
   ) {
-    formData["formName"] = element.name;
+    formData["formName"] = ![YEAR_CONSTANTS['22_23']].includes(design_year) ? FormNames['detailPTaxOp'] : element.name;
     formData["icon"] = element.icon;
     formData["link"] = `/${element.url}`;
   } else if (
