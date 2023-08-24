@@ -1326,12 +1326,10 @@ const dashboard = async (req, res) => {
                 formData: stateFormsResponse,
               }
          let data = await updateResponseFormat(ulbForms, stateForms)
-         const isAvailableForGrant = calculateGrantAvailable(ulbForms, stateForms);
 
         return res.status(200).json({
             success: true,
             data,
-            isAvailableForGrant
         })
         }
         return res.status(200).json({
@@ -1526,12 +1524,14 @@ function buildStateInfo(input) {
 
 async function updateResponseFormat(ulbForm, stateForm){
     try {
+        const isAvailableForGrant = calculateGrantAvailable(ulbForm, stateForm);
         const formData = {
             ulbForm,
             stateForm
         };
         return {
             formData,
+            isAvailableForGrant
         }
     } catch (error) {
         throw { message: `updateResponseFormat:: ${error.message}`}
