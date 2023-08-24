@@ -682,6 +682,7 @@ const getResourceList = async (req, res, next) => {
                     }
                 }
             },
+            { $sort: { "files.0.createdAt": -1 } },
             {
                 $facet: {
                     totalCount: [{ $count: "count" }],
