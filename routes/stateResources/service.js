@@ -71,7 +71,7 @@ const handleDatabaseUpload = async (req, res, next) => {
 const dulyElectedTemplate = async (req, res, next) => {
     const templateName = req.params.templateName;
     try {
-
+        const relatedIds = Array.isArray(req.query.relatedIds) ? req.query.relatedIds : [req.query.relatedIds];
         const startingRow = 3;
         const workbook = new ExcelJS.Workbook();
         const worksheet = workbook.addWorksheet('My Sheet');
@@ -115,6 +115,9 @@ const dulyElectedTemplate = async (req, res, next) => {
             });
         });
         const query = [
+            {
+                $match: { state: { $in: relatedIds.map(id => ObjectId(id)) } }
+            },
             {
                 $lookup: {
                     from: "states",
@@ -323,7 +326,7 @@ const updateDulyElectedTemplate = async (req, res, next, worksheet, workbook) =>
 const gsdpTemplate = async (req, res, next) => {
     const templateName = req.params.templateName;
     try {
-
+        const relatedIds = Array.isArray(req.query.relatedIds) ? req.query.relatedIds : [req.query.relatedIds];
         const startingRow = 1;
         const workbook = new ExcelJS.Workbook();
         const worksheet = workbook.addWorksheet('My Sheet');
@@ -355,6 +358,9 @@ const gsdpTemplate = async (req, res, next) => {
         });
 
         const ulbData = await Ulb.aggregate([
+            {
+                $match: { state: { $in: relatedIds.map(id => ObjectId(id)) } }
+            },
             {
                 $lookup: {
                     from: "states",
