@@ -1263,8 +1263,9 @@ const dashboard = async (req, res) => {
                   const slbScoringEntry = statesFormData[state]?.stateResponse.find(el=> el.key === CollectionNames.slbScoring)
                   if (hasUA.length && data.formType === "mpc_tied" && !slbScoringEntry) {
                     if (indicatorFormCount === indicatorFormValidationCount && ![YEAR_CONSTANTS['22_23']].includes(data.design_year)) {
+                      const indicatorDependentForms = [...statesFormData[state]["ulbResponse"],...ulbResponseArray]
                       let { leastSubmitPercent, leastSubmitNumber, leastApprovedNumber, leastApprovedPercent } =
-                        addSlbScoringData(ulbResponseArray);
+                        addSlbScoringData(indicatorDependentForms);
                       let slbScoring = getSlbScoringResponse(
                         leastSubmitPercent,
                         leastSubmitNumber,
