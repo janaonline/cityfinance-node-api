@@ -1330,7 +1330,6 @@ const dashboard = async (req, res) => {
         return res.status(200).json({
             success: true,
             data,
-    
         })
         }
         return res.status(200).json({
@@ -1541,12 +1540,12 @@ async function updateResponseFormat(ulbForm, stateForm){
 
 function calculateGrantAvailable(ulbForm, stateForm){
     try { 
-        // let formList = [...ulbForm['formData'],...stateForm['formData']]
-        // for(let form of formList){
-        //     if(form?.status !== ELIGIBLITY['YES']){
-        //         return false;
-        //     }
-        // }
+        let formList = [...ulbForm['formData'],...stateForm['formData']]
+        for(let form of formList){
+            if(form?.status !== ELIGIBLITY['YES']){
+                return false;
+            }
+        }
         return true;
     } catch (error) {
         throw { message: `calculateGrantAvailable:: ${error.message}`}
