@@ -28,6 +28,7 @@ module.exports.getValue = async (req, res) =>{
     try {
         let type = req?.query?.type;
         let query = { isActive: true }; 
+        if (!type) return Response.BadRequest(res, {}, "parameter is required");
         if (type) {
             type = req?.query?.type;
             query.moduleName = type; 
