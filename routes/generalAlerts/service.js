@@ -34,14 +34,15 @@ module.exports.getValue = async (req, res) =>{
             query.moduleName = type; 
         }
         let output = await GeneralAlerts.findOne(query, {
-            title: 1, icon: 1, text: 1, isActive: 1
+            title: 1, icon: 1, text: 1, position:1, isActive: 1
         }).sort({ createdAt: -1 }).lean();
         const response = {
             isActive: true,
             message: {
                 title: output?.title || "Alert",
                 icon: output?.icon || "warning",
-                text: output?.text || "Failed"
+                text: output?.text || "Failed",
+                position: output?.position || "top-start"
             },
         };
         if (!output) return Response.BadRequest(res, {}, "Failed");
