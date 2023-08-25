@@ -1,5 +1,6 @@
 const ExcelJS = require("exceljs");
 const ObjectId = require("mongoose").Types.ObjectId;
+// const ensureArray = require('ensure-array');
 
 const MainCategory = require('../../models/Master/MainCategory');
 const Ulb = require('../../models/Ulb');
@@ -9,6 +10,7 @@ const CategoryFileUpload = require('../../models/CategoryFileUpload');
 const { loadExcelByUrl } = require('../../util/worksheet');
 const { isValidObjectId } = require("mongoose");
 const { isValidDate } = require("../../util/helper");
+// const { query } = require("express");
 
 
 const isValidNumber = str => {
@@ -24,8 +26,11 @@ const handleDatabaseUpload = async (req, res, next) => {
     if (uploadType != 'database') return next();
 
     try {
-        console.log(req.body.file);
         const remoteUrl = req.body.file.url;
+        // const relatedIds = ensureArray(req.body.relatedIds);
+        // const stateIds = relatedIds.map(item => ObjectId(item?._id));
+        // const ulbIds = await Ulb.find({ state: { $in: stateIds } }).map(ulb => '' + ulb._id);
+        // req.body.ulbIds = ulbIds;
 
         workbook = await loadExcelByUrl(remoteUrl);
         worksheet = workbook.getWorksheet(1);
@@ -214,6 +219,7 @@ const updateDulyElectedTemplate = async (req, res, next, worksheet, workbook) =>
 
         const dulyElectedUpdateQuery = _ids.map((_id, index) => {
             if (!_id || !isValidObjectId(_id)) return;
+            // if (!req.body.ulbIds?.includes('' + _id)) return;
 
             if (dulyElectedsColumns[index] && !['duly elected', 'not elected'].includes(dulyElectedsColumns[index]?.toLowerCase())) {
                 validationErrors.push({
@@ -451,6 +457,7 @@ const updateGsdpTemplate = async (req, res, next, worksheet, workbook) => {
 
         const gsdpUpdateQuery = _ids.map((_id, index) => {
             if (!_id || !isValidObjectId(_id)) return;
+            // if (!req.body.ulbIds?.includes('' + _id)) return;
 
             if (gdsps[index] && !['eligible', 'not eligible'].includes(gdsps[index]?.toLowerCase())) {
                 validationErrors.push({
