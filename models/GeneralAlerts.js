@@ -4,16 +4,24 @@ const { Schema } = mongoose;
 
 const GeneralAlerts = new Schema({
     moduleName:{
-        type: String
+        type: String,
+        required: true
     },
     title:{
-        type: String
+        type: String,
+        required: true
     },
     icon:{
-        type: String
+        type: String,
+        required: true
     },
     text:{
-        type: String
+        type: String,
+        required: true
+    },
+    position:{
+        type: String,
+        required: true
     },
     isActive:{
         type: Boolean,
