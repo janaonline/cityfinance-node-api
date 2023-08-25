@@ -1,6 +1,7 @@
 const express = require("express");
 const morgan = require("morgan");
 const { logger } = require("../middlewares/loggermiddleware")
+const { verifyToken } = require("./auth/services/verifyToken");
 
 const router = express.Router();
 // @Base Url
@@ -290,7 +291,10 @@ const MunicipalityBudgets = require("./MunicipalityBudgets");
 router.use('/municipality-budgets', MunicipalityBudgets);
 
 const stateResources = require("./stateResources");
-router.use('/state-resources', stateResources);
+router.use('/state-resources', verifyToken, stateResources);
+
+const generalAlerts = require("./generalAlerts")
+router.use('/general-alert', generalAlerts);
 
 router.use(require('./Master'))
 
