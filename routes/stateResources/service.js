@@ -505,12 +505,16 @@ const getCategoryWiseResource = async (req, res, next) => {
             {
                 $match: {
                     module: 'state_resource',
-                    relatedIds: ObjectId(req.decoded.state)
                 },
             },
             {
                 $unwind: {
                     path: "$relatedIds",
+                }
+            },
+            {
+                $match: {
+                    relatedIds: ObjectId(req.decoded.state)
                 }
             },
             {
