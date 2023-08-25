@@ -292,6 +292,9 @@ router.use('/municipality-budgets', MunicipalityBudgets);
 const stateResources = require("./stateResources");
 router.use('/state-resources', stateResources);
 
+const generalAlerts = require("./generalAlerts")
+router.use('/general-alert', generalAlerts);
+
 router.use(require('./Master'))
 
 module.exports = router;
