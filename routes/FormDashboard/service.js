@@ -18,7 +18,7 @@ const State = require('../../models/State');
 const Sidemenu = require('../../models/Sidemenu');
 const ObjectId = require('mongoose').Types.ObjectId;
 const {CollectionNames, ModelNames, FormPathMappings, ModelNamesToFormId} = require('../../util/15thFCstatus');
-const { YEAR_CONSTANTS, MASTER_STATUS, FormNames, USER_ROLE } = require('../../util/FormNames');
+const { YEAR_CONSTANTS, MASTER_STATUS, FormNames, USER_ROLE, FormURL, MASTER_STATUS_ID, MASTER_FORM_STATUS } = require('../../util/FormNames');
 const UA = require('../../models/UA');
 const {getPopulationDataQueries} = require('./query')
 const Response = require('../../service/response');
@@ -218,11 +218,17 @@ function gtcSubmitCondition2324(type, installment, state, designYear){
               actionTakenByRole: 'MoHUA',
               status: 'APPROVED',
             },
+            {
+                isDraft: false,
+                actionTakenByRole: 'STATE',
+                status: 'PENDING',
+              },
           ];
           let submitConditionState = [
             {
                 currentFormStatus:{
                     $in:[
+                        MASTER_STATUS['Under Review By MoHUA'],
                         MASTER_STATUS['Submission Acknowledged By MoHUA'],
                     ]
                 }
@@ -381,6 +387,7 @@ function getCollections2324(type, installment) {
       GrantTransferCertificate,
       StateFinanceCommission,
       PropertyTaxOp,
+      DUR
     ],
     mpc_tied_1: [
       AnnualAccounts,
@@ -408,14 +415,14 @@ function getCollections2324(type, installment) {
 const COLORS = {
     ULB: {
       formName: "ULB Forms",
-      approvedColor: '#059B05',
-      submittedColor: '#E67E1566',
+      approvedColor: '#E67E15',
+      submittedColor: '#f7bf88',
       border: '#E67E15'
     },
     STATE: {
       formName: "State Forms",
       approvedColor: '#059B05',
-      submittedColor: '#E67E1599',
+      submittedColor: '#f7bf88',
       border: '#059B05'
     }
   };
@@ -442,11 +449,11 @@ function getFormData(formCategory, modelName, sidemenuForms, reviewForm, design_
   let formData = {};
   if (formCategory === "ULB") {
     formData["approvedColor"] = "#E67E15";
-    formData["submittedColor"] = "#E67E1566";
+    formData["submittedColor"] = "#f7bf88";
     formData["border"] = "#E67E15";
   } else if (formCategory === "STATE") {
     formData["approvedColor"] = "#059B05";
-    formData["submittedColor"] = "#E67E1599";
+    formData["submittedColor"] = "#f7bf88";
     formData["border"] = "#059B05";
   }
   let element = sidemenuForms.find((el) => {
@@ -505,7 +512,7 @@ function getFormData(formCategory, modelName, sidemenuForms, reviewForm, design_
   ) {
     formData["formName"] = element.name;
     formData["icon"] = element.icon;
-    formData["link"] = `/${element.url}`;
+    formData["link"] = ![YEAR_CONSTANTS['22_23']].includes(design_year) ? FormURL['23_24']['GTC_STATE'] : `/${element.url}`;
   } else if (
     modelName === CollectionNames.twentyEightSlbs &&
     element._id === "TwentyEightSlbsForm"
@@ -551,7 +558,7 @@ function getFormData(formCategory, modelName, sidemenuForms, reviewForm, design_
     modelName === CollectionNames.propTaxOp &&
     element._id === "PropertyTaxOp"
   ) {
-    formData["formName"] = element.name;
+    formData["formName"] = ![YEAR_CONSTANTS['22_23']].includes(design_year) ? FormNames['detailPTaxOp'] : element.name;
     formData["icon"] = element.icon;
     formData["link"] = `/${element.url}`;
   } else if (
@@ -611,7 +618,7 @@ function approvedForms(forms, formCategory, design_year, modelName){
         ){
             switch(formCategory){
                 case "ULB":
-                    if( [MASTER_STATUS['Under Review By State'],
+                    if( [
                     MASTER_STATUS['Submission Acknowledged By MoHUA'],
                     MASTER_STATUS['Under Review By MoHUA']].includes(currentFormStatus)){
                         numOfApprovedForms++;
@@ -659,7 +666,7 @@ function UASubmittedForms(forms, formCategory, design_year, modelName) {
           [
             MASTER_STATUS["Under Review By State"]
           ].includes(currentFormStatus) &&
-            ulb.isUA === "Yes" &&
+            ulb?.isUA === "Yes" &&
             formCategory === "ULB"
         ) {
             numOfUAUlbSubmittedForms++;
@@ -901,7 +908,8 @@ function getQuery2324(modelName, formType, designYear, formCategory, stateId){
         currentFormStatus:{
             $in:[
                 MASTER_STATUS['Submission Acknowledged By MoHUA'],
-                MASTER_STATUS['Under Review By MoHUA']
+                MASTER_STATUS['Under Review By MoHUA'],
+                MASTER_FORM_STATUS['UNDER_REVIEW_BY_STATE']
             ]
         }
     }]
@@ -911,11 +919,18 @@ function getQuery2324(modelName, formType, designYear, formCategory, stateId){
             currentFormStatus:{
                 $in:[
                     MASTER_STATUS['Submission Acknowledged By MoHUA'],
+                MASTER_FORM_STATUS['UNDER_REVIEW_BY_MoHUA']
+
                 ]
             }
         }
     ]
-    let submitConditionUlb2223 = [{
+    let submitConditionUlb2223 = [
+        {
+            isDraft: false,
+            actionTakenByRole: "STATE",
+            status: "PENDING"
+        },{
         isDraft: false,
         actionTakenByRole: "STATE",
         status: "APPROVED"
@@ -926,7 +941,11 @@ function getQuery2324(modelName, formType, designYear, formCategory, stateId){
     }]
 
     let submitConditionState2223 = [
-        
+        {
+            isDraft: false,
+            actionTakenByRole: "STATE",
+            status: "PENDING"
+        },
         {
             isDraft: false,
             actionTakenByRole: "MoHUA",
@@ -1071,7 +1090,7 @@ const dashboard = async (req, res) => {
             submitUAFormPercent = {},
             totalUlbs = {};
 
-        let { totalUlbNonMillionPlusPipeline, totalUlbMpcAndNmpcUAPipeline, sidemenuPipeline, reviewUlbCondition } = getQueries(states);
+        let { totalUlbNonMillionPlusPipeline, totalUlbMpcAndNmpcUAPipeline, sidemenuPipeline, reviewUlbCondition, indicatorFormCondition } = getQueries(states);
         let hasUA =  await UA.aggregate([{
             $group:{
                 _id:"$state"
@@ -1083,9 +1102,10 @@ const dashboard = async (req, res) => {
         }else{
             totalUlbs = await State.aggregate(totalUlbMpcAndNmpcUAPipeline);
         }
-        let [sidemenuForms, reviewSidemenuForm] = await Promise.all([
+        let [sidemenuForms, reviewSidemenuForm, indicatorSidemenuForm] = await Promise.all([
             Sidemenu.aggregate(sidemenuPipeline),
-            Sidemenu.findOne(reviewUlbCondition).lean()
+            Sidemenu.findOne(reviewUlbCondition).lean(),
+            Sidemenu.findOne(indicatorFormCondition).lean()
         ]);
         let multi = states?.length >= 1 ? true : false
         if(!Boolean(multi)){
@@ -1243,12 +1263,16 @@ const dashboard = async (req, res) => {
                   const slbScoringEntry = statesFormData[state]?.stateResponse.find(el=> el.key === CollectionNames.slbScoring)
                   if (hasUA.length && data.formType === "mpc_tied" && !slbScoringEntry) {
                     if (indicatorFormCount === indicatorFormValidationCount && ![YEAR_CONSTANTS['22_23']].includes(data.design_year)) {
-                      let { leastSubmitPercent, leastSubmitNumber } =
-                        addSlbScoringData(ulbResponseArray);
+                      const indicatorDependentForms = [...statesFormData?.[state]?.ulbResponse,...ulbResponseArray]
+                      let { leastSubmitPercent, leastSubmitNumber, leastApprovedNumber, leastApprovedPercent } =
+                        addSlbScoringData(indicatorDependentForms);
                       let slbScoring = getSlbScoringResponse(
                         leastSubmitPercent,
                         leastSubmitNumber,
-                        cutOff
+                        leastApprovedNumber,
+                        leastApprovedPercent,
+                        cutOff,
+                        indicatorSidemenuForm
                       );
                        stateResponseArray.push(slbScoring);
                     }
@@ -1275,13 +1299,13 @@ const dashboard = async (req, res) => {
               {
                 formHeader: "ULB Forms",
                 approvedColor: "#E67E15",
-                submittedColor: "#E67E1566",
+                submittedColor: "#f7bf88",
                 formData: ulbFormsResponse,
               },
               {
                 formHeader: "State Forms",
                 approvedColor: "#059B05",
-                submittedColor: "#E67E1566",
+                submittedColor: "#f7bf88",
                 formData: stateFormsResponse,
               },
             ],
@@ -1303,12 +1327,10 @@ const dashboard = async (req, res) => {
                 formData: stateFormsResponse,
               }
          let data = await updateResponseFormat(ulbForms, stateForms)
-         const isAvailableForGrant = calculateGrantAvailable(ulbForms, stateForms);
 
         return res.status(200).json({
             success: true,
             data,
-            isAvailableForGrant
         })
         }
         return res.status(200).json({
@@ -1316,13 +1338,13 @@ const dashboard = async (req, res) => {
             data: [{
                 formHeader:'ULB Forms',
                 approvedColor:'#E67E15',
-                submittedColor:'#E67E1566',
+                submittedColor:'#f7bf88',
                 formData: ulbFormsResponse
             },
             {
                 formHeader:'State Forms',
                 approvedColor:'#059B05',
-                submittedColor:'#E67E1566',
+                submittedColor:'#f7bf88',
                 formData : stateFormsResponse
             }]
         })
@@ -1503,12 +1525,14 @@ function buildStateInfo(input) {
 
 async function updateResponseFormat(ulbForm, stateForm){
     try {
+        const isAvailableForGrant = calculateGrantAvailable(ulbForm, stateForm);
         const formData = {
             ulbForm,
             stateForm
         };
         return {
             formData,
+            isAvailableForGrant
         }
     } catch (error) {
         throw { message: `updateResponseFormat:: ${error.message}`}
@@ -1517,7 +1541,8 @@ async function updateResponseFormat(ulbForm, stateForm){
 
 function calculateGrantAvailable(ulbForm, stateForm){
     try { 
-        for(let form of [...ulbForm['formData'],stateForm['formData']]){
+        let formList = [...ulbForm['formData'],...stateForm['formData']]
+        for(let form of formList){
             if(form?.status !== ELIGIBLITY['YES']){
                 return false;
             }
@@ -1901,7 +1926,10 @@ function getQueries(states) {
         "isActive": true,
         "name": "Review Grant Application"
     };
-    return { totalUlbNonMillionPlusPipeline, totalUlbMpcAndNmpcUAPipeline, sidemenuPipeline, reviewUlbCondition };
+    const indicatorFormCondition = {
+        "folderName" : "indicators_wss",
+    }
+    return { totalUlbNonMillionPlusPipeline, totalUlbMpcAndNmpcUAPipeline, sidemenuPipeline, reviewUlbCondition, indicatorFormCondition };
 }
 
 /**
@@ -1914,19 +1942,19 @@ function getQueries(states) {
  * submission to be considered as approved.
  * @returns an object with the following properties:
  */
-function getSlbScoringResponse(leastSubmitPercent, leastSubmitNumber, cutOff) {
+function getSlbScoringResponse(leastSubmitPercent, leastSubmitNumber,leastApprovedNumber, leastApprovedPercent, cutOff,indicatorSidemenuForm) {
     return {
         formName: FormNames["indicatorForm"],
         key: ModelNames['slbScoring'],
         approvedColor: COLORS['STATE']['approvedColor'],
         submittedColor: COLORS['STATE']['submittedColor'],
         submittedValue: leastSubmitPercent ?? 0,
-        approvedValue: null,
-        totalApproved: null,
+        approvedValue: leastApprovedPercent ?? 0,
+        totalApproved: leastApprovedNumber ?? 0,
         totalSubmitted: leastSubmitNumber ?? 0,
         cutOff,
-        icon: null,
-        link: null,
+        icon: indicatorSidemenuForm['icon'],
+        link: `/${indicatorSidemenuForm['url']}`,
         border: COLORS['STATE']['border'] ?? null,
         status: leastSubmitPercent === 100 ? ELIGIBLITY['YES'] : ELIGIBLITY['NO']
     };
@@ -1944,16 +1972,20 @@ function addSlbScoringData(ulbResponseArray){
     try {
         const maxPercent = 100;
         const collectionNamesArr = [CollectionNames['twentyEightSlbs'],CollectionNames['odf'], CollectionNames['gfc']];
-        let leastSubmitPercent = maxPercent, leastSubmitNumber;
+        let leastSubmitPercent = maxPercent, leastSubmitNumber,leastApprovedPercent = maxPercent, leastApprovedNumber ;
         for(let ulbResponse of ulbResponseArray ){
             if(collectionNamesArr.includes(ulbResponse.key)){
                 if(ulbResponse.submittedValue <= leastSubmitPercent){    
                     leastSubmitPercent = ulbResponse.submittedValue;
                     leastSubmitNumber = ulbResponse.totalSubmitted;
                 }
+                if(ulbResponse.approvedValue <= leastApprovedPercent){
+                    leastApprovedPercent = ulbResponse.approvedValue;
+                    leastApprovedNumber = ulbResponse.totalApproved;
+                }
             }
         }
-        return {leastSubmitPercent, leastSubmitNumber};
+        return {leastSubmitPercent, leastSubmitNumber, leastApprovedPercent, leastApprovedNumber};
     } catch (error) {
         throw(`addSlbScoringData:: ${error.message}`)
     }
