@@ -3,6 +3,7 @@ const router = express.Router();
 const { verifyToken } = require('../auth/services/verifyToken')
 const Service = require('./service')
 
-router.post('/',verifyToken , Service.createValue);
+router.get('/all',verifyToken,Service.getAll);
+router.post('/',verifyToken , Service.createUpdateValue);
 router.get('/', Service.getValue );
 module.exports = router

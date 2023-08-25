@@ -1,11 +1,25 @@
 const GeneralAlerts = require('../../models/GeneralAlerts');
 const Response = require('../../service/response')
 
-module.exports.createValue = async(req,res)=>{
+module.exports.createUpdateValue = async(req,res)=>{
     try {
-        const output = await GeneralAlerts.create(req.body);
-        if(!output)  Response.BadRequest(res, {}, "Cannot create status")
-        return Response.OK(res, output, "Success")
+        const { moduleName } = req.body;
+        const newData = {
+            isActive: req.body.isActive,
+            icon: req.body.icon,
+            title: req.body.title,
+            text: req.body.text,
+            position: req.body.position
+        };
+        const updatedRecord = await GeneralAlerts.findOneAndUpdate(
+            { moduleName }, newData,{ upsert: true, new: true }
+        );
+    
+        if (!updatedRecord) {
+            return Response.BadRequest(res, {}, "Cannot create or update status");
+        }
+    
+        return Response.OK(res, updatedRecord, "Success");
     } catch (error) {
         return Response.BadRequest(res, {}, error.message);
     }
@@ -28,7 +42,7 @@ module.exports.getValue = async (req, res) =>{
     try {
         let type = req?.query?.type;
         let query = { isActive: true }; 
-        if (!type) return Response.BadRequest(res, {}, "parameter is required");
+        if (!type) return Response.OK(res, {}, "parameter is required");
         if (type) {
             type = req?.query?.type;
             query.moduleName = type; 
@@ -45,7 +59,7 @@ module.exports.getValue = async (req, res) =>{
                 position: output?.position || "top-start"
             },
         };
-        if (!output) return Response.BadRequest(res, {}, "Failed");
+        if (!output) return Response.OK(res, {}, "Invalid parameter");
         return Response.OK(res, response, "Success");
     } catch (error) {
         return Response.BadRequest(res, {}, error.message);
