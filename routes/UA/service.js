@@ -3024,9 +3024,7 @@ async function validateBulkUpload(data, res) {
                 errors.push(`dpr document link is invalid of this ulb :- ${item['ulb']}`)
             }
 
-            if (!item['dpr (pdf)']) {
-                errors.push(`DPR (pdf) file is can't be empty for this ulb:- ${item['ulb']}`);
-            } else {
+            if (item['dpr (pdf)']) {
                 let validFileSize = await validateFileSize(item['dpr (pdf)'], 5)
                 if (!validFileSize) {
                     errors.push(`DPR (pdf) file size exceeds 5MB for this ulb: ${item['ulb']}`);
@@ -3051,6 +3049,7 @@ function transformData(data) {
             categoriesName: item['form type/ sector'],
             cost: croreToLakh(item['total project cost (in cr.)']),
             code: item['project code'],
+            ulbCode: item['code'],
             ulbName: item['ulb'],
             designYear: years[item['year']],
             stateShare: croreToLakh(item['project state share (in cr.)']),
@@ -3089,8 +3088,14 @@ async function performBulkUpload(req, res, data) {
         for (const itemData of data) {
             const findUlbName = itemData['ulbName'].toLowerCase();
             if (!ulbMap.has(findUlbName)) {
+                // const findUlb = await Ulb.findOne({
+                //     name: { $regex: new RegExp(`^${findUlbName}`, 'i') }
+                // });
                 const findUlb = await Ulb.findOne({
-                    name: { $regex: new RegExp(`^${findUlbName}`, 'i') }
+                    $or: [
+                        { name: { $regex: new RegExp(`^${findUlbName}`, 'i') } },
+                        { code: itemData['ulbCode'] }
+                    ]
                 });
                 ulbMap.set(findUlbName, findUlb);
             }
