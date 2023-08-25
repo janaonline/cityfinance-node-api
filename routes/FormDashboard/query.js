@@ -55,14 +55,14 @@ function getPopulationDataQueries(state) {
                 { $match: isActiveMatch },
                 countUlb,
               ],
-              totalUlbMpcAndNmpcUAPipeline: [
+              totalUlbMpc: [
                 ulbLookup,
                 ulbUnwind,
                 {
                   $match: {
                     $and: [
                       isActiveMatch,
-                      { $or: [isMillionPlusMatch, isUAMatch] },
+                      isMillionPlusMatch, 
                     ],
                   },
                 },
@@ -131,7 +131,7 @@ function getPopulationDataQueries(state) {
           },
           {
             $unwind: {
-              path: "$totalUlbMpcAndNmpcUAPipeline",
+              path: "$totalUlbMpc",
               preserveNullAndEmptyArrays: true,
             },
           },
@@ -169,7 +169,7 @@ function getPopulationDataQueries(state) {
           {
             $project:{
                 totalUlbs: "$totalUlbs.totalUlb",
-                TotalofMPCs: "$totalUlbMpcAndNmpcUAPipeline.totalUlb",
+                TotalofMPCs: "$totalUlbMpc.totalUlb",
                 TotalofNMPCs: "$totalUlbNonMillionPlusPipeline.totalUlb",
                 TotalULBsUAs: "$totalUlbsInUA.totalUlb",
                 totalDulyElectedNMPCs: "$totalDulyElectedNMPCs.totalUlb",
