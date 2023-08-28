@@ -37,10 +37,6 @@ const handleDatabaseUpload = async (req, res, next) => {
 
     try {
         const remoteUrl = req.body.file.url;
-        // const relatedIds = ensureArray(req.body.relatedIds);
-        // const stateIds = relatedIds.map(item => ObjectId(item?._id));
-        // const ulbIds = await Ulb.find({ state: { $in: stateIds } }).map(ulb => '' + ulb._id);
-        // req.body.ulbIds = ulbIds;
 
         workbook = await loadExcelByUrl(remoteUrl);
         worksheet = workbook.getWorksheet(1);
@@ -247,7 +243,7 @@ const updateDulyElectedTemplate = async (req, res, next, worksheet, workbook) =>
             } else if (isValidDate(dulyElectedsDateColumns[index])) {
                 electedDate = dulyElectedsDateColumns[index];
             }
-            if (isDulyElected && !isValidDate(electedDate)) {
+            if (electedDate && !isValidDate(electedDate)) {
                 validationErrors.push({
                     r: index,
                     c: columnDulyElectedDate,

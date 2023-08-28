@@ -10,16 +10,6 @@ const CategoryFileUpload = new Schema(
         subCategoryId: {
             type: Schema.Types.ObjectId,
             ref: "SubCategory", required: true,
-            validate: {
-                async validator(id) {
-                    const category = await SubCategory.findById(id);
-                    const maxUploads = category?.maxUploads;
-                    if(!maxUploads) return true;
-                    const currentCount = await mongoose.model('CategoryFileUpload').countDocuments({ subCategoryId: ObjectId(id)});
-                    return currentCount < maxUploads;
-                },
-                message: 'Maximum upload limit exceeded for this subcategory.'
-            }
         },
         title: { type: String, required: true },
         file: {
@@ -41,4 +31,32 @@ const CategoryFileUpload = new Schema(
     },
     { timestamps: { createdAt: "createdAt", updatedAt: "modifiedAt" } }
 );
+
+CategoryFileUpload.pre('updateOne', { document: true, query: true }, async function(next) {
+    try {
+        const { subCategoryId, relatedIds } = this._update;
+
+        const category = await SubCategory.findById(subCategoryId);
+        const maxUploads = category?.maxUploads;
+
+        if (!maxUploads) {
+            return next(); // Proceed to the next middleware
+        }
+
+        const currentCount = await mongoose.model('CategoryFileUpload').countDocuments({
+            subCategoryId: ObjectId(subCategoryId),
+            relatedIds: { $in: relatedIds.map(item => ObjectId(item?._id)) }
+        });
+
+        if (currentCount >= maxUploads * relatedIds?.length) {
+            return next(new Error('Maximum upload limit exceeded for this subcategory.'));
+        }
+
+        next(); // Proceed to the next middleware
+    } catch (error) {
+        next(error); // Pass any errors to the next middleware
+    }
+});
+
+
 module.exports = mongoose.model("CategoryFileUpload", CategoryFileUpload);
