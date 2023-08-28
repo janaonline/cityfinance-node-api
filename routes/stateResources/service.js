@@ -12,6 +12,16 @@ const { isValidObjectId } = require("mongoose");
 const { isValidDate } = require("../../util/helper");
 // const { query } = require("express");
 
+const GSDP_OPTIONS = {
+    ELIGIBLE: 'eligible',
+    NOT_ELIGIBLE: 'not eligible'
+}
+
+const DULY_ELECTED_OPTIONS = {
+    DULY_ELECTED: 'duly elected',
+    NOT_ELECTED: 'not elected'
+}
+
 
 const isValidNumber = str => {
     return !isNaN(Number(str));
@@ -221,7 +231,7 @@ const updateDulyElectedTemplate = async (req, res, next, worksheet, workbook) =>
             if (!_id || !isValidObjectId(_id)) return;
             // if (!req.body.ulbIds?.includes('' + _id)) return;
 
-            if (dulyElectedsColumns[index] && !['duly elected', 'not elected'].includes(dulyElectedsColumns[index]?.toLowerCase())) {
+            if (typeof dulyElectedsColumns[index] !== 'string' || !Object.values(DULY_ELECTED_OPTIONS).includes(dulyElectedsColumns[index]?.toLowerCase())) {
                 validationErrors.push({
                     r: index,
                     c: columnDulyElected,
@@ -230,7 +240,7 @@ const updateDulyElectedTemplate = async (req, res, next, worksheet, workbook) =>
             }
 
 
-            const isDulyElected = dulyElectedsColumns[index] ? (dulyElectedsColumns[index] == 'Duly Elected') : null;
+            const isDulyElected = typeof dulyElectedsColumns[index] === 'string' ? (dulyElectedsColumns[index]?.toLowerCase() == DULY_ELECTED_OPTIONS.DULY_ELECTED) : null;
             let electedDate = dulyElectedsDateColumns[index];
             if (typeof dulyElectedsDateColumns[index] == 'string') {
                 electedDate = new Date(dulyElectedsDateColumns[index]?.split('/')?.reverse()?.join('-'));
@@ -459,7 +469,7 @@ const updateGsdpTemplate = async (req, res, next, worksheet, workbook) => {
             if (!_id || !isValidObjectId(_id)) return;
             // if (!req.body.ulbIds?.includes('' + _id)) return;
 
-            if (gdsps[index] && !['eligible', 'not eligible'].includes(gdsps[index]?.toLowerCase())) {
+            if (typeof gdsps[index] !== 'string' || !Object.values(GSDP_OPTIONS).includes(gdsps[index]?.toLowerCase())) {
                 validationErrors.push({
                     r: index,
                     c: columnGdspElected,
@@ -467,7 +477,7 @@ const updateGsdpTemplate = async (req, res, next, worksheet, workbook) => {
                 });
             }
 
-            const isGsdpEligible = gdsps[index] ? (gdsps[index] == 'Eligible') : null;
+            const isGsdpEligible = typeof gdsps[index] === 'string' ? (gdsps[index]?.toLowerCase() == GSDP_OPTIONS.ELIGIBLE) : null;
             const result = {
                 updateOne: {
                     filter: { _id: ObjectId(_id) },
