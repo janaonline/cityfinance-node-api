@@ -60,7 +60,7 @@ function Helper() {
         }
         return key || ""
     }
-    this.convertValue = async (objData) => {
+    this.convertValue = (objData) => {
         const { data, keyArr } = objData;
         let arr = [];
         if (data.length > 0) {

@@ -1722,6 +1722,7 @@ function createDynamicElements(collectionName, formType, entity) {
               },${wmData[0]?.["grantUtilised"] ?? ""
               },${wmData[0]?.["numberOfProjects"] ?? ""
               }, ${wmData[0]?.["totalProjectCost"] ?? ""
+
               },${wmData[1]?.["grantUtilised"] ?? ""
               },${wmData[1]?.["numberOfProjects"] ?? ""
               }, ${wmData[1]?.["totalProjectCost"] ?? ""

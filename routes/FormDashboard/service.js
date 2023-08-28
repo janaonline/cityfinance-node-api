@@ -1260,23 +1260,7 @@ const dashboard = async (req, res) => {
                   formData.status = "Not yet eligible for Grant Claim";
                 }
                 ({ ulbResponse, stateResponse } = createFormResponseObjects(formCategory, ulbResponse, formData, modelName, submittedFormPercent, approvedFormPercent, totalApprovedUlbForm, totalSubmittedUlbForm, totalForms, cutOff, ulbResponseArray, stateResponse, totalApprovedStateForm, totalSubmittedStateForm, stateResponseArray));
-                  const slbScoringEntry = statesFormData[state]?.stateResponse.find(el=> el.key === CollectionNames.slbScoring)
-                  if (hasUA.length && data.formType === "mpc_tied" && !slbScoringEntry) {
-                    if (indicatorFormCount === indicatorFormValidationCount && ![YEAR_CONSTANTS['22_23']].includes(data.design_year)) {
-                      const indicatorDependentForms = [...statesFormData?.[state]?.ulbResponse,...ulbResponseArray]
-                      let { leastSubmitPercent, leastSubmitNumber, leastApprovedNumber, leastApprovedPercent } =
-                        addSlbScoringData(indicatorDependentForms);
-                      let slbScoring = getSlbScoringResponse(
-                        leastSubmitPercent,
-                        leastSubmitNumber,
-                        leastApprovedNumber,
-                        leastApprovedPercent,
-                        cutOff,
-                        indicatorSidemenuForm
-                      );
-                       stateResponseArray.push(slbScoring);
-                    }
-                  }
+                // calculateIndicatorFormRes(statesFormData, state, hasUA, data, indicatorFormCount, indicatorFormValidationCount, ulbResponseArray, cutOff, indicatorSidemenuForm, stateResponseArray);
                   statesFormData[state] = {
                     ulbResponse: (
                       statesFormData[state]?.ulbResponse || []
@@ -1356,6 +1340,33 @@ const dashboard = async (req, res) => {
         });
     }
 
+}
+
+/**
+ * The function calculates the SLB scoring for a state based on the indicator form data and adds it to
+ * the state response array if certain conditions are met.
+ */
+function calculateIndicatorFormRes(statesFormData, state, hasUA, data, indicatorFormCount, indicatorFormValidationCount, ulbResponseArray, cutOff, indicatorSidemenuForm, stateResponseArray) {
+    try {
+        const slbScoringEntry = statesFormData[state]?.stateResponse.find(el => el.key === CollectionNames.slbScoring);
+        if (hasUA.length && data.formType === "mpc_tied" && !slbScoringEntry) {
+            if (indicatorFormCount === indicatorFormValidationCount && ![YEAR_CONSTANTS['22_23']].includes(data.design_year)) {
+                const indicatorDependentForms = [...statesFormData?.[state]?.ulbResponse, ...ulbResponseArray];
+                let { leastSubmitPercent, leastSubmitNumber, leastApprovedNumber, leastApprovedPercent } = addSlbScoringData(indicatorDependentForms);
+                let slbScoring = getSlbScoringResponse(
+                    leastSubmitPercent,
+                    leastSubmitNumber,
+                    leastApprovedNumber,
+                    leastApprovedPercent,
+                    cutOff,
+                    indicatorSidemenuForm
+                );
+                stateResponseArray.push(slbScoring);
+            }
+        }
+    } catch (error) {
+        throw {message: `calculateIndicatorFormRes:: ${error.message}`}
+    }
 }
 
 function addStatusData(modelName, query) {
