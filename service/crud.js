@@ -38,12 +38,9 @@ module.exports = {
                 });
             } catch (error) {
                 let message = "Something went wrong!";
-                if(Object.values(error.errors)?.length > 0) {
-                    message = Object.values(error.errors).join();
-                }
                 return res.status(400).json({
                     status: false,
-                    message: message,
+                    message: error.message || message,
                     err: error.message,
                 });
             }
