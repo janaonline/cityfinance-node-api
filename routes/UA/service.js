@@ -2909,6 +2909,7 @@ module.exports.bulkUpload = catchAsync(async (req, res, next) => {
         // Apply the mapping to transform the data keys
         const transformedData = transformData(data);
 
+        //preform the bulk upload logic.
         await performBulkUpload(req, res, transformedData)
     }
     catch (err) {
