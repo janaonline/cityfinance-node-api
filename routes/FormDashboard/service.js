@@ -1312,10 +1312,10 @@ const dashboard = async (req, res) => {
               }
             //If mpc have no ulbs, show message
             if (data?.formType === INSTALLMENT_TYPE["mpc"] && !hasUA.length){ 
-                let info = {
+                const info = {
                     message: `No ULBs meet the eligibility criteria for the MPC Tied Grant.`,
                     msgVisible: true
-                }
+                };
                 return response.OK(res,info);
             }
             let newResponse = await updateResponseFormat(ulbForms, stateForms)
