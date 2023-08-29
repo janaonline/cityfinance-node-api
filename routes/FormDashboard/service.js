@@ -18,7 +18,7 @@ const State = require('../../models/State');
 const Sidemenu = require('../../models/Sidemenu');
 const ObjectId = require('mongoose').Types.ObjectId;
 const {CollectionNames, ModelNames, FormPathMappings, ModelNamesToFormId} = require('../../util/15thFCstatus');
-const { YEAR_CONSTANTS, MASTER_STATUS, FormNames, USER_ROLE, FormURL, MASTER_STATUS_ID, MASTER_FORM_STATUS } = require('../../util/FormNames');
+const { YEAR_CONSTANTS, MASTER_STATUS, FormNames, USER_ROLE, FormURL, MASTER_STATUS_ID, MASTER_FORM_STATUS,  INSTALLMENT_TYPE } = require('../../util/FormNames');
 const UA = require('../../models/UA');
 const {getPopulationDataQueries} = require('./query')
 const Response = require('../../service/response');
@@ -1310,11 +1310,15 @@ const dashboard = async (req, res) => {
                 submittedColor: COLORS['STATE']['submittedColor'],
                 formData: stateFormsResponse,
               }
-         let data = await updateResponseFormat(ulbForms, stateForms)
+            //If mpc have no ulbs, show message
+            if (data?.formType === INSTALLMENT_TYPE["mpc"] && !hasUA.length){ 
+                return getMpcMsg();
+            }
+            let newResponse = await updateResponseFormat(ulbForms, stateForms)
 
         return res.status(200).json({
             success: true,
-            data,
+            data:newResponse,
         })
         }
         return res.status(200).json({
@@ -1340,6 +1344,17 @@ const dashboard = async (req, res) => {
         });
     }
 
+    /**
+     * The function returns a message indicating that no ULBs meet the eligibility criteria for the MPC
+     * Tied Grant.
+     */
+    function getMpcMsg() {
+        const info = {
+            message: `No ULBs meet the eligibility criteria for the MPC Tied Grant.`,
+            msgVisible: true
+        };
+        return response.OK(res, info);
+    }
 }
 
 /**
