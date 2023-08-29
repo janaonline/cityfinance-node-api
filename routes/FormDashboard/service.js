@@ -1312,11 +1312,7 @@ const dashboard = async (req, res) => {
               }
             //If mpc have no ulbs, show message
             if (data?.formType === INSTALLMENT_TYPE["mpc"] && !hasUA.length){ 
-                const info = {
-                    message: `No ULBs meet the eligibility criteria for the MPC Tied Grant.`,
-                    msgVisible: true
-                };
-                return response.OK(res,info);
+                return getMpcMsg();
             }
             let newResponse = await updateResponseFormat(ulbForms, stateForms)
 
@@ -1348,6 +1344,17 @@ const dashboard = async (req, res) => {
         });
     }
 
+    /**
+     * The function returns a message indicating that no ULBs meet the eligibility criteria for the MPC
+     * Tied Grant.
+     */
+    function getMpcMsg() {
+        const info = {
+            message: `No ULBs meet the eligibility criteria for the MPC Tied Grant.`,
+            msgVisible: true
+        };
+        return response.OK(res, info);
+    }
 }
 
 /**
