@@ -453,7 +453,7 @@ module.exports.get = catchAsync(async (req, res) => {
       data = filterResponseForms(data,!statesWithUA.length,stateWithUAForms)
       data.forEach((el,) => {
         if (el.category.toLowerCase() != "ulb management" && el.url !== "water-supply"
-          && !(["GrantClaim"].includes(`${el.collectionName}`)) && !(el.name === "Dashboard")
+          && !(["GrantClaim"].includes(`${el.collectionName}`)) && !(el.name === "Dashboard") && !(el.name === "State resources")
         ) {
           let flag = 0;
           if(singleYearFormCollections.includes(el.path)){

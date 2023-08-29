@@ -27,7 +27,7 @@ router.put('/sub_category/update/:_id', verifyToken, (req, res, next) => {
 router.get('/main_category/list', categoryList)
 router.get('/sub_category/list', subCategoryList)
 router.get('/municipalBondRepository/list', categoryFileUploadList);
-router.post('/municipalBondRepository/create', verifyToken, createOrUpdate("CategoryFileUpload"));
+router.post('/municipalBondRepository/create', verifyToken, createOrUpdate("CategoryFileUpload", { module: 'municipal_bond_repository'}));
 router.post('/municipalBondRepository/fileUpload', fileUpload);
 
 router.get('/video-gallary/list', list('Video'));

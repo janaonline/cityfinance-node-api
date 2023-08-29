@@ -18,7 +18,7 @@ const State = require('../../models/State');
 const Sidemenu = require('../../models/Sidemenu');
 const ObjectId = require('mongoose').Types.ObjectId;
 const {CollectionNames, ModelNames, FormPathMappings, ModelNamesToFormId} = require('../../util/15thFCstatus');
-const { YEAR_CONSTANTS, MASTER_STATUS, FormNames, USER_ROLE, FormURL, MASTER_STATUS_ID, MASTER_FORM_STATUS } = require('../../util/FormNames');
+const { YEAR_CONSTANTS, MASTER_STATUS, FormNames, USER_ROLE, FormURL, MASTER_STATUS_ID, MASTER_FORM_STATUS,  INSTALLMENT_TYPE } = require('../../util/FormNames');
 const UA = require('../../models/UA');
 const {getPopulationDataQueries} = require('./query')
 const Response = require('../../service/response');
@@ -1260,23 +1260,7 @@ const dashboard = async (req, res) => {
                   formData.status = "Not yet eligible for Grant Claim";
                 }
                 ({ ulbResponse, stateResponse } = createFormResponseObjects(formCategory, ulbResponse, formData, modelName, submittedFormPercent, approvedFormPercent, totalApprovedUlbForm, totalSubmittedUlbForm, totalForms, cutOff, ulbResponseArray, stateResponse, totalApprovedStateForm, totalSubmittedStateForm, stateResponseArray));
-                  const slbScoringEntry = statesFormData[state]?.stateResponse.find(el=> el.key === CollectionNames.slbScoring)
-                  if (hasUA.length && data.formType === "mpc_tied" && !slbScoringEntry) {
-                    if (indicatorFormCount === indicatorFormValidationCount && ![YEAR_CONSTANTS['22_23']].includes(data.design_year)) {
-                      const indicatorDependentForms = [...statesFormData?.[state]?.ulbResponse,...ulbResponseArray]
-                      let { leastSubmitPercent, leastSubmitNumber, leastApprovedNumber, leastApprovedPercent } =
-                        addSlbScoringData(indicatorDependentForms);
-                      let slbScoring = getSlbScoringResponse(
-                        leastSubmitPercent,
-                        leastSubmitNumber,
-                        leastApprovedNumber,
-                        leastApprovedPercent,
-                        cutOff,
-                        indicatorSidemenuForm
-                      );
-                       stateResponseArray.push(slbScoring);
-                    }
-                  }
+                // calculateIndicatorFormRes(statesFormData, state, hasUA, data, indicatorFormCount, indicatorFormValidationCount, ulbResponseArray, cutOff, indicatorSidemenuForm, stateResponseArray);
                   statesFormData[state] = {
                     ulbResponse: (
                       statesFormData[state]?.ulbResponse || []
@@ -1326,11 +1310,15 @@ const dashboard = async (req, res) => {
                 submittedColor: COLORS['STATE']['submittedColor'],
                 formData: stateFormsResponse,
               }
-         let data = await updateResponseFormat(ulbForms, stateForms)
+            //If mpc have no ulbs, show message
+            if (data?.formType === INSTALLMENT_TYPE["mpc"] && !hasUA.length){ 
+                return getMpcMsg();
+            }
+            let newResponse = await updateResponseFormat(ulbForms, stateForms)
 
         return res.status(200).json({
             success: true,
-            data,
+            data:newResponse,
         })
         }
         return res.status(200).json({
@@ -1356,6 +1344,44 @@ const dashboard = async (req, res) => {
         });
     }
 
+    /**
+     * The function returns a message indicating that no ULBs meet the eligibility criteria for the MPC
+     * Tied Grant.
+     */
+    function getMpcMsg() {
+        const info = {
+            message: `No ULBs meet the eligibility criteria for the MPC Tied Grant.`,
+            msgVisible: true
+        };
+        return response.OK(res, info);
+    }
+}
+
+/**
+ * The function calculates the SLB scoring for a state based on the indicator form data and adds it to
+ * the state response array if certain conditions are met.
+ */
+function calculateIndicatorFormRes(statesFormData, state, hasUA, data, indicatorFormCount, indicatorFormValidationCount, ulbResponseArray, cutOff, indicatorSidemenuForm, stateResponseArray) {
+    try {
+        const slbScoringEntry = statesFormData[state]?.stateResponse.find(el => el.key === CollectionNames.slbScoring);
+        if (hasUA.length && data.formType === "mpc_tied" && !slbScoringEntry) {
+            if (indicatorFormCount === indicatorFormValidationCount && ![YEAR_CONSTANTS['22_23']].includes(data.design_year)) {
+                const indicatorDependentForms = [...statesFormData?.[state]?.ulbResponse, ...ulbResponseArray];
+                let { leastSubmitPercent, leastSubmitNumber, leastApprovedNumber, leastApprovedPercent } = addSlbScoringData(indicatorDependentForms);
+                let slbScoring = getSlbScoringResponse(
+                    leastSubmitPercent,
+                    leastSubmitNumber,
+                    leastApprovedNumber,
+                    leastApprovedPercent,
+                    cutOff,
+                    indicatorSidemenuForm
+                );
+                stateResponseArray.push(slbScoring);
+            }
+        }
+    } catch (error) {
+        throw {message: `calculateIndicatorFormRes:: ${error.message}`}
+    }
 }
 
 function addStatusData(modelName, query) {
