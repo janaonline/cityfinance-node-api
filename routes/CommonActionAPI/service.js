@@ -1112,6 +1112,7 @@ function sendCsv(filename, modelName, query, res, cols, csvCols, fromArr, cb = n
             if (fromArr) {
                 for (let ele of document[fromArr]) {
                     ele['type'] = ele.type ? ele.type.toUpperCase() : ""
+                    ele['projectReport'] = ele?.projectReport ? ele?.projectReport?.url : ""
                     writeCsv(cols, csvCols, ele, res, cb)
                 }
             }
