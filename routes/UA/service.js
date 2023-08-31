@@ -1691,9 +1691,9 @@ function getProjectReportDetail(csv){
         "name": "Project Report file",
         "url": "$amrProjects.dprDocument.url"
     }
-    if(csv){
-        return "https://jana-cityfinance.s3.ap-south-1.amazonaws.com/objects/94d21e52-3439-4221-9844-2d76972c7107.pdf"
-    }
+    // if(csv){
+    //     return "https://jana-cityfinance.s3.ap-south-1.amazonaws.com/objects/94d21e52-3439-4221-9844-2d76972c7107.pdf"
+    // }
     return obj
 }
 function amrProjects(service,csv,ulbId){

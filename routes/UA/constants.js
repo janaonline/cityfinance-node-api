@@ -116,6 +116,7 @@ let csvCols = {
     "censusCode":"Census Code",
     "population":"Population Category",
     "projectName":"Project Name",
+    "type": "Type",
     "implementationAgency":"Implementation Agency",
     "sector":"Sector",
     "totalProjectCost":"Total Project cost INR (in lakhs)",
@@ -157,11 +158,11 @@ const filterYears = [ // make this dynamic with the current financial year
 ]
 const types = [
     {
-        name: 'Dur',
+        name: 'DUR',
         _id: 'dur'
     },
     {
-        name: "Amrut",
+        name: "AMRUT",
         _id: 'amrut'
     }
 ];
