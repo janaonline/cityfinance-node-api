@@ -17,7 +17,8 @@ const PropTax = require('../../models/PropertyTaxOp')
 const { calculateStatus, calculateStatusMaster } = require('../CommonActionAPI/service')
 const SLB28 = require('../../models/TwentyEightSlbsForm')
 const PropertyTaxOp = require('../../models/PropertyTaxOp')
-const { YEAR_CONSTANTS, MASTER_STATUS_ID, MASTER_FORM_STATUS, MASTER_STATUS } = require('../../util/FormNames');
+const CollectionName = require('../../util/collectionName')
+const { YEAR_CONSTANTS, MASTER_STATUS_ID, MASTER_FORM_STATUS, YEAR_CONSTANTS_IDS } = require('../../util/FormNames');
 var outDatedYears = ["2018-19","2019-20","2021-22","2022-23"]
 //STate Forms
 const SFC = require('../../models/StateFinanceCommissionFormation')
@@ -30,6 +31,8 @@ const USER_TYPES = require('../../util/userTypes');
 const { years } = require('../../service/years');
 const { getKeyByValue } = require('../../util/masterFunctions');
 const { stat } = require('fs');
+const UA = require('../../models/UA');
+const { FolderName, CollectionNames } = require('../../util/15thFCstatus');
 const ticks = {
   "green": "../../../assets/form-icon/checked.svg",
   "red": "../../../assets/form-icon/cancel.svg"
@@ -314,21 +317,23 @@ module.exports.get = catchAsync(async (req, res) => {
       color_2: ""
     }
   }
-  let isLatestCreated;
+  let isLatestCreated, checkBaseYearAccess, baseYear;
   if ((role == 'ULB' || role == 'STATE') && (!role || !year || !_id))
     return res.status(400).json({
       success: false,
       message: "Data missing"
     })
-  let isUA;
+  let isUA, stateInfo, statesWithUA;
   
   let output = []
   if (role == 'ULB') {
     let ulbInfo = await Ulb.findOne({ _id: ObjectId(_id) }).lean();
-    isUA = ulbInfo?.isUA
+    isUA = ulbInfo?.isUA;
     let accessVariable = await getKeyByValue(years,year)
     accessVariable = `access_${accessVariable.split("-")[0].slice(-2)-1}${accessVariable.split("-")[1].slice(-2)-1}`
-    isLatestCreated = !ulbInfo[accessVariable]
+    isLatestCreated = !ulbInfo[accessVariable];
+    baseYear = `access_${YEAR_CONSTANTS_IDS[YEAR_CONSTANTS['21_22']].split("-")[0].slice(-2)}${YEAR_CONSTANTS_IDS[YEAR_CONSTANTS['21_22']].split("-")[1]}`;
+    checkBaseYearAccess = ulbInfo[baseYear]
     console.log("accessVariable :: ",accessVariable,isLatestCreated)
     FormModelMapping["GfcFormCollection"] = isUA == 'Yes' ? ObjectId("62aa1d82c9a98b2254632a9e") : ObjectId("62aa1dd6c9a98b2254632aae")
     FormModelMapping["OdfFormCollection"] = isUA == 'Yes' ? ObjectId("62aa1d6ec9a98b2254632a9a") : ObjectId("62aa1dc0c9a98b2254632aaa")
@@ -368,7 +373,9 @@ module.exports.get = catchAsync(async (req, res) => {
       }
     }
   } else if (role == 'STATE') {
-    let stateInfo = await State.findOne({ _id: ObjectId(_id) }).lean();
+    let stateInfoQuery =  State.findOne({ _id: ObjectId(_id) }).lean();
+    let statesWithUAQuery =  UA.find({state: ObjectId(_id)}).lean();
+    [stateInfo, statesWithUA] = await Promise.all([stateInfoQuery,statesWithUAQuery]);
     let condition = {
       state: ObjectId(_id),
       design_year: ObjectId(year)
@@ -406,9 +413,12 @@ module.exports.get = catchAsync(async (req, res) => {
     }
   }
 
-  let data = await Sidemenu.find({ year: ObjectId(year), role: role, isActive: true }).lean()
+  let data = await Sidemenu.find({ year: ObjectId(year), role: role, isActive: true }).lean();
+  let baseYearForms = [CollectionName.slb]
+
   if (data.length) {
     if (role == "ULB") {
+      data = filterResponseForms(data,!checkBaseYearAccess,baseYearForms);
       if (isUA == 'Yes') {
         data = data.filter(el => el.category != 'Performance Conditions')
       } else {
@@ -439,14 +449,16 @@ module.exports.get = catchAsync(async (req, res) => {
 
       })
     } else if (role == "STATE") {
+      let stateWithUAForms = [CollectionName.state_action_plan,CollectionNames.waterRej,CollectionName.waterRej , FolderName['IndicatorForWaterSupply']]
+      data = filterResponseForms(data,!statesWithUA.length,stateWithUAForms)
       data.forEach((el,) => {
         if (el.category.toLowerCase() != "ulb management" && el.url !== "water-supply"
-          && !(["GrantClaim"].includes(`${el.collectionName}`)) && !(el.name === "Dashboard")
+          && !(["GrantClaim"].includes(`${el.collectionName}`)) && !(el.name === "Dashboard") && !(el.name === "State resources")
         ) {
           let flag = 0;
           if(singleYearFormCollections.includes(el.path)){
             el._id = FormModelMapping_State[el.path]
-          }
+          } 
           output.forEach(el2 => {
             if ((el._id).toString() == (Object.keys(el2)[0])) {
               Object.assign(el, el2[Object.keys(el2)[0]])
@@ -560,6 +572,26 @@ module.exports.list = catchAsync(async (req, res) => {
   })
 })
 
+/**
+ * The function `filterResponseForms` filters an array of data based on a flag and a list of forms, and
+ * returns the filtered array.
+ * @returns a filtered array of objects based on the provided conditions. If the flag is true, it
+ * filters out objects whose collectionName or folderName is included in the forms array. If the flag
+ * is false, it returns the original data array without any filtering.
+ */
+function filterResponseForms(data, flag, forms) {
+  try {
+    return flag
+      ? data.filter((el) => {
+          return el.collectionName
+            ? !forms.includes(el.collectionName)
+            : !forms.includes(el.folderName);
+        })
+      : data;
+  } catch (error) {
+    throw { message: `filterResponseForms: ${error.message}` };
+  }
+}
 module.exports.post = catchAsync(async (req, res) => {
   let data = req.body;
   if (!data.name || !data.url || !data.role || !data.position || !data.year) {

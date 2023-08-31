@@ -21,7 +21,7 @@ const axios = require('axios')
 const { sendCsv, apiUrls } = require("../../routes/CommonActionAPI/service")
 const { calculateSlbMarks } = require('../Scoring/service');
 const { ulb } = require('../../util/userTypes');
-const { columns, csvCols, sortFilterKeys, dashboardColumns, filterYears } = require("./constants.js")
+const { columns, csvCols, sortFilterKeys, dashboardColumns, filterYears, types } = require("./constants.js")
 const Redis = require("../../service/redis")
 const { AggregationServices } = require("../../routes/CommonActionAPI/service");
 const { YEAR_CONSTANTS, FORMIDs, FormNames, MASTER_STATUS, MASTER_FORM_STATUS } = require('../../util/FormNames');
@@ -1702,6 +1702,7 @@ function amrProjects(service,csv,ulbId){
             "projectName":"$amrProjects.name",
             "projectId": "$amrProjects._id",
             "totalProjectCost":"$amrProjects.cost",
+            "type": "amrut",
             "implementationAgency":"$name",
             "capitalExpenditureState": {
                 "$add": [
@@ -1773,6 +1774,7 @@ function durProjects(service,csv,ulbId){
         "projectName":"$projects.name",
         "projectId": "$projects._id",
         "implementationAgency":"$name",
+        "type": "dur",
         "totalProjectCost":"$projects.cost",
         "lat" : "$projects.location.lat",
         "long": "$projects.location.long",
@@ -1896,6 +1898,7 @@ function getFilterConditions(filters) {
    let filtersName = {
         "implementationAgencies": "ulbId",
         "sectors": "sectorId",
+        "type": "type",
         "projects": "projectId"
     }
     try {
@@ -1908,15 +1911,17 @@ function getFilterConditions(filters) {
             let tempObj = {}
             tempObj["$or"] = []
             let filter_arr = filters[filter]
-            for (let id of filter_arr) {
+            for (let elem of filter_arr) {
                 let temp = {
                     "$eq": [`$$row.${filtersName[filter]}`]
                 }
-                temp["$eq"].push(ObjectId(id))
+                
+                temp["$eq"].push(mongoose.isValidObjectId(elem) ? ObjectId(elem) : elem);
                 tempObj["$or"].push(temp)
                 
             }
             obj["$and"].push(tempObj)
+
         }
         return obj
     }
@@ -1943,7 +1948,7 @@ function getFilteredObjects(filteredObj, arrName) {
 
 
 function getProjectionQueries(service, filteredObj, skip, limit, sortKey) {
-    let { sectors: sectorObj } = { ...filteredObj.filters }
+    let { sectors: sectorObj, type } = { ...filteredObj.filters }
     let sectorialObj = { "filters": { "sectors": sectorObj } }
     
     // slicing is used for pagination as data structure is totally created with mongodb aggregation
@@ -2117,8 +2122,8 @@ function queryPipelineLookup(service,fromTable,as){
 }
 
 function getFilteredProjects(filteredObj){
-    let { sectors: sectorObj } = { ...filteredObj.filters }
-    let sectorialObj = { "filters": { "sectors": sectorObj } }
+    let { sectors: sectorObj, type } = { ...filteredObj.filters }
+    let sectorialObj = { "filters": { "sectors": sectorObj, type } }
     try{
         let obj = {
             "$addFields":{
@@ -2349,9 +2354,10 @@ module.exports.getInfrastructureProjects = catchAsync(async (req, res) => {
         success: false,
         message: "Something went wrong"
     }
-    let menuNames = ['year', 'implementationAgencies', 'sectors', 'projects']
+    let menuNames = ['filterYear','type','implementationAgencies', 'sectors', 'projects']
     let keysDisplayName = {
-        "year": "Year",
+        "filterYear": "Year",
+        'type': "Type",
         'sectors': "Sectors",
         'projects': "Projects",
         'implementationAgencies': "Implemenation Agency"
@@ -2395,17 +2401,30 @@ module.exports.getInfrastructureProjects = catchAsync(async (req, res) => {
              return;
         }
         if (dbResponse.length) {
-            response.total = dbResponse[0].total
-            response.rows = dbResponse[0]['rows'] || []
-            response.filters = []
-            response.filters = menuNames.map(el => ({
-                key: el,
-                name: keysDisplayName[el],
-                options: el==="year" ? filterYears.map(item => ({name:item.label,_id:item.id})) : dbResponse[0][el]
-            }))
-            response.columns = columns
-            response.message = "Fetched Successfully"
+            response.total = dbResponse[0].total;
+            response.rows = dbResponse[0]['rows'] || [];
+            response.filters = menuNames.map(el => {
+                let options = null;
+                if (el === "filterYear") {
+                    options = filterYears.map(item => ({
+                        name: item.label,
+                        _id: item.id
+                    }));
+                } else if (el === "type") {
+                    options = types;
+                } else {
+                    options = dbResponse[0][el];
+                }
+                return {
+                    key: el,
+                    name: keysDisplayName[el],
+                    options
+                };
+            });
+            response.columns = columns;
+            response.message = "Fetched Successfully";
         }
+        
         else {
             response.message = "No data for particular ulb"
             response.rows = []
@@ -2470,7 +2489,9 @@ const getApprovedFormQuery =(keyName = false,designYear)=>{
     let statusKeyName = (keyName) ? `${keyName}.status` : "status"
     let actionKeyName = (keyName) ? `${keyName}.actionTakenByRole` : "actionTakenByRole" 
     let outDatedYears = ["2018-19", "2019-20", "2021-22", "2022-23"]
-    let queryObj = {}
+    let queryObj = {
+        "$or": []
+    }
     try{
         let stringStatusQuery = {
             "$or": [
@@ -2502,13 +2523,15 @@ const getApprovedFormQuery =(keyName = false,designYear)=>{
 
         }
         let idWiseQuery = {
-            "$in":["$currentFormStatus",[MASTER_FORM_STATUS.SUBMISSION_ACKNOWLEDGED_BY_MoHUA,MASTER_FORM_STATUS.UNDER_REVIEW_BY_MoHUA]]
-                
-        
+            "$in":["$currentFormStatus",[MASTER_FORM_STATUS.SUBMISSION_ACKNOWLEDGED_BY_MoHUA,MASTER_FORM_STATUS.UNDER_REVIEW_BY_MoHUA]]       
         }
-        // queryObj = 
-        queryObj  = outDatedYears.includes(getKeyByValue(years,designYear)) ? stringStatusQuery : idWiseQuery
-        console.log("queryObj ::: ",queryObj)
+
+        for (const year of designYear) {
+            const yearKey = getKeyByValue(years, year.toString());
+            const queryForYear = outDatedYears.includes(yearKey) ? stringStatusQuery : idWiseQuery;
+            queryObj["$or"].push(queryForYear);
+        }
+
         return queryObj
     }
     catch(err){
@@ -2523,7 +2546,7 @@ function lookupQueryForAmrut(service,designYear,project=false){
                 "from":"amrutprojects",
                 "let":{
                     "ulb_id":"$_id",
-                    "designYear":ObjectId(designYear)
+                    "designYearArray": Array.isArray(designYear) ? designYear.map(year => ObjectId(year)) : [ObjectId(designYear)]
                 },
                 "pipeline":[
                     {
@@ -2531,7 +2554,8 @@ function lookupQueryForAmrut(service,designYear,project=false){
                             "$expr":{
                                 "$and":[
                                     service.getCommonEqObj("$ulb","$$ulb_id"),
-                                    service.getCommonEqObj("$designYear","$$designYear")
+                                    // service.getCommonEqObj("$designYear","$$designYear")
+                                    { "$in": ["$designYear", "$$designYearArray"] },
                                 ]
                             }
                         }
@@ -2549,12 +2573,13 @@ function lookupQueryForAmrut(service,designYear,project=false){
 
 function lookupQueryForDur(service,designYear,project=false){
     try{
+        designYear = Array.isArray(designYear) ? designYear.map(year => ObjectId(year)) : [ObjectId(designYear)]
         let obj = {
             "$lookup":{
                 "from":"utilizationreports",
                 "let":{
                     "ulb_id":"$_id",
-                    "designYear":ObjectId(designYear)
+                    "designYearArray": designYear
                 },
                 "pipeline":[
                     {
@@ -2562,7 +2587,7 @@ function lookupQueryForDur(service,designYear,project=false){
                             "$expr":{
                                 "$and":[
                                     service.getCommonEqObj("$ulb","$$ulb_id"),
-                                    service.getCommonEqObj("$designYear","$$designYear"),
+                                    { "$in": ["$designYear", "$$designYearArray"] },
                                     service.getCommonEqObj("$isDraft",false),
                                     getApprovedFormQuery(false,designYear)
                                 ]
@@ -2884,6 +2909,7 @@ module.exports.bulkUpload = catchAsync(async (req, res, next) => {
         // Apply the mapping to transform the data keys
         const transformedData = transformData(data);
 
+        //preform the bulk upload logic.
         await performBulkUpload(req, res, transformedData)
     }
     catch (err) {
@@ -2999,9 +3025,7 @@ async function validateBulkUpload(data, res) {
                 errors.push(`dpr document link is invalid of this ulb :- ${item['ulb']}`)
             }
 
-            if (!item['dpr (pdf)']) {
-                errors.push(`DPR (pdf) file is can't be empty for this ulb:- ${item['ulb']}`);
-            } else {
+            if (item['dpr (pdf)']) {
                 let validFileSize = await validateFileSize(item['dpr (pdf)'], 5)
                 if (!validFileSize) {
                     errors.push(`DPR (pdf) file size exceeds 5MB for this ulb: ${item['ulb']}`);
@@ -3026,6 +3050,7 @@ function transformData(data) {
             categoriesName: item['form type/ sector'],
             cost: croreToLakh(item['total project cost (in cr.)']),
             code: item['project code'],
+            ulbCode: item['code'],
             ulbName: item['ulb'],
             designYear: years[item['year']],
             stateShare: croreToLakh(item['project state share (in cr.)']),
@@ -3064,8 +3089,14 @@ async function performBulkUpload(req, res, data) {
         for (const itemData of data) {
             const findUlbName = itemData['ulbName'].toLowerCase();
             if (!ulbMap.has(findUlbName)) {
+                // const findUlb = await Ulb.findOne({
+                //     name: { $regex: new RegExp(`^${findUlbName}`, 'i') }
+                // });
                 const findUlb = await Ulb.findOne({
-                    name: { $regex: new RegExp(`^${findUlbName}`, 'i') }
+                    $or: [
+                        { name: { $regex: new RegExp(`^${findUlbName}`, 'i') } },
+                        { code: itemData['ulbCode'] }
+                    ]
                 });
                 ulbMap.set(findUlbName, findUlb);
             }

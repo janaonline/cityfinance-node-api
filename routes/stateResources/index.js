@@ -1,8 +1,8 @@
 const express = require('express');
 const router = express.Router();
-const { 
-    handleDatabaseUpload, 
-    getResourceList, 
+const {
+    handleDatabaseUpload,
+    getResourceList,
     removeStateFromFiles,
     getCategoryWiseResource,
     getTemplate
@@ -11,15 +11,16 @@ const {
 const {
     createOrUpdate
 } = require("../../service/crud");
+const { allowedRoles } = require('../auth/services/roleAuthorize');
 
 
-router.get('/getResourceList', getResourceList);
-router.get('/list',  getCategoryWiseResource );
-router.post('/createOrUpdate', handleDatabaseUpload, createOrUpdate('CategoryFileUpload', { module: 'state_resource' }));
+router.get('/getResourceList', allowedRoles(['MoHUA', 'PMU']), getResourceList);
+router.get('/list', allowedRoles(['STATE']), getCategoryWiseResource);
+router.post('/createOrUpdate', allowedRoles(['MoHUA', 'PMU']), handleDatabaseUpload, createOrUpdate('CategoryFileUpload', { module: 'state_resource' }));
 
-router.get('/template/:templateName', getTemplate);
+router.get('/template/:templateName', allowedRoles(['MoHUA', 'PMU']), getTemplate);
 
-router.post('/removeStateFromFiles',  removeStateFromFiles );
+router.post('/removeStateFromFiles', allowedRoles(['MoHUA', 'PMU']), removeStateFromFiles);
 
 
 module.exports = router;

@@ -1,5 +1,6 @@
 const ExcelJS = require("exceljs");
 const ObjectId = require("mongoose").Types.ObjectId;
+// const ensureArray = require('ensure-array');
 
 const MainCategory = require('../../models/Master/MainCategory');
 const Ulb = require('../../models/Ulb');
@@ -8,6 +9,18 @@ const State = require('../../models/State');
 const CategoryFileUpload = require('../../models/CategoryFileUpload');
 const { loadExcelByUrl } = require('../../util/worksheet');
 const { isValidObjectId } = require("mongoose");
+const { isValidDate } = require("../../util/helper");
+// const { query } = require("express");
+
+const GSDP_OPTIONS = {
+    ELIGIBLE: 'eligible',
+    NOT_ELIGIBLE: 'not eligible'
+}
+
+const DULY_ELECTED_OPTIONS = {
+    DULY_ELECTED: 'duly elected',
+    NOT_ELECTED: 'not elected'
+}
 
 
 const isValidNumber = str => {
@@ -23,7 +36,6 @@ const handleDatabaseUpload = async (req, res, next) => {
     if (uploadType != 'database') return next();
 
     try {
-        console.log(req.body.file);
         const remoteUrl = req.body.file.url;
 
         workbook = await loadExcelByUrl(remoteUrl);
@@ -36,7 +48,7 @@ const handleDatabaseUpload = async (req, res, next) => {
             subCategoryId: ObjectId(req.body?.subCategoryId)
         });
 
-        if(uploaded) {
+        if (uploaded) {
             req.body.id = uploaded._id;
         }
         next();
@@ -70,7 +82,7 @@ const handleDatabaseUpload = async (req, res, next) => {
 const dulyElectedTemplate = async (req, res, next) => {
     const templateName = req.params.templateName;
     try {
-
+        const relatedIds = Array.isArray(req.query.relatedIds) ? req.query.relatedIds : [req.query.relatedIds];
         const startingRow = 3;
         const workbook = new ExcelJS.Workbook();
         const worksheet = workbook.addWorksheet('My Sheet');
@@ -113,7 +125,10 @@ const dulyElectedTemplate = async (req, res, next) => {
                 };
             });
         });
-        const ulbData = await Ulb.aggregate([
+        const query = [
+            {
+                $match: { state: { $in: relatedIds.map(id => ObjectId(id)) } }
+            },
             {
                 $lookup: {
                     from: "states",
@@ -132,9 +147,6 @@ const dulyElectedTemplate = async (req, res, next) => {
                     foreignField: "ulbId",
                     as: "grantallocation2324"
                 }
-            },
-            {
-                $unwind: '$grantallocation2324'
             },
             {
                 $project: {
@@ -161,14 +173,15 @@ const dulyElectedTemplate = async (req, res, next) => {
                         }
                     },
                     electedDate: 1,
-                    untiedGrantAmount: '$grantallocation2324.untiedGrantAmount',
-                    untiedGrantPercent: '$grantallocation2324.untiedGrantPercent',
-                    tiedGrantAmount: '$grantallocation2324.tiedGrantAmount',
-                    tiedGrantPercent: '$grantallocation2324.tiedGrantPercent',
+                    untiedGrantAmount: { $arrayElemAt: ['$grantallocation2324.untiedGrantAmount', 0] },
+                    untiedGrantPercent: { $arrayElemAt: ['$grantallocation2324.untiedGrantPercent', 0] },
+                    tiedGrantAmount: { $arrayElemAt: ['$grantallocation2324.tiedGrantAmount', 0] },
+                    tiedGrantPercent: { $arrayElemAt: ['$grantallocation2324.tiedGrantPercent', 0] },
                 }
             }
-        ]);
+        ];
 
+        const ulbData = await Ulb.aggregate(query);
 
 
         worksheet.addRows(ulbData.map((value, sno) => ({ ...value, sno: sno + 1 })), { startingRow, properties: { outlineLevel: 1 } });
@@ -212,8 +225,9 @@ const updateDulyElectedTemplate = async (req, res, next, worksheet, workbook) =>
 
         const dulyElectedUpdateQuery = _ids.map((_id, index) => {
             if (!_id || !isValidObjectId(_id)) return;
+            // if (!req.body.ulbIds?.includes('' + _id)) return;
 
-            if (dulyElectedsColumns[index] && !['Duly Elected', 'Not Elected'].includes(dulyElectedsColumns[index])) {
+            if (typeof dulyElectedsColumns[index] !== 'string' || !Object.values(DULY_ELECTED_OPTIONS).includes(dulyElectedsColumns[index]?.toLowerCase())) {
                 validationErrors.push({
                     r: index,
                     c: columnDulyElected,
@@ -222,16 +236,28 @@ const updateDulyElectedTemplate = async (req, res, next, worksheet, workbook) =>
             }
 
 
-            const isDulyElected = dulyElectedsColumns[index] ? (dulyElectedsColumns[index] == 'Duly Elected') : null;
-            const electedDate = dulyElectedsDateColumns[index];
+            const isDulyElected = typeof dulyElectedsColumns[index] === 'string' ? (dulyElectedsColumns[index]?.toLowerCase() == DULY_ELECTED_OPTIONS.DULY_ELECTED) : null;
+            let electedDate = dulyElectedsDateColumns[index];
+            if (typeof dulyElectedsDateColumns[index] == 'string') {
+                electedDate = new Date(dulyElectedsDateColumns[index]?.split('/')?.reverse()?.join('-'));
+            } else if (isValidDate(dulyElectedsDateColumns[index])) {
+                electedDate = dulyElectedsDateColumns[index];
+            }
+            if (electedDate && !isValidDate(electedDate)) {
+                validationErrors.push({
+                    r: index,
+                    c: columnDulyElectedDate,
+                    message: `Please selected a valid date in format dd/mm/yyyy`
+                });
+            }
             const result = {
                 updateOne: {
                     filter: { _id: ObjectId(_id) },
                     update: {
                         $set: {
                             isDulyElected,
-                            ...(isDulyElected == true && {
-                                electedDate: new Date()
+                            ...(isDulyElected == true && isValidDate(electedDate) && {
+                                electedDate
                             })
                         }
                     }
@@ -312,7 +338,7 @@ const updateDulyElectedTemplate = async (req, res, next, worksheet, workbook) =>
 const gsdpTemplate = async (req, res, next) => {
     const templateName = req.params.templateName;
     try {
-
+        const relatedIds = Array.isArray(req.query.relatedIds) ? req.query.relatedIds : [req.query.relatedIds];
         const startingRow = 1;
         const workbook = new ExcelJS.Workbook();
         const worksheet = workbook.addWorksheet('My Sheet');
@@ -344,6 +370,9 @@ const gsdpTemplate = async (req, res, next) => {
         });
 
         const ulbData = await Ulb.aggregate([
+            {
+                $match: { state: { $in: relatedIds.map(id => ObjectId(id)) } }
+            },
             {
                 $lookup: {
                     from: "states",
@@ -434,8 +463,9 @@ const updateGsdpTemplate = async (req, res, next, worksheet, workbook) => {
 
         const gsdpUpdateQuery = _ids.map((_id, index) => {
             if (!_id || !isValidObjectId(_id)) return;
+            // if (!req.body.ulbIds?.includes('' + _id)) return;
 
-            if (gdsps[index] && !['Eligible', 'Not Eligible'].includes(gdsps[index])) {
+            if (typeof gdsps[index] !== 'string' || !Object.values(GSDP_OPTIONS).includes(gdsps[index]?.toLowerCase())) {
                 validationErrors.push({
                     r: index,
                     c: columnGdspElected,
@@ -443,7 +473,7 @@ const updateGsdpTemplate = async (req, res, next, worksheet, workbook) => {
                 });
             }
 
-            const isGsdpEligible = gdsps[index] ? (gdsps[index] == 'Eligible') : null;
+            const isGsdpEligible = typeof gdsps[index] === 'string' ? (gdsps[index]?.toLowerCase() == GSDP_OPTIONS.ELIGIBLE) : null;
             const result = {
                 updateOne: {
                     filter: { _id: ObjectId(_id) },
@@ -486,6 +516,11 @@ const getCategoryWiseResource = async (req, res, next) => {
             {
                 $unwind: {
                     path: "$relatedIds",
+                }
+            },
+            {
+                $match: {
+                    relatedIds: ObjectId(req.decoded.state)
                 }
             },
             {
@@ -557,13 +592,18 @@ const removeStateFromFiles = async (req, res, next) => {
 const getResourceList = async (req, res, next) => {
     const skip = +req.query.skip || 0;
     const limit = +req.query.limit || 2;
-    const { categoryId, stateId } = req.query;
+    const { categoryId, stateId, subCategoryId } = req.query;
 
     try {
         const query = [
             {
                 $match: {
                     module: 'state_resource',
+                }
+            },
+            {
+                $sort: {
+                    createdAt: -1
                 }
             },
             {
@@ -576,10 +616,11 @@ const getResourceList = async (req, res, next) => {
                     path: "$relatedIds",
                 }
             },
-            ...(categoryId || stateId ? [
+            ...(categoryId || stateId || subCategoryId ? [
                 {
                     $match: {
                         ...(categoryId && { categoryId: ObjectId(categoryId) }),
+                        ...(subCategoryId && { subCategoryId: ObjectId(subCategoryId) }),
                         ...(stateId && { relatedIds: ObjectId(stateId) })
                     }
                 },
@@ -658,6 +699,7 @@ const getResourceList = async (req, res, next) => {
                     }
                 }
             },
+            { $sort: { "files.0.createdAt": -1 } },
             {
                 $facet: {
                     totalCount: [{ $count: "count" }],

@@ -60,7 +60,7 @@ function Helper() {
         }
         return key || ""
     }
-    this.convertValue = async (objData) => {
+    this.convertValue = (objData) => {
         const { data, keyArr } = objData;
         let arr = [];
         if (data.length > 0) {
@@ -93,6 +93,9 @@ function Helper() {
         } else {
             return ""
         }
+    }
+    this.isValidDate = (d) => {
+        return d instanceof Date && !isNaN(d);
     }
 }
 function padTo2Digits(num) {

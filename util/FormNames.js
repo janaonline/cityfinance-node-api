@@ -8,10 +8,15 @@ module.exports.FormNames = {
     propTaxOp: "Property Tax Operationalisation",
     slb28: "28 SLBs",
     indicatorForm: "Indicators for Water Supply and Sanitation",
-    slbScoring: "Submit Claims for 15th FC Grants"
-
+    slbScoring: "Submit Claims for 15th FC Grants",
+    detailPTaxOp : "Details of Property Tax and User Charges"
 }
 
+module.exports.FormURL = {
+    "23_24":{
+        "GTC_STATE": "/gtCertificate"
+    }
+}
 // values: ["Grant Transfer Certificate", "Detailed Utilisation Report",
 // "Annual Accounts", "Linking of PFMS Account", "Property Tax Operationalisation",
 // "SLBs for Water Supply and Sanitation", "Open Defecation Free (ODF)", 
@@ -172,7 +177,11 @@ module.exports.FORM_TYPE_SUBMIT_CLAIM = {  // submit grant claim
     "nmpc_untied" : "Claim Non-Million Plus Cities Untied Grants" ,
     "mpc_tied" : "Claim Million Plus Cities Tied Grants"
  };
-
+module.exports.INSTALLMENT_TYPE = { //Submit Grant Claim
+ "mpc":"mpc_tied",
+ "nmpcTied":"nmpc_tied",
+ "nmpcUntied": "nmpc_untied"
+}
  module.exports.INSTALLMENT_NAME = {  // submit grant claim 
     1 : "1st Installment", 
     2 : "2nd Installment" ,

@@ -55,14 +55,14 @@ function getPopulationDataQueries(state) {
                 { $match: isActiveMatch },
                 countUlb,
               ],
-              totalUlbMpcAndNmpcUAPipeline: [
+              totalUlbMpc: [
                 ulbLookup,
                 ulbUnwind,
                 {
                   $match: {
                     $and: [
                       isActiveMatch,
-                      { $or: [isMillionPlusMatch, isUAMatch] },
+                      isMillionPlusMatch, 
                     ],
                   },
                 },
@@ -124,17 +124,30 @@ function getPopulationDataQueries(state) {
             },
           },
           {
-            $unwind: "$totalUlbs",
+            $unwind: {
+              path: "$totalUlbs",
+              preserveNullAndEmptyArrays: true,
+            },
           },
           {
-            $unwind: "$totalUlbMpcAndNmpcUAPipeline",
+            $unwind: {
+              path: "$totalUlbMpc",
+              preserveNullAndEmptyArrays: true,
+            },
           },
           {
-            $unwind: "$totalUlbNonMillionPlusPipeline",
+            $unwind: {
+              path: "$totalUlbNonMillionPlusPipeline",
+              preserveNullAndEmptyArrays: true,
+            },
           },
           {
-            $unwind: "$totalUlbsInUA",
+            $unwind: {
+              path: "$totalUlbsInUA",
+              preserveNullAndEmptyArrays: true,
+            },
           },
+
           {
             $unwind: {
               path: "$totalDulyElectedNMPCs",
@@ -156,7 +169,7 @@ function getPopulationDataQueries(state) {
           {
             $project:{
                 totalUlbs: "$totalUlbs.totalUlb",
-                TotalofMPCs: "$totalUlbMpcAndNmpcUAPipeline.totalUlb",
+                TotalofMPCs: "$totalUlbMpc.totalUlb",
                 TotalofNMPCs: "$totalUlbNonMillionPlusPipeline.totalUlb",
                 TotalULBsUAs: "$totalUlbsInUA.totalUlb",
                 totalDulyElectedNMPCs: "$totalDulyElectedNMPCs.totalUlb",

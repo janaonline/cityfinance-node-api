@@ -37,9 +37,10 @@ module.exports = {
                     data: data,
                 });
             } catch (error) {
+                let message = "Something went wrong!";
                 return res.status(400).json({
                     status: false,
-                    message: "Something went wrong!",
+                    message: error.message || message,
                     err: error.message,
                 });
             }
