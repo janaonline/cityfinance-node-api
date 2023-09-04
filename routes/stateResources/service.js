@@ -127,9 +127,9 @@ const dulyElectedTemplate = async (req, res, next) => {
         });
         const query = [
             {
-                $match: { 
+                $match: {
                     isActive: true,
-                    state: { $in: relatedIds.map(id => ObjectId(id)) } 
+                    state: { $in: relatedIds.map(id => ObjectId(id)) }
                 }
             },
             {
@@ -374,9 +374,9 @@ const gsdpTemplate = async (req, res, next) => {
 
         const ulbData = await Ulb.aggregate([
             {
-                $match: { 
+                $match: {
                     isActive: true,
-                    state: { $in: relatedIds.map(id => ObjectId(id)) } 
+                    state: { $in: relatedIds.map(id => ObjectId(id)) }
                 }
             },
             {
@@ -512,6 +512,7 @@ const getTemplate = async (req, res, next) => {
 }
 
 const getCategoryWiseResource = async (req, res, next) => {
+    
     try {
         const query = [
             {
@@ -526,7 +527,7 @@ const getCategoryWiseResource = async (req, res, next) => {
             },
             {
                 $match: {
-                    relatedIds: ObjectId(req.decoded.state)
+                    relatedIds: ObjectId(req.params.stateId || req.decoded.state)
                 }
             },
             {
