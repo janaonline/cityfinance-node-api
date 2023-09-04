@@ -512,7 +512,7 @@ const getTemplate = async (req, res, next) => {
 }
 
 const getCategoryWiseResource = async (req, res, next) => {
-    
+
     try {
         const query = [
             {
@@ -542,6 +542,9 @@ const getCategoryWiseResource = async (req, res, next) => {
                         }
                     }
                 }
+            },
+            {
+                $sort: { _id: 1}
             },
             {
                 $lookup: {
