@@ -127,7 +127,10 @@ const dulyElectedTemplate = async (req, res, next) => {
         });
         const query = [
             {
-                $match: { state: { $in: relatedIds.map(id => ObjectId(id)) } }
+                $match: { 
+                    isActive: true,
+                    state: { $in: relatedIds.map(id => ObjectId(id)) } 
+                }
             },
             {
                 $lookup: {
@@ -371,7 +374,10 @@ const gsdpTemplate = async (req, res, next) => {
 
         const ulbData = await Ulb.aggregate([
             {
-                $match: { state: { $in: relatedIds.map(id => ObjectId(id)) } }
+                $match: { 
+                    isActive: true,
+                    state: { $in: relatedIds.map(id => ObjectId(id)) } 
+                }
             },
             {
                 $lookup: {
