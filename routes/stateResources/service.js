@@ -578,15 +578,11 @@ const removeStateFromFiles = async (req, res, next) => {
             stateId,
             fileIds
         } = req.body;
-        console.log('deletable ids', req.body);
 
-        const data = await CategoryFileUpload.findOneAndUpdate({
-            _id: { $in: fileIds }
-        }, {
-            $pull: {
-                relatedIds: stateId
-            }
-        });
+        const data = await CategoryFileUpload.updateMany(
+            { _id: { $in: fileIds } },
+            { $pull: { relatedIds: stateId } }
+        );
         return res.status(200).json({
             status: true,
             message: "State removed!",
