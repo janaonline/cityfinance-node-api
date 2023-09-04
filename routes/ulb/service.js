@@ -3018,6 +3018,11 @@ module.exports.getAllULBSCSV = function (req, res) {
 
   Ulb.aggregate([
     {
+      $match: {
+        isActive: true,
+      },
+    },
+    {
       $lookup: {
         from: "states",
         as: "states",
@@ -3105,45 +3110,45 @@ module.exports.getAllULBSCSV = function (req, res) {
         el.location = el.location ? el.location : { lat: "NA", lng: "NA" };
         res.write(
           el.name +
-          "," +
-          el.code +
-          "," +
-          el.censusCode +
-          "," +
-          el.sbCode +
-          "," +
-          el.ulbtypes.name +
-          "," +
-          el.isActive +
-          "," +
-          el.state.name +
-          "," +
-          el.state.code +
-          "," +
-          el.natureOfUlb +
-          "," +
-          el.area +
-          "," +
-          el.wards +
-          "," +
-          el.population +
-          "," +
-          el.amrut +
-          "," +
-          el.location.lat +
-          "," +
-          el.location.lng +
-          "," +
-          el.isMillionPlus +
-          "," +
-          el.UA +
-          "," +
-          el.UA_Code +
-          "," +
-          el.createdAt +
-          "," +
-          el.modifiedAt +
-          "\r\n"
+            "," +
+            el.code +
+            "," +
+            el.censusCode +
+            "," +
+            el.sbCode +
+            "," +
+            el.ulbtypes.name +
+            "," +
+            el.isActive +
+            "," +
+            el.state.name +
+            "," +
+            el.state.code +
+            "," +
+            el.natureOfUlb +
+            "," +
+            el.area +
+            "," +
+            el.wards +
+            "," +
+            el.population +
+            "," +
+            el.amrut +
+            "," +
+            el.location.lat +
+            "," +
+            el.location.lng +
+            "," +
+            el.isMillionPlus +
+            "," +
+            el.UA +
+            "," +
+            el.UA_Code +
+            "," +
+            el.createdAt +
+            "," +
+            el.modifiedAt +
+            "\r\n"
         );
       }
       res.end();
