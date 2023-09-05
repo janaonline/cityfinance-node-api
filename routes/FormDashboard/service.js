@@ -564,21 +564,26 @@ function getFormData(formCategory, modelName, sidemenuForms, reviewForm, design_
   ) {
     getFormsLinkIcon(element, formData);
   }
-  if(
-    ![YEAR_CONSTANTS['22_23']].includes(design_year) &&
-    [USER_ROLE['ULB']].includes(formCategory)
-   ){
-    const ignoreForms =  [CollectionNames.slb];
-    updateFormData(modelName,formData,reviewForm,ignoreForms)
-  }
+  handleFormLinkBasedOnRole(design_year, formCategory, modelName, formData, reviewForm);
   return formData;
+}
+
+function handleFormLinkBasedOnRole(design_year, formCategory, modelName, formData, reviewForm) {
+    if (![YEAR_CONSTANTS['22_23']].includes(design_year)) {
+        if ([USER_ROLE['ULB']].includes(formCategory)) {
+            const ignoreForms = [CollectionNames.slb];
+            updateFormLink(modelName, formData, reviewForm, ignoreForms);
+        } else {
+            formData.link = `/state-form${formData.link}`;
+        }
+    }
 }
 
 /**
  * The function updates the link property of the formData object based on the modelName and reviewForm
  * parameters.
  */
-function updateFormData(modelName,formData,reviewForm,ignoreForms){
+function updateFormLink(modelName,formData,reviewForm,ignoreForms){
     let modelExist = Object.values(CollectionNames).includes(modelName)
     if(modelExist && !ignoreForms.includes(modelName)){
         formData.link = `/state-form/${reviewForm.url}?formId=${ModelNamesToFormId[modelName]}`
