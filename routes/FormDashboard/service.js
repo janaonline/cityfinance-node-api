@@ -485,9 +485,7 @@ function getFormData(formCategory, modelName, sidemenuForms, reviewForm, design_
   ) {
     formData["formName"] = element.name;
     formData["icon"] = element.icon;
-    formData["link"] = `/${reviewForm.url}/${
-      FormObjectIds[CollectionNames.slb]
-    }`;
+    formData["link"] = `/${reviewForm.url}`;
   } else if (
     modelName === CollectionNames.twentyEightSlbs &&
     element._id === "TwentyEightSlbsForm"
@@ -1066,8 +1064,10 @@ const dashboard = async (req, res) => {
     try {
         let data = req.query;
         let user = req.decoded;
-        const {_id:actionTakenBy, role: actionTakenByRole, state } = user;
-        const singleState = 1;
+        let { _id: actionTakenBy, role: actionTakenByRole, state } = user;
+        if([USER_ROLE['MoHUA']].includes(actionTakenByRole)){
+            state = data?.state
+        }
         let collectionArr = getCollections(data.formType, data.installment);
         if(data.design_year === YEAR_CONSTANTS['23_24']){
             collectionArr = getCollections2324(data.formType, data.installment);
