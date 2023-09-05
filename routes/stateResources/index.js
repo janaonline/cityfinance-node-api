@@ -5,18 +5,16 @@ const {
     getResourceList,
     removeStateFromFiles,
     getCategoryWiseResource,
-    getTemplate
+    getTemplate,
+    createOrUpdate
 } = require('./service');
 
-const {
-    createOrUpdate
-} = require("../../service/crud");
 const { allowedRoles } = require('../auth/services/roleAuthorize');
 
 
 router.get('/getResourceList', allowedRoles(['MoHUA', 'PMU']), getResourceList);
 router.get('/list/:stateId?', allowedRoles(['STATE', 'MoHUA']), getCategoryWiseResource);
-router.post('/createOrUpdate', allowedRoles(['MoHUA', 'PMU']), handleDatabaseUpload, createOrUpdate('CategoryFileUpload', { module: 'state_resource' }));
+router.post('/createOrUpdate', allowedRoles(['MoHUA', 'PMU']), handleDatabaseUpload, createOrUpdate);
 
 router.get('/template/:templateName', allowedRoles(['MoHUA', 'PMU']), getTemplate);
 
