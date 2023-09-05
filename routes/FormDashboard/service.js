@@ -581,9 +581,9 @@ function getFormData(formCategory, modelName, sidemenuForms, reviewForm, design_
 function updateFormData(modelName,formData,reviewForm,ignoreForms){
     let modelExist = Object.values(CollectionNames).includes(modelName)
     if(modelExist && !ignoreForms.includes(modelName)){
-        formData.link = `/${reviewForm.url}?formId=${ModelNamesToFormId[modelName]}`
+        formData.link = `/state-form/${reviewForm.url}?formId=${ModelNamesToFormId[modelName]}`
     } else {
-        formData.link = `/${reviewForm.url}`
+        formData.link = `/stateform/${reviewForm.url}`
     }
 }
  
