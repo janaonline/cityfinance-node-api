@@ -864,6 +864,7 @@ function getQuery2324(modelName, formType, designYear, formCategory, stateId){
             {$unwind: "$ulb" },
             {
                 $match:{
+                    "ulb.isActive":true,
                     "ulb.isMillionPlus":"No",
                 }
             }
@@ -880,6 +881,7 @@ function getQuery2324(modelName, formType, designYear, formCategory, stateId){
             {$unwind: "$ulb" },
             {
                 $match:{
+                    "ulb.isActive":true,
                     $or:[
                         {
                             "ulb.isMillionPlus":"Yes",
@@ -1894,6 +1896,7 @@ function getQueries(states) {
         { $unwind: "$ulb" },
         {
             $match: {
+                "ulb.isActive": true,
                 $or: [
                     { "ulb.isMillionPlus": "Yes", "ulb.isUA": "Yes" },
                     {
@@ -1924,6 +1927,7 @@ function getQueries(states) {
         { $unwind: "$ulb" },
         {
             $match: {
+                "ulb.isActive": true,
                 "ulb.isMillionPlus": "No",
             },
         },
