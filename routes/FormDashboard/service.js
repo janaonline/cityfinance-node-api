@@ -568,7 +568,8 @@ function getFormData(formCategory, modelName, sidemenuForms, reviewForm, design_
     ![YEAR_CONSTANTS['22_23']].includes(design_year) &&
     [USER_ROLE['ULB']].includes(formCategory)
    ){
-    updateFormData(modelName,formData,reviewForm)
+    const ignoreForms =  [CollectionNames.slb];
+    updateFormData(modelName,formData,reviewForm,ignoreForms)
   }
   return formData;
 }
@@ -577,9 +578,9 @@ function getFormData(formCategory, modelName, sidemenuForms, reviewForm, design_
  * The function updates the link property of the formData object based on the modelName and reviewForm
  * parameters.
  */
-function updateFormData(modelName,formData,reviewForm){
+function updateFormData(modelName,formData,reviewForm,ignoreForms){
     let modelExist = Object.values(CollectionNames).includes(modelName)
-    if(modelExist){
+    if(modelExist && !ignoreForms.includes(modelName)){
         formData.link = `/${reviewForm.url}?formId=${ModelNamesToFormId[modelName]}`
     } else {
         formData.link = `/${reviewForm.url}`
