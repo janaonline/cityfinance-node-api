@@ -446,7 +446,7 @@ const ELIGIBLITY = {
  * returned depend on the input parameters and the conditions met within the function.
  */
 function getFormData(formCategory, modelName, sidemenuForms, reviewForm, design_year) {
-  let formData = {}, ignoreFormId =  false;
+  let formData = {};
   if (formCategory === "ULB") {
     formData["approvedColor"] = "#E67E15";
     formData["submittedColor"] = "#f7bf88";
@@ -486,7 +486,6 @@ function getFormData(formCategory, modelName, sidemenuForms, reviewForm, design_
     formData["formName"] = element.name;
     formData["icon"] = element.icon;
     formData["link"] = `/${reviewForm.url}`;
-    ignoreFormId = true;
   } else if (
     modelName === CollectionNames.twentyEightSlbs &&
     element._id === "TwentyEightSlbsForm"
@@ -569,7 +568,8 @@ function getFormData(formCategory, modelName, sidemenuForms, reviewForm, design_
     ![YEAR_CONSTANTS['22_23']].includes(design_year) &&
     [USER_ROLE['ULB']].includes(formCategory)
    ){
-    updateFormData(modelName,formData,reviewForm,ignoreFormId)
+    const ignoreForms =  [CollectionNames.slb];
+    updateFormData(modelName,formData,reviewForm,ignoreForms)
   }
   return formData;
 }
@@ -578,9 +578,9 @@ function getFormData(formCategory, modelName, sidemenuForms, reviewForm, design_
  * The function updates the link property of the formData object based on the modelName and reviewForm
  * parameters.
  */
-function updateFormData(modelName,formData,reviewForm,ignoreFormId){
+function updateFormData(modelName,formData,reviewForm,ignoreForms){
     let modelExist = Object.values(CollectionNames).includes(modelName)
-    if(modelExist && !ignoreFormId){
+    if(modelExist && !ignoreForms.includes(modelName)){
         formData.link = `/${reviewForm.url}?formId=${ModelNamesToFormId[modelName]}`
     } else {
         formData.link = `/${reviewForm.url}`
