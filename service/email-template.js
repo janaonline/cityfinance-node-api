@@ -1576,6 +1576,20 @@ let total = {
   };
 };
 
+const alertStateToClaimGrants = (payload) => {
+  return {
+    subject: `To claim XVFC grants for the FY 23-24`,
+    body: `Dear sir/ma’am,<br>
+                    <p>
+                    This is to bring to your kind attention that your state has completed all the stipulated conditions concerning the <strong>${payload.installment}
+                    instalment</strong> of <strong>${payload.tiedStatus ? "Tied" : "Untied"}</strong> Grant FY 23-24 allocated to <strong>${payload.title}</strong> 
+                    under the 15thFC. Kindly submit the necessary claims in order to release the grant.
+                    </p>
+                    <br>Regards,<br>
+                    PMU- XVFC,<br>
+                    MoHUA`,
+  };
+};
 
 const calculateTotalStatus = (totalObj, formArray)=>{
   for(let key in totalObj){
@@ -1626,6 +1640,7 @@ module.exports = {
   gtcSubmission,
   ulbFormSubmitted,
   CfrFormRejected,
+  alertStateToClaimGrants,
   stateUlbFormTrigger
 
 };
