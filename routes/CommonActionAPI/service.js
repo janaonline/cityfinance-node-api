@@ -2780,7 +2780,7 @@ module.exports.masterAction = async (req, res) => {
         }
 
         if (req.emailEligibility) {
-            await alertStateClaimGrants(req, ulbs, design_year);
+            await alertStateClaimGrants(req, ulbs, design_year, states, type);
         }
 
     } catch (error) {
@@ -2859,11 +2859,10 @@ async function emailTriggerWithMohuaAction(responses, states, formId) {
     });
 }
 
-async function alertStateClaimGrants(req, ulbs, design_year) {
+async function alertStateClaimGrants(req, ulbs, design_year, states, type) {
     try {
         const LOCALHOST = 'localhost:8080';
-        let host = "";
-        host = req.headers.host;
+        let host = req.headers.host;
         if (host === LOCALHOST) {
             host = BackendHeaderHost.Demo;
         }
@@ -2872,71 +2871,75 @@ async function alertStateClaimGrants(req, ulbs, design_year) {
             "x-access-token": req?.headers?.['x-access-token']
         };
 
-        const UlbData = await ULB.find({ _id: { $in: ulbs } }).select("-_id state");
-        const uniqueStatesArray = [...new Set(UlbData.map(doc => doc.state.toString()))];
+        let uniqueStatesArray, userEmails;
 
-        let stateUserData = await User.find({ state: { $in: uniqueStatesArray }, role: "STATE" });
-        let userEmails = stateUserData.map(user => user.email);
+        if (type === "STATE") {
+            let users = await User.find({ state: { $in: states }, role: "STATE", isDeleted: false });
+            uniqueStatesArray = states;
+            userEmails = users.map((user) => user.email);
+        } else {
+            uniqueStatesArray = [req?.decoded?.state];
+            let stateUserData = await User.find({ state: req?.decoded?.state, role: "STATE", isDeleted: false });
+            userEmails = stateUserData.map(user => user.email);
+        }
+
+        console.log({ uniqueStatesArray, userEmails })
 
         if (uniqueStatesArray && uniqueStatesArray.length) {
-            for (let state of uniqueStatesArray) {
+            await Promise.all(uniqueStatesArray.map(async (state) => {
                 const params = {
                     financialYear: design_year,
                     stateId: state
                 };
 
-                axios.get(`https://${host}/api/v1/grant-claim/get2223`, { headers, params })
-                    .then(async (response) => {
-                        let data = response?.data?.data?.data;
+                try {
+                    const response = await axios.get(`https://${host}/api/v1/grant-claim/get2223`, { headers, params });
+                    let data = response?.data?.data?.data;
 
-                        const results = Object.entries(data).map(([key, value]) => value.yearData.filter(year => year.conditionSuccess).map(year => ({
-                            title: value.title.substring(value.title.indexOf('Claim') + 6),
-                            installment: year.installment,
-                            tiedStatus: key.endsWith('_tied')
-                        }))).flat(1);
+                    const results = Object.entries(data).map(([key, value]) => value.yearData.filter(year => year.conditionSuccess).map(year => ({
+                        title: value.title.substring(value.title.indexOf('Claim') + 6),
+                        installment: year.installment,
+                        tiedStatus: key.endsWith('_tied')
+                    }))).flat(1);
 
-                        for (let elem of results) {
-                            let emailTemplate = Service.emailTemplate.alertStateToClaimGrants(elem);
+                    for (let elem of results) {
+                        let emailTemplate = Service.emailTemplate.alertStateToClaimGrants(elem);
 
-                            let mailOptions = {
-                                Destination: {
-                                    /* required */
-                                    ToAddresses: userEmails,
-                                },
-                                Message: {
-                                    /* required */
-                                    Body: {
-                                        /* required */
-                                        Html: {
-                                            Charset: "UTF-8",
-                                            Data: emailTemplate.body,
-                                        },
-                                    },
-                                    Subject: {
-                                        Charset: "UTF-8",
-                                        Data: emailTemplate.subject,
-                                    },
-                                },
-                                Source: process.env.EMAIL,
+                        let mailOptions = {
+                            Destination: {
                                 /* required */
-                                ReplyToAddresses: [process.env.EMAIL],
-                            };
+                                ToAddresses: userEmails,
+                            },
+                            Message: {
+                                /* required */
+                                Body: {
+                                    /* required */
+                                    Html: {
+                                        Charset: "UTF-8",
+                                        Data: emailTemplate.body,
+                                    },
+                                },
+                                Subject: {
+                                    Charset: "UTF-8",
+                                    Data: emailTemplate.subject,
+                                },
+                            },
+                            Source: process.env.EMAIL,
+                            /* required */
+                            ReplyToAddresses: [process.env.EMAIL],
+                        };
 
-                            await Service.sendEmail(mailOptions);
-                        }
-                        return;
-                    })
-                    .catch(error => {
-                        if (error.response && error.response.status === 400) {
-                            console.error('Status Code 400:', error.response.data);
-                        } else {
-                            throw error;
-                        }
-                    });
-            }
-
+                        await Service.sendEmail(mailOptions);
+                    }
+                } catch (error) {
+                    if (error.response && error.response.status === 400) {
+                        console.error('Status Code 400:', error.response.data);
+                    } else {
+                        throw error;
+                    }
+                }
+            }));
         }
-        return;
     } catch (error) {
         throw error;
     }
