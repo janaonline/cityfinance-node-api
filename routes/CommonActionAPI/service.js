@@ -25,6 +25,10 @@ const CurrentStatus = require('../../models/CurrentStatus');
 const { MASTER_STATUS_ID, FORM_LEVEL_SHORTKEY, FORMIDs } = require('../../util/FormNames');
 const { ModelNames } = require('../../util/15thFCstatus');
 const UA = require('../../models/UA');
+const User = require('../../models/User');
+const ULB = require('../../models/Ulb');
+const { default: axios } = require('axios');
+const { BackendHeaderHost } = require('../../util/envUrl');
 // const { getUAShortKeys } = require('../CommonFormSubmissionState/service');
 var allowedStatuses = [StatusList.Rejected_By_MoHUA, StatusList.STATE_REJECTED, StatusList.Rejected_By_State, StatusList.In_Progress, StatusList.Not_Started]
 var ignorableKeys = ["actionTakenByRole", "actionTakenBy", "ulb", "design_year"]
@@ -2558,7 +2562,7 @@ async function mutateResponse(jsonFormat, flatForm, keysToBeDeleted, role) {
         //     transDate['maxRange'] = maxDate;
         // }
         // console.log('transDate', transDate);
-        console.log("flattedForm['disabledShortKeys'] >>",flattedForm['disabledShortKeys'] )
+        console.log("flattedForm['disabledShortKeys'] >>", flattedForm['disabledShortKeys'])
         obj[0] = await appendExtraKeys(keysToBeDeleted, obj[0], flattedForm)
         await deleteKeys(flattedForm, keysToBeDeleted)
         for (let key in obj) {
@@ -2717,6 +2721,9 @@ function deleteKeys(obj, delKeys) {
     }
 }
 
+const Service = require('../../service');
+
+
 module.exports.masterAction = async (req, res) => {
     try {
         let { decoded: userData, body: bodyData } = req;
@@ -2755,7 +2762,7 @@ module.exports.masterAction = async (req, res) => {
         }
         //   if(multi){
         if ([FORMIDs['GrantAllocation'], FORMIDs['GTC_STATE']].includes(formId)) {
-            formData =  formData.filter(item => item.currentFormStatus ===  MASTER_FORM_STATUS['UNDER_REVIEW_BY_MoHUA'])
+            formData = formData.filter(item => item.currentFormStatus === MASTER_FORM_STATUS['UNDER_REVIEW_BY_MoHUA'])
         }
         let params = { formData, actionTakenByRole, actionTakenBy, bodyData }
         let actionResponse = await takeActionOnForms(params, res)
@@ -2763,12 +2770,128 @@ module.exports.masterAction = async (req, res) => {
         //     let [form] = formData; 
         //   }
         if (actionResponse === formData.length) {
-            return Response.OK(res, {}, "Action Successful");
+            Response.OK(res, {}, "Action Successful");
         } else {
-            return Response.BadRequest(res, {}, actionResponse);
+            Response.BadRequest(res, {}, actionResponse);
         }
+
+        if (req.emailEligibility) {
+            await alertStateClaimGrants(req, ulbs, design_year);
+        }
+
     } catch (error) {
         return Response.BadRequest(res, {}, error.message);
+    }
+}
+
+module.exports.emailEligibilityCheck = async (req, res, next) => {
+    try {
+        const { form_level, multi, responses } = req.body;
+        const [response] = responses;
+        const isReturnedStatus = [
+            MASTER_STATUS["Returned By MoHUA"],
+            MASTER_STATUS["Returned By State"],
+        ].includes(Number(response.status));
+
+        let emailEligibility;
+
+        if (form_level === FORM_LEVEL["form"]) {
+            emailEligibility = !isReturnedStatus;
+        } else if (form_level === FORM_LEVEL["tab"] || form_level === FORM_LEVEL["question"]) {
+            if (multi === true || responses.every((response) => [MASTER_STATUS['Under Review By MoHUA'], MASTER_STATUS['Submission Acknowledged By MoHUA']].includes(Number(response.status)))) {
+                emailEligibility = !isReturnedStatus;
+            } else {
+                emailEligibility = false;
+            }
+        }
+        req['emailEligibility'] = emailEligibility;
+        next();
+    } catch (error) {
+        return Response.BadRequest(res, {}, error.message);
+    }
+}
+
+
+async function alertStateClaimGrants(req, ulbs, design_year) {
+    try {
+        const LOCALHOST = 'localhost:8080';
+        let host = "";
+        host = req.headers.host;
+        if (host === LOCALHOST) {
+            host = BackendHeaderHost.Demo;
+        }
+
+        const headers = {
+            "x-access-token": req?.headers?.['x-access-token']
+        };
+
+        const UlbData = await ULB.find({ _id: { $in: ulbs } }).select("-_id state");
+        const uniqueStatesArray = [...new Set(UlbData.map(doc => doc.state.toString()))];
+
+        let stateUserData = await User.find({ state: { $in: uniqueStatesArray }, role: "STATE" });
+        let userEmails = stateUserData.map(user => user.email);
+
+        if (uniqueStatesArray && uniqueStatesArray.length) {
+            for (let state of uniqueStatesArray) {
+                const params = {
+                    financialYear: design_year,
+                    stateId: state
+                };
+
+                axios.get(`https://${host}/api/v1/grant-claim/get2223`, { headers, params })
+                    .then(async (response) => {
+                        let data = response?.data?.data?.data;
+
+                        const results = Object.entries(data).map(([key, value]) => value.yearData.filter(year => year.conditionSuccess).map(year => ({
+                            title: value.title.substring(value.title.indexOf('Claim') + 6),
+                            installment: year.installment,
+                            tiedStatus: key.endsWith('_tied')
+                        }))).flat(1);
+
+                        for (let elem of results) {
+                            let emailTemplate = Service.emailTemplate.alertStateToClaimGrants(elem);
+
+                            let mailOptions = {
+                                Destination: {
+                                    /* required */
+                                    ToAddresses: userEmails,
+                                },
+                                Message: {
+                                    /* required */
+                                    Body: {
+                                        /* required */
+                                        Html: {
+                                            Charset: "UTF-8",
+                                            Data: emailTemplate.body,
+                                        },
+                                    },
+                                    Subject: {
+                                        Charset: "UTF-8",
+                                        Data: emailTemplate.subject,
+                                    },
+                                },
+                                Source: process.env.EMAIL,
+                                /* required */
+                                ReplyToAddresses: [process.env.EMAIL],
+                            };
+
+                            await Service.sendEmail(mailOptions);
+                        }
+                        return;
+                    })
+                    .catch(error => {
+                        if (error.response && error.response.status === 400) {
+                            console.error('Status Code 400:', error.response.data);
+                        } else {
+                            throw error;
+                        }
+                    });
+            }
+
+        }
+        return;
+    } catch (error) {
+        throw error;
     }
 }
 
@@ -2779,7 +2902,7 @@ async function takeActionOnForms(params, res) {
         let count = 0;
         let path = modelPath(formId);
         const model = require(`../../models/${path}`);
-        
+
         for (let form of formData) {
             let bodyData = {
                 formId,
