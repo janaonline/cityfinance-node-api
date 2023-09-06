@@ -2775,6 +2775,10 @@ module.exports.masterAction = async (req, res) => {
             Response.BadRequest(res, {}, actionResponse);
         }
 
+        if (req.decoded.role === "MoHUA" && actionResponse === formData.length) {
+            await emailTriggerWithMohuaAction(responses, states, formId);
+        }
+
         if (req.emailEligibility) {
             await alertStateClaimGrants(req, ulbs, design_year);
         }
@@ -2811,6 +2815,49 @@ module.exports.emailEligibilityCheck = async (req, res, next) => {
     }
 }
 
+
+async function emailTriggerWithMohuaAction(responses, states, formId) {
+    let [response] = responses;
+    let users = await User.find({ state: { $in: states }, role: "STATE" })
+        .populate("state", "name");
+    let formName = await Sidemenu.findOne({ formId: formId, isActive: true });
+
+    users.forEach(async (user) => {
+        let payload = {
+            formName: formName?.name,
+            email: user.email,
+            isApproved: (MASTER_STATUS_ID[+response?.status] === 'Submission Acknowledged By MoHUA'),
+            stateName: user?.state?.name,
+            reasonForRejection: response?.rejectReason,
+            status: MASTER_STATUS_ID[+response?.status]
+        };
+        let emailTemplate = Service.emailTemplate.alertStateWithMohuaAction(payload);
+        let mailOptions = {
+            Destination: {
+                /* required */
+                ToAddresses: [user?.email],
+            },
+            Message: {
+                /* required */
+                Body: {
+                    /* required */
+                    Html: {
+                        Charset: "UTF-8",
+                        Data: emailTemplate.body,
+                    },
+                },
+                Subject: {
+                    Charset: "UTF-8",
+                    Data: emailTemplate.subject,
+                },
+            },
+            Source: process.env.EMAIL,
+            /* required */
+            ReplyToAddresses: [process.env.EMAIL],
+        };
+        await Service.sendEmail(mailOptions);
+    });
+}
 
 async function alertStateClaimGrants(req, ulbs, design_year) {
     try {
