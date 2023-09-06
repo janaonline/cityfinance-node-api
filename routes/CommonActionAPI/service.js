@@ -2776,111 +2776,72 @@ module.exports.masterAction = async (req, res) => {
         }
 
         if (req.emailEligibility) {
-            const LOCALHOST = 'localhost:8080';
-            let host = "";
-            host = req.headers.host
-            if (host === LOCALHOST) {
-                host = BackendHeaderHost.Demo
+            await alertStateClaimGrants(req, ulbs, design_year);
+        }
+
+    } catch (error) {
+        return Response.BadRequest(res, {}, error.message);
+    }
+}
+
+module.exports.emailEligibilityCheck = async (req, res, next) => {
+    try {
+        const { form_level, multi, responses } = req.body;
+        const [response] = responses;
+        const isReturnedStatus = [
+            MASTER_STATUS["Returned By MoHUA"],
+            MASTER_STATUS["Returned By State"],
+        ].includes(Number(response.status));
+
+        let emailEligibility;
+
+        if (form_level === FORM_LEVEL["form"]) {
+            emailEligibility = !isReturnedStatus;
+        } else if (form_level === FORM_LEVEL["tab"] || form_level === FORM_LEVEL["question"]) {
+            if (multi === true || responses.every((response) => ['4', '6'].includes(response.status))) {
+                emailEligibility = !isReturnedStatus;
+            } else {
+                emailEligibility = false;
             }
+        }
+        req['emailEligibility'] = emailEligibility;
+        next();
+    } catch (error) {
+        return Response.BadRequest(res, {}, error.message);
+    }
+}
 
-            const headers = {
-                "x-access-token": req?.headers?.['x-access-token']
-            };
 
-            const UlbData = await ULB.find({ _id: { $in: ulbs } }).select("-_id state");
-            const uniqueStatesArray = [...new Set(UlbData.map(doc => doc.state.toString()))];
+async function alertStateClaimGrants(req, ulbs, design_year) {
+    try {
+        const LOCALHOST = 'localhost:8080';
+        let host = "";
+        host = req.headers.host;
+        if (host === LOCALHOST) {
+            host = BackendHeaderHost.Demo;
+        }
 
-            let stateUserData = await User.find({ state: { $in: uniqueStatesArray }, role: "STATE" })
-            let userEmails = stateUserData.map(user => user.email)
+        const headers = {
+            "x-access-token": req?.headers?.['x-access-token']
+        };
 
+        const UlbData = await ULB.find({ _id: { $in: ulbs } }).select("-_id state");
+        const uniqueStatesArray = [...new Set(UlbData.map(doc => doc.state.toString()))];
+
+        let stateUserData = await User.find({ state: { $in: uniqueStatesArray }, role: "STATE" });
+        let userEmails = stateUserData.map(user => user.email);
+
+        if (uniqueStatesArray && uniqueStatesArray.length) {
             for (let state of uniqueStatesArray) {
                 const params = {
                     financialYear: design_year,
                     stateId: state
-                }
+                };
 
                 axios.get(`https://${host}/api/v1/grant-claim/get2223`, { headers, params })
-                    .then(async response => {
-                        // let data = response?.data?.data?.data;
-                        console.log(response?.data?.data?.data);
-                        let data = {
-                            "nmpc_tied": {
-                                "title": "1. Claim Non-Million Plus Cities Tied Grants",
-                                "yearData": [
-                                    {
-                                        "key": "",
-                                        "title": "1st Installment (FY 2023-24):",
-                                        "installment": 1,
-                                        "year": "",
-                                        "type": "",
-                                        "position": 1,
-                                        "conditionSuccess": true,
-                                        "buttonName": "Claim Grant - ",
-                                        "amount": "",
-                                    },
-                                    {
-                                        "key": "",
-                                        "title": "2nd Installment (FY 2023-24):",
-                                        "installment": 2,
-                                        "year": "",
-                                        "type": "",
-                                        "position": 1,
-                                        "conditionSuccess": false,
-                                        "buttonName": "Claim Grant - ",
-                                        "amount": "",
-                                    }
-                                ],
-                                "isClose": true,
-                                "id": 1
-                            },
-                            "nmpc_untied": {
-                                "title": "2. Claim Non-Million Plus Cities Untied Grants",
-                                "yearData": [
-                                    {
-                                        "key": "",
-                                        "title": "1st Installment (FY 2023-24):",
-                                        "installment": 1,
-                                        "year": "",
-                                        "type": "",
-                                        "position": 1,
-                                        "conditionSuccess": true,
-                                        "buttonName": "Claim Grant - ",
-                                        "amount": "",
-                                    },
-                                    {
-                                        "key": "",
-                                        "title": "2nd Installment (FY 2023-24):",
-                                        "installment": 2,
-                                        "year": "",
-                                        "type": "",
-                                        "position": 1,
-                                        "conditionSuccess": false,
-                                        "buttonName": "Claim Grant - ",
-                                        "amount": "",
-                                    }
-                                ],
-                                "isClose": true,
-                                "id": 2
-                            },
-                            "mpc_tied": {
-                                "title": "3. Claim Million Plus Cities Tied Grants",
-                                "yearData": [
-                                    {
-                                        "key": "",
-                                        "title": "1st Installment (FY 2023-24):",
-                                        "installment": 1,
-                                        "year": "",
-                                        "type": "",
-                                        "position": 1,
-                                        "conditionSuccess": true,
-                                        "buttonName": "Claim Grant - ",
-                                        "amount": "",
-                                    }
-                                ],
-                                "isClose": true,
-                                "id": 3
-                            }
-                        }
+                    .then(async (response) => {
+                        let data = response?.data?.data?.data;
+
                         const results = Object.entries(data).map(([key, value]) => value.yearData.filter(year => year.conditionSuccess).map(year => ({
                             title: value.title.substring(value.title.indexOf('Claim') + 6),
                             installment: year.installment,
@@ -2916,10 +2877,7 @@ module.exports.masterAction = async (req, res) => {
 
                             await Service.sendEmail(mailOptions);
                         }
-
-
-                        console.log({ results });
-                        // console.log('data', response?.data?.data?.data, ">>>>>>>>>>")
+                        return;
                     })
                     .catch(error => {
                         if (error.response && error.response.status === 400) {
@@ -2927,43 +2885,15 @@ module.exports.masterAction = async (req, res) => {
                         } else {
                             throw error;
                         }
-                    })
+                    });
             }
 
         }
-
+        return;
     } catch (error) {
-        return Response.BadRequest(res, {}, error.message);
+        throw error;
     }
 }
-
-module.exports.emailEligibilityCheck = async (req, res, next) => {
-    try {
-        const { form_level, multi, responses } = req.body;
-        const [response] = responses;
-        const isReturnedStatus = [
-            MASTER_STATUS["Returned By MoHUA"],
-            MASTER_STATUS["Returned By State"],
-        ].includes(Number(response.status));
-
-        let emailEligibility;
-
-        if (form_level === FORM_LEVEL["form"]) {
-            emailEligibility = !isReturnedStatus;
-        } else if (form_level === FORM_LEVEL["tab"] || form_level === FORM_LEVEL["question"]) {
-            if (multi === true || responses.every((response) => ['4', '6'].includes(response.status))) {
-                emailEligibility = !isReturnedStatus;
-            } else {
-                emailEligibility = false;
-            }
-        }
-        req['emailEligibility'] = emailEligibility;
-        next();
-    } catch (error) {
-        return Response.BadRequest(res, {}, error.message);
-    }
-}
-
 
 async function takeActionOnForms(params, res) {
     try {
