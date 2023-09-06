@@ -36,7 +36,7 @@ const handleDatabaseUpload = async (req, res, next) => {
     if (uploadType != 'database') return next();
 
     try {
-        const remoteUrl = req.body.file.url;
+        const remoteUrl = req.body.files?.[0].url;
 
         workbook = await loadExcelByUrl(remoteUrl);
         worksheet = workbook.getWorksheet(1);
@@ -127,7 +127,10 @@ const dulyElectedTemplate = async (req, res, next) => {
         });
         const query = [
             {
-                $match: { state: { $in: relatedIds.map(id => ObjectId(id)) } }
+                $match: {
+                    isActive: true,
+                    state: { $in: relatedIds.map(id => ObjectId(id)) }
+                }
             },
             {
                 $lookup: {
@@ -371,7 +374,10 @@ const gsdpTemplate = async (req, res, next) => {
 
         const ulbData = await Ulb.aggregate([
             {
-                $match: { state: { $in: relatedIds.map(id => ObjectId(id)) } }
+                $match: {
+                    isActive: true,
+                    state: { $in: relatedIds.map(id => ObjectId(id)) }
+                }
             },
             {
                 $lookup: {
@@ -506,6 +512,7 @@ const getTemplate = async (req, res, next) => {
 }
 
 const getCategoryWiseResource = async (req, res, next) => {
+
     try {
         const query = [
             {
@@ -520,7 +527,7 @@ const getCategoryWiseResource = async (req, res, next) => {
             },
             {
                 $match: {
-                    relatedIds: ObjectId(req.decoded.state)
+                    relatedIds: ObjectId(req.params.stateId || req.decoded.state)
                 }
             },
             {
@@ -535,6 +542,9 @@ const getCategoryWiseResource = async (req, res, next) => {
                         }
                     }
                 }
+            },
+            {
+                $sort: { _id: 1 }
             },
             {
                 $lookup: {
@@ -568,15 +578,11 @@ const removeStateFromFiles = async (req, res, next) => {
             stateId,
             fileIds
         } = req.body;
-        console.log('deletable ids', req.body);
 
-        const data = await CategoryFileUpload.findOneAndUpdate({
-            _id: { $in: fileIds }
-        }, {
-            $pull: {
-                relatedIds: stateId
-            }
-        });
+        const data = await CategoryFileUpload.updateMany(
+            { _id: { $in: fileIds } },
+            { $pull: { relatedIds: stateId } }
+        );
         return res.status(200).json({
             status: true,
             message: "State removed!",
@@ -713,7 +719,7 @@ const getResourceList = async (req, res, next) => {
         const [categoryResult] = await CategoryFileUpload.aggregate(query);
         const documents = categoryResult.documents || {};
         const totalDocuments = categoryResult?.totalCount?.[0]?.count || 0;
-        const states = await State.find().select('name _id');
+        const states = await State.find({ isUT: false }).select('name _id');
         const categories = await MainCategory.aggregate([
             {
                 $match: { typeOfCategory: "state_resource", isActive: true }
@@ -749,6 +755,40 @@ const getResourceList = async (req, res, next) => {
     }
 }
 
+const createOrUpdate = async (req, res, next) => {
+    const { id, files } = req.body;
+    delete req.body.id;
+    delete req.body.files;
+    delete req.body.actionType;
+    try {
+        data = [];
+        for (let file of files) {
+            let result = await CategoryFileUpload.updateOne(
+                { _id: ObjectId(id) },
+                {
+                    ...req.body,
+                    module: 'state_resource',
+                    file
+                },
+                { upsert: true, runValidators: !(id !== undefined && isValidObjectId(id)) }
+            );
+            data.push(result);
+        }
+        return res.status(200).json({
+            status: true,
+            message: "Successfully saved data!",
+            data: data,
+        });
+    } catch (error) {
+        let message = "Something went wrong!";
+        return res.status(400).json({
+            status: false,
+            message: error.message || message,
+            err: error.message,
+        });
+    }
+}
+
 
 
 
@@ -759,5 +799,6 @@ module.exports = {
     getResourceList,
     getTemplate,
     getCategoryWiseResource,
-    removeStateFromFiles
+    removeStateFromFiles,
+    createOrUpdate
 }
