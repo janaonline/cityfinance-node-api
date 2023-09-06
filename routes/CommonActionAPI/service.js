@@ -2798,7 +2798,7 @@ module.exports.emailEligibilityCheck = async (req, res, next) => {
         if (form_level === FORM_LEVEL["form"]) {
             emailEligibility = !isReturnedStatus;
         } else if (form_level === FORM_LEVEL["tab"] || form_level === FORM_LEVEL["question"]) {
-            if (multi === true || responses.every((response) => ['4', '6'].includes(response.status))) {
+            if (multi === true || responses.every((response) => [MASTER_STATUS['Under Review By MoHUA'], MASTER_STATUS['Submission Acknowledged By MoHUA']].includes(Number(response.status)))) {
                 emailEligibility = !isReturnedStatus;
             } else {
                 emailEligibility = false;
