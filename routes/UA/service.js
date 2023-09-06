@@ -2001,8 +2001,8 @@ function addUlbAndAmrutFields(service,fields,fieldName='ulbShare'){
         let obj = {
             "$addFields":{}
         }
-        obj['$addFields']['totalAmrutProjectCost'] = { "$multiply" : [{"$sum": "$AMRUT.cost"}, 100] }
-        obj['$addFields']['totalDurProjectCost'] = {"$sum": {"$sum": "$DUR.projects.cost"}}
+        obj['$addFields']['totalAmrutProjectCost'] = {"$sum": "$AMRUT.cost"}
+        obj['$addFields']['totalDurProjectCost'] = {"$sum": "$DUR.projects.cost"}
         obj['$addFields']['totalAmrutProjects'] = {"$size": "$AMRUT"}
         obj['$addFields']['totalDurProjects'] = {
             "$cond": {
@@ -2015,7 +2015,7 @@ function addUlbAndAmrutFields(service,fields,fieldName='ulbShare'){
                 "else": 0
             }
         },
-        obj['$addFields']['totalAmrutUlbShare'] = { "$multiply" : [{"$sum": "$AMRUT.ulbShare"}, 100] }
+        obj['$addFields']['totalAmrutUlbShare'] = {"$sum": "$AMRUT.ulbShare"},
         obj['$addFields'][fieldName] = {
             "$cond":{
                 "if":{
@@ -2462,7 +2462,7 @@ const redisStoreData = (redis_key) => {
 function getProjectionForDur(service){
     let totalProjectCostSum = service.addTwoFieldData("$totalDurProjectCost", "$totalAmrutProjectCost"); 
     let totalProjectSum = service.addTwoFieldData("$totalAmrutProjects", "$totalDurProjects");
-    let totalUlbShareSum = service.addTwoFieldData(service.getCommonConvertor("$ulbShare","int"), "$totalAmrutUlbShare"); 
+    let totalUlbShareSum = service.addTwoFieldData("$ulbShare", "$totalAmrutUlbShare"); 
     try{
         const obj = {
             "$project":{
