@@ -564,10 +564,22 @@ function getFormData(formCategory, modelName, sidemenuForms, reviewForm, design_
   ) {
     getFormsLinkIcon(element, formData);
   }
-  handleFormLinkBasedOnRole(design_year, formCategory, modelName, formData, reviewForm);
+  /* 
+     The function handles the form link based on the user's role and design year.
+ */
+  handleFormLinkBasedOnRole(
+    design_year,
+    formCategory,
+    modelName,
+    formData,
+    reviewForm
+  );
   return formData;
 }
 
+/**
+  The function handles the form link based on the user's role and design year.
+ */
 function handleFormLinkBasedOnRole(design_year, formCategory, modelName, formData, reviewForm) {
     if (![YEAR_CONSTANTS['22_23']].includes(design_year)) {
         if ([USER_ROLE['ULB']].includes(formCategory)) {
