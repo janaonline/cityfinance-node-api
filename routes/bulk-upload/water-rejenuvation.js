@@ -79,7 +79,8 @@ module.exports = async function (req, res) {
                         declaration:declarationUrl,
                         uaData: [],
                         status: MASTER_STATUS["Submission Acknowledged By MoHUA"],
-                        isDraft: false
+                        isDraft: false,
+                        entry_type:"bulkupload"
                     };
                 }
             }));
@@ -107,16 +108,16 @@ module.exports = async function (req, res) {
                 message: 'No row Found!'
             })
         }
-        mergedStateData.forEach(async (item) => {
-            Object.assign(req.body, {...item});
-            await saveWaterRejenuvation(req, res);
-        });
+        // mergedStateData.forEach(async (item) => {
+        //     Object.assign(req.body, {...item});
+        //     await saveWaterRejenuvation(req, res);
+        // });
 
-        // return res.status(200).json({
-        //     success: true,
-        //     data: mergedStateData,
-        //     message: 'User Found!'
-        // })
+        return res.status(200).json({
+            success: true,
+            data: mergedStateData,
+            message: 'User Found!'
+        })
     } catch (e) {
         return res.json({
             success: false,
@@ -165,6 +166,12 @@ module.exports = async function (req, res) {
 async function createWSSJson(mergedStateData, entries, lineItemsKeyValue) {
     for (const element of mergedStateData) {
         for (const entry of entries) {
+             // Trim all values in the entry object
+            for (const key in entry) {
+                if (entry.hasOwnProperty(key) && typeof entry[key] === 'string') {
+                    entry[key] = entry[key].trim();
+                }
+            }
             entry.isDisable = true; // added isDisable Key
             const uaCode = entry["UA Code"];
             const uadata = await UA.findOne({ UACode: uaCode }).lean();
