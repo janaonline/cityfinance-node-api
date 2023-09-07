@@ -5,7 +5,7 @@ const ObjectId = require("mongoose").Types.ObjectId;
 const Ulb = require('../../models/Ulb')
 const {saveStatusAndHistory} = require("../CommonFormSubmission/service")
 const { checkForUndefinedVaribales, mutateResponse, getFlatObj } = require("../../routes/CommonActionAPI/service")
-const { getKeyByValue, saveFormHistory, grantDistributeOptions } = require("../../util/masterFunctions");
+const { getKeyByValue, saveFormHistory, grantDistributeOptions, emailTriggerWithMohuaAction } = require("../../util/masterFunctions");
 const { years } = require('../../service/years');
 const GtcInstallmentForm = require("../../models/GtcInstallmentForm")
 const TransferGrantDetailForm = require("../../models/TransferGrantDetailForm")
@@ -1152,12 +1152,14 @@ module.exports.installmentAction = async (req, res) => {
         let formSubmit = [{...req.body,type:key,currentFormStatus:statusId}]
         await createHistory({ formBodyStatus : Number(statusId),formSubmit, actionTakenByRole:role , actionTakenBy: mohua || state  })
         if(!found) return res.status(404).json({ message: 'Installment not found'});
-        return res.status(200).json({
+        res.status(200).json({
             success: true,
             message: 'Action recorded'
         });
 
-
+        //Send mail to state when mahua take action in this form.
+        await emailTriggerWithMohuaAction(state, statusId, rejectReason_mohua, FORMIDs['GTC_STATE'])
+        return;
     }
     catch (err) {
         let message = ["demo","staging"].includes(process.env.ENV) ? err.message : "something went wrong"

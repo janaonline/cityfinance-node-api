@@ -2,7 +2,10 @@ const FormHistory = require("../models/FormHistory");
 const CurrentStatus = require("../models/CurrentStatus");
 const StatusHistory = require("../models/StatusHistory");
 const FORMJSON  = require('../models/FormsJson');
-const { MODEL_PATH, YEAR_CONSTANTS_IDS } = require("../util/FormNames");
+const User = require('../models/User');
+const Sidemenu = require('../models/Sidemenu');
+const Service = require('../service')
+const { MODEL_PATH, YEAR_CONSTANTS_IDS, MASTER_STATUS_ID } = require("../util/FormNames");
 const ObjectId = require("mongoose").Types.ObjectId;
 const {years} = require("../service/years")
 const grantDistributeOptions = {
@@ -218,6 +221,53 @@ function getAccessYear(design_year, accessYear) {
   return accessYear;
 }
 
+async function emailTriggerWithMohuaAction(state, statusId, rejectReason, formId) {
+  try {
+    let users = await User.find({ state: state, role: "STATE" })
+      .populate("state", "name");
+    let formName = await Sidemenu.findOne({ formId: formId, isActive: true });
+
+    users?.forEach(async (user) => {
+      let payload = {
+        formName: formName?.name,
+        email: user.email,
+        isApproved: (MASTER_STATUS_ID[+statusId] === 'Submission Acknowledged By MoHUA'),
+        stateName: user?.state?.name,
+        reasonForRejection: rejectReason,
+        status: MASTER_STATUS_ID[+statusId]
+      };
+      let emailTemplate = Service.emailTemplate.alertStateWithMohuaAction(payload);
+      let mailOptions = {
+        Destination: {
+          /* required */
+          ToAddresses: user?.email
+        },
+        Message: {
+          /* required */
+          Body: {
+            /* required */
+            Html: {
+              Charset: "UTF-8",
+              Data: emailTemplate.body,
+            },
+          },
+          Subject: {
+            Charset: "UTF-8",
+            Data: emailTemplate.subject,
+          },
+        },
+        Source: process.env.EMAIL,
+        /* required */
+        ReplyToAddresses: [process.env.EMAIL],
+      };
+      await Service.sendEmail(mailOptions);
+    });
+
+  } catch (error) {
+    throw error;
+  }
+}
+
 function getFinancialYear() {
   const currentDate = new Date();
   const currentMonth = currentDate.getMonth();
@@ -232,6 +282,7 @@ function getFinancialYear() {
 
 module.exports.grantDistributeOptions = grantDistributeOptions
 module.exports.getCurrentYear = getCurrentYear;
+module.exports.emailTriggerWithMohuaAction = emailTriggerWithMohuaAction;
 module.exports.getAccessYear = getAccessYear;
 module.exports.getFinancialYear = getFinancialYear;
 module.exports.checkForCalculationsForDurForm = checkForCalculationsForDurForm
