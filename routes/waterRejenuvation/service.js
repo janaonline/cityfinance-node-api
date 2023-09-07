@@ -92,10 +92,17 @@ exports.saveWaterRejenuvation = async (req, res) => {
 
     formData["actionTakenBy"] = ObjectId(actionTakenBy);
     formData["actionTakenByRole"] = actionTakenByRole;
-    formData["uaData"].forEach(entity=>{
-      entity.status = "PENDING"
-    })
-    formData.status = "PENDING"
+    if (!req.body.entry_type == "bulkupload") {
+      formData["uaData"].forEach(entity=>{
+        entity.status = "PENDING"
+      })
+      formData.status = "APPROVED"
+    }else{
+      formData["uaData"].forEach(entity=>{
+        entity.status = "APPROVED"
+      })
+      formData.status = "APPROVED"
+    }
     if (formData.state) {
       formData["state"] = ObjectId(formData.state);
     }
