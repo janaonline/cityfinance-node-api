@@ -7,7 +7,8 @@ const SubCategorySchema = new Schema(
         createdAt: { type: Date, default: Date.now() },
         isActive: { type: Boolean, default: 1 },
         accepts: [ { type: String } ],
-        maxUploads: { type: Number }
+        maxUploads: { type: Number },
+        uploadType: { type: String, enum: ['file', 'database'] }
     },
     { timestamp: { createdAt: "createdAt", updatedAt: "modifiedAt" } }
 );

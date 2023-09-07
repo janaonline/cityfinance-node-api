@@ -526,7 +526,16 @@ const getCategoryWiseResource = async (req, res, next) => {
                 }
             },
             {
+                $lookup: {
+                    from: 'subcategories',
+                    localField: 'subCategoryId',
+                    foreignField: '_id',
+                    as: 'subCategory'
+                }
+            },
+            {
                 $match: {
+                    'subCategory.uploadType': 'file',
                     relatedIds: ObjectId(req.params.stateId || req.decoded.state)
                 }
             },
@@ -564,7 +573,7 @@ const getCategoryWiseResource = async (req, res, next) => {
         const data = await CategoryFileUpload.aggregate(query);
         return res.status(200).json({
             status: true,
-            message: "Successfully saved data!",
+            message: "Fetched Successfully",
             data,
         });
     } catch (err) {
@@ -741,7 +750,7 @@ const getResourceList = async (req, res, next) => {
         ]);
         return res.status(200).json({
             status: true,
-            message: "Successfully saved data!",
+            message: "Fetched Successfully",
             data: {
                 documents,
                 states,
@@ -770,7 +779,7 @@ const createOrUpdate = async (req, res, next) => {
                     module: 'state_resource',
                     file
                 },
-                { upsert: true, runValidators: !(id !== undefined && isValidObjectId(id)) }
+                { upsert: true }
             );
             data.push(result);
         }
