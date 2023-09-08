@@ -5,6 +5,8 @@ const UA = require("../../models/UA")
 const IndicatorLineItems = require("../../models/indicatorLineItems");
 const Year = require('../../models/Year')
 const {saveWaterRejenuvation} = require("../waterRejenuvation/service");
+const fs = require('fs');
+const url = require('url');
 
 const waterBodiesKeyMap = {
     "Project Name": "name",
@@ -67,9 +69,14 @@ module.exports = async function (req, res) {
         if (data) {
             mergedStateData = await Promise.all(data.stateDetails.map(async stateDetail => {
                 let declarationUrl = {}
-                // if(stateDetail['declaration']){
-                //     retriveS3Url(stateDetail);
-                // }
+                if(stateDetail['declaration']){
+                    const parsedUrl = new URL(stateDetail['declaration']);
+                    const objectKey = decodeURIComponent(parsedUrl.pathname.slice(1));
+                    const name = objectKey.split('/')
+                    declarationUrl.url = parsedUrl;
+                    declarationUrl.name = name[name.length - 1];
+                   // declarationUrl = retriveS3Url(stateDetail);
+                }
                 const statedata = await State.findOne({ code: stateDetail["State Code"] }).lean();
                 if (statedata) {
                     return {
@@ -88,7 +95,15 @@ module.exports = async function (req, res) {
             const waterBodies = addReplaceKeysInArray(data["waterBodies"],"array_type","waterBodies",waterBodiesKeyMap);
             const reuseWater = addReplaceKeysInArray(data["reuseWater"],"array_type","reuseWater",reuseWaterKeyMap);
             const serviceLevelIndicators = addReplaceKeysInArray(data["serviceLevelIndicators"],"array_type","serviceLevelIndicators",serviceLevelIndicatorsKeyMap);
-
+            waterBodies.forEach(body => {
+                const parsedUrl = new URL(body.photos);
+                const objectKey = decodeURIComponent(parsedUrl.pathname.slice(1));
+                const name = objectKey.split('/')
+                body.photos = [{
+                    "url": parsedUrl,
+                    "name": name[name.length - 1]
+                }];
+            })
             const entries = [...waterBodies, ...reuseWater, ...serviceLevelIndicators];
 
             await createWSSJson(mergedStateData, entries, lineItemsKeyValue);
@@ -125,39 +140,47 @@ module.exports = async function (req, res) {
         })
     }
 }
+//STATE/2022-23/projects_wss/HR/
+// async function retriveS3Url(url, objectKey) {
+//     try {
+//         const response = await axios.get(url, { responseType: 'stream' });
 
-// function retriveS3Url(stateDetail) {
-//     axios({ method: 'get', url: stateDetail['declaration'], responseType: 'stream' }).then(response => {
-//         // Create a temporary file to store the fetched content
 //         const tempFilePath = 'temp-file.tmp';
 //         const writer = fs.createWriteStream(tempFilePath);
 
 //         response.data.pipe(writer);
 
-//         writer.on('finish', () => {
-//             // Upload the temporary file to S3
-//             const fileStream = fs.createReadStream(tempFilePath);
+//         return new Promise((resolve, reject) => {
+//             writer.on('finish', () => {
+//                 const fileStream = fs.createReadStream(tempFilePath);
+//                 const params = {
+//                     Bucket: bucketName,
+//                     Key: objectKey,
+//                     Body: fileStream
+//                 };
+//                 s3.upload(params, (err, data) => {
+//                     if (err) {
+//                         console.error('Error uploading to S3:', err);
+//                         resolve({ url: '', status: false });
+//                     } else {
+//                         console.log('File uploaded to S3 successfully:', data.Location);
 
-//             const params = {
-//                 Bucket: bucketName,
-//                 Key: objectKey,
-//                 Body: fileStream
-//             };
+//                         fs.unlinkSync(tempFilePath);
 
-//             s3.upload(params, (err, data) => {
-//                 if (err) {
-//                     console.error('Error uploading to S3:', err);
-//                 } else {
-//                     console.log('File uploaded to S3 successfully:', data.Location);
+//                         resolve({ url: data.Location, status: true });
+//                     }
+//                 });
+//             });
 
-//                     // Clean up the temporary file
-//                     fs.unlinkSync(tempFilePath);
-//                 }
+//             writer.on('error', (err) => {
+//                 console.error('Error writing to temporary file:', err);
+//                 resolve({ url: '', status: false });
 //             });
 //         });
-//     }).catch(error => {
+//     } catch (error) {
 //         console.error('Error fetching file from URL:', error);
-//     });
+//         return { url: '', status: false };
+//     }
 // }
 
 /**

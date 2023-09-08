@@ -16,7 +16,7 @@ module.exports = (expectedSheetNames) => async (req, res, next) => {
             return res.status(400).json({ success: false, message: `Invalid sheet names: ${invalidSheetNames.join(', ')}` });
         }
 
-        await checkValidations(req, res, workbook, sheetNames)
+        //await checkValidations(req, res, workbook, sheetNames)
         const jsonArray = {};
 
         for (const sheetName of sheetNames) {
