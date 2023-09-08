@@ -1158,7 +1158,7 @@ module.exports.installmentAction = async (req, res) => {
         });
 
         //Send mail to state when mahua take action in this form.
-        await emailTriggerWithMohuaAction(state, statusId, rejectReason_mohua, FORMIDs['GTC_STATE'])
+        // await emailTriggerWithMohuaAction(state, statusId, rejectReason_mohua, FORMIDs['GTC_STATE'])
         return;
     }
     catch (err) {
