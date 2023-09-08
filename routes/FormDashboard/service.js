@@ -485,9 +485,7 @@ function getFormData(formCategory, modelName, sidemenuForms, reviewForm, design_
   ) {
     formData["formName"] = element.name;
     formData["icon"] = element.icon;
-    formData["link"] = `/${reviewForm.url}/${
-      FormObjectIds[CollectionNames.slb]
-    }`;
+    formData["link"] = `/${reviewForm.url}`;
   } else if (
     modelName === CollectionNames.twentyEightSlbs &&
     element._id === "TwentyEightSlbsForm"
@@ -566,25 +564,43 @@ function getFormData(formCategory, modelName, sidemenuForms, reviewForm, design_
   ) {
     getFormsLinkIcon(element, formData);
   }
-  if(
-    ![YEAR_CONSTANTS['22_23']].includes(design_year) &&
-    [USER_ROLE['ULB']].includes(formCategory)
-   ){
-    updateFormData(modelName,formData,reviewForm)
-  }
+  /* 
+     The function handles the form link based on the user's role and design year.
+ */
+  handleFormLinkBasedOnRole(
+    design_year,
+    formCategory,
+    modelName,
+    formData,
+    reviewForm
+  );
   return formData;
+}
+
+/**
+  The function handles the form link based on the user's role and design year.
+ */
+function handleFormLinkBasedOnRole(design_year, formCategory, modelName, formData, reviewForm) {
+    if (![YEAR_CONSTANTS['22_23']].includes(design_year)) {
+        if ([USER_ROLE['ULB']].includes(formCategory)) {
+            const ignoreForms = [CollectionNames.slb];
+            updateFormLink(modelName, formData, reviewForm, ignoreForms);
+        } else {
+            formData.link = `/state-form${formData.link}`;
+        }
+    }
 }
 
 /**
  * The function updates the link property of the formData object based on the modelName and reviewForm
  * parameters.
  */
-function updateFormData(modelName,formData,reviewForm){
+function updateFormLink(modelName,formData,reviewForm,ignoreForms){
     let modelExist = Object.values(CollectionNames).includes(modelName)
-    if(modelExist){
-        formData.link = `/${reviewForm.url}?formId=${ModelNamesToFormId[modelName]}`
+    if(modelExist && !ignoreForms.includes(modelName)){
+        formData.link = `/state-form/${reviewForm.url}?formId=${ModelNamesToFormId[modelName]}`
     } else {
-        formData.link = `/${reviewForm.url}`
+        formData.link = `/stateform/${reviewForm.url}`
     }
 }
  
@@ -865,6 +881,7 @@ function getQuery2324(modelName, formType, designYear, formCategory, stateId){
             {$unwind: "$ulb" },
             {
                 $match:{
+                    "ulb.isActive":true,
                     "ulb.isMillionPlus":"No",
                 }
             }
@@ -881,6 +898,7 @@ function getQuery2324(modelName, formType, designYear, formCategory, stateId){
             {$unwind: "$ulb" },
             {
                 $match:{
+                    "ulb.isActive":true,
                     $or:[
                         {
                             "ulb.isMillionPlus":"Yes",
@@ -1066,8 +1084,10 @@ const dashboard = async (req, res) => {
     try {
         let data = req.query;
         let user = req.decoded;
-        const {_id:actionTakenBy, role: actionTakenByRole, state } = user;
-        const singleState = 1;
+        let { _id: actionTakenBy, role: actionTakenByRole, state } = user;
+        if([USER_ROLE['MoHUA']].includes(actionTakenByRole)){
+            state = data?.state
+        }
         let collectionArr = getCollections(data.formType, data.installment);
         if(data.design_year === YEAR_CONSTANTS['23_24']){
             collectionArr = getCollections2324(data.formType, data.installment);
@@ -1893,6 +1913,7 @@ function getQueries(states) {
         { $unwind: "$ulb" },
         {
             $match: {
+                "ulb.isActive": true,
                 $or: [
                     { "ulb.isMillionPlus": "Yes", "ulb.isUA": "Yes" },
                     {
@@ -1923,6 +1944,7 @@ function getQueries(states) {
         { $unwind: "$ulb" },
         {
             $match: {
+                "ulb.isActive": true,
                 "ulb.isMillionPlus": "No",
             },
         },

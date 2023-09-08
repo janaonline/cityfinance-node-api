@@ -13,7 +13,8 @@ const options = {
         bottom: '.2in',
         left: '.1in'
     },
-    quality: '100'
+    quality: '100',
+    encoding: 'utf-8'
 };
 
 module.exports.get = function(req, res){

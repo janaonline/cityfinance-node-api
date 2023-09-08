@@ -92,10 +92,17 @@ exports.saveWaterRejenuvation = async (req, res) => {
 
     formData["actionTakenBy"] = ObjectId(actionTakenBy);
     formData["actionTakenByRole"] = actionTakenByRole;
-    formData["uaData"].forEach(entity=>{
-      entity.status = "PENDING"
-    })
-    formData.status = "PENDING"
+    if (!req.body.entry_type == "bulkupload") {
+      formData["uaData"].forEach(entity=>{
+        entity.status = "PENDING"
+      })
+      formData.status = "APPROVED"
+    }else{
+      formData["uaData"].forEach(entity=>{
+        entity.status = "APPROVED"
+      })
+      formData.status = "APPROVED"
+    }
     if (formData.state) {
       formData["state"] = ObjectId(formData.state);
     }
@@ -340,9 +347,9 @@ exports.getWaterRejenuvation = async (req, res) => {
           "STATE",
           role
         ),
-        statusId: MASTER_STATUS["Not Started"],
-        status: MASTER_STATUS_ID[MASTER_STATUS["Not Started"]],
-        isDraft: null
+        //statusId: MASTER_STATUS["Not Started"],
+        //status: MASTER_STATUS_ID[MASTER_STATUS["Not Started"]],
+        //isDraft: null
       });
     }
       return Response.OK(res, data2223, "Success");

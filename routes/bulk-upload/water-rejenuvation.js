@@ -1,9 +1,12 @@
+const axios = require('axios');
 const { MASTER_STATUS, YEAR_CONSTANTS, } = require("../../util/FormNames");
 const State = require("../../models/State")
 const UA = require("../../models/UA")
 const IndicatorLineItems = require("../../models/indicatorLineItems");
 const Year = require('../../models/Year')
 const {saveWaterRejenuvation} = require("../waterRejenuvation/service");
+const fs = require('fs');
+const url = require('url');
 
 const waterBodiesKeyMap = {
     "Project Name": "name",
@@ -65,15 +68,26 @@ module.exports = async function (req, res) {
         const lineItemsKeyValue = Object.fromEntries(lineItems.map(item => [item.name, item.lineItemId]));  
         if (data) {
             mergedStateData = await Promise.all(data.stateDetails.map(async stateDetail => {
+                let declarationUrl = {}
+                if(stateDetail['declaration']){
+                    const parsedUrl = new URL(stateDetail['declaration']);
+                    const objectKey = decodeURIComponent(parsedUrl.pathname.slice(1));
+                    const name = objectKey.split('/')
+                    declarationUrl.url = parsedUrl;
+                    declarationUrl.name = name[name.length - 1];
+                   // declarationUrl = retriveS3Url(stateDetail);
+                }
                 const statedata = await State.findOne({ code: stateDetail["State Code"] }).lean();
                 if (statedata) {
                     return {
                         state: statedata._id,
                         state_code: stateDetail["State Code"],
                         design_year: YEAR_CONSTANTS['22_23'],
+                        declaration:declarationUrl,
                         uaData: [],
                         status: MASTER_STATUS["Submission Acknowledged By MoHUA"],
-                        isDraft: false
+                        isDraft: false,
+                        entry_type:"bulkupload"
                     };
                 }
             }));
@@ -81,7 +95,15 @@ module.exports = async function (req, res) {
             const waterBodies = addReplaceKeysInArray(data["waterBodies"],"array_type","waterBodies",waterBodiesKeyMap);
             const reuseWater = addReplaceKeysInArray(data["reuseWater"],"array_type","reuseWater",reuseWaterKeyMap);
             const serviceLevelIndicators = addReplaceKeysInArray(data["serviceLevelIndicators"],"array_type","serviceLevelIndicators",serviceLevelIndicatorsKeyMap);
-
+            waterBodies.forEach(body => {
+                const parsedUrl = new URL(body.photos);
+                const objectKey = decodeURIComponent(parsedUrl.pathname.slice(1));
+                const name = objectKey.split('/')
+                body.photos = [{
+                    "url": parsedUrl,
+                    "name": name[name.length - 1]
+                }];
+            })
             const entries = [...waterBodies, ...reuseWater, ...serviceLevelIndicators];
 
             await createWSSJson(mergedStateData, entries, lineItemsKeyValue);
@@ -101,16 +123,16 @@ module.exports = async function (req, res) {
                 message: 'No row Found!'
             })
         }
-        mergedStateData.forEach(async (item) => {
-            Object.assign(req.body, {...item});
-            await saveWaterRejenuvation(req, res);
-        });
+        // mergedStateData.forEach(async (item) => {
+        //     Object.assign(req.body, {...item});
+        //     await saveWaterRejenuvation(req, res);
+        // });
 
-        // return res.status(200).json({
-        //     success: true,
-        //     data: mergedStateData,
-        //     message: 'User Found!'
-        // })
+        return res.status(200).json({
+            success: true,
+            data: mergedStateData,
+            message: 'User Found!'
+        })
     } catch (e) {
         return res.json({
             success: false,
@@ -118,6 +140,48 @@ module.exports = async function (req, res) {
         })
     }
 }
+//STATE/2022-23/projects_wss/HR/
+// async function retriveS3Url(url, objectKey) {
+//     try {
+//         const response = await axios.get(url, { responseType: 'stream' });
+
+//         const tempFilePath = 'temp-file.tmp';
+//         const writer = fs.createWriteStream(tempFilePath);
+
+//         response.data.pipe(writer);
+
+//         return new Promise((resolve, reject) => {
+//             writer.on('finish', () => {
+//                 const fileStream = fs.createReadStream(tempFilePath);
+//                 const params = {
+//                     Bucket: bucketName,
+//                     Key: objectKey,
+//                     Body: fileStream
+//                 };
+//                 s3.upload(params, (err, data) => {
+//                     if (err) {
+//                         console.error('Error uploading to S3:', err);
+//                         resolve({ url: '', status: false });
+//                     } else {
+//                         console.log('File uploaded to S3 successfully:', data.Location);
+
+//                         fs.unlinkSync(tempFilePath);
+
+//                         resolve({ url: data.Location, status: true });
+//                     }
+//                 });
+//             });
+
+//             writer.on('error', (err) => {
+//                 console.error('Error writing to temporary file:', err);
+//                 resolve({ url: '', status: false });
+//             });
+//         });
+//     } catch (error) {
+//         console.error('Error fetching file from URL:', error);
+//         return { url: '', status: false };
+//     }
+// }
 
 /**
  * The function create a JSON object with specific data structure and values.
@@ -125,6 +189,12 @@ module.exports = async function (req, res) {
 async function createWSSJson(mergedStateData, entries, lineItemsKeyValue) {
     for (const element of mergedStateData) {
         for (const entry of entries) {
+             // Trim all values in the entry object
+            for (const key in entry) {
+                if (entry.hasOwnProperty(key) && typeof entry[key] === 'string') {
+                    entry[key] = entry[key].trim();
+                }
+            }
             entry.isDisable = true; // added isDisable Key
             const uaCode = entry["UA Code"];
             const uadata = await UA.findOne({ UACode: uaCode }).lean();

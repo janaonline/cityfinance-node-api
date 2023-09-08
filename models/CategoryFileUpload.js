@@ -36,10 +36,11 @@ CategoryFileUpload.pre('updateOne', { document: true, query: true }, async funct
     try {
         const { subCategoryId, relatedIds } = this._update;
 
-        const category = await SubCategory.findById(subCategoryId);
-        const maxUploads = category?.maxUploads;
-
-        if (!maxUploads) {
+        const subCategory = await SubCategory.findById(subCategoryId);
+        const maxUploads = subCategory?.maxUploads;
+        const uploadType = subCategory?.uploadType;
+        
+        if (!maxUploads || uploadType == 'database') {
             return next(); // Proceed to the next middleware
         }
 

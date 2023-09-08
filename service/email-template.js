@@ -1576,6 +1576,33 @@ let total = {
   };
 };
 
+const alertStateToClaimGrants = (payload) => {
+  return {
+    subject: `To claim XVFC grants for the FY 23-24`,
+    body: `Dear sir/ma’am,<br>
+                    <p>
+                    This is to bring to your kind attention that your state has completed all the stipulated conditions concerning the <strong>${payload.installment}
+                    instalment</strong> of <strong>${payload.tiedStatus ? "Tied" : "Untied"}</strong> Grant FY 23-24 allocated to <strong>${payload.title}</strong> 
+                    under the 15thFC. Kindly submit the necessary claims in order to release the grant.
+                    </p>
+                    <br>Regards,<br>
+                    PMU- XVFC,<br>
+                    MoHUA`,
+  };
+};
+
+const alertStateWithMohuaAction = (payload) => {
+  return {
+    subject: `${payload.formName} Form ${payload.status}`,
+    body: `Dear <strong>${payload.stateName}</strong> User,<br><br>
+    ${payload.isApproved
+        ? `Your ${payload.formName} form submission for FY 2023-24 has been successfully Acknowledged By MoHUA.<br><br>No further action is needed for this form.`
+        : `Your ${payload.formName} form submission for FY 2023-24 has been Returned By MoHUA.${typeof payload.hasApproved === 'boolean' ? "" : `<br>Reason for Rejection :- ${payload.reasonForRejection}`}<br>
+           <br>Please visit <a href="http://www.cityfinance.in">http://www.cityfinance.in</a> to submit the correct data.`}<br><br>
+    Regards,<br>XVFC PMU,<br>MoHUA`,
+  };
+};
+
 
 const calculateTotalStatus = (totalObj, formArray)=>{
   for(let key in totalObj){
@@ -1626,6 +1653,8 @@ module.exports = {
   gtcSubmission,
   ulbFormSubmitted,
   CfrFormRejected,
-  stateUlbFormTrigger
+  alertStateToClaimGrants,
+  stateUlbFormTrigger,
+  alertStateWithMohuaAction
 
 };
