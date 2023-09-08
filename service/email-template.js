@@ -1594,10 +1594,10 @@ const alertStateToClaimGrants = (payload) => {
 const alertStateWithMohuaAction = (payload) => {
   return {
     subject: `${payload.formName} Form ${payload.status}`,
-    body: `Dear <strong>${payload.stateName}</strong> User,<br>
+    body: `Dear <strong>${payload.stateName}</strong> User,<br><br>
     ${payload.isApproved
         ? `Your ${payload.formName} form submission for FY 2023-24 has been successfully Acknowledged By MoHUA.<br><br>No further action is needed for this form.`
-        : `Your ${payload.formName} form submission for FY 2023-24 has been Returned By MoHUA.<br>Reason for Rejection :- ${payload.reasonForRejection}<br>
+        : `Your ${payload.formName} form submission for FY 2023-24 has been Returned By MoHUA.${typeof payload.hasApproved === 'boolean' ? "" : `<br>Reason for Rejection :- ${payload.reasonForRejection}`}<br>
            <br>Please visit <a href="http://www.cityfinance.in">http://www.cityfinance.in</a> to submit the correct data.`}<br><br>
     Regards,<br>XVFC PMU,<br>MoHUA`,
   };
