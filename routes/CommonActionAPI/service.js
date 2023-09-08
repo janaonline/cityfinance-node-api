@@ -2818,20 +2818,29 @@ module.exports.emailEligibilityCheck = async (req, res, next) => {
 
 async function emailTriggerWithMohuaAction(responses, states, formId) {
     let [response] = responses;
+    let hasApproved = null;
     let users = await User.find({ state: { $in: states }, role: "STATE" })
         .populate("state", "name");
     let formName = await Sidemenu.findOne({ formId: formId, isActive: true });
 
-    users.forEach(async (user) => {
+    if ([FORMIDs['waterRej'], FORMIDs['actionPlan']].includes(+formId)) {
+        hasApproved = !responses.some(response => +response.status == 7);
+    }
+
+    users?.forEach(async (user) => {
         let payload = {
             formName: formName?.name,
             email: user.email,
+            hasApproved,
             isApproved: (MASTER_STATUS_ID[+response?.status] === 'Submission Acknowledged By MoHUA'),
             stateName: user?.state?.name,
             reasonForRejection: response?.rejectReason,
             status: MASTER_STATUS_ID[+response?.status]
         };
+        if (typeof hasApproved == 'boolean') payload['isApproved'] = hasApproved;
+
         let emailTemplate = Service.emailTemplate.alertStateWithMohuaAction(payload);
+
         let mailOptions = {
             Destination: {
                 /* required */
