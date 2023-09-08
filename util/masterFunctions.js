@@ -240,7 +240,7 @@ async function emailTriggerWithMohuaAction(state, statusId, rejectReason, formId
       let mailOptions = {
         Destination: {
           /* required */
-          ToAddresses: user?.email
+          ToAddresses: [user?.email]
         },
         Message: {
           /* required */
