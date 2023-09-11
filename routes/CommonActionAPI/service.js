@@ -2775,13 +2775,13 @@ module.exports.masterAction = async (req, res) => {
             Response.BadRequest(res, {}, actionResponse);
         }
 
-        // if (req.decoded.role === "MoHUA" && actionResponse === formData.length) {
-        //     await emailTriggerWithMohuaAction(responses, states, formId);
-        // }
+        if (req.decoded.role === "MoHUA" && actionResponse === formData.length) {
+            await emailTriggerWithMohuaAction(responses, states, formId);
+        }
 
-        // if (req.emailEligibility) {
-        //     await alertStateClaimGrants(req, ulbs, design_year, states, type);
-        // }
+        if (req.emailEligibility) {
+            await alertStateClaimGrants(req, ulbs, design_year, states, type);
+        }
 
     } catch (error) {
         return Response.BadRequest(res, {}, error.message);
