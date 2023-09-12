@@ -3066,7 +3066,7 @@ module.exports.getAllULBSCSV = function (req, res) {
         sbCode: 1,
         isGsdpEligible : 1,
         isDulyElected : 1,
-        electedDate:1
+        electedDate:{$dateToString:{ format: "%d/%m/%Y", date: "$electedDate" }  }
       },
     },
     {
@@ -3092,9 +3092,9 @@ module.exports.getAllULBSCSV = function (req, res) {
         sbCode: { $cond: ["$sbCode", "$sbCode", "NA"] },
         UA: { $cond: ["$UA", "$UA.name", "NA"] },
         UA_Code: { $cond: ["$UA", "$UA.UACode", "NA"] },
-        isGsdpEligible : 1,
-        isDulyElected : 1,
-        electedDate:1
+        isGsdpEligible :  { $cond: ["$isGsdpEligible", "$isGsdpEligible", ""] },
+        isDulyElected :{ $cond: ["$isDulyElected", "$isDulyElected", ""] },
+        electedDate:{ $cond: ["$electedDate", "$electedDate", ""] }
       },
     },
   ]).exec((err, data) => {
@@ -3136,8 +3136,11 @@ module.exports.getAllULBSCSV = function (req, res) {
           "," +
           el.population +
           "," +
+          el.isDulyElected +
           "," +
+          el.electedDate +
           "," +
+          el.isGsdpEligible +
           "," +
           el.amrut +
           "," +
