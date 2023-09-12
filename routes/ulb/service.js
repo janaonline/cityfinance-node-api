@@ -3011,7 +3011,7 @@ module.exports.getAllULBSCSV = function (req, res) {
   res.writeHead(200, { "Content-Type": "text/csv;charset=utf-8,%EF%BB%BF" });
 
   res.write(
-    "ULB Name, City Finance Code,Census Code, Swatcha Bharat Code, ULB Type, Ulb Active ,State Name, State Code, Nature of ULB, Area, Ward, Population, AMRUT, Latitude,Longitude,isMillionPlus, UA, UA_code, Created On, Modified On \r\n"
+    "ULB Name, City Finance Code,Census Code, Swatcha Bharat Code, ULB Type, Ulb Active, CFR Activity (Yes/No), State Name, State Code, District Name, Nature of ULB, Area, Ward, Population, Status of ULBs (Duly elected/ Not elected), Elected Date, Property Tax GSDP Eligibility (Eligible/ Not Eligible), AMRUT, Latitude,Longitude,isMillionPlus, UA, UA_code, Created On, Modified On \r\n"
   );
   // Flush the headers before we start pushing the CSV content
   res.flushHeaders();
@@ -3064,6 +3064,9 @@ module.exports.getAllULBSCSV = function (req, res) {
         isMillionPlus: 1,
         censusCode: 1,
         sbCode: 1,
+        isGsdpEligible : 1,
+        isDulyElected : 1,
+        electedDate:1
       },
     },
     {
@@ -3089,6 +3092,9 @@ module.exports.getAllULBSCSV = function (req, res) {
         sbCode: { $cond: ["$sbCode", "$sbCode", "NA"] },
         UA: { $cond: ["$UA", "$UA.name", "NA"] },
         UA_Code: { $cond: ["$UA", "$UA.UACode", "NA"] },
+        isGsdpEligible : 1,
+        isDulyElected : 1,
+        electedDate:1
       },
     },
   ]).exec((err, data) => {
@@ -3116,10 +3122,12 @@ module.exports.getAllULBSCSV = function (req, res) {
           "," +
           el.isActive +
           "," +
+          ","+
           el.state.name +
           "," +
           el.state.code +
           "," +
+          ","+
           el.natureOfUlb +
           "," +
           el.area +
@@ -3127,6 +3135,9 @@ module.exports.getAllULBSCSV = function (req, res) {
           el.wards +
           "," +
           el.population +
+          "," +
+          "," +
+          "," +
           "," +
           el.amrut +
           "," +
