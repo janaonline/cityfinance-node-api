@@ -186,3 +186,13 @@ module.exports.INSTALLMENT_TYPE = { //Submit Grant Claim
     1 : "1st Installment", 
     2 : "2nd Installment" ,
  };
+
+ module.exports.GSDP_OPT = {
+    ELIGIBLE: 'Eligible',
+    NOT_ELIGIBLE: 'Not Eligible'
+}
+
+module.exports.DULY_ELECTED_OPT= {
+    DULY_ELECTED: 'Duly Elected',
+    NOT_ELECTED: 'Not Elected'
+}

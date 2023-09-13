@@ -12,6 +12,7 @@ const ObjectId = require("mongoose").Types.ObjectId;
 const axios = require("axios");
 const Redis = require("../../service/redis");
 const ExcelJS = require("exceljs");
+const { GSDP_OPT, DULY_ELECTED_OPT } = require("../../util/FormNames");
 
 module.exports.getFilteredUlb = async function (req, res) {
   let query = {};
@@ -3092,8 +3093,18 @@ module.exports.getAllULBSCSV = function (req, res) {
         sbCode: { $cond: ["$sbCode", "$sbCode", "NA"] },
         UA: { $cond: ["$UA", "$UA.name", "NA"] },
         UA_Code: { $cond: ["$UA", "$UA.UACode", "NA"] },
-        isGsdpEligible :  { $cond: ["$isGsdpEligible", "$isGsdpEligible", ""] },
-        isDulyElected :{ $cond: ["$isDulyElected", "$isDulyElected", ""] },
+        isGsdpEligible :  { 
+          $cond: [
+            { $eq: [{ $ifNull: ["$isGsdpEligible", false] }, true] },
+            GSDP_OPT['ELIGIBLE'],
+            GSDP_OPT['NOT_ELIGIBLE'],
+          ]},
+        isDulyElected :{
+          $cond: [
+            { $eq: [{ $ifNull: ["$isDulyElected", false] }, true] },
+            DULY_ELECTED_OPT['DULY_ELECTED'],
+            DULY_ELECTED_OPT['NOT_ELECTED']
+          ]},
         electedDate:{ $cond: ["$electedDate", "$electedDate", ""] }
       },
     },
