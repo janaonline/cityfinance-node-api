@@ -1242,6 +1242,23 @@ const computeQuery = (params) => {
         },
       ];
       if (dbCollectionName) {
+        if ([List.CollectionNames['waterRej'], List.CollectionNames['actionPlan']].includes(dbCollectionName)) {
+          query_s.push(...[
+            {
+              "$lookup": {
+                "from": "uas",
+                "localField": "_id",
+                "foreignField": "state",
+                "as": "uas"
+              }
+            },
+            {
+              "$match": {
+                "uas": { "$ne": [] }
+              }
+            }
+          ])
+        }
         query_s.push(...[
           {
             $lookup: {
