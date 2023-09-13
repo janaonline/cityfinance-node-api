@@ -626,8 +626,8 @@ module.exports.installmentAction = async (req, res) => {
           message: 'Action recorded'
       });
 
-    //Send mail to state when mahua take action in this form.
-    // await emailTriggerWithMohuaAction(state, statusId, rejectReason, FORMIDs['GrantAllocation']);
+    // Send mail to state when mahua take action in this form.
+    await emailTriggerWithMohuaAction(state, statusId, rejectReason, FORMIDs['GrantAllocation']);
     return;
 
   }
