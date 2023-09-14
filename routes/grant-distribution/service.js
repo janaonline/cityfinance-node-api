@@ -5,6 +5,7 @@ const ULB = require("../../models/Ulb");
 const STATE = require("../../models/State");
 const Response = require("../../service").response;
 const FormsJson = require("../../models/FormsJson");
+const { getOriginalQueryParams } = require('../../util/helper');
 const Service = require("../../service");
 const {years} = require("../../service/years");
 const downloadFileToDisk = require("../file-upload/service").downloadFileToDisk;
@@ -129,7 +130,9 @@ exports.getTemplate = async (req, res) => {
 exports.uploadTemplate = async (req, res) => {
   let { url, design_year } = req.query;
   let state = req.decoded?.state;
-  console.log("req.decoded?.state :: ",req.decoded)
+
+  //Get original url from Query params.
+  url = getOriginalQueryParams(req)?.url;
   let formData = req.query;
  
   try {
