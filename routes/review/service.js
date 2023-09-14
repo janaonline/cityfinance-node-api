@@ -2358,7 +2358,6 @@ const computeQuery = (formName, userRole, isFormOptional, state, design_year, cs
   let dY = "$design_year";
   let designYearField = "design_year"
   if (formName == CollectionNames.dur) {
-
     dY = "$designYear";
     designYearField = "designYear";
   }
@@ -2621,7 +2620,28 @@ const computeQuery = (formName, userRole, isFormOptional, state, design_year, cs
           $match: {
             accessToXVFC: true,
           },
-        },
+        }
+      ];
+
+      if ([List.CollectionNames['waterRej'], List.CollectionNames['actionPlan']].includes(dbCollectionName)) {
+        query_s.push(...[
+          {
+            "$lookup": {
+              "from": "uas",
+              "localField": "_id",
+              "foreignField": "state",
+              "as": "uas"
+            }
+          },
+          {
+            "$match": {
+              "uas": { "$ne": [] }
+            }
+          }
+        ])
+      }
+
+      query_s.push(...[
         {
           $lookup: {
             from: dbCollectionName,
@@ -2681,7 +2701,8 @@ const computeQuery = (formName, userRole, isFormOptional, state, design_year, cs
         {
           $sort: { formData: -1 },
         },
-      ];
+      ])
+
 
       query_s = createDynamicQuery(formName, query_s, userRole, csv);
       /* Checking if the user role is STATE and the folder name is IndicatorForWaterSupply. */
