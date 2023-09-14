@@ -254,7 +254,7 @@ module.exports.getAll = async (req, res) => {
                             rejectReason: "$user.rejectReason",
                             modifiedAt: "$user.modifiedAt",
                             createdAt: "$user.createdAt",
-                            isActive: "$user.isDeleted",
+                            isActive: "$user.isActive",
                             ulbIsActive: "$isActive",
                             accountantConatactNumber: "$user.accountantConatactNumber",
                             accountantEmail: "$user.accountantEmail",
