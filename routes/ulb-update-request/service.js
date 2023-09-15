@@ -364,6 +364,7 @@ module.exports.create = async (req, res) => {
             let dulb, du;
             pObj['isRegistered'] = true;
             pObj['isVerified2223'] = true;
+            if (data.hasOwnProperty('isActive')) pObj['isActive'] = data?.isActive
             if (Object.keys(obj).length) {
                 dulb = await Ulb.update({ _id: ObjectId(ulb) }, { $set: obj });
             }
