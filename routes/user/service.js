@@ -399,9 +399,9 @@ module.exports.getAll = async (req, res) => {
                 ]
 
                 let newFilter = await Service.mapFilter(filter);
-                if (newFilter[user]) JSON.parse(newFilter['user'])
 
-                
+                if (newFilter['user']) newFilter['user'] = JSON.parse(newFilter['user'])
+
                 let total = undefined;
                 if (user.role == 'STATE') {
                     let ulbs = await Ulb.distinct('_id', {
