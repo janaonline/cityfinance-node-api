@@ -19,7 +19,6 @@ module.exports.get = async function (req, res) {
         query["code"] = req.params._code
     }
     if (req.query.type == "filter") {
-
         query1["questionnaireType"] = "state"
         let stateId = await XVFcForms.find(query1, { _id: 0, state: 1 }).exec();
         let stateArray = stateId.map((s) => { return ObjectId(s.state) })
@@ -27,9 +26,43 @@ module.exports.get = async function (req, res) {
     }
     // Get any state
     // State is model name
-    service.find(query, State, function (response, value) {
-        return res.status(response ? 200 : 400).send(value);
-    });
+
+    let stateList = await State.aggregate([
+        {
+            $match: query
+        },
+        {
+            "$lookup": {
+                "from": "uas",
+                "localField": "_id",
+                "foreignField": "state",
+                "as": "uas"
+            }
+        },
+        {
+            $addFields: {
+                "isUaWise": {
+                    $cond: {
+                        if: { $eq: [{ $size: "$uas" }, 0] },
+                        then: false,
+                        else: true
+                    }
+                }
+            }
+        },
+        {
+            $project: {
+                "uas": 0
+            }
+        }
+    ])
+    let responseObj = {
+        timestamp: moment().unix(),
+        success: true,
+        message: 'Successfully fetched',
+        data: stateList
+    };
+    return res.status(200).json(responseObj);
 
 }
 module.exports.put = async function (req, res) {
