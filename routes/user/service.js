@@ -248,7 +248,7 @@ module.exports.getAll = async (req, res) => {
                                 $cond: [
                                     { $ifNull: ["$user.status", false] },
                                     "$user.status",
-                                    "PENDING"
+                                    "NA"
                                 ]
                             },
                             rejectReason: "$user.rejectReason",
