@@ -43,6 +43,18 @@ function Helper() {
             return data;
         }
     }
+
+    /* The `getOriginalQueryParams` function takes a `req` object as a parameter, which is
+    typically the request object in a Node.js application. It extracts the query parameters
+    from the URL and returns them as an object. */
+    this.getOriginalQueryParams = (req) => {
+        return req._parsedOriginalUrl.query.split('&').reduce((result, str) => {
+            const [key, value] = str.split('=');
+            return { ...result, [key]: value };
+        }, {})
+    }
+
+
     this.isEmptyObj = (obj) => {
         return Object.keys(obj).length == 0 && obj.constructor === Object
     }
