@@ -2025,6 +2025,160 @@ module.exports.get = catchAsync(async (req, res) => {
     }
   })
 
+  // if (csv) {
+  //   let filename = `Review_${formType}-${collectionName}.csv`;
+  //   // Set approrpiate download headers
+  //   res.setHeader("Content-disposition", "attachment; filename=" + filename);
+  //   res.writeHead(200, { "Content-Type": "text/csv;charset=utf-8,%EF%BB%BF" });
+  //   if (formType === 'ULB') {
+
+  //     let fixedColumns = `State Name, ULB Name, City Finance Code, Census Code, Population Category, UA, UA Name,`;
+  //     let dynamicColumns = createDynamicColumns(collectionName);
+
+
+  //     if (collectionName != CollectionNames.annual && collectionName != CollectionNames['28SLB']) {
+  //       res.write(
+  //         "\ufeff" +
+  //         `${fixedColumns.toString()} ${dynamicColumns.toString()} \r\n`
+  //       );
+
+  //       res.flushHeaders();
+  //       for (let el of data) {
+  //         let dynamicElementData = await createDynamicElements(collectionName, formType, el);
+  //         if (el.UA === "null") {
+  //           el.UA = "NA"
+  //         }
+  //         if (el.UA === "NA") {
+  //           el.isUA = "No";
+  //         } else if (el.UA !== "NA") {
+  //           el.isUA = "Yes";
+  //         }
+  //         if (!el.censusCode) {
+  //           el.censusCode = "NA"
+  //         }
+  //         res.write(
+  //           "\ufeff" +
+  //           el.stateName +
+  //           "," +
+  //           el.ulbName +
+  //           "," +
+  //           el.ulbCode +
+  //           "," +
+  //           el.censusCode +
+  //           "," +
+  //           el.populationType +
+  //           "," +
+  //           el.isUA +
+  //           "," +
+  //           el.UA +
+  //           "," +
+
+  //           dynamicElementData.toString() +
+
+  //           "\r\n"
+  //         )
+
+  //       }
+  //       res.end();
+  //       return
+  //     } else {
+  //       res.write(
+  //         "\ufeff" +
+  //         `State Name, ULB Name, City Finance Code, Census Code, Population Category, UA, UA Name, ${dynamicColumns.toString()}  \r\n`
+  //       );
+
+  //       res.flushHeaders();
+  //       for (let el of data) {
+
+  //         let [row1, row2] = await createDynamicElements(collectionName, formType, el);
+
+  //         if (el.UA === "null") {
+  //           el.UA = "NA"
+  //         }
+  //         if (el.UA === "NA") {
+  //           el.isUA = "No";
+  //         } else if (el.UA !== "NA") {
+  //           el.isUA = "Yes";
+  //         }
+  //         if (!el.censusCode) {
+  //           el.censusCode = "NA"
+  //         }
+
+  //         res.write(
+  //           "\ufeff" +
+  //           el.stateName +
+  //           "," +
+  //           el.ulbName +
+  //           "," +
+  //           el.ulbCode +
+  //           "," +
+  //           el.censusCode +
+  //           "," +
+  //           el.populationType +
+  //           "," +
+  //           el.isUA +
+  //           "," +
+  //           el.UA +
+  //           "," +
+  //           row1.toString() +
+
+  //           "\r\n"
+  //         )
+  //         res.write(
+  //           "\ufeff" +
+  //           el.stateName +
+  //           "," +
+  //           el.ulbName +
+  //           "," +
+  //           el.ulbCode +
+  //           "," +
+  //           el.censusCode +
+  //           "," +
+  //           el.populationType +
+  //           "," +
+  //           el.isUA +
+  //           "," +
+  //           el.UA +
+  //           "," +
+  //           row2.toString() +
+
+  //           "\r\n"
+  //         )
+
+  //       }
+  //       res.end();
+  //       return
+  //     }
+  //   } else if (formType === "STATE") {
+  //     let fixedColumns = `State Name, City Finance Code, Regional Name,`;
+  //     let dynamicColumns = createDynamicColumns(collectionName)
+  //     res.write(
+  //       "\ufeff" +
+  //       `${fixedColumns.toString()} ${dynamicColumns.toString()} \r\n`
+  //     );
+
+  //     res.flushHeaders();
+  //     for (let el of data) {
+  //       let dynamicElementData = await createDynamicElements(collectionName, formType, el);
+
+  //       res.write(
+  //         "\ufeff" +
+  //         el.stateName +
+  //         "," +
+  //         el.stateCode +
+  //         "," +
+  //         el.regionalName +
+  //         "," +
+  //         dynamicElementData.toString() +
+  //         "\r\n"
+  //       )
+
+  //     }
+  //     res.end();
+  //     return
+  //   }
+  // }
+
   if (
     collectionName === CollectionNames.state_gtc ||
     collectionName === CollectionNames.state_grant_alloc
@@ -2061,7 +2215,7 @@ module.exports.get = catchAsync(async (req, res) => {
 async function createCSV(params) {
   const { formType, collectionName, res, loggedInUserRole, req, query } = params;
   try {
-    let data = formType == "ULB" ? await Ulb.aggregate(query[0]).allowDiskUse(true).cursor({ batchSize: 500 }).exec() : await State.aggregate(query[0]).allowDiskUse(true);
+    let data = formType == "ULB" ? await Ulb.aggregate(query[0]).allowDiskUse(true).exec() : await State.aggregate(query[0]).allowDiskUse(true);
 
     if (formType === 'ULB') {
       let filename = `Review_${formType}-${collectionName}.csv`;
@@ -2190,7 +2344,6 @@ async function createCSV(params) {
       } else if (collectionName == 'ActionPlan') {
         await actionPlanXlsDownload(data, res, collectionName, formType, loggedInUserRole)   // xls
       } else {
-        console.log("inside else block for GTC...")
         let filename = `Review_${formType}-${collectionName}.csv`;
         // Set approrpiate download headers
         res.setHeader("Content-disposition", "attachment; filename=" + filename);
@@ -2204,22 +2357,27 @@ async function createCSV(params) {
         );
 
         res.flushHeaders();
-        for (let el of data) {
-          let dynamicElementData = await createDynamicElements(collectionName, formType, el);
+        if (data?.length) {
+          for (let el of data) {
+            let dynamicElementData = await createDynamicElements(collectionName, formType, el);
 
-          res.write(
-            "\ufeff" +
-            el.stateName +
-            "," +
-            el.stateCode +
-            "," +
-            el.regionalName +
-            "," +
-            dynamicElementData.toString() +
-            "\r\n"
-          )
+            res.write(
+              "\ufeff" +
+              el.stateName +
+              "," +
+              el.stateCode +
+              "," +
+              el.regionalName +
+              "," +
+              dynamicElementData.toString() +
+              "\r\n"
+            )
 
+          }
+        } else {
+          res.write("\ufeff" + "");
         }
+        
         res.end();
         return
       }
@@ -2228,6 +2386,21 @@ async function createCSV(params) {
   } catch (error) {
     console.log("CSV Download Error", error);
     return Response.BadRequest(res, {}, error.message);
+  }
+}
+
+async function grantAllCsvDownload(el, res) {
+  let { stateName, stateCode, formData } = el;
+  let row = [stateName, stateCode];
+  if (formData && formData.length && (formData[0] !== "")) {
+    for (let pf of formData) {
+      let tempArr = [pf?.type, pf?.installment, pf?.url];
+      let str = [...row, ...tempArr].join(',') + "\r\n";
+      res.write("\ufeff" + str);
+    }
+  } else {
+    let str = [...row].join(',') + "\r\n";
+    res.write("\ufeff" + str);
   }
 }
 
