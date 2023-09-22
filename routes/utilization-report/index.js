@@ -52,7 +52,7 @@ router.get("/dur/report", report);
 //2223
 router.get("/utilReport", verifyToken, read2223,changeGetApiForm);
 
-router.get("/repair_data",dataRepair);
+router.post("/repair_data",dataRepair);
 
 router.get("/grantPositionDesiMalvalueUpdate",GrantPositionDesiMalvalueUpdate);
 router.get("/getProjects",verifyToken,getProjects)

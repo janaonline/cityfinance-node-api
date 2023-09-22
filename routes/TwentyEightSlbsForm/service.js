@@ -763,9 +763,8 @@ module.exports.twentyEightSlbFormFormTargetValuesUpdation = async (req, res) => 
   try {
     const slb4Forms = await SLB.find({
       design_year: YEAR_CONSTANTS["21_22"],
-      // "_id" : ObjectId("620f6bb3d4ad324699e7d0f7"),
 
-    }).lean()
+    },{history:0}).lean()
     let outputArray = []
     if (slb4Forms && slb4Forms.length > 0) {
       for (let i = 0; i < slb4Forms.length; i++) {
@@ -796,9 +795,14 @@ module.exports.twentyEightSlbFormFormTargetValuesUpdation = async (req, res) => 
         //     StatusList.Under_Review_By_MoHUA,
         //   ].includes(formStatus)
         // ) {
-        let slb28Form = await TwentyEightSlbsForm.findOne({
-          ulb: form.ulb,
-        }).lean();
+
+        let slb28Form;
+        if(req.query?.year){
+          slb28Form = await TwentyEightSlbsForm.findOne({
+            ulb: form.ulb,
+            design_year  : (req.query?.year)
+          }).lean();
+        }
 
         if (slb28Form) {
           let slb28FormStatus = calculateStatus(
