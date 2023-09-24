@@ -546,18 +546,18 @@ module.exports.getForm = async (req, res, next) => {
           ulb: ObjectId(data.ulb),
           design_year: ObjectId(YEAR_CONSTANTS['22_23'])
         }
-        let prev28SlbFormData = await TwentyEightSlbsForm.findOne(prevYearCond, { history: 0 }).lean()
-        if (prev28SlbFormData && userRole === "MoHUA") {
-          if (
-            !(
-              prev28SlbFormData.actionTakenByRole === "MoHUA" &&
-              !prev28SlbFormData.isDraft &&
-              prev28SlbFormData.status === "APPROVED"
-            )
-          ) {
-            formData["canTakeAction"] = false;
-          }
-        }
+        // let prev28SlbFormData = await TwentyEightSlbsForm.findOne(prevYearCond, { history: 0 }).lean()
+        // if (prev28SlbFormData && userRole === "MoHUA") {
+        //   if (
+        //     !(
+        //       prev28SlbFormData.actionTakenByRole === "MoHUA" &&
+        //       !prev28SlbFormData.isDraft &&
+        //       prev28SlbFormData.status === "APPROVED"
+        //     )
+        //   ) {
+        //     formData["canTakeAction"] = false;
+        //   }
+        // }
       } else {
         Object.assign(formData, {
           canTakeAction: canTakenAction(
@@ -568,17 +568,17 @@ module.exports.getForm = async (req, res, next) => {
             userRole
           ),
         });
-        if (masterFormData && userRole === "MoHUA") {
-          if (
-            !(
-              masterFormData.actionTakenByRole === "MoHUA" &&
-              !masterFormData.isDraft &&
-              masterFormData.status === "APPROVED"
-            )
-          ) {
-            formData["canTakeAction"] = false;
-          }
-        }
+        // if (masterFormData && userRole === "MoHUA") {
+        //   if (
+        //     !(
+        //       masterFormData.actionTakenByRole === "MoHUA" &&
+        //       !masterFormData.isDraft &&
+        //       masterFormData.status === "APPROVED"
+        //     )
+        //   ) {
+        //     formData["canTakeAction"] = false;
+        //   }
+        // }
       }
 
 
