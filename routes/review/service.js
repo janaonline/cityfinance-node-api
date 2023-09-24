@@ -2008,20 +2008,23 @@ module.exports.get = catchAsync(async (req, res) => {
   const sequentialReview = `Cannot review since last year form is not approved by MoHUA.`
   data.forEach(el => {
     el['info'] = '';
+    el['prevYearStatus'] = '';
     if (!el.formData) {
       el['formStatus'] = "Not Started";
       el['cantakeAction'] = false;
     } else {
       el['formStatus'] = calculateStatus(el.formData.status, el.formData.actionTakenByRole, el.formData.isDraft, formType);
-      // if (collectionName === CollectionNames.dur || collectionName === CollectionNames['28SLB']) {
+      if (collectionName === CollectionNames.dur || collectionName === CollectionNames['28SLB']) {
       //   el['cantakeAction'] = req.decoded.role === "ADMIN" ? false : canTakeActionOrViewOnly(el, loggedInUserRole);
       //   if (!(approvedUlbs.find(ulb => ulb.toString() === el.ulbId.toString())) && loggedInUserRole === "MoHUA") {
       //     el['cantakeAction'] = false
       //     el['formStatus'] === STATUS_LIST['Under_Review_By_MoHUA'] ? el['info'] = sequentialReview : ""
       //   }
-      // } else {
+        el['prevYearStatus'] = approvedUlbs[el._id]
+
+      } else {
         el['cantakeAction'] = req.decoded.role === "ADMIN" ? false : canTakeActionOrViewOnly(el, loggedInUserRole)
-      // }
+      }
     }
   })
 
@@ -2280,11 +2283,11 @@ async function masterForms2122(collectionName, data) {
 
 function getUlbsApprovedByMoHUA(forms) {
   try {
-    let ulbArray = [];
+    let ulbArray = {};
     for (let form of forms) {
-      if (form.actionTakenByRole === "MoHUA" && form.isSubmit && form.status === "APPROVED") {
-        ulbArray.push(form.ulb);
-      }
+      // if (form.actionTakenByRole === "MoHUA" && form.isSubmit && form.status === "APPROVED") {
+        ulbArray[form.ulb] = calculateStatus(form.status,form.actionTakenByRole, !form.isSubmit,"ULB");
+      // }
     }
     return ulbArray;
   } catch (error) {

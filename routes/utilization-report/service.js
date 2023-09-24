@@ -967,7 +967,14 @@ module.exports.read2223 = catchAsync(async (req, res, next) => {
         actionTakenByRole: role,
       };
       const canTakeActionOnMasterForm = await getMasterForm(params);
-      Object.assign(fetchedData, canTakeActionOnMasterForm);
+      Object.assign(fetchedData, canTakeActionOnMasterForm,{
+        prevYearStatus: calculateStatus(
+          prevData.status,
+          prevData.actionTakenByRole,
+          prevData.isDraft,
+          "ULB"
+        )
+      });
       // if (prevData && role === "MoHUA") {
       //   if (!(prevData.actionTakenByRole === "MoHUA" && !prevData.isDraft && prevData.status === "APPROVED")) {
       //     fetchedData['canTakeAction'] = false;
@@ -982,6 +989,12 @@ module.exports.read2223 = catchAsync(async (req, res, next) => {
           "ULB",
           role
         ),
+        prevYearStatus: calculateStatus(
+          prevData.status,
+          prevData.actionTakenByRole,
+          !prevData.isSubmit,
+          "ULB"
+        )
       });
       // if (prevData && role === "MoHUA") {
       //   if (!(prevData.actionTakenByRole === "MoHUA" && !prevData.isDraft && prevData.status === "APPROVED")) {
