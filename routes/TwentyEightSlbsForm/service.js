@@ -546,7 +546,15 @@ module.exports.getForm = async (req, res, next) => {
           ulb: ObjectId(data.ulb),
           design_year: ObjectId(YEAR_CONSTANTS['22_23'])
         }
-        // let prev28SlbFormData = await TwentyEightSlbsForm.findOne(prevYearCond, { history: 0 }).lean()
+        let prev28SlbFormData = await TwentyEightSlbsForm.findOne(prevYearCond, { history: 0 }).lean()
+        Object.assign(formData,{
+          prevYearStatus:  calculateStatus(
+            prev28SlbFormData.status,
+            prev28SlbFormData.actionTakenByRole,
+            prev28SlbFormData.isDraft,
+            "ULB"
+          )
+        })
         // if (prev28SlbFormData && userRole === "MoHUA") {
         //   if (
         //     !(
@@ -567,6 +575,12 @@ module.exports.getForm = async (req, res, next) => {
             "ULB",
             userRole
           ),
+          prevYearStatus: calculateStatus(
+            masterFormData.status,
+            masterFormData.actionTakenByRole,
+            !masterFormData.isSubmit,
+            "ULB"
+          )
         });
         // if (masterFormData && userRole === "MoHUA") {
         //   if (
