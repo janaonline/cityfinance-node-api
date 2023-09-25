@@ -43,6 +43,16 @@ const fiscalRankingMapperSchema = new Schema(
         },
         ledgerUpdated: { type: Boolean, default: false },
         displayPriority: { type: Number, default: null },
+        suggestedValue: { type: Schema.Types.Mixed, default: null },
+        ulbComment: { type:String, default:""},
+        approvalType: {
+            type: String,
+            default: null,
+            enum: {
+              values: ["PMU", "ULB"],
+              message: "ERROR: Approval Type SHOULD BE 'PMU'/ 'ULB'",
+            },
+          },
         // createdAt: { type: Date, default: Date.now() },
         // modifiedAt: { type: Date, default: Date.now() },
     },

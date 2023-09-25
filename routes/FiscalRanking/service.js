@@ -1201,6 +1201,9 @@ exports.getView = async function (req, res, next) {
                         url: "",
                       };
                     pf["value"] = singleFydata ? singleFydata.value : "";
+                    pf['suggestedValue'] = singleFydata?.suggestedValue;
+                    pf['approvalType'] = singleFydata?.approvalType;
+                    pf['ulbComment'] = singleFydata?.ulbComment;
                     pf["status"] = singleFydata && singleFydata.status != null
                       ? singleFydata.status
                       : "PENDING";
@@ -1314,6 +1317,7 @@ exports.getView = async function (req, res, next) {
         ? viewOne.design_year
         : req.query.design_year,
       isDraft: viewOne.isDraft,
+      pmuSubmissionDate: viewOne?.pmuSubmissionDate,
       tabs: modifiedTabs,
       currentFormStatus: viewOne.currentFormStatus,
       financialYearTableHeader,
@@ -3439,10 +3443,13 @@ async function updateQueryForFiscalRanking(
           payload["rejectReason"] = years?.rejectReason || ""
           payload["displayPriority"] = dynamicObj.position;
           payload['ledgerUpdated'] = false
+          payload["ulbComment"] = years.ulbComment;
         } else {
           payload["status"] = years.status;
+          payload["suggestedValue"] = years.suggestedValue;
           payload["rejectReason"] = years?.rejectReason
         }
+        payload["approvalType"] = years.approvalType;
         let up = await FiscalRankingMapper.findOneAndUpdate(filter, payload, {
           upsert: upsert,
         });
@@ -3786,6 +3793,11 @@ async function saveFeedbacksAndForm(
     actionTakenByRole: role,
     currentFormStatus: formStatus,
   };
+  //Add the submission deate in case of Pmu submit the form.
+  if (+formStatus == 11) {
+    payloadForForm['pmuSubmissionDate'] = new Date();
+  }
+
   let filterForForm = {
     // _id: ObjectId(formId),
     ulb: ObjectId(ulbId),
