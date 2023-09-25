@@ -15,6 +15,7 @@ const { calculateKeys } = require('../CommonActionAPI/service')
 const Ulb = require('../../models/Ulb')
 const State = require('../../models/State');
 const MasterForm = require('../../models/MasterForm');
+const { PREV_MASTER_FORM_STATUS } = require('../../util/FormNames');
 
 
 function padTo2Digits(num) {
@@ -2009,6 +2010,7 @@ module.exports.get = catchAsync(async (req, res) => {
   data.forEach(el => {
     el['info'] = '';
     el['prevYearStatus'] = '';
+    el['prevYearStatusId'] = '';
     if (!el.formData) {
       el['formStatus'] = "Not Started";
       el['cantakeAction'] = false;
@@ -2021,7 +2023,9 @@ module.exports.get = catchAsync(async (req, res) => {
       //     el['cantakeAction'] = false
       //     el['formStatus'] === STATUS_LIST['Under_Review_By_MoHUA'] ? el['info'] = sequentialReview : ""
       //   }
-        el['prevYearStatus'] = approvedUlbs[el._id]
+        el['prevYearStatus'] = approvedUlbs[el._id];
+        const previousStatus =  el['prevYearStatus'].toUpperCase().split(' ').join('_')
+        el['prevYearStatusId'] = PREV_MASTER_FORM_STATUS[previousStatus] 
 
       } 
       // else {
