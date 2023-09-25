@@ -10,7 +10,7 @@ const Sidemenu = require('../../models/Sidemenu');
 const ObjectId = require("mongoose").Types.ObjectId;
 const Service = require('../../service');
 const STATUS_LIST = require('../../util/newStatusList');
-const { MASTER_STATUS, MASTER_STATUS_ID, YEAR_CONSTANTS, YEAR_CONSTANTS_IDS, MASTER_FORM_STATUS, MASTER_FORM_QUESTION_STATUS, MASTER_FORM_QUESTION_STATUS_STATE, FORM_TYPE_SUBMIT_CLAIM, FORM_TYPE_NAME, INSTALLMENT_NAME } = require('../../util/FormNames');
+const { MASTER_STATUS, MASTER_STATUS_ID, YEAR_CONSTANTS, YEAR_CONSTANTS_IDS, MASTER_FORM_STATUS, MASTER_FORM_QUESTION_STATUS, MASTER_FORM_QUESTION_STATUS_STATE, FORM_TYPE_SUBMIT_CLAIM, FORM_TYPE_NAME, INSTALLMENT_NAME, PREV_MASTER_FORM_STATUS } = require('../../util/FormNames');
 const { getCurrentYear, getAccessYear, getFinancialYear } = require('../../util/masterFunctions');
 const { canTakeActionOrViewOnlyMasterForm, checkUlbAccess, getLastYearUlbAccess, calculateStatus } = require('../../routes/CommonActionAPI/service')
 const { createObjectFromArray, addActionKeys } = require('../CommonFormSubmissionState/service');
@@ -873,6 +873,7 @@ const setCurrentStatus = (req, data, approvedUlbs, collectionName, loggedInUserR
   data.forEach(el => {
     el['info'] = '';
     el['prevYearStatus'] = ''
+    el['prevYearStatusId'] = ''
     if (!el.formData) {
       el['formStatus'] = "Not Started";
       el['cantakeAction'] = false;
@@ -887,6 +888,8 @@ const setCurrentStatus = (req, data, approvedUlbs, collectionName, loggedInUserR
       //     el['formData']['currentFormStatus'] === MASTER_STATUS['Under Review By MoHUA'] ? el['info'] = sequentialReview : ""
       //   }
         el['prevYearStatus'] = approvedUlbs[el._id];
+        const previousStatus =  el['prevYearStatus'].toUpperCase().split(' ').join('_')
+        el['prevYearStatusId'] = PREV_MASTER_FORM_STATUS[previousStatus] 
       } 
       // else {
         // let params = { status: el.formData.currentFormStatus, userRole: loggedInUserRole }
