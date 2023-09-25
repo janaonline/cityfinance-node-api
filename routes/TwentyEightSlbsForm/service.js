@@ -7,7 +7,7 @@ const { groupByKey } = require('../../util/group_list_by_key')
 const SLB = require('../../models/XVFcGrantForm')
 const { canTakenAction, calculateStatus } = require('../CommonActionAPI/service')
 const Service = require('../../service');
-const { FormNames, YEAR_CONSTANTS, MASTER_STATUS_ID } = require('../../util/FormNames');
+const { FormNames, YEAR_CONSTANTS, MASTER_STATUS_ID, PREV_MASTER_FORM_STATUS } = require('../../util/FormNames');
 const User = require('../../models/User');
 const MasterForm = require('../../models/MasterForm')
 const StatusList = require('../../util/newStatusList')
@@ -546,14 +546,18 @@ module.exports.getForm = async (req, res, next) => {
           ulb: ObjectId(data.ulb),
           design_year: ObjectId(YEAR_CONSTANTS['22_23'])
         }
-        let prev28SlbFormData = await TwentyEightSlbsForm.findOne(prevYearCond, { history: 0 }).lean()
+        let prev28SlbFormData = await TwentyEightSlbsForm.findOne(prevYearCond, { history: 0 }).lean();
+        const prevYearStatus = calculateStatus(
+          prev28SlbFormData.status,
+          prev28SlbFormData.actionTakenByRole,
+          prev28SlbFormData.isDraft,
+          "ULB"
+        );
+        const previousStatusInCaps =  prevYearStatus.toUpperCase().split(' ').join('_')
+
         Object.assign(formData,{
-          prevYearStatus:  calculateStatus(
-            prev28SlbFormData.status,
-            prev28SlbFormData.actionTakenByRole,
-            prev28SlbFormData.isDraft,
-            "ULB"
-          )
+          prevYearStatus,
+          prevYearStatusId: PREV_MASTER_FORM_STATUS[previousStatusInCaps]
         })
         // if (prev28SlbFormData && userRole === "MoHUA") {
         //   if (
@@ -567,6 +571,14 @@ module.exports.getForm = async (req, res, next) => {
         //   }
         // }
       } else {
+        const prevYearStatus = calculateStatus(
+          masterFormData.status,
+          masterFormData.actionTakenByRole,
+          !masterFormData.isSubmit,
+          "ULB"
+        )
+        const previousStatusInCaps =  prevYearStatus.toUpperCase().split(' ').join('_')
+
         Object.assign(formData, {
           canTakeAction: canTakenAction(
             formData["status"],
@@ -575,12 +587,8 @@ module.exports.getForm = async (req, res, next) => {
             "ULB",
             userRole
           ),
-          prevYearStatus: calculateStatus(
-            masterFormData.status,
-            masterFormData.actionTakenByRole,
-            !masterFormData.isSubmit,
-            "ULB"
-          )
+          prevYearStatus,
+          prevYearStatusId : PREV_MASTER_FORM_STATUS[previousStatusInCaps]
         });
         // if (masterFormData && userRole === "MoHUA") {
         //   if (
