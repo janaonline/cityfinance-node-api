@@ -2013,8 +2013,8 @@ module.exports.get = catchAsync(async (req, res) => {
       el['formStatus'] = "Not Started";
       el['cantakeAction'] = false;
     } else {
-      el['cantakeAction'] = req.decoded.role === "ADMIN" ? false : canTakeActionOrViewOnly(el, loggedInUserRole)
       el['formStatus'] = calculateStatus(el.formData.status, el.formData.actionTakenByRole, el.formData.isDraft, formType);
+      el['cantakeAction'] = req.decoded.role === "ADMIN" ? false : canTakeActionOrViewOnly(el, loggedInUserRole)
       if (collectionName === CollectionNames.dur || collectionName === CollectionNames['28SLB']) {
       //   el['cantakeAction'] = req.decoded.role === "ADMIN" ? false : canTakeActionOrViewOnly(el, loggedInUserRole);
       //   if (!(approvedUlbs.find(ulb => ulb.toString() === el.ulbId.toString())) && loggedInUserRole === "MoHUA") {
