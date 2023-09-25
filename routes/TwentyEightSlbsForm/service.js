@@ -874,7 +874,10 @@ module.exports.twentyEightSlbFormFormTargetValuesUpdation = async (req, res) => 
               }
             });
             let slb28UpdatedForm = await TwentyEightSlbsForm.findOneAndUpdate(
-              { ulb: form.ulb },
+              { 
+                ulb: form.ulb ,
+                design_year  : (req.query?.year)
+              },
               {
                 $set: {
                   data: slb28Form["data"],
