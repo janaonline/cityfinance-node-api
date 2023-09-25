@@ -2013,6 +2013,7 @@ module.exports.get = catchAsync(async (req, res) => {
       el['formStatus'] = "Not Started";
       el['cantakeAction'] = false;
     } else {
+      el['cantakeAction'] = req.decoded.role === "ADMIN" ? false : canTakeActionOrViewOnly(el, loggedInUserRole)
       el['formStatus'] = calculateStatus(el.formData.status, el.formData.actionTakenByRole, el.formData.isDraft, formType);
       if (collectionName === CollectionNames.dur || collectionName === CollectionNames['28SLB']) {
       //   el['cantakeAction'] = req.decoded.role === "ADMIN" ? false : canTakeActionOrViewOnly(el, loggedInUserRole);
@@ -2022,9 +2023,10 @@ module.exports.get = catchAsync(async (req, res) => {
       //   }
         el['prevYearStatus'] = approvedUlbs[el._id]
 
-      } else {
-        el['cantakeAction'] = req.decoded.role === "ADMIN" ? false : canTakeActionOrViewOnly(el, loggedInUserRole)
-      }
+      } 
+      // else {
+        // el['cantakeAction'] = req.decoded.role === "ADMIN" ? false : canTakeActionOrViewOnly(el, loggedInUserRole)
+      // }
     }
   })
 
