@@ -3817,18 +3817,20 @@ const decideOverAllStatus = (statusObject) => {
   return 9
 }
 
-const sendEmailToUlb = async (ulbId) => {
+const sendEmailToUlb = async (ulbId, status) => {
   try {
     let userInf = await Users.findOne({
       "ulb": ObjectId(ulbId),
       "role": "ULB"
     }).populate("ulb")
-    let emailAddress = [userInf.email]
+    let emailAddress = [userInf.email];
+    if(process.env.ENV !== "production" ){
+      emailAddress = ['']
+    }
     let ulbName = userInf.name
     let ulbTemplate = Service.emailTemplate.CfrFormRejected(
-      ulbName,
+      ulbName,status
     );
-    console.log("emailAddress ::: ", emailAddress)
     let mailOptions = {
       Destination: {
         /* required */
@@ -3854,7 +3856,6 @@ const sendEmailToUlb = async (ulbId) => {
 
     };
     await Service.sendEmail(mailOptions);
-    console.log("email Sent")
   }
   catch (err) {
     console.log("error in sendEmailToUlb ::: ", err.message)
@@ -3899,8 +3900,8 @@ module.exports.actionTakenByMoHua = catchAsync(async (req, res) => {
     let formStatus = currentFormStatus
     if (currentFormStatus != statusTracker["VIP"]) {
       formStatus = await decideOverAllStatus(calculationsTabWise)
-      if (formStatus === statusTracker['RBP']) {
-        await sendEmailToUlb(ulbId)
+      if ([statusTracker['RBP'], statusTracker['SAP']].includes(formStatus)) {
+        await sendEmailToUlb(ulbId,formStatus)
         console.log({formId})
         await updateRejectCount(ulbId,design_year);
       }

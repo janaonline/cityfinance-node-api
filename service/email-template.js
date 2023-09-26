@@ -8,16 +8,25 @@ const ObjectId = require("mongoose").Types.ObjectId;
 const {CollectionNames} = require('../util/15thFCstatus')
 const StatusList = require("../util/newStatusList");
 const { Not_Started } = require("../util/newStatusList");
+const { MASTER_FORM_STATUS } = require("../util/FormNames");
 
 
-const CfrFormRejected = (ulbName)=>{
+const CfrFormRejected = (ulbName,status)=>{
   try{
     return {
-      subject:`Fiscal Ranking Form Returned by PMU`,
-      body:`Dear ${ulbName} <br>
-      <p>Your Fiscal Ranking form has been returned by PMU.</p>
-      <p>Please visit https://cityfinance.in/rankings/login to submit the corrected data.</p>`
-    }
+      subject: `Fiscal Ranking Form Review by PMU`,
+      body: `Dear ${ulbName} <br>
+      <p>Your Fiscal Ranking form has been ${
+        status === MASTER_FORM_STATUS['SUBMISSION_ACKNOWLEDGED_BY_PMU']
+          ? "approved"
+          : "rejected"
+      } by PMU.</p>
+      ${
+        status === MASTER_FORM_STATUS['SUBMISSION_ACKNOWLEDGED_BY_PMU']
+          ? ""
+          : "<p>Please visit https://cityfinance.in/rankings/login to submit the corrected data.</p>"
+      }`,
+    };
   }
   catch(err){
     console.log("error in CfrFormRejected ::: ",err.message)
