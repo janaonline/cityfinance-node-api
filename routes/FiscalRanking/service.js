@@ -1050,6 +1050,9 @@ exports.getView = async function (req, res, next) {
                 }
                 pf["rejectReason"] = singleFydata.rejectReason
                 pf["modelName"] = singleFydata ? singleFydata.modelName : "";
+                pf['suggestedValue'] = singleFydata?.suggestedValue;
+                pf['approvalType'] = singleFydata?.approvalType;
+                pf['ulbComment'] = singleFydata?.ulbComment;
                 pf["status"] = singleFydata.status != null ? singleFydata.status : 'PENDING';
                 pf['ledgerUpdated'] = singleFydata.ledgerUpdated || false
                 if (subData[key].calculatedFrom === undefined) {
@@ -1268,8 +1271,11 @@ exports.getView = async function (req, res, next) {
               }
             }
           }
+          //In case of suggested value given by the Pmu the fields only in the read only mode.
+          if(pf?.suggestedValue) pf["readonly"] = true;
         }
       }
+      
     }
 
     let tabs = await TabsFiscalRankings.find({})
@@ -1278,7 +1284,7 @@ exports.getView = async function (req, res, next) {
     let conditionForFeedbacks = {
       fiscal_ranking: data?._id || null,
     };
-  
+
     let userRole = req.decoded.role
     let params = {
       ledgerData: ulbData,
@@ -1288,6 +1294,7 @@ exports.getView = async function (req, res, next) {
       role: userRole,
       currentFormStatus: viewOne.currentFormStatus
     }
+    
     /**
      * This function always get latest data for ledgers
      */
