@@ -6,7 +6,7 @@ const FiscalRanking = require("../../models/FiscalRanking");
 const FiscalRankingMapper = require("../../models/FiscalRankingMapper");
 const { FRTypeShortKey } = require('./formjson')
 const UlbLedger = require("../../models/UlbLedger");
-const { FORMIDs, MASTER_STATUS, MASTER_STATUS_ID, FORM_LEVEL, POPULATION_TYPE, YEAR_CONSTANTS, YEAR_CONSTANTS_IDS, USER_ROLE } = require("../../util/FormNames");
+const { FORMIDs, MASTER_STATUS, MASTER_STATUS_ID, FORM_LEVEL, POPULATION_TYPE, YEAR_CONSTANTS, YEAR_CONSTANTS_IDS, USER_ROLE, MASTER_FORM_STATUS } = require("../../util/FormNames");
 const { saveCurrentStatus, saveFormHistory, saveStatusHistory } = require("../../util/masterFunctions");
 const FeedBackFiscalRanking = require("../../models/FeedbackFiscalRanking");
 const TwentyEightSlbsForm = require("../../models/TwentyEightSlbsForm");
@@ -3844,12 +3844,21 @@ const sendEmailToUlb = async (ulbId, status) => {
     }).populate("ulb")
     let emailAddress = [userInf.email];
     if(process.env.ENV !== "production" ){
-      emailAddress = ['']
+      emailAddress = ['aditya.yadav@dhwaniris.com']
     }
-    let ulbName = userInf.name
-    let ulbTemplate = Service.emailTemplate.CfrFormRejected(
-      ulbName,status
-    );
+    let ulbName = userInf.name;
+    let ulbTemplate;
+    if(
+      status == MASTER_FORM_STATUS['SUBMISSION_ACKNOWLEDGED_BY_PMU']
+      ){
+      
+    }else if(
+      status == MASTER_FORM_STATUS['RETURNED_BY_PMU']
+      ){
+      ulbTemplate = Service.emailTemplate.CfrFormRejected(
+       ulbName
+     );
+    }
     let mailOptions = {
       Destination: {
         /* required */
