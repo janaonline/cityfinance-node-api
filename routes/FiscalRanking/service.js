@@ -1050,6 +1050,9 @@ exports.getView = async function (req, res, next) {
                 }
                 pf["rejectReason"] = singleFydata.rejectReason
                 pf["modelName"] = singleFydata ? singleFydata.modelName : "";
+                pf['suggestedValue'] = singleFydata?.suggestedValue;
+                pf['approvalType'] = singleFydata?.approvalType;
+                pf['ulbComment'] = singleFydata?.ulbComment;
                 pf["status"] = singleFydata.status != null ? singleFydata.status : 'PENDING';
                 pf['ledgerUpdated'] = singleFydata.ledgerUpdated || false
                 if (subData[key].calculatedFrom === undefined) {
@@ -1201,6 +1204,9 @@ exports.getView = async function (req, res, next) {
                         url: "",
                       };
                     pf["value"] = singleFydata ? singleFydata.value : "";
+                    pf['suggestedValue'] = singleFydata?.suggestedValue;
+                    pf['approvalType'] = singleFydata?.approvalType;
+                    pf['ulbComment'] = singleFydata?.ulbComment;
                     pf["status"] = singleFydata && singleFydata.status != null
                       ? singleFydata.status
                       : "PENDING";
@@ -1265,8 +1271,11 @@ exports.getView = async function (req, res, next) {
               }
             }
           }
+          //In case of suggested value given by the Pmu the fields only in the read only mode.
+          if(pf?.suggestedValue) pf["readonly"] = true;
         }
       }
+      
     }
 
     let tabs = await TabsFiscalRankings.find({})
@@ -1275,7 +1284,7 @@ exports.getView = async function (req, res, next) {
     let conditionForFeedbacks = {
       fiscal_ranking: data?._id || null,
     };
-  
+
     let userRole = req.decoded.role
     let params = {
       ledgerData: ulbData,
@@ -1285,6 +1294,7 @@ exports.getView = async function (req, res, next) {
       role: userRole,
       currentFormStatus: viewOne.currentFormStatus
     }
+    
     /**
      * This function always get latest data for ledgers
      */
@@ -1314,6 +1324,7 @@ exports.getView = async function (req, res, next) {
         ? viewOne.design_year
         : req.query.design_year,
       isDraft: viewOne.isDraft,
+      pmuSubmissionDate: viewOne?.pmuSubmissionDate,
       tabs: modifiedTabs,
       currentFormStatus: viewOne.currentFormStatus,
       financialYearTableHeader,
@@ -3439,10 +3450,13 @@ async function updateQueryForFiscalRanking(
           payload["rejectReason"] = years?.rejectReason || ""
           payload["displayPriority"] = dynamicObj.position;
           payload['ledgerUpdated'] = false
+          payload["ulbComment"] = years.ulbComment;
         } else {
           payload["status"] = years.status;
+          payload["suggestedValue"] = years.suggestedValue;
           payload["rejectReason"] = years?.rejectReason
         }
+        payload["approvalType"] = years.approvalType;
         let up = await FiscalRankingMapper.findOneAndUpdate(filter, payload, {
           upsert: upsert,
         });
@@ -3786,6 +3800,11 @@ async function saveFeedbacksAndForm(
     actionTakenByRole: role,
     currentFormStatus: formStatus,
   };
+  //Add the submission deate in case of Pmu submit the form.
+  if (+formStatus == 11) {
+    payloadForForm['pmuSubmissionDate'] = new Date();
+  }
+
   let filterForForm = {
     // _id: ObjectId(formId),
     ulb: ObjectId(ulbId),
