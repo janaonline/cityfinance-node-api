@@ -73,6 +73,20 @@ module.exports.MASTER_FORM_STATUS = {
     RETURNED_BY_PMU: 10,
     SUBMISSION_ACKNOWLEDGED_BY_PMU: 11,
 }
+module.exports.PREV_MASTER_FORM_STATUS = {
+    NO_STATUS: -1,
+    NOT_STARTED: 1,
+    IN_PROGRESS: 2,
+    UNDER_REVIEW_BY_STATE: 3,
+    UNDER_REVIEW_BY_MOHUA: 4,
+    RETURNED_BY_STATE: 5,
+    APPROVED_BY_MOHUA: 6,
+    RETURNED_BY_MOHUA: 7,
+    VERIFICATION_NOT_STARTED: 8,
+    VERIFICATION_IN_PROGRESS: 9,
+    RETURNED_BY_PMU: 10,
+    SUBMISSION_ACKNOWLEDGED_BY_PMU: 11,
+}
 
 module.exports.MASTER_FORM_QUESTION_STATUS = {
     4: "APPROVED",
@@ -195,4 +209,14 @@ module.exports.INSTALLMENT_TYPE = { //Submit Grant Claim
 module.exports.DULY_ELECTED_OPT= {
     DULY_ELECTED: 'Duly Elected',
     NOT_ELECTED: 'Not Elected'
+}
+
+module.exports.TEST_EMAIL= {
+    test1 : "testingdhwani@gmail.com"
+}
+
+module.exports.ENV = {
+    prod: "production",
+    stg: "staging",
+    demo: "demo"
 }

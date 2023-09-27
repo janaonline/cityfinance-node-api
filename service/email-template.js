@@ -8,16 +8,41 @@ const ObjectId = require("mongoose").Types.ObjectId;
 const {CollectionNames} = require('../util/15thFCstatus')
 const StatusList = require("../util/newStatusList");
 const { Not_Started } = require("../util/newStatusList");
+const { MASTER_FORM_STATUS } = require("../util/FormNames");
 
 
 const CfrFormRejected = (ulbName)=>{
   try{
     return {
-      subject:`Fiscal Ranking Form Returned by PMU`,
+      subject:`Correction Required: CityFinance Rankings 2022 – Form Returned`,
       body:`Dear ${ulbName} <br>
-      <p>Your Fiscal Ranking form has been returned by PMU.</p>
-      <p>Please visit https://cityfinance.in/rankings/login to submit the corrected data.</p>`
-    }
+      <p>Refer – data submission for City Finance Ranking 2022. </p>
+      <p>Discrepancies have been noted in the entered data vis-à-vis uploaded documents. Entries have been revised based on uploaded documents as indicated in remarks section of your form in the portal. Please use the following steps to access our suggested value and remarks and complete the resubmission for rankings:</p>
+
+    <ol>
+        <li>Data points with discrepancies have been marked as returned.</li>
+        <li>Please click on the “i” button next to the entries.</li>
+        <li>
+            <p>This information button will have:</p>
+            <ol type = "a">
+                <li>Remarks for discrepancy</li>
+                <li>PMU Suggested value</li>
+                <li>Option to accept or reject the PMU value</li>
+                <li>Please review the remarks and PMU Values.</li>
+                <li>In case of agreement with PMU suggest value, please click on “Accept PMU value” and click on submit to close the discrepancy request.</li>
+                <li>In case of disagreement, please click on “Reject PMU value”. It is mandatory to provide reasons for rejection in remarks section. Any supporting documents can be uploaded in the any other information field in the documents section.</li>
+        </li>
+        
+        <li>Steps mentioned in point (3) need to be completed for each data point that has been marked as returned.</li>
+        <li>Upon completion of all acceptance/rejection of discrepancy request, ULB is required to resubmit the form for PMU review.</li>
+    </ol>
+
+    <p>Please complete this process within the next 10 days. In the event of no response by the end of the stipulated period, entries as revised would be treated as final for ranking purposes.</p>
+
+    <p>For queries contact at <a href="mailto:rankings@cityfinance.in">rankings@cityfinance.in</a>.</p>
+
+    <p>PMU Team<br>City Finance Rankings</p>`
+    };
   }
   catch(err){
     console.log("error in CfrFormRejected ::: ",err.message)

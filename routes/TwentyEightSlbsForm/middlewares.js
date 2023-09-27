@@ -29,6 +29,8 @@ module.exports.changeApiGetForm = async(req,res)=>{
               "language":[],
               "canTakeAction":req?.form?.canTakeAction ,
               "isDraft":req?.form?.isDraft,
+              'prevYearStatus': req?.form?.prevYearStatus || null,
+              'prevYearStatusId': req?.form?.prevYearStatusId || null,
               "population":req?.form?.population || null,
             }
         ]
