@@ -6,7 +6,7 @@ const FiscalRanking = require("../../models/FiscalRanking");
 const FiscalRankingMapper = require("../../models/FiscalRankingMapper");
 const { FRTypeShortKey } = require('./formjson')
 const UlbLedger = require("../../models/UlbLedger");
-const { FORMIDs, MASTER_STATUS, MASTER_STATUS_ID, FORM_LEVEL, POPULATION_TYPE, YEAR_CONSTANTS, YEAR_CONSTANTS_IDS, USER_ROLE } = require("../../util/FormNames");
+const { FORMIDs, MASTER_STATUS, MASTER_STATUS_ID, FORM_LEVEL, POPULATION_TYPE, YEAR_CONSTANTS, YEAR_CONSTANTS_IDS, USER_ROLE, MASTER_FORM_STATUS } = require("../../util/FormNames");
 const { saveCurrentStatus, saveFormHistory, saveStatusHistory } = require("../../util/masterFunctions");
 const FeedBackFiscalRanking = require("../../models/FeedbackFiscalRanking");
 const TwentyEightSlbsForm = require("../../models/TwentyEightSlbsForm");
@@ -3836,18 +3836,29 @@ const decideOverAllStatus = (statusObject) => {
   return 9
 }
 
-const sendEmailToUlb = async (ulbId) => {
+const sendEmailToUlb = async (ulbId, status) => {
   try {
     let userInf = await Users.findOne({
       "ulb": ObjectId(ulbId),
       "role": "ULB"
     }).populate("ulb")
-    let emailAddress = [userInf.email]
-    let ulbName = userInf.name
-    let ulbTemplate = Service.emailTemplate.CfrFormRejected(
-      ulbName,
-    );
-    console.log("emailAddress ::: ", emailAddress)
+    let emailAddress = [userInf.email];
+    if(process.env.ENV !== "production" ){
+      emailAddress = ['aditya.yadav@dhwaniris.com']
+    }
+    let ulbName = userInf.name;
+    let ulbTemplate;
+    if(
+      status == MASTER_FORM_STATUS['SUBMISSION_ACKNOWLEDGED_BY_PMU']
+      ){
+      
+    }else if(
+      status == MASTER_FORM_STATUS['RETURNED_BY_PMU']
+      ){
+      ulbTemplate = Service.emailTemplate.CfrFormRejected(
+       ulbName
+     );
+    }
     let mailOptions = {
       Destination: {
         /* required */
@@ -3873,7 +3884,6 @@ const sendEmailToUlb = async (ulbId) => {
 
     };
     await Service.sendEmail(mailOptions);
-    console.log("email Sent")
   }
   catch (err) {
     console.log("error in sendEmailToUlb ::: ", err.message)
@@ -3918,8 +3928,8 @@ module.exports.actionTakenByMoHua = catchAsync(async (req, res) => {
     let formStatus = currentFormStatus
     if (currentFormStatus != statusTracker["VIP"]) {
       formStatus = await decideOverAllStatus(calculationsTabWise)
-      if (formStatus === statusTracker['RBP']) {
-        await sendEmailToUlb(ulbId)
+      if ([statusTracker['RBP'], statusTracker['SAP']].includes(formStatus)) {
+        await sendEmailToUlb(ulbId,formStatus)
         console.log({formId})
         await updateRejectCount(ulbId,design_year);
       }
