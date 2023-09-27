@@ -6,7 +6,7 @@ const FiscalRanking = require("../../models/FiscalRanking");
 const FiscalRankingMapper = require("../../models/FiscalRankingMapper");
 const { FRTypeShortKey } = require('./formjson')
 const UlbLedger = require("../../models/UlbLedger");
-const { FORMIDs, MASTER_STATUS, MASTER_STATUS_ID, FORM_LEVEL, POPULATION_TYPE, YEAR_CONSTANTS, YEAR_CONSTANTS_IDS, USER_ROLE, MASTER_FORM_STATUS } = require("../../util/FormNames");
+const { FORMIDs, MASTER_STATUS, MASTER_STATUS_ID, FORM_LEVEL, POPULATION_TYPE, YEAR_CONSTANTS, YEAR_CONSTANTS_IDS, USER_ROLE, MASTER_FORM_STATUS, TEST_EMAIL, ENV } = require("../../util/FormNames");
 const { saveCurrentStatus, saveFormHistory, saveStatusHistory } = require("../../util/masterFunctions");
 const FeedBackFiscalRanking = require("../../models/FeedbackFiscalRanking");
 const TwentyEightSlbsForm = require("../../models/TwentyEightSlbsForm");
@@ -3843,8 +3843,8 @@ const sendEmailToUlb = async (ulbId, status) => {
       "role": "ULB"
     }).populate("ulb")
     let emailAddress = [userInf.email];
-    if(process.env.ENV !== "production" ){
-      emailAddress = ['aditya.yadav@dhwaniris.com']
+    if(process.env.ENV !== ENV['prod'] ){
+      emailAddress = [TEST_EMAIL['test1']]
     }
     let ulbName = userInf.name;
     let ulbTemplate;

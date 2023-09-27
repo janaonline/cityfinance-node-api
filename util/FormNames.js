@@ -196,3 +196,13 @@ module.exports.DULY_ELECTED_OPT= {
     DULY_ELECTED: 'Duly Elected',
     NOT_ELECTED: 'Not Elected'
 }
+
+module.exports.TEST_EMAIL= {
+    test1 : "testingdhwani@gmail.com"
+}
+
+module.exports.ENV = {
+    prod: "production",
+    stg: "staging",
+    demo: "demo"
+}
