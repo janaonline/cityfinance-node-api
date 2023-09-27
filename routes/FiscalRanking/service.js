@@ -3800,8 +3800,8 @@ async function saveFeedbacksAndForm(
     actionTakenByRole: role,
     currentFormStatus: formStatus,
   };
-  //Add the submission deate in case of Pmu submit the form.
-  if (+formStatus == 11) {
+  //Add the submission date in case of Pmu submit the form.
+  if (+formStatus == 11 || +formStatus == 10) {
     payloadForForm['pmuSubmissionDate'] = new Date();
   }
 
