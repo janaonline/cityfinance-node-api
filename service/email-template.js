@@ -37,7 +37,7 @@ const CfrFormRejected = (ulbName)=>{
         <li>Upon completion of all acceptance/rejection of discrepancy request, ULB is required to resubmit the form for PMU review.</li>
     </ol>
 
-    <p>Please complete this process within the next 10 days. In the event of no response by the end of the stipulated period, entries as revised would be treated as final for ranking purposes.</p>
+    <p><b>Please complete this process within the next 10 days. In the event of no response by the end of the stipulated period, entries as revised would be treated as final for ranking purposes.</b></p>
 
     <p>For queries contact at <a href="mailto:rankings@cityfinance.in">rankings@cityfinance.in</a>.</p>
 
