@@ -12,7 +12,7 @@ const catchAsync = require('../../util/catchAsync')
 const { calculateStatus, checkForUndefinedVaribales, canTakenAction, mutateResponse, changePayloadFormat, decideDisabledFields, checkIfUlbHasAccess } = require('../CommonActionAPI/service')
 const { getKeyByValue,checkForCalculationsForDurForm } = require("../../util/masterFunctions")
 const Service = require('../../service');
-const { FormNames, ULB_ACCESSIBLE_YEARS, MASTER_STATUS_ID } = require('../../util/FormNames');
+const { FormNames, ULB_ACCESSIBLE_YEARS, MASTER_STATUS_ID, PREV_MASTER_FORM_STATUS } = require('../../util/FormNames');
 const MasterForm = require('../../models/MasterForm')
 const { YEAR_CONSTANTS } = require("../../util/FormNames");
 const { ModelNames } = require('../../util/15thFCstatus')
@@ -967,13 +967,30 @@ module.exports.read2223 = catchAsync(async (req, res, next) => {
         actionTakenByRole: role,
       };
       const canTakeActionOnMasterForm = await getMasterForm(params);
-      Object.assign(fetchedData, canTakeActionOnMasterForm);
-      if (prevData && role === "MoHUA") {
-        if (!(prevData.actionTakenByRole === "MoHUA" && !prevData.isDraft && prevData.status === "APPROVED")) {
-          fetchedData['canTakeAction'] = false;
-        }
-      }
+      const prevYearStatus = calculateStatus(
+        prevData.status,
+        prevData.actionTakenByRole,
+        prevData.isDraft,
+        "ULB"
+      )
+      const previousStatusInCaps =  prevYearStatus.toUpperCase().split(' ').join('_')
+      Object.assign(fetchedData, canTakeActionOnMasterForm,{
+        prevYearStatus,
+        prevYearStatusId: PREV_MASTER_FORM_STATUS[previousStatusInCaps]
+      });
+      // if (prevData && role === "MoHUA") {
+      //   if (!(prevData.actionTakenByRole === "MoHUA" && !prevData.isDraft && prevData.status === "APPROVED")) {
+      //     fetchedData['canTakeAction'] = false;
+      //   }
+      // }
     } else {
+      const prevYearStatus = calculateStatus(
+        prevData.status,
+        prevData.actionTakenByRole,
+        !prevData.isSubmit,
+        "ULB"
+      );
+      const previousStatusInCaps =  prevYearStatus.toUpperCase().split(' ').join('_')
       Object.assign(fetchedData, {
         canTakeAction: canTakenAction(
           fetchedData["status"],
@@ -982,12 +999,14 @@ module.exports.read2223 = catchAsync(async (req, res, next) => {
           "ULB",
           role
         ),
+        prevYearStatus,
+        prevYearStatusId: PREV_MASTER_FORM_STATUS[previousStatusInCaps]
       });
-      if (prevData && role === "MoHUA") {
-        if (!(prevData.actionTakenByRole === "MoHUA" && !prevData.isDraft && prevData.status === "APPROVED")) {
-          fetchedData['canTakeAction'] = false;
-        }
-      }
+      // if (prevData && role === "MoHUA") {
+      //   if (!(prevData.actionTakenByRole === "MoHUA" && !prevData.isDraft && prevData.status === "APPROVED")) {
+      //     fetchedData['canTakeAction'] = false;
+      //   }
+      // }
     }
 
 

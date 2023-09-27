@@ -47,10 +47,13 @@ module.exports.changeGetApiForm = async (req, res, next) => {
                 "_id": req?.form?._id,
                 "formId": req.query.formId,
                 "language": [],
-                "canTakeAction": form?.canTakeAction || false,
+                    "canTakeAction": form?.canTakeAction || false,
                 "isDraft": form.isDraft !== undefined ? form.isDraft : true,
                 "status": MASTER_STATUS_ID[parseInt(form.currentFormStatus)] || "Not Started",
-                "statusId": form.currentFormStatus ? form.currentFormStatus : MASTER_STATUS['Not Started']
+                "statusId": form.currentFormStatus ? form.currentFormStatus : MASTER_STATUS['Not Started'],
+                'prevYearStatus': req?.form?.prevYearStatus || null ,
+                'prevYearStatusId': req?.form?.prevYearStatusId || null
+
             }
         ]
         if (latestYear) {
