@@ -220,3 +220,13 @@ module.exports.ENV = {
     stg: "staging",
     demo: "demo"
 }
+module.exports.APPROVAL_TYPES = {
+    'ulbEnteredPmuAccept': 1,
+    'ulbEnteredPmuReject': 2,
+    'enteredPmuAcceptUlb': 3,
+    'enteredPmuRejectUlb': 4,
+    'enteredUlbAcceptPmu': 5,
+    'enteredPmuAcceptPmu': 6,
+    'enteredPmuSecondAcceptPmu': 7,
+    'enteredPmuAcceptPmuAuto': 8,
+}

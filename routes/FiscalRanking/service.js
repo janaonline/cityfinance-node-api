@@ -6,7 +6,7 @@ const FiscalRanking = require("../../models/FiscalRanking");
 const FiscalRankingMapper = require("../../models/FiscalRankingMapper");
 const { FRTypeShortKey } = require('./formjson')
 const UlbLedger = require("../../models/UlbLedger");
-const { FORMIDs, MASTER_STATUS, MASTER_STATUS_ID, FORM_LEVEL, POPULATION_TYPE, YEAR_CONSTANTS, YEAR_CONSTANTS_IDS, USER_ROLE, MASTER_FORM_STATUS, TEST_EMAIL, ENV } = require("../../util/FormNames");
+const { FORMIDs, MASTER_STATUS, MASTER_STATUS_ID, FORM_LEVEL, POPULATION_TYPE, YEAR_CONSTANTS, YEAR_CONSTANTS_IDS, USER_ROLE, MASTER_FORM_STATUS, TEST_EMAIL, ENV, APPROVAL_TYPES } = require("../../util/FormNames");
 const { saveCurrentStatus, saveFormHistory, saveStatusHistory } = require("../../util/masterFunctions");
 const FeedBackFiscalRanking = require("../../models/FeedbackFiscalRanking");
 const TwentyEightSlbsForm = require("../../models/TwentyEightSlbsForm");
@@ -3406,7 +3406,8 @@ async function updateQueryForFiscalRanking(
   isDraft,
   session,
   dynamicObj,
-  financialInfo
+  financialInfo,
+  currentFormStatus
 ) {
   try {
     for (var years of yearData) {
@@ -3457,6 +3458,17 @@ async function updateQueryForFiscalRanking(
           payload["rejectReason"] = years?.rejectReason
         }
         payload["approvalType"] = years.approvalType;
+
+        if ([
+          MASTER_FORM_STATUS['VERIFICATION_NOT_STARTED'],
+          MASTER_FORM_STATUS['VERIFICATION_IN_PROGRESS']
+        ].includes(currentFormStatus)
+        ) {
+          if (years.status == "REJECTED" && years.approvalType == APPROVAL_TYPES['enteredPmuAcceptUlb']) {
+            payload["status"] = "APPROVED";
+          }
+        }
+        
         let up = await FiscalRankingMapper.findOneAndUpdate(filter, payload, {
           upsert: upsert,
         });
@@ -3601,7 +3613,8 @@ async function calculateAndUpdateStatusForMappers(
   formId,
   year,
   updateForm,
-  isDraft
+  isDraft,
+  currentFormStatus
 ) {
   try {
     let totalIndicator = 0;
@@ -3679,7 +3692,8 @@ async function calculateAndUpdateStatusForMappers(
             isDraft,
             session,
             dynamicObj,
-            financialInfo
+            financialInfo,
+            currentFormStatus
           );
         } else {
           if (
@@ -3923,7 +3937,8 @@ module.exports.actionTakenByMoHua = catchAsync(async (req, res) => {
       formId,
       design_year,
       false,
-      isDraft
+      isDraft,
+      currentFormStatus
     );
     let formStatus = currentFormStatus
     if (currentFormStatus != statusTracker["VIP"]) {
@@ -4098,7 +4113,8 @@ module.exports.createForm = catchAsync(async (req, res) => {
       formId,
       design_year,
       true,
-      isDraft
+      isDraft,
+      currentFormStatus
     );
     if (!(statusTracker.IP === currentFormStatus)) {
       let a = await FiscalRanking.findOneAndUpdate({
