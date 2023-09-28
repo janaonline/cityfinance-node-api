@@ -2023,10 +2023,9 @@ module.exports.get = catchAsync(async (req, res) => {
       //     el['cantakeAction'] = false
       //     el['formStatus'] === STATUS_LIST['Under_Review_By_MoHUA'] ? el['info'] = sequentialReview : ""
       //   }
-        el['prevYearStatus'] = approvedUlbs[el._id];
-        const previousStatus =  el['prevYearStatus'].toUpperCase().split(' ').join('_')
-        el['prevYearStatusId'] = PREV_MASTER_FORM_STATUS[previousStatus] 
-
+        el['prevYearStatus'] = approvedUlbs[el._id] ?? STATUS_LIST['Not_Started'];
+        const previousStatus =  el['prevYearStatus']?.toUpperCase().split(' ').join('_')
+        el['prevYearStatusId'] = PREV_MASTER_FORM_STATUS[previousStatus] ??  PREV_MASTER_FORM_STATUS['NOT_STARTED']
       } 
       // else {
         // el['cantakeAction'] = req.decoded.role === "ADMIN" ? false : canTakeActionOrViewOnly(el, loggedInUserRole)
