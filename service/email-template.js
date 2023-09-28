@@ -52,7 +52,19 @@ const CfrFormRejected = (ulbName)=>{
     "body":""
   }
 }
+const CfrFormApproved = (ulbName)=>{
+  try{
+    return {
+      subject:`Fiscal Ranking Form Approved by PMU`,
+      body:`Dear ${ulbName} <br>
+      <p>Your Fiscal Ranking form has been approved by PMU.</p>`
+    }
+  }
+  catch(err){
+    console.log("error in CfrFormApproved ::: ",err.message)
+  }
 
+}
 
 const userSignup = (userName, name, link) => {
   return {
@@ -1678,6 +1690,7 @@ module.exports = {
   gtcSubmission,
   ulbFormSubmitted,
   CfrFormRejected,
+  CfrFormApproved,
   alertStateToClaimGrants,
   stateUlbFormTrigger,
   alertStateWithMohuaAction
