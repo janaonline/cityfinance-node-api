@@ -887,15 +887,15 @@ const setCurrentStatus = (req, data, approvedUlbs, collectionName, loggedInUserR
       //     el['cantakeAction'] = false;
       //     el['formData']['currentFormStatus'] === MASTER_STATUS['Under Review By MoHUA'] ? el['info'] = sequentialReview : ""
       //   }
-        el['prevYearStatus'] = approvedUlbs[el._id];
-        const previousStatus =  el['prevYearStatus'].toUpperCase().split(' ').join('_')
-        el['prevYearStatusId'] = PREV_MASTER_FORM_STATUS[previousStatus] 
+        el['prevYearStatus'] = approvedUlbs[el._id] ?? STATUS_LIST['Not_Started']
+        const previousStatus =  el['prevYearStatus']?.toUpperCase().split(' ').join('_')
+        el['prevYearStatusId'] = PREV_MASTER_FORM_STATUS[previousStatus] ?? PREV_MASTER_FORM_STATUS['NOT_STARTED']
       } 
       // else {
         // let params = { status: el.formData.currentFormStatus, userRole: loggedInUserRole }
         // el['cantakeAction'] = req.decoded.role === "ADMIN" ? false : canTakeActionOrViewOnlyMasterForm(params);
         // el['formStatus'] = MASTER_STATUS_ID[el.formData.currentFormStatus]
-      // }
+      // }  
     }
   })
   return data;
