@@ -3851,7 +3851,9 @@ const sendEmailToUlb = async (ulbId, status) => {
     if(
       status == MASTER_FORM_STATUS['SUBMISSION_ACKNOWLEDGED_BY_PMU']
       ){
-      
+        ulbTemplate = Service.emailTemplate.CfrFormApproved(
+          ulbName
+        );
     }else if(
       status == MASTER_FORM_STATUS['RETURNED_BY_PMU']
       ){
