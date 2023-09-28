@@ -394,6 +394,7 @@ class tabsUpdationServiceFR {
     return {
       otherUpload: { ...this.detail.otherUpload, required: false }, // IMPORTANT :: if changed inform frotend
       signedCopyOfFile: { ...this.detail.signedCopyOfFile, required: true },
+      ulbSupportingDoc: { ...this.detail.ulbSupportingDoc, required: false }
     };
   }
   async getFeedbackForTabs(condition, tabId) {
@@ -716,6 +717,19 @@ const getColumnWiseData = (key, obj, isDraft, dataSource = "", role, formStatus)
         readonly: getReadOnly(formStatus, isDraft, role, obj.status),
         // rejectReason:"",
       };
+    case "ulbSupportingDoc":
+      return {
+        ...statusObj(
+          "",
+          "file",
+          "",
+          dataSource,
+          "0"
+        ),
+        ...obj,
+        readonly: getReadOnly(formStatus, isDraft, role, obj.status),
+        // rejectReason:"",
+      };
     case "otherUpload":
       return {
         ...statusObj(
@@ -959,6 +973,7 @@ exports.getView = async function (req, res, next) {
       "caMembershipNo",
       "signedCopyOfFile",
       "otherUpload",
+      "ulbSupportingDoc"
     ];
     for (let index = 0; index < keys.length; index++) {
       if (viewOne.hasOwnProperty(keys[index])) {
@@ -3523,7 +3538,7 @@ async function updateFiscalRankingForm(
             obj[key].status = ""
           }
         }
-        if (key === "signedCopyOfFile" || key === "otherUpload") {
+        if (key === "signedCopyOfFile" || key === "otherUpload" || key === "ulbSupportingDoc") {
           payload[key] = obj[key];
         } else {
           // if (!obj[key].value && !notRequiredValidations.includes(key) && !isDraft) {
