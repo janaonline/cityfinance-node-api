@@ -55,6 +55,8 @@ const fiscalRankingMapperSchema = new Schema(
         displayPriority: { type: Number, default: null },
         suggestedValue: { type: Schema.Types.Mixed, default: null },
         ulbComment: { type:String, default:""},
+        ulbValue: { type: Schema.Types.Mixed, default: null },
+        pmuSuggestedValue2: { type: Schema.Types.Mixed, default: null },
         approvalType: {
             type: Number,
             default: null,
