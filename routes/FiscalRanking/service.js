@@ -1068,6 +1068,7 @@ exports.getView = async function (req, res, next) {
                 pf['suggestedValue'] = singleFydata?.suggestedValue;
                 pf['approvalType'] = singleFydata?.approvalType;
                 pf['ulbComment'] = singleFydata?.ulbComment;
+                pf['ulbValue'] = singleFydata?.ulbValue;
                 pf["status"] = singleFydata.status != null ? singleFydata.status : 'PENDING';
                 pf['ledgerUpdated'] = singleFydata.ledgerUpdated || false
                 if (subData[key].calculatedFrom === undefined) {
@@ -1222,6 +1223,7 @@ exports.getView = async function (req, res, next) {
                     pf['suggestedValue'] = singleFydata?.suggestedValue;
                     pf['approvalType'] = singleFydata?.approvalType;
                     pf['ulbComment'] = singleFydata?.ulbComment;
+                    pf['ulbValue'] = singleFydata?.ulbValue;
                     pf["status"] = singleFydata && singleFydata.status != null
                       ? singleFydata.status
                       : "PENDING";
@@ -3467,6 +3469,7 @@ async function updateQueryForFiscalRanking(
           payload["displayPriority"] = dynamicObj.position;
           payload['ledgerUpdated'] = false
           payload["ulbComment"] = years.ulbComment;
+          payload["ulbValue"] = years.ulbValue;
         } else {
           payload["status"] = years.status;
           payload["suggestedValue"] = years.suggestedValue;
