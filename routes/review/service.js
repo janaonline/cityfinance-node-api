@@ -1988,7 +1988,7 @@ module.exports.get = catchAsync(async (req, res) => {
 
   let query = computeQuery(collectionName, formType, isFormOptional, state, design_year, csv, skip, limit, newFilter, dbCollectionName, folderName);
   if (getQuery) return res.json({
-    query: query[0]
+    query: query[0] 
   })
 
   // if csv - then no skip and limit, else with skip and limit
