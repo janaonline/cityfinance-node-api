@@ -1075,7 +1075,7 @@ exports.getView = async function (req, res, next) {
                   pf["readonly"] = getReadOnly(data?.currentFormStatus, viewOne.isDraft, role, singleFydata.status);
                 } else {
                   pf["readonly"] = true;
-                  pf["status"] = ""
+                  pf["status"] = "";
 
                 }
 
