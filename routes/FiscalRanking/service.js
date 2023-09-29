@@ -1050,9 +1050,9 @@ exports.getView = async function (req, res, next) {
                 }
                 pf["rejectReason"] = singleFydata.rejectReason
                 pf["modelName"] = singleFydata ? singleFydata.modelName : "";
-                pf['suggestedValue'] = singleFydata?.suggestedValue;
-                pf['approvalType'] = singleFydata?.approvalType;
-                pf['ulbComment'] = singleFydata?.ulbComment;
+                // pf['suggestedValue'] = singleFydata?.suggestedValue;
+                // pf['approvalType'] = singleFydata?.approvalType;
+                // pf['ulbComment'] = singleFydata?.ulbComment;
                 pf["status"] = singleFydata.status != null ? singleFydata.status : 'PENDING';
                 pf['ledgerUpdated'] = singleFydata.ledgerUpdated || false
                 if (subData[key].calculatedFrom === undefined) {
@@ -1204,9 +1204,9 @@ exports.getView = async function (req, res, next) {
                         url: "",
                       };
                     pf["value"] = singleFydata ? singleFydata.value : "";
-                    pf['suggestedValue'] = singleFydata?.suggestedValue;
-                    pf['approvalType'] = singleFydata?.approvalType;
-                    pf['ulbComment'] = singleFydata?.ulbComment;
+                    // pf['suggestedValue'] = singleFydata?.suggestedValue;
+                    // pf['approvalType'] = singleFydata?.approvalType;
+                    // pf['ulbComment'] = singleFydata?.ulbComment;
                     pf["status"] = singleFydata && singleFydata.status != null
                       ? singleFydata.status
                       : "PENDING";
@@ -1272,7 +1272,7 @@ exports.getView = async function (req, res, next) {
             }
           }
           //In case of suggested value given by the Pmu the fields only in the read only mode.
-          if(pf?.suggestedValue) pf["readonly"] = true;
+          // if(pf?.suggestedValue) pf["readonly"] = true;
         }
       }
       
@@ -1324,7 +1324,7 @@ exports.getView = async function (req, res, next) {
         ? viewOne.design_year
         : req.query.design_year,
       isDraft: viewOne.isDraft,
-      pmuSubmissionDate: viewOne?.pmuSubmissionDate,
+      // pmuSubmissionDate: viewOne?.pmuSubmissionDate,
       tabs: modifiedTabs,
       currentFormStatus: viewOne.currentFormStatus,
       financialYearTableHeader,
@@ -3450,13 +3450,13 @@ async function updateQueryForFiscalRanking(
           payload["rejectReason"] = years?.rejectReason || ""
           payload["displayPriority"] = dynamicObj.position;
           payload['ledgerUpdated'] = false
-          payload["ulbComment"] = years.ulbComment;
+          // payload["ulbComment"] = years.ulbComment;
         } else {
           payload["status"] = years.status;
-          payload["suggestedValue"] = years.suggestedValue;
+          // payload["suggestedValue"] = years.suggestedValue;
           payload["rejectReason"] = years?.rejectReason
         }
-        payload["approvalType"] = years.approvalType;
+        // payload["approvalType"] = years.approvalType;
         let up = await FiscalRankingMapper.findOneAndUpdate(filter, payload, {
           upsert: upsert,
         });
@@ -3801,9 +3801,9 @@ async function saveFeedbacksAndForm(
     currentFormStatus: formStatus,
   };
   //Add the submission date in case of Pmu submit the form.
-  if (+formStatus == 11 || +formStatus == 10) {
-    payloadForForm['pmuSubmissionDate'] = new Date();
-  }
+  // if (+formStatus == 11 || +formStatus == 10) {
+  //   payloadForForm['pmuSubmissionDate'] = new Date();
+  // }
 
   let filterForForm = {
     // _id: ObjectId(formId),
@@ -3931,7 +3931,7 @@ module.exports.actionTakenByMoHua = catchAsync(async (req, res) => {
     if (currentFormStatus != statusTracker["VIP"]) {
       formStatus = await decideOverAllStatus(calculationsTabWise)
       if ([statusTracker['RBP'], statusTracker['SAP']].includes(formStatus)) {
-        await sendEmailToUlb(ulbId,formStatus)
+        // await sendEmailToUlb(ulbId,formStatus)
         console.log({formId})
         await updateRejectCount(ulbId,design_year);
       }
