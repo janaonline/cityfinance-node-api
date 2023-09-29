@@ -6,7 +6,7 @@ const FiscalRanking = require("../../models/FiscalRanking");
 const FiscalRankingMapper = require("../../models/FiscalRankingMapper");
 const { FRTypeShortKey } = require('./formjson')
 const UlbLedger = require("../../models/UlbLedger");
-const { FORMIDs, MASTER_STATUS, MASTER_STATUS_ID, FORM_LEVEL, POPULATION_TYPE, YEAR_CONSTANTS, YEAR_CONSTANTS_IDS, USER_ROLE } = require("../../util/FormNames");
+const { FORMIDs, MASTER_STATUS, MASTER_STATUS_ID, FORM_LEVEL, POPULATION_TYPE, YEAR_CONSTANTS, YEAR_CONSTANTS_IDS, USER_ROLE, MASTER_FORM_STATUS, TEST_EMAIL, ENV } = require("../../util/FormNames");
 const { saveCurrentStatus, saveFormHistory, saveStatusHistory } = require("../../util/masterFunctions");
 const FeedBackFiscalRanking = require("../../models/FeedbackFiscalRanking");
 const TwentyEightSlbsForm = require("../../models/TwentyEightSlbsForm");
@@ -1050,6 +1050,9 @@ exports.getView = async function (req, res, next) {
                 }
                 pf["rejectReason"] = singleFydata.rejectReason
                 pf["modelName"] = singleFydata ? singleFydata.modelName : "";
+                // pf['suggestedValue'] = singleFydata?.suggestedValue;
+                // pf['approvalType'] = singleFydata?.approvalType;
+                // pf['ulbComment'] = singleFydata?.ulbComment;
                 pf["status"] = singleFydata.status != null ? singleFydata.status : 'PENDING';
                 pf['ledgerUpdated'] = singleFydata.ledgerUpdated || false
                 if (subData[key].calculatedFrom === undefined) {
@@ -1201,6 +1204,9 @@ exports.getView = async function (req, res, next) {
                         url: "",
                       };
                     pf["value"] = singleFydata ? singleFydata.value : "";
+                    // pf['suggestedValue'] = singleFydata?.suggestedValue;
+                    // pf['approvalType'] = singleFydata?.approvalType;
+                    // pf['ulbComment'] = singleFydata?.ulbComment;
                     pf["status"] = singleFydata && singleFydata.status != null
                       ? singleFydata.status
                       : "PENDING";
@@ -1265,8 +1271,11 @@ exports.getView = async function (req, res, next) {
               }
             }
           }
+          //In case of suggested value given by the Pmu the fields only in the read only mode.
+          // if(pf?.suggestedValue) pf["readonly"] = true;
         }
       }
+      
     }
 
     let tabs = await TabsFiscalRankings.find({})
@@ -1275,7 +1284,7 @@ exports.getView = async function (req, res, next) {
     let conditionForFeedbacks = {
       fiscal_ranking: data?._id || null,
     };
-  
+
     let userRole = req.decoded.role
     let params = {
       ledgerData: ulbData,
@@ -1285,6 +1294,7 @@ exports.getView = async function (req, res, next) {
       role: userRole,
       currentFormStatus: viewOne.currentFormStatus
     }
+    
     /**
      * This function always get latest data for ledgers
      */
@@ -1314,12 +1324,13 @@ exports.getView = async function (req, res, next) {
         ? viewOne.design_year
         : req.query.design_year,
       isDraft: viewOne.isDraft,
+      // pmuSubmissionDate: viewOne?.pmuSubmissionDate,
       tabs: modifiedTabs,
       currentFormStatus: viewOne.currentFormStatus,
       financialYearTableHeader,
       messages: userMessages,
-      // hideForm,
-      // notice
+      hideForm,
+      notice
     };
     if (userMessages.length > 0) {
       let { approvedPerc, rejectedPerc } = calculatePercentage(modifiedLedgerData, requiredFields, viewOne)
@@ -3439,10 +3450,13 @@ async function updateQueryForFiscalRanking(
           payload["rejectReason"] = years?.rejectReason || ""
           payload["displayPriority"] = dynamicObj.position;
           payload['ledgerUpdated'] = false
+          // payload["ulbComment"] = years.ulbComment;
         } else {
           payload["status"] = years.status;
+          // payload["suggestedValue"] = years.suggestedValue;
           payload["rejectReason"] = years?.rejectReason
         }
+        // payload["approvalType"] = years.approvalType;
         let up = await FiscalRankingMapper.findOneAndUpdate(filter, payload, {
           upsert: upsert,
         });
@@ -3786,6 +3800,12 @@ async function saveFeedbacksAndForm(
     actionTakenByRole: role,
     currentFormStatus: formStatus,
   };
+    
+  //Add the submission date in case of Pmu submit the form.
+  // if (+formStatus == 11 || +formStatus == 10) {
+  //   payloadForForm['pmuSubmissionDate'] = new Date();
+  // }
+
   let filterForForm = {
     // _id: ObjectId(formId),
     ulb: ObjectId(ulbId),
@@ -3817,18 +3837,31 @@ const decideOverAllStatus = (statusObject) => {
   return 9
 }
 
-const sendEmailToUlb = async (ulbId) => {
+const sendEmailToUlb = async (ulbId, status) => {
   try {
     let userInf = await Users.findOne({
       "ulb": ObjectId(ulbId),
       "role": "ULB"
     }).populate("ulb")
-    let emailAddress = [userInf.email]
-    let ulbName = userInf.name
-    let ulbTemplate = Service.emailTemplate.CfrFormRejected(
-      ulbName,
-    );
-    console.log("emailAddress ::: ", emailAddress)
+    let emailAddress = [userInf.email];
+    if(process.env.ENV !== ENV['prod'] ){
+      emailAddress = [TEST_EMAIL['test1']]
+    }
+    let ulbName = userInf.name;
+    let ulbTemplate;
+    if(
+      status == MASTER_FORM_STATUS['SUBMISSION_ACKNOWLEDGED_BY_PMU']
+      ){
+        ulbTemplate = Service.emailTemplate.CfrFormApproved(
+          ulbName
+        );
+    }else if(
+      status == MASTER_FORM_STATUS['RETURNED_BY_PMU']
+      ){
+      ulbTemplate = Service.emailTemplate.CfrFormRejected(
+       ulbName
+     );
+    }
     let mailOptions = {
       Destination: {
         /* required */
@@ -3854,7 +3887,6 @@ const sendEmailToUlb = async (ulbId) => {
 
     };
     await Service.sendEmail(mailOptions);
-    console.log("email Sent")
   }
   catch (err) {
     console.log("error in sendEmailToUlb ::: ", err.message)
@@ -3899,8 +3931,8 @@ module.exports.actionTakenByMoHua = catchAsync(async (req, res) => {
     let formStatus = currentFormStatus
     if (currentFormStatus != statusTracker["VIP"]) {
       formStatus = await decideOverAllStatus(calculationsTabWise)
-      if (formStatus === statusTracker['RBP']) {
-        await sendEmailToUlb(ulbId)
+      if ([statusTracker['RBP'], statusTracker['SAP']].includes(formStatus)) {
+        // await sendEmailToUlb(ulbId,formStatus)
         console.log({formId})
         await updateRejectCount(ulbId,design_year);
       }

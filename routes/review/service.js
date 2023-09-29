@@ -3,6 +3,11 @@ const Sidemenu = require('../../models/Sidemenu')
 const CollectionNames = require('../../util/collectionName')
 const { calculateStatus, canTakeActionOrViewOnly } = require('../CommonActionAPI/service')
 const ObjectId = require("mongoose").Types.ObjectId;
+const ExcelJS = require("exceljs");
+const fs = require("fs")
+const UA = require('../../models/UA')
+const IndicatorLineItems = require('../../models/indicatorLineItems');
+const { createObjectFromArray, addActionKeys } = require('../CommonFormSubmissionState/service');
 const STATUS_LIST = require('../../util/newStatusList')
 const Service = require('../../service');
 const List = require('../../util/15thFCstatus')
@@ -1108,7 +1113,7 @@ async function createDynamicElements(collectionName, formType, entity) {
             data?.categoryWiseData_wm &&
             data?.categoryWiseData_wm.length > 0
           ) {
-            let wm =  convertValue({
+            let wm = convertValue({
               data: data.categoryWiseData_wm,
               keyArr: ["grantUtilised", "numberOfProjects", "totalProjectCost"],
             });
@@ -1118,7 +1123,7 @@ async function createDynamicElements(collectionName, formType, entity) {
             data?.categoryWiseData_swm &&
             data?.categoryWiseData_swm.length > 0
           ) {
-            let swm =  convertValue({
+            let swm = convertValue({
               data: data.categoryWiseData_swm,
               keyArr: ["grantUtilised", "numberOfProjects", "totalProjectCost"],
             });
@@ -1987,10 +1992,14 @@ module.exports.get = catchAsync(async (req, res) => {
   })
 
   // if csv - then no skip and limit, else with skip and limit
+  if (csv) {
+    await createCSV({ formType, collectionName, res, loggedInUserRole, req, query });
+    return;
+  }
   let data = formType == "ULB" ? Ulb.aggregate(query[0]).allowDiskUse(true) : State.aggregate(query[0]).allowDiskUse(true)
   total = formType == "ULB" ? Ulb.aggregate(query[1]).allowDiskUse(true) : State.aggregate(query[1]).allowDiskUse(true)
   let allData = await Promise.all([data, total]);
-  data = allData[0]
+  data = allData[0] 
   total = allData[1].length ? allData[1][0]['total'] : 0
   //  if(collectionName == CollectionNames.dur || collectionName == CollectionNames.gfc ||
   //     collectionName == CollectionNames.odf || collectionName == CollectionNames.slb || 
@@ -1998,7 +2007,7 @@ module.exports.get = catchAsync(async (req, res) => {
   let approvedUlbs = await masterForms2122(collectionName, data);
   const sequentialReview = `Cannot review since last year form is not approved by MoHUA.`
   data.forEach(el => {
-    el['info']= '';
+    el['info'] = '';
     if (!el.formData) {
       el['formStatus'] = "Not Started";
       el['cantakeAction'] = false;
@@ -2012,25 +2021,55 @@ module.exports.get = catchAsync(async (req, res) => {
         }
       } else {
         el['cantakeAction'] = req.decoded.role === "ADMIN" ? false : canTakeActionOrViewOnly(el, loggedInUserRole)
-      }
-    }
+      }    }
   })
 
+  if (
+    collectionName === CollectionNames.state_gtc ||
+    collectionName === CollectionNames.state_grant_alloc
+  ) {
+    data.forEach((element) => {
+      // element.stateName = element["stateName"];
+      let { status, pending } = countStatusData(element, collectionName);
+      element.formStatus = status;
+      if (pending > 0 && collectionName === CollectionNames.state_gtc) {
+        element.cantakeAction = true;
+      }
+    });
+  }
 
-  // if users clicks on Download Button - the data gets downloaded as per the applied filter
-  if (csv) {
+  //  console.log(data)
+  data.forEach(el => {
+    if (el.formData || el.formData === "") delete el.formData;
 
-    let filename = `Review_${formType}-${collectionName}.csv`;
+  })
+  return res.status(200).json({
+    success: true,
+    data: data,
+    total: total,
+    columnNames: formType == 'ULB' ? ulbColumnNames : stateColumnNames,
+    statusList: formType == 'ULB' ? List.ulbFormStatus : List.stateFormStatus,
+    ulbType: formType == 'ULB' ? List.ulbType : {},
+    populationType: formType == 'ULB' ? List.populationType : {},
+    title: formType == 'ULB' ? 'Review Grant Application' : 'Review State Forms'
+  })
 
-    // Set approrpiate download headers
-    res.setHeader("Content-disposition", "attachment; filename=" + filename);
-    res.writeHead(200, { "Content-Type": "text/csv;charset=utf-8,%EF%BB%BF" });
+})
+
+
+async function createCSV(params) {
+  const { formType, collectionName, res, loggedInUserRole, req, query } = params;
+  try {
+    let data = formType == "ULB" ? await Ulb.aggregate(query[0]).allowDiskUse(true).exec() : await State.aggregate(query[0]).allowDiskUse(true);
+
     if (formType === 'ULB') {
+      let filename = `Review_${formType}-${collectionName}.csv`;
+      // Set approrpiate download headers
+      res.setHeader("Content-disposition", "attachment; filename=" + filename);
+      res.writeHead(200, { "Content-Type": "text/csv;charset=utf-8,%EF%BB%BF" });
 
       let fixedColumns = `State Name, ULB Name, City Finance Code, Census Code, Population Category, UA, UA Name,`;
       let dynamicColumns = createDynamicColumns(collectionName);
-
-
       if (collectionName != CollectionNames.annual && collectionName != CollectionNames['28SLB']) {
         res.write(
           "\ufeff" +
@@ -2145,67 +2184,70 @@ module.exports.get = catchAsync(async (req, res) => {
         return
       }
     } else if (formType === "STATE") {
-      let fixedColumns = `State Name, City Finance Code, Regional Name,`;
-      let dynamicColumns = createDynamicColumns(collectionName)
-      res.write(
-        "\ufeff" +
-        `${fixedColumns.toString()} ${dynamicColumns.toString()} \r\n`
-      );
+      if (collectionName == "WaterRejenuvationRecycling") {
+        await waterSenitationXlsDownload(data, res, collectionName, formType, loggedInUserRole);
+      } else if (collectionName == 'ActionPlan') {
+        await actionPlanXlsDownload(data, res, collectionName, formType, loggedInUserRole)   // xls
+      } else {
+        let filename = `Review_${formType}-${collectionName}.csv`;
+        // Set approrpiate download headers
+        res.setHeader("Content-disposition", "attachment; filename=" + filename);
+        res.writeHead(200, { "Content-Type": "text/csv;charset=utf-8,%EF%BB%BF" });
 
-      res.flushHeaders();
-      for (let el of data) {
-        let dynamicElementData = await createDynamicElements(collectionName, formType, el);
-
+        let fixedColumns = `State Name, City Finance Code, Regional Name,`;
+        let dynamicColumns = createDynamicColumns(collectionName)
         res.write(
           "\ufeff" +
-          el.stateName +
-          "," +
-          el.stateCode +
-          "," +
-          el.regionalName +
-          "," +
-          dynamicElementData.toString() +
-          "\r\n"
-        )
+          `${fixedColumns.toString()} ${dynamicColumns.toString()} \r\n`
+        );
 
+        res.flushHeaders();
+        if (data?.length) {
+          for (let el of data) {
+            let dynamicElementData = await createDynamicElements(collectionName, formType, el);
+
+            res.write(
+              "\ufeff" +
+              el.stateName +
+              "," +
+              el.stateCode +
+              "," +
+              el.regionalName +
+              "," +
+              dynamicElementData.toString() +
+              "\r\n"
+            )
+
+          }
+        } else {
+          res.write("\ufeff" + "");
+        }
+        
+        res.end();
+        return
       }
-      res.end();
-      return
+
     }
-
-
+  } catch (error) {
+    console.log("CSV Download Error", error);
+    return Response.BadRequest(res, {}, error.message);
   }
-  if (
-    collectionName === CollectionNames.state_gtc ||
-    collectionName === CollectionNames.state_grant_alloc
-  ) {
-    data.forEach((element) => {
-      // element.stateName = element["stateName"];
-      let { status, pending } = countStatusData(element, collectionName);
-      element.formStatus = status;
-      if (pending > 0 && collectionName === CollectionNames.state_gtc) {
-        element.cantakeAction = true;
-      }
-    });
+}
+
+async function grantAllCsvDownload(el, res) {
+  let { stateName, stateCode, formData } = el;
+  let row = [stateName, stateCode];
+  if (formData && formData.length && (formData[0] !== "")) {
+    for (let pf of formData) {
+      let tempArr = [pf?.type, pf?.installment, pf?.url];
+      let str = [...row, ...tempArr].join(',') + "\r\n";
+      res.write("\ufeff" + str);
+    }
+  } else {
+    let str = [...row].join(',') + "\r\n";
+    res.write("\ufeff" + str);
   }
-
-  //  console.log(data)
-  data.forEach(el => {
-    if (el.formData || el.formData === "") delete el.formData;
-
-  })
-  return res.status(200).json({
-    success: true,
-    data: data,
-    total: total,
-    columnNames: formType == 'ULB' ? ulbColumnNames : stateColumnNames,
-    statusList: formType == 'ULB' ? List.ulbFormStatus : List.stateFormStatus,
-    ulbType: formType == 'ULB' ? List.ulbType : {},
-    populationType: formType == 'ULB' ? List.populationType : {},
-    title: formType == 'ULB' ? 'Review Grant Application' : 'Review State Forms'
-  })
-
-})
+}
 
 async function masterForms2122(collectionName, data) {
   try {
@@ -2515,7 +2557,7 @@ const computeQuery = (formName, userRole, isFormOptional, state, design_year, cs
         $project: {
           ulbName: 1,
           ulbId: 1,
-          access : 1,
+          access: 1,
           ulbCode: 1,
           access: 1,
           censusCode: 1,
@@ -3020,6 +3062,225 @@ const computeQuery = (formName, userRole, isFormOptional, state, design_year, cs
 
   // }
 
+}
+
+const waterSenitationXlsDownload = async (data, res, collectionName, formType, role) => {
+  try {
+    const tempFilePath = "uploads/excel";
+    if (!fs.existsSync(tempFilePath)) {
+      fs.mkdirSync(tempFilePath);
+    }
+    const filename = `${Date.now()}__waterSupplyAndSanitation.xlsx`;
+    const workbook = new ExcelJS.Workbook();
+    const waterBodies = workbook.addWorksheet('waterBodies');
+    const reuseWater = workbook.addWorksheet('reuseWater');
+    const serviceLevelIndicators = workbook.addWorksheet('serviceLevelIndicators');
+    let uaFormData = await UA.find({}).lean();
+    let indicatorLineItems = await IndicatorLineItems.find({ "type": "water supply" }).lean();
+    waterBodies.addRow([
+      "State Name", "State Code", "Form Status", "UA Name", "Project Name", "Name of water body", "Area",
+      "Latitude", "Longitude", "BOD in mg/L (Current)", "BOD in mg/L (Expected)",
+      "COD in mg/L (Current)", "COD in mg/L (Expected)", "DO in mg/L (Current)", "DO in mg/L(Expected)", "TDS in mg/L (Current)",
+      "TDS in mg/L(Expected)", "Turbidity in  NTU (Current)", "Turbidity in  NTU(Expected)", "Project Details", "Preparation of  DPR",
+      "Completion  of tendering process", "%  of  work completion", "MoHUA Review For UA Wise Status", "MoHUA Review Comments", "MoHUA Review Files"
+    ]);
+    reuseWater.addRow([
+      "State Name", "State Code", "Form Status", "UA Name", "Project Name",
+      "Latitude", "Longitude", "Proposed capacity of STP(MLD)", "Proposed water quantity  to be reused(MLD)",
+      "Target customers/ consumer for  reuse of  water", "Preparation of  DPR", "Completion of tendering process", "%  of  work completion",
+      "MoHUA Review For UA Wise Status", "MoHUA Review Comments", "MoHUA Review Files"
+    ]);
+    serviceLevelIndicators.addRow([
+      "State Name", "State Code", "Form Status", "UA Name", "Project Name", "Physical  Components",
+      "Indicator", "Existing  (As- is)", "After  (To-be)", "Estimated  Cost (Amount  in  INR Lakhs)",
+      "Preparation of  DPR", "Completion of tendering process", "%  of  work completion",
+      "MoHUA Review For UA Wise Status", "MoHUA Review Comments", "MoHUA Review Files"
+    ]);
+
+    let counter = { waterBodies: 2, serviceLevelIndicators: 2, reuseWater: 2 } // counter
+    if (data?.length) {
+      for (const el of data) {
+
+        if (!el.formData) {
+          el['formStatus'] = "Not Started";
+        } else {
+          el['formStatus'] = calculateStatus(el?.formData?.status, el?.formData?.actionTakenByRole, el?.formData?.isDraft, formType);
+
+          if ((collectionName === CollectionNames.dur || collectionName === CollectionNames['28SLB']) &&
+            loggedInUserRole === "MoHUA" && el.access &&
+            !approvedUlbs.some(ulb => ulb.toString() === el.ulbId.toString())) {
+            el['cantakeAction'] = false;
+            el['formStatus'] === STATUS_LIST['Under_Review_By_MoHUA'] ? el['info'] = sequentialReview : "";
+          }
+        }
+
+        let rowsArr = [el?.stateName, el?.stateCode, el?.formStatus];
+        let sortKeys = { waterBodies, reuseWater, serviceLevelIndicators };
+        if (el?.formData) {
+          let { uaData } = el?.formData;
+          let uaCode = await UA.find({ state: ObjectId(el?.state) }, { UACode: 1 }).lean();
+          uaCode = createObjectFromArray(uaCode);
+          for (const ua of uaData) {
+            let UAName = uaFormData?.length ? uaFormData.find(e => e?._id?.toString() == ua?.ua?.toString()) : null;
+            rowsArr[3] = UAName?.name
+            for (const key in sortKeys) {
+              let projData = ua[key];
+              let keysArr = sortKeysWaterSenitation(key)
+              for (const proj of projData) {
+                let projArr = [];
+                for (const k of keysArr) {
+                  if (k == "indicator") {
+                    let indiData = indicatorLineItems?.length ? indicatorLineItems.find(e => e?.lineItemId?.toString() == proj[k]) : null
+                    let indicatorName = indiData ? indiData?.name : ""
+                    projArr.push(indicatorName)
+                  } else {
+                    projArr.push(proj[k])
+                  }
+                }
+                sortKeys[key].addRow([...rowsArr, ...projArr]);
+                sortKeys[key].getRow(counter[key])
+                counter[key]++
+              }
+            }
+          }
+        } else {
+          for (const key in sortKeys) {
+            sortKeys[key].addRow([...rowsArr]);
+            sortKeys[key].getRow(counter[key])
+            counter[key]++
+          }
+        }
+      }
+    }
+
+    // Create a write stream
+    const writeStream = fs.createWriteStream(`${tempFilePath}/${filename}`);
+    // Write the stream to the file
+    await workbook.xlsx.write(writeStream);
+    // Set response headers for downloading the file
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader("Content-Disposition", "attachment; filename=" + `${filename}`);
+    // Write the stream to the response object
+    fs.unlink(`${tempFilePath}/${filename}`, (err) => console.log(err))
+    await workbook.xlsx.write(res);
+  } catch (error) {
+    console.log("CSV Download Error", error);
+    return Response.BadRequest(res, {}, error.message);
+  }
+}
+
+const actionPlanXlsDownload = async (data, res, collectionName, formType, role) => {
+  try {
+    const tempFilePath = "uploads/excel";
+    if (!fs.existsSync(tempFilePath)) {
+      fs.mkdirSync(tempFilePath);
+    }
+    const filename = `${Date.now()}__actionPlan.xlsx`;
+    const workbook = new ExcelJS.Workbook();
+
+    const projectExecute = workbook.addWorksheet('Projects to be Executed with 15th FC Grants');
+    const sourceFund = workbook.addWorksheet('Project List and Source of Funds (Annual In INR Lakhs)');
+    const yearOutlay = workbook.addWorksheet('Year wise Outlay for 15th FC Grants(Annual In INR Lakhs)');
+
+    let uaFormData = await UA.find({}).lean();
+    projectExecute.addRow([
+      "State Name", "State Code", "Form Status", "UA Name", "Project_Code", "Project_Name", "Project_Details", "Project_Cost", "Executing_Agency", "Parastatal_Agency", "Sector", "Project_Type", "Estimated_Outcome", "Review Status", "MoHUA Comments", "Review Documents"
+    ]);
+    sourceFund.addRow([
+      "State Name", "State Code", "Form Status", "UA Name", "Project_Code", "Project_Code", "XV_FC", "Other", "Total", "2021-22", "2022-23", "2023-24", "2024-25", "2025-26", "Review Status", "MoHUA Comments", "Review Documents"
+    ]);
+    yearOutlay.addRow([
+      "State Name", "State Code", "Form Status", "UA Name", "Project_Code", "Project_Name", "Project_Cost", "Funding", "Amount", "2021-22", "2022-23", "2023-24", "2024-25", "2025-26", "Review Status", "MoHUA Comments", "Review Documents"
+    ]);
+
+    let counter = { projectExecute: 2, sourceFund: 2, yearOutlay: 2 } // counter
+    if (data?.length) {
+      for (const el of data) {
+        if (!el.formData) {
+          el['formStatus'] = "Not Started";
+        } else {
+          el['formStatus'] = calculateStatus(el?.formData?.status, el?.formData?.actionTakenByRole, el?.formData?.isDraft, formType);
+
+          if ((collectionName === CollectionNames.dur || collectionName === CollectionNames['28SLB']) &&
+            loggedInUserRole === "MoHUA" && el.access &&
+            !approvedUlbs.some(ulb => ulb.toString() === el.ulbId.toString())) {
+            el['cantakeAction'] = false;
+            el['formStatus'] === STATUS_LIST['Under_Review_By_MoHUA'] ? el['info'] = sequentialReview : "";
+          }
+        }
+        let rowsArr = [el?.stateName, el?.stateCode, el?.formStatus];
+        let sortKeys = { projectExecute, sourceFund, yearOutlay };
+        if (el?.formData) {
+          let { uaData } = el?.formData;
+          let uaCode = await UA.find({ state: ObjectId(el?.state) }, { UACode: 1 }).lean();
+          uaCode = createObjectFromArray(uaCode);
+
+          for (const ua of uaData) {
+            let UAName = uaFormData?.length ? uaFormData.find(e => e?._id?.toString() == ua?.ua?.toString()) : null
+            rowsArr[3] = UAName?.name
+            for (const key in sortKeys) {
+              let projData = ua[key];
+              let keysArr = sortKeysWaterSenitation(key)
+              for (const proj of projData) {
+                let projArr = [];
+                for (const k of keysArr) {
+                  if (proj[k] && typeof proj[k] !== 'number') {
+                    proj[k] = proj[k].split(',').join(' ')
+                  }
+                  projArr.push(proj[k])
+                }
+                sortKeys[key].addRow([...rowsArr, ...projArr]);
+                sortKeys[key].getRow(counter[key])
+                counter[key]++
+              }
+            }
+          }
+        } else {
+          for (const key in sortKeys) {
+            sortKeys[key].addRow([...rowsArr]);
+            sortKeys[key].getRow(counter[key])
+            counter[key]++
+          }
+        }
+      }
+    }
+    // Create a write stream
+    const writeStream = fs.createWriteStream(`${tempFilePath}/${filename}`);
+    // Write the stream to the file
+    await workbook.xlsx.write(writeStream);
+    // Set response headers for downloading the file
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader("Content-Disposition", "attachment; filename=" + `${filename}`);
+    // Write the stream to the response object
+    fs.unlink(`${tempFilePath}/${filename}`, (err) => console.log(err))
+    await workbook.xlsx.write(res);
+  } catch (error) {
+    console.log("CSV Download Error", error);
+    return Response.BadRequest(res, {}, error.message);
+  }
+}
+
+
+const sortKeysWaterSenitation = (key) => {
+  switch (key) {
+    case 'waterBodies':
+      return [
+        "name", "nameOfBody", "area", "lat", "long", "bod", "bod_expected", "cod", "cod_expected", "do", "do_expected",
+        "tds", "tds_expected", "turbidity", "turbidity_expected", "details", "dprPreparation", "dprCompletion", "workCompletion"
+      ]
+    case "serviceLevelIndicators":
+      return ["name", "component", "indicator", "existing", "after", "cost", "dprPreparation", "dprCompletion", "workCompletion"]
+    case "reuseWater":
+      return ["name", "lat", "long", "stp", "treatmentPlant", "targetCust", "dprPreparation", "dprCompletion", "workCompletion"]
+    case "projectExecute":
+      return ["Project_Code", "Project_Name", "Details", "Cost", "Executing_Agency", "Parastatal_Agency", "Sector", "Type", "Estimated_Outcome"]
+    case "sourceFund":
+      return ["Project_Code", "Project_Name", "Cost", "XV_FC", "Other", "Total", "2021-22", "2022-23", "2023-24", "2024-25", "2025-26"]
+    case "yearOutlay":
+      return ["Project_Code", "Project_Name", "Cost", "Funding", "Amount", "2021-22", "2022-23", "2023-24", "2024-25", "2025-26"]
+    default:
+      return []
+  }
 }
 
 module.exports.createDynamicColumns = createDynamicColumns

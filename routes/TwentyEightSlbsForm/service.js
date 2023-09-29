@@ -7,7 +7,7 @@ const { groupByKey } = require('../../util/group_list_by_key')
 const SLB = require('../../models/XVFcGrantForm')
 const { canTakenAction, calculateStatus } = require('../CommonActionAPI/service')
 const Service = require('../../service');
-const { FormNames, YEAR_CONSTANTS, MASTER_STATUS_ID } = require('../../util/FormNames');
+const { FormNames, YEAR_CONSTANTS, MASTER_STATUS_ID, PREV_MASTER_FORM_STATUS } = require('../../util/FormNames');
 const User = require('../../models/User');
 const MasterForm = require('../../models/MasterForm')
 const StatusList = require('../../util/newStatusList')
@@ -546,19 +546,39 @@ module.exports.getForm = async (req, res, next) => {
           ulb: ObjectId(data.ulb),
           design_year: ObjectId(YEAR_CONSTANTS['22_23'])
         }
-        let prev28SlbFormData = await TwentyEightSlbsForm.findOne(prevYearCond, { history: 0 }).lean()
-        if (prev28SlbFormData && userRole === "MoHUA") {
-          if (
-            !(
-              prev28SlbFormData.actionTakenByRole === "MoHUA" &&
-              !prev28SlbFormData.isDraft &&
-              prev28SlbFormData.status === "APPROVED"
-            )
-          ) {
-            formData["canTakeAction"] = false;
-          }
-        }
+        let prev28SlbFormData = await TwentyEightSlbsForm.findOne(prevYearCond, { history: 0 }).lean();
+        const prevYearStatus = calculateStatus(
+          prev28SlbFormData.status,
+          prev28SlbFormData.actionTakenByRole,
+          prev28SlbFormData.isDraft,
+          "ULB"
+        );
+        const previousStatusInCaps =  prevYearStatus.toUpperCase().split(' ').join('_')
+
+        Object.assign(formData,{
+          prevYearStatus,
+          prevYearStatusId: PREV_MASTER_FORM_STATUS[previousStatusInCaps]
+        })
+        // if (prev28SlbFormData && userRole === "MoHUA") {
+        //   if (
+        //     !(
+        //       prev28SlbFormData.actionTakenByRole === "MoHUA" &&
+        //       !prev28SlbFormData.isDraft &&
+        //       prev28SlbFormData.status === "APPROVED"
+        //     )
+        //   ) {
+        //     formData["canTakeAction"] = false;
+        //   }
+        // }
       } else {
+        const prevYearStatus = calculateStatus(
+          masterFormData.status,
+          masterFormData.actionTakenByRole,
+          !masterFormData.isSubmit,
+          "ULB"
+        )
+        const previousStatusInCaps =  prevYearStatus.toUpperCase().split(' ').join('_')
+
         Object.assign(formData, {
           canTakeAction: canTakenAction(
             formData["status"],
@@ -567,18 +587,20 @@ module.exports.getForm = async (req, res, next) => {
             "ULB",
             userRole
           ),
+          prevYearStatus,
+          prevYearStatusId : PREV_MASTER_FORM_STATUS[previousStatusInCaps]
         });
-        if (masterFormData && userRole === "MoHUA") {
-          if (
-            !(
-              masterFormData.actionTakenByRole === "MoHUA" &&
-              !masterFormData.isDraft &&
-              masterFormData.status === "APPROVED"
-            )
-          ) {
-            formData["canTakeAction"] = false;
-          }
-        }
+        // if (masterFormData && userRole === "MoHUA") {
+        //   if (
+        //     !(
+        //       masterFormData.actionTakenByRole === "MoHUA" &&
+        //       !masterFormData.isDraft &&
+        //       masterFormData.status === "APPROVED"
+        //     )
+        //   ) {
+        //     formData["canTakeAction"] = false;
+        //   }
+        // }
       }
 
 
@@ -761,18 +783,22 @@ module.exports.getForm = async (req, res, next) => {
 
 module.exports.twentyEightSlbFormFormTargetValuesUpdation = async (req, res) => {
   try {
+    if(!req.body?.year ||  !req.body?.ulbs){
+      throw new Error("Required year and ulbs")
+    }
+    const {year:targetYear, ulbs, design_year} = req.body;
     const slb4Forms = await SLB.find({
       design_year: YEAR_CONSTANTS["21_22"],
-      // "_id" : ObjectId("620f6bb3d4ad324699e7d0f7"),
+      ulb: {$in:ulbs}
 
-    }).lean()
+    },{history:0}).lean();
     let outputArray = []
     if (slb4Forms && slb4Forms.length > 0) {
       for (let i = 0; i < slb4Forms.length; i++) {
         let form = slb4Forms[i];
 
-        let formStatus = calculateStatus(form.status, form.actionTakenByRole, !form.isCompleted,
-          "ULB")
+        // let formStatus = calculateStatus(form.status, form.actionTakenByRole, !form.isCompleted,
+        //   "ULB")
 
         /* Checking if the form status is rejected by state or rejected by MoHUA. If it is, then it
         will not be displayed. */
@@ -782,7 +808,7 @@ module.exports.twentyEightSlbFormFormTargetValuesUpdation = async (req, res) => 
         if (form.status === "NA" || form.status === "N/A") {
           continue;
         }
-        if (!form?.waterManagement?.reduction?.target?.["2223"]) {
+        if (!form?.waterManagement?.reduction?.target?.[targetYear]) {
           continue
         }
 
@@ -796,9 +822,12 @@ module.exports.twentyEightSlbFormFormTargetValuesUpdation = async (req, res) => 
         //     StatusList.Under_Review_By_MoHUA,
         //   ].includes(formStatus)
         // ) {
+
         let slb28Form = await TwentyEightSlbsForm.findOne({
-          ulb: form.ulb,
-        }).lean();
+            ulb: form.ulb,
+            design_year
+          }).lean();
+    
 
         if (slb28Form) {
           let slb28FormStatus = calculateStatus(
@@ -808,11 +837,12 @@ module.exports.twentyEightSlbFormFormTargetValuesUpdation = async (req, res) => 
             "ULB"
           );
           if (
-            [
-              StatusList.In_Progress,
-              StatusList.Rejected_By_MoHUA,
-              StatusList.Rejected_By_State,
-            ].includes(slb28FormStatus)
+            // [
+            //   StatusList.In_Progress,
+            //   StatusList.Rejected_By_MoHUA,
+            //   StatusList.Rejected_By_State,
+            // ].includes(slb28FormStatus)
+            true
           ) {
             slb28Form["data"].forEach((element) => {
               /* Checking if the element is equal to the previous line item. */
@@ -823,10 +853,10 @@ module.exports.twentyEightSlbFormFormTargetValuesUpdation = async (req, res) => 
                 ]
               ) {
                 element.target_1.value = form?.waterManagement
-                  ?.houseHoldCoveredPipedSupply?.target["2223"]
+                  ?.houseHoldCoveredPipedSupply?.target[targetYear]
                   ? Number(
                     form?.waterManagement?.houseHoldCoveredPipedSupply
-                      ?.target["2223"]
+                      ?.target[targetYear]
                   )
                   : "";
               }
@@ -835,10 +865,10 @@ module.exports.twentyEightSlbFormFormTargetValuesUpdation = async (req, res) => 
                 PrevLineItem_CONSTANTS["Per capita supply of water(lpcd)"]
               ) {
                 element.target_1.value = form?.waterManagement
-                  ?.waterSuppliedPerDay.target["2223"]
+                  ?.waterSuppliedPerDay.target[targetYear]
                   ? Number(
                     form?.waterManagement?.waterSuppliedPerDay?.target[
-                    "2223"
+                    targetYear
                     ]
                   )
                   : "";
@@ -848,9 +878,9 @@ module.exports.twentyEightSlbFormFormTargetValuesUpdation = async (req, res) => 
                 PrevLineItem_CONSTANTS["Extent of non-revenue water (NRW)"]
               ) {
                 element.target_1.value = form?.waterManagement?.reduction
-                  ?.target["2223"]
+                  ?.target[targetYear]
                   ? Number(
-                    form?.waterManagement?.reduction?.target["2223"]
+                    form?.waterManagement?.reduction?.target[targetYear]
                   )
                   : "";
               }
@@ -861,16 +891,19 @@ module.exports.twentyEightSlbFormFormTargetValuesUpdation = async (req, res) => 
                 ]
               ) {
                 element.target_1.value = form?.waterManagement
-                  ?.houseHoldCoveredWithSewerage?.target["2223"]
+                  ?.houseHoldCoveredWithSewerage?.target[targetYear]
                   ? Number(
                     form?.waterManagement?.houseHoldCoveredWithSewerage
-                      ?.target["2223"]
+                      ?.target[targetYear]
                   )
                   : "";
               }
             });
             let slb28UpdatedForm = await TwentyEightSlbsForm.findOneAndUpdate(
-              { ulb: form.ulb },
+              { 
+                ulb: form.ulb ,
+                design_year
+              },
               {
                 $set: {
                   data: slb28Form["data"],
