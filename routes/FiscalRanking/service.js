@@ -1329,6 +1329,7 @@ exports.getView = async function (req, res, next) {
       currentFormStatus: viewOne.currentFormStatus,
       financialYearTableHeader,
       messages: userMessages,
+      progress: data?.progress,
       hideForm,
       notice
     };
