@@ -2021,8 +2021,7 @@ module.exports.get = catchAsync(async (req, res) => {
         }
       } else {
         el['cantakeAction'] = req.decoded.role === "ADMIN" ? false : canTakeActionOrViewOnly(el, loggedInUserRole)
-      }
-    }
+      }    }
   })
 
   if (

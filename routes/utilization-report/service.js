@@ -1125,60 +1125,31 @@ module.exports.dataRepair = async function (req, res, next) {
     //   ObjectId("5fa24665072dab780a6f1815")
     // ]
 
-    let ulbIds = [
-      ObjectId("5dd2472a437ba31f7eb43074"),
-      ObjectId("5dd24d43e7af460396bf2ebf"),
-      ObjectId("5e0b2190f0d3fc6ffa3d9497"),
-      ObjectId("5f5610b3aab0f778b2d2caab"),
-      ObjectId("5fa2465d072dab780a6f0fe4"),
-      ObjectId("5fa2465d072dab780a6f0ff7"),
-      ObjectId("5fa2465d072dab780a6f1012"),
-      ObjectId("5fa2465d072dab780a6f1023"),
-      ObjectId("5fa2465d072dab780a6f1057"),
-      ObjectId("5fa2465e072dab780a6f109b"),
-      ObjectId("5fa2465e072dab780a6f1103"),
-      ObjectId("5fa24661072dab780a6f153f"),
-      ObjectId("5fa24662072dab780a6f1631"),
-      ObjectId("5fa24662072dab780a6f1633"),
-      ObjectId("5fa24663072dab780a6f16ad"),
-      ObjectId("5fa24663072dab780a6f16b1"),
-      ObjectId("5fa24663072dab780a6f16d2"),
-      ObjectId("5fa24663072dab780a6f16d7"),
-      ObjectId("5fa24663072dab780a6f16eb"),
-      ObjectId("5fa24664072dab780a6f170d"),
-      ObjectId("5fa24664072dab780a6f1711"),
-      ObjectId("5fa24664072dab780a6f1723"),
-      ObjectId("5fa24664072dab780a6f1741"),
-      ObjectId("5fa24664072dab780a6f1746"),
-      ObjectId("5fa24664072dab780a6f175f"),
-      ObjectId("5fa24664072dab780a6f17ba"),
-      ObjectId("5fa24664072dab780a6f17d2"),
-      ObjectId("5fa24664072dab780a6f17f6"),
-      ObjectId("5fa24665072dab780a6f182c"),
-      ObjectId("5e0b2190f0d3fc6ffa3d9494"),
-      ObjectId("5e0b2190f0d3fc6ffa3d949c"),
-      ObjectId("5e0b2190f0d3fc6ffa3d94a5"),
-      ObjectId("5fa2465e072dab780a6f1183"),
-      ObjectId("5fa2465f072dab780a6f11d7"),
-      ObjectId("5fa24660072dab780a6f1397"),
-      ObjectId("5fa24660072dab780a6f13a2"),
-      ObjectId("5fa24665072dab780a6f1877"),
-      ObjectId("6049bafc7d66d1146d885656"),
-      ObjectId("620a0ac67f6b136427b7152a")
-    ]
-    let condition = {
-      "designYear": ObjectId("606aaf854dff55e6c075d219"), /// 2021-22
-      "financialYear": ObjectId("606aadac4dff55e6c075c507"), /// 2020-21
-      "ulb": { $in: ulbIds },
-      // "ulb": { $ne: null }
-    }
-    let cond = {
-      "designYear": ObjectId("606aafb14dff55e6c075d3ae"), /// 2022-23
-      "financialYear": ObjectId("606aaf854dff55e6c075d219"), /// 2021-22
-      // "actionTakenByRole": { $ne: "STATE" },
-      // "status": { $ne: "APPROVED" },
-      "ulb": { $in: ulbIds },
-      // "ulb": { $ne: null }
+    let ulbIds = req.body?.ulbs;
+    let condition,cond;
+    if(Boolean(req.body?.flag2324)){
+      cond = {
+        "designYear": ObjectId("606aafc14dff55e6c075d3ec"), /// 2023-24
+        "financialYear": ObjectId("606aafc14dff55e6c075d3ec"), /// 2022-23
+        "ulb": { $in: ulbIds },
+      }
+       condition = {
+        "designYear": ObjectId("606aafb14dff55e6c075d3ae"), /// 2022-23
+        "financialYear": ObjectId("606aaf854dff55e6c075d219"), /// 2021-22
+         "ulb": { $in: ulbIds },
+        
+      }
+    }else{
+      condition = {
+       "designYear": ObjectId("606aaf854dff55e6c075d219"), /// 2021-22
+       "financialYear": ObjectId("606aadac4dff55e6c075c507"), /// 2020-21
+       "ulb": { $in: ulbIds },
+     }
+      cond = {
+       "designYear": ObjectId("606aafb14dff55e6c075d3ae"), /// 2022-23
+       "financialYear": ObjectId("606aaf854dff55e6c075d219"), /// 2021-22
+       "ulb": { $in: ulbIds }
+     }
     }
     const utiReportData = await UtilizationReport.find(condition, {
       "_id": 1,
@@ -1202,21 +1173,36 @@ const utilisationUpdate = (objData) => {
   return new Promise(async (resolve, reject) => {
     let prmsArr = [];
     const utiSecond = await UtilizationReport.find(cond).lean();
-    for (const pf of utiReportData) {
+    for (const prevUtil of utiReportData) {
       let pmr = new Promise(async (rjlv, rjct) => {
         try {
-          if (pf.ulb) {
-            let dk = await utiSecond.find(e => e.ulb.toString() === pf.ulb.toString());
-            if (dk) {
-              if (parseFloat(pf.grantPosition.closingBal) !== parseFloat(dk.grantPosition.unUtilizedPrevYr)) {
+          if (prevUtil.ulb) {
+            let currentUtilReport = await utiSecond.find(e => e.ulb.toString() === prevUtil.ulb.toString());
+            if (currentUtilReport) {
+              if (parseFloat(prevUtil.grantPosition.closingBal) !== parseFloat(currentUtilReport.grantPosition.unUtilizedPrevYr)) {
                 let obj = {
-                  "unUtilizedPrevYr": pf.grantPosition.closingBal,
-                  "receivedDuringYr": dk.grantPosition.receivedDuringYr,
-                  "expDuringYr": dk.grantPosition.expDuringYr,
-                  "closingBal": (((parseFloat(pf.grantPosition.unUtilizedPrevYr)) + (parseFloat(dk.grantPosition.receivedDuringYr == null ? 0 : dk.grantPosition.receivedDuringYr))) - parseFloat(dk.grantPosition.expDuringYr == null ? 0 : dk.grantPosition.expDuringYr)).toFixed(2)
-                }
+                  unUtilizedPrevYr: prevUtil.grantPosition.closingBal,
+                  receivedDuringYr: currentUtilReport.grantPosition.receivedDuringYr,
+                  expDuringYr: currentUtilReport.grantPosition.expDuringYr,
+                 /* The above code is calculating the closing balance by adding the unutilized amount
+                 from the previous year, the received amount during the year, and subtracting the
+                 expenses during the year. */
+                  closingBal: (
+                    parseFloat(prevUtil.grantPosition.closingBal) +
+                    parseFloat(
+                      currentUtilReport.grantPosition.receivedDuringYr == null
+                        ? 0
+                        : currentUtilReport.grantPosition.receivedDuringYr
+                    ) -
+                    parseFloat(
+                      currentUtilReport.grantPosition.expDuringYr == null
+                        ? 0
+                        : currentUtilReport.grantPosition.expDuringYr
+                    )
+                  ).toFixed(2),
+                };
                 await UtilizationReport.update({
-                  "_id": dk._id
+                  "_id": currentUtilReport._id
                 }, { "$set": { "grantPosition": obj } })
               }
             }
@@ -1328,10 +1314,10 @@ const roundGrantPosition = (objData) => {
   const { utiReportData } = objData;
   return new Promise(async (resolve, reject) => {
     let prmsArr = [];
-    for (const pf of utiReportData) {
+    for (const prevUtil of utiReportData) {
       let pmr = new Promise(async (rjlv, rjct) => {
         try {
-          const { unUtilizedPrevYr, receivedDuringYr, expDuringYr, closingBal } = pf.grantPosition;
+          const { unUtilizedPrevYr, receivedDuringYr, expDuringYr, closingBal } = prevUtil.grantPosition;
           let obj = {
             "unUtilizedPrevYr": unUtilizedPrevYr !== null ? parseFloat(parseFloat(unUtilizedPrevYr).toFixed(2)) : unUtilizedPrevYr,
             "receivedDuringYr": receivedDuringYr !== null ? parseFloat(parseFloat(receivedDuringYr).toFixed(2)) : receivedDuringYr,
@@ -1367,7 +1353,7 @@ const roundGrantPosition = (objData) => {
           // }
 
           await UtilizationReport.update({
-            "_id": pf._id
+            "_id": prevUtil._id
           }, { "$set": { "grantPosition": obj } })
           rjlv(1)
         } catch (error) {
