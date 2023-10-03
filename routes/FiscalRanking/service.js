@@ -1346,8 +1346,8 @@ exports.getView = async function (req, res, next) {
       currentFormStatus: viewOne.currentFormStatus,
       financialYearTableHeader,
       messages: userMessages,
-      // hideForm,
-      // notice
+      hideForm : (process.env.ENV == ENV['prod']) ? hideForm : false,
+      notice
     };
     if (userMessages.length > 0) {
       let { approvedPerc, rejectedPerc } = calculatePercentage(modifiedLedgerData, requiredFields, viewOne)
@@ -3835,7 +3835,6 @@ async function saveFeedbacksAndForm(
     
   //Add the submission date in case of Pmu submit the form.
   if (+formStatus == 11 || +formStatus == 10) {
-
     payloadForForm['pmuSubmissionDate'] = new Date();
   }
 
@@ -3885,7 +3884,9 @@ const sendEmailToUlb = async (ulbId, status) => {
     if(
       status == MASTER_FORM_STATUS['SUBMISSION_ACKNOWLEDGED_BY_PMU']
       ){
-      
+        ulbTemplate = Service.emailTemplate.CfrFormApproved(
+          ulbName
+        );
     }else if(
       status == MASTER_FORM_STATUS['RETURNED_BY_PMU']
       ){
@@ -3965,7 +3966,8 @@ module.exports.actionTakenByMoHua = catchAsync(async (req, res) => {
       formStatus = await decideOverAllStatus(calculationsTabWise)
       if ([statusTracker['RBP'], statusTracker['SAP']].includes(formStatus)) {
         await sendEmailToUlb(ulbId,formStatus)
-        console.log({formId})
+      }
+      if([statusTracker['RBP']].includes(formStatus)){
         await updateRejectCount(ulbId,design_year);
       }
 

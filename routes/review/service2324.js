@@ -10,9 +10,9 @@ const Sidemenu = require('../../models/Sidemenu');
 const ObjectId = require("mongoose").Types.ObjectId;
 const Service = require('../../service');
 const STATUS_LIST = require('../../util/newStatusList');
-const { MASTER_STATUS, MASTER_STATUS_ID, YEAR_CONSTANTS, YEAR_CONSTANTS_IDS, MASTER_FORM_STATUS, MASTER_FORM_QUESTION_STATUS, MASTER_FORM_QUESTION_STATUS_STATE, FORM_TYPE_SUBMIT_CLAIM, FORM_TYPE_NAME, INSTALLMENT_NAME, PREV_MASTER_FORM_STATUS } = require('../../util/FormNames');
+const { MASTER_STATUS, MASTER_STATUS_ID, YEAR_CONSTANTS, YEAR_CONSTANTS_IDS, MASTER_FORM_STATUS, MASTER_FORM_QUESTION_STATUS, MASTER_FORM_QUESTION_STATUS_STATE, FORM_TYPE_SUBMIT_CLAIM, FORM_TYPE_NAME, INSTALLMENT_NAME } = require('../../util/FormNames');
 const { getCurrentYear, getAccessYear, getFinancialYear } = require('../../util/masterFunctions');
-const { canTakeActionOrViewOnlyMasterForm, checkUlbAccess, getLastYearUlbAccess, calculateStatus } = require('../../routes/CommonActionAPI/service')
+const { canTakeActionOrViewOnlyMasterForm, checkUlbAccess, getLastYearUlbAccess } = require('../../routes/CommonActionAPI/service')
 const { createObjectFromArray, addActionKeys } = require('../CommonFormSubmissionState/service');
 // const { createDynamicColumns } = require('./service')
 const List = require('../../util/15thFCstatus');
@@ -871,31 +871,23 @@ async function fetchApprovedUlbsData(collectionName, data) {
 const sequentialReview = `Cannot review since last year form is not approved by MoHUA.`
 const setCurrentStatus = (req, data, approvedUlbs, collectionName, loggedInUserRole) => {
   data.forEach(el => {
-    el['info'] = '';
-    el['prevYearStatus'] = ''
-    el['prevYearStatusId'] = ''
+    el['info'] = ''
     if (!el.formData) {
       el['formStatus'] = "Not Started";
       el['cantakeAction'] = false;
     } else {
       el['formStatus'] = MASTER_STATUS_ID[el.formData.currentFormStatus]
-      let params = { status: el.formData.currentFormStatus, userRole: loggedInUserRole }
-      el['cantakeAction'] = req.decoded.role === "ADMIN" ? false : canTakeActionOrViewOnlyMasterForm(params)
       if (collectionName === CollectionNames.dur || collectionName === CollectionNames['28SLB']) {
-      //   el['cantakeAction'] = req.decoded.role === "ADMIN" ? false : canTakeActionOrViewOnlyMasterForm(params);
-      //   if (!(approvedUlbs.find(ulb => ulb.toString() === el.ulbId.toString())) && loggedInUserRole === "MoHUA") {
-      //     el['cantakeAction'] = false;
-      //     el['formData']['currentFormStatus'] === MASTER_STATUS['Under Review By MoHUA'] ? el['info'] = sequentialReview : ""
-      //   }
-        el['prevYearStatus'] = approvedUlbs[el._id] ?? STATUS_LIST['Not_Started']
-        const previousStatus =  el['prevYearStatus']?.toUpperCase().split(' ').join('_')
-        el['prevYearStatusId'] = PREV_MASTER_FORM_STATUS[previousStatus] ?? PREV_MASTER_FORM_STATUS['NOT_STARTED']
-      } 
-      // else {
-        // let params = { status: el.formData.currentFormStatus, userRole: loggedInUserRole }
-        // el['cantakeAction'] = req.decoded.role === "ADMIN" ? false : canTakeActionOrViewOnlyMasterForm(params);
-        // el['formStatus'] = MASTER_STATUS_ID[el.formData.currentFormStatus]
-      // }  
+        let params = { status: el.formData.currentFormStatus, userRole: loggedInUserRole }
+        el['cantakeAction'] = req.decoded.role === "ADMIN" ? false : canTakeActionOrViewOnlyMasterForm(params);
+        if (!(approvedUlbs.find(ulb => ulb.toString() === el.ulbId.toString())) && loggedInUserRole === "MoHUA") {
+          el['cantakeAction'] = false;
+          el['formData']['currentFormStatus'] === MASTER_STATUS['Under Review By MoHUA'] ? el['info'] = sequentialReview : ""
+        }
+      } else {
+        let params = { status: el.formData.currentFormStatus, userRole: loggedInUserRole }
+        el['cantakeAction'] = req.decoded.role === "ADMIN" ? false : canTakeActionOrViewOnlyMasterForm(params);
+      }
     }
   })
   return data;
@@ -970,11 +962,11 @@ const setIndicatorSequense = (indicatorList, el) => {
  */
 function getUlbsApprovedByMoHUA(forms) {
   try {
-    let ulbArray = {};
+    let ulbArray = [];
     for (let form of forms) {
-      // if (form.actionTakenByRole === "MoHUA" && !form.isDraft && form.status === "APPROVED") {
-        ulbArray[form.ulb] = calculateStatus(form.status,form.actionTakenByRole, form.isDraft,"ULB");
-      // }
+      if (form.actionTakenByRole === "MoHUA" && !form.isDraft && form.status === "APPROVED") {
+        ulbArray.push(form.ulb);
+      }
     }
     return ulbArray;
   } catch (error) {
