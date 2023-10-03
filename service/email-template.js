@@ -57,7 +57,8 @@ const CfrFormApproved = (ulbName)=>{
     return {
       subject:`Fiscal Ranking Form Approved by PMU`,
       body:`Dear ${ulbName} <br>
-      <p>Your Fiscal Ranking form has been approved by PMU.</p>`
+      <p>Thanks for participating in the CityFinance.in Rankings 2022. Your submission has been acknowledged by PMU. </p>
+      <p>PMU Team<br>City Finance Rankings</p>  `
     }
   }
   catch(err){
