@@ -3913,7 +3913,8 @@ module.exports.actionTakenByMoHua = catchAsync(async (req, res) => {
       formStatus = await decideOverAllStatus(calculationsTabWise)
       if ([statusTracker['RBP'], statusTracker['SAP']].includes(formStatus)) {
         await sendEmailToUlb(ulbId,formStatus)
-        console.log({formId})
+      }
+      if([statusTracker['RBP']].includes(formStatus)){
         await updateRejectCount(ulbId,design_year);
       }
 
