@@ -407,7 +407,7 @@ module.exports.getAllLedgersCsv = async function (req, res) {
         // Set approrpiate download headers
         res.setHeader("Content-disposition", "attachment; filename=" + filename);
         res.writeHead(200, { "Content-Type": "text/csv;charset=utf-8,%EF%BB%BF" });
-        res.write("ULB Name, ULB Code, AMRUT, Head of account,Code, Line Item, Budget year, Budget amount\r\n");
+        res.write("ULB Name, ULB Code, AMRUT, Audit Status, Head of account,Code, Line Item, Budget year, Budget amount\r\n");
         // Flush the headers before we start pushing the CSV content
         res.flushHeaders();
         let lineItem = await LineItem.find({ "isActive": true }, { 'modifiedAt': 0, createdAt: 0, isActive: 0 }).lean()
@@ -460,9 +460,11 @@ module.exports.getAllLedgersCsv = async function (req, res) {
                     "lineItem": "$lineItem",
                     financialYear: "$financialYear",
                     amount: 1,
-                    population: 1
+                    population: 1,
+                    audit_status:1
                 }
             }
+
         ]).allowDiskUse(true)
             .cursor({ batchSize: 5000 })
             .addCursorFlag('noCursorTimeout', true)
@@ -477,7 +479,7 @@ module.exports.getAllLedgersCsv = async function (req, res) {
                 el.code = el.line_item ? el.line_item.code : "";
                 el.head_of_account = el.line_item ? el.line_item.headOfAccount : "";
                 el.ulb.name = el.ulb ? el.ulb.name.toString().replace(/[,]/g, ' | ') : "";
-                let str =el.ulb.name + "," + el.ulb.code + "," + el.ulb.amrut + "," + el.head_of_account + "," + el.code + "," + line_item + "," + el.financialYear + "," + el.amount + "\r\n";
+                let str = el.ulb.name + "," + el.ulb.code + "," + el.ulb.amrut +"," + el.audit_status + "," + el.head_of_account + "," + el.code + "," + line_item + "," + el.financialYear + "," + el.amount + "\r\n";
                 res.write(str);
             }
         })

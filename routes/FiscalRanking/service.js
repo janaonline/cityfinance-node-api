@@ -1329,8 +1329,8 @@ exports.getView = async function (req, res, next) {
       currentFormStatus: viewOne.currentFormStatus,
       financialYearTableHeader,
       messages: userMessages,
-      // hideForm,
-      // notice
+      hideForm : (process.env.ENV == ENV['prod']) ? hideForm : false,
+      notice
     };
     if (userMessages.length > 0) {
       let { approvedPerc, rejectedPerc } = calculatePercentage(modifiedLedgerData, requiredFields, viewOne)
@@ -3803,7 +3803,6 @@ async function saveFeedbacksAndForm(
     
   //Add the submission date in case of Pmu submit the form.
   if (+formStatus == 11 || +formStatus == 10) {
-
     payloadForForm['pmuSubmissionDate'] = new Date();
   }
 
