@@ -6,7 +6,7 @@ const FiscalRanking = require("../../models/FiscalRanking");
 const FiscalRankingMapper = require("../../models/FiscalRankingMapper");
 const { FRTypeShortKey } = require('./formjson')
 const UlbLedger = require("../../models/UlbLedger");
-const { FORMIDs, MASTER_STATUS, MASTER_STATUS_ID, FORM_LEVEL, POPULATION_TYPE, YEAR_CONSTANTS, YEAR_CONSTANTS_IDS, USER_ROLE, MASTER_FORM_STATUS, TEST_EMAIL, ENV } = require("../../util/FormNames");
+const { FORMIDs, MASTER_STATUS, MASTER_STATUS_ID, FORM_LEVEL, POPULATION_TYPE, YEAR_CONSTANTS, YEAR_CONSTANTS_IDS, USER_ROLE, MASTER_FORM_STATUS, TEST_EMAIL, ENV, APPROVAL_TYPES } = require("../../util/FormNames");
 const { saveCurrentStatus, saveFormHistory, saveStatusHistory } = require("../../util/masterFunctions");
 const FeedBackFiscalRanking = require("../../models/FeedbackFiscalRanking");
 const TwentyEightSlbsForm = require("../../models/TwentyEightSlbsForm");
@@ -394,6 +394,7 @@ class tabsUpdationServiceFR {
     return {
       otherUpload: { ...this.detail.otherUpload, required: false }, // IMPORTANT :: if changed inform frotend
       signedCopyOfFile: { ...this.detail.signedCopyOfFile, required: true },
+      ulbSupportingDoc: { ...this.detail.ulbSupportingDoc, required: false }
     };
   }
   async getFeedbackForTabs(condition, tabId) {
@@ -716,6 +717,19 @@ const getColumnWiseData = (key, obj, isDraft, dataSource = "", role, formStatus)
         readonly: getReadOnly(formStatus, isDraft, role, obj.status),
         // rejectReason:"",
       };
+    case "ulbSupportingDoc":
+      return {
+        ...statusObj(
+          "",
+          "file",
+          "",
+          dataSource,
+          "0"
+        ),
+        ...obj,
+        readonly: getReadOnly(formStatus, isDraft, role, obj.status),
+        // rejectReason:"",
+      };
     case "otherUpload":
       return {
         ...statusObj(
@@ -959,6 +973,7 @@ exports.getView = async function (req, res, next) {
       "caMembershipNo",
       "signedCopyOfFile",
       "otherUpload",
+      "ulbSupportingDoc"
     ];
     for (let index = 0; index < keys.length; index++) {
       if (viewOne.hasOwnProperty(keys[index])) {
@@ -1051,15 +1066,17 @@ exports.getView = async function (req, res, next) {
                 pf["rejectReason"] = singleFydata.rejectReason
                 pf["modelName"] = singleFydata ? singleFydata.modelName : "";
                 pf['suggestedValue'] = singleFydata?.suggestedValue;
+                pf['pmuSuggestedValue2'] = singleFydata?.pmuSuggestedValue2;
                 pf['approvalType'] = singleFydata?.approvalType;
                 pf['ulbComment'] = singleFydata?.ulbComment;
+                pf['ulbValue'] = singleFydata?.ulbValue;
                 pf["status"] = singleFydata.status != null ? singleFydata.status : 'PENDING';
                 pf['ledgerUpdated'] = singleFydata.ledgerUpdated || false
                 if (subData[key].calculatedFrom === undefined) {
                   pf["readonly"] = getReadOnly(data?.currentFormStatus, viewOne.isDraft, role, singleFydata.status);
                 } else {
                   pf["readonly"] = true;
-                  pf["status"] = ""
+                  pf["status"] = "";
 
                 }
 
@@ -1205,8 +1222,10 @@ exports.getView = async function (req, res, next) {
                       };
                     pf["value"] = singleFydata ? singleFydata.value : "";
                     pf['suggestedValue'] = singleFydata?.suggestedValue;
+                    pf['pmuSuggestedValue2'] = singleFydata?.pmuSuggestedValue2;
                     pf['approvalType'] = singleFydata?.approvalType;
                     pf['ulbComment'] = singleFydata?.ulbComment;
+                    pf['ulbValue'] = singleFydata?.ulbValue;
                     pf["status"] = singleFydata && singleFydata.status != null
                       ? singleFydata.status
                       : "PENDING";
@@ -3406,7 +3425,8 @@ async function updateQueryForFiscalRanking(
   isDraft,
   session,
   dynamicObj,
-  financialInfo
+  financialInfo,
+  currentFormStatus
 ) {
   try {
     for (var years of yearData) {
@@ -3451,12 +3471,33 @@ async function updateQueryForFiscalRanking(
           payload["displayPriority"] = dynamicObj.position;
           payload['ledgerUpdated'] = false
           payload["ulbComment"] = years.ulbComment;
+          payload["ulbValue"] = years.ulbValue;
         } else {
           payload["status"] = years.status;
           payload["suggestedValue"] = years.suggestedValue;
+          payload["pmuSuggestedValue2"] = years?.pmuSuggestedValue2;
           payload["rejectReason"] = years?.rejectReason
         }
         payload["approvalType"] = years.approvalType;
+
+        if ([
+          MASTER_FORM_STATUS['VERIFICATION_NOT_STARTED'],
+          MASTER_FORM_STATUS['VERIFICATION_IN_PROGRESS'],
+          MASTER_FORM_STATUS['SUBMISSION_ACKNOWLEDGED_BY_PMU'],
+        ].includes(currentFormStatus)
+        ) {
+          if (years.status == "REJECTED" &&
+          [
+            APPROVAL_TYPES['enteredPmuAcceptUlb'],
+            APPROVAL_TYPES['enteredPmuSecondAcceptPmu'],
+            APPROVAL_TYPES['enteredPmuAcceptPmu'],
+            APPROVAL_TYPES['enteredUlbAcceptPmu'],
+          ].includes(years?.approvalType)
+          ) {
+            payload["status"] = "APPROVED";
+          }
+        }
+        
         let up = await FiscalRankingMapper.findOneAndUpdate(filter, payload, {
           upsert: upsert,
         });
@@ -3511,7 +3552,7 @@ async function updateFiscalRankingForm(
             obj[key].status = ""
           }
         }
-        if (key === "signedCopyOfFile" || key === "otherUpload") {
+        if (key === "signedCopyOfFile" || key === "otherUpload" || key === "ulbSupportingDoc") {
           payload[key] = obj[key];
         } else {
           // if (!obj[key].value && !notRequiredValidations.includes(key) && !isDraft) {
@@ -3601,7 +3642,8 @@ async function calculateAndUpdateStatusForMappers(
   formId,
   year,
   updateForm,
-  isDraft
+  isDraft,
+  currentFormStatus
 ) {
   try {
     let totalIndicator = 0;
@@ -3679,7 +3721,8 @@ async function calculateAndUpdateStatusForMappers(
             isDraft,
             session,
             dynamicObj,
-            financialInfo
+            financialInfo,
+            currentFormStatus
           );
         } else {
           if (
@@ -3926,7 +3969,8 @@ module.exports.actionTakenByMoHua = catchAsync(async (req, res) => {
       formId,
       design_year,
       false,
-      isDraft
+      isDraft,
+      currentFormStatus
     );
     let formStatus = currentFormStatus
     if (currentFormStatus != statusTracker["VIP"]) {
@@ -4102,7 +4146,8 @@ module.exports.createForm = catchAsync(async (req, res) => {
       formId,
       design_year,
       true,
-      isDraft
+      isDraft,
+      currentFormStatus
     );
     if (!(statusTracker.IP === currentFormStatus)) {
       let a = await FiscalRanking.findOneAndUpdate({
