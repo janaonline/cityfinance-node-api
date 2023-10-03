@@ -1066,6 +1066,7 @@ exports.getView = async function (req, res, next) {
                 pf["rejectReason"] = singleFydata.rejectReason
                 pf["modelName"] = singleFydata ? singleFydata.modelName : "";
                 pf['suggestedValue'] = singleFydata?.suggestedValue;
+                pf['pmuSuggestedValue2'] = singleFydata?.pmuSuggestedValue2;
                 pf['approvalType'] = singleFydata?.approvalType;
                 pf['ulbComment'] = singleFydata?.ulbComment;
                 pf['ulbValue'] = singleFydata?.ulbValue;
@@ -1221,6 +1222,7 @@ exports.getView = async function (req, res, next) {
                       };
                     pf["value"] = singleFydata ? singleFydata.value : "";
                     pf['suggestedValue'] = singleFydata?.suggestedValue;
+                    pf['pmuSuggestedValue2'] = singleFydata?.pmuSuggestedValue2;
                     pf['approvalType'] = singleFydata?.approvalType;
                     pf['ulbComment'] = singleFydata?.ulbComment;
                     pf['ulbValue'] = singleFydata?.ulbValue;
@@ -3473,16 +3475,25 @@ async function updateQueryForFiscalRanking(
         } else {
           payload["status"] = years.status;
           payload["suggestedValue"] = years.suggestedValue;
+          payload["pmuSuggestedValue2"] = years?.pmuSuggestedValue2;
           payload["rejectReason"] = years?.rejectReason
         }
         payload["approvalType"] = years.approvalType;
 
         if ([
           MASTER_FORM_STATUS['VERIFICATION_NOT_STARTED'],
-          MASTER_FORM_STATUS['VERIFICATION_IN_PROGRESS']
+          MASTER_FORM_STATUS['VERIFICATION_IN_PROGRESS'],
+          MASTER_FORM_STATUS['SUBMISSION_ACKNOWLEDGED_BY_PMU'],
         ].includes(currentFormStatus)
         ) {
-          if (years.status == "REJECTED" && years.approvalType == APPROVAL_TYPES['enteredPmuAcceptUlb']) {
+          if (years.status == "REJECTED" &&
+          [
+            APPROVAL_TYPES['enteredPmuAcceptUlb'],
+            APPROVAL_TYPES['enteredPmuSecondAcceptPmu'],
+            APPROVAL_TYPES['enteredPmuAcceptPmu'],
+            APPROVAL_TYPES['enteredUlbAcceptPmu'],
+          ].includes(years?.approvalType)
+          ) {
             payload["status"] = "APPROVED";
           }
         }

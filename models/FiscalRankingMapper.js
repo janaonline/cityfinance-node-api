@@ -9,7 +9,8 @@ const APPROVAL_TYPES = {
     'enteredPmuRejectUlb': 4,
     'enteredUlbAcceptPmu': 5,
     'enteredPmuAcceptPmu': 6,
-    'enteredPmuAcceptPmuAuto': 7
+    'enteredPmuSecondAcceptPmu': 7,
+    'enteredPmuAcceptPmuAuto': 8,
 }
 const fiscalRankingMapperSchema = new Schema(
     {
