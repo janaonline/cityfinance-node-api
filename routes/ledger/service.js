@@ -461,7 +461,7 @@ module.exports.getAllLedgersCsv = async function (req, res) {
                     financialYear: "$financialYear",
                     amount: 1,
                     population: 1,
-                    audit_status:1
+                    audit_status:{$ifNull:["$audit_status",""]}
                 }
             }
 
