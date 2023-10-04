@@ -31,6 +31,7 @@ const fiscalRankingMapperSchema = new Schema(
             type:String,
             default:""
         },
+        rejectReason2: { type: String, default: "" },
         isActive: { type: Boolean, default: 1 },
         modelName: modelSchema(),
         type: {
