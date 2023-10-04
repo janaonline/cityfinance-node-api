@@ -5608,3 +5608,110 @@ module.exports.getTrackingHistory = async(req,res)=>{
     return res.status(400).json(response)
   }
 }
+const axios = require('axios');
+module.exports.freezeForm = async (req, res) => {
+  // try {
+  //   const currentDate = new Date();
+  //   const october9th = new Date(currentDate.getFullYear(), 9, 9);
+  //   let url = "localhost:8080/api/v1/"
+  //   let endPoint = "fiscal-ranking/view"
+  //   let token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiUE1VIFVzZXIiLCJlbWFpbCI6InBtdUBjZnJhbmtpbmdzLmluIiwicm9sZSI6IlBNVSIsImlzQWN0aXZlIjp0cnVlLCJpc1JlZ2lzdGVyZWQiOmZhbHNlLCJfaWQiOiI2NDZmMWI5MWUwYjU4YjFjMzZhNTZhNGEiLCJwdXJwb3NlIjoiV0VCIiwibGhfaWQiOiI2NTFkMTA0NmExNzAxOTQxYzAwNzU1N2YiLCJzZXNzaW9uSWQiOiI2NTFjZmIzYzFlMzgyNDNlNTJhNDBhYTUiLCJwYXNzd29yZEhpc3RvcnkiOltdLCJpYXQiOjE2OTY0MDM1MjYsImV4cCI6MTY5NjQzOTUyNn0.PFHtSo8D-BSHNN8MgK8uPABW92QLArVEyZQNN7NyAn0"
+
+  //   if (currentDate < october9th) {
+  //     res.json({ message: 'API is available' });
+
+  //     let getUlbForms = await FiscalRanking.find({
+  //       currentFormStatus: { $in: [2, 10] },
+  //       pmuSubmissionDate: { $exists: false }
+  //     }).select('ulb design_year')
+
+  //     for(let elem of getUlbForms){
+  //       const response = await axios.get(`${url}${endPoint}`, {
+  //         params: {
+  //           design_year: elem?.design_year.toString(),
+  //           ulb: elem?.ulb
+  //         },
+  //         headers: {
+  //           "x-access-token": token || req?.query?.token || "", // Provide a default value if token is undefined
+  //         },
+  //       });
+        
+  //     // Handle the response data here
+  //     const responseData = response.data;
+  //     return res.json({responseData})
+  //     }
+
+  //   } else {
+  //     res.status(400).json({ error: 'Current date is greater than October 9th' });
+  //   }
+
+  // }
+  // catch (err) {
+  //   console.log("error in Freeze Form :: ", err.message)
+  //   return res.status(400).json(err)
+  // }
+
+  try {
+    const currentDate = new Date();
+    const october9th = new Date(currentDate.getFullYear(), 9, 9);
+    let url = "https://staging.cityfinance.in/api/v1/";
+    let endPoint = "fiscal-ranking/view";
+    let token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiUE1VIFVzZXIiLCJlbWFpbCI6InBtdUBjZnJhbmtpbmdzLmluIiwicm9sZSI6IlBNVSIsImlzQWN0aXZlIjp0cnVlLCJpc1JlZ2lzdGVyZWQiOmZhbHNlLCJfaWQiOiI2NDZmMWI5MWUwYjU4YjFjMzZhNTZhNGEiLCJwdXJwb3NlIjoiV0VCIiwibGhfaWQiOiI2NTFkMTA0NmExNzAxOTQxYzAwNzU1N2YiLCJzZXNzaW9uSWQiOiI2NTFjZmIzYzFlMzgyNDNlNTJhNDBhYTUiLCJwYXNzd29yZEhpc3RvcnkiOltdLCJpYXQiOjE2OTY0MDM1MjYsImV4cCI6MTY5NjQzOTUyNn0.PFHtSo8D-BSHNN8MgK8uPABW92QLArVEyZQNN7NyAn0";
+
+    if (currentDate < october9th) {
+
+      let responseDataArray = [];
+
+      let getUlbForms = await FiscalRanking.find({
+        pmuSubmissionDate: { $exists: false },
+        $or: [
+          { currentFormStatus: 10 },
+          {
+            $and: [
+              { currentFormStatus: 2 },
+              {
+                $expr: {
+                  $eq: [
+                    {
+                      $add: [
+                        {
+                          $toDouble: "$progress.approvedProgress"
+                        },
+                        {
+                          $toDouble: "$progress.rejectedProgress"
+                        }
+                      ]
+                    },
+                    100
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      }).select('ulb design_year').limit(1);
+
+      // console.log(getUlbForms.length);process.exit();
+      for (let elem of getUlbForms) {
+        const response = await axios.get(`${url}${endPoint}`, {
+          params: {
+            design_year: elem?.design_year.toString(),
+            ulb: elem?.ulb.toString()
+          },
+          headers: {
+            "x-access-token": token || req?.query?.token || "",
+          },
+        });
+        const responseData = response?.data?.data;
+        responseDataArray.push(responseData);
+      }
+      return res.status(200).json({ data: responseDataArray });
+    } else {
+      res.status(400).json({ error: 'Current date is greater than October 9th' });
+    }
+  } catch (err) {
+    console.log("error in Freeze Form :: ", err.message);
+    return res.status(400).json(err);
+  }
+  
+}
