@@ -3488,25 +3488,6 @@ async function updateQueryForFiscalRanking(
         }
         payload["approvalType"] = years.approvalType;
 
-
-        // if ([
-        //   MASTER_FORM_STATUS['VERIFICATION_NOT_STARTED'],
-        //   MASTER_FORM_STATUS['VERIFICATION_IN_PROGRESS'],
-        //   MASTER_FORM_STATUS['SUBMISSION_ACKNOWLEDGED_BY_PMU'],
-        // ].includes(currentFormStatus)
-        // ) {
-        //   if (years.status == "REJECTED" &&
-        //   [
-        //     APPROVAL_TYPES['enteredPmuAcceptUlb'],
-        //     APPROVAL_TYPES['enteredPmuSecondAcceptPmu'],
-        //     APPROVAL_TYPES['enteredPmuAcceptPmu'],
-        //     APPROVAL_TYPES['enteredUlbAcceptPmu'],
-        //   ].includes(years?.approvalType)
-        //   ) {
-        //     payload["status"] = "APPROVED";
-        //   }
-        // }
-        
         let up = await FiscalRankingMapper.findOneAndUpdate(filter, payload, {
           upsert: upsert,
         });
