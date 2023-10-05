@@ -3477,6 +3477,10 @@ async function updateQueryForFiscalRanking(
           payload["ulbValue"] = years.ulbValue;
         } else {
           payload["status"] = years.status;
+          if(payload.status == 'REJECTED') {
+            payload["value"] = years.value;
+            payload["date"] = years.date;
+          }
           payload["suggestedValue"] = years.suggestedValue;
           payload["pmuSuggestedValue2"] = years?.pmuSuggestedValue2;
           payload["rejectReason"] = years?.rejectReason;
