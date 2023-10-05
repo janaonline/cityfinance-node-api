@@ -5610,58 +5610,16 @@ module.exports.getTrackingHistory = async(req,res)=>{
 }
 const axios = require('axios');
 module.exports.freezeForm = async (req, res) => {
-  // try {
-  //   const currentDate = new Date();
-  //   const october9th = new Date(currentDate.getFullYear(), 9, 9);
-  //   let url = "localhost:8080/api/v1/"
-  //   let endPoint = "fiscal-ranking/view"
-  //   let token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiUE1VIFVzZXIiLCJlbWFpbCI6InBtdUBjZnJhbmtpbmdzLmluIiwicm9sZSI6IlBNVSIsImlzQWN0aXZlIjp0cnVlLCJpc1JlZ2lzdGVyZWQiOmZhbHNlLCJfaWQiOiI2NDZmMWI5MWUwYjU4YjFjMzZhNTZhNGEiLCJwdXJwb3NlIjoiV0VCIiwibGhfaWQiOiI2NTFkMTA0NmExNzAxOTQxYzAwNzU1N2YiLCJzZXNzaW9uSWQiOiI2NTFjZmIzYzFlMzgyNDNlNTJhNDBhYTUiLCJwYXNzd29yZEhpc3RvcnkiOltdLCJpYXQiOjE2OTY0MDM1MjYsImV4cCI6MTY5NjQzOTUyNn0.PFHtSo8D-BSHNN8MgK8uPABW92QLArVEyZQNN7NyAn0"
-
-  //   if (currentDate < october9th) {
-  //     res.json({ message: 'API is available' });
-
-  //     let getUlbForms = await FiscalRanking.find({
-  //       currentFormStatus: { $in: [2, 10] },
-  //       pmuSubmissionDate: { $exists: false }
-  //     }).select('ulb design_year')
-
-  //     for(let elem of getUlbForms){
-  //       const response = await axios.get(`${url}${endPoint}`, {
-  //         params: {
-  //           design_year: elem?.design_year.toString(),
-  //           ulb: elem?.ulb
-  //         },
-  //         headers: {
-  //           "x-access-token": token || req?.query?.token || "", // Provide a default value if token is undefined
-  //         },
-  //       });
-        
-  //     // Handle the response data here
-  //     const responseData = response.data;
-  //     return res.json({responseData})
-  //     }
-
-  //   } else {
-  //     res.status(400).json({ error: 'Current date is greater than October 9th' });
-  //   }
-
-  // }
-  // catch (err) {
-  //   console.log("error in Freeze Form :: ", err.message)
-  //   return res.status(400).json(err)
-  // }
-
   try {
     const currentDate = new Date();
     const october9th = new Date(currentDate.getFullYear(), 9, 9);
     let url = "https://staging.cityfinance.in/api/v1/";
     let endPoint = "fiscal-ranking/view";
-    let token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiUE1VIFVzZXIiLCJlbWFpbCI6InBtdUBjZnJhbmtpbmdzLmluIiwicm9sZSI6IlBNVSIsImlzQWN0aXZlIjp0cnVlLCJpc1JlZ2lzdGVyZWQiOmZhbHNlLCJfaWQiOiI2NDZmMWI5MWUwYjU4YjFjMzZhNTZhNGEiLCJwdXJwb3NlIjoiV0VCIiwibGhfaWQiOiI2NTFkMTA0NmExNzAxOTQxYzAwNzU1N2YiLCJzZXNzaW9uSWQiOiI2NTFjZmIzYzFlMzgyNDNlNTJhNDBhYTUiLCJwYXNzd29yZEhpc3RvcnkiOltdLCJpYXQiOjE2OTY0MDM1MjYsImV4cCI6MTY5NjQzOTUyNn0.PFHtSo8D-BSHNN8MgK8uPABW92QLArVEyZQNN7NyAn0";
+    let endPoint2 = "fiscal-ranking/create-form";
+
+    let token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoiVG9kYWJoaW0gTXVuaWNpcGFsaXR5IiwiZW1haWwiOiJjYW9kbGJAZ21haWwuY29tIiwicm9sZSI6IlVMQiIsInN0YXRlIjoiNWRjZjlkNzUxNmEwNmFlZDQxYzc0OGY4IiwidWxiIjoiNWRkMjQ3Mjk0MzdiYTMxZjdlYjQyZWExIiwiaXNBY3RpdmUiOnRydWUsImlzUmVnaXN0ZXJlZCI6dHJ1ZSwiX2lkIjoiNWZjYjlmMjA2ZTdhMDEzOWRjNmI2MWM5IiwicHVycG9zZSI6IldFQiIsImxoX2lkIjoiNjUxZDU0YmEyNWM0NmM0MWM5MTg0NzcwIiwic2Vzc2lvbklkIjoiNjUxZDM2MjMyNWM0NmM0MWM5MTg0MWU0IiwicGFzc3dvcmRFeHBpcmVzIjoxNjcxNjEwMDIxMDk0LCJwYXNzd29yZEhpc3RvcnkiOlsiJDJhJDEwJDRWVnRwN0M3d3FRRC5qU2pGY1Y2UU9STzFlcTd0T0t4d21LOHQyb0pkOGpGNW1vQk1HQ2d5IiwiJDJhJDEwJDcvR3pDbU1jTk5BZUlMOXZHcndVOE9zTGlOSGo5eU9oRFhnVmlkTjc2cG84dVh4RlpZamguIl0sImlhdCI6MTY5NjQyMTA1MCwiZXhwIjoxNjk2NDU3MDUwfQ.lCsp21C9yNKmJ396Z8C001J1z9dVeh-0nRw-zl9Ve7I";
 
     if (currentDate < october9th) {
-
-      let responseDataArray = [];
-
       let getUlbForms = await FiscalRanking.find({
         pmuSubmissionDate: { $exists: false },
         $or: [
@@ -5671,18 +5629,11 @@ module.exports.freezeForm = async (req, res) => {
               { currentFormStatus: 2 },
               {
                 $expr: {
-                  $eq: [
+                  $gt: [
                     {
-                      $add: [
-                        {
-                          $toDouble: "$progress.approvedProgress"
-                        },
-                        {
-                          $toDouble: "$progress.rejectedProgress"
-                        }
-                      ]
+                      $toDouble: "$progress.rejectedProgress"
                     },
-                    100
+                    0
                   ]
                 }
               }
@@ -5690,8 +5641,8 @@ module.exports.freezeForm = async (req, res) => {
           }
         ]
       }).select('ulb design_year').limit(1);
+      console.log({ getUlbForms });
 
-      // console.log(getUlbForms.length);process.exit();
       for (let elem of getUlbForms) {
         const response = await axios.get(`${url}${endPoint}`, {
           params: {
@@ -5703,9 +5654,30 @@ module.exports.freezeForm = async (req, res) => {
           },
         });
         const responseData = response?.data?.data;
-        responseDataArray.push(responseData);
+
+        let payload = {
+          ulbId: elem?.ulb.toString(),
+          formId: elem?._id.toString(),
+          design_year: elem?.design_year.toString(),
+          isDraft: false,
+          currentFormStatus: 9,
+          actions: responseData?.tabs
+        }
+
+        console.log("endPoints", `${url}${endPoint2}`)
+        try {
+          await axios.post(`${url}${endPoint2}`, payload, {
+            headers: {
+              "x-access-token": token || req?.query?.token || "",
+            }
+          });
+          // Handle the response data as needed
+        } catch (postError) {
+          console.error("Error in POST request :: ", postError);
+          return res.status(500).json({ error: 'Internal server error' });
+        }
       }
-      return res.status(200).json({ data: responseDataArray });
+      return res.status(200).json({ data: "Successfully executed!"});
     } else {
       res.status(400).json({ error: 'Current date is greater than October 9th' });
     }
@@ -5713,5 +5685,84 @@ module.exports.freezeForm = async (req, res) => {
     console.log("error in Freeze Form :: ", err.message);
     return res.status(400).json(err);
   }
-  
+
 }
+
+// module.exports.freezeForm = async (req, res) => {
+//   try {
+//     const currentDate = new Date();
+//     const october9th = new Date(currentDate.getFullYear(), 9, 9);
+//     let url = "https://staging.cityfinance.in/api/v1/";
+//     let endPoint = "fiscal-ranking/view";
+//     let endPoint2 = "fiscal-ranking/create-form";
+//     let token = "YOUR_AUTH_TOKEN_HERE"; // Replace with your actual authentication token
+
+//     if (currentDate < october9th) {
+//       let getUlbForms = await FiscalRanking.find({
+//         pmuSubmissionDate: { $exists: false },
+//         $or: [
+//           { currentFormStatus: 10 },
+//           {
+//             $and: [
+//               { currentFormStatus: 2 },
+//               {
+//                 $expr: {
+//                   $gt: [
+//                     {
+//                       $toDouble: "$progress.rejectedProgress"
+//                     },
+//                     0
+//                   ]
+//                 }
+//               }
+//             ]
+//           }
+//         ]
+//       }).select('ulb design_year').limit(1);
+
+//       console.log({ getUlbForms });
+
+//       for (let elem of getUlbForms) {
+//         const response = await axios.get(`${url}${endPoint}`, {
+//           params: {
+//             design_year: elem?.design_year.toString(),
+//             ulb: elem?.ulb.toString()
+//           },
+//           headers: {
+//             "x-access-token": token || req?.query?.token || "",
+//           },
+//         });
+//         const responseData = response?.data?.data;
+
+//         let payload = {
+//           ulbId: elem?.ulb.toString(),
+//           formId: elem?._id.toString(),
+//           design_year: elem?.design_year.toString(),
+//           isDraft: false,
+//           currentFormStatus: 9,
+//           actions: responseData?.tabs
+//         }
+
+//         try {
+//           await axios.post(`${url}${endPoint2}`, payload, {
+//             headers: {
+//               "x-access-token": token || req?.query?.token || "",
+//             }
+//           });
+//           // Handle the response data as needed
+//         } catch (postError) {
+//           console.error("Error in POST request :: ", postError.message);
+//           // Handle the POST request error, e.g., log it or return an error response
+//           return res.status(500).json({ error: 'Internal server error' });
+//         }
+//       }
+
+//       return res.status(200).send({ success: true, message: "Successfully created." });
+//     } else {
+//       res.status(400).json({ error: 'Current date is greater than October 9th' });
+//     }
+//   } catch (err) {
+//     console.error("Error in Freeze Form :: ", err.message);
+//     return res.status(400).json(err);
+//   }
+// }
