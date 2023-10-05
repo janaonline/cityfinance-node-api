@@ -5337,7 +5337,7 @@ module.exports.FRUlbFinancialData = async (req, res) => {
     let { csvCols } = await columnsForCSV(params);
     fyUlbFyCsv({
       res,
-      filename: "ULB_Ranking_Financial_Data1122.csv",
+      filename: "ULB_Ranking_Financial_Data.csv",
       modelName: "FiscalRankingMapper",
       csvCols,
       query
