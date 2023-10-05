@@ -3488,24 +3488,6 @@ async function updateQueryForFiscalRanking(
         }
         payload["approvalType"] = years.approvalType;
 
-        if ([
-          MASTER_FORM_STATUS['VERIFICATION_NOT_STARTED'],
-          MASTER_FORM_STATUS['VERIFICATION_IN_PROGRESS'],
-          MASTER_FORM_STATUS['SUBMISSION_ACKNOWLEDGED_BY_PMU'],
-        ].includes(currentFormStatus)
-        ) {
-          if (years.status == "REJECTED" &&
-          [
-            APPROVAL_TYPES['enteredPmuAcceptUlb'],
-            APPROVAL_TYPES['enteredPmuSecondAcceptPmu'],
-            APPROVAL_TYPES['enteredPmuAcceptPmu'],
-            APPROVAL_TYPES['enteredUlbAcceptPmu'],
-          ].includes(years?.approvalType)
-          ) {
-            payload["status"] = "APPROVED";
-          }
-        }
-        
         let up = await FiscalRankingMapper.findOneAndUpdate(filter, payload, {
           upsert: upsert,
         });
@@ -3685,12 +3667,17 @@ async function calculateAndUpdateStatusForMappers(
         }
         if (obj[k].yearData) {
           total += 1
-
+          
           let yearArr = obj[k].yearData;
           let dynamicObj = obj[k];
           let financialInfo = obj;
-          yearArr.forEach((uniqueItem) => {
-            let item = { ...uniqueItem }
+
+          for (const uniqueItem of yearArr) {
+            if(isAutoApprovedIndicator(uniqueItem, currentFormStatus)) {
+              uniqueItem.status = 'APPROVED';
+            }
+            let item = { ...uniqueItem };
+
             let skipFiles = {
               "registerGisProof": "registerGis",
               "accountStwreProof": "accountStwre"
@@ -3710,7 +3697,7 @@ async function calculateAndUpdateStatusForMappers(
               approvedIndicator += count[1]
               rejectedIndicator += count[2]
             }
-          })
+          }
           let status = yearArr.every((item) => {
             if (calculatedFields.includes(item?.type)) return true;
             if (item?.type && item.status) {
@@ -3797,6 +3784,25 @@ async function calculateAndUpdateStatusForMappers(
     throw err;
     console.log("error in calculatAndUpdateStatusForMappers :: ", err.message);
   }
+}
+
+function isAutoApprovedIndicator(years, currentFormStatus) {
+  if ([
+    MASTER_FORM_STATUS['VERIFICATION_NOT_STARTED'],
+    MASTER_FORM_STATUS['VERIFICATION_IN_PROGRESS'],
+    MASTER_FORM_STATUS['SUBMISSION_ACKNOWLEDGED_BY_PMU'],
+  ].includes(currentFormStatus)) {
+    if (years.status == "REJECTED" &&
+      [
+        APPROVAL_TYPES['enteredPmuAcceptUlb'],
+        APPROVAL_TYPES['enteredPmuSecondAcceptPmu'],
+        APPROVAL_TYPES['enteredPmuAcceptPmu'],
+        APPROVAL_TYPES['enteredUlbAcceptPmu'],
+      ].includes(years?.approvalType)) {
+      return true;
+    }
+  }
+  return false;
 }
 
 /**
