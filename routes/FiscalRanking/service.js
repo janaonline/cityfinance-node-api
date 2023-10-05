@@ -728,7 +728,7 @@ const getColumnWiseData = (key, obj, isDraft, dataSource = "", role, formStatus)
         ),
         ...obj,
         readonly: getReadOnly(formStatus, isDraft, role, obj.status),
-        // rejectReason:"",
+        status:"",
       };
     case "otherUpload":
       return {
@@ -1063,7 +1063,8 @@ exports.getView = async function (req, res, next) {
                 } else {
                   pf["value"] = singleFydata ? singleFydata.value : "";
                 }
-                pf["rejectReason"] = singleFydata.rejectReason
+                pf["rejectReason"] = singleFydata.rejectReason;
+                pf["rejectReason2"] = singleFydata?.rejectReason;
                 pf["modelName"] = singleFydata ? singleFydata.modelName : "";
                 pf['suggestedValue'] = singleFydata?.suggestedValue;
                 pf['pmuSuggestedValue2'] = singleFydata?.pmuSuggestedValue2;
@@ -1223,6 +1224,7 @@ exports.getView = async function (req, res, next) {
                     pf["value"] = singleFydata ? singleFydata.value : "";
                     pf['suggestedValue'] = singleFydata?.suggestedValue;
                     pf['pmuSuggestedValue2'] = singleFydata?.pmuSuggestedValue2;
+                    pf['rejectReason2'] = singleFydata?.rejectReason2;
                     pf['approvalType'] = singleFydata?.approvalType;
                     pf['ulbComment'] = singleFydata?.ulbComment;
                     pf['ulbValue'] = singleFydata?.ulbValue;
@@ -3468,15 +3470,21 @@ async function updateQueryForFiscalRanking(
           payload["status"] = years.status;
           payload["modelName"] = years.modelName;
           payload["rejectReason"] = years?.rejectReason || ""
+          payload["rejectReason2"] = years?.rejectReason2 || ""
           payload["displayPriority"] = dynamicObj.position;
           payload['ledgerUpdated'] = false
           payload["ulbComment"] = years.ulbComment;
           payload["ulbValue"] = years.ulbValue;
         } else {
           payload["status"] = years.status;
+          if(payload.status == 'REJECTED') {
+            payload["value"] = years.value;
+            payload["date"] = years.date;
+          }
           payload["suggestedValue"] = years.suggestedValue;
           payload["pmuSuggestedValue2"] = years?.pmuSuggestedValue2;
-          payload["rejectReason"] = years?.rejectReason
+          payload["rejectReason"] = years?.rejectReason;
+          payload["rejectReason2"] = years?.rejectReason2;
         }
         payload["approvalType"] = years.approvalType;
 
@@ -4405,6 +4413,10 @@ async function columnsForCSV(params) {
       "dataYear",
       "indicator",
       "amount",
+      "suggestedValue",
+      "pmuSuggestedValue2",
+      "approvalType",
+      "status"
     ];
     output["csvCols"] = [
       "State Name",
@@ -4416,6 +4428,10 @@ async function columnsForCSV(params) {
       "Data Year",
       "Indicator",
       "Amount",
+      "PMU Suggested Value",
+      "PMU Different Value",
+      "Counter",
+      "Approval Status"
     ];
 
     let FRShortKeyObj = {};
@@ -5400,10 +5416,12 @@ async function fyUlbFyCsv(params) {
         for (let key in sortKeys) {
           let fyData = fyMapperData.length ? fyMapperData.filter(e => parseFloat(e.displayPriority) == sortKeys[key]) : null;
           if (fyData) {
-            let str = '';
             for (let pf of fyData) {
               let value = pf.file ? pf.file : pf.date ? pf.date : pf.value ? pf.value : ""
-              str = stateName + "," + document.ulbName + "," + document.cityFinanceCode + "," + censusCode + "," + MASTER_STATUS_ID[document.currentFormStatus] + "," + YEAR_CONSTANTS_IDS[document.designYear] + "," + YEAR_CONSTANTS_IDS[pf.year] + "," + FRShortKeyObj[pf.type] + "," + value;
+              let mainArr = [stateName, document.ulbName, document.cityFinanceCode, censusCode, MASTER_STATUS_ID[document.currentFormStatus], YEAR_CONSTANTS_IDS[document.designYear]];
+              let mappersValues = [YEAR_CONSTANTS_IDS[pf.year], FRShortKeyObj[pf.type], value, pf?.suggestedValue, pf?.pmuSuggestedValue2, pf?.approvalType, pf?.status];
+
+              let str = [...mainArr, ...mappersValues].join(", ");
               str.trim()
               res.write("\ufeff" + str + "\r\n");
             }
