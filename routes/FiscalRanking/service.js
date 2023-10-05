@@ -728,7 +728,7 @@ const getColumnWiseData = (key, obj, isDraft, dataSource = "", role, formStatus)
         ),
         ...obj,
         readonly: getReadOnly(formStatus, isDraft, role, obj.status),
-        // rejectReason:"",
+        status:"",
       };
     case "otherUpload":
       return {
