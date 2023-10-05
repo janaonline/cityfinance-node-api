@@ -4413,6 +4413,10 @@ async function columnsForCSV(params) {
       "dataYear",
       "indicator",
       "amount",
+      "suggestedValue",
+      "pmuSuggestedValue2",
+      "approvalType",
+      "status"
     ];
     output["csvCols"] = [
       "State Name",
@@ -4424,6 +4428,10 @@ async function columnsForCSV(params) {
       "Data Year",
       "Indicator",
       "Amount",
+      "PMU Suggested Value",
+      "PMU Different Value",
+      "Counter",
+      "Approval Status"
     ];
 
     let FRShortKeyObj = {};
@@ -5408,10 +5416,12 @@ async function fyUlbFyCsv(params) {
         for (let key in sortKeys) {
           let fyData = fyMapperData.length ? fyMapperData.filter(e => parseFloat(e.displayPriority) == sortKeys[key]) : null;
           if (fyData) {
-            let str = '';
             for (let pf of fyData) {
               let value = pf.file ? pf.file : pf.date ? pf.date : pf.value ? pf.value : ""
-              str = stateName + "," + document.ulbName + "," + document.cityFinanceCode + "," + censusCode + "," + MASTER_STATUS_ID[document.currentFormStatus] + "," + YEAR_CONSTANTS_IDS[document.designYear] + "," + YEAR_CONSTANTS_IDS[pf.year] + "," + FRShortKeyObj[pf.type] + "," + value;
+              let mainArr = [stateName, document.ulbName, document.cityFinanceCode, censusCode, MASTER_STATUS_ID[document.currentFormStatus], YEAR_CONSTANTS_IDS[document.designYear]];
+              let mappersValues = [YEAR_CONSTANTS_IDS[pf.year], FRShortKeyObj[pf.type], value, pf?.suggestedValue, pf?.pmuSuggestedValue2, pf?.approvalType, pf?.status];
+
+              let str = [...mainArr, ...mappersValues].join(", ");
               str.trim()
               res.write("\ufeff" + str + "\r\n");
             }
