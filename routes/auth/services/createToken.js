@@ -48,7 +48,7 @@ module.exports.createToken = (user, sessionId, body) => {
             var updates = {
                 $set: { loginAttempts: 0 },
             };
-            if (!user.ulbflagForEmail) {
+            if (!user.emailFlag) {
                 user.email = user.accountantEmail;
             }
             await User.update({ ulb: ObjectId(user.ulb), role: 'ULB' }, updates).exec(); // set
