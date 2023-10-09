@@ -9,7 +9,8 @@ const APPROVAL_TYPES = {
     'enteredPmuRejectUlb': 4,
     'enteredUlbAcceptPmu': 5,
     'enteredPmuAcceptPmu': 6,
-    'enteredPmuAcceptPmuAuto': 7
+    'enteredPmuSecondAcceptPmu': 7,
+    'enteredPmuAcceptPmuAuto': 8,
 }
 const fiscalRankingMapperSchema = new Schema(
     {
@@ -30,6 +31,7 @@ const fiscalRankingMapperSchema = new Schema(
             type:String,
             default:""
         },
+        rejectReason2: { type: String, default: "" },
         isActive: { type: Boolean, default: 1 },
         modelName: modelSchema(),
         type: {
@@ -55,6 +57,8 @@ const fiscalRankingMapperSchema = new Schema(
         displayPriority: { type: Number, default: null },
         suggestedValue: { type: Schema.Types.Mixed, default: null },
         ulbComment: { type:String, default:""},
+        ulbValue: { type: Schema.Types.Mixed, default: null },
+        pmuSuggestedValue2: { type: Schema.Types.Mixed, default: null },
         approvalType: {
             type: Number,
             default: null,
