@@ -3648,7 +3648,8 @@ async function calculateAndUpdateStatusForMappers(
   year,
   updateForm,
   isDraft,
-  currentFormStatus
+  currentFormStatus,
+  role
 ) {
   try {
     let totalIndicator = 0;
@@ -3688,7 +3689,7 @@ async function calculateAndUpdateStatusForMappers(
           let financialInfo = obj;
 
           for (const uniqueItem of yearArr) {
-            if(isAutoApprovedIndicator(uniqueItem, currentFormStatus)) {
+            if(isAutoApprovedIndicator(uniqueItem, currentFormStatus, role)) {
               uniqueItem.status = 'APPROVED';
             }
             let item = { ...uniqueItem };
@@ -3801,24 +3802,66 @@ async function calculateAndUpdateStatusForMappers(
   }
 }
 
-function isAutoApprovedIndicator(years, currentFormStatus) {
-  if ([
-    MASTER_FORM_STATUS['VERIFICATION_NOT_STARTED'],
-    MASTER_FORM_STATUS['VERIFICATION_IN_PROGRESS'],
-    MASTER_FORM_STATUS['SUBMISSION_ACKNOWLEDGED_BY_PMU'],
-  ].includes(currentFormStatus)) {
-    if (years.status == "REJECTED" &&
-      [
-        APPROVAL_TYPES['enteredPmuAcceptUlb'],
-        APPROVAL_TYPES['enteredPmuSecondAcceptPmu'],
-        APPROVAL_TYPES['enteredPmuAcceptPmu'],
-        APPROVAL_TYPES['enteredUlbAcceptPmu'],
-      ].includes(years?.approvalType)) {
+// function isAutoApprovedIndicator(years, currentFormStatus, role) {
+//   if (role == 'ULB' &&
+//   [
+//     MASTER_FORM_STATUS['VERIFICATION_NOT_STARTED'],
+//     MASTER_FORM_STATUS['VERIFICATION_IN_PROGRESS'],
+//   ].includes(currentFormStatus)) {
+//     if (years.status == "REJECTED" &&
+//       [
+//         APPROVAL_TYPES['enteredPmuAcceptUlb'],
+//         APPROVAL_TYPES['enteredPmuSecondAcceptPmu'],
+//         APPROVAL_TYPES['enteredPmuAcceptPmu'],
+//         APPROVAL_TYPES['enteredUlbAcceptPmu'],
+//       ].includes(years?.approvalType)) {
+//       return true;
+//     }
+//   }else if(role == "PMU" &&
+//   [
+//     MASTER_FORM_STATUS['SUBMISSION_ACKNOWLEDGED_BY_PMU'],
+//   ].includes(currentFormStatus)) {
+//     if (years.status == "REJECTED" &&
+//       [
+//         APPROVAL_TYPES['enteredPmuAcceptUlb'],
+//         APPROVAL_TYPES['enteredPmuSecondAcceptPmu'],
+//         APPROVAL_TYPES['enteredPmuAcceptPmu'],
+//         APPROVAL_TYPES['enteredUlbAcceptPmu'],
+//       ].includes(years?.approvalType)) {
+//       return true;
+//     }
+//   }
+//   return false;
+// }
+
+function isAutoApprovedIndicator(years, currentFormStatus, role) {
+  const ulbConditions = role === 'ULB' &&
+    [
+      MASTER_FORM_STATUS['VERIFICATION_NOT_STARTED'],
+      MASTER_FORM_STATUS['VERIFICATION_IN_PROGRESS'],
+    ].includes(currentFormStatus);
+
+  const pmuConditions = role === 'PMU' &&
+    [
+      MASTER_FORM_STATUS['SUBMISSION_ACKNOWLEDGED_BY_PMU'],
+    ].includes(currentFormStatus);
+
+  if ((ulbConditions || pmuConditions) && years.status === 'REJECTED') {
+    const approvedTypesToCheck = [
+      APPROVAL_TYPES['enteredPmuAcceptUlb'],
+      APPROVAL_TYPES['enteredPmuSecondAcceptPmu'],
+      APPROVAL_TYPES['enteredPmuAcceptPmu'],
+      APPROVAL_TYPES['enteredUlbAcceptPmu'],
+    ];
+
+    if (approvedTypesToCheck.includes(years?.approvalType)) {
       return true;
     }
   }
+
   return false;
 }
+
 
 /**
  * It takes an object as an argument and checks if the values of the object are undefined, null or
@@ -3999,7 +4042,8 @@ module.exports.actionTakenByMoHua = catchAsync(async (req, res) => {
       design_year,
       false,
       isDraft,
-      currentFormStatus
+      currentFormStatus,
+      role
     );
     let formStatus = currentFormStatus
     if (currentFormStatus != statusTracker["VIP"]) {
@@ -4176,7 +4220,8 @@ module.exports.createForm = catchAsync(async (req, res) => {
       design_year,
       true,
       isDraft,
-      currentFormStatus
+      currentFormStatus,
+      role
     );
     if (!(statusTracker.IP === currentFormStatus)) {
       let a = await FiscalRanking.findOneAndUpdate({
