@@ -66,10 +66,17 @@ let priorTabsForFiscalRanking = {
   selDec: "s5",
 };
 
-function getMessages(params){
-  let {ulbName} = params
-  return {
-    "freeze" :`Dear ${ulbName} , your data input form for City Finance Rankings has been put on hold. Cityfinance Rankings Module is no longer accepting submissions. Please email rankings@cityfinance.in for any queries.`
+function getMessages(params) {
+  let { ulbName, formFreeze } = params
+
+  if (formFreeze) {
+    return {
+      "freeze": `Dear ${ulbName} , PMU returned your form with a 10-day response request. Despite our efforts to contact you via email and phone, we have not received any responses. Consequently, we are now in the process of finalizing our ranking values.`
+    }
+  } else {
+    return {
+      "freeze": `Dear ${ulbName} , your data input form for City Finance Rankings has been put on hold. Cityfinance Rankings Module is no longer accepting submissions. Please email rankings@cityfinance.in for any queries.`
+    }
   }
 }
 async function manageLedgerData(params) {
@@ -873,6 +880,7 @@ exports.getView = async function (req, res, next) {
         fyData = await FiscalRankingMapper.find({
           fiscal_ranking: data._id,
         }).lean();
+
       data["populationFr"] = {
         ...data.populationFr,
         value: data?.populationFr?.value
@@ -1336,6 +1344,15 @@ exports.getView = async function (req, res, next) {
       let actionTaken = await checkIfActionTaken(modifiedTabs)
       hideForm = !actionTaken 
     }
+
+    if (role == 'ULB' && [MASTER_FORM_STATUS['RETURNED_BY_PMU'], MASTER_FORM_STATUS['IN_PROGRESS']].includes(viewOne?.currentFormStatus) && !viewOne.pmuSubmissionDate) {
+      hideForm = true;
+      notice = await getMessages({
+        ulbName: ulbPData.name,
+        formFreeze: true
+      })['freeze']
+    }
+
     let viewData = {
       _id: viewOne._id ? viewOne._id : null,
       ulb: viewOne.ulb ? viewOne.ulb : req.query.ulb,
@@ -1350,7 +1367,8 @@ exports.getView = async function (req, res, next) {
       currentFormStatus: viewOne.currentFormStatus,
       financialYearTableHeader,
       messages: userMessages,
-      hideForm : (process.env.ENV == ENV['prod']) ? hideForm : false,
+      // hideForm : (process.env.ENV == ENV['prod']) ? hideForm : false,
+      hideForm,
       notice
     };
     if (userMessages.length > 0) {
