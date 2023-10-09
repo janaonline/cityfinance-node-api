@@ -71,11 +71,11 @@ function getMessages(params) {
 
   if (formFreeze) {
     return {
-      "freeze": `Dear ${ulbName} , PMU returned your form with a 10-day response request. Despite our efforts to contact you via email and phone, we have not received any responses. Consequently, we are now in the process of finalizing our ranking values.`
+      "freeze": `Dear ${ulbName}, PMU returned your form with a 10-day response request. Despite our efforts to contact you via email and phone, we have not received any responses. Consequently, we are now in the process of finalizing our ranking values.`
     }
   } else {
     return {
-      "freeze": `Dear ${ulbName} , your data input form for City Finance Rankings has been put on hold. Cityfinance Rankings Module is no longer accepting submissions. Please email rankings@cityfinance.in for any queries.`
+      "freeze": `Dear ${ulbName}, your data input form for City Finance Rankings has been put on hold. Cityfinance Rankings Module is no longer accepting submissions. Please email rankings@cityfinance.in for any queries.`
     }
   }
 }
@@ -1367,8 +1367,7 @@ exports.getView = async function (req, res, next) {
       currentFormStatus: viewOne.currentFormStatus,
       financialYearTableHeader,
       messages: userMessages,
-      // hideForm : (process.env.ENV == ENV['prod']) ? hideForm : false,
-      hideForm,
+      hideForm : (process.env.ENV == ENV['prod']) ? hideForm : false,
       notice
     };
     if (userMessages.length > 0) {
