@@ -46,6 +46,8 @@ const UserSchema = mongoose.Schema({
 	passwordHistory: { type: Array, default: [] },
 	isRegistered: { type: Boolean, default: false },
 	isVerified2223: {type: Boolean, default: false},
-	isNodalOfficer: { type: Boolean, default: false }
+	isNodalOfficer: { type: Boolean, default: false },
+	otpAttempts: {type: Number },
+	otpBlockedUntil: {type: Date }
 });
 module.exports = mongoose.model('User', UserSchema);;

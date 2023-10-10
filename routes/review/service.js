@@ -15,6 +15,7 @@ const { calculateKeys } = require('../CommonActionAPI/service')
 const Ulb = require('../../models/Ulb')
 const State = require('../../models/State');
 const MasterForm = require('../../models/MasterForm');
+const { PREV_MASTER_FORM_STATUS, MASTER_STATUS_ID, MASTER_FORM_STATUS } = require('../../util/FormNames');
 
 
 function padTo2Digits(num) {
@@ -1988,12 +1989,12 @@ module.exports.get = catchAsync(async (req, res) => {
 
   let query = computeQuery(collectionName, formType, isFormOptional, state, design_year, csv, skip, limit, newFilter, dbCollectionName, folderName);
   if (getQuery) return res.json({
-    query: query[0]
+    query: query[0] 
   })
 
   // if csv - then no skip and limit, else with skip and limit
   if (csv) {
-    await createCSV({ formType, collectionName, res, loggedInUserRole, req, query });
+    await createCSV({ formType, collectionName, res, loggedInUserRole, query });
     return;
   }
   let data = formType == "ULB" ? Ulb.aggregate(query[0]).allowDiskUse(true) : State.aggregate(query[0]).allowDiskUse(true)
@@ -2021,7 +2022,8 @@ module.exports.get = catchAsync(async (req, res) => {
         }
       } else {
         el['cantakeAction'] = req.decoded.role === "ADMIN" ? false : canTakeActionOrViewOnly(el, loggedInUserRole)
-      }    }
+      }
+    }
   })
 
   if (
@@ -2057,12 +2059,30 @@ module.exports.get = catchAsync(async (req, res) => {
 })
 
 
+/**
+ * The function `createCSV` is an asynchronous function that generates a CSV file based on the provided
+ * parameters, including the form type, collection name, response object, logged-in user role, request
+ * object, and query.
+ */
 async function createCSV(params) {
-  const { formType, collectionName, res, loggedInUserRole, req, query } = params;
+  const { formType, collectionName, res, loggedInUserRole, query } =
+    params;
   try {
-    let data = formType == "ULB" ? await Ulb.aggregate(query[0]).allowDiskUse(true).exec() : await State.aggregate(query[0]).allowDiskUse(true);
-
-    if (formType === 'ULB') {
+    let data =
+      formType == "ULB"
+        ? await Ulb.aggregate(query[0]).allowDiskUse(true).exec()
+        : await State.aggregate(query[0]).allowDiskUse(true);
+    data.forEach((el) => {
+      el["formStatus"] = el.formData
+        ? calculateStatus(
+            el.formData.status,
+            el.formData.actionTakenByRole,
+            el.formData.isDraft,
+            formType
+          )
+        : MASTER_STATUS_ID[MASTER_FORM_STATUS['NOT_STARTED']];
+    });
+    if (formType === "ULB") {
       let filename = `Review_${formType}-${collectionName}.csv`;
       // Set approrpiate download headers
       res.setHeader("Content-disposition", "attachment; filename=" + filename);
@@ -2073,14 +2093,18 @@ async function createCSV(params) {
       if (collectionName != CollectionNames.annual && collectionName != CollectionNames['28SLB']) {
         res.write(
           "\ufeff" +
-          `${fixedColumns.toString()} ${dynamicColumns.toString()} \r\n`
+            `${fixedColumns.toString()} ${dynamicColumns.toString()} \r\n`
         );
 
         res.flushHeaders();
         for (let el of data) {
-          let dynamicElementData = await createDynamicElements(collectionName, formType, el);
+          let dynamicElementData = await createDynamicElements(
+            collectionName,
+            formType,
+            el
+          );
           if (el.UA === "null") {
-            el.UA = "NA"
+            el.UA = "NA";
           }
           if (el.UA === "NA") {
             el.isUA = "No";
@@ -2088,46 +2112,46 @@ async function createCSV(params) {
             el.isUA = "Yes";
           }
           if (!el.censusCode) {
-            el.censusCode = "NA"
+            el.censusCode = "NA";
           }
           res.write(
             "\ufeff" +
-            el.stateName +
-            "," +
-            el.ulbName +
-            "," +
-            el.ulbCode +
-            "," +
-            el.censusCode +
-            "," +
-            el.populationType +
-            "," +
-            el.isUA +
-            "," +
-            el.UA +
-            "," +
-
-            dynamicElementData.toString() +
-
-            "\r\n"
-          )
-
+              el.stateName +
+              "," +
+              el.ulbName +
+              "," +
+              el.ulbCode +
+              "," +
+              el.censusCode +
+              "," +
+              el.populationType +
+              "," +
+              el.isUA +
+              "," +
+              el.UA +
+              "," +
+              dynamicElementData.toString() +
+              "\r\n"
+          );
         }
         res.end();
-        return
+        return;
       } else {
         res.write(
           "\ufeff" +
-          `State Name, ULB Name, City Finance Code, Census Code, Population Category, UA, UA Name, ${dynamicColumns.toString()}  \r\n`
+            `State Name, ULB Name, City Finance Code, Census Code, Population Category, UA, UA Name, ${dynamicColumns.toString()}  \r\n`
         );
 
         res.flushHeaders();
         for (let el of data) {
-
-          let [row1, row2] = await createDynamicElements(collectionName, formType, el);
+          let [row1, row2] = await createDynamicElements(
+            collectionName,
+            formType,
+            el
+          );
 
           if (el.UA === "null") {
-            el.UA = "NA"
+            el.UA = "NA";
           }
           if (el.UA === "NA") {
             el.isUA = "No";
@@ -2135,98 +2159,114 @@ async function createCSV(params) {
             el.isUA = "Yes";
           }
           if (!el.censusCode) {
-            el.censusCode = "NA"
+            el.censusCode = "NA";
           }
 
           res.write(
             "\ufeff" +
-            el.stateName +
-            "," +
-            el.ulbName +
-            "," +
-            el.ulbCode +
-            "," +
-            el.censusCode +
-            "," +
-            el.populationType +
-            "," +
-            el.isUA +
-            "," +
-            el.UA +
-            "," +
-            row1.toString() +
-
-            "\r\n"
-          )
+              el.stateName +
+              "," +
+              el.ulbName +
+              "," +
+              el.ulbCode +
+              "," +
+              el.censusCode +
+              "," +
+              el.populationType +
+              "," +
+              el.isUA +
+              "," +
+              el.UA +
+              "," +
+              row1.toString() +
+              "\r\n"
+          );
           res.write(
             "\ufeff" +
-            el.stateName +
-            "," +
-            el.ulbName +
-            "," +
-            el.ulbCode +
-            "," +
-            el.censusCode +
-            "," +
-            el.populationType +
-            "," +
-            el.isUA +
-            "," +
-            el.UA +
-            "," +
-            row2.toString() +
-
-            "\r\n"
-          )
-
+              el.stateName +
+              "," +
+              el.ulbName +
+              "," +
+              el.ulbCode +
+              "," +
+              el.censusCode +
+              "," +
+              el.populationType +
+              "," +
+              el.isUA +
+              "," +
+              el.UA +
+              "," +
+              row2.toString() +
+              "\r\n"
+          );
         }
         res.end();
-        return
+        return;
       }
     } else if (formType === "STATE") {
       if (collectionName == "WaterRejenuvationRecycling") {
-        await waterSenitationXlsDownload(data, res, collectionName, formType, loggedInUserRole);
-      } else if (collectionName == 'ActionPlan') {
-        await actionPlanXlsDownload(data, res, collectionName, formType, loggedInUserRole)   // xls
+        await waterSenitationXlsDownload(
+          data,
+          res,
+          collectionName,
+          formType,
+          loggedInUserRole
+        );
+      } else if (collectionName == "ActionPlan") {
+        await actionPlanXlsDownload(
+          data,
+          res,
+          collectionName,
+          formType,
+          loggedInUserRole
+        ); // xls
       } else {
         let filename = `Review_${formType}-${collectionName}.csv`;
         // Set approrpiate download headers
-        res.setHeader("Content-disposition", "attachment; filename=" + filename);
-        res.writeHead(200, { "Content-Type": "text/csv;charset=utf-8,%EF%BB%BF" });
+        res.setHeader(
+          "Content-disposition",
+          "attachment; filename=" + filename
+        );
+        res.writeHead(200, {
+          "Content-Type": "text/csv;charset=utf-8,%EF%BB%BF",
+        });
 
         let fixedColumns = `State Name, City Finance Code, Regional Name,`;
-        let dynamicColumns = createDynamicColumns(collectionName)
+        let dynamicColumns = createDynamicColumns(collectionName);
         res.write(
           "\ufeff" +
-          `${fixedColumns.toString()} ${dynamicColumns.toString()} \r\n`
+            `${fixedColumns.toString()} ${dynamicColumns.toString()} \r\n`
         );
 
         res.flushHeaders();
         if (data?.length) {
           for (let el of data) {
-            let dynamicElementData = await createDynamicElements(collectionName, formType, el);
+            let dynamicElementData = await createDynamicElements(
+              collectionName,
+              formType,
+              el
+            );
 
             res.write(
               "\ufeff" +
-              el.stateName +
-              "," +
-              el.stateCode +
-              "," +
-              el.regionalName +
-              "," +
-              dynamicElementData.toString() +
-              "\r\n"
-            )
-
+                el.stateName +
+                "," +
+                el.stateCode +
+                "," +
+                el.regionalName +
+                "," +
+                dynamicElementData.toString() +
+                "\r\n"
+            );
           }
         } else {
           res.write("\ufeff" + "");
         }
-        
-        res.end();
-        return
-      }
 
+        res.end();
+        return;
+      }
     }
   } catch (error) {
     console.log("CSV Download Error", error);
