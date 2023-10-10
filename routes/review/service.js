@@ -1989,7 +1989,7 @@ module.exports.get = catchAsync(async (req, res) => {
 
   let query = computeQuery(collectionName, formType, isFormOptional, state, design_year, csv, skip, limit, newFilter, dbCollectionName, folderName);
   if (getQuery) return res.json({
-    query: query[0]
+    query: query[0] 
   })
 
   // if csv - then no skip and limit, else with skip and limit
@@ -2000,7 +2000,7 @@ module.exports.get = catchAsync(async (req, res) => {
   let data = formType == "ULB" ? Ulb.aggregate(query[0]).allowDiskUse(true) : State.aggregate(query[0]).allowDiskUse(true)
   total = formType == "ULB" ? Ulb.aggregate(query[1]).allowDiskUse(true) : State.aggregate(query[1]).allowDiskUse(true)
   let allData = await Promise.all([data, total]);
-  data = allData[0]
+  data = allData[0] 
   total = allData[1].length ? allData[1][0]['total'] : 0
   //  if(collectionName == CollectionNames.dur || collectionName == CollectionNames.gfc ||
   //     collectionName == CollectionNames.odf || collectionName == CollectionNames.slb || 
@@ -2009,28 +2009,20 @@ module.exports.get = catchAsync(async (req, res) => {
   const sequentialReview = `Cannot review since last year form is not approved by MoHUA.`
   data.forEach(el => {
     el['info'] = '';
-    el['prevYearStatus'] = '';
-    el['prevYearStatusId'] = '';
     if (!el.formData) {
       el['formStatus'] = "Not Started";
       el['cantakeAction'] = false;
     } else {
       el['formStatus'] = calculateStatus(el.formData.status, el.formData.actionTakenByRole, el.formData.isDraft, formType);
-      el['cantakeAction'] = req.decoded.role === "ADMIN" ? false : canTakeActionOrViewOnly(el, loggedInUserRole)
       if (collectionName === CollectionNames.dur || collectionName === CollectionNames['28SLB']) {
-      //   el['cantakeAction'] = req.decoded.role === "ADMIN" ? false : canTakeActionOrViewOnly(el, loggedInUserRole);
-      //   if (!(approvedUlbs.find(ulb => ulb.toString() === el.ulbId.toString())) && loggedInUserRole === "MoHUA") {
-      //     el['cantakeAction'] = false
-      //     el['formStatus'] === STATUS_LIST['Under_Review_By_MoHUA'] ? el['info'] = sequentialReview : ""
-      //   }
-        el['prevYearStatus'] = approvedUlbs[el._id] ?? STATUS_LIST['Not_Started'];
-        const previousStatus =  el['prevYearStatus']?.toUpperCase().split(' ').join('_')
-        el['prevYearStatusId'] = PREV_MASTER_FORM_STATUS[previousStatus] ??  PREV_MASTER_FORM_STATUS['NOT_STARTED']
-
-      } 
-      // else {
-        // el['cantakeAction'] = req.decoded.role === "ADMIN" ? false : canTakeActionOrViewOnly(el, loggedInUserRole)
-      // }
+        el['cantakeAction'] = req.decoded.role === "ADMIN" ? false : canTakeActionOrViewOnly(el, loggedInUserRole);
+        if (!(approvedUlbs.find(ulb => ulb.toString() === el.ulbId.toString())) && loggedInUserRole === "MoHUA" && el.access) {
+          el['cantakeAction'] = false
+          el['formStatus'] === STATUS_LIST['Under_Review_By_MoHUA'] ? el['info'] = sequentialReview : ""
+        }
+      } else {
+        el['cantakeAction'] = req.decoded.role === "ADMIN" ? false : canTakeActionOrViewOnly(el, loggedInUserRole)
+      }
     }
   })
 
@@ -2327,11 +2319,11 @@ async function masterForms2122(collectionName, data) {
 
 function getUlbsApprovedByMoHUA(forms) {
   try {
-    let ulbArray = {};
+    let ulbArray = [];
     for (let form of forms) {
-      // if (form.actionTakenByRole === "MoHUA" && form.isSubmit && form.status === "APPROVED") {
-        ulbArray[form.ulb] = calculateStatus(form.status,form.actionTakenByRole, !form.isSubmit,"ULB");
-      // }
+      if (form.actionTakenByRole === "MoHUA" && form.isSubmit && form.status === "APPROVED") {
+        ulbArray.push(form.ulb);
+      }
     }
     return ulbArray;
   } catch (error) {
