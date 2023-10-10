@@ -50,6 +50,12 @@ module.exports.verifyOtp = catchAsync(async (req, res, next) => {
         }
 
         let user = await getUSer({ email });
+
+        //reset otp attempt
+        await User.updateOne(
+          { _id: ObjectId(user._id) },
+          { $unset: { otpAttempts: "", otpBlockedUntil: "" } }
+        ).exec();
         let state;
         if (user?.state) state = await State.findOne({ _id: ObjectId(user.state) });
         if (state && state['accessToXVFC'] == false) {

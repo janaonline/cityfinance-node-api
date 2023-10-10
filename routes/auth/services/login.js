@@ -72,7 +72,7 @@ module.exports.login = async (req, res) => {
       });
     } else {
       let update = Service.incLoginAttempts(user);
-      if (!user.ulbflagForEmail) {
+      if (!user.emailFlag) {
         user.email = user.accountantEmail;
         let up = await User.update({ _id: user._id }, update).exec();
       }

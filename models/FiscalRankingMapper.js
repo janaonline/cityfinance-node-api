@@ -1,6 +1,17 @@
 require("./dbConnect");
 const { modelSchema } = require('./constants')
-const { FRTypeShortKey } = require('../routes/FiscalRanking/formjson')
+const { FRTypeShortKey } = require('../routes/FiscalRanking/formjson');
+
+const APPROVAL_TYPES = {
+    'ulbEnteredPmuAccept': 1,
+    'ulbEnteredPmuReject': 2,
+    'enteredPmuAcceptUlb': 3,
+    'enteredPmuRejectUlb': 4,
+    'enteredUlbAcceptPmu': 5,
+    'enteredPmuAcceptPmu': 6,
+    'enteredPmuSecondAcceptPmu': 7,
+    'enteredPmuAcceptPmuAuto': 8,
+}
 const fiscalRankingMapperSchema = new Schema(
     {
         fiscal_ranking: { type: Schema.Types.ObjectId, ref: "FiscalRanking", required: true },
@@ -20,6 +31,7 @@ const fiscalRankingMapperSchema = new Schema(
             type:String,
             default:""
         },
+        rejectReason2: { type: String, default: "" },
         isActive: { type: Boolean, default: 1 },
         modelName: modelSchema(),
         type: {
@@ -43,6 +55,18 @@ const fiscalRankingMapperSchema = new Schema(
         },
         ledgerUpdated: { type: Boolean, default: false },
         displayPriority: { type: Number, default: null },
+        suggestedValue: { type: Schema.Types.Mixed, default: null },
+        ulbComment: { type:String, default:""},
+        ulbValue: { type: Schema.Types.Mixed, default: null },
+        pmuSuggestedValue2: { type: Schema.Types.Mixed, default: null },
+        approvalType: {
+            type: Number,
+            default: null,
+            enum: {
+              values: Object.values(APPROVAL_TYPES),
+              message: "Allowed values are " + Object.keys(APPROVAL_TYPES).join(', '),
+            },
+          },
         // createdAt: { type: Date, default: Date.now() },
         // modifiedAt: { type: Date, default: Date.now() },
     },

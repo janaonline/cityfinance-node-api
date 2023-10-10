@@ -200,6 +200,19 @@ const fiscalRankingSchema = new Schema(
             },
             rejectReason:{type:String,default:""}
         },
+        ulbSupportingDoc:{
+            name: { type: String },
+            url: { type: String },
+            status: {
+                type: String,
+                enum: {
+                    values: ["PENDING", "APPROVED", "REJECTED"],
+                    default:"",
+                    message: "ERROR: STATUS BE EITHER 'PENDING'/ 'APPROVED' / 'REJECTED'",
+                },
+            },
+            rejectReason:{type:String,default:""}
+        },
         status: {
             type: String,
             enum: {
@@ -225,6 +238,7 @@ const fiscalRankingSchema = new Schema(
         isActive: { type: Boolean, default: 1 },
         isDraft: { type: Boolean, default: false, required: true },
         submittedDate :  { type: Date, default:null },
+        pmuSubmissionDate: {type: Date, default: null}
     },
     { timestamps: { createdAt: "createdAt", updatedAt: "modifiedAt" } }
 );
