@@ -1345,12 +1345,14 @@ exports.getView = async function (req, res, next) {
       hideForm = !actionTaken 
     }
 
-    if (role == 'ULB' && [MASTER_FORM_STATUS['RETURNED_BY_PMU'], MASTER_FORM_STATUS['IN_PROGRESS']].includes(viewOne?.currentFormStatus) && !viewOne.pmuSubmissionDate) {
+    if (role == 'ULB' && [MASTER_FORM_STATUS['RETURNED_BY_PMU'], MASTER_FORM_STATUS['IN_PROGRESS']].includes(viewOne?.currentFormStatus) && !viewOne?.pmuSubmissionDate) {
       hideForm = true;
-      notice = await getMessages({
-        ulbName: ulbPData.name,
-        formFreeze: true
-      })['freeze']
+      if (+viewOne?.progress?.rejectedProgress > 0) {
+        notice = await getMessages({
+          ulbName: ulbPData.name,
+          formFreeze: true
+        })['freeze']
+      }
     }
 
     let viewData = {
@@ -1367,7 +1369,8 @@ exports.getView = async function (req, res, next) {
       currentFormStatus: viewOne.currentFormStatus,
       financialYearTableHeader,
       messages: userMessages,
-      hideForm : (process.env.ENV == ENV['prod']) ? hideForm : false,
+      // hideForm : (process.env.ENV == ENV['prod']) ? hideForm : false,
+      hideForm,
       notice
     };
     if (userMessages.length > 0) {
@@ -3801,38 +3804,6 @@ async function calculateAndUpdateStatusForMappers(
     console.log("error in calculatAndUpdateStatusForMappers :: ", err.message);
   }
 }
-
-// function isAutoApprovedIndicator(years, currentFormStatus, role) {
-//   if (role == 'ULB' &&
-//   [
-//     MASTER_FORM_STATUS['VERIFICATION_NOT_STARTED'],
-//     MASTER_FORM_STATUS['VERIFICATION_IN_PROGRESS'],
-//   ].includes(currentFormStatus)) {
-//     if (years.status == "REJECTED" &&
-//       [
-//         APPROVAL_TYPES['enteredPmuAcceptUlb'],
-//         APPROVAL_TYPES['enteredPmuSecondAcceptPmu'],
-//         APPROVAL_TYPES['enteredPmuAcceptPmu'],
-//         APPROVAL_TYPES['enteredUlbAcceptPmu'],
-//       ].includes(years?.approvalType)) {
-//       return true;
-//     }
-//   }else if(role == "PMU" &&
-//   [
-//     MASTER_FORM_STATUS['SUBMISSION_ACKNOWLEDGED_BY_PMU'],
-//   ].includes(currentFormStatus)) {
-//     if (years.status == "REJECTED" &&
-//       [
-//         APPROVAL_TYPES['enteredPmuAcceptUlb'],
-//         APPROVAL_TYPES['enteredPmuSecondAcceptPmu'],
-//         APPROVAL_TYPES['enteredPmuAcceptPmu'],
-//         APPROVAL_TYPES['enteredUlbAcceptPmu'],
-//       ].includes(years?.approvalType)) {
-//       return true;
-//     }
-//   }
-//   return false;
-// }
 
 function isAutoApprovedIndicator(years, currentFormStatus, role) {
   const ulbConditions = role === 'ULB' &&
