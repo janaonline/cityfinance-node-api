@@ -5703,7 +5703,7 @@ module.exports.freezeForm = async (req, res) => {
 
     if (currentDate < october13th) {
       let getUlbForms = await FiscalRanking.find({
-        currentFormStatus: { $in: [2, 10] },
+        currentFormStatus: { $in: [MASTER_FORM_STATUS['IN_PROGRESS'], MASTER_FORM_STATUS['RETURNED_BY_PMU']] },
         $expr: {
           $gt: [
             { $toDouble: "$progress.rejectedProgress" },
