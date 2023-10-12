@@ -59,8 +59,15 @@ module.exports.frFormFreeze = async () => {
 
 
                 //Check validation..
-                actualValues = checkLedgerValidation(key, actualValues, indicator, sumValues);
-
+                if (key == "fixedAsset") {
+                    actualValues = indicator.yearData?.map((year) => year.value);
+                }
+                if (key == "faLandBuild" || key == "faOther") {
+                    indicator.yearData?.forEach((year, index) => {
+                        sumValues[index] += +year.value;
+                    });
+                }
+                
                 //Mutate the payload for every Indicator of financial Indicator.
                 mutateIndicatorPayload(indicator);
             });
@@ -118,18 +125,6 @@ const createToken = (user) => {
     }
     data['purpose'] = 'WEB';
     return jwt.sign(data, Config.JWT.SECRET, { expiresIn: Config.JWT.TOKEN_EXPIRY });
-}
-
-function checkLedgerValidation(key, actualValues, indicator, sumValues) {
-    if (key == "fixedAsset") {
-        actualValues = indicator.yearData?.map((year) => year.value);
-    }
-    if (key == "faLandBuild" || key == "faOther") {
-        indicator.yearData?.forEach((year, index) => {
-            sumValues[index] += +year.value;
-        });
-    }
-    return actualValues;
 }
 
 function mutateIndicatorPayload(indicator) {
