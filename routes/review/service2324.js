@@ -12,7 +12,7 @@ const Service = require('../../service');
 const STATUS_LIST = require('../../util/newStatusList');
 const { MASTER_STATUS, MASTER_STATUS_ID, YEAR_CONSTANTS, YEAR_CONSTANTS_IDS, MASTER_FORM_STATUS, MASTER_FORM_QUESTION_STATUS, MASTER_FORM_QUESTION_STATUS_STATE, FORM_TYPE_SUBMIT_CLAIM, FORM_TYPE_NAME, INSTALLMENT_NAME } = require('../../util/FormNames');
 const { getCurrentYear, getAccessYear, getFinancialYear } = require('../../util/masterFunctions');
-const { canTakeActionOrViewOnlyMasterForm, checkUlbAccess, getLastYearUlbAccess } = require('../../routes/CommonActionAPI/service')
+const { canTakeActionOrViewOnlyMasterForm, checkUlbAccess, getLastYearUlbAccess, AggregationServices } = require('../../routes/CommonActionAPI/service')
 const { createObjectFromArray, addActionKeys } = require('../CommonFormSubmissionState/service');
 // const { createDynamicColumns } = require('./service')
 const List = require('../../util/15thFCstatus');
@@ -2885,28 +2885,28 @@ const excelPTOMapping = async (query) => {
 
       const cursor = await Ulb.aggregate([
                 {
-          $match: { [accessYear]: true }
+          $match: { [accessYear]: true},
         },
         {
           $lookup: {
             from: "states",
             localField: "state",
             foreignField: "_id",
-            as: "state"
-          }
+            as: "state",
+          },
         },
         {
-          $unwind: "$state"
+          $unwind: "$state",
         },
         {
-          $match: { "state.accessToXVFC": true }
+          $match: { "state.accessToXVFC": true },
         },
         {
           $lookup: {
             from: "propertytaxops",
             let: {
               firstUser: design_year,
-              secondUser: "$_id"
+              secondUser: "$_id",
             },
             pipeline: [
               {
@@ -2914,28 +2914,28 @@ const excelPTOMapping = async (query) => {
                   $expr: {
                     $and: [
                       { $eq: ["$design_year", "$$firstUser"] },
-                      { $eq: ["$ulb", "$$secondUser"] }
-                    ]
-                  }
-                }
-              }
+                      { $eq: ["$ulb", "$$secondUser"] },
+                    ],
+                  },
+                },
+              },
             ],
-            as: "propertytaxop"
-          }
+            as: "propertytaxop",
+          },
         },
         {
           $unwind: {
             path: "$propertytaxop",
-            preserveNullAndEmptyArrays: true
-          }
+            preserveNullAndEmptyArrays: true,
+          },
         },
         {
           $lookup: {
             from: "currentstatuses",
             localField: "propertytaxop._id",
             foreignField: "recordId",
-            as: "currentstatuse"
-          }
+            as: "currentstatuse",
+          },
         },
         {
           $addFields: {
@@ -2943,8 +2943,8 @@ const excelPTOMapping = async (query) => {
               $cond: {
                 if: { $ne: [{ $type: "$propertytaxop" }, "object"] },
                 then: "1",
-                else: "$propertytaxop.currentFormStatus"
-              }
+                else: "$propertytaxop.currentFormStatus",
+              },
             },
             stateStatusData: {
               $arrayElemAt: [
@@ -2955,13 +2955,13 @@ const excelPTOMapping = async (query) => {
                     cond: {
                       $and: [
                         { $eq: ["$$cs.actionTakenByRole", "STATE"] },
-                        { $eq: ["$$cs.shortKey", "form_level"] }
-                      ]
-                    }
-                  }
+                        { $eq: ["$$cs.shortKey", "form_level"] },
+                      ],
+                    },
+                  },
                 },
-                0
-              ]
+                0,
+              ],
             },
             mohuaStatusData: {
               $arrayElemAt: [
@@ -2972,33 +2972,58 @@ const excelPTOMapping = async (query) => {
                     cond: {
                       $and: [
                         { $eq: ["$$cs.actionTakenByRole", "MoHUA"] },
-                        { $eq: ["$$cs.shortKey", "form_level"] }
-                      ]
-                    }
-                  }
+                        { $eq: ["$$cs.shortKey", "form_level"] },
+                      ],
+                    },
+                  },
                 },
-                0
-              ]
-            }
-          }
+                0,
+              ],
+            },
+          },
         },
         {
           $lookup: {
             from: "propertytaxopmappers",
-            localField: "propertytaxop._id",
-            foreignField: "ptoId",
-            as: "propertytaxopmapper"
-          }
+            // localField: "propertytaxop._id",
+            // foreignField: "ptoId",
+            let: {
+              first: "$propertytaxop._id",
+            },
+            pipeline: [
+              {
+                $match: {
+                  $expr: {
+                    $and: [{ $eq: ["$$first", "$ptoId"] }],
+                  },
+                },
+              },
+              {
+                $addFields: {
+                  date: {
+                    $ifNull: [
+                      AggregationServices.getCommonDateTransformer(
+                        "$date"
+                      ),
+                      null,
+                    ]
+                  },
+                },
+              },
+            ],
+            as: "propertytaxopmapper",
+          },
         },
         {
           $lookup: {
             from: "propertymapperchilddatas",
             localField: "propertytaxop._id",
             foreignField: "ptoId",
-            as: "propertymapperchilddata"
-          }
-        }
-      ]).allowDiskUse(true)
+            as: "propertymapperchilddata",
+          },
+        },
+      ])
+        .allowDiskUse(true)
         .cursor({ batchSize: 75 })
         .addCursorFlag("noCursorTimeout", true)
         .exec();
@@ -3035,7 +3060,7 @@ const excelPTOMapping = async (query) => {
             ).value = result.file
               ? result.file.url
               : result.date
-              ? dateFormatter(result.date)
+              ? result.date
               : result.value;
           }
           if (result.child?.length) {
