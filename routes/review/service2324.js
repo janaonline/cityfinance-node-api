@@ -32,7 +32,7 @@ var request = require('request');
 const Year = require('../../models/Year');
 const { state } = require('../../util/userTypes');
 const { dashboard } = require('../../routes/FormDashboard/service');
-const { dateFormatter } = require('../../util/dateformatter');
+const { dateFormatter, convertToKolkataDate } = require('../../util/dateformatter');
 
 const isMillionPlus = async (data) => {
   try {
@@ -2985,32 +2985,32 @@ const excelPTOMapping = async (query) => {
         {
           $lookup: {
             from: "propertytaxopmappers",
-            // localField: "propertytaxop._id",
-            // foreignField: "ptoId",
-            let: {
-              first: "$propertytaxop._id",
-            },
-            pipeline: [
-              {
-                $match: {
-                  $expr: {
-                    $and: [{ $eq: ["$$first", "$ptoId"] }],
-                  },
-                },
-              },
-              {
-                $addFields: {
-                  date: {
-                    $ifNull: [
-                      AggregationServices.getCommonDateTransformer(
-                        "$date"
-                      ),
-                      null,
-                    ]
-                  },
-                },
-              },
-            ],
+            localField: "propertytaxop._id",
+            foreignField: "ptoId",
+            // let: {
+            //   first: "$propertytaxop._id",
+            // },
+            // pipeline: [
+            //   {
+            //     $match: {
+            //       $expr: {
+            //         $and: [{ $eq: ["$$first", "$ptoId"] }],
+            //       },
+            //     },
+            //   },
+            //   {
+            //     $addFields: {
+            //       date: {
+            //         $ifNull: [
+            //           AggregationServices.getCommonDateTransformer(
+            //             "$date"
+            //           ),
+            //           null,
+            //         ]
+            //       },
+            //     },
+            //   },
+            // ],
             as: "propertytaxopmapper",
           },
         },
@@ -3060,7 +3060,7 @@ const excelPTOMapping = async (query) => {
             ).value = result.file
               ? result.file.url
               : result.date
-              ? result.date
+              ? convertToKolkataDate(result.date, 'Asia/Kolkata')
               : result.value;
           }
           if (result.child?.length) {
