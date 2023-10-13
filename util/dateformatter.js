@@ -5,3 +5,10 @@ module.exports.dateFormatter = (input, separator="/")=> {
     const year = t.getFullYear();
     return `${date}${separator}${month}${separator}${year}`;
 }
+
+module.exports.convertToKolkataDate = (isoDate, timeZone)=> {
+    const options = { year: 'numeric', month: 'numeric', day: 'numeric', timeZone };
+    const date = new Date(isoDate);
+    const kolkataDate = new Intl.DateTimeFormat('en-US', options).format(date);
+    return kolkataDate;
+}
