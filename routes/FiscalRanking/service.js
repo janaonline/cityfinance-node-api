@@ -4214,6 +4214,16 @@ module.exports.createForm = catchAsync(async (req, res) => {
         }
       })
     }
+    if (isAutoApproved) {
+      await FiscalRanking.findOneAndUpdate({
+        ulb: ObjectId(req.body.ulbId),
+        design_year: ObjectId(req.body.design_year),
+      }, {
+        "$set":{
+          isAutoApproved
+        }
+      })
+    }
 
     response.success = true;
     response.formId = formId;
@@ -4463,6 +4473,7 @@ async function columnsForCSV(params) {
       "amount",
       "suggestedValue",
       "pmuSuggestedValue2",
+      "ulbValue",
       "approvalType",
       "status"
     ];
@@ -4478,6 +4489,7 @@ async function columnsForCSV(params) {
       "Amount",
       "PMU Suggested Value",
       "PMU Different Value",
+      "ULB Value",
       "Counter",
       "Approval Status"
     ];
@@ -5384,7 +5396,7 @@ module.exports.FRUlbFinancialData = async (req, res) => {
     // let condition = fiscalRankingFilter(req);
     let { getQuery, csv } = filters;
     csv = csv === "true" ? true : false;
-    let params = { FRUlbFinancialData: true };
+    let params = { FRUlbFinancialData: true, _id: ObjectId('646437f8cff5e12f29270f97') };
     let query = fyCsvDownloadQuery();
     if (getQuery === "true") {
       return res.status(200).json(query);
@@ -5467,7 +5479,7 @@ async function fyUlbFyCsv(params) {
             for (let pf of fyData) {
               let value = pf.file ? pf.file : pf.date ? pf.date : pf.value ? pf.value : ""
               let mainArr = [stateName, document.ulbName, document.cityFinanceCode, censusCode, MASTER_STATUS_ID[document.currentFormStatus], YEAR_CONSTANTS_IDS[document.designYear]];
-              let mappersValues = [YEAR_CONSTANTS_IDS[pf.year], FRShortKeyObj[pf.type], value, pf?.suggestedValue, pf?.pmuSuggestedValue2, pf?.approvalType, pf?.status];
+              let mappersValues = [YEAR_CONSTANTS_IDS[pf.year], FRShortKeyObj[pf.type], value, pf?.suggestedValue, pf?.pmuSuggestedValue2,pf?.ulbValue, pf?.approvalType, pf?.status];
 
               let str = [...mainArr, ...mappersValues].join(", ");
               str.trim()

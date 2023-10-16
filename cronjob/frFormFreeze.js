@@ -5,7 +5,7 @@ const ObjectId = require("mongoose").Types.ObjectId;
 const axios = require('axios');
 const User = require('../models/User');
 const { appendFile } = require('fs')
-const { MASTER_FORM_STATUS, APPROVAL_TYPES } = require("../util/FormNames");
+const { MASTER_FORM_STATUS, APPROVAL_TYPES, ENV } = require("../util/FormNames");
 
 
 module.exports.frFormFreeze = async () => {
@@ -14,7 +14,7 @@ module.exports.frFormFreeze = async () => {
         compareDate.setDate(compareDate.getDate() - 10);
 
         let url = "http://localhost:8080/api/v1/";
-        
+
         if ((process.env.ENV == ENV['prod'])) {
             url = "https://cityfinance.in/api/v1/";
         } else if ((process.env.ENV == ENV['demo'])) {
