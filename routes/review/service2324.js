@@ -3060,7 +3060,7 @@ const excelPTOMapping = async (query) => {
             ).value = result.file
               ? result.file.url
               : result.date
-              ? convertToKolkataDate(result.date, 'Asia/Kolkata')
+              ? convertToKolkataDate(result.date)
               : result.value;
           }
           if (result.child?.length) {
