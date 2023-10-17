@@ -12,7 +12,7 @@ const Service = require('../../service');
 const STATUS_LIST = require('../../util/newStatusList');
 const { MASTER_STATUS, MASTER_STATUS_ID, YEAR_CONSTANTS, YEAR_CONSTANTS_IDS, MASTER_FORM_STATUS, MASTER_FORM_QUESTION_STATUS, MASTER_FORM_QUESTION_STATUS_STATE, FORM_TYPE_SUBMIT_CLAIM, FORM_TYPE_NAME, INSTALLMENT_NAME } = require('../../util/FormNames');
 const { getCurrentYear, getAccessYear, getFinancialYear } = require('../../util/masterFunctions');
-const { canTakeActionOrViewOnlyMasterForm, checkUlbAccess, getLastYearUlbAccess } = require('../../routes/CommonActionAPI/service')
+const { canTakeActionOrViewOnlyMasterForm, checkUlbAccess, getLastYearUlbAccess, AggregationServices } = require('../../routes/CommonActionAPI/service')
 const { createObjectFromArray, addActionKeys } = require('../CommonFormSubmissionState/service');
 // const { createDynamicColumns } = require('./service')
 const List = require('../../util/15thFCstatus');
@@ -32,6 +32,7 @@ var request = require('request');
 const Year = require('../../models/Year');
 const { state } = require('../../util/userTypes');
 const { dashboard } = require('../../routes/FormDashboard/service');
+const { dateFormatter, convertToKolkataDate } = require('../../util/dateformatter');
 
 const isMillionPlus = async (data) => {
   try {
@@ -2883,29 +2884,29 @@ const excelPTOMapping = async (query) => {
       const crrWorksheet = crrWorkbook.getWorksheet("Sheet 1")
 
       const cursor = await Ulb.aggregate([
-        {
-          $match: { [accessYear]: true }
+                {
+          $match: { [accessYear]: true},
         },
         {
           $lookup: {
             from: "states",
             localField: "state",
             foreignField: "_id",
-            as: "state"
-          }
+            as: "state",
+          },
         },
         {
-          $unwind: "$state"
+          $unwind: "$state",
         },
         {
-          $match: { "state.accessToXVFC": true }
+          $match: { "state.accessToXVFC": true },
         },
         {
           $lookup: {
             from: "propertytaxops",
             let: {
               firstUser: design_year,
-              secondUser: "$_id"
+              secondUser: "$_id",
             },
             pipeline: [
               {
@@ -2913,28 +2914,28 @@ const excelPTOMapping = async (query) => {
                   $expr: {
                     $and: [
                       { $eq: ["$design_year", "$$firstUser"] },
-                      { $eq: ["$ulb", "$$secondUser"] }
-                    ]
-                  }
-                }
-              }
+                      { $eq: ["$ulb", "$$secondUser"] },
+                    ],
+                  },
+                },
+              },
             ],
-            as: "propertytaxop"
-          }
+            as: "propertytaxop",
+          },
         },
         {
           $unwind: {
             path: "$propertytaxop",
-            preserveNullAndEmptyArrays: true
-          }
+            preserveNullAndEmptyArrays: true,
+          },
         },
         {
           $lookup: {
             from: "currentstatuses",
             localField: "propertytaxop._id",
             foreignField: "recordId",
-            as: "currentstatuse"
-          }
+            as: "currentstatuse",
+          },
         },
         {
           $addFields: {
@@ -2942,8 +2943,8 @@ const excelPTOMapping = async (query) => {
               $cond: {
                 if: { $ne: [{ $type: "$propertytaxop" }, "object"] },
                 then: "1",
-                else: "$propertytaxop.currentFormStatus"
-              }
+                else: "$propertytaxop.currentFormStatus",
+              },
             },
             stateStatusData: {
               $arrayElemAt: [
@@ -2954,13 +2955,13 @@ const excelPTOMapping = async (query) => {
                     cond: {
                       $and: [
                         { $eq: ["$$cs.actionTakenByRole", "STATE"] },
-                        { $eq: ["$$cs.shortKey", "form_level"] }
-                      ]
-                    }
-                  }
+                        { $eq: ["$$cs.shortKey", "form_level"] },
+                      ],
+                    },
+                  },
                 },
-                0
-              ]
+                0,
+              ],
             },
             mohuaStatusData: {
               $arrayElemAt: [
@@ -2971,33 +2972,58 @@ const excelPTOMapping = async (query) => {
                     cond: {
                       $and: [
                         { $eq: ["$$cs.actionTakenByRole", "MoHUA"] },
-                        { $eq: ["$$cs.shortKey", "form_level"] }
-                      ]
-                    }
-                  }
+                        { $eq: ["$$cs.shortKey", "form_level"] },
+                      ],
+                    },
+                  },
                 },
-                0
-              ]
-            }
-          }
+                0,
+              ],
+            },
+          },
         },
         {
           $lookup: {
             from: "propertytaxopmappers",
             localField: "propertytaxop._id",
             foreignField: "ptoId",
-            as: "propertytaxopmapper"
-          }
+            // let: {
+            //   first: "$propertytaxop._id",
+            // },
+            // pipeline: [
+            //   {
+            //     $match: {
+            //       $expr: {
+            //         $and: [{ $eq: ["$$first", "$ptoId"] }],
+            //       },
+            //     },
+            //   },
+            //   {
+            //     $addFields: {
+            //       date: {
+            //         $ifNull: [
+            //           AggregationServices.getCommonDateTransformer(
+            //             "$date"
+            //           ),
+            //           null,
+            //         ]
+            //       },
+            //     },
+            //   },
+            // ],
+            as: "propertytaxopmapper",
+          },
         },
         {
           $lookup: {
             from: "propertymapperchilddatas",
             localField: "propertytaxop._id",
             foreignField: "ptoId",
-            as: "propertymapperchilddata"
-          }
-        }
-      ]).allowDiskUse(true)
+            as: "propertymapperchilddata",
+          },
+        },
+      ])
+        .allowDiskUse(true)
         .cursor({ batchSize: 75 })
         .addCursorFlag("noCursorTimeout", true)
         .exec();
@@ -3023,7 +3049,19 @@ const excelPTOMapping = async (query) => {
         // mapping form questions and child questions with their cell position
         for (const result of sortedResults) {
           if (result?.year && questionColMapping[`${result.type}-${YEAR_CONSTANTS_IDS[result?.year].split("-")[1]}`]) {
-            crrWorksheet.getCell(`${questionColMapping[`${result.type}-${YEAR_CONSTANTS_IDS[result?.year].split("-")[1]}`]}${startRowIndex + counter}`).value = result.file ? result.file.url : result.value
+            crrWorksheet.getCell(
+              `${
+                questionColMapping[
+                  `${result.type}-${
+                    YEAR_CONSTANTS_IDS[result?.year].split("-")[1]
+                  }`
+                ]
+              }${startRowIndex + counter}`
+            ).value = result.file
+              ? result.file.url
+              : result.date
+              ? convertToKolkataDate(result.date)
+              : result.value;
           }
           if (result.child?.length) {
             const childCounter = {};
@@ -3041,7 +3079,6 @@ const excelPTOMapping = async (query) => {
                 }
 
                 if (userCharges.includes(child.type) && child?.year && questionColMapping[`${child.type}-${child.textValue.replace(/ /g, '')}-${YEAR_CONSTANTS_IDS[child?.year].split("-")[1]}`]) {
-                  console.log(questionColMapping[`${child.type}-${child.textValue.replace(/ /g, '')}-${YEAR_CONSTANTS_IDS[child?.year].split("-")[1]}`], `${child.type}-${child.textValue.replace(/ /g, '')}-${YEAR_CONSTANTS_IDS[child?.year].split("-")[1]}`, child.value, "hehehehehe--------")
                   crrWorksheet.getCell(`${questionColMapping[`${child.type}-${child.textValue.replace(/ /g, '')}-${YEAR_CONSTANTS_IDS[child?.year].split("-")[1]}`]}${startRowIndex + counter}`).value = child.value
                 }
 
