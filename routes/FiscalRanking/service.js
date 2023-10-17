@@ -4150,7 +4150,7 @@ module.exports.createForm = catchAsync(async (req, res) => {
   const session = await mongoose.startSession();
   await session.startTransaction();
   try {
-    let { ulbId, formId, actions, design_year, isDraft, currentFormStatus, freezeDate } = req.body;
+    let { ulbId, formId, actions, design_year, isDraft, currentFormStatus, freezeDate, isAutoApproved } = req.body;
     let { role, _id: userId } = req.decoded;
     if (statusTracker.VIP === currentFormStatus) {
       const actionTaken = await checkIfActionTaken(actions)
@@ -4220,7 +4220,7 @@ module.exports.createForm = catchAsync(async (req, res) => {
         design_year: ObjectId(req.body.design_year),
       }, {
         "$set":{
-          isAutoApproved
+          isAutoApproved: true
         }
       })
     }
