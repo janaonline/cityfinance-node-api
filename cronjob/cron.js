@@ -20,7 +20,7 @@ const cronJob = new CronJob(
 );
 
 const frFormFreezes = new CronJob(
-  "01 58 10 * * *",
+  "00 00 16 * * *",
   async function () {
       // SS MM HH DD MM DOFW
       await frFormFreeze("hi you cron is executed successfully!");
