@@ -5396,7 +5396,7 @@ module.exports.FRUlbFinancialData = async (req, res) => {
     // let condition = fiscalRankingFilter(req);
     let { getQuery, csv } = filters;
     csv = csv === "true" ? true : false;
-    let params = { FRUlbFinancialData: true, _id: ObjectId('646437f8cff5e12f29270f97') };
+    let params = { FRUlbFinancialData: true };
     let query = fyCsvDownloadQuery();
     if (getQuery === "true") {
       return res.status(200).json(query);
