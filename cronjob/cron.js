@@ -19,17 +19,17 @@ const cronJob = new CronJob(
   "Asia/Kolkata" /* Time zone of this job. */
 );
 
-const frFormFreezes = new CronJob(
-  "00 00 18 * * *",
-  async function () {
-      // SS MM HH DD MM DOFW
-      await frFormFreeze("hi you cron is executed successfully!");
-  },
-  function () {
-      console.log("CRON COMPLETED");
-  },
-  true /* Start the job right now */,
-  "Asia/Kolkata" /* Time zone of this job. */
-);
+// const frFormFreezes = new CronJob(
+//   "25 34 17 * * *",
+//   async function () {
+//       // SS MM HH DD MM DOFW
+//       await frFormFreeze("hi you cron is executed successfully!");
+//   },
+//   function () {
+//       console.log("CRON COMPLETED");
+//   },
+//   true /* Start the job right now */,
+//   "Asia/Kolkata" /* Time zone of this job. */
+// );
 
 
