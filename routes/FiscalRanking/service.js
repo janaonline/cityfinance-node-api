@@ -4150,7 +4150,7 @@ module.exports.createForm = catchAsync(async (req, res) => {
   const session = await mongoose.startSession();
   await session.startTransaction();
   try {
-    let { ulbId, formId, actions, design_year, isDraft, currentFormStatus, freezeDate } = req.body;
+    let { ulbId, formId, actions, design_year, isDraft, currentFormStatus, freezeDate, isAutoApproved } = req.body;
     let { role, _id: userId } = req.decoded;
     if (statusTracker.VIP === currentFormStatus) {
       const actionTaken = await checkIfActionTaken(actions)
@@ -4211,6 +4211,16 @@ module.exports.createForm = catchAsync(async (req, res) => {
       }, {
         "$set":{
           freezeDate
+        }
+      })
+    }
+    if (isAutoApproved) {
+      await FiscalRanking.findOneAndUpdate({
+        ulb: ObjectId(req.body.ulbId),
+        design_year: ObjectId(req.body.design_year),
+      }, {
+        "$set":{
+          isAutoApproved: true
         }
       })
     }
@@ -4463,6 +4473,7 @@ async function columnsForCSV(params) {
       "amount",
       "suggestedValue",
       "pmuSuggestedValue2",
+      "ulbValue",
       "approvalType",
       "status"
     ];
@@ -4478,6 +4489,7 @@ async function columnsForCSV(params) {
       "Amount",
       "PMU Suggested Value",
       "PMU Different Value",
+      "ULB Value",
       "Counter",
       "Approval Status"
     ];
@@ -5467,7 +5479,7 @@ async function fyUlbFyCsv(params) {
             for (let pf of fyData) {
               let value = pf.file ? pf.file : pf.date ? pf.date : pf.value ? pf.value : ""
               let mainArr = [stateName, document.ulbName, document.cityFinanceCode, censusCode, MASTER_STATUS_ID[document.currentFormStatus], YEAR_CONSTANTS_IDS[document.designYear]];
-              let mappersValues = [YEAR_CONSTANTS_IDS[pf.year], FRShortKeyObj[pf.type], value, pf?.suggestedValue, pf?.pmuSuggestedValue2, pf?.approvalType, pf?.status];
+              let mappersValues = [YEAR_CONSTANTS_IDS[pf.year], FRShortKeyObj[pf.type], value, pf?.suggestedValue, pf?.pmuSuggestedValue2,pf?.ulbValue, pf?.approvalType, pf?.status];
 
               let str = [...mainArr, ...mappersValues].join(", ");
               str.trim()
