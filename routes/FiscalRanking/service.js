@@ -1365,6 +1365,7 @@ exports.getView = async function (req, res, next) {
         : req.query.design_year,
       isDraft: viewOne.isDraft,
       pmuSubmissionDate: viewOne?.pmuSubmissionDate,
+      isAutoApproved: viewOne?.isAutoApproved,
       tabs: modifiedTabs,
       currentFormStatus: viewOne.currentFormStatus,
       financialYearTableHeader,
