@@ -49,35 +49,36 @@ module.exports.sendOtp = catchAsync(async (req, res, next) => {
         }
 
         // limit OTP
-        // const otpBlockedUntil = user.otpBlockedUntil ? new Date(
-        //   user.otpBlockedUntil + 24 * 60 * 60 * 1000
-        // ) : 0;
+        if(process.env.ENV == "staging") {
+            const otpBlockedUntil = user.otpBlockedUntil ? new Date(
+            user.otpBlockedUntil + 24 * 60 * 60 * 1000
+            ) : 0;
 
-        // if (otpBlockedUntil >= new Date(Date.now()) || user.otpAttempts >= 3) {
-        //     let setData = {
-        //         otpAttempts: 0,
-        //         otpBlockedUntil: new Date(Date.now() + 24 * 60 * 60 * 1000),
-        //       };
-        //     await User.updateOne(
-        //         { _id: ObjectId(user._id) },    
-        //         {
-        //           $set: setData,
-        //         }
-        //       ).exec();
-        //       return res.status(400).json({
-        //         success: false,
-        //         message: "Maximum OTP limit exhausted. Please try after 24 hours",
-        //       });
-        // }
+            if (otpBlockedUntil >= new Date(Date.now()) || user.otpAttempts >= 3) {
+                let setData = {
+                    otpAttempts: 0,
+                    otpBlockedUntil: new Date(Date.now() + 24 * 60 * 60 * 1000),
+                };
+                await User.updateOne(
+                    { _id: ObjectId(user._id) },    
+                    {
+                    $set: setData,
+                    }
+                ).exec();
+                return res.status(400).json({
+                    success: false,
+                    message: "Maximum OTP limit exhausted. Please try after 24 hours",
+                });
+            }
 
-        // // increment otp attempt
-        // await User.updateOne(
-        //   { _id: ObjectId(user._id) },
-        //   {
-        //     $inc: { otpAttempts: 1 },
-        //   }
-        // ).exec();
-
+            // increment otp attempt
+            await User.updateOne(
+            { _id: ObjectId(user._id) },
+            {
+                $inc: { otpAttempts: 1 },
+            }
+            ).exec();
+        }
         let otp = OtpMethods.generateOTP();
         if (!otp) {
             if (!user) {
