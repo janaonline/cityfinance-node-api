@@ -1345,12 +1345,14 @@ exports.getView = async function (req, res, next) {
       hideForm = !actionTaken 
     }
 
-    if (role == 'ULB' && [MASTER_FORM_STATUS['RETURNED_BY_PMU'], MASTER_FORM_STATUS['IN_PROGRESS']].includes(viewOne?.currentFormStatus) && !viewOne.pmuSubmissionDate) {
+    if (role == 'ULB' && [MASTER_FORM_STATUS['RETURNED_BY_PMU'], MASTER_FORM_STATUS['IN_PROGRESS']].includes(viewOne?.currentFormStatus) && !viewOne?.pmuSubmissionDate) {
       hideForm = true;
-      notice = await getMessages({
-        ulbName: ulbPData.name,
-        formFreeze: true
-      })['freeze']
+      if (+viewOne?.progress?.rejectedProgress > 0) {
+        notice = await getMessages({
+          ulbName: ulbPData.name,
+          formFreeze: true
+        })['freeze']
+      }
     }
 
     let viewData = {
@@ -1363,11 +1365,13 @@ exports.getView = async function (req, res, next) {
         : req.query.design_year,
       isDraft: viewOne.isDraft,
       pmuSubmissionDate: viewOne?.pmuSubmissionDate,
+      isAutoApproved: viewOne?.isAutoApproved,
       tabs: modifiedTabs,
       currentFormStatus: viewOne.currentFormStatus,
       financialYearTableHeader,
       messages: userMessages,
-      hideForm : (process.env.ENV == ENV['prod']) ? hideForm : false,
+      // hideForm : (process.env.ENV == ENV['prod']) ? hideForm : false,
+      hideForm,
       notice
     };
     if (userMessages.length > 0) {
@@ -3802,38 +3806,6 @@ async function calculateAndUpdateStatusForMappers(
   }
 }
 
-// function isAutoApprovedIndicator(years, currentFormStatus, role) {
-//   if (role == 'ULB' &&
-//   [
-//     MASTER_FORM_STATUS['VERIFICATION_NOT_STARTED'],
-//     MASTER_FORM_STATUS['VERIFICATION_IN_PROGRESS'],
-//   ].includes(currentFormStatus)) {
-//     if (years.status == "REJECTED" &&
-//       [
-//         APPROVAL_TYPES['enteredPmuAcceptUlb'],
-//         APPROVAL_TYPES['enteredPmuSecondAcceptPmu'],
-//         APPROVAL_TYPES['enteredPmuAcceptPmu'],
-//         APPROVAL_TYPES['enteredUlbAcceptPmu'],
-//       ].includes(years?.approvalType)) {
-//       return true;
-//     }
-//   }else if(role == "PMU" &&
-//   [
-//     MASTER_FORM_STATUS['SUBMISSION_ACKNOWLEDGED_BY_PMU'],
-//   ].includes(currentFormStatus)) {
-//     if (years.status == "REJECTED" &&
-//       [
-//         APPROVAL_TYPES['enteredPmuAcceptUlb'],
-//         APPROVAL_TYPES['enteredPmuSecondAcceptPmu'],
-//         APPROVAL_TYPES['enteredPmuAcceptPmu'],
-//         APPROVAL_TYPES['enteredUlbAcceptPmu'],
-//       ].includes(years?.approvalType)) {
-//       return true;
-//     }
-//   }
-//   return false;
-// }
-
 function isAutoApprovedIndicator(years, currentFormStatus, role) {
   const ulbConditions = role === 'ULB' &&
     [
@@ -3960,7 +3932,7 @@ const sendEmailToUlb = async (ulbId, status) => {
     }).populate("ulb")
     let emailAddress = [userInf.email];
     if(process.env.ENV !== ENV['prod'] ){
-      emailAddress = [TEST_EMAIL['test1']]
+      emailAddress = [TEST_EMAIL['test1'], TEST_EMAIL['test2'], TEST_EMAIL['test3'], TEST_EMAIL['test4']]
     }
     let ulbName = userInf.name;
     let ulbTemplate;
@@ -4179,7 +4151,7 @@ module.exports.createForm = catchAsync(async (req, res) => {
   const session = await mongoose.startSession();
   await session.startTransaction();
   try {
-    let { ulbId, formId, actions, design_year, isDraft, currentFormStatus } = req.body;
+    let { ulbId, formId, actions, design_year, isDraft, currentFormStatus, freezeDate, isAutoApproved } = req.body;
     let { role, _id: userId } = req.decoded;
     if (statusTracker.VIP === currentFormStatus) {
       const actionTaken = await checkIfActionTaken(actions)
@@ -4233,6 +4205,27 @@ module.exports.createForm = catchAsync(async (req, res) => {
         }
       })
     }
+    if (freezeDate) {
+      await FiscalRanking.findOneAndUpdate({
+        ulb: ObjectId(req.body.ulbId),
+        design_year: ObjectId(req.body.design_year),
+      }, {
+        "$set":{
+          freezeDate
+        }
+      })
+    }
+    if (isAutoApproved) {
+      await FiscalRanking.findOneAndUpdate({
+        ulb: ObjectId(req.body.ulbId),
+        design_year: ObjectId(req.body.design_year),
+      }, {
+        "$set":{
+          isAutoApproved: true
+        }
+      })
+    }
+
     response.success = true;
     response.formId = formId;
     response.message = "Form submitted successfully";
@@ -4481,6 +4474,7 @@ async function columnsForCSV(params) {
       "amount",
       "suggestedValue",
       "pmuSuggestedValue2",
+      "ulbValue",
       "approvalType",
       "status"
     ];
@@ -4496,6 +4490,7 @@ async function columnsForCSV(params) {
       "Amount",
       "PMU Suggested Value",
       "PMU Different Value",
+      "ULB Value",
       "Counter",
       "Approval Status"
     ];
@@ -5485,7 +5480,7 @@ async function fyUlbFyCsv(params) {
             for (let pf of fyData) {
               let value = pf.file ? pf.file : pf.date ? pf.date : pf.value ? pf.value : ""
               let mainArr = [stateName, document.ulbName, document.cityFinanceCode, censusCode, MASTER_STATUS_ID[document.currentFormStatus], YEAR_CONSTANTS_IDS[document.designYear]];
-              let mappersValues = [YEAR_CONSTANTS_IDS[pf.year], FRShortKeyObj[pf.type], value, pf?.suggestedValue, pf?.pmuSuggestedValue2, pf?.approvalType, pf?.status];
+              let mappersValues = [YEAR_CONSTANTS_IDS[pf.year], FRShortKeyObj[pf.type], value, pf?.suggestedValue, pf?.pmuSuggestedValue2,pf?.ulbValue, pf?.approvalType, pf?.status];
 
               let str = [...mainArr, ...mappersValues].join(", ");
               str.trim()
@@ -5691,4 +5686,146 @@ module.exports.getTrackingHistory = async(req,res)=>{
     console.log("error in getTrackingHistory :: ",err.message)
     return res.status(400).json(response)
   }
+}
+
+//This api is used only for once...(After that please remove this api..)
+const jwt = require('jsonwebtoken');
+const Config = require('../../config/app_config');
+const axios = require('axios');
+const { appendFile } = require('fs')
+
+module.exports.freezeForm = async (req, res) => {
+  try {
+    let counterSuccess = 0;
+    let counterRejection = 0;
+    const currentDate = new Date();
+    const october21th = new Date(currentDate.getFullYear(), 9, 21);
+
+    let url = "http://localhost:8080/api/v1/";
+
+    if ((process.env.ENV == ENV['prod'])) {
+      url = "https://cityfinance.in/api/v1/";
+    } else if ((process.env.ENV == ENV['demo'])) {
+      url = "https://democityfinanceapi.dhwaniris.in/api/v1/";
+    } else if ((process.env.ENV == ENV['stg'])) {
+      url = "https://staging.cityfinance.in/api/v1/";
+    }
+
+    let viewEndPoint = "fiscal-ranking/view";
+    let createEndPoint = "fiscal-ranking/create-form";
+
+    if (currentDate < october21th) {
+      let getUlbForms = await FiscalRanking.find({
+        currentFormStatus: { $in: [MASTER_FORM_STATUS['IN_PROGRESS'], MASTER_FORM_STATUS['RETURNED_BY_PMU']] },
+        $expr: {
+          $gt: [
+            { $toDouble: "$progress.rejectedProgress" },
+            0
+          ]
+        },
+        pmuSubmissionDate: { $exists: false }
+      }).select('ulb design_year');
+
+      for (let frData of getUlbForms) {
+        let user = await Users.findOne({ role: 'ULB', ulb: ObjectId(frData?.ulb) });
+        if (!user) continue;
+        let token = createToken(user)
+
+        const response = await axios.get(`${url}${viewEndPoint}`, {
+          params: {
+            design_year: frData?.design_year.toString(),
+            ulb: frData?.ulb.toString()
+          },
+          headers: {
+            "x-access-token": token || req?.query?.token || "",
+          },
+        });
+        const responseData = response?.data?.data;
+
+        let payload = {
+          ulbId: frData?.ulb?.toString(),
+          formId: frData?._id?.toString(),
+          design_year: frData?.design_year.toString(),
+          isDraft: false,
+          currentFormStatus: MASTER_FORM_STATUS['VERIFICATION_IN_PROGRESS'],
+          actions: responseData?.tabs,
+          freezeDate: new Date()
+        }
+
+        let actualValues = [0, 0, 0, 0];
+        let sumValues = [0, 0, 0, 0];
+
+        Object.entries(payload['actions'][2]['data']).forEach(([key, indicator]) => {
+          indicator.yearData?.reverse();
+          if(key == "fixedAsset"){
+            actualValues = indicator.yearData?.map((year) => year.value)
+          }
+          if(key == "faLandBuild" || key == "faOther"){
+            indicator.yearData?.forEach((year, index) => {
+              sumValues[index] += +year.value;
+            })
+          }
+          indicator['position'] = +indicator.displayPriority || 1;
+        });
+
+        let isValid = actualValues.every((value, index)=> value == sumValues[index]);
+
+        //Api call for ulb to submit the FR form.
+        try {
+          if(!isValid) throw new Error('ledger mismatch')
+          await axios.post(`${url}${createEndPoint}`, payload, {
+            headers: {
+              "x-access-token": token || req?.query?.token || "",
+            }
+          });
+         counterSuccess++
+          // Handle the response data as needed
+        } catch (postError) {
+          counterRejection++
+
+          const logDetails = {
+            timestamp: new Date().toISOString(),
+            ulbId: frData?.ulb?.toString(),
+            frFormId: frData?._id?.toString(),
+            data: JSON.stringify(postError?.response?.data || {}, 3, 3),
+            message: postError?.message,
+          };
+          appendFile("freezeform-error-logs.txt", JSON.stringify(logDetails, 3, 3) + ",", function (err) {
+            if (err) throw err;
+            console.log('Saved!');
+          })
+        }
+      }
+      return console.log("Executed successfully!", { counterSuccess, counterRejection });
+    } else {
+      res.status(400).json({ error: 'Current date is greater than October 21th' });
+    }
+  }
+  catch (err) {
+    console.log("error in Freeze Form :: ", err.message)
+    return res.status(400).json(err)
+  }
+}
+
+const createToken = (user) => {
+  let keys = [
+      '_id',
+      'accountantEmail',
+      'email',
+      'role',
+      'name',
+      'ulb',
+      'state',
+      'isEmailVerified',
+      'isPasswordResetInProgress',
+  ];
+
+  let data = {};
+  for (k in user) {
+      if (keys.indexOf(k) > -1) {
+          data[k] = user[k];
+      }
+  }
+  data['purpose'] = 'WEB';
+  return jwt.sign(data, Config.JWT.SECRET, { expiresIn: Config.JWT.TOKEN_EXPIRY });
 }

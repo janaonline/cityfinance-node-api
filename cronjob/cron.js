@@ -1,5 +1,7 @@
 const CronJob = require("cron").CronJob;
-const {emailTrigger} =  require('./stateEmail')
+const {emailTrigger} =  require('./stateEmail');
+const { frFormFreeze } = require('./frFormFreeze');
+
 const cronJob = new CronJob(
   "0 0 10 * * 1",
  async () => {
@@ -16,5 +18,18 @@ const cronJob = new CronJob(
   true /* Start the job right now */,
   "Asia/Kolkata" /* Time zone of this job. */
 );
+
+// const frFormFreezes = new CronJob(
+//   "25 34 17 * * *",
+//   async function () {
+//       // SS MM HH DD MM DOFW
+//       await frFormFreeze("hi you cron is executed successfully!");
+//   },
+//   function () {
+//       console.log("CRON COMPLETED");
+//   },
+//   true /* Start the job right now */,
+//   "Asia/Kolkata" /* Time zone of this job. */
+// );
 
 
