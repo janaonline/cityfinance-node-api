@@ -1114,7 +1114,7 @@ async function createDynamicElements(collectionName, formType, entity) {
             data?.categoryWiseData_wm &&
             data?.categoryWiseData_wm.length > 0
           ) {
-            let wm = convertValue({
+            let wm = await convertValue({
               data: data.categoryWiseData_wm,
               keyArr: ["grantUtilised", "numberOfProjects", "totalProjectCost"],
             });
@@ -1124,7 +1124,7 @@ async function createDynamicElements(collectionName, formType, entity) {
             data?.categoryWiseData_swm &&
             data?.categoryWiseData_swm.length > 0
           ) {
-            let swm = convertValue({
+            let swm = await convertValue({
               data: data.categoryWiseData_swm,
               keyArr: ["grantUtilised", "numberOfProjects", "totalProjectCost"],
             });
