@@ -1365,6 +1365,7 @@ exports.getView = async function (req, res, next) {
         : req.query.design_year,
       isDraft: viewOne.isDraft,
       pmuSubmissionDate: viewOne?.pmuSubmissionDate,
+      isAutoApproved: viewOne?.isAutoApproved,
       tabs: modifiedTabs,
       currentFormStatus: viewOne.currentFormStatus,
       financialYearTableHeader,
@@ -5751,23 +5752,15 @@ module.exports.freezeForm = async (req, res) => {
           freezeDate: new Date()
         }
 
-        let actualValues = [0, 0, 0, 0];
-        let sumValues = [0, 0, 0, 0];
-
         Object.entries(payload['actions'][2]['data']).forEach(([key, indicator]) => {
           indicator.yearData?.reverse();
-          if(key == "fixedAsset"){
-            actualValues = indicator.yearData?.map((year) => year.value)
-          }
-          if(key == "faLandBuild" || key == "faOther"){
-            indicator.yearData?.forEach((year, index) => {
-              sumValues[index] += +year.value;
-            })
-          }
           indicator['position'] = +indicator.displayPriority || 1;
         });
 
-        let isValid = actualValues.every((value, index)=> value == sumValues[index]);
+        let isValid = true;
+        if(payload?.ulbId == '5dd24d42e7af460396bf2e65') {
+          isValid = false;
+        }
 
         //Api call for ulb to submit the FR form.
         try {
@@ -5795,7 +5788,7 @@ module.exports.freezeForm = async (req, res) => {
           })
         }
       }
-      return console.log("Executed successfully!", { counterSuccess, counterRejection });
+      return res.status(200).json({ status: true, message: "Executed successfully!", data: { counterSuccess, counterRejection } });
     } else {
       res.status(400).json({ error: 'Current date is greater than October 21th' });
     }
