@@ -5699,36 +5699,23 @@ module.exports.freezeForm = async (req, res) => {
     let counterSuccess = 0;
     let counterRejection = 0;
     const currentDate = new Date();
-    const october21th = new Date(currentDate.getFullYear(), 9, 21);
+    const october22th = new Date(currentDate.getFullYear(), 9, 22);
 
     let url = "http://localhost:8080/api/v1/";
 
-    // if ((process.env.ENV == ENV['prod'])) {
-    //   url = "https://cityfinance.in/api/v1/";
-    // } else if ((process.env.ENV == ENV['demo'])) {
-    //   url = "https://democityfinanceapi.dhwaniris.in/api/v1/";
-    // } else if ((process.env.ENV == ENV['stg'])) {
-    //   url = "https://staging.cityfinance.in/api/v1/";
-    // }
+    if ((process.env.ENV == ENV['prod'])) {
+      url = "https://cityfinance.in/api/v1/";
+    } else if ((process.env.ENV == ENV['demo'])) {
+      url = "https://democityfinanceapi.dhwaniris.in/api/v1/";
+    } else if ((process.env.ENV == ENV['stg'])) {
+      url = "https://staging.cityfinance.in/api/v1/";
+    }
 
     let viewEndPoint = "fiscal-ranking/view";
     let createEndPoint = "fiscal-ranking/create-form";
 
-    if (currentDate < october21th) {
+    if (currentDate < october22th) {
       let getUlbForms = await FiscalRanking.find({
-        ulb: {
-          $in: [
-              ObjectId('5dd247914f14901fa9b4a85d'),
-              ObjectId('5dd2474883f0771f8da4da04'),
-              ObjectId('5fa2465f072dab780a6f1249'),
-              ObjectId('5dd24d42e7af460396bf2e65'),
-              ObjectId('5eb5845076a3b61f40ba087c'),
-              ObjectId('5fa2465f072dab780a6f1227'),
-              ObjectId('5fa24665072dab780a6f1830'),
-              ObjectId('5f5610b3aab0f778b2d2cab2'),
-              ObjectId('5eb5845076a3b61f40ba076a')
-          ]
-      },
         currentFormStatus: { $in: [MASTER_FORM_STATUS['IN_PROGRESS'], MASTER_FORM_STATUS['RETURNED_BY_PMU']] },
         $expr: {
           $gt: [
@@ -5737,9 +5724,7 @@ module.exports.freezeForm = async (req, res) => {
           ]
         },
         pmuSubmissionDate: { $exists: false }
-      }).select('ulb design_year').limit(1);
-
-      console.log('getUlbForms:', getUlbForms);
+      }).select('ulb design_year');
 
       for (let frData of getUlbForms) {
         let user = await Users.findOne({ role: 'ULB', ulb: ObjectId(frData?.ulb) });
@@ -5799,7 +5784,7 @@ module.exports.freezeForm = async (req, res) => {
       }
       return res.status(200).json({ status: true, message: "Executed successfully!", data: { counterSuccess, counterRejection } });
     } else {
-      res.status(400).json({ error: 'Current date is greater than October 21th' });
+      res.status(400).json({ error: 'Current date is greater than October 22th' });
     }
   }
   catch (err) {
