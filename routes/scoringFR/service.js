@@ -76,7 +76,7 @@ async function getData(res) {
     const fsMapper2021_22 = await FiscalRankingMapper.find({
         ulb: ObjectId(ulbRes._id),
         year: ObjectId(design_year2021_22),
-        type: { $in: ['totalRcptSanitation', 'totalRcptWaterSupply', 'totalRecActual', 'waterSupplyFee', 'waterTax'] }
+        type: { $in: ['totalRcptSanitation', 'totalRcptWaterSupply', 'totalRecActual', 'waterSupplyFee', 'waterTax', 'totalOwnRevenue', 'sewerageTax', 'sanitationFee'] }
     }).exec();
 
     // Total Budget size per capita (Actual Total Reciepts)
