@@ -6,6 +6,7 @@ const { years } = require('../../service/years');
 const Ulb = require('../../models/Ulb');
 const FiscalRanking = require('../../models/FiscalRanking');
 const FiscalRankingMapper = require('../../models/FiscalRankingMapper');
+const ScoringFiscalRanking = require('../../models/ScoringFiscalRanking');
 
 function calculateRecommendationPercentage(score) {
     let percent = 0;
@@ -41,12 +42,27 @@ function totalBudget(ulbRes, fsData, fsMapper2021_22) {
     const totalRcptWaterSupply = fsData.propertyWaterTax.value === 'Yes' ? getValue(fsMapper2021_22, 'totalRcptWaterSupply') : 0;
     const totalRcptSanitation = fsData.propertySanitationTax.value === 'Yes' ? getValue(fsMapper2021_22, 'totalRcptSanitation') : 0;
     const totalBudget = (totalRecActual - (totalRcptWaterSupply + totalRcptSanitation)) / ulbRes.population;
+    return totalBudget;
+}
+
+function getPopulationBucket(population) {
+    let populationBucket = 0;
+    if (population >= 4000000) {
+        populationBucket = 1;
+    } else if (population < 4000000 && population >= 1000000) {
+        populationBucket = 2;
+    } if (population < 1000000 && population >= 100000) {
+        populationBucket = 3;
+    } if (population < 100000) {
+        populationBucket = 4;
+    }
+    return populationBucket;
 }
 
 async function getData(res) {
     moongose.set('debug', true);
     const censusCode = 802814;
-    const ulbRes = await Ulb.findOne({ censusCode }).exec();
+    const ulbRes = await Ulb.findOne({ censusCode }).lean();
     // ulbRes.forEach(element => {
     //     console.log('population', element.population);
     // });
@@ -76,7 +92,10 @@ async function getData(res) {
     const fsMapper2021_22 = await FiscalRankingMapper.find({
         ulb: ObjectId(ulbRes._id),
         year: ObjectId(design_year2021_22),
-        type: { $in: ['totalRcptSanitation', 'totalRcptWaterSupply', 'totalRecActual', 'waterSupplyFee', 'waterTax', 'totalOwnRevenue', 'sewerageTax', 'sanitationFee'] }
+        type: {
+            $in: ['totalRcptSanitation', 'totalRcptWaterSupply', 'totalRecActual', 'waterSupplyFee',
+                'waterTax', 'totalOwnRevenue', 'sewerageTax', 'sanitationFee']
+        }
     }).exec();
 
     // Total Budget size per capita (Actual Total Reciepts)
@@ -92,6 +111,32 @@ async function getData(res) {
     const ownRevenueSanitation = fsData.propertyWaterTax.value === 'Yes' ? (sewerageTax + sanitationFee) : 0;
     const ownRevenueData = (totalOwnRevenue - (ownRevenueWaterSupply + ownRevenueSanitation)) / ulbRes.population;
 
+    // await ScoringFiscalRanking.findOneAndUpdate({
+    //     ulb: ObjectId(req.body.ulbId),
+    //     design_year: ObjectId(req.body.design_year),
+    //   },
+    //   {
+    //     $set: {
+    //       isDraft: true,
+    //       currentFormStatus: 2
+    //     },
+    //   });
+    
+
+    const scoringData = {
+        name: ulbRes.name,
+        ulb: ulbRes._id,
+        censusCode: ulbRes.censusCode,
+        isActive: ulbRes.isActive,
+        population: ulbRes.population,
+        populationBucket: getPopulationBucket(ulbRes.population),
+        state: ulbRes.state,
+        totalBudget: { score: totalBudgetData },
+        ownRevenue: { score: ownRevenueData },
+    };
+
+    await ScoringFiscalRanking.create(scoringData);
+    
     return res.status(200).json({
         status: 'true',
         totalBudgetData,
