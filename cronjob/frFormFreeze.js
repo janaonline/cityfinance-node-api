@@ -58,34 +58,16 @@ module.exports.frFormFreeze = async () => {
                 actions: responseData?.tabs
             }
 
-            //Check Validation of the ledger data..
-            let actualValues = [0, 0, 0, 0];
-            let sumValues = [0, 0, 0, 0];
-
             Object.entries(payload['actions'][2]['data']).forEach(([key, indicator]) => {
                 indicator.yearData?.reverse();
                 indicator['position'] = +indicator.displayPriority || 1;
-
-
-                //Check validation..
-                if (key == "fixedAsset") {
-                    actualValues = indicator.yearData?.map((year) => year.value);
-                }
-                if (key == "faLandBuild" || key == "faOther") {
-                    indicator.yearData?.forEach((year, index) => {
-                        sumValues[index] += +year.value;
-                    });
-                }
 
                 //Mutate the payload for every Indicator of financial Indicator.
                 mutateIndicatorPayload(indicator);
             });
 
-            let isValid = actualValues.every((value, index) => value == sumValues[index]);
-
             //Api call for ulb to submit the FR form.
             try {
-                if (!isValid) throw new Error('ledger mismatch');
                 await axios.post(`${url}${createEndPoint}`, payload, {
                     headers: {
                         "x-access-token": token || req?.query?.token || "",
