@@ -1354,6 +1354,16 @@ exports.getView = async function (req, res, next) {
         })['freeze']
       }
     }
+    if (viewOne?.pmuSubmissionDate) {
+      let compareDate = new Date();
+      compareDate.setDate(compareDate.getDate() - 10);
+
+      if (viewOne?.pmuSubmissionDate < compareDate) {
+        hideForm = true;
+        notice = (await getMessages({ ulbName: ulbPData.name, formFreeze: true }))['freeze'];
+      }
+
+    }
 
     let viewData = {
       _id: viewOne._id ? viewOne._id : null,
@@ -5699,7 +5709,7 @@ module.exports.freezeForm = async (req, res) => {
     let counterSuccess = 0;
     let counterRejection = 0;
     const currentDate = new Date();
-    const october21th = new Date(currentDate.getFullYear(), 9, 21);
+    const october22th = new Date(currentDate.getFullYear(), 9, 22);
 
     let url = "http://localhost:8080/api/v1/";
 
@@ -5714,7 +5724,7 @@ module.exports.freezeForm = async (req, res) => {
     let viewEndPoint = "fiscal-ranking/view";
     let createEndPoint = "fiscal-ranking/create-form";
 
-    if (currentDate < october21th) {
+    if (currentDate < october22th) {
       let getUlbForms = await FiscalRanking.find({
         currentFormStatus: { $in: [MASTER_FORM_STATUS['IN_PROGRESS'], MASTER_FORM_STATUS['RETURNED_BY_PMU']] },
         $expr: {
@@ -5757,14 +5767,8 @@ module.exports.freezeForm = async (req, res) => {
           indicator['position'] = +indicator.displayPriority || 1;
         });
 
-        let isValid = true;
-        if(payload?.ulbId == '5dd24d42e7af460396bf2e65') {
-          isValid = false;
-        }
-
         //Api call for ulb to submit the FR form.
         try {
-          if(!isValid) throw new Error('ledger mismatch')
           await axios.post(`${url}${createEndPoint}`, payload, {
             headers: {
               "x-access-token": token || req?.query?.token || "",
@@ -5790,7 +5794,7 @@ module.exports.freezeForm = async (req, res) => {
       }
       return res.status(200).json({ status: true, message: "Executed successfully!", data: { counterSuccess, counterRejection } });
     } else {
-      res.status(400).json({ error: 'Current date is greater than October 21th' });
+      res.status(400).json({ error: 'Current date is greater than October 22th' });
     }
   }
   catch (err) {
