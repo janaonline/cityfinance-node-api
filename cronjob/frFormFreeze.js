@@ -58,34 +58,22 @@ module.exports.frFormFreeze = async () => {
                 actions: responseData?.tabs
             }
 
-            //Check Validation of the ledger data..
-            let actualValues = [0, 0, 0, 0];
-            let sumValues = [0, 0, 0, 0];
 
-            Object.entries(payload['actions'][2]['data']).forEach(([key, indicator]) => {
+            const financialTabIndicators = Object.entries(payload['actions'][2]['data']);
+
+            financialTabIndicators.forEach(([key, indicator]) => {
                 indicator.yearData?.reverse();
                 indicator['position'] = +indicator.displayPriority || 1;
-
-
-                //Check validation..
-                if (key == "fixedAsset") {
-                    actualValues = indicator.yearData?.map((year) => year.value);
-                }
-                if (key == "faLandBuild" || key == "faOther") {
-                    indicator.yearData?.forEach((year, index) => {
-                        sumValues[index] += +year.value;
-                    });
-                }
-
-                //Mutate the payload for every Indicator of financial Indicator.
                 mutateIndicatorPayload(indicator);
             });
 
-            let isValid = actualValues.every((value, index) => value == sumValues[index]);
 
-            //Api call for ulb to submit the FR form.
+
+
+
+            // Api call for ulb to submit the FR form.
             try {
-                if (!isValid) throw new Error('ledger mismatch');
+                autoSumAndLedgerCheck(financialTabIndicators);
                 await axios.post(`${url}${createEndPoint}`, payload, {
                     headers: {
                         "x-access-token": token || req?.query?.token || "",
@@ -111,6 +99,37 @@ module.exports.frFormFreeze = async () => {
     } catch (error) {
         console.error("Error while Freezing Fr form throw cronJob:-", error)
     }
+}
+
+const autoSumAndLedgerCheck = financialTabIndicators => {
+    financialTabIndicators.forEach(([key, indicator]) => {
+        if (indicator.logic == 'sum') {
+            console.log('key', key)
+            const childIndicators = financialTabIndicators
+                .filter(([key, value]) => indicator.calculatedFrom.includes(value.displayPriority));
+
+            childIndicators.reduce((acc, [childKey, childIndicator]) => {
+                childIndicator?.yearData.forEach((year, index) => {
+                    acc[index] += + year.value;
+                })
+                return acc;
+            }, [0, 0, 0, 0]).forEach((value, index) => {
+                const updatableYearItem = indicator['yearData'][index];
+                if (updatableYearItem?.modelName && updatableYearItem.value != value) {
+                    const error = new Error('Ledger mismatch');
+                    error['response'] = {};
+                    error.response.data = {
+                        key: indicator.key,
+                        yearIndex: index,
+                        oldValue: updatableYearItem.value,
+                        updatableValue: value
+                    };
+                    throw error;
+                }
+                updatableYearItem.value = value;
+            })
+        }
+    });
 }
 
 const createToken = (user) => {

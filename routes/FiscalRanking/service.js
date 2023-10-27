@@ -1354,6 +1354,16 @@ exports.getView = async function (req, res, next) {
         })['freeze']
       }
     }
+    if (viewOne?.pmuSubmissionDate) {
+      let compareDate = new Date();
+      compareDate.setDate(compareDate.getDate() - 10);
+
+      if (viewOne?.pmuSubmissionDate < compareDate) {
+        hideForm = true;
+        notice = (await getMessages({ ulbName: ulbPData.name, formFreeze: true }))['freeze'];
+      }
+
+    }
 
     let viewData = {
       _id: viewOne._id ? viewOne._id : null,
