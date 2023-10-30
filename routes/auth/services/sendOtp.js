@@ -29,18 +29,18 @@ module.exports.sendOtp = catchAsync(async (req, res, next) => {
         }
 
 
-        if (!process.env.MSG91_AUTH_KEY) {
-            return res.status(400).json({
-                success: false,
-                message: 'MSG91 AUTH KEY NOT FOUND'
-            })
-        }
-        if (!process.env.SENDER_ID) {
-            return res.status(400).json({
-                success: false,
-                message: 'SENDER ID KEY NOT FOUND'
-            })
-        }
+        // if (!process.env.MSG91_AUTH_KEY) {
+        //     return res.status(400).json({
+        //         success: false,
+        //         message: 'MSG91 AUTH KEY NOT FOUND'
+        //     })
+        // }
+        // if (!process.env.SENDER_ID) {
+        //     return res.status(400).json({
+        //         success: false,
+        //         message: 'SENDER ID KEY NOT FOUND'
+        //     })
+        // }
         if (!user) {
             res.status(400).json({
                 success: false,
@@ -54,7 +54,14 @@ module.exports.sendOtp = catchAsync(async (req, res, next) => {
             user.otpBlockedUntil + 24 * 60 * 60 * 1000
             ) : 0;
 
-            if (otpBlockedUntil >= new Date(Date.now()) || user.otpAttempts >= 3) {
+            const otpSent = await OTP
+            .find({emailId: user.email, "createdAt":{$gt:new Date(Date.now() - 24*3*60*60 * 1000)}})
+            .limit(3).sort({"createdAt":-1})
+            .lean();
+
+            const otpSentCount = otpSent.filter(e=>e.isVerified === false).length;
+
+            if (otpBlockedUntil >= new Date(Date.now()) || otpSentCount >= 3) {
                 let setData = {
                     otpAttempts: 0,
                     otpBlockedUntil: new Date(Date.now() + 24 * 60 * 60 * 1000),
