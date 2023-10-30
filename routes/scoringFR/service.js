@@ -84,7 +84,7 @@ function pTaxPerCapita(ulbRes, fsMapper2021_22) {
 }
 
 // 4. Growth (3 Year CAGR) in Total Budget Size (Total actual reciept) - RM
-function CAGRInTotalBudget(fsData, fsMapper2018_19, fsMapper2021_22) {
+function cagrInTotalBudget(fsData, fsMapper2018_19, fsMapper2021_22) {
     // Total receipts actual.
     const totalRecActual_2018_19 = getValue(fsMapper2018_19, 'totalRecActual');
     const totalRecActual_2021_22 = getValue(fsMapper2021_22, 'totalRecActual');
@@ -108,7 +108,7 @@ function CAGRInTotalBudget(fsData, fsMapper2018_19, fsMapper2021_22) {
 }
 
 // 5. Growth (3 Year CAGR) in Own Revenue - RM
-function CAGRInOwnRevenue(fsData, fsMapper2018_19, fsMapper2021_22) {
+function cagrInOwnRevenue(fsData, fsMapper2018_19, fsMapper2021_22) {
     // Total Own revenue.
     const totalOwnRevenue_2018_19 = getValue(fsMapper2018_19, 'totalOwnRevenue');
     const totalOwnRevenue_2021_22 = getValue(fsMapper2021_22, 'totalOwnRevenue');     
@@ -133,7 +133,7 @@ function CAGRInOwnRevenue(fsData, fsMapper2018_19, fsMapper2021_22) {
 }
 
 // 6. Growth (3 Year CAGR) in Property - RM
-function CAGRInPTax(fsMapper2018_19, fsMapper2021_22) {
+function cagrInPTax(fsMapper2018_19, fsMapper2021_22) {
     // Ptax 21-22 / Ptax 18-19
     const PTax = (getValue(fsMapper2021_22, 'propertyTax') / getValue(fsMapper2018_19, 'propertyTax'))
     // Growth for 3 years
@@ -144,7 +144,7 @@ function CAGRInPTax(fsMapper2018_19, fsMapper2021_22) {
 }
 
 // 7. Capital Expenditure per capita (3-year average) - EP
-function CapExPerCapitaAvg(ulbRes, fsData, fsMapper2019_20, fsMapper2020_21, fsMapper2021_22) {
+function capExPerCapitaAvg(ulbRes, fsData, fsMapper2019_20, fsMapper2020_21, fsMapper2021_22) {
     // Total Capex of 3 years.
     const TotalCapEx_2019_20 = getValue(fsMapper2019_20, 'CaptlExp');
     const TotalCapEx_2020_21 = getValue(fsMapper2020_21, 'CaptlExp');
@@ -169,7 +169,7 @@ function CapExPerCapitaAvg(ulbRes, fsData, fsMapper2019_20, fsMapper2020_21, fsM
 }
 
 // 8. Growth (3-Year CAGR) in Capex - EP
-function CAGRInCapEx(fsData, fsMapper2018_19, fsMapper2021_22) {
+function cagrInCapEx(fsData, fsMapper2018_19, fsMapper2021_22) {
     // Assigning the values to variables if fsData options are 'YES'.
     const totalRcptWaterSupply_2018_19 = fsData.propertyWaterTax.value === 'Yes' ? getValue(fsMapper2018_19, 'CaptlExpWaterSupply') : 0;
     const totalRcptSanitation_2018_19 = fsData.propertySanitationTax.value === 'Yes' ? getValue(fsMapper2018_19, 'CaptlExpSanitation') : 0;
@@ -188,7 +188,7 @@ function CAGRInCapEx(fsData, fsMapper2018_19, fsMapper2021_22) {
 }
 
 // // 9. O&M expenses to Total Revenue Expenditure (TRE) (3- year average) - EP
-function OMExpTotalRevEx(fsData, fsMapper2019_20, fsMapper2020_21, fsMapper2021_22) {
+function omExpTotalRevEx(fsData, fsMapper2019_20, fsMapper2020_21, fsMapper2021_22) {
     const OmExpWaterSupply_2019_20 = fsData.propertyWaterTax.value === 'Yes' ? getValue(fsMapper2019_20, 'omExpWaterSupply') : 0;
     const OmExpSanitation_2019_20 = fsData.propertySanitationTax.value === 'Yes' ? getValue(fsMapper2019_20, 'omExpSanitation') : 0;
     const OmExpWaterSupply_2020_21 = fsData.propertyWaterTax.value === 'Yes' ? getValue(fsMapper2020_21, 'omExpWaterSupply') : 0;
@@ -197,16 +197,14 @@ function OMExpTotalRevEx(fsData, fsMapper2019_20, fsMapper2020_21, fsMapper2021_
     const OmExpSanitation_2021_22 = fsData.propertySanitationTax.value === 'Yes' ? getValue(fsMapper2021_22, 'omExpSanitation') : 0;
 
 // Unable to fetch 'omExp' >>Error>>"Cannot read properties of undefined (reading 'pmuSuggestedValue2')"
-// <-----------------------------------------------------------------------
-    // Total O&M - O&M for water suppy + O&M for sewerage and sanitation. 
+// Total O&M - O&M for water suppy + O&M for sewerage and sanitation. 
     // Array is created to find average. 
     const arr1 = [
-        (Number(getValue(fsMapper2019_20, 'omExp')) - (Number(OmExpWaterSupply_2019_20) + Number(OmExpSanitation_2019_20))),
-        (Number(getValue(fsMapper2020_21, 'omExp')) - (Number(OmExpWaterSupply_2020_21) + Number(OmExpSanitation_2020_21))), 
-        (Number(getValue(fsMapper2021_22, 'omExp')) - (Number(OmExpWaterSupply_2021_22) + Number(OmExpSanitation_2021_22)))
+        (Number(getValue(fsMapper2019_20, 'totalOmExp')) - (Number(OmExpWaterSupply_2019_20) + Number(OmExpSanitation_2019_20))),
+        (Number(getValue(fsMapper2020_21, 'totalOmExp')) - (Number(OmExpWaterSupply_2020_21) + Number(OmExpSanitation_2020_21))), 
+        (Number(getValue(fsMapper2021_22, 'totalOmExp')) - (Number(OmExpWaterSupply_2021_22) + Number(OmExpSanitation_2021_22)))
     ]; 
     const AvgOfOmExp = calculateAverage(arr1);    
-// ------------------------------------------------------------------------->
 
     // Array is created to find average. 
     const arr2 = [
@@ -223,7 +221,7 @@ function OMExpTotalRevEx(fsData, fsMapper2019_20, fsMapper2020_21, fsMapper2021_
 }
 
 // 10A. For Timely Audit - Average number of months taken by ULB in closing audit - FG
-function AvgMonthsForULBAudit(fsMapper2019_20, fsMapper2020_21, fsMapper2021_22) {
+function avgMonthsForULBAudit(fsMapper2019_20, fsMapper2020_21, fsMapper2021_22) {
     const April_2020 = new Date("2020/04/01");
     const April_2021 = new Date("2021/04/01");
     const April_2022 = new Date("2022/04/01");
@@ -242,28 +240,28 @@ function AvgMonthsForULBAudit(fsMapper2019_20, fsMapper2020_21, fsMapper2021_22)
 }
 
 // 10B. For Publication of Annual Accounts - Availability for last 3 years on Cityfinance or Own website - FG
-function AAPublished(fsMapperNoYear) {
+function aaPublished(fsMapperNoYear) {
     // If answer is 'Yes' then 25 marks else 0 marks. 
     const AAPublished = getValue(fsMapperNoYear, 'webUrlAnnual') === 'Yes' ? 25 : 0; 
     return AAPublished;
 }
 
 // 11A. Is the property tax register GIS-based - FG
-function GISBasedPTax(fsMapperNoYear) {
+function gisBasedPTax(fsMapperNoYear) {
     // If answer is 'Yes then 25 marks else 0 marks. 
     const registerGis = getValue(fsMapperNoYear, 'registerGis') === 'Yes' ? 25 : 0; 
     return registerGis;
 }
 
 // 11B. Do you use accounting software? ( Eg.Tally, State-prescribed ERP etc) - FG
-function AccSoftware(fsMapperNoYear) {
+function accSoftware(fsMapperNoYear) {
     // If answer is 'Yes then 25 marks else 0 marks. 
     const AccSoftware = getValue(fsMapperNoYear, 'accountStwre') === 'Yes' ? 25 : 0; 
     return AccSoftware;
 }
 
 // 12. Budget vs. Actual (Variance %) for Total Receipts (3-year average) - FG
-function TotalReceiptsVariance(fsMapper2019_20, fsMapper2020_21, fsMapper2021_22) {
+function totalReceiptsVariance(fsMapper2019_20, fsMapper2020_21, fsMapper2021_22) {
     // Find average of total receipts actual for 3 years. 
     // Array is created to find average. 
     const arr1 = [Number(getValue(fsMapper2019_20, 'totalRecActual')), Number(getValue(fsMapper2020_21, 'totalRecActual')), Number(getValue(fsMapper2021_22, 'totalRecActual'))];
@@ -280,7 +278,7 @@ function TotalReceiptsVariance(fsMapper2019_20, fsMapper2020_21, fsMapper2021_22
 }
 
 // 13. Own Revenue Receivables Outstanding - FG
-function OwnRevRecOut(fsMapperNoYear, fsMapper2021_22) {
+function ownRevRecOut(fsMapperNoYear, fsMapper2021_22) {
     // ifNoError ? (indicator 25 / indicator 7.1) * 365 : 0;
     // TODO - Condition to be added >> if any error then 0 should be returned condition to be written.
     const OwnRevRecOut = (getValue(fsMapperNoYear, 'totalOwnRevenueArea') / getValue(fsMapper2021_22, 'totalOwnRevenue')) * 365;
@@ -288,7 +286,7 @@ function OwnRevRecOut(fsMapperNoYear, fsMapper2021_22) {
 }
 
 // 14. Digital Own Revenue Collection (DORC) to Total Own Revenue Collection (TORC) - FG
-function DigtalOwnRevToTotalOwnRev(fsMapperNoYear){
+function digtalOwnRevToTotalOwnRev(fsMapperNoYear){
     // indicator 30 / indicator 29 + 30
     // TO-DO if any error then 0 is to be entered condition to be written.
     const DigitalOwnRev = getValue(fsMapperNoYear, 'fy_21_22_online');
@@ -297,30 +295,28 @@ function DigtalOwnRevToTotalOwnRev(fsMapperNoYear){
     return parseFloat(DigtalOwnRevToTotalOwnRev.toFixed(2));
 }
 
-// // 15. Properties under Tax Collection net - FG
-function PropUnderTaxColl(fsMapperNoYear) {
+// 15. Properties under Tax Collection net - FG
+function propUnderTaxColl(fsMapperNoYear) {
     // indicator 33 / (indicator 31 - indicator 32)
     // TO-DO if any error then 0 is to be entered condition to be written.
 
-// Because of 'paid_property_tax' indicator there is error in API response >>Error is>> "Cannot read properties of undefined (reading 'pmuSuggestedValue2')"
-// <-------------------------------------------------
-    const PropUnderTaxColl = 
-    Number(getValue(fsMapperNoYear, 'paid_property_tax')) / 
-    (Number(getValue(fsMapperNoYear, 'property_tax_register')) - Number(getValue(fsMapperNoYear, 'paying_property_tax')));
-// ----------------------------------------------------->
+    const PropUnderTaxColl = ( Number(getValue(fsMapperNoYear, 'paid_property_tax')) / 
+    (Number(getValue(fsMapperNoYear, 'property_tax_register')) - Number(getValue(fsMapperNoYear, 'paying_property_tax')))
+    ) * 100;
+    
     return parseFloat(PropUnderTaxColl.toFixed(2));
 }
 
 function getPopulationBucket(population) {
     let populationBucket = 0;
     if (population >= 4000000) {
-        populationBucket = 1;
+        populationBucket = 1; //4M+
     } else if (population < 4000000 && population >= 1000000) {
-        populationBucket = 2;
+        populationBucket = 2; //1M - 4M
     } if (population < 1000000 && population >= 100000) {
-        populationBucket = 3;
-    } if (population < 100000) {
-        populationBucket = 4;
+        populationBucket = 3; //100K - 1M
+    } if (population < 100000) { 
+        populationBucket = 4; //<100K
     }
     return populationBucket;
 }
@@ -359,84 +355,98 @@ async function getData(res) {
     const fsMapper2018_19 = await FiscalRankingMapper.find({
         ulb: ObjectId(ulbRes._id),
         year: ObjectId(design_year2018_19),
-        type: { $in: ['totalRecActual', 'totalRcptWaterSupply', 'totalRcptSanitation', 'totalOwnRevenue', 'waterTax', 'waterSupplyFee',
-         'sewerageTax', 'sanitationFee', 'propertyTax', 'CaptlExpWaterSupply', 'CaptlExpSanitation', 'CaptlExp'] }
+        type: { $in: [
+                'totalRecActual', 'totalRcptWaterSupply', 'totalRcptSanitation', 
+                'totalOwnRevenue', 'waterTax', 'waterSupplyFee', 'sewerageTax', 'sanitationFee', 
+                'propertyTax', 'CaptlExpWaterSupply', 'CaptlExpSanitation', 'CaptlExp'
+            ] }
     }).exec();
 
     const fsMapper2019_20 = await FiscalRankingMapper.find({
         ulb: ObjectId(ulbRes._id),
         year: ObjectId(design_year2019_20),
-        type: { $in: ['CaptlExp', 'CaptlExpWaterSupply', 'CaptlExpSanitation', 'omExpWaterSupply', 'omExpSanitation',
-         'omExp', 'totalExpend', 'auditAnnualReport', 'totalRecActual', 'RcptBudget'] }
+        type: { $in: [
+                'CaptlExp', 'CaptlExpWaterSupply', 'CaptlExpSanitation', 
+                'omExpWaterSupply', 'omExpSanitation', 'totalOmExp', 
+                'totalExpend', 'totalRecActual', 'RcptBudget',
+                'auditAnnualReport'
+            ] }
     }).exec();
 
     const fsMapper2020_21 = await FiscalRankingMapper.find({
         ulb: ObjectId(ulbRes._id),
         year: ObjectId(design_year2020_21),
-        type: { $in: ['totalRecActual', 'totalRcptWaterSupply', 'totalRcptSanitation', 'CaptlExp', 'CaptlExpWaterSupply',
-         'CaptlExpSanitation', 'omExpWaterSupply', 'omExpSanitation', 'omExp', 'totalExpend', 'auditAnnualReport', 'totalRecActual', 'RcptBudget'] }
+        type: { $in: [
+                'totalRecActual', 'totalRcptWaterSupply', 'totalRcptSanitation', 
+                'CaptlExp', 'CaptlExpWaterSupply', 'CaptlExpSanitation', 
+                'omExpWaterSupply', 'omExpSanitation', 'totalOmExp', 
+                'totalExpend', 'totalRecActual', 'RcptBudget',
+                'auditAnnualReport'
+             ] }
     }).exec();
 
     const fsMapper2021_22 = await FiscalRankingMapper.find({
         ulb: ObjectId(ulbRes._id),
         year: ObjectId(design_year2021_22),
         type: {
-            $in: ['totalRecActual', 'totalRcptWaterSupply', 'totalRcptSanitation', 'totalOwnRevenue', 'waterTax', 
-            'waterSupplyFee', 'sewerageTax', 'sanitationFee', 'propertyTax', 'CaptlExp', 'CaptlExpWaterSupply', 'CaptlExpSanitation',
-             'omExpWaterSupply', 'omExpSanitation', 'omExp', 'totalExpend', 'auditAnnualReport', 'totalRecActual', 'RcptBudget']
+            $in: ['totalRecActual', 'totalRcptWaterSupply', 'totalRcptSanitation', 
+            'totalOwnRevenue', 'waterTax', 'waterSupplyFee', 'sewerageTax', 'sanitationFee', 
+            'propertyTax', 'CaptlExp', 'CaptlExpWaterSupply', 'CaptlExpSanitation',
+            'omExpWaterSupply', 'omExpSanitation', 'totalOmExp', 
+            'totalExpend', 'auditAnnualReport', 'totalRecActual', 'RcptBudget']
         }
     }).exec();
 
     // 1. Total Budget size per capita (Actual Total Reciepts) - RM
-    const totalBudgetDataPC = totalBudgetPerCapita(ulbRes, fsData, fsMapper2021_22);
+    const totalBudgetDataPC_1 = totalBudgetPerCapita(ulbRes, fsData, fsMapper2021_22);
 
     // 2. Own Revenue per capita - RM
-    const ownRevenuePC = ownRevenuePerCapita(ulbRes, fsData, fsMapper2021_22);
+    const ownRevenuePC_2 = ownRevenuePerCapita(ulbRes, fsData, fsMapper2021_22);
 
     // 3. Property Tax per capita - RM
-    const pTaxPC = pTaxPerCapita(ulbRes, fsMapper2021_22);
+    const pTaxPC_3 = pTaxPerCapita(ulbRes, fsMapper2021_22);
 
     // 4. Growth (3 Year CAGR) in Total Budget Size (Total actual reciept) - RM
-    const CAGRInTotalBud = CAGRInTotalBudget(fsData, fsMapper2018_19, fsMapper2020_21);
+    const cagrInTotalBud_4 = cagrInTotalBudget(fsData, fsMapper2018_19, fsMapper2020_21);
 
     // 5. Growth (3 Year CAGR) in Own Revenue - RM
-    const CAGRInOwnRevPC = CAGRInOwnRevenue(fsData, fsMapper2018_19, fsMapper2021_22);
+    const cagrInOwnRevPC_5 = cagrInOwnRevenue(fsData, fsMapper2018_19, fsMapper2021_22);
 
     // 6. Growth (3 Year CAGR) in Property - RM
-    const CAGRInPropTax = CAGRInPTax(fsMapper2018_19, fsMapper2021_22); 
+    const cagrInPropTax_6 = cagrInPTax(fsMapper2018_19, fsMapper2021_22); 
 
     // 7. Capital Expenditure per capita (3-year average) - EP
-    const CapExPCAvg = CapExPerCapitaAvg(ulbRes, fsData, fsMapper2019_20, fsMapper2020_21, fsMapper2021_22);
+    const capExPCAvg_7 = capExPerCapitaAvg(ulbRes, fsData, fsMapper2019_20, fsMapper2020_21, fsMapper2021_22);
     
     // 8. Growth (3-Year CAGR) in Capex - EP
-    const CAGRInCapExpen = CAGRInCapEx(fsData, fsMapper2018_19, fsMapper2021_22);
+    const cagrInCapExpen_8 = cagrInCapEx(fsData, fsMapper2018_19, fsMapper2021_22);
 
-    // // 9. O&M expenses to Total Revenue Expenditure (TRE) (3- year average) - EP
-    const OMExpTotalRevExpen = OMExpTotalRevEx(fsData, fsMapper2019_20, fsMapper2020_21, fsMapper2021_22);
+    // 9. O&M expenses to Total Revenue Expenditure (TRE) (3- year average) - EP
+    const omExpTotalRevExpen_9 = omExpTotalRevEx(fsData, fsMapper2019_20, fsMapper2020_21, fsMapper2021_22);
 
     // 10A. For Timely Audit - Average number of months taken by ULB in closing audit - FG
-    const AvgMonthsForULBAuditMarks = AvgMonthsForULBAudit(fsMapper2019_20, fsMapper2020_21, fsMapper2021_22)
+    const avgMonthsForULBAuditMarks_10a = avgMonthsForULBAudit(fsMapper2019_20, fsMapper2020_21, fsMapper2021_22)
     
     // 10B. For Publication of Annual Accounts - Availability for last 3 years on Cityfinance or Own website.
-    const AAPushishedMarks = AAPublished(fsMapperNoYear);
+    const aaPushishedMarks_10b = aaPublished(fsMapperNoYear);
 
     // 11A. Is the property tax register GIS-based
-    const GISBasedPTaxMarks = GISBasedPTax(fsMapperNoYear);
+    const gisBasedPTaxMarks_11a = gisBasedPTax(fsMapperNoYear);
 
     // 11B. Do you use accounting software? ( Eg.Tally, State-prescribed ERP etc) - FG
-    const AccSoftwareMarks = AccSoftware(fsMapperNoYear);
+    const accSoftwareMarks_11b = accSoftware(fsMapperNoYear);
 
     // 12. Budget vs. Actual (Variance %) for Total Receipts (3-year average) - FG
-    const ReceiptsVariance = TotalReceiptsVariance(fsMapper2019_20, fsMapper2020_21, fsMapper2021_22);
+    const receiptsVariance_12 = totalReceiptsVariance(fsMapper2019_20, fsMapper2020_21, fsMapper2021_22);
 
     // 13. Own Revenue Receivables Outstanding - FG
-    const OwnRevRecOutStanding = OwnRevRecOut(fsMapperNoYear, fsMapper2021_22);
+    const ownRevRecOutStanding_13 = ownRevRecOut(fsMapperNoYear, fsMapper2021_22);
 
     // 14. Digital Own Revenue Collection (DORC) to Total Own Revenue Collection (TORC) - FG
-    const DigitalToTotalOwnRev =  DigtalOwnRevToTotalOwnRev(fsMapperNoYear);
+    const digitalToTotalOwnRev_14 =  digtalOwnRevToTotalOwnRev(fsMapperNoYear);
     
-    // // 15. Properties under Tax Collection net - FG
-    const  PropUnderTaxCollNet = PropUnderTaxColl(fsMapperNoYear); 
+    // 15. Properties under Tax Collection net - FG
+    const propUnderTaxCollNet_15 = propUnderTaxColl(fsMapperNoYear); 
 
     // await ScoringFiscalRanking.findOneAndUpdate({
     //     ulb: ObjectId(req.body.ulbId),
@@ -466,23 +476,23 @@ async function getData(res) {
     
     return res.status(200).json({
         status: 'true',
-        totalBudgetDataPC,
-        ownRevenuePC,
-        pTaxPC,
-        CAGRInTotalBud,
-        CAGRInOwnRevPC,
-        CAGRInPropTax,
-        CapExPCAvg,
-        CAGRInCapExpen,
-        // OMExpTotalRevExpen,
-        AvgMonthsForULBAuditMarks,
-        AAPushishedMarks,
-        GISBasedPTaxMarks,   
-        AccSoftwareMarks,
-        ReceiptsVariance,
-        OwnRevRecOutStanding,
-        DigitalToTotalOwnRev,
-        PropUnderTaxCollNet
+        totalBudgetDataPC_1,
+        ownRevenuePC_2,
+        pTaxPC_3,
+        cagrInTotalBud_4,
+        cagrInOwnRevPC_5,
+        cagrInPropTax_6,
+        capExPCAvg_7,
+        cagrInCapExpen_8,
+        omExpTotalRevExpen_9,
+        avgMonthsForULBAuditMarks_10a,
+        aaPushishedMarks_10b,
+        gisBasedPTaxMarks_11a,
+        accSoftwareMarks_11b,
+        receiptsVariance_12,
+        ownRevRecOutStanding_13,
+        digitalToTotalOwnRev_14,
+        propUnderTaxCollNet_15
 
         // ulbRes,
         // fsData,
