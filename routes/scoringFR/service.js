@@ -188,39 +188,39 @@ function CAGRInCapEx(fsData, fsMapper2018_19, fsMapper2021_22) {
 }
 
 // // 9. O&M expenses to Total Revenue Expenditure (TRE) (3- year average) - EP
-// function OMExpTotalRevEx(fsData, fsMapper2019_20, fsMapper2020_21, fsMapper2021_22) {
-//     const OmExpWaterSupply_2019_20 = fsData.propertyWaterTax.value === 'Yes' ? getValue(fsMapper2019_20, 'omExpWaterSupply') : 0;
-//     const OmExpSanitation_2019_20 = fsData.propertySanitationTax.value === 'Yes' ? getValue(fsMapper2019_20, 'omExpSanitation') : 0;
-//     const OmExpWaterSupply_2020_21 = fsData.propertyWaterTax.value === 'Yes' ? getValue(fsMapper2020_21, 'omExpWaterSupply') : 0;
-//     const OmExpSanitation_2020_21 = fsData.propertySanitationTax.value === 'Yes' ? getValue(fsMapper2020_21, 'omExpSanitation') : 0;
-//     const OmExpWaterSupply_2021_22 = fsData.propertyWaterTax.value === 'Yes' ? getValue(fsMapper2021_22, 'omExpWaterSupply') : 0;
-//     const OmExpSanitation_2021_22 = fsData.propertySanitationTax.value === 'Yes' ? getValue(fsMapper2021_22, 'omExpSanitation') : 0;
+function OMExpTotalRevEx(fsData, fsMapper2019_20, fsMapper2020_21, fsMapper2021_22) {
+    const OmExpWaterSupply_2019_20 = fsData.propertyWaterTax.value === 'Yes' ? getValue(fsMapper2019_20, 'omExpWaterSupply') : 0;
+    const OmExpSanitation_2019_20 = fsData.propertySanitationTax.value === 'Yes' ? getValue(fsMapper2019_20, 'omExpSanitation') : 0;
+    const OmExpWaterSupply_2020_21 = fsData.propertyWaterTax.value === 'Yes' ? getValue(fsMapper2020_21, 'omExpWaterSupply') : 0;
+    const OmExpSanitation_2020_21 = fsData.propertySanitationTax.value === 'Yes' ? getValue(fsMapper2020_21, 'omExpSanitation') : 0;
+    const OmExpWaterSupply_2021_22 = fsData.propertyWaterTax.value === 'Yes' ? getValue(fsMapper2021_22, 'omExpWaterSupply') : 0;
+    const OmExpSanitation_2021_22 = fsData.propertySanitationTax.value === 'Yes' ? getValue(fsMapper2021_22, 'omExpSanitation') : 0;
 
-// // Unable to fetch 'omExp' >>Error>>"Cannot read properties of undefined (reading 'pmuSuggestedValue2')"
-// // <-----------------------------------------------------------------------
-//     // Total O&M - O&M for water suppy + O&M for sewerage and sanitation. 
-//     // Array is created to find average. 
-//     const arr1 = [
-//         (Number(getValue(fsMapper2019_20, 'omExp')) - (Number(OmExpWaterSupply_2019_20) + Number(OmExpSanitation_2019_20))),
-//         (Number(getValue(fsMapper2020_21, 'omExp')) - (Number(OmExpWaterSupply_2020_21) + Number(OmExpSanitation_2020_21))), 
-//         (Number(getValue(fsMapper2021_22, 'omExp')) - (Number(OmExpWaterSupply_2021_22) + Number(OmExpSanitation_2021_22)))
-//     ]; 
-//     const AvgOfOmExp = calculateAverage(arr1);    
-// // ------------------------------------------------------------------------->
+// Unable to fetch 'omExp' >>Error>>"Cannot read properties of undefined (reading 'pmuSuggestedValue2')"
+// <-----------------------------------------------------------------------
+    // Total O&M - O&M for water suppy + O&M for sewerage and sanitation. 
+    // Array is created to find average. 
+    const arr1 = [
+        (Number(getValue(fsMapper2019_20, 'omExp')) - (Number(OmExpWaterSupply_2019_20) + Number(OmExpSanitation_2019_20))),
+        (Number(getValue(fsMapper2020_21, 'omExp')) - (Number(OmExpWaterSupply_2020_21) + Number(OmExpSanitation_2020_21))), 
+        (Number(getValue(fsMapper2021_22, 'omExp')) - (Number(OmExpWaterSupply_2021_22) + Number(OmExpSanitation_2021_22)))
+    ]; 
+    const AvgOfOmExp = calculateAverage(arr1);    
+// ------------------------------------------------------------------------->
 
-//     // Array is created to find average. 
-//     const arr2 = [
-//         Number(getValue(fsMapper2019_20, 'totalExpend')), 
-//         Number(getValue(fsMapper2020_21, 'totalExpend')), 
-//         Number(getValue(fsMapper2021_22, 'totalExpend'))
-//     ];
-//     console.log(getValue(fsMapper2019_20, 'totalExpend'),' totalExpend 19-20');
-//     const AvgOfRevExp = calculateAverage(arr2);
-//     console.log(AvgOfRevExp),'AvgOfRevExp';
-//     const OMExpTotalRevEx = AvgOfOmExp / AvgOfRevExp;
+    // Array is created to find average. 
+    const arr2 = [
+        Number(getValue(fsMapper2019_20, 'totalExpend')), 
+        Number(getValue(fsMapper2020_21, 'totalExpend')), 
+        Number(getValue(fsMapper2021_22, 'totalExpend'))
+    ];
+    console.log(getValue(fsMapper2019_20, 'totalExpend'),' totalExpend 19-20');
+    const AvgOfRevExp = calculateAverage(arr2);
+    console.log(AvgOfRevExp),'AvgOfRevExp';
+    const OMExpTotalRevEx = AvgOfOmExp / AvgOfRevExp;
     
-//     return parseFloat(OMExpTotalRevEx.toFixed(2));
-// }
+    return parseFloat(OMExpTotalRevEx.toFixed(2));
+}
 
 // 10A. For Timely Audit - Average number of months taken by ULB in closing audit - FG
 function AvgMonthsForULBAudit(fsMapper2019_20, fsMapper2020_21, fsMapper2021_22) {
@@ -298,18 +298,18 @@ function DigtalOwnRevToTotalOwnRev(fsMapperNoYear){
 }
 
 // // 15. Properties under Tax Collection net - FG
-// function PropUnderTaxColl(fsMapperNoYear) {
-//     // indicator 33 / (indicator 31 - indicator 32)
-//     // TO-DO if any error then 0 is to be entered condition to be written.
+function PropUnderTaxColl(fsMapperNoYear) {
+    // indicator 33 / (indicator 31 - indicator 32)
+    // TO-DO if any error then 0 is to be entered condition to be written.
 
-// // Because of 'paid_property_tax' indicator there is error in API response >>Error is>> "Cannot read properties of undefined (reading 'pmuSuggestedValue2')"
-// // <-------------------------------------------------
-//     const PropUnderTaxColl = 
-//     Number(getValue(fsMapperNoYear, 'paid_property_tax')) / 
-//     (Number(getValue(fsMapperNoYear, 'property_tax_register')) - Number(getValue(fsMapperNoYear, 'paying_property_tax')));
-// // ----------------------------------------------------->
-//     return parseFloat(PropUnderTaxColl.toFixed(2));
-// }
+// Because of 'paid_property_tax' indicator there is error in API response >>Error is>> "Cannot read properties of undefined (reading 'pmuSuggestedValue2')"
+// <-------------------------------------------------
+    const PropUnderTaxColl = 
+    Number(getValue(fsMapperNoYear, 'paid_property_tax')) / 
+    (Number(getValue(fsMapperNoYear, 'property_tax_register')) - Number(getValue(fsMapperNoYear, 'paying_property_tax')));
+// ----------------------------------------------------->
+    return parseFloat(PropUnderTaxColl.toFixed(2));
+}
 
 function getPopulationBucket(population) {
     let populationBucket = 0;
@@ -326,7 +326,7 @@ function getPopulationBucket(population) {
 }
 
 async function getData(res) {
-    moongose.set('debug', true);
+    // moongose.set('debug', true);
     const censusCode = 802814;
     const ulbRes = await Ulb.findOne({ censusCode }).lean();
     // ulbRes.forEach(element => {
@@ -352,32 +352,38 @@ async function getData(res) {
     const fsMapperNoYear = await FiscalRankingMapper.find({
         ulb: ObjectId(ulbRes._id),
         // year: ObjectId(design_year2018_19),
-        type: { $in: ['webUrlAnnual', 'registerGis', 'accountStwre', 'totalOwnRevenueArea', 'fy_21_22_online', 'fy_21_22_cash', 'property_tax_register', 'paying_property_tax'] }
+        type: { $in: ['webUrlAnnual', 'registerGis', 'accountStwre', 'totalOwnRevenueArea', 'fy_21_22_online', 'fy_21_22_cash', 
+        'property_tax_register', 'paying_property_tax', 'paid_property_tax'] }
     }).exec();
 
     const fsMapper2018_19 = await FiscalRankingMapper.find({
         ulb: ObjectId(ulbRes._id),
         year: ObjectId(design_year2018_19),
-        type: { $in: ['totalRecActual', 'totalRcptWaterSupply', 'totalRcptSanitation', 'totalOwnRevenue', 'waterTax', 'waterSupplyFee', 'sewerageTax', 'sanitationFee', 'propertyTax', 'CaptlExpWaterSupply', 'CaptlExpSanitation', 'CaptlExp'] }
+        type: { $in: ['totalRecActual', 'totalRcptWaterSupply', 'totalRcptSanitation', 'totalOwnRevenue', 'waterTax', 'waterSupplyFee',
+         'sewerageTax', 'sanitationFee', 'propertyTax', 'CaptlExpWaterSupply', 'CaptlExpSanitation', 'CaptlExp'] }
     }).exec();
 
     const fsMapper2019_20 = await FiscalRankingMapper.find({
         ulb: ObjectId(ulbRes._id),
         year: ObjectId(design_year2019_20),
-        type: { $in: ['CaptlExp', 'CaptlExpWaterSupply', 'CaptlExpSanitation', 'omExpWaterSupply', 'omExpSanitation', 'omExp', 'totalExpend', 'auditAnnualReport', 'totalRecActual', 'RcptBudget'] }
+        type: { $in: ['CaptlExp', 'CaptlExpWaterSupply', 'CaptlExpSanitation', 'omExpWaterSupply', 'omExpSanitation',
+         'omExp', 'totalExpend', 'auditAnnualReport', 'totalRecActual', 'RcptBudget'] }
     }).exec();
 
     const fsMapper2020_21 = await FiscalRankingMapper.find({
         ulb: ObjectId(ulbRes._id),
         year: ObjectId(design_year2020_21),
-        type: { $in: ['totalRecActual', 'totalRcptWaterSupply', 'totalRcptSanitation', 'CaptlExp', 'CaptlExpWaterSupply', 'CaptlExpSanitation', 'omExpWaterSupply', 'omExpSanitation', 'omExp', 'totalExpend', 'auditAnnualReport', 'totalRecActual', 'RcptBudget'] }
+        type: { $in: ['totalRecActual', 'totalRcptWaterSupply', 'totalRcptSanitation', 'CaptlExp', 'CaptlExpWaterSupply',
+         'CaptlExpSanitation', 'omExpWaterSupply', 'omExpSanitation', 'omExp', 'totalExpend', 'auditAnnualReport', 'totalRecActual', 'RcptBudget'] }
     }).exec();
 
     const fsMapper2021_22 = await FiscalRankingMapper.find({
         ulb: ObjectId(ulbRes._id),
         year: ObjectId(design_year2021_22),
         type: {
-            $in: ['totalRecActual', 'totalRcptWaterSupply', 'totalRcptSanitation', 'totalOwnRevenue', 'waterTax', 'waterSupplyFee', 'sewerageTax', 'sanitationFee', 'propertyTax', 'CaptlExp', 'CaptlExpWaterSupply', 'CaptlExpSanitation', 'omExpWaterSupply', 'omExpSanitation', 'omExp', 'totalExpend', 'auditAnnualReport', 'totalRecActual', 'RcptBudget']
+            $in: ['totalRecActual', 'totalRcptWaterSupply', 'totalRcptSanitation', 'totalOwnRevenue', 'waterTax', 
+            'waterSupplyFee', 'sewerageTax', 'sanitationFee', 'propertyTax', 'CaptlExp', 'CaptlExpWaterSupply', 'CaptlExpSanitation',
+             'omExpWaterSupply', 'omExpSanitation', 'omExp', 'totalExpend', 'auditAnnualReport', 'totalRecActual', 'RcptBudget']
         }
     }).exec();
 
@@ -406,7 +412,7 @@ async function getData(res) {
     const CAGRInCapExpen = CAGRInCapEx(fsData, fsMapper2018_19, fsMapper2021_22);
 
     // // 9. O&M expenses to Total Revenue Expenditure (TRE) (3- year average) - EP
-    // const OMExpTotalRevExpen = OMExpTotalRevEx(fsData, fsMapper2019_20, fsMapper2020_21, fsMapper2021_22);
+    const OMExpTotalRevExpen = OMExpTotalRevEx(fsData, fsMapper2019_20, fsMapper2020_21, fsMapper2021_22);
 
     // 10A. For Timely Audit - Average number of months taken by ULB in closing audit - FG
     const AvgMonthsForULBAuditMarks = AvgMonthsForULBAudit(fsMapper2019_20, fsMapper2020_21, fsMapper2021_22)
@@ -430,7 +436,7 @@ async function getData(res) {
     const DigitalToTotalOwnRev =  DigtalOwnRevToTotalOwnRev(fsMapperNoYear);
     
     // // 15. Properties under Tax Collection net - FG
-    // const  PropUnderTaxCollNet = PropUnderTaxColl(fsMapperNoYear); 
+    const  PropUnderTaxCollNet = PropUnderTaxColl(fsMapperNoYear); 
 
     // await ScoringFiscalRanking.findOneAndUpdate({
     //     ulb: ObjectId(req.body.ulbId),
@@ -476,7 +482,7 @@ async function getData(res) {
         ReceiptsVariance,
         OwnRevRecOutStanding,
         DigitalToTotalOwnRev,
-        // PropUnderTaxCollNet
+        PropUnderTaxCollNet
 
         // ulbRes,
         // fsData,
@@ -495,6 +501,7 @@ module.exports.calculateFRScore = async (req, res) => {
 
 
     } catch (error) {
+        console.log('error', error);
         return res.status(400).json({
             status: false,
             message: error.message
