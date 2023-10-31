@@ -2004,6 +2004,7 @@ module.exports.get = catchAsync(async (req, res) => {
   let allData = await Promise.all([data, total]);
   data = allData[0]
   total = allData[1].length ? allData[1][0]['total'] : 0;
+  
   if(!data.length){
     return res.status(200).json({
       success: true,
