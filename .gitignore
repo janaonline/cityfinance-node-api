@@ -39,6 +39,5 @@ public
 
 package-lock.json
 
-freezeform-error-logs.txt
 
 /config/s3-config.json
