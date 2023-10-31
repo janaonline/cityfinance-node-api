@@ -1,5 +1,6 @@
 const ObjectId = require("mongoose").Types.ObjectId;
 const moongose = require("mongoose");
+const ExcelJS = require('exceljs');
 const Response = require("../../service").response;
 const { years } = require("../../service/years");
 const FiscalRanking = require("../../models/FiscalRanking");
@@ -5814,4 +5815,118 @@ const createToken = (user) => {
   }
   data['purpose'] = 'WEB';
   return jwt.sign(data, Config.JWT.SECRET, { expiresIn: Config.JWT.TOKEN_EXPIRY });
+}
+
+
+async function getDataOFErrorUlbs(ulbIds) {
+  return FiscalRanking.aggregate([
+    {
+        $match: {
+            ulb: { $in: ulbIds }
+        }
+    },
+    {
+        $lookup: {
+            from: "ulbs",
+            localField: "ulb",
+            foreignField: "_id",
+            as: "ulbData"
+        }
+    },
+    { $unwind: "$ulbData" },
+    {
+        $lookup: {
+            from: 'fiscalrankingmappers',
+            let: {
+                 frId: '$_id'   
+            },
+            pipeline: [
+                {
+                    $match: {
+                        $expr: { $eq: ["$$frId", "$fiscal_ranking"] },
+                    },
+                },
+                {
+                    $match: {
+                         status: 'REJECTED',
+                         suggestedValue: { $exists: true, $ne: null, $ne: ''}
+                    }
+                },
+            ],
+            as: 'mapperData'
+        }
+    },
+    {
+        $unwind: "$mapperData"
+    },
+    {
+        $lookup: {
+            from: "years",
+            localField: "mapperData.year",
+            foreignField: "_id",
+            as: "yearData"
+        }
+    },
+    { $unwind: "$yearData" },
+    {
+        $project: {
+            _id: 0,
+            ulbName: "$ulbData.name",
+            censusCode: "$ulbData.censusCode",
+            sbCOde: "$ulbData.sbCode",
+            "Indicator No": "$mapperData.displayPriority",
+            "Year" : "$yearData.year",
+            "Value": "$mapperData.value",
+            "ApprovalType": "$mapperData.approvalType",
+            "suggestedValue": "$mapperData.suggestedValue",
+            
+        }
+    }
+]);
+}
+
+function convertToExcel(data) {
+  const workbook = new ExcelJS.Workbook();
+  const worksheet = workbook.addWorksheet('Data');
+  const headers = Object.keys(data[0]);
+  worksheet.addRow(headers);
+  data.forEach((item) => {
+    const row = headers.map((header) => item[header]);
+    worksheet.addRow(row);
+  });
+  return workbook;
+}
+
+
+module.exports.errorLogs = async (req, res) => {
+  try {
+    const filePath = 'cron-freeze-error-logs.txt';
+
+    fs.readFile(filePath, 'utf8', async (err, data) => {
+      if (err) {
+        console.error(err);
+        res.status(500).send('Error reading file');
+      } else {
+        fileData = JSON.parse(data);
+
+        const ulbIds = fileData.map(i => ObjectId(i.ulbId));
+
+        const finalData = await getDataOFErrorUlbs(ulbIds);
+        const workbook = convertToExcel(finalData);
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        res.setHeader('Content-Disposition', `attachment; filename=${process.env.ENV}-error-logs.xlsx`);
+        workbook.xlsx.write(res)
+          .then(() => {
+            res.end();
+          })
+          .catch((err) => {
+            res.status(500).json({ error: 'Error generating Excel file' });
+          });
+      }
+    });
+  }
+  catch (err) {
+    console.log("error While getting logs File :: ", err.message)
+    return res.status(400).json(err)
+  }
 }
