@@ -95,11 +95,7 @@ function cagrInTotalBudget(fsData, fsMapper2018_19, fsMapper2021_22) {
     const waterTax_2018_19 = fsData.propertyWaterTax.value === 'Yes' ? getValue(fsMapper2018_19, 'totalRcptWaterSupply') : 0;
     const SanitationTax_2018_19 = fsData.propertySanitationTax.value === 'Yes' ?  getValue(fsMapper2018_19, 'totalRcptSanitation') : 0;
 
-    // Total - (watersupply + sanitaion)
-    // const A = (totalRecActual_2021_22 - (WaterTax2021_22 + SanitationTax2021_22)) / (totalRecActual_2018_19 - (waterTax_2018_19 + SanitationTax_2018_19)); 
-    const N = Number(68068504681);
-    const A = ( N - (WaterTax2021_22 + SanitationTax2021_22)) / (totalRecActual_2018_19 - (waterTax_2018_19 + SanitationTax_2018_19)); 
-    // console.log(A);
+    const A = (totalRecActual_2021_22 - (WaterTax2021_22 + SanitationTax2021_22)) / (totalRecActual_2018_19 - (waterTax_2018_19 + SanitationTax_2018_19)); 
     const time = 3; 
     const CAGRInTotalBudget = (Math.pow(A, (1/time)) - 1) * 100; 
 
@@ -187,7 +183,7 @@ function cagrInCapEx(fsData, fsMapper2018_19, fsMapper2021_22) {
     return parseFloat(CAGRInCapEx.toFixed(2));
 }
 
-// // 9. O&M expenses to Total Revenue Expenditure (TRE) (3- year average) - EP
+// 9. O&M expenses to Total Revenue Expenditure (TRE) (3- year average) - EP
 function omExpTotalRevEx(fsData, fsMapper2019_20, fsMapper2020_21, fsMapper2021_22) {
     const OmExpWaterSupply_2019_20 = fsData.propertyWaterTax.value === 'Yes' ? getValue(fsMapper2019_20, 'omExpWaterSupply') : 0;
     const OmExpSanitation_2019_20 = fsData.propertySanitationTax.value === 'Yes' ? getValue(fsMapper2019_20, 'omExpSanitation') : 0;
@@ -212,9 +208,7 @@ function omExpTotalRevEx(fsData, fsMapper2019_20, fsMapper2020_21, fsMapper2021_
         Number(getValue(fsMapper2020_21, 'totalExpend')), 
         Number(getValue(fsMapper2021_22, 'totalExpend'))
     ];
-    console.log(getValue(fsMapper2019_20, 'totalExpend'),' totalExpend 19-20');
     const AvgOfRevExp = calculateAverage(arr2);
-    console.log(AvgOfRevExp),'AvgOfRevExp';
     const OMExpTotalRevEx = AvgOfOmExp / AvgOfRevExp;
     
     return parseFloat(OMExpTotalRevEx.toFixed(2));
@@ -407,7 +401,7 @@ async function getData(res) {
     const pTaxPC_3 = pTaxPerCapita(ulbRes, fsMapper2021_22);
 
     // 4. Growth (3 Year CAGR) in Total Budget Size (Total actual reciept) - RM
-    const cagrInTotalBud_4 = cagrInTotalBudget(fsData, fsMapper2018_19, fsMapper2020_21);
+    const cagrInTotalBud_4 = cagrInTotalBudget(fsData, fsMapper2018_19, fsMapper2021_22);
 
     // 5. Growth (3 Year CAGR) in Own Revenue - RM
     const cagrInOwnRevPC_5 = cagrInOwnRevenue(fsData, fsMapper2018_19, fsMapper2021_22);
