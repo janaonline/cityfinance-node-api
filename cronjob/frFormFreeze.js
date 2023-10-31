@@ -4,7 +4,7 @@ const Config = require('../config/app_config');
 const ObjectId = require("mongoose").Types.ObjectId;
 const axios = require('axios');
 const User = require('../models/User');
-const { appendFile } = require('fs')
+const { writeFileSync } = require('fs')
 const { MASTER_FORM_STATUS, APPROVAL_TYPES, ENV } = require("../util/FormNames");
 
 
@@ -32,6 +32,7 @@ module.exports.frFormFreeze = async () => {
             currentFormStatus: { $in: [MASTER_FORM_STATUS['IN_PROGRESS'], MASTER_FORM_STATUS['RETURNED_BY_PMU']] }
         }).select('ulb design_year pmuSubmissionDate isAutoApproved');
 
+        const logDetails = [];
         for (let frData of getUlbForms) {
             let user = await User.findOne({ role: 'ULB', ulb: ObjectId(frData?.ulb) });
             if (!user) continue;
@@ -81,20 +82,21 @@ module.exports.frFormFreeze = async () => {
                 });
                 // Handle the response data as needed
             } catch (postError) {
-                const logDetails = {
+                logDetails.push({
                     timestamp: new Date().toISOString(),
                     ulbId: frData?.ulb?.toString(),
                     frFormId: frData?._id?.toString(),
                     data: JSON.stringify(postError?.response?.data || {}, 3, 3),
                     message: postError?.message,
-                };
-                appendFile("cron-freeze-error-logs.txt", JSON.stringify(logDetails, 3, 3) + ",", function (err) {
-                    if (err) throw err;
-                    console.log('Saved!');
-                })
+                });
+                
             }
 
         }
+        writeFileSync("cron-freeze-error-logs.txt", JSON.stringify(logDetails, 3, 3), function (err) {
+            if (err) throw err;
+            console.log('Saved!');
+        })
         return console.log("Executed successfully!");
     } catch (error) {
         console.error("Error while Freezing Fr form throw cronJob:-", error)
