@@ -1522,3 +1522,241 @@ async function updateForNextForms(design_year, ulb, utiData) {
     console.log("error in checkForNextForms :::: ", err.message)
   }
 }
+function removeEscapeChars(entity) {
+  return !entity ? entity : entity.replace(/(\n|,|")/gm, " ");
+}
+
+module.exports.projectsCSV = async (req, res) => {
+  try {
+    let csvColsFr = [
+      "Ulb Name" ,
+      "Ulb Code" ,
+      "Design Year" ,
+      "Name of the Project" ,
+      "Sector" ,
+      "Latitude" ,
+      "Longitude" ,
+      "Total Project Cost(INR in lakhs)" ,
+      "Amount of 15th FC Grants in Total Project Cost(INR in lakhs)" ,
+      "% of 15th FC Grants in Total Project Cost" 
+   ]
+    let filename = "Projects-DUR.csv";
+    res.setHeader("Content-disposition", "attachment; filename=" + filename);
+    res.writeHead(200, { "Content-Type": "text/csv;charset=utf-8,%EF%BB%BF" });
+    res.write("\ufeff" + csvColsFr.join(","));
+    res.write("\r\n");
+    res.flushHeaders();
+   
+    let cursor = await UtilizationReport.aggregate([
+      {$match:{
+        ulb:{$ne:null}
+      }},
+      {
+        $project: {
+          projects: 1,
+          ulb: 1,
+          designYear: 1,
+        },
+      },
+      {
+        $lookup: {
+          from: "ulbs",
+          let: {
+            ulb: "$ulb",
+          },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    {
+                      $eq: ["$_id", "$$ulb"],
+                    },
+                  ],
+                },
+              },
+            },
+            {
+              $project: {
+                code: 1,
+                name: 1,
+                _id: 0,
+              },
+            },
+          ],
+          as: "ulb",
+        },
+      },
+
+      {
+        $unwind: {
+          path: "$ulb",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $sort: {
+          "ulb.code": -1,
+        },
+      },
+      {
+        $lookup: {
+          from: "years",
+          let: {
+            designYear: "$designYear",
+          },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    {
+                      $eq: ["$_id", "$$designYear"],
+                    },
+                  ],
+                },
+              },
+            },
+            {
+              $project: {
+                year: 1,
+                _id: 0,
+              },
+            },
+          ],
+          as: "designYear",
+        },
+      },
+      {
+        $unwind: {
+          path: "$designYear",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $addFields: {
+          projects: {
+            $map: {
+              input: "$projects",
+              as: "project",
+              in: {
+                $mergeObjects: [
+                  "$$project",
+                  {
+                    ulbName: "$ulb.name",
+                    ulbCode: "$ulb.code",
+                    year: "$designYear.year",
+                  },
+                ],
+              },
+            },
+          },
+        },
+      },
+      {
+        $project: {
+          designYear: 0,
+          ulb: 0,
+          _id: 0,
+        },
+      },
+      {
+        $unwind: {
+          path: "$projects",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $lookup: {
+          from: "categories",
+          let: {
+            category: "$projects.category",
+          },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    {
+                      $eq: ["$_id", "$$category"],
+                    },
+                  ],
+                },
+              },
+            },
+            {
+              $project: {
+                name: 1,
+                _id: 0,
+              },
+            },
+          ],
+          as: "category",
+        },
+      },
+      {
+        $unwind: {
+          path: "$category",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $project: {
+          "Ulb Name": "$projects.ulbName",
+          "Ulb Code": "$projects.ulbCode",
+          "Design Year": "$projects.year",
+          "Name of the Project": "$projects.name",
+          Sector: "$category.name",
+          Latitude: "$projects.location.lat",
+          Longitude: "$projects.location.long",
+          "Total Project Cost(INR in lakhs)": "$projects.cost",
+          "Amount of 15th FC Grants in Total Project Cost(INR in lakhs)":
+            "$projects.expenditure",
+          "% of 15th FC Grants in Total Project Cost": {
+            $cond: {
+              if: { $eq: ["$projects.cost", 0] }, // Check if 'expenditure' is 0 to avoid division by zero
+              then: 0, // If 'expenditure' is 0, set the percentage to 0
+              else: {
+                $multiply: [
+                  { $divide: ["$projects.expenditure", "$projects.cost"] },
+                  100,
+                ],
+              }, // Calculate the percentage
+            },
+          },
+          _id: 0,
+        },
+      }
+    ])
+      .allowDiskUse(true)
+      .cursor({ batchSize: 500 })
+      .addCursorFlag("noCursorTimeout", true)
+      .exec()
+    cursor.on("data", function (el) {
+      let str = "";
+      // if(el["Ulb Code"] === "TN450" && el['Name of the Project'].includes("Construction of on site compost centre at Mahalakshmi nagar")){
+      //   console.log({
+      //     el
+      //   })
+      // }
+      if(Object.keys(el).length<=5) {
+        for (let key of csvColsFr) {
+          if (el[key] !== undefined && el[key] !== null) {
+            key === "Name of the Project" ? el[key] = removeEscapeChars(el[key]) : ""
+            str += el[key] + ",";
+          } else {
+            str += " " + ",";
+          }
+        }
+        if (str !== " " && str !== undefined) {
+          res.write( "\ufeff" + str + "\r\n");
+        }
+      }  
+    });
+    cursor.on("end", function (el) {
+      return res.json()
+    });
+  } catch (error) {
+    console.log(error.message)
+  }
+};
