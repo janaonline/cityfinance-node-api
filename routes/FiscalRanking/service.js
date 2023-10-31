@@ -5815,3 +5815,25 @@ const createToken = (user) => {
   data['purpose'] = 'WEB';
   return jwt.sign(data, Config.JWT.SECRET, { expiresIn: Config.JWT.TOKEN_EXPIRY });
 }
+
+
+module.exports.errorLogs = async (req, res) => {
+  try {
+    const filePath = 'cron-freeze-error-logs.txt';
+
+    fs.readFile(filePath, 'utf8', (err, data) => {
+      if (err) {
+        console.error(err);
+        res.status(500).send('Error reading file');
+      } else {
+        res.setHeader('Content-Disposition', `attachment; filename="${process.env.ENV}-error-logs.txt"`);
+        res.setHeader('Content-Type', 'text/plain');
+        res.send(data);
+      }
+    });
+  }
+  catch (err) {
+    console.log("error While getting logs File :: ", err.message)
+    return res.status(400).json(err)
+  }
+}
