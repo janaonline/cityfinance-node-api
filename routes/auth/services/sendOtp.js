@@ -29,18 +29,18 @@ module.exports.sendOtp = catchAsync(async (req, res, next) => {
         }
 
 
-        if (!process.env.MSG91_AUTH_KEY) {
-            return res.status(400).json({
-                success: false,
-                message: 'MSG91 AUTH KEY NOT FOUND'
-            })
-        }
-        if (!process.env.SENDER_ID) {
-            return res.status(400).json({
-                success: false,
-                message: 'SENDER ID KEY NOT FOUND'
-            })
-        }
+        // if (!process.env.MSG91_AUTH_KEY) {
+        //     return res.status(400).json({
+        //         success: false,
+        //         message: 'MSG91 AUTH KEY NOT FOUND'
+        //     })
+        // }
+        // if (!process.env.SENDER_ID) {
+        //     return res.status(400).json({
+        //         success: false,
+        //         message: 'SENDER ID KEY NOT FOUND'
+        //     })
+        // }
         if (!user) {
             res.status(400).json({
                 success: false,
@@ -49,20 +49,27 @@ module.exports.sendOtp = catchAsync(async (req, res, next) => {
         }
 
         // limit OTP
-        if(process.env.ENV == "staging") {
+        if (process.env.ENV == "staging") {
             const otpBlockedUntil = user.otpBlockedUntil ? new Date(
-            user.otpBlockedUntil + 24 * 60 * 60 * 1000
+                user.otpBlockedUntil + 24 * 60 * 60 * 1000
             ) : 0;
 
-            if (otpBlockedUntil >= new Date(Date.now()) || user.otpAttempts >= 3) {
+            const otpSent = await OTP
+                .find({ emailId: user.email, "createdAt": { $gt: new Date(Date.now() - 24 * 60 * 60 * 1000) } })
+                .limit(3).sort({ "createdAt": -1 })
+                .lean();
+
+            const otpSentCount = otpSent.filter(e => e.isVerified === false).length;
+
+            if (otpBlockedUntil >= new Date(Date.now()) || otpSentCount >= 3) {
                 let setData = {
                     otpAttempts: 0,
                     otpBlockedUntil: new Date(Date.now() + 24 * 60 * 60 * 1000),
                 };
                 await User.updateOne(
-                    { _id: ObjectId(user._id) },    
+                    { _id: ObjectId(user._id) },
                     {
-                    $set: setData,
+                        $set: setData,
                     }
                 ).exec();
                 return res.status(400).json({
@@ -73,10 +80,10 @@ module.exports.sendOtp = catchAsync(async (req, res, next) => {
 
             // increment otp attempt
             await User.updateOne(
-            { _id: ObjectId(user._id) },
-            {
-                $inc: { otpAttempts: 1 },
-            }
+                { _id: ObjectId(user._id) },
+                {
+                    $inc: { otpAttempts: 1 },
+                }
             ).exec();
         }
         let otp = OtpMethods.generateOTP();
@@ -89,9 +96,9 @@ module.exports.sendOtp = catchAsync(async (req, res, next) => {
             }
         }
         let msg = `Your OTP to login into CityFinance.in is ${otp}. Do not share this code. If not requested, please contact us at contact@cityfinance.in - City Finance`;
-/* If the user is a state, then the mobile number is the mobile number of the state. If the user is not
-a state, then the mobile number is the mobile number of the accountant. */
-        let mobile = user?.role === "STATE" ? user.mobile : user.accountantConatactNumber ; 
+        /* If the user is a state, then the mobile number is the mobile number of the state. If the user is not
+        a state, then the mobile number is the mobile number of the accountant. */
+        let mobile = user?.role === "STATE" ? user.mobile : user.accountantConatactNumber;
         if (OtpMethods.validatePhoneNumber(mobile) || OtpMethods.ValidateEmail(user.email)) {
             let sendOtp = new SendOtp(process.env.MSG91_AUTH_KEY, msg);
             let Otp = new OTP({
@@ -108,12 +115,12 @@ a state, then the mobile number is the mobile number of the accountant. */
             await Otp.save();
             if (mobile) {
                 axios.get(`https://api.msg91.com/api/v5/otp?template_id=${process.env.TEMPLATE_ID}&mobile=91${mobile}&authkey=${process.env.MSG91_AUTH_KEY}&otp=${otp}`).then(function (response) {
-                console.log('OTP SENT');
-                
-                  })
-                  .catch(function (error) {
-                    console.log('OTP NOT SENT');
-                  })
+                    console.log('OTP SENT');
+
+                })
+                    .catch(function (error) {
+                        console.log('OTP NOT SENT');
+                    })
                 // sendOtp.send(`${countryCode}${mobile}`, process.env.SENDER_ID, otp, function (error, data) {
                 //     if (error) {
                 //         res.status(500).json({
@@ -124,29 +131,29 @@ a state, then the mobile number is the mobile number of the accountant. */
                 // });
             }
             if (user.email) {
-                let mailOptions =     {
+                let mailOptions = {
                     Destination: {
-                      /* required */
-                      ToAddresses: [user.email]
+                        /* required */
+                        ToAddresses: [user.email]
                     },
                     Message: {
-                      /* required */
-                      Body: {
                         /* required */
-                        Html: {
-                          Charset: "UTF-8",
-                          Data: msg
+                        Body: {
+                            /* required */
+                            Html: {
+                                Charset: "UTF-8",
+                                Data: msg
+                            },
                         },
-                      },
-                      Subject: {
-                        Charset: 'UTF-8',
-                        Data: Subject
-                      }
+                        Subject: {
+                            Charset: 'UTF-8',
+                            Data: Subject
+                        }
                     },
                     Source: process.env.EMAIL,
                     /* required */
                     ReplyToAddresses: [process.env.EMAIL],
-                  }
+                }
                 sendEmail(mailOptions)
             }
             return res.status(200).json({
