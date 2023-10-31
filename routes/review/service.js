@@ -2005,7 +2005,7 @@ module.exports.get = catchAsync(async (req, res) => {
   data = allData[0]
   total = allData[1].length ? allData[1][0]['total'] : 0;
   if(!data.length){
-    return Response.OK(res, {
+    return res.status(200).json({
       success: true,
       data: data,
       total: total,
