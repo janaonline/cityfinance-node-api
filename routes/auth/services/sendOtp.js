@@ -55,13 +55,13 @@ module.exports.sendOtp = catchAsync(async (req, res, next) => {
             ) : 0;
 
             const otpSent = await OTP
-            .find({emailId: user.email, "createdAt":{$gt:new Date(Date.now() - 24*3*60*60 * 1000)}})
+            .find({emailId: user.email, "createdAt":{$gt:new Date(Date.now() - 24*60*60 * 1000)}})
             .limit(3).sort({"createdAt":-1})
             .lean();
 
             const otpSentCount = otpSent.filter(e=>e.isVerified === false).length;
 
-            if (otpBlockedUntil >= new Date(Date.now()) || otpSentCount >= 3) {
+                        if (otpBlockedUntil >= new Date(Date.now()) || otpSentCount >= 3) {
                 let setData = {
                     otpAttempts: 0,
                     otpBlockedUntil: new Date(Date.now() + 24 * 60 * 60 * 1000),
