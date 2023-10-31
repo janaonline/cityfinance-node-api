@@ -16,7 +16,7 @@ const Ulb = require('../../models/Ulb')
 const State = require('../../models/State');
 const MasterForm = require('../../models/MasterForm');
 const { PREV_MASTER_FORM_STATUS, MASTER_STATUS_ID, MASTER_FORM_STATUS } = require('../../util/FormNames');
-
+const Response = require("../../service").response;
 
 function padTo2Digits(num) {
   return num.toString().padStart(2, '0');
@@ -1866,6 +1866,8 @@ function createDynamicQuery(collectionName, oldQuery, userRole, csv) {
 // }
 
 module.exports.get = catchAsync(async (req, res) => {
+  try {
+  
   let loggedInUserRole = req.decoded.role
   let filter = {};
   const ulbColumnNames = {
@@ -2001,7 +2003,19 @@ module.exports.get = catchAsync(async (req, res) => {
   total = formType == "ULB" ? Ulb.aggregate(query[1]).allowDiskUse(true) : State.aggregate(query[1]).allowDiskUse(true)
   let allData = await Promise.all([data, total]);
   data = allData[0]
-  total = allData[1].length ? allData[1][0]['total'] : 0
+  total = allData[1].length ? allData[1][0]['total'] : 0;
+  if(!data.length){
+    return res.status(200).json({
+      success: true,
+      data: data,
+      total: total,
+      columnNames: formType == 'ULB' ? ulbColumnNames : stateColumnNames,
+      statusList: formType == 'ULB' ? List.ulbFormStatus : List.stateFormStatus,
+      ulbType: formType == 'ULB' ? List.ulbType : {},
+      populationType: formType == 'ULB' ? List.populationType : {},
+      title: formType == 'ULB' ? 'Review Grant Application' : 'Review State Forms'
+    })
+  }
   //  if(collectionName == CollectionNames.dur || collectionName == CollectionNames.gfc ||
   //     collectionName == CollectionNames.odf || collectionName == CollectionNames.slb || 
   //     collectionName === CollectionNames.sfc || collectionName === CollectionNames.propTaxState || collectionName === CollectionNames.annual )
@@ -2063,7 +2077,9 @@ module.exports.get = catchAsync(async (req, res) => {
     populationType: formType == 'ULB' ? List.populationType : {},
     title: formType == 'ULB' ? 'Review Grant Application' : 'Review State Forms'
   })
-
+  } catch (error) {
+    return Response.BadRequest(res, "Something went wrong!")
+  }
 })
 
 
@@ -2335,7 +2351,7 @@ function getUlbsApprovedByMoHUA(forms) {
     }
     return ulbArray;
   } catch (error) {
-    throw (`getUlbsApprovedByMoHUA:: ${error.message}`);
+    throw ({message:`getUlbsApprovedByMoHUA:: ${error.message}`});
   }
 }
 function countStatusData(element, collectionName) {
