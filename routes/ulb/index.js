@@ -3,6 +3,7 @@ const express = require('express');
 const router = express.Router();
 const Ulb = require('./service')
 const multer = require("multer");
+const { allowedRoles } = require('../auth/services/roleAuthorize');
 const upload = multer({ dest: "uploads/resource" });
 const verifyToken = require("../auth/services/verifyToken").verifyToken;
 
@@ -45,5 +46,5 @@ router.get('/getUlbDatafromGeoUrban', Ulb.getUlbDatafromGeoUrban)
 
 //truncate sbCode
 router.get('/truncateSbCode',Ulb.truncateSbCode);
-router.put('/updateData', Ulb.updateFields)
+router.put('/updateData', verifyToken, allowedRoles(['MoHUA']),Ulb.updateFields)
 module.exports = router;

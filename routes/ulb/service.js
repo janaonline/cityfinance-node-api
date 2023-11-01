@@ -3521,9 +3521,9 @@ module.exports.updateFields = async (req, res)=>{
     if(!validObj.valid){
       throw Error(`${validObj.message ?? 'Fields missing'}`)
     }
-    const Model =  require(`../../models/${modelPath}`);
+    // const Model =  require(`../../models/${modelPath}`);
     let query = getQuery(filter, data, filterOperator);
-    let output = await Model.bulkWrite(query);
+    let output = await Ulb.bulkWrite(query);
     return Response.OK(res,output);
   }catch(error){
     if(Object.keys(ERROR_CODE).includes(error.code)){
@@ -3565,14 +3565,14 @@ function getQuery(filter, data, filterOperator) {
       filterQuery = filterQuery.filter((el) => el && el);
       query.push({
         updateOne: {
-           filter: { [filterOperator]: filterQuery },
+           filter: { [filterOperator]: JSON.parse(JSON.stringify(filterQuery)) },
            update: { $set : obj}
           }
       });
     });
     return query;
   } catch (error) {
-    return Response.BadRequest(res, {},`${error.message}`);
+    throw Error({message: `getQuery : ${error.message}`})
   }
 }
 
