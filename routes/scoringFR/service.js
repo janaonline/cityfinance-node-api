@@ -368,7 +368,7 @@ async function getData(ulbRes) {
         year: ObjectId(design_year2019_20),
         type: { $in: [
                 'CaptlExp', 'CaptlExpWaterSupply', 'CaptlExpSanitation', 
-                'omExpWaterSupply', 'omExpSanitation', 'totalOmExp', 
+                'totalCaptlExpWaterSupply', 'totalOMCaptlExpSanitation', 'totalOmExp', 
                 'totalExpend', 'totalRecActual', 'RcptBudget',
                 'auditAnnualReport'
             ]
@@ -381,7 +381,7 @@ async function getData(ulbRes) {
         type: { $in: [
                 'totalRecActual', 'totalRcptWaterSupply', 'totalRcptSanitation', 
                 'CaptlExp', 'CaptlExpWaterSupply', 'CaptlExpSanitation', 
-                'omExpWaterSupply', 'omExpSanitation', 'totalOmExp', 
+                'totalCaptlExpWaterSupply', 'totalOMCaptlExpSanitation', 'totalOmExp', 
                 'totalExpend', 'totalRecActual', 'RcptBudget',
                 'auditAnnualReport'
             ]
@@ -395,7 +395,7 @@ async function getData(ulbRes) {
             $in: ['totalRecActual', 'totalRcptWaterSupply', 'totalRcptSanitation', 
             'totalOwnRevenue', 'waterTax', 'waterSupplyFee', 'sewerageTax', 'sanitationFee', 
             'propertyTax', 'CaptlExp', 'CaptlExpWaterSupply', 'CaptlExpSanitation',
-            'omExpWaterSupply', 'omExpSanitation', 'totalOmExp', 
+            'totalCaptlExpWaterSupply', 'totalOMCaptlExpSanitation', 'totalOmExp', 
             'totalExpend', 'auditAnnualReport', 'totalRecActual', 'RcptBudget']
         }
     }).exec();
