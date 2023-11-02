@@ -238,7 +238,9 @@ const fiscalRankingSchema = new Schema(
         isActive: { type: Boolean, default: 1 },
         isDraft: { type: Boolean, default: false, required: true },
         submittedDate :  { type: Date, default:null },
-        pmuSubmissionDate: {type: Date, default: null}
+        pmuSubmissionDate: {type: Date, default: null},
+        isAutoApproved: { type: Boolean, default: false },
+        freezeDate: { type: Date, default: null }
     },
     { timestamps: { createdAt: "createdAt", updatedAt: "modifiedAt" } }
 );

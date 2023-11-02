@@ -1,5 +1,6 @@
 const ObjectId = require("mongoose").Types.ObjectId;
 const moongose = require("mongoose");
+const ExcelJS = require('exceljs');
 const Response = require("../../service").response;
 const { years } = require("../../service/years");
 const FiscalRanking = require("../../models/FiscalRanking");
@@ -1365,6 +1366,7 @@ exports.getView = async function (req, res, next) {
         : req.query.design_year,
       isDraft: viewOne.isDraft,
       pmuSubmissionDate: viewOne?.pmuSubmissionDate,
+      isAutoApproved: viewOne?.isAutoApproved,
       tabs: modifiedTabs,
       currentFormStatus: viewOne.currentFormStatus,
       financialYearTableHeader,
@@ -3931,7 +3933,7 @@ const sendEmailToUlb = async (ulbId, status) => {
     }).populate("ulb")
     let emailAddress = [userInf.email];
     if(process.env.ENV !== ENV['prod'] ){
-      emailAddress = [TEST_EMAIL['test1']]
+      emailAddress = [TEST_EMAIL['test1'], TEST_EMAIL['test2'], TEST_EMAIL['test3'], TEST_EMAIL['test4']]
     }
     let ulbName = userInf.name;
     let ulbTemplate;
@@ -4150,7 +4152,7 @@ module.exports.createForm = catchAsync(async (req, res) => {
   const session = await mongoose.startSession();
   await session.startTransaction();
   try {
-    let { ulbId, formId, actions, design_year, isDraft, currentFormStatus } = req.body;
+    let { ulbId, formId, actions, design_year, isDraft, currentFormStatus, freezeDate, isAutoApproved } = req.body;
     let { role, _id: userId } = req.decoded;
     if (statusTracker.VIP === currentFormStatus) {
       const actionTaken = await checkIfActionTaken(actions)
@@ -4204,6 +4206,27 @@ module.exports.createForm = catchAsync(async (req, res) => {
         }
       })
     }
+    if (freezeDate) {
+      await FiscalRanking.findOneAndUpdate({
+        ulb: ObjectId(req.body.ulbId),
+        design_year: ObjectId(req.body.design_year),
+      }, {
+        "$set":{
+          freezeDate
+        }
+      })
+    }
+    if (isAutoApproved) {
+      await FiscalRanking.findOneAndUpdate({
+        ulb: ObjectId(req.body.ulbId),
+        design_year: ObjectId(req.body.design_year),
+      }, {
+        "$set":{
+          isAutoApproved: true
+        }
+      })
+    }
+
     response.success = true;
     response.formId = formId;
     response.message = "Form submitted successfully";
@@ -4452,6 +4475,7 @@ async function columnsForCSV(params) {
       "amount",
       "suggestedValue",
       "pmuSuggestedValue2",
+      "ulbValue",
       "approvalType",
       "status"
     ];
@@ -4467,6 +4491,7 @@ async function columnsForCSV(params) {
       "Amount",
       "PMU Suggested Value",
       "PMU Different Value",
+      "ULB Value",
       "Counter",
       "Approval Status"
     ];
@@ -5456,7 +5481,7 @@ async function fyUlbFyCsv(params) {
             for (let pf of fyData) {
               let value = pf.file ? pf.file : pf.date ? pf.date : pf.value ? pf.value : ""
               let mainArr = [stateName, document.ulbName, document.cityFinanceCode, censusCode, MASTER_STATUS_ID[document.currentFormStatus], YEAR_CONSTANTS_IDS[document.designYear]];
-              let mappersValues = [YEAR_CONSTANTS_IDS[pf.year], FRShortKeyObj[pf.type], value, pf?.suggestedValue, pf?.pmuSuggestedValue2, pf?.approvalType, pf?.status];
+              let mappersValues = [YEAR_CONSTANTS_IDS[pf.year], FRShortKeyObj[pf.type], value, pf?.suggestedValue, pf?.pmuSuggestedValue2,pf?.ulbValue, pf?.approvalType, pf?.status];
 
               let str = [...mainArr, ...mappersValues].join(", ");
               str.trim()
@@ -5661,5 +5686,247 @@ module.exports.getTrackingHistory = async(req,res)=>{
     console.log(err)
     console.log("error in getTrackingHistory :: ",err.message)
     return res.status(400).json(response)
+  }
+}
+
+//This api is used only for once...(After that please remove this api..)
+const jwt = require('jsonwebtoken');
+const Config = require('../../config/app_config');
+const axios = require('axios');
+const { appendFile } = require('fs')
+
+module.exports.freezeForm = async (req, res) => {
+  try {
+    let counterSuccess = 0;
+    let counterRejection = 0;
+    const currentDate = new Date();
+    const october22th = new Date(currentDate.getFullYear(), 9, 22);
+
+    let url = "http://localhost:8080/api/v1/";
+
+    if ((process.env.ENV == ENV['prod'])) {
+      url = "https://cityfinance.in/api/v1/";
+    } else if ((process.env.ENV == ENV['demo'])) {
+      url = "https://democityfinanceapi.dhwaniris.in/api/v1/";
+    } else if ((process.env.ENV == ENV['stg'])) {
+      url = "https://staging.cityfinance.in/api/v1/";
+    }
+
+    let viewEndPoint = "fiscal-ranking/view";
+    let createEndPoint = "fiscal-ranking/create-form";
+
+    if (currentDate < october22th) {
+      let getUlbForms = await FiscalRanking.find({
+        currentFormStatus: { $in: [MASTER_FORM_STATUS['IN_PROGRESS'], MASTER_FORM_STATUS['RETURNED_BY_PMU']] },
+        $expr: {
+          $gt: [
+            { $toDouble: "$progress.rejectedProgress" },
+            0
+          ]
+        },
+        pmuSubmissionDate: { $exists: false }
+      }).select('ulb design_year');
+
+      for (let frData of getUlbForms) {
+        let user = await Users.findOne({ role: 'ULB', ulb: ObjectId(frData?.ulb) });
+        if (!user) continue;
+        let token = createToken(user)
+
+        const response = await axios.get(`${url}${viewEndPoint}`, {
+          params: {
+            design_year: frData?.design_year.toString(),
+            ulb: frData?.ulb.toString()
+          },
+          headers: {
+            "x-access-token": token || req?.query?.token || "",
+          },
+        });
+        const responseData = response?.data?.data;
+
+        let payload = {
+          ulbId: frData?.ulb?.toString(),
+          formId: frData?._id?.toString(),
+          design_year: frData?.design_year.toString(),
+          isDraft: false,
+          currentFormStatus: MASTER_FORM_STATUS['VERIFICATION_IN_PROGRESS'],
+          actions: responseData?.tabs,
+          freezeDate: new Date()
+        }
+
+        Object.entries(payload['actions'][2]['data']).forEach(([key, indicator]) => {
+          indicator.yearData?.reverse();
+          indicator['position'] = +indicator.displayPriority || 1;
+        });
+
+        //Api call for ulb to submit the FR form.
+        try {
+          await axios.post(`${url}${createEndPoint}`, payload, {
+            headers: {
+              "x-access-token": token || req?.query?.token || "",
+            }
+          });
+         counterSuccess++
+          // Handle the response data as needed
+        } catch (postError) {
+          counterRejection++
+
+          const logDetails = {
+            timestamp: new Date().toISOString(),
+            ulbId: frData?.ulb?.toString(),
+            frFormId: frData?._id?.toString(),
+            data: JSON.stringify(postError?.response?.data || {}, 3, 3),
+            message: postError?.message,
+          };
+          appendFile("freezeform-error-logs.txt", JSON.stringify(logDetails, 3, 3) + ",", function (err) {
+            if (err) throw err;
+            console.log('Saved!');
+          })
+        }
+      }
+      return res.status(200).json({ status: true, message: "Executed successfully!", data: { counterSuccess, counterRejection } });
+    } else {
+      res.status(400).json({ error: 'Current date is greater than October 22th' });
+    }
+  }
+  catch (err) {
+    console.log("error in Freeze Form :: ", err.message)
+    return res.status(400).json(err)
+  }
+}
+
+const createToken = (user) => {
+  let keys = [
+      '_id',
+      'accountantEmail',
+      'email',
+      'role',
+      'name',
+      'ulb',
+      'state',
+      'isEmailVerified',
+      'isPasswordResetInProgress',
+  ];
+
+  let data = {};
+  for (k in user) {
+      if (keys.indexOf(k) > -1) {
+          data[k] = user[k];
+      }
+  }
+  data['purpose'] = 'WEB';
+  return jwt.sign(data, Config.JWT.SECRET, { expiresIn: Config.JWT.TOKEN_EXPIRY });
+}
+
+
+async function getDataOFErrorUlbs(ulbIds) {
+  return FiscalRanking.aggregate([
+    {
+        $match: {
+            ulb: { $in: ulbIds }
+        }
+    },
+    {
+        $lookup: {
+            from: "ulbs",
+            localField: "ulb",
+            foreignField: "_id",
+            as: "ulbData"
+        }
+    },
+    { $unwind: "$ulbData" },
+    {
+        $lookup: {
+            from: 'fiscalrankingmappers',
+            let: {
+                 frId: '$_id'   
+            },
+            pipeline: [
+                {
+                    $match: {
+                        $expr: { $eq: ["$$frId", "$fiscal_ranking"] },
+                    },
+                },
+                {
+                    $match: {
+                         status: 'REJECTED',
+                         suggestedValue: { $exists: true, $ne: null, $ne: ''}
+                    }
+                },
+            ],
+            as: 'mapperData'
+        }
+    },
+    {
+        $unwind: "$mapperData"
+    },
+    {
+        $lookup: {
+            from: "years",
+            localField: "mapperData.year",
+            foreignField: "_id",
+            as: "yearData"
+        }
+    },
+    { $unwind: "$yearData" },
+    {
+        $project: {
+            _id: 0,
+            ulbName: "$ulbData.name",
+            censusCode: "$ulbData.censusCode",
+            sbCOde: "$ulbData.sbCode",
+            "Indicator No": "$mapperData.displayPriority",
+            "Year" : "$yearData.year",
+            "Value": "$mapperData.value",
+            "ApprovalType": "$mapperData.approvalType",
+            "suggestedValue": "$mapperData.suggestedValue",
+            
+        }
+    }
+]);
+}
+
+function convertToExcel(data) {
+  const workbook = new ExcelJS.Workbook();
+  const worksheet = workbook.addWorksheet('Data');
+  const headers = Object.keys(data[0]);
+  worksheet.addRow(headers);
+  data.forEach((item) => {
+    const row = headers.map((header) => item[header]);
+    worksheet.addRow(row);
+  });
+  return workbook;
+}
+
+
+module.exports.errorLogs = async (req, res) => {
+  try {
+    const filePath = 'cron-freeze-error-logs.txt';
+
+    fs.readFile(filePath, 'utf8', async (err, data) => {
+      if (err) {
+        console.error(err);
+        res.status(500).send('Error reading file');
+      } else {
+        fileData = JSON.parse(data);
+
+        const ulbIds = fileData.map(i => ObjectId(i.ulbId));
+
+        const finalData = await getDataOFErrorUlbs(ulbIds);
+        const workbook = convertToExcel(finalData);
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        res.setHeader('Content-Disposition', `attachment; filename=${process.env.ENV}-error-logs.xlsx`);
+        workbook.xlsx.write(res)
+          .then(() => {
+            res.end();
+          })
+          .catch((err) => {
+            res.status(500).json({ error: 'Error generating Excel file' });
+          });
+      }
+    });
+  }
+  catch (err) {
+    console.log("error While getting logs File :: ", err.message)
+    return res.status(400).json(err)
   }
 }

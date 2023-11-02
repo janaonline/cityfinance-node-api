@@ -381,7 +381,11 @@ module.exports = function (req, res) {
                     let state = await State.findOne({ code: objOfSheet.state_code, isActive: true }).exec();
                     // console.log(state)
                     // Find whether ulb code exists or not
-                    let ulb = await Ulb.findOne({ code: objOfSheet.ulb_code, state: state._id, isActive: true }).exec();
+                    let ulb = await Ulb.findOne({
+                      code: objOfSheet.ulb_code,
+                      state: state._id,
+                    //   isActive: true,
+                    }).exec();
                     // console.log(ulb)
                     if (!state) {
                         console.log("validateOverview: !state")
