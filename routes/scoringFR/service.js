@@ -185,12 +185,12 @@ function cagrInCapEx(fsData, fsMapper2018_19, fsMapper2021_22) {
 
 // 9. O&M expenses to Total Revenue Expenditure (TRE) (3- year average) - EP
 function omExpTotalRevEx(fsData, fsMapper2019_20, fsMapper2020_21, fsMapper2021_22) {
-    const OmExpWaterSupply_2019_20 = fsData.propertyWaterTax.value === 'Yes' ? getValue(fsMapper2019_20, 'omExpWaterSupply') : 0;
-    const OmExpSanitation_2019_20 = fsData.propertySanitationTax.value === 'Yes' ? getValue(fsMapper2019_20, 'omExpSanitation') : 0;
-    const OmExpWaterSupply_2020_21 = fsData.propertyWaterTax.value === 'Yes' ? getValue(fsMapper2020_21, 'omExpWaterSupply') : 0;
-    const OmExpSanitation_2020_21 = fsData.propertySanitationTax.value === 'Yes' ? getValue(fsMapper2020_21, 'omExpSanitation') : 0;
-    const OmExpWaterSupply_2021_22 = fsData.propertyWaterTax.value === 'Yes' ? getValue(fsMapper2021_22, 'omExpWaterSupply') : 0;
-    const OmExpSanitation_2021_22 = fsData.propertySanitationTax.value === 'Yes' ? getValue(fsMapper2021_22, 'omExpSanitation') : 0;
+    const OmExpWaterSupply_2019_20 = fsData.propertyWaterTax.value === 'Yes' ? getValue(fsMapper2019_20, 'totalCaptlExpWaterSupply') : 0;
+    const OmExpSanitation_2019_20 = fsData.propertySanitationTax.value === 'Yes' ? getValue(fsMapper2019_20, 'totalOMCaptlExpSanitation') : 0;
+    const OmExpWaterSupply_2020_21 = fsData.propertyWaterTax.value === 'Yes' ? getValue(fsMapper2020_21, 'totalCaptlExpWaterSupply') : 0;
+    const OmExpSanitation_2020_21 = fsData.propertySanitationTax.value === 'Yes' ? getValue(fsMapper2020_21, 'totalOMCaptlExpSanitation') : 0;
+    const OmExpWaterSupply_2021_22 = fsData.propertyWaterTax.value === 'Yes' ? getValue(fsMapper2021_22, 'totalCaptlExpWaterSupply') : 0;
+    const OmExpSanitation_2021_22 = fsData.propertySanitationTax.value === 'Yes' ? getValue(fsMapper2021_22, 'totalOMCaptlExpSanitation') : 0;
 
 // Unable to fetch 'omExp' >>Error>>"Cannot read properties of undefined (reading 'pmuSuggestedValue2')"
 // Total O&M - O&M for water suppy + O&M for sewerage and sanitation. 
@@ -361,7 +361,7 @@ async function getData(res) {
         year: ObjectId(design_year2019_20),
         type: { $in: [
                 'CaptlExp', 'CaptlExpWaterSupply', 'CaptlExpSanitation', 
-                'omExpWaterSupply', 'omExpSanitation', 'totalOmExp', 
+                'totalCaptlExpWaterSupply', 'totalOMCaptlExpSanitation', 'totalOmExp', 
                 'totalExpend', 'totalRecActual', 'RcptBudget',
                 'auditAnnualReport'
             ] }
@@ -373,7 +373,7 @@ async function getData(res) {
         type: { $in: [
                 'totalRecActual', 'totalRcptWaterSupply', 'totalRcptSanitation', 
                 'CaptlExp', 'CaptlExpWaterSupply', 'CaptlExpSanitation', 
-                'omExpWaterSupply', 'omExpSanitation', 'totalOmExp', 
+                'totalCaptlExpWaterSupply', 'totalOMCaptlExpSanitation', 'totalOmExp', 
                 'totalExpend', 'totalRecActual', 'RcptBudget',
                 'auditAnnualReport'
              ] }
@@ -386,7 +386,7 @@ async function getData(res) {
             $in: ['totalRecActual', 'totalRcptWaterSupply', 'totalRcptSanitation', 
             'totalOwnRevenue', 'waterTax', 'waterSupplyFee', 'sewerageTax', 'sanitationFee', 
             'propertyTax', 'CaptlExp', 'CaptlExpWaterSupply', 'CaptlExpSanitation',
-            'omExpWaterSupply', 'omExpSanitation', 'totalOmExp', 
+            'totalCaptlExpWaterSupply', 'totalOMCaptlExpSanitation', 'totalOmExp', 
             'totalExpend', 'auditAnnualReport', 'totalRecActual', 'RcptBudget']
         }
     }).exec();
