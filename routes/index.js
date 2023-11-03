@@ -298,7 +298,7 @@ router.use('/general-alert', generalAlerts);
 
 //calculate fiscal ranking score
 const scoringFR = require('./scoringFR');
-router.use('/scoringFR', scoringFR);
+router.use('/scoring-fr', scoringFR);
 
 router.use(require('./Master'))
 

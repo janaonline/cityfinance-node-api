@@ -8,7 +8,12 @@ const FiscalRanking = require('../../models/FiscalRanking');
 const FiscalRankingMapper = require('../../models/FiscalRankingMapper');
 const ScoringFiscalRanking = require('../../models/ScoringFiscalRanking');
 const { registerCustomQueryHandler } = require('puppeteer');
-
+/** 
+ * Pending actions
+ * 1. Reduce mark based on provisional account
+ * 2. 
+ * 
+*/
 function calculateRecommendationPercentage(score) {
     let percent = 0;
     score = Math.round(score);
@@ -321,7 +326,7 @@ function getPopulationBucket(population) {
 // TO-DO What if population is blank or 0 in master data. 
 // Function to check if the data for ranking was submitted from Provisional A/c; if yes then deduct x% of marks in final_score
 function getProvisionalStatus(censusCode) {
-    return 0; 
+    return 0;
 }
 
 async function getData(ulbRes) {
@@ -371,9 +376,10 @@ async function getData(ulbRes) {
     const fsMapper2019_20 = await FiscalRankingMapper.find({
         ulb: ObjectId(ulbRes._id),
         year: ObjectId(design_year2019_20),
-        type: { $in: [
-                'CaptlExp', 'CaptlExpWaterSupply', 'CaptlExpSanitation', 
-                'totalCaptlExpWaterSupply', 'totalOMCaptlExpSanitation', 'totalOmExp', 
+        type: {
+            $in: [
+                'CaptlExp', 'CaptlExpWaterSupply', 'CaptlExpSanitation',
+                'totalCaptlExpWaterSupply', 'totalOMCaptlExpSanitation', 'totalOmExp',
                 'totalExpend', 'totalRecActual', 'RcptBudget',
                 'auditAnnualReport'
             ]
@@ -383,10 +389,11 @@ async function getData(ulbRes) {
     const fsMapper2020_21 = await FiscalRankingMapper.find({
         ulb: ObjectId(ulbRes._id),
         year: ObjectId(design_year2020_21),
-        type: { $in: [
-                'totalRecActual', 'totalRcptWaterSupply', 'totalRcptSanitation', 
-                'CaptlExp', 'CaptlExpWaterSupply', 'CaptlExpSanitation', 
-                'totalCaptlExpWaterSupply', 'totalOMCaptlExpSanitation', 'totalOmExp', 
+        type: {
+            $in: [
+                'totalRecActual', 'totalRcptWaterSupply', 'totalRcptSanitation',
+                'CaptlExp', 'CaptlExpWaterSupply', 'CaptlExpSanitation',
+                'totalCaptlExpWaterSupply', 'totalOMCaptlExpSanitation', 'totalOmExp',
                 'totalExpend', 'totalRecActual', 'RcptBudget',
                 'auditAnnualReport'
             ]
@@ -397,11 +404,11 @@ async function getData(ulbRes) {
         ulb: ObjectId(ulbRes._id),
         year: ObjectId(design_year2021_22),
         type: {
-            $in: ['totalRecActual', 'totalRcptWaterSupply', 'totalRcptSanitation', 
-            'totalOwnRevenue', 'waterTax', 'waterSupplyFee', 'sewerageTax', 'sanitationFee', 
-            'propertyTax', 'CaptlExp', 'CaptlExpWaterSupply', 'CaptlExpSanitation',
-            'totalCaptlExpWaterSupply', 'totalOMCaptlExpSanitation', 'totalOmExp', 
-            'totalExpend', 'auditAnnualReport', 'totalRecActual', 'RcptBudget']
+            $in: ['totalRecActual', 'totalRcptWaterSupply', 'totalRcptSanitation',
+                'totalOwnRevenue', 'waterTax', 'waterSupplyFee', 'sewerageTax', 'sanitationFee',
+                'propertyTax', 'CaptlExp', 'CaptlExpWaterSupply', 'CaptlExpSanitation',
+                'totalCaptlExpWaterSupply', 'totalOMCaptlExpSanitation', 'totalOmExp',
+                'totalExpend', 'auditAnnualReport', 'totalRecActual', 'RcptBudget']
         }
     }).exec();
 
@@ -476,27 +483,27 @@ async function getData(ulbRes) {
         population: ulbRes.population,
         populationBucket: getPopulationBucket(ulbRes.population),
         state: ulbRes.state,
-    
+
         totalBudgetDataPC_1: { score: totalBudgetDataPC_1 },
-        ownRevenuePC_2: { score: ownRevenuePC_2},
-        pTaxPC_3: { score: pTaxPC_3},
-        cagrInTotalBud_4: { score: cagrInTotalBud_4},
-        cagrInOwnRevPC_5: { score: cagrInOwnRevPC_5},
-        cagrInPropTax_6: { score: cagrInPropTax_6},
-        capExPCAvg_7: { score: capExPCAvg_7},
-        cagrInCapExpen_8: { score: cagrInCapExpen_8},
-        omExpTotalRevExpen_9: { score: omExpTotalRevExpen_9},
-        avgMonthsForULBAuditMarks_10a: { score: avgMonthsForULBAuditMarks_10a},
-        aaPushishedMarks_10b: { score: aaPushishedMarks_10b},
-        gisBasedPTaxMarks_11a: { score: gisBasedPTaxMarks_11a},
-        accSoftwareMarks_11b: { score: accSoftwareMarks_11b},
-        receiptsVariance_12: { score: receiptsVariance_12},
-        ownRevRecOutStanding_13: { score: ownRevRecOutStanding_13},
-        digitalToTotalOwnRev_14: { score: digitalToTotalOwnRev_14},
-        propUnderTaxCollNet_15: { score: propUnderTaxCollNet_15},
-        
-        isProvisional: getProvisionalStatus(ulbRes.censusCode),
-   
+        ownRevenuePC_2: { score: ownRevenuePC_2 },
+        pTaxPC_3: { score: pTaxPC_3 },
+        cagrInTotalBud_4: { score: cagrInTotalBud_4 !== 'NaN' ? cagrInTotalBud_4: 0 },
+        cagrInOwnRevPC_5: { score: cagrInOwnRevPC_5 },
+        cagrInPropTax_6: { score: cagrInPropTax_6 },
+        capExPCAvg_7: { score: capExPCAvg_7 },
+        cagrInCapExpen_8: { score: cagrInCapExpen_8 },
+        omExpTotalRevExpen_9: { score: omExpTotalRevExpen_9 },
+        avgMonthsForULBAuditMarks_10a: { score: avgMonthsForULBAuditMarks_10a },
+        aaPushishedMarks_10b: { score: aaPushishedMarks_10b },
+        gisBasedPTaxMarks_11a: { score: gisBasedPTaxMarks_11a },
+        accSoftwareMarks_11b: { score: accSoftwareMarks_11b },
+        receiptsVariance_12: { score: receiptsVariance_12 },
+        ownRevRecOutStanding_13: { score: ownRevRecOutStanding_13 },
+        digitalToTotalOwnRev_14: { score: digitalToTotalOwnRev_14 },
+        propUnderTaxCollNet_15: { score: propUnderTaxCollNet_15 },
+
+        // isProvisional: getProvisionalStatus(ulbRes.censusCode),
+
     }
     await ScoringFiscalRanking.create(scoringData);
     return {
@@ -532,13 +539,12 @@ module.exports.calculateFRScore = async (req, res) => {
         const data = req.body;
         const censusCode = 802814;
         // const cc = 800321;
-        const condition = { isActive: true, censusCode}
+        const condition = { isActive: true }
         const ulbRes = await Ulb.find(condition).limit(10).lean();
         ulbRes.forEach(async (ulb) => {
-            console.log('ulb', ulb._id);
             await getData(ulb);
         });
-        return res.status(200).json();
+        return res.status(200).json({ message: 'Done' });
     } catch (error) {
         console.log('error', error);
         return res.status(400).json({
@@ -548,27 +554,4 @@ module.exports.calculateFRScore = async (req, res) => {
     }
 }
 
-function  calculateFRPercentage(ulb) {
-    
-}
-module.exports.calculateFRPercentage = async (req, res) => {
-
-    try {
-        const data = req.body;
-        const censusCode = 802814;
-        const condition = { isActive: true }
-        const ulbRes = await ScoringFiscalRanking.find(condition).limit(10).lean();
-        ulbRes.forEach(async (ulb) => {
-            console.log('ulb', ulb._id);
-            await calculateFRPercentage(ulb);
-        });
-        return res.status(200).json();
-    } catch (error) {
-        console.log('error', error);
-        return res.status(400).json({
-            status: false,
-            message: error.message
-        })
-    }
-}
 // func15 indicator-'paid_property_tax' & func9 indicator-'omExp' have error.
