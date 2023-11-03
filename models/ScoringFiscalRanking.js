@@ -48,7 +48,7 @@ const ScoringFiscalRankingSchema = new Schema({
     modifiedAt: { type: Date, default: Date.now() },
     createdAt: { type: Date, default: Date.now() },
     isActive: { type: Boolean, default: 1 },
-    isProvisional: { type: String, enum: ["Yes", "No"], default: "No" } //If the data is taken from Provisional a/c x% will be subtracted from final_score. (Dump to provided with Yes/ No values.)
+    // isProvisional: { type: String, enum: ["Yes", "No"], default: "No" } //If the data is taken from Provisional a/c x% will be subtracted from final_score. (Dump to provided with Yes/ No values.)
     
 }, { timestamp: { createdAt: "createdAt", updatedAt: "modifiedAt" } });
 module.exports = mongoose.model('ScoringFiscalRanking', ScoringFiscalRankingSchema);

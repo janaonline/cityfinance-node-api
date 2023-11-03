@@ -34,7 +34,7 @@ function calculateRecommendationPercentage(score) {
 
 function getValue(fsMapper, type) {
     // console.log('fsMapper', fsMapper);
-    console.log('type', type);
+    // console.log('type', type);
     const indicator = fsMapper.find(e => e.type === type);
     if (indicator && indicator.pmuSuggestedValue2) {
         return indicator.pmuSuggestedValue2;
@@ -484,27 +484,29 @@ async function getData(ulbRes) {
         populationBucket: getPopulationBucket(ulbRes.population),
         state: ulbRes.state,
 
-        totalBudgetDataPC_1: { score: totalBudgetDataPC_1 },
-        ownRevenuePC_2: { score: ownRevenuePC_2 },
-        pTaxPC_3: { score: pTaxPC_3 },
-        cagrInTotalBud_4: { score: cagrInTotalBud_4 !== 'NaN' ? cagrInTotalBud_4: 0 },
-        cagrInOwnRevPC_5: { score: cagrInOwnRevPC_5 },
-        cagrInPropTax_6: { score: cagrInPropTax_6 },
-        capExPCAvg_7: { score: capExPCAvg_7 },
-        cagrInCapExpen_8: { score: cagrInCapExpen_8 },
-        omExpTotalRevExpen_9: { score: omExpTotalRevExpen_9 },
-        avgMonthsForULBAuditMarks_10a: { score: avgMonthsForULBAuditMarks_10a },
-        aaPushishedMarks_10b: { score: aaPushishedMarks_10b },
-        gisBasedPTaxMarks_11a: { score: gisBasedPTaxMarks_11a },
-        accSoftwareMarks_11b: { score: accSoftwareMarks_11b },
-        receiptsVariance_12: { score: receiptsVariance_12 },
-        ownRevRecOutStanding_13: { score: ownRevRecOutStanding_13 },
-        digitalToTotalOwnRev_14: { score: digitalToTotalOwnRev_14 },
-        propUnderTaxCollNet_15: { score: propUnderTaxCollNet_15 },
+        totalBudgetDataPC_1: { score: !isNaN(totalBudgetDataPC_1) ? totalBudgetDataPC_1: 0 },
+        ownRevenuePC_2: { score: !isNaN(ownRevenuePC_2) ? ownRevenuePC_2: 0 },
+        pTaxPC_3: { score: !isNaN(pTaxPC_3) ? pTaxPC_3: 0 },
+        cagrInTotalBud_4: { score: !isNaN(cagrInTotalBud_4) ? cagrInTotalBud_4: 0 },
+        cagrInOwnRevPC_5: { score: !isNaN(cagrInOwnRevPC_5) ? cagrInOwnRevPC_5: 0 },
+        cagrInPropTax_6: { score: !isNaN(cagrInPropTax_6) ? cagrInPropTax_6: 0 },
+        capExPCAvg_7: { score: !isNaN(capExPCAvg_7) ? capExPCAvg_7: 0 },
+        omExpTotalRevExpen_9: { score: !isNaN(omExpTotalRevExpen_9) ? omExpTotalRevExpen_9: 0 },
+        avgMonthsForULBAuditMarks_10a: { score: !isNaN(avgMonthsForULBAuditMarks_10a) ? avgMonthsForULBAuditMarks_10a: 0 },
+        aaPushishedMarks_10b: { score: !isNaN(aaPushishedMarks_10b) ? aaPushishedMarks_10b: 0 },
+        gisBasedPTaxMarks_11a: { score: !isNaN(gisBasedPTaxMarks_11a) ? gisBasedPTaxMarks_11a: 0 },
+        accSoftwareMarks_11b: { score: !isNaN(accSoftwareMarks_11b) ? accSoftwareMarks_11b: 0 },
+        receiptsVariance_12: { score: !isNaN(receiptsVariance_12) ? receiptsVariance_12: 0 },
+        ownRevRecOutStanding_13: { score: !isNaN(ownRevRecOutStanding_13) ? ownRevRecOutStanding_13: 0 },
+        digitalToTotalOwnRev_14: { score: !isNaN(digitalToTotalOwnRev_14) ? digitalToTotalOwnRev_14: 0 },
+        propUnderTaxCollNet_15: { score: !isNaN(propUnderTaxCollNet_15) ? propUnderTaxCollNet_15: 0 },
 
         // isProvisional: getProvisionalStatus(ulbRes.censusCode),
 
     }
+    console.log('cagrInTotalBud_4',cagrInTotalBud_4);
+    console.log('cagrInTotalBud_4 is nan',!isNaN(cagrInTotalBud_4));
+    console.log('scoringData',scoringData);
     await ScoringFiscalRanking.create(scoringData);
     return {
         status: 'true',
