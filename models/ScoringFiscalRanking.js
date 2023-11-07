@@ -8,6 +8,13 @@ const scoreFields = {
 	percentage: {
 		type: Number,
 		default: 0,
+	}
+};
+
+const sumScoreFields = {
+	score: {
+		type: Number,
+		default: 0,
 	},
 	rank: {
 		type: Number,
@@ -44,6 +51,10 @@ const ScoringFiscalRankingSchema = new Schema(
 		ownRevRecOutStanding_13: scoreFields,
 		digitalToTotalOwnRev_14: scoreFields,
 		propUnderTaxCollNet_15: scoreFields,
+		resourceMobilization: sumScoreFields,
+		expenditurePerformance: sumScoreFields,
+		fiscalGovernance: sumScoreFields,
+		overAll: sumScoreFields,
 
 		modifiedAt: { type: Date, default: Date.now() },
 		createdAt: { type: Date, default: Date.now() },
