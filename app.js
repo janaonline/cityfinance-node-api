@@ -30,7 +30,7 @@ app.use(function(req, res, next) {
 // CORS middleware
 // app.use(cors());
 app.use(cors({
-    origin: ['https://cityfinance.in'],
+    origin: ['https://democityfinanceapi.dhwaniris.in/api/v1/'],
     optionsSuccessStatus: 200 // some legacy browsers (IE11, various SmartTVs) choke on 204
 }));
 app.use(expressSanitizer());
