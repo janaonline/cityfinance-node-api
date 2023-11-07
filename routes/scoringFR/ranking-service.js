@@ -10,8 +10,8 @@ const ScoringFiscalRanking = require('../../models/ScoringFiscalRanking');
 const { registerCustomQueryHandler } = require('puppeteer');
 
 async function getParticipatedUlbCount() {
-    const condition = { isActive: true };
-    return await ScoringFiscalRanking.countDocuments();
+    const condition = { isActive: true, currentFormStatus: { $in: [8, 9, 10, 11] } };
+    return await FiscalRanking.countDocuments(condition);
 }
 async function topCategoryUlb(populationBucket) {
     const condition = { populationBucket };
@@ -62,7 +62,7 @@ module.exports.participatedState = async (req, res) => {
     try {
         const data = req.body;
         const condition = { isActive: true };
-        const states = await State.find(condition).exec();
+        const states = await State.find(condition).lean();
         return res.status(200).json({ states });
     } catch (error) {
         console.log('error', error);
