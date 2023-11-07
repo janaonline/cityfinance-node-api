@@ -28,7 +28,11 @@ app.use(function(req, res, next) {
   next();
 });
 // CORS middleware
-app.use(cors());
+// app.use(cors());
+app.use(cors({
+    origin: ['https://cityfinance.in'],
+    optionsSuccessStatus: 200 // some legacy browsers (IE11, various SmartTVs) choke on 204
+}));
 app.use(expressSanitizer());
 
 app.use(express.static(path.join(__dirname, "public")));
@@ -82,7 +86,7 @@ app.use((err, req, res, next) => {
 });
 
 // app.listen(port, () => {
-//   console.log("server started on port " + port);
+  //   console.log("server started on port " + port);
 // });
 
 module.exports = app
