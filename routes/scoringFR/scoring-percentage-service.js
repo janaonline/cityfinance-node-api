@@ -104,25 +104,50 @@ async function calculateFRPercentage(populationBucket) {
 	const ulbArr = await ScoringFiscalRanking.find(condition).lean();
 
 	ulbArr.forEach(async (ulb) => {
+		const totalBudgetDataPC_1 = updatePercentage_formula1(ulb, ulbArr, 'totalBudgetDataPC_1');
+		const ownRevenuePC_2 = updatePercentage_formula1(ulb, ulbArr, 'ownRevenuePC_2');
+		const pTaxPC_3 = updatePercentage_formula1(ulb, ulbArr, 'pTaxPC_3');
+		const cagrInTotalBud_4 = updatePercentage_formula2(ulb, ulbArr, 'cagrInTotalBud_4');
+		const cagrInOwnRevPC_5 = updatePercentage_formula2(ulb, ulbArr, 'cagrInOwnRevPC_5');
+		const cagrInPropTax_6 = updatePercentage_formula2(ulb, ulbArr, 'cagrInPropTax_6');
+		const capExPCAvg_7 = updatePercentage_formula1(ulb, ulbArr, 'capExPCAvg_7');
+		const cagrInCapExpen_8 = updatePercentage_formula2(ulb, ulbArr, 'cagrInCapExpen_8');
+		const omExpTotalRevExpen_9 = updatePercentage_formula1(ulb, ulbArr, 'omExpTotalRevExpen_9');
+		const receiptsVariance_12 = updatePercentage_formula3(ulb, 'receiptsVariance_12');
+		const ownRevRecOutStanding_13 = updatePercentage_formula4(ulb, ulbArr, 'ownRevRecOutStanding_13');
+		const digitalToTotalOwnRev_14 = updatePercentage_formula1(ulb, ulbArr, 'digitalToTotalOwnRev_14', 50);
+		const propUnderTaxCollNet_15 = updatePercentage_formula1(ulb, ulbArr, 'propUnderTaxCollNet_15', 50);
+
+		const resourceMobilization = totalBudgetDataPC_1 + ownRevenuePC_2 + pTaxPC_3 + cagrInTotalBud_4 + cagrInOwnRevPC_5 + cagrInPropTax_6;
+		const expenditurePerformance = capExPCAvg_7 + cagrInCapExpen_8 + omExpTotalRevExpen_9;
+		const fiscalGovernance = ulb['aaPushishedMarks_10b'].score + ulb['gisBasedPTaxMarks_11a'].score + ulb['accSoftwareMarks_11b'].score +
+			receiptsVariance_12 + ownRevRecOutStanding_13 + digitalToTotalOwnRev_14 + propUnderTaxCollNet_15;
+
+		const overAll = resourceMobilization + expenditurePerformance + fiscalGovernance;
 		const updateData = {
-			'totalBudgetDataPC_1.percentage': updatePercentage_formula1(ulb, ulbArr, 'totalBudgetDataPC_1'),
-			'ownRevenuePC_2.percentage': updatePercentage_formula1(ulb, ulbArr, 'ownRevenuePC_2'),
-			'pTaxPC_3.percentage': updatePercentage_formula1(ulb, ulbArr, 'pTaxPC_3'),
-			'cagrInTotalBud_4.percentage': updatePercentage_formula2(ulb, ulbArr, 'cagrInTotalBud_4'),
-			'cagrInOwnRevPC_5.percentage': updatePercentage_formula2(ulb, ulbArr, 'cagrInOwnRevPC_5'),
-			'cagrInPropTax_6.percentage': updatePercentage_formula2(ulb, ulbArr, 'cagrInPropTax_6'),
-			'capExPCAvg_7.percentage': updatePercentage_formula1(ulb, ulbArr, 'capExPCAvg_7'),
-			'cagrInCapExpen_8.percentage': updatePercentage_formula2(ulb, ulbArr, 'cagrInCapExpen_8'),
-			'omExpTotalRevExpen_9.percentage': updatePercentage_formula1(ulb, ulbArr, 'omExpTotalRevExpen_9'),
+			'totalBudgetDataPC_1.percentage': totalBudgetDataPC_1,
+			'ownRevenuePC_2.percentage': ownRevenuePC_2,
+			'pTaxPC_3.percentage': pTaxPC_3,
+			'cagrInTotalBud_4.percentage': cagrInTotalBud_4,
+			'cagrInOwnRevPC_5.percentage': cagrInOwnRevPC_5,
+			'cagrInPropTax_6.percentage': cagrInPropTax_6,
+			'capExPCAvg_7.percentage': capExPCAvg_7,
+			'cagrInCapExpen_8.percentage': cagrInCapExpen_8,
+			'omExpTotalRevExpen_9.percentage': omExpTotalRevExpen_9,
 			'avgMonthsForULBAuditMarks_10a.percentage': ulb['avgMonthsForULBAuditMarks_10a'].score,
 			'aaPushishedMarks_10b.percentage': ulb['aaPushishedMarks_10b'].score,
 			'gisBasedPTaxMarks_11a.percentage': ulb['gisBasedPTaxMarks_11a'].score,
 			'accSoftwareMarks_11b.percentage': ulb['accSoftwareMarks_11b'].score,
-			'receiptsVariance_12.percentage': updatePercentage_formula3(ulb, 'receiptsVariance_12'),
-			'ownRevRecOutStanding_13.percentage': updatePercentage_formula4(ulb, ulbArr, 'ownRevRecOutStanding_13'),
-			'digitalToTotalOwnRev_14.percentage': updatePercentage_formula1(ulb, ulbArr, 'digitalToTotalOwnRev_14', 50),
-			'propUnderTaxCollNet_15.percentage': updatePercentage_formula1(ulb, ulbArr, 'propUnderTaxCollNet_15', 50),
+			'receiptsVariance_12.percentage': receiptsVariance_12,
+			'ownRevRecOutStanding_13.percentage': ownRevRecOutStanding_13,
+			'digitalToTotalOwnRev_14.percentage': digitalToTotalOwnRev_14,
+			'propUnderTaxCollNet_15.percentage': propUnderTaxCollNet_15,
+			'resourceMobilization.score': resourceMobilization,
+			'expenditurePerformance.score': expenditurePerformance,
+			'fiscalGovernance.score': fiscalGovernance,
+			'overAll.score': overAll,
 		};
+
 		await ScoringFiscalRanking.findByIdAndUpdate(ulb._id, {
 			$set: updateData,
 		});
