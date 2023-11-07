@@ -44,120 +44,13 @@ function calculateAverage(numbers) {
 	return Number(sum / numbers.length);
 }
 
-// Indicator 1, 2, 3, 7, 9 >> (ulb/ high)*100 >> function 1
-async function updatePercentage_fun1(ulbArr, indicator) {
-	// Array with sorted values.
-	const sortByTotalBudgetArr = ulbArr.sort((a, b) => b[indicator].score - a[indicator].score);
-	ulbArr.forEach(async (ulb) => {
-		const percentage = (ulb[indicator].score / sortByTotalBudgetArr[0][indicator].score) * 100;
-
-		await ScoringFiscalRanking.findByIdAndUpdate(ulb._id, {
-			$set: {
-				[`${indicator}.percentage`]: percentage,
-			},
-		});
-	});
-}
-
-// Indicator 4, 5, 6, 8 >> ((ulb - low)/(high - low))*100 >> function 2
-async function updatePercentage_fun2(ulbArr, indicator) {
-	// Array with sorted values.
-	const sortByTotalBudgetArr = ulbArr.sort((a, b) => b[indicator].score - a[indicator].score);
-    const len = sortByTotalBudgetArr.length;
-
-	ulbArr.forEach(async (ulb) => {
-		const percentage =
-			((ulb[indicator].score - sortByTotalBudgetArr[len - 1][indicator].score) /
-				(sortByTotalBudgetArr[0][indicator].score - sortByTotalBudgetArr[len - 1][indicator].score)) *
-			100;
-
-		await ScoringFiscalRanking.findByIdAndUpdate(ulb._id, {
-			$set: {
-				[`${indicator}.percentage`]: percentage,
-			},
-		});
-	});
-}
-// Indicator 10A, 10B, 11A, 11B >> same as score >> function 6
-async function updatePercentage_fun6(ulbArr, indicator) {
-	ulbArr.forEach(async (ulb) => {
-		const percentage = ulb[indicator].score;
-
-		await ScoringFiscalRanking.findByIdAndUpdate(ulb._id, {
-			$set: {
-				[`${indicator}.percentage`]: percentage,
-			},
-		});
-	});
-}
-
-// Indicator 12  >> function 3 >>
-/* 
-(Score <= -25%) --> 37.5
-(Score > -25% && Score <= -10%) --> 40
-(Score > 20%) --> 45
-(Score > -10% && Score <= 20%) --> 50
-*/
-async function updatePercentage_fun3(ulbArr, indicator) {
-	ulbArr.forEach(async (ulb) => {
-		let percentage = 0;
-		if (ulb[indicator].score <= 20 && ulb[indicator].score > -10) percentage = 50;
-		else if (ulb[indicator].score > 20) percentage = 45;
-		else if (ulb[indicator].score <= -10 && ulb[indicator].score > -25) percentage = 40;
-		else if (ulb[indicator].score <= -25) percentage = 37.5;
-		else percentage = 0;
-
-		await ScoringFiscalRanking.findByIdAndUpdate(ulb._id, {
-			$set: {
-				[`${indicator}.percentage`]: percentage,
-			},
-		});
-	});
-}
-
-// Indicator 13 >> ((high - ulb)/(high-low))*50 >> function 4
-async function updatePercentage_fun4(ulbArr, indicator) {
-	// Array with sorted values.
-	const sortByTotalBudgetArr = ulbArr.sort((a, b) => b[indicator].score - a[indicator].score);
-    const len = sortByTotalBudgetArr.length;
-
-	ulbArr.forEach(async (ulb) => {
-		const percentage =
-			((sortByTotalBudgetArr[0][indicator].score - ulb[indicator].score) /
-				(sortByTotalBudgetArr[0][indicator].score - sortByTotalBudgetArr[len - 1][indicator].score)) *
-			50;
-
-		await ScoringFiscalRanking.findByIdAndUpdate(ulb._id, {
-			$set: {
-				[`${indicator}.percentage`]: percentage,
-			},
-		});
-	});
-}
-
-// Indicator 14, 15 >> (ulb/ high)*50 >> function 5
-async function updatePercentage_fun5(ulbArr, indicator) {
-	// Array with sorted values.
-	const sortByTotalBudgetArr = ulbArr.sort((a, b) => b[indicator].score - a[indicator].score);
-
-	ulbArr.forEach(async (ulb) => {
-		const percentage = (ulb[indicator].score / sortByTotalBudgetArr[0][indicator].score) * 50;
-
-		await ScoringFiscalRanking.findByIdAndUpdate(ulb._id, {
-			$set: {
-				[`${indicator}.percentage`]: percentage,
-			},
-		});
-	});
-}
-
 // async function updateMinusLowestPercentage(ulbArr, indicator) {
-// 	const sortByTotalBudgetArr = ulbArr.sort((a, b) => b[indicator].score - a[indicator].score);
-// const len = sortByTotalBudgetArr.length;
+// 	const sortedArr = ulbArr.sort((a, b) => b[indicator].score - a[indicator].score);
+// const len = sortedArr.length;
 // 	ulbArr.forEach(async (ulb) => {
 // 		const percentage =
-// 			(ulb[indicator].score - sortByTotalBudgetArr[len - 1][indicator].score) /
-// 			(sortByTotalBudgetArr[0][indicator].score - sortByTotalBudgetArr[len - 1][indicator].score) /
+// 			(ulb[indicator].score - sortedArr[len - 1][indicator].score) /
+// 			(sortedArr[0][indicator].score - sortedArr[len - 1][indicator].score) /
 // 			100;
 // 		await ScoringFiscalRanking.findOneAndUpdate(
 // 			{
@@ -171,38 +64,69 @@ async function updatePercentage_fun5(ulbArr, indicator) {
 // 		);
 // 	});
 // }
+
+function updatePercentage_formula1(ulb, ulbArr, indicator, percent = 100) {
+	const sortedArr = ulbArr.sort((a, b) => b[indicator].score - a[indicator].score);
+	return (ulb[indicator].score / sortedArr[0][indicator].score) * percent;
+}
+
+function updatePercentage_formula2(ulb, ulbArr, indicator) {
+	const sortedArr = ulbArr.sort((a, b) => b[indicator].score - a[indicator].score);
+	const len = sortedArr.length;
+	const percentage = ((ulb[indicator].score - sortedArr[len - 1][indicator].score) /
+		(sortedArr[0][indicator].score - sortedArr[len - 1][indicator].score)) *
+		100;
+	return percentage;
+}
+function updatePercentage_formula3(ulb, indicator) {
+	let percentage = 0;
+	if (ulb[indicator].score <= 20 && ulb[indicator].score > -10) percentage = 50;
+	else if (ulb[indicator].score > 20) percentage = 45;
+	else if (ulb[indicator].score <= -10 && ulb[indicator].score > -25) percentage = 40;
+	else if (ulb[indicator].score <= -25) percentage = 37.5;
+	else percentage = 0;
+	return percentage;
+}
+function updatePercentage_formula4(ulb, ulbArr, indicator) {
+	const sortedArr = ulbArr.sort((a, b) => b[indicator].score - a[indicator].score);
+	const len = sortedArr.length;
+	const percentage =
+		((sortedArr[0][indicator].score - ulb[indicator].score) /
+			(sortedArr[0][indicator].score - sortedArr[len - 1][indicator].score)) *
+		50;
+
+	return percentage;
+}
+
 async function calculateFRPercentage(populationBucket) {
 	// const condition = { populationBucket };
 	const condition = {};
 	const ulbArr = await ScoringFiscalRanking.find(condition).lean();
 
-	await updatePercentage_fun1(ulbArr, 'totalBudgetDataPC_1');
-	await updatePercentage_fun1(ulbArr, 'ownRevenuePC_2');
-	await updatePercentage_fun1(ulbArr, 'pTaxPC_3');
-	await updatePercentage_fun2(ulbArr, 'cagrInTotalBud_4');
-	await updatePercentage_fun2(ulbArr, 'cagrInOwnRevPC_5');
-	await updatePercentage_fun2(ulbArr, 'cagrInPropTax_6');
-	await updatePercentage_fun1(ulbArr, 'capExPCAvg_7');
-	await updatePercentage_fun2(ulbArr, 'cagrInCapExpen_8');
-	await updatePercentage_fun1(ulbArr, 'omExpTotalRevExpen_9');
-	await updatePercentage_fun6(ulbArr, 'avgMonthsForULBAuditMarks_10a');
-	await updatePercentage_fun6(ulbArr, 'aaPushishedMarks_10b');
-	await updatePercentage_fun6(ulbArr, 'gisBasedPTaxMarks_11a');
-	await updatePercentage_fun6(ulbArr, 'accSoftwareMarks_11b');
-	await updatePercentage_fun3(ulbArr, 'receiptsVariance_12');
-	await updatePercentage_fun4(ulbArr, 'ownRevRecOutStanding_13');
-	await updatePercentage_fun5(ulbArr, 'digitalToTotalOwnRev_14');
-	await updatePercentage_fun5(ulbArr, 'propUnderTaxCollNet_15');
-
-	// await updateMinusLowestPercentage(ulbArr, 'cagrInTotalBud_4');
-	// return ulbArr;
-	// const sortByTotalBudgetArr = ulbArr.sort((a, b) => b.totalBudgetDataPC_1.score - a.totalBudgetDataPC_1.score);
-
-	// return sortByTotalBudgetArr;
-	// ulbRes.forEach(async (ulb) => {
-	//     console.log('ulb', ulb._id);
-	//     await calculateFRPercentage(ulb);
-	// });
+	ulbArr.forEach(async (ulb) => {
+		const updateData = {
+			'totalBudgetDataPC_1.percentage': updatePercentage_formula1(ulb, ulbArr, 'totalBudgetDataPC_1'),
+			'ownRevenuePC_2.percentage': updatePercentage_formula1(ulb, ulbArr, 'ownRevenuePC_2'),
+			'pTaxPC_3.percentage': updatePercentage_formula1(ulb, ulbArr, 'pTaxPC_3'),
+			'cagrInTotalBud_4.percentage': updatePercentage_formula2(ulb, ulbArr, 'cagrInTotalBud_4'),
+			'cagrInOwnRevPC_5.percentage': updatePercentage_formula2(ulb, ulbArr, 'cagrInOwnRevPC_5'),
+			'cagrInPropTax_6.percentage': updatePercentage_formula2(ulb, ulbArr, 'cagrInPropTax_6'),
+			'capExPCAvg_7.percentage': updatePercentage_formula1(ulb, ulbArr, 'capExPCAvg_7'),
+			'cagrInCapExpen_8.percentage': updatePercentage_formula2(ulb, ulbArr, 'cagrInCapExpen_8'),
+			'omExpTotalRevExpen_9.percentage': updatePercentage_formula1(ulb, ulbArr, 'omExpTotalRevExpen_9'),
+			'avgMonthsForULBAuditMarks_10a.percentage': ulb['avgMonthsForULBAuditMarks_10a'].score,
+			'aaPushishedMarks_10b.percentage': ulb['aaPushishedMarks_10b'].score,
+			'gisBasedPTaxMarks_11a.percentage': ulb['gisBasedPTaxMarks_11a'].score,
+			'accSoftwareMarks_11b.percentage': ulb['accSoftwareMarks_11b'].score,
+			'receiptsVariance_12.percentage': updatePercentage_formula3(ulb, 'receiptsVariance_12'),
+			'ownRevRecOutStanding_13.percentage': updatePercentage_formula4(ulb, ulbArr, 'ownRevRecOutStanding_13'),
+			'digitalToTotalOwnRev_14.percentage': updatePercentage_formula1(ulb, ulbArr, 'digitalToTotalOwnRev_14', 50),
+			'propUnderTaxCollNet_15.percentage': updatePercentage_formula1(ulb, ulbArr, 'propUnderTaxCollNet_15', 50),
+		};
+		await ScoringFiscalRanking.findByIdAndUpdate(ulb._id, {
+			$set: updateData,
+		});
+	});
 }
 module.exports.calculateFRPercentage = async (req, res) => {
 	try {
@@ -211,9 +135,9 @@ module.exports.calculateFRPercentage = async (req, res) => {
 		// for (let i = 1; i <= 4; i++) {
 		//     await calculateFRPercentage(i);
 		// }
-		const data = await calculateFRPercentage(1);        
+		const data = await calculateFRPercentage(1);
 		return res.status(200).json({ message: 'Done' });
-        
+
 	} catch (error) {
 		console.log('error', error);
 		return res.status(400).json({
