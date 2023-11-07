@@ -88,9 +88,11 @@ module.exports.states = async (req, res) => {
 };
 module.exports.topRankedUlbs = async (req, res) => {
     try {
-        const { key, order } = req.query;
+        const { sortBy, sortOrder } = req.query;
         const condition = { isActive: true };
-        const ulbRes = await ScoringFiscalRanking.find(condition).limit(5).sort({ [key]: order }).exec();
+        sortBy = sortBy ? sortBy : 'overAll';
+        sortOrder = sortOrder === 'desc' ? -1 : 1;
+        const ulbRes = await ScoringFiscalRanking.find(condition).limit(5).sort({ [sortBy]: sortOrder }).exec();
         return res.status(200).json({ ulbs: ulbRes });
     } catch (error) {
         console.log('error', error);
