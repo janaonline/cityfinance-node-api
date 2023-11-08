@@ -692,6 +692,7 @@ async function getData(ulbRes) {
 		population: ulbRes.population,
 		populationBucket: getPopulationBucket(ulbRes.population),
 		state: ulbRes.state,
+		currentFormStatus: fsData.currentFormStatus,
 		totalBudgetDataPC_1: { score: totalBudgetDataPC_1 },
 		ownRevenuePC_2: { score: ownRevenuePC_2 },
 		pTaxPC_3: { score: pTaxPC_3 },
