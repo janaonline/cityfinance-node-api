@@ -31,6 +31,7 @@ const ScoringFiscalRankingSchema = new Schema(
 		ulb: { type: Schema.Types.ObjectId, ref: 'ulb', required: true },
 		population: { type: Number, default: 0 },
 		populationBucket: { type: Number, default: 0 },
+		currentFormStatus: { type: Number, default: 0 },
 		censusCode: { type: String, default: null },
 		isMillionPlus: { type: String, enum: ['Yes', 'No'], default: 'No' },
 		location: {
