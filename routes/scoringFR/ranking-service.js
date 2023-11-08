@@ -88,11 +88,20 @@ module.exports.states = async (req, res) => {
 };
 module.exports.topRankedUlbs = async (req, res) => {
     try {
-        const { sortBy, sortOrder } = req.query;
-        const condition = { isActive: true };
+        // moongose.set('debug', true);
+        let { sortBy, sortOrder, state, populationBucket } = req.query;
+        let condition = { isActive: true };
+        if (state) {
+            condition = { ...condition, state: ObjectId(state) };
+        }
+        if (populationBucket) {
+            condition = { ...condition, populationBucket };
+        }
         sortBy = sortBy ? sortBy : 'overAll';
         sortOrder = sortOrder === 'desc' ? -1 : 1;
-        const ulbRes = await ScoringFiscalRanking.find(condition).limit(5).sort({ [sortBy]: sortOrder }).exec();
+        const ulbRes = await ScoringFiscalRanking.find(condition)
+            .select('name ulb location resourceMobilization expenditurePerformance fiscalGovernance overAll')
+            .limit(5).sort({ [sortBy]: sortOrder }).exec();
         return res.status(200).json({ ulbs: ulbRes });
     } catch (error) {
         console.log('error', error);

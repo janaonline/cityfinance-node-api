@@ -686,6 +686,7 @@ async function getData(ulbRes) {
 	const scoringData = {
 		name: ulbRes.name,
 		ulb: ulbRes._id,
+		location: ulbRes.location,
 		censusCode: ulbRes.censusCode,
 		isActive: ulbRes.isActive,
 		population: ulbRes.population,

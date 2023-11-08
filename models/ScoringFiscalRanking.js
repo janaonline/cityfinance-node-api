@@ -33,6 +33,16 @@ const ScoringFiscalRankingSchema = new Schema(
 		populationBucket: { type: Number, default: 0 },
 		censusCode: { type: String, default: null },
 		isMillionPlus: { type: String, enum: ['Yes', 'No'], default: 'No' },
+		location: {
+			type: { 
+				lat: { type: String },
+				lng: { type: String },
+			},
+			default: {
+				lat: "0.0",
+				lng: "0.0"
+			}
+		},
 
 		totalBudgetDataPC_1: scoreFields,
 		ownRevenuePC_2: scoreFields,
