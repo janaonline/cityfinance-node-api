@@ -16,6 +16,7 @@ Pending actions
 4. 0/0 = NaN >> handle this condition
 5. 10B. to be confirmed.
 6. 11A. to be confirmed.
+7. In CAGR >> time is 3 or 4?
 */
 
 function calculateRecommendationPercentage(score) {
@@ -40,11 +41,14 @@ function getValue(fsMapper, type) {
 	// console.log('fsMapper', fsMapper);
 	// console.log('type', type);
 	const indicator = fsMapper.find((e) => e.type === type);
-	if (indicator && indicator.pmuSuggestedValue2) {
+	if (!indicator) {
+		return 0;
+	}
+	if (indicator.pmuSuggestedValue2) {
 		return indicator.pmuSuggestedValue2;
-	} else if (indicator && indicator.suggestedValue) {
+	} else if (indicator.suggestedValue) {
 		return indicator.suggestedValue;
-	} else if (indicator && indicator.value) {
+	} else if (indicator.value) {
 		return indicator.value;
 	}
 	return 0;
@@ -54,11 +58,14 @@ function getNumberValue(fsMapper, type) {
 	// console.log('fsMapper', fsMapper);
 	// console.log('type', type);
 	const indicator = fsMapper.find((e) => e.type === type);
-	if (indicator && indicator.pmuSuggestedValue2) {
+	if (!indicator) {
+		return 0;
+	}
+	if (indicator.pmuSuggestedValue2) {
 		return Number(indicator.pmuSuggestedValue2);
-	} else if (indicator && indicator.suggestedValue) {
+	} else if (indicator.suggestedValue) {
 		return Number(indicator.suggestedValue);
-	} else if (indicator && indicator.value) {
+	} else if (indicator.value) {
 		return Number(indicator.value);
 	}
 	return 0;
@@ -86,11 +93,11 @@ function totalBudgetPerCapita(ulbRes, fsData, fsMapper2021_22) {
 		const totalRcptWaterSupply = fsData && fsData.propertyWaterTax.value === 'Yes' ? getNumberValue(fsMapper2021_22, 'totalRcptWaterSupply') : 0;
 		// Total reciepts actual for sanitaion.
 		const totalRcptSanitation = fsData && fsData.propertySanitationTax.value === 'Yes' ? getNumberValue(fsMapper2021_22, 'totalRcptSanitation') : 0;
-
 		const totalBudget =
 			ulbRes.population === 0
 				? console.log('Population is 0')
 				: (totalRecActual_2021_22 - (totalRcptWaterSupply + totalRcptSanitation)) / ulbRes.population;
+
 		return parseFloat(totalBudget.toFixed(2));
 	} catch (e) {
 		return 0;
@@ -151,7 +158,7 @@ function cagrInTotalBudget(fsData, fsMapper2018_19, fsMapper2021_22) {
 		const budget = budget2021_22 === 0 && budget2018_19 === 0 ? 0 : budget2021_22 / budget2018_19;
 		// Growth
 		const time = 3;
-		const CAGRInTotalBudget = (budget < 0) ? 0 : (Math.pow(budget, 1 / time) - 1) * 100;
+		const CAGRInTotalBudget = budget < 0 ? 0 : (Math.pow(budget, 1 / time) - 1) * 100;
 
 		return parseFloat(CAGRInTotalBudget.toFixed(2)); //15.73%
 		// return parseFloat(Math.ceil(CAGRInTotalBudget.toFixed(2))); //15.73% >> 16%
@@ -184,7 +191,7 @@ function cagrInOwnRevenue(fsData, fsMapper2018_19, fsMapper2021_22) {
 		const ownRev = ownRev2021_22 === 0 && ownRev2018_19 === 0 ? 0 : ownRev2021_22 / ownRev2018_19;
 		// Growth.
 		const time = 3;
-		const CAGRInOwnRevenue = (ownRev < 0) ? 0 : (Math.pow(ownRev, 1 / time) - 1) * 100;
+		const CAGRInOwnRevenue = ownRev < 0 ? 0 : (Math.pow(ownRev, 1 / time) - 1) * 100;
 
 		return parseFloat(CAGRInOwnRevenue.toFixed(2));
 	} catch (e) {
@@ -202,7 +209,7 @@ function cagrInPTax(fsMapper2018_19, fsMapper2021_22) {
 		const pTax = pTax2021_22 === 0 && pTax2018_19 === 0 ? 0 : pTax2021_22 / pTax2018_19;
 		// Growth for 3 years
 		const time = 3;
-		const CAGRInPTax = (pTax < 0 )? 0 : (Math.pow(pTax, 1 / time) - 1) * 100;
+		const CAGRInPTax = pTax < 0 ? 0 : (Math.pow(pTax, 1 / time) - 1) * 100;
 
 		return parseFloat(CAGRInPTax.toFixed(2));
 	} catch (e) {
@@ -237,7 +244,7 @@ function capExPerCapitaAvg(ulbRes, fsData, fsMapper2019_20, fsMapper2020_21, fsM
 		// Array is created to find average.
 		const arr = [CapEx_2019_20, CapEx_2020_21, CapEx_2021_22];
 		const CapExPerCapitaAvg = ulbRes.population === 0 ? console.log('Population is 0') : calculateAverage(arr) / ulbRes.population;
-
+		
 		return parseFloat(CapExPerCapitaAvg.toFixed(2));
 	} catch (e) {
 		return 0;
@@ -263,7 +270,7 @@ function cagrInCapEx(fsData, fsMapper2018_19, fsMapper2021_22) {
 		const TotalCapEx = capEx2021_22 === 0 && capEx2018_19 === 0 ? 0 : capEx2021_22 / capEx2018_19;
 		// Growth
 		const time = 3;
-		const CAGRInCapEx = (TotalCapEx < 0) ? 0 : Math.pow(TotalCapEx, 1 / time) * 100;
+		const CAGRInCapEx = TotalCapEx < 0 ? 0 : Math.pow(TotalCapEx, 1 / time) * 100;
 
 		return parseFloat(CAGRInCapEx.toFixed(2));
 	} catch (e) {
@@ -304,7 +311,7 @@ function omExpTotalRevEx(fsData, fsMapper2019_20, fsMapper2020_21, fsMapper2021_
 		];
 		const AvgOfRevExp = calculateAverage(arr2);
 		// Handling 0/ 0
-		const OMExpTotalRevEx = (AvgOfOmExp === 0 && AvgOfRevExp === 0) ? 0 : (AvgOfOmExp / AvgOfRevExp);
+		const OMExpTotalRevEx = AvgOfOmExp === 0 && AvgOfRevExp === 0 ? 0 : AvgOfOmExp / AvgOfRevExp;
 
 		return parseFloat(OMExpTotalRevEx.toFixed(2));
 	} catch (e) {
@@ -333,9 +340,9 @@ function avgMonthsForULBAudit(fsMapper2019_20, fsMapper2020_21, fsMapper2021_22)
 		const April_2021 = new Date('2021/04/01');
 		const April_2022 = new Date('2022/04/01');
 		// Function call to calcuate diff.
-		const NoOfMonths_2019_20 = (ulbValue2019_20 === null || ulbValue2019_20 === 0) ? 0 : getMonthDifference(April_2020, ulbValue2019_20);
-		const NoOfMonths_2020_21 = (ulbValue2020_21 === null || ulbValue2020_21 === 0) ? 0 : getMonthDifference(April_2021, ulbValue2020_21);
-		const NoOfMonths_2021_22 = (ulbValue2021_22 === null || ulbValue2021_22 === 0) ? 0 : getMonthDifference(April_2022, ulbValue2021_22);
+		const NoOfMonths_2019_20 = ulbValue2019_20 === null || ulbValue2019_20 === 0 ? 0 : getMonthDifference(April_2020, ulbValue2019_20);
+		const NoOfMonths_2020_21 = ulbValue2020_21 === null || ulbValue2020_21 === 0 ? 0 : getMonthDifference(April_2021, ulbValue2020_21);
+		const NoOfMonths_2021_22 = ulbValue2021_22 === null || ulbValue2021_22 === 0 ? 0 : getMonthDifference(April_2022, ulbValue2021_22);
 
 		// Array is created to find average.
 		const arr = [NoOfMonths_2019_20, NoOfMonths_2020_21, NoOfMonths_2021_22];
@@ -500,6 +507,9 @@ async function getData(ulbRes) {
 		design_year: ObjectId(design_year2022_23),
 	};
 	let fsData = await FiscalRanking.findOne(condition).lean();
+	if(!fsData) {
+		return 'no data';
+	}
 
 	const fsMapperNoYear = await FiscalRankingMapper.find({
 		ulb: ObjectId(ulbRes._id),
@@ -700,8 +710,7 @@ async function getData(ulbRes) {
 		// isProvisional: getProvisionalStatus(ulbRes.censusCode),
 	};
 
-	console.log(scoringData.name);
-	console.log(scoringData.avgMonthsForULBAuditMarks_10a);
+	// console.log(scoringData.name);
 
 	await ScoringFiscalRanking.create(scoringData);
 	return {
@@ -735,12 +744,18 @@ module.exports.calculateFRScore = async (req, res) => {
 	try {
 		const data = req.body;
 		const censusCode = 802814;
-		const condition = { isActive: true };
-		const ulbRes = await Ulb.find(condition).limit(100).lean();
+		// const sbCode = '980171';
+		// Consider only ULBs with isActive TRUE & population is not empty & not 0.
+		const condition = { isActive: true, population: { $nin: [null, 0] }};
+		const ulbRes = await Ulb.find(condition)
+			// .limit(10)
+			.lean();
+		console.log('ulbRes.len----------', ulbRes.length);
+
 		ulbRes.forEach(async (ulb) => {
-			if (ScoringFiscalRanking.findOne({ ulb: ulb._id })) {
-				await getData(ulb);
-			}
+			// if (!ScoringFiscalRanking.findOne({ ulb: ulb._id })) {
+			await getData(ulb);
+			// }
 		});
 		return res.status(200).json({ message: 'Done' });
 	} catch (error) {
