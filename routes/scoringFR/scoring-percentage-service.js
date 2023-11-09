@@ -10,7 +10,12 @@ const { registerCustomQueryHandler } = require('puppeteer');
 const { initParams } = require('request');
 
 /*
- 1. is calculateAverage() required in this .js file?
+ Not started - 1
+ In progress - 2
+ Verificaion not started - 8
+ Verification in progress - 9
+ Returned by PMU - 10
+ Submission Acknowledged by PMU - 11
  */
 
 function calculateRecommendationPercentage(score) {
@@ -102,7 +107,7 @@ function updatePercentage_formula4(ulb, ulbArr, indicator) {
 
 async function calculateFRPercentage(populationBucket) {
 	// const censusCode = 802787;
-	const condition = { populationBucket};
+	const condition = { populationBucket, currentFormStatus: { $in: [11]}};
 	// const condition = {};
 	const ulbArr = await ScoringFiscalRanking.find(condition).lean();
 
@@ -198,7 +203,7 @@ async function setIndicatorRank(ulbArr, indicator) {
 
 
 async function calculateFRRank(populationBucket) {
-	const condition = { isActive: true, populationBucket };
+	const condition = { isActive: true, populationBucket, currentFormStatus: { $in: [11]} };
     const ulbArr = await ScoringFiscalRanking.find(condition)
 	.select('resourceMobilization expenditurePerformance fiscalGovernance overAll')
 	.lean();
