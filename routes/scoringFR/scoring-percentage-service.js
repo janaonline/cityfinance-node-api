@@ -104,7 +104,7 @@ async function calculateFRPercentage(populationBucket) {
 	// const censusCode = 802787;
 	const condition = { populationBucket};
 	// const condition = {};
-	const ulbArr = await ScoringFiscalRanking.find(condition).limit(5).lean();
+	const ulbArr = await ScoringFiscalRanking.find(condition).lean();
 
 	ulbArr.forEach(async (ulb) => {
 		const totalBudgetDataPC_1 = updatePercentage_formula1(ulb, ulbArr, 'totalBudgetDataPC_1');

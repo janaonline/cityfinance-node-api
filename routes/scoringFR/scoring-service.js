@@ -487,6 +487,7 @@ function getProvisionalStatus(censusCode) {
 }
 
 async function getData(ulbRes) {
+	console.log('----in--------');
 	// moongose.set('debug', true);
 
 	// ulbRes.forEach(element => {
@@ -714,7 +715,7 @@ async function getData(ulbRes) {
 	};
 
 	// console.log(scoringData);
-
+	
 	await ScoringFiscalRanking.create(scoringData);
 	return {
 		status: 'true',
@@ -751,14 +752,14 @@ module.exports.calculateFRScore = async (req, res) => {
 		// Consider only ULBs with isActive TRUE & population is not empty & not 0.
 		const condition = { isActive: true, population: { $nin: [null, 0] }};
 		const ulbRes = await Ulb.find(condition)
-			.limit(20)
+		// .limit(4000)
 			.lean();
 		console.log('ulbRes.len----------', ulbRes.length);
 
 		ulbRes.forEach(async (ulb) => {
-			// if (!ScoringFiscalRanking.findOne({ ulb: ulb._id })) {
+			if (!await ScoringFiscalRanking.findOne({ ulb: ulb._id })) {
 			await getData(ulb);
-			// }
+			}
 		});
 		return res.status(200).json({ message: 'Done' });
 	} catch (error) {
