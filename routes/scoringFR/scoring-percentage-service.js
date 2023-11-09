@@ -65,19 +65,23 @@ function calculateAverage(numbers) {
 // 	});
 // }
 
+let decimalPlace = 2; 
+
 function updatePercentage_formula1(ulb, ulbArr, indicator, percent = 100) {
 	const sortedArr = ulbArr.sort((a, b) => b[indicator].score - a[indicator].score);
-	return (ulb[indicator].score / sortedArr[0][indicator].score) * percent;
+	const percentage = ulb[indicator].score === 0 || sortedArr[0][indicator].score === 0 ? 0 : (ulb[indicator].score / sortedArr[0][indicator].score) * percent;
+	return parseFloat(percentage.toFixed(decimalPlace)); 
 }
 
 function updatePercentage_formula2(ulb, ulbArr, indicator) {
 	const sortedArr = ulbArr.sort((a, b) => b[indicator].score - a[indicator].score);
 	const len = sortedArr.length;
-	const percentage = ((ulb[indicator].score - sortedArr[len - 1][indicator].score) /
-		(sortedArr[0][indicator].score - sortedArr[len - 1][indicator].score)) *
-		100;
-	return percentage;
+	const numerator = (ulb[indicator].score - sortedArr[len - 1][indicator].score);
+	const denominator = (sortedArr[0][indicator].score - sortedArr[len - 1][indicator].score);
+	const percentage = numerator === 0 || denominator === 0 ? 0 : (numerator / denominator) * 100;
+	return parseFloat(percentage.toFixed(decimalPlace));
 }
+
 function updatePercentage_formula3(ulb, indicator) {
 	let percentage = 0;
 	if (ulb[indicator].score <= 20 && ulb[indicator].score > -10) percentage = 50;
@@ -85,22 +89,21 @@ function updatePercentage_formula3(ulb, indicator) {
 	else if (ulb[indicator].score <= -10 && ulb[indicator].score > -25) percentage = 40;
 	else if (ulb[indicator].score <= -25) percentage = 37.5;
 	else percentage = 0;
-	return percentage;
+	return parseFloat(percentage.toFixed(decimalPlace));
 }
 function updatePercentage_formula4(ulb, ulbArr, indicator) {
 	const sortedArr = ulbArr.sort((a, b) => b[indicator].score - a[indicator].score);
 	const len = sortedArr.length;
-	const percentage =
-		((sortedArr[0][indicator].score - ulb[indicator].score) /
-			(sortedArr[0][indicator].score - sortedArr[len - 1][indicator].score)) *
-		50;
-
-	return percentage;
+	const numerator = (sortedArr[0][indicator].score - ulb[indicator].score);
+	const denominator = (sortedArr[0][indicator].score - sortedArr[len - 1][indicator].score);
+ 	const percentage = numerator === 0 || denominator === 0 ? 0 : (numerator /denominator) * 50;
+	return parseFloat(percentage.toFixed(decimalPlace));
 }
 
 async function calculateFRPercentage(populationBucket) {
-	// const condition = { populationBucket };
-	const condition = {};
+	// const censusCode = 802787;
+	const condition = { populationBucket};
+	// const condition = {};
 	const ulbArr = await ScoringFiscalRanking.find(condition).lean();
 
 	ulbArr.forEach(async (ulb) => {
@@ -118,12 +121,13 @@ async function calculateFRPercentage(populationBucket) {
 		const digitalToTotalOwnRev_14 = updatePercentage_formula1(ulb, ulbArr, 'digitalToTotalOwnRev_14', 50);
 		const propUnderTaxCollNet_15 = updatePercentage_formula1(ulb, ulbArr, 'propUnderTaxCollNet_15', 50);
 
-		const resourceMobilization = totalBudgetDataPC_1 + ownRevenuePC_2 + pTaxPC_3 + cagrInTotalBud_4 + cagrInOwnRevPC_5 + cagrInPropTax_6;
-		const expenditurePerformance = capExPCAvg_7 + cagrInCapExpen_8 + omExpTotalRevExpen_9;
-		const fiscalGovernance = ulb['aaPushishedMarks_10b'].score + ulb['gisBasedPTaxMarks_11a'].score + ulb['accSoftwareMarks_11b'].score +
-			receiptsVariance_12 + ownRevRecOutStanding_13 + digitalToTotalOwnRev_14 + propUnderTaxCollNet_15;
+		const resourceMobilization = parseFloat((totalBudgetDataPC_1 + ownRevenuePC_2 + pTaxPC_3 + cagrInTotalBud_4 + cagrInOwnRevPC_5 + cagrInPropTax_6).toFixed(decimalPlace));
+		const expenditurePerformance = parseFloat((capExPCAvg_7 + cagrInCapExpen_8 + omExpTotalRevExpen_9).toFixed(decimalPlace));
+		const fiscalGovernance = parseFloat((ulb['aaPushishedMarks_10b'].score + ulb['gisBasedPTaxMarks_11a'].score + ulb['accSoftwareMarks_11b'].score +
+			receiptsVariance_12 + ownRevRecOutStanding_13 + digitalToTotalOwnRev_14 + propUnderTaxCollNet_15).toFixed(decimalPlace));
 
-		const overAll = resourceMobilization + expenditurePerformance + fiscalGovernance;
+		const overAll = parseFloat((resourceMobilization + expenditurePerformance + fiscalGovernance).toFixed(decimalPlace));
+		
 		const updateData = {
 			'totalBudgetDataPC_1.percentage': totalBudgetDataPC_1,
 			'ownRevenuePC_2.percentage': ownRevenuePC_2,
@@ -153,14 +157,63 @@ async function calculateFRPercentage(populationBucket) {
 		});
 	});
 }
+
+
 module.exports.calculateFRPercentage = async (req, res) => {
 	try {
-		const censusCode = 802814;
-		const condition = { isActive: true };
-		// for (let i = 1; i <= 4; i++) {
-		//     await calculateFRPercentage(i);
-		// }
-		const data = await calculateFRPercentage(1);
+		for (let i = 1; i <= 4; i++) {
+		    await calculateFRPercentage(i);
+		}
+		// const data = await calculateFRPercentage(1);
+		return res.status(200).json({ message: 'Done' });
+	} catch (error) {
+		console.log('error', error);
+		return res.status(400).json({
+			status: false,
+			message: error.message,
+		});
+	}
+};
+
+async function setIndicatorRank(ulbArr, indicator) {
+	ulbArr.sort((a, b) => b[indicator].score - a[indicator].score);
+    for (let i = 0; i < ulbArr.length; i++) {
+		let rank = 1;
+		if(i===0) {
+			rank = 1;
+		} else if(ulbArr[i-1][indicator].score === ulbArr[i][indicator].score) {
+			ulbArr[i][indicator].rank = ulbArr[i-1][indicator].rank;
+		} else {
+			ulbArr[i][indicator].rank = ulbArr[i-1][indicator].rank +1;
+		}
+     
+        await ScoringFiscalRanking.findByIdAndUpdate(ulbArr[i]._id, {
+          $set: {
+            [`${indicator}.rank`]: ulbArr[i][indicator].rank
+          },
+        });
+     
+    }
+}
+
+
+async function calculateFRRank(populationBucket) {
+	const condition = { isActive: true, populationBucket };
+    const ulbArr = await ScoringFiscalRanking.find(condition)
+	.select('resourceMobilization expenditurePerformance fiscalGovernance overAll')
+	.lean();
+	await setIndicatorRank(ulbArr, 'resourceMobilization');
+	await setIndicatorRank(ulbArr, 'expenditurePerformance');
+	await setIndicatorRank(ulbArr, 'fiscalGovernance');
+	await setIndicatorRank(ulbArr, 'overAll');
+
+}
+module.exports.calculateFRRank = async (req, res) => {
+	try {
+		for (let i = 1; i <= 4; i++) {
+		    await calculateFRRank(i);
+		}
+		// const data = await calculateFRRank(1);
 		return res.status(200).json({ message: 'Done' });
 
 	} catch (error) {
