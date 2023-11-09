@@ -29,18 +29,18 @@ module.exports.sendOtp = catchAsync(async (req, res, next) => {
         }
 
 
-        // if (!process.env.MSG91_AUTH_KEY) {
-        //     return res.status(400).json({
-        //         success: false,
-        //         message: 'MSG91 AUTH KEY NOT FOUND'
-        //     })
-        // }
-        // if (!process.env.SENDER_ID) {
-        //     return res.status(400).json({
-        //         success: false,
-        //         message: 'SENDER ID KEY NOT FOUND'
-        //     })
-        // }
+        if (!process.env.MSG91_AUTH_KEY) {
+            return res.status(400).json({
+                success: false,
+                message: 'MSG91 AUTH KEY NOT FOUND'
+            })
+        }
+        if (!process.env.SENDER_ID) {
+            return res.status(400).json({
+                success: false,
+                message: 'SENDER ID KEY NOT FOUND'
+            })
+        }
         if (!user) {
             res.status(400).json({
                 success: false,
@@ -60,8 +60,17 @@ module.exports.sendOtp = catchAsync(async (req, res, next) => {
                 .lean();
 
             const otpSentCount = otpSent.filter(e => e.isVerified === false).length;
-
-            if (otpBlockedUntil >= new Date(Date.now()) || otpSentCount >= 3) {
+            // check if the blocked date is less than current date
+            if (otpBlockedUntil > new Date(Date.now())) {
+                const timeLeft = Math.abs(Date.now() - otpBlockedUntil);
+                const hoursLeft = Math.floor(timeLeft / 36e5);
+                const minutes = Math.floor((timeLeft / 1000 / 60) % 60);
+                return res.status(400).json({
+                    success: false,
+                    message: `Maximum OTP limit exhausted. Please try after ${hoursLeft} hours ${minutes} minutes`,
+                });
+            }
+            if (otpSentCount >= 3) {
                 let setData = {
                     otpAttempts: 0,
                     otpBlockedUntil: new Date(Date.now() + 24 * 60 * 60 * 1000),
