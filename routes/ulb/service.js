@@ -13,7 +13,8 @@ const axios = require("axios");
 const Redis = require("../../service/redis");
 const ExcelJS = require("exceljs");
 const { GSDP_OPT, DULY_ELECTED_OPT } = require("../../util/FormNames");
-
+const { checkForUndefinedVaribales } = require("../CommonActionAPI/service");
+const { ERROR_CODE} = require('../../util/Error_Constants')
 module.exports.getFilteredUlb = async function (req, res) {
   let query = {};
   let query1 = {};
@@ -3510,4 +3511,82 @@ module.exports.truncateSbCode = async (req, res) => {
     updatedUlbs,
     length: updatedUlbs.length
   })
+}
+
+/*It is an asynchronous function that handles a request to update fields in a database. */
+module.exports.updateFields = async (req, res)=>{
+  try{
+    const { data, modelPath, filter, filterOperator} = req.body;
+    let validObj = Object.keys(req.body).length && checkForUndefinedVaribales(req.body);
+    if(!validObj.valid){
+      throw Error(`${validObj.message ?? 'Fields missing'}`)
+    }
+    // const Model =  require(`../../models/${modelPath}`);
+    let query = getQuery(filter, data, filterOperator);
+    let output = await Ulb.bulkWrite(query);
+    return Response.OK(res,output);
+  }catch(error){
+    if(Object.keys(ERROR_CODE).includes(error.code)){
+      return Response.BadRequest(res, {}, ERROR_CODE[error.code]);
+    }
+    return Response.BadRequest(res, {},error.message);
+  }
+}
+
+/**
+ * The function `getQuery` takes in a filter, data, and filterOperator, and returns a query that can be
+ * used to update multiple documents in a database.
+ * @param filter - An array of strings representing the properties to filter on.
+ * @param data - The `data` parameter is an array of objects. Each object represents a data entry with
+ * multiple properties.
+ * @param filterOperator - The `filterOperator` parameter is a string that specifies the operator to
+ * use when combining multiple filters. It is used to create the filter query for each object in the
+ * `data` array.
+ * @returns a query array.
+ */
+function getQuery(filter, data, filterOperator) {
+  try {
+    let query = [];
+    let filterArray = filter.reduce((acc, el) => {
+      acc.push({ [el]: undefined });
+      return acc;
+    }, []);
+
+    data.forEach((obj) => {
+      let filterQuery = filterArray.map((filter) => {
+        const keyInFilter = getObjectKey(filter,0)
+        if (obj[keyInFilter]) {
+           filter[keyInFilter] = obj[keyInFilter];
+          delete obj[keyInFilter];
+          return filter;
+        } 
+        return;
+      });
+      filterQuery = filterQuery.filter((el) => el && el);
+      query.push({
+        updateOne: {
+           filter: { [filterOperator]: JSON.parse(JSON.stringify(filterQuery)) },
+           update: { $set : obj}
+          }
+      });
+    });
+    return query;
+  } catch (error) {
+    throw Error({message: `getQuery : ${error.message}`})
+  }
+}
+
+
+/**
+ * The function `getObjectKey` returns the key at a specified index in an object.
+ * @param obj - The `obj` parameter is an object from which we want to retrieve a key.
+ * @param idx - The `idx` parameter is the index of the key you want to retrieve from the `obj` object.
+ * @returns the key at the specified index in the object.
+ */
+function getObjectKey(obj, idx){
+  try {
+    return Object.keys(obj)[idx];
+  } catch (error) {
+    throw Error({message: `${error.message}`})
+  }
 }
