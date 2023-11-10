@@ -23,6 +23,7 @@ let DurPageLinks = {
   "2022-23": "ulbform/ulbform-overview",
   "2023-24": "ulbform2223/utilisation-report"
 }
+const YEAR2223 = 202223;
 async function getCorrectDataSet() {
 
 }
@@ -162,8 +163,10 @@ module.exports.createOrUpdate = async (req, res) => {
     if (financialYear) {
       formData["financialYear"] = ObjectId(financialYear);
     }
+    let yearInNumber;
     if (designYear) {
       formData["designYear"] = ObjectId(designYear);
+      yearInNumber =  Number(getKeyByValue(years,designYear).split('-').join(''))
     }
     if (formData.designYear.toString() === YEAR_CONSTANTS["23_24"] && formData.ulb) {
       formData.status = currentMasterFormStatus;
@@ -361,7 +364,8 @@ module.exports.createOrUpdate = async (req, res) => {
           Service.sendEmail(mailOptions);
         }
       } else {
-        if (!isProjectLoaded && years['2023-24']) {
+        
+        if (!isProjectLoaded && yearInNumber > YEAR2223) {
           delete req.body['projects']
         }
         // console.log(req.body)
