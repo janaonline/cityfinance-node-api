@@ -3,6 +3,7 @@ const router = express.Router();
 const { calculateFRScore } = require('./scoring-service');
 const { calculateFRPercentage } = require('./scoring-percentage-service');
 const { calculateFRRank } = require('./scoring-rank-service');
+const { setUlbScore } = require('./set-ulb-score');
 const { setStateData } = require('./scoring-state-data-service');
 const { getUlbDetails, getSearchedUlbDetails } = require('./ulb-service');
 const { dashboard, participatedState, states, topRankedUlbs } = require('./ranking-service');

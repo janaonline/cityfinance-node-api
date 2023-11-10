@@ -8,6 +8,14 @@ const scoreFields = {
 	percentage: {
 		type: Number,
 		default: 0,
+	},
+	highestScore: {
+		type: Number,
+		default: 0,
+	},
+	lowestScore: {
+		type: Number,
+		default: 0,
 	}
 };
 
