@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const { verifyToken } = require('../auth/services/verifyToken')
-const { CreateorUpdate, getView, approvedByMohua, getFRforms, createTabsFiscalRanking, actionTakenByMoHua, FRUlbFinancialData, FROverAllUlbData, getTrackingHistory,heatMapReport, overview, createForm, getAll, freezeForm } = require('./service')
+const { CreateorUpdate, getView, approvedByMohua, getFRforms, createTabsFiscalRanking, actionTakenByMoHua, FRUlbFinancialData, FROverAllUlbData, getTrackingHistory,heatMapReport, overview, createForm, getAll, freezeForm, errorLogs} = require('./service')
 const { updateSubmittedDate } = require('./update-submitted-date')
 
 router.post("/create", verifyToken, CreateorUpdate);
@@ -20,6 +20,7 @@ router.get("/tracking-history",getTrackingHistory)
 
 //One time API to freeze form FR.
 router.put("/freeze-form",freezeForm)
+router.get("/get-error-logs", errorLogs)
 
 router.patch("/update-submitted-date", verifyToken, updateSubmittedDate);
 
