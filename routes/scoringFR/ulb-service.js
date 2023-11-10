@@ -28,9 +28,29 @@ module.exports.getUlbDetails = async (req, res) => {
 			ulb: ObjectId(ulb.ulb),
 			design_year: ObjectId(design_year2022_23),
 		};
+
 		let fsData = await FiscalRanking.findOne(conditionFs).lean();
 		const data = { ulb, fsData }
 		return res.status(200).json({ data });
+	} catch (error) {
+		console.log('error', error);
+		return res.status(400).json({
+			status: false,
+			message: error.message,
+		});
+	}
+};
+
+module.exports.getSearchedUlbDetails = async (req, res) => {
+	try {
+		moongose.set('debug', true);
+		const ulbIds = req.query.ulbId;
+		console.log('ulbIds',ulbIds);
+		// const censusCode = 802989;
+		const condition = { isActive: true, ulb: { $in: ulbIds } };
+		const ulbs = await ScoringFiscalRanking.find(condition).limit(5);
+		
+		return res.status(200).json({ ulbs });
 	} catch (error) {
 		console.log('error', error);
 		return res.status(400).json({
