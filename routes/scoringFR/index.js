@@ -17,6 +17,8 @@ router.get('/set-state-data', setStateData);
 router.get('/dashboard', dashboard);
 router.get('/participated-state', participatedState);
 router.get('/states', states);
+router.get('/audited-accounts', states);
+router.get('/annual-budget', states);
 router.get('/top-ranked-ulbs', topRankedUlbs);
 router.get('/ulb/:censusCode?', getUlbDetails);
 router.get('/search-ulbs', getSearchedUlbDetails);

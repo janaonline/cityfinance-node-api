@@ -24,13 +24,17 @@ module.exports.getUlbDetails = async (req, res) => {
 		const ulb = await ScoringFiscalRanking.findOne(condition).lean();
 
 		const design_year2022_23 = '606aafb14dff55e6c075d3ae';
+
+		const condition1 = { isActive: true, populationBucket: ulb.populationBucket };
+		const populationBucketUlbCount = await ScoringFiscalRanking.countDocuments(condition1).lean();
+
 		const conditionFs = {
 			ulb: ObjectId(ulb.ulb),
 			design_year: ObjectId(design_year2022_23),
 		};
 
 		let fsData = await FiscalRanking.findOne(conditionFs).lean();
-		const data = { ulb, fsData }
+		const data = { populationBucketUlbCount, ulb, fsData }
 		return res.status(200).json({ data });
 	} catch (error) {
 		console.log('error', error);
@@ -44,12 +48,13 @@ module.exports.getUlbDetails = async (req, res) => {
 module.exports.getSearchedUlbDetails = async (req, res) => {
 	try {
 		moongose.set('debug', true);
-		const ulbIds = req.query.ulbId;
-		console.log('ulbIds',ulbIds);
+		const ulbIds = req.query.ulb;
+		console.log('ulbIds', ulbIds);
 		// const censusCode = 802989;
 		const condition = { isActive: true, ulb: { $in: ulbIds } };
-		const ulbs = await ScoringFiscalRanking.find(condition).limit(5);
-		
+		const ulbs = await ScoringFiscalRanking.find(condition)
+			.select('name ulb location resourceMobilization expenditurePerformance fiscalGovernance overAll').limit(5);
+
 		return res.status(200).json({ ulbs });
 	} catch (error) {
 		console.log('error', error);
