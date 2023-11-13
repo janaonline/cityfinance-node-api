@@ -117,7 +117,7 @@ const autoSumAndLedgerCheck = financialTabIndicators => {
                 return acc;
             }, [0, 0, 0, 0]).forEach((value, index) => {
                 const updatableYearItem = indicator['yearData'][index];
-                if (updatableYearItem?.modelName && updatableYearItem.value != value) {
+                if (updatableYearItem?.modelName && updatableYearItem.value != Math.floor(value)) {
                     const error = new Error('Ledger mismatch');
                     error['response'] = {};
                     error.response.data = {
