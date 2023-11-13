@@ -229,3 +229,4 @@ module.exports.calculateFRRank = async (req, res) => {
 		});
 	}
 };
+

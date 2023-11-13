@@ -113,22 +113,3 @@ module.exports.topRankedUlbs = async (req, res) => {
 		});
 	}
 };
-module.exports.ulb = async (req, res) => {
-	try {
-		const data = req.body;
-		const censusCode = 802814;
-		const condition = { isActive: true };
-		const ulbRes = await Ulb.find(condition).limit(10).lean();
-		ulbRes.forEach(async (ulb) => {
-			console.log('ulb', ulb._id);
-			await getData(ulb);
-		});
-		return res.status(200).json();
-	} catch (error) {
-		console.log('error', error);
-		return res.status(400).json({
-			status: false,
-			message: error.message,
-		});
-	}
-};
