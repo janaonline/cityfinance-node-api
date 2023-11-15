@@ -74,9 +74,9 @@ module.exports.participatedState = async (req, res) => {
 };
 module.exports.states = async (req, res) => {
 	try {
-		const data = req.body;
+		let select = req.params.select ? `name fiscalRanking ${req.params.select}` : 'name';
 		const condition = { isActive: true };
-		const states = await State.find(condition).select('name').exec();
+		const states = await State.find(condition).select(select).exec();
 		return res.status(200).json({ states });
 	} catch (error) {
 		console.log('error', error);

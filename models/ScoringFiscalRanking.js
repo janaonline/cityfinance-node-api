@@ -30,6 +30,12 @@ const sumScoreFields = {
 	},
 };
 
+const yearFile = {
+	year: { type: String, required: true, index: true },
+	fileName: { type: String },
+	url: { type: String, default: null },
+};
+
 const ScoringFiscalRankingSchema = new Schema(
 	{
 		name: { type: String, required: true },
@@ -43,7 +49,7 @@ const ScoringFiscalRankingSchema = new Schema(
 		censusCode: { type: String, default: null },
 		isMillionPlus: { type: String, enum: ['Yes', 'No'], default: 'No' },
 		location: {
-			type: { 
+			type: {
 				lat: { type: String },
 				lng: { type: String },
 			},
@@ -74,6 +80,9 @@ const ScoringFiscalRankingSchema = new Schema(
 		expenditurePerformance: sumScoreFields,
 		fiscalGovernance: sumScoreFields,
 		overAll: sumScoreFields,
+
+		auditedAccounts: [yearFile],
+		annualBudgets: [yearFile],
 
 		modifiedAt: { type: Date, default: Date.now() },
 		createdAt: { type: Date, default: Date.now() },
