@@ -590,6 +590,7 @@ async function getData(ulbRes) {
 				'totalRecActual',
 				'RcptBudget',
 				'auditAnnualReport',
+				'appAnnualBudget',
 			],
 		},
 	}).exec();
@@ -618,6 +619,7 @@ async function getData(ulbRes) {
 				'auditAnnualReport',
 				'totalRecActual',
 				'RcptBudget',
+				'appAnnualBudget',
 			],
 		},
 	}).exec();
@@ -684,6 +686,8 @@ async function getData(ulbRes) {
 	//     },
 	//   });
 
+	const file20_21 = getValue(fsMapper2020_21, 'appAnnualBudget');
+	const auditedAccounts = [{year: '2020-21', fileName: file20_21.name, url: file20_21.url}];
 	const scoringData = {
 		name: ulbRes.name,
 		ulb: ulbRes._id,
@@ -694,6 +698,9 @@ async function getData(ulbRes) {
 		populationBucket: getPopulationBucket(ulbRes.population),
 		state: ulbRes.state,
 		currentFormStatus: fsData.currentFormStatus,
+
+		auditedAccounts,
+
 		totalBudgetDataPC_1: { score: totalBudgetDataPC_1 },
 		ownRevenuePC_2: { score: ownRevenuePC_2 },
 		pTaxPC_3: { score: pTaxPC_3 },

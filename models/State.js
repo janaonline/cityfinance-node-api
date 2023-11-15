@@ -7,6 +7,13 @@ const fiscalRanking = {
 	participatedUlbs: { type: Number, default: 0 },
 	rankedUlbs: { type: Number, default: 0 },
 	nonRankedUlbs: { type: Number, default: 0 },
+	auditedAccountsCount: { type: Number, default: 0 },
+	annualBudgetsCount: { type: Number, default: 0 },
+};
+
+const yearCount = {
+	year: { type: String, required: true, index: true },
+	total: { type: Number, default: 0 },
 };
 const StateSchema = new Schema(
 	{
@@ -15,6 +22,8 @@ const StateSchema = new Schema(
 		regionalName: { type: String, required: true, default: '' },
 		censusCode: { type: String, default: null },
 		fiscalRanking: [fiscalRanking],
+		auditedAccounts: [yearCount],
+		annualBudgets: [yearCount],
 		stateType: { type: String, enum: ['Large', 'Small', 'UT'] },
 		modifiedAt: { type: Date },
 		createdAt: { type: Date },
