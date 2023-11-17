@@ -77,13 +77,13 @@ function getNumberValue(fsMapper, type) {
 }
 // Get file.
 function getFile(fsMapper, type) {
-	
+
 	const indicator = fsMapper.find((e) => e.type === type);
 	if (!indicator) {
 		return false;
 	}
-	
-	return indicator.file;
+
+	return indicator;
 }
 
 // Function to calculate average.
@@ -503,33 +503,33 @@ function getProvisionalStatus(censusCode) {
 
 // appAnnualBudget
 // auditedAnnualFySt
+function pushFileData(fsMapper, indicator, year, data) {
+	const typeData = getFile(fsMapper, indicator);
 
+	if (typeData) {
+		const file = typeData.file;
+		data.push({ year, fileName: file.name, url: file.url, modelName: typeData.modelName || undefined });
+	}
+	return data;
+}
 // Check for document availability.
 function getannualBudget(fsMapper2020_21, fsMapper2021_22, fsMapper2022_23, fsMapper2023_24) {
-	const file20_21 = getFile(fsMapper2020_21, 'appAnnualBudget');
-	const file21_22 = getFile(fsMapper2021_22, 'appAnnualBudget');
-	const file22_23 = getFile(fsMapper2022_23, 'appAnnualBudget');
-	const file23_24 = getFile(fsMapper2023_24, 'appAnnualBudget');
-	return [
-		{ year: '2023-24', fileName: file23_24 ? file23_24.name : null, url: file23_24 ? file23_24.url : null },
-		{ year: '2022-23', fileName: file22_23 ? file22_23.name : null, url: file22_23 ? file22_23.url : null },
-		{ year: '2021-22', fileName: file21_22 ? file21_22.name : null, url: file21_22 ? file21_22.url : null },
-		{ year: '2020-21', fileName: file20_21 ? file20_21.name : null, url: file20_21 ? file20_21.url : null },
-	];
+
+	let data = [];
+	data = pushFileData(fsMapper2020_21, 'appAnnualBudget', '2020-21', data);
+	data = pushFileData(fsMapper2021_22, 'appAnnualBudget', '2021-22', data);
+	data = pushFileData(fsMapper2022_23, 'appAnnualBudget', '2022-23', data);
+	data = pushFileData(fsMapper2023_24, 'appAnnualBudget', '2023-24', data);
+	return data;
 }
 
 function getauditedAccounts(fsMapper2018_19, fsMapper2019_20, fsMapper2020_21, fsMapper2021_22) {
-	const file18_19 = getFile(fsMapper2018_19, 'auditedAnnualFySt');
-	const file19_20 = getFile(fsMapper2019_20, 'auditedAnnualFySt');
-	const file20_21 = getFile(fsMapper2020_21, 'auditedAnnualFySt');
-	const file21_22 = getFile(fsMapper2021_22, 'auditedAnnualFySt');
-
-	return [
-		{ year: '2021-22', fileName: file21_22 ? file21_22.name : null, url: file21_22 ? file21_22.url : null },
-		{ year: '2020-21', fileName: file20_21 ? file20_21.name : null, url: file20_21 ? file20_21.url : null },
-		{ year: '2019-20', fileName: file19_20 ? file19_20.name : null, url: file19_20 ? file19_20.url : null },
-		{ year: '2018-19', fileName: file18_19 ? file18_19.name : null, url: file18_19 ? file18_19.url : null },
-	];
+	let data = [];
+	data = pushFileData(fsMapper2018_19, 'auditedAnnualFySt', '2018-19', data);
+	data = pushFileData(fsMapper2019_20, 'auditedAnnualFySt', '2019-20', data);
+	data = pushFileData(fsMapper2020_21, 'auditedAnnualFySt', '2020-21', data);
+	data = pushFileData(fsMapper2021_22, 'auditedAnnualFySt', '2021-22', data);
+	return data;
 }
 
 async function getData(ulbRes) {
@@ -756,7 +756,7 @@ async function getData(ulbRes) {
 
 	const annualBudgets = getannualBudget(fsMapper2020_21, fsMapper2021_22, fsMapper2022_23, fsMapper2023_24);
 	const auditedAccounts = getauditedAccounts(fsMapper2018_19, fsMapper2019_20, fsMapper2020_21, fsMapper2021_22);
-	
+
 
 	const scoringData = {
 		name: ulbRes.name,
@@ -818,13 +818,14 @@ async function getData(ulbRes) {
 		// fsData,
 		// fsMapper2021_22
 	};
-	
+
 	// return { ulbRes, fsData, fsMapper }
 }
 module.exports.calculateFRScore = async (req, res) => {
 	try {
 		const data = req.body;
 		const censusCode = 802989;
+		const _id = ObjectId('5dd24b8f91344e2300876ca9');
 		// const sbCode = '980171';
 		// Consider only ULBs with isActive TRUE & population is not empty & not 0.
 		const condition = { isActive: true, population: { $nin: [null, 0] } };

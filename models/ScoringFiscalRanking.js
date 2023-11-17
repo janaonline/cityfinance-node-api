@@ -34,6 +34,7 @@ const yearFile = {
 	year: { type: String, required: true, index: true },
 	fileName: { type: String },
 	url: { type: String, default: null },
+	modelName: { type: String },
 };
 
 const ScoringFiscalRankingSchema = new Schema(
