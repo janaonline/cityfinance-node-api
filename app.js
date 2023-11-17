@@ -47,15 +47,17 @@ const corsOptions = {
   origin: (origin, callback) => {
     if (allowedOrigins.includes(origin)) {
       callback(null, true);
-    } else if (!origin) {
-      // If Origin header is not present, check the Host header
-      const host = request.headers.host;
-      if (allowedOrigins.some(allowedHost => host.endsWith(allowedHost))) {
-        callback(null, true);
-      } else {
-        callback(new Error("Not allowed by CORS"));
-      }
-    } else {
+    } 
+    // else if (!origin) {
+    //   // If Origin header is not present, check the Host header
+    //   const host = request.headers.host;
+    //   if (allowedOrigins.some(allowedHost => host.endsWith(allowedHost))) {
+    //     callback(null, true);
+    //   } else {
+    //     callback(new Error("Not allowed by CORS"));
+    //   }
+    // }
+     else {
       callback(new Error("Not allowed by CORS"));
     }
   },
