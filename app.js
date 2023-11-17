@@ -34,11 +34,24 @@ const allowedOrigins = [
   'https://api.aaina-mohua.in/',
  'https://cityfinance.in/'
 ];
-app.use(cors({
-    origin: allowedOrigins,
-    optionsSuccessStatus: 200 // some legacy browsers (IE11, various SmartTVs) choke on 204
-}));
+
+// app.use(cors({
+//     origin: allowedOrigins,
+//     optionsSuccessStatus: 200 // some legacy browsers (IE11, various SmartTVs) choke on 204
+// }));
+const corsOptions = {
+  origin: (origin, callback) => {
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
+};
+app.use(cors(corsOptions));
 app.use(expressSanitizer());
+
+
 
 app.use(express.static(path.join(__dirname, "public")));
 app.use(express.static(path.join(__dirname, "uploads")));
