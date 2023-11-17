@@ -32,7 +32,8 @@ app.use(function(req, res, next) {
 
 const allowedOrigins = [
   'https://stage.aaina-mohua.in/',
- 'https://staging.cityfinance.in/'
+ 'https://staging.cityfinance.in/',
+ 'https://api-stage.aaina-mohua.in/'
 ];
 app.use(cors({
     origin: allowedOrigins,
