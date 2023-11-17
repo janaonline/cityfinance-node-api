@@ -21,6 +21,8 @@ const port = config.APP.PORT;
 
 app.use(logger("dev"));
 app.use(function(req, res, next) {
+  const origin = req.headers.host ? `http://${2}` : '';
+  res.setHeader('Origin', origin);
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -34,6 +36,8 @@ const allowedOrigins = [
   'https://stage.aaina-mohua.in',
   'https://staging.cityfinance.in',
   'https://api-stage.aaina-mohua.in',
+  'https://democityfinanceapi.dhwaniris.in',
+  'https://democityfinance.dhwaniris.in'
 ];
 // app.use(cors({
 //     origin: allowedOrigins,
@@ -43,6 +47,14 @@ const corsOptions = {
   origin: (origin, callback) => {
     if (allowedOrigins.includes(origin)) {
       callback(null, true);
+    } else if (!origin) {
+      // If Origin header is not present, check the Host header
+      const host = request.headers.host;
+      if (allowedOrigins.some(allowedHost => host.endsWith(allowedHost))) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
     } else {
       callback(new Error("Not allowed by CORS"));
     }
