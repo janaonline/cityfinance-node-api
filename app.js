@@ -30,9 +30,9 @@ app.use(function(req, res, next) {
 // CORS middleware
 // app.use(cors());
 const allowedOrigins = [
-  'https://aaina.gov.in/',
-  'https://api.aaina-mohua.in/',
- 'https://cityfinance.in/'
+  'https://aaina.gov.in',
+  'https://api.aaina-mohua.in',
+ 'https://cityfinance.in'
 ];
 
 // app.use(cors({
