@@ -22,7 +22,7 @@ const port = config.APP.PORT;
 app.use(logger("dev"));
 app.use(function(req, res, next) {
   const origin = req.headers.host ? `http://${2}` : '';
-  res.setHeader('Origin', origin);
+  req.setHeader('Origin', origin);
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
