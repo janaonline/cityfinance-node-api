@@ -8,6 +8,7 @@ const FiscalRanking = require('../../models/FiscalRanking');
 const FiscalRankingMapper = require('../../models/FiscalRankingMapper');
 const ScoringFiscalRanking = require('../../models/ScoringFiscalRanking');
 const { registerCustomQueryHandler } = require('puppeteer');
+const { tableResponse } = require('../../service/common');
 
 async function getParticipatedUlbCount() {
 	const condition = { isActive: true, currentFormStatus: { $in: [8, 9, 10, 11] } };
@@ -104,7 +105,9 @@ module.exports.topRankedUlbs = async (req, res) => {
 			.limit(5)
 			.sort({ [sortBy]: sortOrder })
 			.exec();
-		return res.status(200).json({ ulbs: ulbRes });
+		return res.status(200).json({ 
+            data: ulbRes//tableResponse(ulbRes) 
+        });
 	} catch (error) {
 		console.log('error', error);
 		return res.status(400).json({
