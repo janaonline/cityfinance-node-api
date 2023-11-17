@@ -28,7 +28,7 @@ app.use(function(req, res, next) {
   next();
 });
 // CORS middleware
-// app.use(cors());
+app.use(cors());
 
 
 // app.use(cors({
@@ -45,26 +45,26 @@ const allowedOrigins = [
   'https://democityfinance.dhwaniris.in'
 ];
 
-const corsOptions = {
-  origin: (origin, callback) => {
-    if (allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } 
-    // else if (!origin) {
+// const corsOptions = {
+//   origin: (origin, callback) => {
+//     if (allowedOrigins.includes(origin)) {
+//       callback(null, true);
+//     } 
+//     // else if (!origin) {
 
-    //   // If Origin header is not present, check the Host header
-    //   const host = request.headers.host;
-    //   if (allowedOrigins.some(allowedHost => host.endsWith(allowedHost))) {
-    //     callback(null, true);
-    //   } else {
-    //     callback(new Error("Not allowed by CORS"));
-    //   }
-    // }
-     else {
-      callback(new Error("Not allowed by CORS"));
-    }
-  },
-};
+//     //   // If Origin header is not present, check the Host header
+//     //   const host = request.headers.host;
+//     //   if (allowedOrigins.some(allowedHost => host.endsWith(allowedHost))) {
+//     //     callback(null, true);
+//     //   } else {
+//     //     callback(new Error("Not allowed by CORS"));
+//     //   }
+//     // }
+//      else {
+//       callback(new Error("Not allowed by CORS"));
+//     }
+//   },
+// };
 // var corsOptionsDelegate = function (req, callback) {
 //   let corsOptions;
 //   if (allowedOrigins.indexOf(req.header('Origin')) !== -1) {
@@ -74,7 +74,7 @@ const corsOptions = {
 //   }
 //   callback(null, corsOptions) // callback expects two parameters: error and options
 // }
-app.use(cors(corsOptions));
+// app.use(cors(corsOptions));
 app.use(expressSanitizer());
 
 app.use(express.static(path.join(__dirname, "public")));
