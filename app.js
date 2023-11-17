@@ -28,7 +28,16 @@ app.use(function(req, res, next) {
   next();
 });
 // CORS middleware
-app.use(cors());
+// app.use(cors());
+const allowedOrigins = [
+  'https://aaina.gov.in/',
+  'https://api.aaina-mohua.in/',
+ 'https://cityfinance.in/'
+];
+app.use(cors({
+    origin: allowedOrigins,
+    optionsSuccessStatus: 200 // some legacy browsers (IE11, various SmartTVs) choke on 204
+}));
 app.use(expressSanitizer());
 
 app.use(express.static(path.join(__dirname, "public")));
