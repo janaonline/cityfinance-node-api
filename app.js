@@ -34,7 +34,8 @@ const allowedOrigins = [
   'https://stage.aaina-mohua.in/',
  'https://staging.cityfinance.in/',
  'https://api-stage.aaina-mohua.in/',
- 'https://democityfinanceapi.dhwaniris.in'
+ 'https://democityfinanceapi.dhwaniris.in',
+ 'https://democityfinance.dhwaniris.in'
 ];
 // app.use(cors({
 //     origin: allowedOrigins,
