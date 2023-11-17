@@ -29,8 +29,13 @@ app.use(function(req, res, next) {
 });
 // CORS middleware
 // app.use(cors());
+
+const allowedOrigins = [
+  'https://api-stage.aaina-mohua.in/',
+ 'https://staging.cityfinance.in/'
+];
 app.use(cors({
-    origin: ['https://democityfinanceapi.dhwaniris.in/api/v1/'],
+    origin: allowedOrigins,
     optionsSuccessStatus: 200 // some legacy browsers (IE11, various SmartTVs) choke on 204
 }));
 app.use(expressSanitizer());
