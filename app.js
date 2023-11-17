@@ -30,37 +30,50 @@ app.use(function(req, res, next) {
 // CORS middleware
 // app.use(cors());
 
-const allowedOrigins = [
-  'https://stage.aaina-mohua.in',
-  'https://staging.cityfinance.in',
-  'https://api-stage.aaina-mohua.in',
-  'https://democityfinanceapi.dhwaniris.in',
-  'https://democityfinance.dhwaniris.in'
-];
+
 // app.use(cors({
 //     origin: allowedOrigins,
 //     optionsSuccessStatus: 200 // some legacy browsers (IE11, various SmartTVs) choke on 204
 // }));
-const corsOptions = {
-  origin: (origin, callback) => {
-    if (allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } 
-    // else if (!origin) {
-    //   // If Origin header is not present, check the Host header
-    //   const host = request.headers.host;
-    //   if (allowedOrigins.some(allowedHost => host.endsWith(allowedHost))) {
-    //     callback(null, true);
-    //   } else {
-    //     callback(new Error("Not allowed by CORS"));
-    //   }
-    // }
-     else {
-      callback(new Error("Not allowed by CORS"));
-    }
-  },
-};
-app.use(cors(corsOptions));
+
+// const corsOptions = {
+//   origin: (origin, callback) => {
+//     if (allowedOrigins.includes(origin)) {
+//       callback(null, true);
+//     } 
+//     // else if (!origin) {
+//     //   // If Origin header is not present, check the Host header
+//     //   const host = request.headers.host;
+//     //   if (allowedOrigins.some(allowedHost => host.endsWith(allowedHost))) {
+//     //     callback(null, true);
+//     //   } else {
+//     //     callback(new Error("Not allowed by CORS"));
+//     //   }
+//     // }
+//      else {
+//       callback(new Error("Not allowed by CORS"));
+//     }
+//   },
+// };
+// app.use(cors(corsOptions));
+app.use((req, res, next) => {
+  const allowedOrigins = [
+    'http://127.0.0.1:5500',
+    'https://stage.aaina-mohua.in',
+    'https://staging.cityfinance.in',
+    'https://api-stage.aaina-mohua.in',
+    'https://democityfinanceapi.dhwaniris.in',
+    'https://democityfinance.dhwaniris.in'
+  ];
+  const origin = req.headers.origin;
+  if (allowedOrigins.includes(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+  }
+  res.header('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.header('Access-Control-Allow-Credentials', true);
+  return next();
+});
 app.use(expressSanitizer());
 
 app.use(express.static(path.join(__dirname, "public")));
