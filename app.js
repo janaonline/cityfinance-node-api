@@ -33,7 +33,8 @@ app.use(function(req, res, next) {
 const allowedOrigins = [
   'https://stage.aaina-mohua.in/',
  'https://staging.cityfinance.in/',
- 'https://api-stage.aaina-mohua.in/'
+ 'https://api-stage.aaina-mohua.in/',
+ 'https://democityfinanceapi.dhwaniris.in'
 ];
 app.use(cors({
     origin: allowedOrigins,
