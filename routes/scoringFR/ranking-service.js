@@ -22,9 +22,28 @@ async function getParticipatedState(limit, select = 'name') {
 	const condition = { isActive: true, 'fiscalRanking.participatedUlbsPercentage': { $ne: 0 } };
 	return await State.find(condition).select(select).sort({ 'fiscalRanking.participatedUlbsPercentage': -1 }).limit(limit).lean();
 }
+
 async function getAuditedUlbCount() {
 	const condition = { isActive: true };
 	return await Ulb.countDocuments(condition);
+}
+async function getDocCount(indicator) {
+	const condition = {
+		$and: [{
+			"type": indicator
+		}, {
+			$or: [{
+				"file.url": {
+					$ne: ""
+				}
+			}, {
+				"modelName": {
+					$ne: ""
+				}
+			}]
+		}]
+	};
+	return await FiscalRankingMapper.countDocuments(condition);
 }
 async function getBudgetUlbCount() {
 	const condition = { isActive: true };
@@ -39,8 +58,8 @@ module.exports.dashboard = async (req, res) => {
 		const populationBucket2 = await topCategoryUlb(2);
 		const populationBucket3 = await topCategoryUlb(3);
 		const populationBucket4 = await topCategoryUlb(4);
-		const auditedUlbCount = await getAuditedUlbCount();
-		const budgetUlbCount = await getBudgetUlbCount();
+		const auditedUlbCount = await getDocCount('auditedAnnualFySt');
+		const budgetUlbCount = await getDocCount('appAnnualBudget');
 
 		const data = {
 			participatedUlbCount: await getParticipatedUlbCount(),
