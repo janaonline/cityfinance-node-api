@@ -40,11 +40,11 @@ app.use(function(req, res, next) {
 
 const allowedOrigins = [
   // 'http://127.0.0.1:5500',
-  'https://stage.aaina-mohua.in',
-  'https://staging.cityfinance.in',
-  'https://api-stage.aaina-mohua.in',
-  'https://democityfinanceapi.dhwaniris.in',
-  'https://democityfinance.dhwaniris.in'
+  'stage.aaina-mohua.in',
+  'staging.cityfinance.in',
+  'api-stage.aaina-mohua.in',
+  'democityfinanceapi.dhwaniris.in',
+  'democityfinance.dhwaniris.in'
 ];
 
 // const corsOptions = {
@@ -79,9 +79,10 @@ const allowedOrigins = [
 // app.use(cors(corsOptions));
 app.use((req, res, next) => {
   try{
-    const parsedUrl = new URL(req.headers?.host);
-    const protocol = parsedUrl.protocol;
-    const origin = req.headers?.origin ?? `${protocol}//${req.headers.host}`;
+    // const parsedUrl = new URL(req.headers?.host);
+    // const protocol = parsedUrl.protocol;
+    const origin = req.headers?.host 
+    // ?? `${protocol}//${req.headers.host}`;
       if (allowedOrigins.includes(origin)) {
         // Allow requests from the specified origins
         res.setHeader("Access-Control-Allow-Origin", origin);
