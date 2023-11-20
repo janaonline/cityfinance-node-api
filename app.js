@@ -15,64 +15,39 @@ const verifyToken = require("./routes/auth/services/verifyToken").verifyToken;
 const ExpressError = require("./util/ExpressError");
 const emailCron = require('./cronjob/cron')
 
+
+const whitelist = [
+  'https://youtube.com',
+  'https://aaina.gov.in',
+  'https://api.aaina-mohua.in',
+  
+  'http://localhost:4200',
+  'https://democityfinance.dhwaniris.in',
+  'https://staging.cityfinance.in',
+  'https://cityfinance.in'
+];
+
+const corsOptions = {
+  origin: function (origin, callback) {
+    if (whitelist.indexOf(origin) !== -1 || !origin) {
+      callback(null, true)
+    } else {
+      callback(new Error('Not allowed by CORS'))
+    }
+  }
+}
+
+app.use(cors(corsOptions));
+
+
 app.use(json2xls.middleware);
 //Port Number
 const port = config.APP.PORT;
 
 app.use(logger("dev"));
-app.use(function(req, res, next) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-  res.setHeader('Access-Control-Allow-Credentials', true);
-  next();
-});
-// CORS middleware
-// app.use(cors());
-
-
-// app.use(cors({
-//     origin: allowedOrigins,
-//     optionsSuccessStatus: 200 // some legacy browsers (IE11, various SmartTVs) choke on 204
-// }));
-
-
-const allowedOrigins = [
-  // 'http://127.0.0.1:5500',
-  'stage.aaina-mohua.in',
-  'staging.cityfinance.in',
-  'api-stage.aaina-mohua.in',
-  'democityfinanceapi.dhwaniris.in',
-  'democityfinance.dhwaniris.in'
-];
-
-
-// app.use(cors(corsOptions));
-app.use((req, res, next) => {
-  try{
-    const host = req.headers?.host 
-      if (allowedOrigins.includes(host)) {
-        // Allow requests from the specified origins
-       const origin = `${req.headers.origin}`;
-      res.setHeader("Access-Control-Allow-Origin", origin);
-      }
-      // Allow specified methods
-      res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE");
-      // Allow specified headers
-      res.setHeader("Access-Control-Allow-Headers", "Content-Type");
-      // Allow credentials (if needed)
-      res.setHeader("Access-Control-Allow-Credentials", true);
-      // Handle preflight requests
-      if (req.method === "OPTIONS") {
-        return res.sendStatus(200);
-      }
-      // Move to the next middleware or route handler
-      next();
-  }catch(err){
-    return res.json({error: err.message})
-  }
-});
 app.use(expressSanitizer());
+
+
 
 app.use(express.static(path.join(__dirname, "public")));
 app.use(express.static(path.join(__dirname, "uploads")));
