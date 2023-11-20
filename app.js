@@ -44,21 +44,6 @@ const allowedOrigins = [
   'https://democityfinanceapi.dhwaniris.in',
   'https://democityfinance.dhwaniris.in'
 ];
-<<<<<<< HEAD
-// app.use(cors({
-//     origin: allowedOrigins,
-//     optionsSuccessStatus: 200 // some legacy browsers (IE11, various SmartTVs) choke on 204
-// }));
-const corsOptions = {
-  origin: (origin, callback) => {
-    if (allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error("Not allowed by CORS"));
-    }
-  },
-};
-=======
 
 // const corsOptions = {
 //   origin: (origin, callback) => {
@@ -89,7 +74,6 @@ const corsOptions = {
 //   }
 //   callback(null, corsOptions) // callback expects two parameters: error and options
 // }
->>>>>>> 679bceb6c66aba211525868eacc9c5c6a3ac0adf
 // app.use(cors(corsOptions));
 app.use(expressSanitizer());
 
