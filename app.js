@@ -17,6 +17,9 @@ const emailCron = require('./cronjob/cron')
 
 
 const whitelist = [
+  'https://stage.aaina-mohua.in',
+  'https://api-stage.aaina-mohua.in',
+
   'https://aaina.gov.in',
   'https://api.aaina-mohua.in',
   
