@@ -15,40 +15,39 @@ const verifyToken = require("./routes/auth/services/verifyToken").verifyToken;
 const ExpressError = require("./util/ExpressError");
 const emailCron = require('./cronjob/cron')
 
+
+const whitelist = [
+  'https://stage.aaina-mohua.in',
+  'https://api-stage.aaina-mohua.in',
+
+  'https://aaina.gov.in',
+  'https://api.aaina-mohua.in',
+  
+  'http://localhost:4200',
+  'https://democityfinance.dhwaniris.in',
+  'https://staging.cityfinance.in',
+  'https://cityfinance.in'
+];
+
+const corsOptions = {
+  origin: function (origin, callback) {
+    if (whitelist.indexOf(origin) !== -1 || !origin) {
+      callback(null, true)
+    } else {
+      callback(new Error('Not allowed by CORS'))
+    }
+  }
+}
+
+app.use(cors(corsOptions));
+
+
 app.use(json2xls.middleware);
 //Port Number
 const port = config.APP.PORT;
 
 app.use(logger("dev"));
-app.use(function(req, res, next) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-  res.setHeader('Access-Control-Allow-Credentials', true);
-  next();
-});
-// CORS middleware
-// app.use(cors());
-const allowedOrigins = [
-  'https://aaina.gov.in',
-  'https://api.aaina-mohua.in',
- 'https://cityfinance.in'
-];
 
-// app.use(cors({
-//     origin: allowedOrigins,
-//     optionsSuccessStatus: 200 // some legacy browsers (IE11, various SmartTVs) choke on 204
-// }));
-const corsOptions = {
-  origin: (origin, callback) => {
-    if (allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error("Not allowed by CORS"));
-    }
-  },
-};
-app.use(cors(corsOptions));
 app.use(expressSanitizer());
 
 
