@@ -83,7 +83,7 @@ module.exports.participatedState = async (req, res) => {
 		const data = req.body;
 		const condition = { isActive: true };
 		const states = await getParticipatedState(5, 'name fiscalRanking stateType');
-		return res.status(200).json({ states });
+		return res.status(200).json({ data: tableResponse(states) });
 	} catch (error) {
 		console.log('error', error);
 		return res.status(400).json({
@@ -97,10 +97,10 @@ module.exports.states = async (req, res) => {
 		let select = req.params.select ? `name fiscalRanking ${req.params.select}` : 'name';
 		const condition = { isActive: true };
 		const states = await State.find(condition).select(select).exec();
-		return res.status(200).json({ states });
+		return res.status(200).json({ data: tableResponse(states) });
 	} catch (error) {
 		console.log('error', error);
-		return res.status(400).json({
+		return res.status(400).json({ 
 			status: false,
 			message: error.message,
 		});
