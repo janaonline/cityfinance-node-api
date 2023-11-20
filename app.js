@@ -78,13 +78,13 @@ const allowedOrigins = [
 // }
 // app.use(cors(corsOptions));
 app.use((req, res, next) => {
-const parsedUrl = new URL(req.headers.host);
+const parsedUrl = new URL(req.headers?.host);
 const protocol = parsedUrl.protocol;
-const origin = req.headers.origin ?? `${protocol}//${req.headers.host}`;
-  // if (allowedOrigins.includes(origin)) {
+const origin = req.headers?.origin ?? `${protocol}//${req.headers.host}`;
+  if (allowedOrigins.includes(origin)) {
     // Allow requests from the specified origins
     res.setHeader("Access-Control-Allow-Origin", origin);
-  // }
+  }
   // Allow specified methods
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE");
   // Allow specified headers
