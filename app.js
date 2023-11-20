@@ -46,43 +46,15 @@ const allowedOrigins = [
   'democityfinance.dhwaniris.in'
 ];
 
-// const corsOptions = {
-//   origin: (origin, callback) => {
-//     if (allowedOrigins.includes(origin)) {
-//       callback(null, true);
-//     } 
-//     // else if (!origin) {
 
-//     //   // If Origin header is not present, check the Host header
-//     //   const host = request.headers.host;
-//     //   if (allowedOrigins.some(allowedHost => host.endsWith(allowedHost))) {
-//     //     callback(null, true);
-//     //   } else {
-//     //     callback(new Error("Not allowed by CORS"));
-//     //   }
-//     // }
-//      else {
-//       callback(new Error("Not allowed by CORS"));
-//     }
-//   },
-// };
-// var corsOptionsDelegate = function (req, callback) {
-//   let corsOptions;
-//   if (allowedOrigins.indexOf(req.header('Origin')) !== -1) {
-//     corsOptions = { origin } // reflect (enable) the requested origin in the CORS response
-//   } else {
-//     corsOptions = { origin: false } // disable CORS for this request
-//   }
-//   callback(null, corsOptions) // callback expects two parameters: error and options
-// }
 // app.use(cors(corsOptions));
 app.use((req, res, next) => {
   try{
     const host = req.headers?.host 
       if (allowedOrigins.includes(host)) {
         // Allow requests from the specified origins
-       const origin = `https://${req.headers.host}`;
-        res.setHeader("Access-Control-Allow-Origin", origin);
+       const origin = `${req.headers.origin}`;
+      res.setHeader("Access-Control-Allow-Origin", origin);
       }
       // Allow specified methods
       res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE");
