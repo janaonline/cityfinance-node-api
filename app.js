@@ -81,7 +81,7 @@ app.use((req, res, next) => {
     const host = req.headers?.host 
       if (allowedOrigins.includes(host)) {
         // Allow requests from the specified origins
-       const origin = `${req.protocol}//${req.headers.host}`;
+       const origin = `https://${req.headers.host}`;
         res.setHeader("Access-Control-Allow-Origin", origin);
       }
       // Allow specified methods
