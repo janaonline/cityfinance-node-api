@@ -19,7 +19,7 @@ async function topCategoryUlb(populationBucket) {
 	return await ScoringFiscalRanking.find(condition).select('name').limit(2);
 }
 async function getParticipatedState(limit, query = false, select = 'name') {
-	mongoose.set('debug', true);
+	// mongoose.set('debug', true);
 	const { stateType, ulbParticipationFilter, ulbRankingStatusFilter } = query;
 	let condition = { isActive: true, 'fiscalRanking.participatedUlbsPercentage': { $ne: 0 } };
 	if (['Large', 'Small', 'UT'].includes(stateType)) {
