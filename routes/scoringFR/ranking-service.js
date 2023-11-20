@@ -8,6 +8,7 @@ const FiscalRanking = require('../../models/FiscalRanking');
 const FiscalRankingMapper = require('../../models/FiscalRankingMapper');
 const ScoringFiscalRanking = require('../../models/ScoringFiscalRanking');
 const { registerCustomQueryHandler } = require('puppeteer');
+const { tableResponse } = require('../../service/common');
 
 async function getParticipatedUlbCount() {
 	const condition = { isActive: true, currentFormStatus: { $in: [8, 9, 10, 11] } };
@@ -21,9 +22,28 @@ async function getParticipatedState(limit, select = 'name') {
 	const condition = { isActive: true, 'fiscalRanking.participatedUlbsPercentage': { $ne: 0 } };
 	return await State.find(condition).select(select).sort({ 'fiscalRanking.participatedUlbsPercentage': -1 }).limit(limit).lean();
 }
+
 async function getAuditedUlbCount() {
 	const condition = { isActive: true };
 	return await Ulb.countDocuments(condition);
+}
+async function getDocCount(indicator) {
+	const condition = {
+		$and: [{
+			"type": indicator
+		}, {
+			$or: [{
+				"file.url": {
+					$ne: ""
+				}
+			}, {
+				"modelName": {
+					$ne: ""
+				}
+			}]
+		}]
+	};
+	return await FiscalRankingMapper.countDocuments(condition);
 }
 async function getBudgetUlbCount() {
 	const condition = { isActive: true };
@@ -38,8 +58,8 @@ module.exports.dashboard = async (req, res) => {
 		const populationBucket2 = await topCategoryUlb(2);
 		const populationBucket3 = await topCategoryUlb(3);
 		const populationBucket4 = await topCategoryUlb(4);
-		const auditedUlbCount = await getAuditedUlbCount();
-		const budgetUlbCount = await getBudgetUlbCount();
+		const auditedUlbCount = await getDocCount('auditedAnnualFySt');
+		const budgetUlbCount = await getDocCount('appAnnualBudget');
 
 		const data = {
 			participatedUlbCount: await getParticipatedUlbCount(),
@@ -63,7 +83,7 @@ module.exports.participatedState = async (req, res) => {
 		const data = req.body;
 		const condition = { isActive: true };
 		const states = await getParticipatedState(5, 'name fiscalRanking stateType');
-		return res.status(200).json({ states });
+		return res.status(200).json({ data: tableResponse(states) });
 	} catch (error) {
 		console.log('error', error);
 		return res.status(400).json({
@@ -77,10 +97,10 @@ module.exports.states = async (req, res) => {
 		let select = req.params.select ? `name fiscalRanking ${req.params.select}` : 'name';
 		const condition = { isActive: true };
 		const states = await State.find(condition).select(select).exec();
-		return res.status(200).json({ states });
+		return res.status(200).json({ data: tableResponse(states) });
 	} catch (error) {
 		console.log('error', error);
-		return res.status(400).json({
+		return res.status(400).json({ 
 			status: false,
 			message: error.message,
 		});
@@ -104,7 +124,7 @@ module.exports.topRankedUlbs = async (req, res) => {
 			.limit(5)
 			.sort({ [sortBy]: sortOrder })
 			.exec();
-		return res.status(200).json({ ulbs: ulbRes });
+		return res.status(200).json({ data: tableResponse(ulbRes) });
 	} catch (error) {
 		console.log('error', error);
 		return res.status(400).json({

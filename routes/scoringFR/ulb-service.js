@@ -8,7 +8,7 @@ const FiscalRanking = require('../../models/FiscalRanking');
 const FiscalRankingMapper = require('../../models/FiscalRankingMapper');
 const ScoringFiscalRanking = require('../../models/ScoringFiscalRanking');
 const { registerCustomQueryHandler } = require('puppeteer');
-
+const { tableResponse } = require('../../service/common');
 async function getScoreFR(populationBucket, indicator, sortOrder = -1) {
 	const condition = { isActive: true, populationBucket };
 	const ulb = await ScoringFiscalRanking.findOne(condition)
