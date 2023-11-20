@@ -19,6 +19,11 @@ Pending actions
 7. In CAGR >> time is 3 or 4?
 */
 
+/*
+ * AFS >> 2018-19, 2019-20, 2020-21, 2021-22
+ * Budget >> 2020-21, 2021-22, 2022-23, 2023-24
+ */
+
 function calculateRecommendationPercentage(score) {
 	let percent = 0;
 	score = Math.round(score);
@@ -69,6 +74,16 @@ function getNumberValue(fsMapper, type) {
 		return Number(indicator.value);
 	}
 	return 0;
+}
+// Get file.
+function getFile(fsMapper, type) {
+
+	const indicator = fsMapper.find((e) => e.type === type);
+	if (!indicator) {
+		return false;
+	}
+
+	return indicator;
 }
 
 // Function to calculate average.
@@ -244,7 +259,7 @@ function capExPerCapitaAvg(ulbRes, fsData, fsMapper2019_20, fsMapper2020_21, fsM
 		// Array is created to find average.
 		const arr = [capEx_2019_20, capEx_2020_21, capEx_2021_22];
 		const CapExPerCapitaAvg = ulbRes.population === 0 ? console.log('Population is 0') : calculateAverage(arr) / ulbRes.population;
-		
+
 		return parseFloat(CapExPerCapitaAvg.toFixed(2));
 	} catch (e) {
 		return 0;
@@ -411,7 +426,7 @@ function totalReceiptsVariance(fsMapper2019_20, fsMapper2020_21, fsMapper2021_22
 		const avgOfEstimate = calculateAverage(arr2);
 
 		// Acutal V/S Estimate
-		// Handling denominator = 0; 
+		// Handling denominator = 0;
 		const totalReceiptsVariance = avgOfEstimate === 0 ? 0 : ((avgOFActual - avgOfEstimate) / avgOfEstimate) * 100;
 		return parseFloat(totalReceiptsVariance.toFixed(2));
 	} catch (e) {
@@ -427,7 +442,7 @@ function ownRevRecOut(fsMapperNoYear, fsMapper2021_22) {
 		const ownRevArea = getNumberValue(fsMapperNoYear, 'totalOwnRevenueArea');
 		const ownRev2021_22 = getNumberValue(fsMapper2021_22, 'totalOwnRevenue');
 
-		// Handling denominator = 0; 
+		// Handling denominator = 0;
 		const ownRevRecOut = ownRevArea === 0 || ownRev2021_22 === 0 ? 0 : (ownRevArea / ownRev2021_22) * 365;
 		return parseFloat(ownRevRecOut.toFixed(2));
 	} catch (e) {
@@ -486,8 +501,39 @@ function getProvisionalStatus(censusCode) {
 	return 0;
 }
 
+// appAnnualBudget
+// auditedAnnualFySt
+function pushFileData(fsMapper, indicator, year, data) {
+	const typeData = getFile(fsMapper, indicator);
+
+	if (typeData) {
+		const file = typeData.file;
+		data.push({ year, fileName: file.name, url: file.url, modelName: typeData.modelName || undefined });
+	}
+	return data;
+}
+// Check for document availability.
+function getannualBudget(fsMapper2020_21, fsMapper2021_22, fsMapper2022_23, fsMapper2023_24) {
+
+	let data = [];
+	data = pushFileData(fsMapper2020_21, 'appAnnualBudget', '2020-21', data);
+	data = pushFileData(fsMapper2021_22, 'appAnnualBudget', '2021-22', data);
+	data = pushFileData(fsMapper2022_23, 'appAnnualBudget', '2022-23', data);
+	data = pushFileData(fsMapper2023_24, 'appAnnualBudget', '2023-24', data);
+	return data;
+}
+
+function getauditedAccounts(fsMapper2018_19, fsMapper2019_20, fsMapper2020_21, fsMapper2021_22) {
+	let data = [];
+	data = pushFileData(fsMapper2018_19, 'auditedAnnualFySt', '2018-19', data);
+	data = pushFileData(fsMapper2019_20, 'auditedAnnualFySt', '2019-20', data);
+	data = pushFileData(fsMapper2020_21, 'auditedAnnualFySt', '2020-21', data);
+	data = pushFileData(fsMapper2021_22, 'auditedAnnualFySt', '2021-22', data);
+	return data;
+}
+
 async function getData(ulbRes) {
-	console.log('----in--------');
+	// console.log('----in--------');
 	// moongose.set('debug', true);
 
 	// ulbRes.forEach(element => {
@@ -503,13 +549,15 @@ async function getData(ulbRes) {
 	const design_year2020_21 = '606aadac4dff55e6c075c507';
 	const design_year2021_22 = '606aaf854dff55e6c075d219';
 	const design_year2022_23 = '606aafb14dff55e6c075d3ae';
+	const design_year2023_24 = '606aafc14dff55e6c075d3ec';
+
 	const condition = {
 		ulb: ObjectId(ulbRes._id),
 		// ulb: ObjectId(ulb),
 		design_year: ObjectId(design_year2022_23),
 	};
 	let fsData = await FiscalRanking.findOne(condition).lean();
-	if(!fsData) {
+	if (!fsData) {
 		return 'no data';
 	}
 
@@ -549,6 +597,7 @@ async function getData(ulbRes) {
 				'CaptlExpWaterSupply',
 				'CaptlExpSanitation',
 				'CaptlExp',
+				'auditedAnnualFySt', //AFS
 			],
 		},
 	}).exec();
@@ -568,6 +617,7 @@ async function getData(ulbRes) {
 				'totalRecActual',
 				'RcptBudget',
 				'auditAnnualReport',
+				'auditedAnnualFySt', //AFS
 			],
 		},
 	}).exec();
@@ -590,7 +640,8 @@ async function getData(ulbRes) {
 				'totalRecActual',
 				'RcptBudget',
 				'auditAnnualReport',
-				'appAnnualBudget',
+				'auditedAnnualFySt', //AFS
+				'appAnnualBudget', //budget
 			],
 		},
 	}).exec();
@@ -619,10 +670,27 @@ async function getData(ulbRes) {
 				'auditAnnualReport',
 				'totalRecActual',
 				'RcptBudget',
-				'appAnnualBudget',
+				'auditedAnnualFySt', //AFS
+				'appAnnualBudget', //budget
 			],
 		},
 	}).exec();
+
+	const fsMapper2022_23 = await FiscalRankingMapper.find({
+		ulb: ObjectId(ulbRes._id),
+		year: ObjectId(design_year2022_23),
+		type: {
+			$in: ['appAnnualBudget'], //budget
+		},
+	}).lean();
+
+	const fsMapper2023_24 = await FiscalRankingMapper.find({
+		ulb: ObjectId(ulbRes._id),
+		year: ObjectId(design_year2023_24),
+		type: {
+			$in: ['appAnnualBudget'], //budget
+		},
+	}).lean();
 
 	// 1. Total Budget size per capita (Actual Total Reciepts) - RM
 	const totalBudgetDataPC_1 = totalBudgetPerCapita(ulbRes, fsData, fsMapper2021_22);
@@ -686,8 +754,10 @@ async function getData(ulbRes) {
 	//     },
 	//   });
 
-	const file20_21 = getValue(fsMapper2020_21, 'appAnnualBudget');
-	const auditedAccounts = [{year: '2020-21', fileName: file20_21.name, url: file20_21.url}];
+	const annualBudgets = getannualBudget(fsMapper2020_21, fsMapper2021_22, fsMapper2022_23, fsMapper2023_24);
+	const auditedAccounts = getauditedAccounts(fsMapper2018_19, fsMapper2019_20, fsMapper2020_21, fsMapper2021_22);
+
+
 	const scoringData = {
 		name: ulbRes.name,
 		ulb: ulbRes._id,
@@ -699,6 +769,7 @@ async function getData(ulbRes) {
 		state: ulbRes.state,
 		currentFormStatus: fsData.currentFormStatus,
 
+		annualBudgets,
 		auditedAccounts,
 
 		totalBudgetDataPC_1: { score: totalBudgetDataPC_1 },
@@ -720,9 +791,8 @@ async function getData(ulbRes) {
 		propUnderTaxCollNet_15: { score: propUnderTaxCollNet_15 },
 		// isProvisional: getProvisionalStatus(ulbRes.censusCode),
 	};
-
 	// console.log(scoringData);
-	
+
 	await ScoringFiscalRanking.create(scoringData);
 	return {
 		status: 'true',
@@ -755,17 +825,18 @@ module.exports.calculateFRScore = async (req, res) => {
 	try {
 		const data = req.body;
 		const censusCode = 802989;
+		const _id = ObjectId('5dd24b8f91344e2300876ca9');
 		// const sbCode = '980171';
 		// Consider only ULBs with isActive TRUE & population is not empty & not 0.
-		const condition = { isActive: true, population: { $nin: [null, 0] }};
+		const condition = { isActive: true, population: { $nin: [null, 0] } };
 		const ulbRes = await Ulb.find(condition)
-		// .limit(4000)
+			// .limit(4000)
 			.lean();
 		console.log('ulbRes.len----------', ulbRes.length);
 
 		ulbRes.forEach(async (ulb) => {
-			if (!await ScoringFiscalRanking.findOne({ ulb: ulb._id })) {
-			await getData(ulb);
+			if (!(await ScoringFiscalRanking.findOne({ ulb: ulb._id }))) {
+				await getData(ulb);
 			}
 		});
 		return res.status(200).json({ message: 'Done' });

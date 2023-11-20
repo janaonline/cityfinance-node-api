@@ -5,7 +5,10 @@ module.exports.camelize = (dashString = '')=>{
              m => m?.toLowerCase() );
 }
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> 679bceb6c66aba211525868eacc9c5c6a3ac0adf
 module.exports.tableResponse = array => {
     function flattenObject(obj, prefix = '') {
         return Object.keys(obj).reduce((acc, key) => {
