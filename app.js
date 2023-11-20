@@ -78,25 +78,29 @@ const allowedOrigins = [
 // }
 // app.use(cors(corsOptions));
 app.use((req, res, next) => {
-const parsedUrl = new URL(req.headers?.host);
-const protocol = parsedUrl.protocol;
-const origin = req.headers?.origin ?? `${protocol}//${req.headers.host}`;
-  if (allowedOrigins.includes(origin)) {
-    // Allow requests from the specified origins
-    res.setHeader("Access-Control-Allow-Origin", origin);
+  try{
+    const parsedUrl = new URL(req.headers?.host);
+    const protocol = parsedUrl.protocol;
+    const origin = req.headers?.origin ?? `${protocol}//${req.headers.host}`;
+      if (allowedOrigins.includes(origin)) {
+        // Allow requests from the specified origins
+        res.setHeader("Access-Control-Allow-Origin", origin);
+      }
+      // Allow specified methods
+      res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE");
+      // Allow specified headers
+      res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+      // Allow credentials (if needed)
+      res.setHeader("Access-Control-Allow-Credentials", true);
+      // Handle preflight requests
+      if (req.method === "OPTIONS") {
+        return res.sendStatus(200);
+      }
+      // Move to the next middleware or route handler
+      next();
+  }catch(err){
+    return res.json({error: err.message})
   }
-  // Allow specified methods
-  res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE");
-  // Allow specified headers
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
-  // Allow credentials (if needed)
-  res.setHeader("Access-Control-Allow-Credentials", true);
-  // Handle preflight requests
-  if (req.method === "OPTIONS") {
-    return res.sendStatus(200);
-  }
-  // Move to the next middleware or route handler
-  next();
 });
 app.use(expressSanitizer());
 
