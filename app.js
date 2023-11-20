@@ -80,8 +80,7 @@ const allowedOrigins = [
 app.use((req, res, next) => {
 const parsedUrl = new URL(req.headers.host);
 const protocol = parsedUrl.protocol;
-const origin = req.headers.origin 
-// ?? `${protocol}//${req.headers.host}`;
+const origin = req.headers.origin ?? `${protocol}//${req.headers.host}`;
   // if (allowedOrigins.includes(origin)) {
     // Allow requests from the specified origins
     res.setHeader("Access-Control-Allow-Origin", origin);
