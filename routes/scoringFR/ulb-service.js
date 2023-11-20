@@ -45,6 +45,23 @@ module.exports.getUlbDetails = async (req, res) => {
 	}
 };
 
+module.exports.getUlbsBySate = async (req, res) => {
+	try {
+		moongose.set('debug', true);
+		const state = ObjectId(req.params.stateId);
+		const condition = { isActive: true, state };
+		const ulbs = await ScoringFiscalRanking.find(condition).lean();
+		const data = tableResponse(ulbs);
+		return res.status(200).json({ data });
+	} catch (error) {
+		console.log('error', error);
+		return res.status(400).json({
+			status: false,
+			message: error.message,
+		});
+	}
+};
+
 module.exports.getSearchedUlbDetails = async (req, res) => {
 	try {
 		moongose.set('debug', true);
