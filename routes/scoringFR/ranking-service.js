@@ -106,7 +106,81 @@ module.exports.topRankedUlbs = async (req, res) => {
 			.sort({ [sortBy]: sortOrder })
 			.exec();
 		return res.status(200).json({ 
-            data: ulbRes//tableResponse(ulbRes) 
+            "columns": [
+                {
+                  "label": "S.No",
+                  "key": "sNo",
+                  "sort": 0,
+                  "sortable": false,
+                  "class": "th-common-cls",
+                  "width": "3"
+                },
+                {
+                  "label": "State Name",
+                  "key": "stateName",
+                  "sort": 1,
+                  "sortable": true,
+                  "class": "th-common-cls",
+                  "width": "8"
+                },
+                {
+                  "label": "State Type",
+                  "key": "stateType",
+                  "sortable": false,
+                  "sort": 1,
+                  "class": "th-common-cls",
+                  "width": "6"
+                },
+                {
+                  "label": "Total ULBs",
+                  "key": "totalULBs",
+                  "sortable": false,
+                  "sort": 0,
+                  "class": "th-common-cls",
+                  "width": "6"
+                },
+                {
+                  "label": "Participated ULBs",
+                  "key": "participatedULBs",
+                  "sortable": true,
+                  "sort": 1,
+                  "class": "th-common-cls",
+                  "width": "7"
+                },
+                {
+                  "label": "Participated ULBs",
+                  "key": "participatedULBs",
+                  "sortable": true,
+                  "sort": 1,
+                  "class": "th-common-cls",
+                  "width": "7"
+                },
+                {
+                  "label": "Ranked ULBs",
+                  "key": "rankedULBs",
+                  "sortable": true,
+                  "sort": 1,
+                  "class": "th-common-cls",
+                  "width": "6"
+                },
+                {
+                  "label": "Non Ranked ULBs",
+                  "key": "nonRankedULBs",
+                  "sortable": true,
+                  "sort": 1,
+                  "class": "th-common-cls",
+                  "width": "7"
+                },
+                {
+                  "label": "Ranked to Total(%)",
+                  "key": "rankedtoTotal",
+                  "sortable": true,
+                  "sort": 1,
+                  "class": "th-color-cls",
+                  "width": "7"
+                }
+              ],
+            data: tableResponse(ulbRes) 
         });
 	} catch (error) {
 		console.log('error', error);

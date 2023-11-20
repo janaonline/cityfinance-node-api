@@ -48,7 +48,7 @@ const corsOptions = {
     }
   },
 };
-app.use(cors(corsOptions));
+// app.use(cors(corsOptions));
 app.use(expressSanitizer());
 
 app.use(express.static(path.join(__dirname, "public")));
