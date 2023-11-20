@@ -14,7 +14,6 @@ const expressSanitizer = require("express-sanitizer");
 const verifyToken = require("./routes/auth/services/verifyToken").verifyToken;
 const ExpressError = require("./util/ExpressError");
 const emailCron = require('./cronjob/cron')
-const {URL} = require('url')
 
 app.use(json2xls.middleware);
 //Port Number
@@ -79,12 +78,10 @@ const allowedOrigins = [
 // app.use(cors(corsOptions));
 app.use((req, res, next) => {
   try{
-    // const parsedUrl = new URL(req.headers?.host);
-    // const protocol = parsedUrl.protocol;
-    const origin = req.headers?.host 
-    // ?? `${protocol}//${req.headers.host}`;
-      if (allowedOrigins.includes(origin)) {
+    const host = req.headers?.host 
+      if (allowedOrigins.includes(host)) {
         // Allow requests from the specified origins
+       const origin = `${req.protocol}//${req.headers.host}`;
         res.setHeader("Access-Control-Allow-Origin", origin);
       }
       // Allow specified methods
