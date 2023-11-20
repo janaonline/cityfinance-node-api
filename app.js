@@ -17,7 +17,6 @@ const emailCron = require('./cronjob/cron')
 
 
 const whitelist = [
-  'https://youtube.com',
   'https://aaina.gov.in',
   'https://api.aaina-mohua.in',
   
