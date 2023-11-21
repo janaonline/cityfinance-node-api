@@ -23,15 +23,15 @@ async function getParticipatedState(limit, query = false, select = 'name') {
 	const { stateType, ulbParticipationFilter, ulbRankingStatusFilter } = query;
 	let condition = { isActive: true, 'fiscalRanking.participatedUlbsPercentage': { $ne: 0 } };
 	if (['Large', 'Small', 'UT'].includes(stateType)) {
-		condition = { ...condition, stateType }
+		condition = { ...condition, stateType };
 	}
 	if (['participated', 'nonParticipated'].includes(ulbParticipationFilter)) {
 		const participateCond = ulbParticipationFilter === 'participated' ? { '$ne': 0 } : 0;
-		condition = { ...condition, 'fiscalRanking.participatedUlbs': participateCond }
+		condition = { ...condition, 'fiscalRanking.participatedUlbs': participateCond };
 	}
 	if (['ranked', 'nonRanked'].includes(ulbRankingStatusFilter)) {
 		const rankedCond = ulbRankingStatusFilter === 'ranked' ? { '$ne': 0 } : 0;
-		condition = { ...condition, 'fiscalRanking.rankedUlbs': rankedCond }
+		condition = { ...condition, 'fiscalRanking.rankedUlbs': rankedCond };
 	}
 	return await State.find(condition).select(select).sort({ 'fiscalRanking.participatedUlbsPercentage': -1 }).limit(limit).lean();
 }
@@ -42,19 +42,25 @@ async function getAuditedUlbCount() {
 }
 async function getDocCount(indicator) {
 	const condition = {
-		$and: [{
-			"type": indicator
-		}, {
-			$or: [{
-				"file.url": {
-					$ne: ""
-				}
-			}, {
-				"modelName": {
-					$ne: ""
-				}
-			}]
-		}]
+		$and: [
+			{
+				'type': indicator,
+			},
+			{
+				$or: [
+					{
+						'file.url': {
+							$ne: '',
+						},
+					},
+					{
+						'modelName': {
+							$ne: '',
+						},
+					},
+				],
+			},
+		],
 	};
 	return await FiscalRankingMapper.countDocuments(condition);
 }
@@ -93,112 +99,221 @@ module.exports.dashboard = async (req, res) => {
 
 function tableRes(states) {
 	let table = {
-		"columns": [
+		'columns': [
 			{
-				"label": "S.No",
-				"key": "sNo",
-				"sort": 0,
-				"sortable": false,
-				"class": "th-common-cls",
-				"width": "3"
+				'label': 'S.No',
+				'key': 'sNo',
+				'sort': 0,
+				'sortable': false,
+				'class': 'th-common-cls',
+				'width': '3',
 			},
 			{
-				"label": "State Name",
-				"key": "stateName",
-				"sort": 1,
-				"sortable": true,
-				"class": "th-common-cls",
-				"width": "8"
+				'label': 'State Name',
+				'key': 'stateName',
+				'sort': 1,
+				'sortable': true,
+				'class': 'th-common-cls',
+				'width': '8',
 			},
 			{
-				"label": "State Type",
-				"key": "stateType",
-				"sortable": false,
-				"sort": 1,
-				"class": "th-common-cls",
-				"width": "6"
+				'label': 'State Type',
+				'key': 'stateType',
+				'sortable': false,
+				'sort': 1,
+				'class': 'th-common-cls',
+				'width': '6',
 			},
 			{
-				"label": "Total ULBs",
-				"key": "totalULBs",
-				"sortable": false,
-				"sort": 0,
-				"class": "th-common-cls",
-				"width": "6"
+				'label': 'Total ULBs',
+				'key': 'totalULBs',
+				'sortable': false,
+				'sort': 0,
+				'class': 'th-common-cls',
+				'width': '6',
 			},
 			{
-				"label": "Participated ULBs",
-				"key": "participatedULBs",
-				"sortable": true,
-				"sort": 1,
-				"class": "th-common-cls",
-				"width": "7"
+				'label': 'Participated ULBs',
+				'key': 'participatedULBs',
+				'sortable': true,
+				'sort': 1,
+				'class': 'th-common-cls',
+				'width': '7',
 			},
 			{
-				"label": "Participated ULBs",
-				"key": "participatedULBs",
-				"sortable": true,
-				"sort": 1,
-				"class": "th-common-cls",
-				"width": "7"
+				'label': 'Participated ULBs',
+				'key': 'participatedULBs',
+				'sortable': true,
+				'sort': 1,
+				'class': 'th-common-cls',
+				'width': '7',
 			},
 			{
-				"label": "Ranked ULBs",
-				"key": "rankedULBs",
-				"sortable": true,
-				"sort": 1,
-				"class": "th-common-cls",
-				"width": "6"
+				'label': 'Ranked ULBs',
+				'key': 'rankedULBs',
+				'sortable': true,
+				'sort': 1,
+				'class': 'th-common-cls',
+				'width': '6',
 			},
 			{
-				"label": "Non Ranked ULBs",
-				"key": "nonRankedULBs",
-				"sortable": true,
-				"sort": 1,
-				"class": "th-common-cls",
-				"width": "7"
+				'label': 'Non Ranked ULBs',
+				'key': 'nonRankedULBs',
+				'sortable': true,
+				'sort': 1,
+				'class': 'th-common-cls',
+				'width': '7',
 			},
 			{
-				"label": "Ranked to Total(%)",
-				"key": "rankedtoTotal",
-				"sortable": true,
-				"sort": 1,
-				"class": "th-color-cls",
-				"width": "7"
-			}
+				'label': 'Ranked to Total(%)',
+				'key': 'rankedtoTotal',
+				'sortable': true,
+				'sort': 1,
+				'class': 'th-color-cls',
+				'width': '7',
+			},
 		],
-		"name": "",
-		"data": [],
-		"lastRow": [
-			"",
-			"",
-			"Total",
-			"$sum",
-			"$sum",
-			"$sum",
-			"$sum",
-			"$sum",
-			"$sum"
-		]
+		'name': '',
+		'data': [],
+		'lastRow': ['', '', 'Total', '$sum', '$sum', '$sum', '$sum', '$sum', '$sum'],
 	};
 	let i = 1;
 	for (const state of states) {
 		const ele = {
-			"_id": state._id,
-			"sNo": i++,
-			"stateType": state.stateType,
-			"totalULBs": state.fiscalRanking[0].totalUlbs,
-			"participatedULBs": state.fiscalRanking[0].participatedUlbs,
-			"rankedULBs": state.fiscalRanking[0].rankedUlbs,
-			"nonRankedULBs": state.fiscalRanking[0].nonRankedUlbs,
-			"stateName": state.name,
-			"rankedtoTotal": 2,
-			"stateNameLink": "/rankings/participated-ulbs"
+			'_id': state._id,
+			'sNo': i++,
+			'stateType': state.stateType,
+			'totalULBs': state.fiscalRanking[0].totalUlbs,
+			'participatedULBs': state.fiscalRanking[0].participatedUlbs,
+			'rankedULBs': state.fiscalRanking[0].rankedUlbs,
+			'nonRankedULBs': state.fiscalRanking[0].nonRankedUlbs,
+			'stateName': state.name,
+			'rankedtoTotal': 2,
+			'stateNameLink': '/rankings/participated-ulbs',
 		};
 		table.data.push(ele);
 	}
 	return table;
 }
+
+// API - topRankedULBs
+function findassessmentParameterScore(ulbRes, key) {
+	ulbScore = [];
+	for (ulb of ulbRes) {
+		var ulbData = {
+			[`${key}Rank`]: ulb[key].rank,
+			'ulbName': ulb.name,
+			'ulbNameLink': `/rankings/ulb/${ulb.censusCode ? ulb.censusCode : ulb.sbCode ? ulb.sbCode : ulb.ulb}`,
+			'overallScore': ulb.overAll.score,
+			'overallRrank': ulb.overAll.rank,
+		};
+		ulbScore.push(ulbData);
+	}
+	return ulbScore;
+}
+
+// Function to fetch 5 ULBs Score
+var ulbScore = [];
+function fetchFiveUlbs(ulbRes, sortBy) {
+	if (sortBy === 'overAll') {
+		ulbScore = [];
+		for (ulb of ulbRes) {
+			const ulbData = {
+				'overallRank': ulb.overAll.rank,
+				'ulbName': ulb.name,
+				'ulbNameLink': `/rankings/ulb/${ulb.censusCode ? ulb.censusCode : ulb.sbCode ? ulb.sbCode : ulb.ulb}`,
+				'totalUlbScore': ulb.overAll.score,
+				'resourceMobilizationScore': ulb.resourceMobilization.score,
+				'expenditurePerformanceScore': ulb.expenditurePerformance.score,
+				'fiscalGovernanceScore': ulb.fiscalGovernance.score,
+			};
+			ulbScore.push(ulbData);
+		}
+	} else {
+		findassessmentParameterScore(ulbRes, sortBy);
+	}
+	return ulbScore;
+}
+
+function findassessmentParameter(sortBy) {
+	function findParameter(label, score) {
+		assessmentParameter = [
+			{
+				'label': `${label} Rank`,
+				'key': `${sortBy}Rank`,
+				'sort': 1,
+				'sortable': true,
+			},
+			{
+				'label': 'ULB Name',
+				'key': 'ulbName',
+			},
+			{
+				'label': `${label} Score`,
+				'info': `Max Score: ${score}`,
+				'key': `${sortBy}Score`,
+			},
+			{
+				'label': 'Total ULB Score',
+				'info': 'Max Score: 1200',
+				'key': 'overallScore',
+			},
+			{
+				'label': 'Rank',
+				'key': 'overallRank',
+				'sort': 1,
+				'sortable': true,
+			},
+		];
+		return assessmentParameter;
+	}
+
+	let assessmentParameter = [];
+	if (sortBy === 'overAll') {
+		assessmentParameter = [
+			{
+				'label': 'Rank',
+				'key': 'overallRank',
+				'sort': 1,
+				'sortable': true,
+			},
+			{
+				'label': 'ULB Name',
+				'key': 'ulbName',
+			},
+			{
+				'label': 'Total Ulb Score',
+				'info': 'Max Score: 1200',
+				'key': 'overallScore',
+			},
+			{
+				'label': 'RM Score',
+				'info': 'Max Score: 600',
+				'key': 'resourceMobilizationScore',
+			},
+			{
+				'label': 'EP Score',
+				'info': 'Max Score: 300',
+				'key': 'expenditurePerformanceScore',
+			},
+			{
+				'label': 'FG Score',
+				'info': 'Max Score: 300',
+				'key': 'fiscalGovernanceScore',
+			},
+		];
+	} else if (sortBy === 'resourceMobilization') {
+		findParameter('RM', 600);
+	} else if (sortBy === 'expenditurePerformance') {
+		findParameter('EP', 300);
+	} else if (sortBy === 'fiscalGovernance') {
+		findParameter('FG', 300);
+	}
+	return assessmentParameter;
+}
+
+// Audited and Budget documents table format.
+
 module.exports.participatedState = async (req, res) => {
 	try {
 		const query = req.query;
@@ -213,12 +328,123 @@ module.exports.participatedState = async (req, res) => {
 		});
 	}
 };
+function stateTable(indicator, states) {
+	const table = {
+		'status': true,
+		'message': 'Successfully saved data!',
+		'columns': [
+			{
+				'label': 'S. No',
+				'key': 'sNo',
+			},
+			{
+				'label': 'State Name',
+				'key': 'stateName',
+				'sort': 1,
+				'sortable': true,
+			},
+			{
+				'label': 'No of ulbs',
+				'key': 'noOfUlbs',
+			},
+		],
+		'subHeaders': [],
+		'name': '',
+		'data': [],
+	};
+	let years = [];
+	if (indicator === 'annualBudgets') {
+		const cols = [
+			{
+				'label': 'Annual Budget Available',
+				'key': '2020-21',
+				'colspan': 4,
+			},
+			{
+				'label': '',
+				'key': '2021-22',
+				'hidden': true,
+			},
+			{
+				'label': '',
+				'key': '2022-23',
+				'hidden': true,
+			},
+			{
+				'label': '',
+				'key': '2023-24',
+				'hidden': true,
+			},
+		];
+		table.columns = [...table.columns, ...cols];
+		years = ['2020-21', '2021-22', '2022-23', '2023-24'];
+		table.subHeaders = ['', '', '', ...years];
+
+	} else {
+		const cols = [
+			{
+				'label': 'Annual Financial Statements Available',
+				'key': '2018-19',
+				'colspan': 4,
+			},
+			{
+				'label': '',
+				'key': '2019-20',
+				'hidden': true,
+			},
+			{
+				'label': '',
+				'key': '2020-21',
+				'hidden': true,
+			},
+			{
+				'label': '',
+				'key': '2021-22',
+				'hidden': true,
+			},
+		];
+		table.columns = [...table.columns, ...cols];
+		years = ['2018-19', '2019-20', '2020-21', '2021-22'];
+		table.subHeaders = ['', '', '', ...years];
+	}
+	let i = 1;
+	for (const state of states) {
+		const ele = {
+			'sNo': i++,
+			'totalULBs': state.fiscalRanking[0].totalUlbs,
+			'stateName': state.name,
+			'stateNameLink': '/rankings/ulb/685965',
+		};
+		years.forEach((year) => {
+			ele[year] = getDocYearCount(state, indicator, year);
+		});
+		table.data.push(ele);
+	}
+	return table;
+}
+function getDocYearCount(state, indicator, year) {
+	const yearData = state[indicator].find((e) => e.year === year);
+	let total = 0;
+	if (yearData) {
+		total = yearData.total;
+	}
+	return total;
+}
 module.exports.states = async (req, res) => {
 	try {
 		let select = req.params.select ? `name fiscalRanking ${req.params.select}` : 'name';
 		const condition = { isActive: true };
 		const states = await State.find(condition).select(select).exec();
-		return res.status(200).json({ data: tableResponse(states) });
+
+		let data = states;
+		if (req.params.select) {
+			data = stateTable(req.params.select, states);
+		}
+		return res.status(200).json({
+			data,
+		});
+
+		// return res.status(200).json({ data: tableResponse(states) });
 	} catch (error) {
 		console.log('error', error);
 		return res.status(400).json({
@@ -238,6 +464,7 @@ module.exports.topRankedUlbs = async (req, res) => {
 		if (populationBucket) {
 			condition = { ...condition, populationBucket };
 		}
+
 		sortBy = sortBy ? sortBy : 'overAll';
 		sortOrder = sortOrder === 'desc' ? -1 : 1;
 		const ulbRes = await ScoringFiscalRanking.find(condition)
@@ -245,7 +472,18 @@ module.exports.topRankedUlbs = async (req, res) => {
 			.limit(5)
 			.sort({ [sortBy]: sortOrder })
 			.exec();
-		return res.status(200).json({ data: tableResponse(ulbRes) });
+		// console.log(ulbRes)
+
+		fetchFiveUlbs(ulbRes, sortBy);
+		var assessmentParameter = findassessmentParameter(sortBy);
+
+		return res.status(200).json({
+			'status': true,
+			'message': 'Successfully fetched data!',
+			'columns': assessmentParameter,
+			'data': [...ulbScore],
+		});
+		// return res.status(200).json({ data: tableResponse(ulbRes) });
 	} catch (error) {
 		console.log('error', error);
 		return res.status(400).json({
