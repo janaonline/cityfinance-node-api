@@ -39,6 +39,65 @@ async function getScoredUlbsCount(state_id, type) {
 	return await ScoringFiscalRanking.countDocuments(condition);
 }
 
+async function getFsData(stateEle) {
+	const totalUlbs = await getTotalULB(stateEle._id);
+	const participatedUlbs = await getScoredUlbsCount(stateEle._id, 'participated');
+	const rankedUlbs = await getScoredUlbsCount(stateEle._id, 'ranked');
+	const participatedUlbsPercentage = participatedUlbs && totalUlbs ? parseFloat(((participatedUlbs / totalUlbs) * 100).toFixed(2)) : 0;
+	const fiscalRanking = {
+		rankingYear: '2022-23',
+		totalUlbs,
+		participatedUlbs,
+		rankedUlbs,
+		nonRankedUlbs: await getScoredUlbsCount(stateEle._id, 'nonRanked'),
+		participatedUlbsPercentage,
+	};
+	return fiscalRanking;
+}
+
+async function getYearwiseDocCount(stateId, indicator) {
+	return await ScoringFiscalRanking.aggregate([
+		{
+			$match: {
+				state: ObjectId(stateId)
+			}
+		},
+		{
+			$unwind: `$${indicator}`
+		},
+		{
+			$match: {
+				$or: [
+					{
+						[`${indicator}.url`]: {
+							$ne: ""
+						}
+					},
+					{
+						[`${indicator}.modelName`]: "ULBLedger"
+					}
+				]
+			}
+		},
+		{
+
+			"$group": {
+				_id: `$${indicator}.year`,
+				total: {
+					$sum: 1
+				}
+			}
+		},
+		{
+			$project: {
+				_id: 0,
+				year: "$_id",
+				total: 1,
+
+			}
+		}
+	]);
+}
 module.exports.setStateData = async (req, res) => {
 	try {
 		const condition = { isActive: true };
@@ -46,18 +105,7 @@ module.exports.setStateData = async (req, res) => {
 		// console.log(states);
 
 		states.forEach(async (stateEle) => {
-			const totalUlbs = await getTotalULB(stateEle._id);
-			const participatedUlbs = await getScoredUlbsCount(stateEle._id, 'participated');
-			const rankedUlbs = await getScoredUlbsCount(stateEle._id, 'ranked');
-			const participatedUlbsPercentage = participatedUlbs && totalUlbs ? parseFloat(((participatedUlbs / totalUlbs) * 100).toFixed(2)) : 0;
-			const fiscalRanking = {
-				rankingYear: '2022-23',
-				totalUlbs,
-				participatedUlbs,
-				rankedUlbs,
-				nonRankedUlbs: await getScoredUlbsCount(stateEle._id, 'nonRanked'),
-				participatedUlbsPercentage,
-			};
+			const fiscalRanking = await getFsData(stateEle);
 			// delete the field
 			await State.findByIdAndUpdate(stateEle._id, {
 				$unset: { fiscalRanking: 1 },
@@ -67,7 +115,13 @@ module.exports.setStateData = async (req, res) => {
 			await State.findByIdAndUpdate(stateEle._id, {
 				$push: { fiscalRanking },
 			});
-			
+			const auditedAccounts = await getYearwiseDocCount(stateEle._id, 'auditedAccounts');
+			const annualBudgets = await getYearwiseDocCount(stateEle._id, 'annualBudgets');
+			console.log('annualBudgets', annualBudgets)
+			//push the data
+			await State.findByIdAndUpdate(stateEle._id, {
+				$set: { auditedAccounts, annualBudgets },
+			});
 		});
 		return res.status(200).json({ message: 'done' });
 	} catch (error) {
