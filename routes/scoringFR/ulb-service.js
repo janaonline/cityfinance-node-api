@@ -1,4 +1,5 @@
 const ObjectId = require('mongoose').Types.ObjectId;
+const ObjectID = require('mongodb').ObjectID
 const moongose = require('mongoose');
 const Response = require('../../service').response;
 const { years } = require('../../service/years');
@@ -12,15 +13,22 @@ const { tableResponse } = require('../../service/common');
 async function getScoreFR(populationBucket, indicator, sortOrder = -1) {
 	const condition = { isActive: true, populationBucket };
 	const ulb = await ScoringFiscalRanking.findOne(condition)
-		.sort({ [`${indicator}.score`]: sortOrder }).lean();
+		.sort({ [`${indicator}.score`]: sortOrder })
+		.lean();
 }
 
 module.exports.getUlbDetails = async (req, res) => {
 	try {
 		moongose.set('debug', true);
-		const censusCode = req.params.censusCode;
-		// const censusCode = 802989;
-		const condition = { isActive: true, censusCode };
+		// const censusCode = req.params.censusCode;
+		const searchId = req.params.searchId;
+		let condition = {
+			$and: [{ 'isActive': true }, { $or: [{ 'censusCode': searchId }, { 'sbCode': searchId }] }],
+		};
+		
+		if (ObjectID.isValid(searchId)) {
+			let condition = { isActive: true, ulb: ObjectId(searchId) };
+		}
 		const ulb = await ScoringFiscalRanking.findOne(condition).lean();
 
 		const design_year2022_23 = '606aafb14dff55e6c075d3ae';
@@ -34,7 +42,7 @@ module.exports.getUlbDetails = async (req, res) => {
 		};
 
 		let fsData = await FiscalRanking.findOne(conditionFs).lean();
-		const data = { populationBucketUlbCount, ulb, fsData }
+		const data = { populationBucketUlbCount, ulb, fsData };
 		return res.status(200).json({ data });
 	} catch (error) {
 		console.log('error', error);
@@ -70,7 +78,8 @@ module.exports.getSearchedUlbDetails = async (req, res) => {
 		// const censusCode = 802989;
 		const condition = { isActive: true, ulb: { $in: ulbIds } };
 		const ulbs = await ScoringFiscalRanking.find(condition)
-			.select('name ulb location resourceMobilization expenditurePerformance fiscalGovernance overAll').limit(5);
+			.select('name ulb location resourceMobilization expenditurePerformance fiscalGovernance overAll')
+			.limit(5);
 
 		return res.status(200).json({ ulbs });
 	} catch (error) {

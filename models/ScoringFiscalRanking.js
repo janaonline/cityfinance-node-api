@@ -48,6 +48,7 @@ const ScoringFiscalRankingSchema = new Schema(
 		populationBucket: { type: Number, default: 0 },
 		currentFormStatus: { type: Number, default: 0 },
 		censusCode: { type: String, default: null },
+		sbCode: { type: String, default: null },
 		isMillionPlus: { type: String, enum: ['Yes', 'No'], default: 'No' },
 		location: {
 			type: {
