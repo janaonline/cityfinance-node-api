@@ -68,6 +68,8 @@ async function getBudgetUlbCount() {
 	const condition = { isActive: true };
 	return await Ulb.countDocuments(condition);
 }
+
+//<<-- Dashboard -->>
 module.exports.dashboard = async (req, res) => {
 	try {
 		const reqData = req.body;
@@ -97,8 +99,24 @@ module.exports.dashboard = async (req, res) => {
 	}
 };
 
+// <<-- Participated State Table -->>
+module.exports.participatedState = async (req, res) => {
+	try {
+		const query = req.query;
+		const condition = { isActive: true };
+		const states = await getParticipatedState(5, query, 'name fiscalRanking stateType');
+		return res.status(200).json({ data: tableRes(states) });
+	} catch (error) {
+		console.log('error', error);
+		return res.status(400).json({
+			status: false,
+			message: error.message,
+		});
+	}
+};
+// Find participated ULB count state wise.
 function tableRes(states) {
-	let table = {
+	let tableData = {
 		'columns': [
 			{
 				'label': 'S.No',
@@ -178,6 +196,7 @@ function tableRes(states) {
 		'lastRow': ['', '', 'Total', '$sum', '$sum', '$sum', '$sum', '$sum', '$sum'],
 	};
 	let i = 1;
+	let mapData = [];
 	for (const state of states) {
 		const ele = {
 			'_id': state._id,
@@ -191,29 +210,282 @@ function tableRes(states) {
 			'rankedtoTotal': 2,
 			'stateNameLink': '/rankings/participated-ulbs',
 		};
+		const participatedCount = {
+			'participatedUlbsPercentage': state.fiscalRanking[0].participatedUlbsPercentage,
+			'stateCode': state.code,
+			'stateName': state.name,
+			'stateId': state._id,
+		};
+		tableData.data.push(ele);
+		mapData.push(participatedCount);
+	}
+	return { tableData, mapData };
+}
+
+//<<-- Participated states - Filter -->>
+module.exports.getParticipatedStateFilter = async (req, res) => {
+	try {
+		const data = selectParticipateStateFilter();
+		return res.status(200).json({
+			'status': true,
+			'message': 'Successfully saved data!',
+			data,
+		});
+
+		// return res.status(200).json({ data: tableResponse(states) });
+	} catch (error) {
+		console.log('error', error);
+		return res.status(400).json({
+			status: false,
+			message: error.message,
+		});
+	}
+};
+
+// Participated State - filter.
+function selectParticipateStateFilter() {
+	const filters = {
+		stateTypeFilter: [
+			{
+				label: 'All',
+				id: '1',
+				key: 'all',
+				value: null, //for score type filter
+			},
+			{
+				label: 'Large state',
+				id: '2',
+				key: 'largeState',
+				value: null, //for score type filter
+			},
+			{
+				label: 'Small state',
+				id: '3',
+				key: 'smallState',
+				value: null, //for score type filter
+			},
+			{
+				label: 'Union territory',
+				id: '4',
+				key: 'unionTerritory',
+				value: null, //for score type filter
+			},
+		],
+		ulbParticipationFilter: [
+			{
+				label: 'All',
+				id: '1',
+				key: 'all',
+				value: null, //for score type filter
+			},
+			{
+				label: 'Participated',
+				id: '2',
+				key: 'participated',
+				value: null, //for score type filter
+			},
+			{
+				label: 'Non Participated',
+				id: '3',
+				key: 'nonParticipated',
+				value: null, //for score type filter
+			},
+		],
+		ulbRankingStatusFilter: [
+			{
+				label: 'All',
+				id: '1',
+				key: 'all',
+				value: null, //for score type filter
+			},
+			{
+				label: 'Ranked',
+				id: '2',
+				key: 'ranked',
+				value: null, //for score type filter
+			},
+			{
+				label: 'Non Ranked',
+				id: '3',
+				key: 'nonRanked',
+				value: null, //for score type filter
+			},
+		],
+	};
+	return filters;
+}
+
+// <<-- Get state wise documents count ??-->>
+module.exports.states = async (req, res) => {
+	try {
+		let select = req.params.select ? `name fiscalRanking ${req.params.select}` : 'name';
+		const condition = { isActive: true };
+		const states = await State.find(condition).select(select).exec();
+
+		let data = states;
+		if (req.params.select) {
+			data = stateTable(req.params.select, states);
+		}
+		return res.status(200).json({
+			data,
+		});
+
+		// return res.status(200).json({ data: tableResponse(states) });
+	} catch (error) {
+		console.log('error', error);
+		return res.status(400).json({
+			status: false,
+			message: error.message,
+		});
+	}
+};
+// Get documetns count - as per state.
+function stateTable(indicator, states) {
+	const table = {
+		'status': true,
+		'message': 'Successfully saved data!',
+		'columns': [
+			{
+				'label': 'S. No',
+				'key': 'sNo',
+			},
+			{
+				'label': 'State Name',
+				'key': 'stateName',
+				'sort': 1,
+				'sortable': true,
+			},
+			{
+				'label': 'No of ulbs',
+				'key': 'noOfUlbs',
+			},
+		],
+		'subHeaders': [],
+		'name': '',
+		'data': [],
+	};
+	let years = [];
+	if (indicator === 'annualBudgets') {
+		const cols = [
+			{
+				'label': 'Annual Budget Available',
+				'key': '2020-21',
+				'colspan': 4,
+			},
+			{
+				'label': '',
+				'key': '2021-22',
+				'hidden': true,
+			},
+			{
+				'label': '',
+				'key': '2022-23',
+				'hidden': true,
+			},
+			{
+				'label': '',
+				'key': '2023-24',
+				'hidden': true,
+			},
+		];
+		table.columns = [...table.columns, ...cols];
+		years = ['2020-21', '2021-22', '2022-23', '2023-24'];
+		table.subHeaders = ['', '', '', ...years];
+	} else {
+		const cols = [
+			{
+				'label': 'Annual Financial Statements Available',
+				'key': '2018-19',
+				'colspan': 4,
+			},
+			{
+				'label': '',
+				'key': '2019-20',
+				'hidden': true,
+			},
+			{
+				'label': '',
+				'key': '2020-21',
+				'hidden': true,
+			},
+			{
+				'label': '',
+				'key': '2021-22',
+				'hidden': true,
+			},
+		];
+		table.columns = [...table.columns, ...cols];
+		years = ['2018-19', '2019-20', '2020-21', '2021-22'];
+		table.subHeaders = ['', '', '', ...years];
+	}
+	let i = 1;
+	for (const state of states) {
+		const ele = {
+			'sNo': i++,
+			'totalULBs': state.fiscalRanking[0].totalUlbs,
+			'stateName': state.name,
+			'stateNameLink': '/rankings/ulb/685965',
+		};
+		years.forEach((year) => {
+			ele[year] = getDocYearCount(state, indicator, year);
+		});
 		table.data.push(ele);
 	}
 	return table;
 }
-
-// API - topRankedULBs
-function findassessmentParameterScore(ulbRes, key) {
-	ulbScore = [];
-	for (ulb of ulbRes) {
-		var ulbData = {
-			[`${key}Rank`]: ulb[key].rank,
-			'ulbName': ulb.name,
-			'ulbNameLink': `/rankings/ulb/${ulb.censusCode ? ulb.censusCode : ulb.sbCode ? ulb.sbCode : ulb.ulb}`,
-			'overallScore': ulb.overAll.score,
-			'overallRrank': ulb.overAll.rank,
-		};
-		ulbScore.push(ulbData);
+function getDocYearCount(state, indicator, year) {
+	const yearData = state[indicator].find((e) => e.year === year);
+	let total = 0;
+	if (yearData) {
+		total = yearData.total;
 	}
-	return ulbScore;
+	return total;
 }
+function getMapData() {}
 
-// Function to fetch 5 ULBs Score
+//<<-- Top Ranked ULBs -->>
+module.exports.topRankedUlbs = async (req, res) => {
+	try {
+		// moongose.set('debug', true);
+		let { sortBy, sortOrder, state, populationBucket } = req.query;
+		let condition = { isActive: true };
+		if (state) {
+			condition = { ...condition, state: ObjectId(state) };
+		}
+		if (populationBucket) {
+			condition = { ...condition, populationBucket };
+		}
+
+		sortBy = sortBy ? sortBy : 'overAll';
+		sortOrder = sortOrder === 'desc' ? -1 : 1;
+		const ulbRes = await ScoringFiscalRanking.find(condition)
+			.select('name ulb location resourceMobilization expenditurePerformance fiscalGovernance overAll state')
+			.limit(5)
+			.sort({ [sortBy]: sortOrder })
+			.exec();
+		// console.log(ulbRes)
+
+		fetchFiveUlbs(ulbRes, sortBy);
+		var assessmentParameter = findassessmentParameter(sortBy);
+
+		return res.status(200).json({
+			'status': true,
+			'message': 'Successfully fetched data!',
+			'tableData': { 'columns': assessmentParameter, 'data': [...ulbScore] },
+			'mapData': [...ulbLocation],
+		});
+		// return res.status(200).json({ data: tableResponse(ulbRes) });
+	} catch (error) {
+		console.log('error', error);
+		return res.status(400).json({
+			status: false,
+			message: error.message,
+		});
+	}
+};
+// Function to fetch 5 ULBs Score - Top ranked ulbs.
 var ulbScore = [];
+var ulbLocation = [];
 function fetchFiveUlbs(ulbRes, sortBy) {
 	if (sortBy === 'overAll') {
 		ulbScore = [];
@@ -227,14 +499,41 @@ function fetchFiveUlbs(ulbRes, sortBy) {
 				'expenditurePerformanceScore': ulb.expenditurePerformance.score,
 				'fiscalGovernanceScore': ulb.fiscalGovernance.score,
 			};
+			const ulbLoc = {
+				'location': ulb.location,
+				'state': ulb.state,
+			};
 			ulbScore.push(ulbData);
+			ulbLocation.push(ulbLoc);
 		}
 	} else {
 		findassessmentParameterScore(ulbRes, sortBy);
 	}
-	return ulbScore;
+	return { ulbScore, ulbLocation };
+}
+// API - topRankedULBs
+function findassessmentParameterScore(ulbRes, key) {
+	ulbScore = [];
+	var ulbLocation = [];
+	for (ulb of ulbRes) {
+		var ulbData = {
+			[`${key}Rank`]: ulb[key].rank,
+			'ulbName': ulb.name,
+			'ulbNameLink': `/rankings/ulb/${ulb.censusCode ? ulb.censusCode : ulb.sbCode ? ulb.sbCode : ulb.ulb}`,
+			'overallScore': ulb.overAll.score,
+			'overallRrank': ulb.overAll.rank,
+		};
+		const ulbLoc = {
+			'location': ulb.location,
+			'state': ulb.state,
+		};
+		ulbScore.push(ulbData);
+		ulbLocation.push(ulbLoc);
+	}
+	return { ulbScore, ulbLocation };
 }
 
+// Table headers for top ranked ulbs table.
 function findassessmentParameter(sortBy) {
 	function findParameter(label, score) {
 		assessmentParameter = [
@@ -311,184 +610,3 @@ function findassessmentParameter(sortBy) {
 	}
 	return assessmentParameter;
 }
-
-// Audited and Budget documents table format.
-
-module.exports.participatedState = async (req, res) => {
-	try {
-		const query = req.query;
-		const condition = { isActive: true };
-		const states = await getParticipatedState(5, query, 'name fiscalRanking stateType');
-		return res.status(200).json({ data: tableRes(states) });
-	} catch (error) {
-		console.log('error', error);
-		return res.status(400).json({
-			status: false,
-			message: error.message,
-		});
-	}
-};
-function stateTable(indicator, states) {
-	const table = {
-		'status': true,
-		'message': 'Successfully saved data!',
-		'columns': [
-			{
-				'label': 'S. No',
-				'key': 'sNo',
-			},
-			{
-				'label': 'State Name',
-				'key': 'stateName',
-				'sort': 1,
-				'sortable': true,
-			},
-			{
-				'label': 'No of ulbs',
-				'key': 'noOfUlbs',
-			},
-		],
-		'subHeaders': [],
-		'name': '',
-		'data': [],
-	};
-	let years = [];
-	if (indicator === 'annualBudgets') {
-		const cols = [
-			{
-				'label': 'Annual Budget Available',
-				'key': '2020-21',
-				'colspan': 4,
-			},
-			{
-				'label': '',
-				'key': '2021-22',
-				'hidden': true,
-			},
-			{
-				'label': '',
-				'key': '2022-23',
-				'hidden': true,
-			},
-			{
-				'label': '',
-				'key': '2023-24',
-				'hidden': true,
-			},
-		];
-		table.columns = [...table.columns, ...cols];
-		years = ['2020-21', '2021-22', '2022-23', '2023-24'];
-		table.subHeaders = ['', '', '', ...years];
-
-	} else {
-		const cols = [
-			{
-				'label': 'Annual Financial Statements Available',
-				'key': '2018-19',
-				'colspan': 4,
-			},
-			{
-				'label': '',
-				'key': '2019-20',
-				'hidden': true,
-			},
-			{
-				'label': '',
-				'key': '2020-21',
-				'hidden': true,
-			},
-			{
-				'label': '',
-				'key': '2021-22',
-				'hidden': true,
-			},
-		];
-		table.columns = [...table.columns, ...cols];
-		years = ['2018-19', '2019-20', '2020-21', '2021-22'];
-		table.subHeaders = ['', '', '', ...years];
-	}
-	let i = 1;
-	for (const state of states) {
-		const ele = {
-			'sNo': i++,
-			'totalULBs': state.fiscalRanking[0].totalUlbs,
-			'stateName': state.name,
-			'stateNameLink': '/rankings/ulb/685965',
-		};
-		years.forEach((year) => {
-			ele[year] = getDocYearCount(state, indicator, year);
-		});
-		table.data.push(ele);
-	}
-	return table;
-}
-function getDocYearCount(state, indicator, year) {
-	const yearData = state[indicator].find((e) => e.year === year);
-	let total = 0;
-	if (yearData) {
-		total = yearData.total;
-	}
-	return total;
-}
-module.exports.states = async (req, res) => {
-	try {
-		let select = req.params.select ? `name fiscalRanking ${req.params.select}` : 'name';
-		const condition = { isActive: true };
-		const states = await State.find(condition).select(select).exec();
-
-		let data = states;
-		if (req.params.select) {
-			data = stateTable(req.params.select, states);
-		}
-		return res.status(200).json({
-			data,
-		});
-
-		// return res.status(200).json({ data: tableResponse(states) });
-	} catch (error) {
-		console.log('error', error);
-		return res.status(400).json({
-			status: false,
-			message: error.message,
-		});
-	}
-};
-module.exports.topRankedUlbs = async (req, res) => {
-	try {
-		// moongose.set('debug', true);
-		let { sortBy, sortOrder, state, populationBucket } = req.query;
-		let condition = { isActive: true };
-		if (state) {
-			condition = { ...condition, state: ObjectId(state) };
-		}
-		if (populationBucket) {
-			condition = { ...condition, populationBucket };
-		}
-
-		sortBy = sortBy ? sortBy : 'overAll';
-		sortOrder = sortOrder === 'desc' ? -1 : 1;
-		const ulbRes = await ScoringFiscalRanking.find(condition)
-			.select('name ulb location resourceMobilization expenditurePerformance fiscalGovernance overAll')
-			.limit(5)
-			.sort({ [sortBy]: sortOrder })
-			.exec();
-		// console.log(ulbRes)
-
-		fetchFiveUlbs(ulbRes, sortBy);
-		var assessmentParameter = findassessmentParameter(sortBy);
-
-		return res.status(200).json({
-			'status': true,
-			'message': 'Successfully fetched data!',
-			'columns': assessmentParameter,
-			'data': [...ulbScore],
-		});
-		// return res.status(200).json({ data: tableResponse(ulbRes) });
-	} catch (error) {
-		console.log('error', error);
-		return res.status(400).json({
-			status: false,
-			message: error.message,
-		});
-	}
-};
