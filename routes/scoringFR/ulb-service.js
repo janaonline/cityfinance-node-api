@@ -17,6 +17,15 @@ async function getScoreFR(populationBucket, indicator, sortOrder = -1) {
 		.lean();
 }
 
+function isValidObjectId(id) {
+	if (ObjectId.isValid(id)) {
+		if ((String)(new ObjectId(id)) === id) {
+			return true;
+		}
+		return false;
+	}
+	return false;
+}
 module.exports.getUlbDetails = async (req, res) => {
 	try {
 		moongose.set('debug', true);
@@ -25,12 +34,17 @@ module.exports.getUlbDetails = async (req, res) => {
 		let condition = {
 			$and: [{ 'isActive': true }, { $or: [{ 'censusCode': searchId }, { 'sbCode': searchId }] }],
 		};
-
-		if (ObjectID.isValid(searchId)) {
-			let condition = { isActive: true, ulb: ObjectId(searchId) };
+		if (isValidObjectId(searchId)) {
+			condition = { isActive: true, ulb: ObjectId(searchId) };
 		}
 		const ulb = await ScoringFiscalRanking.findOne(condition).lean();
 
+		if (!ulb) {
+			return res.status(404).json({
+				status: false,
+				message: 'ULB not found',
+			});
+		}
 		const design_year2022_23 = '606aafb14dff55e6c075d3ae';
 
 		const condition1 = { isActive: true, populationBucket: ulb.populationBucket };
