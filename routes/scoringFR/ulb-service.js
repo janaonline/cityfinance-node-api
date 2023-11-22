@@ -19,7 +19,7 @@ async function getScoreFR(populationBucket, indicator, sortOrder = -1) {
 
 function isValidObjectId(id) {
 	if (ObjectId.isValid(id)) {
-		if ((String)(new ObjectId(id)) === id) {
+		if (String(new ObjectId(id)) === id) {
 			return true;
 		}
 		return false;
@@ -71,6 +71,7 @@ module.exports.getUlbDetails = async (req, res) => {
 			population: ulb.population,
 			populationBucket: ulb.populationBucket,
 			state: ulb.state,
+			//State name to be added.
 			overAll: ulb.overAll,
 			resourceMobilization: ulb.resourceMobilization,
 			expenditurePerformance: ulb.expenditurePerformance,
@@ -97,27 +98,6 @@ module.exports.getUlbsBySate = async (req, res) => {
 		const ulbs = await ScoringFiscalRanking.find(condition).lean();
 		const data = tableResponse(ulbs);
 		return res.status(200).json({ data });
-	} catch (error) {
-		console.log('error', error);
-		return res.status(400).json({
-			status: false,
-			message: error.message,
-		});
-	}
-};
-
-module.exports.getSearchedUlbDetails = async (req, res) => {
-	try {
-		moongose.set('debug', true);
-		const ulbIds = req.query.ulb;
-		console.log('ulbIds', ulbIds);
-		// const censusCode = 802989;
-		const condition = { isActive: true, ulb: { $in: ulbIds } };
-		const ulbs = await ScoringFiscalRanking.find(condition)
-			.select('name ulb location resourceMobilization expenditurePerformance fiscalGovernance overAll')
-			.limit(5);
-
-		return res.status(200).json({ ulbs });
 	} catch (error) {
 		console.log('error', error);
 		return res.status(400).json({
@@ -264,3 +244,75 @@ function getTableData(ulb, type) {
 	const header = getTableHeader(type);
 	return { ...header, data };
 }
+
+//<<-- ULB details - Filter -->>
+function getSearchedUlb(ulbs) {
+	let data = [
+		{
+			'label': 'State Average',
+			'data': [110, 60, 243, 580],
+			'fill': false,
+			'borderColor': 'orange',
+			'type': 'line',
+			'lineTension': 0,
+		},
+		{
+			'label': 'National Average',
+			'data': [180, 160, 330, 280],
+			'fill': false,
+			'borderColor': 'gray',
+			'type': 'line',
+			'lineTension': 0,
+		},
+		{
+			'label': 'Population Average',
+			'data': [540, 260, 403, 600],
+			'fill': false,
+			'borderColor': 'yellow',
+			'type': 'line',
+			'lineTension': 0,
+		},
+		{
+			'label': 'Overall',
+			'data': [1080, 760, 803, 680],
+			'backgroundColor': '#0B5ACF',
+			'borderWidth': 1,
+			'type': 'bar',
+			'barPercentage': 0.5,
+			'categoryPercentage': 1,
+		},
+	];
+
+	return data;
+}
+
+// ULB details - graph section.
+module.exports.getSearchedUlbDetails = async (req, res) => {
+	try {
+		moongose.set('debug', true);
+		const ulbIds = req.query.ulb;
+		// console.log('ulbIds', ulbIds);
+		// const censusCode = 802989;
+		const condition = { isActive: true, ulb: { $in: ulbIds } };
+		const ulbs = await ScoringFiscalRanking.find(condition)
+			.select('name ulb location resourceMobilization expenditurePerformance fiscalGovernance overAll')
+			.limit(5);
+
+		// console.log(ulbs);
+
+		data = getSearchedUlb(ulbs);
+
+		return res.status(200).json({
+			'data': {
+				'labels': ['Navi Mumbai', 'Chennai', 'Hyderabad', 'Bangalore'],
+				'datasets': data,
+			},
+		});
+	} catch (error) {
+		console.log('error', error);
+		return res.status(400).json({
+			status: false,
+			message: error.message,
+		});
+	}
+};
