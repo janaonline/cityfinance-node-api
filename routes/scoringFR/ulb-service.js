@@ -75,6 +75,7 @@ module.exports.getUlbDetails = async (req, res) => {
 			resourceMobilization: ulb.resourceMobilization,
 			expenditurePerformance: ulb.expenditurePerformance,
 			fiscalGovernance: ulb.fiscalGovernance,
+			location: ulb.location,
 		};
 
 		const data = { populationBucketUlbCount, ulb: ulbData, fsData, assessmentParameter };
