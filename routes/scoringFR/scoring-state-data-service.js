@@ -117,7 +117,7 @@ module.exports.setStateData = async (req, res) => {
 			});
 			const auditedAccounts = await getYearwiseDocCount(stateEle._id, 'auditedAccounts');
 			const annualBudgets = await getYearwiseDocCount(stateEle._id, 'annualBudgets');
-			console.log('annualBudgets', annualBudgets)
+			// console.log('annualBudgets', annualBudgets)
 			//push the data
 			await State.findByIdAndUpdate(stateEle._id, {
 				$set: { auditedAccounts, annualBudgets },

@@ -763,6 +763,7 @@ async function getData(ulbRes) {
 		ulb: ulbRes._id,
 		location: ulbRes.location,
 		censusCode: ulbRes.censusCode,
+		sbCode: ulbRes.sbCode,
 		isActive: ulbRes.isActive,
 		population: ulbRes.population,
 		populationBucket: getPopulationBucket(ulbRes.population),
