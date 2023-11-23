@@ -41,6 +41,7 @@ async function setIndicatorRank(ulbArr, indicator) {
 
 
 async function calculateFRRank(populationBucket) {
+	// Submission Acknowledged by PMU - 11
 	const condition = { isActive: true, populationBucket, currentFormStatus: { $in: [11]} };
     const ulbArr = await ScoringFiscalRanking.find(condition)
 	.select('resourceMobilization expenditurePerformance fiscalGovernance overAll')

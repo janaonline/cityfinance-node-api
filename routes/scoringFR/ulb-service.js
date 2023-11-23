@@ -93,10 +93,15 @@ module.exports.getUlbDetails = async (req, res) => {
 module.exports.getUlbsBySate = async (req, res) => {
 	try {
 		moongose.set('debug', true);
-		const state = ObjectId(req.params.stateId);
-		const condition = { isActive: true, state };
-		const ulbs = await ScoringFiscalRanking.find(condition).lean();
-		const data = tableResponse(ulbs);
+		const stateId = ObjectId(req.params.stateId);
+		const condition = { isActive: true, state: stateId };
+
+		const ulbs = await ScoringFiscalRanking.find(condition)
+			.select('ulb name populationBucket currentFormStatus auditedAccounts annualBudgets ')
+			.lean();
+		const state = await State.findById(stateId).select('fiscalRanking name').lean();
+		const data = { ulbs, state };
+
 		return res.status(200).json({ data });
 	} catch (error) {
 		console.log('error', error);
@@ -287,13 +292,13 @@ function getSearchedUlb(ulbs) {
 }
 
 // ULB details - graph section.
-module.exports.getSearchedUlbDetails = async (req, res) => {
+module.exports.getSearchedUlbDetailsGraph = async (req, res) => {
 	try {
 		moongose.set('debug', true);
 		const ulbIds = req.query.ulb;
 		// console.log('ulbIds', ulbIds);
 		// const censusCode = 802989;
-		const condition = { isActive: true, ulb: { $in: ulbIds } };
+		const condition = { isActive: true, ulb: { $in: ulbIds }, currentFormStatus: { $in: [11] } };
 		const ulbs = await ScoringFiscalRanking.find(condition)
 			.select('name ulb location resourceMobilization expenditurePerformance fiscalGovernance overAll')
 			.limit(5);

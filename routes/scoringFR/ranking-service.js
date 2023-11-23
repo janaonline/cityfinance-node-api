@@ -16,7 +16,7 @@ async function getParticipatedUlbCount() {
 }
 async function topCategoryUlb(populationBucket) {
 	const condition = { populationBucket };
-	return await ScoringFiscalRanking.find(condition).select('name').limit(2);
+	return await ScoringFiscalRanking.find(condition).select('name').sort('overAll.rank', -1).limit(2);
 }
 async function getParticipatedState(limit, query = false, select = 'name') {
 	// mongoose.set('debug', true);
@@ -357,7 +357,7 @@ function stateTable(indicator, states) {
 			},
 			{
 				'label': 'No of ulbs',
-				'key': 'noOfUlbs',
+				'key': 'totalULBs',
 			},
 		],
 		'subHeaders': [],
@@ -424,7 +424,7 @@ function stateTable(indicator, states) {
 			'sNo': i++,
 			'totalULBs': state.fiscalRanking[0].totalUlbs,
 			'stateName': state.name,
-			'stateNameLink': '/rankings/ulb/685965',
+			'stateNameLink': `/rankings/participated-ulbs/${state._id}`,
 		};
 		years.forEach((year) => {
 			ele[year] = getDocYearCount(state, indicator, year);
@@ -461,7 +461,7 @@ module.exports.topRankedUlbs = async (req, res) => {
 		const ulbRes = await ScoringFiscalRanking.find(condition)
 			.select('name ulb location resourceMobilization expenditurePerformance fiscalGovernance overAll state')
 			.limit(5)
-			.sort({ [sortBy]: sortOrder })
+			.sort({ [`${sortBy}.rank`]: sortOrder })
 			.exec();
 		// console.log(ulbRes)
 
