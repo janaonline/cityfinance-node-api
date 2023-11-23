@@ -23,7 +23,12 @@ Pending actions
  * AFS >> 2018-19, 2019-20, 2020-21, 2021-22
  * Budget >> 2020-21, 2021-22, 2022-23, 2023-24
  */
-
+const design_year2018_19 = '63735a5bd44534713673c1ca';
+const design_year2019_20 = '607697074dff55e6c0be33ba';
+const design_year2020_21 = '606aadac4dff55e6c075c507';
+const design_year2021_22 = '606aaf854dff55e6c075d219';
+const design_year2022_23 = '606aafb14dff55e6c075d3ae';
+const design_year2023_24 = '606aafc14dff55e6c075d3ec';
 function calculateRecommendationPercentage(score) {
 	let percent = 0;
 	score = Math.round(score);
@@ -77,7 +82,6 @@ function getNumberValue(fsMapper, type) {
 }
 // Get file.
 function getFile(fsMapper, type) {
-
 	const indicator = fsMapper.find((e) => e.type === type);
 	if (!indicator) {
 		return false;
@@ -514,7 +518,6 @@ function pushFileData(fsMapper, indicator, year, data) {
 }
 // Check for document availability.
 function getannualBudget(fsMapper2020_21, fsMapper2021_22, fsMapper2022_23, fsMapper2023_24) {
-
 	let data = [];
 	data = pushFileData(fsMapper2020_21, 'appAnnualBudget', '2020-21', data);
 	data = pushFileData(fsMapper2021_22, 'appAnnualBudget', '2021-22', data);
@@ -531,36 +534,7 @@ function getauditedAccounts(fsMapper2018_19, fsMapper2019_20, fsMapper2020_21, f
 	data = pushFileData(fsMapper2021_22, 'auditedAnnualFySt', '2021-22', data);
 	return data;
 }
-
-async function getData(ulbRes) {
-	// console.log('----in--------');
-	// moongose.set('debug', true);
-
-	// ulbRes.forEach(element => {
-	//     console.log('population', element.population);
-	// });
-	// return res.status(200).json({
-	//     status: 'true',
-	//     data: ulbRes
-	// });
-	// const ulb = '5eb5844f76a3b61f40ba0694';
-	const design_year2018_19 = '63735a5bd44534713673c1ca';
-	const design_year2019_20 = '607697074dff55e6c0be33ba';
-	const design_year2020_21 = '606aadac4dff55e6c075c507';
-	const design_year2021_22 = '606aaf854dff55e6c075d219';
-	const design_year2022_23 = '606aafb14dff55e6c075d3ae';
-	const design_year2023_24 = '606aafc14dff55e6c075d3ec';
-
-	const condition = {
-		ulb: ObjectId(ulbRes._id),
-		// ulb: ObjectId(ulb),
-		design_year: ObjectId(design_year2022_23),
-	};
-	let fsData = await FiscalRanking.findOne(condition).lean();
-	if (!fsData) {
-		return 'no data';
-	}
-
+async function getMapperData(ulbRes) {
 	const fsMapperNoYear = await FiscalRankingMapper.find({
 		ulb: ObjectId(ulbRes._id),
 		// year: ObjectId(design_year2018_19),
@@ -692,6 +666,48 @@ async function getData(ulbRes) {
 		},
 	}).lean();
 
+	return { fsMapperNoYear, fsMapper2018_19, fsMapper2019_20, fsMapper2020_21, fsMapper2021_22, fsMapper2022_23, fsMapper2023_24 };
+}
+async function getData(ulbRes) {
+	// console.log('----in--------');
+	// moongose.set('debug', true);
+
+	// ulbRes.forEach(element => {
+	//     console.log('population', element.population);
+	// });
+	// return res.status(200).json({
+	//     status: 'true',
+	//     data: ulbRes
+	// });
+	// const ulb = '5eb5844f76a3b61f40ba0694';
+	const condition = {
+		ulb: ObjectId(ulbRes._id),
+		// ulb: ObjectId(ulb),
+		design_year: ObjectId(design_year2022_23),
+	};
+	let fsData = await FiscalRanking.findOne(condition).lean();
+	if (!fsData) {
+		// if not started just create basic ulb details
+		const scoringData = {
+			name: ulbRes.name,
+			ulb: ulbRes._id,
+			location: ulbRes.location,
+			censusCode: ulbRes.censusCode,
+			sbCode: ulbRes.sbCode,
+			isActive: ulbRes.isActive,
+			population: ulbRes.population,
+			populationBucket: getPopulationBucket(ulbRes.population),
+			state: ulbRes.state,
+			currentFormStatus: 1,
+		};
+		// console.log(scoringData);
+
+		await ScoringFiscalRanking.create(scoringData);
+		return 'no data';
+	}
+
+	const { fsMapperNoYear, fsMapper2018_19, fsMapper2019_20, fsMapper2020_21, fsMapper2021_22, fsMapper2022_23, fsMapper2023_24 } =
+		await getMapperData(ulbRes);
 	// 1. Total Budget size per capita (Actual Total Reciepts) - RM
 	const totalBudgetDataPC_1 = totalBudgetPerCapita(ulbRes, fsData, fsMapper2021_22);
 
@@ -743,20 +759,8 @@ async function getData(ulbRes) {
 	// 15. Properties under Tax Collection net - FG
 	const propUnderTaxCollNet_15 = propUnderTaxColl(fsMapperNoYear);
 
-	// await ScoringFiscalRanking.findOneAndUpdate({
-	//     ulb: ObjectId(req.body.ulbId),
-	//     design_year: ObjectId(req.body.design_year),
-	//   },
-	//   {
-	//     $set: {
-	//       isDraft: true,
-	//       currentFormStatus: 2
-	//     },
-	//   });
-
 	const annualBudgets = getannualBudget(fsMapper2020_21, fsMapper2021_22, fsMapper2022_23, fsMapper2023_24);
 	const auditedAccounts = getauditedAccounts(fsMapper2018_19, fsMapper2019_20, fsMapper2020_21, fsMapper2021_22);
-
 
 	const scoringData = {
 		name: ulbRes.name,
@@ -795,30 +799,7 @@ async function getData(ulbRes) {
 	// console.log(scoringData);
 
 	await ScoringFiscalRanking.create(scoringData);
-	return {
-		status: 'true',
-		totalBudgetDataPC_1,
-		ownRevenuePC_2,
-		pTaxPC_3,
-		cagrInTotalBud_4,
-		cagrInOwnRevPC_5,
-		cagrInPropTax_6,
-		capExPCAvg_7,
-		cagrInCapExpen_8,
-		omExpTotalRevExpen_9,
-		avgMonthsForULBAuditMarks_10a,
-		aaPushishedMarks_10b,
-		gisBasedPTaxMarks_11a,
-		accSoftwareMarks_11b,
-		receiptsVariance_12,
-		ownRevRecOutStanding_13,
-		digitalToTotalOwnRev_14,
-		propUnderTaxCollNet_15,
-
-		// ulbRes,
-		// fsData,
-		// fsMapper2021_22
-	};
+	return 'created';
 
 	// return { ulbRes, fsData, fsMapper }
 }

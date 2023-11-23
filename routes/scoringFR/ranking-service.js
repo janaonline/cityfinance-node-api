@@ -16,12 +16,16 @@ async function getParticipatedUlbCount() {
 }
 async function topCategoryUlb(populationBucket) {
 	const condition = { populationBucket };
-	return await ScoringFiscalRanking.find(condition).select('name').limit(2);
+	return await ScoringFiscalRanking.find(condition).select('name').sort('overAll.rank', -1).limit(2);
 }
 async function getParticipatedState(limit, query = false, select = 'name') {
+	let sort = { 'fiscalRanking.participatedUlbsPercentage': -1 };
 	// mongoose.set('debug', true);
-	const { stateType, ulbParticipationFilter, ulbRankingStatusFilter } = query;
+	const { stateType, ulbParticipationFilter, ulbRankingStatusFilter, sortBy, sortOrder } = query;
 	let condition = { isActive: true, 'fiscalRanking.participatedUlbsPercentage': { $ne: 0 } };
+	if (sortBy) {
+		sort = { [sortBy]: sortOrder };
+	}
 	if (['Large', 'Small', 'UT'].includes(stateType)) {
 		condition = { ...condition, stateType };
 	}
@@ -33,7 +37,7 @@ async function getParticipatedState(limit, query = false, select = 'name') {
 		const rankedCond = ulbRankingStatusFilter === 'ranked' ? { '$ne': 0 } : 0;
 		condition = { ...condition, 'fiscalRanking.rankedUlbs': rankedCond };
 	}
-	return await State.find(condition).select(select).sort({ 'fiscalRanking.participatedUlbsPercentage': -1 }).limit(limit).lean();
+	return await State.find(condition).select(select).sort(sort).limit(limit).lean();
 }
 
 async function getAuditedUlbCount() {
@@ -104,7 +108,7 @@ module.exports.participatedState = async (req, res) => {
 	try {
 		const query = req.query;
 		const condition = { isActive: true };
-		const states = await getParticipatedState(5, query, 'name fiscalRanking stateType');
+		const states = await getParticipatedState(5, query, 'name code fiscalRanking stateType');
 		return res.status(200).json({ data: tableRes(states) });
 	} catch (error) {
 		console.log('error', error);
@@ -193,7 +197,7 @@ function tableRes(states) {
 		],
 		'name': '',
 		'data': [],
-		'lastRow': ['', '', 'Total', '$sum', '$sum', '$sum', '$sum', '$sum', '$sum'],
+		'lastRow': ['', '', 'Total', '$x', '$sum', '$sum', '$sum', '$sum', '$sum'],
 	};
 	let i = 1;
 	let mapData = [];
@@ -211,9 +215,9 @@ function tableRes(states) {
 			'stateNameLink': `/rankings/participated-ulbs/${state._id}`,
 		};
 		const participatedCount = {
-			'participatedUlbsPercentage': state.fiscalRanking[0].participatedUlbsPercentage,
-			'stateCode': state.code,
-			'stateName': state.name,
+			'percentage': state.fiscalRanking[0].participatedUlbsPercentage,
+			'code': state.code,
+			'_id': state.name,
 			'stateId': state._id,
 		};
 		tableData.data.push(ele);
@@ -225,7 +229,7 @@ function tableRes(states) {
 //<<-- Participated states - Filter -->>
 module.exports.getParticipatedStateFilter = async (req, res) => {
 	try {
-		const data = selectParticipateStateFilter();
+		const data = filterApi();
 		return res.status(200).json({
 			'status': true,
 			'message': 'Successfully saved data!',
@@ -243,8 +247,9 @@ module.exports.getParticipatedStateFilter = async (req, res) => {
 };
 
 // Participated State - filter.
-function selectParticipateStateFilter() {
+function filterApi() {
 	const filters = {
+		//State type.
 		stateTypeFilter: [
 			{
 				label: 'All',
@@ -271,6 +276,7 @@ function selectParticipateStateFilter() {
 				value: null, //for score type filter
 			},
 		],
+		// ULB Participation
 		ulbParticipationFilter: [
 			{
 				label: 'All',
@@ -291,6 +297,7 @@ function selectParticipateStateFilter() {
 				value: null, //for score type filter
 			},
 		],
+		// ULB ranking status
 		ulbRankingStatusFilter: [
 			{
 				label: 'All',
@@ -308,6 +315,39 @@ function selectParticipateStateFilter() {
 				label: 'Non Ranked',
 				id: '3',
 				key: 'nonRanked',
+				value: null, //for score type filter
+			},
+		],
+		// Population category
+		populationBucketFilter: [
+			{
+				label: 'All',
+				id: '1',
+				key: 'all',
+				value: null, //for score type filter
+			},
+			{
+				label: '4M+',
+				id: '2',
+				key: '1',
+				value: null, //for score type filter
+			},
+			{
+				label: '1M-4M',
+				id: '2',
+				key: '2',
+				value: null, //for score type filter
+			},
+			{
+				label: '100K-1M',
+				id: '2',
+				key: '3',
+				value: null, //for score type filter
+			},
+			{
+				label: '<100K',
+				id: '2',
+				key: '4',
 				value: null, //for score type filter
 			},
 		],
@@ -357,7 +397,7 @@ function stateTable(indicator, states) {
 			},
 			{
 				'label': 'No of ulbs',
-				'key': 'noOfUlbs',
+				'key': 'totalULBs',
 			},
 		],
 		'subHeaders': [],
@@ -424,7 +464,7 @@ function stateTable(indicator, states) {
 			'sNo': i++,
 			'totalULBs': state.fiscalRanking[0].totalUlbs,
 			'stateName': state.name,
-			'stateNameLink': '/rankings/ulb/685965',
+			'stateNameLink': `/rankings/participated-ulbs/${state._id}`,
 		};
 		years.forEach((year) => {
 			ele[year] = getDocYearCount(state, indicator, year);
@@ -457,11 +497,11 @@ module.exports.topRankedUlbs = async (req, res) => {
 		}
 
 		sortBy = sortBy ? sortBy : 'overAll';
-		sortOrder = sortOrder === 'desc' ? -1 : 1;
+		// sortOrder = sortOrder === 'desc' ? -1 : 1;
 		const ulbRes = await ScoringFiscalRanking.find(condition)
 			.select('name ulb location resourceMobilization expenditurePerformance fiscalGovernance overAll state')
 			.limit(5)
-			.sort({ [sortBy]: sortOrder })
+			.sort({ [`${sortBy}.rank`]: sortOrder })
 			.exec();
 		// console.log(ulbRes)
 
@@ -472,7 +512,7 @@ module.exports.topRankedUlbs = async (req, res) => {
 			'status': true,
 			'message': 'Successfully fetched data!',
 			'tableData': { 'columns': assessmentParameter, 'data': [...ulbScore] },
-			'mapData': [...ulbLocation],
+			'mapDataTopUlbs': [...map1Data],
 		});
 		// return res.status(200).json({ data: tableResponse(ulbRes) });
 	} catch (error) {
@@ -485,7 +525,7 @@ module.exports.topRankedUlbs = async (req, res) => {
 };
 // Function to fetch 5 ULBs Score - Top ranked ulbs.
 var ulbScore = [];
-var ulbLocation = [];
+var map1Data = []; // map1 - top ulbs
 function fetchFiveUlbs(ulbRes, sortBy) {
 	if (sortBy === 'overAll') {
 		ulbScore = [];
@@ -499,17 +539,14 @@ function fetchFiveUlbs(ulbRes, sortBy) {
 				'expenditurePerformanceScore': ulb.expenditurePerformance.score,
 				'fiscalGovernanceScore': ulb.fiscalGovernance.score,
 			};
-			const ulbLoc = {
-				'location': ulb.location,
-				'state': ulb.state,
-			};
+			const ulbLocation = { ...ulb.location, name: ulb.name };
 			ulbScore.push(ulbData);
-			ulbLocation.push(ulbLoc);
+			map1Data.push(ulbLocation); // map1 - top ulbs
 		}
 	} else {
 		findassessmentParameterScore(ulbRes, sortBy);
 	}
-	return { ulbScore, ulbLocation };
+	return { ulbScore, map1Data };
 }
 // API - topRankedULBs
 function findassessmentParameterScore(ulbRes, key) {

@@ -16,6 +16,10 @@ const { initParams } = require('request');
  Verification in progress - 9
  Returned by PMU - 10
  Submission Acknowledged by PMU - 11
+
+participatedUlbs - 8, 9, 10, 11
+rankedUlbs - 11
+
  */
 
 function calculateRecommendationPercentage(score) {
@@ -107,6 +111,7 @@ function updatePercentage_formula4(ulb, ulbArr, indicator) {
 
 async function calculateFRPercentage(populationBucket) {
 	// const censusCode = 802787;
+	// Submission Acknowledged by PMU - 11
 	const condition = { populationBucket, currentFormStatus: { $in: [11]}};
 	// const condition = {};
 	const ulbArr = await ScoringFiscalRanking.find(condition).lean();
@@ -203,6 +208,7 @@ async function setIndicatorRank(ulbArr, indicator) {
 
 
 async function calculateFRRank(populationBucket) {
+	// Submission Acknowledged by PMU - 11
 	const condition = { isActive: true, populationBucket, currentFormStatus: { $in: [11]} };
     const ulbArr = await ScoringFiscalRanking.find(condition)
 	.select('resourceMobilization expenditurePerformance fiscalGovernance overAll')

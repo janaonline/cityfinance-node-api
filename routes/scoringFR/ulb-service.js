@@ -16,7 +16,7 @@ async function getScoreFR(populationBucket, indicator, sortOrder = -1) {
 		.sort({ [`${indicator}.score`]: sortOrder })
 		.lean();
 }
-
+const mainIndicators = ['resourceMobilization', 'expenditurePerformance', 'fiscalGovernance', 'overAll'];
 function isValidObjectId(id) {
 	if (ObjectId.isValid(id)) {
 		if (String(new ObjectId(id)) === id) {
@@ -37,7 +37,9 @@ module.exports.getUlbDetails = async (req, res) => {
 		if (isValidObjectId(searchId)) {
 			condition = { isActive: true, ulb: ObjectId(searchId) };
 		}
+
 		const ulb = await ScoringFiscalRanking.findOne(condition).lean();
+		const state = await State.findById(ulb.state).select('name code').lean();
 
 		if (!ulb) {
 			return res.status(404).json({
@@ -70,8 +72,9 @@ module.exports.getUlbDetails = async (req, res) => {
 			censusCode: ulb.censusCode,
 			population: ulb.population,
 			populationBucket: ulb.populationBucket,
-			state: ulb.state,
-			//State name to be added.
+			stateId: ulb.state,
+			stateName: state.name,
+			stateCode: state.code,
 			overAll: ulb.overAll,
 			resourceMobilization: ulb.resourceMobilization,
 			expenditurePerformance: ulb.expenditurePerformance,
@@ -93,10 +96,15 @@ module.exports.getUlbDetails = async (req, res) => {
 module.exports.getUlbsBySate = async (req, res) => {
 	try {
 		moongose.set('debug', true);
-		const state = ObjectId(req.params.stateId);
-		const condition = { isActive: true, state };
-		const ulbs = await ScoringFiscalRanking.find(condition).lean();
-		const data = tableResponse(ulbs);
+		const stateId = ObjectId(req.params.stateId);
+		const condition = { isActive: true, state: stateId };
+
+		const ulbs = await ScoringFiscalRanking.find(condition)
+			.select('ulb name populationBucket currentFormStatus auditedAccounts annualBudgets ')
+			.lean();
+		const state = await State.findById(stateId).select('fiscalRanking name').lean();
+		const data = { ulbs, state };
+
 		return res.status(200).json({ data });
 	} catch (error) {
 		console.log('error', error);
@@ -247,10 +255,21 @@ function getTableData(ulb, type) {
 
 //<<-- ULB details - Filter -->>
 function getSearchedUlb(ulbs) {
-	let data = [
+	const overAllData = [];
+	const populationAvgData = [];
+	const nationalAvgData = [];
+	const stateAvgData = [];
+
+	for (const ulb of ulbs) {
+		overAllData.push(ulb.overAll.score);
+		populationAvgData.push(ulb.overAll.populationBucketAvg);
+		nationalAvgData.push(ulb.overAll.nationalAvg);
+		stateAvgData.push(ulb.overAll.stateAvg);
+	}
+	const graphData = [
 		{
 			'label': 'State Average',
-			'data': [110, 60, 243, 580],
+			'data': stateAvgData,
 			'fill': false,
 			'borderColor': 'orange',
 			'type': 'line',
@@ -258,7 +277,7 @@ function getSearchedUlb(ulbs) {
 		},
 		{
 			'label': 'National Average',
-			'data': [180, 160, 330, 280],
+			'data': nationalAvgData,
 			'fill': false,
 			'borderColor': 'gray',
 			'type': 'line',
@@ -266,7 +285,7 @@ function getSearchedUlb(ulbs) {
 		},
 		{
 			'label': 'Population Average',
-			'data': [540, 260, 403, 600],
+			'data': populationAvgData,
 			'fill': false,
 			'borderColor': 'yellow',
 			'type': 'line',
@@ -274,7 +293,7 @@ function getSearchedUlb(ulbs) {
 		},
 		{
 			'label': 'Overall',
-			'data': [1080, 760, 803, 680],
+			'data': overAllData,
 			'backgroundColor': '#0B5ACF',
 			'borderWidth': 1,
 			'type': 'bar',
@@ -283,24 +302,29 @@ function getSearchedUlb(ulbs) {
 		},
 	];
 
-	return data;
+	return graphData;
 }
 
 // ULB details - graph section.
-module.exports.getSearchedUlbDetails = async (req, res) => {
+module.exports.getSearchedUlbDetailsGraph = async (req, res) => {
 	try {
 		moongose.set('debug', true);
 		const ulbIds = req.query.ulb;
 		// console.log('ulbIds', ulbIds);
 		// const censusCode = 802989;
-		const condition = { isActive: true, ulb: { $in: ulbIds } };
+		const condition = {
+			isActive: true,
+			ulb: { $in: ulbIds },
+			// currentFormStatus: { $in: [11] }
+		};
 		const ulbs = await ScoringFiscalRanking.find(condition)
 			.select('name ulb location resourceMobilization expenditurePerformance fiscalGovernance overAll')
-			.limit(5);
+			.limit(5)
+			.lean();
 
 		// console.log(ulbs);
 
-		data = getSearchedUlb(ulbs);
+		const data = getSearchedUlb(ulbs);
 
 		return res.status(200).json({
 			'data': {
