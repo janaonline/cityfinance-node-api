@@ -23,7 +23,12 @@ Pending actions
  * AFS >> 2018-19, 2019-20, 2020-21, 2021-22
  * Budget >> 2020-21, 2021-22, 2022-23, 2023-24
  */
-
+const design_year2018_19 = '63735a5bd44534713673c1ca';
+const design_year2019_20 = '607697074dff55e6c0be33ba';
+const design_year2020_21 = '606aadac4dff55e6c075c507';
+const design_year2021_22 = '606aaf854dff55e6c075d219';
+const design_year2022_23 = '606aafb14dff55e6c075d3ae';
+const design_year2023_24 = '606aafc14dff55e6c075d3ec';
 function calculateRecommendationPercentage(score) {
 	let percent = 0;
 	score = Math.round(score);
@@ -530,12 +535,6 @@ function getauditedAccounts(fsMapper2018_19, fsMapper2019_20, fsMapper2020_21, f
 	return data;
 }
 async function getMapperData(ulbRes) {
-	const design_year2018_19 = '63735a5bd44534713673c1ca';
-	const design_year2019_20 = '607697074dff55e6c0be33ba';
-	const design_year2020_21 = '606aadac4dff55e6c075c507';
-	const design_year2021_22 = '606aaf854dff55e6c075d219';
-	const design_year2022_23 = '606aafb14dff55e6c075d3ae';
-	const design_year2023_24 = '606aafc14dff55e6c075d3ec';
 	const fsMapperNoYear = await FiscalRankingMapper.find({
 		ulb: ObjectId(ulbRes._id),
 		// year: ObjectId(design_year2018_19),
@@ -681,7 +680,6 @@ async function getData(ulbRes) {
 	//     data: ulbRes
 	// });
 	// const ulb = '5eb5844f76a3b61f40ba0694';
-
 	const condition = {
 		ulb: ObjectId(ulbRes._id),
 		// ulb: ObjectId(ulb),
