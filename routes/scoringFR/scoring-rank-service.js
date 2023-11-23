@@ -23,7 +23,7 @@ async function setIndicatorRank(ulbArr, indicator) {
     for (let i = 0; i < ulbArr.length; i++) {
 		let rank = 1;
 		if(i===0) {
-			rank = 1;
+			ulbArr[i][indicator].rank = 1;
 		} else if(ulbArr[i-1][indicator].score === ulbArr[i][indicator].score) {
 			ulbArr[i][indicator].rank = ulbArr[i-1][indicator].rank;
 		} else {
