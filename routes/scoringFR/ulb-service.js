@@ -37,8 +37,10 @@ module.exports.getUlbDetails = async (req, res) => {
 		if (isValidObjectId(searchId)) {
 			condition = { isActive: true, ulb: ObjectId(searchId) };
 		}
-		const ulb = await ScoringFiscalRanking.findOne(condition).lean();
 
+		const ulb = await ScoringFiscalRanking.findOne(condition).lean();
+		const state = await State.findById(ulb.state).select('name code').lean();
+		
 		if (!ulb) {
 			return res.status(404).json({
 				status: false,
@@ -70,15 +72,16 @@ module.exports.getUlbDetails = async (req, res) => {
 			censusCode: ulb.censusCode,
 			population: ulb.population,
 			populationBucket: ulb.populationBucket,
-			state: ulb.state,
-			//State name to be added.
+			stateId: ulb.state,
+			stateName: state.name,
+			stateCode: state.code,
 			overAll: ulb.overAll,
 			resourceMobilization: ulb.resourceMobilization,
 			expenditurePerformance: ulb.expenditurePerformance,
 			fiscalGovernance: ulb.fiscalGovernance,
 			location: ulb.location,
 		};
-
+		
 		const data = { populationBucketUlbCount, ulb: ulbData, fsData, assessmentParameter };
 		return res.status(200).json({ data });
 	} catch (error) {
