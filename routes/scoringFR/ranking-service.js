@@ -208,7 +208,7 @@ function tableRes(states) {
 			'nonRankedULBs': state.fiscalRanking[0].nonRankedUlbs,
 			'stateName': state.name,
 			'rankedtoTotal': 2,
-			'stateNameLink': '/rankings/participated-ulbs',
+			'stateNameLink': `/rankings/participated-ulbs/${state._id}`,
 		};
 		const participatedCount = {
 			'participatedUlbsPercentage': state.fiscalRanking[0].participatedUlbsPercentage,
@@ -494,7 +494,7 @@ function fetchFiveUlbs(ulbRes, sortBy) {
 				'overallRank': ulb.overAll.rank,
 				'ulbName': ulb.name,
 				'ulbNameLink': `/rankings/ulb/${ulb.censusCode ? ulb.censusCode : ulb.sbCode ? ulb.sbCode : ulb.ulb}`,
-				'totalUlbScore': ulb.overAll.score,
+				'overallScore': ulb.overAll.score,
 				'resourceMobilizationScore': ulb.resourceMobilization.score,
 				'expenditurePerformanceScore': ulb.expenditurePerformance.score,
 				'fiscalGovernanceScore': ulb.fiscalGovernance.score,
