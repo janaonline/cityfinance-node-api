@@ -456,6 +456,7 @@ module.exports.getAll = async (req, res) => {
                             ulbCode: 'ULB Code',
                             sbCode: 'Swatch Bharat Code',
                             censusCode: 'Census Code',
+                            isActive: 'Status',
                             accountantName: 'ULB Nodal Officer Name',
                             accountantEmail: 'ULB Nodal Officer Email ID',
                             accountantConatactNumber: 'ULB Nodal Officer Phone Number'
@@ -466,7 +467,6 @@ module.exports.getAll = async (req, res) => {
                             organization: 'Organisation'
                         });
                     }
-                    console.log(field)
                     let xlsData = await Service.dataFormating(arr, field);
                     return res.xls('user.xlsx', xlsData);
                 } else {
