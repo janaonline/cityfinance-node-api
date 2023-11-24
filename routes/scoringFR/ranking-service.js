@@ -10,6 +10,8 @@ const ScoringFiscalRanking = require('../../models/ScoringFiscalRanking');
 const { registerCustomQueryHandler } = require('puppeteer');
 const { tableResponse } = require('../../service/common');
 
+const mainIndicators = ['resourceMobilization', 'expenditurePerformance', 'fiscalGovernance', 'overAll'];
+
 async function getParticipatedUlbCount() {
 	const condition = { isActive: true, currentFormStatus: { $in: [8, 9, 10, 11] } };
 	return await FiscalRanking.countDocuments(condition);
@@ -481,7 +483,7 @@ function getDocYearCount(state, indicator, year) {
 	}
 	return total;
 }
-function getMapData() {}
+function getMapData() { }
 
 //<<-- Top Ranked ULBs -->>
 module.exports.topRankedUlbs = async (req, res) => {
@@ -513,8 +515,56 @@ module.exports.topRankedUlbs = async (req, res) => {
 			'message': 'Successfully fetched data!',
 			'tableData': { 'columns': assessmentParameter, 'data': [...ulbScore] },
 			'mapDataTopUlbs': [...map1Data],
-			'mapDataRankHolders': [...map2Data],
+			// 'mapDataRankHolders': top-ranked-states API
 
+		});
+		// return res.status(200).json({ data: tableResponse(ulbRes) });
+	} catch (error) {
+		console.log('error', error);
+		return res.status(400).json({
+			status: false,
+			message: error.message,
+		});
+	}
+};
+async function getTopUlbs(sortBy, sortOrder) {
+	let condition = { isActive: true };
+	const ulbRes = await ScoringFiscalRanking.find(condition, { state: 1, _id: 0 })
+		.select('state')
+		.limit(5)
+		.sort({ [`${sortBy}.rank`]: sortOrder })
+		.lean();
+	return ulbRes;
+}
+function countEle() {
+
+}
+//<<-- Top Ranked ULBs -->>
+module.exports.topRankedStates = async (req, res) => {
+	moongose.set('debug', true);
+	try {
+		let ulbs = [];
+		for (const indicator of mainIndicators) {
+			ulbs = [...ulbs, ...await getTopUlbs(indicator, -1)];
+		}
+
+		let counter = {};
+		for (const ulb of ulbs) {
+			counter[ulb.state] = (counter[ulb.state] || 0) + 1
+		}
+
+		const condition = { _id: { $in: Object.keys(counter) } };
+		const states = await State.find(condition).select('code name').lean();
+
+		states.map(e => {
+			e.count = counter[e._id];
+			return e;
+		});
+
+		return res.status(200).json({
+			'status': true,
+			'message': 'Successfully fetched data!',
+			states
 		});
 		// return res.status(200).json({ data: tableResponse(ulbRes) });
 	} catch (error) {
@@ -531,6 +581,7 @@ var map1Data = []; // map1 - top ulbs
 var map2Data = []; // map 2 - rank holders
 function fetchFiveUlbs(ulbRes, sortBy) {
 	if (sortBy === 'overAll') {
+		map1Data = [];
 		ulbScore = [];
 		for (ulb of ulbRes) {
 			const ulbData = {
@@ -554,23 +605,21 @@ function fetchFiveUlbs(ulbRes, sortBy) {
 // API - topRankedULBs
 function findassessmentParameterScore(ulbRes, key) {
 	ulbScore = [];
-	var ulbLocation = [];
+	map1Data = [];
 	for (ulb of ulbRes) {
 		var ulbData = {
+			[`${key}Score`]: ulb[key].score,
 			[`${key}Rank`]: ulb[key].rank,
 			'ulbName': ulb.name,
 			'ulbNameLink': `/rankings/ulb/${ulb.censusCode ? ulb.censusCode : ulb.sbCode ? ulb.sbCode : ulb.ulb}`,
 			'overallScore': ulb.overAll.score,
-			'overallRrank': ulb.overAll.rank,
+			'overallRank': ulb.overAll.rank,
 		};
-		const ulbLoc = {
-			'location': ulb.location,
-			'state': ulb.state,
-		};
+		const ulbLocation = { ...ulb.location, name: ulb.name };
 		ulbScore.push(ulbData);
-		ulbLocation.push(ulbLoc);
+		map1Data.push(ulbLocation); // map1 - top ulbs
 	}
-	return { ulbScore, ulbLocation };
+	return { ulbScore, map1Data };
 }
 
 // Table headers for top ranked ulbs table.
