@@ -10,6 +10,8 @@ const ScoringFiscalRanking = require('../../models/ScoringFiscalRanking');
 const { registerCustomQueryHandler } = require('puppeteer');
 const { tableResponse } = require('../../service/common');
 
+const mainIndicators = ['resourceMobilization', 'expenditurePerformance', 'fiscalGovernance', 'overAll'];
+
 async function getParticipatedUlbCount() {
 	const condition = { isActive: true, currentFormStatus: { $in: [8, 9, 10, 11] } };
 	return await FiscalRanking.countDocuments(condition);
@@ -481,7 +483,7 @@ function getDocYearCount(state, indicator, year) {
 	}
 	return total;
 }
-function getMapData() {}
+function getMapData() { }
 
 //<<-- Top Ranked ULBs -->>
 module.exports.topRankedUlbs = async (req, res) => {
@@ -514,6 +516,57 @@ module.exports.topRankedUlbs = async (req, res) => {
 			'tableData': { 'columns': assessmentParameter, 'data': [...ulbScore] },
 			'mapDataTopUlbs': [...map1Data],
 			'mapDataRankHolders': [...map2Data],
+
+		});
+		// return res.status(200).json({ data: tableResponse(ulbRes) });
+	} catch (error) {
+		console.log('error', error);
+		return res.status(400).json({
+			status: false,
+			message: error.message,
+		});
+	}
+};
+async function getTopUlbs(sortBy, sortOrder) {
+	let condition = { isActive: true };
+	const ulbRes = await ScoringFiscalRanking.find(condition, { state: 1, _id: 0 })
+		.select('state')
+		.limit(5)
+		.sort({ [`${sortBy}.rank`]: sortOrder })
+		.lean();
+	return ulbRes;
+}
+function countEle() {
+
+}
+//<<-- Top Ranked ULBs -->>
+module.exports.topRankedStates = async (req, res) => {
+	moongose.set('debug', true);
+	try {
+		let ulbs = [];
+		for (const indicator of mainIndicators) {
+			ulbs = [...ulbs, ...await getTopUlbs(indicator, -1)];
+		}
+
+		let counter = {};
+		for (const ulb of ulbs) {
+			counter[ulb.state] = (counter[ulb.state] || 0) + 1
+		}
+
+		console.log('Object.keys(counter);', Object.keys(counter));
+		const condition = { _id: { $in: Object.keys(counter) } };
+		const states = await State.find(condition).select('code name').lean();
+
+		states.map(e => {
+			e.count = counter[e._id];
+			return e;
+		});
+
+		return res.status(200).json({
+			'status': true,
+			'message': 'Successfully fetched data!',
+			counter,
+			states
 
 		});
 		// return res.status(200).json({ data: tableResponse(ulbRes) });
