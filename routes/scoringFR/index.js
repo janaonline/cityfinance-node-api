@@ -6,7 +6,7 @@ const { calculateFRRank } = require('./scoring-rank-service');
 const { calculateFRAverage } = require('./scoring-average-service');
 const { setUlbScore } = require('./set-ulb-score');
 const { setStateData } = require('./scoring-state-data-service');
-const { getUlbDetails, getSearchedUlbDetailsGraph, getUlbsBySate } = require('./ulb-service');
+const { getUlbDetails, getSearchedUlbDetailsGraph, getUlbsBySate, autoSuggestUlbs } = require('./ulb-service');
 const { dashboard, participatedState, getParticipatedStateFilter, states, topRankedUlbs } = require('./ranking-service');
 const { verifyToken } = require('../auth/services/verifyToken');
 
@@ -26,5 +26,6 @@ router.get('/top-ranked-ulbs', topRankedUlbs);
 router.get('/ulb/:searchId?', getUlbDetails);
 router.get('/ulbs/:stateId?', getUlbsBySate);
 router.get('/search-ulbs', getSearchedUlbDetailsGraph);
+router.get('/autocomplete-ulbs', autoSuggestUlbs);
 
 module.exports = router

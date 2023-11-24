@@ -311,7 +311,16 @@ function getSearchedUlb(ulbs, indicator) {
 		},
 	];
 
-	return graphData;
+	const ulbName = [];
+	// Loop to get ULBs names in an array.
+	for (const ulb of ulbs) {
+		ulbName.push(ulb.name);
+	}
+	const data = {
+		'labels': ulbName,
+		'datasets': graphData,
+	};
+	return data;
 }
 
 // ULB details - graph section.
@@ -320,7 +329,6 @@ module.exports.getSearchedUlbDetailsGraph = async (req, res) => {
 		moongose.set('debug', true);
 		const ulbIds = req.query.ulb;
 		// const indicator = req.query.indicator;
-		const ulbName = [];
 
 		const condition = {
 			isActive: true,
@@ -332,26 +340,37 @@ module.exports.getSearchedUlbDetailsGraph = async (req, res) => {
 			.limit(5)
 			.lean();
 
-		// Loop to get ULBs names in an array.
-		// for (id of ulbIds) {
-		// 	if (id === ulbs.ulb) {
-		// 		ulbName.push(ulbs.name);
-		// 	}
-
-		const indicator = 'expenditurePerformance'; // input from query >> resourceMobilization || expenditurePerformance || fiscalGovernance || overAll
-		
-		function searchedParamterInQuery(ulbs, indicator) {
-			const searchedParamter = getSearchedUlb(ulbs, indicator);
-			return searchedParamter;
+		const graphData = {};
+		for (const indicator of mainIndicators) {
+			graphData[indicator] = getSearchedUlb(ulbs, indicator);
 		}
-		const data = searchedParamterInQuery(ulbs, indicator);
-		
+
 		return res.status(200).json({
-			'data': {
-				'labels': ['Navi Mumbai', 'Chennai', 'Hyderabad', 'Bangalore'],
-				// 'labels': ulbName,
-				'datasets': data
-			},
+			graphData,
+		});
+	} catch (error) {
+		console.log('error', error);
+		return res.status(400).json({
+			status: false,
+			message: error.message,
+		});
+	}
+};
+
+// <<-- Auto suggest ulbs -->>>>
+module.exports.autoSuggestUlbs = async (req, res) => {
+	try {
+		moongose.set('debug', true);
+		const q = req.query.q;
+		const condition = {
+			isActive: true,
+			name: new RegExp(`.*${q}.*`, 'i')
+			// currentFormStatus: { $in: [11] }
+		};
+		let ulbs = await ScoringFiscalRanking.find(condition, {name:1, ulb:1, populationBucket:1, censusCode:1, sbCode:1, _id:0}).sort({name: 1}).limit(5).lean();
+
+		return res.status(200).json({
+			ulbs
 		});
 	} catch (error) {
 		console.log('error', error);

@@ -513,6 +513,8 @@ module.exports.topRankedUlbs = async (req, res) => {
 			'message': 'Successfully fetched data!',
 			'tableData': { 'columns': assessmentParameter, 'data': [...ulbScore] },
 			'mapDataTopUlbs': [...map1Data],
+			'mapDataRankHolders': [...map2Data],
+
 		});
 		// return res.status(200).json({ data: tableResponse(ulbRes) });
 	} catch (error) {
@@ -526,6 +528,7 @@ module.exports.topRankedUlbs = async (req, res) => {
 // Function to fetch 5 ULBs Score - Top ranked ulbs.
 var ulbScore = [];
 var map1Data = []; // map1 - top ulbs
+var map2Data = []; // map 2 - rank holders
 function fetchFiveUlbs(ulbRes, sortBy) {
 	if (sortBy === 'overAll') {
 		ulbScore = [];
