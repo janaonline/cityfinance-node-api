@@ -254,18 +254,27 @@ function getTableData(ulb, type) {
 }
 
 //<<-- ULB details - Filter -->>
-function getSearchedUlb(ulbs) {
-	const overAllData = [];
+function getSearchedUlb(ulbs, indicator) {
+	const indicatorData = [];
 	const populationAvgData = [];
 	const nationalAvgData = [];
 	const stateAvgData = [];
 
 	for (const ulb of ulbs) {
-		overAllData.push(ulb.overAll.score);
-		populationAvgData.push(ulb.overAll.populationBucketAvg);
-		nationalAvgData.push(ulb.overAll.nationalAvg);
-		stateAvgData.push(ulb.overAll.stateAvg);
+		indicatorData.push(ulb[indicator].score);
+		populationAvgData.push(ulb[indicator].populationBucketAvg);
+		nationalAvgData.push(ulb[indicator].nationalAvg);
+		stateAvgData.push(ulb[indicator].stateAvg);
 	}
+
+	// function to convert camelCase into proper case.
+	function toProperCase(indicator) {
+		return indicator.replace(/([A-Z])/g, ' $1').replace(/^./, function (str) {
+			return str.toUpperCase();
+		});
+	}
+	const indicatorName = toProperCase(indicator);
+
 	const graphData = [
 		{
 			'label': 'State Average',
@@ -292,8 +301,8 @@ function getSearchedUlb(ulbs) {
 			'lineTension': 0,
 		},
 		{
-			'label': 'Overall',
-			'data': overAllData,
+			'label': indicatorName,
+			'data': indicatorData,
 			'backgroundColor': '#0B5ACF',
 			'borderWidth': 1,
 			'type': 'bar',
@@ -310,26 +319,38 @@ module.exports.getSearchedUlbDetailsGraph = async (req, res) => {
 	try {
 		moongose.set('debug', true);
 		const ulbIds = req.query.ulb;
-		// console.log('ulbIds', ulbIds);
-		// const censusCode = 802989;
+		// const indicator = req.query.indicator;
+		const ulbName = [];
+
 		const condition = {
 			isActive: true,
 			ulb: { $in: ulbIds },
 			// currentFormStatus: { $in: [11] }
 		};
-		const ulbs = await ScoringFiscalRanking.find(condition)
+		let ulbs = await ScoringFiscalRanking.find(condition)
 			.select('name ulb location resourceMobilization expenditurePerformance fiscalGovernance overAll')
 			.limit(5)
 			.lean();
 
-		// console.log(ulbs);
+		// Loop to get ULBs names in an array.
+		// for (id of ulbIds) {
+		// 	if (id === ulbs.ulb) {
+		// 		ulbName.push(ulbs.name);
+		// 	}
 
-		const data = getSearchedUlb(ulbs);
-
+		const indicator = 'expenditurePerformance'; // input from query >> resourceMobilization || expenditurePerformance || fiscalGovernance || overAll
+		
+		function searchedParamterInQuery(ulbs, indicator) {
+			const searchedParamter = getSearchedUlb(ulbs, indicator);
+			return searchedParamter;
+		}
+		const data = searchedParamterInQuery(ulbs, indicator);
+		
 		return res.status(200).json({
 			'data': {
 				'labels': ['Navi Mumbai', 'Chennai', 'Hyderabad', 'Bangalore'],
-				'datasets': data,
+				// 'labels': ulbName,
+				'datasets': data
 			},
 		});
 	} catch (error) {
