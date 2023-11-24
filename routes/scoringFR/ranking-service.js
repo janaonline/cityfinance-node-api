@@ -515,7 +515,7 @@ module.exports.topRankedUlbs = async (req, res) => {
 			'message': 'Successfully fetched data!',
 			'tableData': { 'columns': assessmentParameter, 'data': [...ulbScore] },
 			'mapDataTopUlbs': [...map1Data],
-			'mapDataRankHolders': [...map2Data],
+			// 'mapDataRankHolders': top-ranked-states API
 
 		});
 		// return res.status(200).json({ data: tableResponse(ulbRes) });
