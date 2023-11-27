@@ -257,25 +257,25 @@ function filterApi() {
 				label: 'All',
 				id: '1',
 				key: 'all',
-				value: null, //for score type filter
+				value: 'All', //for score type filter
 			},
 			{
 				label: 'Large state',
 				id: '2',
 				key: 'largeState',
-				value: null, //for score type filter
+				value: 'Large', //for score type filter
 			},
 			{
 				label: 'Small state',
 				id: '3',
 				key: 'smallState',
-				value: null, //for score type filter
+				value: 'Small', //for score type filter
 			},
 			{
 				label: 'Union territory',
 				id: '4',
 				key: 'unionTerritory',
-				value: null, //for score type filter
+				value: 'UT', //for score type filter
 			},
 		],
 		// ULB Participation
@@ -284,19 +284,19 @@ function filterApi() {
 				label: 'All',
 				id: '1',
 				key: 'all',
-				value: null, //for score type filter
+				value: 'All', //for score type filter
 			},
 			{
 				label: 'Participated',
 				id: '2',
 				key: 'participated',
-				value: null, //for score type filter
+				value: 'participated', //for score type filter
 			},
 			{
 				label: 'Non Participated',
 				id: '3',
 				key: 'nonParticipated',
-				value: null, //for score type filter
+				value: 'nonParticipated', //for score type filter
 			},
 		],
 		// ULB ranking status
@@ -305,19 +305,19 @@ function filterApi() {
 				label: 'All',
 				id: '1',
 				key: 'all',
-				value: null, //for score type filter
+				value: 'All', //for score type filter
 			},
 			{
 				label: 'Ranked',
 				id: '2',
 				key: 'ranked',
-				value: null, //for score type filter
+				value: 'ranked', //for score type filter
 			},
 			{
 				label: 'Non Ranked',
 				id: '3',
 				key: 'nonRanked',
-				value: null, //for score type filter
+				value: 'nonRanked', //for score type filter
 			},
 		],
 		// Population category
@@ -326,31 +326,31 @@ function filterApi() {
 				label: 'All',
 				id: '1',
 				key: 'all',
-				value: null, //for score type filter
+				value: 'All', //for score type filter
 			},
 			{
 				label: '4M+',
 				id: '2',
 				key: '1',
-				value: null, //for score type filter
+				value: 1, //for score type filter
 			},
 			{
 				label: '1M-4M',
 				id: '2',
 				key: '2',
-				value: null, //for score type filter
+				value: 2, //for score type filter
 			},
 			{
 				label: '100K-1M',
 				id: '2',
 				key: '3',
-				value: null, //for score type filter
+				value: 3, //for score type filter
 			},
 			{
 				label: '<100K',
 				id: '2',
 				key: '4',
-				value: null, //for score type filter
+				value: 4, //for score type filter
 			},
 		],
 	};
