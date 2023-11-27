@@ -7,7 +7,7 @@ const { calculateFRAverage } = require('./scoring-average-service');
 const { setUlbScore } = require('./set-ulb-score');
 const { setStateData } = require('./scoring-state-data-service');
 const { getUlbDetails, getSearchedUlbDetailsGraph, getUlbsBySate, autoSuggestUlbs } = require('./ulb-service');
-const { dashboard, participatedState, getParticipatedStateFilter, states, topRankedUlbs, topRankedStates } = require('./ranking-service');
+const { dashboard, participatedState, filterApi, states, topRankedUlbs, topRankedStates } = require('./ranking-service');
 const { assessmentParametersDashboard } = require('./assessment-parameters');
 const { verifyToken } = require('../auth/services/verifyToken');
 
@@ -19,7 +19,7 @@ router.get('/calculate-avg', calculateFRAverage);
 router.get('/set-state-data', setStateData);
 router.get('/dashboard', dashboard);
 router.get('/participated-state', participatedState);
-router.get('/participated-state-filter', getParticipatedStateFilter);
+router.get('/filters', filterApi);
 router.get('/states/:select?', states);
 // router.get('/audited-accounts', states);
 // router.get('/annual-budget', states);

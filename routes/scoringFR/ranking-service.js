@@ -229,7 +229,7 @@ function tableRes(states) {
 }
 
 //<<-- Participated states - Filter -->>
-module.exports.getParticipatedStateFilter = async (req, res) => {
+module.exports.filterApi = async (req, res) => {
 	try {
 		const data = filterApi();
 		return res.status(200).json({
