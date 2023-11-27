@@ -10,6 +10,10 @@ const FiscalRankingMapper = require('../../models/FiscalRankingMapper');
 const ScoringFiscalRanking = require('../../models/ScoringFiscalRanking');
 const { registerCustomQueryHandler } = require('puppeteer');
 const { tableResponse } = require('../../service/common');
+
+const abYears = ['2020-21', '2021-22', '2022-23', '2023-24'];
+const afsYears = ['2018-19', '2019-20', '2020-21', '2021-22'];
+
 async function getScoreFR(populationBucket, indicator, sortOrder = -1) {
 	const condition = { isActive: true, populationBucket };
 	const ulb = await ScoringFiscalRanking.findOne(condition)
@@ -93,6 +97,7 @@ module.exports.getUlbDetails = async (req, res) => {
 	}
 };
 
+// <<-- Get all the ULBs of a state - Document details. -->>
 module.exports.getUlbsBySate = async (req, res) => {
 	try {
 		moongose.set('debug', true);
@@ -102,10 +107,22 @@ module.exports.getUlbsBySate = async (req, res) => {
 		const ulbs = await ScoringFiscalRanking.find(condition)
 			.select('ulb name populationBucket currentFormStatus auditedAccounts annualBudgets ')
 			.lean();
-		const state = await State.findById(stateId).select('fiscalRanking name').lean();
-		const data = { ulbs, state };
+		const state = await State.findById(stateId).select('fiscalRanking name annualBudgets auditedAccounts').lean();
+		const data = getUlbData(ulbs);
+		const header = getTableHeaderDocs();
+		const footer = ['', '', '', '', ''];
+		state.annualBudgets.forEach(y=> {
+			footer.push(y.total);
+		})
+		state.auditedAccounts.forEach(y=> {
+			footer.push(y.total);
+		})
 
-		return res.status(200).json({ data });
+		return res.status(200).json({
+			'status': true,
+			'message': 'Successfully saved data!',
+			'data': {...header, data, state, footer},
+		});
 	} catch (error) {
 		console.log('error', error);
 		return res.status(400).json({
@@ -114,6 +131,119 @@ module.exports.getUlbsBySate = async (req, res) => {
 		});
 	}
 };
+// Table header
+function getTableHeaderDocs() {
+	const data = {
+		'columns': [
+			{
+				'label': 'S.No',
+				'key': 'sNo',
+				'class': 'th-common-cls',
+				'width': '2',
+			},
+			{
+				'label': 'ULB Name',
+				'key': 'ulbName',
+				'sort': 1,
+				'sortable': true,
+				'class': 'th-color-cls',
+			},
+			{
+				'label': 'Population Category',
+				'key': 'populationCategory',
+				'sortable': true,
+				'sort': 1,
+				'class': 'th-common-cls',
+			},
+			{
+				'label': 'ULB Participated',
+				'key': 'participatedUlbs',
+				'sortable': true,
+				'sort': 1,
+				'class': 'th-common-cls',
+			},
+			{
+				'label': 'CFR Ranked',
+				'key': 'rankedUlbs',
+				'sortable': true,
+				'sort': 1,
+				'class': 'th-common-cls',
+			},
+			{
+				'label': 'Annual Financial Statement Available',
+				'key': 'auditedAccounts2018-19',
+				'colspan': 4,
+				'class': 'th-common-cls',
+			},
+			{
+				'label': '',
+				'key': 'auditedAccounts2019-20',
+				'hidden': true,
+			},
+			{
+				'label': '',
+				'key': 'auditedAccounts2020-21',
+				'hidden': true,
+			},
+			{
+				'label': '',
+				'key': 'auditedAccounts2021-22',
+				'hidden': true,
+			},
+			{
+				'label': 'Annual Budget Available',
+				'key': 'annualBudgets2020-21',
+				'colspan': 4,
+				'class': 'th-common-cls',
+			},
+			{
+				'label': '',
+				'key': 'annualBudgets2021-22',
+				'hidden': true,
+			},
+			{
+				'label': '',
+				'key': 'annualBudgets2022-23',
+				'hidden': true,
+			},
+			{
+				'label': '',
+				'key': 'annualBudgets2023-24',
+				'hidden': true,
+			},
+		],
+		'subHeaders': ['', '', '', '', '', ...abYears, ...afsYears],
+		'name': '',
+	};
+	return data;
+}
+// Table data
+function getUlbData(ulbs) {
+	
+	const tableData = [] ;
+	let j = 1;
+	ulbs.forEach((ulb) => {
+		const data = {
+			'_id': ulb._id,
+			'sNo': j,
+			// 'stateName': 'Andaman and Nicobar Islands',
+			'ulbName': ulb.name,
+			'populationCategory': ulb.populationBucket,
+			'participatedULBs':
+				ulb.currentFormStatus === 8 || ulb.currentFormStatus === 9 || ulb.currentFormStatus === 10 || ulb.currentFormStatus === 11 ? 'Yes' : 'No',
+			'rankedULBs': ulb.currentFormStatus === 11 ? 'Yes' : 'No',
+		};
+		ulb.annualBudgets.forEach((year) => {
+			data[`annualBudgets${year.year}`] = year.url;
+		});
+		ulb.auditedAccounts.forEach((year) => {
+			data[`auditedAccounts${year.year}`] = year.modelName === 'ULBLedger' ? 'Available in 15th FC' : year.url;
+		});
+		tableData.push(data);
+		j++;
+	});
+	return tableData;
+}
 
 //<<-- ULB details - Assessment parameter score -->>
 function getTableHeader(type) {
@@ -364,13 +494,16 @@ module.exports.autoSuggestUlbs = async (req, res) => {
 		const q = req.query.q;
 		const condition = {
 			isActive: true,
-			name: new RegExp(`.*${q}.*`, 'i')
+			name: new RegExp(`.*${q}.*`, 'i'),
 			// currentFormStatus: { $in: [11] }
 		};
-		let ulbs = await ScoringFiscalRanking.find(condition, {name:1, ulb:1, populationBucket:1, censusCode:1, sbCode:1, _id:0}).sort({name: 1}).limit(5).lean();
+		let ulbs = await ScoringFiscalRanking.find(condition, { name: 1, ulb: 1, populationBucket: 1, censusCode: 1, sbCode: 1, _id: 0 })
+			.sort({ name: 1 })
+			.limit(5)
+			.lean();
 
 		return res.status(200).json({
-			ulbs
+			ulbs,
 		});
 	} catch (error) {
 		console.log('error', error);
