@@ -8,6 +8,7 @@ const { setUlbScore } = require('./set-ulb-score');
 const { setStateData } = require('./scoring-state-data-service');
 const { getUlbDetails, getSearchedUlbDetailsGraph, getUlbsBySate, autoSuggestUlbs } = require('./ulb-service');
 const { dashboard, participatedState, getParticipatedStateFilter, states, topRankedUlbs, topRankedStates } = require('./ranking-service');
+const { assessmentParametersDashboard } = require('./assessment-parameters');
 const { verifyToken } = require('../auth/services/verifyToken');
 
 router.get('/calculate-score', calculateFRScore);
@@ -28,5 +29,6 @@ router.get('/ulb/:searchId?', getUlbDetails);
 router.get('/ulbs/:stateId?', getUlbsBySate);
 router.get('/search-ulbs', getSearchedUlbDetailsGraph);
 router.get('/autocomplete-ulbs', autoSuggestUlbs);
+router.get('/assessment-parameters', assessmentParametersDashboard);
 
 module.exports = router
