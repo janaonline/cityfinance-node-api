@@ -18,7 +18,7 @@ async function getParticipatedUlbCount() {
 }
 async function topCategoryUlb(populationBucket) {
 	const condition = { populationBucket };
-	return await ScoringFiscalRanking.find(condition).select('name').sort('overAll.rank', -1).limit(2);
+	return await ScoringFiscalRanking.find(condition).select('name').sort({ 'overAll.rank': -1 }).limit(2);
 }
 async function getParticipatedState(limit, query = false, select = 'name') {
 	let sort = { 'fiscalRanking.participatedUlbsPercentage': -1 };
