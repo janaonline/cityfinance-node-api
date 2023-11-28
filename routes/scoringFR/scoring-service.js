@@ -805,14 +805,19 @@ async function getData(ulbRes) {
 }
 module.exports.calculateFRScore = async (req, res) => {
 	try {
-		const data = req.body;
+		// moongose.set('debug', true);
+		const limit = req.query.limit ? parseInt(req.query.limit) : 1000;
+		const page = req.query.page ? parseInt(req.query.page) : 1;
 		const censusCode = 802989;
 		const _id = ObjectId('5dd24b8f91344e2300876ca9');
 		// const sbCode = '980171';
 		// Consider only ULBs with isActive TRUE & population is not empty & not 0.
 		const condition = { isActive: true, population: { $nin: [null, 0] } };
+		const skip = (page - 1) * limit;
 		const ulbRes = await Ulb.find(condition)
-			// .limit(4000)
+			.sort({ _id: 1 })
+			.skip(skip)
+			.limit(limit)
 			.lean();
 		console.log('ulbRes.len----------', ulbRes.length);
 
