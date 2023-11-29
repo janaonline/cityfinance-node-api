@@ -1,8 +1,15 @@
-module.exports.camelize = (dashString = '')=>{
-    return dashString.replace( /(?<!\p{L})\p{L}|\s+/gu,
-              m => +m === 0 ? "" : m.toUpperCase() )
-    .replace( /^./, 
-             m => m?.toLowerCase() );
+module.exports.camelize = (dashString = '') => {
+    return dashString.replace(/(?<!\p{L})\p{L}|\s+/gu,
+        m => +m === 0 ? "" : m.toUpperCase())
+        .replace(/^./,
+            m => m?.toLowerCase());
+}
+
+module.exports.getPaginationParams = (query) => {
+    const limit = query.limit ? parseInt(query.limit) : 10;
+    const page = query.page ? parseInt(query.page) : 1;
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+    return { limit, skip };
 }
 
 module.exports.tableResponse = array => {

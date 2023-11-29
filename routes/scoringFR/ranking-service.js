@@ -8,9 +8,10 @@ const FiscalRanking = require('../../models/FiscalRanking');
 const FiscalRankingMapper = require('../../models/FiscalRankingMapper');
 const ScoringFiscalRanking = require('../../models/ScoringFiscalRanking');
 const { registerCustomQueryHandler } = require('puppeteer');
-const { tableResponse } = require('../../service/common');
+const { getPaginationParams } = require('../../service/common');
 
 const mainIndicators = ['resourceMobilization', 'expenditurePerformance', 'fiscalGovernance', 'overAll'];
+const currentFormStatus = { $in: [11] };
 
 async function getParticipatedUlbCount() {
 	const condition = { isActive: true, currentFormStatus: { $in: [8, 9, 10, 11] } };
@@ -360,13 +361,23 @@ function filterApi() {
 // <<-- Get state wise documents count ??-->>
 module.exports.states = async (req, res) => {
 	try {
-		let select = req.params.select ? `name fiscalRanking ${req.params.select}` : 'name';
+		// mongoose.set('debug', true);
+		const { sortOrder, sortBy } = req.query;
+
+		const select = req.params.select
+		let selected = select ? `name fiscalRanking ${select}` : 'name';
 		const condition = { isActive: true };
-		const states = await State.find(condition).select(select).exec();
+		const { limit, skip } = getPaginationParams(req.query);
+		const states = await State.find(condition)
+			.select(selected)
+			.sort({ [sortBy]: sortOrder })
+			.skip(skip)
+			.limit(limit)
+			.exec();
 
 		let data = states;
-		if (req.params.select) {
-			data = stateTable(req.params.select, states);
+		if (select) {
+			data = stateTable(select, states);
 		}
 		return res.status(200).json({
 			data,
@@ -490,7 +501,7 @@ module.exports.topRankedUlbs = async (req, res) => {
 	try {
 		// moongose.set('debug', true);
 		let { sortBy, sortOrder, state, populationBucket } = req.query;
-		let condition = { isActive: true };
+		let condition = { isActive: true, currentFormStatus };
 		if (state) {
 			condition = { ...condition, state: ObjectId(state) };
 		}
@@ -502,8 +513,8 @@ module.exports.topRankedUlbs = async (req, res) => {
 		// sortOrder = sortOrder === 'desc' ? -1 : 1;
 		const ulbRes = await ScoringFiscalRanking.find(condition)
 			.select('name ulb location resourceMobilization expenditurePerformance fiscalGovernance overAll state')
-			.limit(5)
 			.sort({ [`${sortBy}.rank`]: sortOrder })
+			.limit(5)
 			.exec();
 		// console.log(ulbRes)
 
