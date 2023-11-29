@@ -651,7 +651,7 @@ module.exports.profileUpdate = async (req, res) => {
                         { _id: userInfo._id },
                         { $set: obj }
                     );
-                    if(body.hasOwnProperty('isActive') && out){
+                    if(body.hasOwnProperty('isActive') && out && userInfo.role == 'ULB'){
                         const model = MODEL_CONSTANT[userInfo.role];
                         const userId = userInfo[USER_ROLE[userInfo.role]]
                         //setitng isActive true or false based on body provided
