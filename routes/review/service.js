@@ -23,11 +23,17 @@ function padTo2Digits(num) {
 }
 
 function formatDate(date) {
-  return [
-    padTo2Digits(date.getDate()),
-    padTo2Digits(date.getMonth() + 1),
-    date.getFullYear(),
-  ].join('/');
+  try{
+    date = new Date(date);
+    return [
+      padTo2Digits(date.getDate()),
+      padTo2Digits(date.getMonth() + 1),
+      date.getFullYear(),
+    ].join('/');
+  }catch(err){
+      throw Error({message: `formatDate:: ${err.message}`})
+  }
+  
 }
 
 function createDynamicColumns(collectionName) {
