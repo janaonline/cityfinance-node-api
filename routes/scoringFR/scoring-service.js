@@ -29,23 +29,6 @@ const design_year2020_21 = '606aadac4dff55e6c075c507';
 const design_year2021_22 = '606aaf854dff55e6c075d219';
 const design_year2022_23 = '606aafb14dff55e6c075d3ae';
 const design_year2023_24 = '606aafc14dff55e6c075d3ec';
-function calculateRecommendationPercentage(score) {
-	let percent = 0;
-	score = Math.round(score);
-	// console.log( '-->Rounded score',score);
-	if (score >= 0 && score <= 29) {
-		percent = 0;
-	} else if (score >= 30 && score <= 45) {
-		percent = 60;
-	} else if (score >= 46 && score <= 60) {
-		percent = 75;
-	} else if (score >= 60 && score <= 80) {
-		percent = 90;
-	} else if (score >= 80 && score <= 100) {
-		percent = 100;
-	}
-	return percent;
-}
 
 function getValue(fsMapper, type) {
 	// console.log('fsMapper', fsMapper);
@@ -65,8 +48,6 @@ function getValue(fsMapper, type) {
 }
 
 function getNumberValue(fsMapper, type) {
-	// console.log('fsMapper', fsMapper);
-	// console.log('type', type);
 	const indicator = fsMapper.find((e) => e.type === type);
 	if (!indicator) {
 		return 0;
@@ -174,10 +155,10 @@ function cagrInTotalBudget(fsData, fsMapper2018_19, fsMapper2021_22) {
 		const budget2021_22 = totalRecActual_2021_22 - (waterTax2021_22 + sanitationTax2021_22);
 		const budget2018_19 = totalRecActual_2018_19 - (waterTax_2018_19 + sanitationTax_2018_19);
 		// Handaling 0/ 0
-		const budget = budget2021_22 === 0 && budget2018_19 === 0 ? 0 : budget2021_22 / budget2018_19;
+		const budget = budget2021_22 === 0 || budget2018_19 === 0 ? 0 : budget2021_22 / budget2018_19;
 		// Growth
 		const time = 3;
-		const CAGRInTotalBudget = budget < 0 ? 0 : (Math.pow(budget, 1 / time) - 1) * 100;
+		const CAGRInTotalBudget = budget <= 0 ? 0 : (Math.pow(budget, 1 / time) - 1) * 100;
 
 		return parseFloat(CAGRInTotalBudget.toFixed(2)); //15.73%
 		// return parseFloat(Math.ceil(CAGRInTotalBudget.toFixed(2))); //15.73% >> 16%
@@ -207,10 +188,10 @@ function cagrInOwnRevenue(fsData, fsMapper2018_19, fsMapper2021_22) {
 		const ownRev2021_22 = totalOwnRevenue_2021_22 - (waterTax_2021_22 + sanitationTax_2021_22);
 		const ownRev2018_19 = totalOwnRevenue_2018_19 - (waterTax_2018_19 + sanitationTax_2018_19);
 		// Handaling 0/ 0
-		const ownRev = ownRev2021_22 === 0 && ownRev2018_19 === 0 ? 0 : ownRev2021_22 / ownRev2018_19;
+		const ownRev = ownRev2021_22 === 0 || ownRev2018_19 === 0 ? 0 : ownRev2021_22 / ownRev2018_19;
 		// Growth.
 		const time = 3;
-		const cagrInOwnRevenue = ownRev < 0 ? 0 : (Math.pow(ownRev, 1 / time) - 1) * 100;
+		const cagrInOwnRevenue = ownRev <= 0 ? 0 : (Math.pow(ownRev, 1 / time) - 1) * 100;
 
 		return parseFloat(cagrInOwnRevenue.toFixed(2));
 	} catch (e) {
@@ -225,10 +206,10 @@ function cagrInPTax(fsMapper2018_19, fsMapper2021_22) {
 		const pTax2021_22 = getNumberValue(fsMapper2021_22, 'propertyTax');
 		const pTax2018_19 = getNumberValue(fsMapper2018_19, 'propertyTax');
 		// Handling 0/ 0onst
-		const pTax = pTax2021_22 === 0 && pTax2018_19 === 0 ? 0 : pTax2021_22 / pTax2018_19;
+		const pTax = pTax2021_22 === 0 || pTax2018_19 === 0 ? 0 : pTax2021_22 / pTax2018_19;
 		// Growth for 3 years
 		const time = 3;
-		const cagrInPTax = pTax < 0 ? 0 : (Math.pow(pTax, 1 / time) - 1) * 100;
+		const cagrInPTax = pTax <= 0 ? 0 : (Math.pow(pTax, 1 / time) - 1) * 100;
 
 		return parseFloat(cagrInPTax.toFixed(2));
 	} catch (e) {
@@ -286,10 +267,10 @@ function cagrInCapEx(fsData, fsMapper2018_19, fsMapper2021_22) {
 		const capEx2021_22 = getNumberValue(fsMapper2021_22, 'CaptlExp') - (totalRcptWaterSupply_2021_22 + totalRcptSanitation_2021_22);
 		const capEx2018_19 = getNumberValue(fsMapper2018_19, 'CaptlExp') - (totalRcptWaterSupply_2018_19 + totalRcptSanitation_2018_19);
 		// Handling 0/ 0
-		const totalCapEx = capEx2021_22 === 0 && capEx2018_19 === 0 ? 0 : capEx2021_22 / capEx2018_19;
+		const totalCapEx = capEx2021_22 === 0 || capEx2018_19 === 0 ? 0 : capEx2021_22 / capEx2018_19;
 		// Growth
 		const time = 3;
-		const cagrInCapEx = TotalCapEx < 0 ? 0 : Math.pow(totalCapEx, 1 / time) * 100;
+		const cagrInCapEx = TotalCapEx <= 0 ? 0 : Math.pow(totalCapEx, 1 / time) * 100;
 
 		return parseFloat(cagrInCapEx.toFixed(2));
 	} catch (e) {
@@ -805,12 +786,14 @@ async function getData(ulbRes) {
 }
 module.exports.calculateFRScore = async (req, res) => {
 	try {
+		req.setTimeout(240000);
 		// moongose.set('debug', true);
 		const limit = req.query.limit ? parseInt(req.query.limit) : 1000;
 		const page = req.query.page ? parseInt(req.query.page) : 1;
 		const censusCode = 802989;
-		const _id = ObjectId('5dd24b8f91344e2300876ca9');
+		// const _id = ObjectId('5dd24b8f91344e2300876ca9');
 		// const sbCode = '980171';
+		const _id = ObjectId('5dd24729437ba31f7eb42f4a');
 		// Consider only ULBs with isActive TRUE & population is not empty & not 0.
 		const condition = { isActive: true, population: { $nin: [null, 0] } };
 		const skip = (page - 1) * limit;
