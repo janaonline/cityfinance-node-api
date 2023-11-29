@@ -10,6 +10,7 @@ const FiscalRankingMapper = require('../../models/FiscalRankingMapper');
 const ScoringFiscalRanking = require('../../models/ScoringFiscalRanking');
 const { registerCustomQueryHandler } = require('puppeteer');
 const { tableResponse } = require('../../service/common');
+const { getPaginationParams } = require('../../service/common');
 
 const abYears = ['2020-21', '2021-22', '2022-23', '2023-24'];
 const afsYears = ['2018-19', '2019-20', '2020-21', '2021-22'];
@@ -100,28 +101,32 @@ module.exports.getUlbDetails = async (req, res) => {
 // <<-- Get all the ULBs of a state - Document details. -->>
 module.exports.getUlbsBySate = async (req, res) => {
 	try {
-		moongose.set('debug', true);
+		// moongose.set('debug', true);
 		const stateId = ObjectId(req.params.stateId);
 		const condition = { isActive: true, state: stateId };
-
+		const { sortOrder, sortBy } = req.query;
+		const { limit, skip } = getPaginationParams(req.query);
 		const ulbs = await ScoringFiscalRanking.find(condition)
 			.select('ulb name populationBucket currentFormStatus auditedAccounts annualBudgets ')
+			.sort({ [sortBy] : sortOrder })
+			.skip(skip)
+			.limit(limit)
 			.lean();
 		const state = await State.findById(stateId).select('fiscalRanking name annualBudgets auditedAccounts').lean();
-		const data = getUlbData(ulbs);
+		const data = getUlbData(ulbs, req.query);
 		const header = getTableHeaderDocs();
 		const footer = ['', '', '', '', ''];
-		state.annualBudgets.forEach(y=> {
+		state.annualBudgets.forEach(y => {
 			footer.push(y.total);
 		})
-		state.auditedAccounts.forEach(y=> {
+		state.auditedAccounts.forEach(y => {
 			footer.push(y.total);
 		})
 
 		return res.status(200).json({
 			'status': true,
 			'message': 'Successfully saved data!',
-			'data': {...header, data, state, footer},
+			'data': { ...header, data, state, footer },
 		});
 	} catch (error) {
 		console.log('error', error);
@@ -218,10 +223,10 @@ function getTableHeaderDocs() {
 	return data;
 }
 // Table data
-function getUlbData(ulbs) {
-	
-	const tableData = [] ;
-	let j = 1;
+function getUlbData(ulbs, query) {
+
+	const tableData = [];
+	let j = ((query.page - 1) * query.limit) + 1;
 	ulbs.forEach((ulb) => {
 		const data = {
 			'_id': ulb._id,

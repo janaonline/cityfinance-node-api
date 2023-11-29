@@ -8,7 +8,7 @@ const FiscalRanking = require('../../models/FiscalRanking');
 const FiscalRankingMapper = require('../../models/FiscalRankingMapper');
 const ScoringFiscalRanking = require('../../models/ScoringFiscalRanking');
 const { registerCustomQueryHandler } = require('puppeteer');
-const { tableResponse } = require('../../service/common');
+const { getPaginationParams } = require('../../service/common');
 
 const mainIndicators = ['resourceMobilization', 'expenditurePerformance', 'fiscalGovernance', 'overAll'];
 
@@ -360,13 +360,23 @@ function filterApi() {
 // <<-- Get state wise documents count ??-->>
 module.exports.states = async (req, res) => {
 	try {
-		let select = req.params.select ? `name fiscalRanking ${req.params.select}` : 'name';
+		// mongoose.set('debug', true);
+		const { sortOrder, sortBy } = req.query;
+
+		const select = req.params.select
+		let selected = select ? `name fiscalRanking ${select}` : 'name';
 		const condition = { isActive: true };
-		const states = await State.find(condition).select(select).exec();
+		const { limit, skip } = getPaginationParams(req.query);
+		const states = await State.find(condition)
+			.select(selected)
+			.sort({ [sortBy]: sortOrder })
+			.skip(skip)
+			.limit(limit)
+			.exec();
 
 		let data = states;
-		if (req.params.select) {
-			data = stateTable(req.params.select, states);
+		if (select) {
+			data = stateTable(select, states);
 		}
 		return res.status(200).json({
 			data,
