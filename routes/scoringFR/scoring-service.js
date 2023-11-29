@@ -793,11 +793,12 @@ module.exports.calculateFRScore = async (req, res) => {
 		const censusCode = 802989;
 		// const _id = ObjectId('5dd24b8f91344e2300876ca9');
 		// const sbCode = '980171';
-		const _id = ObjectId('5dd24729437ba31f7eb42f4a');
+		const _id = ObjectId('5dd24729437ba31f7eb42f4a');		
 		// Consider only ULBs with isActive TRUE & population is not empty & not 0.
 		const condition = { isActive: true, population: { $nin: [null, 0] } };
 		const skip = (page - 1) * limit;
 		const ulbRes = await Ulb.find(condition)
+			.select('_id population isActive state code name ulbType location censusCode sbCode')
 			.sort({ _id: 1 })
 			.skip(skip)
 			.limit(limit)
