@@ -21,13 +21,14 @@ async function topCategoryUlb(populationBucket) {
 	return await ScoringFiscalRanking.find(condition).select('name').sort({ 'overAll.rank': -1 }).limit(2);
 }
 async function getParticipatedState(limit, query = false, select = 'name') {
-	let sort = { 'fiscalRanking.participatedUlbsPercentage': -1 };
-	// mongoose.set('debug', true);
+	// let sort = { 'fiscalRanking.participatedUlbsPercentage': -1 };
+	mongoose.set('debug', true);
+	// const sortArr = {totalUlbs: 'fiscalRanking.totalUlbs'}
 	const { stateType, ulbParticipationFilter, ulbRankingStatusFilter, sortBy, sortOrder } = query;
 	let condition = { isActive: true, 'fiscalRanking.participatedUlbsPercentage': { $ne: 0 } };
 	if (sortBy) {
 		sort = { [sortBy]: sortOrder };
-	}
+	} 
 	if (['Large', 'Small', 'UT'].includes(stateType)) {
 		condition = { ...condition, stateType };
 	}
@@ -79,7 +80,6 @@ async function getBudgetUlbCount() {
 module.exports.dashboard = async (req, res) => {
 	try {
 		const reqData = req.body;
-
 		const top3ParticipatedState = await getParticipatedState(3);
 		const populationBucket1 = await topCategoryUlb(1);
 		const populationBucket2 = await topCategoryUlb(2);
@@ -362,7 +362,6 @@ module.exports.states = async (req, res) => {
 	try {
 		// mongoose.set('debug', true);
 		const { sortOrder, sortBy } = req.query;
-
 		const select = req.params.select
 		let selected = select ? `name fiscalRanking ${select}` : 'name';
 		const condition = { isActive: true };
@@ -376,7 +375,7 @@ module.exports.states = async (req, res) => {
 
 		let data = states;
 		if (select) {
-			data = stateTable(select, states);
+			data = stateTable(select, states, req.query);
 		}
 		return res.status(200).json({
 			data,
@@ -392,7 +391,7 @@ module.exports.states = async (req, res) => {
 	}
 };
 // Get documetns count - as per state.
-function stateTable(indicator, states) {
+function stateTable(indicator, states, query) {
 	const table = {
 		'status': true,
 		'message': 'Successfully saved data!',
@@ -470,7 +469,7 @@ function stateTable(indicator, states) {
 		years = ['2018-19', '2019-20', '2020-21', '2021-22'];
 		table.subHeaders = ['', '', '', ...years];
 	}
-	let i = 1;
+	let i = ((query.page - 1) * query.limit) + 1;
 	for (const state of states) {
 		const ele = {
 			'sNo': i++,
