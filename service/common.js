@@ -27,3 +27,8 @@ module.exports.tableResponse = array => {
     const json = JSON.parse(JSON.stringify(array));
     return json.map(item => flattenObject(item));
 }
+
+module.exports.getMultipleRandomElements = (arr, num) => {
+    const shuffled = [...arr].sort(() => 0.5 - Math.random());
+    return shuffled.slice(0, num);
+}
