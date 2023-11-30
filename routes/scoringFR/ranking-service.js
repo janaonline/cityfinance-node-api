@@ -22,14 +22,15 @@ async function topCategoryUlb(populationBucket) {
 	return await ScoringFiscalRanking.find(condition).select('name').sort({ 'overAll.rank': -1 }).limit(2);
 }
 async function getParticipatedState(limit, query = false, select = 'name') {
-	// let sort = { 'fiscalRanking.participatedUlbsPercentage': -1 };
-	mongoose.set('debug', true);
-	// const sortArr = {totalUlbs: 'fiscalRanking.totalUlbs'}
+	let sort = { 'fiscalRanking.participatedUlbsPercentage': -1 };
+	// mongoose.set('debug', true);
+	const sortArr = { totalUlbs: 'fiscalRanking.totalUlbs', stateName: 'name' }
 	const { stateType, ulbParticipationFilter, ulbRankingStatusFilter, sortBy, sortOrder } = query;
 	let condition = { isActive: true, 'fiscalRanking.participatedUlbsPercentage': { $ne: 0 } };
 	if (sortBy) {
-		sort = { [sortBy]: sortOrder };
-	} 
+		const by = sortArr[sortBy] || 'name'
+		sort = { [by]: sortOrder };
+	}
 	if (['Large', 'Small', 'UT'].includes(stateType)) {
 		condition = { ...condition, stateType };
 	}
