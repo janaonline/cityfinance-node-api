@@ -135,7 +135,7 @@ function tableRes(states) {
 			},
 			{
 				'label': 'State Name',
-				'key': 'stateName',
+				'key': 'name',
 				'sort': 1,
 				'sortable': true,
 				'class': 'th-common-cls',
@@ -159,15 +159,7 @@ function tableRes(states) {
 			},
 			{
 				'label': 'Participated ULBs',
-				'key': 'participatedULBs',
-				'sortable': true,
-				'sort': 1,
-				'class': 'th-common-cls',
-				'width': '7',
-			},
-			{
-				'label': 'Participated ULBs',
-				'key': 'participatedULBs',
+				'key': 'participatedUlbs',
 				'sortable': true,
 				'sort': 1,
 				'class': 'th-common-cls',
@@ -175,7 +167,7 @@ function tableRes(states) {
 			},
 			{
 				'label': 'Ranked ULBs',
-				'key': 'rankedULBs',
+				'key': 'rankedUlbs',
 				'sortable': true,
 				'sort': 1,
 				'class': 'th-common-cls',
@@ -183,7 +175,7 @@ function tableRes(states) {
 			},
 			{
 				'label': 'Non Ranked ULBs',
-				'key': 'nonRankedULBs',
+				'key': 'nonRankedUlbs',
 				'sortable': true,
 				'sort': 1,
 				'class': 'th-common-cls',
@@ -205,17 +197,18 @@ function tableRes(states) {
 	let i = 1;
 	let mapData = [];
 	for (const state of states) {
+		const rankedtoTotal = state.fiscalRanking[0].totalUlbs && state.fiscalRanking[0].rankedUlbs ? state.fiscalRanking[0].rankedUlbs / state.fiscalRanking[0].totalUlbs : 0;
 		const ele = {
-			'_id': state._id,
-			'sNo': i++,
-			'stateType': state.stateType,
-			'totalULBs': state.fiscalRanking[0].totalUlbs,
-			'participatedULBs': state.fiscalRanking[0].participatedUlbs,
-			'rankedULBs': state.fiscalRanking[0].rankedUlbs,
-			'nonRankedULBs': state.fiscalRanking[0].nonRankedUlbs,
-			'stateName': state.name,
-			'rankedtoTotal': 2,
-			'stateNameLink': `/rankings/participated-ulbs/${state._id}`,
+			_id: state._id,
+			sNo: i++,
+			name: state.name,
+			stateType: state.stateType,
+			totalULBs: state.fiscalRanking[0].totalUlbs,
+			participatedUlbs: state.fiscalRanking[0].participatedUlbs,
+			rankedUlbs: state.fiscalRanking[0].rankedUlbs,
+			nonRankedUlbs: state.fiscalRanking[0].nonRankedUlbs,
+			rankedtoTotal,
+			stateNameLink: `/rankings/participated-ulbs/${state._id}`,
 		};
 		const participatedCount = {
 			'percentage': state.fiscalRanking[0].participatedUlbsPercentage,

@@ -9,8 +9,9 @@ const FiscalRanking = require('../../models/FiscalRanking');
 const FiscalRankingMapper = require('../../models/FiscalRankingMapper');
 const ScoringFiscalRanking = require('../../models/ScoringFiscalRanking');
 const { registerCustomQueryHandler } = require('puppeteer');
-const { tableResponse } = require('../../service/common');
+const { getMultipleRandomElements } = require('../../service/common');
 const { getPaginationParams } = require('../../service/common');
+const e = require('express');
 
 const abYears = ['2020-21', '2021-22', '2022-23', '2023-24'];
 const afsYears = ['2018-19', '2019-20', '2020-21', '2021-22'];
@@ -57,6 +58,9 @@ module.exports.getUlbDetails = async (req, res) => {
 		const condition1 = { isActive: true, populationBucket: ulb.populationBucket };
 		const populationBucketUlbCount = await ScoringFiscalRanking.countDocuments(condition1).lean();
 
+		const condition2 = { isActive: true, populationBucket: ulb.populationBucket };
+		const topUlbs = await ScoringFiscalRanking.find(condition2).select('_id').sort({ 'overAll.rank': 1 }).limit(10).lean();
+
 		const conditionFs = {
 			ulb: ObjectId(ulb.ulb),
 			design_year: ObjectId(design_year2022_23),
@@ -86,8 +90,11 @@ module.exports.getUlbDetails = async (req, res) => {
 			fiscalGovernance: ulb.fiscalGovernance,
 			location: ulb.location,
 		};
-
-		const data = { populationBucketUlbCount, ulb: ulbData, fsData, assessmentParameter };
+		const topUlbIds = getMultipleRandomElements(topUlbs, 4).map(e => e._id);
+		const data = {
+			populationBucketUlbCount, ulb: ulbData, fsData, assessmentParameter,
+			topUlbIds
+		};
 		return res.status(200).json({ data });
 	} catch (error) {
 		console.log('error', error);
@@ -108,7 +115,7 @@ module.exports.getUlbsBySate = async (req, res) => {
 		const { limit, skip } = getPaginationParams(req.query);
 		const ulbs = await ScoringFiscalRanking.find(condition)
 			.select('ulb name populationBucket currentFormStatus auditedAccounts annualBudgets ')
-			.sort({ [sortBy] : sortOrder })
+			.sort({ [sortBy]: sortOrder })
 			.skip(skip)
 			.limit(limit)
 			.lean();
@@ -162,14 +169,14 @@ function getTableHeaderDocs() {
 			},
 			{
 				'label': 'ULB Participated',
-				'key': 'participatedUlbs',
+				'key': 'isUlbParticipated',
 				'sortable': true,
 				'sort': 1,
 				'class': 'th-common-cls',
 			},
 			{
 				'label': 'CFR Ranked',
-				'key': 'rankedUlbs',
+				'key': 'isUlbRanked',
 				'sortable': true,
 				'sort': 1,
 				'class': 'th-common-cls',
@@ -234,15 +241,26 @@ function getUlbData(ulbs, query) {
 			// 'stateName': 'Andaman and Nicobar Islands',
 			'ulbName': ulb.name,
 			'populationCategory': ulb.populationBucket,
-			'participatedULBs':
-				ulb.currentFormStatus === 8 || ulb.currentFormStatus === 9 || ulb.currentFormStatus === 10 || ulb.currentFormStatus === 11 ? 'Yes' : 'No',
-			'rankedULBs': ulb.currentFormStatus === 11 ? 'Yes' : 'No',
+			'isUlbParticipated': [8, 9, 10, 11].includes(ulb.currentFormStatus) ? 'Yes' : 'No',
+			'isUlbRanked': ulb.currentFormStatus === 11 ? 'Yes' : 'No',
 		};
 		ulb.annualBudgets.forEach((year) => {
 			data[`annualBudgets${year.year}`] = year.url;
 		});
+		//if no data for year add -
+		abYears.forEach((year) => {
+			if (!data[`annualBudgets${year}`]) {
+				data[`annualBudgets${year}`] = '-';
+			}
+		});
 		ulb.auditedAccounts.forEach((year) => {
 			data[`auditedAccounts${year.year}`] = year.modelName === 'ULBLedger' ? 'Available in 15th FC' : year.url;
+		});
+		//if no data for year add -
+		afsYears.forEach((year) => {
+			if (!data[`auditedAccounts${year}`]) {
+				data[`auditedAccounts${year}`] = '-';
+			}
 		});
 		tableData.push(data);
 		j++;
