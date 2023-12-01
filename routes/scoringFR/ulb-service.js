@@ -1,5 +1,4 @@
 const ObjectId = require('mongoose').Types.ObjectId;
-const ObjectID = require('mongodb').ObjectID;
 const moongose = require('mongoose');
 const Response = require('../../service').response;
 const { years } = require('../../service/years');
@@ -10,28 +9,20 @@ const FiscalRankingMapper = require('../../models/FiscalRankingMapper');
 const ScoringFiscalRanking = require('../../models/ScoringFiscalRanking');
 const { registerCustomQueryHandler } = require('puppeteer');
 const { getMultipleRandomElements } = require('../../service/common');
-const { getPaginationParams } = require('../../service/common');
+const { getPaginationParams, isValidObjectId, getPageNo, getPopulationBucket } = require('../../service/common');
 const e = require('express');
 
 const abYears = ['2020-21', '2021-22', '2022-23', '2023-24'];
 const afsYears = ['2018-19', '2019-20', '2020-21', '2021-22'];
 
-async function getScoreFR(populationBucket, indicator, sortOrder = -1) {
+async function getScoreFR(populationBucket, indicator, order = -1) {
 	const condition = { isActive: true, populationBucket };
 	const ulb = await ScoringFiscalRanking.findOne(condition)
-		.sort({ [`${indicator}.score`]: sortOrder })
+		.sort({ [`${indicator}.score`]: order })
 		.lean();
 }
 const mainIndicators = ['resourceMobilization', 'expenditurePerformance', 'fiscalGovernance', 'overAll'];
-function isValidObjectId(id) {
-	if (ObjectId.isValid(id)) {
-		if (String(new ObjectId(id)) === id) {
-			return true;
-		}
-		return false;
-	}
-	return false;
-}
+
 module.exports.getUlbDetails = async (req, res) => {
 	try {
 		moongose.set('debug', true);
@@ -108,14 +99,22 @@ module.exports.getUlbDetails = async (req, res) => {
 // <<-- Get all the ULBs of a state - Document details. -->>
 module.exports.getUlbsBySate = async (req, res) => {
 	try {
-		// moongose.set('debug', true);
+		moongose.set('debug', true);
 		const stateId = ObjectId(req.params.stateId);
 		const condition = { isActive: true, state: stateId };
-		const { sortOrder, sortBy } = req.query;
+		const { order, sortBy } = req.query;
+
+		const sortArr = {participated:'currentFormStatus',ranked: 'overAll.rank', populationBucket: 'populationBucket'}
+		let sort = {name:1};
+		if (sortBy) {
+			const by = sortArr[sortBy] || 'name'
+			sort = { [by]: order };
+		}
+
 		const { limit, skip } = getPaginationParams(req.query);
 		const ulbs = await ScoringFiscalRanking.find(condition)
-			.select('ulb name populationBucket currentFormStatus auditedAccounts annualBudgets ')
-			.sort({ [sortBy]: sortOrder })
+			.select('ulb name populationBucket currentFormStatus auditedAccounts annualBudgets overAll ')
+			.sort(sort)
 			.skip(skip)
 			.limit(limit)
 			.lean();
@@ -229,20 +228,22 @@ function getTableHeaderDocs() {
 	};
 	return data;
 }
+
 // Table data
 function getUlbData(ulbs, query) {
 
 	const tableData = [];
-	let j = ((query.page - 1) * query.limit) + 1;
+	let j = getPageNo(query);
 	ulbs.forEach((ulb) => {
+		console.log(ulb);
+		const populationCategory = getPopulationBucket(ulb.populationBucket);
 		const data = {
 			'_id': ulb._id,
-			'sNo': j,
-			// 'stateName': 'Andaman and Nicobar Islands',
+			'sNo': j++,
 			'ulbName': ulb.name,
-			'populationCategory': ulb.populationBucket,
+			populationCategory,
 			'isUlbParticipated': [8, 9, 10, 11].includes(ulb.currentFormStatus) ? 'Yes' : 'No',
-			'isUlbRanked': ulb.currentFormStatus === 11 ? 'Yes' : 'No',
+			'isUlbRanked': ulb.overAll.rank ? 'Yes' : 'No',
 		};
 		ulb.annualBudgets.forEach((year) => {
 			data[`annualBudgets${year.year}`] = year.url;
@@ -263,7 +264,6 @@ function getUlbData(ulbs, query) {
 			}
 		});
 		tableData.push(data);
-		j++;
 	});
 	return tableData;
 }
