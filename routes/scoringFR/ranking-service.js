@@ -193,6 +193,16 @@ function tableRes(states, query) {
 				'width': '7',
 			},
 		],
+		'subHeaders': [
+    		"",
+    		"",
+    		"",
+    		"A",
+    		"B",
+    		"C",
+    		"D",
+    		"E = C/ A"
+		],
 		'name': '',
 		'data': [],
 		'lastRow': ['', '', 'Total', '$sum', '$sum', '$sum', '$sum', '$sum', '$sum'],
