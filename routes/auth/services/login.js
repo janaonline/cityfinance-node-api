@@ -54,7 +54,7 @@ module.exports.login = async (req, res) => {
         message: ``,
         token: token,
         user: {
-          user: user._id,
+          _id: user._id,
           name: user.name,
           email: user.email,
           isActive: user.isActive,
