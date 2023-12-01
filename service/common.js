@@ -1,3 +1,4 @@
+const ObjectId = require('mongoose').Types.ObjectId;
 module.exports.camelize = (dashString = '') => {
     return dashString.replace(/(?<!\p{L})\p{L}|\s+/gu,
         m => +m === 0 ? "" : m.toUpperCase())
@@ -31,4 +32,41 @@ module.exports.tableResponse = array => {
 module.exports.getMultipleRandomElements = (arr, num) => {
     const shuffled = [...arr].sort(() => 0.5 - Math.random());
     return shuffled.slice(0, num);
+}
+
+module.exports.getPageNo = (query) => {
+    console.log('query',query)
+    const page = query.page || 1;
+    const limit = query.limit || 10;
+    console.log('page',page,limit)
+    return ((page - 1) * limit) + 1;
+}
+
+module.exports.isValidObjectId = (id) => {
+    if (ObjectId.isValid(id)) {
+		if (String(new ObjectId(id)) === id) {
+			return true;
+		}
+		return false;
+	}
+	return false;
+}
+
+module.exports.getPopulationBucket = (populationBucket) => {
+    let cat = '';
+    switch (populationBucket) {
+        case 1:
+            cat = '4M+';
+            break;
+        case 2:
+            cat = '1M - 4M';
+            break;
+        case 3:
+            cat = '100K - 1M';
+            break;
+        case 4:
+            cat = '<100K';
+            break;
+    }
+	return cat;
 }

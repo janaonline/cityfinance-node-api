@@ -8,7 +8,7 @@ const FiscalRanking = require('../../models/FiscalRanking');
 const FiscalRankingMapper = require('../../models/FiscalRankingMapper');
 const ScoringFiscalRanking = require('../../models/ScoringFiscalRanking');
 const { registerCustomQueryHandler } = require('puppeteer');
-const { getPaginationParams } = require('../../service/common');
+const { getPaginationParams, getPageNo } = require('../../service/common');
 
 const mainIndicators = ['resourceMobilization', 'expenditurePerformance', 'fiscalGovernance', 'overAll'];
 const currentFormStatus = { $in: [11] };
@@ -21,15 +21,16 @@ async function topCategoryUlb(populationBucket) {
 	const condition = { populationBucket };
 	return await ScoringFiscalRanking.find(condition).select('name').sort({ 'overAll.rank': -1 }).limit(2);
 }
-async function getParticipatedState(limit, query = false, select = 'name') {
+async function getParticipatedState(limit, skip=0, query = false, select = 'name') {
 	let sort = { 'fiscalRanking.participatedUlbsPercentage': -1 };
 	// mongoose.set('debug', true);
-	const sortArr = { totalUlbs: 'fiscalRanking.totalUlbs', stateName: 'name' }
-	const { stateType, ulbParticipationFilter, ulbRankingStatusFilter, sortBy, sortOrder } = query;
+	const sortArr = { totalUlbs: 'fiscalRanking.totalUlbs', participatedUlbs: 'fiscalRanking.participatedUlbs', rankedUlbs: 'fiscalRanking.rankedUlbs', nonRankedUlbs: 'fiscalRanking.nonRankedUlbs', stateName: 'name', 	}
+
+	const { stateType, ulbParticipationFilter, ulbRankingStatusFilter, sortBy, order } = query;
 	let condition = { isActive: true, 'fiscalRanking.participatedUlbsPercentage': { $ne: 0 } };
 	if (sortBy) {
 		const by = sortArr[sortBy] || 'name'
-		sort = { [by]: sortOrder };
+		sort = { [by]: order };
 	}
 	if (['Large', 'Small', 'UT'].includes(stateType)) {
 		condition = { ...condition, stateType };
@@ -42,7 +43,7 @@ async function getParticipatedState(limit, query = false, select = 'name') {
 		const rankedCond = ulbRankingStatusFilter === 'ranked' ? { '$ne': 0 } : 0;
 		condition = { ...condition, 'fiscalRanking.rankedUlbs': rankedCond };
 	}
-	return await State.find(condition).select(select).sort(sort).limit(limit).lean();
+	return await State.find(condition).select(select).sort(sort).limit(limit).skip(skip).lean();
 }
 
 async function getAuditedUlbCount() {
@@ -112,8 +113,9 @@ module.exports.participatedState = async (req, res) => {
 	try {
 		const query = req.query;
 		const condition = { isActive: true };
-		const states = await getParticipatedState(5, query, 'name code fiscalRanking stateType');
-		return res.status(200).json({ data: tableRes(states) });
+		let { limit, skip } = getPaginationParams(req.query);
+		const states = await getParticipatedState(limit, skip, query, 'name code fiscalRanking stateType');
+		return res.status(200).json({ data: tableRes(states, query) });
 	} catch (error) {
 		console.log('error', error);
 		return res.status(400).json({
@@ -123,7 +125,7 @@ module.exports.participatedState = async (req, res) => {
 	}
 };
 // Find participated ULB count state wise.
-function tableRes(states) {
+function tableRes(states, query) {
 	let tableData = {
 		'columns': [
 			{
@@ -193,23 +195,23 @@ function tableRes(states) {
 		],
 		'name': '',
 		'data': [],
-		'lastRow': ['', '', 'Total', '$x', '$sum', '$sum', '$sum', '$sum', '$sum'],
+		'lastRow': ['', '', 'Total', '$sum', '$sum', '$sum', '$sum', '$sum', '$sum'],
 	};
-	let i = 1;
 	let mapData = [];
+	let i = getPageNo(query);
 	for (const state of states) {
-		const rankedtoTotal = state.fiscalRanking[0].totalUlbs && state.fiscalRanking[0].rankedUlbs ? state.fiscalRanking[0].rankedUlbs / state.fiscalRanking[0].totalUlbs : 0;
+		const rankedtoTotal = state.fiscalRanking[0].totalUlbs && state.fiscalRanking[0].rankedUlbs ? parseFloat((state.fiscalRanking[0].rankedUlbs / state.fiscalRanking[0].totalUlbs).toFixed(2)) : 0;
 		const ele = {
 			_id: state._id,
 			sNo: i++,
 			name: state.name,
 			stateType: state.stateType,
-			totalULBs: state.fiscalRanking[0].totalUlbs,
+			totalULBs: state.fiscalRanking[0].totalUlbs, //Name to be changed?
 			participatedUlbs: state.fiscalRanking[0].participatedUlbs,
 			rankedUlbs: state.fiscalRanking[0].rankedUlbs,
 			nonRankedUlbs: state.fiscalRanking[0].nonRankedUlbs,
 			rankedtoTotal,
-			stateNameLink: `/rankings/participated-ulbs/${state._id}`,
+			nameLink: `/rankings/participated-ulbs/${state._id}`,
 		};
 		const participatedCount = {
 			'percentage': state.fiscalRanking[0].participatedUlbsPercentage,
@@ -356,14 +358,17 @@ function filterApi() {
 module.exports.states = async (req, res) => {
 	try {
 		// mongoose.set('debug', true);
-		const { sortOrder, sortBy } = req.query;
+		let  { order, sortBy } = req.query;
+		 
+		order = order || 1;
+		sortBy = sortBy || 'name';
 		const select = req.params.select
 		let selected = select ? `name fiscalRanking ${select}` : 'name';
 		const condition = { isActive: true };
 		const { limit, skip } = getPaginationParams(req.query);
 		const states = await State.find(condition)
 			.select(selected)
-			.sort({ [sortBy]: sortOrder })
+			.sort({ [sortBy]: order })
 			.skip(skip)
 			.limit(limit)
 			.exec();
@@ -397,13 +402,13 @@ function stateTable(indicator, states, query) {
 			},
 			{
 				'label': 'State Name',
-				'key': 'stateName',
+				'key': 'name',
 				'sort': 1,
 				'sortable': true,
 			},
 			{
 				'label': 'No of ulbs',
-				'key': 'totalULBs',
+				'key': 'totalUlbs',
 			},
 		],
 		'subHeaders': [],
@@ -464,13 +469,13 @@ function stateTable(indicator, states, query) {
 		years = ['2018-19', '2019-20', '2020-21', '2021-22'];
 		table.subHeaders = ['', '', '', ...years];
 	}
-	let i = ((query.page - 1) * query.limit) + 1;
+	let i = getPageNo(query);
 	for (const state of states) {
 		const ele = {
 			'sNo': i++,
-			'totalULBs': state.fiscalRanking[0].totalUlbs,
-			'stateName': state.name,
-			'stateNameLink': `/rankings/participated-ulbs/${state._id}`,
+			'totalUlbs': state.fiscalRanking[0].totalUlbs,
+			'name': state.name,
+			'nameLink': `/rankings/participated-ulbs/${state._id}`,
 		};
 		years.forEach((year) => {
 			ele[year] = getDocYearCount(state, indicator, year);
@@ -493,7 +498,7 @@ function getMapData() { }
 module.exports.topRankedUlbs = async (req, res) => {
 	try {
 		// moongose.set('debug', true);
-		let { sortBy, sortOrder, state, populationBucket } = req.query;
+		let { category, sortBy, order, state, populationBucket } = req.query;
 		let condition = { isActive: true, currentFormStatus };
 		if (state) {
 			condition = { ...condition, state: ObjectId(state) };
@@ -502,17 +507,25 @@ module.exports.topRankedUlbs = async (req, res) => {
 			condition = { ...condition, populationBucket };
 		}
 
-		sortBy = sortBy ? sortBy : 'overAll';
-		// sortOrder = sortOrder === 'desc' ? -1 : 1;
+		const sortArr = {overAllRank:'overAll', resourceMobilizationRank: 'resourceMobilization', expenditurePerformanceRank: 'expenditurePerformance', fiscalGovernanceRank: 'fiscalGovernance'}
+		let sort = {[`overAll.rank`]:1};
+		let by = 'overAll';
+		sortBy = category || sortBy;
+		if (sortBy && sortArr[sortBy]) {
+			 by = sortArr[sortBy];
+			sort = { [`${by}.rank`]: order };
+		}
+
+		// order = order === 'desc' ? -1 : 1;
 		const ulbRes = await ScoringFiscalRanking.find(condition)
 			.select('name ulb location resourceMobilization expenditurePerformance fiscalGovernance overAll state')
-			.sort({ [`${sortBy}.rank`]: sortOrder })
+			.sort(sort)
 			.limit(5)
 			.exec();
 		// console.log(ulbRes)
 
-		fetchFiveUlbs(ulbRes, sortBy);
-		var assessmentParameter = findassessmentParameter(sortBy);
+		fetchFiveUlbs(ulbRes, by);
+		var assessmentParameter = findassessmentParameter(by);
 
 		return res.status(200).json({
 			'status': true,
@@ -531,12 +544,12 @@ module.exports.topRankedUlbs = async (req, res) => {
 		});
 	}
 };
-async function getTopUlbs(sortBy, sortOrder) {
+async function getTopUlbs(sortBy, order) {
 	let condition = { isActive: true };
 	const ulbRes = await ScoringFiscalRanking.find(condition, { state: 1, _id: 0 })
 		.select('state')
 		.limit(5)
-		.sort({ [`${sortBy}.rank`]: sortOrder })
+		.sort({ [`${sortBy}.rank`]: order })
 		.lean();
 	return ulbRes;
 }
