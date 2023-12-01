@@ -724,7 +724,7 @@ module.exports.updateForm = async (req, res) => {
         if (formType === "ULB") {
             for (let i = 0; i < data.ulb.length; i++) {//update status and add history
                 ulb = data.ulb[i];
-                form = forms[i];
+                form = forms.find(entity => ulb?.toString() === entity.ulb?.toString())
                 if (form === undefined) continue;
                 form['actionTakenByRole'] = formData.actionTakenByRole;
                 form['actionTakenBy'] = formData.actionTakenBy;
