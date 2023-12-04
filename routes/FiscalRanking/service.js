@@ -1371,8 +1371,8 @@ exports.getView = async function (req, res, next) {
       currentFormStatus: viewOne.currentFormStatus,
       financialYearTableHeader,
       messages: userMessages,
-      // hideForm : (process.env.ENV == ENV['prod']) ? hideForm : false,
-      hideForm,
+      hideForm : (process.env.ENV == ENV['prod']) ? hideForm : false,
+      // hideForm,
       notice
     };
     if (userMessages.length > 0) {
