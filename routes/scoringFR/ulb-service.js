@@ -99,16 +99,28 @@ module.exports.getUlbDetails = async (req, res) => {
 // <<-- Get all the ULBs of a state - Document details. -->>
 module.exports.getUlbsBySate = async (req, res) => {
 	try {
-		moongose.set('debug', true);
+		// moongose.set('debug', true);
 		const stateId = ObjectId(req.params.stateId);
-		const condition = { isActive: true, state: stateId };
-		const { order, sortBy } = req.query;
+		let condition = { isActive: true, state: stateId };
+		const { order, sortBy, populationBucket, ulbParticipationFilter,ulbRankingStatusFilter } = req.query;
 
 		const sortArr = {participated:'currentFormStatus',ranked: 'overAll.rank', populationBucket: 'populationBucket'}
 		let sort = {name:1};
 		if (sortBy) {
 			const by = sortArr[sortBy] || 'name'
 			sort = { [by]: order };
+		}
+		if ([1, 2, 3, 4].includes(parseInt(populationBucket))) {
+			condition = { ...condition, populationBucket };
+		}
+		if (['participated', 'nonParticipated'].includes(ulbParticipationFilter)) {
+			//TODO: check participated form status
+			const participateCond = ulbParticipationFilter === 'participated' ? {$in:[8,9,10,11]} : {$in:[1]};
+			condition = { ...condition, 'currentFormStatus': participateCond };
+		}
+		if (['ranked', 'nonRanked'].includes(ulbRankingStatusFilter)) {
+			const rankedCond = ulbRankingStatusFilter === 'ranked' ? { '$ne': 0 } : 0;
+			condition = { ...condition, 'overAll.rank': rankedCond };
 		}
 
 		const { limit, skip } = getPaginationParams(req.query);
@@ -235,7 +247,6 @@ function getUlbData(ulbs, query) {
 	const tableData = [];
 	let j = getPageNo(query);
 	ulbs.forEach((ulb) => {
-		console.log(ulb);
 		const populationCategory = getPopulationBucket(ulb.populationBucket);
 		const data = {
 			'_id': ulb._id,
@@ -479,7 +490,7 @@ function getSearchedUlb(ulbs, indicator) {
 // ULB details - graph section.
 module.exports.getSearchedUlbDetailsGraph = async (req, res) => {
 	try {
-		moongose.set('debug', true);
+		// moongose.set('debug', true);
 		const ulbIds = req.query.ulb;
 		// const indicator = req.query.indicator;
 
@@ -513,7 +524,7 @@ module.exports.getSearchedUlbDetailsGraph = async (req, res) => {
 // <<-- Auto suggest ulbs -->>>>
 module.exports.autoSuggestUlbs = async (req, res) => {
 	try {
-		moongose.set('debug', true);
+		// moongose.set('debug', true);
 		const q = req.query.q;
 		const condition = {
 			isActive: true,
