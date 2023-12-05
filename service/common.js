@@ -7,9 +7,8 @@ module.exports.camelize = (dashString = '') => {
 }
 
 module.exports.getPaginationParams = (query) => {
+    const skip = query.skip !== undefined ? parseInt(query.skip): 0;
     const limit = query.limit ? parseInt(query.limit) : 10;
-    const page = query.page ? parseInt(query.page) : 1;
-    const skip = (parseInt(page) - 1) * parseInt(limit);
     return { limit, skip };
 }
 
@@ -35,11 +34,8 @@ module.exports.getMultipleRandomElements = (arr, num) => {
 }
 
 module.exports.getPageNo = (query) => {
-    console.log('query',query)
-    const page = query.page || 1;
-    const limit = query.limit || 10;
-    console.log('page',page,limit)
-    return ((page - 1) * limit) + 1;
+    const skip = query.skip !== undefined ? query.skip: 0;
+    return skip + 1;
 }
 
 module.exports.isValidObjectId = (id) => {

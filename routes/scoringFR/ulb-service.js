@@ -299,7 +299,7 @@ function getTableHeader(type) {
 			'key': 'unit',
 		},
 		{
-			'label': 'Ulb performance',
+			'label': 'ULB performance',
 			'key': 'ulbPerformance',
 		},
 		{
@@ -332,14 +332,14 @@ function getTableData(ulb, type) {
 		{ units: 'Rs.', sno: '2', key: 'ownRevenuePC_2', type: 'resourceMobilization', title: 'Own Revenue per capita' },
 		{ units: 'Rs.', sno: '3', key: 'pTaxPC_3', type: 'resourceMobilization', title: 'Property Tax per capita' },
 		{
-			units: '%.',
+			units: '%',
 			sno: '4',
 			key: 'cagrInTotalBud_4',
 			type: 'resourceMobilization',
 			title: 'Growth (3 Year CAGR) in Total Budget Size (Total actual reciept)',
 		},
-		{ units: '%.', sno: '5', key: 'cagrInOwnRevPC_5', type: 'resourceMobilization', title: 'Growth (3 Year CAGR) in Own Revenue per capita' },
-		{ units: '%.', sno: '6', key: 'cagrInPropTax_6', type: 'expenditurePerformance', title: 'Growth (3 Year CAGR) in Property Tax per capita' },
+		{ units: '%', sno: '5', key: 'cagrInOwnRevPC_5', type: 'resourceMobilization', title: 'Growth (3 Year CAGR) in Own Revenue per capita' },
+		{ units: '%', sno: '6', key: 'cagrInPropTax_6', type: 'expenditurePerformance', title: 'Growth (3 Year CAGR) in Property Tax per capita' },
 		{ units: 'Rs.', sno: '7', key: 'capExPCAvg_7', type: 'expenditurePerformance', title: 'Capital Expenditure per capita (3-year average)' },
 		{ units: '%', sno: '8', key: 'cagrInCapExpen_8', type: 'expenditurePerformance', title: 'Growth (3-Year CAGR) in Capex per capita' },
 		{
@@ -366,7 +366,7 @@ function getTableData(ulb, type) {
 		},
 		{
 			units: 'Yes/ No',
-			sno: '10a',
+			sno: '11a',
 			key: 'gisBasedPTaxMarks_11a',
 			type: 'fiscalGovernance',
 			title: 'For Property-tax - whether property tax records are linked to GIS-based system? (Yes/ No)',

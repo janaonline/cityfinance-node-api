@@ -17,33 +17,13 @@ async function getParticipatedUlbCount() {
 	const condition = { isActive: true, currentFormStatus: { $in: [8, 9, 10, 11] } };
 	return await FiscalRanking.countDocuments(condition);
 }
+async function getParticipatedStateCount() {
+	const condition = { isActive: true, 'fiscalRanking.participatedUlbs': {$ne: 0} };
+	return await State.countDocuments(condition);
+}
 async function topCategoryUlb(populationBucket) {
 	const condition = { populationBucket };
 	return await ScoringFiscalRanking.find(condition).select('name').sort({ 'overAll.rank': -1 }).limit(2);
-}
-async function getParticipatedState(limit, skip=0, query = false, select = 'name') {
-	let sort = { 'fiscalRanking.participatedUlbsPercentage': -1 };
-	// mongoose.set('debug', true);
-	const sortArr = { totalUlbs: 'fiscalRanking.totalUlbs', participatedUlbs: 'fiscalRanking.participatedUlbs', rankedUlbs: 'fiscalRanking.rankedUlbs', nonRankedUlbs: 'fiscalRanking.nonRankedUlbs', stateName: 'name', 	}
-
-	const { stateType, ulbParticipationFilter, ulbRankingStatusFilter, sortBy, order } = query;
-	let condition = { isActive: true, 'fiscalRanking.participatedUlbsPercentage': { $ne: 0 } };
-	if (sortBy) {
-		const by = sortArr[sortBy] || 'name'
-		sort = { [by]: order };
-	}
-	if (['Large', 'Small', 'UT'].includes(stateType)) {
-		condition = { ...condition, stateType };
-	}
-	if (['participated', 'nonParticipated'].includes(ulbParticipationFilter)) {
-		const participateCond = ulbParticipationFilter === 'participated' ? { '$ne': 0 } : 0;
-		condition = { ...condition, 'fiscalRanking.participatedUlbs': participateCond };
-	}
-	if (['ranked', 'nonRanked'].includes(ulbRankingStatusFilter)) {
-		const rankedCond = ulbRankingStatusFilter === 'ranked' ? { '$ne': 0 } : 0;
-		condition = { ...condition, 'fiscalRanking.rankedUlbs': rankedCond };
-	}
-	return await State.find(condition).select(select).sort(sort).limit(limit).skip(skip).lean();
 }
 
 async function getAuditedUlbCount() {
@@ -78,12 +58,15 @@ async function getBudgetUlbCount() {
 	const condition = { isActive: true };
 	return await Ulb.countDocuments(condition);
 }
-
+async function getTop3ParticipatedState() {
+	return await State.find({ isActive: true}).select('name')
+	.sort({ 'fiscalRanking.participatedUlbsPercentage': -1 }).limit(3).lean();
+}
 //<<-- Dashboard -->>
 module.exports.dashboard = async (req, res) => {
 	try {
 		const reqData = req.body;
-		const top3ParticipatedState = await getParticipatedState(3);
+		const top3ParticipatedState = await getTop3ParticipatedState();
 		const populationBucket1 = await topCategoryUlb(1);
 		const populationBucket2 = await topCategoryUlb(2);
 		const populationBucket3 = await topCategoryUlb(3);
@@ -93,6 +76,7 @@ module.exports.dashboard = async (req, res) => {
 
 		const data = {
 			participatedUlbCount: await getParticipatedUlbCount(),
+			participatedStateCount: await getParticipatedStateCount(),
 			top3ParticipatedState,
 			bucketWiseUlb: { populationBucket1, populationBucket2, populationBucket3, populationBucket4 },
 			auditedUlbCount,
@@ -107,15 +91,43 @@ module.exports.dashboard = async (req, res) => {
 		});
 	}
 };
+async function getParticipatedState(limit, skip=0, query = false, select = 'name') {
+	let sort = { 'fiscalRanking.participatedUlbsPercentage': -1 };
+	// mongoose.set('debug', true);
+	const sortArr = { totalUlbs: 'fiscalRanking.totalUlbs', participatedUlbs: 'fiscalRanking.participatedUlbs', rankedUlbs: 'fiscalRanking.rankedUlbs', nonRankedUlbs: 'fiscalRanking.nonRankedUlbs', stateName: 'name', 	}
 
+	const { stateType, ulbParticipationFilter, ulbRankingStatusFilter, sortBy, order } = query;
+	let condition = { isActive: true, 'fiscalRanking.participatedUlbsPercentage': { $ne: 0 } };
+	if (sortBy) {
+		console.log('order',order);
+		const by = sortArr[sortBy] || 'name'
+		sort = { [by]: order };
+	}
+	if (['Large', 'Small', 'UT'].includes(stateType)) {
+		condition = { ...condition, stateType };
+	}
+	if (['participated', 'nonParticipated'].includes(ulbParticipationFilter)) {
+		const participateCond = ulbParticipationFilter === 'participated' ? { '$ne': 0 } : 0;
+		condition = { ...condition, 'fiscalRanking.participatedUlbs': participateCond };
+	}
+	if (['ranked', 'nonRanked'].includes(ulbRankingStatusFilter)) {
+		const rankedCond = ulbRankingStatusFilter === 'ranked' ? { '$ne': 0 } : 0;
+		condition = { ...condition, 'fiscalRanking.rankedUlbs': rankedCond };
+	}
+	const states = await State.find(condition).select(select).sort(sort).limit(limit).skip(skip).lean();
+	const total = await State.countDocuments(condition);
+	return {data:tableRes(states, query), total}
+}
 // <<-- Participated State Table -->>
 module.exports.participatedState = async (req, res) => {
 	try {
+		mongoose.set('debug', true);
 		const query = req.query;
 		const condition = { isActive: true };
 		let { limit, skip } = getPaginationParams(req.query);
-		const states = await getParticipatedState(limit, skip, query, 'name code fiscalRanking stateType');
-		return res.status(200).json({ data: tableRes(states, query) });
+		const data = await getParticipatedState(limit, skip, query, 'name code fiscalRanking stateType');
+		
+		return res.status(200).json({ ...data });
 	} catch (error) {
 		console.log('error', error);
 		return res.status(400).json({
@@ -205,7 +217,7 @@ function tableRes(states, query) {
 		],
 		'name': '',
 		'data': [],
-		'lastRow': ['', '', 'Total', '$sum', '$sum', '$sum', '$sum', '$sum', '$sum'],
+		'lastRow': ['', '', 'Total', '$sum', '$sum', '$sum', '$sum', '$sum'],
 	};
 	let mapData = [];
 	let i = getPageNo(query);
@@ -385,7 +397,8 @@ module.exports.states = async (req, res) => {
 
 		let data = states;
 		if (select) {
-			data = stateTable(select, states, req.query);
+			const total = await State.countDocuments(condition);
+			data = stateTable(select, states, req.query, total);
 		}
 		return res.status(200).json({
 			data,
@@ -401,7 +414,7 @@ module.exports.states = async (req, res) => {
 	}
 };
 // Get documetns count - as per state.
-function stateTable(indicator, states, query) {
+function stateTable(indicator, states, query, total) {
 	const table = {
 		'status': true,
 		'message': 'Successfully saved data!',
@@ -424,6 +437,7 @@ function stateTable(indicator, states, query) {
 		'subHeaders': [],
 		'name': '',
 		'data': [],
+		total,
 	};
 	let years = [];
 	if (indicator === 'annualBudgets') {
