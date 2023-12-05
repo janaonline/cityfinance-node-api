@@ -116,7 +116,7 @@ async function getParticipatedState(limit, skip=0, query = false, select = 'name
 	}
 	const states = await State.find(condition).select(select).sort(sort).limit(limit).skip(skip).lean();
 	const total = await State.countDocuments(condition);
-	return {data:tableRes(states, query), total}
+	return {data:tableRes(states, query, total)}
 }
 // <<-- Participated State Table -->>
 module.exports.participatedState = async (req, res) => {
@@ -137,7 +137,7 @@ module.exports.participatedState = async (req, res) => {
 	}
 };
 // Find participated ULB count state wise.
-function tableRes(states, query) {
+function tableRes(states, query, total) {
 	let tableData = {
 		'columns': [
 			{
@@ -217,6 +217,7 @@ function tableRes(states, query) {
 		],
 		'name': '',
 		'data': [],
+		total,
 		'lastRow': ['', '', 'Total', '$sum', '$sum', '$sum', '$sum', '$sum'],
 	};
 	let mapData = [];

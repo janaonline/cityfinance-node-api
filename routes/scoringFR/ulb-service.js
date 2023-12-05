@@ -130,6 +130,7 @@ module.exports.getUlbsBySate = async (req, res) => {
 			.skip(skip)
 			.limit(limit)
 			.lean();
+		const total = await ScoringFiscalRanking.countDocuments(condition);
 		const state = await State.findById(stateId).select('fiscalRanking name annualBudgets auditedAccounts').lean();
 		const data = getUlbData(ulbs, req.query);
 		const header = getTableHeaderDocs();
@@ -144,7 +145,7 @@ module.exports.getUlbsBySate = async (req, res) => {
 		return res.status(200).json({
 			'status': true,
 			'message': 'Successfully saved data!',
-			'data': { ...header, data, state, footer },
+			'data': { ...header, data, total, state, footer },
 		});
 	} catch (error) {
 		console.log('error', error);
