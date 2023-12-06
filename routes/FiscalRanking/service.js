@@ -4003,6 +4003,17 @@ module.exports.actionTakenByMoHua = catchAsync(async (req, res) => {
       response.message = "Not permitted";
       return res.status(500).json(response);
     }
+
+    //Validation for submitted Forms.
+    let frForm = await FiscalRanking.findOne({ ulb: ulbId });
+    if ([
+      MASTER_FORM_STATUS['SUBMISSION_ACKNOWLEDGED_BY_PMU'],
+      MASTER_FORM_STATUS['RETURNED_BY_PMU'],
+    ].includes(frForm.currentFormStatus)) {
+      response.message = "The form has already been submitted.";
+      return res.status(400).json(response);
+    }
+
     const session = await mongoose.startSession();
     await session.startTransaction();
     let masterFormId = FORMIDs['fiscalRanking'];
