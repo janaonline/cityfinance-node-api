@@ -108,8 +108,7 @@ module.exports.getStateListWithCoveredUlb = async (req, res) => {
         }
         let financialYear = req.body.year && req.body.year.length ? req.body.year : null;
         let states = await State.find(cond).lean();
-        let lineItem = await LineItem.findOne({ code: "1001" }).exec();
-        const stateResponses = await getData(states, financialYear, lineItem); 
+        const stateResponses = await getData(states, financialYear); 
         let index = 0;  
         for (let el of states) {
             let data = stateResponses[index];
@@ -592,6 +591,16 @@ const getUlbs = (state, yrs) => {
     });
 
 }
+/**
+ * The function calculates various data points for each state and adds them to an array.
+ * @param el - The parameter `el` is an object that represents a state. It has properties like `code`,
+ * `name`, and `_id`.
+ * @param data - The `data` parameter is an array of objects. Each object represents a ULB (Urban Local
+ * Body) and has properties such as `auditStatus` which can have values like "audited", "unaudited", or
+ * others.
+ * @param arr - The `arr` parameter is an array where the calculated state data objects will be pushed
+ * into.
+ */
 async function calculateStateData(el, data, arr) {
     let overAllUlbs = await OverallUlb.distinct("_id", { state: el._id }).exec();
     let obj = {};
@@ -617,8 +626,22 @@ async function calculateStateData(el, data, arr) {
     arr.push(obj);
 }
 
-async function getData(states, financialYear, lineItem, stateDataPromises) {
+/**
+ * The function `getData` retrieves state data for a given set of states, financial year, line item,
+ * and state data promises.
+ * @param states - An array of objects representing different states.
+ * @param financialYear - The `financialYear` parameter is used to filter the data based on a specific
+ * financial year. It is an array of financial year values.
+ * @param lineItem - The lineItem parameter is a string that represents the specific item or category
+ * of data that you want to retrieve from the state ledger. It could be something like "revenue",
+ * "expenditure", "taxes", etc.
+ * @param stateDataPromises - An array of promises that will resolve to the state data for each state.
+ * @returns the stateResponses, which is an array of promises that represent the results of the
+ * stateDataPromises.
+ */
+async function getData(states, financialYear) {
    try {
+    let lineItem = await LineItem.findOne({ code: "1001" }).lean();
     let stateDataPromises = [];
     for(let el of states){
         let stateUlbs = await getUlbs(el._id, financialYear);
