@@ -107,92 +107,17 @@ module.exports.getStateListWithCoveredUlb = async (req, res) => {
             cond['accessToXVFC'] = Boolean(accessToXVFC)
         }
         let financialYear = req.body.year && req.body.year.length ? req.body.year : null;
-        let states = await State.find(cond).exec();
+        let states = await State.find(cond).lean();
         let lineItem = await LineItem.findOne({ code: "1001" }).exec();
-        for (var el of states) {
-            let obj = {};
-            //let coveredUlbs = await UlbLedger.distinct("ulb",cond).exec();
-
-            let overAllUlbs = await OverallUlb.distinct("_id", { state: el._id }).exec();
-            let stateUlbs = await getUlbs(el._id, financialYear);
-            let condition = { ulb: { $in: stateUlbs } };
-            if (financialYear) {
-                condition["financialYear"] = { $in: financialYear }
-            }
-            let data = await UlbLedger.aggregate([
-                { $match: condition },
-                {
-                    $group: {
-                        _id: {
-                            ulb: "$ulb",
-                        },
-                        lineItem: { $addToSet: { _id: "$lineItem", amount: "$amount" } }
-                    }
-                },
-                {
-                    $project: {
-                        ulb: "$_id.ulb",
-                        lineItem: {
-                            $filter: {
-                                input: "$lineItem",
-                                as: "lineItem",
-                                cond: {
-                                    $and: [
-                                        { $eq: ["$$lineItem._id", lineItem._id] },
-                                    ]
-                                }
-                            }
-                        }
-                    }
-                },
-                {
-                    $project: {
-                        "ulb": 1,
-                        "lineItem": { $arrayElemAt: ["$lineItem", 0] },
-                    }
-                },
-                {
-                    $project: {
-                        "ulb": 1,
-                        amount: "$lineItem.amount",
-                    }
-                },
-                {
-                    $project: {
-                        "ulb": 1,
-                        auditStatus: {
-                            $switch: {
-                                branches: [
-                                    { case: { $eq: ["$amount", 0] }, then: "unaudited" },
-                                    { case: { $gt: ["$amount", 0] }, then: "audited" }
-                                ],
-                                default: "auditNA"
-                            }
-                        },
-                    }
-                }
-            ])
-            obj["code"] = el.code
-            obj["name"] = el.name
-            obj["_id"] = el._id
-            obj["totalUlbs"] = overAllUlbs.length
-            obj["coveredUlbCount"] = 0
-            obj["audited"] = 0
-            obj["unaudited"] = 0
-            obj["auditNA"] = 0
-            data.map(m => {
-                obj["coveredUlbCount"]++;
-                if (m.auditStatus == "audited") {
-                    obj["audited"]++;
-                } else if (m.auditStatus == "unaudited") {
-                    obj["unaudited"]++;
-                } else {
-                    obj["auditNA"]++;
-                }
-            });
-            obj["coveredUlbPercentage"] = (obj["coveredUlbCount"] / obj["totalUlbs"]) * 100 ? ((obj["coveredUlbCount"] / obj["totalUlbs"]) * 100).toFixed(2) : 0
-            arr.push(obj);
+        const stateResponses = await getData(states, financialYear, lineItem); 
+        let index = 0;  
+        for (let el of states) {
+            let data = stateResponses[index];
+            data = data.value
+            await calculateStateData(el, data, arr);
+            index++;
         }
+        //let coveredUlbs = await UlbLedger.distinct("ulb",cond).exec();
         return res.status(200).json({ message: "State list with ulb covered percentage.", success: true, data: arr })
     } catch (e) {
         console.log("Exception", e);
@@ -667,3 +592,108 @@ const getUlbs = (state, yrs) => {
     });
 
 }
+async function calculateStateData(el, data, arr) {
+    let overAllUlbs = await OverallUlb.distinct("_id", { state: el._id }).exec();
+    let obj = {};
+    obj["code"] = el.code;
+    obj["name"] = el.name;
+    obj["_id"] = el._id;
+    obj["totalUlbs"] = overAllUlbs.length;
+    obj["coveredUlbCount"] = 0;
+    obj["audited"] = 0;
+    obj["unaudited"] = 0;
+    obj["auditNA"] = 0;
+    data.map(m => {
+        obj["coveredUlbCount"]++;
+        if (m.auditStatus == "audited") {
+            obj["audited"]++;
+        } else if (m.auditStatus == "unaudited") {
+            obj["unaudited"]++;
+        } else {
+            obj["auditNA"]++;
+        }
+    });
+    obj["coveredUlbPercentage"] = (obj["coveredUlbCount"] / obj["totalUlbs"]) * 100 ? ((obj["coveredUlbCount"] / obj["totalUlbs"]) * 100).toFixed(2) : 0;
+    arr.push(obj);
+}
+
+async function getData(states, financialYear, lineItem, stateDataPromises) {
+   try {
+    let stateDataPromises = [];
+    for(let el of states){
+        let stateUlbs = await getUlbs(el._id, financialYear);
+        let condition = { ulb: { $in: stateUlbs } };
+        if (financialYear) {
+            condition["financialYear"] = { $in: financialYear };
+        }
+        let prms = getStateLedgerQuery(condition, lineItem);
+        stateDataPromises.push(prms);
+    }
+    const stateResponses = await Promise.allSettled(stateDataPromises);
+    return stateResponses;
+   } catch (error) {
+     throw {message: `getData: ${error.message}`}
+   }
+}
+
+async function getStateLedgerQuery(condition, lineItem) {
+  return new Promise((resolve, reject) => {
+    try {
+      const output = UlbLedger.aggregate([
+        { $match: condition },
+        {
+          $group: {
+            _id: {
+              ulb: "$ulb",
+            },
+            lineItem: { $addToSet: { _id: "$lineItem", amount: "$amount" } },
+          },
+        },
+        {
+          $project: {
+            ulb: "$_id.ulb",
+            lineItem: {
+              $filter: {
+                input: "$lineItem",
+                as: "lineItem",
+                cond: {
+                  $and: [{ $eq: ["$$lineItem._id", lineItem._id] }],
+                },
+              },
+            },
+          },
+        },
+        {
+          $project: {
+            ulb: 1,
+            lineItem: { $arrayElemAt: ["$lineItem", 0] },
+          },
+        },
+        {
+          $project: {
+            ulb: 1,
+            amount: "$lineItem.amount",
+          },
+        },
+        {
+          $project: {
+            ulb: 1,
+            auditStatus: {
+              $switch: {
+                branches: [
+                  { case: { $eq: ["$amount", 0] }, then: "unaudited" },
+                  { case: { $gt: ["$amount", 0] }, then: "audited" },
+                ],
+                default: "auditNA",
+              },
+            },
+          },
+        },
+      ]);
+      resolve(output);
+    } catch (error) {
+      reject(error);
+    }
+  });
+} 
+
