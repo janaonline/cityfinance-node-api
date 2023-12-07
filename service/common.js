@@ -34,7 +34,7 @@ module.exports.getMultipleRandomElements = (arr, num) => {
 }
 
 module.exports.getPageNo = (query) => {
-    const skip = query.skip !== undefined ? query.skip: 0;
+    const skip = query.skip !== undefined ? parseInt(query.skip): 0;
     return skip + 1;
 }
 
