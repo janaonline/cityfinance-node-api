@@ -43,7 +43,7 @@ async function getFRAverage(indicator, type = false, value = '') {
 		}
 	]);
 	// console.log('res', res);
-	return res && res[0] ? res[0].average : 0;
+	return res && res[0] ? (res[0].average).toFixed(2) : 0;
 }
 async function updateAverage(avgKey, type = '', value = '') {
 	const condition = getCondition(type, value);
@@ -78,7 +78,7 @@ async function calculateFRNationalAverage() {
 
 async function calculateFRStateAverage() {
 	const condition = { isActive: true };
-	const states = await State.find(condition).select('name').limit(5).lean();
+	const states = await State.find(condition).select('name').lean();
 	// console.log('states', states);
 	states.forEach(async (stateEle) => {
 		await updateAverage('stateAvg', 'state', ObjectId(stateEle._id));
