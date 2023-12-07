@@ -117,15 +117,15 @@ module.exports = (req, res) => {
             let query = [];
            if (req.query.state) {
              query = [
-              {
-                "$group": {
-                    "_id": "$financialYear",
-                    "ulbs": {
-                        "$addToSet": "$ulb"
-                    }
-                }
+               {
+                 $group: {
+                   _id: "$financialYear",
+                   ulbs: {
+                     $addToSet: "$ulb",
+                   },
+                 },
                },
-               {$unwind: "$ulbs"},
+               { $unwind: "$ulbs" },
 
                {
                  $lookup: {
