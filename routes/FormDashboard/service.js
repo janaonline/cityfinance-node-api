@@ -1086,7 +1086,7 @@ const dashboard = async (req, res) => {
         let user = req.decoded;
         let { _id: actionTakenBy, role: actionTakenByRole, state } = user;
         if([USER_ROLE['MoHUA']].includes(actionTakenByRole)){
-            state = data?.state
+            state = data?.state ?? data?.stateId
         }
         let collectionArr = getCollections(data.formType, data.installment);
         if(data.design_year === YEAR_CONSTANTS['23_24']){
