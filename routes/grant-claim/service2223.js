@@ -629,7 +629,7 @@ async function getDashboardData(req,res,stateId, financialYear) {
     for(let key in formType){
       for (let j = 0; j < formType[key].length; j++) {
         let dataResponse = [];
-        if(![YEAR_CONSTANTS['21_22'], YEAR_CONSTANTS['22_23']].includes(financialYear)){
+        // if(![YEAR_CONSTANTS['21_22'], YEAR_CONSTANTS['22_23']].includes(financialYear)){
           Object.assign(req.query, {
             formType: formType[key][j],
             design_year: financialYear,
@@ -638,16 +638,16 @@ async function getDashboardData(req,res,stateId, financialYear) {
             flagFunction: true
           });
           dataResponse = await dashboard(req,res);
-        }else{
-          let { data } = await axios.get(
-            `https://${host}/api/v1/dashboard?formType=${formType[key][j]}&design_year=${financialYear}&stateId=${stateId}&installment=${key}`,
-            {
-              params: {},
-              headers: { "x-access-token": req.headers["x-access-token"] },
-            }
-          );
-          dataResponse = data
-        }
+        // }else{
+        //   let { data } = await axios.get(
+        //     `https://${host}/api/v1/dashboard?formType=${formType[key][j]}&design_year=${financialYear}&stateId=${stateId}&installment=${key}`,
+        //     {
+        //       params: {},
+        //       headers: { "x-access-token": req.headers["x-access-token"] },
+        //     }
+        //   );
+        //   dataResponse = data
+        // }
         if (!dataResponse) throw new Error("Failed to fetch dashboard data!");
         if (!dashboardData[formType[key][j]]) {
           dashboardData[formType[key][j]] = {
