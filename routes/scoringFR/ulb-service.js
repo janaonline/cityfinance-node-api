@@ -81,10 +81,10 @@ module.exports.getUlbDetails = async (req, res) => {
 			fiscalGovernance: ulb.fiscalGovernance,
 			location: ulb.location,
 		};
-		const topUlbIds = getMultipleRandomElements(topUlbs, 4);
+		const shuffledTopUlbs = getMultipleRandomElements(topUlbs, 4);
 		const data = {
 			populationBucketUlbCount, ulb: ulbData, fsData, assessmentParameter,
-			topUlbIds
+			topUlbs: shuffledTopUlbs
 		};
 		return res.status(200).json({ data });
 	} catch (error) {
