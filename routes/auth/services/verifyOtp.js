@@ -51,10 +51,22 @@ module.exports.verifyOtp = catchAsync(async (req, res, next) => {
 
         let user = await getUSer({ email });
 
+        if (process.env.ENV == "staging") {
+            const otpBlockedUntil = user.otpBlockedUntil ? new Date(
+                user.otpBlockedUntil + 24 * 60 * 60 * 1000
+            ) : 0;
+
+            if (otpBlockedUntil >= new Date(Date.now()) || verification.verificationAttempts >= 3) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Maximum OTP attempt limit exhausted. Please try after 24 hours",
+                });
+            }
+        }
         //reset otp attempt
         await User.updateOne(
-          { _id: ObjectId(user._id) },
-          { $unset: { otpAttempts: "", otpBlockedUntil: "" } }
+            { _id: ObjectId(user._id) },
+            { $unset: { otpAttempts: "", otpBlockedUntil: "" } }
         ).exec();
         let state;
         if (user?.state) state = await State.findOne({ _id: ObjectId(user.state) });
@@ -75,7 +87,7 @@ module.exports.verifyOtp = catchAsync(async (req, res, next) => {
             if (otp == verification.otp) {
                 await OTP.findByIdAndUpdate(verification._id, { $set: { isVerified: true } });
                 let sessionId = req.headers.sessionid;
-                let token = await createToken(user, sessionId,req.body);
+                let token = await createToken(user, sessionId, req.body);
                 const allYears = await getYears()
                 return res.status(200).json({
                     token: token,
@@ -96,6 +108,22 @@ module.exports.verifyOtp = catchAsync(async (req, res, next) => {
                     allYears
                 })
             } else {
+                if (process.env.ENV == "staging") {
+                    await OTP.updateOne(
+                        { _id: ObjectId(verification._id) },
+                        {
+                            $inc: { verificationAttempts: 1 },
+                        }
+                    ).exec();
+                    if (verification.verificationAttempts >= 2) {
+                        await User.updateOne(
+                            { _id: ObjectId(user._id) },
+                            {
+                                $set: { otpBlockedUntil: new Date(Date.now() + 24 * 60 * 60 * 1000), },
+                            }
+                        ).exec();
+                    }
+                }
                 return res.status(400).json({
                     success: false,
                     message: 'OTP NOT VERIFIED'

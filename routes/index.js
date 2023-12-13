@@ -296,6 +296,10 @@ router.use('/state-resources', verifyToken, stateResources);
 const generalAlerts = require("./generalAlerts")
 router.use('/general-alert', generalAlerts);
 
+//calculate fiscal ranking score
+const scoringFR = require('./scoringFR');
+router.use('/scoring-fr', scoringFR);
+
 router.use(require('./Master'))
 
 module.exports = router;
