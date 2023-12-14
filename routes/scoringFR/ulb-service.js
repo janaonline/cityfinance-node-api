@@ -50,7 +50,7 @@ module.exports.getUlbDetails = async (req, res) => {
 		const populationBucketUlbCount = await ScoringFiscalRanking.countDocuments(condition1).lean();
 
 		const condition2 = { isActive: true, populationBucket: ulb.populationBucket };
-		const topUlbs = await ScoringFiscalRanking.find(condition2).select('_id').sort({ 'overAll.rank': 1 }).limit(10).lean();
+		const topUlbs = await ScoringFiscalRanking.find(condition2, { name: 1, ulb: 1, populationBucket: 1, censusCode: 1, sbCode: 1, _id: 0 }).sort({ 'overAll.rank': 1 }).limit(10).lean();
 
 		const conditionFs = {
 			ulb: ObjectId(ulb.ulb),
@@ -81,10 +81,10 @@ module.exports.getUlbDetails = async (req, res) => {
 			fiscalGovernance: ulb.fiscalGovernance,
 			location: ulb.location,
 		};
-		const topUlbIds = getMultipleRandomElements(topUlbs, 4).map(e => e._id);
+		const shuffledTopUlbs = getMultipleRandomElements(topUlbs, 4);
 		const data = {
 			populationBucketUlbCount, ulb: ulbData, fsData, assessmentParameter,
-			topUlbIds
+			topUlbs: shuffledTopUlbs
 		};
 		return res.status(200).json({ data });
 	} catch (error) {
