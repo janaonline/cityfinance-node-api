@@ -429,6 +429,7 @@ function stateTable(indicator, states, query, total) {
 				'key': 'name',
 				'sort': 1,
 				'sortable': true,
+				'width': '30%'
 			},
 			{
 				'label': 'No of ulbs',
