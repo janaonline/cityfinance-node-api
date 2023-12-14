@@ -1629,6 +1629,27 @@ const alertStateToClaimGrants = (payload) => {
   };
 };
 
+///temp       
+const tempDurEmail = (ulbName) => {
+  return {
+    subject: `Urgent: DUR Form Status Update - Action Required`,
+    body: `Dear <strong>${ulbName}</strong>,<br>
+                    <p>
+                    We are reaching out to inform you about a recent update regarding the DUR form you submitted. 
+                    The status of your form has been temporarily changed to "In Progress." We kindly request you 
+                    to review the numbers and details in the form again. If everything appears to be in order, 
+                    proceed with submitting the form again. If you come across any mismatch, please update the 
+                    numbers and submit the form. This effort will help us ensure the accuracy of the information in the records.<br><br>
+                    In case of queries, please reach out to 15fcgrant@cityfinance.in. We appreciate your prompt attention to this matter.
+                    </p>
+                    <br>Thanks and Regards,<br>
+                    XVFC - PMU team<br>`,
+  };
+};
+
+
+
+
 const alertStateWithMohuaAction = (payload) => {
   return {
     subject: `${payload.formName} Form ${payload.status}`,
@@ -1694,6 +1715,7 @@ module.exports = {
   CfrFormApproved,
   alertStateToClaimGrants,
   stateUlbFormTrigger,
-  alertStateWithMohuaAction
+  alertStateWithMohuaAction,
+  tempDurEmail
 
 };

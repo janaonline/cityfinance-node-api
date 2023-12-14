@@ -3590,3 +3590,713 @@ function getObjectKey(obj, idx){
     throw Error({message: `${error.message}`})
   }
 }
+
+
+const Service = require("../../service")
+
+module.exports.durRejEmail = async function (req, res) {
+  try {
+    // let EmailIds = [
+    //   {
+    //     "email": "mc.kalwakurthy@gmail.com",
+    //     "ulbName": "Kalwakurthy Nagar Panchayat"
+    //   },
+    //   {
+    //     "email": "engineeringmckky@gmail.com",
+    //     "ulbName": "Kalwakurthy Nagar Panchayat"
+    //   },
+    //   {
+    //     "email": "dvknpy@gmail.com",
+    //     "ulbName": "Devarakonda Nagar Panchayat"
+    //   },
+    //   {
+    //     "email": "Cmosukma@Rediffmail.com",
+    //     "ulbName": "Sukma Municipal Council"
+    //   },
+    //   {
+    //     "email": "kheralunagarpalika2016@gmail.com",
+    //     "ulbName": "Kheralu Nagar Palika"
+    //   },
+    //   {
+    //     "email": "np_vijapur@yahoo.co.in",
+    //     "ulbName": "Vijapur Nagar Palika"
+    //   },
+    //   {
+    //     "email": "seccpymun@gmail.com",
+    //     "ulbName": "Cherpulassery Municipality"
+    //   },
+    //   {
+    //     "email": "mannarkkadmunicipalitypkd@gmail.com",
+    //     "ulbName": "Mannarkad Municipality"
+    //   },
+    //   {
+    //     "email": "nagarpanchayat.tvr@gmail.com",
+    //     "ulbName": "Tiruvuru Town Panchayat"
+    //   },
+    //   {
+    //     "email": "commissioner.wmc@gmail.com",
+    //     "ulbName": "Warangal Municipal Corporation"
+    //   },
+    //   {
+    //     "email": "acts.gwmc@gmail.com",
+    //     "ulbName": "Warangal Municipal Corporation"
+    //   },
+    //   {
+    //     "email": "np.gajwel@gmail.com",
+    //     "ulbName": "Gajwel Municipality"
+    //   },
+    //   {
+    //     "email": "mc.ieejanp@gmail.com",
+    //     "ulbName": "Ieeja Municipality"
+    //   },
+    //   {
+    //     "email": "mc.jalpally@gmail.com",
+    //     "ulbName": "Jalpally Municipality"
+    //   },
+    //   {
+    //     "email": "mc.kaghaznagar@gmail.com",
+    //     "ulbName": "Kagaznagar Municiplaity"
+    //   },
+    //   {
+    //     "email": "cdma.swmtelangana@gmail.com",
+    //     "ulbName": "Kagaznagar Municiplaity"
+    //   },
+    //   {
+    //     "email": "mckamareddy1987@gmail.com",
+    //     "ulbName": "Kamareddy Municipality"
+    //   },
+    //   {
+    //     "email": "commr.dharmapuri@tn.gov.in",
+    //     "ulbName": "Dharmapuri Municipality"
+    //   },
+    //   {
+    //     "email": "commr.dharmapuri@gmail.com",
+    //     "ulbName": "Dharmapuri Municipality"
+    //   },
+    //   {
+    //     "email": "cmoastha@mpurban.gov.in",
+    //     "ulbName": "Asta Municipality"
+    //   },
+    //   {
+    //     "email": "commissionermcr@gmail.com",
+    //     "ulbName": "Rohtak Municipal Corporation"
+    //   },
+    //   {
+    //     "email": "xenmcrohtak@gmail.com",
+    //     "ulbName": "Rohtak Municipal Corporation"
+    //   },
+    //   {
+    //     "email": "sao@mcambala.gov.in",
+    //     "ulbName": "Ambala Municipal Corporation"
+    //   },
+    //   {
+    //     "email": "secy.mc.beri@gmail.com",
+    //     "ulbName": "Beri Municipality"
+    //   },
+    //   {
+    //     "email": "rajeshmalik82@yahoo.com",
+    //     "ulbName": "Jhajjar Municipality"
+    //   },
+    //   {
+    //     "email": "sjsecymcjhajjar@gmail.com",
+    //     "ulbName": "Jhajjar Municipality"
+    //   },
+    //   {
+    //     "email": "mcpanchkula2019@gmail.com",
+    //     "ulbName": "Panchkula Municipal Corporation"
+    //   },
+    //   {
+    //     "email": "secymcpataudi@gmail.com",
+    //     "ulbName": "Pataudi Municipality"
+    //   },
+    //   {
+    //     "email": "secretarymcpundri01@gmail.com",
+    //     "ulbName": "Pundri Municipality"
+    //   },
+    //   {
+    //     "email": "secymcrania@gmail.com",
+    //     "ulbName": "Rania Municipality"
+    //   },
+    //   {
+    //     "email": "secratia@gmail.com",
+    //     "ulbName": "Ratia Municipality"
+    //   },
+    //   {
+    //     "email": "mc.nurpur0@gmail.com",
+    //     "ulbName": "Nurpur Municipality"
+    //   },
+    //   {
+    //     "email": "cmoakoda@mpurban.gov.in",
+    //     "ulbName": "Akoda Town Panchayat"
+    //   },
+    //   {
+    //     "email": "neerajshrivastava@yahoo.com",
+    //     "ulbName": "Mauganj Town Panchayat"
+    //   },
+    //   {
+    //     "email": "cmoalampur@mpurban.gov.in",
+    //     "ulbName": "Alampur Town Panchayat"
+    //   },
+    //   {
+    //     "email": "Cmoalampur@mpurban.gov.in",
+    //     "ulbName": "Alampur Town Panchayat"
+    //   },
+    //   {
+    //     "email": "cmoamarwada@mpurban.gov.in",
+    //     "ulbName": "Amarwara Municipality"
+    //   },
+    //   {
+    //     "email": "neeraj.bpl2023@gmail.com",
+    //     "ulbName": "Dola"
+    //   },
+    //   {
+    //     "email": "cmobadoni@mpurban.gov.in",
+    //     "ulbName": "Badonee Town Panchayat"
+    //   },
+    //   {
+    //     "email": "cmobairad@mpurban.gov.in",
+    //     "ulbName": "Bairad Town Panchayat"
+    //   },
+    //   {
+    //     "email": "cmobaldevgarh@mpurban.gov.in",
+    //     "ulbName": "Baldevgarh Town Panchayat"
+    //   },
+    //   {
+    //     "email": "cmobhander@mpurban.gov.in",
+    //     "ulbName": "Bhander Town Panchayat"
+    //   },
+    //   {
+    //     "email": "cmobichhua@mpurban.gov.in",
+    //     "ulbName": "Bichhua Town Panchayat"
+    //   },
+    //   {
+    //     "email": "cmobirsingpur@mpurban.gov.in",
+    //     "ulbName": "Birsinghpur Town Panchayat"
+    //   },
+    //   {
+    //     "email": "cmonpbod@gmail.com",
+    //     "ulbName": "Boda Town Panchayat"
+    //   },
+    //   {
+    //     "email": "cmo.boda.mpurban@gmail.com",
+    //     "ulbName": "Boda Town Panchayat"
+    //   },
+    //   {
+    //     "email": "cmobhudhar@mpurban.gov.in",
+    //     "ulbName": "Burhar Town Panchayat"
+    //   },
+    //   {
+    //     "email": "abhilashsharma0018@gmail.com",
+    //     "ulbName": "Dumar Kachhar"
+    //   },
+    //   {
+    //     "email": "cmocha-cdw@mp.gov.in",
+    //     "ulbName": "Chand Town Panchayat"
+    //   },
+    //   {
+    //     "email": "cmochhapiheda@mpurban.gov.in",
+    //     "ulbName": "Chhapiheda Town Panchayat"
+    //   },
+    //   {
+    //     "email": "jaygeed8@gmail.com",
+    //     "ulbName": "Khilchipur Town Panchayat"
+    //   },
+    //   {
+    //     "email": "cmodidori@mpurban.gov.in",
+    //     "ulbName": "Dindori Town Panchayat"
+    //   },
+    //   {
+    //     "email": "cmoganjbasoda@mpurban.gov.in",
+    //     "ulbName": "Ganjbasoda Municipality"
+    //   },
+    //   {
+    //     "email": "cmohindoriya@mpurban.gov.in",
+    //     "ulbName": "Hindoria Town Panchayat"
+    //   },
+    //   {
+    //     "email": "cmoindargarh@gmail.com",
+    //     "ulbName": "Indergarh Town Panchayat"
+    //   },
+    //   {
+    //     "email": "cmojaithari@mpurban.gov.in",
+    //     "ulbName": "Jaithari Town Panchayat"
+    //   },
+    //   {
+    //     "email": "cmojunardev@mpurban.gov.in",
+    //     "ulbName": "Jamai Municipality"
+    //   },
+    //   {
+    //     "email": "cmojawar@mpurban.gov.in",
+    //     "ulbName": "Jawar Town Panchayat"
+    //   },
+    //   {
+    //     "email": "cmokari@mpurban.gov.in",
+    //     "ulbName": "Kari Town Panchayat"
+    //   },
+    //   {
+    //     "email": "cmokhajuraho@mpurban.gov.in",
+    //     "ulbName": "Khajuraho Town Panchayat"
+    //   },
+    //   {
+    //     "email": "cmokhilchipur@mpuraban.gov.in",
+    //     "ulbName": "Khilchipur Town Panchayat"
+    //   },
+    //   {
+    //     "email": "cmokothar@mpurban.gov.in",
+    //     "ulbName": "Kotar Town Panchayat"
+    //   },
+    //   {
+    //     "email": "cmolateri@mpurban.gov.in",
+    //     "ulbName": "Lateri Town Panchayat"
+    //   },
+    //   {
+    //     "email": "cmomachalpur@mpurban.gov.in",
+    //     "ulbName": "Machalpur Town Panchayat"
+    //   },
+    //   {
+    //     "email": "cmopanagar@mpurban.gov.in",
+    //     "ulbName": "Panagar Municipality"
+    //   },
+    //   {
+    //     "email": "cmonprgh@gmail.com",
+    //     "ulbName": "Rajgarh Municipality"
+    //   },
+    //   {
+    //     "email": "cmosarangpur@mpurban.gov.in",
+    //     "ulbName": "Sarangpur Municipality"
+    //   },
+    //   {
+    //     "email": "cmonpsgp@gmail.com",
+    //     "ulbName": "Sarangpur Municipality"
+    //   },
+    //   {
+    //     "email": "cmosemariya@mpurban.gov.in",
+    //     "ulbName": "Semaria Town Panchayat"
+    //   },
+    //   {
+    //     "email": "gyanendranp1033@gmail.com",
+    //     "ulbName": "Semaria Town Panchayat"
+    //   },
+    //   {
+    //     "email": "cmoshahdol@mpurban.gov.in",
+    //     "ulbName": "Shahdol Municipality"
+    //   },
+    //   {
+    //     "email": "cmoshivpuri@mpurban.gov.in",
+    //     "ulbName": "Shivpuri Municipality"
+    //   },
+    //   {
+    //     "email": "cmosironj@mpurban.gov.in",
+    //     "ulbName": "Sironj Municipality"
+    //   },
+    //   {
+    //     "email": "cmosonkatch@gmail.com",
+    //     "ulbName": "Sonkatch Town Panchayat"
+    //   },
+    //   {
+    //     "email": "cmonpsuth@gmail.com",
+    //     "ulbName": "Suthaliya Town Panchayat"
+    //   },
+    //   {
+    //     "email": "cmotalen@mpurban.gov.in",
+    //     "ulbName": "Talen Town Panchayat"
+    //   },
+    //   {
+    //     "email": "126rajendra@gmail.com",
+    //     "ulbName": "Talen Town Panchayat"
+    //   },
+    //   {
+    //     "email": "cmothyother@mpurban.gov.in",
+    //     "ulbName": "Teonthar Town Panchayat"
+    //   },
+    //   {
+    //     "email": "cmovijaypur@mpurban.gov.in",
+    //     "ulbName": "Vijaypur Town Panchayat"
+    //   },
+    //   {
+    //     "email": "npaliganj@gmail.com",
+    //     "ulbName": "Aliganj Municipality"
+    //   },
+    //   {
+    //     "email": "nppbah@gmail.com",
+    //     "ulbName": "Bah Municipality"
+    //   },
+    //   {
+    //     "email": "nppbangarmau@gmail.com",
+    //     "ulbName": "Bangarmau Municipality"
+    //   },
+    //   {
+    //     "email": "nagarpanchayatbhongon1@gmail.com",
+    //     "ulbName": "Bhogaon Town Panchayat"
+    //   },
+    //   {
+    //     "email": "lbcmainpuri7@gmail.com",
+    //     "ulbName": "Bhogaon Town Panchayat"
+    //   },
+    //   {
+    //     "email": "nppf84@gmail.com",
+    //     "ulbName": "Fatehpur Chaurasi Town Panchayat"
+    //   },
+    //   {
+    //     "email": "lkonpkakori@gmail.com",
+    //     "ulbName": "Kakori Town Panchayat"
+    //   },
+    //   {
+    //     "email": "npmahavan12@gmail.com",
+    //     "ulbName": "Mahaban Town Panchayat"
+    //   },
+    //   {
+    //     "email": "madhusudanjayaswal@gmail.com",
+    //     "ulbName": "Mahroni Town Panchayat"
+    //   },
+    //   {
+    //     "email": "dmlal@nic.in",
+    //     "ulbName": "Mahroni Town Panchayat"
+    //   },
+    //   {
+    //     "email": "nppmarheraetah@gmail.com",
+    //     "ulbName": "Marehra Municipality"
+    //   },
+    //   {
+    //     "email": "knm2050@gmail.com",
+    //     "ulbName": "Marehra Municipality"
+    //   },
+    //   {
+    //     "email": "nppmohan@gmail.com",
+    //     "ulbName": "Mohan Town Panchayat"
+    //   },
+    //   {
+    //     "email": "nppnagina@gmail.com",
+    //     "ulbName": "Nagina Municipality"
+    //   },
+    //   {
+    //     "email": "nppnbd@gmail.com",
+    //     "ulbName": "Najibabad Municipality"
+    //   },
+    //   {
+    //     "email": "mcjind2013@gmail.com",
+    //     "ulbName": "Jind Notified Area Council"
+    //   },
+    //   {
+    //     "email": "secymc.narwana@gmail.com",
+    //     "ulbName": "Narwana Notified Area Council"
+    //   },
+    //   {
+    //     "email": "secymc.palwal@gmail.com",
+    //     "ulbName": "Palwal Notified Area Council"
+    //   },
+    //   {
+    //     "email": "eomc.rwr1@gmail.com",
+    //     "ulbName": "Rewari Notified Area Council"
+    //   },
+    //   {
+    //     "email": "mcsohna@gmail.com",
+    //     "ulbName": "Sohna Notified Area Council"
+    //   },
+    //   {
+    //     "email": "purushottampurnac@gmail.com",
+    //     "ulbName": "Purusottampur Notified Area Council"
+    //   },
+    //   {
+    //     "email": "asitpintu@gmail.com",
+    //     "ulbName": "Purusottampur Notified Area Council"
+    //   },
+    //   {
+    //     "email": "mc.amanal@gmail.com",
+    //     "ulbName": "Amangal Municipality"
+    //   },
+    //   {
+    //     "email": "mc.amangal@gmail.com",
+    //     "ulbName": "Amangal Municipality"
+    //   },
+    //   {
+    //     "email": "bandlagudajagir@gmail.com",
+    //     "ulbName": "Bandlaguda Jagir Municipal Corporation"
+    //   },
+    //   {
+    //     "email": "aebandlaguda@gmail.com",
+    //     "ulbName": "Bandlaguda Jagir Municipal Corporation"
+    //   },
+    //   {
+    //     "email": "bollarammunicipality@gmail.com",
+    //     "ulbName": "Bollaram Municipality"
+    //   },
+    //   {
+    //     "email": "chityalmunicipality@gmail.com",
+    //     "ulbName": "Chityal Municipality"
+    //   },
+    //   {
+    //     "email": "padma.gsps@gmail.com",
+    //     "ulbName": "Chityal Municipality"
+    //   },
+    //   {
+    //     "email": "mcdharmapuri1@gmail.com",
+    //     "ulbName": "Dharmapuri Municipality"
+    //   },
+    //   {
+    //     "email": "municipalityhaliya@gmail.com",
+    //     "ulbName": "Haliya Municipality"
+    //   },
+    //   {
+    //     "email": "kothapallimunicipality@gmail.com",
+    //     "ulbName": "Kothapally Municipality"
+    //   },
+    //   {
+    //     "email": "mcmothkur@gmail.com",
+    //     "ulbName": "Mothkur Municipality"
+    //   },
+    //   {
+    //     "email": "mc.narsingi@gmail.com",
+    //     "ulbName": "Narsingi Municipality"
+    //   },
+    //   {
+    //     "email": "mcpebbair@gmail.com",
+    //     "ulbName": "Pebbair Municipality"
+    //   },
+    //   {
+    //     "email": "mcshamshabad06@gmail.com",
+    //     "ulbName": "Shamshabad Municipality"
+    //   },
+    //   {
+    //     "email": "thurkayamjalmc@gmail.com",
+    //     "ulbName": "Turkayamjal Municipality"
+    //   },
+    //   {
+    //     "email": "engg.mctkjl@gmail.com",
+    //     "ulbName": "Turkayamjal Municipality"
+    //   },
+    //   {
+    //     "email": "cmobakho.shahdol@mpurban.gov.in",
+    //     "ulbName": "Bakho"
+    //   },
+    //   {
+    //     "email": "chhapara@mpurban.gov.in",
+    //     "ulbName": "Chhapara"
+    //   },
+    //   {
+    //     "email": "cmodola@mpurban.gov.in",
+    //     "ulbName": "Dola"
+    //   },
+    //   {
+    //     "email": "cmodoomarkachhar@mpurban.gov.in",
+    //     "ulbName": "Dumar Kachhar"
+    //   },
+    //   {
+    //     "email": "cmorannod@mpurban.gov.in",
+    //     "ulbName": "Rannod"
+    //   },
+    //   {
+    //     "email": "npbanthara.lko@gmail.com",
+    //     "ulbName": "Banthara - Lucknow"
+    //   },
+    //   {
+    //     "email": "eonpbelharkala89@gmail.com",
+    //     "ulbName": "Belharkala -Sant Kabir Nagar"
+    //   },
+    //   {
+    //     "email": "secy.mcsiwan@gmail.com",
+    //     "ulbName": "Siwan Municipality"
+    //   },
+    //   {
+    //     "email": "gautamku1111@gmail.com",
+    //     "ulbName": "Belharkala -Sant Kabir Nagar"
+    //   },
+    //   {
+    //     "email": "gautam01kr11@gmail.com",
+    //     "ulbName": "Siwan Municipality"
+    //   }
+    // ]
+
+    let EmailIds = [
+      { email: 'cmoastha@mpurban.gov.in', ulbName: 'Asta Municipality' },
+      { email: 'cmoakoda@mpurban.gov.in', ulbName: 'Akoda Town Panchayat' },
+      {
+        email: 'neerajshrivastava@yahoo.com',
+        ulbName: 'Mauganj Town Panchayat'
+      },
+      {
+        email: 'cmoalampur@mpurban.gov.in',
+        ulbName: 'Alampur Town Panchayat'
+      },
+      {
+        email: 'Cmoalampur@mpurban.gov.in',
+        ulbName: 'Alampur Town Panchayat'
+      },
+      {
+        email: 'cmoamarwada@mpurban.gov.in',
+        ulbName: 'Amarwara Municipality'
+      },
+      { email: 'neeraj.bpl2023@gmail.com', ulbName: 'Dola' },
+      {
+        email: 'cmobadoni@mpurban.gov.in',
+        ulbName: 'Badonee Town Panchayat'
+      },
+      {
+        email: 'cmobairad@mpurban.gov.in',
+        ulbName: 'Bairad Town Panchayat'
+      },
+      {
+        email: 'cmobaldevgarh@mpurban.gov.in',
+        ulbName: 'Baldevgarh Town Panchayat'
+      },
+      {
+        email: 'cmobhander@mpurban.gov.in',
+        ulbName: 'Bhander Town Panchayat'
+      },
+      {
+        email: 'cmobichhua@mpurban.gov.in',
+        ulbName: 'Bichhua Town Panchayat'
+      },
+      {
+        email: 'cmobirsingpur@mpurban.gov.in',
+        ulbName: 'Birsinghpur Town Panchayat'
+      },
+      { email: 'cmonpbod@gmail.com', ulbName: 'Boda Town Panchayat' },
+      {
+        email: 'cmo.boda.mpurban@gmail.com',
+        ulbName: 'Boda Town Panchayat'
+      },
+      {
+        email: 'cmobhudhar@mpurban.gov.in',
+        ulbName: 'Burhar Town Panchayat'
+      },
+      { email: 'abhilashsharma0018@gmail.com', ulbName: 'Dumar Kachhar' },
+      { email: 'cmocha-cdw@mp.gov.in', ulbName: 'Chand Town Panchayat' },
+      {
+        email: 'cmochhapiheda@mpurban.gov.in',
+        ulbName: 'Chhapiheda Town Panchayat'
+      },
+      { email: 'jaygeed8@gmail.com', ulbName: 'Khilchipur Town Panchayat' },
+      {
+        email: 'cmodidori@mpurban.gov.in',
+        ulbName: 'Dindori Town Panchayat'
+      },
+      {
+        email: 'cmoganjbasoda@mpurban.gov.in',
+        ulbName: 'Ganjbasoda Municipality'
+      },
+      {
+        email: 'cmohindoriya@mpurban.gov.in',
+        ulbName: 'Hindoria Town Panchayat'
+      },
+      {
+        email: 'cmoindargarh@gmail.com',
+        ulbName: 'Indergarh Town Panchayat'
+      },
+      {
+        email: 'cmojaithari@mpurban.gov.in',
+        ulbName: 'Jaithari Town Panchayat'
+      },
+      {
+        email: 'cmojunardev@mpurban.gov.in',
+        ulbName: 'Jamai Municipality'
+      },
+      { email: 'cmojawar@mpurban.gov.in', ulbName: 'Jawar Town Panchayat' },
+      { email: 'cmokari@mpurban.gov.in', ulbName: 'Kari Town Panchayat' },
+      {
+        email: 'cmokhajuraho@mpurban.gov.in',
+        ulbName: 'Khajuraho Town Panchayat'
+      },
+      {
+        email: 'cmokhilchipur@mpuraban.gov.in',
+        ulbName: 'Khilchipur Town Panchayat'
+      },
+      {
+        email: 'cmokothar@mpurban.gov.in',
+        ulbName: 'Kotar Town Panchayat'
+      },
+      {
+        email: 'cmolateri@mpurban.gov.in',
+        ulbName: 'Lateri Town Panchayat'
+      },
+      {
+        email: 'cmomachalpur@mpurban.gov.in',
+        ulbName: 'Machalpur Town Panchayat'
+      },
+      {
+        email: 'cmopanagar@mpurban.gov.in',
+        ulbName: 'Panagar Municipality'
+      },
+      { email: 'cmonprgh@gmail.com', ulbName: 'Rajgarh Municipality' },
+      {
+        email: 'cmosarangpur@mpurban.gov.in',
+        ulbName: 'Sarangpur Municipality'
+      },
+      { email: 'cmonpsgp@gmail.com', ulbName: 'Sarangpur Municipality' },
+      {
+        email: 'cmosemariya@mpurban.gov.in',
+        ulbName: 'Semaria Town Panchayat'
+      },
+      {
+        email: 'gyanendranp1033@gmail.com',
+        ulbName: 'Semaria Town Panchayat'
+      },
+      {
+        email: 'cmoshahdol@mpurban.gov.in',
+        ulbName: 'Shahdol Municipality'
+      },
+      {
+        email: 'cmoshivpuri@mpurban.gov.in',
+        ulbName: 'Shivpuri Municipality'
+      },
+      { email: 'cmosironj@mpurban.gov.in', ulbName: 'Sironj Municipality' },
+      {
+        email: 'cmosonkatch@gmail.com',
+        ulbName: 'Sonkatch Town Panchayat'
+      },
+      { email: 'cmonpsuth@gmail.com', ulbName: 'Suthaliya Town Panchayat' },
+      { email: 'cmotalen@mpurban.gov.in', ulbName: 'Talen Town Panchayat' },
+      { email: '126rajendra@gmail.com', ulbName: 'Talen Town Panchayat' },
+      {
+        email: 'cmothyother@mpurban.gov.in',
+        ulbName: 'Teonthar Town Panchayat'
+      },
+      {
+        email: 'cmovijaypur@mpurban.gov.in',
+        ulbName: 'Vijaypur Town Panchayat'
+      },
+      { email: 'cmobakho.shahdol@mpurban.gov.in', ulbName: 'Bakho' },
+      { email: 'chhapara@mpurban.gov.in', ulbName: 'Chhapara' },
+      { email: 'cmodola@mpurban.gov.in', ulbName: 'Dola' },
+      {
+        email: 'cmodoomarkachhar@mpurban.gov.in',
+        ulbName: 'Dumar Kachhar'
+      },
+      { email: 'cmorannod@mpurban.gov.in', ulbName: 'Rannod' },
+      { email: 'abhilashsharma527@gmail.com', ulbName: 'Badkuhi Town Panchayat' },
+      { email: 'cmobadkuhi@mpurban.gov.in', ulbName: 'Badkuhi Town Panchayat' },
+      { email: 'cmobetulbazaar@mpurban.gov.in', ulbName: 'Betul Bazar Town Panchayat' },
+    ]
+
+    EmailIds.forEach((emailDetails) => {
+      let template = Service.emailTemplate.tempDurEmail(emailDetails.ulbName);
+      console.log("🚀 ~ file: service.js:3688 ~ EmailIds.forEach ~ email:", emailDetails)
+
+      let mailOptions = {
+        Destination: {
+          /* required */
+          ToAddresses: [emailDetails.email]
+        },
+        Message: {
+          Body: {
+            Html: {
+              Charset: "UTF-8",
+              Data: template.body
+            },
+          },
+          Subject: {
+            Charset: 'UTF-8',
+            Data: template.subject
+          }
+        },
+        Source: process.env.EMAIL,
+        /* required */
+        ReplyToAddresses: [process.env.EMAIL],
+      }
+      Service.sendEmail(mailOptions);
+    });
+    return res.status(200).send({status: true, message: "Email sent successfully"})
+  } catch (error) {
+    console.error({ error: error.message })
+  }
+};
