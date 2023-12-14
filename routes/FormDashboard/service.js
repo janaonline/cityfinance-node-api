@@ -698,17 +698,15 @@ function getQuery(modelName, formType, designYear, formCategory, stateId){
     let condition = {};
     let nmpcConditionUlb = [],
         mpcConditionUlb = [];
-
+    const defaultProjectStage = {
+        actionTakenByRole:1,
+        isDraft:1,
+        ulb:1,
+        design_year:1,
+        status:1
+    }
         nmpcConditionUlb =[
-            {
-                $project:{
-                    actionTakenByRole:1,
-                    isDraft:1,
-                    ulb:1,
-                    design_year:1,
-                    status:1,        
-                }           
-             },
+            { $project: defaultProjectStage },
             {
                 $lookup:{
                     from: "ulbs",
@@ -725,15 +723,7 @@ function getQuery(modelName, formType, designYear, formCategory, stateId){
             }
         ];
         mpcConditionUlb = [
-            {
-                $project:{
-                    actionTakenByRole:1,
-                    isDraft:1,
-                    ulb:1,
-                    design_year:1,
-                    status:1,        
-                }           
-            },
+            { $project:   defaultProjectStage },
             {
                 $lookup:{
                     from: "ulbs",
@@ -859,6 +849,7 @@ function getQuery(modelName, formType, designYear, formCategory, stateId){
     }
     return query;
 }
+/* Fields to project */
 const ProjectStageForPopulation = {
     [CollectionNames.annualAcc]:{
         "audited.submit_annual_accounts" :1,
@@ -875,6 +866,14 @@ const ProjectStageForPopulation = {
         isDraft: 1
     }
 }
+/**
+ * The function `updatePopulationCondition` updates a specific condition in a JavaScript object based
+ * on a given model name.
+ * @param condition - The `condition` parameter is an array of objects that represents the stages of a
+ * MongoDB aggregation pipeline. Each object in the array represents a stage in the pipeline.
+ * @param modelName - The `modelName` parameter is a string that represents the name of the model for
+ * which the population condition is being updated.
+ */
 function updatePopulationCondition(condition, modelName){
     try {
         let projectStage =  condition.find(el=> el.hasOwnProperty("$project"));
