@@ -125,7 +125,7 @@ module.exports.getUlbsBySate = async (req, res) => {
 
 		const { limit, skip } = getPaginationParams(req.query);
 		const ulbs = await ScoringFiscalRanking.find(condition)
-			.select('ulb name populationBucket currentFormStatus auditedAccounts annualBudgets overAll ')
+			.select('ulb name populationBucket currentFormStatus auditedAccounts annualBudgets overAll state ')
 			.sort(sort)
 			.skip(skip)
 			.limit(limit)
@@ -244,6 +244,8 @@ function getTableHeaderDocs() {
 
 // Table data
 function getUlbData(ulbs, query) {
+	
+	console.log(ulbs);
 
 	const tableData = [];
 	let j = getPageNo(query);
@@ -267,7 +269,11 @@ function getUlbData(ulbs, query) {
 			}
 		});
 		ulb.auditedAccounts.forEach((year) => {
-			data[`auditedAccounts${year.year}`] = year.modelName === 'ULBLedger' ? 'Available in 15th FC' : year.url;
+			let filename = year.url;
+			if(year.modelName === 'ULBLedger') {
+				filename = `/resources-dashboard/data-sets/balanceSheet?year=${year.year}&type=Raw%20Data%20PDF&category=balance&state=${ulb.state}&ulbName=${ulb.name}`;
+			}
+			data[`auditedAccounts${year.year}`] =  filename;
 		});
 		//if no data for year add -
 		afsYears.forEach((year) => {
