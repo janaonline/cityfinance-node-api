@@ -1355,6 +1355,9 @@ exports.getView = async function (req, res, next) {
         })['freeze']
       }
     }
+    if(role == 'ULB' && req.query.ulb == "5fa2465e072dab780a6f109b") {
+      hideForm = false;
+    }
 
     let viewData = {
       _id: viewOne._id ? viewOne._id : null,
