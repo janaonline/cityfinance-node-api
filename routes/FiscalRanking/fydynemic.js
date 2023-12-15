@@ -5695,7 +5695,7 @@ const fiscalRankingFormJson = () => {
                         "value": "",
                         "file": "",
                         "min": 0,
-                        "max": 50,
+                        "max": 200,
                         "required": true,
                         "type": "webUrlAnnual",
                         "year": "606aaf854dff55e6c075d219",
@@ -6277,7 +6277,7 @@ function getInputKeysByType(formType, type, label, dataSource = null, position, 
     let min = 0
     if (formType != "number") {
         min = 0
-        maximum = 50
+        maximum = 200
     }
     if (mn == true) {
         min = 6000000000

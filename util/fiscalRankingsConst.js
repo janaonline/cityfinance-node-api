@@ -114,6 +114,10 @@ let csvColsFr = ["State Name",
 "Self Declaration Uploaded File link",
 "Self Declaration_comments"]
 
+let hideFormVisibleUlb = {
+  "Vallabh Vidyanagar Municipality": "5fa2465e072dab780a6f109b"
+}
+
 
 
 /**
@@ -299,7 +303,8 @@ function updateCsvCols(obj,fetchAmountFromQuery){
   module.exports = {
     csvColsFr,
     getCsvProjectionQueries,
-    updateCsvCols
+    updateCsvCols,
+    hideFormVisibleUlb
     
 
 }
