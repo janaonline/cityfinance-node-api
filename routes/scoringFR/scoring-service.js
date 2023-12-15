@@ -116,7 +116,8 @@ function ownRevenuePerCapita(ulbRes, fsData, fsMapper2021_22) {
 		// Own revenue for sewerage and sanitation.
 		const sewerageTax = getNumberValue(fsMapper2021_22, 'sewerageTax');
 		const sanitationFee = getNumberValue(fsMapper2021_22, 'sanitationFee');
-		const ownRevenueSanitation = fsData && fsData.propertyWaterTax.value === 'Yes' ? sewerageTax + sanitationFee : 0;
+		// const ownRevenueSanitation = fsData && fsData.propertyWaterTax.value === 'Yes' ? sewerageTax + sanitationFee : 0;
+		const ownRevenueSanitation = fsData && fsData.propertySanitationTax.value === 'Yes' ? sewerageTax + sanitationFee : 0;
 
 		const ownRevenueData =
 			ulbRes.population === 0
@@ -270,7 +271,7 @@ function cagrInCapEx(fsData, fsMapper2018_19, fsMapper2021_22) {
 		const totalCapEx = capEx2021_22 === 0 || capEx2018_19 === 0 ? 0 : capEx2021_22 / capEx2018_19;
 		// Growth
 		const time = 3;
-		const cagrInCapEx = TotalCapEx <= 0 ? 0 : Math.pow(totalCapEx, 1 / time) * 100;
+		const cagrInCapEx = totalCapEx <= 0 ? 0 : (Math.pow(totalCapEx, 1 / time) -1 ) * 100;
 
 		return parseFloat(cagrInCapEx.toFixed(2));
 	} catch (e) {
@@ -404,9 +405,9 @@ function totalReceiptsVariance(fsMapper2019_20, fsMapper2020_21, fsMapper2021_22
 		// Find average of total receipts estimate for 3 years.
 		// Array is created to find average.
 		const arr2 = [
-			getNumberValue(fsMapper2019_20, 'rcptBudget'),
-			getNumberValue(fsMapper2020_21, 'rcptBudget'),
-			getNumberValue(fsMapper2021_22, 'rcptBudget'),
+			getNumberValue(fsMapper2019_20, 'RcptBudget'),
+			getNumberValue(fsMapper2020_21, 'RcptBudget'),
+			getNumberValue(fsMapper2021_22, 'RcptBudget'),
 		];
 		const avgOfEstimate = calculateAverage(arr2);
 
@@ -793,7 +794,7 @@ module.exports.calculateFRScore = async (req, res) => {
 		const censusCode = 802989;
 		// const _id = ObjectId('5dd24b8f91344e2300876ca9');
 		// const sbCode = '980171';
-		const _id = ObjectId('5dd24729437ba31f7eb42f4a');		
+		const _id = ObjectId('5dd24729437ba31f7eb42e9c');		
 		// Consider only ULBs with isActive TRUE & population is not empty & not 0.
 		const condition = { isActive: true, population: { $nin: [null, 0] } };
 		const skip = (page - 1) * limit;

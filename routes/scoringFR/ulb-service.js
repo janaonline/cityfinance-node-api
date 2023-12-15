@@ -36,7 +36,6 @@ module.exports.getUlbDetails = async (req, res) => {
 		}
 
 		const ulb = await ScoringFiscalRanking.findOne(condition).lean();
-		const state = await State.findById(ulb.state).select('name code').lean();
 
 		if (!ulb) {
 			return res.status(404).json({
@@ -44,6 +43,8 @@ module.exports.getUlbDetails = async (req, res) => {
 				message: 'ULB not found',
 			});
 		}
+		const state = await State.findById(ulb.state).select('name code').lean();
+
 		const design_year2022_23 = '606aafb14dff55e6c075d3ae';
 
 		const condition1 = { isActive: true, populationBucket: ulb.populationBucket };
@@ -272,8 +273,11 @@ function getUlbData(ulbs, query) {
 			let filename = year.url;
 			if(year.modelName === 'ULBLedger') {
 				filename = `/resources-dashboard/data-sets/balanceSheet?year=${year.year}&type=Raw%20Data%20PDF&category=balance&state=${ulb.state}&ulbName=${ulb.name}`;
+				data[`auditedAccounts${year.year}`] = 'Click here';
+				data[`auditedAccounts${year.year}Link`] =  filename;
+			} else {
+				data[`auditedAccounts${year.year}`] =  filename;
 			}
-			data[`auditedAccounts${year.year}`] =  filename;
 		});
 		//if no data for year add -
 		afsYears.forEach((year) => {
