@@ -36,7 +36,6 @@ module.exports.getUlbDetails = async (req, res) => {
 		}
 
 		const ulb = await ScoringFiscalRanking.findOne(condition).lean();
-		const state = await State.findById(ulb.state).select('name code').lean();
 
 		if (!ulb) {
 			return res.status(404).json({
@@ -44,6 +43,8 @@ module.exports.getUlbDetails = async (req, res) => {
 				message: 'ULB not found',
 			});
 		}
+		const state = await State.findById(ulb.state).select('name code').lean();
+
 		const design_year2022_23 = '606aafb14dff55e6c075d3ae';
 
 		const condition1 = { isActive: true, populationBucket: ulb.populationBucket };
