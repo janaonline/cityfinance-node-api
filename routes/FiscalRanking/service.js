@@ -22,6 +22,7 @@ const {
   csvColsFr,
   getCsvProjectionQueries,
   updateCsvCols,
+  hideFormVisibleUlb
 } = require("../../util/fiscalRankingsConst");
 const userTypes = require("../../util/userTypes");
 const { dateFormatter } = require("../../util/dateformatter");
@@ -1355,7 +1356,7 @@ exports.getView = async function (req, res, next) {
         })['freeze']
       }
     }
-    if(role == 'ULB' && req.query.ulb == "5fa2465e072dab780a6f109b") {
+    if(role == 'ULB' && req.query?.ulb == hideFormVisibleUlb['Vallabh Vidyanagar Municipality']) {
       hideForm = false;
     }
 
