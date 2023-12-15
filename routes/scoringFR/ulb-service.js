@@ -36,7 +36,6 @@ module.exports.getUlbDetails = async (req, res) => {
 		}
 
 		const ulb = await ScoringFiscalRanking.findOne(condition).lean();
-		const state = await State.findById(ulb.state).select('name code').lean();
 
 		if (!ulb) {
 			return res.status(404).json({
@@ -44,13 +43,15 @@ module.exports.getUlbDetails = async (req, res) => {
 				message: 'ULB not found',
 			});
 		}
+		const state = await State.findById(ulb.state).select('name code').lean();
+
 		const design_year2022_23 = '606aafb14dff55e6c075d3ae';
 
 		const condition1 = { isActive: true, populationBucket: ulb.populationBucket };
 		const populationBucketUlbCount = await ScoringFiscalRanking.countDocuments(condition1).lean();
 
 		const condition2 = { isActive: true, populationBucket: ulb.populationBucket };
-		const topUlbs = await ScoringFiscalRanking.find(condition2).select('_id').sort({ 'overAll.rank': 1 }).limit(10).lean();
+		const topUlbs = await ScoringFiscalRanking.find(condition2, { name: 1, ulb: 1, populationBucket: 1, censusCode: 1, sbCode: 1, _id: 0 }).sort({ 'overAll.rank': 1 }).limit(10).lean();
 
 		const conditionFs = {
 			ulb: ObjectId(ulb.ulb),
@@ -81,10 +82,10 @@ module.exports.getUlbDetails = async (req, res) => {
 			fiscalGovernance: ulb.fiscalGovernance,
 			location: ulb.location,
 		};
-		const topUlbIds = getMultipleRandomElements(topUlbs, 4).map(e => e._id);
+		const shuffledTopUlbs = getMultipleRandomElements(topUlbs, 4);
 		const data = {
 			populationBucketUlbCount, ulb: ulbData, fsData, assessmentParameter,
-			topUlbIds
+			topUlbs: shuffledTopUlbs
 		};
 		return res.status(200).json({ data });
 	} catch (error) {
@@ -125,7 +126,7 @@ module.exports.getUlbsBySate = async (req, res) => {
 
 		const { limit, skip } = getPaginationParams(req.query);
 		const ulbs = await ScoringFiscalRanking.find(condition)
-			.select('ulb name populationBucket currentFormStatus auditedAccounts annualBudgets overAll ')
+			.select('ulb name populationBucket currentFormStatus auditedAccounts annualBudgets overAll state ')
 			.sort(sort)
 			.skip(skip)
 			.limit(limit)
@@ -244,6 +245,8 @@ function getTableHeaderDocs() {
 
 // Table data
 function getUlbData(ulbs, query) {
+	
+	console.log(ulbs);
 
 	const tableData = [];
 	let j = getPageNo(query);
@@ -267,7 +270,14 @@ function getUlbData(ulbs, query) {
 			}
 		});
 		ulb.auditedAccounts.forEach((year) => {
-			data[`auditedAccounts${year.year}`] = year.modelName === 'ULBLedger' ? 'Available in 15th FC' : year.url;
+			let filename = year.url;
+			if(year.modelName === 'ULBLedger') {
+				filename = `/resources-dashboard/data-sets/balanceSheet?year=${year.year}&type=Raw%20Data%20PDF&category=balance&state=${ulb.state}&ulbName=${ulb.name}`;
+				data[`auditedAccounts${year.year}`] = 'Click here';
+				data[`auditedAccounts${year.year}Link`] =  filename;
+			} else {
+				data[`auditedAccounts${year.year}`] =  filename;
+			}
 		});
 		//if no data for year add -
 		afsYears.forEach((year) => {
