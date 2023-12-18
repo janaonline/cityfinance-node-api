@@ -416,10 +416,10 @@ function getTableData(ulb, type) {
 			'sNo': indicator.sno,
 			'indicator': indicator.title,
 			'unit': indicator.units,
-			'ulbPerformance': ulb[indicator.key].percentage,
+			'ulbPerformance': ulb[indicator.key].score,
 			'highPerformance': ulb[indicator.key].highestScore,
 			'lowPerformance': ulb[indicator.key].lowestScore,
-			'ulbScore': ulb[indicator.key].score,
+			'ulbScore': ulb[indicator.key].percentage,
 		};
 		data.push(ele);
 	}
