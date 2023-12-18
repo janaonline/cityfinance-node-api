@@ -90,9 +90,11 @@ function totalBudgetPerCapita(ulbRes, fsData, fsMapper2021_22) {
 		//Total receipts actual
 		const totalRecActual_2021_22 = getNumberValue(fsMapper2021_22, 'totalRecActual');
 		// Total receipts actual of water supply
-		const totalRcptWaterSupply = fsData && fsData.propertyWaterTax.value === 'Yes' ? getNumberValue(fsMapper2021_22, 'totalRcptWaterSupply') : 0;
+		// const totalRcptWaterSupply = fsData && fsData.propertyWaterTax.value === 'Yes' ? getNumberValue(fsMapper2021_22, 'totalRcptWaterSupply') : 0;
+		const totalRcptWaterSupply = fsData && fsData.propertyWaterTax.value === 'Yes' && fsData.waterSupply.value === 'Yes' ? getNumberValue(fsMapper2021_22, 'totalRcptWaterSupply') : 0;
 		// Total reciepts actual for sanitaion.
-		const totalRcptSanitation = fsData && fsData.propertySanitationTax.value === 'Yes' ? getNumberValue(fsMapper2021_22, 'totalRcptSanitation') : 0;
+		// const totalRcptSanitation = fsData && fsData.propertySanitationTax.value === 'Yes' ? getNumberValue(fsMapper2021_22, 'totalRcptSanitation') : 0;
+		const totalRcptSanitation = fsData && fsData.propertySanitationTax.value === 'Yes' && fsData.sanitationService.value === 'Yes' ? getNumberValue(fsMapper2021_22, 'totalRcptSanitation') : 0;
 		const totalBudget =
 			ulbRes.population === 0
 				? console.log('Population is 0')
@@ -274,7 +276,7 @@ function cagrInCapEx(fsData, fsMapper2018_19, fsMapper2021_22) {
 		const cagrInCapEx = totalCapEx <= 0 ? 0 : (Math.pow(totalCapEx, 1 / time) -1 ) * 100;
 
 		return parseFloat(cagrInCapEx.toFixed(2));
-	} catch (e) {
+	} catch (e) {	
 		return 0;
 	}
 }
@@ -792,11 +794,10 @@ module.exports.calculateFRScore = async (req, res) => {
 		const limit = req.query.limit ? parseInt(req.query.limit) : 1000;
 		const page = req.query.page ? parseInt(req.query.page) : 1;
 		const censusCode = 802989;
-		// const _id = ObjectId('5dd24b8f91344e2300876ca9');
-		// const sbCode = '980171';
-		const _id = ObjectId('5dd24729437ba31f7eb42e9c');		
+		const _id = ObjectId('5fa24660072dab780a6f1358');		
 		// Consider only ULBs with isActive TRUE & population is not empty & not 0.
 		const condition = { isActive: true, population: { $nin: [null, 0] } };
+		// const condition = { isActive: true, _id, population: { $nin: [null, 0] } };
 		const skip = (page - 1) * limit;
 		const ulbRes = await Ulb.find(condition)
 			.select('_id population isActive state code name ulbType location censusCode sbCode')

@@ -237,7 +237,7 @@ function getTableHeaderDocs() {
 				'hidden': true,
 			},
 		],
-		'subHeaders': ['', '', '', '', '', ...abYears, ...afsYears],
+		'subHeaders': ['', '', '', '', '', ...afsYears, ...abYears],
 		'name': '',
 	};
 	return data;
@@ -324,7 +324,7 @@ function getTableHeader(type) {
 			'key': 'lowPerformance',
 		},
 		{
-			'label': 'Ulb Score',
+			'label': 'ULB Score',
 			'info': `Out of ${score}`,
 			'key': 'ulbScore',
 		},
@@ -350,14 +350,14 @@ function getTableData(ulb, type) {
 			title: 'Growth (3 Year CAGR) in Total Budget Size (Total actual reciept)',
 		},
 		{ units: '%', sno: '5', key: 'cagrInOwnRevPC_5', type: 'resourceMobilization', title: 'Growth (3 Year CAGR) in Own Revenue per capita' },
-		{ units: '%', sno: '6', key: 'cagrInPropTax_6', type: 'expenditurePerformance', title: 'Growth (3 Year CAGR) in Property Tax per capita' },
+		{ units: '%', sno: '6', key: 'cagrInPropTax_6', type: 'resourceMobilization', title: 'Growth (3 Year CAGR) in Property Tax per capita' },
 		{ units: 'Rs.', sno: '7', key: 'capExPCAvg_7', type: 'expenditurePerformance', title: 'Capital Expenditure per capita (3-year average)' },
 		{ units: '%', sno: '8', key: 'cagrInCapExpen_8', type: 'expenditurePerformance', title: 'Growth (3-Year CAGR) in Capex per capita' },
 		{
 			units: 'Rs.',
 			sno: '9',
 			key: 'omExpTotalRevExpen_9',
-			type: 'fiscalGovernance',
+			type: 'expenditurePerformance',
 			title: 'O&M expenses to Total Revenue Expenditure (TRE) (3- year average)',
 		},
 		{
@@ -373,14 +373,14 @@ function getTableData(ulb, type) {
 			sno: '10b',
 			key: 'aaPushishedMarks_10b',
 			type: 'fiscalGovernance',
-			title: 'For Publication of Annual Accounts - Availability for last 3 years on Cityfinance/ Own website (Yes/ No)',
+			title: 'For Publication of Annual Accounts - Availability for last 3 years on Cityfinance/ Own website',
 		},
 		{
 			units: 'Yes/ No',
 			sno: '11a',
 			key: 'gisBasedPTaxMarks_11a',
 			type: 'fiscalGovernance',
-			title: 'For Property-tax - whether property tax records are linked to GIS-based system? (Yes/ No)',
+			title: 'For Property-tax - whether property tax records are linked to GIS-based system?',
 		},
 		{
 			units: 'Yes/ No',
@@ -388,7 +388,7 @@ function getTableData(ulb, type) {
 			key: 'accSoftwareMarks_11b',
 			type: 'fiscalGovernance',
 			title:
-				'For Accounting - whether accounting is done on either standalone software like Tally, e-biz etc, or a state-level centralized system like ERP, Digit etc. (Yes/ No)',
+				'For Accounting - whether accounting is done on either standalone software like Tally, e-biz etc, or a state-level centralized system like ERP, Digit etc.',
 		},
 		{
 			units: '%',
