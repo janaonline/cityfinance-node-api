@@ -37,14 +37,22 @@ function getValue(fsMapper, type) {
 	if (!indicator) {
 		return 0;
 	}
-	if (indicator.pmuSuggestedValue2) {
-		return indicator.pmuSuggestedValue2;
-	} else if (indicator.suggestedValue) {
-		return indicator.suggestedValue;
-	} else if (indicator.value) {
-		return indicator.value;
+	let value = 0;
+	switch (indicator.approvalType) {
+		case 7:
+			value = indicator.pmuSuggestedValue2;
+			break;
+		case 3: case 6: case 8:
+			value = indicator.suggestedValue;
+			break;
+		case 1: case 5:
+			value = indicator.value;
+			break;
+		default: 
+			value = indicator.value;
+			break;
 	}
-	return 0;
+	return value;
 }
 
 function getNumberValue(fsMapper, type) {
@@ -52,14 +60,31 @@ function getNumberValue(fsMapper, type) {
 	if (!indicator) {
 		return 0;
 	}
-	if (indicator.pmuSuggestedValue2) {
-		return Number(indicator.pmuSuggestedValue2);
-	} else if (indicator.suggestedValue) {
-		return Number(indicator.suggestedValue);
-	} else if (indicator.value) {
-		return Number(indicator.value);
+	let value = 0;
+	switch (indicator.approvalType) {
+		case 7:
+			value = Number(indicator.pmuSuggestedValue2);
+			break;
+		case 3: case 6: case 8:
+			value = Number(indicator.suggestedValue);
+			break;
+		case 1: case 5:
+			value = Number(indicator.value);
+			break;
+		default: 
+			value = Number(indicator.value);
+			break;
 	}
-	return 0;
+	return value;
+
+	// if (indicator.pmuSuggestedValue2) {
+	// 	return Number(indicator.pmuSuggestedValue2);
+	// } else if (indicator.suggestedValue) {
+	// 	return Number(indicator.suggestedValue);
+	// } else if (indicator.value) {
+	// 	return Number(indicator.value);
+	// }
+	// return 0;
 }
 // Get file.
 function getFile(fsMapper, type) {
@@ -90,10 +115,9 @@ function totalBudgetPerCapita(ulbRes, fsData, fsMapper2021_22) {
 		//Total receipts actual
 		const totalRecActual_2021_22 = getNumberValue(fsMapper2021_22, 'totalRecActual');
 		// Total receipts actual of water supply
-		// const totalRcptWaterSupply = fsData && fsData.propertyWaterTax.value === 'Yes' ? getNumberValue(fsMapper2021_22, 'totalRcptWaterSupply') : 0;
+		//TODO: verify the condition
 		const totalRcptWaterSupply = fsData && fsData.propertyWaterTax.value === 'Yes' && fsData.waterSupply.value === 'Yes' ? getNumberValue(fsMapper2021_22, 'totalRcptWaterSupply') : 0;
 		// Total reciepts actual for sanitaion.
-		// const totalRcptSanitation = fsData && fsData.propertySanitationTax.value === 'Yes' ? getNumberValue(fsMapper2021_22, 'totalRcptSanitation') : 0;
 		const totalRcptSanitation = fsData && fsData.propertySanitationTax.value === 'Yes' && fsData.sanitationService.value === 'Yes' ? getNumberValue(fsMapper2021_22, 'totalRcptSanitation') : 0;
 		const totalBudget =
 			ulbRes.population === 0
@@ -114,12 +138,12 @@ function ownRevenuePerCapita(ulbRes, fsData, fsMapper2021_22) {
 		// Own revenue for water supply.
 		const waterTax = getNumberValue(fsMapper2021_22, 'waterTax');
 		const waterSupplyFee = getNumberValue(fsMapper2021_22, 'waterSupplyFee');
-		const ownRevenueWaterSupply = fsData && fsData.propertyWaterTax.value === 'Yes' ? waterTax + waterSupplyFee : 0;
+		//TODO: verify the condition
+		const ownRevenueWaterSupply = fsData && fsData.propertyWaterTax.value === 'Yes' && fsData.waterSupply.value === 'Yes' ? waterTax + waterSupplyFee : 0;
 		// Own revenue for sewerage and sanitation.
 		const sewerageTax = getNumberValue(fsMapper2021_22, 'sewerageTax');
 		const sanitationFee = getNumberValue(fsMapper2021_22, 'sanitationFee');
-		// const ownRevenueSanitation = fsData && fsData.propertyWaterTax.value === 'Yes' ? sewerageTax + sanitationFee : 0;
-		const ownRevenueSanitation = fsData && fsData.propertySanitationTax.value === 'Yes' ? sewerageTax + sanitationFee : 0;
+		const ownRevenueSanitation = fsData && fsData.propertySanitationTax.value === 'Yes' && fsData.sanitationService.value === 'Yes' ? sewerageTax + sanitationFee : 0;
 
 		const ownRevenueData =
 			ulbRes.population === 0
@@ -150,10 +174,11 @@ function cagrInTotalBudget(fsData, fsMapper2018_19, fsMapper2021_22) {
 		const totalRecActual_2018_19 = getNumberValue(fsMapper2018_19, 'totalRecActual');
 		const totalRecActual_2021_22 = getNumberValue(fsMapper2021_22, 'totalRecActual');
 		// If 'Yes' then take the receipts for watersupply/ sanitation value.
-		const waterTax2021_22 = fsData && fsData.propertyWaterTax.value === 'Yes' ? getNumberValue(fsMapper2021_22, 'totalRcptWaterSupply') : 0;
-		const sanitationTax2021_22 = fsData && fsData.propertySanitationTax.value === 'Yes' ? getNumberValue(fsMapper2021_22, 'totalRcptSanitation') : 0;
-		const waterTax_2018_19 = fsData && fsData.propertyWaterTax.value === 'Yes' ? getNumberValue(fsMapper2018_19, 'totalRcptWaterSupply') : 0;
-		const sanitationTax_2018_19 = fsData && fsData.propertySanitationTax.value === 'Yes' ? getNumberValue(fsMapper2018_19, 'totalRcptSanitation') : 0;
+		//TODO: verify the condition
+		const waterTax2021_22 = fsData && fsData.propertyWaterTax.value === 'Yes' && fsData.waterSupply.value === 'Yes' ? getNumberValue(fsMapper2021_22, 'totalRcptWaterSupply') : 0;
+		const sanitationTax2021_22 = fsData && fsData.propertySanitationTax.value === 'Yes' && fsData.sanitationService.value === 'Yes' ? getNumberValue(fsMapper2021_22, 'totalRcptSanitation') : 0;
+		const waterTax_2018_19 = fsData && fsData.propertyWaterTax.value === 'Yes' && fsData.waterSupply.value === 'Yes' ? getNumberValue(fsMapper2018_19, 'totalRcptWaterSupply') : 0;
+		const sanitationTax_2018_19 = fsData && fsData.propertySanitationTax.value === 'Yes' && fsData.sanitationService.value === 'Yes' ? getNumberValue(fsMapper2018_19, 'totalRcptSanitation') : 0;
 		// Total - (waterTax + sanitationTax)
 		const budget2021_22 = totalRecActual_2021_22 - (waterTax2021_22 + sanitationTax2021_22);
 		const budget2018_19 = totalRecActual_2018_19 - (waterTax_2018_19 + sanitationTax_2018_19);
@@ -183,10 +208,11 @@ function cagrInOwnRevenue(fsData, fsMapper2018_19, fsMapper2021_22) {
 		const ownRevenueSewerageSanitation_2018_19 = getNumberValue(fsMapper2018_19, 'sewerageTax') + getNumberValue(fsMapper2018_19, 'sanitationFee');
 		const ownRevenueSewerageSanitation_2021_22 = getNumberValue(fsMapper2021_22, 'sewerageTax') + getNumberValue(fsMapper2021_22, 'sanitationFee');
 		// If 'Yes' then take the own revenue for watersupply/ sanitation value.
-		const waterTax_2021_22 = fsData && fsData.propertyWaterTax.value === 'Yes' ? ownRevenueWaterSupply_2021_22 : 0;
-		const sanitationTax_2021_22 = fsData && fsData.propertySanitationTax.value === 'Yes' ? ownRevenueSewerageSanitation_2021_22 : 0;
-		const waterTax_2018_19 = fsData && fsData.propertyWaterTax.value === 'Yes' ? ownRevenueWaterSupply_2018_19 : 0;
-		const sanitationTax_2018_19 = fsData && fsData.propertySanitationTax.value === 'Yes' ? ownRevenueSewerageSanitation_2018_19 : 0;
+		//TODO: verify the condition
+		const waterTax_2021_22 = fsData && fsData.propertyWaterTax.value === 'Yes' && fsData.waterSupply.value === 'Yes' ? ownRevenueWaterSupply_2021_22 : 0;
+		const sanitationTax_2021_22 = fsData && fsData.propertySanitationTax.value === 'Yes' && fsData.sanitationService.value === 'Yes' ? ownRevenueSewerageSanitation_2021_22 : 0;
+		const waterTax_2018_19 = fsData && fsData.propertyWaterTax.value === 'Yes' && fsData.waterSupply.value === 'Yes' ? ownRevenueWaterSupply_2018_19 : 0;
+		const sanitationTax_2018_19 = fsData && fsData.propertySanitationTax.value === 'Yes' && fsData.sanitationService.value === 'Yes' ? ownRevenueSewerageSanitation_2018_19 : 0;
 		// Total - (watersupply + sanitaion)
 		const ownRev2021_22 = totalOwnRevenue_2021_22 - (waterTax_2021_22 + sanitationTax_2021_22);
 		const ownRev2018_19 = totalOwnRevenue_2018_19 - (waterTax_2018_19 + sanitationTax_2018_19);
@@ -228,18 +254,19 @@ function capExPerCapitaAvg(ulbRes, fsData, fsMapper2019_20, fsMapper2020_21, fsM
 		const totalCapEx_2020_21 = getNumberValue(fsMapper2020_21, 'CaptlExp');
 		const totalCapEx_2021_22 = getNumberValue(fsMapper2021_22, 'CaptlExp');
 		// Assigning the values to variables if fsData options are 'YES' - 3years
+		//TODO: verify the condition
 		const totalRcptWaterSupply_2019_20 =
-			fsData && fsData.propertyWaterTax.value === 'Yes' ? getNumberValue(fsMapper2019_20, 'CaptlExpWaterSupply') : 0;
+			fsData && fsData.propertyWaterTax.value === 'Yes' && fsData.waterSupply.value === 'Yes' ? getNumberValue(fsMapper2019_20, 'CaptlExpWaterSupply') : 0;
 		const totalRcptSanitation_2019_20 =
-			fsData && fsData.propertySanitationTax.value === 'Yes' ? getNumberValue(fsMapper2019_20, 'CaptlExpSanitation') : 0;
+			fsData && fsData.propertySanitationTax.value === 'Yes' && fsData.sanitationService.value === 'Yes' ? getNumberValue(fsMapper2019_20, 'CaptlExpSanitation') : 0;
 		const totalRcptWaterSupply_2020_21 =
-			fsData && fsData.propertyWaterTax.value === 'Yes' ? getNumberValue(fsMapper2020_21, 'CaptlExpWaterSupply') : 0;
+			fsData && fsData.propertyWaterTax.value === 'Yes' && fsData.waterSupply.value === 'Yes' ? getNumberValue(fsMapper2020_21, 'CaptlExpWaterSupply') : 0;
 		const totalRcptSanitation_2020_21 =
-			fsData && fsData.propertySanitationTax.value === 'Yes' ? getNumberValue(fsMapper2020_21, 'CaptlExpSanitation') : 0;
+			fsData && fsData.propertySanitationTax.value === 'Yes' && fsData.sanitationService.value === 'Yes' ? getNumberValue(fsMapper2020_21, 'CaptlExpSanitation') : 0;
 		const totalRcptWaterSupply_2021_22 =
-			fsData && fsData.propertyWaterTax.value === 'Yes' ? getNumberValue(fsMapper2021_22, 'CaptlExpWaterSupply') : 0;
+			fsData && fsData.propertyWaterTax.value === 'Yes' && fsData.waterSupply.value === 'Yes' ? getNumberValue(fsMapper2021_22, 'CaptlExpWaterSupply') : 0;
 		const totalRcptSanitation_2021_22 =
-			fsData && fsData.propertySanitationTax.value === 'Yes' ? getNumberValue(fsMapper2021_22, 'CaptlExpSanitation') : 0;
+			fsData && fsData.propertySanitationTax.value === 'Yes' && fsData.sanitationService.value === 'Yes' ? getNumberValue(fsMapper2021_22, 'CaptlExpSanitation') : 0;
 		// Total capex - (watersupply + sanitation)
 		const capEx_2019_20 = totalCapEx_2019_20 - (totalRcptWaterSupply_2019_20 + totalRcptSanitation_2019_20);
 		const capEx_2020_21 = totalCapEx_2020_21 - (totalRcptWaterSupply_2020_21 + totalRcptSanitation_2020_21);
@@ -258,14 +285,15 @@ function capExPerCapitaAvg(ulbRes, fsData, fsMapper2019_20, fsMapper2020_21, fsM
 function cagrInCapEx(fsData, fsMapper2018_19, fsMapper2021_22) {
 	try {
 		// Assigning the values to variables if fsData options are 'YES'.
+		//TODO: verify the condition
 		const totalRcptWaterSupply_2018_19 =
-			fsData && fsData.propertyWaterTax.value === 'Yes' ? getNumberValue(fsMapper2018_19, 'CaptlExpWaterSupply') : 0;
+			fsData && fsData.propertyWaterTax.value === 'Yes' && fsData.waterSupply.value === 'Yes' ? getNumberValue(fsMapper2018_19, 'CaptlExpWaterSupply') : 0;
 		const totalRcptSanitation_2018_19 =
-			fsData && fsData.propertySanitationTax.value === 'Yes' ? getNumberValue(fsMapper2018_19, 'CaptlExpSanitation') : 0;
+			fsData && fsData.propertySanitationTax.value === 'Yes' && fsData.sanitationService.value === 'Yes' ? getNumberValue(fsMapper2018_19, 'CaptlExpSanitation') : 0;
 		const totalRcptWaterSupply_2021_22 =
-			fsData && fsData.propertyWaterTax.value === 'Yes' ? getNumberValue(fsMapper2021_22, 'CaptlExpWaterSupply') : 0;
+			fsData && fsData.propertyWaterTax.value === 'Yes' && fsData.waterSupply.value === 'Yes' ? getNumberValue(fsMapper2021_22, 'CaptlExpWaterSupply') : 0;
 		const totalRcptSanitation_2021_22 =
-			fsData && fsData.propertySanitationTax.value === 'Yes' ? getNumberValue(fsMapper2021_22, 'CaptlExpSanitation') : 0;
+			fsData && fsData.propertySanitationTax.value === 'Yes' && fsData.sanitationService.value === 'Yes' ? getNumberValue(fsMapper2021_22, 'CaptlExpSanitation') : 0;
 		// Total capex - (watersupply + sanitation)
 		const capEx2021_22 = getNumberValue(fsMapper2021_22, 'CaptlExp') - (totalRcptWaterSupply_2021_22 + totalRcptSanitation_2021_22);
 		const capEx2018_19 = getNumberValue(fsMapper2018_19, 'CaptlExp') - (totalRcptWaterSupply_2018_19 + totalRcptSanitation_2018_19);
@@ -273,29 +301,30 @@ function cagrInCapEx(fsData, fsMapper2018_19, fsMapper2021_22) {
 		const totalCapEx = capEx2021_22 === 0 || capEx2018_19 === 0 ? 0 : capEx2021_22 / capEx2018_19;
 		// Growth
 		const time = 3;
-		const cagrInCapEx = totalCapEx <= 0 ? 0 : (Math.pow(totalCapEx, 1 / time) -1 ) * 100;
+		const cagrInCapEx = totalCapEx <= 0 ? 0 : (Math.pow(totalCapEx, 1 / time) - 1) * 100;
 
 		return parseFloat(cagrInCapEx.toFixed(2));
-	} catch (e) {	
+	} catch (e) {
 		return 0;
 	}
 }
 
 // 9. O&M expenses to Total Revenue Expenditure (TRE) (3- year average) - EP
+//TODO: verify the condition
 function omExpTotalRevEx(fsData, fsMapper2019_20, fsMapper2020_21, fsMapper2021_22) {
 	try {
 		const omExpWaterSupply_2019_20 =
-			fsData && fsData.propertyWaterTax.value === 'Yes' ? getNumberValue(fsMapper2019_20, 'totalCaptlExpWaterSupply') : 0;
+			fsData && fsData.propertyWaterTax.value === 'Yes' && fsData.waterSupply.value === 'Yes' ? getNumberValue(fsMapper2019_20, 'totalCaptlExpWaterSupply') : 0;
 		const omExpSanitation_2019_20 =
-			fsData && fsData.propertySanitationTax.value === 'Yes' ? getNumberValue(fsMapper2019_20, 'totalOMCaptlExpSanitation') : 0;
+			fsData && fsData.propertySanitationTax.value === 'Yes' && fsData.sanitationService.value === 'Yes' ? getNumberValue(fsMapper2019_20, 'totalOMCaptlExpSanitation') : 0;
 		const omExpWaterSupply_2020_21 =
-			fsData && fsData.propertyWaterTax.value === 'Yes' ? getNumberValue(fsMapper2020_21, 'totalCaptlExpWaterSupply') : 0;
+			fsData && fsData.propertyWaterTax.value === 'Yes' && fsData.waterSupply.value === 'Yes' ? getNumberValue(fsMapper2020_21, 'totalCaptlExpWaterSupply') : 0;
 		const omExpSanitation_2020_21 =
-			fsData && fsData.propertySanitationTax.value === 'Yes' ? getNumberValue(fsMapper2020_21, 'totalOMCaptlExpSanitation') : 0;
+			fsData && fsData.propertySanitationTax.value === 'Yes' && fsData.sanitationService.value === 'Yes' ? getNumberValue(fsMapper2020_21, 'totalOMCaptlExpSanitation') : 0;
 		const omExpWaterSupply_2021_22 =
-			fsData && fsData.propertyWaterTax.value === 'Yes' ? getNumberValue(fsMapper2021_22, 'totalCaptlExpWaterSupply') : 0;
+			fsData && fsData.propertyWaterTax.value === 'Yes' && fsData.waterSupply.value === 'Yes' ? getNumberValue(fsMapper2021_22, 'totalCaptlExpWaterSupply') : 0;
 		const omExpSanitation_2021_22 =
-			fsData && fsData.propertySanitationTax.value === 'Yes' ? getNumberValue(fsMapper2021_22, 'totalOMCaptlExpSanitation') : 0;
+			fsData && fsData.propertySanitationTax.value === 'Yes' && fsData.sanitationService.value === 'Yes' ? getNumberValue(fsMapper2021_22, 'totalOMCaptlExpSanitation') : 0;
 
 		// Total O&M - O&M for water suppy + O&M for sewerage and sanitation.
 		// Array is created to find average.
@@ -363,7 +392,8 @@ function avgMonthsForULBAudit(fsMapper2019_20, fsMapper2020_21, fsMapper2021_22)
 function aaPublished(fsMapperNoYear) {
 	try {
 		// If answer is 'Yes' then 25 marks else 0 marks.
-		const aaPublished = getValue(fsMapperNoYear, 'webUrlAnnual') !== null ? 25 : 0;
+		const isWeblink = getValue(fsMapperNoYear, 'webUrlAnnual');
+		const aaPublished = isWeblink === 'www.nowebsite.com' || isWeblink === null ? 0 : 25;
 		return aaPublished;
 	} catch (e) {
 		return 0;
@@ -794,7 +824,7 @@ module.exports.calculateFRScore = async (req, res) => {
 		const limit = req.query.limit ? parseInt(req.query.limit) : 1000;
 		const page = req.query.page ? parseInt(req.query.page) : 1;
 		const censusCode = 802989;
-		const _id = ObjectId('5fa24660072dab780a6f1358');		
+		const _id = ObjectId('5e33ffd0d6f5614a4bba622d');
 		// Consider only ULBs with isActive TRUE & population is not empty & not 0.
 		const condition = { isActive: true, population: { $nin: [null, 0] } };
 		// const condition = { isActive: true, _id, population: { $nin: [null, 0] } };
