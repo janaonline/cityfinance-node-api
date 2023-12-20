@@ -26,6 +26,7 @@ const whitelist = [
   'http://localhost:4200',
   'https://democityfinance.dhwaniris.in',
   'https://staging.cityfinance.in',
+  'https://staging-jana.cityfinance.in',
   'https://cityfinance.in'
 ];
 
@@ -47,7 +48,6 @@ app.use(json2xls.middleware);
 const port = config.APP.PORT;
 
 app.use(logger("dev"));
-
 app.use(expressSanitizer());
 
 
@@ -103,7 +103,7 @@ app.use((err, req, res, next) => {
 });
 
 // app.listen(port, () => {
-//   console.log("server started on port " + port);
+  //   console.log("server started on port " + port);
 // });
 
 module.exports = app
