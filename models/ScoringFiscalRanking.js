@@ -28,6 +28,18 @@ const sumScoreFields = {
 		type: Number,
 		default: 0,
 	},
+	stateAvg: {
+		type: Number,
+		default: 0,
+	},
+	nationalAvg: {
+		type: Number,
+		default: 0,
+	},
+	populationBucketAvg: {
+		type: Number,
+		default: 0,
+	},
 };
 
 const yearFile = {
