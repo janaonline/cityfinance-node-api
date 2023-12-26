@@ -3039,7 +3039,7 @@ const excelPTOMapping = async (query) => {
         .exec();
 
       cursor.on("data", (el) => {
-        if (STATE_DATA[el.state.toString()]) {
+        if (STATE_DATA[el?.state?.toString()]) {
           // Filters the current status of a form element and removes certain data fields based on the status.
           currentStatusFilter(el);
 
