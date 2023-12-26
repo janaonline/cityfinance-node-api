@@ -3034,7 +3034,7 @@ const excelPTOMapping = async (query) => {
         },
       ])
         .allowDiskUse(true)
-        .cursor({ batchSize: 75 })
+        .cursor({ batchSize: 50 })
         .addCursorFlag("noCursorTimeout", true)
         .exec();
 
