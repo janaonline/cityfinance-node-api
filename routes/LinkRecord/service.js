@@ -22,7 +22,7 @@ const createLinkRecords = async(req,res)=>{
         for(let {key,shortKey,url} of input){
             let validation = checkUndefinedValidations({key, shortKey, url});
             if (!validation.valid) { return Response.BadRequest(res,{}, validation?.message) }
-            const output = await LinkRecord.create({key, url, shortKey}).lean();
+            const output = await LinkRecord.create({key, url, shortKey});
             if(!output) {return Response.BadRequest(res, {}, "Cannot create record!")}
         }
         return Response.OK(res, {}, "Success")
