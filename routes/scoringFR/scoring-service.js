@@ -244,7 +244,9 @@ function cagrInPTax(fsMapper2018_19, fsMapper2021_22) {
 		const pTax = pTax2021_22 === 0 || pTax2018_19 === 0 ? 0 : pTax2021_22 / pTax2018_19;
 		// Growth for 3 years
 		const time = 3;
-		const cagrInPTax = pTax <= 0 ? 0 : (Math.pow(pTax, 1 / time) - 1) * 100;
+		// TODO:check 0 condtion with navinder
+		// const cagrInPTax = pTax <= 0 ? 0 : (Math.pow(pTax, 1 / time) - 1) * 100;
+		const cagrInPTax = (Math.pow(pTax, 1 / time) - 1) * 100;
 
 		return parseFloat(cagrInPTax.toFixed(2));
 	} catch (e) {
@@ -303,11 +305,14 @@ function cagrInCapEx(fsData, fsMapper2018_19, fsMapper2021_22) {
 		// Total capex - (watersupply + sanitation)
 		const capEx2021_22 = getNumberValue(fsMapper2021_22, 'CaptlExp') - (totalRcptWaterSupply_2021_22 + totalRcptSanitation_2021_22);
 		const capEx2018_19 = getNumberValue(fsMapper2018_19, 'CaptlExp') - (totalRcptWaterSupply_2018_19 + totalRcptSanitation_2018_19);
-		// Handling 0/ 0
+				// Handling 0/ 0
 		const totalCapEx = capEx2021_22 === 0 || capEx2018_19 === 0 ? 0 : capEx2021_22 / capEx2018_19;
-		// Growth
+				// Growth
 		const time = 3;
-		const cagrInCapEx = totalCapEx <= 0 ? 0 : (Math.pow(totalCapEx, (1 / time)) - 1) * 100;
+		// TODO: check 0 cond with navinder
+		// const cagrInCapEx = totalCapEx <= 0 ? 0 : (Math.pow(totalCapEx, (1 / time)) - 1) * 100;
+		const cagrInCapEx = (Math.pow(totalCapEx, (1 / time)) - 1) * 100;
+		console.log(totalCapEx, "totalCapEx");
 
 		return parseFloat(cagrInCapEx.toFixed(2));
 	} catch (e) {
@@ -829,7 +834,7 @@ module.exports.calculateFRScore = async (req, res) => {
 		const limit = req.query.limit ? parseInt(req.query.limit) : 1000;
 		const page = req.query.page ? parseInt(req.query.page) : 1;
 		const censusCode = 802989;
-		const _id = ObjectId('5dd24728437ba31f7eb42e84');
+		const _id = ObjectId('5dd24729437ba31f7eb42f14');
 		// Consider only ULBs with isActive TRUE & population is not empty & not 0.
 		const condition = { isActive: true, population: { $nin: [null, 0] } };
 		// const condition = { isActive: true, _id, population: { $nin: [null, 0] } };
