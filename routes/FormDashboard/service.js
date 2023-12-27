@@ -698,8 +698,15 @@ function getQuery(modelName, formType, designYear, formCategory, stateId){
     let condition = {};
     let nmpcConditionUlb = [],
         mpcConditionUlb = [];
-
+    const defaultProjectStage = {
+        actionTakenByRole:1,
+        isDraft:1,
+        ulb:1,
+        design_year:1,
+        status:1
+    }
         nmpcConditionUlb =[
+            { $project: defaultProjectStage },
             {
                 $lookup:{
                     from: "ulbs",
@@ -716,6 +723,7 @@ function getQuery(modelName, formType, designYear, formCategory, stateId){
             }
         ];
         mpcConditionUlb = [
+            { $project:   defaultProjectStage },
             {
                 $lookup:{
                     from: "ulbs",
@@ -727,53 +735,31 @@ function getQuery(modelName, formType, designYear, formCategory, stateId){
             {$unwind: "$ulb" },
             {
                 $match:{
-                    $or:[
-                        {
-                            "ulb.isMillionPlus":"Yes",
-                            "ulb.isUA":"Yes"
-                        },
-                        {
-                            "ulb.isMillionPlus":"No",
-                            "ulb.isUA": "Yes"
-                        }
-                    ]     
+                    "ulb.isUA":"Yes"   
                 }
             } 
         ];
-    if(formType === "nmpc_untied" || formType === "nmpc_tied"){
-        if( formCategory === "ULB"){
+        if (formCategory === "ULB") {
+          if (["nmpc_untied", "nmpc_tied"].includes(formType)) {
+            updatePopulationCondition(nmpcConditionUlb, modelName)
             query.push(...nmpcConditionUlb);
+          } else if (formType === "mpc_tied") {
+            updatePopulationCondition(mpcConditionUlb, modelName)
+            query.push(...mpcConditionUlb);
+          }
         }
-    } else if( formType === "mpc_tied"){
-        if( formCategory === "ULB"){
-            query.push(...mpcConditionUlb)
-        }
-    }
 
     let submitConditionUlb = [{
-        isDraft: false,
-        actionTakenByRole: "ULB",
-        status: "PENDING"
-    },{
-        isDraft: false,
-        actionTakenByRole: "STATE",
-        status: "APPROVED"
-    },{
-        isDraft: false,
-        actionTakenByRole: "MoHUA",
-        status:"APPROVED"
+        "isDraft": false,
+        "actionTakenByRole": {$in:["ULB", "MoHUA", "STATE"]},
+        "status": {$in:["PENDING","APPROVED"]}
     }]
 
     let submitConditionState = [
         {
             isDraft: false,
-            actionTakenByRole: "STATE",
-            status: "PENDING", 
-        },
-        {
-            isDraft: false,
-            actionTakenByRole: "MoHUA",
-            status: "APPROVED"
+            actionTakenByRole: {$in:["STATE", "MoHUA"]},
+            status: {$in:["PENDING", "APPROVED"]}, 
         }
     ]
     switch(formCategory){
@@ -863,6 +849,40 @@ function getQuery(modelName, formType, designYear, formCategory, stateId){
     }
     return query;
 }
+/* Fields to project */
+const ProjectStageForPopulation = {
+    [CollectionNames.annualAcc]:{
+        "audited.submit_annual_accounts" :1,
+        "unAudited.submit_annual_accounts": 1,
+        "isDraft": 1
+    },
+    [CollectionNames.linkPFMS]: {
+        linkPFMS:1,
+        isUlbLinkedWithPFMS: 1,
+        isDraft: 1
+    },
+    [CollectionNames.slb]:{
+        blank: 1,
+        isDraft: 1
+    }
+}
+/**
+ * The function `updatePopulationCondition` updates a specific condition in a JavaScript object based
+ * on a given model name.
+ * @param condition - The `condition` parameter is an array of objects that represents the stages of a
+ * MongoDB aggregation pipeline. Each object in the array represents a stage in the pipeline.
+ * @param modelName - The `modelName` parameter is a string that represents the name of the model for
+ * which the population condition is being updated.
+ */
+function updatePopulationCondition(condition, modelName){
+    try {
+        let projectStage =  condition.find(el=> el.hasOwnProperty("$project"));
+        projectStage['$project'] = {...projectStage['$project'],...ProjectStageForPopulation[modelName] }
+    } catch (error) {
+        throw {message: `updatePopulationCondition:  ${error.message}`}
+    }
+}
+
 function getQuery2324(modelName, formType, designYear, formCategory, stateId){
     let query = [];
     let condition = {};
