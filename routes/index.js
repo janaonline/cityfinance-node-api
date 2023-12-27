@@ -290,14 +290,15 @@ router.use('/master-skip-value', MasterSkipValue)
 const MunicipalityBudgets = require("./MunicipalityBudgets");
 router.use('/municipality-budgets', MunicipalityBudgets);
 
+/* Link Record to store links data*/
+const LinkRecord = require('./LinkRecord');
+router.use('/link-record', LinkRecord)
+
 const stateResources = require("./stateResources");
 router.use('/state-resources', verifyToken, stateResources);
 
 const generalAlerts = require("./generalAlerts")
 router.use('/general-alert', generalAlerts);
-
-const LinkRecord = require('./LinkRecord');
-router.use('/link-record', LinkRecord)
 
 router.use(require('./Master'))
 
