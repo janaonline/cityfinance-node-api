@@ -133,7 +133,7 @@ async function calculateFRPercentage(populationBucket) {
 
 		const resourceMobilization = parseFloat((totalBudgetDataPC_1 + ownRevenuePC_2 + pTaxPC_3 + cagrInTotalBud_4 + cagrInOwnRevPC_5 + cagrInPropTax_6).toFixed(decimalPlace));
 		const expenditurePerformance = parseFloat((capExPCAvg_7 + cagrInCapExpen_8 + omExpTotalRevExpen_9).toFixed(decimalPlace));
-		const fiscalGovernance = parseFloat((ulb['aaPushishedMarks_10b'].score + ulb['gisBasedPTaxMarks_11a'].score + ulb['accSoftwareMarks_11b'].score +
+		const fiscalGovernance = parseFloat((ulb['avgMonthsForULBAuditMarks_10a'].score + ulb['aaPushishedMarks_10b'].score + ulb['gisBasedPTaxMarks_11a'].score + ulb['accSoftwareMarks_11b'].score +
 			receiptsVariance_12 + ownRevRecOutStanding_13 + digitalToTotalOwnRev_14 + propUnderTaxCollNet_15).toFixed(decimalPlace));
 
 		const overAll = parseFloat((resourceMobilization + expenditurePerformance + fiscalGovernance).toFixed(decimalPlace));

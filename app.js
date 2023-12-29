@@ -27,6 +27,7 @@ const whitelist = [
   'https://democityfinance.dhwaniris.in',
   'https://staging.cityfinance.in',
   'https://staging-jana.cityfinance.in',
+  'https://uat.cityfinance.in',
   'https://cityfinance.in'
 ];
 
