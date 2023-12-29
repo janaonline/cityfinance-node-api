@@ -42,12 +42,12 @@ const { MASTER_STATUS_ID } = require("../../util/FormNames");
 
 const BackendHeaderHost ={
   Demo: "democityfinanceapi.dhwaniris.in",
-  Staging: "staging.cityfinance.in",
+  Staging: `${process.env.STAGING_HOST}`,
   Prod: "cityfinance.in",
 }
 const FrontendHeaderHost ={
   Demo: "democityfinance.dhwaniris.in",
-  Staging: "staging.cityfinance.in",
+  Staging: `${process.env.STAGING_HOST}`,
   Prod: "cityfinance.in",
 }
 async function sleep(millis) {

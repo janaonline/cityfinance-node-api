@@ -18,7 +18,7 @@ const {
 } = require("../../service/updateStateMasterForm");
 const {saveStatusAndHistory} = require("../CommonFormSubmission/service")
 let baseUrls = {
-  "staging":"https://staging.cityfinance.in",
+  "staging":`https://${process.env.STAGING_HOST}`,
   "demo":"https://democityfinance.dhwaniris.in",
   "prod":"https://cityfinance.in"
 }

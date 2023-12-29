@@ -40,12 +40,12 @@ let validationMessages = {
 
 const BackendHeaderHost = {
   Demo: "democityfinanceapi.dhwaniris.in",
-  Staging: "staging.cityfinance.in",
+  Staging: `${process.env.STAGING_HOST}`,
   Prod: "cityfinance.in",
 }
 const FrontendHeaderHost = {
   Demo: "democityfinance.dhwaniris.in",
-  Staging: "staging.cityfinance.in",
+  Staging: `${process.env.STAGING_HOST}`,
   Prod: "cityfinance.in",
 }
 const {

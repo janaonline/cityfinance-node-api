@@ -1047,7 +1047,7 @@ function findForm(formArray, stateId) {
 
 let apiUrls = {
     "demo": "https://democityfinanceapi.dhwaniris.in/api/v1/",
-    "staging": "https://staging.cityfinance.in/api/v1/",
+    "staging": `https://${process.env.STAGING_HOST}/api/v1/`,
     "production": "https://cityfinance.in/api/v1/"
 }
 

@@ -659,7 +659,7 @@ module.exports.get2223 = catchAsync(async (req, res) => {
     // console.log(uaId,`${process.env.BASEURL}/xv-fc-form/state/606aaf854dff55e6c075d219?ua_id=${uaId}` )
     await axios
       .get(
-        `https://staging.cityfinance.in/api/v1/xv-fc-form/state/606aaf854dff55e6c075d219?ua_id=${uaId}`
+        `https://${process.env.STAGING_HOST}/api/v1/xv-fc-form/state/606aaf854dff55e6c075d219?ua_id=${uaId}`
       )
       .then(function (response) {
         slbWeigthed = response.data.data[0];

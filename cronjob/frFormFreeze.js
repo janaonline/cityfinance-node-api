@@ -20,7 +20,7 @@ module.exports.frFormFreeze = async () => {
         } else if ((process.env.ENV == ENV['demo'])) {
             url = "https://democityfinanceapi.dhwaniris.in/api/v1/";
         } else if ((process.env.ENV == ENV['stg'])) {
-            url = "https://staging.cityfinance.in/api/v1/";
+            url = `https://${process.env.STAGING_HOST}/api/v1/`;
         }
 
         let viewEndPoint = "fiscal-ranking/view";

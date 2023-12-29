@@ -25,7 +25,7 @@ const whitelist = [
   
   'http://localhost:4200',
   'https://democityfinance.dhwaniris.in',
-  'https://staging.cityfinance.in',
+  `https://${process.env.STAGING_HOST}`,
   'https://cityfinance.in'
 ];
 
