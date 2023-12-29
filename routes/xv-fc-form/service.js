@@ -41,12 +41,12 @@ const { getKeyByValue } = require("../../util/masterFunctions");
 const { MASTER_STATUS_ID } = require("../../util/FormNames");
 
 const BackendHeaderHost ={
-  Demo: "democityfinanceapi.dhwaniris.in",
+  Demo: `${process.env.DEMO_HOST_BACKEND}`,
   Staging: `${process.env.STAGING_HOST}`,
   Prod: "cityfinance.in",
 }
 const FrontendHeaderHost ={
-  Demo: "democityfinance.dhwaniris.in",
+  Demo: `${process.env.DEMO_HOST_FRONTEND}`,
   Staging: `${process.env.STAGING_HOST}`,
   Prod: "cityfinance.in",
 }

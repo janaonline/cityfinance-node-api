@@ -19,7 +19,7 @@ const {
 const {saveStatusAndHistory} = require("../CommonFormSubmission/service")
 let baseUrls = {
   "staging":`https://${process.env.STAGING_HOST}`,
-  "demo":"https://democityfinance.dhwaniris.in",
+  "demo":`https://${process.env.DEMO_HOST_FRONTEND}`,
   "prod":"https://cityfinance.in"
 }
 

@@ -24,7 +24,7 @@ const whitelist = [
   'https://api.aaina-mohua.in',
   
   'http://localhost:4200',
-  'https://democityfinance.dhwaniris.in',
+  `https://${process.env.DEMO_HOST_FRONTEND}`,
   `https://${process.env.STAGING_HOST}`,
   'https://cityfinance.in'
 ];

@@ -18,7 +18,7 @@ module.exports.frFormFreeze = async () => {
         if ((process.env.ENV == ENV['prod'])) {
             url = "https://cityfinance.in/api/v1/";
         } else if ((process.env.ENV == ENV['demo'])) {
-            url = "https://democityfinanceapi.dhwaniris.in/api/v1/";
+            url = `https://${process.env.DEMO_HOST_BACKEND}/api/v1/`;
         } else if ((process.env.ENV == ENV['stg'])) {
             url = `https://${process.env.STAGING_HOST}/api/v1/`;
         }
