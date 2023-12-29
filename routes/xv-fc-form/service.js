@@ -43,12 +43,12 @@ const { MASTER_STATUS_ID } = require("../../util/FormNames");
 const BackendHeaderHost ={
   Demo: `${process.env.DEMO_HOST_BACKEND}`,
   Staging: `${process.env.STAGING_HOST}`,
-  Prod: "cityfinance.in",
+  Prod: `${process.env.PROD_HOST}`,
 }
 const FrontendHeaderHost ={
   Demo: `${process.env.DEMO_HOST_FRONTEND}`,
   Staging: `${process.env.STAGING_HOST}`,
-  Prod: "cityfinance.in",
+  Prod: `${process.env.PROD_HOST}`,
 }
 async function sleep(millis) {
   return new Promise((resolve) => setTimeout(resolve, millis));
@@ -4745,13 +4745,13 @@ let uaIDs = await UA.find().select("_id").lean()
 
 let finalData = []
 let x = 1;
-let data = await axios.post('https://cityfinance.in/api/v1/login', {
-  "email":"admin@cityfinance.in",
+let data = await axios.post(`https://${process.env.PROD_HOST}/api/v1/login`, {
+  "email":`admin@${process.env.PROD_HOST}`,
   "password":"admin007@cityfinance"
 })
 
 for(let el of uaIDs ){
-  await axios.get(`https://cityfinance.in/api/v1/xv-fc-form/state/606aaf854dff55e6c075d219?ua_id=${el._id}`,
+  await axios.get(`https://${process.env.PROD_HOST}/api/v1/xv-fc-form/state/606aaf854dff55e6c075d219?ua_id=${el._id}`,
   { params:{}, headers: { "x-access-token": data?.data?.token } }
   ).then(function(response) {
  

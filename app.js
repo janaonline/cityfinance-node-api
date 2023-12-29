@@ -26,7 +26,7 @@ const whitelist = [
   'http://localhost:4200',
   `https://${process.env.DEMO_HOST_FRONTEND}`,
   `https://${process.env.STAGING_HOST}`,
-  'https://cityfinance.in'
+  `https://${process.env.PROD_HOST}`
 ];
 
 const corsOptions = {

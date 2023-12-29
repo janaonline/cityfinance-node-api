@@ -88,7 +88,7 @@ module.exports.sendOtp = catchAsync(async (req, res, next) => {
                 })
             }
         }
-        let msg = `Your OTP to login into CityFinance.in is ${otp}. Do not share this code. If not requested, please contact us at contact@cityfinance.in - City Finance`;
+        let msg = `Your OTP to login into CityFinance.in is ${otp}. Do not share this code. If not requested, please contact us at contact@${process.env.PROD_HOST} - City Finance`;
 /* If the user is a state, then the mobile number is the mobile number of the state. If the user is not
 a state, then the mobile number is the mobile number of the accountant. */
         let mobile = user?.role === "STATE" ? user.mobile : user.accountantConatactNumber ; 

@@ -77,7 +77,7 @@ function getMessages(params) {
     }
   } else {
     return {
-      "freeze": `Dear ${ulbName}, your data input form for City Finance Rankings has been put on hold. Cityfinance Rankings Module is no longer accepting submissions. Please email rankings@cityfinance.in for any queries.`
+      "freeze": `Dear ${ulbName}, your data input form for City Finance Rankings has been put on hold. Cityfinance Rankings Module is no longer accepting submissions. Please email rankings@${process.env.PROD_HOST} for any queries.`
     }
   }
 }
@@ -1176,7 +1176,7 @@ exports.getView = async function (req, res, next) {
                     if (chekFile) {
                       pf[
                         "info"
-                      ] = `Available on Cityfinance - <a href ="https://cityfinance.in/resources-dashboard/data-sets/income_statement ">View here</a>`;
+                      ] = `Available on Cityfinance - <a href ="https://${process.env.PROD_HOST}/resources-dashboard/data-sets/income_statement ">View here</a>`;
                     }
                     if (subData[key].calculatedFrom === undefined) {
                       pf["readonly"] = chekFile ? true : false;
@@ -1202,7 +1202,7 @@ exports.getView = async function (req, res, next) {
 
                     pf[
                       "info"
-                    ] = `Available on Cityfinance - <a href ="https://cityfinance.in/resources-dashboard/data-sets/income_statement ">View here</a>`;
+                    ] = `Available on Cityfinance - <a href =https://${process.env.PROD_HOST}/resources-dashboard/data-sets/income_statement ">View here</a>`;
                   }
                   if (subData[key].calculatedFrom === undefined) {
                     pf["readonly"] = chekFile ? true : getReadOnly(data?.currentFormStatus, viewOne.isDraft, role, "PENDING");
@@ -5709,7 +5709,7 @@ module.exports.freezeForm = async (req, res) => {
     let url = "http://localhost:8080/api/v1/";
 
     if ((process.env.ENV == ENV['prod'])) {
-      url = "https://cityfinance.in/api/v1/";
+      url = `https://${process.env.PROD_HOST}/api/v1/`;
     } else if ((process.env.ENV == ENV['demo'])) {
       url = `https://${process.env.DEMO_HOST_BACKEND}/api/v1/`;
     } else if ((process.env.ENV == ENV['stg'])) {

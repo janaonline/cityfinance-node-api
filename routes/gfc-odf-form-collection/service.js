@@ -554,7 +554,7 @@ module.exports.defunct = async (req, res) => {
           if (key != "_id" && key != "ulbName" && key != "ulbcode" && el[key]) {
             documnetcounter++;
             let url = el[key];
-            // let url = 'https://cityfinance.in/objects/31e1883d-7eef-4b2f-9e29-18d598056a5d.pdf'
+            // let url = `https://${process.env.PROD_HOST}/objects/31e1883d-7eef-4b2f-9e29-18d598056a5d.pdf`
             try {
               let response = await doRequest(url);
 

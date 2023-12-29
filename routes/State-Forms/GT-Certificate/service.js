@@ -74,7 +74,7 @@ module.exports.create = catchAsync(async (req, res) => {
     });
     if (updatedData) {
       await UpdateStateMasterForm(req, "GTCertificate");
-     if(req.headers.host == 'cityfinance.in'){
+     if(req.headers.host == `${process.env.PROD_HOST}`){
       let template = Service.emailTemplate.gtcSubmission(stateData.name, yearData.year, user.name, req.body.installment )
       let mailOptions =     {
         Destination: {

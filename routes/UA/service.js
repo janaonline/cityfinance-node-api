@@ -1743,7 +1743,7 @@ function amrProjects(service,csv,ulbId){
             "links":"$links.link",
             "creditRating": {
                     "name": "Credit rating",
-                    "url": "https://democityfinance.in/creditRating.pdf"
+                    "url": `https://demo${process.env.PROD_HOST}/creditRating.pdf`
                 }
         }
         let obj =  {
@@ -1785,7 +1785,7 @@ function durProjects(service,csv,ulbId){
         "divideTo":100,
         "creditRating": {
             "name": "Credit rating",
-            "url": "https://democityfinance.in/creditRating.pdf"
+            "url": `https://demo${process.env.PROD_HOST}/creditRating.pdf`
         },
         "links":"$links.link",
         "moreInformation": {
