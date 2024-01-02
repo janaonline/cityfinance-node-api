@@ -74,12 +74,12 @@ function calculateAverage(numbers) {
 // 	});
 // }
 
-let decimalPlace = 2; 
+let decimalPlace = 2;
 
 function updatePercentage_formula1(ulb, ulbArr, indicator, percent = 100) {
 	const sortedArr = ulbArr.sort((a, b) => b[indicator].score - a[indicator].score);
 	const percentage = ulb[indicator].score === 0 || sortedArr[0][indicator].score === 0 ? 0 : (ulb[indicator].score / sortedArr[0][indicator].score) * percent;
-	return parseFloat(percentage.toFixed(decimalPlace)); 
+	return parseFloat(percentage.toFixed(decimalPlace));
 }
 
 function updatePercentage_formula2(ulb, ulbArr, indicator) {
@@ -105,14 +105,14 @@ function updatePercentage_formula4(ulb, ulbArr, indicator) {
 	const len = sortedArr.length;
 	const numerator = (sortedArr[0][indicator].score - ulb[indicator].score);
 	const denominator = (sortedArr[0][indicator].score - sortedArr[len - 1][indicator].score);
- 	const percentage = numerator === 0 || denominator === 0 ? 0 : (numerator /denominator) * 50;
+	const percentage = numerator === 0 || denominator === 0 ? 0 : (numerator / denominator) * 50;
 	return parseFloat(percentage.toFixed(decimalPlace));
 }
 
 async function calculateFRPercentage(populationBucket) {
 	// const censusCode = 802787;
 	// Submission Acknowledged by PMU - 11
-	const condition = { populationBucket, currentFormStatus: { $in: [11]}};
+	const condition = { populationBucket, currentFormStatus: { $in: [11] } };
 	// const condition = {};
 	const ulbArr = await ScoringFiscalRanking.find(condition).lean();
 
@@ -137,7 +137,7 @@ async function calculateFRPercentage(populationBucket) {
 			receiptsVariance_12 + ownRevRecOutStanding_13 + digitalToTotalOwnRev_14 + propUnderTaxCollNet_15).toFixed(decimalPlace));
 
 		const overAll = parseFloat((resourceMobilization + expenditurePerformance + fiscalGovernance).toFixed(decimalPlace));
-		
+
 		const updateData = {
 			'totalBudgetDataPC_1.percentage': totalBudgetDataPC_1,
 			'ownRevenuePC_2.percentage': ownRevenuePC_2,
@@ -172,7 +172,7 @@ async function calculateFRPercentage(populationBucket) {
 module.exports.calculateFRPercentage = async (req, res) => {
 	try {
 		for (let i = 1; i <= 4; i++) {
-		    await calculateFRPercentage(i);
+			await calculateFRPercentage(i);
 		}
 		// const data = await calculateFRPercentage(1);
 		return res.status(200).json({ message: 'Done' });
@@ -187,32 +187,32 @@ module.exports.calculateFRPercentage = async (req, res) => {
 
 async function setIndicatorRank(ulbArr, indicator) {
 	ulbArr.sort((a, b) => b[indicator].score - a[indicator].score);
-    for (let i = 0; i < ulbArr.length; i++) {
+	for (let i = 0; i < ulbArr.length; i++) {
 		let rank = 1;
-		if(i===0) {
+		if (i === 0) {
 			rank = 1;
-		} else if(ulbArr[i-1][indicator].score === ulbArr[i][indicator].score) {
-			ulbArr[i][indicator].rank = ulbArr[i-1][indicator].rank;
+		} else if (ulbArr[i - 1][indicator].score === ulbArr[i][indicator].score) {
+			ulbArr[i][indicator].rank = ulbArr[i - 1][indicator].rank;
 		} else {
-			ulbArr[i][indicator].rank = ulbArr[i-1][indicator].rank +1;
+			ulbArr[i][indicator].rank = ulbArr[i - 1][indicator].rank + 1;
 		}
-     
-        await ScoringFiscalRanking.findByIdAndUpdate(ulbArr[i]._id, {
-          $set: {
-            [`${indicator}.rank`]: ulbArr[i][indicator].rank
-          },
-        });
-     
-    }
+
+		await ScoringFiscalRanking.findByIdAndUpdate(ulbArr[i]._id, {
+			$set: {
+				[`${indicator}.rank`]: ulbArr[i][indicator].rank
+			},
+		});
+
+	}
 }
 
 
 async function calculateFRRank(populationBucket) {
 	// Submission Acknowledged by PMU - 11
-	const condition = { isActive: true, populationBucket, currentFormStatus: { $in: [11]} };
-    const ulbArr = await ScoringFiscalRanking.find(condition)
-	.select('resourceMobilization expenditurePerformance fiscalGovernance overAll')
-	.lean();
+	const condition = { isActive: true, populationBucket, currentFormStatus: { $in: [11] } };
+	const ulbArr = await ScoringFiscalRanking.find(condition)
+		.select('resourceMobilization expenditurePerformance fiscalGovernance overAll')
+		.lean();
 	await setIndicatorRank(ulbArr, 'resourceMobilization');
 	await setIndicatorRank(ulbArr, 'expenditurePerformance');
 	await setIndicatorRank(ulbArr, 'fiscalGovernance');
@@ -222,7 +222,7 @@ async function calculateFRRank(populationBucket) {
 module.exports.calculateFRRank = async (req, res) => {
 	try {
 		for (let i = 1; i <= 4; i++) {
-		    await calculateFRRank(i);
+			await calculateFRRank(i);
 		}
 		// const data = await calculateFRRank(1);
 		return res.status(200).json({ message: 'Done' });
