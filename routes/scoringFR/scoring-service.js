@@ -7,6 +7,8 @@ const FiscalRanking = require('../../models/FiscalRanking');
 const FiscalRankingMapper = require('../../models/FiscalRankingMapper');
 const ScoringFiscalRanking = require('../../models/ScoringFiscalRanking');
 const { registerCustomQueryHandler } = require('puppeteer');
+const { cubeRootOfNegative } = require('../../service/common');
+// const { pow } = require('mathjs');
 /* 
 Pending actions
 
@@ -192,7 +194,20 @@ function cagrInTotalBudget(fsData, fsMapper2018_19, fsMapper2021_22) {
 		const budget = budget2021_22 === 0 || budget2018_19 === 0 ? 0 : budget2021_22 / budget2018_19;
 		// Growth
 		const time = 3;
-		const CAGRInTotalBudget = budget <= 0 ? 0 : (Math.pow(budget, 1 / time) - 1) * 100;
+		let CAGRInTotalBudget = 0;
+		if (budget !== 0) {
+			// const pow1 = cubeRootOfNegative(budget);
+			// const pow1 = pow(budget,0.333);
+			const pow1 = Math.cbrt(budget);
+			// console.log('pow-DD--',pow1);
+			// console.log('pow-st--',JSON.stringify(pow1));
+			// console.log('pow---',typeof pow1);
+			CAGRInTotalBudget = (pow1 - 1) * 100;
+			// CAGRInTotalBudget = (Math.pow(budget, 1 / time) - 1) * 100;
+		} else {
+			CAGRInTotalBudget = 0;
+		}
+		// const CAGRInTotalBudget = budget <= 0 ? 0 : (Math.pow(budget, 1 / time) - 1) * 100;
 
 		return parseFloat(CAGRInTotalBudget.toFixed(2)); //15.73%
 		// return parseFloat(Math.ceil(CAGRInTotalBudget.toFixed(2))); //15.73% >> 16%
@@ -305,14 +320,20 @@ function cagrInCapEx(fsData, fsMapper2018_19, fsMapper2021_22) {
 		// Total capex - (watersupply + sanitation)
 		const capEx2021_22 = getNumberValue(fsMapper2021_22, 'CaptlExp') - (totalRcptWaterSupply_2021_22 + totalRcptSanitation_2021_22);
 		const capEx2018_19 = getNumberValue(fsMapper2018_19, 'CaptlExp') - (totalRcptWaterSupply_2018_19 + totalRcptSanitation_2018_19);
-				// Handling 0/ 0
+		// Handling 0/ 0
 		const totalCapEx = capEx2021_22 === 0 || capEx2018_19 === 0 ? 0 : capEx2021_22 / capEx2018_19;
-				// Growth
+		// Growth
 		const time = 3;
 		// TODO: check 0 cond with navinder
 		// const cagrInCapEx = totalCapEx <= 0 ? 0 : (Math.pow(totalCapEx, (1 / time)) - 1) * 100;
-		const cagrInCapEx = (Math.pow(totalCapEx, (1 / time)) - 1) * 100;
-		console.log(totalCapEx, "totalCapEx");
+		// const cagrInCapEx = (Math.pow(totalCapEx, (1 / time)) - 1) * 100;
+		let cagrInCapEx = 0;
+		if (totalCapEx !== 0) {
+			const pow1 = Math.cbrt(totalCapEx);
+			cagrInCapEx = (pow1 - 1) * 100;
+		} else {
+			cagrInCapEx = 0;
+		}
 
 		return parseFloat(cagrInCapEx.toFixed(2));
 	} catch (e) {
@@ -834,7 +855,7 @@ module.exports.calculateFRScore = async (req, res) => {
 		const limit = req.query.limit ? parseInt(req.query.limit) : 1000;
 		const page = req.query.page ? parseInt(req.query.page) : 1;
 		const censusCode = 802989;
-		const _id = ObjectId('5dd24729437ba31f7eb42f14');
+		const _id = ObjectId('5eb5844f76a3b61f40ba069b');
 		// Consider only ULBs with isActive TRUE & population is not empty & not 0.
 		const condition = { isActive: true, population: { $nin: [null, 0] } };
 		// const condition = { isActive: true, _id, population: { $nin: [null, 0] } };
