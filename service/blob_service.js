@@ -65,6 +65,7 @@ async function generateSignedUrl(data) {
           url: sasToken,
           file_alias,
           file_url: blobClient?.url,
+          path: `/${blobClient?.name}`
         });
       } catch (error) {
         reject(error);
