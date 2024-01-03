@@ -61,16 +61,35 @@ async function generateSignedUrl(data) {
           startsOn: startDate,
         });
 
+        const path = removePrefix(blobClient?.url);
         resolve({
           url: sasToken,
           file_alias,
           file_url: blobClient?.url,
-          path: `/${blobClient?.name}`
+          path
         });
       } catch (error) {
         reject(error);
       }
     });
+}
+
+/**
+ * The function removes a specific prefix from a given URL if it starts with that prefix.
+ * @param url - The `url` parameter is a string that represents a URL.
+ * @returns The function will return the URL with the prefix removed if the URL starts with the
+ * specified prefix. If the URL does not start with the prefix, it will return the original URL.
+ */
+function removePrefix(url) {
+  try {
+    const prefixToRemove = `https://${AZURE_STORAGE_ACCOUNT_NAME}.blob.core.windows.net/${containerName}`;
+    if (url.startsWith(prefixToRemove)) {
+      return url.substring(prefixToRemove.length);
+    }
+    return url;
+  } catch (error) {
+    throw {message: `removePrefix: ${error.message}`}
+  }
 }
 
 /**
