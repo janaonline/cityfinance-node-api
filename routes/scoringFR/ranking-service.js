@@ -121,7 +121,7 @@ async function getParticipatedState(limit, skip = 0, query = false, select = 'na
 // <<-- Participated State Table -->>
 module.exports.participatedState = async (req, res) => {
 	try {
-		mongoose.set('debug', true);
+		// mongoose.set('debug', true);
 		const query = req.query;
 		const condition = { isActive: true };
 		let { limit, skip } = getPaginationParams(req.query);
@@ -206,7 +206,7 @@ function tableRes(states, query, total) {
 			"B",
 			"C",
 			"D",
-			"E = C/ A"
+			"E = C/ A * 100"
 		],
 		'name': '',
 		'data': [],
@@ -216,7 +216,7 @@ function tableRes(states, query, total) {
 	let mapData = [];
 	let i = getPageNo(query);
 	for (const state of states) {
-		const rankedtoTotal = state.fiscalRanking[0].totalUlbs && state.fiscalRanking[0].rankedUlbs ? parseFloat((state.fiscalRanking[0].rankedUlbs / state.fiscalRanking[0].totalUlbs).toFixed(2)) : 0;
+		const rankedtoTotal = state.fiscalRanking[0].totalUlbs && state.fiscalRanking[0].rankedUlbs ? parseFloat(((state.fiscalRanking[0].rankedUlbs / state.fiscalRanking[0].totalUlbs)*100).toFixed(2)) : 0;
 		const ele = {
 			_id: state._id,
 			sNo: i++,
@@ -425,7 +425,7 @@ function stateTable(indicator, states, query, total) {
 				'width': '30%'
 			},
 			{
-				'label': 'No of ulbs',
+				'label': 'No of ULBs',
 				'key': 'totalUlbs',
 			},
 		],
@@ -706,7 +706,7 @@ function findassessmentParameter(sortBy) {
 				'key': 'ulbName',
 			},
 			{
-				'label': 'Total Ulb Score',
+				'label': 'Total ULB Score',
 				'info': 'Max Score: 1200',
 				'key': 'overallScore',
 			},

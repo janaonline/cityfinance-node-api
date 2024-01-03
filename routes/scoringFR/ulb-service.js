@@ -25,7 +25,7 @@ const mainIndicators = ['resourceMobilization', 'expenditurePerformance', 'fisca
 
 module.exports.getUlbDetails = async (req, res) => {
 	try {
-		moongose.set('debug', true);
+		// moongose.set('debug', true);
 		// const censusCode = req.params.censusCode;
 		const searchId = req.params.searchId;
 		let condition = {
