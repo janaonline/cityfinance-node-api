@@ -1,11 +1,18 @@
 const { dbModels } = require("./../models/Master/index");
 const ObjectId = require("mongoose").Types.ObjectId;
 const { isValidObjectId } = require("mongoose");
+
+const convertValuesToObjectId = (obj) => {
+    return Object.entries(obj).reduce((acc, [key, value]) => ({
+        ...acc, [key]: ObjectId.isValid(value) ? new ObjectId(value) : value
+    }), {});
+};
+
 module.exports = {
     list: (modelName, filter = {}) => {
         return async (req, res, next) => {
             try {
-                let condition = { ...filter, ...req.query };
+                let condition = convertValuesToObjectId({ ...filter, ...req.query });
                 console.log({ condition });
                 let data = await dbModels[modelName].find(condition);
                 return res.status(200).json({
@@ -28,8 +35,9 @@ module.exports = {
             delete req.body.id;
             try {
                 let data = await dbModels[modelName].updateOne({
-                    _id: ObjectId(id)}, 
-                    {...defaultData, ...req.body}, 
+                    _id: ObjectId(id)
+                },
+                    { ...defaultData, ...req.body },
                     { upsert: true, runValidators: !(id !== undefined && isValidObjectId(id)) });
                 return res.status(200).json({
                     status: true,
