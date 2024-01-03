@@ -177,21 +177,18 @@ function getTableHeaderDocs() {
 				'label': 'Population Category',
 				'key': 'populationCategory',
 				'sortable': true,
-				'sort': 1,
 				'class': 'th-common-cls',
 			},
 			{
 				'label': 'ULB Participated',
 				'key': 'isUlbParticipated',
 				'sortable': true,
-				'sort': 1,
 				'class': 'th-common-cls',
 			},
 			{
 				'label': 'CFR Ranked',
 				'key': 'isUlbRanked',
 				'sortable': true,
-				'sort': 1,
 				'class': 'th-common-cls',
 			},
 			{

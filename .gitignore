@@ -41,3 +41,4 @@ package-lock.json
 
 
 /config/s3-config.json
+cron-*

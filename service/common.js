@@ -37,6 +37,18 @@ module.exports.getPageNo = (query) => {
     const skip = query.skip !== undefined ? parseInt(query.skip): 0;
     return skip + 1;
 }
+module.exports.cubeRootOfNegative = (num) => {
+    if (num >= 0) {
+        return Math.pow(num, 1 / 3);
+      } else {
+        const realPart = Math.pow(Math.abs(num), 1 / 3);
+        const imaginaryPart = Math.sqrt(3) * Math.sqrt(Math.pow(Math.abs(num), 2 / 3)) / 2;
+        return {
+          real: -1 * realPart / 2,
+          imaginary: imaginaryPart
+        };
+      }
+}
 
 module.exports.isValidObjectId = (id) => {
     if (ObjectId.isValid(id)) {
