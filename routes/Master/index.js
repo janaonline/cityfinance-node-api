@@ -32,4 +32,5 @@ router.post('/municipalBondRepository/fileUpload', fileUpload);
 
 router.get('/video-gallary/list', list('Video'));
 
+router.get('/urban-reforms-iv/list', list('CategoryFileUpload', { module: 'urban_reforms_iv' }));
 module.exports = router;
