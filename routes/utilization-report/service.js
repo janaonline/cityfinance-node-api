@@ -39,14 +39,14 @@ let validationMessages = {
 }
 
 const BackendHeaderHost = {
-  Demo: "democityfinanceapi.dhwaniris.in",
-  Staging: "staging.cityfinance.in",
-  Prod: "cityfinance.in",
+  Demo: `${process.env.DEMO_HOST_BACKEND}`,
+  Staging: `${process.env.STAGING_HOST}`,
+  Prod: `${process.env.PROD_HOST}`,
 }
 const FrontendHeaderHost = {
-  Demo: "democityfinance.dhwaniris.in",
-  Staging: "staging.cityfinance.in",
-  Prod: "cityfinance.in",
+  Demo: `${process.env.DEMO_HOST_FRONTEND}`,
+  Staging: `${process.env.STAGING_HOST}`,
+  Prod: `${process.env.PROD_HOST}`,
 }
 const {
   emailTemplate: { utilizationRequestAction },
@@ -222,9 +222,9 @@ module.exports.createOrUpdate = async (req, res) => {
           }).lean();
           if (dur22_23Form) {
             let dur22_23FormStatus = calculateStatus(
-              dur22_23Form.status,
-              dur22_23Form.actionTakenByRole,
-              dur22_23Form.isDraft,
+              dur22_23Form?.status,
+              dur22_23Form?.actionTakenByRole,
+              dur22_23Form?.isDraft,
               "ULB"
             );
             /* Checking if the dur 22-23 form status is in progress, rejected by MoHUA or rejected by state.
@@ -725,7 +725,7 @@ exports.report = async (req, res) => {
         }
       }
 
-      el["formStatus"] = calculateStatus(el.status, el.role, el.isDraft, "ULB")
+      el["formStatus"] = calculateStatus(el?.status, el?.role, el?.isDraft, "ULB")
       // if (el.role == "ULB" && el.isDraft) {
       //   el["formStatus"] = FORM_STATUS.In_Progress;
       // } else if (el.role == "ULB" && !el.isDraft) {
@@ -927,9 +927,9 @@ module.exports.read2223 = catchAsync(async (req, res, next) => {
   if (!prevData) {
     status = 'Not Started'
   } else {
-    prevData = prevData?.history?.length > 0 ? prevData.history[prevData.history.length - 1] : prevData;
-    isDraft = prevData && Object.keys(prevData).includes("isSubmit") ? !prevData.isSubmit : prevData?.isDraft
-    status = calculateStatus(prevData.status, prevData.actionTakenByRole, isDraft, "ULB")
+    prevData = prevData?.history?.length > 0 ? prevData?.history[prevData?.history?.length - 1] : prevData;
+    isDraft = prevData && Object.keys(prevData).includes("isSubmit") ? !prevData?.isSubmit : prevData?.isDraft
+    status = calculateStatus(prevData?.status, prevData?.actionTakenByRole, isDraft, "ULB")
   }
   let host = "";
   if (req.headers.host === BackendHeaderHost.Demo) {
@@ -946,7 +946,7 @@ module.exports.read2223 = catchAsync(async (req, res, next) => {
       obj['action'] = 'not_show';
       obj['url'] = ``;
     } else if (status == FORM_STATUS.Under_Review_By_State) {
-      let msg = role == "ULB" ? `Dear User, Your previous Year's form status is - ${status}. Kindly contact your State Nodal Officer at Mobile - ${userData.mobile ?? 'Not Available'} or Email - ${userData.email ?? 'contact@cityfinance.in'}` : `Dear User, The ${ulbData.name} has not yet filled Detailed Utilization Report Form for the previous year. You will be able to mark your response once STATE approves previous year's form.`
+      let msg = role == "ULB" ? `Dear User, Your previous Year's form status is - ${status}. Kindly contact your State Nodal Officer at Mobile - ${userData.mobile ?? 'Not Available'} or Email - ${userData.email ?? `contact@${process.env.PROD_HOST}`}` : `Dear User, The ${ulbData.name} has not yet filled Detailed Utilization Report Form for the previous year. You will be able to mark your response once STATE approves previous year's form.`
       obj['action'] = 'note';
       obj['url'] = msg;
     } else {
@@ -972,9 +972,9 @@ module.exports.read2223 = catchAsync(async (req, res, next) => {
       };
       const canTakeActionOnMasterForm = await getMasterForm(params);
       const prevYearStatus = calculateStatus(
-        prevData.status,
-        prevData.actionTakenByRole,
-        prevData.isDraft,
+        prevData?.status,
+        prevData?.actionTakenByRole,
+        prevData?.isDraft,
         "ULB"
       )
       const previousStatusInCaps =  prevYearStatus.toUpperCase().split(' ').join('_')
@@ -989,9 +989,9 @@ module.exports.read2223 = catchAsync(async (req, res, next) => {
       // }
     } else {
       const prevYearStatus = calculateStatus(
-        prevData.status,
-        prevData.actionTakenByRole,
-        !prevData.isSubmit,
+        prevData?.status,
+        prevData?.actionTakenByRole,
+        !prevData?.isSubmit,
         "ULB"
       );
       const previousStatusInCaps =  prevYearStatus.toUpperCase().split(' ').join('_')
@@ -1479,9 +1479,9 @@ async function updateForNextForms(design_year, ulb, utiData) {
       condition.designYear = ObjectId(years[nextYearVal])
       condition.ulb = ulb;
       let utilFormStatus = calculateStatus(
-        utilForm.status,
-        utilForm.actionTakenByRole,
-        utilForm.isDraft,
+        utilForm?.status,
+        utilForm?.actionTakenByRole,
+        utilForm?.isDraft,
         "ULB"
       );
       if (!utilForm.status) {

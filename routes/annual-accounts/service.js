@@ -117,7 +117,7 @@ var request = require('request')
 //     for (let key in el) {
 //       if (key != '_id' && key != 'ulbName' && key != 'ulbcode' && el[key]) {
 //         let url = el[key];
-//         // let url = 'https://cityfinance.in/objects/31e1883d-7eef-4b2f-9e29-18d598056a5d.pdf'
+//         // let url = `https://${process.env.PROD_HOST}/objects/31e1883d-7eef-4b2f-9e29-18d598056a5d.pdf`
 //         try {
 //           let response = await doRequest(url);
 
@@ -250,7 +250,7 @@ module.exports.fileDeFuncFiles = async (req, res) => {
           if (key != '_id' && key != 'ulbName' && key != 'ulbcode' && el[key]) {
             documnetcounter++;
             let url = el[key];
-            // let url = 'https://cityfinance.in/objects/31e1883d-7eef-4b2f-9e29-18d598056a5d.pdf'
+            // let url = `https://${process.env.PROD_HOST}/objects/31e1883d-7eef-4b2f-9e29-18d598056a5d.pdf`
             try {
               let response = await doRequest(url);
               let obj = {
@@ -1038,7 +1038,7 @@ let getExcel = async (req, res, data) => {
       console.log(value)
       worksheet.addRow(value);
     });
-    worksheet.addRow({ headOfAccount: "Can't find what you are looking for? Reach out to us at contact@cityfinance.in" });
+    worksheet.addRow({ headOfAccount: `Can't find what you are looking for? Reach out to us at contact@${process.env.PROD_HOST}` });
     res.setHeader(
       "Content-Type",
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"

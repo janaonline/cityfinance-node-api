@@ -2890,25 +2890,27 @@ const excelPTOMapping = async (query) => {
       workbook.calcProperties.fullCalcOnLoad = false;
       const crrWorkbook = await workbook.xlsx.readFile(`${tempFilePath}/${filename}`)
       const crrWorksheet = crrWorkbook.getWorksheet("Sheet 1")
-
+      const states = await State.find({accessToXVFC:true}).lean();
+      let STATE_DATA = {}
+      states.forEach(el=> { STATE_DATA[el?._id] = el?.name})
       const cursor = await Ulb.aggregate([
                 {
           $match: { [accessYear]: true},
         },
-        {
-          $lookup: {
-            from: "states",
-            localField: "state",
-            foreignField: "_id",
-            as: "state",
-          },
-        },
-        {
-          $unwind: "$state",
-        },
-        {
-          $match: { "state.accessToXVFC": true },
-        },
+        // {
+        //   $lookup: {
+        //     from: "states",
+        //     localField: "state",
+        //     foreignField: "_id",
+        //     as: "state",
+        //   },
+        // },
+        // {
+        //   $unwind: "$state",
+        // },
+        // {
+        //   $match: { "state.accessToXVFC": true },
+        // },
         {
           $lookup: {
             from: "propertytaxops",
@@ -3032,73 +3034,141 @@ const excelPTOMapping = async (query) => {
         },
       ])
         .allowDiskUse(true)
-        .cursor({ batchSize: 75 })
+        .cursor({ batchSize: 50 })
         .addCursorFlag("noCursorTimeout", true)
         .exec();
 
       cursor.on("data", (el) => {
-        // Filters the current status of a form element and removes certain data fields based on the status.
-        currentStatusFilter(el);
+        if (STATE_DATA[el?.state?.toString()]) {
+          // Filters the current status of a form element and removes certain data fields based on the status.
+          currentStatusFilter(el);
 
-        // mapping these fields manually as they aren't available in the fydynamic.js file
-        crrWorksheet.getCell(`A${startRowIndex + counter}`).value = counter + 1
-        crrWorksheet.getCell(`B${startRowIndex + counter}`).value = el.state.name
-        crrWorksheet.getCell(`C${startRowIndex + counter}`).value = el.name
-        crrWorksheet.getCell(`D${startRowIndex + counter}`).value = el.code
-        crrWorksheet.getCell(`E${startRowIndex + counter}`).value = el.censusCode ?? el.sbCode
-        crrWorksheet.getCell(`F${startRowIndex + counter}`).value = YEAR_CONSTANTS_IDS[design_year]
-        crrWorksheet.getCell(`G${startRowIndex + counter}`).value = MASTER_STATUS_ID[el.currentFormStatus]
-        crrWorksheet.getCell(`BBX${startRowIndex + counter}`).value = el?.stateStatusData?.rejectReason
-        crrWorksheet.getCell(`BBY${startRowIndex + counter}`).value = el?.stateStatusData?.responseFile?.url
-        crrWorksheet.getCell(`BBZ${startRowIndex + counter}`).value = el?.mohuaStatusData?.rejectReason
-        crrWorksheet.getCell(`BCA${startRowIndex + counter}`).value = el?.mohuaStatusData?.responseFile?.url
+          // mapping these fields manually as they aren't available in the fydynamic.js file
+          crrWorksheet.getCell(`A${startRowIndex + counter}`).value =
+            counter + 1;
+          crrWorksheet.getCell(`B${startRowIndex + counter}`).value =
+            STATE_DATA[el.state.toString()];
+          crrWorksheet.getCell(`C${startRowIndex + counter}`).value = el.name;
+          crrWorksheet.getCell(`D${startRowIndex + counter}`).value = el.code;
+          crrWorksheet.getCell(`E${startRowIndex + counter}`).value =
+            el.censusCode ?? el.sbCode;
+          crrWorksheet.getCell(`F${startRowIndex + counter}`).value =
+            YEAR_CONSTANTS_IDS[design_year];
+          crrWorksheet.getCell(`G${startRowIndex + counter}`).value =
+            MASTER_STATUS_ID[el.currentFormStatus];
+          crrWorksheet.getCell(`BBX${startRowIndex + counter}`).value =
+            el?.stateStatusData?.rejectReason;
+          crrWorksheet.getCell(`BBY${startRowIndex + counter}`).value =
+            el?.stateStatusData?.responseFile?.url;
+          crrWorksheet.getCell(`BBZ${startRowIndex + counter}`).value =
+            el?.mohuaStatusData?.rejectReason;
+          crrWorksheet.getCell(`BCA${startRowIndex + counter}`).value =
+            el?.mohuaStatusData?.responseFile?.url;
 
-        const sortedResults = el.propertytaxopmapper;
-        // mapping form questions and child questions with their cell position
-        for (const result of sortedResults) {
-          if (result?.year && questionColMapping[`${result.type}-${YEAR_CONSTANTS_IDS[result?.year].split("-")[1]}`]) {
-            crrWorksheet.getCell(
-              `${
-                questionColMapping[
-                  `${result.type}-${
-                    YEAR_CONSTANTS_IDS[result?.year].split("-")[1]
-                  }`
-                ]
-              }${startRowIndex + counter}`
-            ).value = result.file
-              ? result.file.url
-              : result.date
-              ? convertToKolkataDate(result.date)
-              : result.value;
-          }
-          if (result.child?.length) {
-            const childCounter = {};
-            for (const childId of result.child) {
-              const child = el?.propertymapperchilddata?.length > 0 ? el?.propertymapperchilddata.find(e => e._id.toString() === childId.toString()) : null;
-              if (child) {
-                if (!childCounter[child.type])
-                  childCounter[child.type] = 0;
+          const sortedResults = el.propertytaxopmapper;
+          // mapping form questions and child questions with their cell position
+          for (const result of sortedResults) {
+            if (
+              result?.year &&
+              questionColMapping[
+                `${result.type}-${
+                  YEAR_CONSTANTS_IDS[result?.year].split("-")[1]
+                }`
+              ]
+            ) {
+              crrWorksheet.getCell(
+                `${
+                  questionColMapping[
+                    `${result.type}-${
+                      YEAR_CONSTANTS_IDS[result?.year].split("-")[1]
+                    }`
+                  ]
+                }${startRowIndex + counter}`
+              ).value = result.file
+                ? result.file.url
+                : result.date
+                ? convertToKolkataDate(result.date)
+                : result.value;
+            }
+            if (result.child?.length) {
+              const childCounter = {};
+              for (const childId of result.child) {
+                const child =
+                  el?.propertymapperchilddata?.length > 0
+                    ? el?.propertymapperchilddata.find(
+                        (e) => e._id.toString() === childId.toString()
+                      )
+                    : null;
+                if (child) {
+                  if (!childCounter[child.type]) childCounter[child.type] = 0;
 
-                // mapping 'input type' column
-                if ((childCounter[child.type] % 5 === 0 || childCounter[child.type] === 0)) {
-                  const textValueCounter = childCounter[child.type] ? childCounter[child.type] / 5 : 0;
-                  if (questionColMapping[`${child.type}-textValue-${textValueCounter}`])
-                    crrWorksheet.getCell(`${questionColMapping[`${child.type}-textValue-${textValueCounter}`]}${startRowIndex + counter}`).value = child.textValue
+                  // mapping 'input type' column
+                  if (
+                    childCounter[child.type] % 5 === 0 ||
+                    childCounter[child.type] === 0
+                  ) {
+                    const textValueCounter = childCounter[child.type]
+                      ? childCounter[child.type] / 5
+                      : 0;
+                    if (
+                      questionColMapping[
+                        `${child.type}-textValue-${textValueCounter}`
+                      ]
+                    )
+                      crrWorksheet.getCell(
+                        `${
+                          questionColMapping[
+                            `${child.type}-textValue-${textValueCounter}`
+                          ]
+                        }${startRowIndex + counter}`
+                      ).value = child.textValue;
+                  }
+
+                  if (
+                    userCharges.includes(child.type) &&
+                    child?.year &&
+                    questionColMapping[
+                      `${child.type}-${child.textValue.replace(/ /g, "")}-${
+                        YEAR_CONSTANTS_IDS[child?.year].split("-")[1]
+                      }`
+                    ]
+                  ) {
+                    crrWorksheet.getCell(
+                      `${
+                        questionColMapping[
+                          `${child.type}-${child.textValue.replace(/ /g, "")}-${
+                            YEAR_CONSTANTS_IDS[child?.year].split("-")[1]
+                          }`
+                        ]
+                      }${startRowIndex + counter}`
+                    ).value = child.value;
+                  }
+
+                  if (
+                    child?.year &&
+                    questionColMapping[
+                      `${child.type}-${
+                        YEAR_CONSTANTS_IDS[child?.year].split("-")[1]
+                      }-${child.replicaNumber - 1}`
+                    ]
+                  ) {
+                    crrWorksheet.getCell(
+                      `${
+                        questionColMapping[
+                          `${child.type}-${
+                            YEAR_CONSTANTS_IDS[child?.year].split("-")[1]
+                          }-${child.replicaNumber - 1}`
+                        ]
+                      }${startRowIndex + counter}`
+                    ).value = child.value;
+                  }
+                  childCounter[child.type]++;
                 }
-
-                if (userCharges.includes(child.type) && child?.year && questionColMapping[`${child.type}-${child.textValue.replace(/ /g, '')}-${YEAR_CONSTANTS_IDS[child?.year].split("-")[1]}`]) {
-                  crrWorksheet.getCell(`${questionColMapping[`${child.type}-${child.textValue.replace(/ /g, '')}-${YEAR_CONSTANTS_IDS[child?.year].split("-")[1]}`]}${startRowIndex + counter}`).value = child.value
-                }
-
-                if (child?.year && questionColMapping[`${child.type}-${YEAR_CONSTANTS_IDS[child?.year].split("-")[1]}-${child.replicaNumber - 1}`]) {
-                  crrWorksheet.getCell(`${questionColMapping[`${child.type}-${YEAR_CONSTANTS_IDS[child?.year].split("-")[1]}-${child.replicaNumber - 1}`]}${startRowIndex + counter}`).value = child.value
-                }
-                childCounter[child.type]++;
               }
             }
           }
+          counter++;
         }
-        counter++
       });
       cursor.on("end", () => {
         resolve({ crrWorkbook, filename, tempFilePath })
