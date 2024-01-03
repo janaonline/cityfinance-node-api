@@ -2891,11 +2891,15 @@ const excelPTOMapping = async (query) => {
       const crrWorkbook = await workbook.xlsx.readFile(`${tempFilePath}/${filename}`)
       const crrWorksheet = crrWorkbook.getWorksheet("Sheet 1")
       const states = await State.find({accessToXVFC:true}).lean();
-      let STATE_DATA = {}
-      states.forEach(el=> { STATE_DATA[el?._id] = el?.name})
+      let STATE_DATA = {}, ALLOWED_STATES = [];
+      states.forEach(el=> { STATE_DATA[el?._id] = el?.name});
+      states.forEach(el=> ALLOWED_STATES.push(el._id))
       const cursor = await Ulb.aggregate([
-                {
-          $match: { [accessYear]: true},
+        {
+          $match: {
+            [accessYear]: true,
+            state: { $in: ALLOWED_STATES },
+          },
         },
         // {
         //   $lookup: {
@@ -2963,10 +2967,7 @@ const excelPTOMapping = async (query) => {
                     input: "$currentstatuse",
                     as: "cs",
                     cond: {
-                      $and: [
-                        { $eq: ["$$cs.actionTakenByRole", "STATE"] },
-                        { $eq: ["$$cs.shortKey", "form_level"] },
-                      ],
+                      $eq: ["$$cs.actionTakenByRole", "STATE"],
                     },
                   },
                 },
@@ -2980,10 +2981,7 @@ const excelPTOMapping = async (query) => {
                     input: "$currentstatuse",
                     as: "cs",
                     cond: {
-                      $and: [
-                        { $eq: ["$$cs.actionTakenByRole", "MoHUA"] },
-                        { $eq: ["$$cs.shortKey", "form_level"] },
-                      ],
+                      $eq: ["$$cs.actionTakenByRole", "MoHUA"],
                     },
                   },
                 },
@@ -3032,6 +3030,12 @@ const excelPTOMapping = async (query) => {
             as: "propertymapperchilddata",
           },
         },
+        {
+            $project:{
+              currentstatuse:0,
+              propertytaxop:0
+          }
+        }
       ])
         .allowDiskUse(true)
         .cursor({ batchSize: 50 })
@@ -3039,7 +3043,6 @@ const excelPTOMapping = async (query) => {
         .exec();
 
       cursor.on("data", (el) => {
-        if (STATE_DATA[el?.state?.toString()]) {
           // Filters the current status of a form element and removes certain data fields based on the status.
           currentStatusFilter(el);
 
@@ -3168,7 +3171,7 @@ const excelPTOMapping = async (query) => {
             }
           }
           counter++;
-        }
+        
       });
       cursor.on("end", () => {
         resolve({ crrWorkbook, filename, tempFilePath })

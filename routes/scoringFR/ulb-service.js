@@ -177,21 +177,18 @@ function getTableHeaderDocs() {
 				'label': 'Population Category',
 				'key': 'populationCategory',
 				'sortable': true,
-				'sort': 1,
 				'class': 'th-common-cls',
 			},
 			{
 				'label': 'ULB Participated',
 				'key': 'isUlbParticipated',
 				'sortable': true,
-				'sort': 1,
 				'class': 'th-common-cls',
 			},
 			{
 				'label': 'CFR Ranked',
 				'key': 'isUlbRanked',
 				'sortable': true,
-				'sort': 1,
 				'class': 'th-common-cls',
 			},
 			{
@@ -416,10 +413,10 @@ function getTableData(ulb, type) {
 			'sNo': indicator.sno,
 			'indicator': indicator.title,
 			'unit': indicator.units,
-			'ulbPerformance': ulb[indicator.key].percentage,
+			'ulbPerformance': ulb[indicator.key].score,
 			'highPerformance': ulb[indicator.key].highestScore,
 			'lowPerformance': ulb[indicator.key].lowestScore,
-			'ulbScore': ulb[indicator.key].score,
+			'ulbScore': ulb[indicator.key].percentage,
 		};
 		data.push(ele);
 	}
