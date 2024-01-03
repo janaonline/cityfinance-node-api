@@ -1202,7 +1202,7 @@ exports.getView = async function (req, res, next) {
 
                     pf[
                       "info"
-                    ] = `Available on Cityfinance - <a href =https://${process.env.PROD_HOST}/resources-dashboard/data-sets/income_statement ">View here</a>`;
+                    ] = `Available on Cityfinance - <a href ="https://${process.env.PROD_HOST}/resources-dashboard/data-sets/income_statement ">View here</a>`;
                   }
                   if (subData[key].calculatedFrom === undefined) {
                     pf["readonly"] = chekFile ? true : getReadOnly(data?.currentFormStatus, viewOne.isDraft, role, "PENDING");
