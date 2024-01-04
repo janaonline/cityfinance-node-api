@@ -2,7 +2,54 @@ const { dbModels } = require("../../models/Master");
 const axios = require('axios');
 var path = require('path');
 var fs = require('fs');
+const CategoryFileUpload = require("../../models/CategoryFileUpload");
 let appUrl = "http://localhost:8080/"
+
+
+module.exports.getUrbanReformsStateList = async (req, res, next) => {
+    try {
+        let data = await CategoryFileUpload.aggregate([
+            {
+                $match: { module: 'urban_reforms_iv' }
+            },
+            {
+                $unwind: '$relatedIds'
+            },
+            {
+                $lookup: {
+                    from: 'states',
+                    localField: 'relatedIds',
+                    foreignField: '_id',
+                    as: 'state'
+                }
+            },
+            {
+                $unwind: '$state'
+            },
+            {
+                $group: {
+                    _id: '$state._id',
+                    name: { $first: '$state.name' },
+                    fileCount: { $sum: 1 } // Counting the files for each state
+                }
+            },
+            {
+                $sort: { name: 1 }
+            }
+        ]);
+        return res.status(200).json({
+            status: true,
+            message: "Successfully fetched data!",
+            data: data,
+        });
+    } catch (error) {
+        return res.status(400).json({
+            status: true,
+            message: "Something went wrong!",
+            err: error.message,
+        });
+    }
+}
 
 module.exports.categoryList = async (req, res, next) => {
     let condition = { ...req.query };
