@@ -33,6 +33,7 @@ const Year = require('../../models/Year');
 const { state } = require('../../util/userTypes');
 const { dashboard } = require('../../routes/FormDashboard/service');
 const { dateFormatter, convertToKolkataDate } = require('../../util/dateformatter');
+const { concatenateUrls } = require('../../service/common');
 
 const isMillionPlus = async (data) => {
   try {
@@ -263,6 +264,8 @@ async function createCSV(params) {
         indiLineList = await indicatorLineItemList();
       }
       data.on("data", async (el) => {
+        el = JSON.parse(JSON.stringify(el));
+        el = concatenateUrls(el);
         el.UA = el?.UA === "null" ? "NA" : el?.UA;
         el.isUA = el?.UA === "NA" ? "No" : "Yes";
         el.censusCode = el.censusCode || "NA";
@@ -393,6 +396,8 @@ async function grantAllCsvDownload(el, res) {
 async function writeSubmitClaimCSV(output, res) {
   try {
     Object.entries(output).forEach(([key, items], index) => {
+      items = JSON.parse(JSON.stringify(items));
+      items = concatenateUrls(items);
       let stateObj = {};
       if (stateArrData.length == 1) {
         stateObj = stateArrData[0]
@@ -630,6 +635,8 @@ const actionPlanXlsDownload = async (data, res, role) => {
     let counter = { projectExecute: 2, sourceFund: 2, yearOutlay: 2 } // counter
     if (data?.length) {
       for (const pf of data) {
+        pf = JSON.parse(JSON.stringify(pf));
+        pf = concatenateUrls(pf);
         if (!pf?.formData) {
           pf['formStatus'] = "Not Started";
         } else {
@@ -727,6 +734,8 @@ const waterSenitationXlsDownload = async (data, res, role) => {
     let counter = { waterBodies: 2, serviceLevelIndicators: 2, reuseWater: 2 } // counter
     if (data?.length) {
       for (const pf of data) {
+        pf = JSON.parse(JSON.stringify(pf));
+        pf = concatenateUrls(pf);
         if (!pf?.formData) {
           pf['formStatus'] = "Not Started";
         } else {
@@ -3039,6 +3048,8 @@ const excelPTOMapping = async (query) => {
         .exec();
 
       cursor.on("data", (el) => {
+        el = JSON.parse(JSON.stringify(el));
+        el = concatenateUrls(el);
         if (STATE_DATA[el?.state?.toString()]) {
           // Filters the current status of a form element and removes certain data fields based on the status.
           currentStatusFilter(el);
