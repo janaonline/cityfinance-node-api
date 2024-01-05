@@ -102,7 +102,14 @@ module.exports.getUlbsBySate = async (req, res) => {
 	try {
 		// moongose.set('debug', true);
 		const stateId = ObjectId(req.params.stateId);
-		let condition = { isActive: true, state: stateId };
+		let condition = { 
+			isActive: true, 
+			state: stateId ,
+			...(req.query?.ulbName && { name: {
+				$regex: req.query?.ulbName,
+				$options: 'i'
+			} })
+		};
 		const { order, sortBy, populationBucket, ulbParticipationFilter,ulbRankingStatusFilter } = req.query;
 
 		const sortArr = {participated:'currentFormStatus',ranked: 'overAll.rank', populationBucket: 'populationBucket'}
@@ -171,6 +178,7 @@ function getTableHeaderDocs() {
 				'key': 'ulbName',
 				'sort': 1,
 				'sortable': true,
+				'query': '',
 				'class': 'th-color-cls',
 			},
 			{
