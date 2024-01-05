@@ -241,7 +241,14 @@ function cagrInOwnRevenue(fsData, fsMapper2018_19, fsMapper2021_22) {
 		const ownRev = ownRev2021_22 === 0 || ownRev2018_19 === 0 ? 0 : ownRev2021_22 / ownRev2018_19;
 		// Growth.
 		const time = 3;
-		const cagrInOwnRevenue = ownRev <= 0 ? 0 : (Math.pow(ownRev, 1 / time) - 1) * 100;
+		// const cagrInOwnRevenue = ownRev <= 0 ? 0 : (Math.pow(ownRev, 1 / time) - 1) * 100;
+		let cagrInOwnRevenue = 0;
+		if (ownRev !== 0) {
+			const pow1 = Math.cbrt(ownRev);
+			cagrInOwnRevenue = (pow1 - 1) * 100;
+		} else {
+			cagrInOwnRevenue = 0;
+		}
 
 		return parseFloat(cagrInOwnRevenue.toFixed(2));
 	} catch (e) {
@@ -261,8 +268,14 @@ function cagrInPTax(fsMapper2018_19, fsMapper2021_22) {
 		const time = 3;
 		// TODO:check 0 condtion with navinder
 		// const cagrInPTax = pTax <= 0 ? 0 : (Math.pow(pTax, 1 / time) - 1) * 100;
-		const cagrInPTax = (Math.pow(pTax, 1 / time) - 1) * 100;
-
+		// const cagrInPTax = (Math.pow(pTax, 1 / time) - 1) * 100;
+		let cagrInPTax = 0;
+		if (pTax !== 0) {
+			const pow1 = Math.cbrt(pTax);
+			cagrInPTax = (pow1 - 1) * 100;
+		} else {
+			cagrInPTax = 0;
+		}
 		return parseFloat(cagrInPTax.toFixed(2));
 	} catch (e) {
 		return 0;
