@@ -279,7 +279,11 @@ function getUlbData(ulbs, query) {
 			if(year.modelName === 'ULBLedger') {
 				filename = `/resources-dashboard/data-sets/balanceSheet?year=${year.year}&type=Raw%20Data%20PDF&category=balance&state=${ulb.state}&ulbName=${ulb.name}`;
 				data[`auditedAccounts${year.year}`] = 'Click here';
-				data[`auditedAccounts${year.year}Link`] =  filename;
+				data[`auditedAccounts${year.year}Config`] =  {
+					icon: 'pdf',
+					title: '',
+					link: filename
+				};
 			} else {
 				data[`auditedAccounts${year.year}`] =  filename;
 			}
