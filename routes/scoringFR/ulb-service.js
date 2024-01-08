@@ -427,6 +427,9 @@ function getTableData(ulb, type) {
 			'unit': indicator.units,
 			'ulbPerformance': ulb[indicator.key].score,
 			'highPerformance': ulb[indicator.key].highestScore,
+			'highPerformanceConfig': {
+				title: `${ulb[indicator.key].highestScore} (${ulb.name})`
+			},
 			'lowPerformance': ulb[indicator.key].lowestScore,
 			'ulbScore': ulb[indicator.key].percentage,
 		};
