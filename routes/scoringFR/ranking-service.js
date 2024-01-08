@@ -1,7 +1,7 @@
 const ObjectId = require('mongoose').Types.ObjectId;
 const moongose = require('mongoose');
-const Response = require('../../service').response;
-const { years } = require('../../service/years');
+// const Response = require('../../service').response;
+// const { years } = require('../../service/years');
 const Ulb = require('../../models/Ulb');
 const State = require('../../models/State');
 const FiscalRanking = require('../../models/FiscalRanking');
@@ -99,7 +99,7 @@ async function getParticipatedState(limit, skip = 0, query = false, select = 'na
 	const { stateType, ulbParticipationFilter, ulbRankingStatusFilter, sortBy, order } = query;
 	let condition = { isActive: true, 'fiscalRanking.participatedUlbsPercentage': { $ne: 0 } };
 	if (sortBy) {
-		console.log('order', order);
+		// console.log('order', order);
 		const by = sortArr[sortBy] || 'name'
 		sort = { [by]: order };
 	}
@@ -216,7 +216,7 @@ function tableRes(states, query, total) {
 	let mapData = [];
 	let i = getPageNo(query);
 	for (const state of states) {
-		const rankedtoTotal = state.fiscalRanking[0].totalUlbs && state.fiscalRanking[0].rankedUlbs ? parseFloat(((state.fiscalRanking[0].rankedUlbs / state.fiscalRanking[0].totalUlbs)*100).toFixed(2)) : 0;
+		const rankedtoTotal = state.fiscalRanking[0].totalUlbs && state.fiscalRanking[0].rankedUlbs ? parseFloat(((state.fiscalRanking[0].rankedUlbs / state.fiscalRanking[0].totalUlbs) * 100).toFixed(2)) : 0;
 		const ele = {
 			_id: state._id,
 			sNo: i++,
