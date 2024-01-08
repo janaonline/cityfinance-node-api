@@ -22,13 +22,14 @@ const whitelist = [
 
   'https://aaina.gov.in',
   'https://api.aaina-mohua.in',
-  
+
   'http://localhost:4200',
   'https://staging-jana.cityfinance.in',
   'https://uat.cityfinance.in',
   `https://${process.env.DEMO_HOST_FRONTEND}`,
   `https://${process.env.STAGING_HOST}`,
-  `https://${process.env.PROD_HOST}`
+  `https://${process.env.PROD_HOST}`,
+  process.env.HOSTNAME,
 ];
 
 const corsOptions = {
@@ -104,7 +105,7 @@ app.use((err, req, res, next) => {
 });
 
 // app.listen(port, () => {
-  //   console.log("server started on port " + port);
+//   console.log("server started on port " + port);
 // });
 
 module.exports = app

@@ -1,14 +1,14 @@
 const ObjectId = require('mongoose').Types.ObjectId;
 const moongose = require('mongoose');
-const Response = require('../../service').response;
-const { years } = require('../../service/years');
+// const Response = require('../../service').response;
+// const { years } = require('../../service/years');
 const Ulb = require('../../models/Ulb');
 const State = require('../../models/State');
 const FiscalRanking = require('../../models/FiscalRanking');
 const FiscalRankingMapper = require('../../models/FiscalRankingMapper');
 const ScoringFiscalRanking = require('../../models/ScoringFiscalRanking');
 const { registerCustomQueryHandler } = require('puppeteer');
-const { getPaginationParams, getPageNo } = require('../../service/common');
+const { getPaginationParams, getPageNo, getPopulationBucket } = require('../../service/common');
 
 const mainIndicators = ['resourceMobilization', 'expenditurePerformance', 'fiscalGovernance', 'overAll'];
 const currentFormStatus = { $in: [11] };
@@ -99,7 +99,7 @@ async function getParticipatedState(limit, skip = 0, query = false, select = 'na
 	const { stateType, ulbParticipationFilter, ulbRankingStatusFilter, sortBy, order } = query;
 	let condition = { isActive: true, 'fiscalRanking.participatedUlbsPercentage': { $ne: 0 } };
 	if (sortBy) {
-		console.log('order', order);
+		// console.log('order', order);
 		const by = sortArr[sortBy] || 'name'
 		sort = { [by]: order };
 	}
@@ -216,7 +216,7 @@ function tableRes(states, query, total) {
 	let mapData = [];
 	let i = getPageNo(query);
 	for (const state of states) {
-		const rankedtoTotal = state.fiscalRanking[0].totalUlbs && state.fiscalRanking[0].rankedUlbs ? parseFloat(((state.fiscalRanking[0].rankedUlbs / state.fiscalRanking[0].totalUlbs)*100).toFixed(2)) : 0;
+		const rankedtoTotal = state.fiscalRanking[0].totalUlbs && state.fiscalRanking[0].rankedUlbs ? parseFloat(((state.fiscalRanking[0].rankedUlbs / state.fiscalRanking[0].totalUlbs) * 100).toFixed(2)) : 0;
 		const ele = {
 			_id: state._id,
 			sNo: i++,
@@ -537,7 +537,7 @@ module.exports.topRankedUlbs = async (req, res) => {
 
 		// order = order === 'desc' ? -1 : 1;
 		const ulbRes = await ScoringFiscalRanking.find(condition)
-			.select('name ulb location resourceMobilization expenditurePerformance fiscalGovernance overAll state')
+			.select('name ulb location resourceMobilization expenditurePerformance fiscalGovernance overAll state populationBucket')
 			.sort(sort)
 			.limit(5)
 			.exec();
@@ -623,6 +623,10 @@ function fetchFiveUlbs(ulbRes, sortBy) {
 			const ulbData = {
 				'overallRank': ulb.overAll.rank,
 				'ulbName': ulb.name,
+				'ulbNameConfig': {
+					title: `${ulb.name} (${getPopulationBucket(ulb.populationBucket)})`
+				},
+				ulb,
 				'ulbNameLink': `/rankings/ulb/${ulb.censusCode ? ulb.censusCode : ulb.sbCode ? ulb.sbCode : ulb.ulb}`,
 				'overallScore': ulb.overAll.score,
 				'resourceMobilizationScore': ulb.resourceMobilization.score,
