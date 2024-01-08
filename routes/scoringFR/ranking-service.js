@@ -8,7 +8,7 @@ const FiscalRanking = require('../../models/FiscalRanking');
 const FiscalRankingMapper = require('../../models/FiscalRankingMapper');
 const ScoringFiscalRanking = require('../../models/ScoringFiscalRanking');
 const { registerCustomQueryHandler } = require('puppeteer');
-const { getPaginationParams, getPageNo } = require('../../service/common');
+const { getPaginationParams, getPageNo, getPopulationBucket } = require('../../service/common');
 
 const mainIndicators = ['resourceMobilization', 'expenditurePerformance', 'fiscalGovernance', 'overAll'];
 const currentFormStatus = { $in: [11] };
@@ -537,7 +537,7 @@ module.exports.topRankedUlbs = async (req, res) => {
 
 		// order = order === 'desc' ? -1 : 1;
 		const ulbRes = await ScoringFiscalRanking.find(condition)
-			.select('name ulb location resourceMobilization expenditurePerformance fiscalGovernance overAll state')
+			.select('name ulb location resourceMobilization expenditurePerformance fiscalGovernance overAll state populationBucket')
 			.sort(sort)
 			.limit(5)
 			.exec();
@@ -623,6 +623,10 @@ function fetchFiveUlbs(ulbRes, sortBy) {
 			const ulbData = {
 				'overallRank': ulb.overAll.rank,
 				'ulbName': ulb.name,
+				'ulbNameConfig': {
+					title: `${ulb.name} (${getPopulationBucket(ulb.populationBucket)})`
+				},
+				ulb,
 				'ulbNameLink': `/rankings/ulb/${ulb.censusCode ? ulb.censusCode : ulb.sbCode ? ulb.sbCode : ulb.ulb}`,
 				'overallScore': ulb.overAll.score,
 				'resourceMobilizationScore': ulb.resourceMobilization.score,
