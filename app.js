@@ -23,7 +23,7 @@ const whitelist = [
   'https://aaina.gov.in',
   'https://api.aaina-mohua.in',
 
-  // 'http://localhost:4200',
+  'http://localhost:4200',
   'https://democityfinance.dhwaniris.in',
   'https://staging.cityfinance.in',
   'https://staging-jana.cityfinance.in',
