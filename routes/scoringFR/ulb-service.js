@@ -102,18 +102,22 @@ module.exports.getUlbsBySate = async (req, res) => {
 	try {
 		// moongose.set('debug', true);
 		const stateId = ObjectId(req.params.stateId);
-		let condition = { 
-			isActive: true, 
-			state: stateId ,
-			...(req.query?.ulbName && { name: {
-				$regex: req.query?.ulbName,
-				$options: 'i'
-			} })
-		};
-		const { order, sortBy, populationBucket, ulbParticipationFilter,ulbRankingStatusFilter } = req.query;
 
-		const sortArr = {participated:'currentFormStatus',ranked: 'overAll.rank', populationBucket: 'populationBucket'}
-		let sort = {name:1};
+		let condition = {
+			isActive: true,
+			state: stateId,
+			...(req.query?.ulbName && {
+				name: {
+					$regex: req.query?.ulbName,
+					$options: 'i'
+				}
+			})
+		};
+
+		const { order, sortBy, populationBucket, ulbParticipationFilter, ulbRankingStatusFilter } = req.query;
+
+		const sortArr = { participated: 'currentFormStatus', ranked: 'overAll.rank', populationBucket: 'populationBucket' }
+		let sort = { name: 1 };
 		if (sortBy) {
 			const by = sortArr[sortBy] || 'name'
 			sort = { [by]: order };
@@ -123,7 +127,7 @@ module.exports.getUlbsBySate = async (req, res) => {
 		}
 		if (['participated', 'nonParticipated'].includes(ulbParticipationFilter)) {
 			//TODO: check participated form status
-			const participateCond = ulbParticipationFilter === 'participated' ? {$in:[8,9,10,11]} : {$in:[1]};
+			const participateCond = ulbParticipationFilter === 'participated' ? { $in: [8, 9, 10, 11] } : { $in: [1] };
 			condition = { ...condition, 'currentFormStatus': participateCond };
 		}
 		if (['ranked', 'nonRanked'].includes(ulbRankingStatusFilter)) {
@@ -177,8 +181,8 @@ function getTableHeaderDocs() {
 				'label': 'ULB Name',
 				'key': 'ulbName',
 				'sort': 1,
-				'sortable': true,
 				'query': '',
+				'sortable': true,
 				'class': 'th-color-cls',
 			},
 			{
@@ -250,8 +254,8 @@ function getTableHeaderDocs() {
 
 // Table data
 function getUlbData(ulbs, query) {
-	
-	console.log(ulbs);
+
+	// console.log(ulbs);
 
 	const tableData = [];
 	let j = getPageNo(query);
@@ -276,12 +280,12 @@ function getUlbData(ulbs, query) {
 		});
 		ulb.auditedAccounts.forEach((year) => {
 			let filename = year.url;
-			if(year.modelName === 'ULBLedger') {
+			if (year.modelName === 'ULBLedger') {
 				filename = `/resources-dashboard/data-sets/balanceSheet?year=${year.year}&type=Raw%20Data%20PDF&category=balance&state=${ulb.state}&ulbName=${ulb.name}`;
-				data[`auditedAccounts${year.year}`] = 'Click here';
-				data[`auditedAccounts${year.year}Link`] =  filename;
+				data[`auditedAccounts${year.year}`] = 'pdfIcon';
+				data[`auditedAccounts${year.year}Link`] = filename;
 			} else {
-				data[`auditedAccounts${year.year}`] =  filename;
+				data[`auditedAccounts${year.year}`] = filename;
 			}
 		});
 		//if no data for year add -
