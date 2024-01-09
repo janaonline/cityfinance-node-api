@@ -87,7 +87,7 @@ const concatenateUrls = (obj) => {
             if ( key !== 'history' && typeof obj[key] === 'object' && obj[key] !== null) {
                obj[key] = concatenateUrls(obj[key], KEYS);
             } else if (typeof obj[key] === 'string' && obj[KEYS[key]]) {
-                obj[key] = process.env.AZURE_STORAGE_URL + obj[key]
+                obj[key] = process.env.AZURE_STORAGE_URL ?? 'https://janaagrahstorage.blob.core.windows.net/jana-cityfinance-stg' + obj[key]
             }
         }
         return obj;
