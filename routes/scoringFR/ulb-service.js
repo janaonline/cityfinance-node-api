@@ -370,7 +370,7 @@ function getTableData(ulb, type) {
 			title: 'O&M expenses to Total Revenue Expenditure (TRE) (3- year average)',
 		},
 		{
-			units: '',
+			units: 'Yes/ No',
 			sno: '10a',
 			key: 'avgMonthsForULBAuditMarks_10a',
 			type: 'fiscalGovernance',
