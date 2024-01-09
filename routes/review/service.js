@@ -16,6 +16,7 @@ const Ulb = require('../../models/Ulb')
 const State = require('../../models/State');
 const MasterForm = require('../../models/MasterForm');
 const { PREV_MASTER_FORM_STATUS, MASTER_STATUS_ID, MASTER_FORM_STATUS } = require('../../util/FormNames');
+const { concatenateUrls } = require('../../service/common');
 const Response = require("../../service").response;
 
 function padTo2Digits(num) {
@@ -2128,6 +2129,8 @@ async function createCSV(params) {
 
         res.flushHeaders();
         for (let el of data) {
+          el = JSON.parse(JSON.stringify(el));
+          el = concatenateUrls(el);
           let dynamicElementData = await createDynamicElements(
             collectionName,
             formType,
@@ -2174,6 +2177,8 @@ async function createCSV(params) {
 
         res.flushHeaders();
         for (let el of data) {
+          el = JSON.parse(JSON.stringify(el));
+          el = concatenateUrls(el);
           let [row1, row2] = await createDynamicElements(
             collectionName,
             formType,
@@ -2272,6 +2277,8 @@ async function createCSV(params) {
         res.flushHeaders();
         if (data?.length) {
           for (let el of data) {
+            el = JSON.parse(JSON.stringify(el));
+            el = concatenateUrls(el);
             let dynamicElementData = await createDynamicElements(
               collectionName,
               formType,
@@ -3171,6 +3178,8 @@ const waterSenitationXlsDownload = async (data, res, collectionName, formType, r
     if (data?.length) {
       for (const el of data) {
 
+        el = JSON.parse(JSON.stringify(el));
+        el = concatenateUrls(el);
         if (!el.formData) {
           el['formStatus'] = "Not Started";
         } else {
@@ -3266,6 +3275,8 @@ const actionPlanXlsDownload = async (data, res, collectionName, formType, role) 
     let counter = { projectExecute: 2, sourceFund: 2, yearOutlay: 2 } // counter
     if (data?.length) {
       for (const el of data) {
+        el = JSON.parse(JSON.stringify(el));
+        el = concatenateUrls(el);
         if (!el.formData) {
           el['formStatus'] = "Not Started";
         } else {

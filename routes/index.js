@@ -294,6 +294,10 @@ router.use('/master-skip-value', MasterSkipValue)
 const MunicipalityBudgets = require("./MunicipalityBudgets");
 router.use('/municipality-budgets', MunicipalityBudgets);
 
+/* Link Record to store links data*/
+const LinkRecord = require('./LinkRecord');
+router.use('/link-record', LinkRecord)
+
 const stateResources = require("./stateResources");
 router.use('/state-resources', verifyToken, stateResources);
 
