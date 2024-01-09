@@ -68,7 +68,7 @@ const data = {
 					"maximumScore ": "100",
 					"financialYears": "2021-22",
 					"dataSource": "Annual budget 2023-24 ",
-					"formula": "[Total budget size (actual receipts) - total receipts for water supply and sanitation#] / ULB Population ",
+					"formula": "[Total budget size (actual receipts) - total receipts for water supply and sanitation<sup><b>#</b></sup>] / ULB Population ",
 					"scoringMethodology": "(ULB number / Highest ULB number)* Maximum score ",
 					"scoringLogic": "Higher the better  "
 				},
@@ -79,7 +79,7 @@ const data = {
 					"maximumScore ": "100",
 					"financialYears": "2021-22",
 					"dataSource": "Annual budget 2023-24 ",
-					"formula": "[Total own revenues - own revenues from water supply and sanitation##] / ULB Population ",
+					"formula": "[Total own revenues - own revenues from water supply and sanitation<sup><b>##</b></sup>] / ULB Population ",
 					"scoringMethodology": "---same as above--- ",
 					"scoringLogic": "Higher the better  "
 				},
@@ -90,7 +90,7 @@ const data = {
 					"maximumScore ": "100",
 					"financialYears": "2021-22",
 					"dataSource": "Annual budget 2023-24 ",
-					"formula": "[Total property tax - tax revenues from water supply and sanitation###] / ULB Population ",
+					"formula": "[Total property tax - tax revenues from water supply and sanitation<sup><b>###</b></sup>] / ULB Population ",
 					"scoringMethodology": "---same as above--- ",
 					"scoringLogic": "Higher the better  "
 				},
@@ -127,6 +127,11 @@ const data = {
 					"scoringMethodology": "---same as above--- ",
 					"scoringLogic": "Higher the better "
 				}
+			],
+			"footnotes": [
+				"#Total receipts shall include both revenue and capital receipts; and include own revenues, assigned revenues, grants, transfers etc. for water supply and sanitation purposes. The Own Revenues from Water Supply & Sanitation shall include: (a) Tax revenues such as water tax, drainage tax, sewerage tax; and (b) Non-Tax revenues / Fees & User charges for water supply, sanitation, and/or sewerage. Please note, Fees & User charges for solid waste management / garbage collection shall not be included.",
+				"##The Own Revenues from Water Supply & Sanitation shall include: (a) Tax revenues such as water tax, drainage tax, sewerage tax; and (b) Non-Tax revenues / Fees & User charges for water supply, sanitation, and/or sewerage. Please note, Fees & User charges for solid waste management / garbage collection shall not be included.",
+				"###Tax Revenues from Water Supply & Sanitation shall include: Water tax, Drainage tax, Sewerage tax."
 			]
 		}
 	},
