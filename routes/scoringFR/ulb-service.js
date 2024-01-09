@@ -432,9 +432,12 @@ function getTableData(ulb, type) {
 			'ulbPerformance': ulb[indicator.key].score,
 			'highPerformance': ulb[indicator.key].highestScore,
 			'highPerformanceConfig': {
-				title: `${ulb[indicator.key].highestScore} (${ulb.name})`
+				title: '' // TODO: add name of ulb which has the highest number of specific indicator (UAT feedback - 24)
 			},
 			'lowPerformance': ulb[indicator.key].lowestScore,
+			'lowPerformanceConfig': {
+				title: '' // TODO: add name of ulb which has the lowest number of specific indicator (UAT feedback - 24)
+			},
 			'ulbScore': ulb[indicator.key].percentage,
 		};
 		data.push(ele);
