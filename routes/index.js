@@ -267,6 +267,10 @@ router.use(review);
 const getS3Url = require("../service/getS3Url");
 router.post("/getS3Url", getS3Url);
 
+// @getBlobUrl
+const getBlobUrl = require("../service/getBlobUrl");
+router.post("/getBlobUrl", getBlobUrl);
+
 //deletefile
 const DeleteFileApi = require('./DeleteFileApi');
 router.use('/deleteFile', DeleteFileApi);
