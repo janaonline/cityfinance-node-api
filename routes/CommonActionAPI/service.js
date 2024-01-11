@@ -28,6 +28,7 @@ const UA = require('../../models/UA');
 const User = require('../../models/User');
 const ULB = require('../../models/Ulb');
 const { default: axios } = require('axios');
+const { concatenateUrls } = require('../../service/common');
 const { BackendHeaderHost } = require('../../util/envUrl');
 // const { getUAShortKeys } = require('../CommonFormSubmissionState/service');
 var allowedStatuses = [StatusList.Rejected_By_MoHUA, StatusList.STATE_REJECTED, StatusList.Rejected_By_State, StatusList.In_Progress, StatusList.Not_Started]
@@ -1113,6 +1114,8 @@ function sendCsv(filename, modelName, query, res, cols, csvCols, fromArr, cb = n
         res.write(cols.join(","))
         res.write("\r\n")
         cursor.on("data", (document) => {
+            document = JSON.parse(JSON.stringify(document));
+            document = concatenateUrls(document);
             if (fromArr) {
                 for (let ele of document[fromArr]) {
                     ele['type'] = ele.type ? ele.type.toUpperCase() : ""
