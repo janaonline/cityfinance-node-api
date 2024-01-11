@@ -31,7 +31,8 @@ const {saveCurrentStatus, saveFormHistory, saveStatusHistory, getShortKeys} = re
 const CurrentStatus = require("../../models/CurrentStatus");
 const {getSeparatedShortKeys, saveFormLevelHistory} = require('../../routes/CommonActionAPI/service')
 var https = require('https');
-var request = require('request')
+var request = require('request');
+const { concatenateUrls } = require("../../service/common");
 
 // function doRequest(url) {
 //   return new Promise(function (resolve, reject) {
@@ -2535,6 +2536,17 @@ exports.getCSVAudited = catchAsync(async (req, res) => {
         }
 
         for (el of data) {
+          el = JSON.parse(JSON.stringify(el));
+          let urlParams = {
+            auditor_report: "auditor_report",
+            bal_sheet: "bal_sheet",
+            bal_sheet_schedules: "bal_sheet_schedules",
+            cash_flow: "cash_flow",
+            inc_exp: "inc_exp",
+            inc_exp_schedules: "inc_exp_schedules",
+            standardized_excel: "standardized_excel",
+          };
+          el = concatenateUrls(el, urlParams);
           res.write(
             el.year +
             "," +
@@ -2742,6 +2754,16 @@ exports.getCSVUnaudited = catchAsync(async (req, res) => {
         // }
         }
         for (el of data) {
+          el = JSON.parse(JSON.stringify(el));
+          let urlParams = {
+            bal_sheet: "bal_sheet",
+            bal_sheet_schedules: "bal_sheet_schedules",
+            cash_flow: "cash_flow",
+            inc_exp: "inc_exp",
+            inc_exp_schedules: "inc_exp_schedules",
+            standardized_excel: "standardized_excel",
+          };
+          el = concatenateUrls(el, urlParams);
           res.write(
             el.year +
             "," +
