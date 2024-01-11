@@ -21,8 +21,9 @@ const KEYS  = {
     pdfUrl: 'pdfUrl',
     excelUrl: 'excelUrl'
 }
-const concatenateUrls = (obj, params = KEYS) => {
+const concatenateUrls = (obj, params = KEYS,flag = false) => {
     try {
+        if(flag){ params = Object.assign(params, KEYS); }
         for (var key in obj) {
             if ( key !== 'history' && typeof obj[key] === 'object' && obj[key] !== null) {
                obj[key] = concatenateUrls(obj[key], params);
