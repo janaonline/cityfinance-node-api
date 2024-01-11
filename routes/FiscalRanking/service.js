@@ -3328,7 +3328,7 @@ async function sendCsv(res, aggregateQuery) {
           if (key == "filled") {
             el[key] = el[key] === "Yes" ? "filled" : "Not filled";
           }
-          str += typeof el[key] === 'string' && el[key].split(",").join("-") + ",";
+          str += typeof el[key] === 'string' ? el[key].split(",").join("-") + "," : el[key] + ",";
         } else {
           str += " " + ",";
         }
