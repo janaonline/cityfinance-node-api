@@ -1827,6 +1827,7 @@ function createDynamicQuery(collectionName, oldQuery, userRole, csv) {
               stateName: { $first: "$stateName" },
               state: { $first: "$state" },
               stateCode: { $first: "$stateCode" },
+              regionalName : {$first: "$regionalName"}
             }
           }
           oldQuery.push(query_2);
@@ -3176,7 +3177,7 @@ const waterSenitationXlsDownload = async (data, res, collectionName, formType, r
 
     let counter = { waterBodies: 2, serviceLevelIndicators: 2, reuseWater: 2 } // counter
     if (data?.length) {
-      for (const el of data) {
+      for (let el of data) {
 
         el = JSON.parse(JSON.stringify(el));
         el = concatenateUrls(el);
@@ -3274,7 +3275,7 @@ const actionPlanXlsDownload = async (data, res, collectionName, formType, role) 
 
     let counter = { projectExecute: 2, sourceFund: 2, yearOutlay: 2 } // counter
     if (data?.length) {
-      for (const el of data) {
+      for (let el of data) {
         el = JSON.parse(JSON.stringify(el));
         el = concatenateUrls(el);
         if (!el.formData) {

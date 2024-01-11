@@ -331,6 +331,8 @@ async function createCSV(params) {
             await writeSubmitClaimCSV(output, res);
           } else {
             for (let el of mainArrData) {
+              el = JSON.parse(JSON.stringify(el));
+              el = concatenateUrls(el);
               if (!el?.formData) {
                 el['formStatus'] = "Not Started";
               } else {
@@ -340,6 +342,8 @@ async function createCSV(params) {
                 let gtcData = await gtcInstallmentForms([...new Set(mainArrData.map(e => e._id))]);
                 let GTC = gtcData?.length ? gtcData?.filter(e => (e.state.toString() == el._id.toString() && e.gtcForm.toString() == el?.formData?._id?.toString() && e.installment == el.formData.installment)) : []
                 el['formData']['installment_form'] = GTC;
+                el = JSON.parse(JSON.stringify(el));
+                el = concatenateUrls(el);
                 gtcStateFormCSVFormat(el, res)
               } else if (collectionName == 'GrantAllocation') {
                 await grantAllCsvDownload(el, res);
@@ -634,7 +638,7 @@ const actionPlanXlsDownload = async (data, res, role) => {
 
     let counter = { projectExecute: 2, sourceFund: 2, yearOutlay: 2 } // counter
     if (data?.length) {
-      for (const pf of data) {
+      for (let pf of data) {
         pf = JSON.parse(JSON.stringify(pf));
         pf = concatenateUrls(pf);
         if (!pf?.formData) {
@@ -733,7 +737,7 @@ const waterSenitationXlsDownload = async (data, res, role) => {
 
     let counter = { waterBodies: 2, serviceLevelIndicators: 2, reuseWater: 2 } // counter
     if (data?.length) {
-      for (const pf of data) {
+      for (let pf of data) {
         pf = JSON.parse(JSON.stringify(pf));
         pf = concatenateUrls(pf);
         if (!pf?.formData) {
