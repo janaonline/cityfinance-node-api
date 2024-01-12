@@ -9,14 +9,14 @@ const scoreFields = {
 		type: Number,
 		default: 0,
 	},
-	highestScore: {
-		type: Number,
-		default: 0,
-	},
-	lowestScore: {
-		type: Number,
-		default: 0,
-	}
+	// highestScore: {
+	// 	type: Number,
+	// 	default: 0,
+	// },
+	// lowestScore: {
+	// 	type: Number,
+	// 	default: 0,
+	// }
 };
 
 const sumScoreFields = {
@@ -30,15 +30,15 @@ const sumScoreFields = {
 	},
 	stateAvg: {
 		type: Number,
-		default: 0,
+		// default: 0,
 	},
 	nationalAvg: {
 		type: Number,
-		default: 0,
+		// default: 0,
 	},
 	populationBucketAvg: {
 		type: Number,
-		default: 0,
+		// default: 0,
 	},
 };
 
@@ -82,7 +82,13 @@ const ScoringFiscalRankingSchema = new Schema(
 		capExPCAvg_7: scoreFields,
 		cagrInCapExpen_8: scoreFields,
 		omExpTotalRevExpen_9: scoreFields,
-		avgMonthsForULBAuditMarks_10a: scoreFields,
+		avgMonthsForULBAuditMarks_10a: {
+            ...scoreFields,
+            values: {
+                type: Number,
+                default: 0,
+            },
+        },
 		aaPushishedMarks_10b: scoreFields,
 		gisBasedPTaxMarks_11a: scoreFields,
 		accSoftwareMarks_11b: scoreFields,

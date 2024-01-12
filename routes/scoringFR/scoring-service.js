@@ -195,18 +195,13 @@ function cagrInTotalBudget(fsData, fsMapper2018_19, fsMapper2021_22) {
 		// Growth
 		const time = 3;
 		let CAGRInTotalBudget = 0;
-		if (budget !== 0) {
-			// const pow1 = cubeRootOfNegative(budget);
-			// const pow1 = pow(budget,0.333);
+		// if (budget !== 0) {
 			const pow1 = Math.cbrt(budget);
-			// console.log('pow-DD--',pow1);
-			// console.log('pow-st--',JSON.stringify(pow1));
-			// console.log('pow---',typeof pow1);
 			CAGRInTotalBudget = (pow1 - 1) * 100;
 			// CAGRInTotalBudget = (Math.pow(budget, 1 / time) - 1) * 100;
-		} else {
-			CAGRInTotalBudget = 0;
-		}
+		// } else {
+		// 	CAGRInTotalBudget = 0;	
+		// }
 		// const CAGRInTotalBudget = budget <= 0 ? 0 : (Math.pow(budget, 1 / time) - 1) * 100;
 
 		return parseFloat(CAGRInTotalBudget.toFixed(2)); //15.73%
@@ -243,12 +238,12 @@ function cagrInOwnRevenue(fsData, fsMapper2018_19, fsMapper2021_22) {
 		const time = 3;
 		// const cagrInOwnRevenue = ownRev <= 0 ? 0 : (Math.pow(ownRev, 1 / time) - 1) * 100;
 		let cagrInOwnRevenue = 0;
-		if (ownRev !== 0) {
+		// if (ownRev !== 0) {
 			const pow1 = Math.cbrt(ownRev);
 			cagrInOwnRevenue = (pow1 - 1) * 100;
-		} else {
-			cagrInOwnRevenue = 0;
-		}
+		// } else {
+		// 	cagrInOwnRevenue = 0;
+		// }
 
 		return parseFloat(cagrInOwnRevenue.toFixed(2));
 	} catch (e) {
@@ -269,13 +264,14 @@ function cagrInPTax(fsMapper2018_19, fsMapper2021_22) {
 		// TODO:check 0 condtion with navinder
 		// const cagrInPTax = pTax <= 0 ? 0 : (Math.pow(pTax, 1 / time) - 1) * 100;
 		// const cagrInPTax = (Math.pow(pTax, 1 / time) - 1) * 100;
+		
 		let cagrInPTax = 0;
-		if (pTax !== 0) {
+		// if (pTax !== 0) {
 			const pow1 = Math.cbrt(pTax);
 			cagrInPTax = (pow1 - 1) * 100;
-		} else {
-			cagrInPTax = 0;
-		}
+		// } else {
+		// 	cagrInPTax = 0;
+		// }
 		return parseFloat(cagrInPTax.toFixed(2));
 	} catch (e) {
 		return 0;
@@ -340,13 +336,14 @@ function cagrInCapEx(fsData, fsMapper2018_19, fsMapper2021_22) {
 		// TODO: check 0 cond with navinder
 		// const cagrInCapEx = totalCapEx <= 0 ? 0 : (Math.pow(totalCapEx, (1 / time)) - 1) * 100;
 		// const cagrInCapEx = (Math.pow(totalCapEx, (1 / time)) - 1) * 100;
+		
 		let cagrInCapEx = 0;
-		if (totalCapEx !== 0) {
+		// if (totalCapEx !== 0) {
 			const pow1 = Math.cbrt(totalCapEx);
 			cagrInCapEx = (pow1 - 1) * 100;
-		} else {
-			cagrInCapEx = 0;
-		}
+		// } else {
+		// 	cagrInCapEx = 0;
+		// }
 
 		return parseFloat(cagrInCapEx.toFixed(2));
 	} catch (e) {
@@ -423,10 +420,10 @@ function avgMonthsForULBAudit(fsMapper2019_20, fsMapper2020_21, fsMapper2021_22)
 
 		// Array is created to find average.
 		const arr = [noOfMonths_2019_20, noOfMonths_2020_21, noOfMonths_2021_22];
-		const avgMonth = calculateAverage(arr);
+		const avgMonth = (calculateAverage(arr)).toFixed(2);
 		// If average month is less than 12 then ULB gets 25 marks else 0 marks;
 		const avgMonthsForULBAudit = avgMonth <= 12 && avgMonth > 0 ? 25 : 0;
-		return avgMonthsForULBAudit;
+		return {score:avgMonthsForULBAudit, values:avgMonth};
 	} catch (e) {
 		return 0;
 	}
@@ -534,7 +531,8 @@ function propUnderTaxColl(fsMapperNoYear) {
 		// TO-DO if any error then 0 is to be entered condition to be written.
 		const paidPTax = getNumberValue(fsMapperNoYear, 'paid_property_tax');
 		const denominator = getNumberValue(fsMapperNoYear, 'property_tax_register') - getNumberValue(fsMapperNoYear, 'paying_property_tax');
-		const propUnderTaxColl = paidPTax === 0 || denominator === 0 ? 0 : (paidPTax / denominator) * 100;
+		let tempPropUnderTaxColl = paidPTax === 0 || denominator === 0 ? 0 : (paidPTax / denominator);
+		const propUnderTaxColl =  tempPropUnderTaxColl > 1 || tempPropUnderTaxColl < 0 ? 0 : tempPropUnderTaxColl * 100;
 
 		return parseFloat(propUnderTaxColl.toFixed(2));
 	} catch (e) {
@@ -844,7 +842,7 @@ async function getData(ulbRes) {
 		capExPCAvg_7: { score: capExPCAvg_7 },
 		cagrInCapExpen_8: { score: cagrInCapExpen_8 },
 		omExpTotalRevExpen_9: { score: omExpTotalRevExpen_9 },
-		avgMonthsForULBAuditMarks_10a: { score: avgMonthsForULBAuditMarks_10a },
+		avgMonthsForULBAuditMarks_10a: avgMonthsForULBAuditMarks_10a,
 		aaPushishedMarks_10b: { score: aaPushishedMarks_10b },
 		gisBasedPTaxMarks_11a: { score: gisBasedPTaxMarks_11a },
 		accSoftwareMarks_11b: { score: accSoftwareMarks_11b },
@@ -868,7 +866,7 @@ module.exports.calculateFRScore = async (req, res) => {
 		const limit = req.query.limit ? parseInt(req.query.limit) : 1000;
 		const page = req.query.page ? parseInt(req.query.page) : 1;
 		const censusCode = 802989;
-		const _id = ObjectId('5eb5844f76a3b61f40ba069b');
+		const _id = ObjectId('5dd2472a437ba31f7eb42f82');
 		// Consider only ULBs with isActive TRUE & population is not empty & not 0.
 		const condition = { isActive: true, population: { $nin: [null, 0] } };
 		// const condition = { isActive: true, _id, population: { $nin: [null, 0] } };

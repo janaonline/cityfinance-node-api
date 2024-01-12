@@ -62,9 +62,9 @@ module.exports.getUlbDetails = async (req, res) => {
 			.select('waterSupply sanitationService propertyWaterTax propertySanitationTax registerGis accountStwre')
 			.lean();
 		const assessmentParameter = {
-			resourceMobilization: getTableData(ulb, 'resourceMobilization'),
-			expenditurePerformance: getTableData(ulb, 'expenditurePerformance'),
-			fiscalGovernance: getTableData(ulb, 'fiscalGovernance'),
+			resourceMobilization: await getTableData(ulb, 'resourceMobilization'),
+			expenditurePerformance: await getTableData(ulb, 'expenditurePerformance'),
+			fiscalGovernance: await getTableData(ulb, 'fiscalGovernance'),
 		};
 		const ulbData = {
 			name: ulb.name,
@@ -340,7 +340,13 @@ function getTableHeader(type) {
 	];
 	return { columns, 'lastRow': ['', '', '', '', '', 'Total', '$sum'] };
 }
-function getTableData(ulb, type) {
+async function getMaxMinScore(populationBucket, indicator, order) {
+	// mongoose.set('debug',true);
+	const condition = { isActive: true, populationBucket, currentFormStatus: { $in: [11] } };
+	const res = await ScoringFiscalRanking.findOne(condition).select(`name ${indicator}`).sort({ [`${indicator}.score`]: order }).limit(1).lean();
+	return res;
+}
+async function getTableData(ulb, type) {
 	let indicators = [
 		{
 			units: 'Rs.',
@@ -370,7 +376,7 @@ function getTableData(ulb, type) {
 			title: 'O&M expenses to Total Revenue Expenditure (TRE) (3- year average)',
 		},
 		{
-			units: 'Yes/ No',
+			units: 'No. of months',
 			sno: '10a',
 			key: 'avgMonthsForULBAuditMarks_10a',
 			type: 'fiscalGovernance',
@@ -421,14 +427,38 @@ function getTableData(ulb, type) {
 	// console.log('filteredIndicators', filteredIndicators);
 	let data = [];
 	for (const indicator of filteredIndicators) {
-		const ele = {
+		const highest = await getMaxMinScore(ulb.populationBucket, indicator.key, -1);
+		const lowest = await getMaxMinScore(ulb.populationBucket, indicator.key, 1);
+		let ulbPerformance = ulb[indicator.key].score;
+		
+		let ele = {
 			'sNo': indicator.sno,
 			'indicator': indicator.title,
 			'unit': indicator.units,
-			'ulbPerformance': ulb[indicator.key].score,
-			'highPerformance': ulb[indicator.key].highestScore,
-			'lowPerformance': ulb[indicator.key].lowestScore,
-			'ulbScore': ulb[indicator.key].percentage,
+			'ulbScore': (ulb[indicator.key].percentage).toFixed(2),
+		};
+		if(['aaPushishedMarks_10b','gisBasedPTaxMarks_11a', 'accSoftwareMarks_11b'].includes(indicator.key)) {
+			ulbPerformance = ulb[indicator.key].score ? 'Yes': 'No';
+		} else if(indicator.key ==='avgMonthsForULBAuditMarks_10a') {
+			ulbPerformance = ulb[indicator.key].values;
+		} else {
+			const highest = await getMaxMinScore(ulb.populationBucket, indicator.key, -1);
+			const lowest = await getMaxMinScore(ulb.populationBucket, indicator.key, 1);
+			ele = {
+					...ele,
+					'highPerformance': highest[indicator.key].score,
+					'highPerformanceConfig': {
+						title: highest.name
+					},
+					'lowPerformance': lowest[indicator.key].score,
+					'lowPerformanceConfig': {
+						title: lowest.name
+					},
+				}
+		}
+		ele = {
+			...ele,
+			ulbPerformance,
 		};
 		data.push(ele);
 	}
