@@ -10,6 +10,7 @@ const STATUS_LIST = require('../../../util/newStatusList')
 const {
   UpdateStateMasterForm,
 } = require("../../../service/updateStateMasterForm");
+const { concatenateUrls } = require("../../../service/common");
 const Response = require("../../../service").response;
 
 module.exports.get = catchAsync(async (req, res) => {
@@ -356,6 +357,13 @@ res.write(
 res.flushHeaders();
 
 for (el of data) {
+  el = JSON.parse(JSON.stringify(el));
+  let urlParams = {
+    nonMillion_tied: "nonMillion_tied",
+    nonMillion_untied: "nonMillion_untied",
+    million_tied: 'million_tied'
+  };
+  el = concatenateUrls(el, urlParams);
   res.write(
     el.state +
     "," +
