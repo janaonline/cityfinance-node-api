@@ -3188,7 +3188,9 @@ const excelPTOMapping = async (query) => {
           }
           counter++;
         
-      });
+      }
+    }
+      );
       cursor.on("end", () => {
         resolve({ crrWorkbook, filename, tempFilePath })
       });
