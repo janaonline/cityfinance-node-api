@@ -25,7 +25,7 @@ const concatenateUrls = (obj, params = KEYS,flag = false) => {
     try {
         if(flag){ params = Object.assign(params, KEYS); }
         for (var key in obj) {
-            if ( key !== 'history' && typeof obj[key] === 'object' && obj[key] !== null) {
+            if (typeof obj[key] === 'object' && obj[key] !== null) {
                obj[key] = concatenateUrls(obj[key], params);
             } else if (typeof obj[key] === 'string' && obj[params[key]]) {
                 obj[key] = process.env.AZURE_STORAGE_URL + obj[key]
