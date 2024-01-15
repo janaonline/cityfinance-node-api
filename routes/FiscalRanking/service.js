@@ -77,7 +77,7 @@ function getMessages(params) {
     }
   } else {
     return {
-      "freeze": `Dear ${ulbName}, your data input form for City Finance Rankings has been put on hold. Cityfinance Rankings Module is no longer accepting submissions. Please email rankings@cityfinance.in for any queries.`
+      "freeze": `Dear ${ulbName}, your data input form for City Finance Rankings has been put on hold. Cityfinance Rankings Module is no longer accepting submissions. Please email rankings@${process.env.PROD_HOST} for any queries.`
     }
   }
 }
@@ -1176,7 +1176,7 @@ exports.getView = async function (req, res, next) {
                     if (chekFile) {
                       pf[
                         "info"
-                      ] = `Available on Cityfinance - <a href ="https://cityfinance.in/resources-dashboard/data-sets/income_statement ">View here</a>`;
+                      ] = `Available on Cityfinance - <a href ="https://${process.env.PROD_HOST}/resources-dashboard/data-sets/income_statement ">View here</a>`;
                     }
                     if (subData[key].calculatedFrom === undefined) {
                       pf["readonly"] = chekFile ? true : false;
@@ -1202,7 +1202,7 @@ exports.getView = async function (req, res, next) {
 
                     pf[
                       "info"
-                    ] = `Available on Cityfinance - <a href ="https://cityfinance.in/resources-dashboard/data-sets/income_statement ">View here</a>`;
+                    ] = `Available on Cityfinance - <a href ="https://${process.env.PROD_HOST}/resources-dashboard/data-sets/income_statement ">View here</a>`;
                   }
                   if (subData[key].calculatedFrom === undefined) {
                     pf["readonly"] = chekFile ? true : getReadOnly(data?.currentFormStatus, viewOne.isDraft, role, "PENDING");
@@ -3317,6 +3317,8 @@ async function sendCsv(res, aggregateQuery) {
       .addCursorFlag("noCursorTimeout", true)
       .exec();
     cursor.on("data", function (el) {
+      el = JSON.parse(JSON.stringify(el));
+      el = concatenateUrls(el);
       let str = "";
       for (let key of csvColsFr) {
         if (key == "Form Status") {
@@ -3326,7 +3328,7 @@ async function sendCsv(res, aggregateQuery) {
           if (key == "filled") {
             el[key] = el[key] === "Yes" ? "filled" : "Not filled";
           }
-          str += el[key].split(",").join("-") + ",";
+          str += typeof el[key] === 'string' ? el[key].split(",").join("-") + "," : el[key] + ",";
         } else {
           str += " " + ",";
         }
@@ -5485,6 +5487,8 @@ async function fyUlbFyCsv(params) {
       .exec();
     cursor.on("data", (document) => {
       try {
+        document = JSON.parse(JSON.stringify(document));
+        document = concatenateUrls(document);
         let fyMapperData = document.fiscalrankingmapper;
         let sortKeys = fiscalRankingQestionSortkeys();
         let stateObj = stateList.length ? stateList.find(e => e._id.toString() == document.state.toString()) : null
@@ -5544,6 +5548,13 @@ function createCsv(params) {
 
     cursor.on("data", (document) => {
       try {
+        document = JSON.parse(JSON.stringify(document));
+        let urlParams = {
+          file: "file",
+          signedCopyOfFile: "signedCopyOfFile",
+          otherUpload: "otherUpload",
+        };
+        document = concatenateUrls(document, urlParams, true);
         let str = "";
         let str2 = "";
         let FRFlag = false;
@@ -5708,7 +5719,8 @@ module.exports.getTrackingHistory = async(req,res)=>{
 const jwt = require('jsonwebtoken');
 const Config = require('../../config/app_config');
 const axios = require('axios');
-const { appendFile } = require('fs')
+const { appendFile } = require('fs');
+const { concatenateUrls } = require("../../service/common");
 
 module.exports.freezeForm = async (req, res) => {
   try {
@@ -5720,11 +5732,11 @@ module.exports.freezeForm = async (req, res) => {
     let url = "http://localhost:8080/api/v1/";
 
     if ((process.env.ENV == ENV['prod'])) {
-      url = "https://cityfinance.in/api/v1/";
+      url = `https://${process.env.PROD_HOST}/api/v1/`;
     } else if ((process.env.ENV == ENV['demo'])) {
-      url = "https://democityfinanceapi.dhwaniris.in/api/v1/";
+      url = `https://${process.env.DEMO_HOST_BACKEND}/api/v1/`;
     } else if ((process.env.ENV == ENV['stg'])) {
-      url = "https://staging.cityfinance.in/api/v1/";
+      url = `https://${process.env.STAGING_HOST}/api/v1/`;
     }
 
     let viewEndPoint = "fiscal-ranking/view";

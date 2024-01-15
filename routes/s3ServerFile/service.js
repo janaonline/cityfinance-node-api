@@ -58,7 +58,7 @@ async function put_from_url(url, cb) {
 
 function doRequest(url) {
     return new Promise(async (resolve, reject) => {
-        let url = 'https://cityfinance.in/objects/86f95557-a3ba-4f68-b496-1a47b043f80b.pdf';
+        let url = `https://${process.env.PROD_HOST}/objects/86f95557-a3ba-4f68-b496-1a47b043f80b.pdf`;
         let options = {
             url: url,
             encoding: null
