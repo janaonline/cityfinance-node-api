@@ -378,6 +378,8 @@ async function grantAllCsvDownload(el, res) {
   if (formData && formData.length && (formData[0] !== "")) {
     for (let pf of formData) {
       let currentStatus = await CurrentStatus.findOne({ recordId: ObjectId(pf?._id) });
+      currentStatus = JSON.parse(JSON.stringify(currentStatus));
+      currentStatus = concatenateUrls(currentStatus);
       let MohuaformStatus = MASTER_STATUS_ID[currentStatus?.status];
       let mohuaStatusComment = [MASTER_STATUS_ID[pf?.currentFormStatus]];
       if (['Returned By MoHUA', 'Submission Acknowledged By MoHUA'].includes(MASTER_STATUS_ID[pf?.currentFormStatus])) {
