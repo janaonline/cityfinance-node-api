@@ -39,6 +39,7 @@ const PrevLineItem_CONSTANTS = require('../../util/lineItems');
 const { years } = require("../../service/years");
 const { getKeyByValue } = require("../../util/masterFunctions");
 const { MASTER_STATUS_ID } = require("../../util/FormNames");
+const { concatenateUrls } = require("../../service/common");
 
 const BackendHeaderHost ={
   Demo: `${process.env.DEMO_HOST_BACKEND}`,
@@ -2049,6 +2050,8 @@ module.exports.getAll = catchAsync(async (req, res) => {
       if (csv) {
         let arr = await XVFCGrantULBData.aggregate(q).exec();
         for (d of arr) {
+          d = JSON.parse(JSON.stringify(d));
+          d = concatenateUrls(d);
           if (
             d.status == "PENDING" &&
             d.isCompleted == false &&
