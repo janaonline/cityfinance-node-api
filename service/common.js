@@ -7,7 +7,7 @@ module.exports.camelize = (dashString = '') => {
 }
 
 module.exports.getPaginationParams = (query) => {
-    const skip = query.skip !== undefined ? parseInt(query.skip): 0;
+    const skip = query.skip !== undefined ? parseInt(query.skip) : 0;
     const limit = query.limit ? parseInt(query.limit) : 10;
     return { limit, skip };
 }
@@ -34,30 +34,30 @@ module.exports.getMultipleRandomElements = (arr, num) => {
 }
 
 module.exports.getPageNo = (query) => {
-    const skip = query.skip !== undefined ? parseInt(query.skip): 0;
+    const skip = query.skip !== undefined ? parseInt(query.skip) : 0;
     return skip + 1;
 }
 module.exports.cubeRootOfNegative = (num) => {
     if (num >= 0) {
         return Math.pow(num, 1 / 3);
-      } else {
+    } else {
         const realPart = Math.pow(Math.abs(num), 1 / 3);
         const imaginaryPart = Math.sqrt(3) * Math.sqrt(Math.pow(Math.abs(num), 2 / 3)) / 2;
         return {
-          real: -1 * realPart / 2,
-          imaginary: imaginaryPart
+            real: -1 * realPart / 2,
+            imaginary: imaginaryPart
         };
-      }
+    }
 }
 
 module.exports.isValidObjectId = (id) => {
     if (ObjectId.isValid(id)) {
-		if (String(new ObjectId(id)) === id) {
-			return true;
-		}
-		return false;
-	}
-	return false;
+        if (String(new ObjectId(id)) === id) {
+            return true;
+        }
+        return false;
+    }
+    return false;
 }
 
 module.exports.getPopulationBucket = (populationBucket) => {
@@ -76,7 +76,7 @@ module.exports.getPopulationBucket = (populationBucket) => {
             cat = '<100K';
             break;
     }
-	return cat;
+    return cat;
 }
 /**
  * The function `concatenateUrls` takes an object and an array of keys, and concatenates the values of
@@ -85,7 +85,7 @@ module.exports.getPopulationBucket = (populationBucket) => {
  * property name, and each value represents the corresponding value for that property.
  * @param keys - The `keys` parameter is an object whose value we want to cancatenate.
  */
-const KEYS  = {
+const KEYS = {
     url: 'url',
     link: 'link',
     imageUrl: 'imageUrl',
@@ -93,19 +93,19 @@ const KEYS  = {
     pdfUrl: 'pdfUrl',
     excelUrl: 'excelUrl'
 }
-const concatenateUrls = (obj, params = KEYS,flag = false) => {
+const concatenateUrls = (obj, params = KEYS, flag = false) => {
     try {
-        if(flag){ params = Object.assign(params, KEYS); }
+        if (flag) { params = Object.assign(params, KEYS); }
         for (var key in obj) {
             if (typeof obj[key] === 'object' && obj[key] !== null) {
-               obj[key] = concatenateUrls(obj[key], params);
+                obj[key] = concatenateUrls(obj[key], params);
             } else if (typeof obj[key] === 'string' && obj[params[key]]) {
-                obj[key] = process.env.AZURE_STORAGE_URL + obj[key]
+                if (obj[params[key]] !== "Already Uploaded on Cityfinance") obj[key] = process.env.AZURE_STORAGE_URL + obj[key]
             }
         }
         return obj;
     } catch (error) {
-        throw {message: `concatenateUrls: ${error.message}` }
+        throw { message: `concatenateUrls: ${error.message}` }
     }
 }
 
