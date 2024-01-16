@@ -87,33 +87,35 @@ exports.get = async (req, res) => {
       data[1] = JSON.parse(JSON.stringify(data[1]));
       if (csv === "true") {
         data[1].forEach((element) => {
-          element.stateData.forEach((innerElement) => {
-            if (year_id && year_id != yearsMap[innerElement.year]) {
-              return true;
-            }
-            if (installment && installment != innerElement.installment) {
-              return true;
-            }
-            innerElement.year = yearsMap[innerElement.year];
-            if(design_year === "606aafb14dff55e6c075d3ae"){
-              let key = `${element.state}_${innerElement.GrantType}_${innerElement.installment}`
-                innerElement.submissionDate = gtcFormsMap[key];
-            }
-            innerElement.GrantType = grantTypesMap[innerElement.GrantType];
-            if (innerElement.submissionDate)
-              innerElement.submissionDate = moment(
-                innerElement.submissionDate
-              ).format("L");
-            if (innerElement.releaseDate)
-              innerElement.releaseDate = moment(
-                innerElement.releaseDate
-              ).format("L");
-            if (innerElement.recommendationDate)
-              innerElement.recommendationDate = moment(
-                innerElement.recommendationDate
-              ).format("L");
-            ExcelData.push(innerElement);
-          });
+          if(element.stateData){
+            element.stateData.forEach((innerElement) => {
+              if (year_id && year_id != yearsMap[innerElement.year]) {
+                return true;
+              }
+              if (installment && installment != innerElement.installment) {
+                return true;
+              }
+              innerElement.year = yearsMap[innerElement.year];
+              if(design_year === "606aafb14dff55e6c075d3ae"){
+                let key = `${element.state}_${innerElement.GrantType}_${innerElement.installment}`
+                  innerElement.submissionDate = gtcFormsMap[key];
+              }
+              innerElement.GrantType = grantTypesMap[innerElement.GrantType];
+              if (innerElement.submissionDate)
+                innerElement.submissionDate = moment(
+                  innerElement.submissionDate
+                ).format("L");
+              if (innerElement.releaseDate)
+                innerElement.releaseDate = moment(
+                  innerElement.releaseDate
+                ).format("L");
+              if (innerElement.recommendationDate)
+                innerElement.recommendationDate = moment(
+                  innerElement.recommendationDate
+                ).format("L");
+              ExcelData.push(innerElement);
+            });
+          }
         });
       } else {
         let mill = {
