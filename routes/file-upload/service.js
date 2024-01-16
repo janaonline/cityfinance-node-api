@@ -78,9 +78,10 @@ const downloadFileToDisk = function (url, _cb) {
         let dest = "/tmp/" + fileName;
         var file = fs.createWriteStream(dest);
         var h = http;
-        console.log("url", url)
+        // console.log("url", url)
         let isHttps = url.includes("https");
-        console.log("isHttps", isHttps)
+        // console.log("isHttps", isHttps)
+        url = process.env.AZURE_STORAGE_URL + url;
         if (isHttps) {
             const req = https.get(url, function (response) {
                 response.pipe(file);
