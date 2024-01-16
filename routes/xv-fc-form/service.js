@@ -2049,9 +2049,10 @@ module.exports.getAll = catchAsync(async (req, res) => {
       }
       if (csv) {
         let arr = await XVFCGrantULBData.aggregate(q).exec();
-        for (d of arr) {
+        let index =0;
+        for (let d of arr) {
           d = JSON.parse(JSON.stringify(d));
-          d = concatenateUrls(d);
+          arr[index] = concatenateUrls(d);
           if (
             d.status == "PENDING" &&
             d.isCompleted == false &&
@@ -2115,6 +2116,8 @@ module.exports.getAll = catchAsync(async (req, res) => {
               d.solidWastePlan && d.solidWastePlan.length > 0
                 ? d.solidWastePlan[0]["url"]
                 : "");
+             index++;
+
         }
         let field = csvData();
         if (user.role == "STATE") {
