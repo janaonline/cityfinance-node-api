@@ -331,8 +331,6 @@ async function createCSV(params) {
             await writeSubmitClaimCSV(output, res);
           } else {
             for (let el of mainArrData) {
-              el = JSON.parse(JSON.stringify(el));
-              el = concatenateUrls(el);
               if (!el?.formData) {
                 el['formStatus'] = "Not Started";
               } else {
@@ -344,8 +342,10 @@ async function createCSV(params) {
                 el['formData']['installment_form'] = GTC;
                 el = JSON.parse(JSON.stringify(el));
                 el = concatenateUrls(el);
-                gtcStateFormCSVFormat(el, res)
+                gtcStateFormCSVFormat(el, res);
               } else if (collectionName == 'GrantAllocation') {
+                el = JSON.parse(JSON.stringify(el));
+                el = concatenateUrls(el);
                 await grantAllCsvDownload(el, res);
               }
             }
