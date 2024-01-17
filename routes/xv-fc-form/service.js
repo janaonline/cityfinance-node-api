@@ -4615,6 +4615,7 @@ module.exports.getXVFCStateForm = async (req, res) => {
         },
       ];
       let arr = await XVStateForm.aggregate(q).exec();
+      if(arr.length)  updateURLs(arr);
       let xlsData = await Service.dataFormating(arr, field);
       let filename =
         "state-form" + moment().format("DD-MMM-YY HH:MM:SS") + ".xlsx";
@@ -4838,6 +4839,33 @@ exports.newFormAction = async (req, res) => {
   }
 };
 
+
+/**
+ * The function `updateURLs` takes an array of entities, clones each entity, concatenates the URLs
+ * within each entity, and returns the updated array.
+ */
+function updateURLs(arr) {
+  try{
+    let index = 0;
+    for (let entity of arr) {
+      entity = JSON.parse(JSON.stringify(entity));
+      let urlParams = {
+        grantTransferCertificate: "grantTransferCertificate",
+        serviceLevelBenchmarks: "serviceLevelBenchmarks",
+        utilizationReport: "utilizationReport",
+      };
+      for(let key in urlParams){
+        if(entity[key] === "N/A"){
+          delete urlParams[key]
+        }
+      }
+      arr[index] = concatenateUrls(entity, urlParams);
+      index++;
+    }
+  }catch(e){
+    throw {message: `updateUrls: ${e.message}`}
+  }
+}
 
 async function update28SlbForms(ulbData){
   try{
