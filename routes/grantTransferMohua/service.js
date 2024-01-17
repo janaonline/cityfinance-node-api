@@ -78,7 +78,7 @@ exports.get = async (req, res) => {
         if (yearsMap[element.state]) yearsMap[element.state].push(element);
         else yearsMap[element.state] = [element];
       });
-      data[6].forEach((element)=> {
+      data[6]?.forEach((element)=> {
         let key = `${element.state}_${GRANT_TYPES[element.type]}_${element.installment}`
         gtcFormsMap[key] =  element.stateSubmit ?? ""
 
@@ -86,8 +86,8 @@ exports.get = async (req, res) => {
 
       data[1] = JSON.parse(JSON.stringify(data[1]));
       if (csv === "true") {
-        data[1].forEach((element) => {
-          element.stateData.forEach((innerElement) => {
+        data[1]?.forEach((element) => {
+          element?.stateData?.forEach((innerElement) => {
             if (year_id && year_id != yearsMap[innerElement.year]) {
               return true;
             }
@@ -403,7 +403,7 @@ exports.get = async (req, res) => {
       return Response.OK(res, { ExcelData, latestTime }, "Success");
     }
   } catch (err) {
-    console.error(err.message);
+    console.error(err);
     return Response.DbError(res, err.message, "server error");
   }
 };
