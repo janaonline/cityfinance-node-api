@@ -72,6 +72,7 @@ exports.getGrantDistribution = async (req, res) => {
 };
 
 exports.getTemplate = async (req, res) => {
+  console.log("suresh")
   let { state } = req?.decoded;
   let formData = req.query;
   let amount = "grant amount";
