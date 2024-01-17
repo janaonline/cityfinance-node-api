@@ -63,22 +63,22 @@ exports.get = async (req, res) => {
       ulbSubmittedForm,
       gtcForms
     ]);
-    if (data[1].length > 0) {
+    if (data[1]?.length > 0) {
       let grantTypesMap = {},
         yearsMap = {};
       ulbMap = {};
       gtcFormsMap = {};
-      data[0].forEach((element) => {
+      data[0]?.forEach((element) => {
         grantTypesMap[element._id] = element.name;
       });
-      data[2].forEach((element) => {
+      data[2]?.forEach((element) => {
         yearsMap[element._id] = element.year;
       });
-      data[4].forEach((element) => {
+      data[4]?.forEach((element) => {
         if (yearsMap[element.state]) yearsMap[element.state].push(element);
         else yearsMap[element.state] = [element];
       });
-      data[6].forEach((element)=> {
+      data[6]?.forEach((element)=> {
         let key = `${element.state}_${GRANT_TYPES[element.type]}_${element.installment}`
         gtcFormsMap[key] =  element.stateSubmit ?? ""
 
@@ -86,9 +86,9 @@ exports.get = async (req, res) => {
 
       data[1] = JSON.parse(JSON.stringify(data[1]));
       if (csv === "true") {
-        data[1].forEach((element) => {
+        data[1]?.forEach((element) => {
           if(element.stateData){
-            element.stateData.forEach((innerElement) => {
+            element?.stateData?.forEach((innerElement) => {
               if (year_id && year_id != yearsMap[innerElement.year]) {
                 return true;
               }
@@ -405,7 +405,7 @@ exports.get = async (req, res) => {
       return Response.OK(res, { ExcelData, latestTime }, "Success");
     }
   } catch (err) {
-    console.error(err.message);
+    console.error(err);
     return Response.DbError(res, err.message, "server error");
   }
 };
