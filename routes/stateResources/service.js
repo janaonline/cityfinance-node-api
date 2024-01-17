@@ -36,7 +36,7 @@ const handleDatabaseUpload = async (req, res, next) => {
     if (uploadType != 'database') return next();
 
     try {
-        const remoteUrl = req.body.files?.[0].url;
+        const remoteUrl =  req.body.files?.[0].url;
 
         workbook = await loadExcelByUrl(remoteUrl);
         worksheet = workbook.getWorksheet(1);
