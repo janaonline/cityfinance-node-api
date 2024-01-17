@@ -79,9 +79,9 @@ const downloadFileToDisk = function (url, _cb) {
         var file = fs.createWriteStream(dest);
         var h = http;
         // console.log("url", url)
+        url = process.env.AZURE_STORAGE_URL + url;
         let isHttps = url.includes("https");
         // console.log("isHttps", isHttps)
-        url = process.env.AZURE_STORAGE_URL + url;
         if (isHttps) {
             const req = https.get(url, function (response) {
                 response.pipe(file);
@@ -102,7 +102,7 @@ const downloadFileToDisk = function (url, _cb) {
             });
         }
     } catch (e) {
-        console.log(e.message)
+        throw {message: `downloadFileToDisk: ${e.message}`} 
     }
 
 
