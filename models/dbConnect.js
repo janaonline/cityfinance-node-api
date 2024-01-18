@@ -13,6 +13,9 @@ if(process.env.CONNECTION_STRING){
             process.exit(0);
         }else{
             console.log(process.env.ENV + " Database connected");
+            if (process.env.ENV == "production") { //disable logs only for production
+              console.log = function () { };
+          }
         }
     });
 }else{
