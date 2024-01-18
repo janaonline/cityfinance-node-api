@@ -18,9 +18,9 @@ const {
 } = require("../../service/updateStateMasterForm");
 const {saveStatusAndHistory} = require("../CommonFormSubmission/service")
 let baseUrls = {
-  "staging":"https://staging.cityfinance.in",
-  "demo":"https://democityfinance.dhwaniris.in",
-  "prod":"https://cityfinance.in"
+  "staging":`https://${process.env.STAGING_HOST}`,
+  "demo":`https://${process.env.DEMO_HOST_FRONTEND}`,
+  "prod":`https://${process.env.PROD_HOST}`
 }
 
 const { YEAR_CONSTANTS, MASTER_STATUS,MASTER_FORM_STATUS,MASTER_STATUS_ID,FORMIDs } = require('../../util/FormNames')
@@ -72,6 +72,7 @@ exports.getGrantDistribution = async (req, res) => {
 };
 
 exports.getTemplate = async (req, res) => {
+  console.log("suresh")
   let { state } = req?.decoded;
   let formData = req.query;
   let amount = "grant amount";

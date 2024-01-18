@@ -1,11 +1,11 @@
 module.exports.FrontendHeaderHost ={
-    Demo: "democityfinance.dhwaniris.in",
-    Staging: "staging.cityfinance.in",
-    Prod: "cityfinance.in",
+    Demo: `${process.env.DEMO_HOST_FRONTEND}`,
+    Staging: `${process.env.STAGING_HOST}`,
+    Prod: `${process.env.PROD_HOST}`,
 }
 
 module.exports.BackendHeaderHost ={
-    Demo: "democityfinanceapi.dhwaniris.in",
-    Staging: "staging.cityfinance.in",
-    Prod: "cityfinance.in",
+    Demo: `${process.env.DEMO_HOST_BACKEND}`,
+    Staging: `${process.env.STAGING_HOST}`,
+    Prod: `${process.env.PROD_HOST}`,
 }
