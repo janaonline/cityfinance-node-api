@@ -1176,7 +1176,7 @@ let getExcel = async (req, res, data) => {
       value.sno = i + 1;
       worksheet.addRow(value);
     });
-    worksheet.addRow({sno: "Can't find what you are looking for? Reach out to us at contact@cityfinance.in"});
+    worksheet.addRow({sno: `Can't find what you are looking for? Reach out to us at contact@${process.env.PROD_HOST}`});
     res.setHeader(
       "Content-Type",
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"

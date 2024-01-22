@@ -83,7 +83,7 @@ while(skip<=target){
       for(let key in el) {
         if(key != '_id' && key != 'ulbName' && key != 'ulbcode' && el[key] ){
           let url = el[key];
-        // let url = 'https://cityfinance.in/objects/31e1883d-7eef-4b2f-9e29-18d598056a5d.pdf'
+        // let url = `https://${process.env.PROD_HOST}/objects/31e1883d-7eef-4b2f-9e29-18d598056a5d.pdf`
           try{
             totalCounter++;
             console.log(totalCounter)
