@@ -94,18 +94,23 @@ function Helper() {
         return !entity ? entity : entity.replace(/(\n|,)/gm, " ");
     }
     this.formatDate = (date) => {
+      try {
         if (date) {
-            // let dateF = new Date()
-            return [
-                padTo2Digits(date.getDate()),
-                padTo2Digits(date.getMonth() + 1),
-                date.getFullYear(),
-            ].join('/');
-            // return [dateF.getDate(), (dateF.getMonth() + 1), dateF.getFullYear()].join('/');
+          date = new Date(date);
+          // let dateF = new Date()
+          return [
+            padTo2Digits(date.getDate()),
+            padTo2Digits(date.getMonth() + 1),
+            date.getFullYear(),
+          ].join("/");
+          // return [dateF.getDate(), (dateF.getMonth() + 1), dateF.getFullYear()].join('/');
         } else {
-            return ""
+          return "";
         }
-    }
+      } catch (error) {
+        throw Error({ message: `formatDate:: ${err.message}` });
+      }
+    };
     this.isValidDate = (d) => {
         return d instanceof Date && !isNaN(d);
     }
