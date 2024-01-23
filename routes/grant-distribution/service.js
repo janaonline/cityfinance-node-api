@@ -400,7 +400,7 @@ async function validate(data, formData) {
       if (data[index].Errors) data[index].Errors += "Name Not Valid,";
       else data[index].Errors = "Name Not Valid,";
     }
-    if (isNaN(data[index][amount]) || data[index][amount] === "") {
+    if (!Number(data[index][amount]) || data[index][amount] === "") {
       errorFlag = true;
       if (data[index].Errors) data[index].Errors += "Amount Not valid,";
       else data[index].Errors = "Amount Not valid,";
