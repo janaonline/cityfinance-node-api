@@ -528,13 +528,17 @@ module.exports.topRankedUlbs = async (req, res) => {
 		}
 
 		const sortArr = { overAllRank: 'overAll', resourceMobilizationRank: 'resourceMobilization', expenditurePerformanceRank: 'expenditurePerformance', fiscalGovernanceRank: 'fiscalGovernance' }
-		let sort = { [`overAll.rank`]: 1 };
+		let sort = {};
 		let by = 'overAll';
 		sortBy = category || sortBy;
 		if (sortBy && sortArr[sortBy]) {
 			by = sortArr[sortBy];
-			sort = { [`${by}.rank`]: order };
+			sort[`${by}.rank`] = order;
+		} else {
+			sort[`overAll.rank`]= 1;
 		}
+
+		sort['populationBucket'] = 1;
 
 		// order = order === 'desc' ? -1 : 1;
 		const ulbRes = await ScoringFiscalRanking.find(condition)
