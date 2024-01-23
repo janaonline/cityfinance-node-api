@@ -304,7 +304,7 @@ function getUlbData(ulbs, query) {
 }
 
 //<<-- ULB details - Assessment parameter score -->>
-function getTableHeader(type) {
+function getTableHeader(type,ulb) {
 	let score = '300';
 	if (type === 'resourceMobilization') {
 		score = 600;
@@ -342,7 +342,7 @@ function getTableHeader(type) {
 			'key': 'ulbScore',
 		},
 	];
-	return { columns, 'lastRow': ['', '', '', '', '', 'Total', '$sum'] };
+	return { columns, 'lastRow': ['', '', '', '', '', 'Total', ulb[type].score] };
 }
 async function getMaxMinScore(populationBucket, indicator, order) {
 	// mongoose.set('debug',true);
@@ -440,6 +440,14 @@ async function getTableData(ulb, type) {
 			'indicator': indicator.title,
 			'unit': indicator.units,
 			'ulbScore': (ulb[indicator.key].percentage).toFixed(2),
+			'highPerformance': '-',
+			'highPerformanceConfig': {
+				title: '-'
+			},
+			'lowPerformance': '-',
+			'lowPerformanceConfig': {
+				title: '-'
+			},
 		};
 		if(['aaPushishedMarks_10b','gisBasedPTaxMarks_11a', 'accSoftwareMarks_11b'].includes(indicator.key)) {
 			ulbPerformance = ulb[indicator.key].score ? 'Yes': 'No';
@@ -467,7 +475,7 @@ async function getTableData(ulb, type) {
 		data.push(ele);
 	}
 	// console.log('data',data);
-	const header = getTableHeader(type);
+	const header = getTableHeader(type, ulb);
 	return { ...header, data };
 }
 
@@ -580,14 +588,20 @@ module.exports.autoSuggestUlbs = async (req, res) => {
 	try {
 		// moongose.set('debug', true);
 		const q = req.query.q;
+		const limit = req.query.limit ? parseInt(req.query.limit) : 5;
+		const populationBucket = req.query?.populationBucket;
 		const condition = {
-			isActive: true,
-			name: new RegExp(`.*${q}.*`, 'i'),
-			// currentFormStatus: { $in: [11] }
-		};
+            isActive: true,
+            name: new RegExp(`.*${q}.*`, 'i'),
+            ...(populationBucket && {
+                populationBucket,
+            }),
+
+            // currentFormStatus: { $in: [11] }
+        };
 		let ulbs = await ScoringFiscalRanking.find(condition, { name: 1, ulb: 1, populationBucket: 1, censusCode: 1, sbCode: 1, _id: 0 })
 			.sort({ name: 1 })
-			.limit(5)
+			.limit(limit)
 			.lean();
 
 		return res.status(200).json({
