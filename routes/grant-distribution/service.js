@@ -20,7 +20,7 @@ const {saveStatusAndHistory} = require("../CommonFormSubmission/service")
 let baseUrls = {
   "staging":"https://staging.cityfinance.in",
   "demo":"https://democityfinance.dhwaniris.in",
-  "prod":"https://cityfinance.in"
+  "production":"https://cityfinance.in"
 }
 
 const { YEAR_CONSTANTS, MASTER_STATUS,MASTER_FORM_STATUS,MASTER_STATUS_ID,FORMIDs } = require('../../util/FormNames')
