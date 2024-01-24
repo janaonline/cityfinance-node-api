@@ -213,8 +213,8 @@ module.exports.get = async (req, res) => {
     const Query15FC = { $or: [{ type: "15thFC" }, { multi: { $in: ["15thFC"] } }] };
     const ulbFormStatus = await MASTERSTATUS.find(Query15FC, { statusId: 1, status: 1 }).lean();
     let stateFormStatus = [];
-    if(ulbFormStatus.length){
-      stateFormStatus = ulbFormStatus.filter(el=>{
+    if (ulbFormStatus.length) {
+      stateFormStatus = ulbFormStatus.filter(el => {
         return ![MASTER_FORM_STATUS['RETURNED_BY_STATE'], MASTER_FORM_STATUS['UNDER_REVIEW_BY_STATE']].includes(el.statusId)
       })
     }
@@ -883,19 +883,19 @@ const setCurrentStatus = (req, data, approvedUlbs, collectionName, loggedInUserR
       let params = { status: el.formData.currentFormStatus, userRole: loggedInUserRole }
       el['cantakeAction'] = req.decoded.role === "ADMIN" ? false : canTakeActionOrViewOnlyMasterForm(params)
       if (collectionName === CollectionNames.dur || collectionName === CollectionNames['28SLB']) {
-      //   el['cantakeAction'] = req.decoded.role === "ADMIN" ? false : canTakeActionOrViewOnlyMasterForm(params);
-      //   if (!(approvedUlbs.find(ulb => ulb.toString() === el.ulbId.toString())) && loggedInUserRole === "MoHUA") {
-      //     el['cantakeAction'] = false;
-      //     el['formData']['currentFormStatus'] === MASTER_STATUS['Under Review By MoHUA'] ? el['info'] = sequentialReview : ""
-      //   }
+        //   el['cantakeAction'] = req.decoded.role === "ADMIN" ? false : canTakeActionOrViewOnlyMasterForm(params);
+        //   if (!(approvedUlbs.find(ulb => ulb.toString() === el.ulbId.toString())) && loggedInUserRole === "MoHUA") {
+        //     el['cantakeAction'] = false;
+        //     el['formData']['currentFormStatus'] === MASTER_STATUS['Under Review By MoHUA'] ? el['info'] = sequentialReview : ""
+        //   }
         el['prevYearStatus'] = approvedUlbs[el._id] ?? STATUS_LIST['Not_Started']
-        const previousStatus =  el['prevYearStatus']?.toUpperCase().split(' ').join('_')
+        const previousStatus = el['prevYearStatus']?.toUpperCase().split(' ').join('_')
         el['prevYearStatusId'] = PREV_MASTER_FORM_STATUS[previousStatus] ?? PREV_MASTER_FORM_STATUS['NOT_STARTED']
-      } 
+      }
       // else {
-        // let params = { status: el.formData.currentFormStatus, userRole: loggedInUserRole }
-        // el['cantakeAction'] = req.decoded.role === "ADMIN" ? false : canTakeActionOrViewOnlyMasterForm(params);
-        // el['formStatus'] = MASTER_STATUS_ID[el.formData.currentFormStatus]
+      // let params = { status: el.formData.currentFormStatus, userRole: loggedInUserRole }
+      // el['cantakeAction'] = req.decoded.role === "ADMIN" ? false : canTakeActionOrViewOnlyMasterForm(params);
+      // el['formStatus'] = MASTER_STATUS_ID[el.formData.currentFormStatus]
       // }
     }
   })
@@ -974,7 +974,7 @@ function getUlbsApprovedByMoHUA(forms) {
     let ulbArray = {};
     for (let form of forms) {
       // if (form.actionTakenByRole === "MoHUA" && !form.isDraft && form.status === "APPROVED") {
-        ulbArray[form.ulb] = calculateStatus(form.status,form.actionTakenByRole, form.isDraft,"ULB");
+      ulbArray[form.ulb] = calculateStatus(form.status, form.actionTakenByRole, form.isDraft, "ULB");
       // }
     }
     return ulbArray;
@@ -2831,6 +2831,11 @@ const getQuestionsMapping = (questions, counter = 0) => {
 
 module.exports.downloadPTOExcel = async (req, res) => {
   try {
+    return res.status(400).json({
+      success: false,
+      message: "Forbidden"
+    })
+    
     const { crrWorkbook, filename, tempFilePath, year } = await excelPTOMapping(req.query)
 
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
@@ -2890,12 +2895,12 @@ const excelPTOMapping = async (query) => {
       workbook.calcProperties.fullCalcOnLoad = false;
       const crrWorkbook = await workbook.xlsx.readFile(`${tempFilePath}/${filename}`)
       const crrWorksheet = crrWorkbook.getWorksheet("Sheet 1")
-      const states = await State.find({accessToXVFC:true}).lean();
+      const states = await State.find({ accessToXVFC: true }).lean();
       let STATE_DATA = {}
-      states.forEach(el=> { STATE_DATA[el?._id] = el?.name})
+      states.forEach(el => { STATE_DATA[el?._id] = el?.name })
       const cursor = await Ulb.aggregate([
-                {
-          $match: { [accessYear]: true},
+        {
+          $match: { [accessYear]: true },
         },
         // {
         //   $lookup: {
@@ -3071,24 +3076,21 @@ const excelPTOMapping = async (query) => {
             if (
               result?.year &&
               questionColMapping[
-                `${result.type}-${
-                  YEAR_CONSTANTS_IDS[result?.year].split("-")[1]
-                }`
+              `${result.type}-${YEAR_CONSTANTS_IDS[result?.year].split("-")[1]
+              }`
               ]
             ) {
               crrWorksheet.getCell(
-                `${
-                  questionColMapping[
-                    `${result.type}-${
-                      YEAR_CONSTANTS_IDS[result?.year].split("-")[1]
-                    }`
-                  ]
+                `${questionColMapping[
+                `${result.type}-${YEAR_CONSTANTS_IDS[result?.year].split("-")[1]
+                }`
+                ]
                 }${startRowIndex + counter}`
               ).value = result.file
-                ? result.file.url
-                : result.date
-                ? convertToKolkataDate(result.date)
-                : result.value;
+                  ? result.file.url
+                  : result.date
+                    ? convertToKolkataDate(result.date)
+                    : result.value;
             }
             if (result.child?.length) {
               const childCounter = {};
@@ -3096,8 +3098,8 @@ const excelPTOMapping = async (query) => {
                 const child =
                   el?.propertymapperchilddata?.length > 0
                     ? el?.propertymapperchilddata.find(
-                        (e) => e._id.toString() === childId.toString()
-                      )
+                      (e) => e._id.toString() === childId.toString()
+                    )
                     : null;
                 if (child) {
                   if (!childCounter[child.type]) childCounter[child.type] = 0;
@@ -3112,14 +3114,13 @@ const excelPTOMapping = async (query) => {
                       : 0;
                     if (
                       questionColMapping[
-                        `${child.type}-textValue-${textValueCounter}`
+                      `${child.type}-textValue-${textValueCounter}`
                       ]
                     )
                       crrWorksheet.getCell(
-                        `${
-                          questionColMapping[
-                            `${child.type}-textValue-${textValueCounter}`
-                          ]
+                        `${questionColMapping[
+                        `${child.type}-textValue-${textValueCounter}`
+                        ]
                         }${startRowIndex + counter}`
                       ).value = child.textValue;
                   }
@@ -3128,18 +3129,15 @@ const excelPTOMapping = async (query) => {
                     userCharges.includes(child.type) &&
                     child?.year &&
                     questionColMapping[
-                      `${child.type}-${child.textValue.replace(/ /g, "")}-${
-                        YEAR_CONSTANTS_IDS[child?.year].split("-")[1]
-                      }`
+                    `${child.type}-${child.textValue.replace(/ /g, "")}-${YEAR_CONSTANTS_IDS[child?.year].split("-")[1]
+                    }`
                     ]
                   ) {
                     crrWorksheet.getCell(
-                      `${
-                        questionColMapping[
-                          `${child.type}-${child.textValue.replace(/ /g, "")}-${
-                            YEAR_CONSTANTS_IDS[child?.year].split("-")[1]
-                          }`
-                        ]
+                      `${questionColMapping[
+                      `${child.type}-${child.textValue.replace(/ /g, "")}-${YEAR_CONSTANTS_IDS[child?.year].split("-")[1]
+                      }`
+                      ]
                       }${startRowIndex + counter}`
                     ).value = child.value;
                   }
@@ -3147,18 +3145,15 @@ const excelPTOMapping = async (query) => {
                   if (
                     child?.year &&
                     questionColMapping[
-                      `${child.type}-${
-                        YEAR_CONSTANTS_IDS[child?.year].split("-")[1]
-                      }-${child.replicaNumber - 1}`
+                    `${child.type}-${YEAR_CONSTANTS_IDS[child?.year].split("-")[1]
+                    }-${child.replicaNumber - 1}`
                     ]
                   ) {
                     crrWorksheet.getCell(
-                      `${
-                        questionColMapping[
-                          `${child.type}-${
-                            YEAR_CONSTANTS_IDS[child?.year].split("-")[1]
-                          }-${child.replicaNumber - 1}`
-                        ]
+                      `${questionColMapping[
+                      `${child.type}-${YEAR_CONSTANTS_IDS[child?.year].split("-")[1]
+                      }-${child.replicaNumber - 1}`
+                      ]
                       }${startRowIndex + counter}`
                     ).value = child.value;
                   }
