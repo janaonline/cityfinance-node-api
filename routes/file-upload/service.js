@@ -78,9 +78,8 @@ const downloadFileToDisk = function (url, _cb) {
         let dest = "/tmp/" + fileName;
         var file = fs.createWriteStream(dest);
         var h = http;
-        console.log("url", url)
+        url = process.env.AZURE_STORAGE_URL + url
         let isHttps = url.includes("https");
-        console.log("isHttps", isHttps)
         if (isHttps) {
             const req = https.get(url, function (response) {
                 response.pipe(file);
@@ -91,6 +90,7 @@ const downloadFileToDisk = function (url, _cb) {
                 });
             });
         } else {
+            console.log("url", url)
             const req = http.get(url, function (response) {
                 response.pipe(file);
                 file.on('finish', function () {
@@ -101,10 +101,9 @@ const downloadFileToDisk = function (url, _cb) {
             });
         }
     } catch (e) {
+        console.log("e.message", e)
         console.log(e.message)
     }
-
-
 }
 module.exports = {
     generateSignedUrl: generateSignedUrl,
