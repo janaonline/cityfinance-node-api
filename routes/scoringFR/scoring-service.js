@@ -190,20 +190,20 @@ function cagrInTotalBudget(fsData, fsMapper2018_19, fsMapper2021_22) {
 		// Total - (waterTax + sanitationTax)
 		const budget2021_22 = totalRecActual_2021_22 - (waterTax2021_22 + sanitationTax2021_22);
 		const budget2018_19 = totalRecActual_2018_19 - (waterTax_2018_19 + sanitationTax_2018_19);
-		// Handaling 0/ 0
-		const budget = budget2021_22 === 0 || budget2018_19 === 0 ? 0 : budget2021_22 / budget2018_19;
-		// Growth
-		const time = 3;
+		// Handaling #Div/0
+		const budget = budget2018_19 === 0 ? 0 : budget2021_22 / budget2018_19;
+
 		let CAGRInTotalBudget = 0;
-		// if (budget !== 0) {
+		// If denominator = 0; CAGR = 0 
+		if (budget2018_19 === 0) {
+			CAGRInTotalBudget = 0;	
+		}
+		// If numerator = 0; CAGR = -1
+		else {
 			const pow1 = Math.cbrt(budget);
 			CAGRInTotalBudget = (pow1 - 1) * 100;
-			// CAGRInTotalBudget = (Math.pow(budget, 1 / time) - 1) * 100;
-		// } else {
-		// 	CAGRInTotalBudget = 0;	
-		// }
-		// const CAGRInTotalBudget = budget <= 0 ? 0 : (Math.pow(budget, 1 / time) - 1) * 100;
-
+		}
+		
 		return parseFloat(CAGRInTotalBudget.toFixed(2)); //15.73%
 		// return parseFloat(Math.ceil(CAGRInTotalBudget.toFixed(2))); //15.73% >> 16%
 	} catch (e) {
@@ -232,18 +232,19 @@ function cagrInOwnRevenue(fsData, fsMapper2018_19, fsMapper2021_22) {
 		// Total - (watersupply + sanitaion)
 		const ownRev2021_22 = totalOwnRevenue_2021_22 - (waterTax_2021_22 + sanitationTax_2021_22);
 		const ownRev2018_19 = totalOwnRevenue_2018_19 - (waterTax_2018_19 + sanitationTax_2018_19);
-		// Handaling 0/ 0
-		const ownRev = ownRev2021_22 === 0 || ownRev2018_19 === 0 ? 0 : ownRev2021_22 / ownRev2018_19;
-		// Growth.
-		const time = 3;
-		// const cagrInOwnRevenue = ownRev <= 0 ? 0 : (Math.pow(ownRev, 1 / time) - 1) * 100;
+		
+		// Handaling #Div/0
+		const ownRev = ownRev2018_19 === 0 ? 0 : ownRev2021_22 / ownRev2018_19;
+		
 		let cagrInOwnRevenue = 0;
-		// if (ownRev !== 0) {
+		// If denominator = 0; CAGR = 0 
+		if (ownRev2018_19 === 0) {
+			cagrInOwnRevenue = 0;
+		// If numerator = 0; CAGR = -1
+		} else {
 			const pow1 = Math.cbrt(ownRev);
 			cagrInOwnRevenue = (pow1 - 1) * 100;
-		// } else {
-		// 	cagrInOwnRevenue = 0;
-		// }
+		}
 
 		return parseFloat(cagrInOwnRevenue.toFixed(2));
 	} catch (e) {
@@ -257,21 +258,18 @@ function cagrInPTax(fsMapper2018_19, fsMapper2021_22) {
 		// Ptax 21-22 / Ptax 18-19
 		const pTax2021_22 = getNumberValue(fsMapper2021_22, 'propertyTax');
 		const pTax2018_19 = getNumberValue(fsMapper2018_19, 'propertyTax');
-		// Handling 0/ 0onst
-		const pTax = pTax2021_22 === 0 || pTax2018_19 === 0 ? 0 : pTax2021_22 / pTax2018_19;
-		// Growth for 3 years
-		const time = 3;
-		// TODO:check 0 condtion with navinder
-		// const cagrInPTax = pTax <= 0 ? 0 : (Math.pow(pTax, 1 / time) - 1) * 100;
-		// const cagrInPTax = (Math.pow(pTax, 1 / time) - 1) * 100;
+		
+		// Handaling #Div/0
+		const pTax = pTax2018_19 === 0 ? 0 : pTax2021_22 / pTax2018_19;
 		
 		let cagrInPTax = 0;
-		// if (pTax !== 0) {
+		if (pTax2018_19 === 0) {
+			cagrInPTax = 0;
+		} else {
 			const pow1 = Math.cbrt(pTax);
 			cagrInPTax = (pow1 - 1) * 100;
-		// } else {
-		// 	cagrInPTax = 0;
-		// }
+		}
+
 		return parseFloat(cagrInPTax.toFixed(2));
 	} catch (e) {
 		return 0;
@@ -329,21 +327,17 @@ function cagrInCapEx(fsData, fsMapper2018_19, fsMapper2021_22) {
 		// Total capex - (watersupply + sanitation)
 		const capEx2021_22 = getNumberValue(fsMapper2021_22, 'CaptlExp') - (totalRcptWaterSupply_2021_22 + totalRcptSanitation_2021_22);
 		const capEx2018_19 = getNumberValue(fsMapper2018_19, 'CaptlExp') - (totalRcptWaterSupply_2018_19 + totalRcptSanitation_2018_19);
-		// Handling 0/ 0
-		const totalCapEx = capEx2021_22 === 0 || capEx2018_19 === 0 ? 0 : capEx2021_22 / capEx2018_19;
-		// Growth
-		const time = 3;
-		// TODO: check 0 cond with navinder
-		// const cagrInCapEx = totalCapEx <= 0 ? 0 : (Math.pow(totalCapEx, (1 / time)) - 1) * 100;
-		// const cagrInCapEx = (Math.pow(totalCapEx, (1 / time)) - 1) * 100;
 		
+		// Handling #Div/0
+		const totalCapEx = capEx2018_19 === 0 ? 0 : capEx2021_22 / capEx2018_19;
+
 		let cagrInCapEx = 0;
-		// if (totalCapEx !== 0) {
+		if (capEx2018_19 === 0) {
+			cagrInCapEx = 0;
+		} else {
 			const pow1 = Math.cbrt(totalCapEx);
 			cagrInCapEx = (pow1 - 1) * 100;
-		// } else {
-		// 	cagrInCapEx = 0;
-		// }
+		}
 
 		return parseFloat(cagrInCapEx.toFixed(2));
 	} catch (e) {
