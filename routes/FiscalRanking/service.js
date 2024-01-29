@@ -4157,6 +4157,12 @@ module.exports.createForm = catchAsync(async (req, res) => {
   await session.startTransaction();
   try {
     let { ulbId, formId, actions, design_year, isDraft, currentFormStatus, freezeDate, isAutoApproved } = req.body;
+    const form = await FiscalRanking.findOne({ design_year, ulb: ulbId});
+    if(![
+      MASTER_STATUS['Not Started'],
+      MASTER_STATUS['In Progress'],
+      MASTER_STATUS['Returned by PMU']
+    ].includes(form?.currentFormStatus)) return res.status(400).json({ message: 'Unauthorized entry'});
     let { role, _id: userId } = req.decoded;
     if (statusTracker.VIP === currentFormStatus) {
       const actionTaken = await checkIfActionTaken(actions)
