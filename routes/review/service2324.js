@@ -33,6 +33,7 @@ const Year = require('../../models/Year');
 const { state } = require('../../util/userTypes');
 const { dashboard } = require('../../routes/FormDashboard/service');
 const { dateFormatter, convertToKolkataDate } = require('../../util/dateformatter');
+const { concatenateUrls } = require('../../service/common');
 
 const isMillionPlus = async (data) => {
   try {
@@ -263,6 +264,8 @@ async function createCSV(params) {
         indiLineList = await indicatorLineItemList();
       }
       data.on("data", async (el) => {
+        el = JSON.parse(JSON.stringify(el));
+        el = concatenateUrls(el);
         el.UA = el?.UA === "null" ? "NA" : el?.UA;
         el.isUA = el?.UA === "NA" ? "No" : "Yes";
         el.censusCode = el.censusCode || "NA";
@@ -328,6 +331,8 @@ async function createCSV(params) {
             await writeSubmitClaimCSV(output, res);
           } else {
             for (let el of mainArrData) {
+              el = JSON.parse(JSON.stringify(el));
+              el = concatenateUrls(el);
               if (!el?.formData) {
                 el['formStatus'] = "Not Started";
               } else {
@@ -337,6 +342,8 @@ async function createCSV(params) {
                 let gtcData = await gtcInstallmentForms([...new Set(mainArrData.map(e => e._id))]);
                 let GTC = gtcData?.length ? gtcData?.filter(e => (e.state.toString() == el._id.toString() && e.gtcForm.toString() == el?.formData?._id?.toString() && e.installment == el.formData.installment)) : []
                 el['formData']['installment_form'] = GTC;
+                el = JSON.parse(JSON.stringify(el));
+                el = concatenateUrls(el);
                 gtcStateFormCSVFormat(el, res)
               } else if (collectionName == 'GrantAllocation') {
                 await grantAllCsvDownload(el, res);
@@ -393,6 +400,8 @@ async function grantAllCsvDownload(el, res) {
 async function writeSubmitClaimCSV(output, res) {
   try {
     Object.entries(output).forEach(([key, items], index) => {
+      items = JSON.parse(JSON.stringify(items));
+      items = concatenateUrls(items);
       let stateObj = {};
       if (stateArrData.length == 1) {
         stateObj = stateArrData[0]
@@ -629,7 +638,9 @@ const actionPlanXlsDownload = async (data, res, role) => {
 
     let counter = { projectExecute: 2, sourceFund: 2, yearOutlay: 2 } // counter
     if (data?.length) {
-      for (const pf of data) {
+      for (let pf of data) {
+        pf = JSON.parse(JSON.stringify(pf));
+        pf = concatenateUrls(pf);
         if (!pf?.formData) {
           pf['formStatus'] = "Not Started";
         } else {
@@ -726,7 +737,9 @@ const waterSenitationXlsDownload = async (data, res, role) => {
 
     let counter = { waterBodies: 2, serviceLevelIndicators: 2, reuseWater: 2 } // counter
     if (data?.length) {
-      for (const pf of data) {
+      for (let pf of data) {
+        pf = JSON.parse(JSON.stringify(pf));
+        pf = concatenateUrls(pf);
         if (!pf?.formData) {
           pf['formStatus'] = "Not Started";
         } else {
@@ -2895,12 +2908,17 @@ const excelPTOMapping = async (query) => {
       workbook.calcProperties.fullCalcOnLoad = false;
       const crrWorkbook = await workbook.xlsx.readFile(`${tempFilePath}/${filename}`)
       const crrWorksheet = crrWorkbook.getWorksheet("Sheet 1")
-      const states = await State.find({ accessToXVFC: true }).lean();
-      let STATE_DATA = {}
-      states.forEach(el => { STATE_DATA[el?._id] = el?.name })
+
+      const states = await State.find({accessToXVFC:true}).lean();
+      let STATE_DATA = {}, ALLOWED_STATES = [];
+      states.forEach(el=> { STATE_DATA[el?._id] = el?.name});
+      states.forEach(el=> ALLOWED_STATES.push(el._id))
       const cursor = await Ulb.aggregate([
         {
-          $match: { [accessYear]: true },
+          $match: {
+            [accessYear]: true,
+            state: { $in: ALLOWED_STATES },
+          },
         },
         // {
         //   $lookup: {
@@ -2968,10 +2986,7 @@ const excelPTOMapping = async (query) => {
                     input: "$currentstatuse",
                     as: "cs",
                     cond: {
-                      $and: [
-                        { $eq: ["$$cs.actionTakenByRole", "STATE"] },
-                        { $eq: ["$$cs.shortKey", "form_level"] },
-                      ],
+                      $eq: ["$$cs.actionTakenByRole", "STATE"],
                     },
                   },
                 },
@@ -2985,10 +3000,7 @@ const excelPTOMapping = async (query) => {
                     input: "$currentstatuse",
                     as: "cs",
                     cond: {
-                      $and: [
-                        { $eq: ["$$cs.actionTakenByRole", "MoHUA"] },
-                        { $eq: ["$$cs.shortKey", "form_level"] },
-                      ],
+                      $eq: ["$$cs.actionTakenByRole", "MoHUA"],
                     },
                   },
                 },
@@ -3037,6 +3049,12 @@ const excelPTOMapping = async (query) => {
             as: "propertymapperchilddata",
           },
         },
+        {
+            $project:{
+              currentstatuse:0,
+              propertytaxop:0
+          }
+        }
       ])
         .allowDiskUse(true)
         .cursor({ batchSize: 50 })
@@ -3044,6 +3062,8 @@ const excelPTOMapping = async (query) => {
         .exec();
 
       cursor.on("data", (el) => {
+        el = JSON.parse(JSON.stringify(el));
+        el = concatenateUrls(el);
         if (STATE_DATA[el?.state?.toString()]) {
           // Filters the current status of a form element and removes certain data fields based on the status.
           currentStatusFilter(el);
@@ -3163,8 +3183,10 @@ const excelPTOMapping = async (query) => {
             }
           }
           counter++;
-        }
-      });
+        
+      }
+    }
+      );
       cursor.on("end", () => {
         resolve({ crrWorkbook, filename, tempFilePath })
       });

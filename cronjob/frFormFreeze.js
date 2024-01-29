@@ -19,11 +19,11 @@ module.exports.frFormFreeze = async () => {
         let url = "http://localhost:8080/api/v1/";
 
         if ((process.env.ENV == ENV['prod'])) {
-            url = "https://cityfinance.in/api/v1/";
+            url = `https://${process.env.PROD_HOST}/api/v1/`;
         } else if ((process.env.ENV == ENV['demo'])) {
-            url = "https://democityfinanceapi.dhwaniris.in/api/v1/";
+            url = `https://${process.env.DEMO_HOST_BACKEND}/api/v1/`;
         } else if ((process.env.ENV == ENV['stg'])) {
-            url = "https://staging.cityfinance.in/api/v1/";
+            url = `https://${process.env.STAGING_HOST}/api/v1/`;
         }
 
         let viewEndPoint = "fiscal-ranking/view";

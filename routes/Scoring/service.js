@@ -25,7 +25,7 @@ const { YEAR_CONSTANTS } = require('../../util/FormNames');
 //                     "rejectReason" : "", 
 //                     "_id" : ("600946919c4fb07ddb508adc"), 
 //                     "name" : "GFC_Telangana_Parakala.pdf", 
-//                     "url" : "https://cityfinance.in/objects/cbe9d33c-7baf-4e71-8f14-430e2aed901e.pdf"
+//                     "url" : `https://${process.env.PROD_HOST}/objects/cbe9d33c-7baf-4e71-8f14-430e2aed901e.pdf`
 //                 }
 //             ], 
 //             "waterSupplyCoverage" : [
@@ -34,7 +34,7 @@ const { YEAR_CONSTANTS } = require('../../util/FormNames');
 //                     "rejectReason" : "", 
 //                     "_id" : ("600946919c4fb07ddb508add"), 
 //                     "name" : "CTPT_Telangana_Parakala.pdf", 
-//                     "url" : "https://cityfinance.in/objects/4df4b123-0997-4707-bfc5-07c7d5753b1e.pdf"
+//                     "url" : `https://${process.env.PROD_HOST}/objects/4df4b123-0997-4707-bfc5-07c7d5753b1e.pdf`
 //                 }
 //             ]
 //         }
