@@ -2621,7 +2621,7 @@ const annualAccountSetCurrentStatus = (data, currentFormStatus) => {
   if (currentStatusList?.length) {
     for (let key of mainArr) {
       let subObData = data[key];
-      let tab = setCurrentStatusQuestionLevel(currentStatusList)
+      let tab = setCurrentStatusQuestionLevel(currentStatusList, key)
       Object.assign(subObData, { ...tab })
       for (let subkey of subArr) {
         let d = subObData[subkey];
@@ -2639,7 +2639,7 @@ const annualAccountSetCurrentStatus = (data, currentFormStatus) => {
   delete data.currentstatuse
   return data;
 }
-const setCurrentStatusQuestionLevel = (statusList) => {
+const setCurrentStatusQuestionLevel = (statusList, key = null) => {
   let obj = {
     "state_status": "",
     "rejectReason_state": "",
@@ -2654,6 +2654,10 @@ const setCurrentStatusQuestionLevel = (statusList) => {
       "name": ""
     }
   };
+  if(key){ 
+    let pattern = new RegExp(key);
+    statusList = statusList.filter(status => pattern.test(status.shortKey))
+  }
   if (statusList.length) {
     for (let statusObj of statusList) {
       if (statusObj.actionTakenByRole == "STATE" && (statusObj?.rejectReason || statusObj?.responseFile.url)) {
