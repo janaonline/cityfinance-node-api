@@ -2,8 +2,6 @@ const CronJob = require("cron").CronJob;
 const {emailTrigger} =  require('./stateEmail');
 const { frFormFreeze } = require('./frFormFreeze');
 
-//  frFormFreeze("hi you cron is executed successfully!");
-
 const cronJob = new CronJob(
   "0 0 10 * * 1",
  async () => {
@@ -22,7 +20,7 @@ const cronJob = new CronJob(
 );  
 
 const frFormFreezes = new CronJob(
-  "00 10 12,05 * * *",
+  "00 00 23,05 * * *",
   async function () {
       // SS MM HH DD MM DOFW
       await frFormFreeze("hi you cron is executed successfully!");
