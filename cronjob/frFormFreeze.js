@@ -35,6 +35,10 @@ module.exports.frFormFreeze = async () => {
             currentFormStatus: { $in: [MASTER_FORM_STATUS['IN_PROGRESS'], MASTER_FORM_STATUS['RETURNED_BY_PMU']] }
         }).select('ulb design_year pmuSubmissionDate isAutoApproved');
 
+        writeFileSync("cron-freeze-error-test.txt", JSON.stringify(getUlbForms, 3, 3), function (err) {
+            if (err) throw err;
+            console.log('Saved!');
+        })
         const logDetails = [];
         for (let frData of getUlbForms) {
             let user = await User.findOne({ role: 'ULB', ulb: ObjectId(frData?.ulb) });
