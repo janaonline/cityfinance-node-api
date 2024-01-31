@@ -1238,9 +1238,11 @@ exports.getView = async function (req, res, next) {
                     pf['approvalType'] = singleFydata?.approvalType;
                     pf['ulbComment'] = singleFydata?.ulbComment;
                     pf['ulbValue'] = singleFydata?.ulbValue;
-                    pf["status"] = singleFydata && singleFydata.status != null
+                    if(!req.query?.fromCron) {
+                      pf["status"] = singleFydata && singleFydata.status != null
                       ? singleFydata.status
-                      : "PENDING";
+                      : "PENDING"; 
+                    }
                     pf["modelName"] = singleFydata
                       ? singleFydata.modelName
                       : "";

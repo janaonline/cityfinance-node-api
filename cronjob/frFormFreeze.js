@@ -44,7 +44,8 @@ module.exports.frFormFreeze = async () => {
             const response = await axios.get(`${url}${viewEndPoint}`, {
                 params: {
                     design_year: frData?.design_year.toString(),
-                    ulb: frData?.ulb.toString()
+                    ulb: frData?.ulb.toString(),
+                    fromCron: true
                 },
                 headers: {
                     "x-access-token": token || req?.query?.token || "",
