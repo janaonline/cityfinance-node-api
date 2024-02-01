@@ -58,7 +58,7 @@ async function getBudgetUlbCount() {
 	const condition = { isActive: true };
 	return await Ulb.countDocuments(condition);
 }
-async function getTopParticipatedState(limit = 5) {
+async function getTopParticipatedState(limit = 10) {
 	return await State.find({ isActive: true }).select('name')
 		.sort({ 'fiscalRanking.participatedUlbsPercentage': -1 }).limit(limit).lean();
 }
@@ -97,7 +97,8 @@ async function getParticipatedState(limit, skip = 0, query = false, select = 'na
 	const sortArr = { totalUlbs: 'fiscalRanking.totalUlbs', participatedUlbs: 'fiscalRanking.participatedUlbs', rankedUlbs: 'fiscalRanking.rankedUlbs', nonRankedUlbs: 'fiscalRanking.nonRankedUlbs', stateName: 'name', }
 
 	const { stateType, ulbParticipationFilter, ulbRankingStatusFilter, sortBy, order } = query;
-	let condition = { isActive: true, 'fiscalRanking.participatedUlbsPercentage': { $ne: 0 } };
+	// let condition = { isActive: true, 'fiscalRanking.participatedUlbsPercentage': { $ne: 0 } };
+	let condition = { isActive: true };
 	if (sortBy) {
 		// console.log('order', order);
 		const by = sortArr[sortBy] || 'name'
@@ -527,13 +528,17 @@ module.exports.topRankedUlbs = async (req, res) => {
 		}
 
 		const sortArr = { overAllRank: 'overAll', resourceMobilizationRank: 'resourceMobilization', expenditurePerformanceRank: 'expenditurePerformance', fiscalGovernanceRank: 'fiscalGovernance' }
-		let sort = { [`overAll.rank`]: 1 };
+		let sort = {};
 		let by = 'overAll';
 		sortBy = category || sortBy;
 		if (sortBy && sortArr[sortBy]) {
 			by = sortArr[sortBy];
-			sort = { [`${by}.rank`]: order };
+			sort[`${by}.rank`] = order;
+		} else {
+			sort[`overAll.rank`]= 1;
 		}
+
+		sort['populationBucket'] = 1;
 
 		// order = order === 'desc' ? -1 : 1;
 		const ulbRes = await ScoringFiscalRanking.find(condition)
