@@ -39,6 +39,7 @@ const PrevLineItem_CONSTANTS = require('../../util/lineItems');
 const { years } = require("../../service/years");
 const { getKeyByValue } = require("../../util/masterFunctions");
 const { MASTER_STATUS_ID } = require("../../util/FormNames");
+const { concatenateUrls } = require("../../service/common");
 
 const BackendHeaderHost ={
   Demo: `${process.env.DEMO_HOST_BACKEND}`,
@@ -2048,7 +2049,10 @@ module.exports.getAll = catchAsync(async (req, res) => {
       }
       if (csv) {
         let arr = await XVFCGrantULBData.aggregate(q).exec();
-        for (d of arr) {
+        let index =0;
+        for (let d of arr) {
+          d = JSON.parse(JSON.stringify(d));
+          arr[index] = concatenateUrls(d);
           if (
             d.status == "PENDING" &&
             d.isCompleted == false &&
@@ -2112,6 +2116,8 @@ module.exports.getAll = catchAsync(async (req, res) => {
               d.solidWastePlan && d.solidWastePlan.length > 0
                 ? d.solidWastePlan[0]["url"]
                 : "");
+             index++;
+
         }
         let field = csvData();
         if (user.role == "STATE") {
@@ -4609,6 +4615,7 @@ module.exports.getXVFCStateForm = async (req, res) => {
         },
       ];
       let arr = await XVStateForm.aggregate(q).exec();
+      if(arr.length)  updateURLs(arr);
       let xlsData = await Service.dataFormating(arr, field);
       let filename =
         "state-form" + moment().format("DD-MMM-YY HH:MM:SS") + ".xlsx";
@@ -4832,6 +4839,33 @@ exports.newFormAction = async (req, res) => {
   }
 };
 
+
+/**
+ * The function `updateURLs` takes an array of entities, clones each entity, concatenates the URLs
+ * within each entity, and returns the updated array.
+ */
+function updateURLs(arr) {
+  try{
+    let index = 0;
+    for (let entity of arr) {
+      entity = JSON.parse(JSON.stringify(entity));
+      let urlParams = {
+        grantTransferCertificate: "grantTransferCertificate",
+        serviceLevelBenchmarks: "serviceLevelBenchmarks",
+        utilizationReport: "utilizationReport",
+      };
+      for(let key in urlParams){
+        if(entity[key] === "N/A"){
+          delete urlParams[key]
+        }
+      }
+      arr[index] = concatenateUrls(entity, urlParams);
+      index++;
+    }
+  }catch(e){
+    throw {message: `updateUrls: ${e.message}`}
+  }
+}
 
 async function update28SlbForms(ulbData){
   try{

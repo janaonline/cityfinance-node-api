@@ -20,7 +20,7 @@ const {saveStatusAndHistory} = require("../CommonFormSubmission/service")
 let baseUrls = {
   "staging":`https://${process.env.STAGING_HOST}`,
   "demo":`https://${process.env.DEMO_HOST_FRONTEND}`,
-  "prod":`https://${process.env.PROD_HOST}`
+  "production":`https://${process.env.PROD_HOST}`
 }
 
 const { YEAR_CONSTANTS, MASTER_STATUS,MASTER_FORM_STATUS,MASTER_STATUS_ID,FORMIDs } = require('../../util/FormNames')
@@ -72,6 +72,7 @@ exports.getGrantDistribution = async (req, res) => {
 };
 
 exports.getTemplate = async (req, res) => {
+  console.log("suresh")
   let { state } = req?.decoded;
   let formData = req.query;
   let amount = "grant amount";
@@ -369,7 +370,6 @@ async function validate(data, formData) {
   for (let index = 0; index < data.length; index++) {
     const keys = Object.keys(data[index]).length;
     if (keys !== 3) {
-      console.log(keys.length)
       data[index].Errors = "Incorrect Format,";
     }
     if (data[index][code]) ulbCodes.push(data[index][code]);
@@ -386,7 +386,6 @@ async function validate(data, formData) {
       data[index][name] === ""
     ) {
       errorFlag = true;
-      console.log("0")
       if (data[index].Errors) data[index].Errors += "Code or Ulb name is blank,";
       else data[index].Errors = "Code or Ulb name is blank,";
     }
@@ -399,13 +398,11 @@ async function validate(data, formData) {
       compareData[data[index][code]] != data[index][name]
     ) {
       errorFlag = true;
-      console.log("2")
       if (data[index].Errors) data[index].Errors += "Name Not Valid,";
       else data[index].Errors = "Name Not Valid,";
     }
     if (!Number(data[index][amount]) || data[index][amount] === "") {
       errorFlag = true;
-      console.log("3")
       if (data[index].Errors) data[index].Errors += "Amount Not valid,";
       else data[index].Errors = "Amount Not valid,";
     }
