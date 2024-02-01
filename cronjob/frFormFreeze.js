@@ -8,7 +8,8 @@ const { writeFileSync } = require('fs')
 const { APPROVAL_TYPES, ENV } = require("../util/FormNames");
 const MASTER_FORM_STATUS = {
     IN_PROGRESS : 2,
-    RETURNED_BY_PMU: 10
+    RETURNED_BY_PMU: 10,
+    VERIFICATION_IN_PROGRESS: 9
 }
 
 module.exports.frFormFreeze = async () => {
