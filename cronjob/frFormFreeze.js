@@ -5,8 +5,11 @@ const ObjectId = require("mongoose").Types.ObjectId;
 const axios = require('axios');
 const User = require('../models/User');
 const { writeFileSync } = require('fs')
-const { MASTER_FORM_STATUS, APPROVAL_TYPES, ENV } = require("../util/FormNames");
-
+const { APPROVAL_TYPES, ENV } = require("../util/FormNames");
+const MASTER_FORM_STATUS = {
+    IN_PROGRESS : 2,
+    RETURNED_BY_PMU: 10
+}
 
 module.exports.frFormFreeze = async () => {
     try {
@@ -32,6 +35,10 @@ module.exports.frFormFreeze = async () => {
             currentFormStatus: { $in: [MASTER_FORM_STATUS['IN_PROGRESS'], MASTER_FORM_STATUS['RETURNED_BY_PMU']] }
         }).select('ulb design_year pmuSubmissionDate isAutoApproved');
 
+        writeFileSync("cron-freeze-error-test.txt", JSON.stringify(getUlbForms, 3, 3), function (err) {
+            if (err) throw err;
+            console.log('Saved!');
+        })
         const logDetails = [];
         for (let frData of getUlbForms) {
             let user = await User.findOne({ role: 'ULB', ulb: ObjectId(frData?.ulb) });
@@ -117,7 +124,7 @@ const autoSumAndLedgerCheck = financialTabIndicators => {
                 return acc;
             }, [0, 0, 0, 0]).forEach((value, index) => {
                 const updatableYearItem = indicator['yearData'][index];
-                if (updatableYearItem?.modelName && updatableYearItem.value != Math.floor(value)) {
+                if (updatableYearItem?.modelName && Math.floor(updatableYearItem.value) != Math.floor(value)) {
                     const error = new Error('Ledger mismatch');
                     error['response'] = {};
                     error.response.data = {
