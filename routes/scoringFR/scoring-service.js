@@ -8,6 +8,7 @@ const FiscalRankingMapper = require('../../models/FiscalRankingMapper');
 const ScoringFiscalRanking = require('../../models/ScoringFiscalRanking');
 const { registerCustomQueryHandler } = require('puppeteer');
 const { cubeRootOfNegative } = require('../../service/common');
+const moment = require("moment");
 // const { pow } = require('mathjs');
 /* 
 Pending actions
@@ -38,22 +39,33 @@ function getValue(fsMapper, type) {
 	if (!indicator) {
 		return 0;
 	}
-	let value = 0;
-	switch (indicator.approvalType) {
-		case 7:
-			value = indicator.pmuSuggestedValue2;
-			break;
-		case 3: case 6: case 8:
-			value = indicator.suggestedValue;
-			break;
-		case 1: case 5:
-			value = indicator.value;
-			break;
-		default:
-			value = indicator.value;
-			break;
+	// let value = 0;
+	// switch (indicator.approvalType) {
+	// 	case 7:
+	// 		value = indicator.pmuSuggestedValue2;
+	// 		break;
+	// 	case 3: case 6: case 8:
+	// 		value = indicator.suggestedValue;
+	// 		break;
+	// 	case 1: case 5:
+	// 		value = indicator.value;
+	// 		break;
+	// 	default:
+	// 		value = indicator.value;
+	// 		break;
+	// }
+	// return value;
+// const val = indicator.value?.trim();
+	if (indicator.value !== ''){
+		return indicator.value;
+	} else if (indicator.pmuSuggestedValue2 !== '') {
+		return indicator.pmuSuggestedValue2;
+	} else if (indicator.suggestedValue !== '') {
+		return indicator.suggestedValue;
+	} else if (indicator.ulbValue !== '') {
+		return indicator.ulbValue;
 	}
-	return value;
+	return 0;
 }
 
 function getDate(fsMapper, type) {
@@ -61,6 +73,7 @@ function getDate(fsMapper, type) {
 	if (!indicator && !indicator.date) {
 		return false;
 	}
+
 	return indicator.date;
 }
 function getNumberValue(fsMapper, type) {
@@ -68,31 +81,17 @@ function getNumberValue(fsMapper, type) {
 	if (!indicator) {
 		return 0;
 	}
-	let value = 0;
-	switch (indicator.approvalType) {
-		case 7:
-			value = Number(indicator.pmuSuggestedValue2);
-			break;
-		case 3: case 6: case 8:
-			value = Number(indicator.suggestedValue);
-			break;
-		case 1: case 5:
-			value = Number(indicator.value);
-			break;
-		default:
-			value = Number(indicator.value);
-			break;
-	}
-	return value;
 
-	// if (indicator.pmuSuggestedValue2) {
-	// 	return Number(indicator.pmuSuggestedValue2);
-	// } else if (indicator.suggestedValue) {
-	// 	return Number(indicator.suggestedValue);
-	// } else if (indicator.value) {
-	// 	return Number(indicator.value);
-	// }
-	// return 0;
+	if (indicator.value !== ''){
+		return Number(indicator.value);
+	} else if (indicator.pmuSuggestedValue2 !== '') {
+		return Number(indicator.pmuSuggestedValue2);
+	} else if (indicator.suggestedValue !== '') {
+		return Number(indicator.suggestedValue);
+	} else if (indicator.ulbValue !== '') {
+		return Number(indicator.ulbValue);
+	}
+	return 0;
 }
 // Get file.
 function getFile(fsMapper, type) {
@@ -125,7 +124,7 @@ function totalBudgetPerCapita(ulbRes, fsData, fsMapper2021_22) {
 		// Total receipts actual of water supply
 		//TODO: verify the condition
 		const totalRcptWaterSupply = fsData && fsData.propertyWaterTax.value === 'Yes' && fsData.waterSupply.value === 'Yes' ? getNumberValue(fsMapper2021_22, 'totalRcptWaterSupply') : 0;
-		// Total reciepts actual for sanitaion.
+		// Total reciepts actual for sanitaion.	
 		const totalRcptSanitation = fsData && fsData.propertySanitationTax.value === 'Yes' && fsData.sanitationService.value === 'Yes' ? getNumberValue(fsMapper2021_22, 'totalRcptSanitation') : 0;
 		const totalBudget =
 			ulbRes.population === 0
@@ -203,7 +202,7 @@ function cagrInTotalBudget(fsData, fsMapper2018_19, fsMapper2021_22) {
 			const pow1 = Math.cbrt(budget);
 			CAGRInTotalBudget = (pow1 - 1) * 100;
 		}
-		
+
 		return parseFloat(CAGRInTotalBudget.toFixed(2)); //15.73%
 		// return parseFloat(Math.ceil(CAGRInTotalBudget.toFixed(2))); //15.73% >> 16%
 	} catch (e) {
@@ -389,13 +388,10 @@ function omExpTotalRevEx(fsData, fsMapper2019_20, fsMapper2020_21, fsMapper2021_
 
 // Function to get the months taken to audit.
 function getMonthDifference(startDate, endDate) {
-	const start = new Date(startDate);
-	const end = new Date(endDate);
-
-	const yearDiff = end.getFullYear() - start.getFullYear();
-	const monthDiff = end.getMonth() - start.getMonth();
-
-	return yearDiff * 12 + monthDiff;
+	if(endDate) {
+		return moment(endDate).diff(moment(startDate), 'months', true)
+	}
+	return 0;
 }
 
 // 10A. For Timely Audit - Average number of months taken by ULB in closing audit - FG
@@ -407,17 +403,21 @@ function avgMonthsForULBAudit(fsMapper2019_20, fsMapper2020_21, fsMapper2021_22)
 		const april_2020 = new Date('2020/04/01');
 		const april_2021 = new Date('2021/04/01');
 		const april_2022 = new Date('2022/04/01');
+
 		// Function call to calcuate diff.
-		const noOfMonths_2019_20 = ulbValue2019_20 ? getMonthDifference(april_2020, ulbValue2019_20) : 0;
-		const noOfMonths_2020_21 = ulbValue2020_21 ? getMonthDifference(april_2021, ulbValue2020_21) : 0;
-		const noOfMonths_2021_22 = ulbValue2021_22 ? getMonthDifference(april_2022, ulbValue2021_22) : 0;
+		const noOfMonths_2019_20 = getMonthDifference(april_2020, ulbValue2019_20);
+		const noOfMonths_2020_21 = getMonthDifference(april_2021, ulbValue2020_21);
+		const noOfMonths_2021_22 = getMonthDifference(april_2022, ulbValue2021_22);
 
 		// Array is created to find average.
 		const arr = [noOfMonths_2019_20, noOfMonths_2020_21, noOfMonths_2021_22];
 		const avgMonth = (calculateAverage(arr)).toFixed(2);
+
 		// If average month is less than 12 then ULB gets 25 marks else 0 marks;
 		const avgMonthsForULBAudit = avgMonth <= 12 && avgMonth > 0 ? 25 : 0;
+
 		return {score:avgMonthsForULBAudit, values:avgMonth};
+
 	} catch (e) {
 		return 0;
 	}
@@ -860,7 +860,7 @@ module.exports.calculateFRScore = async (req, res) => {
 		const limit = req.query.limit ? parseInt(req.query.limit) : 1000;
 		const page = req.query.page ? parseInt(req.query.page) : 1;
 		const censusCode = 802989;
-		const _id = ObjectId('5dd2472a437ba31f7eb42f82');
+		const _id = ObjectId('5dd24728437ba31f7eb42e7b');
 		// Consider only ULBs with isActive TRUE & population is not empty & not 0.
 		const condition = { isActive: true, population: { $nin: [null, 0] } };
 		// const condition = { isActive: true, _id, population: { $nin: [null, 0] } };
