@@ -954,7 +954,8 @@ houseHoldCoveredPipedSupply2425: {
     });
 
     // let ulbData = extractUlbData(output2);
-    let finalOutput = [...output1, output2]
+    makeNumbersFixed(output1[0]);
+    let finalOutput = [...output1, output2]; 
     return res.status(200).json({
       success: true,
       message: "Data Found Successfully",
@@ -1740,6 +1741,21 @@ module.exports.slbDownload = catchAsync(async (req, res) => {
     return Response.DbError(res, e, e.message);
   }
 });
+
+/**
+ * The function "makeNumbersFixed" takes an object as input and converts any numeric values in the
+ * object to fixed decimal numbers with two decimal places.
+ * @param output1 - The parameter `output1` is an object.
+ */
+function makeNumbersFixed(input) {
+  try {
+    for (let key in input) {
+      input[key] = typeof(input[key]) == 'number' ? Number(input[key].toFixed(2)) : input[key];
+    }
+  } catch (error) {
+    throw {message: `makeNumbersFixed: ${error.message}`}
+  }
+}
 
 async function innerListGet(t, path) {
   return await path.split(".").reduce((r, k) => r?.[k], t);
