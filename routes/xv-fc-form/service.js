@@ -2876,6 +2876,7 @@ module.exports.update = async (req, res) => {
     );
   }
 };
+
 module.exports.action = async (req, res) => {
   try {
     let user = req.decoded;
