@@ -331,8 +331,6 @@ async function createCSV(params) {
             await writeSubmitClaimCSV(output, res);
           } else {
             for (let el of mainArrData) {
-              el = JSON.parse(JSON.stringify(el));
-              el = concatenateUrls(el);
               if (!el?.formData) {
                 el['formStatus'] = "Not Started";
               } else {
@@ -344,8 +342,10 @@ async function createCSV(params) {
                 el['formData']['installment_form'] = GTC;
                 el = JSON.parse(JSON.stringify(el));
                 el = concatenateUrls(el);
-                gtcStateFormCSVFormat(el, res)
+                gtcStateFormCSVFormat(el, res);
               } else if (collectionName == 'GrantAllocation') {
+                el = JSON.parse(JSON.stringify(el));
+                el = concatenateUrls(el);
                 await grantAllCsvDownload(el, res);
               }
             }
@@ -378,6 +378,8 @@ async function grantAllCsvDownload(el, res) {
   if (formData && formData.length && (formData[0] !== "")) {
     for (let pf of formData) {
       let currentStatus = await CurrentStatus.findOne({ recordId: ObjectId(pf?._id) });
+      currentStatus = JSON.parse(JSON.stringify(currentStatus));
+      currentStatus = concatenateUrls(currentStatus);
       let MohuaformStatus = MASTER_STATUS_ID[currentStatus?.status];
       let mohuaStatusComment = [MASTER_STATUS_ID[pf?.currentFormStatus]];
       if (['Returned By MoHUA', 'Submission Acknowledged By MoHUA'].includes(MASTER_STATUS_ID[pf?.currentFormStatus])) {
@@ -2634,7 +2636,7 @@ const annualAccountSetCurrentStatus = (data, currentFormStatus) => {
   if (currentStatusList?.length) {
     for (let key of mainArr) {
       let subObData = data[key];
-      let tab = setCurrentStatusQuestionLevel(currentStatusList)
+      let tab = setCurrentStatusQuestionLevel(currentStatusList, key)
       Object.assign(subObData, { ...tab })
       for (let subkey of subArr) {
         let d = subObData[subkey];
@@ -2652,7 +2654,7 @@ const annualAccountSetCurrentStatus = (data, currentFormStatus) => {
   delete data.currentstatuse
   return data;
 }
-const setCurrentStatusQuestionLevel = (statusList) => {
+const setCurrentStatusQuestionLevel = (statusList, key = null) => {
   let obj = {
     "state_status": "",
     "rejectReason_state": "",
@@ -2667,6 +2669,10 @@ const setCurrentStatusQuestionLevel = (statusList) => {
       "name": ""
     }
   };
+  if(key){ 
+    let pattern = new RegExp(key);
+    statusList = statusList.filter(status => pattern.test(status.shortKey))
+  }
   if (statusList.length) {
     for (let statusObj of statusList) {
       if (statusObj.actionTakenByRole == "STATE" && (statusObj?.rejectReason || statusObj?.responseFile.url)) {
