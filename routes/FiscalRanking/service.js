@@ -5504,8 +5504,8 @@ async function fyUlbFyCsv(params) {
           let fyData = fyMapperData.length ? fyMapperData.filter(e => parseFloat(e.displayPriority) == sortKeys[key]) : null;
           if (fyData) {
             for (let pf of fyData) {
-              let status = (pf.status.length > 0) ? pf.status : "N/A"
-              let value = pf.file ? pf.file : pf.date ? pf.date : pf.value.toString() ? pf.value : ""
+              let status = (pf.status && pf.status.length > 0) ? pf.status : "N/A"
+              let value = pf.file ? pf.file : pf.date ? pf.date : (pf.value && pf.value.toString()) ? pf.value : ""
               let mainArr = [stateName, document.ulbName, document.cityFinanceCode, censusCode, MASTER_STATUS_ID[document.currentFormStatus], YEAR_CONSTANTS_IDS[document.designYear]];
               let mappersValues = [YEAR_CONSTANTS_IDS[pf.year], FRShortKeyObj[pf.type], value, pf?.suggestedValue, pf?.pmuSuggestedValue2, pf?.ulbValue, pf?.approvalType, status];
 
@@ -5517,7 +5517,7 @@ async function fyUlbFyCsv(params) {
         }
       } catch (err) {
         console.log("error in writeCsv :: ", err);
-        return Response.BadRequest(res, {}, error.message);
+        return Response.BadRequest(res, {}, err.message);
       }
     });
     cursor.on("end", (el) => { return res.end() });
