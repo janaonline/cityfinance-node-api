@@ -5505,7 +5505,7 @@ async function fyUlbFyCsv(params) {
           if (fyData) {
             for (let pf of fyData) {
               let status = (pf.status && pf.status.length > 0) ? pf.status : "N/A"
-              let value = pf.file ? pf.file : pf.date ? pf.date : (pf.value && pf.value.toString()) ? pf.value : ""
+              let value = pf.file ? pf.file : pf.date ? pf.date : ((pf.value != null) && pf.value.toString()) ? pf.value.toString() : ""
               let mainArr = [stateName, document.ulbName, document.cityFinanceCode, censusCode, MASTER_STATUS_ID[document.currentFormStatus], YEAR_CONSTANTS_IDS[document.designYear]];
               let mappersValues = [YEAR_CONSTANTS_IDS[pf.year], FRShortKeyObj[pf.type], value, pf?.suggestedValue, pf?.pmuSuggestedValue2, pf?.ulbValue, pf?.approvalType, status];
 
