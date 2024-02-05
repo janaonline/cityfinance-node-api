@@ -518,8 +518,11 @@ function getMapData() { }
 module.exports.topRankedUlbs = async (req, res) => {
 	try {
 		// moongose.set('debug', true);
-		let { category, sortBy, order, state, populationBucket } = req.query;
+		let { category, sortBy, order, state, populationBucket, limit } = req.query;
 		let condition = { isActive: true, currentFormStatus };
+
+		limit = limit ? parseInt(limit) : 0;
+
 		if (state) {
 			condition = { ...condition, state: ObjectId(state) };
 		}
@@ -535,7 +538,7 @@ module.exports.topRankedUlbs = async (req, res) => {
 			by = sortArr[sortBy];
 			sort[`${by}.rank`] = order;
 		} else {
-			sort[`overAll.rank`]= 1;
+			sort[`overAll.rank`] = 1;
 		}
 
 		sort['populationBucket'] = 1;
@@ -544,7 +547,7 @@ module.exports.topRankedUlbs = async (req, res) => {
 		const ulbRes = await ScoringFiscalRanking.find(condition)
 			.select('name ulb location resourceMobilization expenditurePerformance fiscalGovernance overAll state populationBucket')
 			.sort(sort)
-			.limit(5)
+			.limit(limit)
 			.exec();
 		// console.log(ulbRes)
 
