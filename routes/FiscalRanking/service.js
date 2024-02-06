@@ -5509,7 +5509,7 @@ async function fyUlbFyCsv(params) {
                 continue;
               }
               let mainArr = [stateName, document.ulbName, document.cityFinanceCode, censusCode, MASTER_STATUS_ID[document.currentFormStatus], YEAR_CONSTANTS_IDS[document.designYear]];
-              let mappersValues = [YEAR_CONSTANTS_IDS[pf.year], FRShortKeyObj[pf.type], value, pf?.suggestedValue, pf?.pmuSuggestedValue2, pf?.ulbValue, pf?.approvalType, status, pf?.displayPriority];
+              let mappersValues = [YEAR_CONSTANTS_IDS[pf.year], FRShortKeyObj[pf.type], value, pf?.suggestedValue, pf?.pmuSuggestedValue2, pf?.ulbValue, pf?.approvalType, status];
 
               let str = [...mainArr, ...mappersValues].join(",");
               str.trim()
