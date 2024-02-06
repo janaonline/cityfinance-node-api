@@ -4158,7 +4158,7 @@ module.exports.createForm = catchAsync(async (req, res) => {
   try {
     let { ulbId, formId, actions, design_year, isDraft, currentFormStatus, freezeDate, isAutoApproved } = req.body;
     const form = await FiscalRanking.findOne({ design_year, ulb: ulbId});
-    if(![
+    if(form && ![
       MASTER_STATUS['Not Started'],
       MASTER_STATUS['In Progress'],
       MASTER_STATUS['Returned by PMU']
@@ -5489,11 +5489,15 @@ async function fyUlbFyCsv(params) {
           let fyData = fyMapperData.length ? fyMapperData.filter(e => parseFloat(e.displayPriority) == sortKeys[key]) : null;
           if (fyData) {
             for (let pf of fyData) {
-              let value = pf.file ? pf.file : pf.date ? pf.date : pf.value ? pf.value : ""
+              let status = (pf.status && pf.status.length > 0) ? pf.status : "N/A"
+              let value = pf.file ? pf.file : pf.date ? pf.date : ((pf.value != null) && pf.value.toString()) ? pf.value.toString() : ""
+              if(typeof value == 'object') {
+                continue;
+              }
               let mainArr = [stateName, document.ulbName, document.cityFinanceCode, censusCode, MASTER_STATUS_ID[document.currentFormStatus], YEAR_CONSTANTS_IDS[document.designYear]];
-              let mappersValues = [YEAR_CONSTANTS_IDS[pf.year], FRShortKeyObj[pf.type], value, pf?.suggestedValue, pf?.pmuSuggestedValue2,pf?.ulbValue, pf?.approvalType, pf?.status];
+              let mappersValues = [YEAR_CONSTANTS_IDS[pf.year], FRShortKeyObj[pf.type], value, pf?.suggestedValue, pf?.pmuSuggestedValue2, pf?.ulbValue, pf?.approvalType, status];
 
-              let str = [...mainArr, ...mappersValues].join(", ");
+              let str = [...mainArr, ...mappersValues].join(",");
               str.trim()
               res.write("\ufeff" + str + "\r\n");
             }
@@ -5501,7 +5505,7 @@ async function fyUlbFyCsv(params) {
         }
       } catch (err) {
         console.log("error in writeCsv :: ", err);
-        return Response.BadRequest(res, {}, error.message);
+        return Response.BadRequest(res, {}, err.message);
       }
     });
     cursor.on("end", (el) => { return res.end() });
