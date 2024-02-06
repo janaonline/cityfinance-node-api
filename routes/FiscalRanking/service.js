@@ -4171,7 +4171,7 @@ module.exports.createForm = catchAsync(async (req, res) => {
   try {
     let { ulbId, formId, actions, design_year, isDraft, currentFormStatus, freezeDate, isAutoApproved } = req.body;
     const form = await FiscalRanking.findOne({ design_year, ulb: ulbId});
-    if(![
+    if(form && ![
       MASTER_STATUS['Not Started'],
       MASTER_STATUS['In Progress'],
       MASTER_STATUS['Returned by PMU']
@@ -5505,8 +5505,11 @@ async function fyUlbFyCsv(params) {
             for (let pf of fyData) {
               let status = (pf.status && pf.status.length > 0) ? pf.status : "N/A"
               let value = pf.file ? pf.file : pf.date ? pf.date : ((pf.value != null) && pf.value.toString()) ? pf.value.toString() : ""
+              if(typeof value == 'object') {
+                continue;
+              }
               let mainArr = [stateName, document.ulbName, document.cityFinanceCode, censusCode, MASTER_STATUS_ID[document.currentFormStatus], YEAR_CONSTANTS_IDS[document.designYear]];
-              let mappersValues = [YEAR_CONSTANTS_IDS[pf.year], FRShortKeyObj[pf.type], value, pf?.suggestedValue, pf?.pmuSuggestedValue2, pf?.ulbValue, pf?.approvalType, status];
+              let mappersValues = [YEAR_CONSTANTS_IDS[pf.year], FRShortKeyObj[pf.type], value, pf?.suggestedValue, pf?.pmuSuggestedValue2, pf?.ulbValue, pf?.approvalType, status, pf?.displayPriority];
 
               let str = [...mainArr, ...mappersValues].join(",");
               str.trim()
