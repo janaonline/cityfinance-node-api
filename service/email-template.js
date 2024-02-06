@@ -1694,6 +1694,8 @@ module.exports = {
   CfrFormApproved,
   alertStateToClaimGrants,
   stateUlbFormTrigger,
-  alertStateWithMohuaAction
+  alertStateWithMohuaAction,
+  xvUploadApprovalByStateToUlb,
+  xvUploadApprovalForState
 
 };
