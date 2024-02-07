@@ -76,11 +76,31 @@ const ScoringFiscalRankingSchema = new Schema(
 		totalBudgetDataPC_1: scoreFields,
 		ownRevenuePC_2: scoreFields,
 		pTaxPC_3: scoreFields,
-		cagrInTotalBud_4: scoreFields,
-		cagrInOwnRevPC_5: scoreFields,
-		cagrInPropTax_6: scoreFields,
+		cagrInTotalBud_4: {
+            ...scoreFields,
+            infinity: {
+                type: Boolean
+            },
+        },
+		cagrInOwnRevPC_5: {
+            ...scoreFields,
+            infinity: { // divide by 0
+                type: Boolean
+            },
+        },
+		cagrInPropTax_6: {
+            ...scoreFields,
+            infinity: { // divide by 0
+                type: Boolean
+            },
+        },
 		capExPCAvg_7: scoreFields,
-		cagrInCapExpen_8: scoreFields,
+		cagrInCapExpen_8: {
+            ...scoreFields,
+            infinity: { // divide by 0
+                type: Boolean
+            },
+        },
 		omExpTotalRevExpen_9: scoreFields,
 		avgMonthsForULBAuditMarks_10a: {
             ...scoreFields,
