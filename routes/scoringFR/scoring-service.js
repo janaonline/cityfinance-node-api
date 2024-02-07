@@ -192,10 +192,12 @@ function cagrInTotalBudget(fsData, fsMapper2018_19, fsMapper2021_22) {
 		// Handaling #Div/0
 		const budget = budget2018_19 === 0 ? 0 : budget2021_22 / budget2018_19;
 
+		let infinity = false;
 		let CAGRInTotalBudget = 0;
 		// If denominator = 0; CAGR = 0 
 		if (budget2018_19 === 0) {
 			CAGRInTotalBudget = 0;	
+			infinity = true;
 		}
 		// If numerator = 0; CAGR = -1
 		else {
@@ -203,8 +205,11 @@ function cagrInTotalBudget(fsData, fsMapper2018_19, fsMapper2021_22) {
 			CAGRInTotalBudget = (pow1 - 1) * 100;
 		}
 
-		return parseFloat(CAGRInTotalBudget.toFixed(2)); //15.73%
-		// return parseFloat(Math.ceil(CAGRInTotalBudget.toFixed(2))); //15.73% >> 16%
+		return { 
+			score: parseFloat(CAGRInTotalBudget.toFixed(2)), 			
+			...(infinity && {infinity})
+		};
+
 	} catch (e) {
 		return 0;
 	}
@@ -236,16 +241,21 @@ function cagrInOwnRevenue(fsData, fsMapper2018_19, fsMapper2021_22) {
 		const ownRev = ownRev2018_19 === 0 ? 0 : ownRev2021_22 / ownRev2018_19;
 		
 		let cagrInOwnRevenue = 0;
+		let infinity = false;
 		// If denominator = 0; CAGR = 0 
 		if (ownRev2018_19 === 0) {
 			cagrInOwnRevenue = 0;
+			infinity = true;
 		// If numerator = 0; CAGR = -1
 		} else {
 			const pow1 = Math.cbrt(ownRev);
 			cagrInOwnRevenue = (pow1 - 1) * 100;
 		}
 
-		return parseFloat(cagrInOwnRevenue.toFixed(2));
+		return { 
+			score: parseFloat(cagrInOwnRevenue.toFixed(2)), 			
+			...(infinity && {infinity})
+		};
 	} catch (e) {
 		return 0;
 	}
@@ -262,14 +272,20 @@ function cagrInPTax(fsMapper2018_19, fsMapper2021_22) {
 		const pTax = pTax2018_19 === 0 ? 0 : pTax2021_22 / pTax2018_19;
 		
 		let cagrInPTax = 0;
+		let infinity = false;
 		if (pTax2018_19 === 0) {
 			cagrInPTax = 0;
+			infinity = true;
 		} else {
 			const pow1 = Math.cbrt(pTax);
 			cagrInPTax = (pow1 - 1) * 100;
 		}
 
-		return parseFloat(cagrInPTax.toFixed(2));
+		return { 
+			score: parseFloat(cagrInPTax.toFixed(2)), 			
+			...(infinity && {infinity})
+		};
+
 	} catch (e) {
 		return 0;
 	}
@@ -331,14 +347,15 @@ function cagrInCapEx(fsData, fsMapper2018_19, fsMapper2021_22) {
 		const totalCapEx = capEx2018_19 === 0 ? 0 : capEx2021_22 / capEx2018_19;
 
 		let cagrInCapEx = 0;
+		let infinity =false;
 		if (capEx2018_19 === 0) {
 			cagrInCapEx = 0;
+			infinity = true;
 		} else {
 			const pow1 = Math.cbrt(totalCapEx);
 			cagrInCapEx = (pow1 - 1) * 100;
 		}
-
-		return parseFloat(cagrInCapEx.toFixed(2));
+		return {score: parseFloat(cagrInCapEx.toFixed(2)), ...(infinity && {infinity})};
 	} catch (e) {
 		return 0;
 	}
@@ -830,11 +847,11 @@ async function getData(ulbRes) {
 		totalBudgetDataPC_1: { score: totalBudgetDataPC_1 },
 		ownRevenuePC_2: { score: ownRevenuePC_2 },
 		pTaxPC_3: { score: pTaxPC_3 },
-		cagrInTotalBud_4: { score: cagrInTotalBud_4 },
-		cagrInOwnRevPC_5: { score: cagrInOwnRevPC_5 },
-		cagrInPropTax_6: { score: cagrInPropTax_6 },
+		cagrInTotalBud_4: cagrInTotalBud_4,
+		cagrInOwnRevPC_5: cagrInOwnRevPC_5,
+		cagrInPropTax_6: cagrInPropTax_6,
 		capExPCAvg_7: { score: capExPCAvg_7 },
-		cagrInCapExpen_8: { score: cagrInCapExpen_8 },
+		cagrInCapExpen_8: cagrInCapExpen_8,
 		omExpTotalRevExpen_9: { score: omExpTotalRevExpen_9 },
 		avgMonthsForULBAuditMarks_10a: avgMonthsForULBAuditMarks_10a,
 		aaPushishedMarks_10b: { score: aaPushishedMarks_10b },
@@ -860,10 +877,14 @@ module.exports.calculateFRScore = async (req, res) => {
 		const limit = req.query.limit ? parseInt(req.query.limit) : 1000;
 		const page = req.query.page ? parseInt(req.query.page) : 1;
 		const censusCode = 802989;
-		const _id = ObjectId('5dd24728437ba31f7eb42e7b');
+		const _id = ObjectId('5eb5845176a3b61f40ba08d4');
 		// Consider only ULBs with isActive TRUE & population is not empty & not 0.
-		const condition = { isActive: true, population: { $nin: [null, 0] } };
-		// const condition = { isActive: true, _id, population: { $nin: [null, 0] } };
+		// const condition = { isActive: true, population: { $nin: [null, 0] } };
+		const condition = { isActive: true,  population: { $nin: [null, 0] },
+			...(req.query?.ulb && {
+				_id: ObjectId(req.query?.ulb)
+			})
+		};
 		const skip = (page - 1) * limit;
 		const ulbRes = await Ulb.find(condition)
 			.select('_id population isActive state code name ulbType location censusCode sbCode')
