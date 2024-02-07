@@ -217,21 +217,21 @@ function tableRes(states, query, total) {
 	let mapData = [];
 	let i = getPageNo(query);
 	for (const state of states) {
-		const rankedtoTotal = state.fiscalRanking[0].totalUlbs && state.fiscalRanking[0].rankedUlbs ? parseFloat(((state.fiscalRanking[0].rankedUlbs / state.fiscalRanking[0].totalUlbs) * 100).toFixed(2)) : 0;
+		const rankedtoTotal = state.fiscalRanking && state.fiscalRanking[0].totalUlbs && state.fiscalRanking[0].rankedUlbs ? parseFloat(((state.fiscalRanking[0].rankedUlbs / state.fiscalRanking[0].totalUlbs) * 100).toFixed(2)) : 0;
 		const ele = {
 			_id: state._id,
 			sNo: i++,
 			name: state.name,
 			stateType: state.stateType,
-			totalULBs: state.fiscalRanking[0].totalUlbs, //Name to be changed?
-			participatedUlbs: state.fiscalRanking[0].participatedUlbs,
-			rankedUlbs: state.fiscalRanking[0].rankedUlbs,
-			nonRankedUlbs: state.fiscalRanking[0].nonRankedUlbs,
+			totalULBs: state.fiscalRanking ? state.fiscalRanking[0].totalUlbs : 0, //Name to be changed?
+			participatedUlbs: state.fiscalRanking ? state.fiscalRanking[0].participatedUlbs : 0,
+			rankedUlbs: state.fiscalRanking ? state.fiscalRanking[0].rankedUlbs : 0,
+			nonRankedUlbs: state.fiscalRanking ? state.fiscalRanking[0].nonRankedUlbs : 0,
 			rankedtoTotal,
 			nameLink: `/rankings/participated-ulbs/${state._id}`,
 		};
 		const participatedCount = {
-			'percentage': state.fiscalRanking[0].participatedUlbsPercentage,
+			'percentage': state.fiscalRanking ? state.fiscalRanking[0].participatedUlbsPercentage : 0,
 			'code': state.code,
 			'_id': state.name,
 			'stateId': state._id,
@@ -493,7 +493,7 @@ function stateTable(indicator, states, query, total) {
 	for (const state of states) {
 		const ele = {
 			'sNo': i++,
-			'totalUlbs': state.fiscalRanking[0].totalUlbs,
+			'totalUlbs': state.fiscalRanking[0] ? state.fiscalRanking[0].totalUlbs : 0,
 			'name': state.name,
 			'nameLink': `/rankings/participated-ulbs/${state._id}`,
 		};
