@@ -147,10 +147,10 @@ module.exports.getUlbsBySate = async (req, res) => {
 		const data = getUlbData(ulbs, req.query);
 		const header = getTableHeaderDocs();
 		const footer = ['', '', '', '', ''];
-		state.annualBudgets.forEach(y => {
+		state.annualBudgets?.forEach(y => {
 			footer.push(y.total);
 		})
-		state.auditedAccounts.forEach(y => {
+		state.auditedAccounts?.forEach(y => {
 			footer.push(y.total);
 		})
 
@@ -282,8 +282,8 @@ function getUlbData(ulbs, query) {
 			let filename = year.url;
 			if (year.modelName === 'ULBLedger') {
 				filename = `/resources-dashboard/data-sets/balanceSheet?year=${year.year}&type=Raw%20Data%20PDF&category=balance&state=${ulb.state}&ulbName=${ulb.name}`;
-        data[`auditedAccounts${year.year}`] = 'Click here';
-				data[`auditedAccounts${year.year}Config`] =  {
+				data[`auditedAccounts${year.year}`] = 'Click here';
+				data[`auditedAccounts${year.year}Config`] = {
 					icon: 'pdf',
 					title: '',
 					link: filename
@@ -304,7 +304,7 @@ function getUlbData(ulbs, query) {
 }
 
 //<<-- ULB details - Assessment parameter score -->>
-function getTableHeader(type,ulb) {
+function getTableHeader(type, ulb) {
 	let score = '300';
 	if (type === 'resourceMobilization') {
 		score = 600;
@@ -434,7 +434,7 @@ async function getTableData(ulb, type) {
 		const highest = await getMaxMinScore(ulb.populationBucket, indicator.key, -1);
 		const lowest = await getMaxMinScore(ulb.populationBucket, indicator.key, 1);
 		let ulbPerformance = ulb[indicator.key].score;
-		
+
 		let ele = {
 			'sNo': indicator.sno,
 			'indicator': indicator.title,
@@ -449,24 +449,24 @@ async function getTableData(ulb, type) {
 				title: '-'
 			},
 		};
-		if(['aaPushishedMarks_10b','gisBasedPTaxMarks_11a', 'accSoftwareMarks_11b'].includes(indicator.key)) {
-			ulbPerformance = ulb[indicator.key].score ? 'Yes': 'No';
-		} else if(indicator.key ==='avgMonthsForULBAuditMarks_10a') {
+		if (['aaPushishedMarks_10b', 'gisBasedPTaxMarks_11a', 'accSoftwareMarks_11b'].includes(indicator.key)) {
+			ulbPerformance = ulb[indicator.key].score ? 'Yes' : 'No';
+		} else if (indicator.key === 'avgMonthsForULBAuditMarks_10a') {
 			ulbPerformance = ulb[indicator.key].values;
 		} else {
 			const highest = await getMaxMinScore(ulb.populationBucket, indicator.key, -1);
 			const lowest = await getMaxMinScore(ulb.populationBucket, indicator.key, 1);
 			ele = {
-					...ele,
-					'highPerformance': highest[indicator.key].score,
-					'highPerformanceConfig': {
-						title: highest.name
-					},
-					'lowPerformance': lowest[indicator.key].score,
-					'lowPerformanceConfig': {
-						title: lowest.name
-					},
-				}
+				...ele,
+				'highPerformance': highest[indicator.key].score,
+				'highPerformanceConfig': {
+					title: highest.name
+				},
+				'lowPerformance': lowest[indicator.key].score,
+				'lowPerformanceConfig': {
+					title: lowest.name
+				},
+			}
 		}
 		ele = {
 			...ele,
@@ -591,14 +591,14 @@ module.exports.autoSuggestUlbs = async (req, res) => {
 		const limit = req.query.limit ? parseInt(req.query.limit) : 5;
 		const populationBucket = req.query?.populationBucket;
 		const condition = {
-            isActive: true,
-            name: new RegExp(`.*${q}.*`, 'i'),
-            ...(populationBucket && {
-                populationBucket,
-            }),
+			isActive: true,
+			name: new RegExp(`.*${q}.*`, 'i'),
+			...(populationBucket && {
+				populationBucket,
+			}),
 
-            // currentFormStatus: { $in: [11] }
-        };
+			// currentFormStatus: { $in: [11] }
+		};
 		let ulbs = await ScoringFiscalRanking.find(condition, { name: 1, ulb: 1, populationBucket: 1, censusCode: 1, sbCode: 1, _id: 0 })
 			.sort({ name: 1 })
 			.limit(limit)
