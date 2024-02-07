@@ -2964,6 +2964,7 @@ module.exports.action = async (req, res) => {
             data["actionTakenBy"] = user._id;
             data["ulb"] = prevState.ulb;
             data["modifiedAt"] = time();
+            data['actionTakenByRole'] = user?.role
             let du = await XVFCGrantULBData.update(
               { _id: ObjectId(prevState._id) },
               { $set: data, $push: { history: history } }
