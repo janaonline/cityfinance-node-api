@@ -168,7 +168,7 @@ async function generateSignedUrl(data, _cb) {
                     url: _url,
                     file_alias: file_alias,
                     file_url: _url.substring(0, _url.indexOf("?")),
-                    path: _url.substring(0, _url.indexOf("?"))
+                    path: file_alias
                 });
             } else {
                 reject(err);
