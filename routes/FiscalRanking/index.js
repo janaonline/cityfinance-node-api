@@ -1,8 +1,9 @@
 const express = require("express");
 const router = express.Router();
 const { verifyToken } = require('../auth/services/verifyToken')
-const { CreateorUpdate, getView, approvedByMohua, getFRforms, createTabsFiscalRanking, actionTakenByMoHua, FRUlbFinancialData, FROverAllUlbData, getTrackingHistory,heatMapReport, overview, createForm, getAll, freezeForm, errorLogs} = require('./service')
+const { CreateorUpdate, getView, approvedByMohua, getFRforms, createTabsFiscalRanking, actionTakenByMoHua, FRUlbFinancialData, FROverAllUlbData, getTrackingHistory,heatMapReport, overview, createForm, getAll, freezeForm, errorLogs, backendDataUpload} = require('./service')
 const { updateSubmittedDate } = require('./update-submitted-date')
+const multer = require('multer');
 
 router.post("/create", verifyToken, CreateorUpdate);
 router.get("/getAll", verifyToken, getAll);
@@ -21,6 +22,11 @@ router.get("/tracking-history",getTrackingHistory)
 //One time API to freeze form FR.
 router.put("/freeze-form",freezeForm)
 router.get("/get-error-logs", errorLogs)
+
+//Api to update value from backend
+const storage = multer.memoryStorage();
+const upload = multer({ storage: storage });
+router.post("/backendDataUpload", upload.single("file"), backendDataUpload);
 
 router.patch("/update-submitted-date", verifyToken, updateSubmittedDate);
 

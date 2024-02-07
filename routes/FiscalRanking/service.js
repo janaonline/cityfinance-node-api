@@ -5966,3 +5966,256 @@ module.exports.errorLogs = async (req, res) => {
     return res.status(400).json(err)
   }
 }
+
+module.exports.backendDataUpload = async (req, res) => {
+  try {
+    // Check if a file is provided
+    if (!req.file) {
+      return res.status(400).send("No file uploaded.");
+    }
+
+    // Read the Excel file from buffer
+    const workbook = new ExcelJS.Workbook();
+    await workbook.xlsx.load(req.file.buffer);
+
+    // Convert Excel data to JSON
+    await Promise.all(
+      workbook.worksheets.map(async (worksheet) => {
+        const sheetData = [];
+        const headerRow = [];
+        await worksheet.eachRow({ includeEmpty: true }, (row, rowNumber) => {
+          if (rowNumber === 1) {
+            row.eachCell((cell) => {
+              headerRow.push(cell.value);
+            });
+          } else {
+            const rowData = {};
+            row.eachCell((cell, colNumber) => {
+              if (headerRow[colNumber - 1] == "censusCode") {
+                cell.value += "";
+              } else if (headerRow[colNumber - 1] == "year") {
+                rowData["designYear"] = ObjectId(years[cell.value]);
+              }
+              rowData[headerRow[colNumber - 1] || `column${colNumber}`] =
+                cell.value;
+            });
+            sheetData.push(rowData);
+          }
+        });
+        let [query, autoSumQuery] = await getQueryFrUpdate(sheetData);
+        query = `db.fiscalrankingmappers.bulkWrite(${query})
+        ${autoSumQuery}
+        `
+        // Set response headers for file download
+        res.setHeader('Content-Disposition', 'attachment; filename=ccc.txt');
+        res.setHeader('Content-Type', 'text/plain');
+
+        // Send the file content as the response
+        return res.send(query);
+      })
+    );
+  } catch (error) {
+    console.error("Error reading Excel file:", error);
+    res.status(500).send("Internal Server Error");
+  }
+};
+
+const getAutoSumQuery = (ids) => {
+  return `
+var ulbId = [${ids.map((id) => `ObjectId("${id}")`).join(", ")}]
+var affectedUlbs = [];
+var ulbIdWithZeroIndicatorValues = [];
+
+
+let displayPriorityArr = [
+    [1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1],
+    [2.1, 2.2, 2.3, 2.4, 2],
+    [4.1, 4.2, 4],
+    [5.11, 5.12, 5.13, 5.14, 5.1],
+    [5.21, 5.22, 5.23, 5.2],
+    [5.1, 5.2, 5.3, 5],
+    [19.1, 19.2, 19],
+    [1, 2, 3, 7.1],
+    [1, 2, 3, 4, 5, 6, 7.2],
+    [8.1, 8.2, 8.3, 8.4, 8],
+    [17.1, 17.2, 17],
+    [10.1, 10.2, 10.3, 10],
+    [8, 9, 10, 11, 12, 13, 14],
+    [16.1, 16.2, 16.3, 16]
+];
+
+
+for (ulb of ulbId) {
+    for (var displayPriorities of displayPriorityArr) {
+        var lastElem = displayPriorities[displayPriorities.length - 1];
+
+        var result = db.fiscalrankingmappers.aggregate([
+            {
+                $match: {
+                    ulb,
+                    displayPriority: { $in: displayPriorities }
+                }
+            },
+            {
+                $facet: {
+                    "filteredData": [
+                        {
+                            $group: {
+                                _id: {
+                                    year: "$year"
+                                },
+                                totalSum: {
+                                    $sum: {
+                                        $cond: {
+                                            "if": { "$eq": ["$displayPriority", lastElem] },
+                                            "then": 0,
+                                            "else": {
+                                                $convert: {
+                                                    input: "$value",
+                                                    to: "double",
+                                                    onError: 0,
+                                                    onNull: 0
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                    ],
+                    "individualSum": [
+                        {
+                            $match: {
+                                displayPriority: lastElem
+                            }
+                        },
+                        {
+                            $group: {
+                                _id: {
+                                    year: "$year"
+                                },
+                                valueData: {
+                                    $sum: {
+                                        $convert: {
+                                            input: "$value",
+                                            to: "double",
+                                            onError: 0,
+                                            onNull: ""
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    ]
+                }
+            },
+            {
+                $addFields: {
+                    indicatorLogic: lastElem
+                }
+            },
+            {
+                $project: {
+                    "year": "$filteredData",
+                    "individualSum": "$individualSum",
+                    "indicatorLogic": 1
+                }
+            },
+            {
+                $unwind: "$year"
+            },
+            {
+                $unwind: "$individualSum"
+            },
+            {
+                $match: {
+                    $expr: { $eq: ["$year._id.year", "$individualSum._id.year"] }
+                }
+            },
+            {
+                $project: {
+                    _id: 0,
+                    year: "$year._id.year",
+                    totalSum: "$year.totalSum",
+                    valueData: "$individualSum.valueData",
+                    indicatorLogic: 1
+                }
+            }
+        ]).toArray();
+        result.forEach((item => {
+            if (item.valueData != item.totalSum || (item.valueData == 0 && item.totalSum == 0)) {
+                db.fiscalrankingmappers.updateOne({ ulb, year: item.year, displayPriority: lastElem }, { $set: { value: item.totalSum } })
+
+                if (item.valueData != item.totalSum && !affectedUlbs.includes(ulb)) {
+                    affectedUlbs.push(item);
+                }
+                if ((item.valueData == 0 && item.totalSum == 0) && !ulbIdWithZeroIndicatorValues.includes(ulb)) {
+                    ulbIdWithZeroIndicatorValues.push(ulb);
+                }
+
+            }
+        }));
+    }
+}
+
+printjson({ affectedUlbs, ulbIdWithZeroIndicatorValues})`;
+};
+
+const replaceDots = (s) => {
+  if (typeof s != "string") return s;
+  const [mentisa, ...decimal] = s.split(".");
+  return +[mentisa, decimal.join("")].join(".");
+};
+const getQueryFrUpdate = async (inputArray) => {
+  const ulbIdsMapper = await Ulb.find({
+    $or: [
+      {
+        censusCode: { $in: inputArray.map((i) => i.censusCode) },
+      },
+      {
+        sbCode: { $in: inputArray.map((i) => i.censusCode) },
+      },
+    ],
+  });
+  let ulbMapper = ulbIdsMapper.reduce(
+    (acc, ulb) => ({
+      ...acc,
+      [ulb.censusCode || ulb.sbCode]: ulb._id,
+    }),
+    {}
+  );
+
+  const query = inputArray.map((item) => {
+    return {
+      updateOne: {
+        filter: {
+          ulb: ulbMapper[item.censusCode],
+          displayPriority: replaceDots(item.displayPriority),
+          year: ObjectId(item.designYear),
+        },
+        update: {
+          $set: {
+            pmuSuggestedValue2: item.value,
+            value: item.value,
+            rejectReason2: "Value provided by janagrah Team",
+          },
+        },
+      },
+    };
+  });
+
+  let str = JSON.stringify(query, 3, 3);
+  let ulbIds = query.map(item => '' + item.updateOne.filter?.ulb);
+  const autoSumQuery = getAutoSumQuery([...new Set(ulbIds)])
+
+  // Replace the old values with new values in the string for ulb, year, and displayPriority
+  let newStr = str
+    .replace(/"ulb": "(.*?)"/g, (match, p1) => {
+      return `"ulb": ObjectId("${p1}")`;
+    })
+    .replace(/"year": "(.*?)"/g, (match, p1) => {
+      return `"year": ObjectId("${p1}")`;
+    }); 
+
+  return [newStr, autoSumQuery];
+};
