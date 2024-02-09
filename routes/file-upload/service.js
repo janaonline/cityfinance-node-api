@@ -5,6 +5,7 @@ const http = require('http');
 const urlencode = require("urlencode");
 const baseDir = "uploads/";
 const {ENV} = require('./../../util/FormNames');
+const { getStorageBaseUrl } = require('../../service/getBlobUrl');
 const SECRET ={
     AWS_STORAGE_URL_STG: process.env.AWS_STORAGE_URL_STG,
     AWS_STORAGE_URL_PROD: process.env.AWS_STORAGE_URL_PROD,
@@ -84,9 +85,7 @@ const downloadFileToDisk = function (url, _cb) {
         let dest = "/tmp/" + fileName;
         var file = fs.createWriteStream(dest);
         var h = http;
-        STORAGE_URL = SECRET.ENV !== ENV.prod
-          ? SECRET.AWS_STORAGE_URL_STG
-          : SECRET.AWS_STORAGE_URL_PROD;
+        STORAGE_URL = getStorageBaseUrl();
         url = STORAGE_URL + url
         let isHttps = url.includes("https");
         if (isHttps) {

@@ -1,3 +1,5 @@
+const { getStorageBaseUrl } = require('./getBlobUrl');
+
 const ObjectId = require('mongoose').Types.ObjectId;
 module.exports.camelize = (dashString = '') => {
     return dashString.replace(/(?<!\p{L})\p{L}|\s+/gu,
@@ -100,7 +102,7 @@ const concatenateUrls = (obj, params = KEYS, flag = false) => {
             if (typeof obj[key] === 'object' && obj[key] !== null) {
                 obj[key] = concatenateUrls(obj[key], params);
             } else if (typeof obj[key] === 'string' && obj[params[key]]) {
-                if (obj[params[key]] !== "Already Uploaded on Cityfinance") obj[key] = process.env.AZURE_STORAGE_URL + obj[key]
+                if (obj[params[key]] !== "Already Uploaded on Cityfinance") obj[key] = getStorageBaseUrl() + obj[key]
             }
         }
         return obj;
