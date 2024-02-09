@@ -4,6 +4,12 @@ const https = require('https');
 const http = require('http');
 const urlencode = require("urlencode");
 const baseDir = "uploads/";
+const {ENV} = require('./../../util/FormNames');
+const SECRET ={
+    AWS_STORAGE_URL_STG: process.env.AWS_STORAGE_URL_STG,
+    AWS_STORAGE_URL_PROD: process.env.AWS_STORAGE_URL_PROD,
+    ENV: process.env.ENV
+}
 const generateSignedUrl = function (data) {
     return new Promise((resolve, reject) => {
         let dir = data["headers"].type ? "resource" : "objects";
@@ -78,7 +84,10 @@ const downloadFileToDisk = function (url, _cb) {
         let dest = "/tmp/" + fileName;
         var file = fs.createWriteStream(dest);
         var h = http;
-        url = process.env.AZURE_STORAGE_URL + url
+        STORAGE_URL = SECRET.ENV !== ENV.prod
+          ? SECRET.AWS_STORAGE_URL_STG
+          : SECRET.AWS_STORAGE_URL_PROD;
+        url = STORAGE_URL + url
         let isHttps = url.includes("https");
         if (isHttps) {
             const req = https.get(url, function (response) {
