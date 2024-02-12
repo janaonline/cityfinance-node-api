@@ -85,7 +85,7 @@ async function updatePercentage_formula3(ulb, indicator) {
 		if (ulb[indicator].score <= 20 && ulb[indicator].score >= -10) percentage = 50;
 		else if (ulb[indicator].score > 20) percentage = 45;
 		else if (ulb[indicator].score <= -10 && ulb[indicator].score >= -25) percentage = 40;
-		else if (ulb[indicator].score <= -25) percentage = 37.5;
+		else if (ulb[indicator].score < -25) percentage = 37.5;
 		else percentage = 0;
 	}
 	// return parseFloat(percentage.toFixed(decimalPlace));
