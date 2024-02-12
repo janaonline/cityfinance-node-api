@@ -115,7 +115,7 @@ async function calculateFRPercentage(populationBucket) {
 	// const censusCode = 802787;
 	// Submission Acknowledged by PMU - 11
 	const condition = { populationBucket, currentFormStatus: { $in: [11] } };
-	// const condition = { $and: [ {populationBucket},{ "currentFormStatus": 11 }, { "totalBudgetDataPC_1.percentage": 0 }, { "totalBudgetDataPC_1.score": { $ne: 0 } } ] }
+	// const condition = { $and: [ {populationBucket},{ 'currentFormStatus': 11 }, { 'totalBudgetDataPC_1.percentage': 0 }, { 'totalBudgetDataPC_1.score': { $ne: 0 } } ] }
 	// const condition = {};
 	const ulbArr = await ScoringFiscalRanking.find(condition).select('populationBucket totalBudgetDataPC_1 ownRevenuePC_2 pTaxPC_3 cagrInTotalBud_4 cagrInOwnRevPC_5 cagrInPropTax_6 capExPCAvg_7 cagrInCapExpen_8 omExpTotalRevExpen_9 avgMonthsForULBAuditMarks_10a aaPushishedMarks_10b gisBasedPTaxMarks_11a accSoftwareMarks_11b receiptsVariance_12 ownRevRecOutStanding_13 digitalToTotalOwnRev_14 propUnderTaxCollNet_15').lean();
 

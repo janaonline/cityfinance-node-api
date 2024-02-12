@@ -200,14 +200,14 @@ function tableRes(states, query, total) {
 			},
 		],
 		'subHeaders': [
-			"",
-			"",
-			"",
-			"A",
-			"B",
-			"C",
-			"D",
-			"E = C/ A * 100"
+			'',
+			'',
+			'',
+			'A',
+			'B',
+			'C',
+			'D',
+			'E = C/ A * 100'
 		],
 		'name': '',
 		'data': [],
