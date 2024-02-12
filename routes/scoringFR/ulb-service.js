@@ -50,7 +50,7 @@ module.exports.getUlbDetails = async (req, res) => {
 		const condition1 = { isActive: true, populationBucket: ulb.populationBucket };
 		const populationBucketUlbCount = await ScoringFiscalRanking.countDocuments(condition1).lean();
 
-		const condition2 = { isActive: true, populationBucket: ulb.populationBucket };
+		const condition2 = { isActive: true, populationBucket: ulb.populationBucket, currentFormStatus };
 		const topUlbs = await ScoringFiscalRanking.find(condition2, { name: 1, ulb: 1, populationBucket: 1, censusCode: 1, sbCode: 1, _id: 0 }).sort({ 'overAll.rank': 1 }).limit(10).lean();
 
 		const conditionFs = {
