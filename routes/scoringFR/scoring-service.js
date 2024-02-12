@@ -497,13 +497,21 @@ function totalReceiptsVariance(fsMapper2019_20, fsMapper2020_21, fsMapper2021_22
 function ownRevRecOut(fsMapperNoYear, fsMapper2021_22) {
     try {
         // ifNoError ? (indicator 25 / indicator 7.1) * 365 : 0;
-        // TODO - Condition to be added >> if any error then 0 should be returned condition to be written.
         const ownRevArea = getNumberValue(fsMapperNoYear, 'totalOwnRevenueArea');
         const ownRev2021_22 = getNumberValue(fsMapper2021_22, 'totalOwnRevenue');
 
         // Handling denominator = 0;
-        const ownRevRecOut = ownRevArea === 0 || ownRev2021_22 === 0 ? 0 : (ownRevArea / ownRev2021_22) * 365;
-        return parseFloat(ownRevRecOut.toFixed(2));
+        let ownRevRecOut = 0;
+        let infinity = false;
+
+        // If denominator = 0; 
+        if (ownRev2021_22 === 0) {
+            ownRevRecOut = 0;
+            infinity = true;
+        } else {
+            ownRevRecOut = (ownRevArea / ownRev2021_22) * 365;
+        }
+        return { score: parseFloat(ownRevRecOut.toFixed(2)), ...(infinity && { infinity }) };
     } catch (e) {
         return 0;
     }
@@ -847,7 +855,7 @@ async function getData(ulbRes) {
         gisBasedPTaxMarks_11a: { score: gisBasedPTaxMarks_11a },
         accSoftwareMarks_11b: { score: accSoftwareMarks_11b },
         receiptsVariance_12: { score: receiptsVariance_12 },
-        ownRevRecOutStanding_13: { score: ownRevRecOutStanding_13 },
+        ownRevRecOutStanding_13: ownRevRecOutStanding_13,
         digitalToTotalOwnRev_14: { score: digitalToTotalOwnRev_14 },
         propUnderTaxCollNet_15: { score: propUnderTaxCollNet_15 },
         // isProvisional: getProvisionalStatus(ulbRes.censusCode),

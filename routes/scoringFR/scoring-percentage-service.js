@@ -97,7 +97,7 @@ async function updatePercentage_formula4(ulb, indicator) {
 	const highScore = await getMaxMinScore(ulb.populationBucket, indicator, -1);
 	const lowScore = await getMaxMinScore(ulb.populationBucket, indicator, 1);
 	let percentage = 0;
-	if (ulb[indicator].score) {
+	if (!ulb[indicator].infinity) {
 		const numerator = (highScore - ulb[indicator].score);
 		const denominator = (highScore - lowScore);
 		percentage = numerator === 0 || denominator === 0 ? 0 : (numerator / denominator) * 50;
