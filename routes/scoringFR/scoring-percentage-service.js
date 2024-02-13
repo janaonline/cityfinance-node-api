@@ -137,15 +137,7 @@ async function calculateFRPercentage(populationBucket) {
 		const ownRevRecOutStanding_13 = await updatePercentage_formula4(ulb, 'ownRevRecOutStanding_13');
 		const digitalToTotalOwnRev_14 = await updatePercentage_formula1(ulb, 'digitalToTotalOwnRev_14', 50);
 		const propUnderTaxCollNet_15 = await updatePercentage_formula1(ulb, 'propUnderTaxCollNet_15', 50);
-		// console.log(
-		// 	'ulb', ulb.name,
-		// 	'totalBudgetDataPC_1', totalBudgetDataPC_1.percentage, 
-		// 	'ownRevenuePC_2',ownRevenuePC_2.percentage,
-		// 	'pTaxPC_3',pTaxPC_3.percentage,
-		// 	'cagrInTotalBud_4',cagrInTotalBud_4.percentage,
-		// 	'cagrInOwnRevPC_5',cagrInOwnRevPC_5.percentage,
-		// 	'cagrInPropTax_6',cagrInPropTax_6.percentage,
-		// 	)
+
 		const resourceMobilization = parseFloat((totalBudgetDataPC_1.percentage + ownRevenuePC_2.percentage + pTaxPC_3.percentage + cagrInTotalBud_4.percentage + cagrInOwnRevPC_5.percentage + cagrInPropTax_6.percentage).toFixed(decimalPlace));
 		const expenditurePerformance = parseFloat((capExPCAvg_7.percentage + cagrInCapExpen_8.percentage + omExpTotalRevExpen_9.percentage).toFixed(decimalPlace));
 		const fiscalGovernance = parseFloat((avgMonthsForULBAuditMarks_10a.percentage + aaPushishedMarks_10b.percentage + gisBasedPTaxMarks_11a.percentage + gisBasedPTaxMarks_11a.percentage +
@@ -176,7 +168,6 @@ async function calculateFRPercentage(populationBucket) {
 			'overAll.score': overAll,
 		};
 		// console.log('updateData',updateData);
-
 
 		await ScoringFiscalRanking.findByIdAndUpdate(ulb._id, {
 			$set: updateData,

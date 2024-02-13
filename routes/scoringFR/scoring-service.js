@@ -92,7 +92,6 @@ function totalBudgetPerCapita(ulbRes, fsData, fsMapper2021_22) {
         //Total receipts actual
         const totalRecActual_2021_22 = getNumberValue(fsMapper2021_22, 'totalRecActual');
         // Total receipts actual of water supply
-        //TODO: verify the condition
         const totalRcptWaterSupply = fsData && fsData.waterSupply.value === 'Yes' ? getNumberValue(fsMapper2021_22, 'totalRcptWaterSupply') : 0;
         // Total reciepts actual for sanitaion.	
         const totalRcptSanitation = fsData && fsData.sanitationService.value === 'Yes' ? getNumberValue(fsMapper2021_22, 'totalRcptSanitation') : 0;
@@ -115,7 +114,6 @@ function ownRevenuePerCapita(ulbRes, fsData, fsMapper2021_22) {
         // Own revenue for water supply.
         const waterTax = getNumberValue(fsMapper2021_22, 'waterTax');
         const waterSupplyFee = getNumberValue(fsMapper2021_22, 'waterSupplyFee');
-        //TODO: verify the condition
         const ownRevenueWaterSupply = fsData && fsData.waterSupply.value === 'Yes' ? waterTax + waterSupplyFee : 0;
         // Own revenue for sewerage and sanitation.
         const sewerageTax = getNumberValue(fsMapper2021_22, 'sewerageTax');
@@ -151,7 +149,6 @@ function cagrInTotalBudget(fsData, fsMapper2018_19, fsMapper2021_22) {
         const totalRecActual_2018_19 = getNumberValue(fsMapper2018_19, 'totalRecActual');
         const totalRecActual_2021_22 = getNumberValue(fsMapper2021_22, 'totalRecActual');
         // If 'Yes' then take the receipts for watersupply/ sanitation value.
-        //TODO: verify the condition
         const waterTax2021_22 = fsData && fsData.waterSupply.value === 'Yes' ? getNumberValue(fsMapper2021_22, 'totalRcptWaterSupply') : 0;
         const sanitationTax2021_22 = fsData && fsData.sanitationService.value === 'Yes' ? getNumberValue(fsMapper2021_22, 'totalRcptSanitation') : 0;
         const waterTax_2018_19 = fsData && fsData.waterSupply.value === 'Yes' ? getNumberValue(fsMapper2018_19, 'totalRcptWaterSupply') : 0;
@@ -198,7 +195,6 @@ function cagrInOwnRevenue(fsData, fsMapper2018_19, fsMapper2021_22) {
         const ownRevenueSewerageSanitation_2018_19 = getNumberValue(fsMapper2018_19, 'sewerageTax') + getNumberValue(fsMapper2018_19, 'sanitationFee');
         const ownRevenueSewerageSanitation_2021_22 = getNumberValue(fsMapper2021_22, 'sewerageTax') + getNumberValue(fsMapper2021_22, 'sanitationFee');
         // If 'Yes' then take the own revenue for watersupply/ sanitation value.
-        //TODO: verify the condition
         const waterTax_2021_22 = fsData && fsData.waterSupply.value === 'Yes' ? ownRevenueWaterSupply_2021_22 : 0;
         const sanitationTax_2021_22 = fsData && fsData.sanitationService.value === 'Yes' ? ownRevenueSewerageSanitation_2021_22 : 0;
         const waterTax_2018_19 = fsData && fsData.waterSupply.value === 'Yes' ? ownRevenueWaterSupply_2018_19 : 0;
@@ -269,7 +265,6 @@ function capExPerCapitaAvg(ulbRes, fsData, fsMapper2019_20, fsMapper2020_21, fsM
         const totalCapEx_2020_21 = getNumberValue(fsMapper2020_21, 'CaptlExp');
         const totalCapEx_2021_22 = getNumberValue(fsMapper2021_22, 'CaptlExp');
         // Assigning the values to variables if fsData options are 'YES' - 3years
-        //TODO: verify the condition
         const totalRcptWaterSupply_2019_20 =
             fsData && fsData.waterSupply.value === 'Yes' ? getNumberValue(fsMapper2019_20, 'CaptlExpWaterSupply') : 0;
         const totalRcptSanitation_2019_20 =
@@ -300,7 +295,6 @@ function capExPerCapitaAvg(ulbRes, fsData, fsMapper2019_20, fsMapper2020_21, fsM
 function cagrInCapEx(fsData, fsMapper2018_19, fsMapper2021_22) {
     try {
         // Assigning the values to variables if fsData options are 'YES'.
-        //TODO: verify the condition
         const totalRcptWaterSupply_2018_19 =
             fsData && fsData.waterSupply.value === 'Yes' ? getNumberValue(fsMapper2018_19, 'CaptlExpWaterSupply') : 0;
         const totalRcptSanitation_2018_19 =
@@ -332,7 +326,6 @@ function cagrInCapEx(fsData, fsMapper2018_19, fsMapper2021_22) {
 }
 
 // 9. O&M expenses to Total Revenue Expenditure (TRE) (3- year average) - EP
-//TODO: verify the condition
 function omExpTotalRevEx(fsData, fsMapper2019_20, fsMapper2020_21, fsMapper2021_22) {
     try {
         const omExpWaterSupply_2019_20 =
@@ -521,7 +514,6 @@ function ownRevRecOut(fsMapperNoYear, fsMapper2021_22) {
 function digtalOwnRevToTotalOwnRev(fsMapperNoYear) {
     try {
         // indicator 30 / indicator 29 + 30
-        // TO-DO if any error then 0 is to be entered condition to be written.
         const digitalOwnRev = getNumberValue(fsMapperNoYear, 'fy_21_22_online');
         const totalOwnRev = getNumberValue(fsMapperNoYear, 'fy_21_22_cash') + getNumberValue(fsMapperNoYear, 'fy_21_22_online');
         const digtalOwnRevToTotalOwnRev = digitalOwnRev === 0 || totalOwnRev === 0 ? 0 : (digitalOwnRev / totalOwnRev) * 100;
@@ -536,7 +528,6 @@ function digtalOwnRevToTotalOwnRev(fsMapperNoYear) {
 function propUnderTaxColl(fsMapperNoYear) {
     try {
         // indicator 33 / (indicator 31 - indicator 32)
-        // TO-DO if any error then 0 is to be entered condition to be written.
         const paidPTax = getNumberValue(fsMapperNoYear, 'paid_property_tax');
         const denominator = getNumberValue(fsMapperNoYear, 'property_tax_register') - getNumberValue(fsMapperNoYear, 'paying_property_tax');
         let tempPropUnderTaxColl = paidPTax === 0 || denominator === 0 ? 0 : (paidPTax / denominator);
