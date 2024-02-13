@@ -1016,38 +1016,36 @@ module.exports.report = async (req, res) => {
         }
         let year = `20${fy}`
 
-        AnnualAccount.aggregate(query).exec((err, data) => {
-            if (err) {
-                res.json({
-                    success: false,
-                    msg: "Invalid Payload",
-                    data: err.toString(),
-                });
-            } else {
-                console.log(data.length)
-                res.flushHeaders();
-                for (let el of data) {
-
-                    res.write(
-                        el.ulbName +
-                        "," +
-                        el.Code +
-                        "," +
-                        el.state +
-                        "," +
-                        year +
-                        "," +
-                        el.standardized_excel +
-                        "\r\n"
-                    );
-
-
-                }
-
-                res.end();
-            }
-        });
-
+        res.flushHeaders();
+        try {
+          const cursor = AnnualAccount.aggregate(query)
+            .allowDiskUse(true)
+            .cursor({ batchSize: 500 })
+            .addCursorFlag("noCursorTimeout", true)
+            .exec();
+          cursor.on("data", (el) => {
+            res.write(
+              el.ulbName +
+                "," +
+                el.Code +
+                "," +
+                el.state +
+                "," +
+                year +
+                "," +
+                el.standardized_excel +
+                "\r\n"
+            );
+          });
+          cursor.on("end", (el) => {
+            return res.end();
+          });
+        } catch (err) {
+          return res.status(400).json({
+            success: false,
+            msg: "Invalid Payload",
+          });
+        }
     }
 
 

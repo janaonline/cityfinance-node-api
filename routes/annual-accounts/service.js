@@ -31,7 +31,8 @@ const {saveCurrentStatus, saveFormHistory, saveStatusHistory, getShortKeys} = re
 const CurrentStatus = require("../../models/CurrentStatus");
 const {getSeparatedShortKeys, saveFormLevelHistory} = require('../../routes/CommonActionAPI/service')
 var https = require('https');
-var request = require('request')
+var request = require('request');
+const { concatenateUrls } = require("../../service/common");
 
 // function doRequest(url) {
 //   return new Promise(function (resolve, reject) {
@@ -117,7 +118,7 @@ var request = require('request')
 //     for (let key in el) {
 //       if (key != '_id' && key != 'ulbName' && key != 'ulbcode' && el[key]) {
 //         let url = el[key];
-//         // let url = 'https://cityfinance.in/objects/31e1883d-7eef-4b2f-9e29-18d598056a5d.pdf'
+//         // let url = `https://${process.env.PROD_HOST}/objects/31e1883d-7eef-4b2f-9e29-18d598056a5d.pdf`
 //         try {
 //           let response = await doRequest(url);
 
@@ -250,7 +251,7 @@ module.exports.fileDeFuncFiles = async (req, res) => {
           if (key != '_id' && key != 'ulbName' && key != 'ulbcode' && el[key]) {
             documnetcounter++;
             let url = el[key];
-            // let url = 'https://cityfinance.in/objects/31e1883d-7eef-4b2f-9e29-18d598056a5d.pdf'
+            // let url = `https://${process.env.PROD_HOST}/objects/31e1883d-7eef-4b2f-9e29-18d598056a5d.pdf`
             try {
               let response = await doRequest(url);
               let obj = {
@@ -1038,7 +1039,7 @@ let getExcel = async (req, res, data) => {
       console.log(value)
       worksheet.addRow(value);
     });
-    worksheet.addRow({ headOfAccount: "Can't find what you are looking for? Reach out to us at contact@cityfinance.in" });
+    worksheet.addRow({ headOfAccount: `Can't find what you are looking for? Reach out to us at contact@${process.env.PROD_HOST}` });
     res.setHeader(
       "Content-Type",
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
@@ -2535,6 +2536,17 @@ exports.getCSVAudited = catchAsync(async (req, res) => {
         }
 
         for (el of data) {
+          el = JSON.parse(JSON.stringify(el));
+          let urlParams = {
+            auditor_report: "auditor_report",
+            bal_sheet: "bal_sheet",
+            bal_sheet_schedules: "bal_sheet_schedules",
+            cash_flow: "cash_flow",
+            inc_exp: "inc_exp",
+            inc_exp_schedules: "inc_exp_schedules",
+            standardized_excel: "standardized_excel",
+          };
+          el = concatenateUrls(el, urlParams);
           res.write(
             el.year +
             "," +
@@ -2742,6 +2754,16 @@ exports.getCSVUnaudited = catchAsync(async (req, res) => {
         // }
         }
         for (el of data) {
+          el = JSON.parse(JSON.stringify(el));
+          let urlParams = {
+            bal_sheet: "bal_sheet",
+            bal_sheet_schedules: "bal_sheet_schedules",
+            cash_flow: "cash_flow",
+            inc_exp: "inc_exp",
+            inc_exp_schedules: "inc_exp_schedules",
+            standardized_excel: "standardized_excel",
+          };
+          el = concatenateUrls(el, urlParams);
           res.write(
             el.year +
             "," +

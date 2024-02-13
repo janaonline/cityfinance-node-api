@@ -267,6 +267,10 @@ router.use(review);
 const getS3Url = require("../service/getS3Url");
 router.post("/getS3Url", getS3Url);
 
+// @getBlobUrl
+const getBlobUrl = require("../service/getBlobUrl");
+router.post("/getBlobUrl", getBlobUrl);
+
 //deletefile
 const DeleteFileApi = require('./DeleteFileApi');
 router.use('/deleteFile', DeleteFileApi);
@@ -299,6 +303,10 @@ router.use('/state-resources', verifyToken, stateResources);
 
 const generalAlerts = require("./generalAlerts")
 router.use('/general-alert', generalAlerts);
+
+//calculate fiscal ranking score
+const scoringFR = require('./scoringFR');
+router.use('/scoring-fr', scoringFR);
 
 router.use(require('./Master'))
 

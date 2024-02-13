@@ -20,11 +20,11 @@ module.exports.frFormFreeze = async () => {
         let url = "http://localhost:8080/api/v1/";
 
         if ((process.env.ENV == ENV['prod'])) {
-            url = "https://cityfinance.in/api/v1/";
+            url = `https://${process.env.PROD_HOST}/api/v1/`;
         } else if ((process.env.ENV == ENV['demo'])) {
-            url = "https://democityfinanceapi.dhwaniris.in/api/v1/";
+            url = `https://${process.env.DEMO_HOST_BACKEND}/api/v1/`;
         } else if ((process.env.ENV == ENV['stg'])) {
-            url = "https://staging.cityfinance.in/api/v1/";
+            url = `https://${process.env.STAGING_HOST}/api/v1/`;
         }
 
         let viewEndPoint = "fiscal-ranking/view";
@@ -36,6 +36,10 @@ module.exports.frFormFreeze = async () => {
             currentFormStatus: { $in: [MASTER_FORM_STATUS['IN_PROGRESS'], MASTER_FORM_STATUS['RETURNED_BY_PMU']] }
         }).select('ulb design_year pmuSubmissionDate isAutoApproved');
 
+        writeFileSync("cron-freeze-error-test.txt", JSON.stringify(getUlbForms, 3, 3), function (err) {
+            if (err) throw err;
+            console.log('Saved!');
+        })
         const logDetails = [];
         for (let frData of getUlbForms) {
             let user = await User.findOne({ role: 'ULB', ulb: ObjectId(frData?.ulb) });
