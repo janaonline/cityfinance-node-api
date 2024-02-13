@@ -5,6 +5,7 @@ module.exports = (data = [], fields = {})=>{
             for(let el of data){
 
                 let obj = {};
+                el['isActive'] = el.isActive ? "Active" : "InActive";
                 for(let key in fields){
                     if(key=='createdAt'){
                        let d = el[key].toDateString().split(' ');

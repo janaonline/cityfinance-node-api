@@ -14,7 +14,8 @@ const { years } = require('../../service/years');
 const { saveFormHistory } = require("../../util/masterFunctions")
 const { validationJson, keysWithChild } = require("./validation");
 const MasterStatus = require('../../models/MasterStatus');
-const { saveStatusAndHistory } = require("../CommonFormSubmission/service")
+const { saveStatusAndHistory } = require("../CommonFormSubmission/service");
+const { concatenateUrls } = require('../../service/common');
 const getKeyByValue = (object, value) => {
     return Object.keys(object).find(key => object[key] === value);
 }
@@ -1506,6 +1507,8 @@ module.exports.getCsvForPropertyTaxMapper = async (req, res) => {
             .exec();
 
         cursor.on("data", (el) => {
+            el = JSON.parse(JSON.stringify(el));
+            el = concatenateUrls(el);
             let updatedDatas = {}
             let filteredResults = el.propertytaxopmapper;
             let sortedResults = filteredResults.sort(sortPosition)
