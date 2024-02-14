@@ -377,7 +377,7 @@ module.exports.topRankedUlbs = async (req, res) => {
 			.exec();
 		// console.log(ulbRes)
 
-		fetchFiveUlbs(ulbRes, by);
+		fetchFiveUlbs(ulbRes, by, state);
 		var assessmentParameter = findassessmentParameter(by);
 
 		return res.status(200).json({
@@ -449,7 +449,7 @@ module.exports.topRankedStates = async (req, res) => {
 var ulbScore = [];
 var map1Data = []; // map1 - top ulbs
 var map2Data = []; // map 2 - rank holders
-function fetchFiveUlbs(ulbRes, sortBy) {
+function fetchFiveUlbs(ulbRes, sortBy, state) {
 	if (sortBy === 'overAll') {
 		map1Data = [];
 		ulbScore = [];
@@ -467,17 +467,34 @@ function fetchFiveUlbs(ulbRes, sortBy) {
 				'expenditurePerformanceScore': ulb.expenditurePerformance.score,
 				'fiscalGovernanceScore': ulb.fiscalGovernance.score,
 			};
-			const ulbLocation = { ...ulb.location, name: ulb.name };
+
 			ulbScore.push(ulbData);
-			map1Data.push(ulbLocation); // map1 - top ulbs
+			setOneUlb(ulb, 'overAll', state);
 		}
 	} else {
-		findassessmentParameterScore(ulbRes, sortBy);
+		findassessmentParameterScore(ulbRes, sortBy, state);
 	}
 	return { ulbScore, map1Data };
 }
+
+// If state does not exist return count of ranked ULB.
+function setOneUlb(ulb, key, state) {
+	let ulbLocation = { ...ulb.location, name: ulb.name, [`${key}Rank`]: ulb[key].rank, populationBucket: ulb.populationBucket};
+	if (!state) { // for all states
+		const index = map1Data.findIndex(e => e.state.equals(ulb.state));
+		if (index === -1) {
+			ulbLocation = {...ulbLocation, state: ulb.state, ulbCount: 1 }
+			map1Data.push(ulbLocation);
+		} else {
+			map1Data[index].ulbCount = map1Data[index].ulbCount + 1;
+		}
+	} else {
+		map1Data.push(ulbLocation); // map1 - top ulbs
+	}
+
+}
 // API - topRankedULBs
-function findassessmentParameterScore(ulbRes, key) {
+function findassessmentParameterScore(ulbRes, key, state) {
 	ulbScore = [];
 	map1Data = [];
 	for (ulb of ulbRes) {
@@ -491,7 +508,8 @@ function findassessmentParameterScore(ulbRes, key) {
 		};
 		const ulbLocation = { ...ulb.location, name: ulb.name };
 		ulbScore.push(ulbData);
-		map1Data.push(ulbLocation); // map1 - top ulbs
+
+		setOneUlb(ulb, key, state);
 	}
 	return { ulbScore, map1Data };
 }
