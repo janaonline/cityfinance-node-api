@@ -10,6 +10,7 @@ const multerS3 = require("multer-s3");
 const {ENV} = require('./../util/FormNames')
 const CONFIG = require("../config/s3-config.json").S3BUCKET;
 const sanitize = require("sanitize-filename");
+const { getStorageBaseUrl } = require("./getBlobUrl");
 const SECRET = {
     AWS_ACCESS_KEY_ID: process.env.AWS_ACCESS_KEY_ID,
     AWS_SECRET_ACCESS_KEY: process.env.AWS_SECRET_ACCESS_KEY,
@@ -447,10 +448,7 @@ async function getheadObject(params) {
  */
 function removePrefix(url) {
     try {
-      const prefixToRemove =
-        process.env.ENV !== ENV.prod
-          ? SECRET.AWS_STORAGE_URL_STG
-          : SECRET.AWS_STORAGE_URL_PROD;
+      const prefixToRemove = getStorageBaseUrl();
       if (url.startsWith(prefixToRemove)) {
         return url.substring(prefixToRemove.length);
       }
