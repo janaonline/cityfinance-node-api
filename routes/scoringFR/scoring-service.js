@@ -369,7 +369,7 @@ function omExpTotalRevEx(fsData, fsMapper2019_20, fsMapper2020_21, fsMapper2021_
 // Function to get the months taken to audit.
 function getMonthDifference(startDate, endDate) {
     if (endDate) {
-        return moment(endDate).diff(moment(startDate), 'months', true)
+        return moment(endDate).diff(moment(startDate, "YYYY/MM/DD"), 'months', true)
     }
     return 0;
 }
@@ -377,17 +377,17 @@ function getMonthDifference(startDate, endDate) {
 // 10A. For Timely Audit - Average number of months taken by ULB in closing audit - FG
 function avgMonthsForULBAudit(fsMapper2019_20, fsMapper2020_21, fsMapper2021_22) {
     try {
-        const ulbValue2019_20 = getDate(fsMapper2019_20, 'auditAnnualReport');
-        const ulbValue2020_21 = getDate(fsMapper2020_21, 'auditAnnualReport');
-        const ulbValue2021_22 = getDate(fsMapper2021_22, 'auditAnnualReport');
-        const april_2020 = new Date('2020/04/01');
-        const april_2021 = new Date('2021/04/01');
-        const april_2022 = new Date('2022/04/01');
+        const start_ulbValue2019_20 = getDate(fsMapper2019_20, 'auditAnnualReport');
+        const start_ulbValue2020_21 = getDate(fsMapper2020_21, 'auditAnnualReport');
+        const start_ulbValue2021_22 = getDate(fsMapper2021_22, 'auditAnnualReport');
+        const end_april_2020 = new Date('2020/04/01');
+        const end_april_2021 = new Date('2021/04/01');
+        const end_april_2022 = new Date('2022/04/01');
 
         // Function call to calcuate diff.
-        const noOfMonths_2019_20 = getMonthDifference(april_2020, ulbValue2019_20);
-        const noOfMonths_2020_21 = getMonthDifference(april_2021, ulbValue2020_21);
-        const noOfMonths_2021_22 = getMonthDifference(april_2022, ulbValue2021_22);
+        const noOfMonths_2019_20 = getMonthDifference(end_april_2020, start_ulbValue2019_20 );
+        const noOfMonths_2020_21 = getMonthDifference(end_april_2021, start_ulbValue2020_21 );
+        const noOfMonths_2021_22 = getMonthDifference(end_april_2022, start_ulbValue2021_22 );
 
         // Array is created to find average.
         const arr = [noOfMonths_2019_20, noOfMonths_2020_21, noOfMonths_2021_22];
@@ -402,6 +402,7 @@ function avgMonthsForULBAudit(fsMapper2019_20, fsMapper2020_21, fsMapper2021_22)
         return 0;
     }
 }
+
 
 // 10B. For Publication of Annual Accounts - Availability for last 3 years on Cityfinance or Own website - FG
 function aaPublished(fsMapperNoYear) {
@@ -896,3 +897,4 @@ module.exports.calculateFRScore = async (req, res) => {
         });
     }
 };
+

@@ -76,6 +76,7 @@ module.exports.dashboard = async (req, res) => {
 		const budgetUlbCount = await getDocCount('appAnnualBudget');
 
 		const data = {
+			totalUlbCount: 4700, //Static number.
 			participatedUlbCount: await getParticipatedUlbCount(),
 			participatedStateCount: await getParticipatedStateCount(),
 			top3ParticipatedState,
