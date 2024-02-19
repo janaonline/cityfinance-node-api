@@ -1992,9 +1992,7 @@ module.exports.get = catchAsync(async (req, res) => {
   let isFormOptional = formTab.optional
   // const model = require(`../../models/${path}`)
   let newFilter = await Service.mapFilterNew(filter);
-  if (req.query.status === STATUS_LIST.Not_Started) {// to apply not started filter
-    Object.assign(newFilter, { formData: "" });
-  }
+  statusSpecificCases(req.query.status, newFilter);
   let folderName = formTab?.folderName;
 
   let query = computeQuery(collectionName, formType, isFormOptional, state, design_year, csv, skip, limit, newFilter, dbCollectionName, folderName);
@@ -2090,6 +2088,24 @@ module.exports.get = catchAsync(async (req, res) => {
   }
 })
 
+
+/**
+ * The function applies a filter to a request based on the status value.
+ * @param newFilter - The `newFilter` parameter is an object that represents the filter criteria to be
+ * applied to a request. It is passed as an argument to the `statusSpecificCases` function.
+ */
+function statusSpecificCases(status, newFilter) {
+  try {
+    if (status === STATUS_LIST.Not_Started) { // to apply not started filter
+      Object.assign(newFilter, { formData: "" });
+    }else if(status == STATUS_LIST.In_Progress){
+      delete newFilter['formData.actionTakenByRole']
+    }
+  } catch (error) {
+    throw Error({message: `statusSpecificCases: ${error.message}`})
+    
+  }
+}
 
 /**
  * The function `createCSV` is an asynchronous function that generates a CSV file based on the provided
