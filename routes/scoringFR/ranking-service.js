@@ -347,7 +347,7 @@ module.exports.topRankedUlbs = async (req, res) => {
 		// moongose.set('debug', true);
 		let { category, sortBy, order, state, populationBucket, limit } = req.query;
 		let condition = { isActive: true, currentFormStatus };
-
+		 
 		limit = limit ? parseInt(limit) : 0;
 
 		if (state) {
@@ -378,7 +378,7 @@ module.exports.topRankedUlbs = async (req, res) => {
 			.exec();
 		// console.log(ulbRes)
 
-		fetchFiveUlbs(ulbRes, by, state);
+		await fetchFiveUlbs(ulbRes, by, state);
 		var assessmentParameter = findassessmentParameter(by);
 
 		return res.status(200).json({
@@ -450,7 +450,11 @@ module.exports.topRankedStates = async (req, res) => {
 var ulbScore = [];
 var map1Data = []; // map1 - top ulbs
 var map2Data = []; // map 2 - rank holders
-function fetchFiveUlbs(ulbRes, sortBy, state) {
+async function fetchFiveUlbs(ulbRes, sortBy, state) {
+	let stateRes = [];
+	if (!state) {
+		stateRes = await State.find({ isActive: true });
+	}
 	if (sortBy === 'overAll') {
 		map1Data = [];
 		ulbScore = [];
@@ -470,21 +474,23 @@ function fetchFiveUlbs(ulbRes, sortBy, state) {
 			};
 
 			ulbScore.push(ulbData);
-			setOneUlb(ulb, 'overAll', state);
+			setOneUlb(ulb, 'overAll', state, stateRes);
 		}
 	} else {
-		findassessmentParameterScore(ulbRes, sortBy, state);
+		findassessmentParameterScore(ulbRes, sortBy, state, stateRes);
 	}
 	return { ulbScore, map1Data };
 }
 
 // If state does not exist return count of ranked ULB.
-function setOneUlb(ulb, key, state) {
-	let ulbLocation = { ...ulb.location, name: ulb.name, [`${key}Rank`]: ulb[key].rank, populationBucket: ulb.populationBucket};
+function setOneUlb(ulb, key, state, stateRes) {
+
+	let ulbLocation = { ...ulb.location, ulbName: ulb.name, [`${key}Rank`]: ulb[key].rank, populationBucket: ulb.populationBucket };
 	if (!state) { // for all states
 		const index = map1Data.findIndex(e => e.state.equals(ulb.state));
 		if (index === -1) {
-			ulbLocation = {...ulbLocation, state: ulb.state, ulbCount: 1 }
+			const { name, code } = stateRes.find(e => e._id.equals(ulb.state));
+			ulbLocation = { ...ulbLocation, state: ulb.state, ulbCount: 1, stateName: name, stateCode: code }
 			map1Data.push(ulbLocation);
 		} else {
 			map1Data[index].ulbCount = map1Data[index].ulbCount + 1;
@@ -495,7 +501,7 @@ function setOneUlb(ulb, key, state) {
 
 }
 // API - topRankedULBs
-function findassessmentParameterScore(ulbRes, key, state) {
+function findassessmentParameterScore(ulbRes, key, state, stateRes) {
 	ulbScore = [];
 	map1Data = [];
 	for (ulb of ulbRes) {
@@ -509,8 +515,7 @@ function findassessmentParameterScore(ulbRes, key, state) {
 		};
 		const ulbLocation = { ...ulb.location, name: ulb.name };
 		ulbScore.push(ulbData);
-
-		setOneUlb(ulb, key, state);
+		setOneUlb(ulb, key, state, stateRes);
 	}
 	return { ulbScore, map1Data };
 }
