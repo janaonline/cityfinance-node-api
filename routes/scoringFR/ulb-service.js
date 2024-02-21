@@ -234,8 +234,9 @@ async function getTableData(ulb, type) {
 	// console.log('filteredIndicators', filteredIndicators);
 	let data = [];
 	for (const indicator of filteredIndicators) {
-		const highest = await getMaxMinScore(ulb.populationBucket, indicator.key, -1);
-		const lowest = await getMaxMinScore(ulb.populationBucket, indicator.key, 1);
+		// TODO: to be removed
+		// const highest = await getMaxMinScore(ulb.populationBucket, indicator.key, -1);
+		// const lowest = await getMaxMinScore(ulb.populationBucket, indicator.key, 1);
 		let ulbPerformance = ulb[indicator.key].score;
 
 		let ele = {
