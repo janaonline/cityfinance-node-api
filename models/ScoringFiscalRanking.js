@@ -112,7 +112,12 @@ const ScoringFiscalRankingSchema = new Schema(
 		aaPushishedMarks_10b: scoreFields,
 		gisBasedPTaxMarks_11a: scoreFields,
 		accSoftwareMarks_11b: scoreFields,
-		receiptsVariance_12: scoreFields,
+		receiptsVariance_12: {
+			...scoreFields,
+			infinity: { // divide by 0
+				type: Boolean
+			},
+		},
 		ownRevRecOutStanding_13: {
 			...scoreFields,
 			infinity: { // divide by 0
