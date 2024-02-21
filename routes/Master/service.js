@@ -87,7 +87,10 @@ module.exports.subCategoryList = async (req, res, next) => {
     }
 }
 module.exports.categoryFileUploadList = async (req, res, next) => {
-    let condition = { ...req.query };
+    let condition = { 
+        module: 'municipal_bond_repository',
+        ...req.query 
+    };
     try {
         let data = await dbModels['CategoryFileUpload'].find(condition).sort({ "createdAt": 1 }).populate("categoryId", "name _id").populate("subCategoryId", 'name _id').lean();
         return res.status(200).json({
