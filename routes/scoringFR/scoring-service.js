@@ -385,9 +385,9 @@ function avgMonthsForULBAudit(fsMapper2019_20, fsMapper2020_21, fsMapper2021_22)
         const end_april_2022 = new Date('2022/04/01');
 
         // Function call to calcuate diff.
-        const noOfMonths_2019_20 = getMonthDifference(end_april_2020, start_ulbValue2019_20 );
-        const noOfMonths_2020_21 = getMonthDifference(end_april_2021, start_ulbValue2020_21 );
-        const noOfMonths_2021_22 = getMonthDifference(end_april_2022, start_ulbValue2021_22 );
+        const noOfMonths_2019_20 = getMonthDifference(end_april_2020, start_ulbValue2019_20);
+        const noOfMonths_2020_21 = getMonthDifference(end_april_2021, start_ulbValue2020_21);
+        const noOfMonths_2021_22 = getMonthDifference(end_april_2022, start_ulbValue2021_22);
 
         // Array is created to find average.
         const arr = [noOfMonths_2019_20, noOfMonths_2020_21, noOfMonths_2021_22];
@@ -409,7 +409,7 @@ function aaPublished(fsMapperNoYear) {
     try {
         // If answer is 'Yes' then 25 marks else 0 marks.
         const isWeblink = getValue(fsMapperNoYear, 'webUrlAnnual');
-        const aaPublished = isWeblink === 'www.nowebsite.com' || isWeblink === null ? 0 : 25;
+        const aaPublished = !isWeblink || isWeblink.includes('nowebsite') ? 0 : 25;
         return aaPublished;
     } catch (e) {
         return 0;
@@ -440,51 +440,55 @@ function accSoftware(fsMapperNoYear) {
 
 // 12. Budget vs. Actual (Variance %) for Total Receipts (3-year average) - FG
 function totalReceiptsVariance(fsMapper2019_20, fsMapper2020_21, fsMapper2021_22) {
-    try {
+    const totalRecActual2019_20 = getNumberValue(fsMapper2019_20, 'totalRecActual');
+    const totalRecActual2020_21 = getNumberValue(fsMapper2020_21, 'totalRecActual');
+    const totalRecActual2021_22 = getNumberValue(fsMapper2021_22, 'totalRecActual');
+    const rcptBudget2019_20 = getNumberValue(fsMapper2019_20, 'RcptBudget');
+    const rcptBudget2020_21 = getNumberValue(fsMapper2020_21, 'RcptBudget');
+    const rcptBudget2021_22 = getNumberValue(fsMapper2021_22, 'RcptBudget');
+    let infinity = false;
+    let score = 0;
+    if (!totalRecActual2019_20 ||
+        !totalRecActual2020_21 ||
+        !totalRecActual2021_22 ||
+        !rcptBudget2019_20 ||
+        !rcptBudget2020_21 ||
+        !rcptBudget2021_22
+    ) {
+        infinity = true;
+    } else {
+        // Find average of total receipts actual for 3 years.
+        // Array is created to find average.
+        const arr1 = [
+            totalRecActual2019_20,
+            totalRecActual2020_21,
+            totalRecActual2021_22
+        ];
+        const avgOFActual = calculateAverage(arr1);
 
-        const totalRecActual2019_20 = getNumberValue(fsMapper2019_20, 'totalRecActual');
-        const totalRecActual2020_21 = getNumberValue(fsMapper2020_21, 'totalRecActual');
-        const totalRecActual2021_22 = getNumberValue(fsMapper2021_22, 'totalRecActual');
-        const rcptBudget2019_20 = getNumberValue(fsMapper2019_20, 'RcptBudget');
-        const rcptBudget2020_21 = getNumberValue(fsMapper2020_21, 'RcptBudget');
-        const rcptBudget2021_22 = getNumberValue(fsMapper2021_22, 'RcptBudget');
+        // Find average of total receipts estimate for 3 years.
+        // Array is created to find average.
+        const arr2 = [
+            rcptBudget2019_20,
+            rcptBudget2020_21,
+            rcptBudget2021_22
+        ];
+        const avgOfEstimate = calculateAverage(arr2);
 
-        if (!totalRecActual2019_20 ||
-            !totalRecActual2020_21 ||
-            !totalRecActual2021_22 ||
-            !rcptBudget2019_20 ||
-            !rcptBudget2020_21 ||
-            !rcptBudget2021_22
-        ) {
-            return 0;
+        let totalReceiptsVariance = 0;
+
+        // If denominator = 0; 
+        if (avgOfEstimate === 0) {
+            totalReceiptsVariance = 0;
+            infinity = true;
         } else {
-            // Find average of total receipts actual for 3 years.
-            // Array is created to find average.
-            const arr1 = [
-                totalRecActual2019_20,
-                totalRecActual2020_21,
-                totalRecActual2021_22
-            ];
-            const avgOFActual = calculateAverage(arr1);
-
-            // Find average of total receipts estimate for 3 years.
-            // Array is created to find average.
-            const arr2 = [
-                rcptBudget2019_20,
-                rcptBudget2020_21,
-                rcptBudget2021_22
-            ];
-            const avgOfEstimate = calculateAverage(arr2);
-
-            // Acutal V/S Estimate
-            // Handling denominator = 0;
-            const totalReceiptsVariance = avgOfEstimate === 0 ? 0 : ((avgOFActual - avgOfEstimate) / avgOfEstimate) * 100;
-            return parseFloat(totalReceiptsVariance.toFixed(2));
+            totalReceiptsVariance = ((avgOFActual - avgOfEstimate) / avgOfEstimate) * 100;
         }
+        score = parseFloat(totalReceiptsVariance.toFixed(2));
 
-    } catch (e) {
-        return 0;
     }
+    return { score, ...(infinity && { infinity }) };
+
 }
 
 // 13. Own Revenue Receivables Outstanding - FG
@@ -572,6 +576,7 @@ function pushFileData(fsMapper, indicator, year, data) {
     }
     return data;
 }
+
 // Check for document availability.
 function getannualBudget(fsMapper2020_21, fsMapper2021_22, fsMapper2022_23, fsMapper2023_24) {
     let data = [];
@@ -846,7 +851,7 @@ async function getData(ulbRes) {
         aaPushishedMarks_10b: { score: aaPushishedMarks_10b },
         gisBasedPTaxMarks_11a: { score: gisBasedPTaxMarks_11a },
         accSoftwareMarks_11b: { score: accSoftwareMarks_11b },
-        receiptsVariance_12: { score: receiptsVariance_12 },
+        receiptsVariance_12: receiptsVariance_12,
         ownRevRecOutStanding_13: ownRevRecOutStanding_13,
         digitalToTotalOwnRev_14: { score: digitalToTotalOwnRev_14 },
         propUnderTaxCollNet_15: { score: propUnderTaxCollNet_15 },

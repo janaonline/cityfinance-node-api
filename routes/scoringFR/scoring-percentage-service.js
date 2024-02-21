@@ -44,27 +44,19 @@ async function getMaxMinScore(populationBucket, indicator, order) {
 	return res[indicator].score;
 }
 
-function getIndicatorScore(ulb, indicator, percentage, highestScore, lowestScore) {
+function getIndicatorScore(ulb, indicator, percentage) {
 	const ulbIn = ulb[indicator];
 	ulbIn.percentage = percentage;
-	// ulbIn.highestScore = highestScore;
-	// ulbIn.lowestScore = lowestScore;
 	return ulbIn;
 }
 
 async function updatePercentage_formula1(ulb, indicator, percent = 100) {
-
-	// const sortedArr = ulbArr.sort((a, b) => b[indicator].score - a[indicator].score);
 	const highScore = await getMaxMinScore(ulb.populationBucket, indicator, -1);
-	// const lowScore = await getMaxMinScore(ulb.populationBucket, indicator, 1);
-	// console.log('highScore', highScore);
 	const percentage = ulb[indicator].score === 0 || highScore === 0 ? 0 : (ulb[indicator].score / highScore) * percent;
-	// return parseFloat(percentage.toFixed(decimalPlace));
 	return getIndicatorScore(ulb, indicator, percentage);
 }
 
 async function updatePercentage_formula2(ulb, indicator) {
-	// const sortedArr = ulbArr.sort((a, b) => b[indicator].score - a[indicator].score);
 	const highScore = await getMaxMinScore(ulb.populationBucket, indicator, -1);
 	const lowScore = await getMaxMinScore(ulb.populationBucket, indicator, 1);
 	let percentage = 0;
@@ -73,27 +65,23 @@ async function updatePercentage_formula2(ulb, indicator) {
 		const denominator = (highScore - lowScore);
 		percentage = numerator === 0 || denominator === 0 ? 0 : (numerator / denominator) * 100;
 	}
-	// return parseFloat(percentage.toFixed(decimalPlace));
 	return getIndicatorScore(ulb, indicator, percentage);
 }
 
 async function updatePercentage_formula3(ulb, indicator) {
-	// const highScore = await getMaxMinScore(ulb.populationBucket, indicator, -1);
-	// const lowScore = await getMaxMinScore(ulb.populationBucket, indicator, 1);
+
 	let percentage = 0;
-	if (ulb[indicator].score) {
+	if (!ulb[indicator].infinity) {
 		if (ulb[indicator].score <= 20 && ulb[indicator].score >= -10) percentage = 50;
 		else if (ulb[indicator].score > 20) percentage = 45;
 		else if (ulb[indicator].score <= -10 && ulb[indicator].score >= -25) percentage = 40;
 		else if (ulb[indicator].score < -25) percentage = 37.5;
 		else percentage = 0;
 	}
-	// return parseFloat(percentage.toFixed(decimalPlace));
 	return getIndicatorScore(ulb, indicator, percentage);
 
 }
 async function updatePercentage_formula4(ulb, indicator) {
-	// const sortedArr = ulbArr.sort((a, b) => b[indicator].score - a[indicator].score);
 	const highScore = await getMaxMinScore(ulb.populationBucket, indicator, -1);
 	const lowScore = await getMaxMinScore(ulb.populationBucket, indicator, 1);
 	let percentage = 0;
@@ -107,12 +95,11 @@ async function updatePercentage_formula4(ulb, indicator) {
 }
 
 async function updatePercentage_formula5(ulb, indicator) {
-	const percentage = ulb[indicator].score
+	const percentage = ulb[indicator].score;
 	return getIndicatorScore(ulb, indicator, percentage);
 }
 
 async function calculateFRPercentage(populationBucket) {
-	// const censusCode = 802787;
 	// Submission Acknowledged by PMU - 11
 	const condition = { populationBucket, currentFormStatus: { $in: [11] } };
 	// const condition = { $and: [ {populationBucket},{ 'currentFormStatus': 11 }, { 'totalBudgetDataPC_1.percentage': 0 }, { 'totalBudgetDataPC_1.score': { $ne: 0 } } ] }
