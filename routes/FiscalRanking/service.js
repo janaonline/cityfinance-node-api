@@ -5967,6 +5967,7 @@ module.exports.errorLogs = async (req, res) => {
   }
 }
 
+//Header should be censusCode, year, displayPriority and value.
 module.exports.backendDataUpload = async (req, res) => {
   try {
     // Check if a file is provided
@@ -6170,10 +6171,10 @@ const getQueryFrUpdate = async (inputArray) => {
   const ulbIdsMapper = await Ulb.find({
     $or: [
       {
-        censusCode: { $in: inputArray.map((i) => i.censusCode) },
+        censusCode: { $in: inputArray.map((i) => i.censusCode.trim()) },
       },
       {
-        sbCode: { $in: inputArray.map((i) => i.censusCode) },
+        sbCode: { $in: inputArray.map((i) => i.censusCode.trim()) },
       },
     ],
   });
@@ -6189,9 +6190,9 @@ const getQueryFrUpdate = async (inputArray) => {
     return {
       updateOne: {
         filter: {
-          ulb: ulbMapper[item.censusCode],
-          displayPriority: replaceDots(item.displayPriority),
-          year: ObjectId(item.designYear),
+          ulb: ulbMapper[item.censusCode.trim()] || null,
+          displayPriority: replaceDots(item.displayPriority) || null,
+          year: ObjectId(item.designYear) || null,
         },
         update: {
           $set: {
