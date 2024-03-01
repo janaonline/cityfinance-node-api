@@ -95,7 +95,6 @@ function returnYearUrl(item) {
             obj.url = this.verified ? obj.url : item.profileUrl
         }
         return obj
-
     }
     catch (err) {
         console.log("error in returnYear :: ", err.message)
