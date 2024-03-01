@@ -90,6 +90,7 @@ function returnYearUrl(item) {
             year: item.design_year.year,
             url: item[this.type],
             id: item.design_year._id.toString()
+            
         }
         if ((financialYear == item.design_year.year) && (role == "ulb" || role == "state")) {
             obj.url = this.verified ? obj.url : item.profileUrl
