@@ -32,7 +32,8 @@ const { years } = require('../../service/years');
 const { getKeyByValue } = require('../../util/masterFunctions');
 const { stat } = require('fs');
 const UA = require('../../models/UA');
-const { FolderName, CollectionNames } = require('../../util/15thFCstatus');
+const { FolderName, CollectionNames, UlbFormCollections } = require('../../util/15thFCstatus');
+const Response = require('../../service/response.js');
 const ticks = {
   "green": "../../../assets/form-icon/checked.svg",
   "red": "../../../assets/form-icon/cancel.svg"
@@ -292,6 +293,7 @@ const getformStatus = (data)=>{
 }
 
 module.exports.get = catchAsync(async (req, res) => {
+  try {  
   let user = req.decoded;
   let role = req.query.role;
   let year = req.query.year;
@@ -343,6 +345,9 @@ module.exports.get = catchAsync(async (req, res) => {
     FormModelMapping_Master_23_24["OdfFormCollection"] = isUA == 'Yes' ? UA_FORM_MODEL['ODF_UA_YES'] : UA_FORM_MODEL['ODF_UA_NO']
     FormModelMapping_Master_23_24["XVFcGrantULBForm"] = isUA == 'Yes' ? UA_FORM_MODEL['XVFcGrantULBForm_UA_YES'] : UA_FORM_MODEL['XVFcGrantULBForm_UA_NO']
 
+    if(![YEAR_CONSTANTS['22_23']].includes(year)){
+      FormModelMapping_Master_23_24 = await modelMapper({ year , role})
+    }
     let condition = {
       ulb: ObjectId(_id),
     }
@@ -365,7 +370,7 @@ module.exports.get = catchAsync(async (req, res) => {
       let formData = await el.findOne(condition).lean()
       
       if (formData) {
-        if (formData[designYearCond].toString() === YEAR_CONSTANTS['23_24'] ) {
+        if (![YEAR_CONSTANTS['22_23']].includes(formData[designYearCond].toString()) ) {
           output.push(findStatusAndTooltipMaster({ formData, formId: FormModelMapping_Master_23_24[el['modelName']], loggedInUserRole: user.role, viewFor: role }))
         } else {
           output.push(findStatusAndTooltip(formData, FormModelMapping[el['modelName']], el['modelName'], user.role, role))
@@ -547,8 +552,37 @@ module.exports.get = catchAsync(async (req, res) => {
     data: tempData,
     card: role == "ULB" ? cardArr : []
   })
-})
+} catch (error) {
+    return Response.BadRequest(res)
+}
 
+})
+/**
+ * The function `modelMapper` maps form models based on the year and role, fetching menu items from
+ * Sidemenu and creating a map of form models with their corresponding IDs.
+ * @returns The `modelMapper` function returns a mapping of form model names to their corresponding IDs
+ * based on the provided `year` and `role`. The mapping is filtered based on certain conditions from
+ * the `Sidemenu` collection.
+ */
+async function modelMapper({year , role}){
+  try {
+    let formModelMap = {};
+    let condition = {year: ObjectId(year), isActive: true, role};
+    let menuResponse = await Sidemenu.find(condition,{_id:1, dbCollectionName:1, isUAApplicable:1}).lean();
+    menuResponse.forEach((menuItem)=>{
+      if(Object.keys(UlbFormCollections).includes(menuItem.dbCollectionName)
+         && !formModelMap.hasOwnProperty(UlbFormCollections[menuItem.dbCollectionName]) ){
+        formModelMap[UlbFormCollections[menuItem.dbCollectionName]] = menuItem._id
+        if(menuItem.isUAApplicable){
+          formModelMap[UlbFormCollections[menuItem.dbCollectionName]] = menuItem._id
+        }
+      }
+    })
+    return formModelMap;
+  } catch (error) {
+      throw new Error(`modelMapper:: ${error.message}`)
+  }
+}
 module.exports.list = catchAsync(async (req, res) => {
   let role = req.query.role;
   let design_year = req.query.design_year;

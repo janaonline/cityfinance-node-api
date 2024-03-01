@@ -25,7 +25,8 @@ const SidemenuSchema = new Schema({
     folderName: {type: String},
     groupSequence: {type: Number},
     formId :{type:Number,default:null},
-    year: {type : Schema.Types.ObjectId, ref: "Year", required: true }
+    year: {type : Schema.Types.ObjectId, ref: "Year", required: true },
+    isUAApplicable: {type: Boolean, default: null}
 },{timestamp : {createdAt : "createdAt", updatedAt : "modifiedAt"}});
 
 
