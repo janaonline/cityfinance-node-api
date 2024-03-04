@@ -2065,7 +2065,6 @@ exports.getAccounts = async (req, res,next) => {
     next()
     // return res.status(200).json(annualAccountData);
   } catch (err) {
-    console.error(err.message);
     return Response.BadRequest(res, {}, err.message);
   }
 };
@@ -2096,7 +2095,7 @@ async function addActionKeys(annualAccountData, body, res, role, req){
     }
     return annualAccountData;
   } catch (error) {
-    return Response.BadRequest(res, {}, error.message);
+    throw new Error(`addActionKeys:: ${error.message}`)
   }
 }
 
