@@ -1,12 +1,12 @@
 const { years } = require("../../service/years")
 const { apiUrls } = require("../CommonActionAPI/service")
 
-const propertyTaxOpFormJson = (role) => {
+const propertyTaxOpFormJson = ({role, design_year}) => {
   let readOnly = role === "ULB" ? false : true
-  return {
+  const json =  {
     "_id": null,
     "ulb": "5fa24660072dab780a6f141e",
-    "design_year": "606aafb14dff55e6c075d3ae",
+    "design_year": design_year || "606aafb14dff55e6c075d3ae",
     "isDraft": null,
     "tabs": [
       {
@@ -10470,6 +10470,21 @@ const propertyTaxOpFormJson = (role) => {
       }
     ]
   }
+  
+  json.tabs.forEach(tab => {
+    const indicators = Object.values(tab.data);
+    indicators.forEach(indicator => {
+      const yearData = indicator.yearData;
+      const hasMultipleYears = !yearData.some(yearItem => Object.keys(yearItem).length == 0);
+
+      if(hasMultipleYears) {
+        const lastYear = yearData[yearData.length - 1];
+        yearData.push(JSON.parse(JSON.stringify(lastYear)));
+      }
+    })
+  });
+
+  return json;
 }
 
 
@@ -12084,7 +12099,7 @@ function getSkippableKeys(skipLogics) {
   return results;
 }
 
-let dynamicJson = propertyTaxOpFormJson()['tabs'][0]['data']
+let dynamicJson = propertyTaxOpFormJson({})['tabs'][0]['data']
 let {childKeys, questionIndicators,indicatorsWithNoyears} = fetchIndicatorsOrDp(dynamicJson)
 module.exports.reverseKeys = ["ulbFinancialYear","ulbPassedResolPtax"]
 module.exports.skippableKeys = getSkippableKeys(skipLogicDependencies)

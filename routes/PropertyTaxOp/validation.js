@@ -809,7 +809,7 @@ const getValue = (formFieldType, byData) => {
 const getVavidationObject = (sortKey, byData) => {
     return new Promise(async (resolve, reject) => {
         try {
-            const { tabs } = await propertyTaxOpFormJson();
+            const { tabs } = await propertyTaxOpFormJson({});
             const { data } = tabs[0];
             const { yearData } = data[sortKey];
             const { year, type } = byData;

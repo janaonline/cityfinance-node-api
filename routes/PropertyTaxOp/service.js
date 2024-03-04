@@ -1072,13 +1072,15 @@ exports.getView = async function (req, res, next) {
         if (!req.query.ulb && !req.query.design_year) {
             return res.status(400).json({ status: false, message: "Something went wrong!" });
         }
+        const design_year = req.query.design_year;
         condition = { ulb: ObjectId(req.query.ulb), design_year: ObjectId(req.query.design_year) };
+
         let ptoData = await PropertyTaxOp.findOne(condition, { history: 0 }).lean();
         let ptoMaper = null;
         if (ptoData) {
             ptoMaper = await PropertyTaxOpMapper.find({ ulb: ObjectId(req.query.ulb), ptoId: ObjectId(ptoData._id) }).populate("child").lean();
         }
-        let fyDynemic = { ...await propertyTaxOpFormJson(role) };
+        let fyDynemic = { ...await propertyTaxOpFormJson({role, design_year }) };
         if (ptoData) {
             const { isDraft, status, currentFormStatus } = ptoData;
             for (let sortKey in fyDynemic) {
