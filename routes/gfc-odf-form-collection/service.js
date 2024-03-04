@@ -5,7 +5,7 @@
   const { response } = require("../../util/response");
   const Response = require("../../service").response;
   // const mongoose = require('mongoose');
-  const { canTakenAction , canTakenActionMaster} = require("../CommonActionAPI/service");
+  const { canTakenAction , canTakenActionMaster, isYearWithinRange} = require("../CommonActionAPI/service");
   const Service = require("../../service");
   const { years } = require("../../service/years");
   const { FormNames, YEAR_CONSTANTS , MASTER_STATUS, FORMIDs, FORM_LEVEL} = require("../../util/FormNames");
@@ -122,7 +122,7 @@ module.exports.createOrUpdateForm = async (req, res) => {
       };
       let savedBody = new collection(formData);
 
-      if (data.design_year === YEAR_CONSTANTS["23_24"] && data.ulb) {
+      if (isYearWithinRange(data.design_year) && data.ulb) {
 
         // const session = await mongoose.startSession();
         // await session.startTransaction();
@@ -374,7 +374,7 @@ module.exports.getForm = async (req, res, next) => {
               })
           }
           if (form) {
-            if (design_year.toString() === YEAR_CONSTANTS["23_24"]) {
+            if (isYearWithinRange(design_year.toString())) {
               let params = {
                 status: form.currentFormStatus,
                 formType: "ULB",
