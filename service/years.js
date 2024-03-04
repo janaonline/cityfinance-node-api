@@ -14,7 +14,6 @@ const getDesiredYear = (currentYearId, yearDiffercnce = 0) => {
     const entries = Object.entries(years);
     const currentYearIndex = entries.findIndex(([yearName, yearId]) => yearId == currentYearId);
 
-    console.log(currentYearIndex);
     const [yearName, yearId] =  entries[currentYearIndex + yearDiffercnce];
     return { yearName, yearId };
 }

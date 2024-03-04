@@ -10470,26 +10470,48 @@ const propertyTaxOpFormJson = ({role, design_year}) => {
       }
     ]
   }
-  
-  json.tabs.forEach(tab => {
-    const indicators = Object.values(tab.data);
-    indicators.forEach(indicator => {
-      const yearData = indicator.yearData;
-      const hasMultipleYears = !yearData.some(yearItem => Object.keys(yearItem).length == 0);
 
-      if(hasMultipleYears) {
-        const lastYear = yearData[yearData.length - 1];
-        const { yearName, yearId } = getDesiredYear(lastYear.year, 1);
-        
-        const nextYear = JSON.parse(JSON.stringify(lastYear));
-        nextYear['key'] = `FY${yearName}`;
-        nextYear['label'] = `FY ${yearName}`;
-        nextYear['year'] = yearId;
-        nextYear['postion'] = String(+nextYear['postion'] + 1);
-        yearData.push(nextYear);
-      }
-    })
-  });
+  if (design_year && design_year == years["2024-25"]) {
+    json.tabs.forEach((tab) => {
+      const indicators = Object.values(tab.data);
+      indicators.forEach((indicator) => {
+        const yearData = indicator.yearData;
+        const copyChildFrom = indicator?.copyChildFrom;
+
+        if (copyChildFrom) {
+          copyChildFrom.forEach((copyChild) => {
+            const { yearData } = copyChild;
+            const lastChildYear = yearData[yearData.length - 1];
+            const { yearName, yearId } = getDesiredYear(lastChildYear.year, 1);
+
+            const nextYear = JSON.parse(JSON.stringify(lastChildYear));
+            nextYear["key"] = `FY${yearName}`;
+            nextYear["label"] = `FY ${yearName}`;
+            nextYear["year"] = yearId;
+            nextYear["postion"] = String(+nextYear["postion"] + 1);
+            yearData.push(nextYear);
+          });
+        }
+        const hasMultipleYears = !yearData.some(
+          (yearItem) => Object.keys(yearItem).length == 0
+        );
+
+        if (hasMultipleYears) {
+          const lastYear = yearData[yearData.length - 1];
+          const { yearName, yearId } = getDesiredYear(lastYear.year, 1);
+
+          const nextYear = JSON.parse(JSON.stringify(lastYear));
+          nextYear["key"] = `FY${yearName}`;
+          nextYear["label"] = `FY ${yearName}`;
+          nextYear["year"] = yearId;
+          nextYear["postion"] = String(+nextYear["postion"] + 1);
+          yearData.push(nextYear);
+        } else {
+          yearData.push({});
+        }
+      });
+    });
+  }
 
   return json;
 }
@@ -12111,35 +12133,43 @@ let {childKeys, questionIndicators,indicatorsWithNoyears} = fetchIndicatorsOrDp(
 
 
 const getFormMetaData = ({ design_year }) => {
-  const result = {
-    financialYearTableHeader: Object.entries(financialYearTableHeader).reduce((acc, [displayPriority, headers]) => {
-      const headersCopy = [...headers];
+  let result = {
+    financialYearTableHeader,
+    specialHeaders,
+    skipLogicDependencies,
+  };
 
-      headersCopy.push({
-        "label": "2023-24",
-        "info": ""
-      });
+  if (design_year && design_year == years["2024-25"]) {
+    result = {
+      financialYearTableHeader: Object.entries(financialYearTableHeader).reduce(
+        (acc, [displayPriority, headers]) => {
+          const headersCopy = [...headers];
 
-      return {
-        ...acc,
-        [displayPriority]: headersCopy
-      }
-    },{}), 
-    specialHeaders, 
-    skipLogicDependencies
+          headersCopy.push({
+            label: "2023-24",
+            info: "",
+          });
+
+          return {
+            ...acc,
+            [displayPriority]: headersCopy,
+          };
+        },
+        {}
+      ),
+      specialHeaders,
+      skipLogicDependencies,
+    };
   }
-  console.log('copy', result.financialYearTableHeader);
   return result;
-}
+};
+
 module.exports.reverseKeys = ["ulbFinancialYear","ulbPassedResolPtax"]
 module.exports.skippableKeys = getSkippableKeys(skipLogicDependencies)
-module.exports.financialYearTableHeader = financialYearTableHeader
-module.exports.specialHeaders = specialHeaders
 module.exports.childKeys =childKeys
 module.exports.indicatorsWithNoyears = indicatorsWithNoyears
 module.exports.questionIndicators = questionIndicators
 module.exports.propertyTaxOpFormJson = propertyTaxOpFormJson;
 module.exports.getInputKeysByType = getInputKeysByType;
-module.exports.skipLogicDependencies = skipLogicDependencies
 module.exports.sortPosition = sortPosition
 module.exports.getFormMetaData = getFormMetaData
