@@ -33,6 +33,7 @@ const Year = require('../../models/Year');
 const { state } = require('../../util/userTypes');
 const { dashboard } = require('../../routes/FormDashboard/service');
 const { dateFormatter, convertToKolkataDate } = require('../../util/dateformatter');
+const { concatenateUrls } = require('../../service/common');
 
 const isMillionPlus = async (data) => {
   try {
@@ -263,6 +264,8 @@ async function createCSV(params) {
         indiLineList = await indicatorLineItemList();
       }
       data.on("data", async (el) => {
+        el = JSON.parse(JSON.stringify(el));
+        el = concatenateUrls(el);
         el.UA = el?.UA === "null" ? "NA" : el?.UA;
         el.isUA = el?.UA === "NA" ? "No" : "Yes";
         el.censusCode = el.censusCode || "NA";
@@ -328,6 +331,8 @@ async function createCSV(params) {
             await writeSubmitClaimCSV(output, res);
           } else {
             for (let el of mainArrData) {
+              el = JSON.parse(JSON.stringify(el));
+              el = concatenateUrls(el);
               if (!el?.formData) {
                 el['formStatus'] = "Not Started";
               } else {
@@ -337,6 +342,8 @@ async function createCSV(params) {
                 let gtcData = await gtcInstallmentForms([...new Set(mainArrData.map(e => e._id))]);
                 let GTC = gtcData?.length ? gtcData?.filter(e => (e.state.toString() == el._id.toString() && e.gtcForm.toString() == el?.formData?._id?.toString() && e.installment == el.formData.installment)) : []
                 el['formData']['installment_form'] = GTC;
+                el = JSON.parse(JSON.stringify(el));
+                el = concatenateUrls(el);
                 gtcStateFormCSVFormat(el, res)
               } else if (collectionName == 'GrantAllocation') {
                 await grantAllCsvDownload(el, res);
@@ -393,6 +400,8 @@ async function grantAllCsvDownload(el, res) {
 async function writeSubmitClaimCSV(output, res) {
   try {
     Object.entries(output).forEach(([key, items], index) => {
+      items = JSON.parse(JSON.stringify(items));
+      items = concatenateUrls(items);
       let stateObj = {};
       if (stateArrData.length == 1) {
         stateObj = stateArrData[0]
@@ -629,7 +638,9 @@ const actionPlanXlsDownload = async (data, res, role) => {
 
     let counter = { projectExecute: 2, sourceFund: 2, yearOutlay: 2 } // counter
     if (data?.length) {
-      for (const pf of data) {
+      for (let pf of data) {
+        pf = JSON.parse(JSON.stringify(pf));
+        pf = concatenateUrls(pf);
         if (!pf?.formData) {
           pf['formStatus'] = "Not Started";
         } else {
@@ -726,7 +737,9 @@ const waterSenitationXlsDownload = async (data, res, role) => {
 
     let counter = { waterBodies: 2, serviceLevelIndicators: 2, reuseWater: 2 } // counter
     if (data?.length) {
-      for (const pf of data) {
+      for (let pf of data) {
+        pf = JSON.parse(JSON.stringify(pf));
+        pf = concatenateUrls(pf);
         if (!pf?.formData) {
           pf['formStatus'] = "Not Started";
         } else {
@@ -2621,7 +2634,7 @@ const annualAccountSetCurrentStatus = (data, currentFormStatus) => {
   if (currentStatusList?.length) {
     for (let key of mainArr) {
       let subObData = data[key];
-      let tab = setCurrentStatusQuestionLevel(currentStatusList)
+      let tab = setCurrentStatusQuestionLevel(currentStatusList, key)
       Object.assign(subObData, { ...tab })
       for (let subkey of subArr) {
         let d = subObData[subkey];
@@ -2639,7 +2652,7 @@ const annualAccountSetCurrentStatus = (data, currentFormStatus) => {
   delete data.currentstatuse
   return data;
 }
-const setCurrentStatusQuestionLevel = (statusList) => {
+const setCurrentStatusQuestionLevel = (statusList, key = null) => {
   let obj = {
     "state_status": "",
     "rejectReason_state": "",
@@ -2654,6 +2667,10 @@ const setCurrentStatusQuestionLevel = (statusList) => {
       "name": ""
     }
   };
+  if(key){ 
+    let pattern = new RegExp(key);
+    statusList = statusList.filter(status => pattern.test(status.shortKey))
+  }
   if (statusList.length) {
     for (let statusObj of statusList) {
       if (statusObj.actionTakenByRole == "STATE" && (statusObj?.rejectReason || statusObj?.responseFile.url)) {
@@ -2890,25 +2907,27 @@ const excelPTOMapping = async (query) => {
       workbook.calcProperties.fullCalcOnLoad = false;
       const crrWorkbook = await workbook.xlsx.readFile(`${tempFilePath}/${filename}`)
       const crrWorksheet = crrWorkbook.getWorksheet("Sheet 1")
-
+      const states = await State.find({accessToXVFC:true}).lean();
+      let STATE_DATA = {}
+      states.forEach(el=> { STATE_DATA[el?._id] = el?.name})
       const cursor = await Ulb.aggregate([
                 {
           $match: { [accessYear]: true},
         },
-        {
-          $lookup: {
-            from: "states",
-            localField: "state",
-            foreignField: "_id",
-            as: "state",
-          },
-        },
-        {
-          $unwind: "$state",
-        },
-        {
-          $match: { "state.accessToXVFC": true },
-        },
+        // {
+        //   $lookup: {
+        //     from: "states",
+        //     localField: "state",
+        //     foreignField: "_id",
+        //     as: "state",
+        //   },
+        // },
+        // {
+        //   $unwind: "$state",
+        // },
+        // {
+        //   $match: { "state.accessToXVFC": true },
+        // },
         {
           $lookup: {
             from: "propertytaxops",
@@ -3032,73 +3051,143 @@ const excelPTOMapping = async (query) => {
         },
       ])
         .allowDiskUse(true)
-        .cursor({ batchSize: 75 })
+        .cursor({ batchSize: 50 })
         .addCursorFlag("noCursorTimeout", true)
         .exec();
 
       cursor.on("data", (el) => {
-        // Filters the current status of a form element and removes certain data fields based on the status.
-        currentStatusFilter(el);
+        el = JSON.parse(JSON.stringify(el));
+        el = concatenateUrls(el);
+        if (STATE_DATA[el?.state?.toString()]) {
+          // Filters the current status of a form element and removes certain data fields based on the status.
+          currentStatusFilter(el);
 
-        // mapping these fields manually as they aren't available in the fydynamic.js file
-        crrWorksheet.getCell(`A${startRowIndex + counter}`).value = counter + 1
-        crrWorksheet.getCell(`B${startRowIndex + counter}`).value = el.state.name
-        crrWorksheet.getCell(`C${startRowIndex + counter}`).value = el.name
-        crrWorksheet.getCell(`D${startRowIndex + counter}`).value = el.code
-        crrWorksheet.getCell(`E${startRowIndex + counter}`).value = el.censusCode ?? el.sbCode
-        crrWorksheet.getCell(`F${startRowIndex + counter}`).value = YEAR_CONSTANTS_IDS[design_year]
-        crrWorksheet.getCell(`G${startRowIndex + counter}`).value = MASTER_STATUS_ID[el.currentFormStatus]
-        crrWorksheet.getCell(`BBX${startRowIndex + counter}`).value = el?.stateStatusData?.rejectReason
-        crrWorksheet.getCell(`BBY${startRowIndex + counter}`).value = el?.stateStatusData?.responseFile?.url
-        crrWorksheet.getCell(`BBZ${startRowIndex + counter}`).value = el?.mohuaStatusData?.rejectReason
-        crrWorksheet.getCell(`BCA${startRowIndex + counter}`).value = el?.mohuaStatusData?.responseFile?.url
+          // mapping these fields manually as they aren't available in the fydynamic.js file
+          crrWorksheet.getCell(`A${startRowIndex + counter}`).value =
+            counter + 1;
+          crrWorksheet.getCell(`B${startRowIndex + counter}`).value =
+            STATE_DATA[el.state.toString()];
+          crrWorksheet.getCell(`C${startRowIndex + counter}`).value = el.name;
+          crrWorksheet.getCell(`D${startRowIndex + counter}`).value = el.code;
+          crrWorksheet.getCell(`E${startRowIndex + counter}`).value =
+            el.censusCode ?? el.sbCode;
+          crrWorksheet.getCell(`F${startRowIndex + counter}`).value =
+            YEAR_CONSTANTS_IDS[design_year];
+          crrWorksheet.getCell(`G${startRowIndex + counter}`).value =
+            MASTER_STATUS_ID[el.currentFormStatus];
+          crrWorksheet.getCell(`BBX${startRowIndex + counter}`).value =
+            el?.stateStatusData?.rejectReason;
+          crrWorksheet.getCell(`BBY${startRowIndex + counter}`).value =
+            el?.stateStatusData?.responseFile?.url;
+          crrWorksheet.getCell(`BBZ${startRowIndex + counter}`).value =
+            el?.mohuaStatusData?.rejectReason;
+          crrWorksheet.getCell(`BCA${startRowIndex + counter}`).value =
+            el?.mohuaStatusData?.responseFile?.url;
 
-        const sortedResults = el.propertytaxopmapper;
-        // mapping form questions and child questions with their cell position
-        for (const result of sortedResults) {
-          if (result?.year && questionColMapping[`${result.type}-${YEAR_CONSTANTS_IDS[result?.year].split("-")[1]}`]) {
-            crrWorksheet.getCell(
-              `${
-                questionColMapping[
-                  `${result.type}-${
-                    YEAR_CONSTANTS_IDS[result?.year].split("-")[1]
-                  }`
-                ]
-              }${startRowIndex + counter}`
-            ).value = result.file
-              ? result.file.url
-              : result.date
-              ? convertToKolkataDate(result.date)
-              : result.value;
-          }
-          if (result.child?.length) {
-            const childCounter = {};
-            for (const childId of result.child) {
-              const child = el?.propertymapperchilddata?.length > 0 ? el?.propertymapperchilddata.find(e => e._id.toString() === childId.toString()) : null;
-              if (child) {
-                if (!childCounter[child.type])
-                  childCounter[child.type] = 0;
+          const sortedResults = el.propertytaxopmapper;
+          // mapping form questions and child questions with their cell position
+          for (const result of sortedResults) {
+            if (
+              result?.year &&
+              questionColMapping[
+                `${result.type}-${
+                  YEAR_CONSTANTS_IDS[result?.year].split("-")[1]
+                }`
+              ]
+            ) {
+              crrWorksheet.getCell(
+                `${
+                  questionColMapping[
+                    `${result.type}-${
+                      YEAR_CONSTANTS_IDS[result?.year].split("-")[1]
+                    }`
+                  ]
+                }${startRowIndex + counter}`
+              ).value = result.file
+                ? result.file.url
+                : result.date
+                ? convertToKolkataDate(result.date)
+                : result.value;
+            }
+            if (result.child?.length) {
+              const childCounter = {};
+              for (const childId of result.child) {
+                const child =
+                  el?.propertymapperchilddata?.length > 0
+                    ? el?.propertymapperchilddata.find(
+                        (e) => e._id.toString() === childId.toString()
+                      )
+                    : null;
+                if (child) {
+                  if (!childCounter[child.type]) childCounter[child.type] = 0;
 
-                // mapping 'input type' column
-                if ((childCounter[child.type] % 5 === 0 || childCounter[child.type] === 0)) {
-                  const textValueCounter = childCounter[child.type] ? childCounter[child.type] / 5 : 0;
-                  if (questionColMapping[`${child.type}-textValue-${textValueCounter}`])
-                    crrWorksheet.getCell(`${questionColMapping[`${child.type}-textValue-${textValueCounter}`]}${startRowIndex + counter}`).value = child.textValue
+                  // mapping 'input type' column
+                  if (
+                    childCounter[child.type] % 5 === 0 ||
+                    childCounter[child.type] === 0
+                  ) {
+                    const textValueCounter = childCounter[child.type]
+                      ? childCounter[child.type] / 5
+                      : 0;
+                    if (
+                      questionColMapping[
+                        `${child.type}-textValue-${textValueCounter}`
+                      ]
+                    )
+                      crrWorksheet.getCell(
+                        `${
+                          questionColMapping[
+                            `${child.type}-textValue-${textValueCounter}`
+                          ]
+                        }${startRowIndex + counter}`
+                      ).value = child.textValue;
+                  }
+
+                  if (
+                    userCharges.includes(child.type) &&
+                    child?.year &&
+                    questionColMapping[
+                      `${child.type}-${child.textValue.replace(/ /g, "")}-${
+                        YEAR_CONSTANTS_IDS[child?.year].split("-")[1]
+                      }`
+                    ]
+                  ) {
+                    crrWorksheet.getCell(
+                      `${
+                        questionColMapping[
+                          `${child.type}-${child.textValue.replace(/ /g, "")}-${
+                            YEAR_CONSTANTS_IDS[child?.year].split("-")[1]
+                          }`
+                        ]
+                      }${startRowIndex + counter}`
+                    ).value = child.value;
+                  }
+
+                  if (
+                    child?.year &&
+                    questionColMapping[
+                      `${child.type}-${
+                        YEAR_CONSTANTS_IDS[child?.year].split("-")[1]
+                      }-${child.replicaNumber - 1}`
+                    ]
+                  ) {
+                    crrWorksheet.getCell(
+                      `${
+                        questionColMapping[
+                          `${child.type}-${
+                            YEAR_CONSTANTS_IDS[child?.year].split("-")[1]
+                          }-${child.replicaNumber - 1}`
+                        ]
+                      }${startRowIndex + counter}`
+                    ).value = child.value;
+                  }
+                  childCounter[child.type]++;
                 }
-
-                if (userCharges.includes(child.type) && child?.year && questionColMapping[`${child.type}-${child.textValue.replace(/ /g, '')}-${YEAR_CONSTANTS_IDS[child?.year].split("-")[1]}`]) {
-                  crrWorksheet.getCell(`${questionColMapping[`${child.type}-${child.textValue.replace(/ /g, '')}-${YEAR_CONSTANTS_IDS[child?.year].split("-")[1]}`]}${startRowIndex + counter}`).value = child.value
-                }
-
-                if (child?.year && questionColMapping[`${child.type}-${YEAR_CONSTANTS_IDS[child?.year].split("-")[1]}-${child.replicaNumber - 1}`]) {
-                  crrWorksheet.getCell(`${questionColMapping[`${child.type}-${YEAR_CONSTANTS_IDS[child?.year].split("-")[1]}-${child.replicaNumber - 1}`]}${startRowIndex + counter}`).value = child.value
-                }
-                childCounter[child.type]++;
               }
             }
           }
+          counter++;
         }
-        counter++
       });
       cursor.on("end", () => {
         resolve({ crrWorkbook, filename, tempFilePath })

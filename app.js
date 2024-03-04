@@ -17,12 +17,16 @@ const emailCron = require('./cronjob/cron')
 
 
 const whitelist = [
+  'https://stage.aaina-mohua.in',
+  'https://api-stage.aaina-mohua.in',
+
   'https://aaina.gov.in',
   'https://api.aaina-mohua.in',
   
   'http://localhost:4200',
   'https://democityfinance.dhwaniris.in',
   'https://staging.cityfinance.in',
+  'https://staging-jana.cityfinance.in',
   'https://cityfinance.in'
 ];
 

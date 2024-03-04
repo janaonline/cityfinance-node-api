@@ -41,9 +41,11 @@ function getIndicatorScore(ulb, ulbArr, indicator) {
 
 async function setScore(populationBucket) {
 	// const censusCode = 802787;
+	// Submission Acknowledged by PMU - 11
 	const condition = {
 		populationBucket,
-		// currentFormStatus: { $in: [11] },
+		currentFormStatus: { $nin: [1, 2] },
+		// currentFormStatus: { $in: [11] }, // TODO: how to calculate score ? based on submitted or all
 	};
 	// const condition = {};
 	const ulbArr = await ScoringFiscalRanking.find(condition).lean();

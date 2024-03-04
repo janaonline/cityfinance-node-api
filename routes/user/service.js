@@ -456,6 +456,7 @@ module.exports.getAll = async (req, res) => {
                             ulbCode: 'ULB Code',
                             sbCode: 'Swatch Bharat Code',
                             censusCode: 'Census Code',
+                            isActive: 'Status',
                             accountantName: 'ULB Nodal Officer Name',
                             accountantEmail: 'ULB Nodal Officer Email ID',
                             accountantConatactNumber: 'ULB Nodal Officer Phone Number'
@@ -466,7 +467,6 @@ module.exports.getAll = async (req, res) => {
                             organization: 'Organisation'
                         });
                     }
-                    console.log(field)
                     let xlsData = await Service.dataFormating(arr, field);
                     return res.xls('user.xlsx', xlsData);
                 } else {
@@ -651,7 +651,7 @@ module.exports.profileUpdate = async (req, res) => {
                         { _id: userInfo._id },
                         { $set: obj }
                     );
-                    if(body.hasOwnProperty('isActive') && out){
+                    if(body.hasOwnProperty('isActive') && out && userInfo.role == 'ULB'){
                         const model = MODEL_CONSTANT[userInfo.role];
                         const userId = userInfo[USER_ROLE[userInfo.role]]
                         //setitng isActive true or false based on body provided

@@ -22,6 +22,7 @@ const {
   csvColsFr,
   getCsvProjectionQueries,
   updateCsvCols,
+  hideFormVisibleUlb
 } = require("../../util/fiscalRankingsConst");
 const userTypes = require("../../util/userTypes");
 const { dateFormatter } = require("../../util/dateformatter");
@@ -1355,6 +1356,9 @@ exports.getView = async function (req, res, next) {
         })['freeze']
       }
     }
+    if(role == 'ULB' && req.query?.ulb == hideFormVisibleUlb['Vallabh Vidyanagar Municipality']) {
+      hideForm = false;
+    }
 
     let viewData = {
       _id: viewOne._id ? viewOne._id : null,
@@ -1371,8 +1375,8 @@ exports.getView = async function (req, res, next) {
       currentFormStatus: viewOne.currentFormStatus,
       financialYearTableHeader,
       messages: userMessages,
-      // hideForm : (process.env.ENV == ENV['prod']) ? hideForm : false,
-      hideForm,
+      hideForm : (process.env.ENV == ENV['prod']) ? hideForm : false,
+      // hideForm,
       notice
     };
     if (userMessages.length > 0) {
@@ -3313,6 +3317,8 @@ async function sendCsv(res, aggregateQuery) {
       .addCursorFlag("noCursorTimeout", true)
       .exec();
     cursor.on("data", function (el) {
+      el = JSON.parse(JSON.stringify(el));
+      el = concatenateUrls(el);
       let str = "";
       for (let key of csvColsFr) {
         if (key == "Form Status") {
@@ -3322,7 +3328,7 @@ async function sendCsv(res, aggregateQuery) {
           if (key == "filled") {
             el[key] = el[key] === "Yes" ? "filled" : "Not filled";
           }
-          str += el[key].split(",").join("-") + ",";
+          str += typeof el[key] === 'string' ? el[key].split(",").join("-") + "," : el[key] + ",";
         } else {
           str += " " + ",";
         }
@@ -4003,6 +4009,17 @@ module.exports.actionTakenByMoHua = catchAsync(async (req, res) => {
       response.message = "Not permitted";
       return res.status(500).json(response);
     }
+
+    //Validation for submitted Forms.
+    let frForm = await FiscalRanking.findOne({ ulb: ulbId });
+    if ([
+      MASTER_FORM_STATUS['SUBMISSION_ACKNOWLEDGED_BY_PMU'],
+      MASTER_FORM_STATUS['RETURNED_BY_PMU'],
+    ].includes(frForm.currentFormStatus)) {
+      response.message = "The form has already been submitted.";
+      return res.status(400).json(response);
+    }
+
     const session = await mongoose.startSession();
     await session.startTransaction();
     let masterFormId = FORMIDs['fiscalRanking'];
@@ -5470,6 +5487,8 @@ async function fyUlbFyCsv(params) {
       .exec();
     cursor.on("data", (document) => {
       try {
+        document = JSON.parse(JSON.stringify(document));
+        document = concatenateUrls(document);
         let fyMapperData = document.fiscalrankingmapper;
         let sortKeys = fiscalRankingQestionSortkeys();
         let stateObj = stateList.length ? stateList.find(e => e._id.toString() == document.state.toString()) : null
@@ -5529,6 +5548,13 @@ function createCsv(params) {
 
     cursor.on("data", (document) => {
       try {
+        document = JSON.parse(JSON.stringify(document));
+        let urlParams = {
+          file: "file",
+          signedCopyOfFile: "signedCopyOfFile",
+          otherUpload: "otherUpload",
+        };
+        document = concatenateUrls(document, urlParams, true);
         let str = "";
         let str2 = "";
         let FRFlag = false;
@@ -5693,7 +5719,8 @@ module.exports.getTrackingHistory = async(req,res)=>{
 const jwt = require('jsonwebtoken');
 const Config = require('../../config/app_config');
 const axios = require('axios');
-const { appendFile } = require('fs')
+const { appendFile } = require('fs');
+const { concatenateUrls } = require("../../service/common");
 
 module.exports.freezeForm = async (req, res) => {
   try {

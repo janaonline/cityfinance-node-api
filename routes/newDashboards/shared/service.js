@@ -222,7 +222,7 @@ const moneyInformation = async (req, res) => {
     }
     let balanceSheet = {
       _id: 'BalanceSheetSize',
-      amount: assets.amount
+      amount: assets?.amount
     }
   
 data.push(ownRevenue[0],taxRevenueObj, grantObj, balanceSheet )

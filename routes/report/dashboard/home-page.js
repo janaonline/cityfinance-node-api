@@ -118,17 +118,23 @@ module.exports = (req, res) => {
            if (req.query.state) {
              query = [
                {
+                 $group: {
+                   _id: "$financialYear",
+                   ulbs: {
+                     $addToSet: "$ulb",
+                   },
+                 },
+               },
+               { $unwind: "$ulbs" },
+
+               {
                  $lookup: {
                    from: "ulbs",
                    foreignField: "_id",
-                   localField: "ulb",
+                   localField: "ulbs",
                    as: "ulbData",
                  },
                },
-               {
-                 $unwind: "$ulbData",
-               },
-
                {
                  $match: {
                    "ulbData.state": ObjectId(req.query.state),
@@ -136,8 +142,8 @@ module.exports = (req, res) => {
                },
                {
                  $group: {
-                   _id: "$financialYear",
-                   ulbs: { $addToSet: "$ulb" },
+                   _id: "$_id",
+                   ulbs: { $addToSet: "$ulbData._id" },
                  },
                },
                {

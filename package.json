@@ -8,6 +8,7 @@
     "start": "node app"
   },
   "dependencies": {
+    "@azure/storage-blob": "^12.17.0",
     "adm-zip": "^0.5.1",
     "aws-sdk": "^2.1250.0",
     "axios": "^0.24.0",
