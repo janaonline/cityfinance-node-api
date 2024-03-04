@@ -4113,4 +4113,18 @@ async function saveFormLevelHistory(masterFormId, formSubmit, actionTakenByRole,
         body: statusHistory,
     });
 }
+/**
+ * The function `checkYearValidity` checks if a given year is not equal to specific year constants.
+ * @param year - The `year` parameter is the year that you want to check for validity. 
+ * @returns a boolean value indicating whether the `year` passed as an argument is not equal to the
+ * values stored in the `YEAR_CONSTANTS` object for the keys "21_22" and "22_23".
+ */
+function isYearWithinRange(year){
+    try {
+        return ![YEAR_CONSTANTS["21_22"],YEAR_CONSTANTS["22_23"]].includes(year)
+    } catch (error) {
+        throw new Error(`checkYearValidity:: ${error.message}`)
+    }
+}
 module.exports.saveFormLevelHistory = saveFormLevelHistory
+module.exports.isYearWithinRange = isYearWithinRange
