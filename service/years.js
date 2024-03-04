@@ -9,6 +9,17 @@ let years = {
     "2024-25":"606aafcf4dff55e6c075d424",
     "2025-26":"606aafda4dff55e6c075d48f",
 }
+
+const getDesiredYear = (currentYearId, yearDiffercnce = 0) => {
+    const entries = Object.entries(years);
+    const currentYearIndex = entries.findIndex(([yearName, yearId]) => yearId == currentYearId);
+
+    console.log(currentYearIndex);
+    const [yearName, yearId] =  entries[currentYearIndex + yearDiffercnce];
+    return { yearName, yearId };
+}
+
 module.exports = {
-    years
+    years,
+    getDesiredYear
 }

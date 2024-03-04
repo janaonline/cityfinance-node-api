@@ -1,4 +1,4 @@
-const { years } = require("../../service/years")
+const { years, getDesiredYear } = require("../../service/years")
 const { apiUrls } = require("../CommonActionAPI/service")
 
 const propertyTaxOpFormJson = ({role, design_year}) => {
@@ -10479,7 +10479,14 @@ const propertyTaxOpFormJson = ({role, design_year}) => {
 
       if(hasMultipleYears) {
         const lastYear = yearData[yearData.length - 1];
-        yearData.push(JSON.parse(JSON.stringify(lastYear)));
+        const { yearName, yearId } = getDesiredYear(lastYear.year, 1);
+        
+        const nextYear = JSON.parse(JSON.stringify(lastYear));
+        nextYear['key'] = `FY${yearName}`;
+        nextYear['label'] = `FY ${yearName}`;
+        nextYear['year'] = yearId;
+        nextYear['postion'] = String(+nextYear['postion'] + 1);
+        yearData.push(nextYear);
       }
     })
   });
@@ -12101,6 +12108,29 @@ function getSkippableKeys(skipLogics) {
 
 let dynamicJson = propertyTaxOpFormJson({})['tabs'][0]['data']
 let {childKeys, questionIndicators,indicatorsWithNoyears} = fetchIndicatorsOrDp(dynamicJson)
+
+
+const getFormMetaData = ({ design_year }) => {
+  const result = {
+    financialYearTableHeader: Object.entries(financialYearTableHeader).reduce((acc, [displayPriority, headers]) => {
+      const headersCopy = [...headers];
+
+      headersCopy.push({
+        "label": "2023-24",
+        "info": ""
+      });
+
+      return {
+        ...acc,
+        [displayPriority]: headersCopy
+      }
+    },{}), 
+    specialHeaders, 
+    skipLogicDependencies
+  }
+  console.log('copy', result.financialYearTableHeader);
+  return result;
+}
 module.exports.reverseKeys = ["ulbFinancialYear","ulbPassedResolPtax"]
 module.exports.skippableKeys = getSkippableKeys(skipLogicDependencies)
 module.exports.financialYearTableHeader = financialYearTableHeader
@@ -12112,3 +12142,4 @@ module.exports.propertyTaxOpFormJson = propertyTaxOpFormJson;
 module.exports.getInputKeysByType = getInputKeysByType;
 module.exports.skipLogicDependencies = skipLogicDependencies
 module.exports.sortPosition = sortPosition
+module.exports.getFormMetaData = getFormMetaData
