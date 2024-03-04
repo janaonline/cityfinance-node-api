@@ -1,6 +1,8 @@
 const nodemailer = require('nodemailer');
 const { email } = require('./check-unique');
 const AWS = require('aws-sdk')
+const ENVIRONMENT = process.env.ENV;
+const {ENV, TEST_EMAIL} = require('../util/FormNames')
 
 const SESConfig = {
     apiVersion: '2010-12-01',
@@ -37,7 +39,9 @@ module.exports = function(mailOptions, cb){
         mail= process.env.EMAIL // reachus
         password = process.env.PASS
     }
-
+    if(ENVIRONMENT !== ENV['prod']){
+        mailOptions['Destination']['ToAddresses'] = Object.values(TEST_EMAIL);
+    }
 new AWS.SES(SESConfig).sendEmail(mailOptions).promise().then((res)=>{
     console.log(res)
 })
