@@ -894,7 +894,7 @@ async function calculateAndUpdateStatusForMappers(tabs, ulbId, formId, year, upd
                         }
                     })
                     temp["status"].push(status)
-                    await updateQueryForPropertyTaxOp(yearArr, ulbId, formId, updateForm, dynamicObj, updatedIds)
+                    await updateQueryForPropertyTaxOp(yearArr, ulbId, formId, updateForm, dynamicObj, updatedIds, year)
                 }
                 conditionalObj[tab._id.toString()] = (temp)
             }
@@ -939,11 +939,18 @@ async function calculateAndUpdateStatusForMappers(tabs, ulbId, formId, year, upd
 //     }
 // }
 
-async function updateQueryForPropertyTaxOp(yearData, ulbId, formId, updateForm, dynamicObj, updatedIds) {
+async function updateQueryForPropertyTaxOp(yearData, ulbId, formId, updateForm, dynamicObj, updatedIds, design_year) {
+    const { yearIndex: designYearIndex  } = getDesiredYear(design_year);
+    const { yearIndex: yearIndex23_24 } = getDesiredYear('2023-24');
+
     try {
         for (var years of yearData) {
             let upsert = false
             if (years.year) {
+                if(designYearIndex > yearIndex23_24) {
+                    const { yearIndex } = getDesiredYear(years.year);
+                    if(designYearIndex - yearIndex > 1) continue;
+                }
                 let filter = {
                     "year": ObjectId(years.year),
                     "ulb": ObjectId(ulbId),
