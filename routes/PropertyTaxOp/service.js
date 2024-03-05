@@ -1073,6 +1073,41 @@ exports.getView = async function (req, res, next) {
             return res.status(400).json({ status: false, message: "Something went wrong!" });
         }
         const design_year = req.query.design_year;
+
+         /**
+         * if 2425 design year.
+         * check the previous form and if currentForm status = 4, canShow2425Form : true otherwise false
+         * 
+         * 
+         */
+
+        if (design_year && design_year == years["2024-25"]) {
+            let canShow2425Form = false;
+            let redirectionLink = null;
+            const desiredYear = getDesiredYear(design_year, -1);
+            let ptoData = await PropertyTaxOp.findOne(
+                {
+                ulb: ObjectId(req.query.ulb),
+                design_year: ObjectId(desiredYear?.yearId),
+                },
+                { history: 0 }
+            ).lean();
+            if (MASTER_STATUS_ID[+ptoData?.currentFormStatus] == "Under Review By MoHUA") {
+                canShow2425Form = true;
+            } else {
+                canShowForm = false;
+                redirectionink = 'https:google.com'
+            }
+            return res.status(200).json({
+              status: true,
+              message: "Success fetched data!",
+              data: {
+                canShow2425Form,
+                redirectionLink,
+              },
+            });
+        }
+
         condition = { ulb: ObjectId(req.query.ulb), design_year: ObjectId(req.query.design_year) };
 
         let ptoData = await PropertyTaxOp.findOne(condition, { history: 0 }).lean();
