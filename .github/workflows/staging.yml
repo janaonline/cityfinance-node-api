@@ -53,7 +53,7 @@ jobs:
     - name: Build Code
       run: npm run build --if-present
     - run: |
-          touch .env
-          echo "${{secrets.STAG_ENV}}" > .env
+          sudo touch .env
+          echo "${{secrets.DEV_CITY_ENV}}" > .env
     - run: pm2 restart index.js --name "login"
     
