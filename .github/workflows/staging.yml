@@ -8,7 +8,7 @@ on:
     types: 
       - closed
     branches: 
-      - "staging" 
+      - "dev-jana" 
 
 jobs:
 #   test:
@@ -55,5 +55,6 @@ jobs:
     - run: |
           sudo touch .env
           echo "${{secrets.DEV_CITY_ENV}}" > .env
-    - run: pm2 restart index.js --name "login"
+    # - run: pm2 restart index.js --name "login"
+    - run: pm2 start server.js --name "dev-node-api"
     
