@@ -52,9 +52,9 @@ jobs:
       run: npm install
     - name: Build Code
       run: npm run build --if-present
-    - run: |
-          sudo touch .env
-          sudo echo "${{secrets.DEV_CITY_ENV}}" > .env
+    # - run: |
+    #       sudo touch .env
+    #       sudo echo "${{secrets.DEV_CITY_ENV}}" > .env
     # - run: pm2 restart index.js --name "login"
     - run: pm2 start server.js --name "dev-node-api"
     
