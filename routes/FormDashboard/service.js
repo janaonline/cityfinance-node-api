@@ -696,13 +696,16 @@ function UASubmittedForms(forms, formCategory, design_year, modelName) {
 function getQuery(modelName, formType, designYear, formCategory, stateId){
     let query = [];
     let condition = {};
+    let designYearField = "design_year";
+    if(modelName == CollectionNames.dur) designYearField = "designYear"
+        
     let nmpcConditionUlb = [],
         mpcConditionUlb = [];
     const defaultProjectStage = {
         actionTakenByRole:1,
         isDraft:1,
         ulb:1,
-        design_year:1,
+        [designYearField]:1,
         status:1
     }
         nmpcConditionUlb =[
