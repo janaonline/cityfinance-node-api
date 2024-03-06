@@ -8,7 +8,7 @@ const { FormNames, MASTER_STATUS_ID, MASTER_STATUS, MASTER_FORM_STATUS } = requi
 const User = require('../../models/User');
 const { checkUndefinedValidations } = require('../../routes/FiscalRanking/service');
 const { propertyTaxOpFormJson, skippableKeys, getFormMetaData, indicatorsWithNoyears, childKeys,reverseKeys ,questionIndicators,sortPosition} = require('./fydynemic')
-const { isEmptyObj, isReadOnly } = require('../../util/helper');
+const { isEmptyObj, isReadOnly, handleOldYearsDisabled } = require('../../util/helper');
 const PropertyMapperChildData = require("../../models/PropertyTaxMapperChild");
 const { years, getDesiredYear } = require('../../service/years');
 const { saveFormHistory } = require("../../util/masterFunctions")
@@ -1140,6 +1140,7 @@ exports.getView = async function (req, res, next) {
                                             pf.file ? (pf.file = d ? d.file : "") : d.date ? (pf.date = d ? d.date : "") : (pf.value = d ? d.value : "");
                                         }
                                         pf.readonly = isReadOnly({ isDraft, currentFormStatus, role, ptoData })
+                                        handleOldYearsDisabled(pf, design_year);
                                     }
                                 }
                             } else if (Array.isArray(mData) && ptoData.length) {
