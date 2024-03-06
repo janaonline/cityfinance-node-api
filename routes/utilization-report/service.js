@@ -958,7 +958,7 @@ module.exports.read2223 = catchAsync(async (req, res, next) => {
         isDraft,
         "ULB"
       );
-      if (isYearWithinRange(design_year)) status = MASTER_STATUS_ID[prevData?.currentFormStatus];
+      if (prevData?.currentFormStatus) status = MASTER_STATUS_ID[prevData?.currentFormStatus];
     }
     let host = "";
     if (req.headers.host === BackendHeaderHost.Demo) {
