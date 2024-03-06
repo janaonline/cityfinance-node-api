@@ -1108,7 +1108,10 @@ exports.getView = async function (req, res, next) {
         let ptoData = await PropertyTaxOp.findOne(condition, { history: 0 }).lean();
         let ptoMaper = null;
         if (ptoData) {
-            ptoMaper = await PropertyTaxOpMapper.find({ ulb: ObjectId(req.query.ulb), ptoId: ObjectId(ptoData._id) }).populate("child").lean();
+            ptoMaper = await PropertyTaxOpMapper.find({ 
+                ulb: ObjectId(req.query.ulb), 
+                // ptoId: ObjectId(ptoData._id) 
+            }).populate("child").lean();
         }
         let fyDynemic = { ...await propertyTaxOpFormJson({role, design_year }) };
         if (ptoData) {
