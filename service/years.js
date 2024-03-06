@@ -12,7 +12,7 @@ let years = {
 
 const getDesiredYear = (yearIdOrName, yearDiffercnce = 0) => {
     const entries = Object.entries(years);
-    const yearIndex = entries.findIndex((entry) => entry.includes(yearIdOrName));
+    const yearIndex = entries.findIndex((entry) => entry.includes('' + yearIdOrName));
     const [yearName, yearId] =  entries[yearIndex + yearDiffercnce];
     return { yearName, yearId, yearIndex };
 }

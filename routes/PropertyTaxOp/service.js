@@ -1007,7 +1007,7 @@ function createChildObjectsYearData(params) {
     return yearData
 }
 
-async function createFullChildObj(params) {
+async function createFullChildObj(params, design_year) {
     let { element, yearData, replicaCount, childCopyFrom } = params
     let childs = []
     let copiedFromKeys = Array.from(new Set(yearData.map((item => item.type))))
@@ -1023,7 +1023,8 @@ async function createFullChildObj(params) {
                 childObject.label = yearData[0]?.label
                 childObject.position = yearData[0]?.displayPriority
                 childObject.key = key
-                childObject.yearData = yearData
+                childObject.yearData = yearData;
+                childObject.yearData?.forEach(year => handleOldYearsDisabled(year, design_year));
                 childObject.readonly = true
                 childs.push(childObject)
 
@@ -1037,7 +1038,7 @@ async function createFullChildObj(params) {
 }
 
 async function appendChildValues(params) {
-    let { element, ptoMaper, isDraft, currentFormStatus, role } = params
+    let { element, ptoMaper, isDraft, currentFormStatus, role, design_year } = params
     try {
         if (element.child && ptoMaper) {
             let childElement = ptoMaper.find(item => item.type === element.key)
@@ -1059,7 +1060,7 @@ async function appendChildValues(params) {
                     replicaCount: childElement.replicaCount,
                     childCopyFrom: element.copyChildFrom
                 }
-                let child = await createFullChildObj(params)
+                let child = await createFullChildObj(params, design_year)
                 element.replicaCount = childElement.replicaCount
                 element.child = child
             }
@@ -1129,6 +1130,7 @@ exports.getView = async function (req, res, next) {
                                 ptoMaper: ptoMaper,
                                 isDraft: isDraft,
                                 currentFormStatus: currentFormStatus,
+                                design_year,
                                 role
                             }
                             data[el] = await appendChildValues(childParams)

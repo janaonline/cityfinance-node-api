@@ -69,6 +69,7 @@ function Helper() {
     }
 
     this.handleOldYearsDisabled = (yearObject, design_year) => {
+        if(!design_year || !yearObject?.year) return; 
         const { yearIndex: designYearIndex  } = getDesiredYear(design_year);
         const { yearIndex: yearIndex23_24 } = getDesiredYear('2023-24');
         
