@@ -54,7 +54,9 @@ jobs:
       run: npm run build --if-present
     - run: |
         touch .env
-        echo "${{ secrets.DEV_CITY_ENV }}" | sudo tee .env >/dev/null
+        echo "$DEV_CITY_ENV" | sudo tee .env >/dev/null
+      env:
+        DEV_CITY_ENV: ${{ secrets.DEV_CITY_ENV }}
     # - run: pm2 restart index.js --name "login"
     - run: pm2 start server.js --name "dev-node-api"
     
