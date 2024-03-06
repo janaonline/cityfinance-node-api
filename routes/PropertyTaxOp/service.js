@@ -1027,8 +1027,7 @@ async function createFullChildObj(params, design_year) {
                 childObject.yearData?.forEach(year => handleOldYearsDisabled(year, design_year));
                 childObject.readonly = true
                 childs.push(childObject)
-
-            }
+            }   
         }
     }
     catch (err) {
@@ -1045,6 +1044,19 @@ async function appendChildValues(params) {
             if (childElement && childElement.child) {
                 let yearData = []
                 // console.log("childElement.key :: ",childElement.type)
+
+                //TODO Comment ....
+                const lastChildYear = childElement.child[childElement.child.length - 1];;
+                const { yearName, yearId } = getDesiredYear(lastChildYear.year, 1);
+                const nextYear = JSON.parse(JSON.stringify(lastChildYear));
+                nextYear["key"] = `FY${yearName}`;
+                nextYear["label"] = `FY ${yearName}`;
+                nextYear["year"] = yearId;
+                nextYear["value"] = "";
+                nextYear["postion"] = String(+nextYear["postion"] + 1);
+
+                childElement.child.push(nextYear);
+
                 for (let key of childElement.child) {
                     yearData = await createChildObjectsYearData({
                         childs: childElement.child,
