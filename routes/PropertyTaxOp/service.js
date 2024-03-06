@@ -1104,19 +1104,22 @@ exports.getView = async function (req, res, next) {
             } 
         }
 
-        condition = { ulb: ObjectId(req.query.ulb), design_year: ObjectId(design_year) };
+        condition = { ulb: ObjectId(req.query.ulb), design_year: ObjectId(design_year) }; 
 
         let ptoData = await PropertyTaxOp.findOne(condition, { history: 0 }).lean();
-        let ptoMaper = null;
-        if (ptoData) {
-            ptoMaper = await PropertyTaxOpMapper.find({ 
-                ulb: ObjectId(req.query.ulb), 
-                // ptoId: ObjectId(ptoData._id) 
-            }).populate("child").lean();
-        }
+        const { yearId: previousYearId } = getDesiredYear(design_year, -1);
+        let ptoLatestYearData = await PropertyTaxOp.findOne({ 
+            ulb: ObjectId(req.query.ulb), 
+            design_year: ObjectId(previousYearId) 
+        }, { history: 0 }).lean();
+
+        let ptoMaper = await PropertyTaxOpMapper.find({ 
+            ulb: ObjectId(req.query.ulb), 
+            // ptoId: ObjectId(ptoData._id) 
+        }).populate("child").lean();
         let fyDynemic = { ...await propertyTaxOpFormJson({role, design_year }) };
-        if (ptoData) {
-            const { isDraft, status, currentFormStatus } = ptoData;
+        if (ptoData || ptoLatestYearData) {
+            const { isDraft = false, status = "PENDING", currentFormStatus= MASTER_STATUS['Not Started'] } = ptoData || {};
             for (let sortKey in fyDynemic) {
                 if (sortKey !== "tabs" && ptoData) {
                     fyDynemic[sortKey] = ptoData[sortKey];
