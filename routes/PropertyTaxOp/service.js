@@ -1048,8 +1048,9 @@ function addChildNextYearQuestionObject(childObject) {
     const lastChildYear = childObject.yearData[childObject.yearData.length - 1];
     const { yearName, yearId } = getDesiredYear(lastChildYear.year, 1);
     const nextYear = JSON.parse(JSON.stringify(lastChildYear));
-    nextYear["year"] = yearId;
-    nextYear["value"] = "55";
+    nextYear["year"] = yearId;      
+    nextYear["value"] = "";
+    nextYear["placeholder"] = "";
     nextYear['key'] = `FY${yearName}${yearName}`;
     nextYear["postion"] = String(+nextYear["postion"] + 1);
     nextYear['displayPriority'] = nextYear["postion"];
