@@ -1029,7 +1029,7 @@ async function createFullChildObj(params, design_year) {
                 //TODO Comment 
 
                 if(isBeyond2023_24(design_year)) {
-                    addChildNextYearQuestionObject(childObject);
+                    // addChildNextYearQuestionObject(childObject);
                     childObject.yearData?.forEach(year => handleOldYearsDisabled(year, design_year));
                 }
                 childObject.readonly = true
@@ -1061,28 +1061,40 @@ async function appendChildValues(params) {
     let { element, ptoMaper, isDraft, currentFormStatus, role, design_year } = params
     try {
         if (element.child && ptoMaper) {
-            let childElement = ptoMaper.find(item => item.type === element.key)
-            if (childElement && childElement.child) {
-                let yearData = []
+            let childElements = ptoMaper.filter(item => item.type === element.key);
+            for(let [index, childElement] of childElements.entries()) {
+                if (childElement && childElement.child) {
+                    let yearData = []
 
-                for (let key of childElement.child) {
-                    yearData = await createChildObjectsYearData({
-                        childs: childElement.child,
-                        isDraft: isDraft,
-                        currentFormStatus: currentFormStatus,
-                        childCopyFrom: element.copyChildFrom,
-                        role: role
-                    })
+                    for (let key of childElement.child) {
+                        yearData = await createChildObjectsYearData({
+                            childs: childElement.child,
+                            isDraft: isDraft,
+                            currentFormStatus: currentFormStatus,
+                            childCopyFrom: element.copyChildFrom,
+                            role: role
+                        })
+                    }
+                    let params = {
+                        yearData: yearData,
+                        element: element,
+                        replicaCount: childElement.replicaCount,
+                        childCopyFrom: element.copyChildFrom
+                    }
+                    let child = await createFullChildObj(params, design_year)
+                    element.replicaCount = childElement.replicaCount;
+
+                    if(index == 0) {
+                        element.child = child;
+                    } else {
+                        console.log('in last row', child);
+                        const lastRow = element.child[element.child.length - 1];
+                        lastRow.yearData = [
+                            ...lastRow.yearData,
+                            ...child.map(item => item.yearData).flat()
+                        ];
+                    }
                 }
-                let params = {
-                    yearData: yearData,
-                    element: element,
-                    replicaCount: childElement.replicaCount,
-                    childCopyFrom: element.copyChildFrom
-                }
-                let child = await createFullChildObj(params, design_year)
-                element.replicaCount = childElement.replicaCount
-                element.child = child
             }
         }
     }
@@ -1131,7 +1143,7 @@ exports.getView = async function (req, res, next) {
         }, { history: 0 }).lean();
 
         let ptoMaper = await PropertyTaxOpMapper.find({ 
-            ulb: ObjectId(req.query.ulb), 
+            ulb: ObjectId(req.query.ulb),
             // ptoId: ObjectId(ptoData._id) 
         }).populate("child").lean();
         let fyDynemic = { ...await propertyTaxOpFormJson({role, design_year }) };
