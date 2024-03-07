@@ -336,7 +336,6 @@ module.exports.get = catchAsync(async (req, res) => {
     isLatestCreated = !ulbInfo[accessVariable];
     baseYear = `access_${YEAR_CONSTANTS_IDS[YEAR_CONSTANTS['21_22']].split("-")[0].slice(-2)}${YEAR_CONSTANTS_IDS[YEAR_CONSTANTS['21_22']].split("-")[1]}`;
     checkBaseYearAccess = ulbInfo[baseYear]
-    console.log("accessVariable :: ",accessVariable,isLatestCreated)
     FormModelMapping["GfcFormCollection"] = isUA == 'Yes' ? ObjectId("62aa1d82c9a98b2254632a9e") : ObjectId("62aa1dd6c9a98b2254632aae")
     FormModelMapping["OdfFormCollection"] = isUA == 'Yes' ? ObjectId("62aa1d6ec9a98b2254632a9a") : ObjectId("62aa1dc0c9a98b2254632aaa")
     FormModelMapping["XVFcGrantULBForm"] = isUA == 'Yes' ? ObjectId("62aa1d4fc9a98b2254632a96") : ObjectId("62aa1dadc9a98b2254632aa6")
@@ -346,7 +345,7 @@ module.exports.get = catchAsync(async (req, res) => {
     FormModelMapping_Master_23_24["XVFcGrantULBForm"] = isUA == 'Yes' ? UA_FORM_MODEL['XVFcGrantULBForm_UA_YES'] : UA_FORM_MODEL['XVFcGrantULBForm_UA_NO']
 
     if(![YEAR_CONSTANTS['22_23']].includes(year)){
-      FormModelMapping_Master_23_24 = await modelMapper({ year , role})
+      FormModelMapping_Master_23_24 = await modelMapper({ year , role, UA: ulbInfo?.UA})
     }
     let condition = {
       ulb: ObjectId(_id),
@@ -564,11 +563,12 @@ module.exports.get = catchAsync(async (req, res) => {
  * based on the provided `year` and `role`. The mapping is filtered based on certain conditions from
  * the `Sidemenu` collection.
  */
-async function modelMapper({year , role}){
+async function modelMapper({year , role, UA}){
   try {
     let formModelMap = {};
     let condition = {year: ObjectId(year), isActive: true, role};
     let menuResponse = await Sidemenu.find(condition,{_id:1, dbCollectionName:1, isUAApplicable:1}).lean();
+    if (!UA) menuResponse = menuResponse.filter((menuItem) => !menuItem.isUAApplicable);
     menuResponse.forEach((menuItem)=>{
       if(Object.keys(UlbFormCollections).includes(menuItem.dbCollectionName)
          && !formModelMap.hasOwnProperty(UlbFormCollections[menuItem.dbCollectionName]) ){
