@@ -17,7 +17,14 @@ const getDesiredYear = (yearIdOrName, yearDiffercnce = 0) => {
     return { yearName, yearId, yearIndex };
 }
 
+const isBeyond2023_24 = design_year =>  {
+    const { yearIndex: designYearIndex  } = getDesiredYear(design_year);
+    const { yearIndex: yearIndex23_24 } = getDesiredYear('2023-24');
+    return designYearIndex > yearIndex23_24;
+}
+
 module.exports = {
     years,
-    getDesiredYear
+    getDesiredYear,
+    isBeyond2023_24
 }
