@@ -21,7 +21,7 @@ const {
 } = require("../CommonActionAPI/service");
 const { getKeyByValue,checkForCalculationsForDurForm } = require("../../util/masterFunctions")
 const Service = require('../../service');
-const { FormNames, ULB_ACCESSIBLE_YEARS, MASTER_STATUS_ID, PREV_MASTER_FORM_STATUS } = require('../../util/FormNames');
+const { FormNames, ULB_ACCESSIBLE_YEARS, MASTER_STATUS_ID, PREV_MASTER_FORM_STATUS, MASTER_FORM_STATUS } = require('../../util/FormNames');
 const MasterForm = require('../../models/MasterForm')
 const { YEAR_CONSTANTS } = require("../../util/FormNames");
 const { ModelNames } = require('../../util/15thFCstatus')
@@ -177,7 +177,7 @@ module.exports.createOrUpdate = async (req, res) => {
       formData["designYear"] = ObjectId(designYear);
       yearInNumber =  Number(getKeyByValue(years,designYear).split('-').join(''))
     }
-    if (formData.designYear.toString() === YEAR_CONSTANTS["23_24"] && formData.ulb) {
+    if ( isYearWithinRange(formData.designYear.toString()) && formData.ulb) {
       formData.status = currentMasterFormStatus;
       let params = {
         modelName: ModelNames["dur"],

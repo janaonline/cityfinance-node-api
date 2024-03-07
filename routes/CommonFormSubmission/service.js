@@ -178,7 +178,6 @@ module.exports.createAndUpdateFormMaster = async (params) => {
             .findOne({ ulb: formData.ulb, designYear: formData.designYear })
             .lean();
           let formCurrentStatus;
-          console.log("formData2324 ::: ",formData2324)
           if (!formData2324) {
             formCurrentStatus = {
               status: MASTER_STATUS["Not Started"],
