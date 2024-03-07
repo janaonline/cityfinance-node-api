@@ -10,7 +10,7 @@ const { checkUndefinedValidations } = require('../../routes/FiscalRanking/servic
 const { propertyTaxOpFormJson, skippableKeys, getFormMetaData, indicatorsWithNoyears, childKeys,reverseKeys ,questionIndicators,sortPosition} = require('./fydynemic')
 const { isEmptyObj, isReadOnly, handleOldYearsDisabled } = require('../../util/helper');
 const PropertyMapperChildData = require("../../models/PropertyTaxMapperChild");
-const { years, getDesiredYear } = require('../../service/years');
+const { years, getDesiredYear, isBeyond2023_24 } = require('../../service/years');
 const { saveFormHistory } = require("../../util/masterFunctions")
 const { validationJson, keysWithChild } = require("./validation");
 const MasterStatus = require('../../models/MasterStatus');
@@ -983,19 +983,7 @@ function createChildObjectsYearData(params) {
     let { childs, isDraft, currentFormStatus, childCopyFrom, role } = params
     let yearData = []
     try {
-
-
-        //TODO Comment 
-        const lastChildYear = childs[childs.length - 1];
-        const { yearName, yearId } = getDesiredYear(lastChildYear.year, 1);
-        const nextYear = JSON.parse(JSON.stringify(lastChildYear));
-        nextYear["year"] = yearId;
-        nextYear["value"] = "55";
-        nextYear["postion"] = String(+nextYear["postion"] + 1);
-
-        
-
-        for (let child of [...childs, nextYear]) {
+        for (let child of childs) {
             let yearName = getKeyByValue(years, child?.year.toString())
             let copiedFrom = childCopyFrom.find(item => item.key === child.type)
             let yearJson = copiedFrom?.yearData.find(yearItem => yearItem.year === child.year.toString())
@@ -1036,16 +1024,36 @@ async function createFullChildObj(params, design_year) {
                 childObject.position = yearData[0]?.displayPriority
                 childObject.key = key
                 childObject.yearData = yearData;
-                childObject.yearData?.forEach(year => handleOldYearsDisabled(year, design_year));
+
+
+                //TODO Comment 
+
+                if(isBeyond2023_24(design_year)) {
+                    addChildNextYearQuestionObject(childObject);
+                    childObject.yearData?.forEach(year => handleOldYearsDisabled(year, design_year));
+                }
                 childObject.readonly = true
                 childs.push(childObject)
-            }   
+            } 
+
         }
     }
     catch (err) {
         console.log("error in createFullChildObj ::: ", err.message)
     }
     return childs
+}
+
+function addChildNextYearQuestionObject(childObject) {
+    const lastChildYear = childObject.yearData[childObject.yearData.length - 1];
+    const { yearName, yearId } = getDesiredYear(lastChildYear.year, 1);
+    const nextYear = JSON.parse(JSON.stringify(lastChildYear));
+    nextYear["year"] = yearId;
+    nextYear["value"] = "55";
+    nextYear['key'] = `FY${yearName}${yearName}`;
+    nextYear["postion"] = String(+nextYear["postion"] + 1);
+    nextYear['displayPriority'] = nextYear["postion"];
+    childObject.yearData.push(nextYear);
 }
 
 async function appendChildValues(params) {
@@ -1156,7 +1164,9 @@ exports.getView = async function (req, res, next) {
                                             pf.file ? (pf.file = d ? d.file : "") : d.date ? (pf.date = d ? d.date : "") : (pf.value = d ? d.value : "");
                                         }
                                         pf.readonly = isReadOnly({ isDraft, currentFormStatus, role, ptoData })
-                                        handleOldYearsDisabled(pf, design_year);
+                                        if(isBeyond2023_24(design_year)) {
+                                            handleOldYearsDisabled(pf, design_year);
+                                        }
                                     }
                                 }
                             } else if (Array.isArray(mData) && ptoData.length) {
