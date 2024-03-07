@@ -1101,7 +1101,7 @@ exports.getView = async function (req, res, next) {
         }
         const design_year = req.query.design_year;
 
-        if (design_year && design_year == years["2024-25"]) {
+        if (isBeyond2023_24(design_year)) {
             const desiredYear = getDesiredYear(design_year, -1);
             let ptoData = await PropertyTaxOp.findOne(
                 {

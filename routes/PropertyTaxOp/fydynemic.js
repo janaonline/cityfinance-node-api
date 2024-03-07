@@ -1,4 +1,4 @@
-const { years, getDesiredYear } = require("../../service/years")
+const { years, getDesiredYear, isBeyond2023_24 } = require("../../service/years")
 const { apiUrls } = require("../CommonActionAPI/service")
 
 const propertyTaxOpFormJson = ({role, design_year}) => {
@@ -10471,7 +10471,7 @@ const propertyTaxOpFormJson = ({role, design_year}) => {
     ]
   }
 
-  if (design_year && design_year == years["2024-25"]) {
+  if (isBeyond2023_24(design_year)) {
     json.tabs.forEach((tab) => {
       const indicators = Object.values(tab.data);
       indicators.forEach((indicator) => {
@@ -10479,18 +10479,7 @@ const propertyTaxOpFormJson = ({role, design_year}) => {
         const copyChildFrom = indicator?.copyChildFrom;
 
         if (copyChildFrom) {
-          copyChildFrom.forEach((copyChild) => {
-            const { yearData } = copyChild;
-            const lastChildYear = yearData[yearData.length - 1];
-            const { yearName, yearId } = getDesiredYear(lastChildYear.year, 1);
-
-            const nextYear = JSON.parse(JSON.stringify(lastChildYear));
-            nextYear["key"] = `FY${yearName}`;
-            nextYear["label"] = `FY ${yearName}`;
-            nextYear["year"] = yearId;
-            nextYear["postion"] = String(+nextYear["postion"] + 1);
-            yearData.push(nextYear);
-          });
+          modifyJsonForChild(copyChildFrom);
         }
         const hasMultipleYears = !yearData.some(
           (yearItem) => Object.keys(yearItem).length == 0
@@ -10517,6 +10506,25 @@ const propertyTaxOpFormJson = ({role, design_year}) => {
 }
 
 
+
+function modifyJsonForChild(copyChildFrom) {
+  copyChildFrom.forEach((copyChild) => {
+    const { yearData } = copyChild
+    const lastChildYear = yearData[yearData.length - 1]
+    const { yearName, yearId } = getDesiredYear(lastChildYear.year, 1)
+    const nextYear = JSON.parse(JSON.stringify(lastChildYear))
+    yearData.forEach((yearObj) => {
+      yearObj.readonly = true
+      yearObj.placeholder = "N/A"
+      yearObj.required = false
+    })
+    nextYear["key"] = `FY${yearName}`
+    nextYear["label"] = `FY ${yearName}`
+    nextYear["year"] = yearId
+    nextYear["postion"] = String(+nextYear["postion"] + 1)
+    yearData.push(nextYear)
+  })
+}
 
 function getInputKeysByType(formType, type, label, dataSource = null, position, required = true, mn = false, info = "") {
   let maximum = 9999999999

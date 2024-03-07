@@ -18,6 +18,7 @@ const getDesiredYear = (yearIdOrName, yearDiffercnce = 0) => {
 }
 
 const isBeyond2023_24 = design_year =>  {
+    if(!design_year) return false;
     const { yearIndex: designYearIndex  } = getDesiredYear(design_year);
     const { yearIndex: yearIndex23_24 } = getDesiredYear('2023-24');
     return designYearIndex > yearIndex23_24;
