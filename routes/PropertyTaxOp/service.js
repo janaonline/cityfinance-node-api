@@ -1063,7 +1063,7 @@ function addChildNextYearQuestionObject(childObject) {
     childObject.yearData.push(nextYear);
 }
 
-async function appendChildValues(params) {
+async function          appendChildValues(params) {
     let { element, ptoMaper, isDraft, currentFormStatus, role, design_year, ptoData } = params
     try {
         if (element.child && ptoMaper) {
@@ -1093,13 +1093,13 @@ async function appendChildValues(params) {
 
                     if(index == 0) {
                         element.child = child;
-                    } else {
-                        console.log('in last row', child);
-                        const lastRow = element.child[element.child.length - 1];
-                        lastRow.yearData = [
-                            ...lastRow.yearData,
-                            ...child.map(item => item.yearData).flat()
-                        ];
+                    } else {                        
+                        element.child.forEach(replica => {
+                            const childFromSameReplica = child.find(cl => {
+                                return cl.replicaNumber == replica.replicaNumber && cl.key == replica.key
+                            });
+                            replica.yearData.push(...childFromSameReplica.yearData);
+                        })
                     }
                 }
             }
