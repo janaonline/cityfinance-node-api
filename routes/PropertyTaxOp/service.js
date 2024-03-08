@@ -1014,7 +1014,7 @@ function createChildObjectsYearData(params) {
 }
 
 async function createFullChildObj(params, design_year) {
-    let { element, yearData, ptoMaper, replicaCount, childCopyFrom } = params
+    let { element, yearData, ptoData, replicaCount, childCopyFrom } = params
     let childs = []
     let copiedFromKeys = Array.from(new Set(yearData.map((item => item.type))))
     try {
@@ -1035,7 +1035,7 @@ async function createFullChildObj(params, design_year) {
                 //TODO Comment 
 
                 if(isBeyond2023_24(design_year)) {
-                    if(!ptoMaper) addChildNextYearQuestionObject(childObject);
+                    if(!ptoData) addChildNextYearQuestionObject(childObject);
                     childObject.yearData?.forEach(year => handleOldYearsDisabled(year, design_year));
                 }
                 childObject.readonly = true
@@ -1064,7 +1064,7 @@ function addChildNextYearQuestionObject(childObject) {
 }
 
 async function appendChildValues(params) {
-    let { element, ptoMaper, isDraft, currentFormStatus, role, design_year } = params
+    let { element, ptoMaper, isDraft, currentFormStatus, role, design_year, ptoData } = params
     try {
         if (element.child && ptoMaper) {
             let childElements = ptoMaper.filter(item => item.type === element.key);
@@ -1086,7 +1086,7 @@ async function appendChildValues(params) {
                         element: element,
                         replicaCount: childElement.replicaCount,
                         childCopyFrom: element.copyChildFrom,
-                        ptoMaper,
+                        ptoData,
                     }
                     let child = await createFullChildObj(params, design_year)
                     element.replicaCount = childElement.replicaCount;
@@ -1153,6 +1153,8 @@ exports.getView = async function (req, res, next) {
             ulb: ObjectId(req.query.ulb),
             // ptoId: ObjectId(ptoData._id) 
         }).populate("child").lean();
+
+        console.log('ptoMaper', ptoMaper);
         let fyDynemic = { ...await propertyTaxOpFormJson({role, design_year }) };
         if (ptoData || ptoLatestYearData) {
             const { isDraft = false, status = "PENDING", currentFormStatus= MASTER_STATUS['Not Started'] } = ptoData || {};
@@ -1170,7 +1172,8 @@ exports.getView = async function (req, res, next) {
                                 isDraft: isDraft,
                                 currentFormStatus: currentFormStatus,
                                 design_year,
-                                role
+                                role,
+                                ptoData
                             }
                             data[el] = await appendChildValues(childParams)
                             if (Array.isArray(yearData) && ptoMaper) {
