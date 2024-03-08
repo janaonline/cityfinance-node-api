@@ -2,6 +2,7 @@ const AnnualAccounts = require('../../models/AnnualAccounts');
 const LinkPFMS = require('../../models/LinkPFMS');
 const OdfFormCollection = require('../../models/OdfFormCollection');
 const GfcFormCollection = require('../../models/GfcFormCollection');
+const Option = require('../../models/Option')
 const UtilizationReport = require('../../models/UtilizationReport');
 const XVFcGrantForm = require('../../models/XVFcGrantForm');
 const PropertyTaxOp = require('../../models/PropertyTaxOp');
@@ -220,6 +221,7 @@ var customkeys = {
         "isActive": 'isActive',
         "_id": '_id',
         "category": 'category',
+        'dpr_status': 'dpr_status',
         "name": 'name',
         "location": 'location',
         "capitalExpenditureState": 'capitalExpenditureState',
@@ -238,7 +240,8 @@ var modifiedShortKeys = {
 module.exports.modifiedShortKeys = modifiedShortKeys
 var shortKeysWithModelName = {
     "rating": { "modelName": "Rating", "identifier": "option_id", "from": "value" },
-    "category": { "modelName": "Category", "identifier": "name", "from": "label" }
+    "category": { "modelName": "Category", "identifier": "name", "from": "label" },
+    "dpr_status": { "modelName": "Option", "identifier": "name", "from": "label" }
 }
 var answerObj = {
     "label": "",
@@ -1648,6 +1651,9 @@ class PayloadManager {
                     filters[identifier] = parseInt(filters[identifier])
                     filters['formName'] = this.req.body.isGfc ? "gfc" : "odf"
                     filters['financialYear'] = this.req.body.design_year
+                }
+                if(this.shortKey === "dpr_status"){
+                    filters['type'] = this.shortKey
                 }
                 let databaseObj;
                 if (dynamicTables.includes(modelName)) {
