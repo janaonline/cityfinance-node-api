@@ -402,10 +402,16 @@ async function updateMapperModelWithChildValues(params) {
 }
 
 async function updateChildrenMapper(params) {
-    let { ulbId, formId, yearData, updateForm, dynamicObj, textValue } = params
+    let { ulbId, formId, yearData, updateForm, dynamicObj, textValue, year: design_year } = params;
+    const { yearIndex: designYearIndex  } = getDesiredYear(design_year);
+    const { yearIndex: yearIndex23_24 } = getDesiredYear('2023-24');
     let ids = []
     try {
         for (var years of yearData) {
+            if(designYearIndex > yearIndex23_24) {
+                const { yearIndex } = getDesiredYear(years.year);
+                if(designYearIndex - yearIndex > 1) continue;
+            }
             let upsert = false
             if (years.year) {
                 let filter = {
@@ -447,13 +453,13 @@ async function updateChildrenMapper(params) {
 async function handleChildrenData(params) {
     let ids = []
     try {
-        let { inputElement, ulbId, formId, updateForm, dynamicObj } = params
+        let { inputElement, ulbId, formId, updateForm, dynamicObj, year } = params
         if (inputElement?.child) {
             let updIds = []
             for (let obj of inputElement.child) {
                 let yearData = obj.yearData
                 let textValue = obj.value
-                let updatedIds = await updateChildrenMapper({ yearData, ulbId, formId, updateForm, dynamicObj, textValue })
+                let updatedIds = await updateChildrenMapper({ yearData, ulbId, formId, updateForm, dynamicObj, textValue, year })
                 updIds = updIds.concat(updatedIds, ids)
             }
             params["updatedIds"] = updIds
@@ -884,7 +890,7 @@ async function calculateAndUpdateStatusForMappers(tabs, ulbId, formId, year, upd
                         throw { message: validation.message }
                     }
                 }
-                let updatedIds = await handleChildrenData({ inputElement: { ...tab.data[k] }, formId, ulbId, updateForm, dynamicObj })
+                let updatedIds = await handleChildrenData({ inputElement: { ...tab.data[k] }, formId, ulbId, updateForm, dynamicObj, year })
                 if (obj[k].yearData) {
                     let status = yearArr.every((item) => {
                         if (Object.keys(item).length) {
