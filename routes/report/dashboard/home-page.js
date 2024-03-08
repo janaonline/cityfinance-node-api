@@ -131,7 +131,7 @@ module.exports = (req, res) => {
                  $lookup: {
                    from: "ulbs",
                    foreignField: "_id",
-                   localField: "ulb",
+                   localField: "ulbs",
                    as: "ulbData",
                  },
                },

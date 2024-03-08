@@ -5,7 +5,8 @@ const ObjectId = require("mongoose").Types.ObjectId;
 const service = require("../../service");
 const email = require("../../service/email");
 const Response = require("../../service").response;
-const request = require('request')
+const request = require('request');
+const { concatenateUrls } = require("../../service/common");
 function doRequest(url) {
   let options = {
     url : url,
@@ -83,7 +84,7 @@ while(skip<=target){
       for(let key in el) {
         if(key != '_id' && key != 'ulbName' && key != 'ulbcode' && el[key] ){
           let url = el[key];
-        // let url = 'https://cityfinance.in/objects/31e1883d-7eef-4b2f-9e29-18d598056a5d.pdf'
+        // let url = `https://${process.env.PROD_HOST}/objects/31e1883d-7eef-4b2f-9e29-18d598056a5d.pdf`
           try{
             totalCounter++;
             console.log(totalCounter)
@@ -227,7 +228,11 @@ module.exports.get = async function (req, res) {
 
     if (csv) {
       let total = await dCForm.aggregate(query);
+      let index =0;
       for (t of total) {
+        t = JSON.parse(JSON.stringify(t));
+        total[index] = concatenateUrls(t);
+        index++;
         t["financial_year_2015_16_pdf"] = "";
         t["financial_year_2016_17_pdf"] = "";
         t["financial_year_2017_18_pdf"] = "";

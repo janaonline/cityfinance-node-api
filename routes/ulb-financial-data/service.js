@@ -475,7 +475,7 @@ module.exports.getHistories = async (req, res) => {
             actionAllowed = ['ADMIN', 'MoHUA', 'PARTNER', 'STATE', 'ULB'];
         if (actionAllowed.indexOf(user.role) > -1) {
             let q = [
-                { $match: { _id: ObjectId(req.params._id) } },
+                { $match: { ulb: ObjectId(req.params._id) } },
                 {
                     $project: {
                         history: {

@@ -9,14 +9,14 @@ const scoreFields = {
 		type: Number,
 		default: 0,
 	},
-	highestScore: {
-		type: Number,
-		default: 0,
-	},
-	lowestScore: {
-		type: Number,
-		default: 0,
-	}
+	// highestScore: {
+	// 	type: Number,
+	// 	default: 0,
+	// },
+	// lowestScore: {
+	// 	type: Number,
+	// 	default: 0,
+	// }
 };
 
 const sumScoreFields = {
@@ -30,15 +30,15 @@ const sumScoreFields = {
 	},
 	stateAvg: {
 		type: Number,
-		default: 0,
+		// default: 0,
 	},
 	nationalAvg: {
 		type: Number,
-		default: 0,
+		// default: 0,
 	},
 	populationBucketAvg: {
 		type: Number,
-		default: 0,
+		// default: 0,
 	},
 };
 
@@ -76,18 +76,54 @@ const ScoringFiscalRankingSchema = new Schema(
 		totalBudgetDataPC_1: scoreFields,
 		ownRevenuePC_2: scoreFields,
 		pTaxPC_3: scoreFields,
-		cagrInTotalBud_4: scoreFields,
-		cagrInOwnRevPC_5: scoreFields,
-		cagrInPropTax_6: scoreFields,
+		cagrInTotalBud_4: {
+			...scoreFields,
+			infinity: {
+				type: Boolean
+			},
+		},
+		cagrInOwnRevPC_5: {
+			...scoreFields,
+			infinity: { // divide by 0
+				type: Boolean
+			},
+		},
+		cagrInPropTax_6: {
+			...scoreFields,
+			infinity: { // divide by 0
+				type: Boolean
+			},
+		},
 		capExPCAvg_7: scoreFields,
-		cagrInCapExpen_8: scoreFields,
+		cagrInCapExpen_8: {
+			...scoreFields,
+			infinity: { // divide by 0
+				type: Boolean
+			},
+		},
 		omExpTotalRevExpen_9: scoreFields,
-		avgMonthsForULBAuditMarks_10a: scoreFields,
+		avgMonthsForULBAuditMarks_10a: {
+			...scoreFields,
+			values: {
+				type: Number,
+				default: 0,
+			},
+		},
 		aaPushishedMarks_10b: scoreFields,
 		gisBasedPTaxMarks_11a: scoreFields,
 		accSoftwareMarks_11b: scoreFields,
-		receiptsVariance_12: scoreFields,
-		ownRevRecOutStanding_13: scoreFields,
+		receiptsVariance_12: {
+			...scoreFields,
+			infinity: { // divide by 0
+				type: Boolean
+			},
+		},
+		ownRevRecOutStanding_13: {
+			...scoreFields,
+			infinity: { // divide by 0
+				type: Boolean
+			},
+		},
 		digitalToTotalOwnRev_14: scoreFields,
 		propUnderTaxCollNet_15: scoreFields,
 		resourceMobilization: sumScoreFields,

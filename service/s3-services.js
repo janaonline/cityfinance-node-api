@@ -7,13 +7,17 @@ const tempDir = os.tmpdir();
 const uuid = require("uuid");
 const multer = require("multer");
 const multerS3 = require("multer-s3");
-
+const {ENV} = require('./../util/FormNames')
 const CONFIG = require("../config/s3-config.json").S3BUCKET;
 const sanitize = require("sanitize-filename");
+const { getStorageBaseUrl } = require("./getBlobUrl");
 const SECRET = {
     AWS_ACCESS_KEY_ID: process.env.AWS_ACCESS_KEY_ID,
     AWS_SECRET_ACCESS_KEY: process.env.AWS_SECRET_ACCESS_KEY,
     AWS_REGION: process.env.AWS_REGION,
+    AZURE_STORAGE_URL: process.env.AZURE_STORAGE_URL,
+    AWS_STORAGE_URL_STG: process.env.AWS_STORAGE_URL_STG,
+    AWS_STORAGE_URL_PROD: process.env.AWS_STORAGE_URL_PROD
 };
 const webExecutables = /\.(aspx|asp|css|swf|xhtml|rhtml|shtml|jsp|js|pl|php|cgi|zip|exe)$/i;
 const spcialCharacters = /[`^*?":&'@{},$=!#+<>]/;
@@ -164,10 +168,12 @@ async function generateSignedUrl(data, _cb) {
 
         s3.getSignedUrl("putObject", params, function (err, _url) {
             if (!err) {
+                let getUrl = _url.substring(0, _url.indexOf("?"))
                 resolve({
                     url: _url,
                     file_alias: file_alias,
-                    file_url: _url.substring(0, _url.indexOf("?")),
+                    file_url: getUrl,
+                    path: removePrefix(getUrl)
                 });
             } else {
                 reject(err);
@@ -434,6 +440,23 @@ async function getheadObject(params) {
         });
     });
 }
+/**
+ * The function removes a specific prefix from a given URL if it starts with that prefix.
+ * @param url - The `url` parameter is a string that represents a URL.
+ * @returns The function will return the URL with the prefix removed if the URL starts with the
+ * specified prefix. If the URL does not start with the prefix, it will return the original URL.
+ */
+function removePrefix(url) {
+    try {
+      const prefixToRemove = getStorageBaseUrl();
+      if (url.startsWith(prefixToRemove)) {
+        return url.substring(prefixToRemove.length);
+      }
+      return url;
+    } catch (error) {
+      throw {message: `removePrefix: ${error.message}`}
+    }
+  }
 module.exports.getheadObject = getheadObject;
 module.exports.getObjectStream = getObjectStream;
 module.exports.initBucket = initBucket;

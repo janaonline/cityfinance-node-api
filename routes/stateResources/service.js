@@ -10,6 +10,7 @@ const CategoryFileUpload = require('../../models/CategoryFileUpload');
 const { loadExcelByUrl } = require('../../util/worksheet');
 const { isValidObjectId } = require("mongoose");
 const { isValidDate } = require("../../util/helper");
+const {getStorageBaseUrl} = require('./../../service/getBlobUrl')
 // const { query } = require("express");
 
 const GSDP_OPTIONS = {
@@ -36,8 +37,7 @@ const handleDatabaseUpload = async (req, res, next) => {
     if (uploadType != 'database') return next();
 
     try {
-        const remoteUrl = req.body.files?.[0].url;
-
+        const remoteUrl = getStorageBaseUrl() + req.body.files?.[0].url;
         workbook = await loadExcelByUrl(remoteUrl);
         worksheet = workbook.getWorksheet(1);
 
