@@ -1063,7 +1063,7 @@ function addChildNextYearQuestionObject(childObject) {
     childObject.yearData.push(nextYear);
 }
 
-async function          appendChildValues(params) {
+async function appendChildValues(params) {
     let { element, ptoMaper, isDraft, currentFormStatus, role, design_year, ptoData } = params
     try {
         if (element.child && ptoMaper) {
@@ -1102,6 +1102,12 @@ async function          appendChildValues(params) {
                             replica.yearData.push(...childFromSameReplica.yearData);
                         })
                         handleNewYearChildRows(child, element);
+
+                        element.child.forEach(replica => {
+                            let lastChildYearData = replica.yearData[replica.yearData.length - 1];
+                            let { yearId } = getDesiredYear(lastChildYearData.year, 1);
+                            replica.entryDesignYear = yearId;
+                        })
                     }
                 }
             }
@@ -1156,7 +1162,6 @@ exports.getView = async function (req, res, next) {
             // ptoId: ObjectId(ptoData._id) 
         }).populate("child").lean();
 
-        console.log('ptoMaper', ptoMaper);
         let fyDynemic = { ...await propertyTaxOpFormJson({role, design_year }) };
         if (ptoData || ptoLatestYearData) {
             const { isDraft = false, status = "PENDING", currentFormStatus= MASTER_STATUS['Not Started'] } = ptoData || {};
