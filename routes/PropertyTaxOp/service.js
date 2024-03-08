@@ -1014,7 +1014,7 @@ function createChildObjectsYearData(params) {
 }
 
 async function createFullChildObj(params, design_year) {
-    let { element, yearData, replicaCount, childCopyFrom } = params
+    let { element, yearData, ptoMaper, replicaCount, childCopyFrom } = params
     let childs = []
     let copiedFromKeys = Array.from(new Set(yearData.map((item => item.type))))
     try {
@@ -1035,7 +1035,7 @@ async function createFullChildObj(params, design_year) {
                 //TODO Comment 
 
                 if(isBeyond2023_24(design_year)) {
-                    // addChildNextYearQuestionObject(childObject);
+                    if(!ptoMaper) addChildNextYearQuestionObject(childObject);
                     childObject.yearData?.forEach(year => handleOldYearsDisabled(year, design_year));
                 }
                 childObject.readonly = true
@@ -1085,7 +1085,8 @@ async function appendChildValues(params) {
                         yearData: yearData,
                         element: element,
                         replicaCount: childElement.replicaCount,
-                        childCopyFrom: element.copyChildFrom
+                        childCopyFrom: element.copyChildFrom,
+                        ptoMaper,
                     }
                     let child = await createFullChildObj(params, design_year)
                     element.replicaCount = childElement.replicaCount;
