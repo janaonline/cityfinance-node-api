@@ -7,7 +7,7 @@ const Service = require('../../service');
 const { FormNames, MASTER_STATUS_ID, MASTER_STATUS, MASTER_FORM_STATUS } = require('../../util/FormNames');
 const User = require('../../models/User');
 const { checkUndefinedValidations } = require('../../routes/FiscalRanking/service');
-const { propertyTaxOpFormJson, skippableKeys, getFormMetaData, indicatorsWithNoyears, childKeys,reverseKeys ,questionIndicators,sortPosition} = require('./fydynemic')
+const { propertyTaxOpFormJson, skippableKeys, getFormMetaData, indicatorsWithNoyears, childKeys,reverseKeys ,questionIndicators,sortPosition } = require('./fydynemic')
 const { isEmptyObj, isReadOnly, handleOldYearsDisabled } = require('../../util/helper');
 const PropertyMapperChildData = require("../../models/PropertyTaxMapperChild");
 const { years, getDesiredYear, isBeyond2023_24 } = require('../../service/years');
@@ -1098,8 +1098,10 @@ async function          appendChildValues(params) {
                             const childFromSameReplica = child.find(cl => {
                                 return cl.replicaNumber == replica.replicaNumber && cl.key == replica.key
                             });
+                            childFromSameReplica.pushed = true;
                             replica.yearData.push(...childFromSameReplica.yearData);
                         })
+                        handleNewYearChildRows(child, element);
                     }
                 }
             }
@@ -1229,6 +1231,31 @@ exports.getView = async function (req, res, next) {
 
 
 
+
+function handleNewYearChildRows(child, element) {
+    const unpushedChilds = child.filter(cl => !cl?.pushed);
+    if (unpushedChilds.length) {
+        element.child.push(...unpushedChilds.map((unpushedChild, index) => {
+            let copyFromChild = element.copyChildFrom.find(cl => {
+                return cl.key == unpushedChild.key;
+            });
+            copyFromChild = JSON.parse(JSON.stringify(copyFromChild));
+            const mergedYear = copyFromChild.yearData.map(yearItem => {
+                const unpushedChildYear = unpushedChild.yearData.find(unpushedChildYear => unpushedChildYear.year == yearItem.year);
+                if (unpushedChildYear) {
+                    yearItem.value = unpushedChildYear.value;
+                }
+                return yearItem;
+            });
+
+            return {
+                ...copyFromChild,
+                ...unpushedChild,
+                yearData: mergedYear
+            };
+        }));
+    }
+}
 
 function getLabelName(type) {
     try {
