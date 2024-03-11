@@ -88,7 +88,9 @@ function returnYearUrl(item) {
     try {
         let obj = {
             year: item.design_year.year,
-            url: item[this.type]
+            url: item[this.type],
+            id: item.design_year._id.toString()
+            
         }
         if ((financialYear == item.design_year.year) && (role == "ulb" || role == "state")) {
             obj.url = this.verified ? obj.url : item.profileUrl
@@ -135,7 +137,7 @@ module.exports.access = catchAsync(async function (req, res) {
     try {
         let years = await Tabs.find({}).populate({
             "path": "design_year"
-        })
+        }).lean()
         let MoHUA_arr = years.map(returnYearUrl, { "type": "mohuaUrl", "role": "mohua" })
         const yearList = ['2020-21', '2021-22', '2022-23', '2023-24', '2024-25']
         const role = req.decoded.role;

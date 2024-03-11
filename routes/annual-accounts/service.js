@@ -22,7 +22,7 @@ const STATUS_LIST = require('../../util/newStatusList')
 const LineItem = require('../../models/LineItem')
 const { groupByKey } = require('../../util/group_list_by_key')
 const ExcelJS = require("exceljs");
-const { canTakenAction, canTakenActionMaster, getMasterAction,checkIfUlbHasAccess,calculateStatus } = require('../CommonActionAPI/service')
+const { canTakenAction, canTakenActionMaster, getMasterAction,checkIfUlbHasAccess,calculateStatus, isYearWithinRange } = require('../CommonActionAPI/service')
 const fs = require("fs");
 const Service = require('../../service');
 const { FormNames, YEAR_CONSTANTS,  MASTER_STATUS, FORMIDs, FORM_LEVEL, FORM_LEVEL_SHORTKEY, MASTER_STATUS_ID } = require('../../util/FormNames');
@@ -488,7 +488,7 @@ exports.createUpdate = async (req, res) => {
 
     const submittedForm = await AnnualAccountData.findOne(condition);
 
-    if (data.design_year === YEAR_CONSTANTS["23_24"] && data.ulb) {
+    if (isYearWithinRange(data.design_year) && data.ulb) {
       // const session = await mongoose.startSession();
       // await session.startTransaction();
       try {
@@ -1925,7 +1925,7 @@ exports.getAccounts = async (req, res,next) => {
     let prevStatus = await AnnualAccountData.findOne({
       ulb: ObjectId(ulb),
       design_year: prevYearData._id
-    }).select({ status: 1, isDraft: 1, actionTakenByRole: 1 }).lean()
+    }).select({ status: 1, isDraft: 1, actionTakenByRole: 1, currentFormStatus:1 }).lean()
 
     let status = '';
     if (prevStatus) {
@@ -1973,7 +1973,7 @@ exports.getAccounts = async (req, res,next) => {
       ulb: ObjectId(ulb),
       design_year
     }
-    if( YEAR_CONSTANTS["23_24"] === design_year.toString()){
+    if(isYearWithinRange(design_year.toString())){
       filters['design_year'] = prevYearData._id
       filters['audited.submit_annual_accounts'] = true
     }
@@ -2015,7 +2015,7 @@ exports.getAccounts = async (req, res,next) => {
 
     }
     Object.assign(annualAccountData, obj)
-    if (design_year.toString() === YEAR_CONSTANTS["23_24"]) {
+    if (isYearWithinRange(design_year.toString())) {
       let params = {
         status: annualAccountData.currentFormStatus,
         formType: "ULB",
@@ -2023,7 +2023,7 @@ exports.getAccounts = async (req, res,next) => {
       };
       let bodyParams  = {
         ulb,
-        design_year : YEAR_CONSTANTS["23_24"],
+        design_year : design_year.toString(),
         formId: FORMIDs['AnnualAccount'],
         flag: true
       }
@@ -2065,7 +2065,6 @@ exports.getAccounts = async (req, res,next) => {
     next()
     // return res.status(200).json(annualAccountData);
   } catch (err) {
-    console.error(err.message);
     return Response.BadRequest(res, {}, err.message);
   }
 };
@@ -2096,7 +2095,7 @@ async function addActionKeys(annualAccountData, body, res, role, req){
     }
     return annualAccountData;
   } catch (error) {
-    return Response.BadRequest(res, {}, error.message);
+    throw new Error(`addActionKeys:: ${error.message}`)
   }
 }
 
