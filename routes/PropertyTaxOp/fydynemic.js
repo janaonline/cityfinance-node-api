@@ -10494,6 +10494,9 @@ const propertyTaxOpFormJson = ({role, design_year}) => {
           nextYear["label"] = `FY ${yearName}`;
           nextYear["year"] = yearId;
           nextYear["postion"] = String(+nextYear["postion"] + 1);
+          if(indicator.key == 'collectIncludingCess') {
+            nextYear['info'] = 'Message to be provided by jana';
+          }
           yearData.push(nextYear);
         } else {
           yearData.push({});
