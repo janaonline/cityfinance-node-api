@@ -175,6 +175,17 @@ const moneyInformation = async (req, res) => {
         $group: {
           _id: "$lineitems.headOfAccount",
           amount: { $sum: "$amount" },
+          taxRevenue: {
+            '$sum': {
+                '$cond': {
+                    if : {
+                        '$eq': ['$lineitems.code', '110']
+                    },
+                    then: '$amount',
+                    else : 0
+                }
+            }
+        },
           totalGrant: {
             $sum: {
               $cond: {
@@ -187,9 +198,9 @@ const moneyInformation = async (req, res) => {
         },
       },
     ]);
-  let ownRevenue =  await UlbLedger.aggregate([
+      let ownRevenue =  await UlbLedger.aggregate([
       { $match: { ulb: { $in: ulbId }, 
-      financialYear: req.query.year,
+      financialYear: req.query.year,                    
     lineItem: {
         $in: OwnRevenueObjectIDs
 
@@ -214,7 +225,7 @@ const moneyInformation = async (req, res) => {
     
     let taxRevenueObj = {
       _id: 'TaxRevenue',
-      amount: revenue?.amount - ownRevenue[0]?.amount
+      amount: revenue?.taxRevenue
     }
     let grantObj = {
       _id: 'Grant',

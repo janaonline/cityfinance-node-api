@@ -9,6 +9,7 @@
  
  if (cluster.isMaster) {
    console.log(`Master ${process.pid} is running`);
+   require('./cronjob/cron')
    // Fork workers.
    for (let i = 0; i < numCPUs; i++) {
      cluster.fork();

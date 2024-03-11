@@ -1239,8 +1239,8 @@ exports.getView = async function (req, res, next) {
                     pf['ulbComment'] = singleFydata?.ulbComment;
                     pf['ulbValue'] = singleFydata?.ulbValue;
                     pf["status"] = singleFydata && singleFydata.status != null
-                      ? singleFydata.status
-                      : "PENDING";
+                    ? singleFydata.status
+                    : "PENDING"; 
                     pf["modelName"] = singleFydata
                       ? singleFydata.modelName
                       : "";
