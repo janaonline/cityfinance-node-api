@@ -12152,9 +12152,9 @@ const getFormMetaData = ({ design_year }) => {
       financialYearTableHeader: Object.entries(financialYearTableHeader).reduce(
         (acc, [displayPriority, headers]) => {
           const headersCopy = [...headers];
-
+          const label = ["5.30", "5.31", "5.32"].includes(displayPriority) ? "" : "2023-24";
           headersCopy.push({
-            label: "2023-24",
+            label,
             info: "",
           });
 

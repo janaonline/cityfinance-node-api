@@ -1093,7 +1093,9 @@ async function appendChildValues(params) {
 
                     if(index == 0) {
                         element.child = child;
-                    } else {                        
+                    } else {    
+                        if(!isBeyond2023_24(design_year))  continue;
+                        
                         element.child.forEach(replica => {
                             const childFromSameReplica = child.find(cl => {
                                 return cl.replicaNumber == replica.replicaNumber && cl.key == replica.key
@@ -1102,12 +1104,6 @@ async function appendChildValues(params) {
                             replica.yearData.push(...childFromSameReplica.yearData);
                         })
                         handleNewYearChildRows(child, element);
-
-                        element.child.forEach(replica => {
-                            let lastChildYearData = replica.yearData[replica.yearData.length - 1];
-                            let { yearId } = getDesiredYear(lastChildYearData.year, 1);
-                            replica.entryDesignYear = yearId;
-                        })
                     }
                 }
             }
