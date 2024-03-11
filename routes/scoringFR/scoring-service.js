@@ -96,8 +96,8 @@ function totalBudgetPerCapita(ulbRes, fsData, fsMapper2021_22) {
         // Total reciepts actual for sanitaion.	
         const totalRcptSanitation = fsData && fsData.sanitationService.value === 'Yes' ? getNumberValue(fsMapper2021_22, 'totalRcptSanitation') : 0;
         const totalBudget =
-            ulbRes.population === 0
-                ? console.log('Population is 0')
+            (ulbRes.population === 0 || (totalRecActual_2021_22 < (totalRcptWaterSupply + totalRcptSanitation)))
+                ? 0
                 : (totalRecActual_2021_22 - (totalRcptWaterSupply + totalRcptSanitation)) / ulbRes.population;
 
         return parseFloat(totalBudget.toFixed(2));
@@ -153,20 +153,22 @@ function cagrInTotalBudget(fsData, fsMapper2018_19, fsMapper2021_22) {
         const sanitationTax2021_22 = fsData && fsData.sanitationService.value === 'Yes' ? getNumberValue(fsMapper2021_22, 'totalRcptSanitation') : 0;
         const waterTax_2018_19 = fsData && fsData.waterSupply.value === 'Yes' ? getNumberValue(fsMapper2018_19, 'totalRcptWaterSupply') : 0;
         const sanitationTax_2018_19 = fsData && fsData.sanitationService.value === 'Yes' ? getNumberValue(fsMapper2018_19, 'totalRcptSanitation') : 0;
-        // Total - (waterTax + sanitationTax)
-        const budget2021_22 = totalRecActual_2021_22 - (waterTax2021_22 + sanitationTax2021_22);
-        const budget2018_19 = totalRecActual_2018_19 - (waterTax_2018_19 + sanitationTax_2018_19);
+        // If Total < water + Sanitaion then 0; else Total - (waterTax + sanitationTax) 
+        const budget2021_22 = (totalRecActual_2021_22 < (waterTax2021_22 + sanitationTax2021_22)) ? 0 : totalRecActual_2021_22 - (waterTax2021_22 + sanitationTax2021_22);
+        const budget2018_19 = (totalRecActual_2018_19 < (waterTax_2018_19 + sanitationTax_2018_19)) ? 0 : totalRecActual_2018_19 - (waterTax_2018_19 + sanitationTax_2018_19);
         // Handaling #Div/0
         const budget = budget2018_19 === 0 ? 0 : budget2021_22 / budget2018_19;
 
         let infinity = false;
         let CAGRInTotalBudget = 0;
-        // If denominator = 0; CAGR = 0 
-        if (budget2018_19 === 0) {
+        // If denominator = 0 || totalRect < water + sanitaion; CAGR = 0; Max Score =0
+        if (budget2018_19 === 0 ||
+            (totalRecActual_2021_22 < (waterTax2021_22 + sanitationTax2021_22)) ||
+            (totalRecActual_2018_19 < (waterTax_2018_19 + sanitationTax_2018_19))) {
             CAGRInTotalBudget = 0;
             infinity = true;
         }
-        // If numerator = 0; CAGR = -1
+        // if Numerator is 0 then Score = -100
         else {
             const pow1 = Math.cbrt(budget);
             CAGRInTotalBudget = (pow1 - 1) * 100;
@@ -203,16 +205,15 @@ function cagrInOwnRevenue(fsData, fsMapper2018_19, fsMapper2021_22) {
         const ownRev2021_22 = totalOwnRevenue_2021_22 - (waterTax_2021_22 + sanitationTax_2021_22);
         const ownRev2018_19 = totalOwnRevenue_2018_19 - (waterTax_2018_19 + sanitationTax_2018_19);
 
-        // Handaling #Div/0
-        const ownRev = ownRev2018_19 === 0 ? 0 : ownRev2021_22 / ownRev2018_19;
+        // If numerator or denominator or base year or final year is 0 then Score = 0; Max Score (percentage) = 0;
+        const ownRev = (ownRev2018_19 === 0 || ownRev2021_22 === 0 || totalOwnRevenue_2018_19 === 0 || totalOwnRevenue_2021_22 === 0) ? 0 : ownRev2021_22 / ownRev2018_19;
 
         let cagrInOwnRevenue = 0;
         let infinity = false;
-        // If denominator = 0; CAGR = 0 
-        if (ownRev2018_19 === 0) {
+        // If numerator or denominator or base year or final year is 0 then Score = 0; Max Score (percentage) = 0; 
+        if (ownRev === 0) {
             cagrInOwnRevenue = 0;
             infinity = true;
-            // If numerator = 0; CAGR = -1
         } else {
             const pow1 = Math.cbrt(ownRev);
             cagrInOwnRevenue = (pow1 - 1) * 100;
@@ -234,12 +235,12 @@ function cagrInPTax(fsMapper2018_19, fsMapper2021_22) {
         const pTax2021_22 = getNumberValue(fsMapper2021_22, 'propertyTax');
         const pTax2018_19 = getNumberValue(fsMapper2018_19, 'propertyTax');
 
-        // Handaling #Div/0
-        const pTax = pTax2018_19 === 0 ? 0 : pTax2021_22 / pTax2018_19;
+        // If Numerator or Denominator is 0; Score=0; MaxScore (percentage)=0
+        const pTax = (pTax2018_19 === 0 || pTax2021_22 === 0) ? 0 : pTax2021_22 / pTax2018_19;
 
         let cagrInPTax = 0;
         let infinity = false;
-        if (pTax2018_19 === 0) {
+        if (pTax === 0) {
             cagrInPTax = 0;
             infinity = true;
         } else {
@@ -283,7 +284,12 @@ function capExPerCapitaAvg(ulbRes, fsData, fsMapper2019_20, fsMapper2020_21, fsM
         const capEx_2021_22 = totalCapEx_2021_22 - (totalRcptWaterSupply_2021_22 + totalRcptSanitation_2021_22);
         // Array is created to find average.
         const arr = [capEx_2019_20, capEx_2020_21, capEx_2021_22];
-        const CapExPerCapitaAvg = ulbRes.population === 0 ? console.log('Population is 0') : calculateAverage(arr) / ulbRes.population;
+        const CapExPerCapitaAvg = (ulbRes.population === 0 ||
+            totalCapEx_2019_20 === 0 ||
+            totalCapEx_2020_21 === 0 ||
+            totalCapEx_2021_22 === 0)
+            ? 0
+            : calculateAverage(arr) / ulbRes.population;
 
         return parseFloat(CapExPerCapitaAvg.toFixed(2));
     } catch (e) {
@@ -294,6 +300,8 @@ function capExPerCapitaAvg(ulbRes, fsData, fsMapper2019_20, fsMapper2020_21, fsM
 // 8. Growth (3-Year CAGR) in Capex - EP
 function cagrInCapEx(fsData, fsMapper2018_19, fsMapper2021_22) {
     try {
+        const totalCaptlExp_2021_22 = getNumberValue(fsMapper2021_22, 'CaptlExp');
+        const totalCaptlExp_2018_19 = getNumberValue(fsMapper2018_19, 'CaptlExp');
         // Assigning the values to variables if fsData options are 'YES'.
         const totalRcptWaterSupply_2018_19 =
             fsData && fsData.waterSupply.value === 'Yes' ? getNumberValue(fsMapper2018_19, 'CaptlExpWaterSupply') : 0;
@@ -303,16 +311,16 @@ function cagrInCapEx(fsData, fsMapper2018_19, fsMapper2021_22) {
             fsData && fsData.waterSupply.value === 'Yes' ? getNumberValue(fsMapper2021_22, 'CaptlExpWaterSupply') : 0;
         const totalRcptSanitation_2021_22 =
             fsData && fsData.sanitationService.value === 'Yes' ? getNumberValue(fsMapper2021_22, 'CaptlExpSanitation') : 0;
-        // Total capex - (watersupply + sanitation)
-        const capEx2021_22 = getNumberValue(fsMapper2021_22, 'CaptlExp') - (totalRcptWaterSupply_2021_22 + totalRcptSanitation_2021_22);
-        const capEx2018_19 = getNumberValue(fsMapper2018_19, 'CaptlExp') - (totalRcptWaterSupply_2018_19 + totalRcptSanitation_2018_19);
+        // If base and final year is 0 Score is 0; MaxScore (percentage) = 0 Total capex - (watersupply + sanitation)
+        const capEx2021_22 = totalCaptlExp_2021_22 === 0 ? 0 : totalCaptlExp_2021_22 - (totalRcptWaterSupply_2021_22 + totalRcptSanitation_2021_22);
+        const capEx2018_19 = totalCaptlExp_2018_19 === 0 ? 0 : totalCaptlExp_2018_19 - (totalRcptWaterSupply_2018_19 + totalRcptSanitation_2018_19);
 
-        // Handling #Div/0
-        const totalCapEx = capEx2018_19 === 0 ? 0 : capEx2021_22 / capEx2018_19;
+        // If numerator or denominator is 0 Score is 0; MaxScore (percentage) = 0
+        const totalCapEx = (capEx2018_19 === 0 || capEx2021_22 === 0) ? 0 : capEx2021_22 / capEx2018_19;
 
         let cagrInCapEx = 0;
         let infinity = false;
-        if (capEx2018_19 === 0) {
+        if (totalCapEx === 0) {
             cagrInCapEx = 0;
             infinity = true;
         } else {
@@ -520,7 +528,7 @@ function digtalOwnRevToTotalOwnRev(fsMapperNoYear) {
     try {
         // indicator 30 / indicator 29 + 30
         const digitalOwnRev = getNumberValue(fsMapperNoYear, 'fy_21_22_online');
-        const totalOwnRev = getNumberValue(fsMapperNoYear, 'fy_21_22_cash') + getNumberValue(fsMapperNoYear, 'fy_21_22_online');
+        const totalOwnRev = getNumberValue(fsMapperNoYear, 'fy_21_22_cash') + digitalOwnRev;
         const digtalOwnRevToTotalOwnRev = digitalOwnRev === 0 || totalOwnRev === 0 ? 0 : (digitalOwnRev / totalOwnRev) * 100;
 
         return parseFloat(digtalOwnRevToTotalOwnRev.toFixed(2));
