@@ -1093,21 +1093,9 @@ async function appendChildValues(params) {
                     element.replicaCount = childElement.replicaCount;
 
                     if(index == 0) {
-                        // element.child = child;
-                        if(true) {  
-                            element.element.copyChildFrom
-
-                            element.copyChildFrom.map(replica => {
-                                const childFromSameReplica = child.find(cl => {
-                                    return cl.replicaNumber == replica.replicaNumber && cl.key == replica.key
-                                });
-                                childFromSameReplica.pushed = true;
-                                replica.yearData.push(...childFromSameReplica.yearData);
-                            })
-
-                        }
+                        element.child = child;
                     } else {    
-                        // if(!isBeyond2023_24(design_year))  continue;
+                        if(!isBeyond2023_24(design_year))  continue;
                         
                         element.child.forEach(replica => {
                             const childFromSameReplica = child.find(cl => {
