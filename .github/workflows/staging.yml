@@ -69,7 +69,7 @@ jobs:
         source: "."  # Adjust this path based on your project structure
         target: "/var/www/html/dev-jana/citifinance-node-api/"  # Specify the destination path on your server
     - name: SSH into server and start server
-      run: ssh -i ${{ secrets.SSH_PRIVATE_KEY }} ${{ secrets.SERVER_USERNAME }}@${{ secrets.SERVER_IP }} "cd /var/www/html/dev-jana/citifinance-node-api/ &&  pm2 start server.js --name "dev-node-api""
+      run: ssh -i ${{ secrets.SSH_PRIVATE_KEY }} ${{ secrets.SERVER_USERNAME }}@${{ secrets.SERVER_IP }} "cd /var/www/html/dev-jana/citifinance-node-api/ &&  pm2 start server.js --name "dev-node-api"
 
           #  "cd /path/to/destination/on/server && npm install && npm start"
     # - run: pm2 start server.js --name "dev-node-api"
