@@ -16,6 +16,7 @@ const { validationJson, keysWithChild } = require("./validation");
 const MasterStatus = require('../../models/MasterStatus');
 const { saveStatusAndHistory } = require("../CommonFormSubmission/service");
 const { concatenateUrls } = require('../../service/common');
+const Ulb = require('../../models/Ulb');
 const getKeyByValue = (object, value) => {
     return Object.keys(object).find(key => object[key] === value);
 }
@@ -1092,9 +1093,21 @@ async function appendChildValues(params) {
                     element.replicaCount = childElement.replicaCount;
 
                     if(index == 0) {
-                        element.child = child;
+                        // element.child = child;
+                        if(true) {  
+                            element.element.copyChildFrom
+
+                            element.copyChildFrom.map(replica => {
+                                const childFromSameReplica = child.find(cl => {
+                                    return cl.replicaNumber == replica.replicaNumber && cl.key == replica.key
+                                });
+                                childFromSameReplica.pushed = true;
+                                replica.yearData.push(...childFromSameReplica.yearData);
+                            })
+
+                        }
                     } else {    
-                        if(!isBeyond2023_24(design_year))  continue;
+                        // if(!isBeyond2023_24(design_year))  continue;
                         
                         element.child.forEach(replica => {
                             const childFromSameReplica = child.find(cl => {
@@ -1129,6 +1142,11 @@ const getRowDesignYear = child => {
     return getDesiredYear('2023-24').yearId;
 }
 
+const checkNewOnboardedUlb = async(ulb) => {
+    const isUlbPrevOnboarded = await Ulb.findOne({_id: ulb, "access_2223" : false});
+    return !isUlbPrevOnboarded;
+}
+
 exports.getView = async function (req, res, next) {
     try {
         let condition = {};
@@ -1137,8 +1155,9 @@ exports.getView = async function (req, res, next) {
             return res.status(400).json({ status: false, message: "Something went wrong!" });
         }
         const design_year = req.query.design_year;
+        const isLatestOnboarderUlb = await checkNewOnboardedUlb(ObjectId(req.query.ulb));
 
-        if (isBeyond2023_24(design_year)) {
+        if (!isLatestOnboarderUlb && isBeyond2023_24(design_year)) {
             const desiredYear = getDesiredYear(design_year, -1);
             let ptoData = await PropertyTaxOp.findOne(
                 {
@@ -1172,16 +1191,16 @@ exports.getView = async function (req, res, next) {
         }).populate("child").lean();
 
         let fyDynemic = { ...await propertyTaxOpFormJson({role, design_year }) };
-        if (ptoData || ptoLatestYearData) {
-            const { isDraft = false, status = "PENDING", currentFormStatus= MASTER_STATUS['Not Started'] } = ptoData || {};
-            for (let sortKey in fyDynemic) {
-                if (sortKey !== "tabs" && ptoData) {
-                    fyDynemic[sortKey] = ptoData[sortKey];
-                } else {
-                    for (const k of ['tabs']) {
-                        let { data } = fyDynemic[k][0];
-                        for (let el in data) {
-                            let { yearData, mData } = data[el];
+        const { isDraft = false, status = "PENDING", currentFormStatus= MASTER_STATUS['Not Started'] } = ptoData || {};
+        for (let sortKey in fyDynemic) {
+            if (sortKey !== "tabs" && ptoData) {
+                fyDynemic[sortKey] = ptoData[sortKey];
+            } else {
+                for (const k of ['tabs']) {
+                    let { data } = fyDynemic[k][0];
+                    for (let el in data) {
+                        let { yearData, mData } = data[el];
+                        if (ptoData || ptoLatestYearData) {
                             let childParams = {
                                 element: data[el],
                                 ptoMaper: ptoMaper,
@@ -1200,9 +1219,8 @@ exports.getView = async function (req, res, next) {
                                             pf.file ? (pf.file = d ? d.file : "") : d.date ? (pf.date = d ? d.date : "") : (pf.value = d ? d.value : "");
                                         }
                                         pf.readonly = isReadOnly({ isDraft, currentFormStatus, role, ptoData })
-                                        if(isBeyond2023_24(design_year)) {
-                                            handleOldYearsDisabled(pf, design_year);
-                                        }
+                
+                                        handleOldYearsDisabled(pf, design_year);
                                     }
                                 }
                             } else if (Array.isArray(mData) && ptoData.length) {
@@ -1210,6 +1228,12 @@ exports.getView = async function (req, res, next) {
                                     const { value, status } = ptoData[dk];
                                     dk['status'] = status;
                                     dk['value'] = value;
+                                }
+                            }
+                        } else {
+                            for(const pf of yearData) {
+                                if (!isEmptyObj(pf)) {
+                                    handleOldYearsDisabled(pf, design_year);
                                 }
                             }
                         }

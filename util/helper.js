@@ -1,4 +1,4 @@
-const { getDesiredYear } = require("../service/years");
+const { getDesiredYear, isBeyond2023_24 } = require("../service/years");
 const userTypes = require("./userTypes")
 function Helper() {
     this.isKeyValueMatched = function (obj, key, val) {
@@ -69,6 +69,7 @@ function Helper() {
     }
 
     this.handleOldYearsDisabled = (yearObject, design_year) => {
+        if(!isBeyond2023_24(design_year)) return;
         const { yearIndex: designYearIndex  } = getDesiredYear(design_year);
         const { yearIndex } = getDesiredYear(yearObject.year);
         if(designYearIndex - yearIndex > 1) {
