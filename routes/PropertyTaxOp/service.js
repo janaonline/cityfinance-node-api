@@ -1107,6 +1107,11 @@ async function appendChildValues(params) {
                     }
                 }
             }
+
+            element.child.forEach(child => {
+                child.entryDesignYear = getRowDesignYear(child, design_year);
+            });
+            
         }
     }
     catch (err) {
@@ -1114,6 +1119,14 @@ async function appendChildValues(params) {
         console.log("error in appendChildValues ::: ", err.message)
     }
     return element
+}
+
+const getRowDesignYear = child => {
+    const yearItem = child.yearData.find(yearItem => yearItem.value != "" && yearItem.year);
+    if(!yearItem?.year) return;
+    const { yearId } = getDesiredYear(yearItem?.year, 1);
+    if(isBeyond2023_24(yearId)) return yearId;
+    return getDesiredYear('2023-24').yearId;
 }
 
 exports.getView = async function (req, res, next) {
