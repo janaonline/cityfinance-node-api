@@ -60,7 +60,7 @@ jobs:
     # - name: Start the server 
     #   run: npm start 
     - name: Set permissions
-      run: chmod -R 777 /var/www/html/dev-jana/citifinance-node-api/
+      run: sudo chmod -R 777 /var/www/html/dev-jana/citifinance-node-api/
     - name: Copy dist files to server
       uses: appleboy/scp-action@master
       with:
@@ -69,7 +69,7 @@ jobs:
         key: ${{ secrets.SSH_PRIVATE_KEY }}  # Add your server SSH private key as a secret
         port: 22
         source: "."  # Adjust this path based on your project structure
-        target: "/var/www/html/dev-jana/citifinance-node-api/"  # Specify the destination path on your server
+        target: "/var/www/html/dev-jana/citifinance-node-api"  # Specify the destination path on your server
     
     - name: SSH into server and start server
       run: ssh -i ${{ secrets.SSH_PRIVATE_KEY }} ${{ secrets.SERVER_USERNAME }}@${{ secrets.SERVER_IP }} "cd /var/www/html/dev-jana/citifinance-node-api/ &&  pm2 start server.js --name "dev-node-api"
