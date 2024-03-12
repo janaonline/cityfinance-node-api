@@ -22,7 +22,7 @@ let DurProjectJson = {
         ],
         "restrictions": [],
         "min": 1,
-        "max": 50,
+        "max": 200,
         "input_type": "1",
         "weightage": [],
         "value": "",
