@@ -49,4 +49,4 @@ jobs:
         node-version: ${{ matrix.node-version }}
         cache: 'npm'
     - name: Test SSH connection
-      run: ssh -o BatchMode=yes -i ${{ secrets.SSH_PRIVATE_KEY_SCRIPT }} ${{ secrets.SERVER_USERNAME }}@${{ secrets.SERVER_IP }} exit
+      run: ssh -o BatchMode=yes -i ${{ secrets.SSH_PRIVATE_KEY }} ${{ secrets.SERVER_USERNAME }}@${{ secrets.SERVER_IP }} exit
