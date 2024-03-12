@@ -1065,7 +1065,8 @@ function addChildNextYearQuestionObject(childObject) {
 }
 
 async function appendChildValues(params) {
-    let { element, ptoMaper, isDraft, currentFormStatus, role, design_year, ptoData } = params
+    let { element, ptoMaper, isDraft, currentFormStatus, role, design_year, ptoData, ulb } = params
+    const isLatestOnboarderUlb = await checkNewOnboardedUlb(ObjectId(ulb));
     try {
         if (element.child && ptoMaper) {
             let childElements = ptoMaper.filter(item => item.type === element.key);
@@ -1092,7 +1093,7 @@ async function appendChildValues(params) {
                     let child = await createFullChildObj(params, design_year)
                     element.replicaCount = childElement.replicaCount;
 
-                    if(index == 0) {
+                    if(!isLatestOnboarderUlb && index == 0) {
                         element.child = child;
                     } else {    
                         if(!isBeyond2023_24(design_year))  continue;
@@ -1131,7 +1132,7 @@ const getRowDesignYear = child => {
 }
 
 const checkNewOnboardedUlb = async(ulb) => {
-    const isUlbPrevOnboarded = await Ulb.findOne({_id: ulb, "access_2223" : false});
+    const isUlbPrevOnboarded = await Ulb.findOne({_id: ulb, "access_2324" : true});
     return !isUlbPrevOnboarded;
 }
 
@@ -1196,7 +1197,8 @@ exports.getView = async function (req, res, next) {
                                 currentFormStatus: currentFormStatus,
                                 design_year,
                                 role,
-                                ptoData
+                                ptoData,
+                                ulb: req.query?.ulb
                             }
                             data[el] = await appendChildValues(childParams)
                             if (Array.isArray(yearData) && ptoMaper) {

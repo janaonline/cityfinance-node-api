@@ -74,6 +74,7 @@ function Helper() {
         const { yearIndex } = getDesiredYear(yearObject.year);
         if(designYearIndex - yearIndex > 1) {
             yearObject.readonly = true;
+            yearObject.required = false;
             yearObject.placeholder = 'N/A';
         }
     }
