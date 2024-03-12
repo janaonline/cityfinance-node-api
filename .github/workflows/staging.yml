@@ -48,34 +48,5 @@ jobs:
       with:
         node-version: ${{ matrix.node-version }}
         cache: 'npm'
-    - name: Install Dependencies
-      run: npm install
-    - name: Create staging environment file 
-      run: |
-        touch .env
-        echo "$DEV_CITY_ENV" | sudo tee .env >/dev/null
-      env:
-        DEV_CITY_ENV: ${{ secrets.DEV_CITY_ENV }}
-    - name: Create temporary directory
-      run: sudo mkdir temp_dir
-    - name: Copy files to temporary directory
-      run: find . -mindepth 1 -maxdepth 1 -not -name 'temp_dir' -exec cp -R {} temp_dir/ \;
-    - name: Compress files
-      run: sudo tar -zcvf app.tar.gz temp_dir
-    - name: Remove temporary directory
-      run: sudo rm -rf temp_dir
-    - name: Copy dist files to server
-      uses: appleboy/scp-action@master
-      with:
-        host: ${{ secrets.SERVER_IP }}  # Add your server IP address as a secret in your repository
-        username: ${{ secrets.SERVER_USERNAME }}  # Add your server username as a secret
-        key: ${{ secrets.SSH_PRIVATE_KEY }}  # Add your server SSH private key as a secret
-        port: 22
-        source: "app.tar.gz"
-        target: "/var/www/html/dev-jana/citifinance-node-api/"  # Specify the destination path on your server
-    - name: SSH into server and start server
-      run: ssh -i ${{ secrets.SSH_PRIVATE_KEY_SCRIPT }} ${{ secrets.SERVER_USERNAME }}@${{ secrets.SERVER_IP }} "cd /var/www/html/dev-jana/citifinance-node-api && pm2 start server.js --name 'dev-node-api'"
-      
-          #  "cd /path/to/destination/on/server && npm install && npm start"
-    # - run: pm2 start server.js --name "dev-node-api"
-    
+    - name: Test SSH connection
+      run: ssh -o BatchMode=yes -i ${{ secrets.SSH_PRIVATE_KEY_SCRIPT }} ${{ secrets.SERVER_USERNAME }}@${{ secrets.SERVER_IP }} exit
