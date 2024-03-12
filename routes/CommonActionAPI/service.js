@@ -4132,5 +4132,34 @@ function isYearWithinRange(year){
         throw new Error(`checkYearValidity:: ${error.message}`)
     }
 }
+/**
+ * The function `getFinancialYear` calculates the financial year based on the input date.
+ * @param date - The `date` parameter in the `getFinancialYear` function is used to determine the
+ * financial year based on the month of the given date. If the month is January, February, or March,
+ * the financial year is considered to be the previous year followed by a hyphen and the last two
+ * digits
+ * @returns The function `getFinancialYear` returns the financial year based on the input date. 
+ */
+const getFinancialYear = (date) => {
+  try {
+    let fiscalyear = "";
+    if (date.getMonth() + 1 <= 3) {
+      fiscalyear =
+        date.getFullYear() -
+        1 +
+        "-" +
+        date.toLocaleDateString("en", { year: "2-digit" });
+    } else {
+      fiscalyear =
+        date.getFullYear() +
+        "-" +
+        (parseInt(date.toLocaleDateString("en", { year: "2-digit" })) + 1);
+    }
+    return fiscalyear;
+  } catch (error) {
+    throw new Error(`getFinancialYear::  ${error.message}`);
+  }
+};
+module.exports.getFinancialYear = getFinancialYear;
 module.exports.saveFormLevelHistory = saveFormLevelHistory
 module.exports.isYearWithinRange = isYearWithinRange
