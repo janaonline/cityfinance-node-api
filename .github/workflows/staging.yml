@@ -9,42 +9,73 @@ on:
       - closed
     branches: 
       - "dev-jana" 
-env:
-  SSH_PRIVATE_KEY_SCRIPT: |
-          -----BEGIN RSA PRIVATE KEY-----
-            MIIEpAIBAAKCAQEAu3TYNTQb4wJl9Q3TwDSvAJoaC92qmQxRYz3t2jmW+6i4EBEU
-            i9inuh4Z2tG20qs5H8t8xTTG+DZ9ryZJOU1MAZssXkDcMxBAKz829YCPQEqQ55Qn
-            3X2kJdMU+qO0lNAdJHFEvNfi2reYESNqI+lqTUVdiFM2At/CeQBhb6X0WVZ689XF
-            tXbLYZuUBU9OdjdK0sfmD8a3c+MnxAmN8n0DwasRuAULyH8CLAUYBxPFvc8nYeaB
-            wqEsNvc6hJCXYqsGQIcSktxUTwnmpad2ubpwuU4TjgtL3tX3NLAGNwnPCvMyDrDq
-            0nADHhgLvk7zrNCKINSRORfUPxd5HfwFfcphIQIDAQABAoIBAQCdbQ098RsSVCtH
-            12rjWds2SDRjjq78hSm8jH+56u9vPUwGwjFdGIATf7/60nAVEBKTLxMDksUeIrT+
-            aMrJwq54Etb5+MJ0Z8tcBmSjXGnxdi2nLfckvaUi1tghfWXkK7qtpiox5aPwRosA
-            qZszuYy6g+x+1lLfqwbpE3bAisBgXR5CbTuvdBffrHLs1uCerLekDNUZTttoB0Mc
-            T/g1AEnh1OjEzVCIO4GlLF/mnDYiX6OxWiayFZ9RZENNXGkYRgmG9TQETa74F4Wg
-            uM9eaU0ZlXyXrXHrMrP7Fpxn4X37F2YfYgUq+wBUJ9jdVTo236o+x67DpmvY6dL2
-            0U6ZS3l5AoGBAN0vAC+C7IUwKOTQvqMs1ysIVBz3q+RyovuJhyNhmFvuXAOwqXAr
-            MISJgu/43PjcK5FBJjSQqHoO6LccKo0eX6TcH+NC7CSjx6boTF/Dz65v1rmgbB3l
-            wdCDTCmI0YUKtOsYDVKFZ9Qz7CWYdFsFZic67tmDG82igBJyf/CKNoevAoGBANj2
-            vtdXPXvcfpuNV2LD4ERT/9AsPsj2k9EoTvOW9yxN2V+RY+/VZsfUZgUs3aZBB5I3
-            WRtcF6rSPdePu0mfwMMq+W1triQDh4u7ZBNdNe+fwUdazDTTdxRZWzG955bPccMF
-            JoliUzGgL8OhJqXOtejRLj5JS8LkMg7zuljnlggvAoGBAM92CWeHFxBqNsFApr9p
-            DL1ZR4QQLxPNDuB+g9oE7aK09WukpZkHea+nR8CMnb9yzA6nnA1L7irmlxNBgQvy
-            hGWe7u38VICdemQsmY5tnPwR/McKGL8GRX+t159RrKxseXvViJFxfg0FUqeE0waZ
-            DtMXLPeqSUbc9+HVsflNuo4TAoGABFBLlQ53+3lzzvXtcdpBIDqnUGVAzlAQukzZ
-            3P/4ZBocI0lJul/8ziZL7PhqY77RPrf4/pFDKzNI5XtHFvylIXw+P025859aV43f
-            PH9S7jO37QpCGx7FNFNee8uxyg7PzTfR/1NEIi10JaiTkyJb/YgDKlvctMBCuodg
-            AhqAoiMCgYAMfjzBR40pdf4CbGwiGWm8B9LPmtaaLedvyMQN52OIYO63dnvvRZlo
-            nay/c4zBbUboLbfGUy7c1OCD/dQvFD6u1e9AbxDXtGGsTRBjVpmpyobWH6k0JJ3X
-            jNYzRk5jhL6n/i2W0XMMrUXbaxUVAYQnqnnQNPXz4iIDfNv5D/4vyg==
-          -----END RSA PRIVATE KEY-----
-  SERVER_USERNAME: ubuntu
-  SERVER_IP: staging.cityfinance.in
-      
+
 jobs:
-        test-ssh-connection:
-          runs-on: ubuntu-latest
+#   test:
+#     runs-on: ubuntu-latest
+#     steps:
+#       - name: Get code
+#         uses: actions/checkout@v3
+#       - name: Cache dependencies
+#         id: cache
+#         uses: actions/cache@v3
+#         with:
+#           path: ~/.npm
+#           key: deps-node-modules-${{ hashFiles('**/package-lock.json') }}
+#       - name: Install dependencies
+#         run: npm ci
+#       - name: Test code check
+#         id: run-tests
+#         run: npm run test
+#       - name: Upload test report
+#         if: failure() && steps.run-tests.outcome == 'failure'
+#         uses: actions/upload-artifact@v3
+#         with:
+#           name: test-report
+#           path: test.json
+
+  build:
+    # needs: test
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [14.17.5]
+        # See supported Node.js release schedule at https://nodejs.org/en/about/releases/ 
+    steps:
+    - uses: actions/checkout@v3
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v3
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+    - name: Install Dependencies
+      run: npm install
+    - name: Create staging environment file 
+      run: |
+        touch .env
+        echo "$DEV_CITY_ENV" | sudo tee .env >/dev/null
+      env:
+        DEV_CITY_ENV: ${{ secrets.DEV_CITY_ENV }}
+    - name: Create temporary directory
+      run: sudo mkdir temp_dir
+    - name: Copy files to temporary directory
+      run: find . -mindepth 1 -maxdepth 1 -not -name 'temp_dir' -exec cp -R {} temp_dir/ \;
+    - name: Compress files
+      run: sudo tar -zcvf app.tar.gz temp_dir
+    - name: Remove temporary directory
+      run: sudo rm -rf temp_dir
+    - name: Copy dist files to server
+      uses: appleboy/scp-action@master
+      with:
+        host: ${{ secrets.SERVER_IP }}  # Add your server IP address as a secret in your repository
+        username: ${{ secrets.SERVER_USERNAME }}  # Add your server username as a secret
+        key: ${{ secrets.SSH_PRIVATE_KEY }}  # Add your server SSH private key as a secret
+        port: 22
+        source: "app.tar.gz"
+        target: "/var/www/html/dev-jana/citifinance-node-api/"  # Specify the destination path on your server
+    - name: SSH into server and start server
+      run: ssh -i ${{ secrets.SSH_PRIVATE_KEY }} ${{ secrets.SERVER_USERNAME }}@${{ secrets.SERVER_IP }} "cd /var/www/html/dev-jana/citifinance-node-api && pm2 start server.js --name 'dev-node-api'"
       
-          steps:
-            - name: Test SSH connection
-              run: ssh -o BatchMode=yes -i <(echo "$SSH_PRIVATE_KEY_SCRIPT") $SERVER_USERNAME@$SERVER_IP exit
+          #  "cd /path/to/destination/on/server && npm install && npm start"
+    # - run: pm2 start server.js --name "dev-node-api"
+    
