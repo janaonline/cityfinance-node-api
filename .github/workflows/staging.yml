@@ -49,4 +49,4 @@ jobs:
               username: ${{ secrets.SERVER_USERNAME }}
               key: ${{ secrets.SSH_PRIVATE_KEY }}
               port: 22
-              script: ls -al
+              script: cd /var/www/html/dev-jana/citifinance-node-api && pm2 start server.js --name dev-node-api
