@@ -9,44 +9,42 @@ on:
       - closed
     branches: 
       - "dev-jana" 
-
+env:
+  SSH_PRIVATE_KEY_SCRIPT: |
+          -----BEGIN RSA PRIVATE KEY-----
+            MIIEogIBAAKCAQEAuIknuwUSwcOIoqg/JdJKDP1E0VKlxI419GXdQKFOvlJPkAqa
+            3gojN5LYtyHOUSMEyoaIJpjJIvvGvcUXIrU/Id9/AYMW4BnrT8FmD5eEZ+2LPGAU
+            P7Kiz7zcjL/8OfVahFSo4wt3RhYS+Ep+kooipwymCk/+09hat/Kx1uVwrCvHC/du
+            QzDp7pdWYjeQ4F38AZaGUxRNCT/FRebBDxIYss+dNs9DkZHWudZ3D+T4QpLQhT+8
+            4gd8VNXAqLmkyo6Wd2i1YfhP+uoZaDsNfClrpwjMGQzfX6NUaguO/pIkrIpljQdO
+            xxSskgWeCpHZ1QaQffi5+x5E7X+hpCjtZg8wXQIDAQABAoIBAFIC8ptVR97BTcos
+            R9RBPxPCw4Db4DwYj7YMR2ZfyiUfY6i6bdVcYAZkxtesuIqqq4hufbfZkxpvFwZj
+            v0J3lpUxRLqhTdtO6ZtKcldfmUKu+YBdmuIsO9tjLgmHkUsY1Z+WGHC/OcT2LnwW
+            b2Yk6f2fy3Mt1izELJ0vyQWedpKtJlxItaYb/HrzNUJx17ZzJwSLuN+i3L5Vjm+H
+            M85wUj9/ZUNFRPco9/ye7vlvCyUNI7Krz728UAc2HuM0upDwrkpWS/b2nmW6BI4f
+            +jm2S+8RyfbPtc1a/9kjDN4o97RZ9bmutMGrUFGXxhVfg2UuAn0NHHBfObxoQko9
+            2i5oz+kCgYEA/yjRMXdvXlbOPtP3/8kb0pfhBaIc5ethWQcG7rE8GTUGH806E00K
+            EzAIhn4dcOIJlZM3eYZT8pdeGT7PxoByBZ7v3plT8JDGLkHSbQXIA2XQcoCS61I+
+            VvseXBhdDJszerpmGy8M39rdXVsnPyJSwiPaGrg7nsU0hHEI3pzqkU8CgYEAuSTH
+            eIV/Lh5EG0kQ6Uf2MN51+mCZNlezUBeowNN43AlZJ5q++KUFWq80O/qwg1nIhmCx
+            8pZufZjrdlJzAKQxI8cd2TdUpBMIoj/gLVd0bjy0bftTJsr+Cbg9ZKv4ZUegM92l
+            1qbHSRzVCZnMTOxiNU085bQ8gsrGNlU+kiHWQJMCgYAp93GovCciEg7sAHsKo+4i
+            jf5hqc8s9bDWLrSyL45d6v2t31hM8l/U1hKg5D89YMAIzOTT5QcLoF/GsTEFSfz2
+            9bQoHXnT2EvwMb1FVy0Vefp1yrXfZHCCZ90PcqZjO2eVKPFASVXJv7qm7yYeWSvZ
+            aIIn4ONVcsP3gIvf6VkfOwKBgHLrUGEPw+R1ZuLk1HlocHje7K4P3ansf+G7/cRK
+            vx8dMlix5c3iaFNkovCD56JwTVaTmICyPTz6eVUFUlrYj6PciTt167S4F8jWCyk5
+            uoxeY8RMls1ifJK96GWflNwQvHDVKIX3GYXZPqbp7vTkWQUqvxz5ZgHtKWE6Qk9k
+            b1+/AoGATvWouD7MftpgEsoCkt+0k3JGeYatan9S5YsXBqyI9frDbcYrW1D6fOlQ
+            nsVLQhGsQSu6vGme4+CuCoFUv5ACm5iG+it24HsPn4sjFRd3gFEwUnfPKHqvFio9
+            nPj0SOJzM9M973mf4S0y+4eri2gqtmr75LBgPvESFakGyHPgtq4=
+          -----END RSA PRIVATE KEY-----
+  SERVER_USERNAME: ubuntu
+  SERVER_IP: staging.cityfinance.in
+      
 jobs:
-#   test:
-#     runs-on: ubuntu-latest
-#     steps:
-#       - name: Get code
-#         uses: actions/checkout@v3
-#       - name: Cache dependencies
-#         id: cache
-#         uses: actions/cache@v3
-#         with:
-#           path: ~/.npm
-#           key: deps-node-modules-${{ hashFiles('**/package-lock.json') }}
-#       - name: Install dependencies
-#         run: npm ci
-#       - name: Test code check
-#         id: run-tests
-#         run: npm run test
-#       - name: Upload test report
-#         if: failure() && steps.run-tests.outcome == 'failure'
-#         uses: actions/upload-artifact@v3
-#         with:
-#           name: test-report
-#           path: test.json
-
-  build:
-    # needs: test
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        node-version: [14.17.5]
-        # See supported Node.js release schedule at https://nodejs.org/en/about/releases/ 
-    steps:
-    - uses: actions/checkout@v3
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v3
-      with:
-        node-version: ${{ matrix.node-version }}
-        cache: 'npm'
-    - name: Test SSH connection
-      run: ssh -o BatchMode=yes -i ${{ secrets.SSH_PRIVATE_KEY }} ${{ secrets.SERVER_USERNAME }}@${{ secrets.SERVER_IP }} exit
+        test-ssh-connection:
+          runs-on: ubuntu-latest
+      
+          steps:
+            - name: Test SSH connection
+              run: ssh -o BatchMode=yes -i <(echo "$SSH_PRIVATE_KEY_SCRIPT") $SERVER_USERNAME@$SERVER_IP exit
