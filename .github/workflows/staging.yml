@@ -80,7 +80,7 @@ jobs:
           username: ${{ secrets.SERVER_USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 22
-          script: cd /var/www/html/dev-jana/citifinance-node-api && pm2 delete dev-node-api && pm2 start server.js --watch -i max --name dev-node-api
+          script: cd /var/www/html/dev-jana/citifinance-node-api && pm2 start server.js --watch -i max --name dev-node-api
           #  "cd /path/to/destination/on/server && npm install && npm start"
     # - run: pm2 start server.js --name "dev-node-api"
     
