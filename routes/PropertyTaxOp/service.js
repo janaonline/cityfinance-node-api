@@ -12,7 +12,7 @@ const { isEmptyObj, isReadOnly, handleOldYearsDisabled } = require('../../util/h
 const PropertyMapperChildData = require("../../models/PropertyTaxMapperChild");
 const { years, getDesiredYear, isBeyond2023_24 } = require('../../service/years');
 const { saveFormHistory } = require("../../util/masterFunctions")
-const { validationJson, keysWithChild } = require("./validation");
+const { getValidationJson, keysWithChild } = require("./validation");
 const MasterStatus = require('../../models/MasterStatus');
 const { saveStatusAndHistory } = require("../CommonFormSubmission/service");
 const { concatenateUrls } = require('../../service/common');
@@ -713,12 +713,12 @@ async function handleInternalValidations(params) {
         errors: []
     }
     try {
-        let { dynamicObj } = params
+        let { dynamicObj, design_year } = params
         let childElements = dynamicObj.child || []
         let preparedJsonData = childElements.reduce((result, currentValue) => ({ ...result, [currentValue.key]: currentValue }), {})
         for (let child of childElements) {
-            if (Object.keys(validationJson).includes(child.key)) {
-                let keysToFind = validationJson[child.key].fields
+            if (Object.keys(getValidationJson(design_year)).includes(child.key)) {
+                let keysToFind = getValidationJson(design_year)[child.key].fields
                 let sumOfrefVal = await getYearDataSumForValidations(keysToFind, preparedJsonData)
                 let sumOfCurrentKey = await yearWiseValues(child.yearData)
                 // let validationParams = {
@@ -727,12 +727,12 @@ async function handleInternalValidations(params) {
                 //     data:preparedJsonData
                 // }
                 // let toCheckValidation = await checkIfFieldsAreNotEmpty(validationParams)
-                let errorMessage = await createErrorMessage(validationJson[child.key], preparedJsonData[child.key])
+                let errorMessage = await createErrorMessage(getValidationJson(design_year)[child.key], preparedJsonData[child.key])
                 let valueParams = {
                     sumOfrefVal,
                     sumOfCurrentKey,
-                    logic: validationJson[child.key].logic,
-                    // message:`${validatidynamicObjonJson[dynamicObj.key].displayNumber} - ${validationJson[dynamicObj.key].message} `
+                    logic: getValidationJson(design_year)[child.key].logic,
+                    // message:`${validatidynamicObjonJson[dynamicObj.key].displayNumber} - ${getValidationJson(design_year)[dynamicObj.key].message} `
                     message: errorMessage
                 }
                 let compareValidator = compareValues(valueParams)
@@ -804,18 +804,17 @@ async function handleNonSubmissionValidation(params) {
         errors: []
     }
     try {
-        let { dynamicObj, yearArr, data } = params
-        let validatorKeys = Object.keys(validationJson)
-        let childrenValid = await handleInternalValidations({ dynamicObj })
+        let { dynamicObj, yearArr, data, year : design_year } = params
+        let validatorKeys = Object.keys(getValidationJson(design_year))
+        let childrenValid = await handleInternalValidations({ dynamicObj, design_year })
         if (!childrenValid.valid) {
             return childrenValid
         }
         if (validatorKeys.includes(dynamicObj.key)) {
-            let keysToFind = validationJson[dynamicObj.key].fields
-            let logicType = validationJson[dynamicObj.key].logic
-            // console.log("")
+            let keysToFind = getValidationJson(design_year)[dynamicObj.key].fields
+            let logicType = getValidationJson(design_year)[dynamicObj.key].logic
             if (logicType === "multiple") {
-                let validatorArray = validationJson[dynamicObj.key].multipleValidations
+                let validatorArray = getValidationJson(design_year)[dynamicObj.key].multipleValidations
                 let childValidationParams = {
                     data,
                     validatorArray: validatorArray,
@@ -832,26 +831,21 @@ async function handleNonSubmissionValidation(params) {
                     dynamicObj: dynamicObj,
                     data: data
                 }
-                let toCheckValidation = await checkIfFieldsAreNotEmpty(validationParams)
+                let toCheckValidation = await checkIfFieldsAreNotEmpty(validationParams);
 
-                // console.log("----------------------------------------------")
-                // console.log("sumOfrefVal ::: ",sumOfrefVal,"keystoFind ::: ",keysToFind)
-                // console.log("sumOfCurrentKey :::: ",sumOfCurrentKey,"keysToFind:::",keysToFind)
                 if (toCheckValidation.checkForValidations) {
                     console.log("toCheckValidation  33:: ",keysToFind)
                     let sumOfrefVal = await getYearDataSumForValidations(keysToFind, data)
                     let sumOfCurrentKey = await yearWiseValues(dynamicObj.yearData)
-                    let errorMessage = await createErrorMessage(validationJson[dynamicObj.key], dynamicObj)
+                    let errorMessage = await createErrorMessage(getValidationJson(design_year)[dynamicObj.key], dynamicObj)
                     let valueParams = {
                         sumOfrefVal,
                         sumOfCurrentKey,
-                        logic: validationJson[dynamicObj.key].logic,
-                        // message:`${validationJson[dynamicObj.key].displayNumber} - ${validationJson[dynamicObj.key].message} `
+                        logic: getValidationJson(design_year)[dynamicObj.key].logic,
+                        // message:`${getValidationJson(design_year)[dynamicObj.key].displayNumber} - ${getValidationJson(design_year)[dynamicObj.key].message} `
                         message: errorMessage
                     }
                     let compareValidator = compareValues(valueParams)
-                    // console.log("compareValidator ::q ",compareValidator)
-                    // console.log("-----------------------------------------------")
                     if (!compareValidator.valid) {
                         return compareValidator
                     }
@@ -883,7 +877,8 @@ async function calculateAndUpdateStatusForMappers(tabs, ulbId, formId, year, upd
                 let params = {
                     dynamicObj,
                     yearArr,
-                    data: seperatedValues
+                    data: seperatedValues,
+                    year
                 }
                 if (!isDraft) {
                     let validation = await handleNonSubmissionValidation(params)
