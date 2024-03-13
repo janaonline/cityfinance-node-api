@@ -12151,6 +12151,17 @@ const getFormMetaData = ({ design_year }) => {
   };
 
   if (design_year && design_year == years["2024-25"]) {
+    const skipLogicDependenciesCopy = JSON.parse(JSON.stringify(skipLogicDependencies));
+   
+    Object.values(skipLogicDependenciesCopy).forEach(dependency => {
+      Object.values(dependency?.skippable).forEach(skippable => {
+        const years = skippable?.years;
+        if (years?.length > 1) {
+          years.push(years[years.length - 1] + 1);
+        }
+      });
+    });
+    
     result = {
       financialYearTableHeader: Object.entries(financialYearTableHeader).reduce(
         (acc, [displayPriority, headers]) => {
@@ -12169,7 +12180,7 @@ const getFormMetaData = ({ design_year }) => {
         {}
       ),
       specialHeaders,
-      skipLogicDependencies,
+      skipLogicDependencies: skipLogicDependenciesCopy,
     };
   }
   return result;
