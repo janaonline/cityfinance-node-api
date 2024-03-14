@@ -1125,11 +1125,6 @@ const getRowDesignYear = child => {
     return getDesiredYear('2023-24').yearId;
 }
 
-const checkNewOnboardedUlb = async(ulb) => {
-    const isUlbPrevOnboarded = await Ulb.findOne({_id: ulb, "access_2324" : true});
-    return !isUlbPrevOnboarded;
-}
-
 exports.getView = async function (req, res, next) {
     try {
         let condition = {};
@@ -1138,7 +1133,10 @@ exports.getView = async function (req, res, next) {
             return res.status(400).json({ status: false, message: "Something went wrong!" });
         }
         const design_year = req.query.design_year;
-        const isLatestOnboarderUlb = await checkNewOnboardedUlb(ObjectId(req.query.ulb));
+        const ulbData = await Ulb.findOne({_id: ObjectId(req.query.ulb)})
+        .populate('state', '_id name gsdpGrowthRate').exec();
+
+        const isLatestOnboarderUlb = !ulbData?.access_2324;
 
         if (!isLatestOnboarderUlb && isBeyond2023_24(design_year)) {
             const desiredYear = getDesiredYear(design_year, -1);
@@ -1226,11 +1224,12 @@ exports.getView = async function (req, res, next) {
                 }
             }
         }
-        fyDynemic['isDraft'] = ptoData?.isDraft || true
-        fyDynemic['ulb'] = ptoData?.ulb || req.query.ulb
-        fyDynemic['design_year'] = ptoData?.design_year || req.query.design_year
-        fyDynemic['statusId'] = ptoData?.currentFormStatus || MASTER_STATUS['Not Started']
-        fyDynemic['status'] = MASTER_STATUS_ID[ptoData?.currentFormStatus] || MASTER_STATUS_ID[1]
+        fyDynemic['isDraft'] = ptoData?.isDraft || true;
+        fyDynemic['ulb'] = ptoData?.ulb || req.query.ulb;
+        fyDynemic['stateGsdpGrowthRate'] = ulbData?.state?.gsdpGrowthRate || 0;
+        fyDynemic['design_year'] = ptoData?.design_year || req.query.design_year;
+        fyDynemic['statusId'] = ptoData?.currentFormStatus || MASTER_STATUS['Not Started'];
+        fyDynemic['status'] = MASTER_STATUS_ID[ptoData?.currentFormStatus] || MASTER_STATUS_ID[1];
         let params = {
             status: ptoData?.currentFormStatus,
             formType: "ULB",
@@ -1250,9 +1249,6 @@ exports.getView = async function (req, res, next) {
         return res.status(400).json({ status: false, message: "Something error wrong!" });
     }
 }
-
-
-
 
 
 function handleNewYearChildRows(child, element) {
