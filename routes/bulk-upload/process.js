@@ -536,6 +536,9 @@ fieldsWithNoAmount variable. */
                     balanceSheet.assets += inputSheetObj[key]
                 }
             }
+            if(isNaN(balanceSheet.liability) || isNaN(balanceSheet.assets)){
+                message = "Please enter valid amount in Balance Sheet"
+            }
             if (balanceSheet.liability != balanceSheet.assets) {
                 // If balance sheet doesn't matches
                 message = "Balance sheet has liability: " + balanceSheet.liability + " while assets :" + balanceSheet.assets;
