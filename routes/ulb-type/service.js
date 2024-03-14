@@ -1,10 +1,17 @@
 const UlbType = require('../../models/UlbType');
 const service = require('../../service');
+const Ulb = require('../../models/Ulb');
+
 module.exports.get = async function(req,res) {
     // Get any ulb type
     // UlbType is model name
     let query = {};
-    query["isActive"] = true;
+    query["isActive"] = true;       
+    let {ulbExists} = req.query;
+    if(ulbExists){
+        let ulbTypes = await Ulb.distinct("ulbType");
+        query['_id'] = {$in: ulbTypes}
+    }
     service.find(query,UlbType,function(response,value){
         return res.status(response ? 200 : 400).send(value);
     });

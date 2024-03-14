@@ -146,6 +146,7 @@ const search = catchAsync(async (req, res) => {
           Object.assign(query, { state: ObjectId(stateData._id) })
         }
       }
+      Object.assign(query,{isActive:true});
       let ulbPromise = await Ulb.find(query)
         .populate("state")
         .populate("ulbType")

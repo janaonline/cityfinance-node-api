@@ -22,7 +22,7 @@ let DurProjectJson = {
         ],
         "restrictions": [],
         "min": 1,
-        "max": 50,
+        "max": 200,
         "input_type": "1",
         "weightage": [],
         "value": "",
@@ -166,6 +166,96 @@ let DurProjectJson = {
             "shortKey": "category"
         }
     },
+    "dpr_status":{
+        "isQuestionDisabled": false,
+        "modelName": "Option",
+        "type": "referenceById",
+        "modelFilter": {
+            "type": "dpr_status"
+        },
+        "required": true,
+        "information" : "",
+        "_id" : "65e6b6e6e1cc56023238f7d1",
+        "answer_option" : [
+            {
+                "name" : "Yes",
+                "did" : [
+
+                ],
+                "viewSequence" : "1",
+                "coordinates" : [
+
+                ],
+                "_id" : "1"
+            },
+            {
+                "name" : "No",
+                "did" : [
+
+                ],
+                "viewSequence" : "2",
+                "coordinates" : [
+
+                ],
+                "_id" : "2"
+            },
+            {
+                "name" : "Don't know",
+                "did" : [
+
+                ],
+                "viewSequence" : "3",
+                "coordinates" : [
+
+                ],
+                "_id" : "3"
+            }
+        ],
+        "value": "2",
+        "acceptableType": "",
+        "acceptableFileType": "",
+        "type": "3",
+        "visibility": true,
+        "nestedConfig": {
+            "parentOrder": "2",
+            "index": 1,
+            "loopIndex": 0
+        },
+        "forParentValue": 2,
+        "modelValue": "2",
+        "isSelectValue": true,
+        "previousValue": "2",    
+        "title" : "Is DPR prepared?",
+        "hint" : "",
+        "order" : "6.009",
+        "resource_urls" : [
+
+        ],
+        "label" : "9",
+        "shortKey" : "dpr_status",
+        "viewSequence" : "29",
+        "child" : [
+
+        ],
+        "parent" : [
+
+        ],
+        "validation" : [
+            {
+                "error_msg" : "",
+                "_id" : "1"
+            }
+        ],
+        "restrictions" : [
+
+        ],
+        "input_type" : "3",
+        "weightage" : [
+
+        ]
+
+    },
+
     "startDate": {
         "information": "",
         "_id": "6409b860235a2809db04c501",
