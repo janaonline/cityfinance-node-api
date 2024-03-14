@@ -5505,6 +5505,7 @@ async function fyUlbFyCsv(params) {
             for (let pf of fyData) {
               let status = (pf.status && pf.status.length > 0) ? pf.status : "N/A"
               let value = pf.file ? pf.file : pf.date ? pf.date : ((pf.value != null) && pf.value.toString()) ? pf.value.toString() : ""
+              
               if(typeof value == 'object') {
                 continue;
               }

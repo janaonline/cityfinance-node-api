@@ -70,12 +70,14 @@ async function updatePercentage_formula2(ulb, indicator) {
 
 async function updatePercentage_formula3(ulb, indicator) {
 
+	const lowScore = await getMaxMinScore(ulb.populationBucket, indicator, 1);
 	let percentage = 0;
 	if (!ulb[indicator].infinity) {
 		if (ulb[indicator].score <= 20 && ulb[indicator].score >= -10) percentage = 50;
 		else if (ulb[indicator].score > 20) percentage = 45;
 		else if (ulb[indicator].score <= -10 && ulb[indicator].score >= -25) percentage = 40;
-		else if (ulb[indicator].score < -25) percentage = 37.5;
+		else if (ulb[indicator].score < -25) percentage =
+			((ulb[indicator].score - (lowScore)) / ((-25 - (lowScore)))) * (0.75 * 50);
 		else percentage = 0;
 	}
 	return getIndicatorScore(ulb, indicator, percentage);

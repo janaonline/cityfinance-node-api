@@ -88,7 +88,8 @@ exports.dataAvailabilityState = async (req, res) => {
 async function createdUlbTypeData(ulbs, ulbLedgers, totalUlbs) {
   try {
     const ULBType = require("../../models/UlbType");
-    let ulbTypes = await ULBType.find({ isActive: true }).select("name");
+    let ulbTypes = await Ulb.distinct("ulbType");
+    ulbTypes = await ULBType.find({_id: {$in: ulbTypes}, isActive: true}).lean().select("name");
     let ulbTypeMap = {
       Average: {
         numberOfULBs: 0,
@@ -233,7 +234,7 @@ async function createPopulationData(ulbs, totalUlbs, ulbLedgers) {
   for (let x = 0; x < lengthOfUlbs; ++x) {
     const specific = ulbs[x];
     if (specific.population < 1e5 && specific.population != null) {
-      populationMap["< 100 Thousand"]["numberOfULBs"].push(specific._id);
+      populationMap["< 100 Thousand"]["numberOfULBs"].push(specific);
     } else if (
       specific.population >= 1e5 &&
       specific.population <= 5e5 &&

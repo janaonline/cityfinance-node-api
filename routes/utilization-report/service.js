@@ -17,13 +17,14 @@ const {
   changePayloadFormat,
   decideDisabledFields,
   checkIfUlbHasAccess,
-  isYearWithinRange
+  isYearWithinRange,
+  getFinancialYear
 } = require("../CommonActionAPI/service");
 const { getKeyByValue,checkForCalculationsForDurForm } = require("../../util/masterFunctions")
 const Service = require('../../service');
-const { FormNames, ULB_ACCESSIBLE_YEARS, MASTER_STATUS_ID, PREV_MASTER_FORM_STATUS } = require('../../util/FormNames');
+const { FormNames, ULB_ACCESSIBLE_YEARS, MASTER_STATUS_ID, PREV_MASTER_FORM_STATUS, MASTER_FORM_STATUS } = require('../../util/FormNames');
 const MasterForm = require('../../models/MasterForm')
-const { YEAR_CONSTANTS } = require("../../util/FormNames");
+const { YEAR_CONSTANTS, YEAR_CONSTANTS_IDS } = require("../../util/FormNames");
 const { ModelNames } = require('../../util/15thFCstatus')
 const { createAndUpdateFormMaster, getMasterForm } = require('../../routes/CommonFormSubmission/service')
 
@@ -177,7 +178,7 @@ module.exports.createOrUpdate = async (req, res) => {
       formData["designYear"] = ObjectId(designYear);
       yearInNumber =  Number(getKeyByValue(years,designYear).split('-').join(''))
     }
-    if (formData.designYear.toString() === YEAR_CONSTANTS["23_24"] && formData.ulb) {
+    if ( isYearWithinRange(formData.designYear.toString()) && formData.ulb) {
       formData.status = currentMasterFormStatus;
       let params = {
         modelName: ModelNames["dur"],
@@ -967,8 +968,16 @@ module.exports.read2223 = catchAsync(async (req, res, next) => {
     req.headers.host = host !== "" ? host : req.headers.host;
     let obj = {};
     if (!ulbAccess) {
-      obj["action"] = "not_show";
-      obj["url"] = ``;
+      let msg =
+        role == "ULB"
+          ? `Dear User, You are not eligible to access this form. Kindly contact your State Nodal Officer at Mobile - ${
+              userData.mobile ?? "Not Available"
+            } or Email - ${
+              userData.email ?? `contact@${process.env.PROD_HOST}`
+            }`
+          : `Dear User, The ${ulbData.name} is not eligible to access Detailed Utilization Report Form.`;
+      obj["action"] = "note";
+      obj["url"] = msg;
     } else {
       if (
         [
@@ -1006,6 +1015,12 @@ module.exports.read2223 = catchAsync(async (req, res, next) => {
       }
     }
 
+    let newlyCreated = checkIfNewlyCreatedUlb(design_year, ulbData?.createdAt);
+    if(newlyCreated){
+      let msg = `Dear ${ulbData.name}, You will be eligible to fill the DUR form from next year.`
+      obj["action"] = "note";
+      obj["url"] = msg;
+    }
     let condition = {
       ulb: ObjectId(ulb),
       designYear: ObjectId(currentYear._id),
@@ -1144,6 +1159,28 @@ module.exports.read2223 = catchAsync(async (req, res, next) => {
     return Response.BadRequest(res);
   }
 })
+
+/**
+ * The function `checkIfNewlyCreatedUlb` checks if a ULB (Urban Local Body) was newly created in the
+ * current financial year based on the design year provided.
+ * @param design_year - The `design_year` parameter in the `checkIfNewlyCreatedUlb` function represents
+ * the year in which a ULB (Urban Local Body) is accessing form.
+ * @returns The function `checkIfNewlyCreatedUlb` returns a boolean value - `true` if the design year
+ * is not the same as the current financial year, and `false` if they are the same.
+ */
+function checkIfNewlyCreatedUlb(design_year, creationDate){
+  try {
+    let creationFinancialYear = getFinancialYear(creationDate);
+    if(YEAR_CONSTANTS_IDS[design_year] === creationFinancialYear){
+      return true;
+    };
+    return false;
+  } catch (error) {
+    throw new Error(`checkIfNewlyCreatedUlb:: ${error.message}`)
+  }
+}
+
+
 
 module.exports.dataRepair = async function (req, res, next) {
   try {
