@@ -1427,8 +1427,7 @@ const grantClaimAcknowledgement = (type, installment, state, financialYear,name,
 const gtcSubmission = (state, financialYear, name, installment) =>{
   return {
     subject: `Grant Transfer Certificate Submitted Successfully`,
-    body: `Dear ${name},<br>
-                        <br>
+    body: `Dear ${name},
                         <p>
                         This mail is to inform you that ${state} Government has successfully Submitted the Grant Transfer Certificate(s) for Installment No. - ${installment} of the Financial Year: ${financialYear}.
                         </p>
