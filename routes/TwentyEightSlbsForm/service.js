@@ -548,9 +548,9 @@ module.exports.getForm = async (req, res, next) => {
         }
         let prev28SlbFormData = await TwentyEightSlbsForm.findOne(prevYearCond, { history: 0 }).lean();
         const prevYearStatus = calculateStatus(
-          prev28SlbFormData.status,
-          prev28SlbFormData.actionTakenByRole,
-          prev28SlbFormData.isDraft,
+          prev28SlbFormData?.status,
+          prev28SlbFormData?.actionTakenByRole,
+          prev28SlbFormData?.isDraft,
           "ULB"
         );
         const previousStatusInCaps =  prevYearStatus.toUpperCase().split(' ').join('_')
