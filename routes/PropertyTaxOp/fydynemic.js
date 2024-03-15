@@ -10485,6 +10485,11 @@ const propertyTaxOpFormJson = ({role, design_year}) => {
           (yearItem) => Object.keys(yearItem).length == 0
         );
 
+        if(["1.1", "1.5", "1.15", "5.1", "6.1"]. includes(indicator?.displayPriority)){
+          const indicatorObj = indicator.yearData[0];
+          indicatorObj.year = design_year;
+        }
+
         if (hasMultipleYears) {
           const lastYear = yearData[yearData.length - 1];
           const { yearName, yearId } = getDesiredYear(lastYear.year, 1);
@@ -12150,7 +12155,7 @@ const getFormMetaData = ({ design_year }) => {
     skipLogicDependencies,
   };
 
-  if (design_year && design_year == years["2024-25"]) {
+  if (design_year && isBeyond2023_24(design_year)) {
     const skipLogicDependenciesCopy = JSON.parse(JSON.stringify(skipLogicDependencies));
    
     Object.values(skipLogicDependenciesCopy).forEach(dependency => {

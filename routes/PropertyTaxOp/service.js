@@ -8,7 +8,7 @@ const { FormNames, MASTER_STATUS_ID, MASTER_STATUS, MASTER_FORM_STATUS } = requi
 const User = require('../../models/User');
 const { checkUndefinedValidations } = require('../../routes/FiscalRanking/service');
 const { propertyTaxOpFormJson, skippableKeys, getFormMetaData, indicatorsWithNoyears, childKeys,reverseKeys ,questionIndicators,sortPosition } = require('./fydynemic')
-const { isEmptyObj, isReadOnly, handleOldYearsDisabled } = require('../../util/helper');
+const { isEmptyObj, isReadOnly, handleOldYearsDisabled, hasMultipleYearData } = require('../../util/helper');
 const PropertyMapperChildData = require("../../models/PropertyTaxMapperChild");
 const { years, getDesiredYear, isBeyond2023_24 } = require('../../service/years');
 const { saveFormHistory } = require("../../util/masterFunctions")
@@ -1032,7 +1032,9 @@ async function createFullChildObj(params, design_year) {
 
                 if(isBeyond2023_24(design_year)) {
                     if(!ptoData) addChildNextYearQuestionObject(childObject);
-                    childObject.yearData?.forEach(year => handleOldYearsDisabled(year, design_year));
+                    if(hasMultipleYearData(childObject.yearData)) {
+                        childObject.yearData?.forEach(year => handleOldYearsDisabled(year, design_year));
+                    }
                 }
                 childObject.readonly = true
                 childs.push(childObject)
@@ -1203,7 +1205,19 @@ exports.getView = async function (req, res, next) {
                                         }
                                         pf.readonly = isReadOnly({ isDraft, currentFormStatus, role, ptoData })
                 
-                                        handleOldYearsDisabled(pf, design_year);
+                                        //TO DO...
+                                        if (hasMultipleYearData(yearData)) {
+                                            handleOldYearsDisabled(pf, design_year);
+                                        } else if (isBeyond2023_24(design_year)) {
+                                            const indicatorObj = data[el]?.yearData[0];
+                                            if(data[el]?.yearData[0]?.value == "No"){
+                                                indicatorObj.label = `FY ${getDesiredYear(design_year).yearName}`;
+                                                indicatorObj.readonly = false;
+                                                indicatorObj.key = `FY${getDesiredYear(design_year).yearName}`
+                                            } else {
+                                                indicatorObj.readonly = true;
+                                            }
+                                        }
                                     }
                                 }
                             } else if (Array.isArray(mData) && ptoData.length) {
@@ -1215,7 +1229,7 @@ exports.getView = async function (req, res, next) {
                             }
                         } else {
                             for(const pf of yearData) {
-                                if (!isEmptyObj(pf)) {
+                                if (!isEmptyObj(pf) && hasMultipleYearData(yearData)) {
                                     handleOldYearsDisabled(pf, design_year);
                                 }
                             }

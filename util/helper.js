@@ -78,6 +78,9 @@ function Helper() {
             yearObject.placeholder = 'N/A';
         }
     }
+    this.hasMultipleYearData = (yearData) => {
+        return !yearData.some((yearItem) => Object.keys(yearItem).length == 0);
+    }
     this.roundValue = (key) => {
         if (typeof key == 'number') {
             return Number(key).toFixed(2)
