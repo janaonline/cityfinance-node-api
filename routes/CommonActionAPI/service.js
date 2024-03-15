@@ -3906,7 +3906,7 @@ async function checkForms(params) {
     try {
         let { forms, formId, modelName, res, user, getReview } = params;
         let designYear = "design_year";
-        formId === FORMIDs["dur"]
+        Number(formId) === FORMIDs["dur"]
             ? (designYear = "designYear")
             : (designYear = "design_year");
         let formCount = 0;
