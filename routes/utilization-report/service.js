@@ -425,7 +425,7 @@ module.exports.createOrUpdate = async (req, res) => {
 function addKeysInProject(projects){
   try {
      projects.forEach(project=>{
-      if(project.hasOwnProperty('dpr_status')){
+      if(project.hasOwnProperty('dpr_status') && !project['dpr_status']){
         project['dpr_status'] = null
       }
      })
