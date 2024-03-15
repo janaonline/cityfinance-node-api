@@ -1051,10 +1051,10 @@ let newYearValidationJson = {
     },
 }
 
-const getValidationJson = ({design_year}) => {
+const getValidationJson = (design_year) => {
     if(!isBeyond2023_24(design_year)) return validationJson;
-    
-    return  {...validationJson, ...newYearValidationJson};
+
+    return  { ...newYearValidationJson};
 };
 
 module.exports.getValidationJson = getValidationJson;

@@ -476,11 +476,18 @@ async function handleChildrenData(params) {
 }
 
 
-function yearWiseValues(yearData) {
+function yearWiseValues(yearData, design_year) {
+    const { yearIndex: designYearIndex  } = getDesiredYear(design_year);
+    const { yearIndex: yearIndex23_24 } = getDesiredYear('2023-24');
+                
     try {
         let sumObj = {}
         for (let yearObj of yearData) {
             if (yearObj.year) {
+                if(designYearIndex > yearIndex23_24) {
+                    const { yearIndex } = getDesiredYear(yearObj.year);
+                    if(designYearIndex - yearIndex > 1) continue;
+                }
                 let yearName = getKeyByValue(years, yearObj.year)
                 try {
                     sumObj[yearName].push(yearObj.value ? parseFloat(yearObj.value) : 0)
@@ -504,11 +511,18 @@ function yearWiseValues(yearData) {
 }
 
 function getSumByYear(params) {
-    let { yearData, sumObj } = params
+    let { yearData, sumObj, design_year } = params
+    const { yearIndex: designYearIndex  } = getDesiredYear(design_year);
+    const { yearIndex: yearIndex23_24 } = getDesiredYear('2023-24');
     // console.log("yearData ::: ",yearData)
+
     try {
         for (let yearObj of yearData) {
             if (yearObj.year) {
+                if(designYearIndex > yearIndex23_24) {
+                    const { yearIndex } = getDesiredYear(yearObj.year);
+                    if(designYearIndex - yearIndex > 1) continue;
+                }
                 let yearName = getKeyByValue(years, yearObj.year)
                 try {
                     sumObj[yearName].push(yearObj.value ? parseFloat(yearObj.value) : 0)
@@ -526,7 +540,7 @@ function getSumByYear(params) {
 }
 
 
-function mergeChildObjectsYearData(childObjects) {
+function mergeChildObjectsYearData(childObjects, design_year) {
     try {
         let yearData = []
         let sumObj = {}
@@ -534,7 +548,8 @@ function mergeChildObjectsYearData(childObjects) {
             yearData = childs.yearData
             getSumByYear({
                 yearData: childs.yearData,
-                sumObj
+                sumObj,
+                design_year
             })
         }
         sumObj = Object.entries(sumObj).reduce((result, [key, value]) => ({
@@ -554,7 +569,7 @@ function mergeChildObjectsYearData(childObjects) {
     }
 }
 
-function assignChildToMainKeys(data) {
+function assignChildToMainKeys(data, design_year) {
     let seperatedObject = { ...data }
     try {
         for (let key of Object.keys(keysWithChild)) {
@@ -563,7 +578,7 @@ function assignChildToMainKeys(data) {
                 for (let childElement of keysWithChild[key]) {
                     console.log("childElement :: ",childElement)
                     let filteredChildren = element.child.filter(item => item.key === childElement)
-                    let yearData = [...mergeChildObjectsYearData(filteredChildren)]
+                    let yearData = [...mergeChildObjectsYearData(filteredChildren, design_year)]
                     seperatedObject[childElement] = {
                         "key": childElement,
                         "label": "",
@@ -581,7 +596,7 @@ function assignChildToMainKeys(data) {
 }
 
 
-function getYearDataSumForValidations(keysToFind, payload) {
+function getYearDataSumForValidations(keysToFind, payload, design_year) {
     let sumObj = {}
     let data = { ...payload }
     // console.log("payload ::: ",["othersValueWaterChrgDm"])
@@ -592,14 +607,16 @@ function getYearDataSumForValidations(keysToFind, payload) {
                 if (!data[keyName].child || data[keyName].child.length === 0) {
                     getSumByYear({
                         yearData: data[keyName].yearData,
-                        sumObj
+                        sumObj,
+                        design_year
                     })
                 }
                 else {
                     for (let childs of data[keyName].child) {
                         getSumByYear({
                             yearData: childs.yearData,
-                            sumObj: sumObj
+                            sumObj: sumObj,
+                            design_year
                         })
                     }
                 }
@@ -659,7 +676,7 @@ function compareValues(params) {
 }
 
 async function handleMultipleValidations(params) {
-    let { data, validatorArray, dynamicObj } = params
+    let { data, validatorArray, dynamicObj, design_year } = params
     let valid = {
         "valid": true,
         "errors": "",
@@ -677,8 +694,8 @@ async function handleMultipleValidations(params) {
             // console.log("toCheckValidation :: ",toCheckValidation)
             if (toCheckValidation.checkForValidations) {
                 console.log("toCheckValidation 44:: ",keysToFind)
-                let sumOfrefVal = await getYearDataSumForValidations(keysToFind, data)
-                let sumOfCurrentKey = await yearWiseValues(dynamicObj.yearData)
+                let sumOfrefVal = await getYearDataSumForValidations(keysToFind, data, design_year)
+                let sumOfCurrentKey = await yearWiseValues(dynamicObj.yearData, design_year)
                 let errorMessage = await createErrorMessage(validationObj, dynamicObj)
                 let valueParams = {
                     sumOfrefVal,
@@ -719,8 +736,8 @@ async function handleInternalValidations(params) {
         for (let child of childElements) {
             if (Object.keys(getValidationJson(design_year)).includes(child.key)) {
                 let keysToFind = getValidationJson(design_year)[child.key].fields
-                let sumOfrefVal = await getYearDataSumForValidations(keysToFind, preparedJsonData)
-                let sumOfCurrentKey = await yearWiseValues(child.yearData)
+                let sumOfrefVal = await getYearDataSumForValidations(keysToFind, preparedJsonData, design_year)
+                let sumOfCurrentKey = await yearWiseValues(child.yearData, design_year)
                 // let validationParams = {
                 //     keysToFind:keysToFind,
                 //     dynamicObj:preparedJsonData[child.key],
@@ -818,7 +835,8 @@ async function handleNonSubmissionValidation(params) {
                 let childValidationParams = {
                     data,
                     validatorArray: validatorArray,
-                    dynamicObj
+                    dynamicObj,
+                    design_year
                 }
                 let childValid = await handleMultipleValidations(childValidationParams)
                 if (!childValid.valid) {
@@ -835,8 +853,8 @@ async function handleNonSubmissionValidation(params) {
 
                 if (toCheckValidation.checkForValidations) {
                     console.log("toCheckValidation  33:: ",keysToFind)
-                    let sumOfrefVal = await getYearDataSumForValidations(keysToFind, data)
-                    let sumOfCurrentKey = await yearWiseValues(dynamicObj.yearData)
+                    let sumOfrefVal = await getYearDataSumForValidations(keysToFind, data, design_year)
+                    let sumOfCurrentKey = await yearWiseValues(dynamicObj.yearData, design_year)
                     let errorMessage = await createErrorMessage(getValidationJson(design_year)[dynamicObj.key], dynamicObj)
                     let valueParams = {
                         sumOfrefVal,
@@ -870,7 +888,7 @@ async function calculateAndUpdateStatusForMappers(tabs, ulbId, formId, year, upd
                 "comment": tab.feedback.comment,
                 "status": []
             }
-            let seperatedValues = assignChildToMainKeys(obj)
+            let seperatedValues = assignChildToMainKeys(obj, year)
             for (var k in tab.data) {
                 let dynamicObj = obj[k]
                 let yearArr = obj[k].yearData
