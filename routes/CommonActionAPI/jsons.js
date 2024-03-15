@@ -211,7 +211,7 @@ let DurProjectJson = {
                 "_id" : "3"
             }
         ],
-        "value": "2",
+        "value": "",
         "acceptableType": "",
         "acceptableFileType": "",
         "type": "3",
@@ -222,7 +222,7 @@ let DurProjectJson = {
             "loopIndex": 0
         },
         "forParentValue": 2,
-        "modelValue": "2",
+        "modelValue": "",
         "isSelectValue": true,
         "previousValue": "2",    
         "title" : "Is DPR prepared?",
