@@ -234,7 +234,8 @@ module.exports.createOrUpdateForm = async (req, res) => {
               await saveStatusHistory({ body: statusHistory ,
                 //  session 
                 });
-              
+              //email trigger after form submission
+              Service.sendEmail(mailOptions);
               // await session.commitTransaction();
               return Response.OK(res, {}, "Form Submitted");
             }
