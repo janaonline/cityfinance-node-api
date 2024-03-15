@@ -1443,7 +1443,6 @@ const ulbFormSubmitted = (ulbName, formName) => {
     subject: `${formName} Form Successfully Submitted`,
     body: `
               <p>Dear ${ulbName}</p> 
-              <br>
               <p>
               Your <strong>${formName}</strong> Form has been successfully submitted.<br>
               You will receive a confirmation on approval from State and MoHUA.
