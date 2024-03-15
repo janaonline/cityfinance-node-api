@@ -1,7 +1,8 @@
 const { years, getDesiredYear, isBeyond2023_24 } = require("../../service/years")
-const { apiUrls } = require("../CommonActionAPI/service")
+const { apiUrls } = require("../CommonActionAPI/service");
+const { isSingleYearIndicator } = require('../../util/helper');
 
-const propertyTaxOpFormJson = ({role, design_year}) => {
+const propertyTaxOpFormJson = ({role, design_year, ptoData, ptoMaper = []}) => {
   let readOnly = role === "ULB" ? false : true
   const json =  {
     "_id": null,
@@ -10485,10 +10486,28 @@ const propertyTaxOpFormJson = ({role, design_year}) => {
           (yearItem) => Object.keys(yearItem).length == 0
         );
 
-        if(["1.1", "1.5", "1.15", "5.1", "6.1"]. includes(indicator?.displayPriority)){
+        
+
+        if(isSingleYearIndicator(indicator.yearData)) {
+          
           const indicatorObj = indicator.yearData[0];
-          indicatorObj.year = design_year;
+          const { yearId } = getDesiredYear('2018-19')
+          const mapperItem18_19 = ptoMaper.find(item => {
+            return item.displayPriority == indicator?.displayPriority && ('' + item.year) == yearId
+          })
+          if(!mapperItem18_19) console.log('indicator?.displayPriority', indicator?.displayPriority)
+          if(["1.1", "1.5", "1.15", "5.1", "6.1"].includes(indicator?.displayPriority)){
+            if(mapperItem18_19?.value == 'Yes') {
+              indicatorObj.isReadonlySingleYear = true;
+            }
+          }
+          
+          if(ptoData) {
+            indicatorObj.year = getDesiredYear(design_year, -1).yearId;
+          }
         }
+        
+        
 
         if (hasMultipleYears) {
           const lastYear = yearData[yearData.length - 1];

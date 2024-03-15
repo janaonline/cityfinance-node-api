@@ -59,6 +59,14 @@ function Helper() {
     this.isEmptyObj = (obj) => {
         return Object.keys(obj).length == 0 && obj.constructor === Object
     }
+
+    this.isSingleYearIndicator = yearData => {
+        return yearData.reduce((total, yearItem) => {
+            if(!this.isEmptyObj(yearItem)) total++;
+            return total;
+        }, 0) == 1;
+    }
+    
     this.isReadOnly = ({ isDraft, status, currentFormStatus, role }) => {
         if ([1, 2, 5, 7].includes(currentFormStatus) && role === userTypes.ulb) {
             return false

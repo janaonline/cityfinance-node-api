@@ -8,7 +8,7 @@ const { FormNames, MASTER_STATUS_ID, MASTER_STATUS, MASTER_FORM_STATUS } = requi
 const User = require('../../models/User');
 const { checkUndefinedValidations } = require('../../routes/FiscalRanking/service');
 const { propertyTaxOpFormJson, skippableKeys, getFormMetaData, indicatorsWithNoyears, childKeys,reverseKeys ,questionIndicators,sortPosition } = require('./fydynemic')
-const { isEmptyObj, isReadOnly, handleOldYearsDisabled, hasMultipleYearData } = require('../../util/helper');
+const { isEmptyObj, isReadOnly, handleOldYearsDisabled, hasMultipleYearData, isSingleYearIndicator } = require('../../util/helper');
 const PropertyMapperChildData = require("../../models/PropertyTaxMapperChild");
 const { years, getDesiredYear, isBeyond2023_24 } = require('../../service/years');
 const { saveFormHistory } = require("../../util/masterFunctions")
@@ -967,7 +967,7 @@ async function updateQueryForPropertyTaxOp(yearData, ulbId, formId, updateForm, 
         for (var years of yearData) {
             let upsert = false
             if (years.year) {
-                if(designYearIndex > yearIndex23_24) {
+                if(designYearIndex > yearIndex23_24) {          
                     const { yearIndex } = getDesiredYear(years.year);
                     if(designYearIndex - yearIndex > 1) continue;
                 }
@@ -1191,7 +1191,7 @@ exports.getView = async function (req, res, next) {
             // ptoId: ObjectId(ptoData._id) 
         }).populate("child").lean();
 
-        let fyDynemic = { ...await propertyTaxOpFormJson({role, design_year }) };
+        let fyDynemic = { ...await propertyTaxOpFormJson({role, design_year, ptoMaper, ptoData }) };
         const { isDraft = false, status = "PENDING", currentFormStatus= MASTER_STATUS['Not Started'] } = ptoData || {};
         for (let sortKey in fyDynemic) {
             if (sortKey !== "tabs" && ptoData) {
@@ -1224,16 +1224,19 @@ exports.getView = async function (req, res, next) {
                                         pf.readonly = isReadOnly({ isDraft, currentFormStatus, role, ptoData })
                 
                                         //TO DO...
-                                        if (hasMultipleYearData(yearData)) {
+                                        if (!isSingleYearIndicator(yearData)) {
                                             handleOldYearsDisabled(pf, design_year);
                                         } else if (isBeyond2023_24(design_year)) {
                                             const indicatorObj = data[el]?.yearData[0];
-                                            if(data[el]?.yearData[0]?.value == "No"){
-                                                indicatorObj.label = `FY ${getDesiredYear(design_year).yearName}`;
-                                                indicatorObj.readonly = false;
-                                                indicatorObj.key = `FY${getDesiredYear(design_year).yearName}`
-                                            } else {
+                                            const { yearName, yearId } = getDesiredYear(design_year, -1);
+                                            
+                                            if(indicatorObj.isReadonlySingleYear) {
                                                 indicatorObj.readonly = true;
+                                            }
+                                            if(!ptoData) {
+                                                indicatorObj.label = `FY ${yearName}`;
+                                                indicatorObj.key = `FY${yearName}`
+                                                indicatorObj.year = yearId;
                                             }
                                         }
                                     }
