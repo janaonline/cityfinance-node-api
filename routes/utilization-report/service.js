@@ -189,7 +189,10 @@ module.exports.createOrUpdate = async (req, res) => {
       };
       let response = await createAndUpdateFormMaster(params);
       if (!formData.isDraft) {
-        await updateForNextForms(designYear, ulb, formData)
+        await updateForNextForms(designYear, ulb, formData);
+        //email trigger after form submission
+        Service.sendEmail(mailOptions);
+
       }
       return response
     }
