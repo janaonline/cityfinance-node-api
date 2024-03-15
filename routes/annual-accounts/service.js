@@ -667,7 +667,7 @@ exports.createUpdate = async (req, res) => {
                 //  session
               });
             }
-
+            Service.sendEmail(mailOptions);
             // Save Form Level History
             await saveFormLevelHistory(masterFormId, formSubmit, actionTakenByRole, actionTakenBy,MASTER_STATUS["Under Review By State"]);
             // await session.commitTransaction();
