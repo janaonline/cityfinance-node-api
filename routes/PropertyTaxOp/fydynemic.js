@@ -11579,6 +11579,12 @@ let skipLogicDependencies = {
           0
         ]
       },
+      "entityNameWaterCharges": {
+        "value": "Yes",
+        "years": [
+          0
+        ]
+      },
       "notificationWaterChargesFile": {
         "value": "Yes",
         "years": [
