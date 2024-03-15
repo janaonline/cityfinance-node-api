@@ -1,6 +1,13 @@
 const { years, getDesiredYear, isBeyond2023_24 } = require("../../service/years")
 const { apiUrls } = require("../CommonActionAPI/service");
-const { isSingleYearIndicator } = require('../../util/helper');
+const { isSingleYearIndicator, ensureArray } = require('../../util/helper');
+
+const parentRadioQuestionKeys = [
+  "ulbCollectPtax",
+  "doesUserChargesDmnd",
+  "notificationWaterCharges",
+  "doesColSewerageCharges"
+];
 
 const propertyTaxOpFormJson = ({role, design_year, ptoData, ptoMaper = []}) => {
   let readOnly = role === "ULB" ? false : true
@@ -10491,15 +10498,17 @@ const propertyTaxOpFormJson = ({role, design_year, ptoData, ptoMaper = []}) => {
         if(isSingleYearIndicator(indicator.yearData)) {
           
           const indicatorObj = indicator.yearData[0];
-          const { yearId } = getDesiredYear('2018-19')
-          const mapperItem18_19 = ptoMaper.find(item => {
-            return item.displayPriority == indicator?.displayPriority && ('' + item.year) == yearId
-          })
-          if(!mapperItem18_19) console.log('indicator?.displayPriority', indicator?.displayPriority)
-          if(["1.1", "1.5", "1.15", "5.1", "6.1"].includes(indicator?.displayPriority)){
-            if(mapperItem18_19?.value == 'Yes') {
+
+          if(parentRadioQuestionKeys.includes(indicator?.key)){
+            if(compareWithMapper18_19(ptoMaper, indicator.key, 'Yes')) {
               indicatorObj.isReadonlySingleYear = true;
             }
+          } else {
+            const parentDependencyObject = getRadioParentDependencyObject(indicator);
+            indicatorObj.isReadonlySingleYear = Object.entries(parentDependencyObject)
+              .every(([key, value]) => {
+                return compareWithMapper18_19(ptoMaper, key, 'Yes');
+              })
           }
           
           if(ptoData) {
@@ -10533,6 +10542,26 @@ const propertyTaxOpFormJson = ({role, design_year, ptoData, ptoMaper = []}) => {
 }
 
 
+
+function compareWithMapper18_19(ptoMaper, type, value) {
+  return ptoMaper.find(item => {
+    return item.type == type && 
+    ('' + item.year) == getDesiredYear('2018-19').yearId &&
+    ensureArray(value).includes(item.value);
+  });
+}
+
+function getRadioParentDependencyObject(indicator) {
+  const entries = Object.entries(skipLogicDependencies);
+  const parentValues = entries.reduce((acc, [key, { skippable }]) => {
+    const [_, parentKey] = key.split('.');
+    if (skippable[indicator.key] && parentRadioQuestionKeys.includes(parentKey)) {
+      acc[parentKey] = skippable[indicator.key].value;
+    }
+    return acc;
+  }, {});
+  return parentValues;
+}
 
 function modifyJsonForChild(copyChildFrom) {
   copyChildFrom.forEach((copyChild) => {
@@ -11821,6 +11850,12 @@ let skipLogicDependencies = {
       }
     ],
     "skippable": {
+      "entityNaSewerageCharges": {
+        "value": "Yes",
+        "years": [
+          0
+        ]
+      },
       "entitySewerageCharges": {
         "value": "Yes",
         "years": [
