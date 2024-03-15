@@ -76,7 +76,7 @@ function Helper() {
         return Array.prototype.slice.call(arguments);     // return array with copy of all arguments
       }
 
-    this.isReadOnly = ({ isDraft, status, currentFormStatus, role }) => {
+    this.isReadOnly = ({ currentFormStatus, role }) => {
         if ([1, 2, 5, 7].includes(currentFormStatus) && role === userTypes.ulb) {
             return false
         }

@@ -1111,7 +1111,6 @@ async function appendChildValues(params) {
                         element.child = child;
                     } else {    
                         if(!isBeyond2023_24(design_year))  continue;
-                        
                         element.child.forEach(replica => {
                             const childFromSameReplica = child.find(cl => {
                                 return cl.replicaNumber == replica.replicaNumber && cl.key == replica.key
@@ -1119,7 +1118,7 @@ async function appendChildValues(params) {
                             childFromSameReplica.pushed = true;
                             replica.yearData.push(...childFromSameReplica.yearData);
                         })
-                        handleNewYearChildRows(child, element);
+                        handleNewYearChildRows({child, element, currentFormStatus, role});
                     }
                 }
             }
@@ -1286,7 +1285,7 @@ exports.getView = async function (req, res, next) {
 }
 
 
-function handleNewYearChildRows(child, element) {
+function handleNewYearChildRows({child, element, currentFormStatus, role}) {
     const unpushedChilds = child.filter(cl => !cl?.pushed);
     if (unpushedChilds.length) {
         element.child.push(...unpushedChilds.map((unpushedChild, index) => {
@@ -1298,6 +1297,7 @@ function handleNewYearChildRows(child, element) {
                 const unpushedChildYear = unpushedChild.yearData.find(unpushedChildYear => unpushedChildYear.year == yearItem.year);
                 if (unpushedChildYear) {
                     yearItem.value = unpushedChildYear.value;
+                    yearItem.readonly = isReadOnly({ currentFormStatus, role });
                 }
                 return yearItem;
             });
