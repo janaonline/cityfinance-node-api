@@ -1905,7 +1905,7 @@ function roleWiseJson(json, role) {
 
 async function handleSelectCase(question, obj, flattedForm) {
     try {
-        if (question.modelName) {
+        if (question.modelName && flattedForm[question.shortKey]) {
             let value = flattedForm[question.shortKey]
             let tempObj = question.answer_option.find(item => item.option_id.toString() == value.toString())
             if (tempObj) {
@@ -2065,7 +2065,7 @@ async function handleArrOfObjects(question, flattedForm) {
                 for (let keys in obj) {
                     let keysObj = customkeys[question.shortKey]
                     let jsonKey = keysObj[keys]
-                    let questionObj = DurProjectJson[jsonKey]
+                    let questionObj = DurProjectJson[jsonKey] ? JSON.parse(JSON.stringify(DurProjectJson[jsonKey])) : null
                     if (questionObj) {
                         let formObj = {}
                         formObj[jsonKey] = obj[keys]
