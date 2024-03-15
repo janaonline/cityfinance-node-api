@@ -42,9 +42,9 @@ module.exports = function(mailOptions, cb){
     if(ENVIRONMENT !== ENV['prod']){
         mailOptions['Destination']['ToAddresses'] = Object.values(TEST_EMAIL);
     }
-new AWS.SES(SESConfig).sendEmail(mailOptions).promise().then((res)=>{
-    console.log(res)
-})
+    new AWS.SES(SESConfig).sendEmail(mailOptions).promise().then((res)=>{
+        console.log(res)
+    })
     // const smtpConnectionString = process.env.EMAILSERVICE == 'gmail' ?
     //     `smtps://${encodeURIComponent(mail)}:${encodeURIComponent(password)}@smtp.gmail.com`: {
     //         host: 'smtp.office365.com',
