@@ -38,6 +38,7 @@ const UtilizationReportProjectSchema = new Schema({
   dpr_status: { 
     type: Schema.Types.ObjectId,
     ref: "Option",
+    default: null
   },
   // engineerName: { type: String },
   // engineerContact: { type: String },
