@@ -78,9 +78,9 @@ const TwentyEightSlbFormSchema = new Schema({
         type: Number,
         required: false
     },
-    name: { type: String },
+    officerName: { type: String },
     designation: { type: String },
-    declaration:{ type: Boolean, default: 0 },
+    declaration:{ type: Boolean },
     cert_declaration: pdfSchema(),
     rejectReason: {type: String, default:""},
     responseFile_state:pdfSchema(),
