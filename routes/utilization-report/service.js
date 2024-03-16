@@ -22,7 +22,7 @@ const {
 } = require("../CommonActionAPI/service");
 const { getKeyByValue,checkForCalculationsForDurForm } = require("../../util/masterFunctions")
 const Service = require('../../service');
-const { FormNames, ULB_ACCESSIBLE_YEARS, MASTER_STATUS_ID, PREV_MASTER_FORM_STATUS, MASTER_FORM_STATUS } = require('../../util/FormNames');
+const { FormNames, ULB_ACCESSIBLE_YEARS, MASTER_STATUS_ID, PREV_MASTER_FORM_STATUS, FORM_STATUS_CODES } = require('../../util/FormNames');
 const MasterForm = require('../../models/MasterForm')
 const { YEAR_CONSTANTS, YEAR_CONSTANTS_IDS } = require("../../util/FormNames");
 const { ModelNames } = require('../../util/15thFCstatus')
@@ -1074,7 +1074,7 @@ module.exports.read2223 = catchAsync(async (req, res, next) => {
           .split(" ")
           .join("_");
         let prevYearStatusId = prevData?.currentFormStatus
-          ? MASTER_FORM_STATUS[previousStatusInCaps]
+          ? FORM_STATUS_CODES[previousStatusInCaps]
           : PREV_MASTER_FORM_STATUS[previousStatusInCaps];
         Object.assign(fetchedData, canTakeActionOnMasterForm, {
           prevYearStatus,
