@@ -759,3 +759,5 @@ function getGTCFinalForm(formArray) {
   }
 
 }
+
+module.exports.getPreviousYear = getPreviousYear
