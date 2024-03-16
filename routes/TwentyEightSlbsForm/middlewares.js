@@ -91,6 +91,9 @@ module.exports.changePayloadForm = async(req,res,next)=>{
             // console.log("payload.data :: ",payload.data)
             // let obj = payload.data.find((item)=>item.question === "Extent of metering of water connections")
             req.body['data'] = payload.data
+            if(Object.keys(payload).length>1){
+                Object.assign(req.body, payload)
+            }
             next()
         }
         else{

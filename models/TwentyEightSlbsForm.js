@@ -81,7 +81,7 @@ const TwentyEightSlbFormSchema = new Schema({
     name: { type: String },
     designation: { type: String },
     declaration:{ type: Boolean, default: 0 },
-    upload: pdfSchema(),
+    cert_declaration: pdfSchema(),
     rejectReason: {type: String, default:""},
     responseFile_state:pdfSchema(),
     responseFile_mohua:pdfSchema(),
