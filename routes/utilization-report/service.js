@@ -181,6 +181,7 @@ module.exports.createOrUpdate = async (req, res) => {
     }
     if ( isYearWithinRange(formData.designYear.toString()) && formData.ulb) {
       formData.status = currentMasterFormStatus;
+      formData.projects =  addKeysInProject(formData?.projects);
       let params = {
         modelName: ModelNames["dur"],
         formData,
@@ -413,7 +414,26 @@ module.exports.createOrUpdate = async (req, res) => {
     return Response.BadRequest(res, {}, err.message);
   }
 };
-
+/**
+ * The function `addKeysInProject` adds a `dpr_status` key with a value of `null` to each project in
+ * the input array if the key does not already exist.
+ * @param projects - An array of project objects. Each project object may or may not have a property
+ * named "dpr_status".
+ * @returns The `addKeysInProject` function is returning the `projects` array with the `dpr_status` key
+ * added to each project if it doesn't already exist.
+ */
+function addKeysInProject(projects){
+  try {
+     projects.forEach(project=>{
+      if(project.hasOwnProperty('dpr_status') && !project['dpr_status']){
+        project['dpr_status'] = null
+      }
+     })
+    return projects
+  } catch (error) {
+    throw new Error(`addKeysInProject:  ${error.message}`)
+  }
+}
 exports.read = async (req, res) => {
   try {
     const reports = await UtilizationReport.find(
