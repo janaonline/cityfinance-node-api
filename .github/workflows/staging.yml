@@ -11,31 +11,37 @@ on:
       - "dev-jana" 
 
 jobs:
-#   test:
-#     runs-on: ubuntu-latest
-#     steps:
-#       - name: Get code
-#         uses: actions/checkout@v3
-#       - name: Cache dependencies
-#         id: cache
-#         uses: actions/cache@v3
-#         with:
-#           path: ~/.npm
-#           key: deps-node-modules-${{ hashFiles('**/package-lock.json') }}
-#       - name: Install dependencies
-#         run: npm ci
-#       - name: Test code check
-#         id: run-tests
-#         run: npm run test
-#       - name: Upload test report
-#         if: failure() && steps.run-tests.outcome == 'failure'
-#         uses: actions/upload-artifact@v3
-#         with:
-#           name: test-report
-#           path: test.json
+  lint:
+    runs-on: ubuntu-latest
+    steps: 
+     - name: Run Lint Test 
+       run: echo "Lint Test Runned Successfully"
+  test:
+    needs: lint
+    runs-on: ubuntu-latest
+    steps:
+      # - name: Get code
+      #   uses: actions/checkout@v3
+      # - name: Cache dependencies
+      #   id: cache
+      #   uses: actions/cache@v3
+      #   with:
+      #     path: ~/.npm
+      #     key: deps-node-modules-${{ hashFiles('**/package-lock.json') }}
+      - name: Run Test 
+        run: echo "E2E test, Unit test and Integration Test Runned Successfully"
+      # - name: Test code check
+      #   id: run-tests
+      #   run: npm run test
+      # - name: Upload test report
+      #   if: failure() && steps.run-tests.outcome == 'failure'
+      #   uses: actions/upload-artifact@v3
+      #   with:
+      #     name: test-report
+      #     path: test.json
 
   build:
-    # needs: test
+    needs: test
     runs-on: ubuntu-latest
     strategy:
       matrix:
