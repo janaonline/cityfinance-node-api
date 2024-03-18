@@ -10533,9 +10533,6 @@ const propertyTaxOpFormJson = ({role, design_year, ptoData, ptoMaper = []}) => {
           nextYear["label"] = `FY ${yearName}`;
           nextYear["year"] = yearId;
           nextYear["postion"] = String(+nextYear["postion"] + 1);
-          if(indicator.key == 'collectIncludingCess') {
-            nextYear['info'] = 'Message to be provided by jana';
-          }
           yearData.push(nextYear);
         } else {
           yearData.push({});
@@ -10576,10 +10573,10 @@ function modifyJsonForChild(copyChildFrom) {
     const { yearName, yearId } = getDesiredYear(lastChildYear.year, 1)
     const nextYear = JSON.parse(JSON.stringify(lastChildYear))
     yearData.forEach((yearObj) => {
-      yearObj.readonly = true
-      yearObj.placeholder = "N/A"
-      yearObj.placeholderPdf = "N/A"
-      yearObj.required = false
+      yearObj.readonly = true;
+      yearObj.placeholder = "N/A";
+      yearObj.notApplicable = true;
+      yearObj.required = false;
     })
     nextYear["key"] = `FY${yearName}`
     nextYear["label"] = `FY ${yearName}`

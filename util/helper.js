@@ -93,6 +93,7 @@ function Helper() {
             yearObject.readonly = true;
             yearObject.required = false;
             yearObject.placeholder = 'N/A';
+            yearObject.notApplicable = true;
         }
     }
     this.hasMultipleYearData = (yearData) => {
