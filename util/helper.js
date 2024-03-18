@@ -92,8 +92,8 @@ function Helper() {
         if(designYearIndex - yearIndex > 1) {
             yearObject.readonly = true;
             yearObject.required = false;
-            yearObject.placeholder = 'N/A';
-            yearObject.notApplicable = true;
+            yearObject.placeholder = (yearObject.value == "") ? 'N/A' : "";
+            yearObject.notApplicable = (yearObject.value == "");
         }
     }
     this.hasMultipleYearData = (yearData) => {
