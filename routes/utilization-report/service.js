@@ -1204,7 +1204,7 @@ function checkIfNewlyCreatedUlb(design_year, creationDate){
   }
 }
 
-
+module.exports.checkIfNewlyCreatedUlb = checkIfNewlyCreatedUlb
 
 module.exports.dataRepair = async function (req, res, next) {
   try {
