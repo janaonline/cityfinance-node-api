@@ -854,7 +854,13 @@ async function handleNonSubmissionValidation(params) {
                 if (toCheckValidation.checkForValidations) {
                     console.log("toCheckValidation  33:: ",keysToFind)
                     let sumOfrefVal = await getYearDataSumForValidations(keysToFind, data, design_year)
-                    let sumOfCurrentKey = await yearWiseValues(dynamicObj.yearData, design_year)
+                    let sumOfCurrentKey = {};
+                    
+                    if(dynamicObj.copyChildFrom?.length) {
+                        sumOfCurrentKey = await getYearDataSumForValidations([dynamicObj.key], data, design_year);
+                    } else {
+                        sumOfCurrentKey = await yearWiseValues(dynamicObj.yearData, design_year)
+                    }
                     let errorMessage = await createErrorMessage(getValidationJson(design_year)[dynamicObj.key], dynamicObj)
                     let valueParams = {
                         sumOfrefVal,

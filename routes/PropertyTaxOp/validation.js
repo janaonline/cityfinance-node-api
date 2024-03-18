@@ -823,16 +823,15 @@ const getVavidationObject = (sortKey, byData) => {
 }
 
 let newYearValidationJson = {
-    "userChargesCollectionAmount": {
+    "userChargesCollection": {
         "logic": "ltequal",
         "fields": [
-            "otherNoPropertyTaxDm"
+            "userChargesDmnd"
         ],
         "sequence": [
             "1.16"
         ],
         "message": "userChargesCollectionAmount< or =userChargesDmndAmount",
-        "displayNumber": "1.23"
     },
     "totalMappedPropertiesUlb": {
         "logic": "sum",
