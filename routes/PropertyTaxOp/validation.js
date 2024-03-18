@@ -847,45 +847,6 @@ let newYearValidationJson = {
         "message": "totalMappedPropertiesUlb = totalPropertiesTax + totalPropertiesTaxDm",
         "displayNumber": "2.1"
     },
-    "totalPropertiesTaxDm": {
-        "logic": "multiple",
-        "multipleValidations": [
-            {
-                "logic": "sum",
-                "fields": [
-                    'resNoPropertyTaxDm',
-                    'comNoPropertyTaxDm',
-                    'indNoPropertyTaxDm',
-                    'govNoPropertyTaxDm',
-                    'insNoPropertyTaxDm',
-                    "otherNoPropertyTaxDm"
-                ],
-                "sequence": [
-                    "2.6",
-                    "2.10",
-                    "2.14",
-                    "2.18",
-                    "2.22",
-                    "2.27"
-                ],
-                "message": "Sum should be equal to total number of properties from which property tax is demanded.",
-                "displayNumber": "2.3"
-            },
-            {
-                "logic": "ltequal",
-                "fields": [
-                    "totalMappedPropertiesUlb"
-                ],
-                "sequence": [
-                    "2.1"
-                ],
-                "message": " totalPropertiesTaxDm < or = totalMappedPropertiesUlb",
-                "displayNumber": "2.3"
-            },
-
-        ],
-        "displayNumber": "2.3"
-    },
     "totalPropertiesTaxDmCollected": {
         "logic": "multiple",
         "multipleValidations": [
