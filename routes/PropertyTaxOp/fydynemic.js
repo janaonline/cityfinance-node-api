@@ -10572,6 +10572,7 @@ function modifyJsonForChild(copyChildFrom) {
     yearData.forEach((yearObj) => {
       yearObj.readonly = true
       yearObj.placeholder = "N/A"
+      yearObj.placeholderPdf = "N/A"
       yearObj.required = false
     })
     nextYear["key"] = `FY${yearName}`
