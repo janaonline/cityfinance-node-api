@@ -10512,7 +10512,13 @@ const propertyTaxOpFormJson = ({role, design_year, ptoData, ptoMaper = []}) => {
           }
           
           if(ptoData) {
-            indicatorObj.year = getDesiredYear(design_year, -1).yearId;
+            const { yearName, yearId } = getDesiredYear(design_year, -1);
+            indicatorObj.year = yearId;
+            if(['signedPdf', 'propertyTaxValuationDetails'].includes(indicator.key)) {
+              indicatorObj.isReadonlySingleYear = false;
+              indicatorObj["key"] = `FY${yearName}`;
+              indicatorObj["label"] = `FY ${yearName}`;
+            }
           }
         }
         
