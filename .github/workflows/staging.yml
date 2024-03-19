@@ -64,6 +64,8 @@ jobs:
         DEV_CITY_ENV: ${{ secrets.DEV_CITY_ENV }}
     - name: Create temporary directory
       run: sudo mkdir temp_dir
+    - name: Grant permissions to temporary directory
+      run: sudo chmod -R 777 temp_dir
     - name: Copy files to temporary directory
       run: find . -mindepth 1 -maxdepth 1 -not -name 'temp_dir' -exec cp -R {} temp_dir/ \;
     - name: Compress files
