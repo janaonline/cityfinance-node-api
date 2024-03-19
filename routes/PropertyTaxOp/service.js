@@ -1158,10 +1158,9 @@ exports.getView = async function (req, res, next) {
             return res.status(400).json({ status: false, message: "Something went wrong!" });
         }
         const design_year = req.query.design_year;
-        const ulbData = await Ulb.findOne({_id: ObjectId(req.query.ulb)})
-        .populate('state', '_id name gsdpGrowthRate').exec();
-
-        const isLatestOnboarderUlb = !ulbData?.access_2324;
+        const [ulbData] = await Ulb.aggregate(ulbDataWithGsdpGrowthRateQuery(req.query.ulb));
+        const gsdpGrowthRate = ulbData.gsdpGrowthRateData?.find(el => el.year === "2018-23")?.currentPrice;
+        const isLatestOnboarderUlb = !ulbData.access_2324;
 
         if (!isLatestOnboarderUlb && isBeyond2023_24(design_year)) {
             const desiredYear = getDesiredYear(design_year, -1);
@@ -1272,7 +1271,7 @@ exports.getView = async function (req, res, next) {
         }
         fyDynemic['isDraft'] = ptoData?.isDraft || true;
         fyDynemic['ulb'] = ptoData?.ulb || req.query.ulb;
-        fyDynemic['stateGsdpGrowthRate'] = ulbData?.state?.gsdpGrowthRate || 0;
+        fyDynemic['stateGsdpGrowthRate'] = gsdpGrowthRate || 0;
         fyDynemic['design_year'] = ptoData?.design_year || req.query.design_year;
         fyDynemic['statusId'] = ptoData?.currentFormStatus || MASTER_STATUS['Not Started'];
         fyDynemic['status'] = MASTER_STATUS_ID[ptoData?.currentFormStatus] || MASTER_STATUS_ID[1];
@@ -1296,6 +1295,31 @@ exports.getView = async function (req, res, next) {
     }
 }
 
+
+function ulbDataWithGsdpGrowthRateQuery(ulb) {
+    return [
+        {
+            $match: {
+                _id: ObjectId(ulb)
+            },
+        },
+        {
+            $lookup: {
+                from: "state_gsdp",
+                localField: "state",
+                foreignField: "stateId",
+                as: "stateData"
+            }
+        },
+        { $unwind: { "path": "$stateData", "preserveNullAndEmptyArrays": true } },
+        {
+            $project: {
+                access_2324: 1,
+                gsdpGrowthRateData: "$stateData.data"
+            }
+        }
+    ];
+}
 
 function handleNewYearChildRows({child, element, currentFormStatus, role}) {
     const unpushedChilds = child.filter(cl => !cl?.pushed);
