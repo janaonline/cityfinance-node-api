@@ -62,14 +62,14 @@ jobs:
         echo "$DEV_CITY_ENV" | sudo tee .env >/dev/null
       env:
         DEV_CITY_ENV: ${{ secrets.DEV_CITY_ENV }}
-    # - name: Create temporary directory
-    #   run: sudo mkdir temp_dir
-    # - name: Copy files to temporary directory
-    #   run: find . -mindepth 1 -maxdepth 1 -not -name 'temp_dir' -exec cp -R {} temp_dir/ \;
-    # - name: Compress files
-    #   run: sudo tar -zcvf app.tar.gz temp_dir
-    # - name: Remove temporary directory
-    #   run: sudo rm -rf temp_dir
+    - name: Create temporary directory
+      run: sudo mkdir temp_dir
+    - name: Copy files to temporary directory
+      run: find . -mindepth 1 -maxdepth 1 -not -name 'temp_dir' -exec cp -R {} temp_dir/ \;
+    - name: Compress files
+      run: sudo tar -zcvf app.tar.gz temp_dir
+    - name: Remove temporary directory
+      run: sudo rm -rf temp_dir
     - name: Copy dist files to server
       uses: appleboy/scp-action@master
       with:
@@ -78,7 +78,7 @@ jobs:
         key: ${{ secrets.SSH_PRIVATE_KEY }}  # Add your server SSH private key as a secret
         port: 22
         source: "."
-        target: "/var/www/html/dev-jana/citifinance-node-api/"  # Specify the destination path on your server
+        target: "/var/www/html/development/citifinance-node-api/"  # Specify the destination path on your server
     - name: executing remote ssh commands connecting to server
       uses: appleboy/ssh-action@v1.0.3
       with:
