@@ -14,7 +14,7 @@ const GFC = require('../../models/GfcFormCollection')
 const SLB = require('../../models/XVFcGrantForm')
 const PFMS = require('../../models/LinkPFMS')
 const PropTax = require('../../models/PropertyTaxOp')
-const { calculateStatus, calculateStatusMaster } = require('../CommonActionAPI/service')
+const { calculateStatus, calculateStatusMaster, getFinancialYear, isYearWithinRange, checkUlbAccess } = require('../CommonActionAPI/service')
 const SLB28 = require('../../models/TwentyEightSlbsForm')
 const PropertyTaxOp = require('../../models/PropertyTaxOp')
 const CollectionName = require('../../util/collectionName')
@@ -364,7 +364,8 @@ module.exports.get = catchAsync(async (req, res) => {
         designYearCond = "design_year";
       }
       if(singleYearForms.includes(el) && !isLatestCreated){
-        condition = await changeConditionsFor2223Forms(condition,year)
+        condition = await changeConditionsFor2223Forms(condition,year);
+        if(isYearWithinCurrentFY(year)) updateConditionIfUlbAlreadyExistedPreviously(condition, designYearCond, ulbInfo); 
       }
       let formData = await el.findOne(condition).lean()
       
@@ -428,9 +429,9 @@ module.exports.get = catchAsync(async (req, res) => {
       } else {
         data = data.filter(el => el.category != 'Million Plus City Challenge Fund')
       }
-
+      let formsWithoutCateogry = [CollectionName['pfms']]
       data.forEach((el,) => {
-        if (el.category && el.collectionName != "GTC" && el.collectionName != "SLB") {
+        if ((el.category || formsWithoutCateogry.includes(el.collectionName)) && el.collectionName != "GTC" && el.collectionName != "SLB") {
           let flag = 0;
           let variableName = collectionNames[el.path] || el.path
           if(singleYearFormCollections.includes(variableName) && !isLatestCreated){
@@ -452,6 +453,9 @@ module.exports.get = catchAsync(async (req, res) => {
 
 
       })
+      if(isYearWithinCurrentFY(year)){
+        data = await computeFormRedirection(_id, year, data);
+      }
     } else if (role == "STATE") {
       let stateWithUAForms = [CollectionName.state_action_plan,CollectionNames.waterRej,CollectionName.waterRej , FolderName['IndicatorForWaterSupply']]
       data = filterResponseForms(data,!statesWithUA.length,stateWithUAForms)
@@ -556,6 +560,122 @@ module.exports.get = catchAsync(async (req, res) => {
 }
 
 })
+
+/**
+ * The function `updateConditionIfUlbAlreadyExistedPreviously` updates a condition if a ULB (Urban
+ * Local Body) already existed previously based on certain criteria.
+ * @param condition - The `condition` parameter is an object 
+ * @param designYearCond - The `designYearCond` parameter is used to specify the key in the `condition`
+ * object where the design year information is stored.
+ * @param ulbInfo - `ulbInfo` 
+ */
+function updateConditionIfUlbAlreadyExistedPreviously(condition, designYearCond, ulbInfo) {
+  try {
+    let formYear = getPreviousYear(condition[designYearCond].toString(), 1);
+    let accessVariable = getKeyByValue(years, formYear);
+    const accessYear = checkUlbAccess(accessVariable, 2);
+    if (ulbInfo[accessYear]) condition[designYearCond] = ObjectId(formYear);
+  } catch (error) {
+    throw new Error(`updateConditionIfUlbAlreadyExistedPreviously:: ${error.message}`)
+  }
+}
+
+/**
+ * The function `computeFormRedirection` processes data based on a redirection object and a specified
+ * model.
+ * @param ulb - ulb 
+ * @param year - The `year` parameter in the `computeFormRedirection` function is used to specify the
+ * year for which the form redirection is being computed.
+ * @param data - 
+ * @returns The `computeFormRedirection` function returns the `data` array after applying certain
+ * modifications based on the `redirectionObj` object.
+ */
+async function computeFormRedirection(ulb, year, data) {
+  try {
+    let model = "PFMSAccount";
+    let redirectionObj = await formRedirectionBasedOnCreation(model, ulb, year);
+    if (!redirectionObj.redirect && !redirectionObj.status) {
+      data = data.filter((menu) => {
+        return !(UlbFormCollections[menu?.dbCollectionName] === model);
+      });
+    }
+    if (redirectionObj.redirect) {
+      data = data.map((menu) => {
+        if (UlbFormCollections[menu?.dbCollectionName] === model) {
+          Object.assign(menu, { tooltip: "", tick: "" });
+        }
+        return menu;
+      });
+    }
+    return data;
+  } catch (error) {
+    throw new Error(`computeFormRedirection:: ${error.message}`);
+  }
+}
+
+/**
+ * The function `formRedirectionBasedOnCreation` checks if a new ULB was created in the current
+ * financial year and redirects based on form creation status.
+ * @param model - The `model` parameter in the `formRedirectionBasedOnCreation` function represents the
+ * @param ulb - ULB stands for Urban Local Body. 
+ * @param design_year - The `design_year` parameter represents the year in which the design was
+ * created.  
+ * @returns  The function may return this object with different values for the `redirect` and `status` properties
+ * based on the conditions and data retrieved during its execution.
+ */
+async function formRedirectionBasedOnCreation(model, ulb, design_year){
+  try {
+    let output = {
+      redirect: false,
+      status: true
+    }
+    let ulbInfo = await Ulb.findOne(
+      { _id: ObjectId(ulb) },
+      { createdAt: 1}
+    ).lean();
+    let newUlb = isUlbCreatedInCurrentFinancialYear(design_year, ulbInfo?.createdAt);
+    if(newUlb) return output;
+    let condition = {
+      ulb: ObjectId(ulb)
+    }
+    let formData = await mongoose.model(model).find(condition).lean();
+    if(formData && formData.length) {
+      output['status'] = false
+      return output;
+    }
+    output['redirect'] = true;
+    output['status'] =  false;
+    return output;
+  } catch (error) {
+    throw new Error(`formRedirectionBasedOnCreation:: ${error.message}` )
+  }
+}
+/**
+ * The function `isYearWithinCurrentFY` checks if a given year is within the current financial year.
+ * @param year - The `year` parameter in the `isYearWithinCurrentFY` function represents the year for
+ * which you want to check if it falls within the current financial year.
+ * @returns The function `isYearWithinCurrentFY` is returning a boolean value indicating whether the
+ * given year is within the current financial year.
+ */
+function isYearWithinCurrentFY(year){
+  try {
+    return ![YEAR_CONSTANTS["23_24"],YEAR_CONSTANTS["22_23"]].includes(year)
+  } catch (error) {
+    throw new Error(`isYearWithinCurrentFY:: ${error.message}`)
+  }
+};
+module.exports.isYearWithinCurrentFY = isYearWithinCurrentFY
+function isUlbCreatedInCurrentFinancialYear(design_year, createdAt){
+  try {
+    let creationFinancialYear = getFinancialYear(createdAt);
+    if(YEAR_CONSTANTS_IDS[design_year] === creationFinancialYear){
+      return true;
+    };
+    return false;
+  } catch (error) {
+    throw new Error(`isUlbCreatedInCurrentFinancialYear:: ${error.message}`)
+  }
+}
 /**
  * The function `modelMapper` maps form models based on the year and role, fetching menu items from
  * Sidemenu and creating a map of form models with their corresponding IDs.
