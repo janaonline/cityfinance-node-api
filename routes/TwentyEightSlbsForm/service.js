@@ -5,9 +5,9 @@ const { findPreviousYear } = require('../../util/findPreviousYear')
 const Year = require('../../models/Year')
 const { groupByKey } = require('../../util/group_list_by_key')
 const SLB = require('../../models/XVFcGrantForm')
-const { canTakenAction, calculateStatus } = require('../CommonActionAPI/service')
+const { canTakenAction, calculateStatus, isYearWithinRange } = require('../CommonActionAPI/service')
 const Service = require('../../service');
-const { FormNames, YEAR_CONSTANTS, MASTER_STATUS_ID, PREV_MASTER_FORM_STATUS } = require('../../util/FormNames');
+const { FormNames, YEAR_CONSTANTS, MASTER_STATUS_ID, PREV_MASTER_FORM_STATUS, FORM_STATUS_CODES } = require('../../util/FormNames');
 const User = require('../../models/User');
 const MasterForm = require('../../models/MasterForm')
 const StatusList = require('../../util/newStatusList')
@@ -18,6 +18,7 @@ const { createAndUpdateFormMaster, getMasterForm } = require('../../routes/Commo
 const { ModelNames } = require('../../util/15thFCstatus');
 const { years } = require('../../service/years');
 const { getKeyByValue } = require('../../util/masterFunctions');
+const { getPreviousYear } = require('../sidemenu/service');
 
 let messages = {
   "2021-22": "",
@@ -148,14 +149,15 @@ module.exports.createOrUpdateForm = async (req, res) => {
     };
 
 
-    if (formData.design_year.toString() === YEAR_CONSTANTS["23_24"] && formData.ulb) {
+    if (isYearWithinRange(formData.design_year.toString()) && formData.ulb) {
       formData.status = currentMasterFormStatus
       let params = {
         modelName: ModelNames["twentyEightSlbs"],
         formData,
         res,
         actionTakenByRole,
-        actionTakenBy
+        actionTakenBy, 
+        mailOptions
       };
       return await createAndUpdateFormMaster(params);
     }
@@ -538,26 +540,31 @@ module.exports.getForm = async (req, res, next) => {
 
         }
       }
-      if (formData.design_year.toString() === YEAR_CONSTANTS["23_24"]) {
+      if (isYearWithinRange(formData.design_year.toString())) {
         let params = { modelName: ModelNames['twentyEightSlbs'], currentFormStatus: formData.currentFormStatus, formType: "ULB", actionTakenByRole: userRole };
         let canTakeActionOnMasterForm = await getMasterForm(params);
         Object.assign(formData, canTakeActionOnMasterForm);
+        let prevYearId = getPreviousYear(formData.design_year.toString(),1)
         let prevYearCond = {
           ulb: ObjectId(data.ulb),
-          design_year: ObjectId(YEAR_CONSTANTS['22_23'])
+          design_year: ObjectId(prevYearId)
         }
         let prev28SlbFormData = await TwentyEightSlbsForm.findOne(prevYearCond, { history: 0 }).lean();
-        const prevYearStatus = calculateStatus(
-          prev28SlbFormData.status,
-          prev28SlbFormData.actionTakenByRole,
-          prev28SlbFormData.isDraft,
+        let prevYearStatus = calculateStatus(
+          prev28SlbFormData?.status,
+          prev28SlbFormData?.actionTakenByRole,
+          prev28SlbFormData?.isDraft,
           "ULB"
         );
-        const previousStatusInCaps =  prevYearStatus.toUpperCase().split(' ').join('_')
-
+        if (prev28SlbFormData?.currentFormStatus) prevYearStatus = MASTER_STATUS_ID[prev28SlbFormData?.currentFormStatus];
+        const previousStatusInCaps =  prevYearStatus.toUpperCase().split(' ').join('_');
+        let prevYearStatusId = prev28SlbFormData?.currentFormStatus
+        ? FORM_STATUS_CODES[previousStatusInCaps]
+        : PREV_MASTER_FORM_STATUS[previousStatusInCaps];
+      
         Object.assign(formData,{
           prevYearStatus,
-          prevYearStatusId: PREV_MASTER_FORM_STATUS[previousStatusInCaps]
+          prevYearStatusId
         })
         // if (prev28SlbFormData && userRole === "MoHUA") {
         //   if (

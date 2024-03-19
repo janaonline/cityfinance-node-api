@@ -1905,7 +1905,7 @@ function roleWiseJson(json, role) {
 
 async function handleSelectCase(question, obj, flattedForm) {
     try {
-        if (question.modelName) {
+        if (question.modelName && flattedForm[question.shortKey]) {
             let value = flattedForm[question.shortKey]
             let tempObj = question.answer_option.find(item => item.option_id.toString() == value.toString())
             if (tempObj) {
@@ -2065,7 +2065,7 @@ async function handleArrOfObjects(question, flattedForm) {
                 for (let keys in obj) {
                     let keysObj = customkeys[question.shortKey]
                     let jsonKey = keysObj[keys]
-                    let questionObj = DurProjectJson[jsonKey]
+                    let questionObj = DurProjectJson[jsonKey] ? JSON.parse(JSON.stringify(DurProjectJson[jsonKey])) : null
                     if (questionObj) {
                         let formObj = {}
                         formObj[jsonKey] = obj[keys]
@@ -3902,11 +3902,11 @@ async function sequentialReview(req, res) {
 }
 module.exports.sequentialReview = sequentialReview;
 
-async function checkForms(params) {
+async function checkForms(params) { 
     try {
         let { forms, formId, modelName, res, user, getReview } = params;
         let designYear = "design_year";
-        formId === FORMIDs["dur"]
+        Number(formId) === FORMIDs["dur"]
             ? (designYear = "designYear")
             : (designYear = "design_year");
         let formCount = 0;
@@ -4021,6 +4021,7 @@ async function rejectForm2223(form, modelName, user) {
             modifiedAt: new Date(),
         };
         delete form["history"];
+        Object.assign(form,updateObj)
         let updatedForm = await moongose.model(modelName).findOneAndUpdate(
             { _id: form._id },
             {
@@ -4132,5 +4133,34 @@ function isYearWithinRange(year){
         throw new Error(`checkYearValidity:: ${error.message}`)
     }
 }
+/**
+ * The function `getFinancialYear` calculates the financial year based on the input date.
+ * @param date - The `date` parameter in the `getFinancialYear` function is used to determine the
+ * financial year based on the month of the given date. If the month is January, February, or March,
+ * the financial year is considered to be the previous year followed by a hyphen and the last two
+ * digits
+ * @returns The function `getFinancialYear` returns the financial year based on the input date. 
+ */
+const getFinancialYear = (date) => {
+  try {
+    let fiscalyear = "";
+    if (date.getMonth() + 1 <= 3) {
+      fiscalyear =
+        date.getFullYear() -
+        1 +
+        "-" +
+        date.toLocaleDateString("en", { year: "2-digit" });
+    } else {
+      fiscalyear =
+        date.getFullYear() +
+        "-" +
+        (parseInt(date.toLocaleDateString("en", { year: "2-digit" })) + 1);
+    }
+    return fiscalyear;
+  } catch (error) {
+    throw new Error(`getFinancialYear::  ${error.message}`);
+  }
+};
+module.exports.getFinancialYear = getFinancialYear;
 module.exports.saveFormLevelHistory = saveFormLevelHistory
 module.exports.isYearWithinRange = isYearWithinRange
