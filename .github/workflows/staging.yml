@@ -65,7 +65,7 @@ jobs:
     - name: Create temporary directory
       run: sudo mkdir temp_dir
     - name: Grant permissions to temporary directory
-      run: sudo chmod -R 777 temp_dir
+      run: sudo chmod 777 temp_dir -R
     - name: Copy files to temporary directory
       run: sudo find . -mindepth 1 -maxdepth 1 -not -name 'temp_dir' -exec sudo cp -R {} temp_dir/ \;
     - name: Compress files
