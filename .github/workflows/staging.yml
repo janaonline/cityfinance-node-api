@@ -77,7 +77,7 @@ jobs:
         username: ${{ secrets.SERVER_USERNAME }}  # Add your server username as a secret
         key: ${{ secrets.SSH_PRIVATE_KEY }}  # Add your server SSH private key as a secret
         port: 22
-        source: "."
+        source: "app.tar.gz"
         target: "/var/www/html/development-bkp2/citifinance-node-api/"  # Specify the destination path on your server
     - name: executing remote ssh commands connecting to server
       uses: appleboy/ssh-action@v1.0.3
