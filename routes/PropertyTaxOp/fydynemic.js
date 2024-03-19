@@ -10499,16 +10499,18 @@ const propertyTaxOpFormJson = ({role, design_year, ptoData, ptoMaper = []}) => {
           
           const indicatorObj = indicator.yearData[0];
 
-          if(parentRadioQuestionKeys.includes(indicator?.key)){
-            if(compareWithMapper18_19(ptoMaper, indicator.key, 'Yes')) {
+          if (parentRadioQuestionKeys.includes(indicator?.key)) {
+            if (compareWithMapper18_19(ptoMaper, indicator.key, "Yes")) {
               indicatorObj.isReadonlySingleYear = true;
             }
           } else {
-            const parentDependencyObject = getRadioParentDependencyObject(indicator);
-            indicatorObj.isReadonlySingleYear = Object.entries(parentDependencyObject)
-              .every(([key, value]) => {
-                return compareWithMapper18_19(ptoMaper, key, 'Yes');
-              })
+            const parentDependencyObject =
+              getRadioParentDependencyObject(indicator);
+            indicatorObj.isReadonlySingleYear = Object.entries(
+              parentDependencyObject
+            ).every(([key, value]) => {
+              return compareWithMapper18_19(ptoMaper, key, "Yes");
+            });
           }
           const { yearName, yearId } = getDesiredYear(design_year, -1);
           
@@ -10517,13 +10519,13 @@ const propertyTaxOpFormJson = ({role, design_year, ptoData, ptoMaper = []}) => {
             indicatorObj["label"] = `FY ${yearName}`;
             indicatorObj["key"] = `FY${yearName}`
           }
+          if(['signedPdf', 'propertyTaxValuationDetails'].includes(indicator.key)) {
+            indicatorObj.isReadonlySingleYear = false;
+            indicatorObj["key"] = `FY${yearName}`;
+            indicatorObj["label"] = `FY ${yearName}`;
+          }
           if(ptoData) {
             indicatorObj.year = yearId;
-            if(['signedPdf', 'propertyTaxValuationDetails'].includes(indicator.key)) {
-              indicatorObj.isReadonlySingleYear = false;
-              indicatorObj["key"] = `FY${yearName}`;
-              indicatorObj["label"] = `FY ${yearName}`;
-            }
           }
         }
         

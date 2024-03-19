@@ -1242,6 +1242,12 @@ exports.getView = async function (req, res, next) {
                                                 indicatorObj.label = `FY ${yearName}`;
                                                 indicatorObj.key = `FY${yearName}`
                                                 indicatorObj.year = yearId;
+                                                if (['7.1', '4.1'].includes(data[el].displayPriority)) {
+                                                    indicatorObj.file = {
+                                                        "url": "",
+                                                        "name": ""
+                                                    }
+                                                }
                                             }
                                         }
                                     }
