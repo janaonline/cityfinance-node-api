@@ -67,7 +67,7 @@ jobs:
     - name: Grant permissions to temporary directory
       run: sudo chmod -R 777 temp_dir
     - name: Copy files to temporary directory
-      run: find . -mindepth 1 -maxdepth 1 -not -name 'temp_dir' -exec cp -R {} temp_dir/ \;
+      run: sudo find . -mindepth 1 -maxdepth 1 -not -name 'temp_dir' -exec sudo cp -R {} temp_dir/ \;
     - name: Compress files
       run: sudo tar -zcvf app.tar.gz temp_dir
     - name: Remove temporary directory
