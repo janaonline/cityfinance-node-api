@@ -604,6 +604,7 @@ async function computeFormRedirection(ulb, year, data) {
         if (UlbFormCollections[menu?.dbCollectionName] === model) {
           Object.assign(menu, { tooltip: "", tick: "" });
         }
+        return menu;
       });
     }
     return data;
