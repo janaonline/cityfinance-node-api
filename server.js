@@ -6,7 +6,7 @@
  require("dotenv").config({ path: path.join(__dirname, ".env") });
  var app = require('./app');
  const numCPUs = process.env.ENV == "development" ? 1 : require('os').cpus().length;
- 
+  
  if (cluster.isMaster) {
    console.log(`Master ${process.pid} is running`);
    require('./cronjob/cron')

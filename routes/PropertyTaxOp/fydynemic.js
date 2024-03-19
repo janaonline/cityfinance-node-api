@@ -1,12 +1,20 @@
-const { years } = require("../../service/years")
-const { apiUrls } = require("../CommonActionAPI/service")
+const { years, getDesiredYear, isBeyond2023_24 } = require("../../service/years")
+const { apiUrls } = require("../CommonActionAPI/service");
+const { isSingleYearIndicator, ensureArray } = require('../../util/helper');
 
-const propertyTaxOpFormJson = (role) => {
+const parentRadioQuestionKeys = [
+  "ulbCollectPtax",
+  "doesUserChargesDmnd",
+  "notificationWaterCharges",
+  "doesColSewerageCharges"
+];
+
+const propertyTaxOpFormJson = ({role, design_year, ptoData, ptoMaper = []}) => {
   let readOnly = role === "ULB" ? false : true
-  return {
+  const json =  {
     "_id": null,
     "ulb": "5fa24660072dab780a6f141e",
-    "design_year": "606aafb14dff55e6c075d3ae",
+    "design_year": design_year || "606aafb14dff55e6c075d3ae",
     "isDraft": null,
     "tabs": [
       {
@@ -10470,9 +10478,120 @@ const propertyTaxOpFormJson = (role) => {
       }
     ]
   }
+
+  if (isBeyond2023_24(design_year)) {
+    json.tabs.forEach((tab) => {
+      const indicators = Object.values(tab.data);
+      indicators.forEach((indicator) => {
+        const yearData = indicator.yearData;
+        const copyChildFrom = indicator?.copyChildFrom;
+
+        if (copyChildFrom) {
+          modifyJsonForChild(copyChildFrom);
+        }
+        const hasMultipleYears = !yearData.some(
+          (yearItem) => Object.keys(yearItem).length == 0
+        );
+
+        
+
+        if(isSingleYearIndicator(indicator.yearData)) {
+          
+          const indicatorObj = indicator.yearData[0];
+
+          if (parentRadioQuestionKeys.includes(indicator?.key)) {
+            if (compareWithMapper18_19(ptoMaper, indicator.key, "Yes")) {
+              indicatorObj.isReadonlySingleYear = true;
+            }
+          } else {
+            const parentDependencyObject =
+              getRadioParentDependencyObject(indicator);
+            indicatorObj.isReadonlySingleYear = Object.entries(
+              parentDependencyObject
+            ).every(([key, value]) => {
+              return compareWithMapper18_19(ptoMaper, key, "Yes");
+            });
+          }
+          const { yearName, yearId } = getDesiredYear(design_year, -1);
+          
+          if (["ulbCollectPtax"].includes(indicator.key)) {
+            indicator["label"] = `Did the ULB collect property tax in FY ${yearName}?`;
+            indicatorObj["label"] = `FY ${yearName}`;
+            indicatorObj["key"] = `FY${yearName}`
+          }
+          if(['signedPdf', 'propertyTaxValuationDetails'].includes(indicator.key)) {
+            indicatorObj.isReadonlySingleYear = false;
+            indicatorObj["key"] = `FY${yearName}`;
+            indicatorObj["label"] = `FY ${yearName}`;
+          }
+          if(ptoData) {
+            indicatorObj.year = yearId;
+          }
+        }
+        
+        
+
+        if (hasMultipleYears) {
+          const lastYear = yearData[yearData.length - 1];
+          const { yearName, yearId } = getDesiredYear(lastYear.year, 1);
+
+          const nextYear = JSON.parse(JSON.stringify(lastYear));
+          nextYear["key"] = `FY${yearName}`;
+          nextYear["label"] = `FY ${yearName}`;
+          nextYear["year"] = yearId;
+          nextYear["postion"] = String(+nextYear["postion"] + 1);
+          yearData.push(nextYear);
+        } else {
+          yearData.push({});
+        }
+      });
+    });
+  }
+
+  return json;
 }
 
 
+
+function compareWithMapper18_19(ptoMaper, type, value) {
+  return ptoMaper.find(item => {
+    return item.type == type && 
+    ('' + item.year) == getDesiredYear('2018-19').yearId &&
+    ensureArray(value).includes(item.value);
+  });
+}
+
+function getRadioParentDependencyObject(indicator) {
+  const entries = Object.entries(skipLogicDependencies);
+  const parentValues = entries.reduce((acc, [key, { skippable }]) => {
+    const [_, parentKey] = key.split('.');
+    if (skippable[indicator.key] && parentRadioQuestionKeys.includes(parentKey)) {
+      acc[parentKey] = skippable[indicator.key].value;
+    }
+    return acc;
+  }, {});
+  return parentValues;
+}
+
+function modifyJsonForChild(copyChildFrom) {
+  copyChildFrom.forEach((copyChild) => {
+    const { yearData } = copyChild
+    const lastChildYear = yearData[yearData.length - 1]
+    const { yearName, yearId } = getDesiredYear(lastChildYear.year, 1)
+    const nextYear = JSON.parse(JSON.stringify(lastChildYear))
+    yearData.forEach((yearObj) => {
+      yearObj.readonly = true;
+      yearObj.placeholder = "N/A";
+      yearObj.notApplicable = true;
+      yearObj.required = false;
+    })
+    nextYear["key"] = `FY${yearName}`
+    nextYear["label"] = `FY ${yearName}`
+    nextYear["year"] = yearId
+    nextYear["postion"] = String(+nextYear["postion"] + 1)
+    yearData.push(nextYear)
+  })
+}
 
 function getInputKeysByType(formType, type, label, dataSource = null, position, required = true, mn = false, info = "") {
   let maximum = 9999999999
@@ -11471,6 +11590,12 @@ let skipLogicDependencies = {
           0
         ]
       },
+      "entityNameWaterCharges": {
+        "value": "Yes",
+        "years": [
+          0
+        ]
+      },
       "notificationWaterChargesFile": {
         "value": "Yes",
         "years": [
@@ -11742,6 +11867,12 @@ let skipLogicDependencies = {
       }
     ],
     "skippable": {
+      "entityNaSewerageCharges": {
+        "value": "Yes",
+        "years": [
+          0
+        ]
+      },
       "entitySewerageCharges": {
         "value": "Yes",
         "years": [
@@ -12084,16 +12215,60 @@ function getSkippableKeys(skipLogics) {
   return results;
 }
 
-let dynamicJson = propertyTaxOpFormJson()['tabs'][0]['data']
+let dynamicJson = propertyTaxOpFormJson({})['tabs'][0]['data']
 let {childKeys, questionIndicators,indicatorsWithNoyears} = fetchIndicatorsOrDp(dynamicJson)
+
+
+const getFormMetaData = ({ design_year }) => {
+  let result = {
+    financialYearTableHeader,
+    specialHeaders,
+    skipLogicDependencies,
+  };
+
+  if (design_year && isBeyond2023_24(design_year)) {
+    const skipLogicDependenciesCopy = JSON.parse(JSON.stringify(skipLogicDependencies));
+   
+    Object.values(skipLogicDependenciesCopy).forEach(dependency => {
+      Object.values(dependency?.skippable).forEach(skippable => {
+        const years = skippable?.years;
+        if (years?.length > 1) {
+          years.push(years[years.length - 1] + 1);
+        }
+      });
+    });
+    
+    result = {
+      financialYearTableHeader: Object.entries(financialYearTableHeader).reduce(
+        (acc, [displayPriority, headers]) => {
+          const headersCopy = [...headers];
+          const fYHeaderDisplayPriority = ["5.30", "5.31", "5.32", "6.30", "6.32"]
+          const label = fYHeaderDisplayPriority.includes(displayPriority) ? "" : "2023-24";
+          headersCopy.push({
+            label,
+            info: "",
+          });
+
+          return {
+            ...acc,
+            [displayPriority]: headersCopy,
+          };
+        },
+        {}
+      ),
+      specialHeaders,
+      skipLogicDependencies: skipLogicDependenciesCopy,
+    };
+  }
+  return result;
+};
+
 module.exports.reverseKeys = ["ulbFinancialYear","ulbPassedResolPtax"]
 module.exports.skippableKeys = getSkippableKeys(skipLogicDependencies)
-module.exports.financialYearTableHeader = financialYearTableHeader
-module.exports.specialHeaders = specialHeaders
 module.exports.childKeys =childKeys
 module.exports.indicatorsWithNoyears = indicatorsWithNoyears
 module.exports.questionIndicators = questionIndicators
 module.exports.propertyTaxOpFormJson = propertyTaxOpFormJson;
 module.exports.getInputKeysByType = getInputKeysByType;
-module.exports.skipLogicDependencies = skipLogicDependencies
 module.exports.sortPosition = sortPosition
+module.exports.getFormMetaData = getFormMetaData
