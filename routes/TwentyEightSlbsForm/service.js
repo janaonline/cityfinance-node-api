@@ -402,11 +402,8 @@ module.exports.getForm = async (req, res, next) => {
           !masterFormData.isSubmit,
           "ULB"
         );
-        console.log("status ::::: ", status)
         /* Checking the status of the form. If the status is not in the list of statuses, it will
           return a message. */
-
-        console.log("keyName ::: ", keyName)
         if (
           ![
             StatusList.Under_Review_By_MoHUA,
@@ -414,7 +411,6 @@ module.exports.getForm = async (req, res, next) => {
             StatusList.Approved_By_State,
           ].includes(status)
         ) {
-          console.log("keyName ::: ", keyName)
           let msg = userRole === "ULB" ? `Your ${messages[keyName]} Year's SLBs for Water Supply and Sanitation form status is - ${status ? status : "Not Submitted"
             }. Kindly submit form at - <a href =https://${host}/ulbform/ulbform-overview target="_blank">Click here</a> in order to submit form` : `Dear User, The ${ulbData.name} has not yet filled ${messages[keyName]} Year's SLBs for Water Supply and Sanitation form. You will be able to mark your response once STATE approves ${messages[keyName]} year's form.`
           req.json = {
