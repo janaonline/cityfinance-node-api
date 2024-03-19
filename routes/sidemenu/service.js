@@ -14,7 +14,7 @@ const GFC = require('../../models/GfcFormCollection')
 const SLB = require('../../models/XVFcGrantForm')
 const PFMS = require('../../models/LinkPFMS')
 const PropTax = require('../../models/PropertyTaxOp')
-const { calculateStatus, calculateStatusMaster, getFinancialYear, isYearWithinRange } = require('../CommonActionAPI/service')
+const { calculateStatus, calculateStatusMaster, getFinancialYear, isYearWithinRange, checkUlbAccess } = require('../CommonActionAPI/service')
 const SLB28 = require('../../models/TwentyEightSlbsForm')
 const PropertyTaxOp = require('../../models/PropertyTaxOp')
 const CollectionName = require('../../util/collectionName')
@@ -364,7 +364,8 @@ module.exports.get = catchAsync(async (req, res) => {
         designYearCond = "design_year";
       }
       if(singleYearForms.includes(el) && !isLatestCreated){
-        condition = await changeConditionsFor2223Forms(condition,year)
+        condition = await changeConditionsFor2223Forms(condition,year);
+        if(isYearWithinCurrentFY(year)) updateConditionIfUlbAlreadyExistedPreviously(condition, designYearCond, ulbInfo); 
       }
       let formData = await el.findOne(condition).lean()
       
@@ -428,9 +429,9 @@ module.exports.get = catchAsync(async (req, res) => {
       } else {
         data = data.filter(el => el.category != 'Million Plus City Challenge Fund')
       }
-
+      let formsWithoutCateogry = [CollectionName['pfms']]
       data.forEach((el,) => {
-        if (el.category && el.collectionName != "GTC" && el.collectionName != "SLB") {
+        if ((el.category || formsWithoutCateogry.includes(el.collectionName)) && el.collectionName != "GTC" && el.collectionName != "SLB") {
           let flag = 0;
           let variableName = collectionNames[el.path] || el.path
           if(singleYearFormCollections.includes(variableName) && !isLatestCreated){
@@ -559,6 +560,25 @@ module.exports.get = catchAsync(async (req, res) => {
 }
 
 })
+
+/**
+ * The function `updateConditionIfUlbAlreadyExistedPreviously` updates a condition if a ULB (Urban
+ * Local Body) already existed previously based on certain criteria.
+ * @param condition - The `condition` parameter is an object 
+ * @param designYearCond - The `designYearCond` parameter is used to specify the key in the `condition`
+ * object where the design year information is stored.
+ * @param ulbInfo - `ulbInfo` 
+ */
+function updateConditionIfUlbAlreadyExistedPreviously(condition, designYearCond, ulbInfo) {
+  try {
+    let formYear = getPreviousYear(condition[designYearCond].toString(), 1);
+    let accessVariable = getKeyByValue(years, formYear);
+    const accessYear = checkUlbAccess(accessVariable, 2);
+    if (ulbInfo[accessYear]) condition[designYearCond] = ObjectId(formYear);
+  } catch (error) {
+    throw new Error(`updateConditionIfUlbAlreadyExistedPreviously:: ${error.message}`)
+  }
+}
 
 /**
  * The function `computeFormRedirection` processes data based on a redirection object and a specified
