@@ -136,7 +136,7 @@ function decideRedirections(response, yearId, ulbData) {
             if (ulbData[baseAccessYear]) {
                 prevFormYear = getKeyByValue(years, baseYearId);
             } else if (ulbData[prevAccessYear]) {
-                response.url = `ulb-form/${prevFormYearId}/pfms_acc`;
+                response.url = `/ulb-form/${prevFormYearId}/pfms_acc`;
             }
         }
         response.message = `Click to view PFMS Account Linkage of Financial Year ${prevFormYear}`;
