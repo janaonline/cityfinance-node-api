@@ -64,10 +64,8 @@ jobs:
         DEV_CITY_ENV: ${{ secrets.DEV_CITY_ENV }}
     - name: Create temporary directory
       run: sudo mkdir temp_dir
-    - name: Grant permissions to temporary directory
-      run: sudo chmod 777 temp_dir -R
     - name: Copy files to temporary directory
-      run: sudo find . -mindepth 1 -maxdepth 1 -not -name 'temp_dir' -exec sudo cp -R {} temp_dir/ \;
+      run: find . -mindepth 1 -maxdepth 1 -not -name 'temp_dir' -exec cp -R {} temp_dir/ \;
     - name: Compress files
       run: sudo tar -zcvf app.tar.gz temp_dir
     - name: Remove temporary directory
@@ -88,7 +86,7 @@ jobs:
           username: ${{ secrets.SERVER_USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 22
-          script: cd /var/www/html/development/citifinance-node-api && pm2 start server.js --name 'development-node-cicd-dev' 
+          script: cd /var/www/html/dev-jana/citifinance-node-api && pm2 start server.js --name 'development-node-cicd-dev'
           #  "cd /path/to/destination/on/server && npm install && npm start"
     # - run: pm2 start server.js --name "dev-node-api"
     
