@@ -662,7 +662,8 @@ function isYearWithinCurrentFY(year){
   } catch (error) {
     throw new Error(`isYearWithinCurrentFY:: ${error.message}`)
   }
-}
+};
+module.exports.isYearWithinCurrentFY = isYearWithinCurrentFY
 function isUlbCreatedInCurrentFinancialYear(design_year, createdAt){
   try {
     let creationFinancialYear = getFinancialYear(createdAt);
