@@ -78,7 +78,7 @@ jobs:
         key: ${{ secrets.SSH_PRIVATE_KEY }}  # Add your server SSH private key as a secret
         port: 22
         source: "."
-        target: "/var/www/html/development/citifinance-node-api/"  # Specify the destination path on your server
+        target: "/var/www/html/development-bkp2/citifinance-node-api/"  # Specify the destination path on your server
     - name: executing remote ssh commands connecting to server
       uses: appleboy/ssh-action@v1.0.3
       with:
@@ -86,7 +86,7 @@ jobs:
           username: ${{ secrets.SERVER_USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 22
-          script: cd /var/www/html/development/citifinance-node-api && pm2 start server.js --name 'development-node-cicd-dev'
+          script: cd /var/www/html/development-bkp2/citifinance-node-api && pm2 start server.js --name 'development-node-cicd-dev'
           #  "cd /path/to/destination/on/server && npm install && npm start"
     # - run: pm2 start server.js --name "dev-node-api"
     
