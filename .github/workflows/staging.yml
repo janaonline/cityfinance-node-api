@@ -54,6 +54,8 @@ jobs:
       with:
         node-version: ${{ matrix.node-version }}
         # cache: 'npm'
+    - name: cache clean Dependencies
+      run: npm cache clean --force    
     - name: Install Dependencies
       run: npm install
     - name: Create staging environment file 
