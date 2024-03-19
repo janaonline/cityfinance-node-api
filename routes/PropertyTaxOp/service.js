@@ -1234,11 +1234,6 @@ exports.getView = async function (req, res, next) {
                                         } else if (isBeyond2023_24(design_year)) {
                                             const indicatorObj = data[el]?.yearData[0];
                                             const { yearName, yearId } = getDesiredYear(design_year, -1);
-                                            if (["ulbCollectPtax"].includes(data[el].key)) {
-                                                data[el].label = `Did the ULB collect property tax in FY ${yearName}?`;
-                                                indicatorObj.label = `FY ${yearName}`;
-                                                indicatorObj.key = `FY${yearName}`
-                                            }
 
                                             if (indicatorObj.isReadonlySingleYear) {
                                                 indicatorObj.readonly = true;

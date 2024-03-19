@@ -10510,9 +10510,14 @@ const propertyTaxOpFormJson = ({role, design_year, ptoData, ptoMaper = []}) => {
                 return compareWithMapper18_19(ptoMaper, key, 'Yes');
               })
           }
+          const { yearName, yearId } = getDesiredYear(design_year, -1);
           
+          if (["ulbCollectPtax"].includes(indicator.key)) {
+            indicator["label"] = `Did the ULB collect property tax in FY ${yearName}?`;
+            indicatorObj["label"] = `FY ${yearName}`;
+            indicatorObj["key"] = `FY${yearName}`
+          }
           if(ptoData) {
-            const { yearName, yearId } = getDesiredYear(design_year, -1);
             indicatorObj.year = yearId;
             if(['signedPdf', 'propertyTaxValuationDetails'].includes(indicator.key)) {
               indicatorObj.isReadonlySingleYear = false;
