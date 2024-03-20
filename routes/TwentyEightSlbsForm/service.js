@@ -684,7 +684,7 @@ module.exports.getForm = async (req, res, next) => {
               : "";
         }
       }
-      let lineItems = await IndicatorLineItem.find().lean();
+      let lineItems = await IndicatorLineItem.find({year: ObjectId(data.design_year)}).lean();
       let obj = {
         targetDisable: false,
         actualDisable: false,
