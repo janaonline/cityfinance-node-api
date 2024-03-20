@@ -66,6 +66,7 @@ const {
 const { ElasticBeanstalk } = require("aws-sdk");
 const { forever } = require("request");
 const { years } = require("../../service/years");
+const { getPreviousYear } = require("../sidemenu/service");
 const time = () => {
   var dt = new Date();
   dt.setHours(dt.getHours() + 5);
@@ -936,6 +937,11 @@ module.exports.read2223 = catchAsync(async (req, res, next) => {
     });
     let currentYear = await Year.findOne({ _id: ObjectId(design_year) }).lean();
     let ulbAccess = checkIfUlbHasAccess(ulbData, currentYear);
+    let ulbAccessBeforeCreationId = getPreviousYear(currentYear._id.toString(),2);
+    let ulbAccessBeforeCreation = checkIfUlbHasAccess(
+      ulbData, 
+      ulbAccessBeforeCreationId
+    )
     // current year
     let currentYearVal = currentYear["year"];
     // find Previous year
@@ -1041,7 +1047,7 @@ module.exports.read2223 = catchAsync(async (req, res, next) => {
     }
 
     let newlyCreated = checkIfNewlyCreatedUlb(design_year, ulbData?.createdAt);
-    if(newlyCreated){
+    if(!ulbAccess){
       let msg = `Dear ${ulbData.name}, You will be eligible to fill the DUR form from next year.`
       obj["action"] = "note";
       obj["url"] = msg;
@@ -1163,7 +1169,7 @@ module.exports.read2223 = catchAsync(async (req, res, next) => {
       condition["designYear"] = ObjectId(prevYear._id);
       fetchedData = await UtilizationReport.findOne(condition).lean();
       let sampleData = new UtilizationReport();
-      sampleData.grantPosition.unUtilizedPrevYr = ulbAccess
+      sampleData.grantPosition.unUtilizedPrevYr = ulbAccess && ulbAccessBeforeCreation
         ? fetchedData?.grantPosition?.closingBal ?? 0
         : 0;
       sampleData = sampleData.toObject();
