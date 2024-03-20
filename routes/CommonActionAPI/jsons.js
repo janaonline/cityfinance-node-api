@@ -211,7 +211,7 @@ let DurProjectJson = {
                 "_id" : "3"
             }
         ],
-        "value": "2",
+        "value": "",
         "acceptableType": "",
         "acceptableFileType": "",
         "type": "3",
@@ -222,7 +222,7 @@ let DurProjectJson = {
             "loopIndex": 0
         },
         "forParentValue": 2,
-        "modelValue": "2",
+        "modelValue": "",
         "isSelectValue": true,
         "previousValue": "2",    
         "title" : "Is DPR prepared?",
@@ -2262,6 +2262,235 @@ let DurProjectJson = {
             "shortKey": "stormWater_type"
         }
     },
+    declaration:{
+        "order" : "38",
+        "title" : "Self Declaration",
+        "information" : "",
+        "answer_option" : [
+
+        ],
+        "isQuestionDisabled": false,
+        "hint" : "",
+        "resource_urls" : [
+
+        ],
+        "_id" : "65f598093bfd03509175016e",
+        "label" : "",
+        "shortKey" : "declaration",
+        "viewSequence" : "40",
+        "input_type" : "10",
+        "validation" : [
+
+        ],
+        "restrictions" : [
+
+        ],
+        "child" : [
+
+        ],
+        "parent" : [
+
+        ],
+        "editable" : false,
+        "weightage" : [
+
+        ]
+    },
+    officerName:{
+        "order" : "39",
+        "title" : "Name",
+        "information" : "",
+        "answer_option" : [
+
+        ],
+        "isQuestionDisabled": false,
+
+        "hint" : "",
+        "resource_urls" : [
+
+        ],
+        "_id" : "65f5988d3bfd035091750286",
+        "label" : "29",
+        "shortKey" : "officerName",
+        "viewSequence" : "41",
+        "input_type" : "1",
+        "validation" : [
+            {
+                "_id" : "1",
+                "error_msg" : ""
+            }
+        ],
+        "restrictions" : [
+
+        ],
+        "child" : [
+
+        ],
+        "parent" : [
+
+        ],
+        "pattern" : "",
+        "min" : (1),
+        "max" : (50),
+        "editable" : false,
+        "weightage" : [
+
+        ]
+    },
+    designation:  {
+        "order" : "40",
+        "title" : "Designation",
+        "information" : "",
+        "answer_option" : [
+
+        ],
+        "isQuestionDisabled": false,
+
+        "hint" : "",
+        "resource_urls" : [
+
+        ],
+        "_id" : "65f598dc3bfd0350917503a5",
+        "label" : "30",
+        "shortKey" : "designation",
+        "viewSequence" : "42",
+        "input_type" : "1",
+        "validation" : [
+            {
+                "_id" : "1",
+                "error_msg" : ""
+            }
+        ],
+        "restrictions" : [
+
+        ],
+        "child" : [
+
+        ],
+        "parent" : [
+
+        ],
+        "pattern" : "",
+        "min" : (1),
+        "max" : (50),
+        "editable" : false,
+        "weightage" : [
+
+        ]
+    },
+    cert_declaration:{
+        "order" : "41",
+        "title" : "Upload",
+        "information" : "Kindly obtain a Commissioner or Executive Officer (EO) to sign the PDF file that you downloaded from the 'Preview' section",
+        "answer_option" : [
+
+        ],
+        "isQuestionDisabled": false,
+
+        "hint" : "",
+        "resource_urls" : [
+
+        ],
+        "_id" : "65f5996c3bfd0350917504cb",
+        "label" : "31",
+        "shortKey" : "cert_declaration",
+        "viewSequence" : "43",
+        "input_type" : "11",
+        "validation" : [
+            {
+                "_id" : "83",
+                "error_msg" : "",
+                "value" : "application/pdf"
+            },
+            {
+                "_id" : "1",
+                "error_msg" : ""
+            },
+            {
+                "_id" : "81",
+                "error_msg" : "",
+                "value" : "5120"
+            },
+            {
+                "_id" : "82",
+                "error_msg" : "",
+                "value" : "1"
+            }
+        ],
+        "restrictions" : [
+
+        ],
+        "child" : [
+
+        ],
+        "parent" : [
+
+        ],
+        "pattern" : "",
+        "min" : null,
+        "minRange" : null,
+        "max" : null,
+        "maxRange" : null,
+        "editable" : false,
+        "weightage" : [
+
+        ]
+    },
+    declaration:{
+        "information" : "",
+        "_id" : "6409bc56235a2809db04c7df",
+        "order" : "7",
+        "answer_option" : [
+            {
+                "name" : "Agree",
+                "did" : [
+
+                ],
+                "viewSequence" : "1",
+                "_id" : "1"
+            },
+            {
+                "name" : "Disagree",
+                "did" : [
+
+                ],
+                "viewSequence" : "2",
+                "_id" : "2"
+            }
+        ],
+        "title" : "Certified that above information has been extracted from the relevent records being maintained with the ULB and is true to to best of my knowledge and belief.",
+        "hint" : "",
+        "isQuestionDisabled" : false,
+        "resource_urls" : [
+            {
+                "download" : true,
+                "_id" : "6409bc56235a2809db04c803",
+                "label" : "",
+                "url" : "https://staging-dhwani.s3.ap-south-1.amazonaws.com/consent_70744cd4-922c-4a3a-bcdd-e03aa09786b9.txt"
+            }
+        ],
+        "label" : "6",
+        "shortKey" : "declaration",
+        "viewSequence" : "44",
+        "child" : [
+
+        ],
+        "parent" : [
+
+        ],
+        "validation" : [
+
+        ],
+        "restrictions" : [
+
+        ],
+        "input_type" : "22",
+        "editable" : false,
+        "weightage" : [
+
+        ]
+    },
+
     //gtc form childQuestions
     "transAmount": {
         "information": "",

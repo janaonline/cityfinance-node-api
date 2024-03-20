@@ -20,9 +20,9 @@ const {
   isYearWithinRange,
   getFinancialYear
 } = require("../CommonActionAPI/service");
-const { getKeyByValue,checkForCalculationsForDurForm } = require("../../util/masterFunctions")
+const { getKeyByValue,checkForCalculationsForDurForm, getAccessYear } = require("../../util/masterFunctions")
 const Service = require('../../service');
-const { FormNames, ULB_ACCESSIBLE_YEARS, MASTER_STATUS_ID, PREV_MASTER_FORM_STATUS, MASTER_FORM_STATUS } = require('../../util/FormNames');
+const { FormNames, ULB_ACCESSIBLE_YEARS, MASTER_STATUS_ID, PREV_MASTER_FORM_STATUS, FORM_STATUS_CODES } = require('../../util/FormNames');
 const MasterForm = require('../../models/MasterForm')
 const { YEAR_CONSTANTS, YEAR_CONSTANTS_IDS } = require("../../util/FormNames");
 const { ModelNames } = require('../../util/15thFCstatus')
@@ -31,7 +31,8 @@ const { createAndUpdateFormMaster, getMasterForm } = require('../../routes/Commo
 let DurPageLinks = {
   "2021-22": "",
   "2022-23": "ulbform/ulbform-overview",
-  "2023-24": "ulbform2223/utilisation-report"
+  "2023-24": "ulbform2223/utilisation-report",
+  "2024-25": `ulb-form/${YEAR_CONSTANTS["23_24"]}/utilisation-report`
 }
 const YEAR2223 = 202223;
 async function getCorrectDataSet() {
@@ -65,6 +66,7 @@ const {
 const { ElasticBeanstalk } = require("aws-sdk");
 const { forever } = require("request");
 const { years } = require("../../service/years");
+const { getPreviousYear } = require("../sidemenu/service");
 const time = () => {
   var dt = new Date();
   dt.setHours(dt.getHours() + 5);
@@ -180,6 +182,7 @@ module.exports.createOrUpdate = async (req, res) => {
     }
     if ( isYearWithinRange(formData.designYear.toString()) && formData.ulb) {
       formData.status = currentMasterFormStatus;
+      formData.projects =  addKeysInProject(formData?.projects);
       let params = {
         modelName: ModelNames["dur"],
         formData,
@@ -412,7 +415,26 @@ module.exports.createOrUpdate = async (req, res) => {
     return Response.BadRequest(res, {}, err.message);
   }
 };
-
+/**
+ * The function `addKeysInProject` adds a `dpr_status` key with a value of `null` to each project in
+ * the input array if the key does not already exist.
+ * @param projects - An array of project objects. Each project object may or may not have a property
+ * named "dpr_status".
+ * @returns The `addKeysInProject` function is returning the `projects` array with the `dpr_status` key
+ * added to each project if it doesn't already exist.
+ */
+function addKeysInProject(projects){
+  try {
+     projects.forEach(project=>{
+      if(project.hasOwnProperty('dpr_status') && !project['dpr_status']){
+        project['dpr_status'] = null
+      }
+     })
+    return projects
+  } catch (error) {
+    throw new Error(`addKeysInProject:  ${error.message}`)
+  }
+}
 exports.read = async (req, res) => {
   try {
     const reports = await UtilizationReport.find(
@@ -915,6 +937,11 @@ module.exports.read2223 = catchAsync(async (req, res, next) => {
     });
     let currentYear = await Year.findOne({ _id: ObjectId(design_year) }).lean();
     let ulbAccess = checkIfUlbHasAccess(ulbData, currentYear);
+    let ulbAccessBeforeCreationId = getPreviousYear(currentYear._id.toString(),2);
+    let ulbAccessBeforeCreation = checkIfUlbHasAccess(
+      ulbData, 
+      ulbAccessBeforeCreationId
+    )
     // current year
     let currentYearVal = currentYear["year"];
     // find Previous year
@@ -970,7 +997,8 @@ module.exports.read2223 = catchAsync(async (req, res, next) => {
     }
     req.headers.host = host !== "" ? host : req.headers.host;
     let obj = {};
-    if (!ulbAccess) {
+    let currenYearAccess = getAccessYear(currentYear._id.toString(), null);
+    if (!ulbData[currenYearAccess]) {
       let msg =
         role == "ULB"
           ? `Dear User, You are not eligible to access this form. Kindly contact your State Nodal Officer at Mobile - ${
@@ -981,7 +1009,7 @@ module.exports.read2223 = catchAsync(async (req, res, next) => {
           : `Dear User, The ${ulbData.name} is not eligible to access Detailed Utilization Report Form.`;
       obj["action"] = "note";
       obj["url"] = msg;
-    } else {
+    } else if(!ulbData?.dur_2425) {
       if (
         [
           FORM_STATUS.Under_Review_By_MoHUA,
@@ -1019,7 +1047,7 @@ module.exports.read2223 = catchAsync(async (req, res, next) => {
     }
 
     let newlyCreated = checkIfNewlyCreatedUlb(design_year, ulbData?.createdAt);
-    if(newlyCreated){
+    if(!ulbAccess && !ulbData?.dur_2425){
       let msg = `Dear ${ulbData.name}, You will be eligible to fill the DUR form from next year.`
       obj["action"] = "note";
       obj["url"] = msg;
@@ -1053,7 +1081,7 @@ module.exports.read2223 = catchAsync(async (req, res, next) => {
           .split(" ")
           .join("_");
         let prevYearStatusId = prevData?.currentFormStatus
-          ? MASTER_FORM_STATUS[previousStatusInCaps]
+          ? FORM_STATUS_CODES[previousStatusInCaps]
           : PREV_MASTER_FORM_STATUS[previousStatusInCaps];
         Object.assign(fetchedData, canTakeActionOnMasterForm, {
           prevYearStatus,
@@ -1141,7 +1169,7 @@ module.exports.read2223 = catchAsync(async (req, res, next) => {
       condition["designYear"] = ObjectId(prevYear._id);
       fetchedData = await UtilizationReport.findOne(condition).lean();
       let sampleData = new UtilizationReport();
-      sampleData.grantPosition.unUtilizedPrevYr = ulbAccess
+      sampleData.grantPosition.unUtilizedPrevYr = ulbAccess && ulbAccessBeforeCreation
         ? fetchedData?.grantPosition?.closingBal ?? 0
         : 0;
       sampleData = sampleData.toObject();
@@ -1183,7 +1211,7 @@ function checkIfNewlyCreatedUlb(design_year, creationDate){
   }
 }
 
-
+module.exports.checkIfNewlyCreatedUlb = checkIfNewlyCreatedUlb
 
 module.exports.dataRepair = async function (req, res, next) {
   try {

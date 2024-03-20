@@ -5,9 +5,9 @@ const { findPreviousYear } = require('../../util/findPreviousYear')
 const Year = require('../../models/Year')
 const { groupByKey } = require('../../util/group_list_by_key')
 const SLB = require('../../models/XVFcGrantForm')
-const { canTakenAction, calculateStatus } = require('../CommonActionAPI/service')
+const { canTakenAction, calculateStatus, isYearWithinRange } = require('../CommonActionAPI/service')
 const Service = require('../../service');
-const { FormNames, YEAR_CONSTANTS, MASTER_STATUS_ID, PREV_MASTER_FORM_STATUS } = require('../../util/FormNames');
+const { FormNames, YEAR_CONSTANTS, MASTER_STATUS_ID, PREV_MASTER_FORM_STATUS, FORM_STATUS_CODES } = require('../../util/FormNames');
 const User = require('../../models/User');
 const MasterForm = require('../../models/MasterForm')
 const StatusList = require('../../util/newStatusList')
@@ -18,6 +18,7 @@ const { createAndUpdateFormMaster, getMasterForm } = require('../../routes/Commo
 const { ModelNames } = require('../../util/15thFCstatus');
 const { years } = require('../../service/years');
 const { getKeyByValue } = require('../../util/masterFunctions');
+const { getPreviousYear } = require('../sidemenu/service');
 
 let messages = {
   "2021-22": "",
@@ -148,14 +149,15 @@ module.exports.createOrUpdateForm = async (req, res) => {
     };
 
 
-    if (formData.design_year.toString() === YEAR_CONSTANTS["23_24"] && formData.ulb) {
+    if (isYearWithinRange(formData.design_year.toString()) && formData.ulb) {
       formData.status = currentMasterFormStatus
       let params = {
         modelName: ModelNames["twentyEightSlbs"],
         formData,
         res,
         actionTakenByRole,
-        actionTakenBy
+        actionTakenBy, 
+        mailOptions
       };
       return await createAndUpdateFormMaster(params);
     }
@@ -400,19 +402,16 @@ module.exports.getForm = async (req, res, next) => {
           !masterFormData.isSubmit,
           "ULB"
         );
-        console.log("status ::::: ", status)
         /* Checking the status of the form. If the status is not in the list of statuses, it will
           return a message. */
-
-        console.log("keyName ::: ", keyName)
         if (
           ![
             StatusList.Under_Review_By_MoHUA,
             StatusList.Approved_By_MoHUA,
             StatusList.Approved_By_State,
-          ].includes(status)
+          ].includes(status) 
+          // && ulbData.UA
         ) {
-          console.log("keyName ::: ", keyName)
           let msg = userRole === "ULB" ? `Your ${messages[keyName]} Year's SLBs for Water Supply and Sanitation form status is - ${status ? status : "Not Submitted"
             }. Kindly submit form at - <a href =https://${host}/ulbform/ulbform-overview target="_blank">Click here</a> in order to submit form` : `Dear User, The ${ulbData.name} has not yet filled ${messages[keyName]} Year's SLBs for Water Supply and Sanitation form. You will be able to mark your response once STATE approves ${messages[keyName]} year's form.`
           req.json = {
@@ -429,15 +428,17 @@ module.exports.getForm = async (req, res, next) => {
           return
         }
       } else {
-        req.json = {
+        // if(ulbData.UA){
+          req.json = {
           status: true,
           show: true,
           message: userRole === "ULB" ?
             `Your ${messages[keyName]} Year's SLBs for Water Supply and Sanitation form status is - "Not Submitted". Kindly submit form at - <a href =https://${host}/ulbform/ulbform-overview target="_blank">Click here</a> in order to submit form` :
             `Dear User, The ${ulbData.name} has not yet filled ${messages[keyName]} Year's SLBs for Water Supply and Sanitation form. You will be able to mark your response once STATE approves previous year's form.`,
-        }
-        next()
-        return
+          }
+          next();
+          return;
+        // }
         // return res.status(200).json({
         //   status: true,
         //   show: true,
@@ -538,26 +539,31 @@ module.exports.getForm = async (req, res, next) => {
 
         }
       }
-      if (formData.design_year.toString() === YEAR_CONSTANTS["23_24"]) {
+      if (isYearWithinRange(formData.design_year.toString())) {
         let params = { modelName: ModelNames['twentyEightSlbs'], currentFormStatus: formData.currentFormStatus, formType: "ULB", actionTakenByRole: userRole };
         let canTakeActionOnMasterForm = await getMasterForm(params);
         Object.assign(formData, canTakeActionOnMasterForm);
+        let prevYearId = getPreviousYear(formData.design_year.toString(),1)
         let prevYearCond = {
           ulb: ObjectId(data.ulb),
-          design_year: ObjectId(YEAR_CONSTANTS['22_23'])
+          design_year: ObjectId(prevYearId)
         }
         let prev28SlbFormData = await TwentyEightSlbsForm.findOne(prevYearCond, { history: 0 }).lean();
-        const prevYearStatus = calculateStatus(
+        let prevYearStatus = calculateStatus(
           prev28SlbFormData?.status,
           prev28SlbFormData?.actionTakenByRole,
           prev28SlbFormData?.isDraft,
           "ULB"
         );
-        const previousStatusInCaps =  prevYearStatus.toUpperCase().split(' ').join('_')
-
+        if (prev28SlbFormData?.currentFormStatus) prevYearStatus = MASTER_STATUS_ID[prev28SlbFormData?.currentFormStatus];
+        const previousStatusInCaps =  prevYearStatus.toUpperCase().split(' ').join('_');
+        let prevYearStatusId = prev28SlbFormData?.currentFormStatus
+        ? FORM_STATUS_CODES[previousStatusInCaps]
+        : PREV_MASTER_FORM_STATUS[previousStatusInCaps];
+      
         Object.assign(formData,{
           prevYearStatus,
-          prevYearStatusId: PREV_MASTER_FORM_STATUS[previousStatusInCaps]
+          prevYearStatusId
         })
         // if (prev28SlbFormData && userRole === "MoHUA") {
         //   if (
@@ -678,7 +684,7 @@ module.exports.getForm = async (req, res, next) => {
               : "";
         }
       }
-      let lineItems = await IndicatorLineItem.find().lean();
+      let lineItems = await IndicatorLineItem.find({year: ObjectId(data.design_year)}).lean();
       let obj = {
         targetDisable: false,
         actualDisable: false,
