@@ -884,9 +884,12 @@ async function handleNonSubmissionValidation(params) {
     return errors
 }
 
+const { writeFileSync } = require('fs')
+
 async function calculateAndUpdateStatusForMappers(tabs, ulbId, formId, year, updateForm, isDraft) {
     try {
         let conditionalObj = {}
+        let updateMapperQuery = []
         for (var tab of tabs) {
             conditionalObj[tab._id.toString()] = {}
             let obj = JSON.parse(JSON.stringify(tab.data))
@@ -920,11 +923,16 @@ async function calculateAndUpdateStatusForMappers(tabs, ulbId, formId, year, upd
                         }
                     })
                     temp["status"].push(status)
-                    await updateQueryForPropertyTaxOp(yearArr, ulbId, formId, updateForm, dynamicObj, updatedIds, year)
+                    const mapperUpdateQueryYearData = updateQueryForPropertyTaxOp(yearArr, ulbId, formId, updateForm, dynamicObj, updatedIds, year);
+                    updateMapperQuery.push(...mapperUpdateQueryYearData);
                 }
                 conditionalObj[tab._id.toString()] = (temp)
             }
         }
+
+        //update the whole mappers value..
+        await PropertyTaxOpMapper.bulkWrite(updateMapperQuery);
+
         for (var tabName in conditionalObj) {
             if (conditionalObj[tabName].status.length > 0) {
                 conditionalObj[tabName].status = conditionalObj[tabName].status.every(item => item == true)
@@ -965,10 +973,10 @@ async function calculateAndUpdateStatusForMappers(tabs, ulbId, formId, year, upd
 //     }
 // }
 
-async function updateQueryForPropertyTaxOp(yearData, ulbId, formId, updateForm, dynamicObj, updatedIds, design_year) {
+function updateQueryForPropertyTaxOp(yearData, ulbId, formId, updateForm, dynamicObj, updatedIds, design_year) {
     const { yearIndex: designYearIndex  } = getDesiredYear(design_year);
     const { yearIndex: yearIndex23_24 } = getDesiredYear('2023-24');
-
+    const updateMapperQuery = [];
     try {
         for (var years of yearData) {
             let upsert = false
@@ -995,9 +1003,16 @@ async function updateQueryForPropertyTaxOp(yearData, ulbId, formId, updateForm, 
                 } else {
                     payload["status"] = years.status
                 }
-                await PropertyTaxOpMapper.findOneAndUpdate(filter, payload, { "upsert": upsert })
+                updateMapperQuery.push({
+                    updateOne: {
+                       filter: { ...filter },
+                       update: { $set : {...payload}},
+                       upsert: true
+                      }
+                  });
             }
         }
+        return updateMapperQuery;
     } catch (err) {
         if (err.type === 'ValidationError') {
             throw err
