@@ -1009,7 +1009,7 @@ module.exports.read2223 = catchAsync(async (req, res, next) => {
           : `Dear User, The ${ulbData.name} is not eligible to access Detailed Utilization Report Form.`;
       obj["action"] = "note";
       obj["url"] = msg;
-    } else {
+    } else if(!ulbData?.dur_2425) {
       if (
         [
           FORM_STATUS.Under_Review_By_MoHUA,
@@ -1047,7 +1047,7 @@ module.exports.read2223 = catchAsync(async (req, res, next) => {
     }
 
     let newlyCreated = checkIfNewlyCreatedUlb(design_year, ulbData?.createdAt);
-    if(!ulbAccess){
+    if(!ulbAccess && !ulbData?.dur_2425){
       let msg = `Dear ${ulbData.name}, You will be eligible to fill the DUR form from next year.`
       obj["action"] = "note";
       obj["url"] = msg;
