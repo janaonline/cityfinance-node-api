@@ -20,7 +20,7 @@ const {
   isYearWithinRange,
   getFinancialYear
 } = require("../CommonActionAPI/service");
-const { getKeyByValue,checkForCalculationsForDurForm } = require("../../util/masterFunctions")
+const { getKeyByValue,checkForCalculationsForDurForm, getAccessYear } = require("../../util/masterFunctions")
 const Service = require('../../service');
 const { FormNames, ULB_ACCESSIBLE_YEARS, MASTER_STATUS_ID, PREV_MASTER_FORM_STATUS, FORM_STATUS_CODES } = require('../../util/FormNames');
 const MasterForm = require('../../models/MasterForm')
@@ -991,7 +991,8 @@ module.exports.read2223 = catchAsync(async (req, res, next) => {
     }
     req.headers.host = host !== "" ? host : req.headers.host;
     let obj = {};
-    if (!ulbAccess) {
+    let currenYearAccess = getAccessYear(currentYear._id.toString(), null);
+    if (!ulbData[currenYearAccess]) {
       let msg =
         role == "ULB"
           ? `Dear User, You are not eligible to access this form. Kindly contact your State Nodal Officer at Mobile - ${

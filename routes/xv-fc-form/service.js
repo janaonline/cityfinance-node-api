@@ -4890,10 +4890,10 @@ async function update28SlbForms(ulbData){
     // query.design_year = design_year_2223;
     let yearsIds = [...ulbData.accessibleForYears]
     yearsIds = yearsIds.map(item => ObjectId(item));
-    let ulbUA =  await Ulb.findOne({_id: ulbData?.ulb},{UA:1}).lean();
-    if(!ulbUA?.UA){
-       yearsIds = yearsIds.filter(year=> ![YEAR_CONSTANTS['24_25']].includes(year.toString()));
-    }
+    // let ulbUA =  await Ulb.findOne({_id: ulbData?.ulb},{UA:1}).lean();
+    // if(!ulbUA?.UA){
+    //    yearsIds = yearsIds.filter(year=> ![YEAR_CONSTANTS['24_25']].includes(year.toString()));
+    // }
     let query = {}
     query["ulb"] = ulbData.ulb;
     query["design_year"] = {"$in":yearsIds}
