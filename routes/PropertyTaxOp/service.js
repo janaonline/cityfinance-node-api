@@ -779,7 +779,7 @@ function createErrorMessage(validationObj, dynamicObj) {
             message += `\n Sum of ${validationObj.sequence.join(",")} is not equal to ${dynamicObj.position}`
         }
         else if (validationObj.logic === "ltequal") {
-            message += `\n ${dynamicObj.position} should be lesser than or equal to ${validationObj.sequence[0]}`
+            message += `\n ${dynamicObj.position} should be less than or equal to ${validationObj.sequence[0]}`
         }
     }
     catch (err) {

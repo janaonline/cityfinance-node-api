@@ -340,7 +340,7 @@ const validationJson = {
             "collectIncludingCess"
         ],
         "sequence": [
-            "1.13"
+            "1.17"
         ],
         "message": "Total collections made via online channel should be less than or equal to total property tax collections.",
         "displayNumber": "3.2"
