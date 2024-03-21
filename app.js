@@ -42,6 +42,10 @@ const corsOptions = {
   }
 }
 
+app.get('/test', (req, res) => {
+  return res.json({ working: "fine!!" });
+})
+
 // app.use(cors(corsOptions));
 
 
