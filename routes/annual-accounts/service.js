@@ -33,6 +33,7 @@ const {getSeparatedShortKeys, saveFormLevelHistory} = require('../../routes/Comm
 var https = require('https');
 var request = require('request');
 const { concatenateUrls } = require("../../service/common");
+const { getPreviousYear, isYearWithinCurrentFY } = require("../sidemenu/service");
 
 // function doRequest(url) {
 //   return new Promise(function (resolve, reject) {
@@ -1961,6 +1962,11 @@ exports.getAccounts = async (req, res,next) => {
       } else {
         annualAccountData['action'] = 'redirect'
         annualAccountData['url'] = `Your previous Year's form status is - ${status ? status : 'Not Submitted'} .Kindly submit Annual Accounts for the previous year at - <a href=https://${host}/upload-annual-accounts target="_blank">Click Here!</a> . `;
+        if(isYearWithinRange(design_year)){
+          let previousYearId = getPreviousYear(design_year,1);
+          let formRedirectionUrl = isYearWithinCurrentFY(design_year) ?  `ulb-form/${previousYearId}/annual_acc` : 'ulbform2223/annual_acc';
+          annualAccountData['url'] = `Your previous Year's form status is - ${status ? status : 'Not Submitted'} .Kindly submit Annual Accounts for the previous year at - <a href=https://${host}/${formRedirectionUrl} target="_blank">Click Here!</a> . `;
+        }
       }
     }
 
