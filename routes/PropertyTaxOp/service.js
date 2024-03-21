@@ -779,7 +779,7 @@ function createErrorMessage(validationObj, dynamicObj) {
             message += `\n Sum of ${validationObj.sequence.join(",")} is not equal to ${dynamicObj.position}`
         }
         else if (validationObj.logic === "ltequal") {
-            message += `\n ${dynamicObj.position} should be lesser than or equal to ${validationObj.sequence[0]}`
+            message += `\n ${dynamicObj.position} should be less than or equal to ${validationObj.sequence[0]}`
         }
     }
     catch (err) {
@@ -1057,7 +1057,11 @@ async function createFullChildObj(params, design_year) {
                 if(isBeyond2023_24(design_year)) {
                     if(!ptoData) addChildNextYearQuestionObject(childObject);
                     if(hasMultipleYearData(childObject.yearData)) {
-                        childObject.yearData?.forEach(year => handleOldYearsDisabled(year, design_year));
+                        childObject.yearData?.forEach(year => handleOldYearsDisabled({
+                            yearObject: year, 
+                            design_year,
+                            isForChild: childObject?.required
+                        }));
                     }
                 }
                 childObject.readonly = true
@@ -1122,7 +1126,7 @@ async function appendChildValues(params) {
                                 return cl.replicaNumber == replica.replicaNumber && cl.key == replica.key
                             });
                             childFromSameReplica.pushed = true;
-                            replica.yearData.push(...childFromSameReplica.yearData);
+                            replica.yearData.push(...childFromSameReplica.yearData);                      
                         })
                         handleNewYearChildRows({child, element, currentFormStatus, role});
                     }
@@ -1229,7 +1233,7 @@ exports.getView = async function (req, res, next) {
                 
                                         //TO DO...
                                         if (!isSingleYearIndicator(yearData)) {
-                                            handleOldYearsDisabled(pf, design_year);
+                                            handleOldYearsDisabled({yearObject: pf, design_year});
                                         } else if (isBeyond2023_24(design_year)) {
                                             const indicatorObj = data[el]?.yearData[0];
                                             const { yearName, yearId } = getDesiredYear(design_year, -1);
@@ -1261,7 +1265,7 @@ exports.getView = async function (req, res, next) {
                         } else {
                             for(const pf of yearData) {
                                 if (!isEmptyObj(pf) && hasMultipleYearData(yearData)) {
-                                    handleOldYearsDisabled(pf, design_year);
+                                    handleOldYearsDisabled({yearObject: pf, design_year});
                                 }
                             }
                         }
