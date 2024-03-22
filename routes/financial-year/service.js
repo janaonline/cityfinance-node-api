@@ -7,6 +7,7 @@ const Ulb = require('../../models/Ulb')
 const Tabs = require('../../models/TabList')
 const { getCurrentFinancialYear } = require("../CommonActionAPI/service");
 const catchAsync = require('../../util/catchAsync');
+const { YEAR_CONSTANTS } = require('../../util/FormNames');
 let decade = "20"
 module.exports.get = async function (req, res) {
     let query = {};
@@ -143,7 +144,10 @@ module.exports.access = catchAsync(async function (req, res) {
         const role = req.decoded.role;
         const entity_id = req.decoded._id;
         let arr = []
-        let userData
+        let userData;
+        if(role !== "ULB"){
+            years =  years.filter(year=> year?.design_year?._id.toString() !== YEAR_CONSTANTS['24_25'])
+        }
         switch (role) {
             case "ULB":
                 userData = await User.findOne({ _id: ObjectId(entity_id) }).lean();
