@@ -12273,3 +12273,4 @@ module.exports.getInputKeysByType = getInputKeysByType;
 module.exports.sortPosition = sortPosition
 module.exports.getFormMetaData = getFormMetaData
 module.exports.parentRadioQuestionKeys = parentRadioQuestionKeys
+module.exports.skipLogicDependencies = skipLogicDependencies
