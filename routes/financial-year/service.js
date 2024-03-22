@@ -139,15 +139,15 @@ module.exports.access = catchAsync(async function (req, res) {
         let years = await Tabs.find({}).populate({
             "path": "design_year"
         }).lean()
-        let MoHUA_arr = years.map(returnYearUrl, { "type": "mohuaUrl", "role": "mohua" })
-        const yearList = ['2020-21', '2021-22', '2022-23', '2023-24', '2024-25']
         const role = req.decoded.role;
-        const entity_id = req.decoded._id;
-        let arr = []
-        let userData;
         if(role !== "ULB"){
             years =  years.filter(year=> year?.design_year?._id.toString() !== YEAR_CONSTANTS['24_25'])
         }
+        let MoHUA_arr = years.map(returnYearUrl, { "type": "mohuaUrl", "role": "mohua" })
+        const yearList = ['2020-21', '2021-22', '2022-23', '2023-24', '2024-25']
+        const entity_id = req.decoded._id;
+        let arr = []
+        let userData;
         switch (role) {
             case "ULB":
                 userData = await User.findOne({ _id: ObjectId(entity_id) }).lean();
