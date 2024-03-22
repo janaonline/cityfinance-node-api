@@ -43,7 +43,7 @@ const corsOptions = {
 }
 
 app.get('/test', (req, res) => {
-  return res.json({ working: "fine!!" });
+  return res.json({ working: "fine!! - autopull" });
 })
 
 // app.use(cors(corsOptions));
