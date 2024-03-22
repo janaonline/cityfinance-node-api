@@ -312,9 +312,9 @@ module.exports.createOrUpdate = async (req, res) => {
         await calculateAndUpdateStatusForMappers(actions, ulbId, formId, design_year, true, isDraft)
         await handlePtoSkipLogicDependencies({
             design_year,
-            mapperForm,
+            formId,
             ulbId,
-            currentFormStatus
+            currentFormStatus,
         });
         await createHistory(params,ptoForm,mapperForm)
         response.success = true
@@ -334,7 +334,7 @@ module.exports.createOrUpdate = async (req, res) => {
 
 async function handlePtoSkipLogicDependencies({ 
     design_year,
-    mapperForm,
+    formId,
     ulbId,
     currentFormStatus
  }) {
@@ -344,7 +344,8 @@ async function handlePtoSkipLogicDependencies({
         design_year: ObjectId(getDesiredYear(design_year, 1).yearId)
     });
     if(!nextYearPto) return;
-    const parentSkipLogicRadioQuestions =  mapperForm.filter(({ value, type }) => value == 'Yes' && parentRadioQuestionKeys.includes(type))
+    let mapperForm = await PropertyTaxOpMapper.find({ ptoId: ObjectId(formId) }).populate("child").lean();
+    const parentSkipLogicRadioQuestions =  mapperForm.filter(({ value, type }) => parentRadioQuestionKeys.includes(type))
     const childSkipLogicRadioQuestionKeys = Object.keys(parentSkipLogicRadioQuestions.reduce((acc, question) => {
         return {
             ...acc,
