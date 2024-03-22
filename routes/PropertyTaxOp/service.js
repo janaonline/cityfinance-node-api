@@ -7,7 +7,7 @@ const Service = require('../../service');
 const { FormNames, MASTER_STATUS_ID, MASTER_STATUS, MASTER_FORM_STATUS } = require('../../util/FormNames');
 const User = require('../../models/User');
 const { checkUndefinedValidations } = require('../../routes/FiscalRanking/service');
-const { propertyTaxOpFormJson, skippableKeys, getFormMetaData, indicatorsWithNoyears, childKeys,reverseKeys ,questionIndicators,sortPosition } = require('./fydynemic')
+const { propertyTaxOpFormJson, parentRadioQuestionKeys, skippableKeys, getFormMetaData, indicatorsWithNoyears, childKeys,reverseKeys ,questionIndicators,sortPosition } = require('./fydynemic')
 const { isEmptyObj, isReadOnly, handleOldYearsDisabled, hasMultipleYearData, isSingleYearIndicator } = require('../../util/helper');
 const PropertyMapperChildData = require("../../models/PropertyTaxMapperChild");
 const { years, getDesiredYear, isBeyond2023_24 } = require('../../service/years');
@@ -310,6 +310,11 @@ module.exports.createOrUpdate = async (req, res) => {
         let mapperForm = await PropertyTaxOpMapper.find({ ptoId: ObjectId(formId) }).populate("child").lean();
         await checkUndefinedValidations({ "ulb": ulbId, "formId": formId, "actions": actions, "design_year": design_year });
         await calculateAndUpdateStatusForMappers(actions, ulbId, formId, design_year, true, isDraft)
+        await handlePtoSkipLogicDependencies({
+            design_year,
+            mapperForm,
+            ulbId
+        });
         await createHistory(params,ptoForm,mapperForm)
         response.success = true
         response.formId = formId
@@ -326,6 +331,45 @@ module.exports.createOrUpdate = async (req, res) => {
     }
 }
 
+async function handlePtoSkipLogicDependencies({ 
+    design_year,
+    mapperForm,
+    ulbId
+ }) {
+    const nextYearPto = await PropertyTaxOp.findOne({
+        ulb: ObjectId(ulbId),
+        design_year: ObjectId(getDesiredYear(design_year, 1).yearId)
+    });
+    if(!nextYearPto) return;
+    const parentRadioQuestions =  mapperForm.filter(({ value, type }) => value == 'Yes' && parentRadioQuestionKeys.includes(type))
+    const nextYearMapperUpdateQuery = parentRadioQuestions.map(question => {
+        const { yearName: currentYearName } = getDesiredYear('' + question.year); 
+        const { yearId: nextYearId } = currentYearName  == '2018-19' ? 
+            getDesiredYear('2023-24') : 
+            getDesiredYear('' + question.year, 1)
+        return {
+            updateOne: {
+                filter: {
+                    ulb: ObjectId(ulbId),
+                    type: question.type,
+                    ptoId: nextYearPto._id,
+                    year: ObjectId(nextYearId)
+                },
+                update: {
+                    $set: {
+                        value: question.value
+                    }
+                }
+            }
+        }
+    });
+
+    if(nextYearMapperUpdateQuery.length) {
+        const res = await PropertyTaxOpMapper.bulkWrite(nextYearMapperUpdateQuery);
+        // console.log(JSON.stringify(res, 3, 3))
+    }
+    // console.log(actions)
+}
 
 async function checkIfFormIdExistsOrNot(ulbId, design_year, isDraft, role, userId, currentFormStatus) {
     return new Promise(async (resolve, reject) => {
