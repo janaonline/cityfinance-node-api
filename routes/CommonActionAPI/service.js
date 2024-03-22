@@ -3857,7 +3857,7 @@ async function sequentialReview(req, res) {
             ? (designYear = "designYear")
             : (designYear = "design_year");
 
-        const modelName = null;
+        let modelName = null;
 
         if(formId === FORMIDs['twentyEightSlb']) {
             modelName = ModelNames['twentyEightSlbs'];
