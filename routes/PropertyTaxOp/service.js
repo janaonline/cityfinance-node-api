@@ -357,7 +357,6 @@ async function handlePtoSkipLogicDependencies({
     const updatableQuestion = [ ...parentSkipLogicRadioQuestions, ...childSkipLogicRadioQuestion];
 
     const nextYearMapperUpdateQuery = updatableQuestion.map(question => {
-        console.log(question);
         const { yearName: currentYearName } = getDesiredYear('' + question.year); 
         const { yearId: nextYearId } = currentYearName  == '2018-19' ? 
             getDesiredYear('2023-24') : 
@@ -376,7 +375,8 @@ async function handlePtoSkipLogicDependencies({
                         date: question.date,
                         file: question.file
                     }
-                }
+                },
+                upsert: true
             }
         }
     });
