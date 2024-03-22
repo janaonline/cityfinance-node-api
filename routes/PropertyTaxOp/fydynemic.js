@@ -7784,7 +7784,7 @@ const propertyTaxOpFormJson = ({role, design_year, ptoData, ptoMaper = []}) => {
                 "value": "",
                 "file": "",
                 "min": "",
-                "max": "",
+                "max": "50",
                 "required": true,
                 "type": "entityNaSewerageCharges",
                 "year": "63735a5bd44534713673c1ca",

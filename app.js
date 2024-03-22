@@ -42,7 +42,11 @@ const corsOptions = {
   }
 }
 
-app.use(cors(corsOptions));
+app.get('/test', (req, res) => {
+  return res.json({ working: "fine!! - autopull" });
+})
+
+// app.use(cors(corsOptions));
 
 
 app.use(json2xls.middleware);

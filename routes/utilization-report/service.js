@@ -937,11 +937,11 @@ module.exports.read2223 = catchAsync(async (req, res, next) => {
     });
     let currentYear = await Year.findOne({ _id: ObjectId(design_year) }).lean();
     let ulbAccess = checkIfUlbHasAccess(ulbData, currentYear);
-    let ulbAccessBeforeCreationId = getPreviousYear(currentYear._id.toString(),2);
-    let ulbAccessBeforeCreation = checkIfUlbHasAccess(
-      ulbData, 
-      ulbAccessBeforeCreationId
-    )
+    // let ulbAccessBeforeCreationId = getPreviousYear(currentYear._id.toString(),2);
+    // let ulbAccessBeforeCreation = checkIfUlbHasAccess(
+    //   ulbData, 
+    //   ulbAccessBeforeCreationId
+    // )
     // current year
     let currentYearVal = currentYear["year"];
     // find Previous year
@@ -1169,7 +1169,7 @@ module.exports.read2223 = catchAsync(async (req, res, next) => {
       condition["designYear"] = ObjectId(prevYear._id);
       fetchedData = await UtilizationReport.findOne(condition).lean();
       let sampleData = new UtilizationReport();
-      sampleData.grantPosition.unUtilizedPrevYr = ulbAccess && ulbAccessBeforeCreation
+      sampleData.grantPosition.unUtilizedPrevYr = ulbAccess 
         ? fetchedData?.grantPosition?.closingBal ?? 0
         : 0;
       sampleData = sampleData.toObject();

@@ -1,6 +1,7 @@
 const { years } = require("../../service/years")
 const { getFlatObj,payloadParser,mutateResponse,mutateJson,nestedObjectParser,decideDisabledFields } = require("../CommonActionAPI/service")
 const FormsJson = require("../../models/FormsJson");
+const Ulb = require('../../models/Ulb')
 const {getKeyByValue} = require("../../util/masterFunctions")
 // const Sidemenu = require("../../models/Sidemenu");
 const ObjectId = require("mongoose").Types.ObjectId;
@@ -21,7 +22,8 @@ module.exports.changeApiGetForm = async(req,res)=>{
         let latestYear = !outDatedYears.includes(year)
         let jsonFormId = req.query.formId || 0
         let condition = { formId: parseInt(jsonFormId) ,design_year:ObjectId(yearId) }
-        let formJson = await FormsJson.findOne(condition).lean()
+        let formJson = await FormsJson.findOne(condition).lean();
+        let ulbData = await Ulb.findOne({_id: ObjectId(req.query?.ulb)},{access_2122:1}).lean()
         let responseData = [
             {
               "_id": req?.form?._id ,
@@ -29,6 +31,7 @@ module.exports.changeApiGetForm = async(req,res)=>{
               "language":[],
               "canTakeAction":req?.form?.canTakeAction ,
               "isDraft":req?.form?.isDraft,
+              "createdIn2122": ulbData?.access_2122,
               'prevYearStatus': req?.form?.prevYearStatus || null,
               'prevYearStatusId': req?.form?.prevYearStatusId || null,
               "population":req?.form?.population || null,
