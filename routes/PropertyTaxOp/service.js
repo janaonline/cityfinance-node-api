@@ -345,6 +345,8 @@ async function handlePtoSkipLogicDependencies({
     });
     if(!nextYearPto) return;
     let mapperForm = await PropertyTaxOpMapper.find({ ptoId: ObjectId(formId) }).populate("child").lean();
+    let fyDynemic = { ...propertyTaxOpFormJson({ design_year }) };
+    const json = fyDynemic.tabs[0].data;
     const parentSkipLogicRadioQuestions =  mapperForm.filter(({ value, type }) => parentRadioQuestionKeys.includes(type))
     const childSkipLogicRadioQuestionKeys = Object.keys(parentSkipLogicRadioQuestions.reduce((acc, question) => {
         return {
@@ -352,7 +354,11 @@ async function handlePtoSkipLogicDependencies({
             ...skipLogicDependencies[`data.${question.type}.yearData.0`]?.skippable
         }
     }, {}));
-    const childSkipLogicRadioQuestion =  mapperForm.filter(({ year, type }) => year && childSkipLogicRadioQuestionKeys.includes(type))
+    const filterdChildKeys = childSkipLogicRadioQuestionKeys.filter(key => {
+        return isSingleYearIndicator(json[key].yearData);
+    });
+
+    const childSkipLogicRadioQuestion =  mapperForm.filter(({ year, type }) => year && filterdChildKeys.includes(type))
 
     const updatableQuestion = [ ...parentSkipLogicRadioQuestions, ...childSkipLogicRadioQuestion];
 
@@ -1145,6 +1151,7 @@ function addChildNextYearQuestionObject(childObject) {
     nextYear['key'] = `FY${yearName}${yearName}`;
     nextYear["postion"] = String(+nextYear["postion"] + 1);
     nextYear['displayPriority'] = nextYear["postion"];
+    nextYear['readonly'] = false;
     childObject.yearData.push(nextYear);
 }
 
@@ -1173,8 +1180,10 @@ async function appendChildValues(params) {
                         childCopyFrom: element.copyChildFrom,
                         ptoData,
                     }
-                    let child = await createFullChildObj(params, design_year)
-                    element.replicaCount = childElement.replicaCount;
+                    let child = await createFullChildObj(params, design_year);
+                    if(element.replicaCount < childElement.replicaCount) {
+                        element.replicaCount = childElement.replicaCount;
+                    }
 
                     if(!isLatestOnboarderUlb && index == 0) {
                         element.child = child;
@@ -1184,8 +1193,12 @@ async function appendChildValues(params) {
                             const childFromSameReplica = child.find(cl => {
                                 return cl.replicaNumber == replica.replicaNumber && cl.key == replica.key
                             });
-                            childFromSameReplica.pushed = true;
-                            replica.yearData.push(...childFromSameReplica.yearData);                      
+                            if(childFromSameReplica) {
+                                childFromSameReplica.pushed = true;
+                                replica.yearData.push(...childFromSameReplica.yearData);                      
+                            } else {
+                                addChildNextYearQuestionObject(replica);
+                            }
                         })
                         handleNewYearChildRows({child, element, currentFormStatus, role});
                     }

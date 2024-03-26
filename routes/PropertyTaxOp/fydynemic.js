@@ -11546,13 +11546,7 @@ let skipLogicDependencies = {
         "years": [
           0
         ]
-      },
-      "resolutionFile": {
-        "value": "No",
-        "years": [
-          0
-        ]
-      },
+      }
     }
   },
   "data.ulbPassedResolPtax.yearData.0": {
