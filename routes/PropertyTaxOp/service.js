@@ -352,6 +352,16 @@ async function handlePtoSkipLogicDependencies({
             ...skipLogicDependencies[`data.${question.type}.yearData.0`]?.skippable
         }
     }, {}));
+
+    // Object.entries(skipLogicDependencies).forEach(([key, value]) => {
+    //     if(childSkipLogicRadioQuestionKeys.includes(key)) {
+    //         const childKeys = Object.keys(value.skippable);
+    //         if(childKeys.length) {
+    //             childSkipLogicRadioQuestionKeys.push(...childKeys);
+    //         } 
+    //     }
+    // });
+
     const childSkipLogicRadioQuestion =  mapperForm.filter(({ year, type }) => year && childSkipLogicRadioQuestionKeys.includes(type))
 
     const updatableQuestion = [ ...parentSkipLogicRadioQuestions, ...childSkipLogicRadioQuestion];
