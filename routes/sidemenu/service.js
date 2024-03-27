@@ -453,7 +453,7 @@ module.exports.get = catchAsync(async (req, res) => {
         let currentYear = getKeyByValue(years,year)
         let ulbAccess = checkIfUlbHasAccess(ulbInfo, {year: currentYear});
         let isDependent = previousYearDependentForms.includes(el.collectionName);
-        if(isDependent && !ulbAccess) Object.assign(el, { tooltip: "", tick: "" })
+        // if(isDependent && !ulbAccess) Object.assign(el, { tooltip: "", tick: "" })
       })
       if(isYearWithinCurrentFY(year)){
         data = await computeFormRedirection(_id, year, data);
