@@ -25,7 +25,8 @@ let messages = {
   "2022-23": "Previous",
   "2023-24": "20-21",
   "2024-25": "20-21"
-}
+};
+const LINE_ITEMS_CONSTANT = [];
 
 function response(form, res, successMsg, errMsg) {
   if (form) {
@@ -685,6 +686,10 @@ module.exports.getForm = async (req, res, next) => {
         }
       }
       let lineItems = await IndicatorLineItem.find({year: ObjectId(data.design_year)}).lean();
+      lineItems.forEach(item =>{
+        if(Object.keys(PrevLineItem_CONSTANTS).includes(item.name))
+          LINE_ITEMS_CONSTANT.push({[item?.name]: item._id.toString()})
+        })
       let obj = {
         targetDisable: false,
         actualDisable: false,
@@ -703,17 +708,17 @@ module.exports.getForm = async (req, res, next) => {
       lineItems.forEach((el) => {
         let targ = null;
         if (ulbData.access_2122) {
-          switch (el["_id"].toString()) {
-            case "6284d6f65da0fa64b423b52a":
+          switch (el["name"].toString()) {
+            case "Coverage of waste water network services":
               targ = houseHoldCoveredWithSewerage ?? null;
               break;
-            case "6284d6f65da0fa64b423b53a":
+            case "Coverage of water supply connections":
               targ = pipedSupply ?? null;
               break;
-            case "6284d6f65da0fa64b423b53c":
+            case "Per capita supply of water(lpcd)":
               targ = waterSuppliedPerDay;
               break;
-            case "6284d6f65da0fa64b423b540":
+            case "Extent of non-revenue water (NRW)":
               targ = reduction;
               break;
 
