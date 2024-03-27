@@ -327,9 +327,10 @@ module.exports.get = catchAsync(async (req, res) => {
     })
   let isUA, stateInfo, statesWithUA;
   
-  let output = []
-  let ulbInfo = await Ulb.findOne({ _id: ObjectId(_id) }).lean();
+  let output = [];
+  let ulbInfo;
   if (role == 'ULB') {
+    ulbInfo = await Ulb.findOne({ _id: ObjectId(_id) }).lean();
     isUA = ulbInfo?.isUA;
     let accessVariable = await getKeyByValue(years,year)
     accessVariable = `access_${accessVariable.split("-")[0].slice(-2)-1}${accessVariable.split("-")[1].slice(-2)-1}`
