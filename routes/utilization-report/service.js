@@ -66,7 +66,7 @@ const {
 const { ElasticBeanstalk } = require("aws-sdk");
 const { forever } = require("request");
 const { years } = require("../../service/years");
-const { getPreviousYear } = require("../sidemenu/service");
+const { getPreviousYear, isYearWithinCurrentFY } = require("../sidemenu/service");
 const time = () => {
   var dt = new Date();
   dt.setHours(dt.getHours() + 5);
@@ -1047,7 +1047,7 @@ module.exports.read2223 = catchAsync(async (req, res, next) => {
     }
 
     let newlyCreated = checkIfNewlyCreatedUlb(design_year, ulbData?.createdAt);
-    if(!ulbAccess && !ulbData?.dur_2425){
+    if( isYearWithinCurrentFY(design_year) && !ulbAccess && !ulbData?.dur_2425){
       let msg = `Dear ${ulbData.name}, You will be eligible to fill the DUR form from next year.`
       obj["action"] = "note";
       obj["url"] = msg;
