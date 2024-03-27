@@ -358,6 +358,13 @@ async function handlePtoSkipLogicDependencies({
         return isSingleYearIndicator(json[key].yearData);
     });
 
+    filterdChildKeys.forEach(key => {
+        const grandChild = skipLogicDependencies[`data.${key}.yearData.0`];
+        if (grandChild && grandChild.skippable) {
+            filterdChildKeys.push(...Object.keys(grandChild.skippable));
+        }
+    });
+
     const childSkipLogicRadioQuestion =  mapperForm.filter(({ year, type }) => year && filterdChildKeys.includes(type))
 
     const updatableQuestion = [ ...parentSkipLogicRadioQuestions, ...childSkipLogicRadioQuestion];
@@ -1161,6 +1168,7 @@ async function appendChildValues(params) {
         if (element.child && ptoMaper) {
             let childElements = ptoMaper.filter(item => item.type === element.key);
             for(let [index, childElement] of childElements.entries()) {
+                if(!isBeyond2023_24(design_year) && index > 0) break;
                 if (childElement && childElement.child) {
                     let yearData = []
 
