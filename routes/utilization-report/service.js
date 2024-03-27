@@ -22,7 +22,7 @@ const {
 } = require("../CommonActionAPI/service");
 const { getKeyByValue,checkForCalculationsForDurForm, getAccessYear } = require("../../util/masterFunctions")
 const Service = require('../../service');
-const { FormNames, ULB_ACCESSIBLE_YEARS, MASTER_STATUS_ID, PREV_MASTER_FORM_STATUS, FORM_STATUS_CODES } = require('../../util/FormNames');
+const { FormNames, ULB_ACCESSIBLE_YEARS, MASTER_STATUS_ID, PREV_MASTER_FORM_STATUS, FORM_STATUS_CODES, MASTER_STATUS } = require('../../util/FormNames');
 const MasterForm = require('../../models/MasterForm')
 const { YEAR_CONSTANTS, YEAR_CONSTANTS_IDS } = require("../../util/FormNames");
 const { ModelNames } = require('../../util/15thFCstatus')
@@ -66,7 +66,7 @@ const {
 const { ElasticBeanstalk } = require("aws-sdk");
 const { forever } = require("request");
 const { years } = require("../../service/years");
-const { getPreviousYear } = require("../sidemenu/service");
+const { getPreviousYear, isYearWithinCurrentFY } = require("../sidemenu/service");
 const time = () => {
   var dt = new Date();
   dt.setHours(dt.getHours() + 5);
@@ -1015,6 +1015,7 @@ module.exports.read2223 = catchAsync(async (req, res, next) => {
           FORM_STATUS.Under_Review_By_MoHUA,
           FORM_STATUS.Approved_By_MoHUA,
           FORM_STATUS.Approved_By_State,
+          MASTER_STATUS_ID[MASTER_STATUS['Submission Acknowledged By MoHUA']]
         ].includes(status)
       ) {
         obj["action"] = "not_show";
@@ -1047,7 +1048,7 @@ module.exports.read2223 = catchAsync(async (req, res, next) => {
     }
 
     let newlyCreated = checkIfNewlyCreatedUlb(design_year, ulbData?.createdAt);
-    if(!ulbAccess && !ulbData?.dur_2425){
+    if( isYearWithinCurrentFY(design_year) && !ulbAccess && !ulbData?.dur_2425){
       let msg = `Dear ${ulbData.name}, You will be eligible to fill the DUR form from next year.`
       obj["action"] = "note";
       obj["url"] = msg;

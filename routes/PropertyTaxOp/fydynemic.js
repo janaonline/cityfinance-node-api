@@ -11546,7 +11546,7 @@ let skipLogicDependencies = {
         "years": [
           0
         ]
-      },
+      }
     }
   },
   "data.ulbPassedResolPtax.yearData.0": {
@@ -12272,3 +12272,5 @@ module.exports.propertyTaxOpFormJson = propertyTaxOpFormJson;
 module.exports.getInputKeysByType = getInputKeysByType;
 module.exports.sortPosition = sortPosition
 module.exports.getFormMetaData = getFormMetaData
+module.exports.parentRadioQuestionKeys = parentRadioQuestionKeys
+module.exports.skipLogicDependencies = skipLogicDependencies
