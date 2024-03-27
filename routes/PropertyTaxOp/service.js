@@ -358,6 +358,13 @@ async function handlePtoSkipLogicDependencies({
         return isSingleYearIndicator(json[key].yearData);
     });
 
+    filterdChildKeys.forEach(key => {
+        const grandChild = skipLogicDependencies[`data.${key}.yearData.0`];
+        if (grandChild && grandChild.skippable) {
+            filterdChildKeys.push(...Object.keys(grandChild.skippable));
+        }
+    });
+
     const childSkipLogicRadioQuestion =  mapperForm.filter(({ year, type }) => year && filterdChildKeys.includes(type))
 
     const updatableQuestion = [ ...parentSkipLogicRadioQuestions, ...childSkipLogicRadioQuestion];
