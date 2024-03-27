@@ -14,7 +14,7 @@ const GFC = require('../../models/GfcFormCollection')
 const SLB = require('../../models/XVFcGrantForm')
 const PFMS = require('../../models/LinkPFMS')
 const PropTax = require('../../models/PropertyTaxOp')
-const { calculateStatus, calculateStatusMaster, getFinancialYear, isYearWithinRange, checkUlbAccess } = require('../CommonActionAPI/service')
+const { calculateStatus, calculateStatusMaster, getFinancialYear, isYearWithinRange, checkUlbAccess, checkIfUlbHasAccess } = require('../CommonActionAPI/service')
 const SLB28 = require('../../models/TwentyEightSlbsForm')
 const PropertyTaxOp = require('../../models/PropertyTaxOp')
 const CollectionName = require('../../util/collectionName')
@@ -91,7 +91,7 @@ let SUB_CATEGORY_CONSTANTS = {
   "Submit Claims for 15th FC Grants": 3
 }
 
-
+const previousYearDependentForms = [CollectionName['dur']]
 
 const calculateTick = (tooltip, loggedInUserRole, viewFor) => {
   //get 3 parameter formType and compare formType with loggedInUserRole
@@ -328,8 +328,8 @@ module.exports.get = catchAsync(async (req, res) => {
   let isUA, stateInfo, statesWithUA;
   
   let output = []
+  let ulbInfo = await Ulb.findOne({ _id: ObjectId(_id) }).lean();
   if (role == 'ULB') {
-    let ulbInfo = await Ulb.findOne({ _id: ObjectId(_id) }).lean();
     isUA = ulbInfo?.isUA;
     let accessVariable = await getKeyByValue(years,year)
     accessVariable = `access_${accessVariable.split("-")[0].slice(-2)-1}${accessVariable.split("-")[1].slice(-2)-1}`
@@ -420,7 +420,7 @@ module.exports.get = catchAsync(async (req, res) => {
 
   let data = await Sidemenu.find({ year: ObjectId(year), role: role, isActive: true }).lean();
   let baseYearForms = [CollectionName.slb]
-
+  
   if (data.length) {
     if (role == "ULB") {
       data = filterResponseForms(data,!checkBaseYearAccess,baseYearForms);
@@ -429,9 +429,9 @@ module.exports.get = catchAsync(async (req, res) => {
       } else {
         data = data.filter(el => el.category != 'Million Plus City Challenge Fund')
       }
-      let formsWithoutCateogry = [CollectionName['pfms']]
+      let formsWithoutCategory = [CollectionName['pfms']]
       data.forEach((el,) => {
-        if ((el.category || formsWithoutCateogry.includes(el.collectionName)) && el.collectionName != "GTC" && el.collectionName != "SLB") {
+        if ((el.category || formsWithoutCategory.includes(el.collectionName)) && el.collectionName != "GTC" && el.collectionName != "SLB") {
           let flag = 0;
           let variableName = collectionNames[el.path] || el.path
           if(singleYearFormCollections.includes(variableName) && !isLatestCreated){
@@ -450,8 +450,10 @@ module.exports.get = catchAsync(async (req, res) => {
           // where tick /cross logic is not applicable
           Object.assign(el, { tooltip: "", tick: "" })
         }
-
-
+        let currentYear = getKeyByValue(years,year)
+        let ulbAccess = checkIfUlbHasAccess(ulbInfo, {year: currentYear});
+        let isDependent = previousYearDependentForms.includes(el.collectionName);
+        if(isDependent && !ulbAccess) Object.assign(el, { tooltip: "", tick: "" })
       })
       if(isYearWithinCurrentFY(year)){
         data = await computeFormRedirection(_id, year, data);
