@@ -5,7 +5,7 @@
  const path = require("path");
  require("dotenv").config({ path: path.join(__dirname, ".env") });
  var app = require('./app');
- const numCPUs = process.env.ENV == 1 || "development" ? 1 : require('os').cpus().length;
+ const numCPUs = process.env.ENV == "development" ? 1 : require('os').cpus().length;  
   
  if (cluster.isMaster) {
    console.log(`Master ${process.pid} is running`);

@@ -10504,13 +10504,16 @@ const propertyTaxOpFormJson = ({role, design_year, ptoData, ptoMaper = []}) => {
               indicatorObj.isReadonlySingleYear = true;
             }
           } else {
-            const parentDependencyObject =
-              getRadioParentDependencyObject(indicator);
-            indicatorObj.isReadonlySingleYear = Object.entries(
-              parentDependencyObject
-            ).every(([key, value]) => {
-              return compareWithMapper18_19(ptoMaper, key, "Yes");
-            });
+
+            // TODO: disucuss with Gautam purpose of this code -> commenting for now
+
+            // const parentDependencyObject =
+            //   getRadioParentDependencyObject(indicator);
+            // indicatorObj.isReadonlySingleYear = Object.entries(
+            //   parentDependencyObject
+            // ).every(([key, value]) => {
+            //   return compareWithMapper18_19(ptoMaper, key, "Yes");
+            // });
           }
           const { yearName, yearId } = getDesiredYear(design_year, -1);
           
