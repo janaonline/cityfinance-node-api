@@ -2381,7 +2381,7 @@ let DurProjectJson = {
     cert_declaration:{
         "order" : "41",
         "title" : "Upload",
-        "information" : "Kindly obtain a Commissioner or Executive Officer (EO) to sign the PDF file that you downloaded from the 'Preview' section",
+        "information" : "Kindly obtain the Commissioner or Executive Officer (EO) to sign the PDF file that you downloaded from the 'Preview' section",
         "answer_option" : [
 
         ],
