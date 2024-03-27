@@ -1168,6 +1168,7 @@ async function appendChildValues(params) {
         if (element.child && ptoMaper) {
             let childElements = ptoMaper.filter(item => item.type === element.key);
             for(let [index, childElement] of childElements.entries()) {
+                if(!isBeyond2023_24(design_year) && index > 0) break;
                 if (childElement && childElement.child) {
                     let yearData = []
 
