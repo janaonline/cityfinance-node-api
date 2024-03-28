@@ -616,7 +616,7 @@ async function computeFormRedirection(ulb, year, data) {
   }
 }
 
-/**
+/** 
  * The function `formRedirectionBasedOnCreation` checks if a new ULB was created in the current
  * financial year and redirects based on form creation status.
  * @param model - The `model` parameter in the `formRedirectionBasedOnCreation` function represents the
