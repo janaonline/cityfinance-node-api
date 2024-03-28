@@ -70,7 +70,7 @@ const propertyTaxOpFormJson = ({role, design_year, ptoData, ptoMaper = []}) => {
                 "postion": "0",
                 "value": "",
                 "file": "",
-                "min": "",
+                "min": "1800",
                 "max": ('' + new Date().getFullYear()),
                 "required": true,
                 "type": "ulbFinancialYear",
