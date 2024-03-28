@@ -9,6 +9,23 @@ let years = {
     "2024-25":"606aafcf4dff55e6c075d424",
     "2025-26":"606aafda4dff55e6c075d48f",
 }
+
+const getDesiredYear = (yearIdOrName, yearDiffercnce = 0) => {
+    const entries = Object.entries(years);
+    const yearIndex = entries.findIndex((entry) => entry.includes('' + yearIdOrName));
+    const [yearName, yearId] =  entries[yearIndex + yearDiffercnce];
+    return { yearName, yearId, yearIndex };
+}
+
+const isBeyond2023_24 = design_year =>  {
+    if(!design_year) return false;
+    const { yearIndex: designYearIndex  } = getDesiredYear(design_year);
+    const { yearIndex: yearIndex23_24 } = getDesiredYear('2023-24');
+    return designYearIndex > yearIndex23_24;
+}
+
 module.exports = {
-    years
+    years,
+    getDesiredYear,
+    isBeyond2023_24
 }
