@@ -3790,7 +3790,6 @@ function checkIfUlbHasAccess(ulbData, userYear) {
         let prevYearArr = currentYear.split("-")
         let prevYear = `${(prevYearArr[0] - 1).toString().slice(-2)}${(prevYearArr[1] - 1).toString().slice(-2)}`
         ulbVariable += prevYear
-        console.log({ prevYear, userYear })
         return ulbData[ulbVariable]
     }
     catch (err) {
