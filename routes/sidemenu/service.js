@@ -605,7 +605,7 @@ async function computeFormRedirection(ulb, year, data) {
     if (redirectionObj.redirect) {
       data = data.map((menu) => {
         if (UlbFormCollections[menu?.dbCollectionName] === model) {
-          Object.assign(menu, { tooltip: "", tick: "" });
+          Object.assign(menu, { tooltip: "", tick: "", category: "" });
         }
         return menu;
       });
