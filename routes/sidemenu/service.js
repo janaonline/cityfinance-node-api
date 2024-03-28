@@ -18,7 +18,7 @@ const { calculateStatus, calculateStatusMaster, getFinancialYear, isYearWithinRa
 const SLB28 = require('../../models/TwentyEightSlbsForm')
 const PropertyTaxOp = require('../../models/PropertyTaxOp')
 const CollectionName = require('../../util/collectionName')
-const { YEAR_CONSTANTS, MASTER_STATUS_ID, MASTER_FORM_STATUS, YEAR_CONSTANTS_IDS } = require('../../util/FormNames');
+const { YEAR_CONSTANTS, MASTER_STATUS_ID, MASTER_FORM_STATUS, YEAR_CONSTANTS_IDS, FORMIDs } = require('../../util/FormNames');
 var outDatedYears = ["2018-19","2019-20","2021-22","2022-23"]
 //STate Forms
 const SFC = require('../../models/StateFinanceCommissionFormation')
@@ -609,6 +609,8 @@ async function computeFormRedirection(ulb, year, data) {
         }
         return menu;
       });
+    }else if(redirectionObj.status){
+     data = swapSequence(data,FORMIDs['dur'], FORMIDs['PFMS'] )
     }
     return data;
   } catch (error) {
@@ -729,6 +731,35 @@ module.exports.list = catchAsync(async (req, res) => {
   })
 })
 
+/**
+ * The function `swapSequence` swaps the sequence values of two menu items based on their collection
+ * names in a given array.
+ * @param menuItems - An array of menu items, where each item contains a property `dbCollectionName`
+ * representing the collection name and a property `sequence` representing the sequence number.
+ * @param collectionName1 - The `collectionName1` parameter in the `swapSequence` function represents
+ * the name of the first collection whose sequence you want to swap with another collection's sequence.
+ * @param collectionName12 - It seems like there might be a typo in the function parameter name
+ * `collectionName12`. It should probably be `collectionName2` instead of `collectionName12`.
+ * @returns The function `swapSequence` will return the updated `menuItems` array after swapping the
+ * sequences of the menu items corresponding to the provided `collectionName1` and `collectionName2`.
+ */
+function swapSequence(menuItems, formId_1, formId_2) {
+  try {
+    const index1 = menuItems.findIndex((menu) => menu.formId === formId_1);
+    const index2 = menuItems.findIndex((menu) => menu.formId === formId_2);
+
+    if (index1 === -1 || index2 === -1) {
+      throw new Error("One or both URLs not found.");
+    }
+    [menuItems[index1].sequence, menuItems[index2].sequence] = [
+      menuItems[index2].sequence,
+      menuItems[index1].sequence,
+    ];
+  } catch (error) {
+    console.log(error.message);
+  }
+  return menuItems;
+}
 /**
  * The function `filterResponseForms` filters an array of data based on a flag and a list of forms, and
  * returns the filtered array.
