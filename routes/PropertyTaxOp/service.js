@@ -1325,7 +1325,9 @@ exports.getView = async function (req, res, next) {
                                                 indicatorObj.label = `FY ${yearName}`;
                                                 indicatorObj.key = `FY${yearName}`
                                                 indicatorObj.year = yearId;
-                                                if (['7.1', '4.1'].includes(data[el].displayPriority)) {
+                                                if (![...parentRadioQuestionKeys, 'ulbFinancialYear'].includes(data[el].key)) {
+                                                    indicatorObj.value = "";
+                                                    indicatorObj.date = "";
                                                     indicatorObj.file = {
                                                         "url": "",
                                                         "name": ""
@@ -1359,6 +1361,7 @@ exports.getView = async function (req, res, next) {
         fyDynemic['design_year'] = ptoData?.design_year || req.query.design_year;
         fyDynemic['statusId'] = ptoData?.currentFormStatus || MASTER_STATUS['Not Started'];
         fyDynemic['status'] = MASTER_STATUS_ID[ptoData?.currentFormStatus] || MASTER_STATUS_ID[1];
+        fyDynemic['pullid'] = 100;
         let params = {
             status: ptoData?.currentFormStatus,
             formType: "ULB",
