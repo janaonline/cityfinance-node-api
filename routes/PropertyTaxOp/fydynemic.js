@@ -6,7 +6,8 @@ const parentRadioQuestionKeys = [
   "ulbCollectPtax",
   "doesUserChargesDmnd",
   "notificationWaterCharges",
-  "doesColSewerageCharges"
+  "doesColSewerageCharges",
+  "notificationPropertyTax"
 ];
 
 const propertyTaxOpFormJson = ({role, design_year, ptoData, ptoMaper = []}) => {
@@ -70,7 +71,7 @@ const propertyTaxOpFormJson = ({role, design_year, ptoData, ptoMaper = []}) => {
                 "value": "",
                 "file": "",
                 "min": "1800",
-                "max": "2023",
+                "max": ('' + new Date().getFullYear()),
                 "required": true,
                 "type": "ulbFinancialYear",
                 "year": "63735a5bd44534713673c1ca",
@@ -10504,16 +10505,13 @@ const propertyTaxOpFormJson = ({role, design_year, ptoData, ptoMaper = []}) => {
               indicatorObj.isReadonlySingleYear = true;
             }
           } else {
-
-            // TODO: disucuss with Gautam purpose of this code -> commenting for now
-
-            // const parentDependencyObject =
-            //   getRadioParentDependencyObject(indicator);
-            // indicatorObj.isReadonlySingleYear = Object.entries(
-            //   parentDependencyObject
-            // ).every(([key, value]) => {
-            //   return compareWithMapper18_19(ptoMaper, key, "Yes");
-            // });
+            const parentDependencyObject =
+              getRadioParentDependencyObject(indicator);
+            indicatorObj.isReadonlySingleYear = Object.entries(
+              parentDependencyObject
+            ).every(([key, value]) => {
+              return compareWithMapper18_19(ptoMaper, key, "Yes");
+            });
           }
           const { yearName, yearId } = getDesiredYear(design_year, -1);
           
