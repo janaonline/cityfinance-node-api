@@ -1325,7 +1325,9 @@ exports.getView = async function (req, res, next) {
                                                 indicatorObj.label = `FY ${yearName}`;
                                                 indicatorObj.key = `FY${yearName}`
                                                 indicatorObj.year = yearId;
-                                                if (['7.1', '4.1'].includes(data[el].displayPriority)) {
+                                                if (![...parentRadioQuestionKeys, 'ulbFinancialYear'].includes(data[el].key)) {
+                                                    indicatorObj.value = "";
+                                                    indicatorObj.date = "";
                                                     indicatorObj.file = {
                                                         "url": "",
                                                         "name": ""
