@@ -347,7 +347,7 @@ async function handlePtoSkipLogicDependencies({
     let mapperForm = await PropertyTaxOpMapper.find({ ptoId: ObjectId(formId) }).populate("child").lean();
     
     const parentSkipLogicRadioQuestions =  mapperForm.filter(({ value, type }) => parentRadioQuestionKeys.includes(type))
-    const updatableQuestion = [ ...parentSkipLogicRadioQuestions];
+    const updatableQuestion = [ ...parentSkipLogicRadioQuestions, 'ulbFinancialYear'];
 
     const nextYearMapperUpdateQuery = updatableQuestion.map(question => {
         const { yearName: currentYearName } = getDesiredYear('' + question.year); 
