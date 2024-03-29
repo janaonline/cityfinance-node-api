@@ -345,29 +345,9 @@ async function handlePtoSkipLogicDependencies({
     });
     if(!nextYearPto) return;
     let mapperForm = await PropertyTaxOpMapper.find({ ptoId: ObjectId(formId) }).populate("child").lean();
-    let fyDynemic = { ...propertyTaxOpFormJson({ design_year }) };
-    const json = fyDynemic.tabs[0].data;
+    
     const parentSkipLogicRadioQuestions =  mapperForm.filter(({ value, type }) => parentRadioQuestionKeys.includes(type))
-    const childSkipLogicRadioQuestionKeys = Object.keys(parentSkipLogicRadioQuestions.reduce((acc, question) => {
-        return {
-            ...acc,
-            ...skipLogicDependencies[`data.${question.type}.yearData.0`]?.skippable
-        }
-    }, {}));
-    const filterdChildKeys = childSkipLogicRadioQuestionKeys.filter(key => {
-        return isSingleYearIndicator(json[key].yearData);
-    });
-
-    filterdChildKeys.forEach(key => {
-        const grandChild = skipLogicDependencies[`data.${key}.yearData.0`];
-        if (grandChild && grandChild.skippable) {
-            filterdChildKeys.push(...Object.keys(grandChild.skippable));
-        }
-    });
-
-    const childSkipLogicRadioQuestion =  mapperForm.filter(({ year, type }) => year && filterdChildKeys.includes(type))
-
-    const updatableQuestion = [ ...parentSkipLogicRadioQuestions, ...childSkipLogicRadioQuestion];
+    const updatableQuestion = [ ...parentSkipLogicRadioQuestions];
 
     const nextYearMapperUpdateQuery = updatableQuestion.map(question => {
         const { yearName: currentYearName } = getDesiredYear('' + question.year); 
