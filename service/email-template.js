@@ -121,13 +121,13 @@ const userForgotPassword = (name, link, ulbflagForEmail = true) => {
                         City Finance Team`,
   };
 };
-const userProfileEdit = (name) => {
+const userProfileEdit = (name, verified = false) => {
   return {
-    subject: `Profile Update Successful for City Finance`,
+    subject: `Profile ${verified ? 'Update': 'Verification'} Successful for City Finance`,
     body: `Dear ${name},<br>
                     <br>
                     <p>
-                        Your account has been successfully updated. <br>
+                        Your account has been ${verified ? 'updated': 'verified'} successfully. <br>
                         Please visit <a href="https://www.${process.env.PROD_HOST}" target="_blank">https://www.${process.env.PROD_HOST}</a> to login using your Ulb Code/Census Code.
                     </p>
                     <br>
