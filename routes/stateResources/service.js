@@ -602,13 +602,22 @@ const updatestateGsdpTemplate = async (req, res, next, worksheet, workbook) => {
             if (!_id || !isValidObjectId(_id)) return;
             // if (!req.body.ulbIds?.includes('' + _id)) return;
 
-            // if (typeof stateGsdpConstantPrices[index] !== 'number' || !Object.values(GSDP_OPTIONS).includes(gdsps[index]?.toLowerCase())) {
-            //     validationErrors.push({
-            //         r: index,
-            //         c: columnGdspElected,
-            //         message: `Please selected "Eligible" or "Not Eligible"`
-            //     });
-            // }
+            if (isNaN(stateGsdpConstantPrices[index])) {
+                validationErrors.push({
+                    r: index,
+                    c: columnConstantPrice,
+                    message: `Value should be a number"`
+                });
+            }
+            
+            if (isNaN(stateGsdpCurrentPrices[index])) {
+                validationErrors.push({
+                    r: index,
+                    c: columnCurrentPrice,
+                    message: `Value should be a number"`
+                });
+            }
+            
 
             // const isGsdpEligible = typeof gdsps[index] === 'string' ? (gdsps[index]?.toLowerCase() == GSDP_OPTIONS.ELIGIBLE) : null;
             const result = {
