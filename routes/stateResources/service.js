@@ -473,14 +473,12 @@ const stateGsdpTemplate = async (req, res, next) => {
             { header: 'Average GSDP growth rate of previous 5 years at Constant prices', key: 'constantPrice', width: 30 },
             { header: 'Average GSDP growth rate of previous 5 years at Current prices', key: 'currentPrice', width: 30 },
         ];
-
+        
         worksheet.getRows(1, startingRow).forEach(row => {
+            row.height = 60;
+            row.alignment = { vertical: "middle", wrapText: true, horizontal: "center"};
             row.eachCell({ includeEmpty: true }, cell => {
-                cell.fill = {
-                    type: 'pattern',
-                    pattern: 'solid',
-                    fgColor: { argb: 'ffbdd7ee' }
-                };
+                cell.font = {bold: true}
             });
         });
 
