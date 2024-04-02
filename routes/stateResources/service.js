@@ -608,13 +608,22 @@ const updatestateGsdpTemplate = async (req, res, next, worksheet, workbook) => {
         const promises = _ids.map(async (_id, index) => {
             if (!_id || !isValidObjectId(_id)) return;
 
-            if (isNaN(stateGsdpConstantPrices[index]) || [undefined, ""].includes(stateGsdpConstantPrices[index])) {
+            if (isNaN(stateGsdpConstantPrices[index])) {
                 validationErrors.push({
                     r: index,
                     c: columnConstantPrice,
-                    message: `Value should be a number and can't be empty`
+                    message: `Value should be a number"`
                 });
             }
+            
+            if (isNaN(stateGsdpCurrentPrices[index])) {
+                validationErrors.push({
+                    r: index,
+                    c: columnCurrentPrice,
+                    message: `Value should be a number"`
+                });
+            }
+            
 
             if (isNaN(stateGsdpCurrentPrices[index]) || [undefined, ""].includes(stateGsdpCurrentPrices[index])) {
                 validationErrors.push({
