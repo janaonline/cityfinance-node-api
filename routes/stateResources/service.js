@@ -10,7 +10,8 @@ const CategoryFileUpload = require('../../models/CategoryFileUpload');
 const { loadExcelByUrl } = require('../../util/worksheet');
 const { isValidObjectId } = require("mongoose");
 const { isValidDate } = require("../../util/helper");
-const {getStorageBaseUrl} = require('./../../service/getBlobUrl')
+const {getStorageBaseUrl} = require('./../../service/getBlobUrl');
+const StateGsdpData = require("../../models/StateGsdp");
 // const { query } = require("express");
 
 const GSDP_OPTIONS = {
@@ -43,6 +44,7 @@ const handleDatabaseUpload = async (req, res, next) => {
 
         if (templateName == 'dulyElected') await updateDulyElectedTemplate(req, res, next, worksheet, workbook);
         if (templateName == 'gsdp') await updateGsdpTemplate(req, res, next, worksheet, workbook);
+        if (templateName == 'stateGsdp') await updatestateGsdpTemplate(req, res, next, worksheet, workbook);
 
         const uploaded = await CategoryFileUpload.findOne({
             subCategoryId: ObjectId(req.body?.subCategoryId)
@@ -516,7 +518,7 @@ const stateGsdpTemplate = async (req, res, next) => {
             },
             {
                 $project: {
-                    _id: 1,
+                    _id: { $toString: '$_id' },
                     stateName: "$name",
                     constantPrice: '$prices.constantPrice',
                     currentPrice: '$prices.currentPrice',
@@ -579,6 +581,54 @@ const updateGsdpTemplate = async (req, res, next, worksheet, workbook) => {
         }
 
         await Ulb.bulkWrite(gsdpUpdateQuery);
+        Promise.resolve("Data updated");
+    } catch (err) {
+        console.log(err);
+        Promise.reject("Something went wrong");
+    }
+}
+const updatestateGsdpTemplate = async (req, res, next, worksheet, workbook) => {
+    try {
+        const validationErrors = [];
+        const columnId = 1;
+        const columnConstantPrice = 4;
+        const columnCurrentPrice = 5;
+
+        const _ids = worksheet.getColumn(columnId).values;
+        const stateGsdpConstantPrices = worksheet.getColumn(columnConstantPrice).values;
+        const stateGsdpCurrentPrices = worksheet.getColumn(columnCurrentPrice).values;
+
+        const stateGsdpUpdateQuery = _ids.map((_id, index) => {
+            if (!_id || !isValidObjectId(_id)) return;
+            // if (!req.body.ulbIds?.includes('' + _id)) return;
+
+            // if (typeof stateGsdpConstantPrices[index] !== 'number' || !Object.values(GSDP_OPTIONS).includes(gdsps[index]?.toLowerCase())) {
+            //     validationErrors.push({
+            //         r: index,
+            //         c: columnGdspElected,
+            //         message: `Please selected "Eligible" or "Not Eligible"`
+            //     });
+            // }
+
+            // const isGsdpEligible = typeof gdsps[index] === 'string' ? (gdsps[index]?.toLowerCase() == GSDP_OPTIONS.ELIGIBLE) : null;
+            const result = {
+                updateOne: {
+                    filter: { stateId: ObjectId(_id), 'data.year': "2018-23" },
+                    update: {
+                        $set: {
+                            "data.$.constantPrice": stateGsdpConstantPrices[index],
+                            "data.$.currentPrice": stateGsdpCurrentPrices[index],
+                        }
+                    }
+                }
+            }
+            return result;
+        }).filter(i => i);
+
+        if (validationErrors.length) {
+            return Promise.reject({ validationErrors });
+        }
+        await StateGsdpData.bulkWrite(stateGsdpUpdateQuery);
         Promise.resolve("Data updated");
     } catch (err) {
         console.log(err);
