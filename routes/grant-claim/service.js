@@ -373,7 +373,7 @@ module.exports.CreateorUpdate = catchAsync(async (req, res) => {
         }).lean()
 
         //email trigger
-        if (req.header.host == 'cityfinance.in') {
+        if (req.header.host == `${process.env.PROD_HOST}`) {
             let template = Service.emailTemplate.grantClaimAcknowledgement(
                 type,
                 installment,

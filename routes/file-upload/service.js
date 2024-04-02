@@ -4,6 +4,13 @@ const https = require('https');
 const http = require('http');
 const urlencode = require("urlencode");
 const baseDir = "uploads/";
+const {ENV} = require('./../../util/FormNames');
+const { getStorageBaseUrl } = require('../../service/getBlobUrl');
+const SECRET ={
+    AWS_STORAGE_URL_STG: process.env.AWS_STORAGE_URL_STG,
+    AWS_STORAGE_URL_PROD: process.env.AWS_STORAGE_URL_PROD,
+    ENV: process.env.ENV
+}
 const generateSignedUrl = function (data) {
     return new Promise((resolve, reject) => {
         let dir = data["headers"].type ? "resource" : "objects";
@@ -78,9 +85,9 @@ const downloadFileToDisk = function (url, _cb) {
         let dest = "/tmp/" + fileName;
         var file = fs.createWriteStream(dest);
         var h = http;
-        console.log("url", url)
+        STORAGE_URL = getStorageBaseUrl();
+        url = STORAGE_URL + url
         let isHttps = url.includes("https");
-        console.log("isHttps", isHttps)
         if (isHttps) {
             const req = https.get(url, function (response) {
                 response.pipe(file);
@@ -91,6 +98,7 @@ const downloadFileToDisk = function (url, _cb) {
                 });
             });
         } else {
+            console.log("url", url)
             const req = http.get(url, function (response) {
                 response.pipe(file);
                 file.on('finish', function () {
@@ -101,10 +109,9 @@ const downloadFileToDisk = function (url, _cb) {
             });
         }
     } catch (e) {
+        console.log("e.message", e)
         console.log(e.message)
     }
-
-
 }
 module.exports = {
     generateSignedUrl: generateSignedUrl,

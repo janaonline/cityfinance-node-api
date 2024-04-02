@@ -38,17 +38,18 @@ const TwentyEightSlbForm = require('../../models/TwentyEightSlbsForm');
 const PrevLineItem_CONSTANTS = require('../../util/lineItems');
 const { years } = require("../../service/years");
 const { getKeyByValue } = require("../../util/masterFunctions");
-const { MASTER_STATUS_ID } = require("../../util/FormNames");
+const { MASTER_STATUS_ID, YEAR_CONSTANTS } = require("../../util/FormNames");
+const { concatenateUrls } = require("../../service/common");
 
 const BackendHeaderHost ={
-  Demo: "democityfinanceapi.dhwaniris.in",
-  Staging: "staging.cityfinance.in",
-  Prod: "cityfinance.in",
+  Demo: `${process.env.DEMO_HOST_BACKEND}`,
+  Staging: `${process.env.STAGING_HOST}`,
+  Prod: `${process.env.PROD_HOST}`,
 }
 const FrontendHeaderHost ={
-  Demo: "democityfinance.dhwaniris.in",
-  Staging: "staging.cityfinance.in",
-  Prod: "cityfinance.in",
+  Demo: `${process.env.DEMO_HOST_FRONTEND}`,
+  Staging: `${process.env.STAGING_HOST}`,
+  Prod: `${process.env.PROD_HOST}`,
 }
 async function sleep(millis) {
   return new Promise((resolve) => setTimeout(resolve, millis));
@@ -953,7 +954,8 @@ houseHoldCoveredPipedSupply2425: {
     });
 
     // let ulbData = extractUlbData(output2);
-    let finalOutput = [...output1, output2]
+    makeNumbersFixed(output1[0]);
+    let finalOutput = [...output1, output2]; 
     return res.status(200).json({
       success: true,
       message: "Data Found Successfully",
@@ -1740,6 +1742,21 @@ module.exports.slbDownload = catchAsync(async (req, res) => {
   }
 });
 
+/**
+ * The function "makeNumbersFixed" takes an object as input and converts any numeric values in the
+ * object to fixed decimal numbers with two decimal places.
+ * @param output1 - The parameter `output1` is an object.
+ */
+function makeNumbersFixed(input) {
+  try {
+    for (let key in input) {
+      input[key] = typeof(input[key]) == 'number' ? Number(input[key].toFixed(2)) : input[key];
+    }
+  } catch (error) {
+    throw {message: `makeNumbersFixed: ${error.message}`}
+  }
+}
+
 async function innerListGet(t, path) {
   return await path.split(".").reduce((r, k) => r?.[k], t);
 }
@@ -2048,7 +2065,10 @@ module.exports.getAll = catchAsync(async (req, res) => {
       }
       if (csv) {
         let arr = await XVFCGrantULBData.aggregate(q).exec();
-        for (d of arr) {
+        let index =0;
+        for (let d of arr) {
+          d = JSON.parse(JSON.stringify(d));
+          arr[index] = concatenateUrls(d);
           if (
             d.status == "PENDING" &&
             d.isCompleted == false &&
@@ -2112,6 +2132,8 @@ module.exports.getAll = catchAsync(async (req, res) => {
               d.solidWastePlan && d.solidWastePlan.length > 0
                 ? d.solidWastePlan[0]["url"]
                 : "");
+             index++;
+
         }
         let field = csvData();
         if (user.role == "STATE") {
@@ -2860,6 +2882,7 @@ module.exports.update = async (req, res) => {
     );
   }
 };
+
 module.exports.action = async (req, res) => {
   try {
     let user = req.decoded;
@@ -2941,6 +2964,7 @@ module.exports.action = async (req, res) => {
             data["actionTakenBy"] = user._id;
             data["ulb"] = prevState.ulb;
             data["modifiedAt"] = time();
+            data['actionTakenByRole'] = user?.role
             let du = await XVFCGrantULBData.update(
               { _id: ObjectId(prevState._id) },
               { $set: data, $push: { history: history } }
@@ -4609,6 +4633,7 @@ module.exports.getXVFCStateForm = async (req, res) => {
         },
       ];
       let arr = await XVStateForm.aggregate(q).exec();
+      if(arr.length)  updateURLs(arr);
       let xlsData = await Service.dataFormating(arr, field);
       let filename =
         "state-form" + moment().format("DD-MMM-YY HH:MM:SS") + ".xlsx";
@@ -4745,13 +4770,13 @@ let uaIDs = await UA.find().select("_id").lean()
 
 let finalData = []
 let x = 1;
-let data = await axios.post('https://cityfinance.in/api/v1/login', {
-  "email":"admin@cityfinance.in",
+let data = await axios.post(`https://${process.env.PROD_HOST}/api/v1/login`, {
+  "email":`admin@${process.env.PROD_HOST}`,
   "password":"admin007@cityfinance"
 })
 
 for(let el of uaIDs ){
-  await axios.get(`https://cityfinance.in/api/v1/xv-fc-form/state/606aaf854dff55e6c075d219?ua_id=${el._id}`,
+  await axios.get(`https://${process.env.PROD_HOST}/api/v1/xv-fc-form/state/606aaf854dff55e6c075d219?ua_id=${el._id}`,
   { params:{}, headers: { "x-access-token": data?.data?.token } }
   ).then(function(response) {
  
@@ -4833,11 +4858,42 @@ exports.newFormAction = async (req, res) => {
 };
 
 
+/**
+ * The function `updateURLs` takes an array of entities, clones each entity, concatenates the URLs
+ * within each entity, and returns the updated array.
+ */
+function updateURLs(arr) {
+  try{
+    let index = 0;
+    for (let entity of arr) {
+      entity = JSON.parse(JSON.stringify(entity));
+      let urlParams = {
+        grantTransferCertificate: "grantTransferCertificate",
+        serviceLevelBenchmarks: "serviceLevelBenchmarks",
+        utilizationReport: "utilizationReport",
+      };
+      for(let key in urlParams){
+        if(entity[key] === "N/A"){
+          delete urlParams[key]
+        }
+      }
+      arr[index] = concatenateUrls(entity, urlParams);
+      index++;
+    }
+  }catch(e){
+    throw {message: `updateUrls: ${e.message}`}
+  }
+}
+ 
 async function update28SlbForms(ulbData){
   try{
     // query.design_year = design_year_2223;
     let yearsIds = [...ulbData.accessibleForYears]
-    yearsIds = yearsIds.map(item => ObjectId(item))
+    yearsIds = yearsIds.map(item => ObjectId(item));
+    // let ulbUA =  await Ulb.findOne({_id: ulbData?.ulb},{UA:1}).lean();
+    // if(!ulbUA?.UA){
+    //    yearsIds = yearsIds.filter(year=> ![YEAR_CONSTANTS['24_25']].includes(year.toString()));
+    // }
     let query = {}
     query["ulb"] = ulbData.ulb;
     query["design_year"] = {"$in":yearsIds}

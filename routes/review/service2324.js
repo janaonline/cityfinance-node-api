@@ -183,7 +183,7 @@ module.exports.get = async (req, res) => {
     /* CSV DOWNLOAD */
     let data = []
     if (csv) {
-      await createCSV({ formType, collectionName, res, loggedInUserRole, req, query });
+      await createCSV({ formType, collectionName, res, loggedInUserRole, req, query, year:yearData.year });
       // res.end();
       return;
     } else {
@@ -214,8 +214,8 @@ module.exports.get = async (req, res) => {
     const Query15FC = { $or: [{ type: "15thFC" }, { multi: { $in: ["15thFC"] } }] };
     const ulbFormStatus = await MASTERSTATUS.find(Query15FC, { statusId: 1, status: 1 }).lean();
     let stateFormStatus = [];
-    if(ulbFormStatus.length){
-      stateFormStatus = ulbFormStatus.filter(el=>{
+    if (ulbFormStatus.length) {
+      stateFormStatus = ulbFormStatus.filter(el => {
         return ![MASTER_FORM_STATUS['RETURNED_BY_STATE'], MASTER_FORM_STATUS['UNDER_REVIEW_BY_STATE']].includes(el.statusId)
       })
     }
@@ -241,7 +241,7 @@ module.exports.get = async (req, res) => {
 
 
 async function createCSV(params) {
-  const { formType, collectionName, res, loggedInUserRole, req, query } = params;
+  const { formType, collectionName, res, loggedInUserRole, req, query, year } = params;
   try {
     let ratingList = []
     if (['ODF', 'GFC'].includes(collectionName)) {
@@ -257,7 +257,7 @@ async function createCSV(params) {
       res.writeHead(200, { "Content-Type": "text/csv;charset=utf-8,%EF%BB%BF" });
       fixedColumns = `State Name, ULB Name, City Finance Code, Census Code, Population Category, UA, UA Name,`;
       // dynamicColumns = createDynamicColumns(collectionName);
-      res.write("\ufeff" + `${fixedColumns.toString()} ${createDynamicColumns(collectionName).toString()} \r\n`);
+      res.write("\ufeff" + `${fixedColumns.toString()} ${createDynamicColumns(collectionName, year.split('-')[0]).toString()} \r\n`);
       // res.flushHeaders();
       let indiLineList = []
       if (!(collectionName !== CollectionNames.annual && collectionName !== CollectionNames['28SLB'])) {
@@ -331,8 +331,6 @@ async function createCSV(params) {
             await writeSubmitClaimCSV(output, res);
           } else {
             for (let el of mainArrData) {
-              el = JSON.parse(JSON.stringify(el));
-              el = concatenateUrls(el);
               if (!el?.formData) {
                 el['formStatus'] = "Not Started";
               } else {
@@ -344,8 +342,10 @@ async function createCSV(params) {
                 el['formData']['installment_form'] = GTC;
                 el = JSON.parse(JSON.stringify(el));
                 el = concatenateUrls(el);
-                gtcStateFormCSVFormat(el, res)
+                gtcStateFormCSVFormat(el, res);
               } else if (collectionName == 'GrantAllocation') {
+                el = JSON.parse(JSON.stringify(el));
+                el = concatenateUrls(el);
                 await grantAllCsvDownload(el, res);
               }
             }
@@ -378,6 +378,8 @@ async function grantAllCsvDownload(el, res) {
   if (formData && formData.length && (formData[0] !== "")) {
     for (let pf of formData) {
       let currentStatus = await CurrentStatus.findOne({ recordId: ObjectId(pf?._id) });
+      currentStatus = JSON.parse(JSON.stringify(currentStatus));
+      currentStatus = concatenateUrls(currentStatus);
       let MohuaformStatus = MASTER_STATUS_ID[currentStatus?.status];
       let mohuaStatusComment = [MASTER_STATUS_ID[pf?.currentFormStatus]];
       if (['Returned By MoHUA', 'Submission Acknowledged By MoHUA'].includes(MASTER_STATUS_ID[pf?.currentFormStatus])) {
@@ -896,19 +898,19 @@ const setCurrentStatus = (req, data, approvedUlbs, collectionName, loggedInUserR
       let params = { status: el.formData.currentFormStatus, userRole: loggedInUserRole }
       el['cantakeAction'] = req.decoded.role === "ADMIN" ? false : canTakeActionOrViewOnlyMasterForm(params)
       if (collectionName === CollectionNames.dur || collectionName === CollectionNames['28SLB']) {
-      //   el['cantakeAction'] = req.decoded.role === "ADMIN" ? false : canTakeActionOrViewOnlyMasterForm(params);
-      //   if (!(approvedUlbs.find(ulb => ulb.toString() === el.ulbId.toString())) && loggedInUserRole === "MoHUA") {
-      //     el['cantakeAction'] = false;
-      //     el['formData']['currentFormStatus'] === MASTER_STATUS['Under Review By MoHUA'] ? el['info'] = sequentialReview : ""
-      //   }
+        //   el['cantakeAction'] = req.decoded.role === "ADMIN" ? false : canTakeActionOrViewOnlyMasterForm(params);
+        //   if (!(approvedUlbs.find(ulb => ulb.toString() === el.ulbId.toString())) && loggedInUserRole === "MoHUA") {
+        //     el['cantakeAction'] = false;
+        //     el['formData']['currentFormStatus'] === MASTER_STATUS['Under Review By MoHUA'] ? el['info'] = sequentialReview : ""
+        //   }
         el['prevYearStatus'] = approvedUlbs[el._id] ?? STATUS_LIST['Not_Started']
-        const previousStatus =  el['prevYearStatus']?.toUpperCase().split(' ').join('_')
+        const previousStatus = el['prevYearStatus']?.toUpperCase().split(' ').join('_')
         el['prevYearStatusId'] = PREV_MASTER_FORM_STATUS[previousStatus] ?? PREV_MASTER_FORM_STATUS['NOT_STARTED']
-      } 
+      }
       // else {
-        // let params = { status: el.formData.currentFormStatus, userRole: loggedInUserRole }
-        // el['cantakeAction'] = req.decoded.role === "ADMIN" ? false : canTakeActionOrViewOnlyMasterForm(params);
-        // el['formStatus'] = MASTER_STATUS_ID[el.formData.currentFormStatus]
+      // let params = { status: el.formData.currentFormStatus, userRole: loggedInUserRole }
+      // el['cantakeAction'] = req.decoded.role === "ADMIN" ? false : canTakeActionOrViewOnlyMasterForm(params);
+      // el['formStatus'] = MASTER_STATUS_ID[el.formData.currentFormStatus]
       // }
     }
   })
@@ -987,7 +989,7 @@ function getUlbsApprovedByMoHUA(forms) {
     let ulbArray = {};
     for (let form of forms) {
       // if (form.actionTakenByRole === "MoHUA" && !form.isDraft && form.status === "APPROVED") {
-        ulbArray[form.ulb] = calculateStatus(form.status,form.actionTakenByRole, form.isDraft,"ULB");
+      ulbArray[form.ulb] = calculateStatus(form.status, form.actionTakenByRole, form.isDraft, "ULB");
       // }
     }
     return ulbArray;
@@ -2686,8 +2688,7 @@ const setCurrentStatusQuestionLevel = (statusList, key = null) => {
   }
   return obj;
 }
-
-function createDynamicColumns(collectionName) {
+function createDynamicColumns(collectionName, year = '') {
   let columns = ``;
   switch (collectionName) {
     case CollectionNames.odf:
@@ -2701,7 +2702,7 @@ function createDynamicColumns(collectionName) {
       columns = `Financial Year,Form Status,Created,Submitted On,Filled Status,Type,Audited/Provisional Year,Balance Sheet_PDF_URL,Balance Sheet_Excel_URL,Balance Sheet_State Review Status,Balance Sheet_State_Comments,Balance Sheet_MoHUA Review Status,Balance Sheet_MoHUA_Comments,Balance Sheet_Total Amount of Assets,Balance Sheet_Total Amount of Fixed Assets,Balance Sheet_Total Amount of State Grants received,Balance Sheet_Total Amount of Central Grants received,Balance Sheet Schedule_PDF_URL,Balance Sheet Schedule_Excel_URL,Balance Sheet Schedule_State Review Status,Balance Sheet Schedule_State_Comments,Balance Sheet Schedule_MoHUA Review Status,Balance Sheet Schedule_MoHUA_Comments,Income Expenditure_PDF_URL,Income Expenditure_Excel_URL,Income Expenditure_State Review Status,Income Expenditure_State_Comments,Income Expenditure_MoHUA Review Status,Income Expenditure_MoHUA_Comments,Income Expenditure_Total Amount of Revenue,Income Expenditure_Total Amount of Expenses,Income Expenditure Schedule_PDF_URL,Income Expenditure Schedule_Excel_URL,Income Expenditure Schedule_State Review Status,Income Expenditure Schedule_State_Comments,Income Expenditure Schedule_MoHUA Review Status,Income Expenditure Schedule_MoHUA_Comments,Cash Flow Schedule_PDF_URL,Cash Flow Schedule_Excel_URL,Cash Flow Schedule_State Review Status,Cash Flow Schedule_State_Comments,Cash Flow Schedule_MoHUA Review Status,Cash Flow Schedule_MoHUA_Comments,Auditor Report PDF_URL,Auditor Report State Review Status,Auditor Report State_Comments,Auditor Report MoHUA Review Status,Auditor Report MoHUA_Comments,Financials in Standardized Format_Filled Status,Financials in Standardized Format_Excel URL,State Comments if Accounts for 2022-23 is selected No,MoHUA Comments if Accounts for 2022-23 is selected No,State Review File_URL,MoHUA Review File_URL`;
       break;
     case CollectionNames.dur:
-      columns = `Financial Year,Form Status,Created,Submitted On,Filled Status,Tied grants for year,Unutilised Tied Grants from previous installment (INR in lakhs),15th F.C. Tied grant received during the year (1st & 2nd installment taken together) (INR in lakhs),Expenditure incurred during the year i.e. as on 31st March 2021 from Tied grant (INR in lakhs),Closing balance at the end of year (INR in lakhs),WM Rejuvenation of Water Bodies Total Tied Grant Utilised on WM(INR in lakhs),WM Rejuvenation of Water Bodies Number of Projects Undertaken,WM_Rejuvenation of Water Bodies_Total Project Cost Involved,WM_Drinking Water_Total Tied Grant Utilised on WM(INR in lakhs),WM_Drinking Water_Number of Projects Undertaken,WM_Drinking Water_Total Project Cost Involved,WM_Rainwater Harvesting_Total Tied Grant Utilised on WM(INR in lakhs),WM_Rainwater Harvesting_Number of Projects Undertaken,WM_Rainwater Harvesting_Total Project Cost Involved,WM_Water Recycling_Total Tied Grant Utilised on WM(INR in lakhs),WM_Water Recycling_Number of Projects Undertaken,WM_Water Recycling_Total Project Cost Involved,SWM_Sanitation_Total Tied Grant Utilised on SWM(INR in lakhs),SWM_Sanitation_Number of Projects Undertaken,SWM_Sanitation_Total Project Cost Involved(INR in lakhs),SWM_Solid Waste Management_Total Tied Grant Utilised on SWM(INR in lakhs),SWM_Solid Waste Management_Number of Projects Undertaken,SWM_Solid Waste Management_Total Project Cost Involved(INR in lakhs),Name,Designation,State_Review Status,State_Comments,MoHUA Review Status,MoHUA_Comments,State_File URL,MoHUA_File URL`
+      columns = `Financial Year,Form Status,Created,Submitted On,Filled Status,Tied grants for year,Unutilised Tied Grants from previous installment (INR in lakhs),15th F.C. Tied grant received during the year (1st & 2nd installment taken together) (INR in lakhs),Expenditure incurred during the year i.e. as on 31st March ${year} from Tied grant (INR in lakhs),Closing balance at the end of year (INR in lakhs),WM Rejuvenation of Water Bodies Total Tied Grant Utilised on WM(INR in lakhs),WM Rejuvenation of Water Bodies Number of Projects Undertaken,WM_Rejuvenation of Water Bodies_Total Project Cost Involved,WM_Drinking Water_Total Tied Grant Utilised on WM(INR in lakhs),WM_Drinking Water_Number of Projects Undertaken,WM_Drinking Water_Total Project Cost Involved,WM_Rainwater Harvesting_Total Tied Grant Utilised on WM(INR in lakhs),WM_Rainwater Harvesting_Number of Projects Undertaken,WM_Rainwater Harvesting_Total Project Cost Involved,WM_Water Recycling_Total Tied Grant Utilised on WM(INR in lakhs),WM_Water Recycling_Number of Projects Undertaken,WM_Water Recycling_Total Project Cost Involved,SWM_Sanitation_Total Tied Grant Utilised on SWM(INR in lakhs),SWM_Sanitation_Number of Projects Undertaken,SWM_Sanitation_Total Project Cost Involved(INR in lakhs),SWM_Solid Waste Management_Total Tied Grant Utilised on SWM(INR in lakhs),SWM_Solid Waste Management_Number of Projects Undertaken,SWM_Solid Waste Management_Total Project Cost Involved(INR in lakhs),Name,Designation,State_Review Status,State_Comments,MoHUA Review Status,MoHUA_Comments,State_File URL,MoHUA_File URL`
       break;
     case CollectionNames['28SLB']:
       columns = `Financial Year,Form Status,Created,Submitted On,Filled Status,Type,Year,Coverage of water supply connections,Per capita supply of water(lpcd),Extent of metering of water connections,Extent of non-revenue water (NRW),Continuity of water supply,Efficiency in redressal of customer complaints,Quality of water supplied,Cost recovery in water supply service,Efficiency in collection of water supply-related charges,Coverage of toilets,Coverage of waste water network services,Collection efficiency of waste water network,Adequacy of waste water treatment capacity,Extent of reuse and recycling of waste water,Quality of waste water treatment,Efficiency in redressal of customer complaints,Extent of cost recovery in waste water management,Efficiency in collection of waste water charges,Household level coverage of solid waste management services,Efficiency of collection of municipal solid waste,Extent of segregation of municipal solid waste,Extent of municipal solid waste recovered,Extent of scientific disposal of municipal solid waste,Extent of cost recovery in SWM services,Efficiency in collection of SWM related user related charges,Efficiency in redressal of customer complaints,Coverage of storm water drainage network,Incidence of water logging,State_Review Status,State_Comments,MoHUA Review Status,MoHUA_Comments,State_File URL,MoHUA_File URL `
@@ -2848,6 +2849,11 @@ const getQuestionsMapping = (questions, counter = 0) => {
 
 module.exports.downloadPTOExcel = async (req, res) => {
   try {
+    return res.status(400).json({
+      success: false,
+      message: "Forbidden"
+    })
+    
     const { crrWorkbook, filename, tempFilePath, year } = await excelPTOMapping(req.query)
 
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
@@ -2871,7 +2877,7 @@ const excelPTOMapping = async (query) => {
   return new Promise(async (resolve, reject) => {
     try {
       // get mapping for form questions and child questions
-      const questions = propertyTaxOpFormJson()['tabs'][0]['data']
+      const questions = propertyTaxOpFormJson({})['tabs'][0]['data']
       // static, we know the first four rows will be occupied by headers
       const startRowIndex = 5;
       // map form questions with excel columns
@@ -2907,12 +2913,17 @@ const excelPTOMapping = async (query) => {
       workbook.calcProperties.fullCalcOnLoad = false;
       const crrWorkbook = await workbook.xlsx.readFile(`${tempFilePath}/${filename}`)
       const crrWorksheet = crrWorkbook.getWorksheet("Sheet 1")
+
       const states = await State.find({accessToXVFC:true}).lean();
-      let STATE_DATA = {}
-      states.forEach(el=> { STATE_DATA[el?._id] = el?.name})
+      let STATE_DATA = {}, ALLOWED_STATES = [];
+      states.forEach(el=> { STATE_DATA[el?._id] = el?.name});
+      states.forEach(el=> ALLOWED_STATES.push(el._id))
       const cursor = await Ulb.aggregate([
-                {
-          $match: { [accessYear]: true},
+        {
+          $match: {
+            [accessYear]: true,
+            state: { $in: ALLOWED_STATES },
+          },
         },
         // {
         //   $lookup: {
@@ -2980,10 +2991,7 @@ const excelPTOMapping = async (query) => {
                     input: "$currentstatuse",
                     as: "cs",
                     cond: {
-                      $and: [
-                        { $eq: ["$$cs.actionTakenByRole", "STATE"] },
-                        { $eq: ["$$cs.shortKey", "form_level"] },
-                      ],
+                      $eq: ["$$cs.actionTakenByRole", "STATE"],
                     },
                   },
                 },
@@ -2997,10 +3005,7 @@ const excelPTOMapping = async (query) => {
                     input: "$currentstatuse",
                     as: "cs",
                     cond: {
-                      $and: [
-                        { $eq: ["$$cs.actionTakenByRole", "MoHUA"] },
-                        { $eq: ["$$cs.shortKey", "form_level"] },
-                      ],
+                      $eq: ["$$cs.actionTakenByRole", "MoHUA"],
                     },
                   },
                 },
@@ -3049,6 +3054,12 @@ const excelPTOMapping = async (query) => {
             as: "propertymapperchilddata",
           },
         },
+        {
+            $project:{
+              currentstatuse:0,
+              propertytaxop:0
+          }
+        }
       ])
         .allowDiskUse(true)
         .cursor({ batchSize: 50 })
@@ -3090,24 +3101,21 @@ const excelPTOMapping = async (query) => {
             if (
               result?.year &&
               questionColMapping[
-                `${result.type}-${
-                  YEAR_CONSTANTS_IDS[result?.year].split("-")[1]
-                }`
+              `${result.type}-${YEAR_CONSTANTS_IDS[result?.year].split("-")[1]
+              }`
               ]
             ) {
               crrWorksheet.getCell(
-                `${
-                  questionColMapping[
-                    `${result.type}-${
-                      YEAR_CONSTANTS_IDS[result?.year].split("-")[1]
-                    }`
-                  ]
+                `${questionColMapping[
+                `${result.type}-${YEAR_CONSTANTS_IDS[result?.year].split("-")[1]
+                }`
+                ]
                 }${startRowIndex + counter}`
               ).value = result.file
-                ? result.file.url
-                : result.date
-                ? convertToKolkataDate(result.date)
-                : result.value;
+                  ? result.file.url
+                  : result.date
+                    ? convertToKolkataDate(result.date)
+                    : result.value;
             }
             if (result.child?.length) {
               const childCounter = {};
@@ -3115,8 +3123,8 @@ const excelPTOMapping = async (query) => {
                 const child =
                   el?.propertymapperchilddata?.length > 0
                     ? el?.propertymapperchilddata.find(
-                        (e) => e._id.toString() === childId.toString()
-                      )
+                      (e) => e._id.toString() === childId.toString()
+                    )
                     : null;
                 if (child) {
                   if (!childCounter[child.type]) childCounter[child.type] = 0;
@@ -3131,14 +3139,13 @@ const excelPTOMapping = async (query) => {
                       : 0;
                     if (
                       questionColMapping[
-                        `${child.type}-textValue-${textValueCounter}`
+                      `${child.type}-textValue-${textValueCounter}`
                       ]
                     )
                       crrWorksheet.getCell(
-                        `${
-                          questionColMapping[
-                            `${child.type}-textValue-${textValueCounter}`
-                          ]
+                        `${questionColMapping[
+                        `${child.type}-textValue-${textValueCounter}`
+                        ]
                         }${startRowIndex + counter}`
                       ).value = child.textValue;
                   }
@@ -3147,18 +3154,15 @@ const excelPTOMapping = async (query) => {
                     userCharges.includes(child.type) &&
                     child?.year &&
                     questionColMapping[
-                      `${child.type}-${child.textValue.replace(/ /g, "")}-${
-                        YEAR_CONSTANTS_IDS[child?.year].split("-")[1]
-                      }`
+                    `${child.type}-${child.textValue.replace(/ /g, "")}-${YEAR_CONSTANTS_IDS[child?.year].split("-")[1]
+                    }`
                     ]
                   ) {
                     crrWorksheet.getCell(
-                      `${
-                        questionColMapping[
-                          `${child.type}-${child.textValue.replace(/ /g, "")}-${
-                            YEAR_CONSTANTS_IDS[child?.year].split("-")[1]
-                          }`
-                        ]
+                      `${questionColMapping[
+                      `${child.type}-${child.textValue.replace(/ /g, "")}-${YEAR_CONSTANTS_IDS[child?.year].split("-")[1]
+                      }`
+                      ]
                       }${startRowIndex + counter}`
                     ).value = child.value;
                   }
@@ -3166,18 +3170,15 @@ const excelPTOMapping = async (query) => {
                   if (
                     child?.year &&
                     questionColMapping[
-                      `${child.type}-${
-                        YEAR_CONSTANTS_IDS[child?.year].split("-")[1]
-                      }-${child.replicaNumber - 1}`
+                    `${child.type}-${YEAR_CONSTANTS_IDS[child?.year].split("-")[1]
+                    }-${child.replicaNumber - 1}`
                     ]
                   ) {
                     crrWorksheet.getCell(
-                      `${
-                        questionColMapping[
-                          `${child.type}-${
-                            YEAR_CONSTANTS_IDS[child?.year].split("-")[1]
-                          }-${child.replicaNumber - 1}`
-                        ]
+                      `${questionColMapping[
+                      `${child.type}-${YEAR_CONSTANTS_IDS[child?.year].split("-")[1]
+                      }-${child.replicaNumber - 1}`
+                      ]
                       }${startRowIndex + counter}`
                     ).value = child.value;
                   }
@@ -3187,8 +3188,10 @@ const excelPTOMapping = async (query) => {
             }
           }
           counter++;
-        }
-      });
+        
+      }
+    }
+      );
       cursor.on("end", () => {
         resolve({ crrWorkbook, filename, tempFilePath })
       });

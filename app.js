@@ -13,21 +13,23 @@ const json2xls = require("json2xls");
 const expressSanitizer = require("express-sanitizer");
 const verifyToken = require("./routes/auth/services/verifyToken").verifyToken;
 const ExpressError = require("./util/ExpressError");
-const emailCron = require('./cronjob/cron')
 
 
 const whitelist = [
   'https://stage.aaina-mohua.in',
   'https://api-stage.aaina-mohua.in',
-
   'https://aaina.gov.in',
   'https://api.aaina-mohua.in',
-  
   'http://localhost:4200',
   'https://democityfinance.dhwaniris.in',
   'https://staging.cityfinance.in',
   'https://staging-jana.cityfinance.in',
-  'https://cityfinance.in'
+  'https://uat.cityfinance.in',
+  `https://${process.env.DEMO_HOST_FRONTEND}`,
+  `https://${process.env.STAGING_HOST}`,
+  `https://${process.env.PROD_HOST}`,
+   process.env.HOSTNAME,
+   `https://dev.cityfinance.in`
 ];
 
 const corsOptions = {
@@ -40,7 +42,11 @@ const corsOptions = {
   }
 }
 
-app.use(cors(corsOptions));
+app.get('/test', (req, res) => {
+  return res.json({ working: "fine!! - autopull" });
+})
+
+// app.use(cors(corsOptions));
 
 
 app.use(json2xls.middleware);
@@ -102,8 +108,8 @@ app.use((err, req, res, next) => {
   });
 });
 
-app.listen(port, () => {
-  console.log("server started on port " + port);
-});
+// app.listen(port, () => {
+//   console.log("server started on port " + port);
+// });
 
 // module.exports = app

@@ -22,7 +22,7 @@ const STATUS_LIST = require('../../util/newStatusList')
 const LineItem = require('../../models/LineItem')
 const { groupByKey } = require('../../util/group_list_by_key')
 const ExcelJS = require("exceljs");
-const { canTakenAction, canTakenActionMaster, getMasterAction,checkIfUlbHasAccess,calculateStatus } = require('../CommonActionAPI/service')
+const { canTakenAction, canTakenActionMaster, getMasterAction,checkIfUlbHasAccess,calculateStatus, isYearWithinRange } = require('../CommonActionAPI/service')
 const fs = require("fs");
 const Service = require('../../service');
 const { FormNames, YEAR_CONSTANTS,  MASTER_STATUS, FORMIDs, FORM_LEVEL, FORM_LEVEL_SHORTKEY, MASTER_STATUS_ID } = require('../../util/FormNames');
@@ -33,6 +33,7 @@ const {getSeparatedShortKeys, saveFormLevelHistory} = require('../../routes/Comm
 var https = require('https');
 var request = require('request');
 const { concatenateUrls } = require("../../service/common");
+const { getPreviousYear, isYearWithinCurrentFY } = require("../sidemenu/service");
 
 // function doRequest(url) {
 //   return new Promise(function (resolve, reject) {
@@ -118,7 +119,7 @@ const { concatenateUrls } = require("../../service/common");
 //     for (let key in el) {
 //       if (key != '_id' && key != 'ulbName' && key != 'ulbcode' && el[key]) {
 //         let url = el[key];
-//         // let url = 'https://cityfinance.in/objects/31e1883d-7eef-4b2f-9e29-18d598056a5d.pdf'
+//         // let url = `https://${process.env.PROD_HOST}/objects/31e1883d-7eef-4b2f-9e29-18d598056a5d.pdf`
 //         try {
 //           let response = await doRequest(url);
 
@@ -251,7 +252,7 @@ module.exports.fileDeFuncFiles = async (req, res) => {
           if (key != '_id' && key != 'ulbName' && key != 'ulbcode' && el[key]) {
             documnetcounter++;
             let url = el[key];
-            // let url = 'https://cityfinance.in/objects/31e1883d-7eef-4b2f-9e29-18d598056a5d.pdf'
+            // let url = `https://${process.env.PROD_HOST}/objects/31e1883d-7eef-4b2f-9e29-18d598056a5d.pdf`
             try {
               let response = await doRequest(url);
               let obj = {
@@ -488,7 +489,7 @@ exports.createUpdate = async (req, res) => {
 
     const submittedForm = await AnnualAccountData.findOne(condition);
 
-    if (data.design_year === YEAR_CONSTANTS["23_24"] && data.ulb) {
+    if (isYearWithinRange(data.design_year) && data.ulb) {
       // const session = await mongoose.startSession();
       // await session.startTransaction();
       try {
@@ -667,7 +668,7 @@ exports.createUpdate = async (req, res) => {
                 //  session
               });
             }
-
+            Service.sendEmail(mailOptions);
             // Save Form Level History
             await saveFormLevelHistory(masterFormId, formSubmit, actionTakenByRole, actionTakenBy,MASTER_STATUS["Under Review By State"]);
             // await session.commitTransaction();
@@ -1039,7 +1040,7 @@ let getExcel = async (req, res, data) => {
       console.log(value)
       worksheet.addRow(value);
     });
-    worksheet.addRow({ headOfAccount: "Can't find what you are looking for? Reach out to us at contact@cityfinance.in" });
+    worksheet.addRow({ headOfAccount: `Can't find what you are looking for? Reach out to us at contact@${process.env.PROD_HOST}` });
     res.setHeader(
       "Content-Type",
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
@@ -1925,7 +1926,7 @@ exports.getAccounts = async (req, res,next) => {
     let prevStatus = await AnnualAccountData.findOne({
       ulb: ObjectId(ulb),
       design_year: prevYearData._id
-    }).select({ status: 1, isDraft: 1, actionTakenByRole: 1 }).lean()
+    }).select({ status: 1, isDraft: 1, actionTakenByRole: 1, currentFormStatus:1 }).lean()
 
     let status = '';
     if (prevStatus) {
@@ -1961,6 +1962,11 @@ exports.getAccounts = async (req, res,next) => {
       } else {
         annualAccountData['action'] = 'redirect'
         annualAccountData['url'] = `Your previous Year's form status is - ${status ? status : 'Not Submitted'} .Kindly submit Annual Accounts for the previous year at - <a href=https://${host}/upload-annual-accounts target="_blank">Click Here!</a> . `;
+        if(isYearWithinRange(design_year)){
+          let previousYearId = getPreviousYear(design_year,1);
+          let formRedirectionUrl = isYearWithinCurrentFY(design_year) ?  `ulb-form/${previousYearId}/annual_acc` : 'ulbform2223/annual_acc';
+          annualAccountData['url'] = `Your previous Year's form status is - ${status ? status : 'Not Submitted'} .Kindly submit Annual Accounts for the previous year at - <a href=https://${host}/${formRedirectionUrl} target="_blank">Click Here!</a> . `;
+        }
       }
     }
 
@@ -1973,7 +1979,7 @@ exports.getAccounts = async (req, res,next) => {
       ulb: ObjectId(ulb),
       design_year
     }
-    if( YEAR_CONSTANTS["23_24"] === design_year.toString()){
+    if(isYearWithinRange(design_year.toString())){
       filters['design_year'] = prevYearData._id
       filters['audited.submit_annual_accounts'] = true
     }
@@ -2015,7 +2021,7 @@ exports.getAccounts = async (req, res,next) => {
 
     }
     Object.assign(annualAccountData, obj)
-    if (design_year.toString() === YEAR_CONSTANTS["23_24"]) {
+    if (isYearWithinRange(design_year.toString())) {
       let params = {
         status: annualAccountData.currentFormStatus,
         formType: "ULB",
@@ -2023,7 +2029,7 @@ exports.getAccounts = async (req, res,next) => {
       };
       let bodyParams  = {
         ulb,
-        design_year : YEAR_CONSTANTS["23_24"],
+        design_year : design_year.toString(),
         formId: FORMIDs['AnnualAccount'],
         flag: true
       }
@@ -2065,7 +2071,6 @@ exports.getAccounts = async (req, res,next) => {
     next()
     // return res.status(200).json(annualAccountData);
   } catch (err) {
-    console.error(err.message);
     return Response.BadRequest(res, {}, err.message);
   }
 };
@@ -2096,7 +2101,7 @@ async function addActionKeys(annualAccountData, body, res, role, req){
     }
     return annualAccountData;
   } catch (error) {
-    return Response.BadRequest(res, {}, error.message);
+    throw new Error(`addActionKeys:: ${error.message}`)
   }
 }
 

@@ -10,6 +10,7 @@ const getLink = async (req,res)=>{
         if (!validation.valid) { return Response.BadRequest(res,{}, validation?.message) }
         let data = await LinkRecord.findOne({key},{shortKey:1, url:1, key:1, _id:0}).lean()
         if(data){ return  Response.OK(res,data,""); }
+        return Response.OK(res, {},"No Data Found")
     } catch (error) {
         return Response.BadRequest(res,{}, "Something went wrong")
     }
