@@ -456,6 +456,87 @@ const gsdpTemplate = async (req, res, next) => {
         console.log(err)
     }
 }
+const stateGsdpTemplate = async (req, res, next) => {
+    const templateName = req.params.templateName;
+    try {
+        const relatedIds = Array.isArray(req.query.relatedIds) ? req.query.relatedIds : [req.query.relatedIds];
+        const startingRow = 1;
+        const workbook = new ExcelJS.Workbook();
+        const worksheet = workbook.addWorksheet('My Sheet');
+
+        worksheet.columns = [
+            { header: '_id', key: '_id', width: 20, hidden: true },
+            { header: 'S no', key: 'sno', },
+            { header: 'State', key: 'stateName', width: 20 },
+            { header: 'Average GSDP growth rate of previous 5 years at Constant prices', key: 'constantPrice', width: 30 },
+            { header: 'Average GSDP growth rate of previous 5 years at Current prices', key: 'currentPrice', width: 30 },
+        ];
+
+        worksheet.getRows(1, startingRow).forEach(row => {
+            row.eachCell({ includeEmpty: true }, cell => {
+                cell.fill = {
+                    type: 'pattern',
+                    pattern: 'solid',
+                    fgColor: { argb: 'ffbdd7ee' }
+                };
+            });
+        });
+
+        const stateGsdpDate = await State.aggregate([
+            {
+                $match: {
+                    _id: { $in: relatedIds.map(id => ObjectId(id)) }
+                }
+            },
+            {
+                $lookup: {
+                    from: 'state_gsdp',
+                    localField: '_id',
+                    foreignField: 'stateId',
+                    as: 'gsdp_data'
+                }
+            },
+            {
+                $unwind: '$gsdp_data'
+            },
+            {
+                $addFields: {
+                    prices: {
+                        $filter: {
+                            input: '$gsdp_data.data',
+                            as: 'item',
+                            cond: { $eq: ['$$item.year', '2018-23'] },
+            
+                        }
+                    }    
+                }
+            },
+            {
+                $unwind: '$prices'
+            },
+            {
+                $project: {
+                    _id: 1,
+                    stateName: "$name",
+                    constantPrice: '$prices.constantPrice',
+                    currentPrice: '$prices.currentPrice',
+                }
+            }
+        ]);
+
+        worksheet.addRows(stateGsdpDate.map((value, sno) => ({ ...value, sno: sno + 1 })), { startingRow, properties: { outlineLevel: 1 } });
+
+        const buffer = await workbook.xlsx.writeBuffer();
+        res.setHeader('Content-Disposition', `attachment; filename=${templateName}.xlsx`);
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+
+        res.send(buffer);
+
+
+    } catch (err) {
+        console.log(err)
+    }
+}
 
 
 const updateGsdpTemplate = async (req, res, next, worksheet, workbook) => {
@@ -509,6 +590,7 @@ const getTemplate = async (req, res, next) => {
     const templateName = req.params.templateName;
     if (templateName == 'dulyElected') return dulyElectedTemplate(req, res, next);
     if (templateName == 'gsdp') return gsdpTemplate(req, res, next);
+    if (templateName == 'stateGsdp') return stateGsdpTemplate(req, res, next);
 }
 
 const getCategoryWiseResource = async (req, res, next) => {
