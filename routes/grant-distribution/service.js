@@ -120,6 +120,9 @@ exports.getTemplate = async (req, res) => {
       name: "ULB Name",
       amount,
     };
+    if (formData.year === "606aafcf4dff55e6c075d424") {
+      field = setFields(formData);
+    }
     let xlsData = await Service.dataFormating(data, field);
     return res.xls("grant_template.xlsx", xlsData);
   } catch (err) {
@@ -127,6 +130,23 @@ exports.getTemplate = async (req, res) => {
     return Response.DbError(res, err.message, "server error");
   }
 };
+
+function setFields(formData) {
+  const installment = formData?.installment === '1' ? '1st' : '2nd';
+  let fields = {
+    code: "ULB Census Code/ULB Code",
+    name: "ULB Name",
+    area: 'AREA - as per 2011',
+    population: 'POPULATION as per 2011 CENSUS',
+    dulyElected: 'STATUS (DULY ELECTED - YES/NO)',
+    remarks: 'REMARKS',
+    gaTied: `GRANT ALLOCATION - ${installment} Installment TIED`,
+    ga15fcPercTied: '%FC GRANT ALLOCATED',
+    gaUnTied: `GRANT ALLOCATION - ${installment} Installment UNTIED`,
+    ga15fcPercUnTied: '%FC GRANT ALLOCATED',
+  };
+  return fields;
+}
 
 exports.uploadTemplate = async (req, res) => {
   let { url, design_year } = req.query;
