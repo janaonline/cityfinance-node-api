@@ -495,10 +495,10 @@ const stateGsdpTemplate = async (req, res, next) => {
             },
             {
                 $unwind: {
-                    path: '$gsdp_data',
-                    preserveNullAndEmptyArrays: true
+                  path: "$gsdp_data",
+                  preserveNullAndEmptyArrays: true
                 }
-            },
+              },
             {
                 $addFields: {
                     prices: {
@@ -512,8 +512,8 @@ const stateGsdpTemplate = async (req, res, next) => {
             },
             {
                 $unwind: {
-                    path: '$prices',
-                    preserveNullAndEmptyArrays: true
+                  path: "$prices",
+                  preserveNullAndEmptyArrays: true
                 }
             },
             {
@@ -526,10 +526,7 @@ const stateGsdpTemplate = async (req, res, next) => {
             }
         ]);
 
-        worksheet.addRows(stateGsdpData.map((value, sno) => ({ ...value, sno: sno + 1 })), {
-            startingRow,
-            properties: { outlineLevel: 1 }
-        });
+        worksheet.addRows(stateGsdpData.map((value, sno) => ({ ...value, sno: sno + 1 })), { startingRow, properties: { outlineLevel: 1 } });
 
         // Set up data validation for 'stateName' column
         const stateNameColumn = worksheet.getColumn('stateName');
