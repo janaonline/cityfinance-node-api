@@ -10,19 +10,19 @@ const GrantDistributionSchema = new Schema(
     modifiedAt: { type: Date, default: Date.now() },
     createdAt: { type: Date, default: Date.now() },
     isActive: { type: Boolean, default: 1 },
-    currentFormStatus:{type:Number},
+    currentFormStatus: { type: Number },
     actionTakenBy: {
       type: Schema.Types.ObjectId,
       ref: "User",
       index: true,
     },
-    type:{
+    type: {
       type: String,
       enum: {
-        values: ["nonmillion_tied", "million_tied", "nonmillion_untied",""],
+        values: ["nonmillion_tied", "million_tied", "nonmillion_untied", "nonmillion_tied_untied", ""],
       },
     },
-    installment:{
+    installment: {
       type: Number,
     },
     design_year: { type: Schema.Types.ObjectId, ref: "Year", required: true },
@@ -35,9 +35,9 @@ GrantDistributionSchema.index(
   {
     state: 1,
     design_year: 1,
-    type:1,
-    installment:1,
-    year:1
+    type: 1,
+    installment: 1,
+    year: 1
   },
   {
     unique: true,
