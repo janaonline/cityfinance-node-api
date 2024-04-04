@@ -482,7 +482,7 @@ const stateGsdpTemplate = async (req, res, next) => {
             });
         });
 
-        const stateGsdpDate = await State.aggregate([
+        const stateGsdpData = await State.aggregate([
             {
                 $match: {
                     _id: { $in: relatedIds.map(id => ObjectId(id)) }
@@ -497,8 +497,11 @@ const stateGsdpTemplate = async (req, res, next) => {
                 }
             },
             {
-                $unwind: '$gsdp_data'
-            },
+                $unwind: {
+                  path: "$gsdp_data",
+                  preserveNullAndEmptyArrays: true
+                }
+              },
             {
                 $addFields: {
                     prices: {
@@ -512,7 +515,10 @@ const stateGsdpTemplate = async (req, res, next) => {
                 }
             },
             {
-                $unwind: '$prices'
+                $unwind: {
+                  path: "$prices",
+                  preserveNullAndEmptyArrays: true
+                }
             },
             {
                 $project: {
@@ -524,7 +530,7 @@ const stateGsdpTemplate = async (req, res, next) => {
             }
         ]);
 
-        worksheet.addRows(stateGsdpDate.map((value, sno) => ({ ...value, sno: sno + 1 })), { startingRow, properties: { outlineLevel: 1 } });
+        worksheet.addRows(stateGsdpData.map((value, sno) => ({ ...value, sno: sno + 1 })), { startingRow, properties: { outlineLevel: 1 } });
 
         const buffer = await workbook.xlsx.writeBuffer();
         res.setHeader('Content-Disposition', `attachment; filename=${templateName}.xlsx`);
@@ -585,57 +591,70 @@ const updateGsdpTemplate = async (req, res, next, worksheet, workbook) => {
         Promise.reject("Something went wrong");
     }
 }
+
 const updatestateGsdpTemplate = async (req, res, next, worksheet, workbook) => {
     try {
         const validationErrors = [];
         const columnId = 1;
         const columnConstantPrice = 4;
         const columnCurrentPrice = 5;
+        const columnState = 3;
 
         const _ids = worksheet.getColumn(columnId).values;
         const stateGsdpConstantPrices = worksheet.getColumn(columnConstantPrice).values;
         const stateGsdpCurrentPrices = worksheet.getColumn(columnCurrentPrice).values;
+        const stateName = worksheet.getColumn(columnState).values;
 
-        const stateGsdpUpdateQuery = _ids.map((_id, index) => {
+        const promises = _ids.map(async (_id, index) => {
             if (!_id || !isValidObjectId(_id)) return;
-            // if (!req.body.ulbIds?.includes('' + _id)) return;
 
-            if (isNaN(stateGsdpConstantPrices[index])) {
+            if (isNaN(stateGsdpConstantPrices[index]) || [undefined, ""].includes(stateGsdpConstantPrices[index])) {
                 validationErrors.push({
                     r: index,
                     c: columnConstantPrice,
-                    message: `Value should be a number"`
+                    message: `Value should be a number and can't be empty`
                 });
             }
-            
-            if (isNaN(stateGsdpCurrentPrices[index])) {
+
+            if (isNaN(stateGsdpCurrentPrices[index]) && [undefined, ""].includes(stateGsdpConstantPrices[index])) {
                 validationErrors.push({
                     r: index,
                     c: columnCurrentPrice,
-                    message: `Value should be a number"`
+                    message: `Value should be a number and can't be empty`
+                });
+            }
+
+            let checkStateGsdpData = await StateGsdpData.findOne({ stateId: ObjectId(_id) }).lean();
+
+            if(checkStateGsdpData) {
+                validationErrors.push({
+                    r: index,
+                    c: columnState,
+                    message: `Already Uploaded data`
                 });
             }
             
-
-            // const isGsdpEligible = typeof gdsps[index] === 'string' ? (gdsps[index]?.toLowerCase() == GSDP_OPTIONS.ELIGIBLE) : null;
             const result = {
-                updateOne: {
-                    filter: { stateId: ObjectId(_id), 'data.year': "2018-23" },
-                    update: {
-                        $set: {
-                            "data.$.constantPrice": stateGsdpConstantPrices[index],
-                            "data.$.currentPrice": stateGsdpCurrentPrices[index],
-                        }
+                "stateId" : ObjectId(_id),
+                "stateName" : stateName[index],
+                "data" : [
+                    {
+                        "year" : "2018-23",
+                        "constantPrice" : stateGsdpConstantPrices[index],
+                        "currentPrice" : stateGsdpCurrentPrices[index]
                     }
-                }
+                ],
             }
             return result;
-        }).filter(i => i);
+        });
+
+        const results = (await Promise.all(promises)).filter(i => i);
 
         if (validationErrors.length) {
             return Promise.reject({ validationErrors });
         }
-        await StateGsdpData.bulkWrite(stateGsdpUpdateQuery);
+
+        await StateGsdpData.insertMany(results);
         Promise.resolve("Data updated");
     } catch (err) {
         console.log(err);
