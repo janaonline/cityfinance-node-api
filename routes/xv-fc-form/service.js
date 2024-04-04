@@ -38,7 +38,7 @@ const TwentyEightSlbForm = require('../../models/TwentyEightSlbsForm');
 const PrevLineItem_CONSTANTS = require('../../util/lineItems');
 const { years } = require("../../service/years");
 const { getKeyByValue } = require("../../util/masterFunctions");
-const { MASTER_STATUS_ID } = require("../../util/FormNames");
+const { MASTER_STATUS_ID, YEAR_CONSTANTS } = require("../../util/FormNames");
 const { concatenateUrls } = require("../../service/common");
 
 const BackendHeaderHost ={
@@ -4884,12 +4884,16 @@ function updateURLs(arr) {
     throw {message: `updateUrls: ${e.message}`}
   }
 }
-
+ 
 async function update28SlbForms(ulbData){
   try{
     // query.design_year = design_year_2223;
     let yearsIds = [...ulbData.accessibleForYears]
-    yearsIds = yearsIds.map(item => ObjectId(item))
+    yearsIds = yearsIds.map(item => ObjectId(item));
+    // let ulbUA =  await Ulb.findOne({_id: ulbData?.ulb},{UA:1}).lean();
+    // if(!ulbUA?.UA){
+    //    yearsIds = yearsIds.filter(year=> ![YEAR_CONSTANTS['24_25']].includes(year.toString()));
+    // }
     let query = {}
     query["ulb"] = ulbData.ulb;
     query["design_year"] = {"$in":yearsIds}

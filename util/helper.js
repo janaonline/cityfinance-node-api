@@ -1,3 +1,4 @@
+const { getDesiredYear, isBeyond2023_24 } = require("../service/years");
 const userTypes = require("./userTypes")
 function Helper() {
     this.isKeyValueMatched = function (obj, key, val) {
@@ -58,13 +59,47 @@ function Helper() {
     this.isEmptyObj = (obj) => {
         return Object.keys(obj).length == 0 && obj.constructor === Object
     }
-    this.isReadOnly = ({ isDraft, status, currentFormStatus, role }) => {
+
+    this.isSingleYearIndicator = yearData => {
+        return yearData.reduce((total, yearItem) => {
+            if(!this.isEmptyObj(yearItem)) total++;
+            return total;
+        }, 0) == 1;
+    }
+
+    this.ensureArray = function ensureArray(a) {
+        if (arguments.length === 0) return [];            // no args, ret []
+        if (arguments.length === 1) {                     // single argument
+          if (a === undefined || a === null) return [];   // undefined or null, ret []
+          if (Array.isArray(a)) return a;                 // isArray, return it
+        }
+        return Array.prototype.slice.call(arguments);     // return array with copy of all arguments
+      }
+
+    this.isReadOnly = ({ currentFormStatus, role }) => {
         if ([1, 2, 5, 7].includes(currentFormStatus) && role === userTypes.ulb) {
             return false
         }
         else {
             return true
         }
+    }
+
+    this.handleOldYearsDisabled = ({ yearObject, design_year, isForChild = false }) => {
+        if(!isBeyond2023_24(design_year)) return;
+        const { yearIndex: designYearIndex  } = getDesiredYear(design_year);
+        const { yearIndex } = getDesiredYear(yearObject.year);
+        if(designYearIndex - yearIndex > 1) {
+            yearObject.readonly = true;
+            yearObject.required = false;
+            yearObject.placeholder = (yearObject.value == "") ? 'N/A' : "";
+            yearObject.notApplicable = (yearObject.value == "");
+        } else if(isForChild) {
+            yearObject.required = true;
+        }
+    }
+    this.hasMultipleYearData = (yearData) => {
+        return !yearData.some((yearItem) => Object.keys(yearItem).length == 0);
     }
     this.roundValue = (key) => {
         if (typeof key == 'number') {
