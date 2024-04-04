@@ -46,7 +46,7 @@ module.exports.getForm = async (req, res) => {
 function setForm(req, form) {
     let role = req.decoded.role;
 
-    let readOnly = [1, 2, 5, 7].includes(form.currentFormStatus) && role === userTypes.state ? false : true;
+    let readOnly = [1, 2, 5, 7].includes(form?.currentFormStatus) && role === userTypes.state ? false : true;
 
     sfcForm['isDraft'] = form?.isDraft || true;
     sfcForm['state'] = form?.ulb || req.query.state;
@@ -54,9 +54,10 @@ function setForm(req, form) {
     sfcForm['statusId'] = form?.currentFormStatus || MASTER_STATUS['Not Started'];
     sfcForm['status'] = MASTER_STATUS_ID[form?.currentFormStatus] || MASTER_STATUS_ID[1];
 
-    Object.assign(form, { canTakeAction: canTakenAction(form['status'], form['actionTakenByRole'], form['isDraft'], "STATE", role) })
 
     if (form) {
+        Object.assign(form, { canTakeAction: canTakenAction(form['status'], form['actionTakenByRole'], form['isDraft'], "STATE", role) });
+
         form.data.forEach(element => {
             let keyData = sfcForm.tabs[0].data[element.key];
             if (keyData) {
