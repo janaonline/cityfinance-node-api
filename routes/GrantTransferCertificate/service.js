@@ -2,6 +2,7 @@ const request = require('request')
 const GrantTransferCertificate = require('../../models/GrantTransferCertificate');
 const StateGTCCertificate = require('../../models/StateGTCertificate');
 const ObjectId = require("mongoose").Types.ObjectId;
+const moongose = require('mongoose');
 const Ulb = require('../../models/Ulb')
 const {saveStatusAndHistory} = require("../CommonFormSubmission/service")
 const { checkForUndefinedVaribales, mutateResponse, getFlatObj } = require("../../routes/CommonActionAPI/service")
@@ -11,15 +12,27 @@ const GtcInstallmentForm = require("../../models/GtcInstallmentForm")
 const TransferGrantDetailForm = require("../../models/TransferGrantDetailForm")
 const { grantsWithUlbTypes, installment_types, singleInstallmentTypes,warningkeys,getMessagesForRadioButton } = require("./constants")
 const FormsJson = require("../../models/FormsJson");
-const {previousFormsAggregation,getPFMSFilledQuery} = require("./aggregation")
+const {previousFormsAggregation, pfmsFormsAggregation, getPFMSFilledQuery} = require("./aggregation")
 const { MASTER_STATUS, MASTER_STATUS_ID ,MASTER_FORM_STATUS} = require('../../util/FormNames');
 const userTypes = require("../../util/userTypes");
 const {findPreviousYear} = require("../../util/findPreviousYear")
 const {FORMIDs} = require("../../util/FormNames")
 const {getAccessYearKey } = require('../../routes/masterForm/service');
+const SFC = require('../../models/SFC');
 
-
-
+//TODO: remove the below comments
+/**
+ * Conditions to fill GTC in 22-23 
+ *  1. All the 
+ * Conditions to fill GTC in 23-24
+ *  1. Property tax floor rate notification of 22-23 must be submitted.
+ *  2. SFC notifiction of 22-23 must be submitted.
+ *  3. PFMS of all the ULBs must be submitted/ approved by state?
+ *  4. GTC of 22-23 must be submitted.
+ * Conditions to fill GTC in 24-25
+ *  1. SFC form of 24-25 must be submitted.
+ *  2. All the ULBs PFMS must be submitted/ approved by state?
+ */
 
 let gtcYears = ["2018-19", "2019-20", "2021-22", "2022-23"]
 let GtcFormTypes = [
@@ -592,10 +605,15 @@ const checkForPreviousForms = async (design_year, state) => {
         let gtcFormsLength = await GrantTransferCertificate.find({
             "design_year": yearId,
             "state": ObjectId(state),
-        }).countDocuments()
-        if (gtcFormsLength < 8) {
+        }).countDocuments();
+        let reqLength = 8; // 23-24
+        if(['606aafcf4dff55e6c075d424'].includes(design_year)) { // 24-25
+            reqLength = 5;
+        }
+        // TODO: The number 5 must be dynamic. For 23-24 it is 8 and 24-25 it is 5.
+        if (gtcFormsLength < reqLength) {
             validator.valid = false
-            validator.message = alerts['prevForm']
+            validator.message = alerts['prevForm'] //Your previous year's GTC form is not complete....
         }
     }
     catch (err) {
@@ -818,6 +836,32 @@ async function getPFMSFilledData(params, prevAccessYearKey, currentAccessYearKey
    }
 }
 
+async function getPreviousYearData24_25(state,design_year){
+    let response = {}
+    try {
+        let params = {
+            state:ObjectId(state), 
+            design_year:ObjectId(design_year), 
+        }
+        let query = await pfmsFormsAggregation(params)
+        response = await Ulb.aggregate(query).allowDiskUse(true)
+        const cond = {
+            // actionTakenByRole: 'MoHUA',
+            // status: 'APPROVED'
+        };
+        const sfcCount = await SFC.find({...params, ...cond}).countDocuments();
+        let data = [{
+            IsSfcFormFilled: sfcCount ? 'Yes' : 'No',
+            isPfrFilled: 'Yes',
+            pfmsFilledPerc: response[0].pfmsFilledPerc
+          }];
+       return data;
+    }
+    catch(err){
+        console.log("error in getPreviousYearData24_25 :: ",err.message)
+    }
+    return response
+}
 
 async function addWarnings(previousYearData,design_year){
     try{
@@ -848,6 +892,7 @@ async function addWarnings(previousYearData,design_year){
 
 
 module.exports.getInstallmentForm = async (req, res, next) => {
+    // mongoose.set('debug',true);
     let response = {
         success: false,
         message: "",
@@ -857,9 +902,16 @@ module.exports.getInstallmentForm = async (req, res, next) => {
     try {
         let responseData = []
         let { design_year, state, formType } = req.query
-        let { role } = req.decoded
-        let previousYearData = await getPreviousYearData(state,design_year);
-        response.errors = await addWarnings(previousYearData, design_year)
+        let { role } = req.decoded;
+        let previousYearData;
+
+        if(design_year === '606aafcf4dff55e6c075d424') {
+            previousYearData = await getPreviousYearData24_25(state,design_year);
+        } else {
+            previousYearData = await getPreviousYearData(state,design_year);
+        }
+        
+        response.errors = await addWarnings(previousYearData)
         let validator = await checkForUndefinedVaribales({
             "design year": design_year,
             "state": state
@@ -974,6 +1026,7 @@ const appendFormId = async (transferGrantData, gtcInstallment) => {
     return transferGrantData
 }
 async function handleInstallmentForm(params) {
+    // mongoose.set('debug',true);
     let validator = {
         valid: true,
         message: "",
@@ -1090,13 +1143,14 @@ async function getOrCreateFormId(params) {
 }
 
 module.exports.createOrUpdateInstallmentForm = async (req, res) => {
+    // mongoose.set('debug',true);
     let response = {
         "success": true,
         "message": "",
         "errors": []
     }
     try {
-        let { installment, type, isDraft, status, financialYear, year, state, statusId: currentFormStatus, installment_type } = req.body
+        let { installment, type, isDraft, status, design_year, financialYear, year, state, statusId: currentFormStatus, installment_type } = req.body
         let role = req.decoded.role
         let userId = req.decoded._id
         if (role !== userTypes.state) {
@@ -1136,14 +1190,19 @@ module.exports.createOrUpdateInstallmentForm = async (req, res) => {
         }
         req.body.gtcFormId = gtcFormId
         req.body._id =  gtcFormId
-        req.body.formSubmit = [JSON.parse(JSON.stringify(req.body))]
-        let installmentFormValidator = await handleInstallmentForm(req.body)
-        // console.log("installmentFormValidator ::: ", installmentFormValidator)
-        if (!installmentFormValidator.valid && runValidators) {
-            response.success = false
-            response.message = installmentFormValidator.errors
-            // response.errors = installmentFormValidator.errors
-            return res.status(405).json(response)
+        req.body.formSubmit = [JSON.parse(JSON.stringify(req.body))];
+
+        //TODO: Check the conditions
+        //ingored for 2024-25
+        if(!['606aafcf4dff55e6c075d424'].includes(design_year)) {
+            let installmentFormValidator = await handleInstallmentForm(req.body)
+            // console.log("installmentFormValidator ::: ", installmentFormValidator)
+            if (!installmentFormValidator.valid && runValidators) {
+                response.success = false
+                response.message = installmentFormValidator.errors
+                // response.errors = installmentFormValidator.errors
+                return res.status(405).json(response)
+            }
         }
         
         let actionTakenByRole = role
