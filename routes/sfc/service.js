@@ -2,6 +2,9 @@ const SFC = require('../../models/SFC');
 const ObjectId = require('mongoose').Types.ObjectId;
 const { canTakenAction } = require('../CommonActionAPI/service')
 const { sfcForm } = require('./constant')
+const userTypes = require("../../util/userTypes")
+const { FormNames, MASTER_STATUS_ID, MASTER_STATUS, MASTER_FORM_STATUS } = require('../../util/FormNames');
+
 function response(form, res, successMsg, errMsg) {
     if (form) {
         return res.status(200).json({
@@ -27,18 +30,11 @@ module.exports.getForm = async (req, res) => {
         condition.design_year = data.design_year;
         let role = req.decoded.role;
         const form = await SFC.findOne(condition).lean();
-        if (form) {
-            Object.assign(form, { canTakeAction: canTakenAction(form['status'], form['actionTakenByRole'], form['isDraft'], "STATE", role) })
-            return res.status(200).json({
-                status: true,
-                data: setForm(form)
-            })
-        } else {
-            return res.status(200).json({
-                status: true,
-                data: sfcForm // new form
-            })
-        }
+        
+        return res.status(200).json({
+            status: true,
+            data: setForm(req, form)
+        })
     } catch (error) {
         return res.status(400).json({
             status: false,
@@ -47,23 +43,45 @@ module.exports.getForm = async (req, res) => {
     }
 }
 
-function setForm(form) {
-    form.data.forEach(element => {
-        switch (element.formFieldType) {
-            case 'file':
-                sfcForm.tabs[0].data[element.key].yearData[0].file = element.file;
-                break;
-            case 'date':
-                sfcForm.tabs[0].data[element.key].yearData[0].date = element.date;
-                break;
-            default:
-                sfcForm.tabs[0].data[element.key].yearData[0].value = element.value;
-                break;
-        }
-    });
+function setForm(req, form) {
+    let role = req.decoded.role;
+
+    let readOnly = [1, 2, 5, 7].includes(form.currentFormStatus) && role === userTypes.state ? false : true;
+
+    sfcForm['isDraft'] = form?.isDraft || true;
+    sfcForm['state'] = form?.ulb || req.query.state;
+    sfcForm['design_year'] = form?.design_year || req.query.design_year;
+    sfcForm['statusId'] = form?.currentFormStatus || MASTER_STATUS['Not Started'];
+    sfcForm['status'] = MASTER_STATUS_ID[form?.currentFormStatus] || MASTER_STATUS_ID[1];
+
+    Object.assign(form, { canTakeAction: canTakenAction(form['status'], form['actionTakenByRole'], form['isDraft'], "STATE", role) })
+
+    if (form) {
+        form.data.forEach(element => {
+            let keyData = sfcForm.tabs[0].data[element.key];
+            if (keyData) {
+                keyData.yearData[0].readonly = readOnly;
+                keyData.yearData[0] = setValue(keyData.yearData[0], element);
+            }
+        });
+    }
     return sfcForm;
 }
 
+function setValue(data, yearData) {
+    switch (data.formFieldType) {
+        case 'file':
+            data['file'] = yearData.file;
+            break;
+        case 'date':
+            data['date'] = yearData.date;
+            break;
+        default:
+            data['value'] = yearData.value;
+            break;
+    }
+    return data;
+}
 
 function processFormData(reqData) {
     let sfcData = [];
@@ -76,18 +94,7 @@ function processFormData(reqData) {
             formFieldType: value.yearData[0].formFieldType,
         };
         const yearData = value.yearData[0];
-        switch (yearData.formFieldType) {
-            case 'file':
-                data['file'] = yearData.file;
-                break;
-            case 'date':
-                data['date'] = yearData.date;
-                break;
-            default:
-                data['value'] = yearData.value;
-                break;
-        }
-        sfcData.push(data);
+        sfcData.push(setValue(data, yearData));
     }
     return sfcData;
 }
