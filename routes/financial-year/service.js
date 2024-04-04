@@ -7,7 +7,8 @@ const Ulb = require('../../models/Ulb')
 const Tabs = require('../../models/TabList')
 const { getCurrentFinancialYear } = require("../CommonActionAPI/service");
 const catchAsync = require('../../util/catchAsync');
-const { YEAR_CONSTANTS } = require('../../util/FormNames');
+const { YEAR_CONSTANTS, ENV } = require('../../util/FormNames');
+
 let decade = "20"
 module.exports.get = async function (req, res) {
     let query = {};
@@ -142,7 +143,7 @@ module.exports.access = catchAsync(async function (req, res) {
             "path": "design_year"
         }).lean()
         const role = req.decoded.role;
-        if(role !== "ULB"){
+        if(role !== "ULB" && process.env.ENV === ENV['prod']) {
             years =  years.filter(year=> year?.design_year?._id.toString() !== YEAR_CONSTANTS['24_25'])
         }
         let MoHUA_arr = years.map(returnYearUrl, { "type": "mohuaUrl", "role": "mohua" })
