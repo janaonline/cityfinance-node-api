@@ -10499,10 +10499,10 @@ const propertyTaxOpFormJson = ({role, design_year, ptoData, ptoMaper = []}) => {
           
           const indicatorObj = indicator.yearData[0];
 
-          const disabledKeys = ['ulbFinancialYear'];
-          if(disabledKeys.includes(indicator?.key)) {
-            indicatorObj.isReadonlySingleYear = true;
-          }
+          // const disabledKeys = ['ulbFinancialYear'];
+          // if(disabledKeys.includes(indicator?.key)) {
+          //   indicatorObj.isReadonlySingleYear = true;
+          // }
           
           if (parentRadioQuestionKeys.includes(indicator?.key)) {
             if (compareWithMapper18_19(ptoMaper, indicator.key, "Yes")) {
