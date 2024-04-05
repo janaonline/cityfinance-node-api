@@ -2575,8 +2575,9 @@ async function mutateResponse(jsonFormat, flatForm, keysToBeDeleted, role) {
         obj[0] = await appendExtraKeys(keysToBeDeleted, obj[0], flattedForm)
         await deleteKeys(flattedForm, keysToBeDeleted)
         for (let key in obj) {
-            let questions = obj[key].question
+            let questions = obj[key].question;
             if (questions) {
+              var { toggleDisabledKeys, tabLevelStatuses } = toggleKeysDisableHandling(questions, flattedForm);
                 for (let question of questions) {
                     let answer = []
                     let obj = { ...answerObj }
@@ -2585,7 +2586,11 @@ async function mutateResponse(jsonFormat, flatForm, keysToBeDeleted, role) {
                     await handleValues(question, obj, flattedForm)
                     answer.push(obj)
                     question['selectedValue'] = answer
+                    if(question.shortKey == "unAudited.submit_standardized_data") {
+                        console.log("hihihih")
+                    }
                     await manageDisabledQues(question, flattedForm)
+
                     await deleteExtraKeys(question)
                     let modifiedObj = await handleRangeIfExists(question, flattedForm)
                     let warnings = await handleWarningsIfExists(question, flattedForm)
@@ -2595,6 +2600,14 @@ async function mutateResponse(jsonFormat, flatForm, keysToBeDeleted, role) {
                     question.max = modifiedObj.max ? modifiedObj.max : question.min;
                     question.minRange = modifiedObj.minRange ? modifiedObj.minRange : question.minRange;
                     question.maxRange = modifiedObj.maxRange ? modifiedObj.maxRange : question.minRange;
+
+                    //Tab level radio toggle disabled key handling..
+                    if (toggleDisabledKeys.includes(question.shortKey)) {
+                        let tabShortKey = new RegExp(`${question.shortKey.split('.')[0]}`)
+                        if (Object.keys(tabLevelStatuses).join(" ").match(tabShortKey)) {
+                            question.isQuestionDisabled = tabLevelStatuses[question.shortKey.split('.')[0]] ? true : false;
+                        }
+                    }
                 }
 
                 let modifiedKeys = Object.keys(modifiedShortKeys)
@@ -2608,6 +2621,35 @@ async function mutateResponse(jsonFormat, flatForm, keysToBeDeleted, role) {
     }
 }
 
+
+function toggleKeysDisableHandling(questions, flattedForm) {
+    const tabRegex = /^tab_/g;
+    const toggleDisabledKeys = ["unAudited.submit_annual_accounts", "unAudited.submit_standardized_data", "audited.submit_annual_accounts", "audited.submit_standardized_data"];
+    let tabLevelStatuses = {};
+    questions.forEach(question => {
+        let tabMatch = question.reviewShortKey?.match(tabRegex);
+        if (tabMatch) {
+            let tab = question.reviewShortKey.split("_")[1];
+            tabLevelStatuses[tab] = null;
+        }
+    });
+    Object.keys(tabLevelStatuses).forEach(tab => {
+        for (let keys in flattedForm) {
+            const regex = new RegExp(`^${tab}.*statusId$`);
+            if (keys.match(regex)) {
+                const checkStatusArray = [
+                    MASTER_FORM_STATUS['SUBMISSION_ACKNOWLEDGED_BY_MoHUA'],
+                    MASTER_FORM_STATUS['UNDER_REVIEW_BY_MoHUA'],
+                    MASTER_FORM_STATUS['UNDER_REVIEW_BY_STATE']
+                ];
+                if (checkStatusArray.includes(flattedForm[keys])) {
+                    tabLevelStatuses[tab] = MASTER_STATUS_ID[flattedForm[keys]];
+                }
+            }
+        }
+    });
+    return { toggleDisabledKeys, tabLevelStatuses };
+}
 
 async function handleCasesByInputType(question) {
     try {
