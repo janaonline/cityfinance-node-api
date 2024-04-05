@@ -6,7 +6,7 @@ const parentRadioQuestionKeys = [
   "ulbCollectPtax",
   "doesUserChargesDmnd",
   "notificationWaterCharges",
-  "doesColSewerageCharges"
+  "doesColSewerageCharges",
 ];
 
 const propertyTaxOpFormJson = ({role, design_year, ptoData, ptoMaper = []}) => {
@@ -70,7 +70,7 @@ const propertyTaxOpFormJson = ({role, design_year, ptoData, ptoMaper = []}) => {
                 "value": "",
                 "file": "",
                 "min": "1800",
-                "max": "2023",
+                "max": ('' + new Date().getFullYear()),
                 "required": true,
                 "type": "ulbFinancialYear",
                 "year": "63735a5bd44534713673c1ca",
@@ -7784,7 +7784,7 @@ const propertyTaxOpFormJson = ({role, design_year, ptoData, ptoMaper = []}) => {
                 "value": "",
                 "file": "",
                 "min": "",
-                "max": "",
+                "max": "50",
                 "required": true,
                 "type": "entityNaSewerageCharges",
                 "year": "63735a5bd44534713673c1ca",
@@ -10499,26 +10499,30 @@ const propertyTaxOpFormJson = ({role, design_year, ptoData, ptoMaper = []}) => {
           
           const indicatorObj = indicator.yearData[0];
 
-          if(parentRadioQuestionKeys.includes(indicator?.key)){
-            if(compareWithMapper18_19(ptoMaper, indicator.key, 'Yes')) {
+          // const disabledKeys = ['ulbFinancialYear'];
+          // if(disabledKeys.includes(indicator?.key)) {
+          //   indicatorObj.isReadonlySingleYear = true;
+          // }
+          
+          if (parentRadioQuestionKeys.includes(indicator?.key)) {
+            if (compareWithMapper18_19(ptoMaper, indicator.key, "Yes")) {
               indicatorObj.isReadonlySingleYear = true;
             }
-          } else {
-            const parentDependencyObject = getRadioParentDependencyObject(indicator);
-            indicatorObj.isReadonlySingleYear = Object.entries(parentDependencyObject)
-              .every(([key, value]) => {
-                return compareWithMapper18_19(ptoMaper, key, 'Yes');
-              })
           }
+          const { yearName, yearId } = getDesiredYear(design_year, -1);
           
+          if (["ulbCollectPtax"].includes(indicator.key)) {
+            indicator["label"] = `Did the ULB collect property tax in FY ${yearName}?`;
+            indicatorObj["label"] = `FY ${yearName}`;
+            indicatorObj["key"] = `FY${yearName}`
+          }
+          if(['signedPdf', 'propertyTaxValuationDetails'].includes(indicator.key)) {
+            indicatorObj.isReadonlySingleYear = false;
+            indicatorObj["key"] = `FY${yearName}`;
+            indicatorObj["label"] = `FY ${yearName}`;
+          }
           if(ptoData) {
-            const { yearName, yearId } = getDesiredYear(design_year, -1);
             indicatorObj.year = yearId;
-            if(['signedPdf', 'propertyTaxValuationDetails'].includes(indicator.key)) {
-              indicatorObj.isReadonlySingleYear = false;
-              indicatorObj["key"] = `FY${yearName}`;
-              indicatorObj["label"] = `FY ${yearName}`;
-            }
           }
         }
         
@@ -11539,7 +11543,7 @@ let skipLogicDependencies = {
         "years": [
           0
         ]
-      },
+      }
     }
   },
   "data.ulbPassedResolPtax.yearData.0": {
@@ -12235,7 +12239,8 @@ const getFormMetaData = ({ design_year }) => {
       financialYearTableHeader: Object.entries(financialYearTableHeader).reduce(
         (acc, [displayPriority, headers]) => {
           const headersCopy = [...headers];
-          const label = ["5.30", "5.31", "5.32"].includes(displayPriority) ? "" : "2023-24";
+          const fYHeaderDisplayPriority = ["5.30", "5.31", "5.32", "6.30", "6.32"]
+          const label = fYHeaderDisplayPriority.includes(displayPriority) ? "" : "2023-24";
           headersCopy.push({
             label,
             info: "",
@@ -12264,3 +12269,5 @@ module.exports.propertyTaxOpFormJson = propertyTaxOpFormJson;
 module.exports.getInputKeysByType = getInputKeysByType;
 module.exports.sortPosition = sortPosition
 module.exports.getFormMetaData = getFormMetaData
+module.exports.parentRadioQuestionKeys = parentRadioQuestionKeys
+module.exports.skipLogicDependencies = skipLogicDependencies
