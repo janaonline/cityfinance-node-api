@@ -12,6 +12,7 @@ const { isValidObjectId } = require("mongoose");
 const { isValidDate } = require("../../util/helper");
 const {getStorageBaseUrl} = require('./../../service/getBlobUrl');
 const StateGsdpData = require("../../models/StateGsdp");
+const { getAllCurrAndPrevYearsObjectIds } = require("../../service/years");
 // const { query } = require("express");
 
 const GSDP_OPTIONS = {
@@ -35,6 +36,13 @@ const handleDatabaseUpload = async (req, res, next) => {
     const templateName = req.body.templateName;
     const uploadType = req.body.uploadType;
 
+    if(!req.body.design_year || !isValidObjectId(req.body?.design_year))  {
+        return res.status(400).json({
+            success: false,
+            message: "design_year is required.",
+        });
+    }
+
     if (uploadType != 'database') return next();
 
     try {
@@ -47,7 +55,8 @@ const handleDatabaseUpload = async (req, res, next) => {
         if (templateName == 'stateGsdp') await updatestateGsdpTemplate(req, res, next, worksheet, workbook);
 
         const uploaded = await CategoryFileUpload.findOne({
-            subCategoryId: ObjectId(req.body?.subCategoryId)
+            subCategoryId: ObjectId(req.body?.subCategoryId),
+            design_year : req.body?.design_year
         });
 
         if (uploaded) {
@@ -616,7 +625,7 @@ const updatestateGsdpTemplate = async (req, res, next, worksheet, workbook) => {
                 });
             }
 
-            if (isNaN(stateGsdpCurrentPrices[index]) && [undefined, ""].includes(stateGsdpConstantPrices[index])) {
+            if (isNaN(stateGsdpCurrentPrices[index]) && [undefined, ""].includes(stateGsdpCurrentPrices[index])) {
                 validationErrors.push({
                     r: index,
                     c: columnCurrentPrice,
@@ -765,7 +774,8 @@ const removeStateFromFiles = async (req, res, next) => {
 const getResourceList = async (req, res, next) => {
     const skip = +req.query.skip || 0;
     const limit = +req.query.limit || 2;
-    const { categoryId, stateId, subCategoryId } = req.query;
+    const { categoryId, stateId, subCategoryId, design_year } = req.query;
+    const allCurrAndPrevYearIds = getAllCurrAndPrevYearsObjectIds(design_year);
 
     try {
         const query = [
@@ -894,9 +904,20 @@ const getResourceList = async (req, res, next) => {
             {
                 $lookup: {
                     from: "subcategories",
-                    localField: "_id",
-                    foreignField: "categoryId",
-                    as: "subCategories",
+                    let: { mainCategoryId: "$_id" },
+                    pipeline: [
+                        {
+                            $match: {
+                                $expr: {
+                                    $and: [
+                                        { $eq: ["$$mainCategoryId", "$categoryId"] },
+                                        { $in: ["$design_year", allCurrAndPrevYearIds] }
+                                    ]
+                                }
+                            }
+                        }
+                    ],
+                    as: "subCategories"
                 }
             },
             {
