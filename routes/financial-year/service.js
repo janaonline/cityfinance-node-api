@@ -141,9 +141,9 @@ module.exports.access = catchAsync(async function (req, res) {
             "path": "design_year"
         }).lean()
         const role = req.decoded.role;
-        if(role !== "ULB"){
-            years =  years.filter(year=> year?.design_year?._id.toString() !== YEAR_CONSTANTS['24_25'])
-        }
+        // if(role !== "ULB"){
+        //     years =  years.filter(year=> year?.design_year?._id.toString() !== YEAR_CONSTANTS['24_25'])
+        // }
         let MoHUA_arr = years.map(returnYearUrl, { "type": "mohuaUrl", "role": "mohua" })
         const yearList = ['2020-21', '2021-22', '2022-23', '2023-24', '2024-25']
         const entity_id = req.decoded._id;
