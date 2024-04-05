@@ -21,10 +21,11 @@ const Response = require("../../service").response;
 const {canTakenActionMaster} = require('../CommonActionAPI/service')
 // const UtilizationReport =  require('../../models/UtilizationReport');
 const { years } = require("../../service/years");
+const Service = require('../../service');
 
 module.exports.createAndUpdateFormMaster = async (params) => {
   try {
-    let { modelName, formData, res , actionTakenByRole, actionTakenBy} = params;
+    let { modelName, formData, res , actionTakenByRole, actionTakenBy, mailOptions = ""} = params;
 
     let masterFormId = "";
     switch (modelName) {
@@ -143,6 +144,8 @@ module.exports.createAndUpdateFormMaster = async (params) => {
                 body: statusHistory,
                 //  session
               });
+              //email trigger after form submission
+              Service.sendEmail(mailOptions);
 
               // await session.commitTransaction();
               return Response.OK(res, {}, "Form Submitted");
@@ -178,7 +181,6 @@ module.exports.createAndUpdateFormMaster = async (params) => {
             .findOne({ ulb: formData.ulb, designYear: formData.designYear })
             .lean();
           let formCurrentStatus;
-          console.log("formData2324 ::: ",formData2324)
           if (!formData2324) {
             formCurrentStatus = {
               status: MASTER_STATUS["Not Started"],

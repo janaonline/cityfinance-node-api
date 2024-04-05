@@ -33,6 +33,7 @@ const {getSeparatedShortKeys, saveFormLevelHistory} = require('../../routes/Comm
 var https = require('https');
 var request = require('request');
 const { concatenateUrls } = require("../../service/common");
+const { getPreviousYear, isYearWithinCurrentFY } = require("../sidemenu/service");
 
 // function doRequest(url) {
 //   return new Promise(function (resolve, reject) {
@@ -667,7 +668,7 @@ exports.createUpdate = async (req, res) => {
                 //  session
               });
             }
-
+            Service.sendEmail(mailOptions);
             // Save Form Level History
             await saveFormLevelHistory(masterFormId, formSubmit, actionTakenByRole, actionTakenBy,MASTER_STATUS["Under Review By State"]);
             // await session.commitTransaction();
@@ -1961,6 +1962,11 @@ exports.getAccounts = async (req, res,next) => {
       } else {
         annualAccountData['action'] = 'redirect'
         annualAccountData['url'] = `Your previous Year's form status is - ${status ? status : 'Not Submitted'} .Kindly submit Annual Accounts for the previous year at - <a href=https://${host}/upload-annual-accounts target="_blank">Click Here!</a> . `;
+        if(isYearWithinRange(design_year)){
+          let previousYearId = getPreviousYear(design_year,1);
+          let formRedirectionUrl = isYearWithinCurrentFY(design_year) ?  `ulb-form/${previousYearId}/annual_acc` : 'ulbform2223/annual_acc';
+          annualAccountData['url'] = `Your previous Year's form status is - ${status ? status : 'Not Submitted'} .Kindly submit Annual Accounts for the previous year at - <a href=https://${host}/${formRedirectionUrl} target="_blank">Click Here!</a> . `;
+        }
       }
     }
 
@@ -2065,7 +2071,6 @@ exports.getAccounts = async (req, res,next) => {
     next()
     // return res.status(200).json(annualAccountData);
   } catch (err) {
-    console.error(err.message);
     return Response.BadRequest(res, {}, err.message);
   }
 };
@@ -2096,7 +2101,7 @@ async function addActionKeys(annualAccountData, body, res, role, req){
     }
     return annualAccountData;
   } catch (error) {
-    return Response.BadRequest(res, {}, error.message);
+    throw new Error(`addActionKeys:: ${error.message}`)
   }
 }
 

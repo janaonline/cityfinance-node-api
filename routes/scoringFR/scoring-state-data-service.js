@@ -70,18 +70,18 @@ async function getYearwiseDocCount(stateId, indicator) {
 				$or: [
 					{
 						[`${indicator}.url`]: {
-							$ne: ""
+							$ne: ''
 						}
 					},
 					{
-						[`${indicator}.modelName`]: "ULBLedger"
+						[`${indicator}.modelName`]: 'ULBLedger'
 					}
 				]
 			}
 		},
 		{
 
-			"$group": {
+			'$group': {
 				_id: `$${indicator}.year`,
 				total: {
 					$sum: 1
@@ -91,7 +91,7 @@ async function getYearwiseDocCount(stateId, indicator) {
 		{
 			$project: {
 				_id: 0,
-				year: "$_id",
+				year: '$_id',
 				total: 1,
 
 			}

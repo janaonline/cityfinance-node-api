@@ -35,6 +35,10 @@ const UtilizationReportProjectSchema = new Schema({
   omExpensesUlb:{type:Number,default:0},
   startDate:{type:Date, default: Date.now},
   completionDate:{type:Date, default: Date.now},
+  dpr_status: { 
+    type: Schema.Types.ObjectId,
+    ref: "Option"
+  },
   // engineerName: { type: String },
   // engineerContact: { type: String },
   modifiedAt: { type: Date, default: Date.now },
