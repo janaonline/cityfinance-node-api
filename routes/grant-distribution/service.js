@@ -7,28 +7,28 @@ const Response = require("../../service").response;
 const FormsJson = require("../../models/FormsJson");
 const { getOriginalQueryParams } = require('../../util/helper');
 const Service = require("../../service");
-const {years} = require("../../service/years");
+const { years } = require("../../service/years");
 const downloadFileToDisk = require("../file-upload/service").downloadFileToDisk;
 const GrantDistribution = require("../../models/GrantDistribution");
-const {getChildQuestion} = require("./constants")
+const { getChildQuestion } = require("./constants")
 const { checkForUndefinedVaribales, mutateResponse, getFlatObj } = require("../../routes/CommonActionAPI/service")
 const { getKeyByValue, saveFormHistory, grantDistributeOptions, emailTriggerWithMohuaAction } = require("../../util/masterFunctions");
 const {
   UpdateStateMasterForm,
 } = require("../../service/updateStateMasterForm");
-const {saveStatusAndHistory} = require("../CommonFormSubmission/service")
+const { saveStatusAndHistory } = require("../CommonFormSubmission/service")
 let baseUrls = {
-  "staging":`https://${process.env.STAGING_HOST}`,
-  "demo":`https://${process.env.DEMO_HOST_FRONTEND}`,
-  "production":`https://${process.env.PROD_HOST}`
+  "staging": `https://${process.env.STAGING_HOST}`,
+  "demo": `https://${process.env.DEMO_HOST_FRONTEND}`,
+  "production": `https://${process.env.PROD_HOST}`
 }
 
-const { YEAR_CONSTANTS, MASTER_STATUS,MASTER_FORM_STATUS,MASTER_STATUS_ID,FORMIDs } = require('../../util/FormNames')
+const { YEAR_CONSTANTS, MASTER_STATUS, MASTER_FORM_STATUS, MASTER_STATUS_ID, FORMIDs } = require('../../util/FormNames')
 const { BadRequest } = require("../../service/response");
 const userTypes = require("../../util/userTypes");
 const CurrentStatus = require("../../models/CurrentStatus");
-var outDatedYearIds = Object.entries(years).map(([key,value])=> {
-  return ['2017-18', '2018-19', '2019-20', '2020-21', '2021-22' ].includes(key) ? value : ""
+var outDatedYearIds = Object.entries(years).map(([key, value]) => {
+  return ['2017-18', '2018-19', '2019-20', '2020-21', '2021-22'].includes(key) ? value : ""
 }).filter(item => item != "")
 exports.getGrantDistribution = async (req, res) => {
   const { state_id } = req.query;
@@ -76,8 +76,8 @@ exports.getTemplate = async (req, res) => {
   let { state } = req?.decoded;
   let formData = req.query;
   let amount = "grant amount";
-  
-  formData.design_year = getKeyByValue(years,formData.year)
+
+  formData.design_year = getKeyByValue(years, formData.year)
   if (formData.year === "606aafb14dff55e6c075d3ae") {
     formData.design_year = "2022-23";
   } else if (formData.year === "606aaf854dff55e6c075d219") {
@@ -86,7 +86,7 @@ exports.getTemplate = async (req, res) => {
   const type = `${formData?.type}_${formData?.design_year}_${formData?.installment}`;
   /* Checking if the formData.year is equal to the string "606aafb14dff55e6c075d3ae" and if it is, it is
  value of the variable "type" to the variable amount. */
- !outDatedYearIds.includes(formData.year)
+  !outDatedYearIds.includes(formData.year)
     ? (amount = `${amount} - ${type} (Lakhs)`)
     : (amount = `${amount} (Lakhs)`);
 
@@ -109,17 +109,20 @@ exports.getTemplate = async (req, res) => {
       if (obj.code) {
         data.push(obj);
       }
-      else{
+      else {
         defectedUlb += 1
         // console.log("element :: ",element)
       }
     });
-    console.log("defectedUlb :: ",defectedUlb)
+    console.log("defectedUlb :: ", defectedUlb)
     let field = {
       code: "ULB Census Code/ULB Code",
       name: "ULB Name",
       amount,
     };
+    if (formData.year === "606aafcf4dff55e6c075d424") {
+      field = setFields(formData);
+    }
     let xlsData = await Service.dataFormating(data, field);
     return res.xls("grant_template.xlsx", xlsData);
   } catch (err) {
@@ -128,6 +131,23 @@ exports.getTemplate = async (req, res) => {
   }
 };
 
+function setFields(formData) {
+  const installment = formData?.installment === '1' ? '1st' : '2nd';
+  let fields = {
+    code: "ULB Census Code/ULB Code",
+    name: "ULB Name",
+    area: 'AREA - as per 2011',
+    population: 'POPULATION as per 2011 CENSUS',
+    dulyElected: 'STATUS (DULY ELECTED - YES/NO)',
+    remarks: 'REMARKS',
+    gaTied: `GRANT ALLOCATION - ${installment} Installment TIED`,
+    ga15fcPercTied: '%FC GRANT ALLOCATED',
+    gaUnTied: `GRANT ALLOCATION - ${installment} Installment UNTIED`,
+    ga15fcPercUnTied: '%FC GRANT ALLOCATED',
+  };
+  return fields;
+}
+
 exports.uploadTemplate = async (req, res) => {
   let { url, design_year } = req.query;
   let state = req.decoded?.state;
@@ -135,7 +155,7 @@ exports.uploadTemplate = async (req, res) => {
   //Get original url from Query params.
   url = getOriginalQueryParams(req)?.url;
   let formData = req.query;
- 
+
   try {
     downloadFileToDisk(url, async (err, file) => {
       if (err) {
@@ -206,7 +226,7 @@ exports.uploadTemplate = async (req, res) => {
       if (!outDatedYearIds.includes(formData.design_year)) {
         let [xslDataStateInfo, stateInfo] = await Promise.all([xslDataState, ULB.aggregate(queryState)]);
         let ulbCount = stateInfo[0].totalUlbs;
-        
+
         let xslDataStateName = xslDataStateInfo[0].state.name;
         let stateName = stateInfo[0].state.name;
 
@@ -222,7 +242,7 @@ exports.uploadTemplate = async (req, res) => {
       const notValid = await validate(XslData, formData);
       if (notValid) {
         let amount = "grant amount";
-        formData.design_year = getKeyByValue(years,formData.design_year)
+        formData.design_year = getKeyByValue(years, formData.design_year)
         if (formData.design_year === "606aafb14dff55e6c075d3ae") {
           formData.design_year = '2022-23';
         } else if (formData.design_year === "606aaf854dff55e6c075d219") {
@@ -254,7 +274,7 @@ exports.uploadTemplate = async (req, res) => {
 
 exports.saveData = async (req, res) => {
   try {
-    let { design_year, type, installment, year , } = req.body;
+    let { design_year, type, installment, year, } = req.body;
     let state = req.decoded?.state;
     req.body.actionTakenBy = req.decoded._id;
     req.body.modifiedAt = new Date();
@@ -277,8 +297,8 @@ exports.saveData = async (req, res) => {
           message: "Form not saved."
         })
       }
-      let formSubmit = [{...req.body,_id:data._id,currentFormStatus:req.body.currentFormStatus}]
-    await createHistory({ formBodyStatus : Number(req.body.currentFormStatus),formSubmit, actionTakenByRole:req.decoded.role , actionTakenBy: req.body.actionTakenBy  })
+      let formSubmit = [{ ...req.body, _id: data._id, currentFormStatus: req.body.currentFormStatus }]
+      await createHistory({ formBodyStatus: Number(req.body.currentFormStatus), formSubmit, actionTakenByRole: req.decoded.role, actionTakenBy: req.body.actionTakenBy })
       return Response.OK(res, data, "file submitted");
     }
 
@@ -294,8 +314,8 @@ exports.saveData = async (req, res) => {
     if (design_year === "606aaf854dff55e6c075d219") {
       await UpdateStateMasterForm(req, "grantAllocation");
     }
-    let formSubmit = [{...req.body,_id:data._id,currentFormStatus:req.body.currentFormStatus}]
-    await createHistory({ formBodyStatus : Number(req.body.currentFormStatus),formSubmit, actionTakenByRole:req.decoded.role , actionTakenBy: req.body.actionTakenBy  })
+    let formSubmit = [{ ...req.body, _id: data._id, currentFormStatus: req.body.currentFormStatus }]
+    await createHistory({ formBodyStatus: Number(req.body.currentFormStatus), formSubmit, actionTakenByRole: req.decoded.role, actionTakenBy: req.body.actionTakenBy })
 
     return Response.OK(res, data, "file updated");
   } catch (err) {
@@ -346,7 +366,7 @@ async function validate(data, formData) {
   const code = "ulb census code/ulb code";
   const name = "ulb name";
   let amount = "grant amount";
-  formData.design_year = getKeyByValue(years,formData.design_year)
+  formData.design_year = getKeyByValue(years, formData.design_year)
   if (formData.design_year === "606aafb14dff55e6c075d3ae") {
     formData.design_year = '2022-23';
   } else if (formData.design_year === "606aaf854dff55e6c075d219") {
@@ -452,27 +472,27 @@ async function getUlbData(ulbCodes, ulbNames) {
   return ulbDataMap;
 }
 
-const getRejectedFields = (currentFormStatus,formStatuses,installment,role)=>{
-  try{
-      // console.log("formStatuses :: ",formStatuses)
-      let prevInstallment = installment - 1
-      let inputAllowed = [MASTER_FORM_STATUS['IN_PROGRESS'],MASTER_FORM_STATUS['NOT_STARTED'],MASTER_FORM_STATUS['RETURNED_BY_MoHUA']]
-      let allowedStatuses = [MASTER_FORM_STATUS['UNDER_REVIEW_BY_MoHUA'],MASTER_FORM_STATUS['SUBMISSION_ACKNOWLEDGED_BY_MoHUA'],MASTER_FORM_STATUS['RETURNED_BY_MoHUA']]
-      if(prevInstallment  && !allowedStatuses.includes(formStatuses?.[prevInstallment]) && role === userTypes.state){
-          return true
-      }
-      else{
-          return inputAllowed.includes(currentFormStatus) && role === userTypes.state ? false : true 
-      }
+const getRejectedFields = (currentFormStatus, formStatuses, installment, role) => {
+  try {
+    // console.log("formStatuses :: ",formStatuses)
+    let prevInstallment = installment - 1
+    let inputAllowed = [MASTER_FORM_STATUS['IN_PROGRESS'], MASTER_FORM_STATUS['NOT_STARTED'], MASTER_FORM_STATUS['RETURNED_BY_MoHUA']]
+    let allowedStatuses = [MASTER_FORM_STATUS['UNDER_REVIEW_BY_MoHUA'], MASTER_FORM_STATUS['SUBMISSION_ACKNOWLEDGED_BY_MoHUA'], MASTER_FORM_STATUS['RETURNED_BY_MoHUA']]
+    if (prevInstallment && !allowedStatuses.includes(formStatuses?.[prevInstallment]) && role === userTypes.state) {
+      return true
+    }
+    else {
+      return inputAllowed.includes(currentFormStatus) && role === userTypes.state ? false : true
+    }
   }
-  catch(err){
-      console.log("error in  getRejectedFields::::  ",err.message)
+  catch (err) {
+    console.log("error in  getRejectedFields::::  ", err.message)
   }
 }
 
 
-const getSectionWiseJson = async(state, design_year,role) => {
-let host = baseUrls[process.env.ENV]
+const getSectionWiseJson = async (state, design_year, role) => {
+  let host = baseUrls[process.env.ENV]
   let formStatuses = {}
   try {
     let ulb = await ULB.findOne({
@@ -481,65 +501,66 @@ let host = baseUrls[process.env.ENV]
     }, { isMillionPlus: 1 })
     let stateIsMillion = ulb?.isMillionPlus === "Yes" ? true : false
     let tabularStructure = await FormsJson.findOne({
-      "formId":{"$in":[FORMIDs['GrantAllocation']]},
-      "design_year":design_year
-  }).lean()
-  tabularStructure = tabularStructure?.data || []
-  let allocationForms = await GrantDistribution.find({
-    state:ObjectId(state),
-    design_year:design_year,
-  }).lean()
-  let currentStatuses = await CurrentStatus.find({recordId:{
-    "$in": (allocationForms.length ? allocationForms.map(item=>item._id):[]),
-    
-  },
-  }).sort({
-    "modifiedAt":-1
-  })
-  for(let section of tabularStructure){
-    let installments = section.installments
-    for(let i=1; i <= installments; i++){
-      let file = {
-        "name":"",
-        "url":""
+      "formId": { "$in": [FORMIDs['GrantAllocation']] },
+      "design_year": design_year
+    }).lean()
+    tabularStructure = tabularStructure?.data || []
+    let allocationForms = await GrantDistribution.find({
+      state: ObjectId(state),
+      design_year: design_year,
+    }).lean()
+    let currentStatuses = await CurrentStatus.find({
+      recordId: {
+        "$in": (allocationForms.length ? allocationForms.map(item => item._id) : []),
+
+      },
+    }).sort({
+      "modifiedAt": -1
+    })
+    for (let section of tabularStructure) {
+      let installments = section.installments
+      for (let i = 1; i <= installments; i++) {
+        let file = {
+          "name": "",
+          "url": ""
+        }
+        let shortKey = `${section.type}_${section.yearCode}_${i}`
+        let allocationForm = allocationForms.find(item => item.installment === i && item?.year?.toString() === years[section.yearCode] && item?.type === section?.type) || {}
+        let currentStatus = currentStatuses.find(item => item.recordId.toString() === allocationForm?._id?.toString() && item.shortKey === shortKey)
+        allocationForm.currentFormStatus = allocationForm?.currentFormStatus ? allocationForm?.currentFormStatus : MASTER_FORM_STATUS['NOT_STARTED']
+        let url = ""
+        url = allocationForm?.url || ""
+        const canTakeAction = (allocationForm.currentFormStatus == MASTER_FORM_STATUS['UNDER_REVIEW_BY_MoHUA'] && role == userTypes.mohua);
+        file.name = allocationForm?.fileName || ""
+        file.url = allocationForm?.url || ""
+        let shouldDisableQues = await getRejectedFields(allocationForm?.currentFormStatus, formStatuses, i, role)
+        formStatuses[i] = allocationForm?.currentFormStatus || MASTER_FORM_STATUS['NOT_STARTED']
+        let params = {
+          installment: i,
+          year: years[section.yearCode],
+          type: section.type,
+          quesType: "",
+          template: `${host}/api/v1/grantDistribution/template?type=${section.type}&year=${years[section.yearCode]}&installment=${i}`,
+          key: shortKey,
+          url: url,
+          isDisableQues: shouldDisableQues,
+          file: file,
+          type: section.type,
+          canTakeAction,
+          status: MASTER_STATUS_ID[allocationForm.currentFormStatus],
+          statusId: allocationForm.currentFormStatus,
+          responseFile: currentStatus?.responseFile || "",
+          rejectReason: currentStatus?.rejectReason || ""
+        }
+        let question = await getChildQuestion(params)
+        section.quesArray.push(question)
       }
-      let shortKey = `${section.type}_${section.yearCode}_${i}`
-      let allocationForm =  allocationForms.find(item => item.installment === i && item?.year?.toString() === years[section.yearCode] && item?.type === section?.type ) || {}
-      let currentStatus = currentStatuses.find(item => item.recordId.toString() === allocationForm?._id?.toString() && item.shortKey === shortKey)
-      allocationForm.currentFormStatus = allocationForm?.currentFormStatus ? allocationForm?.currentFormStatus : MASTER_FORM_STATUS['NOT_STARTED']
-      let url = ""
-      url = allocationForm?.url || ""
-      const canTakeAction = (allocationForm.currentFormStatus == MASTER_FORM_STATUS['UNDER_REVIEW_BY_MoHUA'] && role == userTypes.mohua);
-      file.name  = allocationForm?.fileName || ""
-      file.url = allocationForm?.url || ""
-      let shouldDisableQues = await getRejectedFields(allocationForm?.currentFormStatus,formStatuses,i,role)
-      formStatuses[i] = allocationForm?.currentFormStatus || MASTER_FORM_STATUS['NOT_STARTED']
-      let params = {
-        installment : i,
-        year:years[section.yearCode],
-        type:section.type,
-        quesType:"",
-        template:`${host}/api/v1/grantDistribution/template?type=${section.type}&year=${years[section.yearCode]}&installment=${i}`,
-        key:shortKey,
-        url:url,
-        isDisableQues:shouldDisableQues,
-        file:file,
-        type:section.type,
-        canTakeAction,
-        status:MASTER_STATUS_ID[allocationForm.currentFormStatus],
-        statusId:allocationForm.currentFormStatus,
-        responseFile:currentStatus?.responseFile || "",
-        rejectReason:currentStatus?.rejectReason || ""
-       }
-       let question = await getChildQuestion(params)
-       section.quesArray.push(question)
     }
-  }
-  return {json:tabularStructure,isStateMillion:stateIsMillion}
+    return { json: tabularStructure, isStateMillion: stateIsMillion }
   }
   catch (err) {
-    console.log("error in getSectionWiseJson ::: ",err)
-    return{json:[],isStateMillion:true}
+    console.log("error in getSectionWiseJson ::: ", err)
+    return { json: [], isStateMillion: true }
   }
 }
 
@@ -566,7 +587,7 @@ module.exports.getGrantDistributionForm = async (req, res, next) => {
       response.message = validator.message
       return res.status(405).json(response)
     }
-    let { json, isStateMillion } = await getSectionWiseJson(state, design_year,role)
+    let { json, isStateMillion } = await getSectionWiseJson(state, design_year, role)
     response.message = "form fetched"
     response.success = true
     response.isStateMillion = isStateMillion
@@ -583,48 +604,48 @@ module.exports.getGrantDistributionForm = async (req, res, next) => {
 module.exports.installmentAction = async (req, res) => {
 
   try {
-      let {role,mohua} = req.decoded
-      if(role !== userTypes.mohua){
-          return res.json({
-              "success":true,
-              "message":"Not permitted"
-          })
-      }
-      const {
-          key,
-          rejectReason,
-          responseFile,
-          statusId,
-          installment,
-          design_year,
-          state,
-      } = req.body;
+    let { role, mohua } = req.decoded
+    if (role !== userTypes.mohua) {
+      return res.json({
+        "success": true,
+        "message": "Not permitted"
+      })
+    }
+    const {
+      key,
+      rejectReason,
+      responseFile,
+      statusId,
+      installment,
+      design_year,
+      state,
+    } = req.body;
 
-      const found = await GrantDistribution.findOneAndUpdate({
-          installment,
-          // year: ObjectId(year),
-          // type,
-          type:key,
-          design_year: ObjectId(design_year),
-          state: ObjectId(state)
-      }, {
-          $set: {
-              actionTakenBy: mohua || state,
-              actionTakenByRole:role,
-              currentFormStatus: statusId,
-              rejectReason_mohua:rejectReason,
-              responseFile_mohua:responseFile
-          }
-      });
-      req.body._id = found?._id
-      req.body.financialYear = design_year
-      let formSubmit = [{...req.body,type:key,currentFormStatus:statusId}]
-      await createHistory({ formBodyStatus : Number(statusId),formSubmit, actionTakenByRole:role , actionTakenBy: mohua || state  })
-      if(!found) return res.status(404).json({ message: 'Installment not found'});
-      res.status(200).json({
-          success: true,
-          message: 'Action recorded'
-      });
+    const found = await GrantDistribution.findOneAndUpdate({
+      installment,
+      // year: ObjectId(year),
+      // type,
+      type: key,
+      design_year: ObjectId(design_year),
+      state: ObjectId(state)
+    }, {
+      $set: {
+        actionTakenBy: mohua || state,
+        actionTakenByRole: role,
+        currentFormStatus: statusId,
+        rejectReason_mohua: rejectReason,
+        responseFile_mohua: responseFile
+      }
+    });
+    req.body._id = found?._id
+    req.body.financialYear = design_year
+    let formSubmit = [{ ...req.body, type: key, currentFormStatus: statusId }]
+    await createHistory({ formBodyStatus: Number(statusId), formSubmit, actionTakenByRole: role, actionTakenBy: mohua || state })
+    if (!found) return res.status(404).json({ message: 'Installment not found' });
+    res.status(200).json({
+      success: true,
+      message: 'Action recorded'
+    });
 
     // Send mail to state when mahua take action in this form.
     await emailTriggerWithMohuaAction(state, statusId, rejectReason, FORMIDs['GrantAllocation']);
@@ -632,32 +653,32 @@ module.exports.installmentAction = async (req, res) => {
 
   }
   catch (err) {
-      let message = ["demo","staging"].includes(process.env.ENV) ? err.message : "something went wrong"
-       return res.status(404).json({
-          success : true,
-          message,
-      })
+    let message = ["demo", "staging"].includes(process.env.ENV) ? err.message : "something went wrong"
+    return res.status(404).json({
+      success: true,
+      message,
+    })
   }
 }
 
 
 async function createHistory(params) {
   try {
-      let {formBodyStatus,actionTakenBy,actionTakenByRole,formSubmit,formType} = params
-      let formData = formSubmit[0]
-      let shortKey = `${formData.type}_${getKeyByValue(years,formData.design_year)}_${formData.installment}`
-          let historyParams = {
-              formBodyStatus,
-              actionTakenBy:actionTakenBy,
-              actionTakenByRole:actionTakenByRole,
-              formSubmit:formSubmit,
-              formType:"GrantAllocation",
-              shortKey:shortKey,
-          }
-          
-          await saveStatusAndHistory(historyParams)
+    let { formBodyStatus, actionTakenBy, actionTakenByRole, formSubmit, formType } = params
+    let formData = formSubmit[0]
+    let shortKey = `${formData.type}_${getKeyByValue(years, formData.design_year)}_${formData.installment}`
+    let historyParams = {
+      formBodyStatus,
+      actionTakenBy: actionTakenBy,
+      actionTakenByRole: actionTakenByRole,
+      formSubmit: formSubmit,
+      formType: "GrantAllocation",
+      shortKey: shortKey,
+    }
+
+    await saveStatusAndHistory(historyParams)
   }
   catch (err) {
-      console.log("error in createHistory ::: ", err.message)
+    console.log("error in createHistory ::: ", err.message)
   }
 }
