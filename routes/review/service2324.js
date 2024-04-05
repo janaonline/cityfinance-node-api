@@ -2877,7 +2877,7 @@ const excelPTOMapping = async (query) => {
   return new Promise(async (resolve, reject) => {
     try {
       // get mapping for form questions and child questions
-      const questions = propertyTaxOpFormJson()['tabs'][0]['data']
+      const questions = propertyTaxOpFormJson({})['tabs'][0]['data']
       // static, we know the first four rows will be occupied by headers
       const startRowIndex = 5;
       // map form questions with excel columns

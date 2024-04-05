@@ -2,6 +2,7 @@ const AnnualAccounts = require('../../models/AnnualAccounts');
 const LinkPFMS = require('../../models/LinkPFMS');
 const OdfFormCollection = require('../../models/OdfFormCollection');
 const GfcFormCollection = require('../../models/GfcFormCollection');
+const Option = require('../../models/Option')
 const UtilizationReport = require('../../models/UtilizationReport');
 const XVFcGrantForm = require('../../models/XVFcGrantForm');
 const PropertyTaxOp = require('../../models/PropertyTaxOp');
@@ -220,6 +221,7 @@ var customkeys = {
         "isActive": 'isActive',
         "_id": '_id',
         "category": 'category',
+        'dpr_status': 'dpr_status',
         "name": 'name',
         "location": 'location',
         "capitalExpenditureState": 'capitalExpenditureState',
@@ -238,7 +240,8 @@ var modifiedShortKeys = {
 module.exports.modifiedShortKeys = modifiedShortKeys
 var shortKeysWithModelName = {
     "rating": { "modelName": "Rating", "identifier": "option_id", "from": "value" },
-    "category": { "modelName": "Category", "identifier": "name", "from": "label" }
+    "category": { "modelName": "Category", "identifier": "name", "from": "label" },
+    "dpr_status": { "modelName": "Option", "identifier": "name", "from": "label" }
 }
 var answerObj = {
     "label": "",
@@ -1649,6 +1652,9 @@ class PayloadManager {
                     filters['formName'] = this.req.body.isGfc ? "gfc" : "odf"
                     filters['financialYear'] = this.req.body.design_year
                 }
+                if(this.shortKey === "dpr_status"){
+                    filters['type'] = this.shortKey
+                }
                 let databaseObj;
                 if (dynamicTables.includes(modelName)) {
                     databaseObj = categoryTable[fromString]
@@ -1899,7 +1905,7 @@ function roleWiseJson(json, role) {
 
 async function handleSelectCase(question, obj, flattedForm) {
     try {
-        if (question.modelName) {
+        if (question.modelName && flattedForm[question.shortKey]) {
             let value = flattedForm[question.shortKey]
             let tempObj = question.answer_option.find(item => item.option_id.toString() == value.toString())
             if (tempObj) {
@@ -2059,7 +2065,7 @@ async function handleArrOfObjects(question, flattedForm) {
                 for (let keys in obj) {
                     let keysObj = customkeys[question.shortKey]
                     let jsonKey = keysObj[keys]
-                    let questionObj = DurProjectJson[jsonKey]
+                    let questionObj = DurProjectJson[jsonKey] ? JSON.parse(JSON.stringify(DurProjectJson[jsonKey])) : null
                     if (questionObj) {
                         let formObj = {}
                         formObj[jsonKey] = obj[keys]
@@ -3784,7 +3790,6 @@ function checkIfUlbHasAccess(ulbData, userYear) {
         let prevYearArr = currentYear.split("-")
         let prevYear = `${(prevYearArr[0] - 1).toString().slice(-2)}${(prevYearArr[1] - 1).toString().slice(-2)}`
         ulbVariable += prevYear
-        console.log({ prevYear, userYear })
         return ulbData[ulbVariable]
     }
     catch (err) {
@@ -3857,7 +3862,15 @@ async function sequentialReview(req, res) {
             ? (designYear = "designYear")
             : (designYear = "design_year");
 
-        const modelName = formId === FORMIDs['twentyEightSlb'] ? ModelNames['twentyEightSlbs'] : ModelNames['dur'];
+        let modelName = null;
+
+        if(formId === FORMIDs['twentyEightSlb']) {
+            modelName = ModelNames['twentyEightSlbs'];
+        } else if(formId === FORMIDs['PTO']) {
+            modelName = ModelNames['propTaxOp'];
+        } else {
+            modelName = ModelNames['dur']; 
+        }
 
         let query = {
             ulb: { $in: ulbs },
@@ -3896,11 +3909,11 @@ async function sequentialReview(req, res) {
 }
 module.exports.sequentialReview = sequentialReview;
 
-async function checkForms(params) {
+async function checkForms(params) { 
     try {
         let { forms, formId, modelName, res, user, getReview } = params;
         let designYear = "design_year";
-        formId === FORMIDs["dur"]
+        Number(formId) === FORMIDs["dur"]
             ? (designYear = "designYear")
             : (designYear = "design_year");
         let formCount = 0;
@@ -4114,4 +4127,47 @@ async function saveFormLevelHistory(masterFormId, formSubmit, actionTakenByRole,
         body: statusHistory,
     });
 }
+/**
+ * The function `checkYearValidity` checks if a given year is not equal to specific year constants.
+ * @param year - The `year` parameter is the year that you want to check for validity. 
+ * @returns a boolean value indicating whether the `year` passed as an argument is not equal to the
+ * values stored in the `YEAR_CONSTANTS` object for the keys "21_22" and "22_23".
+ */
+function isYearWithinRange(year){
+    try {
+        return ![YEAR_CONSTANTS["21_22"],YEAR_CONSTANTS["22_23"]].includes(year)
+    } catch (error) {
+        throw new Error(`checkYearValidity:: ${error.message}`)
+    }
+}
+/**
+ * The function `getFinancialYear` calculates the financial year based on the input date.
+ * @param date - The `date` parameter in the `getFinancialYear` function is used to determine the
+ * financial year based on the month of the given date. If the month is January, February, or March,
+ * the financial year is considered to be the previous year followed by a hyphen and the last two
+ * digits
+ * @returns The function `getFinancialYear` returns the financial year based on the input date. 
+ */
+const getFinancialYear = (date) => {
+  try {
+    let fiscalyear = "";
+    if (date.getMonth() + 1 <= 3) {
+      fiscalyear =
+        date.getFullYear() -
+        1 +
+        "-" +
+        date.toLocaleDateString("en", { year: "2-digit" });
+    } else {
+      fiscalyear =
+        date.getFullYear() +
+        "-" +
+        (parseInt(date.toLocaleDateString("en", { year: "2-digit" })) + 1);
+    }
+    return fiscalyear;
+  } catch (error) {
+    throw new Error(`getFinancialYear::  ${error.message}`);
+  }
+};
+module.exports.getFinancialYear = getFinancialYear;
 module.exports.saveFormLevelHistory = saveFormLevelHistory
+module.exports.isYearWithinRange = isYearWithinRange

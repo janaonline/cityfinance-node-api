@@ -7,6 +7,7 @@ const Ulb = require('../../models/Ulb')
 const Tabs = require('../../models/TabList')
 const { getCurrentFinancialYear } = require("../CommonActionAPI/service");
 const catchAsync = require('../../util/catchAsync');
+const { YEAR_CONSTANTS } = require('../../util/FormNames');
 let decade = "20"
 module.exports.get = async function (req, res) {
     let query = {};
@@ -88,13 +89,16 @@ function returnYearUrl(item) {
     try {
         let obj = {
             year: item.design_year.year,
-            url: item[this.type]
+            url: item[this.type],
+            id: item.design_year._id.toString()
+            
         }
-        if ((financialYear == item.design_year.year) && (role == "ulb" || role == "state")) {
+        if (
+            // (financialYear == item.design_year.year) &&
+         (role == "ulb" || role == "state")) {
             obj.url = this.verified ? obj.url : item.profileUrl
         }
         return obj
-
     }
     catch (err) {
         console.log("error in returnYear :: ", err.message)
@@ -135,13 +139,16 @@ module.exports.access = catchAsync(async function (req, res) {
     try {
         let years = await Tabs.find({}).populate({
             "path": "design_year"
-        })
+        }).lean()
+        const role = req.decoded.role;
+        // if(role !== "ULB"){
+        //     years =  years.filter(year=> year?.design_year?._id.toString() !== YEAR_CONSTANTS['24_25'])
+        // }
         let MoHUA_arr = years.map(returnYearUrl, { "type": "mohuaUrl", "role": "mohua" })
         const yearList = ['2020-21', '2021-22', '2022-23', '2023-24', '2024-25']
-        const role = req.decoded.role;
         const entity_id = req.decoded._id;
         let arr = []
-        let userData
+        let userData;
         switch (role) {
             case "ULB":
                 userData = await User.findOne({ _id: ObjectId(entity_id) }).lean();

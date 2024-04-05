@@ -44,27 +44,19 @@ async function getMaxMinScore(populationBucket, indicator, order) {
 	return res[indicator].score;
 }
 
-function getIndicatorScore(ulb, indicator, percentage, highestScore, lowestScore) {
+function getIndicatorScore(ulb, indicator, percentage) {
 	const ulbIn = ulb[indicator];
 	ulbIn.percentage = percentage;
-	// ulbIn.highestScore = highestScore;
-	// ulbIn.lowestScore = lowestScore;
 	return ulbIn;
 }
 
 async function updatePercentage_formula1(ulb, indicator, percent = 100) {
-
-	// const sortedArr = ulbArr.sort((a, b) => b[indicator].score - a[indicator].score);
 	const highScore = await getMaxMinScore(ulb.populationBucket, indicator, -1);
-	// const lowScore = await getMaxMinScore(ulb.populationBucket, indicator, 1);
-	// console.log('highScore', highScore);
 	const percentage = ulb[indicator].score === 0 || highScore === 0 ? 0 : (ulb[indicator].score / highScore) * percent;
-	// return parseFloat(percentage.toFixed(decimalPlace));
 	return getIndicatorScore(ulb, indicator, percentage);
 }
 
 async function updatePercentage_formula2(ulb, indicator) {
-	// const sortedArr = ulbArr.sort((a, b) => b[indicator].score - a[indicator].score);
 	const highScore = await getMaxMinScore(ulb.populationBucket, indicator, -1);
 	const lowScore = await getMaxMinScore(ulb.populationBucket, indicator, 1);
 	let percentage = 0;
@@ -73,31 +65,27 @@ async function updatePercentage_formula2(ulb, indicator) {
 		const denominator = (highScore - lowScore);
 		percentage = numerator === 0 || denominator === 0 ? 0 : (numerator / denominator) * 100;
 	}
-	// return parseFloat(percentage.toFixed(decimalPlace));
 	return getIndicatorScore(ulb, indicator, percentage);
 }
 
 async function updatePercentage_formula3(ulb, indicator) {
-	// const highScore = await getMaxMinScore(ulb.populationBucket, indicator, -1);
-	// const lowScore = await getMaxMinScore(ulb.populationBucket, indicator, 1);
+
 	let percentage = 0;
-	if (ulb[indicator].score) {
+	if (!ulb[indicator].infinity) {
 		if (ulb[indicator].score <= 20 && ulb[indicator].score >= -10) percentage = 50;
 		else if (ulb[indicator].score > 20) percentage = 45;
 		else if (ulb[indicator].score <= -10 && ulb[indicator].score >= -25) percentage = 40;
-		else if (ulb[indicator].score <= -25) percentage = 37.5;
+		else if (ulb[indicator].score < -25) percentage = 37.5;
 		else percentage = 0;
 	}
-	// return parseFloat(percentage.toFixed(decimalPlace));
 	return getIndicatorScore(ulb, indicator, percentage);
 
 }
 async function updatePercentage_formula4(ulb, indicator) {
-	// const sortedArr = ulbArr.sort((a, b) => b[indicator].score - a[indicator].score);
 	const highScore = await getMaxMinScore(ulb.populationBucket, indicator, -1);
 	const lowScore = await getMaxMinScore(ulb.populationBucket, indicator, 1);
 	let percentage = 0;
-	if (ulb[indicator].score) {
+	if (!ulb[indicator].infinity) {
 		const numerator = (highScore - ulb[indicator].score);
 		const denominator = (highScore - lowScore);
 		percentage = numerator === 0 || denominator === 0 ? 0 : (numerator / denominator) * 50;
@@ -107,15 +95,14 @@ async function updatePercentage_formula4(ulb, indicator) {
 }
 
 async function updatePercentage_formula5(ulb, indicator) {
-	const percentage = ulb[indicator].score
+	const percentage = ulb[indicator].score;
 	return getIndicatorScore(ulb, indicator, percentage);
 }
 
 async function calculateFRPercentage(populationBucket) {
-	// const censusCode = 802787;
 	// Submission Acknowledged by PMU - 11
 	const condition = { populationBucket, currentFormStatus: { $in: [11] } };
-	// const condition = { $and: [ {populationBucket},{ "currentFormStatus": 11 }, { "totalBudgetDataPC_1.percentage": 0 }, { "totalBudgetDataPC_1.score": { $ne: 0 } } ] }
+	// const condition = { $and: [ {populationBucket},{ 'currentFormStatus': 11 }, { 'totalBudgetDataPC_1.percentage': 0 }, { 'totalBudgetDataPC_1.score': { $ne: 0 } } ] }
 	// const condition = {};
 	const ulbArr = await ScoringFiscalRanking.find(condition).select('populationBucket totalBudgetDataPC_1 ownRevenuePC_2 pTaxPC_3 cagrInTotalBud_4 cagrInOwnRevPC_5 cagrInPropTax_6 capExPCAvg_7 cagrInCapExpen_8 omExpTotalRevExpen_9 avgMonthsForULBAuditMarks_10a aaPushishedMarks_10b gisBasedPTaxMarks_11a accSoftwareMarks_11b receiptsVariance_12 ownRevRecOutStanding_13 digitalToTotalOwnRev_14 propUnderTaxCollNet_15').lean();
 
@@ -137,15 +124,7 @@ async function calculateFRPercentage(populationBucket) {
 		const ownRevRecOutStanding_13 = await updatePercentage_formula4(ulb, 'ownRevRecOutStanding_13');
 		const digitalToTotalOwnRev_14 = await updatePercentage_formula1(ulb, 'digitalToTotalOwnRev_14', 50);
 		const propUnderTaxCollNet_15 = await updatePercentage_formula1(ulb, 'propUnderTaxCollNet_15', 50);
-		// console.log(
-		// 	'ulb', ulb.name,
-		// 	'totalBudgetDataPC_1', totalBudgetDataPC_1.percentage, 
-		// 	'ownRevenuePC_2',ownRevenuePC_2.percentage,
-		// 	'pTaxPC_3',pTaxPC_3.percentage,
-		// 	'cagrInTotalBud_4',cagrInTotalBud_4.percentage,
-		// 	'cagrInOwnRevPC_5',cagrInOwnRevPC_5.percentage,
-		// 	'cagrInPropTax_6',cagrInPropTax_6.percentage,
-		// 	)
+
 		const resourceMobilization = parseFloat((totalBudgetDataPC_1.percentage + ownRevenuePC_2.percentage + pTaxPC_3.percentage + cagrInTotalBud_4.percentage + cagrInOwnRevPC_5.percentage + cagrInPropTax_6.percentage).toFixed(decimalPlace));
 		const expenditurePerformance = parseFloat((capExPCAvg_7.percentage + cagrInCapExpen_8.percentage + omExpTotalRevExpen_9.percentage).toFixed(decimalPlace));
 		const fiscalGovernance = parseFloat((avgMonthsForULBAuditMarks_10a.percentage + aaPushishedMarks_10b.percentage + gisBasedPTaxMarks_11a.percentage + gisBasedPTaxMarks_11a.percentage +
@@ -176,7 +155,6 @@ async function calculateFRPercentage(populationBucket) {
 			'overAll.score': overAll,
 		};
 		// console.log('updateData',updateData);
-
 
 		await ScoringFiscalRanking.findByIdAndUpdate(ulb._id, {
 			$set: updateData,
