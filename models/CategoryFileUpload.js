@@ -28,7 +28,7 @@ const CategoryFileUpload = new Schema(
             type: [mongoose.Schema.Types.ObjectId],
             default: []
         },
-        design_year: { type: Schema.Types.ObjectId, ref: "Year", required: true },
+        design_year: { type: Schema.Types.ObjectId, ref: "Year"},
     },
     { timestamps: { createdAt: "createdAt", updatedAt: "modifiedAt" } }
 );
