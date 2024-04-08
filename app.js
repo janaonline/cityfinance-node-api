@@ -42,7 +42,7 @@ const corsOptions = {
   }
 }
 
-// app.use(cors(corsOptions));
+app.use(cors(corsOptions));
 
 
 app.use(json2xls.middleware);
