@@ -12,7 +12,12 @@ const dataSchema = new Schema({
     currentPrice: {
         type: Number,
         required: true
-    }
+    },
+    updatedOn: {
+        type: Date,
+        default: Date.now()
+    },
+
 });
 
 const stateDataSchema = new mongoose.Schema({

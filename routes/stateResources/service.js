@@ -650,7 +650,8 @@ const updatestateGsdpTemplate = async (req, res, next, worksheet, workbook) => {
                     {
                         "year" : "2018-23",
                         "constantPrice" : stateGsdpConstantPrices[index],
-                        "currentPrice" : stateGsdpCurrentPrices[index]
+                        "currentPrice" : stateGsdpCurrentPrices[index],
+                        "updatedOn": new Date()
                     }
                 ],
             }
