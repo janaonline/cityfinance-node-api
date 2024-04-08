@@ -85,7 +85,7 @@ const handleDatabaseUpload = async (req, res, next) => {
 
         return res.status(500).json({
             status: true,
-            message: err || "Something went wront",
+            message: err || "Something went wrong",
         });
     }
 }
@@ -477,18 +477,16 @@ const stateGsdpTemplate = async (req, res, next) => {
 
         worksheet.columns = [
             { header: '_id', key: '_id', width: 20, hidden: true },
-            { header: 'S no', key: 'sno', },
+            { header: 'S no', key: 'sno', hidden: true },
             { header: 'State', key: 'stateName', width: 20 },
             { header: 'Average GSDP growth rate of previous 5 years at Constant prices', key: 'constantPrice', width: 30 },
             { header: 'Average GSDP growth rate of previous 5 years at Current prices', key: 'currentPrice', width: 30 },
         ];
         
-        worksheet.getRows(1, startingRow).forEach(row => {
-            row.height = 60;
-            row.alignment = { vertical: "middle", wrapText: true, horizontal: "center"};
-            row.eachCell({ includeEmpty: true }, cell => {
-                cell.font = {bold: true}
-            });
+        worksheet.getRow(startingRow).height = 60;
+        worksheet.getRow(startingRow).alignment = { vertical: 'middle', wrapText: true, horizontal: 'center' };
+        worksheet.getRow(startingRow).eachCell({ includeEmpty: true }, cell => {
+            cell.font = { bold: true };
         });
 
         const stateGsdpData = await State.aggregate([
@@ -507,46 +505,69 @@ const stateGsdpTemplate = async (req, res, next) => {
             },
             {
                 $unwind: {
-                  path: "$gsdp_data",
-                  preserveNullAndEmptyArrays: true
+                    path: '$gsdp_data',
+                    preserveNullAndEmptyArrays: true
                 }
-              },
+            },
             {
                 $addFields: {
                     prices: {
                         $filter: {
                             input: '$gsdp_data.data',
                             as: 'item',
-                            cond: { $eq: ['$$item.year', '2018-23'] },
-            
+                            cond: { $eq: ['$$item.year', '2018-23'] }
                         }
-                    }    
+                    }
                 }
             },
             {
                 $unwind: {
-                  path: "$prices",
-                  preserveNullAndEmptyArrays: true
+                    path: '$prices',
+                    preserveNullAndEmptyArrays: true
                 }
             },
             {
                 $project: {
                     _id: { $toString: '$_id' },
-                    stateName: "$name",
+                    stateName: '$name',
                     constantPrice: '$prices.constantPrice',
-                    currentPrice: '$prices.currentPrice',
+                    currentPrice: '$prices.currentPrice'
                 }
             }
         ]);
 
-        worksheet.addRows(stateGsdpData.map((value, sno) => ({ ...value, sno: sno + 1 })), { startingRow, properties: { outlineLevel: 1 } });
+        worksheet.addRows(stateGsdpData.map((value, sno) => ({ ...value, sno: sno + 1 })), {
+            startingRow,
+            properties: { outlineLevel: 1 }
+        });
 
+        // Set up data validation for 'stateName' column
+        const stateNameColumn = worksheet.getColumn('stateName');
+        stateNameColumn.eachCell({ includeEmpty: true }, (cell, rowNumber) => {
+            // Apply custom data validation
+            cell.dataValidation = {
+                type: 'custom',
+                formula1: '0',
+                formula2: '0',
+                showErrorMessage: true,
+                errorTitle: 'Non Editable',
+                error: 'State Name cannot be editable',
+                errorStyle: 'stop',
+                allowBlank: true,
+                showInputMessage: false
+            };
+            if(rowNumber > 1) {
+                cell.font = {
+                    color: { argb: 'FF808080' }
+                };
+            }
+        });
+
+        // Generate Excel file and send as response
         const buffer = await workbook.xlsx.writeBuffer();
         res.setHeader('Content-Disposition', `attachment; filename=${templateName}.xlsx`);
         res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-
         res.send(buffer);
-
 
     } catch (err) {
         console.log(err)
