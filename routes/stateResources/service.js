@@ -74,7 +74,7 @@ const handleDatabaseUpload = async (req, res, next) => {
 
         return res.status(500).json({
             status: true,
-            message: err || "Something went wront",
+            message: err || "Something went wrong",
         });
     }
 }
@@ -528,40 +528,6 @@ const stateGsdpTemplate = async (req, res, next) => {
         worksheet.addRows(stateGsdpData.map((value, sno) => ({ ...value, sno: sno + 1 })), {
             startingRow,
             properties: { outlineLevel: 1 }
-        });
-
-        // Set up data validation for 'constantPrice' and 'currentPrice' columns
-        const constantPriceColumn = worksheet.getColumn('constantPrice');
-        const currentPriceColumn = worksheet.getColumn('currentPrice');
-
-        constantPriceColumn.eachCell({ includeEmpty: true }, (cell, rowNumber) => {
-            // Apply custom data validation for constantPrice column
-            if (rowNumber > 1) {
-                cell.dataValidation = {
-                    type: 'decimal',
-                    operator: 'greaterThanOrEqual',
-                    allowBlank: false,
-                    showErrorMessage: true,
-                    formula1: 0,
-                    errorTitle: 'Validation',
-                    error: 'Value should be a number'
-                };
-            }
-        });
-
-        currentPriceColumn.eachCell({ includeEmpty: true }, (cell, rowNumber) => {
-            // Apply custom data validation for currentPrice column
-            if (rowNumber > 1) {
-                cell.dataValidation = {
-                    type: 'decimal',
-                    operator: 'greaterThanOrEqual',
-                    allowBlank: true,
-                    showErrorMessage: true,
-                    formula1: 0,
-                    errorTitle: 'Validation',
-                    error: 'Value should be a number'
-                };
-            }
         });
 
         // Set up data validation for 'stateName' column
