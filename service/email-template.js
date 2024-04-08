@@ -121,13 +121,13 @@ const userForgotPassword = (name, link, ulbflagForEmail = true) => {
                         City Finance Team`,
   };
 };
-const userProfileEdit = (name) => {
+const userProfileEdit = (name, verified = false) => {
   return {
-    subject: `Profile Update Successful for City Finance`,
+    subject: `Profile ${verified ? 'Update': 'Verification'} Successful for City Finance`,
     body: `Dear ${name},<br>
                     <br>
                     <p>
-                        Your account has been successfully updated. <br>
+                        Your account has been ${verified ? 'updated': 'verified'} successfully. <br>
                         Please visit <a href="https://www.${process.env.PROD_HOST}" target="_blank">https://www.${process.env.PROD_HOST}</a> to login using your Ulb Code/Census Code.
                     </p>
                     <br>
@@ -1427,8 +1427,7 @@ const grantClaimAcknowledgement = (type, installment, state, financialYear,name,
 const gtcSubmission = (state, financialYear, name, installment) =>{
   return {
     subject: `Grant Transfer Certificate Submitted Successfully`,
-    body: `Dear ${name},<br>
-                        <br>
+    body: `Dear ${name},
                         <p>
                         This mail is to inform you that ${state} Government has successfully Submitted the Grant Transfer Certificate(s) for Installment No. - ${installment} of the Financial Year: ${financialYear}.
                         </p>
@@ -1444,7 +1443,6 @@ const ulbFormSubmitted = (ulbName, formName) => {
     subject: `${formName} Form Successfully Submitted`,
     body: `
               <p>Dear ${ulbName}</p> 
-              <br>
               <p>
               Your <strong>${formName}</strong> Form has been successfully submitted.<br>
               You will receive a confirmation on approval from State and MoHUA.

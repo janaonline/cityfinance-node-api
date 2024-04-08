@@ -109,3 +109,14 @@ module.exports.FRFormStatus = {
     'Rejected_By_MoHUA': 'Returned By MoHUA',
 
 }
+
+module.exports.UlbFormCollections = {
+    "gfcformcollections": "GfcFormCollection",
+    "odfformcollections" : "OdfFormCollection",
+    "xvfcgrantulbforms": "XVFcGrantULBForm",
+    "propertytaxops": "PropertyTaxOp",
+    "twentyeightslbforms": "TwentyEightSlbForm",
+    "utilizationreports": "UtilizationReport",
+    "annualaccountdatas" : "AnnualAccountData",
+    "pfmsaccounts":"PFMSAccount"
+}
