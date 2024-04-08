@@ -25,6 +25,20 @@ function getIndicatorScore(ulb, ulbArr, indicator) {
 	return ulbIn;
 }
 
+// function getIndicatorScore25(ulb, ulbArr, indicator) {
+
+// 	const ulbIn = ulb[indicator].score;
+// 	ulbIn.highestScore = 0;
+// 	ulbIn.lowestScore = 25;
+
+// 	if(ulbIn === 25) {
+// 		ulbIn.highestScore = 25;
+// 	}
+// 	if(ulbIn === 0) {
+// 		ulbIn.lowestScore = 0;
+// 	}
+// }
+
 async function setScore(populationBucket) {
 	// const censusCode = 802787;
 	// Submission Acknowledged by PMU - 11
