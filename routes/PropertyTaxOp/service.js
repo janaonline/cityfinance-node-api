@@ -345,9 +345,29 @@ async function handlePtoSkipLogicDependencies({
     });
     if(!nextYearPto) return;
     let mapperForm = await PropertyTaxOpMapper.find({ ptoId: ObjectId(formId) }).populate("child").lean();
-    
-    const parentSkipLogicRadioQuestions =  mapperForm.filter(({ value, type }) => [...parentRadioQuestionKeys,  'ulbFinancialYear'].includes(type))
-    const updatableQuestion = [ ...parentSkipLogicRadioQuestions];
+    let fyDynemic = { ...propertyTaxOpFormJson({ design_year }) };
+    const json = fyDynemic.tabs[0].data;
+    const parentSkipLogicRadioQuestions =  mapperForm.filter(({ value, type }) => parentRadioQuestionKeys.includes(type))
+    const childSkipLogicRadioQuestionKeys = Object.keys(parentSkipLogicRadioQuestions.reduce((acc, question) => {
+        return {
+            ...acc,
+            ...skipLogicDependencies[`data.${question.type}.yearData.0`]?.skippable
+        }
+    }, {}));
+    const filterdChildKeys = childSkipLogicRadioQuestionKeys.filter(key => {
+        return isSingleYearIndicator(json[key].yearData);
+    });
+
+    filterdChildKeys.forEach(key => {
+        const grandChild = skipLogicDependencies[`data.${key}.yearData.0`];
+        if (grandChild && grandChild.skippable) {
+            filterdChildKeys.push(...Object.keys(grandChild.skippable));
+        }
+    });
+
+    const childSkipLogicRadioQuestion =  mapperForm.filter(({ year, type }) => year && filterdChildKeys.includes(type))
+
+    const updatableQuestion = [ ...parentSkipLogicRadioQuestions, ...childSkipLogicRadioQuestion];
 
     const nextYearMapperUpdateQuery = updatableQuestion.map(question => {
         const { yearName: currentYearName } = getDesiredYear('' + question.year); 
@@ -1341,7 +1361,7 @@ exports.getView = async function (req, res, next) {
         fyDynemic['design_year'] = ptoData?.design_year || req.query.design_year;
         fyDynemic['statusId'] = ptoData?.currentFormStatus || MASTER_STATUS['Not Started'];
         fyDynemic['status'] = MASTER_STATUS_ID[ptoData?.currentFormStatus] || MASTER_STATUS_ID[1];
-        fyDynemic['pullid'] = 103;
+        fyDynemic['pullid'] = 100;
         let params = {
             status: ptoData?.currentFormStatus,
             formType: "ULB",

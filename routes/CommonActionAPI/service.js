@@ -4028,7 +4028,6 @@ async function rejectForm2223(form, modelName, user) {
             modifiedAt: new Date(),
         };
         delete form["history"];
-        Object.assign(form,updateObj)
         let updatedForm = await moongose.model(modelName).findOneAndUpdate(
             { _id: form._id },
             {
