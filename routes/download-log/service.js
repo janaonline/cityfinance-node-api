@@ -14,8 +14,20 @@ const options = {
         left: '.1in'
     },
     quality: '100',
-    encoding: 'utf-8'
+    encoding: 'utf-8',
+    // footer: {
+    //     height: "10mm",
+    //     contents: {
+    //         default: '<div style="text-align: center;"><span style="font-size: 10px;">{{page}}</span>/<span style="font-size: 10px;">{{pages}}</span></div>'
+    //     }
+    // },
+    childProcessOptions: {
+        env: {
+          OPENSSL_CONF: '/dev/null',
+        },
+      }
 };
+
 
 module.exports.get = function(req, res){
     let condition = req.query;
