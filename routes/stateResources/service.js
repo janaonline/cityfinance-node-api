@@ -639,7 +639,7 @@ const updatestateGsdpTemplate = async (req, res, next, worksheet, workbook) => {
                 validationErrors.push({
                     r: index,
                     c: columnState,
-                    message: `Already Uploaded data`
+                    message: `Data for ${stateName[index]} cannot be modified as it was already updated.`
                 });
             }
             
