@@ -340,7 +340,7 @@ const validationJson = {
             "collectIncludingCess"
         ],
         "sequence": [
-            "1.13"
+            "1.17"
         ],
         "message": "Total collections made via online channel should be less than or equal to total property tax collections.",
         "displayNumber": "3.2"
@@ -823,16 +823,15 @@ const getVavidationObject = (sortKey, byData) => {
 }
 
 let newYearValidationJson = {
-    "userChargesCollectionAmount": {
+    "userChargesCollection": {
         "logic": "ltequal",
         "fields": [
-            "otherNoPropertyTaxDm"
+            "userChargesDmnd"
         ],
         "sequence": [
             "1.16"
         ],
-        "message": "userChargesCollectionAmount< or =userChargesDmndAmount",
-        "displayNumber": "1.23"
+        "message": "User charges collections must be less than or equal to User charges demand.",
     },
     "totalMappedPropertiesUlb": {
         "logic": "sum",
@@ -844,7 +843,7 @@ let newYearValidationJson = {
             "2.2",
             "2.3"
         ],
-        "message": "totalMappedPropertiesUlb = totalPropertiesTax + totalPropertiesTaxDm",
+        "message": "Sum should be equal to Total number of properties exempted from paying property tax and Total number of properties from which property tax was demanded.",
         "displayNumber": "2.1"
     },
     "totalPropertiesTaxDmCollected": {
@@ -879,7 +878,7 @@ let newYearValidationJson = {
                 "sequence": [
                     "2.3"
                 ],
-                "message": "totalPropertiesTaxDmCollected < or = totalPropertiesTaxDm",
+                "message": " Value must be less than or equal to Total number of properties from which property tax was demanded.",
                 "displayNumber": "2.4"
             },
 
@@ -913,7 +912,7 @@ let newYearValidationJson = {
                 "sequence": [
                     "5.11"
                 ],
-                "message": "waterChrgConnectionCol < or = waterChrgConnectionDm",
+                "message": "Value must be less than or equal to Total Number of connections from which water charges was demanded",
             },
         ],
         "displayNumber": "5.12"
@@ -959,7 +958,7 @@ let newYearValidationJson = {
                 "sequence": [
                     "5.5",
                 ],
-                "message": "waterChrgCol < or = waterChrgDm",
+                "message": "Value must be less than or equal to Total water charges demand",
                 "displayNumber": "5.8"
             }
         ],
@@ -1004,12 +1003,45 @@ let newYearValidationJson = {
                 "sequence": [
                     "6.5",
                 ],
-                "message": `totalSewergeChrgCol < or = totalSewergeChrgDm`
+                "message": `Value must be less than or equal to Total sewerage charges demand`
             },
         ],
         "displayNumber": "6.8"
 
     },
+    "totalSewergeConnectionCol": {
+        "logic": "multiple",
+        "multipleValidations": [
+            {
+
+                "logic": "sum",
+                "fields": [
+                    "resNoSewerageTaxCollected",
+                    "comNoSewerageTaxCollected",
+                    "indNoSewerageTaxCollected",
+                    "otherNoSewerageTaxCollected"
+                ],
+                "sequence": [
+                    "6.16",
+                    "6.20",
+                    "6.24",
+                    "6.29"
+                ],
+                "message": "The sum should be equal to total number of connections from which sewerage charges were collected."
+            },
+            {
+                "logic": "ltequal",
+                "fields": [
+                    "totalSewergeChrgDm"
+                ],
+                "sequence": [
+                    "6.11",
+                ],
+                "message": ` Value must be less than or equal to "Total number of connections from which sewerage charges was demanded`
+            },
+        ],
+        "displayNumber": "6.12"
+    }
 }
 
 const getValidationJson = (design_year) => {
