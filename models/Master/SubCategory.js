@@ -1,3 +1,4 @@
+const mongoose = require("mongoose");
 require("../dbConnect");
 const SubCategorySchema = new Schema(
     {
@@ -8,7 +9,8 @@ const SubCategorySchema = new Schema(
         isActive: { type: Boolean, default: 1 },
         accepts: [ { type: String } ],
         maxUploads: { type: Number },
-        uploadType: { type: String, enum: ['file', 'database'] }
+        uploadType: { type: String, enum: ['file', 'database'] },
+        design_year: { type: mongoose.Schema.Types.ObjectId, ref: "Year"}
     },
     { timestamp: { createdAt: "createdAt", updatedAt: "modifiedAt" } }
 );
