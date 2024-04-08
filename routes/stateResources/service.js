@@ -45,7 +45,8 @@ const handleDatabaseUpload = async (req, res, next) => {
         if (templateName == 'gsdp') await updateGsdpTemplate(req, res, next, worksheet, workbook);
 
         const uploaded = await CategoryFileUpload.findOne({
-            subCategoryId: ObjectId(req.body?.subCategoryId)
+            subCategoryId: ObjectId(req.body?.subCategoryId),
+            design_year : ObjectId(req.body?.design_year)
         });
 
         if (uploaded) {
@@ -695,6 +696,7 @@ const getCategoryWiseResource = async (req, res, next) => {
             {
                 $match: {
                     module: 'state_resource',
+                    design_year: ObjectId(req.query?.design_year)
                 },
             },
             {
@@ -808,12 +810,13 @@ const getResourceList = async (req, res, next) => {
                     path: "$relatedIds",
                 }
             },
-            ...(categoryId || stateId || subCategoryId ? [
+            ...(categoryId || stateId || subCategoryId || design_year ? [
                 {
                     $match: {
                         ...(categoryId && { categoryId: ObjectId(categoryId) }),
                         ...(subCategoryId && { subCategoryId: ObjectId(subCategoryId) }),
-                        ...(stateId && { relatedIds: ObjectId(stateId) })
+                        ...(stateId && { relatedIds: ObjectId(stateId) }),
+                        ...(design_year && { design_year: ObjectId(design_year) }),
                     }
                 },
             ] : []),
@@ -942,7 +945,7 @@ const getResourceList = async (req, res, next) => {
 }
 
 const createOrUpdate = async (req, res, next) => {
-    const { id, files } = req.body;
+    const { id, files, design_year } = req.body;
     delete req.body.id;
     delete req.body.files;
     delete req.body.actionType;
@@ -950,9 +953,10 @@ const createOrUpdate = async (req, res, next) => {
         data = [];
         for (let file of files) {
             let result = await CategoryFileUpload.updateOne(
-                { _id: ObjectId(id) },
+                { _id: ObjectId(id), design_year: ObjectId(design_year) },
                 {
                     ...req.body,
+                    design_year: ObjectId(design_year),
                     module: 'state_resource',
                     file
                 },
