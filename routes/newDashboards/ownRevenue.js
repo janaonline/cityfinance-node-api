@@ -280,6 +280,11 @@ if(from == "slb"){
 
     let countQuery = [
       {
+        $match: {
+            isActive: true
+        }
+      },
+      {
         $count: "ulbCount",
       },
     ];
@@ -316,7 +321,7 @@ if(from == "slb"){
         names.push(el.name);
       });
     }
-    data = (data / ulbCount[0]?.ulbCount) * 100;
+        data = (data / ulbCount[0]?.ulbCount) * 100;
     if (reuseOption == "nationalDashboard")
       return { percent: data, names: names };
     return Response.OK(res, { percent: data, names: names });
