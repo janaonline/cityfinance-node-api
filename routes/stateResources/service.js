@@ -10,7 +10,8 @@ const CategoryFileUpload = require('../../models/CategoryFileUpload');
 const { loadExcelByUrl } = require('../../util/worksheet');
 const { isValidObjectId } = require("mongoose");
 const { isValidDate } = require("../../util/helper");
-const {getStorageBaseUrl} = require('./../../service/getBlobUrl')
+const {getStorageBaseUrl} = require('./../../service/getBlobUrl');
+const StateGsdpData = require("../../models/StateGsdp");
 // const { query } = require("express");
 
 const GSDP_OPTIONS = {
@@ -43,6 +44,7 @@ const handleDatabaseUpload = async (req, res, next) => {
 
         if (templateName == 'dulyElected') await updateDulyElectedTemplate(req, res, next, worksheet, workbook);
         if (templateName == 'gsdp') await updateGsdpTemplate(req, res, next, worksheet, workbook);
+        if (templateName == 'stateGsdp') await updatestateGsdpTemplate(req, res, next, worksheet, workbook);
 
         const uploaded = await CategoryFileUpload.findOne({
             subCategoryId: ObjectId(req.body?.subCategoryId)
@@ -456,6 +458,91 @@ const gsdpTemplate = async (req, res, next) => {
         console.log(err)
     }
 }
+const stateGsdpTemplate = async (req, res, next) => {
+    const templateName = req.params.templateName;
+    try {
+        const relatedIds = Array.isArray(req.query.relatedIds) ? req.query.relatedIds : [req.query.relatedIds];
+        const startingRow = 1;
+        const workbook = new ExcelJS.Workbook();
+        const worksheet = workbook.addWorksheet('My Sheet');
+
+        worksheet.columns = [
+            { header: '_id', key: '_id', width: 20, hidden: true },
+            { header: 'S no', key: 'sno', },
+            { header: 'State', key: 'stateName', width: 20 },
+            { header: 'Average GSDP growth rate of previous 5 years at Constant prices', key: 'constantPrice', width: 30 },
+            { header: 'Average GSDP growth rate of previous 5 years at Current prices', key: 'currentPrice', width: 30 },
+        ];
+        
+        worksheet.getRows(1, startingRow).forEach(row => {
+            row.height = 60;
+            row.alignment = { vertical: "middle", wrapText: true, horizontal: "center"};
+            row.eachCell({ includeEmpty: true }, cell => {
+                cell.font = {bold: true}
+            });
+        });
+
+        const stateGsdpData = await State.aggregate([
+            {
+                $match: {
+                    _id: { $in: relatedIds.map(id => ObjectId(id)) }
+                }
+            },
+            {
+                $lookup: {
+                    from: 'state_gsdp',
+                    localField: '_id',
+                    foreignField: 'stateId',
+                    as: 'gsdp_data'
+                }
+            },
+            {
+                $unwind: {
+                  path: "$gsdp_data",
+                  preserveNullAndEmptyArrays: true
+                }
+              },
+            {
+                $addFields: {
+                    prices: {
+                        $filter: {
+                            input: '$gsdp_data.data',
+                            as: 'item',
+                            cond: { $eq: ['$$item.year', '2018-23'] },
+            
+                        }
+                    }    
+                }
+            },
+            {
+                $unwind: {
+                  path: "$prices",
+                  preserveNullAndEmptyArrays: true
+                }
+            },
+            {
+                $project: {
+                    _id: { $toString: '$_id' },
+                    stateName: "$name",
+                    constantPrice: '$prices.constantPrice',
+                    currentPrice: '$prices.currentPrice',
+                }
+            }
+        ]);
+
+        worksheet.addRows(stateGsdpData.map((value, sno) => ({ ...value, sno: sno + 1 })), { startingRow, properties: { outlineLevel: 1 } });
+
+        const buffer = await workbook.xlsx.writeBuffer();
+        res.setHeader('Content-Disposition', `attachment; filename=${templateName}.xlsx`);
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+
+        res.send(buffer);
+
+
+    } catch (err) {
+        console.log(err)
+    }
+}
 
 
 const updateGsdpTemplate = async (req, res, next, worksheet, workbook) => {
@@ -505,10 +592,81 @@ const updateGsdpTemplate = async (req, res, next, worksheet, workbook) => {
     }
 }
 
+const updatestateGsdpTemplate = async (req, res, next, worksheet, workbook) => {
+    try {
+        const validationErrors = [];
+        const columnId = 1;
+        const columnConstantPrice = 4;
+        const columnCurrentPrice = 5;
+        const columnState = 3;
+
+        const _ids = worksheet.getColumn(columnId).values;
+        const stateGsdpConstantPrices = worksheet.getColumn(columnConstantPrice).values;
+        const stateGsdpCurrentPrices = worksheet.getColumn(columnCurrentPrice).values;
+        const stateName = worksheet.getColumn(columnState).values;
+
+        const promises = _ids.map(async (_id, index) => {
+            if (!_id || !isValidObjectId(_id)) return;
+
+            if (isNaN(stateGsdpConstantPrices[index]) || [undefined, ""].includes(stateGsdpConstantPrices[index])) {
+                validationErrors.push({
+                    r: index,
+                    c: columnConstantPrice,
+                    message: `Value should be a number and can't be empty`
+                });
+            }
+
+            if (isNaN(stateGsdpCurrentPrices[index]) && [undefined, ""].includes(stateGsdpConstantPrices[index])) {
+                validationErrors.push({
+                    r: index,
+                    c: columnCurrentPrice,
+                    message: `Value should be a number and can't be empty`
+                });
+            }
+
+            let checkStateGsdpData = await StateGsdpData.findOne({ stateId: ObjectId(_id) }).lean();
+
+            if(checkStateGsdpData) {
+                validationErrors.push({
+                    r: index,
+                    c: columnState,
+                    message: `Already Uploaded data`
+                });
+            }
+            
+            const result = {
+                "stateId" : ObjectId(_id),
+                "stateName" : stateName[index],
+                "data" : [
+                    {
+                        "year" : "2018-23",
+                        "constantPrice" : stateGsdpConstantPrices[index],
+                        "currentPrice" : stateGsdpCurrentPrices[index]
+                    }
+                ],
+            }
+            return result;
+        });
+
+        const results = (await Promise.all(promises)).filter(i => i);
+
+        if (validationErrors.length) {
+            return Promise.reject({ validationErrors });
+        }
+
+        await StateGsdpData.insertMany(results);
+        Promise.resolve("Data updated");
+    } catch (err) {
+        console.log(err);
+        Promise.reject("Something went wrong");
+    }
+}
+
 const getTemplate = async (req, res, next) => {
     const templateName = req.params.templateName;
     if (templateName == 'dulyElected') return dulyElectedTemplate(req, res, next);
     if (templateName == 'gsdp') return gsdpTemplate(req, res, next);
+    if (templateName == 'stateGsdp') return stateGsdpTemplate(req, res, next);
 }
 
 const getCategoryWiseResource = async (req, res, next) => {
