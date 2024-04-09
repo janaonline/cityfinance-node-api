@@ -456,6 +456,146 @@ const gsdpTemplate = async (req, res, next) => {
         console.log(err)
     }
 }
+const stateGsdpTemplate = async (req, res, next) => {
+    const templateName = req.params.templateName;
+    try {
+        const relatedIds = Array.isArray(req.query.relatedIds) ? req.query.relatedIds : [req.query.relatedIds];
+        const startingRow = 1;
+        const workbook = new ExcelJS.Workbook();
+        const worksheet = workbook.addWorksheet('My Sheet');
+
+        worksheet.columns = [
+            { header: '_id', key: '_id', width: 20, hidden: true },
+            { header: 'S no', key: 'sno', hidden: true },
+            { header: 'State', key: 'stateName', width: 20 },
+            { header: 'Average GSDP growth rate of previous 5 years at Constant prices', key: 'constantPrice', width: 30 },
+            { header: 'Average GSDP growth rate of previous 5 years at Current prices', key: 'currentPrice', width: 30 },
+        ];
+        
+        worksheet.getRow(startingRow).height = 60;
+        worksheet.getRow(startingRow).alignment = { vertical: 'middle', wrapText: true, horizontal: 'center' };
+        worksheet.getRow(startingRow).eachCell({ includeEmpty: true }, cell => {
+            cell.font = { bold: true };
+        });
+
+        const stateGsdpData = await State.aggregate([
+            {
+                $match: {
+                    _id: { $in: relatedIds.map(id => ObjectId(id)) }
+                }
+            },
+            {
+                $lookup: {
+                    from: 'state_gsdp',
+                    localField: '_id',
+                    foreignField: 'stateId',
+                    as: 'gsdp_data'
+                }
+            },
+            {
+                $unwind: {
+                    path: '$gsdp_data',
+                    preserveNullAndEmptyArrays: true
+                }
+            },
+            {
+                $addFields: {
+                    prices: {
+                        $filter: {
+                            input: '$gsdp_data.data',
+                            as: 'item',
+                            cond: { $eq: ['$$item.year', '2018-23'] }
+                        }
+                    }
+                }
+            },
+            {
+                $unwind: {
+                    path: '$prices',
+                    preserveNullAndEmptyArrays: true
+                }
+            },
+            {
+                $project: {
+                    _id: { $toString: '$_id' },
+                    stateName: '$name',
+                    constantPrice: '$prices.constantPrice',
+                    currentPrice: '$prices.currentPrice'
+                }
+            }
+        ]);
+
+        worksheet.addRows(stateGsdpData.map((value, sno) => ({ ...value, sno: sno + 1 })), {
+            startingRow,
+            properties: { outlineLevel: 1 }
+        });
+
+        // Set up data validation for 'constantPrice' and 'currentPrice' columns
+        const constantPriceColumn = worksheet.getColumn('constantPrice');
+        const currentPriceColumn = worksheet.getColumn('currentPrice');
+
+        constantPriceColumn.eachCell({ includeEmpty: true }, (cell, rowNumber) => {
+            // Apply custom data validation for constantPrice column
+            if (rowNumber > 1) {
+                cell.dataValidation = {
+                    type: 'decimal',
+                    operator: 'greaterThanOrEqual',
+                    allowBlank: false,
+                    showErrorMessage: true,
+                    formula1: 0,
+                    errorTitle: 'Validation',
+                    error: 'Value should be a number'
+                };
+            }
+        });
+
+        currentPriceColumn.eachCell({ includeEmpty: true }, (cell, rowNumber) => {
+            // Apply custom data validation for currentPrice column
+            if (rowNumber > 1) {
+                cell.dataValidation = {
+                    type: 'decimal',
+                    operator: 'greaterThanOrEqual',
+                    allowBlank: true,
+                    showErrorMessage: true,
+                    formula1: 0,
+                    errorTitle: 'Validation',
+                    error: 'Value should be a number'
+                };
+            }
+        });
+
+        // Set up data validation for 'stateName' column
+        const stateNameColumn = worksheet.getColumn('stateName');
+        stateNameColumn.eachCell({ includeEmpty: true }, (cell, rowNumber) => {
+            // Apply custom data validation
+            cell.dataValidation = {
+                type: 'custom',
+                formula1: '0',
+                formula2: '0',
+                showErrorMessage: true,
+                errorTitle: 'Non Editable',
+                error: 'State Name cannot be editable',
+                errorStyle: 'stop',
+                allowBlank: true,
+                showInputMessage: false
+            };
+            if(rowNumber > 1) {
+                cell.font = {
+                    color: { argb: 'FF808080' }
+                };
+            }
+        });
+
+        // Generate Excel file and send as response
+        const buffer = await workbook.xlsx.writeBuffer();
+        res.setHeader('Content-Disposition', `attachment; filename=${templateName}.xlsx`);
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        res.send(buffer);
+
+    } catch (err) {
+        console.log(err)
+    }
+}
 
 
 const updateGsdpTemplate = async (req, res, next, worksheet, workbook) => {
