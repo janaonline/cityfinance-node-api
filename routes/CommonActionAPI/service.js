@@ -3862,15 +3862,7 @@ async function sequentialReview(req, res) {
             ? (designYear = "designYear")
             : (designYear = "design_year");
 
-        let modelName = null;
-
-        if(formId === FORMIDs['twentyEightSlb']) {
-            modelName = ModelNames['twentyEightSlbs'];
-        } else if(formId === FORMIDs['PTO']) {
-            modelName = ModelNames['propTaxOp'];
-        } else {
-            modelName = ModelNames['dur']; 
-        }
+        const modelName = formId === FORMIDs['twentyEightSlb'] ? ModelNames['twentyEightSlbs'] : ModelNames['dur'];
 
         let query = {
             ulb: { $in: ulbs },

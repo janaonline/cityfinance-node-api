@@ -85,7 +85,7 @@ function Helper() {
         }
     }
 
-    this.handleOldYearsDisabled = ({ yearObject, design_year, isForChild = false }) => {
+    this.handleOldYearsDisabled = (yearObject, design_year) => {
         if(!isBeyond2023_24(design_year)) return;
         const { yearIndex: designYearIndex  } = getDesiredYear(design_year);
         const { yearIndex } = getDesiredYear(yearObject.year);
@@ -94,8 +94,6 @@ function Helper() {
             yearObject.required = false;
             yearObject.placeholder = (yearObject.value == "") ? 'N/A' : "";
             yearObject.notApplicable = (yearObject.value == "");
-        } else if(isForChild) {
-            yearObject.required = true;
         }
     }
     this.hasMultipleYearData = (yearData) => {
