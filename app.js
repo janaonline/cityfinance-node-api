@@ -112,4 +112,4 @@ app.use((err, req, res, next) => {
 //   console.log("server started on port " + port);
 // });
 
-// module.exports = app
+module.exports = app
