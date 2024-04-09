@@ -915,7 +915,7 @@ const createOrUpdate = async (req, res, next) => {
             let result = await CategoryFileUpload.updateOne(
                 { _id: ObjectId(id) },
                 {
-                    ...req.body,
+                        ...req.body,
                     module: 'state_resource',
                     file
                 },
