@@ -616,7 +616,7 @@ const updatestateGsdpTemplate = async (req, res, next, worksheet, workbook) => {
                 });
             }
 
-            if (isNaN(stateGsdpCurrentPrices[index]) && [undefined, ""].includes(stateGsdpConstantPrices[index])) {
+            if (isNaN(stateGsdpCurrentPrices[index]) || [undefined, ""].includes(stateGsdpCurrentPrices[index])) {
                 validationErrors.push({
                     r: index,
                     c: columnCurrentPrice,
