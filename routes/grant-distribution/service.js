@@ -1,6 +1,7 @@
 const xlstojson = require("xls-to-json-lc");
 const xlsxtojson = require("xlsx-to-json-lc");
 const ObjectId = require("mongoose").Types.ObjectId;
+const moongose = require('mongoose');
 const ULB = require("../../models/Ulb");
 const STATE = require("../../models/State");
 const Response = require("../../service").response;
@@ -71,8 +72,19 @@ exports.getGrantDistribution = async (req, res) => {
   }
 };
 
+function getCond(design_year, type, state) {
+  let cond = {
+    state: ObjectId(state),
+    isActive: true,
+  };
+
+  if (design_year === '606aafcf4dff55e6c075d424') {
+    cond['isMillionPlus'] = type === 'nonmillion_tied_untied' ? 'No' : 'Yes';
+  }
+  return cond;
+}
 exports.getTemplate = async (req, res) => {
-  console.log("suresh")
+  // mongoose.set('debug', true);
   let { state } = req?.decoded;
   let formData = req.query;
   let amount = "grant amount";
@@ -91,10 +103,8 @@ exports.getTemplate = async (req, res) => {
     : (amount = `${amount} (Lakhs)`);
 
   try {
-    const ulbs = await ULB.find({
-      state: ObjectId(state),
-      isActive: true,
-    }).select({ censusCode: 1, name: 1, sbCode: 1 });
+
+    const ulbs = await ULB.find(getCond(formData.year, formData.type, state)).select({ censusCode: 1, name: 1, sbCode: 1 });
     if (ulbs.length === 0) {
       return Response.BadRequest(res, "No ULB found");
     }
@@ -114,7 +124,7 @@ exports.getTemplate = async (req, res) => {
         // console.log("element :: ",element)
       }
     });
-    console.log("defectedUlb :: ", defectedUlb)
+    // console.log("defectedUlb :: ", defectedUlb)
     let field = {
       code: "ULB Census Code/ULB Code",
       name: "ULB Name",
@@ -141,14 +151,20 @@ function setFields(formData) {
     dulyElected: 'STATUS (DULY ELECTED - YES/NO)',
     remarks: 'REMARKS',
     gaTied: `GRANT ALLOCATION - ${installment} Installment TIED`,
-    ga15fcPercTied: '%FC GRANT ALLOCATED',
-    gaUnTied: `GRANT ALLOCATION - ${installment} Installment UNTIED`,
-    ga15fcPercUnTied: '%FC GRANT ALLOCATED',
+    ga15fcPercTied: '%FC GRANT ALLOCATED TIED',
   };
+  if (formData.type === 'nonmillion_tied_untied') {
+    const fields1 = {
+      gaUnTied: `GRANT ALLOCATION - ${installment} Installment UNTIED`,
+      ga15fcPercUnTied: '%FC GRANT ALLOCATED UNTIED',
+    };
+    fields = { ...fields, ...fields1 }
+  }
   return fields;
 }
 
 exports.uploadTemplate = async (req, res) => {
+  // mongoose.set('debug', true);
   let { url, design_year } = req.query;
   let state = req.decoded?.state;
 
@@ -180,10 +196,7 @@ exports.uploadTemplate = async (req, res) => {
       // validate data
       let queryState = [
         {
-          $match: {
-            state: ObjectId(state),
-            isActive: true
-          }
+          $match: getCond(design_year, formData.type, state)
         },
         {
           $group: {
@@ -234,20 +247,20 @@ exports.uploadTemplate = async (req, res) => {
           return res.status(400).xls("error_sheet.xlsx", [{ "message": "Wrong state file" }]);
         }
         if (ulbCount != (XslData.length - emptyCensus)) {
-          console.log("2")
           return res.status(400).xls("error_sheet.xlsx", [{ "message": `${ulbCount - (XslData.length - emptyCensus)} ulb data missing` }]);
           // return BadRequest(res, null, `${ulbCount- (XslData.length-emptyCensus)} ulb data missing`);
         }
       }
-      const notValid = await validate(XslData, formData);
+      let notValid;
+      if (formData.design_year === '606aafcf4dff55e6c075d424') {
+        notValid = await validate24_25(XslData, formData);
+      } else {
+        notValid = await validate(XslData, formData);
+      }
       if (notValid) {
         let amount = "grant amount";
         formData.design_year = getKeyByValue(years, formData.design_year)
-        if (formData.design_year === "606aafb14dff55e6c075d3ae") {
-          formData.design_year = '2022-23';
-        } else if (formData.design_year === "606aaf854dff55e6c075d219") {
-          formData.design_year = '2021-22';
-        }
+
         let type = `${formData.type}_${formData.design_year}_${formData.installment}`
         amount = `${amount} - ${type} (Lakhs)`
         /* Checking if the formData.design_year is equal to 2021-22 or undefined, if it is, then it sets the amount variable
@@ -255,12 +268,21 @@ exports.uploadTemplate = async (req, res) => {
         formData.design_year === undefined || formData.design_year === "2021-22"
           ? amount = "grant amount (Lakhs)"
           : "";
-        let field = {
-          ["ulb census code/ulb code"]: "ULB Census Code/ULB Code",
-          ["ulb name"]: "ULB Name",
-          ["grant amount"]: amount,
-          Errors: "Errors",
-        };
+        let field = {};
+        if (design_year === '606aafcf4dff55e6c075d424') {
+          Object.values(setFields(formData)).forEach(e => {
+            field[e.toLowerCase()] = e;
+          });
+          field["Errors"] = "Errors";
+        } else {
+          field = {
+            ["ulb census code/ulb code"]: "ULB Census Code/ULB Code",
+            ["ulb name"]: "ULB Name",
+            ["grant amount"]: amount,
+            Errors: "Errors",
+          };
+        }
+        // console.log('notValid', notValid);
         let xlsDatas = await Service.dataFormating(notValid, field);
         return res.status(400).xls("error_sheet.xlsx", xlsDatas);
       }
@@ -445,6 +467,119 @@ async function validate(data, formData) {
   }
 }
 
+async function validate24_25(data, formData) {
+  let ulbCodes = [], ulbNames = [];
+  const code = "ulb census code/ulb code";
+  const name = "ulb name";
+
+  const keys = Object.keys(data[0]);
+  const fields = Object.values(setFields(formData)).map(v => v.toLowerCase());
+  const difference = keys.filter(x => !fields.includes(x));
+
+  //Check headers are correct
+  if (difference.length || keys.length !== fields.length) {
+    data.forEach((element) => {
+      element.Errors = "Incorrect Format,";
+    });
+    return data;
+  }
+
+  for (let index = 0; index < data.length; index++) {
+    const keysLen = Object.keys(data[index]).length;
+    if (keysLen !== fields.length) {
+      data[index].Errors = "Incorrect Format,";
+    }
+    if (data[index][code]) ulbCodes.push(data[index][code]);
+    if (data[index][name]) ulbNames.push(data[index][name]);
+  }
+  // get ulb data
+  const compareData = await getUlbData(ulbCodes, ulbNames);
+  let errorFlag = false;
+  let countTiedPercentage = 0, countUntiedPercentage = 0;
+  for (let index = 0; index < data.length; index++) {
+    if (data[index][code] === "" || data[index][name] === "") {
+      data[index].Errors = appendErrors(data[index].Errors, "Code or Ulb name is blank,");
+    }
+    if (!compareData[data[index][code]]) {
+      data[index].Errors = appendErrors(data[index].Errors, "Code Not valid,");
+    }
+
+    if (compareData[data[index][code]] != data[index][name]) {
+      data[index].Errors = appendErrors(data[index].Errors, "Name Not valid,");
+    }
+
+    data[index].Errors = checkNotZero(fields[2], data[index]); // area
+    data[index].Errors = checkNotZero(fields[3], data[index]); // population
+    data[index].Errors = checkDulyElectedValues(fields, data[index]);
+    data[index].Errors = checkValues(fields, data[index]);
+
+    countTiedPercentage += Number(data[index][fields[7]]);
+    if (fields[9]) countUntiedPercentage += Number(data[index][fields[9]]);
+
+    if (data[index].Errors) {
+      errorFlag = true;
+    }
+  }
+
+  data.forEach((object) => {
+    // Check given percentage must be sum of 100
+    if (countTiedPercentage !== 100) {
+      checkField = fields[7];
+      object.Errors = appendErrors(object.Errors, checkField + " - Not valid,");
+      errorFlag = true;
+    }
+    if (fields[9] && countUntiedPercentage !== 100) {
+      checkField = fields[9];
+      object.Errors = appendErrors(object.Errors, checkField + " - Not valid,");
+      errorFlag = true;
+    }
+  });
+  if (errorFlag) {
+    return data;
+  }
+}
+
+function checkNotZero(checkField, row) {
+  let errors = row.Errors
+  if (!Number(row[checkField]) || row[checkField] === "" || row[checkField] === 0) {
+    errors = appendErrors(errors, checkField + " - Not valid,");
+  }
+  return errors;
+}
+
+function checkDulyElectedValues(fields, row) {
+  let errors = row.Errors
+  const dulyElectedField = fields[4];
+  const remarksField = fields[5];
+  if (!['yes', 'no', 'others'].includes(row[dulyElectedField].toLowerCase())) {
+    errorFlag = true;
+    errors = appendErrors(errors, dulyElectedField + " - Not valid,");
+  }
+  if (['Others'].includes(row[dulyElectedField]) && row[remarksField] === "") {
+    errors = appendErrors(errors, remarksField + " - Not valid,");
+  }
+  return errors;
+}
+
+function checkValues(fields, row) {
+  let errors = row.Errors
+  const checkFields = fields.filter((el, i) => i >= 6); // get element from index 6
+  for (const field of checkFields) {
+    if (isNaN(row[field]) || row[field] === "") {
+      errors = appendErrors(errors, field + " - Not valid,");
+    }
+  }
+  return errors;
+}
+function appendErrors(errors, msg) {
+  if (errors) {
+    errors += msg;
+  }
+  else {
+    errors = msg;
+  }
+  return errors;
+}
 async function getUlbData(ulbCodes, ulbNames) {
   const q = {
     $and: [
@@ -566,6 +701,7 @@ const getSectionWiseJson = async (state, design_year, role) => {
 
 
 module.exports.getGrantDistributionForm = async (req, res, next) => {
+  // mongoose.set('debug', true);
   let response = {
     success: false,
     message: "",
