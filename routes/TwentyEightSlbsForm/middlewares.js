@@ -1,7 +1,6 @@
 const { years } = require("../../service/years")
 const { getFlatObj,payloadParser,mutateResponse,mutateJson,nestedObjectParser,decideDisabledFields } = require("../CommonActionAPI/service")
 const FormsJson = require("../../models/FormsJson");
-const Ulb = require('../../models/Ulb')
 const {getKeyByValue} = require("../../util/masterFunctions")
 // const Sidemenu = require("../../models/Sidemenu");
 const ObjectId = require("mongoose").Types.ObjectId;
@@ -22,8 +21,7 @@ module.exports.changeApiGetForm = async(req,res)=>{
         let latestYear = !outDatedYears.includes(year)
         let jsonFormId = req.query.formId || 0
         let condition = { formId: parseInt(jsonFormId) ,design_year:ObjectId(yearId) }
-        let formJson = await FormsJson.findOne(condition).lean();
-        let ulbData = await Ulb.findOne({_id: ObjectId(req.query?.ulb)},{access_2122:1}).lean()
+        let formJson = await FormsJson.findOne(condition).lean()
         let responseData = [
             {
               "_id": req?.form?._id ,
@@ -31,7 +29,6 @@ module.exports.changeApiGetForm = async(req,res)=>{
               "language":[],
               "canTakeAction":req?.form?.canTakeAction ,
               "isDraft":req?.form?.isDraft,
-              "createdIn2122": ulbData?.access_2122,
               'prevYearStatus': req?.form?.prevYearStatus || null,
               'prevYearStatusId': req?.form?.prevYearStatusId || null,
               "population":req?.form?.population || null,
@@ -51,8 +48,6 @@ module.exports.changeApiGetForm = async(req,res)=>{
             let obj = formJson.data
             let keysToBeDeleted = ["_id","createdAt","modifiedAt","actionTakenByRole","actionTakenBy","ulb","design_year"]
             obj = await mutateResponse(obj, flattedForm,keysToBeDeleted,role)
-            let keysToBeDisabled = ['officerName', 'designation','cert_declaration'];
-            getQuestionsDisabled(obj, keysToBeDisabled, formStatus)
             responseData[0]['language'] = obj
             responseData[0]['language'][0]['isDraft'] =  req?.form?.isDraft
             responseData[0]['isQuestionDisabled'] = formStatus
@@ -83,28 +78,6 @@ module.exports.changeApiGetForm = async(req,res)=>{
         console.log("error in changeApiGetForm ::: ",err.message)
     }
 }
-/**
- * The function `getQuestionsDisabled` iterates through a list of questions and disables specific keys
- * based on the provided status.
- * @param obj - The `obj` parameter is likely an array containing objects
- * @param keysToBeDisabled - The `keysToBeDisabled` parameter is an array containing the short keys of
- * the questions that need to be disabled in the form.
- * @param formStatus - The `formStatus` parameter in the `getQuestionsDisabled` function is used to
- * determine whether a question should be disabled or not. 
-  */
-function getQuestionsDisabled(obj, keysToBeDisabled, formStatus){
-    try {
-        let questions = obj[0].question
-            if (questions) {
-                for (let question of questions) {
-                    if(keysToBeDisabled.includes(question.shortKey))
-                     question.isQuestionDisabled = formStatus
-                }
-            }
-    } catch (error) {
-        throw new Error(`getQuestionsDisabled: ${error.message}`)
-    }
-}
 
 module.exports.changePayloadForm = async(req,res,next)=>{
     try{
@@ -118,9 +91,6 @@ module.exports.changePayloadForm = async(req,res,next)=>{
             // console.log("payload.data :: ",payload.data)
             // let obj = payload.data.find((item)=>item.question === "Extent of metering of water connections")
             req.body['data'] = payload.data
-            if(Object.keys(payload).length>1){
-                Object.assign(req.body, payload)
-            }
             next()
         }
         else{

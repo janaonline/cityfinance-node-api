@@ -120,7 +120,7 @@ module.exports.create = async (req, res) => {
         }
         let userData = await User.findOne(
             { isDeleted: false, ulb: ObjectId(ulb), role: 'ULB' },
-            '_id email role name isVerified2223'
+            '_id email role name'
         ).lean();
         let mailOptions
 
@@ -331,8 +331,7 @@ module.exports.create = async (req, res) => {
                 
             } else {
                 let template = Service.emailTemplate.userProfileEdit(
-                    userData.name,
-                    userData?.isVerified2223
+                    userData.name
                 );
                 mailOptions =     {
                     Destination: {
@@ -376,7 +375,7 @@ module.exports.create = async (req, res) => {
                     { $set: pObj }
                 );
             }
-            let template = Service.emailTemplate.userProfileEdit(userData.name, userData?.isVerified2223);
+            let template = Service.emailTemplate.userProfileEdit(userData.name);
             mailOptions =     {
                 Destination: {
                   /* required */

@@ -25,7 +25,6 @@ const StateSchema = new Schema(
 		auditedAccounts: [yearCount],
 		annualBudgets: [yearCount],
 		stateType: { type: String, enum: ['Large', 'Small', 'UT'] },
-		gsdpGrowthRate: { type: Number },
 		modifiedAt: { type: Date },
 		createdAt: { type: Date },
 		isActive: { type: Boolean, default: 1 },

@@ -72,10 +72,4 @@ const fiscalRankingMapperSchema = new Schema(
     },
     { timestamp: { createdAt: "createdAt", updatedAt: "modifiedAt" } }
 );
-fiscalRankingMapperSchema.index(
-    {fiscal_ranking:1},
-    {type:1},
-    {ulb:1},
-    {year:1}
-);
 module.exports = mongoose.model("FiscalRankingMapper", fiscalRankingMapperSchema);
