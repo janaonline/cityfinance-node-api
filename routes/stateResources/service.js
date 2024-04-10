@@ -82,6 +82,8 @@ const handleDatabaseUpload = async (req, res, next) => {
             res.setHeader('Content-Disposition', `attachment; filename=${templateName}-errors.xlsx`);
             res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
             return res.send(buffer);
+        } else if(err.invalidSheet) {
+            return res.status(400).send({ success: false, message: "Please upload the correct sheet" })
         }
 
         return res.status(500).json({
@@ -718,6 +720,10 @@ const updatestateGsdpTemplate = async (req, res, next, worksheet, workbook) => {
 
         if (validationErrors.length) {
             return Promise.reject({ validationErrors });
+        }
+
+        if(!results.length && !validationErrors.length) {
+            return Promise.reject({ invalidSheet:  "Please upload the correct excel sheet"});
         }
 
         await StateGsdpData.insertMany(results);
