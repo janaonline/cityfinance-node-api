@@ -333,7 +333,69 @@ module.exports.sfcForm = {
         //     "info": ""
         // }
     },
-    // "skipLogicDependencies": {
-    // }
+    "skipLogicDependencies": {
+        "data.sfcConstituted.yearData.0": {
+            // "updatables": [
+            //     {
+            //         "on": "No",
+            //         "target": "data.constitutionDate.yearData.0",
+            //         "value": ""
+            //     }
+            // ],
+            "skippable": {
+                "notification": {
+                    "value": [
+                        "Yes"
+                    ],
+                    "years": [
+                        0
+                    ]
+                },
+                "constitutionDate": {
+                    "value": [
+                        "Yes"
+                    ],
+                    "years": [
+                        0
+                    ]
+                },
+                "awardPeriod": {
+                    "value": [
+                        "Yes"
+                    ],
+                    "years": [
+                        0
+                    ]
+                },
+                "actionTakenReport": {
+                    "value": [
+                        "Yes"
+                    ],
+                    "years": [
+                        0
+                    ]
+                },
+                "report": {
+                    "value": [
+                        "Yes"
+                    ],
+                    "years": [
+                        0
+                    ]
+                },
+                "releaseDate": {
+                    "value": [
+                        "Yes"
+                    ],
+                    "years": [
+                        0
+                    ]
+                },
+            }
+        },
+
+
+    }
+
 
 };
