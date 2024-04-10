@@ -54,14 +54,15 @@ const handleDatabaseUpload = async (req, res, next) => {
         if (templateName == 'gsdp') await updateGsdpTemplate(req, res, next, worksheet, workbook);
         if (templateName == 'stateGsdp') await updatestateGsdpTemplate(req, res, next, worksheet, workbook);
 
-        const uploaded = await CategoryFileUpload.findOne({
-            subCategoryId: ObjectId(req.body?.subCategoryId),
-            design_year : ObjectId(req.body?.design_year)
-        });
+        /* Category file upload needs to be create for every states */
+        // const uploaded = await CategoryFileUpload.findOne({
+        //     subCategoryId: ObjectId(req.body?.subCategoryId),
+        //     design_year : ObjectId(req.body?.design_year)
+        // });
 
-        if (uploaded) {
-            req.body.id = uploaded._id;
-        }
+        // if (uploaded) {
+        //     req.body.id = uploaded._id;
+        // }
         next();
     } catch (err) {
         console.log(err);

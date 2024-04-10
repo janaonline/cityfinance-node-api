@@ -30,8 +30,9 @@ const stateDataSchema = new mongoose.Schema({
         type: String,
         required: true
     },
-    data: [dataSchema]
-}, { collection: 'state_gsdp' });
+    data: [dataSchema],
+    createdAt: { type: Date, default: Date.now() }
+}, { collection: 'state_gsdp', timestamps: true });
 
 const StateGsdpData = mongoose.model('StateGsdpData', stateDataSchema);
 
