@@ -1,9 +1,13 @@
 const SFC = require('../../models/SFC');
+const FormsJson = require("../../models/FormsJson");
+const CurrentStatus = require("../../models/CurrentStatus");
+
 const ObjectId = require('mongoose').Types.ObjectId;
-const { canTakenAction } = require('../CommonActionAPI/service')
+// const { canTakenAction } = require('../CommonActionAPI/service')
 const { sfcForm } = require('./constant')
 const userTypes = require("../../util/userTypes")
-const { FormNames, MASTER_STATUS_ID, MASTER_STATUS, MASTER_FORM_STATUS } = require('../../util/FormNames');
+const { FormNames, MASTER_STATUS_ID, MASTER_STATUS, MASTER_FORM_STATUS, FORMIDs } = require('../../util/FormNames');
+const { saveStatusAndHistory } = require("../CommonFormSubmission/service");
 
 function response(form, res, successMsg, errMsg) {
     if (form) {
@@ -30,10 +34,10 @@ module.exports.getForm = async (req, res) => {
         condition.design_year = data.design_year;
         let role = req.decoded.role;
         const form = await SFC.findOne(condition).lean();
-        
+
         return res.status(200).json({
             status: true,
-            data: setForm(req, form)
+            data: await setForm(req, form)
         })
     } catch (error) {
         return res.status(400).json({
@@ -43,20 +47,35 @@ module.exports.getForm = async (req, res) => {
     }
 }
 
-function setForm(req, form) {
+async function setForm(req, form) {
     let role = req.decoded.role;
 
     let readOnly = [1, 2, 5, 7].includes(form?.currentFormStatus) && role === userTypes.state ? false : true;
 
-    sfcForm['isDraft'] = form?.isDraft || true;
+    sfcForm['isDraft'] = form ? form.isDraft : true;
+
     sfcForm['state'] = form?.ulb || req.query.state;
     sfcForm['design_year'] = form?.design_year || req.query.design_year;
     sfcForm['statusId'] = form?.currentFormStatus || MASTER_STATUS['Not Started'];
     sfcForm['status'] = MASTER_STATUS_ID[form?.currentFormStatus] || MASTER_STATUS_ID[1];
-
+    sfcForm['currentFormStatus'] = form?.currentFormStatus ? form?.currentFormStatus : MASTER_FORM_STATUS['NOT_STARTED'];
+    sfcForm['canTakeAction'] = (form?.currentFormStatus == MASTER_FORM_STATUS['UNDER_REVIEW_BY_MoHUA'] && role == userTypes.mohua);
 
     if (form) {
-        Object.assign(form, { canTakeAction: canTakenAction(form['status'], form['actionTakenByRole'], form['isDraft'], "STATE", role) });
+        let currentStatuses = await CurrentStatus.findOne({
+            recordId: form._id,
+        }).sort({
+            "modifiedAt": -1
+        });
+
+        // let currentStatus = currentStatuses.find(item => item.recordId.toString() === form?._id?.toString() && item.shortKey === shortKey)
+        if (currentStatuses) {
+            sfcForm['responseFile'] = currentStatuses?.responseFile || "";
+            sfcForm['rejectReason'] = currentStatuses?.rejectReason || "";
+        }
+
+
+        // Object.assign(form, { canTakeAction: canTakenAction(form['status'], form['actionTakenByRole'], form['isDraft'], "STATE", role) });
 
         form.data.forEach(element => {
             let keyData = sfcForm.tabs[0].data[element.key];
@@ -105,7 +124,7 @@ module.exports.createOrUpdateForm = async (req, res) => {
         const user = req.decoded;
         let formData = {};
         formData = { ...reqData };
-        
+
         if (formData.state) {
             formData.state = ObjectId(formData.state);
         }
@@ -178,6 +197,8 @@ module.exports.createOrUpdateForm = async (req, res) => {
                         },
                         { new: true, runValidators: true }
                     );
+                    let formSubmit = [{ ...req.body, _id: updatedForm._id, currentFormStatus: req.body.currentFormStatus }]
+                    await createHistory({ formBodyStatus: Number(req.body.currentFormStatus), formSubmit, actionTakenByRole: req.decoded.role, actionTakenBy: req.body.actionTakenBy })
                     return response(updatedForm, res, "Form updated.", "Form not updated.")
                 }
             }
@@ -195,6 +216,89 @@ module.exports.createOrUpdateForm = async (req, res) => {
             status: false,
             message: error.message
         })
+    }
+}
+
+
+module.exports.reviewAction = async (req, res) => {
+
+    try {
+        let { role, mohua } = req.decoded
+        if (role !== userTypes.mohua) {
+            return res.json({
+                "success": true,
+                "message": "Not permitted"
+            })
+        }
+        const {
+            // key,
+            rejectReason,
+            responseFile,
+            statusId,
+            // installment,
+            design_year,
+            state,
+        } = req.body;
+
+        const found = await SFC.findOneAndUpdate({
+            // installment,
+            // year: ObjectId(year),
+            // type,
+            // type: key,
+            design_year: ObjectId(design_year),
+            state: ObjectId(state)
+        }, {
+            $set: {
+                actionTakenBy: mohua || state,
+                actionTakenByRole: role,
+                currentFormStatus: statusId,
+                rejectReason_mohua: rejectReason,
+                responseFile_mohua: responseFile
+            }
+        });
+        req.body._id = found?._id
+        req.body.financialYear = design_year
+        let formSubmit = [{ ...req.body, currentFormStatus: statusId }]
+        await createHistory({ formBodyStatus: Number(statusId), formSubmit, actionTakenByRole: role, actionTakenBy: mohua || state })
+        if (!found) return res.status(404).json({ message: 'Installment not found' });
+        res.status(200).json({
+            success: true,
+            message: 'Action recorded'
+        });
+
+        // Send mail to state when mahua take action in this form.
+        // await emailTriggerWithMohuaAction(state, statusId, rejectReason, FORMIDs['GrantAllocation']);
+        return;
+
+    }
+    catch (err) {
+        console.log('err', err);
+        let message = ["demo", "staging"].includes(process.env.ENV) ? err.message : "something went wrong"
+        return res.status(404).json({
+            success: true,
+            message,
+        })
+    }
+}
+
+async function createHistory(params) {
+    try {
+        let { formBodyStatus, actionTakenBy, actionTakenByRole, formSubmit, formType } = params
+        let formData = formSubmit[0]
+        // let shortKey = `${formData.type}_${getKeyByValue(years, formData.design_year)}_${formData.installment}`
+        let historyParams = {
+            formBodyStatus,
+            actionTakenBy: actionTakenBy,
+            actionTakenByRole: actionTakenByRole,
+            formSubmit: formSubmit,
+            formType: "GrantAllocation",
+            // shortKey: shortKey,
+        }
+
+        await saveStatusAndHistory(historyParams)
+    }
+    catch (err) {
+        console.log("error in createHistory ::: ", err.message)
     }
 }
 
