@@ -1031,7 +1031,7 @@ module.exports.read2223 = catchAsync(async (req, res, next) => {
             : `Dear User, The ${ulbData.name} has not yet filled Detailed Utilization Report Form for the previous year. You will be able to mark your response once STATE approves previous year's form.`;
         obj["action"] = "note";
         obj["url"] = msg;
-      } else {
+      } else if(ulbAccess) {
         let msg =
           role == "ULB"
             ? `Dear User, Your previous Year's form status is - ${
