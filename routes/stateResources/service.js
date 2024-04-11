@@ -83,7 +83,7 @@ const handleDatabaseUpload = async (req, res, next) => {
             res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
             return res.send(buffer);
         } else if(err.invalidSheet) {
-            return res.status(400).send({ success: false, message: "Please upload the correct sheet" })
+            return res.status(400).send({ success: false, message: err.invalidSheet || err })
         }
 
         return res.status(500).json({
@@ -340,6 +340,10 @@ const updateDulyElectedTemplate = async (req, res, next, worksheet, workbook) =>
 
         if (validationErrors.length) {
             return Promise.reject({ validationErrors });
+        }
+
+        if(!(dulyElectedUpdateQuery.length && grantAllocation2324UpdateQuery.length)) {
+            return Promise.reject({ invalidSheet:  "Please upload the correct excel sheet"});
         }
 
         const result = await Ulb.bulkWrite(dulyElectedUpdateQuery);
@@ -651,6 +655,10 @@ const updateGsdpTemplate = async (req, res, next, worksheet, workbook) => {
             return Promise.reject({ validationErrors });
         }
 
+        if(!gsdpUpdateQuery.length) {
+            return Promise.reject({ invalidSheet:  "Please upload the correct excel sheet"});
+        }
+
         await Ulb.bulkWrite(gsdpUpdateQuery);
         Promise.resolve("Data updated");
     } catch (err) {
@@ -672,7 +680,11 @@ const updatestateGsdpTemplate = async (req, res, next, worksheet, workbook) => {
         const stateGsdpCurrentPrices = worksheet.getColumn(columnCurrentPrice).values;
         const stateName = worksheet.getColumn(columnState).values;
 
-        const promises = _ids.map(async (_id, index) => {
+        let checkStateGsdpData = await StateGsdpData.find({ stateId: {
+            $in: _ids.filter(_id => _id && isValidObjectId(_id)).map(_id => ObjectId(_id))
+        } }).lean();    
+
+       const results = _ids.map((_id, index) => {
             if (!_id || !isValidObjectId(_id)) return;
 
             if (isNaN(stateGsdpConstantPrices[index]) || [undefined, ""].includes(stateGsdpConstantPrices[index])) {
@@ -691,9 +703,7 @@ const updatestateGsdpTemplate = async (req, res, next, worksheet, workbook) => {
                 });
             }
 
-            let checkStateGsdpData = await StateGsdpData.findOne({ stateId: ObjectId(_id) }).lean();
-
-            if(checkStateGsdpData) {
+            if(checkStateGsdpData.find(item => item.stateId.toString() == _id)) {
                 validationErrors.push({
                     r: index,
                     c: columnState,
@@ -714,15 +724,13 @@ const updatestateGsdpTemplate = async (req, res, next, worksheet, workbook) => {
                 ],
             }
             return result;
-        });
-
-        const results = (await Promise.all(promises)).filter(i => i);
+        }).filter(i => i);
 
         if (validationErrors.length) {
             return Promise.reject({ validationErrors });
         }
 
-        if(!results.length && !validationErrors.length) {
+        if(!results.length) {
             return Promise.reject({ invalidSheet:  "Please upload the correct excel sheet"});
         }
 
