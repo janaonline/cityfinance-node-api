@@ -228,19 +228,19 @@ const updateDulyElectedTemplate = async (req, res, next, worksheet, workbook) =>
         const columnTiedGrantAmount = 14;
         const columnTiedGrantPercent = 15;
 
-        const _ids = worksheet.getColumn(columnId).values;
-        const dulyElectedsColumns = worksheet.getColumn(columnDulyElected).values;
-        const dulyElectedsDateColumns = worksheet.getColumn(columnDulyElectedDate).values;
-        const untiedGrantAmountColumns = worksheet.getColumn(columnUntiedGrantAmount).values;
-        const untiedGrantPercentColumns = worksheet.getColumn(columnUntiedGrantPercent).values;
-        const tiedGrantAmountColumns = worksheet.getColumn(columnTiedGrantAmount).values;
-        const tiedGrantPercentColumns = worksheet.getColumn(columnTiedGrantPercent).values;
+        const _ids = worksheet?.getColumn(columnId).values;
+        const dulyElectedsColumns = worksheet?.getColumn(columnDulyElected).values;
+        const dulyElectedsDateColumns = worksheet?.getColumn(columnDulyElectedDate).values;
+        const untiedGrantAmountColumns = worksheet?.getColumn(columnUntiedGrantAmount).values;
+        const untiedGrantPercentColumns = worksheet?.getColumn(columnUntiedGrantPercent).values;
+        const tiedGrantAmountColumns = worksheet?.getColumn(columnTiedGrantAmount).values;
+        const tiedGrantPercentColumns = worksheet?.getColumn(columnTiedGrantPercent).values;
 
 
 
 
 
-        const dulyElectedUpdateQuery = _ids.map((_id, index) => {
+        const dulyElectedUpdateQuery = _ids?.map((_id, index) => {
             if (!_id || !isValidObjectId(_id)) return;
             // if (!req.body.ulbIds?.includes('' + _id)) return;
 
@@ -284,7 +284,7 @@ const updateDulyElectedTemplate = async (req, res, next, worksheet, workbook) =>
         }).filter(i => i);
 
 
-        const grantAllocation2324UpdateQuery = _ids.map((_id, index) => {
+        const grantAllocation2324UpdateQuery = _ids?.map((_id, index) => {
             if (!_id || !isValidObjectId(_id)) return;
             const untiedGrantAmount = untiedGrantAmountColumns[index];
             const untiedGrantPercent = untiedGrantPercentColumns[index];
@@ -336,13 +336,13 @@ const updateDulyElectedTemplate = async (req, res, next, worksheet, workbook) =>
                 }
             };
             return result;
-        }).filter(i => i);
+        })?.filter(i => i);
 
         if (validationErrors.length) {
             return Promise.reject({ validationErrors });
         }
 
-        if(!(dulyElectedUpdateQuery.length && grantAllocation2324UpdateQuery.length)) {
+        if(!dulyElectedUpdateQuery || !(dulyElectedUpdateQuery?.length && grantAllocation2324UpdateQuery?.length)) {
             return Promise.reject({ invalidSheet:  "Please upload the correct excel sheet"});
         }
 
@@ -622,10 +622,10 @@ const updateGsdpTemplate = async (req, res, next, worksheet, workbook) => {
         const columnId = 1;
         const columnGdspElected = 13;
 
-        const _ids = worksheet.getColumn(columnId).values;
-        const gdsps = worksheet.getColumn(columnGdspElected).values;
+        const _ids = worksheet?.getColumn(columnId).values;
+        const gdsps = worksheet?.getColumn(columnGdspElected).values;
 
-        const gsdpUpdateQuery = _ids.map((_id, index) => {
+        const gsdpUpdateQuery = _ids?.map((_id, index) => {
             if (!_id || !isValidObjectId(_id)) return;
             // if (!req.body.ulbIds?.includes('' + _id)) return;
 
@@ -675,16 +675,16 @@ const updatestateGsdpTemplate = async (req, res, next, worksheet, workbook) => {
         const columnCurrentPrice = 5;
         const columnState = 3;
 
-        const _ids = worksheet.getColumn(columnId).values;
-        const stateGsdpConstantPrices = worksheet.getColumn(columnConstantPrice).values;
-        const stateGsdpCurrentPrices = worksheet.getColumn(columnCurrentPrice).values;
-        const stateName = worksheet.getColumn(columnState).values;
+        const _ids = worksheet?.getColumn(columnId).values;
+        const stateGsdpConstantPrices = worksheet?.getColumn(columnConstantPrice).values;
+        const stateGsdpCurrentPrices = worksheet?.getColumn(columnCurrentPrice).values;
+        const stateName = worksheet?.getColumn(columnState).values;
 
         let checkStateGsdpData = await StateGsdpData.find({ stateId: {
-            $in: _ids.filter(_id => _id && isValidObjectId(_id)).map(_id => ObjectId(_id))
+            $in: _ids?.filter(_id => _id && isValidObjectId(_id)).map(_id => ObjectId(_id))
         } }).lean();    
 
-       const results = _ids.map((_id, index) => {
+       const results = _ids?.map((_id, index) => {
             if (!_id || !isValidObjectId(_id)) return;
 
             if (isNaN(stateGsdpConstantPrices[index]) || [undefined, ""].includes(stateGsdpConstantPrices[index])) {
@@ -724,13 +724,13 @@ const updatestateGsdpTemplate = async (req, res, next, worksheet, workbook) => {
                 ],
             }
             return result;
-        }).filter(i => i);
+        })?.filter(i => i);
 
         if (validationErrors.length) {
             return Promise.reject({ validationErrors });
         }
 
-        if(!results.length) {
+        if(!results || !results.length) {
             return Promise.reject({ invalidSheet:  "Please upload the correct excel sheet"});
         }
 
