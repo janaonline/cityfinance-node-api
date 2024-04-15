@@ -4,7 +4,7 @@ const CurrentStatus = require("../../models/CurrentStatus");
 
 const ObjectId = require('mongoose').Types.ObjectId;
 // const { canTakenAction } = require('../CommonActionAPI/service')
-const { sfcForm } = require('./constant')
+// const { sfcForm } = require('./constant')
 const userTypes = require("../../util/userTypes")
 const { FormNames, MASTER_STATUS_ID, MASTER_STATUS, MASTER_FORM_STATUS, FORMIDs } = require('../../util/FormNames');
 const { saveStatusAndHistory } = require("../CommonFormSubmission/service");
@@ -26,19 +26,15 @@ function response(form, res, successMsg, errMsg) {
 
 module.exports.getForm = async (req, res) => {
     try {
-        const data = req.query;
-        const condition = {};
-        // TODO get it from db
-        // let sfcForms = sfcForm;
-        condition.state = data.state;
-        condition.design_year = data.design_year;
-        let role = req.decoded.role;
-        const form = await SFC.findOne(condition).lean();
+        const reqQuery = req.query;
+        const condition = {
+            state: reqQuery.state,
+            design_year: reqQuery.design_year
+        };
 
-        return res.status(200).json({
-            status: true,
-            data: await setForm(req, form)
-        })
+        const form = await SFC.findOne(condition).lean();
+        const resp = await setForm(req, form);
+        return res.status(resp.status ? 200 : 400).json(resp);
     } catch (error) {
         return res.status(400).json({
             status: false,
@@ -47,11 +43,28 @@ module.exports.getForm = async (req, res) => {
     }
 }
 
+async function getFormJson(design_year) {
+    let formsJson = await FormsJson.findOne({
+        "formId": FORMIDs['SFC_FROM'],
+        "design_year": design_year
+    }).lean();
+    return formsJson;
+}
+
 async function setForm(req, form) {
     let role = req.decoded.role;
 
     let readOnly = [1, 2, 5, 7].includes(form?.currentFormStatus) && role === userTypes.state ? false : true;
 
+    const formsJson = await getFormJson(req.query.design_year);
+
+    if (!formsJson) {
+        return {
+            status: false,
+            message: 'Form not found'
+        };
+    }
+    let sfcForm = formsJson.data;
     sfcForm['isDraft'] = form ? form.isDraft : true;
 
     sfcForm['state'] = form?.ulb || req.query.state;
@@ -85,7 +98,10 @@ async function setForm(req, form) {
             }
         });
     }
-    return sfcForm;
+    return {
+        status: true,
+        data: sfcForm
+    };
 }
 
 function setValue(data, yearData) {

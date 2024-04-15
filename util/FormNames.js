@@ -154,6 +154,7 @@ module.exports.FORMIDs = {
     "indicatorForm": 14,
     "GrantAllocation": 11.2,
     "SFC": 15,
+    "SFC_FROM": 15.1,
     "SubmitClaim": 16,
     "PTOFloorRate": 17
 }
