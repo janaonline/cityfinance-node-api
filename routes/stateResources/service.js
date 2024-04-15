@@ -27,7 +27,7 @@ const DULY_ELECTED_OPTIONS = {
 
 
 const isValidNumber = str => {
-    return !isNaN(Number(str));
+    return !isNaN(Number(str))
 }
 
 const handleDatabaseUpload = async (req, res, next) => {
