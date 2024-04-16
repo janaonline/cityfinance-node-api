@@ -41,7 +41,7 @@ module.exports = async function(req, res, next) {
         });
     } else {
        
-        return Response.UnAuthorized(res, {},`Session Expired!`);
+        return Response.UnAuthorized(res, {sessionExpired: true},`Session Expired!`);
 
     }
 };
