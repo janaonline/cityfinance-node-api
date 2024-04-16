@@ -84,6 +84,6 @@ module.exports.verifyToken = (req, res, next) => {
     // return an error
     return res
       .status(403)
-      .send({ success: false, message: "No token provided." });
+      .send({ success: false, message: "Session Expired!" });
   }
 };
