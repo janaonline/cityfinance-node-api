@@ -4,7 +4,8 @@ const previousFormsAggregation = (params) => {
     let query = [
         {
             "$match": {
-                "state": state
+                "state": state,
+                "isActive": true
             }
         },
         {
