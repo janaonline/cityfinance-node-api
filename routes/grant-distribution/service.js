@@ -523,14 +523,14 @@ async function validate24_25(data, formData) {
 
   data.forEach((object) => {
     // Check given percentage must be sum of 100
-    if (countTiedPercentage !== 100) {
+    if (countTiedPercentage > 100) {
       checkField = fields[7];
-      object.Errors = appendErrors(object.Errors, checkField + " - Not valid,");
+      object.Errors = appendErrors(object.Errors, checkField + " - Should be less than or equal to 100% ,");
       errorFlag = true;
     }
-    if (fields[9] && countUntiedPercentage !== 100) {
+    if (fields[9] && countUntiedPercentage > 100) {
       checkField = fields[9];
-      object.Errors = appendErrors(object.Errors, checkField + " - Not valid,");
+      object.Errors = appendErrors(object.Errors, checkField + " - Should be less than or equal to 100% ,");
       errorFlag = true;
     }
   });
