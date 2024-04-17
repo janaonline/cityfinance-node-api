@@ -11546,6 +11546,28 @@ let skipLogicDependencies = {
       }
     }
   },
+  "data.notificationPropertyTax.yearData.0": {
+    "skippable": {
+      "notificationAdoptionDate": {
+        "value": "Yes",
+        "years": [
+          0
+        ]
+      },
+      "notificationIssuedBy": {
+        "value": "Yes",
+        "years": [
+          0
+        ]
+      },
+      "notificationFile": {
+        "value": "Yes",
+        "years": [
+          0
+        ]
+      }
+    }
+  },
   "data.ulbPassedResolPtax.yearData.0": {
     "skippable": {
       "resolutionFile": {

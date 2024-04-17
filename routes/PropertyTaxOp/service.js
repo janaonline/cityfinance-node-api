@@ -1206,10 +1206,10 @@ async function appendChildValues(params) {
     return element
 }
 
-const getRowDesignYear = child => {
+const getRowDesignYear = (child, design_year) => {
     const yearItem = child.yearData.find(yearItem => yearItem.value != "" && yearItem.year);
-    if(!yearItem?.year) return;
-    const { yearId } = getDesiredYear(yearItem?.year, 1);
+    if(!yearItem?.year) return design_year;
+    const { yearId } = getDesiredYear(yearItem?.year, 1);   
     if(isBeyond2023_24(yearId)) return yearId;
     return getDesiredYear('2023-24').yearId;
 }
