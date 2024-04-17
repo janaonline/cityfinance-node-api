@@ -517,6 +517,7 @@ async function validate24_25(data, formData) {
     if (fields[9]) countUntiedPercentage += Number(data[index][fields[9]]);
 
     if (data[index].Errors) {
+      data[index].Errors = data[index].Errors.replace(/(^,)|(,$)/g, ""); // remove trailing commas
       errorFlag = true;
     }
   }
