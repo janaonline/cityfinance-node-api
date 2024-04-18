@@ -17,6 +17,9 @@ const MasterForm = require("../../models/MasterForm");
 const UtilizationReport = require("../../models/UtilizationReport");
 const Category = require("../../models/Category");
 const statusTypes = require("../../util/statusTypes");
+const { getKeyByValue } = require('../../util/masterFunctions');
+const { years } = require('../../service/years');
+
 
 const { dateFormatter}  = require('../../util/dateformatter')
 module.exports.get = catchAsync(async (req, res) => {
@@ -501,9 +504,11 @@ module.exports.getAll = catchAsync(async (req, res) => {
     //     state: ObjectId(state),
     //   },
     // };
+    let accessVariable = await getAccessYearKey(design_year);
     let queryNotStarted = [
       {
         $match: {
+          [accessVariable]:true,
           $or: [{ censusCode: { $exists: true, $ne: "" } }, { sbCode: { $exists: true, $ne: "" } }]
         }
       },
