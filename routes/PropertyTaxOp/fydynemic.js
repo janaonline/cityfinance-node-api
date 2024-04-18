@@ -7,6 +7,18 @@ const parentRadioQuestionKeys = [
   "doesUserChargesDmnd",
   "notificationWaterCharges",
   "doesColSewerageCharges",
+  "notificationPropertyTax"
+];
+
+const childRadioAnsKeyPrefillDataCurrYear = [
+  "ulbFinancialYear",
+  "notificationAdoptionDate",
+  "notificationFile",
+  "notificationIssuedBy",
+];
+
+const mandatDisplayPrioritiesForCurrYear = [
+  '1.10', '1.11', '1.18', '1.19', '2.1', '2.2', '5.6', '5.7', '5.9', '5.10', '6.6', '6.7', '6.9', '6.10'
 ];
 
 const propertyTaxOpFormJson = ({role, design_year, ptoData, ptoMaper = []}) => {
@@ -10493,6 +10505,11 @@ const propertyTaxOpFormJson = ({role, design_year, ptoData, ptoMaper = []}) => {
           (yearItem) => Object.keys(yearItem).length == 0
         );
 
+        //Make mandatory * icon in the Validation implemented Indicator..
+        if([...mandatDisplayPrioritiesForCurrYear].includes(indicator.displayPriority)) {
+          indicator["required"] = true;
+        }
+
         
 
         if(isSingleYearIndicator(indicator.yearData)) {
@@ -10506,6 +10523,12 @@ const propertyTaxOpFormJson = ({role, design_year, ptoData, ptoMaper = []}) => {
           
           if (parentRadioQuestionKeys.includes(indicator?.key)) {
             if (compareWithMapper18_19(ptoMaper, indicator.key, "Yes")) {
+              indicatorObj.isReadonlySingleYear = true;
+            }
+          }
+          //Special case for 1.5 indicator if previousYear value is yes than freeze the dependencies.
+          if (compareWithMapper18_19(ptoMaper, "notificationPropertyTax", "Yes")) {
+            if([...childRadioAnsKeyPrefillDataCurrYear].includes(indicator.key) && !["ulbFinancialYear"].includes(indicator.key)) {
               indicatorObj.isReadonlySingleYear = true;
             }
           }
@@ -10537,6 +10560,7 @@ const propertyTaxOpFormJson = ({role, design_year, ptoData, ptoMaper = []}) => {
           nextYear["label"] = `FY ${yearName}`;
           nextYear["year"] = yearId;
           nextYear["postion"] = String(+nextYear["postion"] + 1);
+          nextYear['required'] = ([...mandatDisplayPrioritiesForCurrYear].includes(indicator.displayPriority)) ? true : lastYear.required;
           yearData.push(nextYear);
         } else {
           yearData.push({});
@@ -11546,6 +11570,28 @@ let skipLogicDependencies = {
       }
     }
   },
+  "data.notificationPropertyTax.yearData.0": {
+    "skippable": {
+      "notificationAdoptionDate": {
+        "value": "Yes",
+        "years": [
+          0
+        ]
+      },
+      "notificationIssuedBy": {
+        "value": "Yes",
+        "years": [
+          0
+        ]
+      },
+      "notificationFile": {
+        "value": "Yes",
+        "years": [
+          0
+        ]
+      }
+    }
+  },
   "data.ulbPassedResolPtax.yearData.0": {
     "skippable": {
       "resolutionFile": {
@@ -12260,14 +12306,15 @@ const getFormMetaData = ({ design_year }) => {
   return result;
 };
 
-module.exports.reverseKeys = ["ulbFinancialYear","ulbPassedResolPtax"]
-module.exports.skippableKeys = getSkippableKeys(skipLogicDependencies)
-module.exports.childKeys =childKeys
-module.exports.indicatorsWithNoyears = indicatorsWithNoyears
-module.exports.questionIndicators = questionIndicators
+module.exports.reverseKeys = ["ulbFinancialYear","ulbPassedResolPtax"];
+module.exports.skippableKeys = getSkippableKeys(skipLogicDependencies);
+module.exports.childKeys =childKeys;
+module.exports.indicatorsWithNoyears = indicatorsWithNoyears;
+module.exports.questionIndicators = questionIndicators;
 module.exports.propertyTaxOpFormJson = propertyTaxOpFormJson;
 module.exports.getInputKeysByType = getInputKeysByType;
-module.exports.sortPosition = sortPosition
-module.exports.getFormMetaData = getFormMetaData
-module.exports.parentRadioQuestionKeys = parentRadioQuestionKeys
-module.exports.skipLogicDependencies = skipLogicDependencies
+module.exports.sortPosition = sortPosition;
+module.exports.getFormMetaData = getFormMetaData;
+module.exports.parentRadioQuestionKeys = parentRadioQuestionKeys;
+module.exports.childRadioAnsKeyPrefillDataCurrYear = childRadioAnsKeyPrefillDataCurrYear;
+module.exports.skipLogicDependencies = skipLogicDependencies;
