@@ -17,6 +17,9 @@ const MasterForm = require("../../models/MasterForm");
 const UtilizationReport = require("../../models/UtilizationReport");
 const Category = require("../../models/Category");
 const statusTypes = require("../../util/statusTypes");
+const { getKeyByValue } = require('../../util/masterFunctions');
+const { years } = require('../../service/years');
+
 
 const { dateFormatter}  = require('../../util/dateformatter')
 module.exports.get = catchAsync(async (req, res) => {
@@ -501,9 +504,11 @@ module.exports.getAll = catchAsync(async (req, res) => {
     //     state: ObjectId(state),
     //   },
     // };
+    let accessVariable = await getAccessYearKey(design_year);
     let queryNotStarted = [
       {
         $match: {
+          [accessVariable]:true,
           $or: [{ censusCode: { $exists: true, $ne: "" } }, { sbCode: { $exists: true, $ne: "" } }]
         }
       },
@@ -3646,6 +3651,27 @@ const time = () => {
   dt.setMinutes(dt.getMinutes() + 30);
   return dt;
 };
+/**
+ * The function `getAccessYearKey` retrieves a specific key based on a given design year and formats it
+ * into a specific access variable.
+ * @param design_year - The `design_year` parameter represents the year for which you want to retrieve
+ * the access key. This function takes the `design_year` as input, finds the corresponding key in the
+ * `years` object, and then generates an access key based on that key's value.
+ * @returns The function `getAccessYearKey` returns a string that is generated based on the
+ * `design_year` input.
+ */
+async function getAccessYearKey(design_year) {
+  try {
+    let accessVariable = await getKeyByValue(years, design_year);
+    accessVariable = `access_${accessVariable
+      .split("-")[0]
+      .slice(-2)}${accessVariable.split("-")[1].slice(-2)}`;
+    return accessVariable;
+  } catch (error) {
+    throw new Error(error.message)
+  }
+}
+
 function csvULBReviewData() {
   return (field = {
     ulbName: "ULB name",
