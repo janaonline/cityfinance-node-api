@@ -30,6 +30,7 @@ const UlbSchema = new Schema({
     modifiedAt: { type: Date, default: Date.now() },
     createdAt: { type: Date, default: Date.now() },
     isGsdpEligible: { type: Boolean, defualt: false},
+    isGsdpUploaded: { type: Boolean, defualt: false},
     isDulyElected: { type: Boolean, defualt: false},
     electedDate: { type: Date },
     isActive: { type: Boolean, default: 1 },

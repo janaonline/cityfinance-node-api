@@ -27,7 +27,7 @@ const DULY_ELECTED_OPTIONS = {
 
 
 const isValidNumber = str => {
-    return !isNaN(Number(str));
+    return !(isNaN(Number(str)) || [undefined, ""].includes(str));
 }
 
 const handleDatabaseUpload = async (req, res, next) => {
@@ -122,7 +122,6 @@ const dulyElectedTemplate = async (req, res, next) => {
         ];
 
         const emptyRowsArray = Array.from({ length: startingRow - 1 }, () => Array.from({ length: worksheet.columnCount }, () => ''));
-        console.log('emptyRowsArray', emptyRowsArray);
         worksheet.addRows(emptyRowsArray);
 
         const columnsToHide = [2]; // Index of the column to hide (columns are 0-indexed)
@@ -236,10 +235,6 @@ const updateDulyElectedTemplate = async (req, res, next, worksheet, workbook) =>
         const tiedGrantAmountColumns = worksheet?.getColumn(columnTiedGrantAmount).values;
         const tiedGrantPercentColumns = worksheet?.getColumn(columnTiedGrantPercent).values;
 
-
-
-
-
         const dulyElectedUpdateQuery = _ids?.map((_id, index) => {
             if (!_id || !isValidObjectId(_id)) return;
             // if (!req.body.ulbIds?.includes('' + _id)) return;
@@ -251,7 +246,6 @@ const updateDulyElectedTemplate = async (req, res, next, worksheet, workbook) =>
                     message: `Please selected "Duly Elected" or "Not Elected"`
                 });
             }
-
 
             const isDulyElected = typeof dulyElectedsColumns[index] === 'string' ? (dulyElectedsColumns[index]?.toLowerCase() == DULY_ELECTED_OPTIONS.DULY_ELECTED) : null;
             let electedDate = dulyElectedsDateColumns[index];
@@ -283,6 +277,9 @@ const updateDulyElectedTemplate = async (req, res, next, worksheet, workbook) =>
             return result;
         }).filter(i => i);
 
+        let checkGrantAllocation2324Data = await GrantAllocation2324.find({ ulbId: {
+            $in: _ids?.filter(_id => _id && isValidObjectId(_id)).map(_id => ObjectId(_id))
+        } }).lean();
 
         const grantAllocation2324UpdateQuery = _ids?.map((_id, index) => {
             if (!_id || !isValidObjectId(_id)) return;
@@ -290,17 +287,19 @@ const updateDulyElectedTemplate = async (req, res, next, worksheet, workbook) =>
             const untiedGrantPercent = untiedGrantPercentColumns[index];
             const tiedGrantAmount = tiedGrantAmountColumns[index];
             const tiedGrantPercent = tiedGrantPercentColumns[index];
+            const stateColumn = 3;
+            const stateName = worksheet?.getColumn(stateColumn).values;
 
-            if (tiedGrantAmount && !isValidNumber(tiedGrantAmount)) {
+            if (!isValidNumber(tiedGrantAmount)) {
                 validationErrors.push({ r: index, c: columnTiedGrantAmount, message: `Please enter a valid number` });
             }
-            if (tiedGrantPercent && !isValidNumber(tiedGrantPercent)) {
+            if (!isValidNumber(tiedGrantPercent)) {
                 validationErrors.push({ r: index, c: columnTiedGrantPercent, message: `Please enter a valid number` });
             }
-            if (untiedGrantAmount && !isValidNumber(untiedGrantAmount)) {
+            if (!isValidNumber(untiedGrantAmount)) {
                 validationErrors.push({ r: index, c: columnUntiedGrantAmount, message: `Please enter a valid number` });
             }
-            if (untiedGrantPercent && !isValidNumber(untiedGrantPercent)) {
+            if (!isValidNumber(untiedGrantPercent)) {
                 validationErrors.push({ r: index, c: columnUntiedGrantPercent, message: `Please enter a valid number` });
             }
 
@@ -317,6 +316,14 @@ const updateDulyElectedTemplate = async (req, res, next, worksheet, workbook) =>
                     r: index,
                     c: columnUntiedGrantPercent,
                     message: `Should be in range 0-100`
+                });
+            }
+
+            if(checkGrantAllocation2324Data.find(item => item.ulbId.toString() == _id)) {
+                validationErrors.push({
+                    r: index,
+                    c: stateColumn,
+                    message: `Data for ${stateName[index]} cannot be modified as it was already updated.`
                 });
             }
 
@@ -460,8 +467,6 @@ const gsdpTemplate = async (req, res, next) => {
 
 
         worksheet.addRows(ulbData.map((value, sno) => ({ ...value, sno: sno + 1 })), { startingRow, properties: { outlineLevel: 1 } });
-
-        // console.log('worksheet', worksheet);
 
         const buffer = await workbook.xlsx.writeBuffer();
         res.setHeader('Content-Disposition', `attachment; filename=${templateName}.xlsx`);
@@ -621,9 +626,16 @@ const updateGsdpTemplate = async (req, res, next, worksheet, workbook) => {
         const validationErrors = [];
         const columnId = 1;
         const columnGdspElected = 13;
+        const columnState = 3;
 
         const _ids = worksheet?.getColumn(columnId).values;
         const gdsps = worksheet?.getColumn(columnGdspElected).values;
+        const stateName = worksheet?.getColumn(columnState).values;
+
+        let gsdpUploadedData = await Ulb.find({
+            _id: { $in: _ids?.filter(_id => _id && isValidObjectId(_id)).map(_id => ObjectId(_id)) },
+            isGsdpUploaded: true
+        }).lean(); 
 
         const gsdpUpdateQuery = _ids?.map((_id, index) => {
             if (!_id || !isValidObjectId(_id)) return;
@@ -637,6 +649,14 @@ const updateGsdpTemplate = async (req, res, next, worksheet, workbook) => {
                 });
             }
 
+            if (gsdpUploadedData.find(item => item._id.toString() == _id)) {
+                validationErrors.push({
+                    r: index,
+                    c: columnState,
+                    message: `Data for ${stateName[index]} cannot be modified as it was already updated.`
+                });
+            }
+
             const isGsdpEligible = typeof gdsps[index] === 'string' ? (gdsps[index]?.toLowerCase() == GSDP_OPTIONS.ELIGIBLE) : null;
             const result = {
                 updateOne: {
@@ -644,12 +664,13 @@ const updateGsdpTemplate = async (req, res, next, worksheet, workbook) => {
                     update: {
                         $set: {
                             isGsdpEligible,
+                            isGsdpUploaded: true
                         }
                     }
                 }
             }
             return result;
-        }).filter(i => i);
+        })?.filter(i => i);
 
         if (validationErrors.length) {
             return Promise.reject({ validationErrors });
