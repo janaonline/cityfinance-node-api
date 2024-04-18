@@ -7,7 +7,7 @@ const Service = require('../../service');
 const { FormNames, MASTER_STATUS_ID, MASTER_STATUS, MASTER_FORM_STATUS } = require('../../util/FormNames');
 const User = require('../../models/User');
 const { checkUndefinedValidations } = require('../../routes/FiscalRanking/service');
-const { propertyTaxOpFormJson, skipLogicDependencies,  parentRadioQuestionKeys, skippableKeys, getFormMetaData, indicatorsWithNoyears, childKeys,reverseKeys ,questionIndicators,sortPosition } = require('./fydynemic')
+const { propertyTaxOpFormJson, skipLogicDependencies, parentRadioQuestionKeys, childRadioAnsKeyPrefillDataCurrYear, skippableKeys, getFormMetaData, indicatorsWithNoyears, childKeys,reverseKeys ,questionIndicators,sortPosition } = require('./fydynemic')
 const { isEmptyObj, isReadOnly, handleOldYearsDisabled, hasMultipleYearData, isSingleYearIndicator } = require('../../util/helper');
 const PropertyMapperChildData = require("../../models/PropertyTaxMapperChild");
 const { years, getDesiredYear, isBeyond2023_24 } = require('../../service/years');
@@ -346,7 +346,7 @@ async function handlePtoSkipLogicDependencies({
     if(!nextYearPto) return;
     let mapperForm = await PropertyTaxOpMapper.find({ ptoId: ObjectId(formId) }).populate("child").lean();
     
-    const parentSkipLogicRadioQuestions =  mapperForm.filter(({ value, type }) => [...parentRadioQuestionKeys,  'ulbFinancialYear'].includes(type))
+    const parentSkipLogicRadioQuestions =  mapperForm.filter(({ value, type }) => [...parentRadioQuestionKeys,  ...childRadioAnsKeyPrefillDataCurrYear].includes(type))
     const updatableQuestion = [ ...parentSkipLogicRadioQuestions];
 
     const nextYearMapperUpdateQuery = updatableQuestion.map(question => {
@@ -1305,7 +1305,7 @@ exports.getView = async function (req, res, next) {
                                                 indicatorObj.label = `FY ${yearName}`;
                                                 indicatorObj.key = `FY${yearName}`
                                                 indicatorObj.year = yearId;
-                                                if (![...parentRadioQuestionKeys, 'ulbFinancialYear'].includes(data[el].key)) {
+                                                if (![...parentRadioQuestionKeys, ...childRadioAnsKeyPrefillDataCurrYear].includes(data[el].key)) {
                                                     indicatorObj.value = "";
                                                     indicatorObj.date = "";
                                                     indicatorObj.file = {
