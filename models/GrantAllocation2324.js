@@ -14,7 +14,8 @@ const GrantAllocation2324Schema = new Schema(
             Number, 
             min: 0, 
             max: 100 
-        }
+        },
+        design_year: { type: Schema.Types.ObjectId, ref: "Year", required: true },
     },
     { timestamps: { createdAt: "createdAt", updatedAt: "modifiedAt" } }
 );
