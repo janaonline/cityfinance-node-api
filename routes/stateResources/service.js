@@ -684,7 +684,7 @@ const updateGsdpTemplate = async (req, res, next, worksheet, workbook, design_ye
             const updateObj = {
                 [`gsdp.${yearName}`]: {
                     "eligible" : isGsdpEligible,
-                    "updoad" : true,
+                    "upload" : true,
                 },
             }
             const result = {
