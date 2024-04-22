@@ -35,7 +35,7 @@ const CategoryFileUpload = new Schema(
 
 CategoryFileUpload.pre('updateOne', { document: true, query: true }, async function(next) {
     try {
-        const { subCategoryId, relatedIds } = this._update;
+        const { subCategoryId, relatedIds, design_year } = this._update;
 
         const subCategory = await SubCategory.findById(subCategoryId);
         const maxUploads = subCategory?.maxUploads;
@@ -47,6 +47,7 @@ CategoryFileUpload.pre('updateOne', { document: true, query: true }, async funct
 
         const currentCount = await mongoose.model('CategoryFileUpload').countDocuments({
             subCategoryId: ObjectId(subCategoryId),
+            design_year: ObjectId(design_year),
             relatedIds: { $in: relatedIds.map(item => ObjectId(item?._id)) }
         });
 
