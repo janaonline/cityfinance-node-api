@@ -162,7 +162,11 @@ const search = catchAsync(async (req, res) => {
 
       return Response.OK(res, data);
     }
-    let query = { name: { $regex: `${matchingWord}`, $options: "im" } };
+    let query = { 
+      // name: { $regex: `${matchingWord}`, $options: "im" } 
+      $or: [ {name : { $regex: `${matchingWord}`, $options: 'im' }}, { keywords: { $regex: `${matchingWord}`, $options: 'im' } } ]
+    };
+    
     let ulbPromise = Ulb.find(query)
       .populate("state")
       .populate("ulbType")
