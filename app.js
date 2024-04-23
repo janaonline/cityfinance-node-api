@@ -29,7 +29,6 @@ const whitelist = [
   `https://${process.env.STAGING_HOST}`,
   `https://${process.env.PROD_HOST}`,
    process.env.HOSTNAME,
-   `https://dev.cityfinance.in`
 ];
 
 const corsOptions = {

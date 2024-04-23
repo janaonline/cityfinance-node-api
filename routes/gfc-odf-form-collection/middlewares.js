@@ -1,5 +1,5 @@
 const { years } = require("../../service/years")
-const { getFlatObj,payloadParser,mutateResponse,mutateJson,modifiedShortKeys, isYearWithinRange } = require("../CommonActionAPI/service")
+const { getFlatObj,payloadParser,mutateResponse,mutateJson,modifiedShortKeys } = require("../CommonActionAPI/service")
 const FormsJson = require("../../models/FormsJson");
 // const Sidemenu = require("../../models/Sidemenu");
 const {MASTER_STATUS_ID, MASTER_STATUS} = require("../../util/FormNames")
@@ -34,7 +34,7 @@ module.exports.changeRequestBody = async (req,res,next)=>{
     delete bodyData['data']
     let {design_year} = req.body
     // data = modifyData(data)
-    if (isYearWithinRange(design_year)) {
+    if (design_year == years['2023-24']) {
       let {data} = req.body 
       req.body =await  payloadParser(data,req)
     }
@@ -118,7 +118,7 @@ module.exports.changeFormGetStructure = async (req, res, next) => {
       }
     ]
     let keysToBeDeleted = ["_id","createdAt","modifiedAt","actionTakenByRole","actionTakenBy","ulb","design_year","isDraft"]
-    if (isYearWithinRange(design_year)) {
+    if (design_year == years['2023-24']) {
       if (form) {
         form =  JSON.parse(JSON.stringify(req.form))
         flattedForm = getFlatObj(form)

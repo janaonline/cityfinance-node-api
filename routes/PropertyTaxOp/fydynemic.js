@@ -23,10 +23,10 @@ const mandatDisplayPrioritiesForCurrYear = [
 
 const propertyTaxOpFormJson = ({role, design_year, ptoData, ptoMaper = []}) => {
   let readOnly = role === "ULB" ? false : true
-  return {
+  const json =  {
     "_id": null,
     "ulb": "5fa24660072dab780a6f141e",
-    "design_year": "606aafb14dff55e6c075d3ae",
+    "design_year": design_year || "606aafb14dff55e6c075d3ae",
     "isDraft": null,
     "tabs": [
       {
@@ -82,7 +82,7 @@ const propertyTaxOpFormJson = ({role, design_year, ptoData, ptoMaper = []}) => {
                 "value": "",
                 "file": "",
                 "min": "1800",
-                "max": "2023",
+                "max": ('' + new Date().getFullYear()),
                 "required": true,
                 "type": "ulbFinancialYear",
                 "year": "63735a5bd44534713673c1ca",
@@ -7797,7 +7797,6 @@ const propertyTaxOpFormJson = ({role, design_year, ptoData, ptoMaper = []}) => {
                 "file": "",
                 "min": "",
                 "max": "",
-                "max": "",
                 "required": true,
                 "type": "entityNaSewerageCharges",
                 "year": "63735a5bd44534713673c1ca",
@@ -11634,6 +11633,12 @@ let skipLogicDependencies = {
           0
         ]
       },
+      "entityNameWaterCharges": {
+        "value": "Yes",
+        "years": [
+          0
+        ]
+      },
       "notificationWaterChargesFile": {
         "value": "Yes",
         "years": [
@@ -11905,6 +11910,12 @@ let skipLogicDependencies = {
       }
     ],
     "skippable": {
+      "entityNaSewerageCharges": {
+        "value": "Yes",
+        "years": [
+          0
+        ]
+      },
       "entitySewerageCharges": {
         "value": "Yes",
         "years": [
@@ -12247,7 +12258,7 @@ function getSkippableKeys(skipLogics) {
   return results;
 }
 
-let dynamicJson = propertyTaxOpFormJson()['tabs'][0]['data']
+let dynamicJson = propertyTaxOpFormJson({})['tabs'][0]['data']
 let {childKeys, questionIndicators,indicatorsWithNoyears} = fetchIndicatorsOrDp(dynamicJson)
 
 

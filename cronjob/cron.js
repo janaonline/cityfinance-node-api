@@ -1,7 +1,7 @@
 const CronJob = require("cron").CronJob;
 const {emailTrigger} =  require('./stateEmail');
 const { frFormFreeze } = require('./frFormFreeze');
-const {updateVerifyProfile} = require('./verifyProfile')
+
 const cronJob = new CronJob(
   "0 0 10 * * 1",
  async () => {
@@ -32,16 +32,4 @@ const frFormFreezes = new CronJob(
   "Asia/Kolkata" /* Time zone of this job. */
 );
 
-const verifyProfile = new CronJob(
-  "0 0 23 31 mar *",
-  async function () {
-    let rolesToDeactivate = ["ULB"];
-    await updateVerifyProfile(false, rolesToDeactivate);
-  },
-  function () {
-    console.log("CRON COMPLETED:: VerifyProfile");
-  },
-  true /* Start the job right now */,
-  "Asia/Kolkata" /* Time zone of this job. */
-);
 

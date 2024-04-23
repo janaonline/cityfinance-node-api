@@ -14,11 +14,11 @@ const GFC = require('../../models/GfcFormCollection')
 const SLB = require('../../models/XVFcGrantForm')
 const PFMS = require('../../models/LinkPFMS')
 const PropTax = require('../../models/PropertyTaxOp')
-const { calculateStatus, calculateStatusMaster, getFinancialYear, isYearWithinRange, checkUlbAccess, checkIfUlbHasAccess } = require('../CommonActionAPI/service')
+const { calculateStatus, calculateStatusMaster } = require('../CommonActionAPI/service')
 const SLB28 = require('../../models/TwentyEightSlbsForm')
 const PropertyTaxOp = require('../../models/PropertyTaxOp')
 const CollectionName = require('../../util/collectionName')
-const { YEAR_CONSTANTS, MASTER_STATUS_ID, MASTER_FORM_STATUS, YEAR_CONSTANTS_IDS, FORMIDs } = require('../../util/FormNames');
+const { YEAR_CONSTANTS, MASTER_STATUS_ID, MASTER_FORM_STATUS, YEAR_CONSTANTS_IDS } = require('../../util/FormNames');
 var outDatedYears = ["2018-19","2019-20","2021-22","2022-23"]
 //STate Forms
 const SFC = require('../../models/StateFinanceCommissionFormation')
@@ -91,7 +91,7 @@ let SUB_CATEGORY_CONSTANTS = {
   "Submit Claims for 15th FC Grants": 3
 }
 
-const previousYearDependentForms = [CollectionName['dur']]
+
 
 const calculateTick = (tooltip, loggedInUserRole, viewFor) => {
   //get 3 parameter formType and compare formType with loggedInUserRole
@@ -327,16 +327,16 @@ module.exports.get = catchAsync(async (req, res) => {
     })
   let isUA, stateInfo, statesWithUA;
   
-  let output = [];
-  let ulbInfo;
+  let output = []
   if (role == 'ULB') {
-    ulbInfo = await Ulb.findOne({ _id: ObjectId(_id) }).lean();
+    let ulbInfo = await Ulb.findOne({ _id: ObjectId(_id) }).lean();
     isUA = ulbInfo?.isUA;
     let accessVariable = await getKeyByValue(years,year)
     accessVariable = `access_${accessVariable.split("-")[0].slice(-2)-1}${accessVariable.split("-")[1].slice(-2)-1}`
     isLatestCreated = !ulbInfo[accessVariable];
     baseYear = `access_${YEAR_CONSTANTS_IDS[YEAR_CONSTANTS['21_22']].split("-")[0].slice(-2)}${YEAR_CONSTANTS_IDS[YEAR_CONSTANTS['21_22']].split("-")[1]}`;
     checkBaseYearAccess = ulbInfo[baseYear]
+    console.log("accessVariable :: ",accessVariable,isLatestCreated)
     FormModelMapping["GfcFormCollection"] = isUA == 'Yes' ? ObjectId("62aa1d82c9a98b2254632a9e") : ObjectId("62aa1dd6c9a98b2254632aae")
     FormModelMapping["OdfFormCollection"] = isUA == 'Yes' ? ObjectId("62aa1d6ec9a98b2254632a9a") : ObjectId("62aa1dc0c9a98b2254632aaa")
     FormModelMapping["XVFcGrantULBForm"] = isUA == 'Yes' ? ObjectId("62aa1d4fc9a98b2254632a96") : ObjectId("62aa1dadc9a98b2254632aa6")
@@ -346,7 +346,7 @@ module.exports.get = catchAsync(async (req, res) => {
     FormModelMapping_Master_23_24["XVFcGrantULBForm"] = isUA == 'Yes' ? UA_FORM_MODEL['XVFcGrantULBForm_UA_YES'] : UA_FORM_MODEL['XVFcGrantULBForm_UA_NO']
 
     if(![YEAR_CONSTANTS['22_23']].includes(year)){
-      FormModelMapping_Master_23_24 = await modelMapper({ year , role, UA: ulbInfo?.UA})
+      FormModelMapping_Master_23_24 = await modelMapper({ year , role})
     }
     let condition = {
       ulb: ObjectId(_id),
@@ -365,8 +365,7 @@ module.exports.get = catchAsync(async (req, res) => {
         designYearCond = "design_year";
       }
       if(singleYearForms.includes(el) && !isLatestCreated){
-        condition = await changeConditionsFor2223Forms(condition,year);
-        if(isYearWithinCurrentFY(year)) updateConditionIfUlbAlreadyExistedPreviously(condition, designYearCond, ulbInfo); 
+        condition = await changeConditionsFor2223Forms(condition,year)
       }
       let formData = await el.findOne(condition).lean()
       
@@ -421,7 +420,7 @@ module.exports.get = catchAsync(async (req, res) => {
 
   let data = await Sidemenu.find({ year: ObjectId(year), role: role, isActive: true }).lean();
   let baseYearForms = [CollectionName.slb]
-  
+
   if (data.length) {
     if (role == "ULB") {
       data = filterResponseForms(data,!checkBaseYearAccess,baseYearForms);
@@ -430,9 +429,9 @@ module.exports.get = catchAsync(async (req, res) => {
       } else {
         data = data.filter(el => el.category != 'Million Plus City Challenge Fund')
       }
-      let formsWithoutCategory = [CollectionName['pfms']]
+
       data.forEach((el,) => {
-        if ((el.category || formsWithoutCategory.includes(el.collectionName)) && el.collectionName != "GTC" && el.collectionName != "SLB") {
+        if (el.category && el.collectionName != "GTC" && el.collectionName != "SLB") {
           let flag = 0;
           let variableName = collectionNames[el.path] || el.path
           if(singleYearFormCollections.includes(variableName) && !isLatestCreated){
@@ -451,14 +450,9 @@ module.exports.get = catchAsync(async (req, res) => {
           // where tick /cross logic is not applicable
           Object.assign(el, { tooltip: "", tick: "" })
         }
-        let currentYear = getKeyByValue(years,year)
-        let ulbAccess = checkIfUlbHasAccess(ulbInfo, {year: currentYear});
-        let isDependent = previousYearDependentForms.includes(el.collectionName);
-        if(isYearWithinCurrentFY(year) && isDependent && !ulbAccess) Object.assign(el, { tooltip: "", tick: "" })
+
+
       })
-      if(isYearWithinCurrentFY(year)){
-        data = await computeFormRedirection(_id, year, data);
-      }
     } else if (role == "STATE") {
       let stateWithUAForms = [CollectionName.state_action_plan,CollectionNames.waterRej,CollectionName.waterRej , FolderName['IndicatorForWaterSupply']]
       data = filterResponseForms(data,!statesWithUA.length,stateWithUAForms)
@@ -563,124 +557,6 @@ module.exports.get = catchAsync(async (req, res) => {
 }
 
 })
-
-/**
- * The function `updateConditionIfUlbAlreadyExistedPreviously` updates a condition if a ULB (Urban
- * Local Body) already existed previously based on certain criteria.
- * @param condition - The `condition` parameter is an object 
- * @param designYearCond - The `designYearCond` parameter is used to specify the key in the `condition`
- * object where the design year information is stored.
- * @param ulbInfo - `ulbInfo` 
- */
-function updateConditionIfUlbAlreadyExistedPreviously(condition, designYearCond, ulbInfo) {
-  try {
-    let formYear = getPreviousYear(condition[designYearCond].toString(), 1);
-    let accessVariable = getKeyByValue(years, formYear);
-    const accessYear = checkUlbAccess(accessVariable, 2);
-    if (ulbInfo[accessYear]) condition[designYearCond] = ObjectId(formYear);
-  } catch (error) {
-    throw new Error(`updateConditionIfUlbAlreadyExistedPreviously:: ${error.message}`)
-  }
-}
-
-/**
- * The function `computeFormRedirection` processes data based on a redirection object and a specified
- * model.
- * @param ulb - ulb 
- * @param year - The `year` parameter in the `computeFormRedirection` function is used to specify the
- * year for which the form redirection is being computed.
- * @param data - 
- * @returns The `computeFormRedirection` function returns the `data` array after applying certain
- * modifications based on the `redirectionObj` object.
- */
-async function computeFormRedirection(ulb, year, data) {
-  try {
-    let model = "PFMSAccount";
-    let redirectionObj = await formRedirectionBasedOnCreation(model, ulb, year);
-    if (!redirectionObj.redirect && !redirectionObj.status) {
-      data = data.filter((menu) => {
-        return !(UlbFormCollections[menu?.dbCollectionName] === model);
-      });
-    }
-    if (redirectionObj.redirect) {
-      data = data.map((menu) => {
-        if (UlbFormCollections[menu?.dbCollectionName] === model) {
-          Object.assign(menu, { tooltip: "", tick: "", category: "" });
-        }
-        return menu;
-      });
-    }else if(redirectionObj.status){
-     data = swapSequence(data,FORMIDs['dur'], FORMIDs['PFMS'] )
-    }
-    return data;
-  } catch (error) {
-    throw new Error(`computeFormRedirection:: ${error.message}`);
-  }
-}
-
-/** 
- * The function `formRedirectionBasedOnCreation` checks if a new ULB was created in the current
- * financial year and redirects based on form creation status.
- * @param model - The `model` parameter in the `formRedirectionBasedOnCreation` function represents the
- * @param ulb - ULB stands for Urban Local Body. 
- * @param design_year - The `design_year` parameter represents the year in which the design was
- * created.  
- * @returns  The function may return this object with different values for the `redirect` and `status` properties
- * based on the conditions and data retrieved during its execution.
- */
-async function formRedirectionBasedOnCreation(model, ulb, design_year){
-  try {
-    let output = {
-      redirect: false,
-      status: true
-    }
-    let ulbInfo = await Ulb.findOne(
-      { _id: ObjectId(ulb) },
-      { createdAt: 1}
-    ).lean();
-    let newUlb = isUlbCreatedInCurrentFinancialYear(design_year, ulbInfo?.createdAt);
-    if(newUlb) return output;
-    let condition = {
-      ulb: ObjectId(ulb)
-    }
-    let formData = await mongoose.model(model).find(condition).lean();
-    if(formData && formData.length) {
-      output['status'] = false
-      return output;
-    }
-    output['redirect'] = true;
-    output['status'] =  false;
-    return output;
-  } catch (error) {
-    throw new Error(`formRedirectionBasedOnCreation:: ${error.message}` )
-  }
-}
-/**
- * The function `isYearWithinCurrentFY` checks if a given year is within the current financial year.
- * @param year - The `year` parameter in the `isYearWithinCurrentFY` function represents the year for
- * which you want to check if it falls within the current financial year.
- * @returns The function `isYearWithinCurrentFY` is returning a boolean value indicating whether the
- * given year is within the current financial year.
- */
-function isYearWithinCurrentFY(year){
-  try {
-    return ![YEAR_CONSTANTS["23_24"],YEAR_CONSTANTS["22_23"]].includes(year)
-  } catch (error) {
-    throw new Error(`isYearWithinCurrentFY:: ${error.message}`)
-  }
-};
-module.exports.isYearWithinCurrentFY = isYearWithinCurrentFY
-function isUlbCreatedInCurrentFinancialYear(design_year, createdAt){
-  try {
-    let creationFinancialYear = getFinancialYear(createdAt);
-    if(YEAR_CONSTANTS_IDS[design_year] === creationFinancialYear){
-      return true;
-    };
-    return false;
-  } catch (error) {
-    throw new Error(`isUlbCreatedInCurrentFinancialYear:: ${error.message}`)
-  }
-}
 /**
  * The function `modelMapper` maps form models based on the year and role, fetching menu items from
  * Sidemenu and creating a map of form models with their corresponding IDs.
@@ -688,12 +564,11 @@ function isUlbCreatedInCurrentFinancialYear(design_year, createdAt){
  * based on the provided `year` and `role`. The mapping is filtered based on certain conditions from
  * the `Sidemenu` collection.
  */
-async function modelMapper({year , role, UA}){
+async function modelMapper({year , role}){
   try {
     let formModelMap = {};
     let condition = {year: ObjectId(year), isActive: true, role};
     let menuResponse = await Sidemenu.find(condition,{_id:1, dbCollectionName:1, isUAApplicable:1}).lean();
-    if (!UA) menuResponse = menuResponse.filter((menuItem) => !menuItem.isUAApplicable);
     menuResponse.forEach((menuItem)=>{
       if(Object.keys(UlbFormCollections).includes(menuItem.dbCollectionName)
          && !formModelMap.hasOwnProperty(UlbFormCollections[menuItem.dbCollectionName]) ){
@@ -731,35 +606,6 @@ module.exports.list = catchAsync(async (req, res) => {
   })
 })
 
-/**
- * The function `swapSequence` swaps the sequence values of two menu items based on their collection
- * names in a given array.
- * @param menuItems - An array of menu items, where each item contains a property `dbCollectionName`
- * representing the collection name and a property `sequence` representing the sequence number.
- * @param collectionName1 - The `collectionName1` parameter in the `swapSequence` function represents
- * the name of the first collection whose sequence you want to swap with another collection's sequence.
- * @param collectionName12 - It seems like there might be a typo in the function parameter name
- * `collectionName12`. It should probably be `collectionName2` instead of `collectionName12`.
- * @returns The function `swapSequence` will return the updated `menuItems` array after swapping the
- * sequences of the menu items corresponding to the provided `collectionName1` and `collectionName2`.
- */
-function swapSequence(menuItems, formId_1, formId_2) {
-  try {
-    const index1 = menuItems.findIndex((menu) => menu.formId === formId_1);
-    const index2 = menuItems.findIndex((menu) => menu.formId === formId_2);
-
-    if (index1 === -1 || index2 === -1) {
-      throw new Error("One or both URLs not found.");
-    }
-    [menuItems[index1].sequence, menuItems[index2].sequence] = [
-      menuItems[index2].sequence,
-      menuItems[index1].sequence,
-    ];
-  } catch (error) {
-    console.log(error.message);
-  }
-  return menuItems;
-}
 /**
  * The function `filterResponseForms` filters an array of data based on a flag and a list of forms, and
  * returns the filtered array.
@@ -913,5 +759,3 @@ function getGTCFinalForm(formArray) {
   }
 
 }
-
-module.exports.getPreviousYear = getPreviousYear

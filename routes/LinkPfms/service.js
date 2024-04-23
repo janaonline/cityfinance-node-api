@@ -171,8 +171,7 @@ module.exports.createOrUpdateForm = async (req, res) =>{
               formData:userFormData,
               res,
               actionTakenByRole,
-              actionTakenBy, 
-              mailOptions
+              actionTakenBy
             };
             return await createAndUpdateFormMaster(params);
         }
