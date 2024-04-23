@@ -1,3 +1,5 @@
+const ObjectId = require('mongodb').ObjectId;
+
 let years = {
     "2017-18":"63735a4bd44534713673bfbf",
     "2018-19":"63735a5bd44534713673c1ca",
@@ -24,8 +26,19 @@ const isBeyond2023_24 = design_year =>  {
     return designYearIndex > yearIndex23_24;
 }
 
+function getAllCurrAndPrevYearsObjectIds(yearId) {
+    const yearIndex = Object.values(years).indexOf("" + yearId);
+    if (yearIndex === -1 || yearIndex === 0) {
+        return [];
+    }
+    const previousYears = Object.values(years).slice(0, yearIndex+1);
+    return previousYears.map(id => new ObjectId(id));
+}
+
+
 module.exports = {
     years,
     getDesiredYear,
-    isBeyond2023_24
+    isBeyond2023_24,
+    getAllCurrAndPrevYearsObjectIds
 }
