@@ -7,8 +7,8 @@ const Service = require('../../service');
 const { FormNames, MASTER_STATUS_ID, MASTER_STATUS, MASTER_FORM_STATUS } = require('../../util/FormNames');
 const User = require('../../models/User');
 const { checkUndefinedValidations } = require('../../routes/FiscalRanking/service');
-const { propertyTaxOpFormJson, skippableKeys, financialYearTableHeader,indicatorsWithNoyears ,  specialHeaders, skipLogicDependencies,childKeys,reverseKeys ,questionIndicators,sortPosition} = require('./fydynemic')
-const { isEmptyObj, isReadOnly } = require('../../util/helper');
+const { propertyTaxOpFormJson, skipLogicDependencies, parentRadioQuestionKeys, childRadioAnsKeyPrefillDataCurrYear, skippableKeys, getFormMetaData, indicatorsWithNoyears, childKeys,reverseKeys ,questionIndicators,sortPosition } = require('./fydynemic')
+const { isEmptyObj, isReadOnly, handleOldYearsDisabled, hasMultipleYearData, isSingleYearIndicator } = require('../../util/helper');
 const PropertyMapperChildData = require("../../models/PropertyTaxMapperChild");
 const { years } = require('../../service/years');
 const { saveFormHistory } = require("../../util/masterFunctions")
@@ -325,6 +325,52 @@ module.exports.createOrUpdate = async (req, res) => {
     }
 }
 
+async function handlePtoSkipLogicDependencies({ 
+    design_year,
+    formId,
+    ulbId,
+    currentFormStatus
+ }) {
+    if(currentFormStatus != MASTER_FORM_STATUS.UNDER_REVIEW_BY_STATE) return;
+    const nextYearPto = await PropertyTaxOp.findOne({
+        ulb: ObjectId(ulbId),
+        design_year: ObjectId(getDesiredYear(design_year, 1).yearId)
+    });
+    if(!nextYearPto) return;
+    let mapperForm = await PropertyTaxOpMapper.find({ ptoId: ObjectId(formId) }).populate("child").lean();
+    
+    const parentSkipLogicRadioQuestions =  mapperForm.filter(({ value, type }) => [...parentRadioQuestionKeys,  ...childRadioAnsKeyPrefillDataCurrYear].includes(type))
+    const updatableQuestion = [ ...parentSkipLogicRadioQuestions];
+
+    const nextYearMapperUpdateQuery = updatableQuestion.map(question => {
+        const { yearName: currentYearName } = getDesiredYear('' + question.year); 
+        const { yearId: nextYearId } = currentYearName  == '2018-19' ? 
+            getDesiredYear('2023-24') : 
+            getDesiredYear('' + question.year, 1)
+        return {
+            updateOne: {
+                filter: {
+                    ulb: ObjectId(ulbId),
+                    type: question.type,
+                    ptoId: nextYearPto._id,
+                    year: ObjectId(nextYearId)
+                },
+                update: {
+                    $set: {
+                        value: question.value,
+                        date: question.date,
+                        file: question.file
+                    }
+                },
+                upsert: true
+            }
+        }
+    });
+
+    if(nextYearMapperUpdateQuery.length) {
+        await PropertyTaxOpMapper.bulkWrite(nextYearMapperUpdateQuery);
+    }
+}
 
 async function checkIfFormIdExistsOrNot(ulbId, design_year, isDraft, role, userId, currentFormStatus) {
     return new Promise(async (resolve, reject) => {
@@ -1065,6 +1111,14 @@ async function appendChildValues(params) {
     return element
 }
 
+const getRowDesignYear = (child, design_year) => {
+    const yearItem = child.yearData.find(yearItem => yearItem.value != "" && yearItem.year);
+    if(!yearItem?.year) return design_year;
+    const { yearId } = getDesiredYear(yearItem?.year, 1);   
+    if(isBeyond2023_24(yearId)) return yearId;
+    return getDesiredYear('2023-24').yearId;
+}
+
 exports.getView = async function (req, res, next) {
     try {
         let condition = {};
@@ -1105,6 +1159,31 @@ exports.getView = async function (req, res, next) {
                                             pf.file ? (pf.file = d ? d.file : "") : d.date ? (pf.date = d ? d.date : "") : (pf.value = d ? d.value : "");
                                         }
                                         pf.readonly = isReadOnly({ isDraft, currentFormStatus, role, ptoData })
+                
+                                        //TO DO...
+                                        if (!isSingleYearIndicator(yearData)) {
+                                            handleOldYearsDisabled({yearObject: pf, design_year});
+                                        } else if (isBeyond2023_24(design_year)) {
+                                            const indicatorObj = data[el]?.yearData[0];
+                                            const { yearName, yearId } = getDesiredYear(design_year, -1);
+
+                                            if (indicatorObj.isReadonlySingleYear) {
+                                                indicatorObj.readonly = true;
+                                            }
+                                            if (!ptoData) {
+                                                indicatorObj.label = `FY ${yearName}`;
+                                                indicatorObj.key = `FY${yearName}`
+                                                indicatorObj.year = yearId;
+                                                if (![...parentRadioQuestionKeys, ...childRadioAnsKeyPrefillDataCurrYear].includes(data[el].key)) {
+                                                    indicatorObj.value = "";
+                                                    indicatorObj.date = "";
+                                                    indicatorObj.file = {
+                                                        "url": "",
+                                                        "name": ""
+                                                    }
+                                                }
+                                            }
+                                        }
                                     }
                                 }
                             } else if (Array.isArray(mData) && ptoData.length) {
