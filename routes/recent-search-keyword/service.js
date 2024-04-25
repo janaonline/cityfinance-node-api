@@ -134,7 +134,10 @@ const search = catchAsync(async (req, res) => {
       return Response.OK(res, data);
     } else if (type && type == 'ulb') {
       let stateData
-      let query = { name: { $regex: `^${matchingWord}`, $options: "i" } }
+      // let query = { name: { $regex: `^${matchingWord}`, $options: "i" } }
+      let query = { 
+        $or: [ {name : { $regex: `${matchingWord}`, $options: 'im' }}, { keywords: { $regex: `${matchingWord}`, $options: 'im' } } ]
+      };
       if (matchingWord.hasOwnProperty("contentType")) {  // filter add chnage suresh
         query = { name: { $regex: `^${matchingWord[type]}`, $options: "i" } };
       }
