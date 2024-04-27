@@ -195,7 +195,6 @@ exports.indicatorsYears = async (req, res) => {
   }
 };
 exports.getIndicatorData = async (req, res) => {
-  mongoose.set('debug', true);
   try {
     let {
       benchMarkValue = 50,
