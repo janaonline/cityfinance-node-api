@@ -4,6 +4,7 @@ require('./dbConnect');
 const UlbSchema = new Schema({
     name: { type: String, required: true },
     regionalName: { type: String, default: "" },
+    keywords: { type: String },
     code: { type: String, required: true, index: { unique: true } },
     state: { type: Schema.Types.ObjectId, ref: 'State', required: true },
     ulbType: { type: Schema.Types.ObjectId, ref: 'UlbType', required: true },
@@ -12,7 +13,7 @@ const UlbSchema = new Schema({
     area: { type: Number, default: 0 },
     population: { type: Number, default: 0 },
     location: {
-        type: { 
+        type: {
             lat: { type: String },
             lng: { type: String },
         },
@@ -29,14 +30,14 @@ const UlbSchema = new Schema({
     amrut: { type: String, default: "" },
     modifiedAt: { type: Date, default: Date.now() },
     createdAt: { type: Date, default: Date.now() },
-    isGsdpEligible: { type: Boolean, defualt: false},
-    isDulyElected: { type: Boolean, defualt: false},
+    isGsdpEligible: { type: Boolean, defualt: false },
+    isDulyElected: { type: Boolean, defualt: false },
     electedDate: { type: Date },
     isActive: { type: Boolean, default: 1 },
-    access_2021:{ type: Boolean, default: 1 },
-    access_2122:{ type: Boolean, default: 1 },
-    access_2223:{ type: Boolean, default: 1 },
-    access_2324:{ type: Boolean, default: 1 },
-    access_2425:{ type: Boolean, default: 1 },
+    access_2021: { type: Boolean, default: 1 },
+    access_2122: { type: Boolean, default: 1 },
+    access_2223: { type: Boolean, default: 1 },
+    access_2324: { type: Boolean, default: 1 },
+    access_2425: { type: Boolean, default: 1 },
 }, { timestamp: { createdAt: "createdAt", updatedAt: "modifiedAt" } });
 module.exports = mongoose.model('Ulb', UlbSchema);
