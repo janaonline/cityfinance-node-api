@@ -8,7 +8,7 @@ const createLog = async (req, res) => {
     const apiUrl = req.originalUrl
     const diff = (new Date() - new Date(req._startTime)) / 1000
     try {
-        const ignoredUrls = ['/recentSearchKeyword/search'];
+        const ignoredUrls = ['/recentSearchKeyword/search', '/ulb-list', '/states-with-ulb-count'];
         if (['PUT', 'POST'].includes(req.method) && !req.url.split("/").includes("login") && !ignoredUrls.includes(req.route.path)) {
             const dataObj = {
                 "url": apiUrl,
