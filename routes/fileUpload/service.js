@@ -1,4 +1,5 @@
-const ObjectId = require("mongoose").Types.ObjectId;
+const mongoose = require("mongoose")
+const ObjectId = mongoose.Types.ObjectId;
 const Response = require("../../service").response;
 const ExcelJS = require("exceljs");
 const Indicator = require("../../models/indicators");
@@ -161,7 +162,40 @@ exports.fileUpload = async (req, res) => {
   }
 };
 
+exports.indicatorsYears = async (req, res) => {
+  try {
+    let {
+      ulb,
+      type,
+      indicatorName
+    } = req.query;
+
+    let indicatorMatch = {};
+    if (type) {
+      indicatorMatch['type'] = { $regex: type.toLowerCase() };
+    }
+    if (indicatorName) {
+      indicatorMatch['name'] = { $regex: indicatorName.toLowerCase() };
+    }
+
+    const indicatorLineItemIds = await IndicatorLineItems.find(indicatorMatch)
+      .select({ _id: 1 })
+      .lean();
+
+    let query = {};
+    if (ulb) {
+      query['ulb'] = ObjectId(ulb);
+    }
+    query['indicatorLineItem'] = indicatorLineItemIds.map((val) => val._id);
+    const data = await Indicator.distinct('year', query)
+
+    return Response.OK(res, data, "Success");
+  } catch (error) {
+    return Response.DbError(res, error.message);
+  }
+};
 exports.getIndicatorData = async (req, res) => {
+  mongoose.set('debug', true);
   try {
     let {
       benchMarkValue = 50,
