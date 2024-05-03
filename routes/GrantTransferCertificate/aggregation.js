@@ -1,5 +1,6 @@
 const previousFormsAggregation = (params) => {
-    let { state, design_year, prevYear } = params
+    let { state, design_year, prevYear } = params;
+    let allYearsToCheck = [design_year, prevYear]
     let query = [
         {
             "$match": {
@@ -12,7 +13,8 @@ const previousFormsAggregation = (params) => {
                 "let": {
                     "design_year": design_year,
                     "ulb": "$_id",
-                    "prevYear": prevYear
+                    "prevYear": prevYear,
+                    "years": allYearsToCheck
                 },
                 "pipeline": [
                     {
@@ -22,8 +24,7 @@ const previousFormsAggregation = (params) => {
                                     { "$eq": ["$ulb", "$$ulb"] },
                                     {
                                         "$or": [
-                                            { "$eq": ["$design_year", "$$design_year"] },
-                                            { "$eq": ["$design_year", "$$prevYear"] },
+                                            {"$in":["$design_year", "$$years"]}
                                         ]
                                     },
                                     {
@@ -218,6 +219,8 @@ const previousFormsAggregation = (params) => {
                 "_id": 0,
                 "isPfrFilled": 1,
                 "IsSfcFormFilled": 1,
+                "pfmsFilledCount": 1,
+                "totalUlbs":1,
                 "sfcFile": {
                     "$cond": {
                         "if": {
@@ -261,4 +264,116 @@ const previousFormsAggregation = (params) => {
     return query
 }
 
+const getPFMSFilledQuery = (params) => {
+  return [
+    {
+      $match: {
+        state: params.state,
+        isActive: true,
+      },
+    },
+    {
+      $lookup: {
+        from: "pfmsaccounts",
+        let: {
+          ulb: "$_id",
+          prevYear: params.prevYear,
+        },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $and: [
+                  {
+                    $eq: ["$ulb", "$$ulb"],
+                  },
+                  {
+                    $or: [
+                      {
+                        $in: ["$design_year", ["$$prevYear"]],
+                      },
+                    ],
+                  },
+                  {
+                    $or: [
+                      {
+                        $eq: ["$currentFormStatus", 4],
+                      },
+                      {
+                        $eq: ["$currentFormStatus", 6],
+                      },
+                      {
+                        $or: [
+                          {
+                            $and: [
+                              {
+                                $eq: ["$actionTakenByRole", "STATE"],
+                              },
+                              {
+                                $eq: ["$status", "APPROVED"],
+                              },
+                            ],
+                          },
+                          {
+                            $and: [
+                              {
+                                $eq: ["$actionTakenByRole", "MoHUA"],
+                              },
+                              {
+                                $eq: ["$status", "APPROVED"],
+                              },
+                            ],
+                          },
+                        ],
+                      },
+                    ],
+                  },
+                ],
+              },
+            },
+          },
+        ],
+        as: "pfmsAccount",
+      },
+    },
+    {
+      $addFields: {
+        pfmsFormFilled: {
+          $cond: {
+            if: {
+              $gte: [
+                {
+                  $size: "$pfmsAccount",
+                },
+                1,
+              ],
+            },
+            then: "Yes",
+            else: "No",
+          },
+        },
+      },
+    },
+    {
+      $group: {
+        _id: "$state",
+        totalUlbs: {
+          $sum: 1,
+        },
+        pfmsFilledCount: {
+          $sum: {
+            $cond: {
+              if: {
+                $eq: ["$pfmsFormFilled", "Yes"],
+              },
+              then: 1,
+              else: 0,
+            },
+          },
+        },
+      },
+    },
+  ];
+};
 module.exports.previousFormsAggregation = previousFormsAggregation
+module.exports.getPFMSFilledQuery = getPFMSFilledQuery
