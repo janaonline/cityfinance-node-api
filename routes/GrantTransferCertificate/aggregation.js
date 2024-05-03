@@ -391,7 +391,6 @@ module.exports.pfmsFormsAggregation = (params) => {
     ]
     return query
 }
-module.exports.previousFormsAggregation = previousFormsAggregation;
 const getPFMSFilledQuery = (params) => {
   return [
     {
