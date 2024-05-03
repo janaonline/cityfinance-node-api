@@ -12,7 +12,7 @@ const { isValidObjectId } = require("mongoose");
 const { isValidDate } = require("../../util/helper");
 const {getStorageBaseUrl} = require('./../../service/getBlobUrl');
 const StateGsdpData = require("../../models/StateGsdp");
-const { getAllCurrAndPrevYearsObjectIds } = require("../../service/years");
+const { getAllCurrAndPrevYearsObjectIds, getDesiredYear } = require("../../service/years");
 // const { query } = require("express");
 
 const GSDP_OPTIONS = {
@@ -27,7 +27,7 @@ const DULY_ELECTED_OPTIONS = {
 
 
 const isValidNumber = str => {
-    return !isNaN(Number(str))
+    return !(isNaN(Number(str)) || [undefined, ""].includes(str));
 }
 
 const handleDatabaseUpload = async (req, res, next) => {
@@ -35,8 +35,9 @@ const handleDatabaseUpload = async (req, res, next) => {
     let worksheet;
     const templateName = req.body.templateName;
     const uploadType = req.body.uploadType;
+    const { design_year } = req.body;
 
-    if(!req.body.design_year || !isValidObjectId(req.body?.design_year))  {
+    if(!design_year || !isValidObjectId(design_year))  {
         return res.status(400).json({
             success: false,
             message: "design_year is required.",
@@ -50,8 +51,8 @@ const handleDatabaseUpload = async (req, res, next) => {
         workbook = await loadExcelByUrl(remoteUrl);
         worksheet = workbook.getWorksheet(1);
 
-        if (templateName == 'dulyElected') await updateDulyElectedTemplate(req, res, next, worksheet, workbook);
-        if (templateName == 'gsdp') await updateGsdpTemplate(req, res, next, worksheet, workbook);
+        if (templateName == 'dulyElected') await updateDulyElectedTemplate(req, res, next, worksheet, workbook, design_year);
+        if (templateName == 'gsdp') await updateGsdpTemplate(req, res, next, worksheet, workbook, design_year);
         if (templateName == 'stateGsdp') await updatestateGsdpTemplate(req, res, next, worksheet, workbook);
 
         /* Category file upload needs to be create for every states */
@@ -95,6 +96,8 @@ const handleDatabaseUpload = async (req, res, next) => {
 
 const dulyElectedTemplate = async (req, res, next) => {
     const templateName = req.params.templateName;
+    const { design_year } = req.query;
+    const { yearName } = getDesiredYear(design_year);
     try {
         const relatedIds = Array.isArray(req.query.relatedIds) ? req.query.relatedIds : [req.query.relatedIds];
         const startingRow = 3;
@@ -122,7 +125,6 @@ const dulyElectedTemplate = async (req, res, next) => {
         ];
 
         const emptyRowsArray = Array.from({ length: startingRow - 1 }, () => Array.from({ length: worksheet.columnCount }, () => ''));
-        console.log('emptyRowsArray', emptyRowsArray);
         worksheet.addRows(emptyRowsArray);
 
         const columnsToHide = [2]; // Index of the column to hide (columns are 0-indexed)
@@ -160,8 +162,19 @@ const dulyElectedTemplate = async (req, res, next) => {
             {
                 $lookup: {
                     from: "grantallocation2324",
-                    localField: "_id",
-                    foreignField: "ulbId",
+                    let: { ulbId: "$_id" },
+                    pipeline: [
+                        {
+                            $match: {
+                                $expr: {
+                                    $and: [
+                                        { $eq: ["$ulbId", "$$ulbId"] },
+                                        { $eq: ["$design_year", ObjectId(design_year)] }
+                                    ]
+                                }
+                            }
+                        }
+                    ],
                     as: "grantallocation2324"
                 }
             },
@@ -178,18 +191,18 @@ const dulyElectedTemplate = async (req, res, next) => {
                     population: 1,
                     isDulyElected: {
                         $cond: {
-                            if: { $eq: ["$isDulyElected", true] },
+                            if: { $eq: [`$dulyElected.${yearName}.eligible`, true] },
                             then: 'Duly Elected',
                             else: {
                                 $cond: {
-                                    if: { $eq: ["$isDulyElected", false] },
+                                    if: { $eq: [`$dulyElected.${yearName}.eligible`, false] },
                                     then: 'Not Elected',
                                     else: ''
                                 }
                             }
                         }
                     },
-                    electedDate: 1,
+                    electedDate: `$dulyElected.${yearName}.electedDate`,
                     untiedGrantAmount: { $arrayElemAt: ['$grantallocation2324.untiedGrantAmount', 0] },
                     untiedGrantPercent: { $arrayElemAt: ['$grantallocation2324.untiedGrantPercent', 0] },
                     tiedGrantAmount: { $arrayElemAt: ['$grantallocation2324.tiedGrantAmount', 0] },
@@ -217,8 +230,9 @@ const dulyElectedTemplate = async (req, res, next) => {
     }
 }
 
-const updateDulyElectedTemplate = async (req, res, next, worksheet, workbook) => {
+const updateDulyElectedTemplate = async (req, res, next, worksheet, workbook, design_year) => {
     try {
+        const { yearName } = getDesiredYear(design_year)
         const validationErrors = [];
         const columnId = 1;
         const columnDulyElected = 10;
@@ -236,10 +250,6 @@ const updateDulyElectedTemplate = async (req, res, next, worksheet, workbook) =>
         const tiedGrantAmountColumns = worksheet?.getColumn(columnTiedGrantAmount).values;
         const tiedGrantPercentColumns = worksheet?.getColumn(columnTiedGrantPercent).values;
 
-
-
-
-
         const dulyElectedUpdateQuery = _ids?.map((_id, index) => {
             if (!_id || !isValidObjectId(_id)) return;
             // if (!req.body.ulbIds?.includes('' + _id)) return;
@@ -251,7 +261,6 @@ const updateDulyElectedTemplate = async (req, res, next, worksheet, workbook) =>
                     message: `Please selected "Duly Elected" or "Not Elected"`
                 });
             }
-
 
             const isDulyElected = typeof dulyElectedsColumns[index] === 'string' ? (dulyElectedsColumns[index]?.toLowerCase() == DULY_ELECTED_OPTIONS.DULY_ELECTED) : null;
             let electedDate = dulyElectedsDateColumns[index];
@@ -267,22 +276,32 @@ const updateDulyElectedTemplate = async (req, res, next, worksheet, workbook) =>
                     message: `Please selected a valid date in format dd/mm/yyyy`
                 });
             }
+
+            const updateObj = {
+                [`dulyElected.${yearName}`]: {
+                    "eligible" : isDulyElected,
+                    ...(isDulyElected == true && isValidDate(electedDate) && {
+                        electedDate
+                    })
+                },
+            }
+
             const result = {
                 updateOne: {
                     filter: { _id: ObjectId(_id) },
                     update: {
-                        $set: {
-                            isDulyElected,
-                            ...(isDulyElected == true && isValidDate(electedDate) && {
-                                electedDate
-                            })
-                        }
+                        $set: {...updateObj}
                     }
                 }
             }
             return result;
         }).filter(i => i);
 
+        let checkGrantAllocation2324Data = await GrantAllocation2324.find({
+            ulbId: {
+                $in: _ids?.filter(_id => _id && isValidObjectId(_id)).map(_id => ObjectId(_id)),
+            }, design_year: ObjectId(design_year)
+        }).lean();
 
         const grantAllocation2324UpdateQuery = _ids?.map((_id, index) => {
             if (!_id || !isValidObjectId(_id)) return;
@@ -290,17 +309,19 @@ const updateDulyElectedTemplate = async (req, res, next, worksheet, workbook) =>
             const untiedGrantPercent = untiedGrantPercentColumns[index];
             const tiedGrantAmount = tiedGrantAmountColumns[index];
             const tiedGrantPercent = tiedGrantPercentColumns[index];
+            const stateColumn = 3;
+            const stateName = worksheet?.getColumn(stateColumn).values;
 
-            if (tiedGrantAmount && !isValidNumber(tiedGrantAmount)) {
+            if (!isValidNumber(tiedGrantAmount)) {
                 validationErrors.push({ r: index, c: columnTiedGrantAmount, message: `Please enter a valid number` });
             }
-            if (tiedGrantPercent && !isValidNumber(tiedGrantPercent)) {
+            if (!isValidNumber(tiedGrantPercent)) {
                 validationErrors.push({ r: index, c: columnTiedGrantPercent, message: `Please enter a valid number` });
             }
-            if (untiedGrantAmount && !isValidNumber(untiedGrantAmount)) {
+            if (!isValidNumber(untiedGrantAmount)) {
                 validationErrors.push({ r: index, c: columnUntiedGrantAmount, message: `Please enter a valid number` });
             }
-            if (untiedGrantPercent && !isValidNumber(untiedGrantPercent)) {
+            if (!isValidNumber(untiedGrantPercent)) {
                 validationErrors.push({ r: index, c: columnUntiedGrantPercent, message: `Please enter a valid number` });
             }
 
@@ -320,12 +341,19 @@ const updateDulyElectedTemplate = async (req, res, next, worksheet, workbook) =>
                 });
             }
 
+            if(checkGrantAllocation2324Data.find(item => item.ulbId.toString() == _id)) {
+                validationErrors.push({
+                    r: index,
+                    c: stateColumn,
+                    message: `Data for ${stateName[index]} cannot be modified as it was already updated.`
+                });
+            }
+
             const result = {
                 updateOne: {
-                    filter: { ulbId: ObjectId(_id) },
+                    filter: { ulbId: ObjectId(_id), design_year: ObjectId(design_year) },
                     update: {
                         $set: {
-
                             untiedGrantAmount,
                             untiedGrantPercent,
                             tiedGrantAmount,
@@ -358,6 +386,7 @@ const updateDulyElectedTemplate = async (req, res, next, worksheet, workbook) =>
 
 const gsdpTemplate = async (req, res, next) => {
     const templateName = req.params.templateName;
+    const { yearName } = getDesiredYear(req.query.design_year)
     try {
         const relatedIds = Array.isArray(req.query.relatedIds) ? req.query.relatedIds : [req.query.relatedIds];
         const startingRow = 1;
@@ -442,11 +471,11 @@ const gsdpTemplate = async (req, res, next) => {
                     isDulyElected: 1,
                     isGsdpEligible: {
                         $cond: {
-                            if: { $eq: ["$isGsdpEligible", true] },
+                            if: { $eq: [`$gsdp.${yearName}.eligible`, true] },
                             then: 'Eligible',
                             else: {
                                 $cond: {
-                                    if: { $eq: ["$isGsdpEligible", false] },
+                                    if: { $eq: [`$gsdp.${yearName}.eligible`, false] },
                                     then: 'Not Eligible',
                                     else: ''
                                 }
@@ -460,8 +489,6 @@ const gsdpTemplate = async (req, res, next) => {
 
 
         worksheet.addRows(ulbData.map((value, sno) => ({ ...value, sno: sno + 1 })), { startingRow, properties: { outlineLevel: 1 } });
-
-        // console.log('worksheet', worksheet);
 
         const buffer = await workbook.xlsx.writeBuffer();
         res.setHeader('Content-Disposition', `attachment; filename=${templateName}.xlsx`);
@@ -616,14 +643,22 @@ const stateGsdpTemplate = async (req, res, next) => {
 }
 
 
-const updateGsdpTemplate = async (req, res, next, worksheet, workbook) => {
+const updateGsdpTemplate = async (req, res, next, worksheet, workbook, design_year) => {
     try {
         const validationErrors = [];
         const columnId = 1;
         const columnGdspElected = 13;
+        const columnState = 3;
 
         const _ids = worksheet?.getColumn(columnId).values;
         const gdsps = worksheet?.getColumn(columnGdspElected).values;
+        const stateName = worksheet?.getColumn(columnState).values;
+        const {yearName} = getDesiredYear(design_year);
+
+        let gsdpUploadedData = await Ulb.find({
+            _id: { $in: _ids?.filter(_id => _id && isValidObjectId(_id)).map(_id => ObjectId(_id)) },
+            [`gsdp.${yearName}.upload`]: true
+        }).lean(); 
 
         const gsdpUpdateQuery = _ids?.map((_id, index) => {
             if (!_id || !isValidObjectId(_id)) return;
@@ -637,19 +672,31 @@ const updateGsdpTemplate = async (req, res, next, worksheet, workbook) => {
                 });
             }
 
+            if (gsdpUploadedData.find(item => item._id.toString() == _id)) {
+                validationErrors.push({
+                    r: index,
+                    c: columnState,
+                    message: `Data for ${stateName[index]} cannot be modified as it was already updated.`
+                });
+            }
+
             const isGsdpEligible = typeof gdsps[index] === 'string' ? (gdsps[index]?.toLowerCase() == GSDP_OPTIONS.ELIGIBLE) : null;
+            const updateObj = {
+                [`gsdp.${yearName}`]: {
+                    "eligible" : isGsdpEligible,
+                    "upload" : true,
+                },
+            }
             const result = {
                 updateOne: {
                     filter: { _id: ObjectId(_id) },
                     update: {
-                        $set: {
-                            isGsdpEligible,
-                        }
+                        $set: {...updateObj}
                     }
                 }
             }
             return result;
-        }).filter(i => i);
+        })?.filter(i => i);
 
         if (validationErrors.length) {
             return Promise.reject({ validationErrors });
