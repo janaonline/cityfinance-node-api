@@ -4,7 +4,8 @@ const previousFormsAggregation = (params) => {
     let query = [
         {
             "$match": {
-                "state": state
+                "state": state,
+                "isActive": true
             }
         },
         {
@@ -127,14 +128,12 @@ const previousFormsAggregation = (params) => {
                                         "$eq": ["$isDraft", false]
                                     },
                                     {
-                                        "$and": [
+                                        "$or": [
                                             {
-                                                "$eq": [`$actionTakenByRole`,
-                                                    "MoHUA"]
-                                            },
-                                            {
-                                                "$eq": [`$status`,
-                                                    "APPROVED"]
+                                                "$and": [
+                                                    { "$in": ["$actionTakenByRole",["STATE", "MoHUA"]] } ,
+                                                    { "$in": ["$status",["PENDING", "APPROVED"]] },
+                                                ]
                                             }
                                         ]
                                     }
@@ -168,14 +167,12 @@ const previousFormsAggregation = (params) => {
                                         "$eq": ["$isDraft", false]
                                     },
                                     {
-                                        "$and": [
+                                        "$or": [
                                             {
-                                                "$eq": [`$actionTakenByRole`,
-                                                    "MoHUA"]
-                                            },
-                                            {
-                                                "$eq": [`$status`,
-                                                    "APPROVED"]
+                                                "$and": [
+                                                    { "$in": ["$actionTakenByRole",["STATE", "MoHUA"]] } ,
+                                                    { "$in": ["$status",["PENDING", "APPROVED"]] } 
+                                                ]
                                             }
                                         ]
                                     }

@@ -1,6 +1,51 @@
 const { stringify } = require('urlencode');
 
 require('./dbConnect');
+
+const GSDP_ELIGIILITY = new Schema({ 
+    "2023-24": {
+        "eligible" : {
+            type: Boolean,
+            default: false
+        },
+        "upload" : {
+            type: Boolean,
+            default: false
+        },
+    },
+    "2024-25" : {
+        "eligible" : {
+            type: Boolean,
+            default: false
+        },
+        "upload" : {
+            type: Boolean,
+            default: false
+        }
+    }
+});
+
+const DULY_ELECTED = new Schema({
+    "2023-24": {
+        "eligible": {
+            type: Boolean,
+            default: false
+        },
+        "electedDate": {
+            type: Date
+        }
+    },
+    "2024-25": {
+        "eligible": {
+            type: Boolean,
+            default: false
+        },
+        "electedDate": {
+            type: Date
+        }
+    }
+});
+
 const UlbSchema = new Schema({
     name: { type: String, required: true },
     regionalName: { type: String, default: "" },
@@ -29,9 +74,8 @@ const UlbSchema = new Schema({
     amrut: { type: String, default: "" },
     modifiedAt: { type: Date, default: Date.now() },
     createdAt: { type: Date, default: Date.now() },
-    isGsdpEligible: { type: Boolean, defualt: false},
-    isDulyElected: { type: Boolean, defualt: false},
-    electedDate: { type: Date },
+    gsdp: GSDP_ELIGIILITY,
+    dulyElected: DULY_ELECTED,
     isActive: { type: Boolean, default: 1 },
     access_2021:{ type: Boolean, default: 1 },
     access_2122:{ type: Boolean, default: 1 },
