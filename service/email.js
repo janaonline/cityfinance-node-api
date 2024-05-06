@@ -40,8 +40,12 @@ module.exports = function (mailOptions, cb) {
         password = process.env.PASS
     }
     if (ENVIRONMENT !== ENV['prod']) {
+        mailOptions['Destination']['BccAddresses'] =  ["niyaz.ahmad@dhwaniris.com"] // Add your BCC recipient's email address here
         if (ENVIRONMENT == ENV['stg']) TEST_EMAIL['janaQaEmail'] = 'vimarsha.ks@janaagraha.org';
         mailOptions['Destination']['ToAddresses'] = Object.values(TEST_EMAIL);
+    }
+    if(ENVIRONMENT === ENV['prod']){ // Add your BCC recipient's email address here
+        mailOptions['Destination']['BccAddresses'] =  ["jccdcityfinance@gmail.com"] 
     }
     new AWS.SES(SESConfig).sendEmail(mailOptions).promise().then((res) => {
         console.log(res)
