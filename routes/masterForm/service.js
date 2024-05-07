@@ -3672,6 +3672,7 @@ async function getAccessYearKey(design_year) {
   }
 }
 
+module.exports. getAccessYearKey = getAccessYearKey
 function csvULBReviewData() {
   return (field = {
     ulbName: "ULB name",
