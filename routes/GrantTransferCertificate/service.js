@@ -749,16 +749,36 @@ const getJson = async (state, design_year, role,previousYearData) => {
 }
 
 async function getPreviousYearData(state,design_year){
-    let response = {}
+    let response = {}, prevYearPFMSAllFilled, currentYearPFMSAllFilled ;
     try{
         let params = {
             state:ObjectId(state),
             design_year:ObjectId(design_year),
             prevYear :ObjectId(years[findPreviousYear(getKeyByValue(years,design_year))]),
         }
-        console.log("params :: ",params)
-        let query = await previousFormsAggregation(params)
-        response = await Ulb.aggregate(query).allowDiskUse(true)
+        let prevAccessYearKey = await getAccessYearKey(params.prevYear.toString());
+        let ulbsActiveLastYear = await Ulb.countDocuments({
+            state: params.state,
+            [prevAccessYearKey]: true,
+            isActive: true
+        });
+        let currentAccessYearKey = await getAccessYearKey(params.design_year.toString());
+        let ulbsCreatedThisYear = await Ulb.countDocuments({
+            state: params.state,
+            [prevAccessYearKey]: false,
+            [currentAccessYearKey]: true,
+            isActive: true
+        });
+        let query = await previousFormsAggregation(params, currentAccessYearKey);
+        response = await Ulb.aggregate(query).allowDiskUse(true);
+        let pfmsFilledLastQuery =  getPFMSFilledQuery(params, prevAccessYearKey,null,params.prevYear);
+        let pfmsFilledCurrentQuery =  getPFMSFilledQuery(params, prevAccessYearKey, currentAccessYearKey,ObjectId(design_year) );
+        prevYearPFMSAllFilled = await Ulb.aggregate(pfmsFilledLastQuery);
+        currentYearPFMSAllFilled = await Ulb.aggregate(pfmsFilledCurrentQuery);
+        response["prevYearPFMSAllFilled"] =
+          ulbsActiveLastYear - prevYearPFMSAllFilled[0]?.pfmsFilledCount;
+          response["currentYearPFMSAllFilled"] = ulbsCreatedThisYear ?
+          ulbsCreatedThisYear - (currentYearPFMSAllFilled.length ? currentYearPFMSAllFilled[0]?.pfmsFilledCount : 0) : 0
     }
     catch(err){
         console.log("error in getPreviousYearData :: ",err.message)
@@ -770,6 +790,9 @@ async function addWarnings(previousYearData){
         let sfcLink = `<a href="stateform2223/fc-formation" target="_blank"> Click here to fill previous form</a>`
         let propertyTaxLink = `<a href="stateform2223/property-tax" target="_blank"> Click here to fill previous form</a>`
         let reviewPfmsLink = `<a href="stateform2223/review-ulb-form" target="_blank"> Click here to check for the ulbs</a>`
+        if(!previousYearData['prevYearPFMSAllFilled'] && previousYearData['currentYearPFMSAllFilled']){
+         reviewPfmsLink = `<a href="state-form/${design_year}/review-ulb-form" target="_blank"> Click here to check for the ulbs</a>`    
+        }
         let warnings = await getMessagesForRadioButton(sfcLink,propertyTaxLink,reviewPfmsLink)
         let errors = []
         if(previousYearData[0].IsSfcFormFilled === 'No'){
@@ -800,9 +823,16 @@ module.exports.getInstallmentForm = async (req, res, next) => {
     try {
         let responseData = []
         let { design_year, state, formType } = req.query
-        let { role } = req.decoded
-        let previousYearData = await getPreviousYearData(state,design_year)
-        response.errors = await addWarnings(previousYearData)
+        let { role } = req.decoded;
+        let previousYearData;
+
+        if(design_year === '606aafcf4dff55e6c075d424') {
+            previousYearData = await getPreviousYearData24_25(state,design_year);
+        } else {
+            previousYearData = await getPreviousYearData(state,design_year);
+        }
+        
+        response.errors = await addWarnings(previousYearData, design_year)
         let validator = await checkForUndefinedVaribales({
             "design year": design_year,
             "state": state
