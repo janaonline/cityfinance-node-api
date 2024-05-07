@@ -750,7 +750,7 @@ const getJson = async (state, design_year, role,previousYearData) => {
 }
 
 async function getPreviousYearData(state,design_year){
-    let response = {}, prevYearPFMSAllFilled ;
+    let response = {}, prevYearPFMSAllFilled, currentYearPFMSAllFilled ;
     try{
         let params = {
             state:ObjectId(state),
@@ -762,13 +762,24 @@ async function getPreviousYearData(state,design_year){
             state: params.state,
             [prevAccessYearKey]: true,
             isActive: true
-        })
-        let query = await previousFormsAggregation(params);
+        });
+        let currentAccessYearKey = await getAccessYearKey(params.design_year.toString());
+        let ulbsCreatedThisYear = await Ulb.countDocuments({
+            state: params.state,
+            [prevAccessYearKey]: false,
+            [currentAccessYearKey]: true,
+            isActive: true
+        });
+        let query = await previousFormsAggregation(params, currentAccessYearKey);
         response = await Ulb.aggregate(query).allowDiskUse(true);
-        let pfmsFilledLastQuery =  getPFMSFilledQuery(params)
+        let pfmsFilledLastQuery =  getPFMSFilledQuery(params, prevAccessYearKey,null,params.prevYear);
+        let pfmsFilledCurrentQuery =  getPFMSFilledQuery(params, prevAccessYearKey, currentAccessYearKey,ObjectId(design_year) );
         prevYearPFMSAllFilled = await Ulb.aggregate(pfmsFilledLastQuery);
+        currentYearPFMSAllFilled = await Ulb.aggregate(pfmsFilledCurrentQuery);
         response["prevYearPFMSAllFilled"] =
           ulbsActiveLastYear - prevYearPFMSAllFilled[0]?.pfmsFilledCount;
+          response["currentYearPFMSAllFilled"] = ulbsCreatedThisYear ?
+          ulbsCreatedThisYear - (currentYearPFMSAllFilled.length ? currentYearPFMSAllFilled[0]?.pfmsFilledCount : 0) : 0
     }
     catch(err){
         console.log("error in getPreviousYearData :: ",err.message)
@@ -780,7 +791,7 @@ async function addWarnings(previousYearData,design_year){
         let sfcLink = `<a href="stateform2223/fc-formation" target="_blank"> Click here to fill previous form</a>`
         let propertyTaxLink = `<a href="stateform2223/property-tax" target="_blank"> Click here to fill previous form</a>`
         let reviewPfmsLink = `<a href="stateform2223/review-ulb-form" target="_blank"> Click here to check for the ulbs</a>`
-        if(!previousYearData['prevYearPFMSAllFilled']){
+        if(!previousYearData['prevYearPFMSAllFilled'] && previousYearData['currentYearPFMSAllFilled']){
          reviewPfmsLink = `<a href="state-form/${design_year}/review-ulb-form" target="_blank"> Click here to check for the ulbs</a>`    
         }
         let warnings = await getMessagesForRadioButton(sfcLink,propertyTaxLink,reviewPfmsLink)
