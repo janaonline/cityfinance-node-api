@@ -818,32 +818,7 @@ async function getPFMSFilledData(params, prevAccessYearKey, currentAccessYearKey
    }
 }
 
-async function getPreviousYearData24_25(state,design_year){
-    let response = {}
-    try {
-        let params = {
-            state:ObjectId(state), 
-            design_year:ObjectId(design_year), 
-        }
-        let query = await pfmsFormsAggregation(params)
-        response = await Ulb.aggregate(query).allowDiskUse(true)
-        const cond = {
-            // actionTakenByRole: 'MoHUA',
-            // status: 'APPROVED'
-        };
-        const sfcCount = await SFC.find({...params, ...cond}).countDocuments();
-        let data = [{
-            IsSfcFormFilled: sfcCount ? 'Yes' : 'No',
-            isPfrFilled: 'Yes',
-            pfmsFilledPerc: response[0].pfmsFilledPerc
-          }];
-       return data;
-    }
-    catch(err){
-        console.log("error in getPreviousYearData24_25 :: ",err.message)
-    }
-    return response
-}
+
 async function addWarnings(previousYearData,design_year){
     try{
         let sfcLink = `<a href="stateform2223/fc-formation" target="_blank"> Click here to fill previous form</a>`
