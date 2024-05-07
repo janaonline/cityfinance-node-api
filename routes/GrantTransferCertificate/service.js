@@ -782,28 +782,60 @@ async function getPreviousYearData(state,design_year){
             isActive: true
         });
         let currentAccessYearKey = await getAccessYearKey(params.design_year.toString());
-        let ulbsCreatedThisYear = await Ulb.countDocuments({
-            state: params.state,
-            [prevAccessYearKey]: false,
-            [currentAccessYearKey]: true,
-            isActive: true
-        });
-        let query = await previousFormsAggregation(params, currentAccessYearKey);
-        response = await Ulb.aggregate(query).allowDiskUse(true);
-        let pfmsFilledLastQuery =  getPFMSFilledQuery(params, prevAccessYearKey,null,params.prevYear);
-        let pfmsFilledCurrentQuery =  getPFMSFilledQuery(params, prevAccessYearKey, currentAccessYearKey,ObjectId(design_year) );
-        prevYearPFMSAllFilled = await Ulb.aggregate(pfmsFilledLastQuery);
-        currentYearPFMSAllFilled = await Ulb.aggregate(pfmsFilledCurrentQuery);
-        response["prevYearPFMSAllFilled"] =
-          ulbsActiveLastYear - prevYearPFMSAllFilled[0]?.pfmsFilledCount;
-          response["currentYearPFMSAllFilled"] = ulbsCreatedThisYear ?
-          ulbsCreatedThisYear - (currentYearPFMSAllFilled.length ? currentYearPFMSAllFilled[0]?.pfmsFilledCount : 0) : 0
+        ({ response, prevYearPFMSAllFilled, currentYearPFMSAllFilled } = await getPFMSFilledData(params, prevAccessYearKey, currentAccessYearKey, response, design_year, prevYearPFMSAllFilled, currentYearPFMSAllFilled, ulbsActiveLastYear));
     }
     catch(err){
         console.log("error in getPreviousYearData :: ",err.message)
     }
     return response
 }
+
+/**
+ * The function `getPFMSFilledData` retrieves data related to PFMS filled forms for ULBs based on
+ * specified parameters and access years.
+ * @param params - The `params` object contains the following properties:
+ * @param prevAccessYearKey - `prevAccessYearKey` is a key that represents the previous access year in
+ * the data.
+ * @param currentAccessYearKey - The `currentAccessYearKey` parameter is used to specify the key for
+ * the current access year in the database. 
+ * @param response - The `response` parameter in the `getPFMSFilledData` function is used to store the
+ * response data obtained from the database queries
+ * @param design_year - Design year is used as a parameter in the function to filter the PFMS filled
+ * data for the current year. It is passed as an ObjectId in the function call to getPFMSFilledData.
+ * @param prevYearPFMSAllFilled - The `prevYearPFMSAllFilled` parameter in the `getPFMSFilledData`
+ * function is used to store the aggregated data 
+ * @param currentYearPFMSAllFilled - The `currentYearPFMSAllFilled` parameter in the
+ * `getPFMSFilledData` 
+ * @param ulbsActiveLastYear - `ulbsActiveLastYear` is the number of ULBs (Urban Local Bodies) that
+ * were active in the previous year.
+ * @returns The function `getPFMSFilledData` is returning an object with three properties: `response`,
+ * `prevYearPFMSAllFilled`, and `currentYearPFMSAllFilled`.
+ */
+async function getPFMSFilledData(params, prevAccessYearKey, currentAccessYearKey, response, design_year, prevYearPFMSAllFilled, currentYearPFMSAllFilled, ulbsActiveLastYear) {
+   try {
+     let ulbsCreatedThisYear = await Ulb.countDocuments({
+         state: params.state,
+         [prevAccessYearKey]: false,
+         [currentAccessYearKey]: true,
+         isActive: true
+     });
+     let query = await previousFormsAggregation(params, currentAccessYearKey);
+     response = await Ulb.aggregate(query).allowDiskUse(true);
+     let pfmsFilledLastQuery = getPFMSFilledQuery(params, prevAccessYearKey, null, params.prevYear);
+     let pfmsFilledCurrentQuery = getPFMSFilledQuery(params, prevAccessYearKey, currentAccessYearKey, ObjectId(design_year));
+     prevYearPFMSAllFilled = await Ulb.aggregate(pfmsFilledLastQuery);
+     currentYearPFMSAllFilled = await Ulb.aggregate(pfmsFilledCurrentQuery);
+     response["prevYearPFMSAllFilled"] =
+         ulbsActiveLastYear - prevYearPFMSAllFilled[0]?.pfmsFilledCount;
+     response["currentYearPFMSAllFilled"] = ulbsCreatedThisYear ?
+         ulbsCreatedThisYear - (currentYearPFMSAllFilled.length ? currentYearPFMSAllFilled[0]?.pfmsFilledCount : 0) : 0;
+     return { response, prevYearPFMSAllFilled, currentYearPFMSAllFilled };
+ 
+   } catch (error) {
+    console.log(error.message)
+   }
+}
+
 async function getPreviousYearData24_25(state,design_year){
     let response = {}
     try {
