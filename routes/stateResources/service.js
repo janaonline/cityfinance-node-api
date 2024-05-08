@@ -33,9 +33,7 @@ const isValidNumber = str => {
 const handleDatabaseUpload = async (req, res, next) => {
     let workbook;
     let worksheet;
-    const templateName = req.body.templateName;
-    const uploadType = req.body.uploadType;
-    const { design_year } = req.body;
+    const { design_year, templateName, uploadType } = req.body;
 
     if(!design_year || !isValidObjectId(design_year))  {
         return res.status(400).json({
@@ -51,8 +49,8 @@ const handleDatabaseUpload = async (req, res, next) => {
         workbook = await loadExcelByUrl(remoteUrl);
         worksheet = workbook.getWorksheet(1);
 
-        if (templateName == 'dulyElected') await updateDulyElectedTemplate(req, res, next, worksheet, workbook, design_year);
-        if (templateName == 'gsdp') await updateGsdpTemplate(req, res, next, worksheet, workbook, design_year);
+        if (templateName == 'dulyElected') await updateDulyElectedTemplate(req, res, next, worksheet, workbook, design_year, templateName);
+        if (templateName == 'gsdp') await updateGsdpTemplate(req, res, next, worksheet, workbook, design_year, templateName);
         if (templateName == 'stateGsdp') await updatestateGsdpTemplate(req, res, next, worksheet, workbook);
 
         /* Category file upload needs to be create for every states */
@@ -66,7 +64,6 @@ const handleDatabaseUpload = async (req, res, next) => {
         // }
         next();
     } catch (err) {
-        console.log(err);
         if (err.validationErrors?.length) {
             err.validationErrors.forEach(({ r, c, message = 'Some error' }) => {
                 const cell = worksheet.getCell(r, c);
@@ -86,7 +83,7 @@ const handleDatabaseUpload = async (req, res, next) => {
         } else if(err.invalidSheet) {
             return res.status(400).send({ success: false, message: err.invalidSheet || err })
         }
-
+        console.log(err);
         return res.status(500).json({
             status: true,
             message: err || "Something went wrong",
@@ -230,7 +227,7 @@ const dulyElectedTemplate = async (req, res, next) => {
     }
 }
 
-const updateDulyElectedTemplate = async (req, res, next, worksheet, workbook, design_year) => {
+const updateDulyElectedTemplate = async (req, res, next, worksheet, workbook, design_year, templateName) => {
     try {
         const { yearName } = getDesiredYear(design_year)
         const validationErrors = [];
@@ -241,6 +238,7 @@ const updateDulyElectedTemplate = async (req, res, next, worksheet, workbook, de
         const columnUntiedGrantPercent = 13;
         const columnTiedGrantAmount = 14;
         const columnTiedGrantPercent = 15;
+        const stateColumn = 3;
 
         const _ids = worksheet?.getColumn(columnId).values;
         const dulyElectedsColumns = worksheet?.getColumn(columnDulyElected).values;
@@ -249,6 +247,13 @@ const updateDulyElectedTemplate = async (req, res, next, worksheet, workbook, de
         const untiedGrantPercentColumns = worksheet?.getColumn(columnUntiedGrantPercent).values;
         const tiedGrantAmountColumns = worksheet?.getColumn(columnTiedGrantAmount).values;
         const tiedGrantPercentColumns = worksheet?.getColumn(columnTiedGrantPercent).values;
+        const stateName = worksheet?.getColumn(stateColumn).values;
+        const uniqueStateNames = Array.isArray(stateName) ? new Set([...stateName]): []
+
+        const stateExist = stateExistsInTemplate(req.body?.relatedIds, Array.from(uniqueStateNames), templateName);
+        if(!stateExist) {
+            return Promise.reject({ invalidSheet:  "The data in the sheet does not match the selected state(s)."});
+        }
 
         const dulyElectedUpdateQuery = _ids?.map((_id, index) => {
             if (!_id || !isValidObjectId(_id)) return;
@@ -309,8 +314,6 @@ const updateDulyElectedTemplate = async (req, res, next, worksheet, workbook, de
             const untiedGrantPercent = untiedGrantPercentColumns[index];
             const tiedGrantAmount = tiedGrantAmountColumns[index];
             const tiedGrantPercent = tiedGrantPercentColumns[index];
-            const stateColumn = 3;
-            const stateName = worksheet?.getColumn(stateColumn).values;
 
             if (!isValidNumber(tiedGrantAmount)) {
                 validationErrors.push({ r: index, c: columnTiedGrantAmount, message: `Please enter a valid number` });
@@ -376,7 +379,7 @@ const updateDulyElectedTemplate = async (req, res, next, worksheet, workbook, de
 
         const result = await Ulb.bulkWrite(dulyElectedUpdateQuery);
         const result2 = await GrantAllocation2324.bulkWrite(grantAllocation2324UpdateQuery);
-        console.log('result', result, result2);
+        // console.log('result', result, result2);
         Promise.resolve("Data updated");
     } catch (err) {
         console.log(err);
@@ -513,8 +516,8 @@ const stateGsdpTemplate = async (req, res, next) => {
             { header: '_id', key: '_id', width: 20, hidden: true },
             { header: 'S no', key: 'sno', hidden: true },
             { header: 'State', key: 'stateName', width: 20 },
-            { header: 'Average GSDP growth rate of previous 5 years at Constant prices', key: 'constantPrice', width: 30 },
-            { header: 'Average GSDP growth rate of previous 5 years at Current prices', key: 'currentPrice', width: 30 },
+            { header: 'Average GSDP growth rate of previous 5 years at Constant prices (2018-19 to 2022-23)', key: 'constantPrice', width: 30 },
+            { header: 'Average GSDP growth rate of previous 5 years at Current prices (2018-19 to 2022-23)', key: 'currentPrice', width: 30 },
         ];
         
         worksheet.getRow(startingRow).height = 60;
@@ -643,7 +646,7 @@ const stateGsdpTemplate = async (req, res, next) => {
 }
 
 
-const updateGsdpTemplate = async (req, res, next, worksheet, workbook, design_year) => {
+const updateGsdpTemplate = async (req, res, next, worksheet, workbook, design_year, templateName) => {
     try {
         const validationErrors = [];
         const columnId = 1;
@@ -654,6 +657,13 @@ const updateGsdpTemplate = async (req, res, next, worksheet, workbook, design_ye
         const gdsps = worksheet?.getColumn(columnGdspElected).values;
         const stateName = worksheet?.getColumn(columnState).values;
         const {yearName} = getDesiredYear(design_year);
+
+        const uniqueStateNames = Array.isArray(stateName) ? new Set([...stateName]): []
+
+        const stateExist = stateExistsInTemplate(req.body?.relatedIds, Array.from(uniqueStateNames), templateName);
+        if(!stateExist) {
+            return Promise.reject({ invalidSheet:  "The data in the sheet does not match the selected state(s)."});
+        }
 
         let gsdpUploadedData = await Ulb.find({
             _id: { $in: _ids?.filter(_id => _id && isValidObjectId(_id)).map(_id => ObjectId(_id)) },
@@ -726,6 +736,12 @@ const updatestateGsdpTemplate = async (req, res, next, worksheet, workbook) => {
         const stateGsdpConstantPrices = worksheet?.getColumn(columnConstantPrice).values;
         const stateGsdpCurrentPrices = worksheet?.getColumn(columnCurrentPrice).values;
         const stateName = worksheet?.getColumn(columnState).values;
+        const filteredStateIds = _ids?.filter(_id => _id && isValidObjectId(_id)).map(_id => _id.toString());
+
+        const stateExist = stateExistsInTemplate(req.body?.relatedIds, filteredStateIds);
+        if(!stateExist) {
+            return Promise.reject({ invalidSheet:  "The data in the sheet does not match the selected state(s)."});
+        }
 
         let checkStateGsdpData = await StateGsdpData.find({ stateId: {
             $in: _ids?.filter(_id => _id && isValidObjectId(_id)).map(_id => ObjectId(_id))
@@ -889,6 +905,20 @@ const removeStateFromFiles = async (req, res, next) => {
         console.log(err);
     }
 }
+
+const stateExistsInTemplate = (existingStateArr, excelStateIdsOrName, templateName="stateGsdp") => {
+  let notFound = true;
+
+  existingStateArr.forEach((state) => {
+    if(["gsdp", "dulyElected"].includes(templateName)) {
+        let stateNamesArr = excelStateIdsOrName.filter(i => i)
+        if (!stateNamesArr.includes(state.name.toString())) notFound = false;
+    } else {
+        if (!excelStateIdsOrName.includes(state._id.toString())) notFound = false;
+    }
+  });
+  return notFound;
+};
 
 const getResourceList = async (req, res, next) => {
     const skip = +req.query.skip || 0;
