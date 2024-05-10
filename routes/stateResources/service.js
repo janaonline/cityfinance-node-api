@@ -73,7 +73,7 @@ const handleDatabaseUpload = async (req, res, next) => {
                     fgColor: { argb: 'FFFF0000' }
                 };
                 cell.note = {
-                    texts: [{ text: message }]
+                    texts: [{font: {size: 6.5, bold: true}, text: message }]
                 };
             })
             const buffer = await workbook.xlsx.writeBuffer();
@@ -735,7 +735,7 @@ const updatestateGsdpTemplate = async (req, res, next, worksheet, workbook) => {
         const _ids = worksheet?.getColumn(columnId).values;
         const stateGsdpConstantPrices = worksheet?.getColumn(columnConstantPrice).values;
         const stateGsdpCurrentPrices = worksheet?.getColumn(columnCurrentPrice).values;
-        const stateName = worksheet?.getColumn(columnState).values;
+        let stateNameExcel = worksheet?.getColumn(columnState).values;
         const filteredStateIds = _ids?.filter(_id => _id && isValidObjectId(_id)).map(_id => _id.toString());
 
         const stateExist = stateExistsInTemplate(req.body?.relatedIds, filteredStateIds);
@@ -746,6 +746,10 @@ const updatestateGsdpTemplate = async (req, res, next, worksheet, workbook) => {
         let checkStateGsdpData = await StateGsdpData.find({ stateId: {
             $in: _ids?.filter(_id => _id && isValidObjectId(_id)).map(_id => ObjectId(_id))
         } }).lean();    
+
+        const stateData = await State.find({
+            _id: { $in: _ids?.filter((_id) => _id && isValidObjectId(_id)).map((_id) => ObjectId(_id)), },
+        }).lean();
 
        const results = _ids?.map((_id, index) => {
             if (!_id || !isValidObjectId(_id)) return;
@@ -766,17 +770,24 @@ const updatestateGsdpTemplate = async (req, res, next, worksheet, workbook) => {
                 });
             }
 
+            const selectedState = stateData.find(item => item._id.toString() == _id);
+            let stateName = stateNameExcel[index];
+
+            if(selectedState) {
+                stateName = selectedState.name;
+            }
+
             if(checkStateGsdpData.find(item => item.stateId.toString() == _id)) {
                 validationErrors.push({
                     r: index,
                     c: columnState,
-                    message: `Data for ${stateName[index]} cannot be modified as it was already updated.`
+                    message: `Data for ${stateName} cannot be modified as it was already updated.`
                 });
             }
             
             const result = {
                 "stateId" : ObjectId(_id),
-                "stateName" : stateName[index],
+                "stateName" : stateName,
                 "data" : [
                     {
                         "year" : "2018-23",
@@ -906,18 +917,21 @@ const removeStateFromFiles = async (req, res, next) => {
     }
 }
 
-const stateExistsInTemplate = (existingStateArr, excelStateIdsOrName, templateName="stateGsdp") => {
-  let notFound = true;
-
-  existingStateArr.forEach((state) => {
-    if(["gsdp", "dulyElected"].includes(templateName)) {
-        let stateNamesArr = excelStateIdsOrName.filter(i => i)
-        if (!stateNamesArr.includes(state.name.toString())) notFound = false;
-    } else {
-        if (!excelStateIdsOrName.includes(state._id.toString())) notFound = false;
+const stateExistsInTemplate = (existingStateArr, excelStateIdsOrName, templateName = "stateGsdp") => {
+    let notFound = true;
+    let excelStateNameOrId = [...excelStateIdsOrName]
+    if (["gsdp", "dulyElected"].includes(templateName)) {
+        excelStateNameOrId = excelStateIdsOrName.slice(2);
     }
-  });
-  return notFound;
+    if (existingStateArr.length != excelStateNameOrId.length) return notFound = false;
+    existingStateArr.forEach((state) => {
+        if (["gsdp", "dulyElected"].includes(templateName)) {
+            if (!excelStateNameOrId.includes(state.name.toString())) notFound = false;
+        } else {
+            if (!excelStateNameOrId.includes(state._id.toString())) notFound = false;
+        }
+    });
+    return notFound;
 };
 
 const getResourceList = async (req, res, next) => {
