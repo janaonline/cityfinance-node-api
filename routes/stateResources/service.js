@@ -73,7 +73,7 @@ const handleDatabaseUpload = async (req, res, next) => {
                     fgColor: { argb: 'FFFF0000' }
                 };
                 cell.note = {
-                    texts: [{font: {size: 6.5, bold: true}, text: message }]
+                  texts: [{ text: message }],
                 };
             })
             const buffer = await workbook.xlsx.writeBuffer();
@@ -107,7 +107,7 @@ const dulyElectedTemplate = async (req, res, next) => {
             { header: '_id', key: '_id', width: 20, hidden: true },
             { header: 'S no', key: 'sno', },
             { header: 'State Name', key: 'stateName', width: 20 },
-            { header: 'State Code', key: 'stateCode', },
+            { header: 'State Code', key: 'stateCode', width: 20},
             { header: 'ULB Name', key: 'name', width: 30, hidden: true },
             { header: 'ULB City Finance Code', key: 'code' },
             { header: 'Census Code', key: 'censusCode' },
@@ -400,10 +400,10 @@ const gsdpTemplate = async (req, res, next) => {
             { header: '_id', key: '_id', width: 20, hidden: true },
             { header: 'S no', key: 'sno', },
             { header: 'State Name', key: 'stateName', width: 20 },
-            { header: 'State Code', key: 'stateCode', },
+            { header: 'ULB type', key: 'ulbType', width: 30 },
             { header: 'ULB Name', key: 'name', width: 30, hidden: true },
             { header: 'ULB Code', key: 'code' },
-            { header: 'ULB type', key: 'ulbType' },
+            { header: 'State Code', key: 'stateCode' },
             { header: 'Census Code', key: 'censusCode' },
             { header: 'Population (As per Census 2011)', key: 'population', width: 20 },
             { header: 'Is it Million Plus (Yes/No)', key: 'isMillionPlus', width: 20 },
