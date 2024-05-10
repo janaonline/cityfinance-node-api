@@ -107,7 +107,7 @@ const dulyElectedTemplate = async (req, res, next) => {
             { header: '_id', key: '_id', width: 20, hidden: true },
             { header: 'S no', key: 'sno', },
             { header: 'State Name', key: 'stateName', width: 20 },
-            { header: 'State Code', key: 'stateCode', },
+            { header: 'State Code', key: 'stateCode', width: 20},
             { header: 'ULB Name', key: 'name', width: 30, hidden: true },
             { header: 'ULB City Finance Code', key: 'code' },
             { header: 'Census Code', key: 'censusCode' },
@@ -348,7 +348,7 @@ const updateDulyElectedTemplate = async (req, res, next, worksheet, workbook, de
                 validationErrors.push({
                     r: index,
                     c: stateColumn,
-                    message: `${stateName[index]} data already updated, can't modify`
+                    message: `Data for ${stateName[index]} cannot be modified as it was already updated.`
                 });
             }
 
@@ -686,7 +686,7 @@ const updateGsdpTemplate = async (req, res, next, worksheet, workbook, design_ye
                 validationErrors.push({
                     r: index,
                     c: columnState,
-                    message: `${stateName[index]} data already updated, can't modify`
+                    message: `Data for ${stateName[index]} cannot be modified as it was already updated.`
                 });
             }
 
@@ -781,7 +781,7 @@ const updatestateGsdpTemplate = async (req, res, next, worksheet, workbook) => {
                 validationErrors.push({
                     r: index,
                     c: columnState,
-                    message: `${stateName} data already updated, can't modify`
+                    message: `Data for ${stateName} cannot be modified as it was already updated.`
                 });
             }
             
