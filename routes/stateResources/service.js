@@ -73,7 +73,7 @@ const handleDatabaseUpload = async (req, res, next) => {
                     fgColor: { argb: 'FFFF0000' }
                 };
                 cell.note = {
-                    texts: [{font: {size: 6.5, bold: true}, text: message }]
+                  texts: [{ text: message }],
                 };
             })
             const buffer = await workbook.xlsx.writeBuffer();
@@ -348,7 +348,7 @@ const updateDulyElectedTemplate = async (req, res, next, worksheet, workbook, de
                 validationErrors.push({
                     r: index,
                     c: stateColumn,
-                    message: `Data for ${stateName[index]} cannot be modified as it was already updated.`
+                    message: `${stateName[index]} data already updated, can't modify`
                 });
             }
 
@@ -400,10 +400,10 @@ const gsdpTemplate = async (req, res, next) => {
             { header: '_id', key: '_id', width: 20, hidden: true },
             { header: 'S no', key: 'sno', },
             { header: 'State Name', key: 'stateName', width: 20 },
-            { header: 'State Code', key: 'stateCode', },
+            { header: 'ULB type', key: 'ulbType', width: 30 },
             { header: 'ULB Name', key: 'name', width: 30, hidden: true },
             { header: 'ULB Code', key: 'code' },
-            { header: 'ULB type', key: 'ulbType' },
+            { header: 'State Code', key: 'stateCode' },
             { header: 'Census Code', key: 'censusCode' },
             { header: 'Population (As per Census 2011)', key: 'population', width: 20 },
             { header: 'Is it Million Plus (Yes/No)', key: 'isMillionPlus', width: 20 },
@@ -686,7 +686,7 @@ const updateGsdpTemplate = async (req, res, next, worksheet, workbook, design_ye
                 validationErrors.push({
                     r: index,
                     c: columnState,
-                    message: `Data for ${stateName[index]} cannot be modified as it was already updated.`
+                    message: `${stateName[index]} data already updated, can't modify`
                 });
             }
 
@@ -781,7 +781,7 @@ const updatestateGsdpTemplate = async (req, res, next, worksheet, workbook) => {
                 validationErrors.push({
                     r: index,
                     c: columnState,
-                    message: `Data for ${stateName} cannot be modified as it was already updated.`
+                    message: `${stateName} data already updated, can't modify`
                 });
             }
             
