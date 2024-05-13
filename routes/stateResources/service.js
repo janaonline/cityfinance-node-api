@@ -921,7 +921,8 @@ const stateExistsInTemplate = (existingStateArr, excelStateIdsOrName, templateNa
     let notFound = true;
     let excelStateNameOrId = [...excelStateIdsOrName]
     if (["gsdp", "dulyElected"].includes(templateName)) {
-        excelStateNameOrId = excelStateIdsOrName.slice(2);
+        const sliceValue = templateName == "dulyElected" ? 3 : 2
+        excelStateNameOrId = excelStateIdsOrName.slice(sliceValue);
     }
     if (existingStateArr.length != excelStateNameOrId.length) return notFound = false;
     existingStateArr.forEach((state) => {
