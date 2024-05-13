@@ -919,11 +919,7 @@ const removeStateFromFiles = async (req, res, next) => {
 
 const stateExistsInTemplate = (existingStateArr, excelStateIdsOrName, templateName = "stateGsdp") => {
     let notFound = true;
-    let excelStateNameOrId = [...excelStateIdsOrName]
-    if (["gsdp", "dulyElected"].includes(templateName)) {
-        const sliceValue = templateName == "dulyElected" ? 3 : 2
-        excelStateNameOrId = excelStateIdsOrName.slice(sliceValue);
-    }
+    let excelStateNameOrId = removeUndefinedAndEmpty(excelStateIdsOrName);
     if (existingStateArr.length != excelStateNameOrId.length) return notFound = false;
     existingStateArr.forEach((state) => {
         if (["gsdp", "dulyElected"].includes(templateName)) {
@@ -934,6 +930,10 @@ const stateExistsInTemplate = (existingStateArr, excelStateIdsOrName, templateNa
     });
     return notFound;
 };
+
+function removeUndefinedAndEmpty(stateArr) {
+    return stateArr.filter(item => item !== undefined && item !== "" && item !== "State Name");
+}
 
 const getResourceList = async (req, res, next) => {
     const skip = +req.query.skip || 0;
