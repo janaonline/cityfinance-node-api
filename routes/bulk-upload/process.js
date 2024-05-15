@@ -537,8 +537,9 @@ fieldsWithNoAmount variable. */
                 }
             }
             // for checking this non numeric case;
-            if(isNaN(balanceSheet?.liability) || isNaN(balanceSheet?.assets)){
+            if(isNaN(balanceSheet?.liability) || isNaN(balanceSheet?.assets) ){
                 message = "Please enter valid amount in Balance Sheet"
+                return message;
             }
             if (balanceSheet.liability != balanceSheet.assets) {
                 // If balance sheet doesn't matches
