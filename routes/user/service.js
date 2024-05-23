@@ -756,7 +756,7 @@ module.exports.create = async (req, res) => {
                 : '';
             newUser.createdBy = user._id;
             newUser.isEmailVerified = true;
-            let u = await User.findOne({ email: data['email'], role: { $in: ['MoHUA', 'USER', 'PARTNER', 'STATE'] } }).exec()
+            let u = await User.findOne({ email: data['email'], role: { $in: ['MoHUA', 'USER', 'PARTNER', 'STATE', 'XVIFC'] } }).exec()
             if (u) {
                 return Response.BadRequest(
                     res,

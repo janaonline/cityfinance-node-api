@@ -219,6 +219,20 @@ const validate = (data, role,_id)=>{
                         message:"Email already taken.",
                         ignoreDepartment:true
                     }
+                ],
+                XVIFC: [
+                    {
+                        key:"mobile",
+                        type:"mobile",
+                        message:"Mobile number already taken.",
+                        ignoreDepartment:true
+                    },
+                    {
+                        key:"email",
+                        type:"email",
+                        message:"Email already taken.",
+                        ignoreDepartment:true
+                    }
                 ]
             };
             let errors = [];
