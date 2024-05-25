@@ -9,6 +9,7 @@ const FormsJson = require("../../models/FormsJson");
 const XviFcForm1DataCollection = require("../../models/XviFcForm1DataCollection");
 const { financialYearTableHeader, tempDb, keys, getInputKeysByType } = require("./form1_json");
 const { financialYearTableHeaderForm2, tempDbForm2, keysForm2, getInputKeysByTypeForm2 } = require("./form2_json");
+const { getFromForUlb } = require("./ulbsAccessForm");
 const { yearsObj } = require("./xviFC_year");
 
 let priorTabsForXviFcForm1 = {
@@ -197,186 +198,386 @@ module.exports.createxviFcForm2Json = async (req, res) => {
     }
 };
 
-module.exports.getForm1 = async (req, res) => {
-    try {
-        let ulbId = req.query.ulb;
-        let roleName = req.query.role;
-        let from1AnswerFromDb = await XviFcForm1DataCollection.findOne({ ulb: ObjectId(ulbId) });
-        let xviFCForm1Tabs = await XviFcForm1Tabs.find({ formType: "form1" }).lean();
-        let xviFCForm1Table = tempDb;
+module.exports.getForm = async (req, res) => {
+    let ulbId = req.query.ulb;
+    let userForm = await Ulb.findOne({ _id: ObjectId(ulbId) }, { formType: 1 }).lean();
 
-        let role = roleName;
-        let currentFormStatus = from1AnswerFromDb && from1AnswerFromDb.formStatus ? from1AnswerFromDb.formStatus : '';
-
-        for (let index = 0; index < keys.length; index++) {
-            if (xviFCForm1Table.hasOwnProperty(keys[index])) {
-                let obj = xviFCForm1Table[keys[index]];
-                xviFCForm1Table[keys[index]] = getColumnWiseData(keys[index], obj, xviFCForm1Table.isDraft, "", role, currentFormStatus);
-                xviFCForm1Table['readonly'] = role == 'ULB' && (currentFormStatus == 'IN_PROGRESS' || currentFormStatus == 'NOT_STARTED') ? false : true;
-            }
+    if (userForm.formType == "form1") {
+        try {
+            let form1Data = await getForm1(ulbId, req.query.role);
+            return res.status(200).json({ status: true, message: "Success fetched data!", data: form1Data });
         }
+        catch (error) {
+            console.log("err", error);
+            return res.status(400).json({ status: false, message: "Something went wrong!" });
+        }
+    } else if (userForm.formType == "form2") {
+        try {
+            let form2Data = await getForm2(ulbId, req.query.role);
+            return res.status(200).json({ status: true, message: "Success fetched data!", data: form2Data });
+        }
+        catch (error) {
+            console.log("err", error);
+            return res.status(400).json({ status: false, message: "Something went wrong!" });
+        }
+    } else {
+        return res.status(400).json({ status: false, message: "Form not found for the user." });
+    }
 
-        // Create a json structure - questions.
-        let from1QuestionFromDb = await getModifiedTabsXvifcForm1(xviFCForm1Tabs, xviFCForm1Table);
+};
+
+async function getForm1(userId, roleName) {
+    let ulbId = userId;
+    let role = roleName;
+    let from1AnswerFromDb = await XviFcForm1DataCollection.findOne({ ulb: ObjectId(ulbId) });
+    let xviFCForm1Tabs = await XviFcForm1Tabs.find({ formType: "form1" }).lean();
+    let xviFCForm1Table = tempDb;
+
+    let currentFormStatus = from1AnswerFromDb && from1AnswerFromDb.formStatus ? from1AnswerFromDb.formStatus : '';
+
+    for (let index = 0; index < keys.length; index++) {
+        if (xviFCForm1Table.hasOwnProperty(keys[index])) {
+            let obj = xviFCForm1Table[keys[index]];
+            xviFCForm1Table[keys[index]] = getColumnWiseData(keys[index], obj, xviFCForm1Table.isDraft, "", role, currentFormStatus);
+            xviFCForm1Table['readonly'] = role == 'ULB' && (currentFormStatus == 'IN_PROGRESS' || currentFormStatus == 'NOT_STARTED') ? false : true;
+        }
+    }
+
+    // Create a json structure - questions.
+    let from1QuestionFromDb = await getModifiedTabsXvifcForm1(xviFCForm1Tabs, xviFCForm1Table);
 
 
-        if (from1AnswerFromDb) {
-            for (let eachQuestionObj of from1QuestionFromDb) {
-                let indexOfKey = from1AnswerFromDb.tab.findIndex(x => x.tabKey === eachQuestionObj.key);
+    if (from1AnswerFromDb) {
+        for (let eachQuestionObj of from1QuestionFromDb) {
+            let indexOfKey = from1AnswerFromDb.tab.findIndex(x => x.tabKey === eachQuestionObj.key);
 
-                if (indexOfKey > -1) {
-                    if (from1AnswerFromDb.tab[indexOfKey].tabKey == eachQuestionObj.key) {
+            if (indexOfKey > -1) {
+                if (from1AnswerFromDb.tab[indexOfKey].tabKey == eachQuestionObj.key) {
 
-                        for (let selectedData of from1AnswerFromDb.tab[indexOfKey].data) {
-                            if (eachQuestionObj.key == "financialData") {
-                                let questionKeyFinancialData = selectedData.key.split("_")[1]
-                                let yearDataIndex = eachQuestionObj.data[questionKeyFinancialData].year.findIndex(x => x.key === selectedData.key)
-                                if (yearDataIndex > -1 && selectedData.key == eachQuestionObj.data[questionKeyFinancialData].year[yearDataIndex].key) {
-                                    eachQuestionObj.data[questionKeyFinancialData].year[yearDataIndex].value = selectedData.saveAsDraftValue;
-                                }
+                    for (let selectedData of from1AnswerFromDb.tab[indexOfKey].data) {
+                        if (eachQuestionObj.key == "financialData") {
+                            let questionKeyFinancialData = selectedData.key.split("_")[1]
+                            let yearDataIndex = eachQuestionObj.data[questionKeyFinancialData].year.findIndex(x => x.key === selectedData.key)
+                            if (yearDataIndex > -1 && selectedData.key == eachQuestionObj.data[questionKeyFinancialData].year[yearDataIndex].key) {
+                                eachQuestionObj.data[questionKeyFinancialData].year[yearDataIndex].value = selectedData.saveAsDraftValue;
                             }
-
-                            if (eachQuestionObj.key == "uploadDoc") {
-                                let questionKeyFinancialData = selectedData.key.split("_")[1]
-                                let yearDataIndex = eachQuestionObj.data[questionKeyFinancialData].year.findIndex(x => x.key === selectedData.key)
-                                if (yearDataIndex > -1 && selectedData.key == eachQuestionObj.data[questionKeyFinancialData].year[yearDataIndex].key) {
-                                    eachQuestionObj.data[questionKeyFinancialData].year[yearDataIndex].file.name = selectedData.file[0].name;
-                                    eachQuestionObj.data[questionKeyFinancialData].year[yearDataIndex].file.url = selectedData.file[0].url;
-                                }
-                            }
-
-                            if (eachQuestionObj.key == "demographicData" || eachQuestionObj.key == 'accountPractice') {
-                                if (selectedData.key && eachQuestionObj.data[selectedData.key] && selectedData.key == eachQuestionObj.data[selectedData.key].key) {
-                                    eachQuestionObj.data[selectedData.key].value = selectedData.saveAsDraftValue;
-
-                                }
-                            }
-
                         }
+
+                        if (eachQuestionObj.key == "uploadDoc") {
+                            let questionKeyFinancialData = selectedData.key.split("_")[1]
+                            let yearDataIndex = eachQuestionObj.data[questionKeyFinancialData].year.findIndex(x => x.key === selectedData.key)
+                            if (yearDataIndex > -1 && selectedData.key == eachQuestionObj.data[questionKeyFinancialData].year[yearDataIndex].key) {
+                                eachQuestionObj.data[questionKeyFinancialData].year[yearDataIndex].file.name = selectedData.file[0].name;
+                                eachQuestionObj.data[questionKeyFinancialData].year[yearDataIndex].file.url = selectedData.file[0].url;
+                            }
+                        }
+
+                        if (eachQuestionObj.key == "demographicData" || eachQuestionObj.key == 'accountPractice') {
+                            if (selectedData.key && eachQuestionObj.data[selectedData.key] && selectedData.key == eachQuestionObj.data[selectedData.key].key) {
+                                eachQuestionObj.data[selectedData.key].value = selectedData.saveAsDraftValue;
+
+                            }
+                        }
+
                     }
                 }
             }
         }
-
-        // Add Primary keys to the keyDetails{}  - financialData.
-        let financialData = from1QuestionFromDb[1].data;
-        from1QuestionFromDb[1].data = await getUpdatedFinancialData_headers(financialData, Object.keys(financialData));
-
-        // Update the json with the pdf links - Already on Cityfinance.
-        let fileDataJson = from1QuestionFromDb[2].data.auditedAnnualFySt.year;
-        from1QuestionFromDb[2].data.auditedAnnualFySt.year = await getUploadDocLinks(ulbId, fileDataJson);
-
-        // Add Primary keys to the keyDetails{} - accountingPractices.
-        let accountingPractices = from1QuestionFromDb[3].data;
-        from1QuestionFromDb[3].data = await getUpdatedAccountingPractices_headers(accountingPractices, Object.keys(accountingPractices));
-
-        let viewData = {
-            ulb: ulbId,
-            // ulbName: ulbData.name,
-            // stateId: stateId,
-            // stateName: stateData.name,
-            tabs: from1QuestionFromDb,
-            financialYearTableHeader
-        };
-
-        return res.status(200).json({ status: true, message: "Success fetched data!", data: viewData });
-    } catch (error) {
-        console.log("err", error);
-        return res.status(400).json({ status: false, message: "Something went wrong!" });
     }
-};
 
-module.exports.getForm2 = async (req, res) => {
-    try {
-        let ulbId = req.query.ulb;
-        let roleName = req.query.role;
-        let from2AnswerFromDb = await XviFcForm1DataCollection.findOne({ ulb: ObjectId(ulbId) });
-        let xviFCForm2Tabs = await XviFcForm1Tabs.find({ formType: "form2" }).lean();
-        let xviFCForm2Table = tempDbForm2;
+    // Add Primary keys to the keyDetails{}  - financialData.
+    let financialData = from1QuestionFromDb[1].data;
+    from1QuestionFromDb[1].data = await getUpdatedFinancialData_headers(financialData, Object.keys(financialData));
 
-        let role = roleName;
-        let currentFormStatus = from2AnswerFromDb && from2AnswerFromDb.formStatus ? from2AnswerFromDb.formStatus : '';
+    // Update the json with the pdf links - Already on Cityfinance.
+    let fileDataJson = from1QuestionFromDb[2].data.auditedAnnualFySt.year;
+    from1QuestionFromDb[2].data.auditedAnnualFySt.year = await getUploadDocLinks(ulbId, fileDataJson);
 
-        for (let index = 0; index < keysForm2.length; index++) {
-            if (xviFCForm2Table.hasOwnProperty(keysForm2[index])) {
-                let obj = xviFCForm2Table[keysForm2[index]];
-                xviFCForm2Table[keysForm2[index]] = getColumnWiseDataForm2(keysForm2[index], obj, xviFCForm2Table.isDraft, "", role, currentFormStatus);
-                xviFCForm2Table['readonly'] = role == 'ULB' && (currentFormStatus == 'IN_PROGRESS' || currentFormStatus == 'NOT_STARTED') ? false : true;
-            }
+    // Add Primary keys to the keyDetails{} - accountingPractices.
+    let accountingPractices = from1QuestionFromDb[3].data;
+    from1QuestionFromDb[3].data = await getUpdatedAccountingPractices_headers(accountingPractices, Object.keys(accountingPractices));
+
+    let viewData = {
+        ulb: ulbId,
+        // ulbName: ulbData.name,
+        // stateId: stateId,
+        // stateName: stateData.name,
+        tabs: from1QuestionFromDb,
+        financialYearTableHeader
+    };
+
+    return viewData;
+
+}
+
+async function getForm2(userId, roleName) {
+
+    let ulbId = userId;
+    let role = roleName;
+    let from2AnswerFromDb = await XviFcForm1DataCollection.findOne({ ulb: ObjectId(ulbId) });
+    let xviFCForm2Tabs = await XviFcForm1Tabs.find({ formType: "form2" }).lean();
+    let xviFCForm2Table = tempDbForm2;
+
+    let currentFormStatus = from2AnswerFromDb && from2AnswerFromDb.formStatus ? from2AnswerFromDb.formStatus : '';
+
+    for (let index = 0; index < keysForm2.length; index++) {
+        if (xviFCForm2Table.hasOwnProperty(keysForm2[index])) {
+            let obj = xviFCForm2Table[keysForm2[index]];
+            xviFCForm2Table[keysForm2[index]] = getColumnWiseDataForm2(keysForm2[index], obj, xviFCForm2Table.isDraft, "", role, currentFormStatus);
+            xviFCForm2Table['readonly'] = role == 'ULB' && (currentFormStatus == 'IN_PROGRESS' || currentFormStatus == 'NOT_STARTED') ? false : true;
         }
+    }
 
-        // Create a json structure - questions.
-        let from2QuestionFromDb = await getModifiedTabsXvifcForm2(xviFCForm2Tabs, xviFCForm2Table);
+    // Create a json structure - questions.
+    let from2QuestionFromDb = await getModifiedTabsXvifcForm2(xviFCForm2Tabs, xviFCForm2Table);
 
-        if (from2AnswerFromDb) {
-            for (let eachQuestionObj of from2QuestionFromDb) {
-                let indexOfKey = from2AnswerFromDb.tab.findIndex(x => x.tabKey === eachQuestionObj.key);
+    if (from2AnswerFromDb) {
+        for (let eachQuestionObj of from2QuestionFromDb) {
+            let indexOfKey = from2AnswerFromDb.tab.findIndex(x => x.tabKey === eachQuestionObj.key);
 
-                if (indexOfKey > -1) {
-                    if (from2AnswerFromDb.tab[indexOfKey].tabKey == eachQuestionObj.key) {
+            if (indexOfKey > -1) {
+                if (from2AnswerFromDb.tab[indexOfKey].tabKey == eachQuestionObj.key) {
 
-                        for (let selectedData of from2AnswerFromDb.tab[indexOfKey].data) {
-                            if (eachQuestionObj.key == "financialData" || eachQuestionObj.key == "serviceLevelBenchmark") {
-                                let questionKeyFinancialData = selectedData.key.split("_")[1]
-                                let yearDataIndex = eachQuestionObj.data[questionKeyFinancialData].year.findIndex(x => x.key === selectedData.key)
-                                if (yearDataIndex > -1 && selectedData.key == eachQuestionObj.data[questionKeyFinancialData].year[yearDataIndex].key) {
-                                    eachQuestionObj.data[questionKeyFinancialData].year[yearDataIndex].value = selectedData.saveAsDraftValue;
-                                }
+                    for (let selectedData of from2AnswerFromDb.tab[indexOfKey].data) {
+                        if (eachQuestionObj.key == "financialData" || eachQuestionObj.key == "serviceLevelBenchmark") {
+                            let questionKeyFinancialData = selectedData.key.split("_")[1]
+                            let yearDataIndex = eachQuestionObj.data[questionKeyFinancialData].year.findIndex(x => x.key === selectedData.key)
+                            if (yearDataIndex > -1 && selectedData.key == eachQuestionObj.data[questionKeyFinancialData].year[yearDataIndex].key) {
+                                eachQuestionObj.data[questionKeyFinancialData].year[yearDataIndex].value = selectedData.saveAsDraftValue;
                             }
-
-                            if (eachQuestionObj.key == "uploadDoc") {
-                                let questionKeyFinancialData = selectedData.key.split("_")[1]
-                                let yearDataIndex = eachQuestionObj.data[questionKeyFinancialData].year.findIndex(x => x.key === selectedData.key)
-                                if (yearDataIndex > -1 && selectedData.key == eachQuestionObj.data[questionKeyFinancialData].year[yearDataIndex].key) {
-                                    eachQuestionObj.data[questionKeyFinancialData].year[yearDataIndex].file.name = selectedData.file[0].name;
-                                    eachQuestionObj.data[questionKeyFinancialData].year[yearDataIndex].file.url = selectedData.file[0].url;
-                                }
-                            }
-
-                            if (eachQuestionObj.key == "demographicData" || eachQuestionObj.key == 'accountPractice') {
-                                if (selectedData.key && eachQuestionObj.data[selectedData.key] && selectedData.key == eachQuestionObj.data[selectedData.key].key) {
-                                    eachQuestionObj.data[selectedData.key].value = selectedData.saveAsDraftValue;
-
-                                }
-                            }
-
                         }
+
+                        if (eachQuestionObj.key == "uploadDoc") {
+                            let questionKeyFinancialData = selectedData.key.split("_")[1]
+                            let yearDataIndex = eachQuestionObj.data[questionKeyFinancialData].year.findIndex(x => x.key === selectedData.key)
+                            if (yearDataIndex > -1 && selectedData.key == eachQuestionObj.data[questionKeyFinancialData].year[yearDataIndex].key) {
+                                eachQuestionObj.data[questionKeyFinancialData].year[yearDataIndex].file.name = selectedData.file[0].name;
+                                eachQuestionObj.data[questionKeyFinancialData].year[yearDataIndex].file.url = selectedData.file[0].url;
+                            }
+                        }
+
+                        if (eachQuestionObj.key == "demographicData" || eachQuestionObj.key == 'accountPractice') {
+                            if (selectedData.key && eachQuestionObj.data[selectedData.key] && selectedData.key == eachQuestionObj.data[selectedData.key].key) {
+                                eachQuestionObj.data[selectedData.key].value = selectedData.saveAsDraftValue;
+
+                            }
+                        }
+
                     }
                 }
             }
         }
-
-        // Add Primary keys to the keyDetails{}  - financialData.
-        let financialData = from2QuestionFromDb[1].data;
-        from2QuestionFromDb[1].data = await getUpdatedFinancialData_headersForm2(financialData, Object.keys(financialData));
-
-        // Update the json with the pdf links - Already on Cityfinance.
-        let fileDataJson = from2QuestionFromDb[2].data.auditedAnnualFySt.year;
-        from2QuestionFromDb[2].data.auditedAnnualFySt.year = await getUploadDocLinks(ulbId, fileDataJson);
-
-        // Add Primary keys to the keyDetails{} - accountingPractices.
-        let accountingPractices = from2QuestionFromDb[3].data;
-        from2QuestionFromDb[3].data = await getUpdatedAccountingPractices_headers(accountingPractices, Object.keys(accountingPractices));
-
-        // Add Primary keys to the keyDetails{} - serviceLevelBenchmark.
-        let serviceLevelBenchmark = from2QuestionFromDb[4].data;
-        from2QuestionFromDb[4].data = await getUpdatedServiceLevelBenchmark_headers(serviceLevelBenchmark, Object.keys(serviceLevelBenchmark));
-
-        let viewData = {
-            ulb: ulbId,
-            // ulbName: ulbData.name,
-            // stateId: stateId,
-            // stateName: stateData.name,
-            tabs: from2QuestionFromDb,
-            financialYearTableHeaderForm2
-        };
-
-        return res.status(200).json({ status: true, message: "Success fetched data!", data: viewData });
-    } catch (error) {
-        console.log("err", error);
-        return res.status(400).json({ status: false, message: "Something went wrong!" });
     }
+
+    // Add Primary keys to the keyDetails{}  - financialData.
+    let financialData = from2QuestionFromDb[1].data;
+    from2QuestionFromDb[1].data = await getUpdatedFinancialData_headersForm2(financialData, Object.keys(financialData));
+
+    // Update the json with the pdf links - Already on Cityfinance.
+    let fileDataJson = from2QuestionFromDb[2].data.auditedAnnualFySt.year;
+    from2QuestionFromDb[2].data.auditedAnnualFySt.year = await getUploadDocLinks(ulbId, fileDataJson);
+
+    // Add Primary keys to the keyDetails{} - accountingPractices.
+    let accountingPractices = from2QuestionFromDb[3].data;
+    from2QuestionFromDb[3].data = await getUpdatedAccountingPractices_headers(accountingPractices, Object.keys(accountingPractices));
+
+    // Add Primary keys to the keyDetails{} - serviceLevelBenchmark.
+    let serviceLevelBenchmark = from2QuestionFromDb[4].data;
+    from2QuestionFromDb[4].data = await getUpdatedServiceLevelBenchmark_headers(serviceLevelBenchmark, Object.keys(serviceLevelBenchmark));
+
+    let viewData = {
+        ulb: ulbId,
+        // ulbName: ulbData.name,
+        // stateId: stateId,
+        // stateName: stateData.name,
+        tabs: from2QuestionFromDb,
+        financialYearTableHeaderForm2
+    };
+
+    return viewData;
+
 };
+
+// module.exports.getForm1 = async (req, res) => {
+//     try {
+//         let ulbId = req.query.ulb;
+//         let roleName = req.query.role;
+//         let from1AnswerFromDb = await XviFcForm1DataCollection.findOne({ ulb: ObjectId(ulbId) });
+//         let xviFCForm1Tabs = await XviFcForm1Tabs.find({ formType: "form1" }).lean();
+//         let xviFCForm1Table = tempDb;
+
+//         let role = roleName;
+//         let currentFormStatus = from1AnswerFromDb && from1AnswerFromDb.formStatus ? from1AnswerFromDb.formStatus : '';
+
+//         for (let index = 0; index < keys.length; index++) {
+//             if (xviFCForm1Table.hasOwnProperty(keys[index])) {
+//                 let obj = xviFCForm1Table[keys[index]];
+//                 xviFCForm1Table[keys[index]] = getColumnWiseData(keys[index], obj, xviFCForm1Table.isDraft, "", role, currentFormStatus);
+//                 xviFCForm1Table['readonly'] = role == 'ULB' && (currentFormStatus == 'IN_PROGRESS' || currentFormStatus == 'NOT_STARTED') ? false : true;
+//             }
+//         }
+
+//         // Create a json structure - questions.
+//         let from1QuestionFromDb = await getModifiedTabsXvifcForm1(xviFCForm1Tabs, xviFCForm1Table);
+
+
+//         if (from1AnswerFromDb) {
+//             for (let eachQuestionObj of from1QuestionFromDb) {
+//                 let indexOfKey = from1AnswerFromDb.tab.findIndex(x => x.tabKey === eachQuestionObj.key);
+
+//                 if (indexOfKey > -1) {
+//                     if (from1AnswerFromDb.tab[indexOfKey].tabKey == eachQuestionObj.key) {
+
+//                         for (let selectedData of from1AnswerFromDb.tab[indexOfKey].data) {
+//                             if (eachQuestionObj.key == "financialData") {
+//                                 let questionKeyFinancialData = selectedData.key.split("_")[1]
+//                                 let yearDataIndex = eachQuestionObj.data[questionKeyFinancialData].year.findIndex(x => x.key === selectedData.key)
+//                                 if (yearDataIndex > -1 && selectedData.key == eachQuestionObj.data[questionKeyFinancialData].year[yearDataIndex].key) {
+//                                     eachQuestionObj.data[questionKeyFinancialData].year[yearDataIndex].value = selectedData.saveAsDraftValue;
+//                                 }
+//                             }
+
+//                             if (eachQuestionObj.key == "uploadDoc") {
+//                                 let questionKeyFinancialData = selectedData.key.split("_")[1]
+//                                 let yearDataIndex = eachQuestionObj.data[questionKeyFinancialData].year.findIndex(x => x.key === selectedData.key)
+//                                 if (yearDataIndex > -1 && selectedData.key == eachQuestionObj.data[questionKeyFinancialData].year[yearDataIndex].key) {
+//                                     eachQuestionObj.data[questionKeyFinancialData].year[yearDataIndex].file.name = selectedData.file[0].name;
+//                                     eachQuestionObj.data[questionKeyFinancialData].year[yearDataIndex].file.url = selectedData.file[0].url;
+//                                 }
+//                             }
+
+//                             if (eachQuestionObj.key == "demographicData" || eachQuestionObj.key == 'accountPractice') {
+//                                 if (selectedData.key && eachQuestionObj.data[selectedData.key] && selectedData.key == eachQuestionObj.data[selectedData.key].key) {
+//                                     eachQuestionObj.data[selectedData.key].value = selectedData.saveAsDraftValue;
+
+//                                 }
+//                             }
+
+//                         }
+//                     }
+//                 }
+//             }
+//         }
+
+//         // Add Primary keys to the keyDetails{}  - financialData.
+//         let financialData = from1QuestionFromDb[1].data;
+//         from1QuestionFromDb[1].data = await getUpdatedFinancialData_headers(financialData, Object.keys(financialData));
+
+//         // Update the json with the pdf links - Already on Cityfinance.
+//         let fileDataJson = from1QuestionFromDb[2].data.auditedAnnualFySt.year;
+//         from1QuestionFromDb[2].data.auditedAnnualFySt.year = await getUploadDocLinks(ulbId, fileDataJson);
+
+//         // Add Primary keys to the keyDetails{} - accountingPractices.
+//         let accountingPractices = from1QuestionFromDb[3].data;
+//         from1QuestionFromDb[3].data = await getUpdatedAccountingPractices_headers(accountingPractices, Object.keys(accountingPractices));
+
+//         let viewData = {
+//             ulb: ulbId,
+//             // ulbName: ulbData.name,
+//             // stateId: stateId,
+//             // stateName: stateData.name,
+//             tabs: from1QuestionFromDb,
+//             financialYearTableHeader
+//         };
+
+//         return res.status(200).json({ status: true, message: "Success fetched data!", data: viewData });
+//     } catch (error) {
+//         console.log("err", error);
+//         return res.status(400).json({ status: false, message: "Something went wrong!" });
+//     }
+// };
+
+// module.exports.getForm2 = async (req, res) => {
+//     try {
+//         let ulbId = req.query.ulb;
+//         let roleName = req.query.role;
+//         let from2AnswerFromDb = await XviFcForm1DataCollection.findOne({ ulb: ObjectId(ulbId) });
+//         let xviFCForm2Tabs = await XviFcForm1Tabs.find({ formType: "form2" }).lean();
+//         let xviFCForm2Table = tempDbForm2;
+
+//         let role = roleName;
+//         let currentFormStatus = from2AnswerFromDb && from2AnswerFromDb.formStatus ? from2AnswerFromDb.formStatus : '';
+
+//         for (let index = 0; index < keysForm2.length; index++) {
+//             if (xviFCForm2Table.hasOwnProperty(keysForm2[index])) {
+//                 let obj = xviFCForm2Table[keysForm2[index]];
+//                 xviFCForm2Table[keysForm2[index]] = getColumnWiseDataForm2(keysForm2[index], obj, xviFCForm2Table.isDraft, "", role, currentFormStatus);
+//                 xviFCForm2Table['readonly'] = role == 'ULB' && (currentFormStatus == 'IN_PROGRESS' || currentFormStatus == 'NOT_STARTED') ? false : true;
+//             }
+//         }
+
+//         // Create a json structure - questions.
+//         let from2QuestionFromDb = await getModifiedTabsXvifcForm2(xviFCForm2Tabs, xviFCForm2Table);
+
+//         if (from2AnswerFromDb) {
+//             for (let eachQuestionObj of from2QuestionFromDb) {
+//                 let indexOfKey = from2AnswerFromDb.tab.findIndex(x => x.tabKey === eachQuestionObj.key);
+
+//                 if (indexOfKey > -1) {
+//                     if (from2AnswerFromDb.tab[indexOfKey].tabKey == eachQuestionObj.key) {
+
+//                         for (let selectedData of from2AnswerFromDb.tab[indexOfKey].data) {
+//                             if (eachQuestionObj.key == "financialData" || eachQuestionObj.key == "serviceLevelBenchmark") {
+//                                 let questionKeyFinancialData = selectedData.key.split("_")[1]
+//                                 let yearDataIndex = eachQuestionObj.data[questionKeyFinancialData].year.findIndex(x => x.key === selectedData.key)
+//                                 if (yearDataIndex > -1 && selectedData.key == eachQuestionObj.data[questionKeyFinancialData].year[yearDataIndex].key) {
+//                                     eachQuestionObj.data[questionKeyFinancialData].year[yearDataIndex].value = selectedData.saveAsDraftValue;
+//                                 }
+//                             }
+
+//                             if (eachQuestionObj.key == "uploadDoc") {
+//                                 let questionKeyFinancialData = selectedData.key.split("_")[1]
+//                                 let yearDataIndex = eachQuestionObj.data[questionKeyFinancialData].year.findIndex(x => x.key === selectedData.key)
+//                                 if (yearDataIndex > -1 && selectedData.key == eachQuestionObj.data[questionKeyFinancialData].year[yearDataIndex].key) {
+//                                     eachQuestionObj.data[questionKeyFinancialData].year[yearDataIndex].file.name = selectedData.file[0].name;
+//                                     eachQuestionObj.data[questionKeyFinancialData].year[yearDataIndex].file.url = selectedData.file[0].url;
+//                                 }
+//                             }
+
+//                             if (eachQuestionObj.key == "demographicData" || eachQuestionObj.key == 'accountPractice') {
+//                                 if (selectedData.key && eachQuestionObj.data[selectedData.key] && selectedData.key == eachQuestionObj.data[selectedData.key].key) {
+//                                     eachQuestionObj.data[selectedData.key].value = selectedData.saveAsDraftValue;
+
+//                                 }
+//                             }
+
+//                         }
+//                     }
+//                 }
+//             }
+//         }
+
+//         // Add Primary keys to the keyDetails{}  - financialData.
+//         let financialData = from2QuestionFromDb[1].data;
+//         from2QuestionFromDb[1].data = await getUpdatedFinancialData_headersForm2(financialData, Object.keys(financialData));
+
+//         // Update the json with the pdf links - Already on Cityfinance.
+//         let fileDataJson = from2QuestionFromDb[2].data.auditedAnnualFySt.year;
+//         from2QuestionFromDb[2].data.auditedAnnualFySt.year = await getUploadDocLinks(ulbId, fileDataJson);
+
+//         // Add Primary keys to the keyDetails{} - accountingPractices.
+//         let accountingPractices = from2QuestionFromDb[3].data;
+//         from2QuestionFromDb[3].data = await getUpdatedAccountingPractices_headers(accountingPractices, Object.keys(accountingPractices));
+
+//         // Add Primary keys to the keyDetails{} - serviceLevelBenchmark.
+//         let serviceLevelBenchmark = from2QuestionFromDb[4].data;
+//         from2QuestionFromDb[4].data = await getUpdatedServiceLevelBenchmark_headers(serviceLevelBenchmark, Object.keys(serviceLevelBenchmark));
+
+//         let viewData = {
+//             ulb: ulbId,
+//             // ulbName: ulbData.name,
+//             // stateId: stateId,
+//             // stateName: stateData.name,
+//             tabs: from2QuestionFromDb,
+//             financialYearTableHeaderForm2
+//         };
+
+//         return res.status(200).json({ status: true, message: "Success fetched data!", data: viewData });
+//     } catch (error) {
+//         console.log("err", error);
+//         return res.status(400).json({ status: false, message: "Something went wrong!" });
+//     }
+// };
 
 module.exports.submitFrom1 = async (req, res) => {
     try {
@@ -2031,7 +2232,8 @@ let keyDetailsForm2 = {
         logic: '',
         min: 0,
         max: 999,
-        decimal: ''
+        decimal: '',
+        warning: { "value": 135, "condition": "gt", "message": 'Please note that the entered value exceeds the threshold of 135 lpcd' }
     },
     extentOfMeteringWs: {
         formFieldType: 'number',
@@ -2091,7 +2293,8 @@ let keyDetailsForm2 = {
         logic: '',
         min: 0,
         max: 100,
-        decimal: ''
+        decimal: '',
+        warning: { "value": 80, "condition": "gt", "message": 'Please note that the entered value exceeds the threshold of 80 lpcd' }
     },
     qualityOfWs: {
         formFieldType: 'number',
@@ -2136,7 +2339,8 @@ let keyDetailsForm2 = {
         logic: '',
         min: 0,
         max: 100,
-        decimal: ''
+        decimal: '',
+        warning: { "value": 90, "condition": "gt", "message": 'Please note that the entered value exceeds the threshold of 90 lpcd' }
     },
     coverageOfToiletsSew: {
         formFieldType: 'number',
@@ -2271,7 +2475,8 @@ let keyDetailsForm2 = {
         logic: '',
         min: 0,
         max: 100,
-        decimal: ''
+        decimal: '',
+        warning: { "value": 90, "condition": "gt", "message": 'Please note that the entered value exceeds the threshold of 90 lpcd' }
     },
     householdLevelCoverageLevelSwm: {
         formFieldType: 'number',
@@ -2331,7 +2536,8 @@ let keyDetailsForm2 = {
         logic: '',
         min: 0,
         max: 100,
-        decimal: ''
+        decimal: '',
+        warning: { "value": 80, "condition": "gt", "message": 'Please note that the entered value exceeds the threshold of 80 lpcd' }
     },
     extentOfScientificSolidSwm: {
         formFieldType: 'number',
@@ -2376,7 +2582,8 @@ let keyDetailsForm2 = {
         logic: '',
         min: 0,
         max: 100,
-        decimal: ''
+        decimal: '',
+        warning: { "value": 90, "condition": "gt", "message": 'Please note that the entered value exceeds the threshold of 90 lpcd' }
     },
     efficiencyInRedressalCustomerSwm: {
         formFieldType: 'number',
@@ -2391,7 +2598,8 @@ let keyDetailsForm2 = {
         logic: '',
         min: 0,
         max: 100,
-        decimal: ''
+        decimal: '',
+        warning: { "value": 80, "condition": "gt", "message": 'Please note that the entered value exceeds the threshold of 80 lpcd' }
     },
     coverageOfStormDrainage: {
         formFieldType: 'number',
@@ -2908,7 +3116,6 @@ const getColumnWiseDataForm2 = (key, obj, isDraft, dataSource = "", role, formSt
             };
         }
         case "grantsWithoutState": {
-            console.log("dkfja", keyDetailsForm2["grantsWithoutState"]);
             return {
                 ...getInputKeysByTypeForm2(keyDetailsForm2["grantsWithoutState"], dataSource),
                 ...obj,
@@ -3782,8 +3989,6 @@ class tabsUpdationServiceFR2 {
 async function getUploadDocLinks(ulbId, fileDataJson) {
     // Get years from UlbLedger.
     let yearsLedgerDataAvailable = await UlbLedger.distinct("financialYear", { $and: [{ "financialYear": { $in: financialYearTableHeader } }, { "ulb": ObjectId(ulbId) }] });
-
-    console.log("Data in ledger", yearsLedgerDataAvailable);
 
     // Get pdf links from "DataCollectionForm" collection.
     if (yearsLedgerDataAvailable.length > 0) {

@@ -3514,11 +3514,13 @@ function getInputKeysByType(selectedKeyDetails, dataSource) {
     }
 
     if (selectedKeyDetails.formFieldType === "number") {
+        obj.warning = [];
         obj.max = selectedKeyDetails.max;
         obj.min = selectedKeyDetails.min;
         obj.decimal = selectedKeyDetails.decimal;
         obj.validation = selectedKeyDetails.validation;
         obj.logic = selectedKeyDetails.logic;
+        obj.warning.push({ "value": 0, "condition": "eq", "message": 'Are you sure you want to continue with 0' });
     }
     else if (selectedKeyDetails.formFieldType === "radio" || selectedKeyDetails.formFieldType === "dropdown") {
         obj.options = selectedKeyDetails.options;
@@ -3537,19 +3539,15 @@ function getInputKeysByType(selectedKeyDetails, dataSource) {
         let yearData = [];
         for (let year of financialYearTableHeader) {
             let eachYearobj = {};
+            eachYearobj.warning = [];
             eachYearobj["label"] = `FY ${year}`;
             eachYearobj["key"] = `fy${year}_${selectedKeyDetails.key}`;
             eachYearobj["postion"] = positionCounter++;
             eachYearobj["type"] = selectedKeyDetails.key;
             eachYearobj["formFieldType"] = selectedKeyDetails.formFieldType;
             eachYearobj["value"] = "";
-            // eachYearobj["year"] = yearId[yearArr[i]];
-            // eachYearobj["isRupee"] = true;
-            // eachYearobj["code"] = [];
-            // eachYearobj["file"] = "";
-            // eachYearobj["bottomText"] = "";
-            // eachYearobj["status"] = "PENDING";
-            // eachYearobj["rejectReason"] = "";
+
+            if (selectedKeyDetails.formFieldType === "number") eachYearobj.warning.push({ "value": 0, "condition": "eq", "message": 'Are you sure you want to continue with 0' });
 
             if (selectedKeyDetails.formFieldType === "file") {
                 eachYearobj["isPdfAvailable"] = "";
@@ -3560,8 +3558,8 @@ function getInputKeysByType(selectedKeyDetails, dataSource) {
                 eachYearobj["fileAlreadyOnCf"] = [{
                     "name": "",
                     "url": "",
-                    "type":"",
-                    "label":""
+                    "type": "",
+                    "label": ""
                 }];
             }
 

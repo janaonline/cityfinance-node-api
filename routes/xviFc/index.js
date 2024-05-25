@@ -17,8 +17,9 @@ router.post('/onboard', passport.authenticate('jwt', { session: false }), (req, 
 
 
 // router.post('/', verifyToken, xviFcService.get);
-router.get('/fetch_form1', xviFcService.getForm1);
-router.get('/fetch_form2', xviFcService.getForm2);
+router.get('/fetch_form', xviFcService.getForm);
+// router.get('/fetch_form1', xviFcService.getForm1);
+// router.get('/fetch_form2', xviFcService.getForm2);
 router.post('/create_tabs', xviFcService.createxviFcForm1Tabs);
 router.post('/create_formJson', xviFcService.createxviFcForm1Json);
 router.post('/create_formJson2', xviFcService.createxviFcForm2Json);

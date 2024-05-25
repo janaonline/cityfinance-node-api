@@ -13,7 +13,7 @@ let eachQuestionkeysForm2 = [
     "isElected",
     "yearOfConstitution",
     "yearOfSlb",
-    
+
     "sourceOfFd",
     "pTax",
     "otherTax",
@@ -578,11 +578,13 @@ function getInputKeysByType(selectedKeyDetails, dataSource) {
     }
 
     if (selectedKeyDetails.formFieldType === "number") {
+        obj.warning = [];
         obj.max = selectedKeyDetails.max;
         obj.min = selectedKeyDetails.min;
         obj.decimal = selectedKeyDetails.decimal;
         obj.validation = selectedKeyDetails.validation;
         obj.logic = selectedKeyDetails.logic;
+        obj.warning.push({ "value": 0, "condition": "eq", "message": 'Are you sure you want to continue with 0' });
     }
     else if (selectedKeyDetails.formFieldType === "radio" || selectedKeyDetails.formFieldType === "dropdown") {
         obj.options = selectedKeyDetails.options;
@@ -601,12 +603,18 @@ function getInputKeysByType(selectedKeyDetails, dataSource) {
         let yearData = [];
         for (let year of financialYearTableHeader) {
             let eachYearobj = {};
+            eachYearobj.warning = [];
             eachYearobj["label"] = `FY ${year}`;
             eachYearobj["key"] = `fy${year}_${selectedKeyDetails.key}`;
             eachYearobj["postion"] = positionCounter++;
             eachYearobj["type"] = selectedKeyDetails.key;
             eachYearobj["formFieldType"] = selectedKeyDetails.formFieldType;
             eachYearobj["value"] = "";
+
+            if (selectedKeyDetails.formFieldType === "number") {
+                eachYearobj.warning.push({ "value": 0, "condition": "eq", "message": 'Are you sure you want to continue with 0' });
+                if (selectedKeyDetails.warning) eachYearobj.warning.push(selectedKeyDetails.warning);
+            }
 
             if (selectedKeyDetails.formFieldType === "file") {
                 eachYearobj["isPdfAvailable"] = "";
