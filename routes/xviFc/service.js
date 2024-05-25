@@ -3788,29 +3788,28 @@ async function getUploadDocLinks(ulbId, fileDataJson) {
     // Get pdf links from "DataCollectionForm" collection.
     if (yearsLedgerDataAvailable.length > 0) {
         let alreadyOnCfPdfs = {};
-        for (let year of yearsLedgerDataAvailable) {
+        // for (let year of yearsLedgerDataAvailable) {
 
-            let dynamicKey = 'documents.financial_year_' + year.replace("-", "_");
-            let tempDyanamicKey = 'financial_year_' + year.replace("-", "_");
-            let availablePdfData = await DataCollectionForm.find({ [`${dynamicKey}`]: { '$exists': 1 }, "ulb": ObjectId(ulbId) }, { [`${dynamicKey}`]: 1 });
+        //     let dynamicKey = 'documents.financial_year_' + year.replace("-", "_");
+        //     let tempDyanamicKey = 'financial_year_' + year.replace("-", "_");
+        //     //let availablePdfData = await DataCollectionForm.find({ [`${dynamicKey}`]: { '$exists': 1 }, "ulb": ObjectId(ulbId) }, { [`${dynamicKey}`]: 1 });
 
-            if (
-                availablePdfData[0] &&
-                availablePdfData[0].documents[tempDyanamicKey].pdf.length > 0 &&
-                availablePdfData[0].documents[tempDyanamicKey].pdf[0].url
-            ) {
-                let obj = {}
-                let temp = { "year": "", "collection": "dataCollectionForm", "availablePdfData": [] };
-                obj.name = availablePdfData[0].documents[tempDyanamicKey].pdf[0].name
-                obj.url = availablePdfData[0].documents[tempDyanamicKey].pdf[0].url
-                obj.type = ''
-                obj.label = ''
-                temp.availablePdfData.push(obj);
-                temp.year = year;
-                // alreadyOnCfPdfs.push(temp);
-                alreadyOnCfPdfs[year] = temp;
-            }
-        }
+        //     if (
+        //         availablePdfData[0] &&
+        //         availablePdfData[0].documents[tempDyanamicKey].pdf.length > 0 &&
+        //         availablePdfData[0].documents[tempDyanamicKey].pdf[0].url
+        //     ) {
+        //         let obj={}
+        //         let temp = { "year": "", "collection": "dataCollectionForm", "availablePdfData": [] };
+        //         obj.name=availablePdfData[0].documents[tempDyanamicKey].pdf[0].name
+        //         obj.url=availablePdfData[0].documents[tempDyanamicKey].pdf[0].url
+        //         obj.type=''
+        //         obj.label=''
+        //         temp.availablePdfData.push(obj);
+        //         temp.year = year;
+        //         alreadyOnCfPdfs[year] = temp;
+        //     }
+        // }
 
         // Get pdf links from "AnnualAccountDatas" collection.
         let availablePdfData_aa = await AnnualAccountData.find({ "ulb": ObjectId(ulbId) });
