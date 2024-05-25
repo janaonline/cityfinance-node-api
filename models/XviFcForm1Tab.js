@@ -8,9 +8,7 @@ const XviFcForm1TabsSchema = new Schema({
         required: [true, "Tab label is required."]
     },
     id: {
-        unique: true,
         type: String,
-        required: [true, "id is required."]
     },
     key: {
         type: String,
@@ -26,8 +24,11 @@ const XviFcForm1TabsSchema = new Schema({
     },
     displayPriority: {
         type: Number,
-        required: [true, "Display priority is required."]
+        // required: [true, "Display priority is required."]
     },
-
+    formType: {
+        type: String,
+        default: ""
+    }
 })
 module.exports = mongoose.model("XviFcForm1Tabs", XviFcForm1TabsSchema)
