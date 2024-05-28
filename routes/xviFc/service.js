@@ -180,7 +180,8 @@ module.exports.createxviFcForm2Json = async (req, res) => {
             stateId: "",
             stateName: "",
             tabs: modifiedTabs,
-            financialYearTableHeaderForm2
+            // financialYearTableHeaderForm2
+            financialYearTableHeader
         };
 
 
@@ -391,193 +392,13 @@ async function getForm2(userId, roleName) {
         // stateId: stateId,
         // stateName: stateData.name,
         tabs: from2QuestionFromDb,
-        financialYearTableHeaderForm2
+        // financialYearTableHeaderForm2
+        financialYearTableHeader
     };
 
     return viewData;
 
 };
-
-// module.exports.getForm1 = async (req, res) => {
-//     try {
-//         let ulbId = req.query.ulb;
-//         let roleName = req.query.role;
-//         let from1AnswerFromDb = await XviFcForm1DataCollection.findOne({ ulb: ObjectId(ulbId) });
-//         let xviFCForm1Tabs = await XviFcForm1Tabs.find({ formType: "form1" }).lean();
-//         let xviFCForm1Table = tempDb;
-
-//         let role = roleName;
-//         let currentFormStatus = from1AnswerFromDb && from1AnswerFromDb.formStatus ? from1AnswerFromDb.formStatus : '';
-
-//         for (let index = 0; index < keys.length; index++) {
-//             if (xviFCForm1Table.hasOwnProperty(keys[index])) {
-//                 let obj = xviFCForm1Table[keys[index]];
-//                 xviFCForm1Table[keys[index]] = getColumnWiseData(keys[index], obj, xviFCForm1Table.isDraft, "", role, currentFormStatus);
-//                 xviFCForm1Table['readonly'] = role == 'ULB' && (currentFormStatus == 'IN_PROGRESS' || currentFormStatus == 'NOT_STARTED') ? false : true;
-//             }
-//         }
-
-//         // Create a json structure - questions.
-//         let from1QuestionFromDb = await getModifiedTabsXvifcForm1(xviFCForm1Tabs, xviFCForm1Table);
-
-
-//         if (from1AnswerFromDb) {
-//             for (let eachQuestionObj of from1QuestionFromDb) {
-//                 let indexOfKey = from1AnswerFromDb.tab.findIndex(x => x.tabKey === eachQuestionObj.key);
-
-//                 if (indexOfKey > -1) {
-//                     if (from1AnswerFromDb.tab[indexOfKey].tabKey == eachQuestionObj.key) {
-
-//                         for (let selectedData of from1AnswerFromDb.tab[indexOfKey].data) {
-//                             if (eachQuestionObj.key == "financialData") {
-//                                 let questionKeyFinancialData = selectedData.key.split("_")[1]
-//                                 let yearDataIndex = eachQuestionObj.data[questionKeyFinancialData].year.findIndex(x => x.key === selectedData.key)
-//                                 if (yearDataIndex > -1 && selectedData.key == eachQuestionObj.data[questionKeyFinancialData].year[yearDataIndex].key) {
-//                                     eachQuestionObj.data[questionKeyFinancialData].year[yearDataIndex].value = selectedData.saveAsDraftValue;
-//                                 }
-//                             }
-
-//                             if (eachQuestionObj.key == "uploadDoc") {
-//                                 let questionKeyFinancialData = selectedData.key.split("_")[1]
-//                                 let yearDataIndex = eachQuestionObj.data[questionKeyFinancialData].year.findIndex(x => x.key === selectedData.key)
-//                                 if (yearDataIndex > -1 && selectedData.key == eachQuestionObj.data[questionKeyFinancialData].year[yearDataIndex].key) {
-//                                     eachQuestionObj.data[questionKeyFinancialData].year[yearDataIndex].file.name = selectedData.file[0].name;
-//                                     eachQuestionObj.data[questionKeyFinancialData].year[yearDataIndex].file.url = selectedData.file[0].url;
-//                                 }
-//                             }
-
-//                             if (eachQuestionObj.key == "demographicData" || eachQuestionObj.key == 'accountPractice') {
-//                                 if (selectedData.key && eachQuestionObj.data[selectedData.key] && selectedData.key == eachQuestionObj.data[selectedData.key].key) {
-//                                     eachQuestionObj.data[selectedData.key].value = selectedData.saveAsDraftValue;
-
-//                                 }
-//                             }
-
-//                         }
-//                     }
-//                 }
-//             }
-//         }
-
-//         // Add Primary keys to the keyDetails{}  - financialData.
-//         let financialData = from1QuestionFromDb[1].data;
-//         from1QuestionFromDb[1].data = await getUpdatedFinancialData_headers(financialData, Object.keys(financialData));
-
-//         // Update the json with the pdf links - Already on Cityfinance.
-//         let fileDataJson = from1QuestionFromDb[2].data.auditedAnnualFySt.year;
-//         from1QuestionFromDb[2].data.auditedAnnualFySt.year = await getUploadDocLinks(ulbId, fileDataJson);
-
-//         // Add Primary keys to the keyDetails{} - accountingPractices.
-//         let accountingPractices = from1QuestionFromDb[3].data;
-//         from1QuestionFromDb[3].data = await getUpdatedAccountingPractices_headers(accountingPractices, Object.keys(accountingPractices));
-
-//         let viewData = {
-//             ulb: ulbId,
-//             // ulbName: ulbData.name,
-//             // stateId: stateId,
-//             // stateName: stateData.name,
-//             tabs: from1QuestionFromDb,
-//             financialYearTableHeader
-//         };
-
-//         return res.status(200).json({ status: true, message: "Success fetched data!", data: viewData });
-//     } catch (error) {
-//         console.log("err", error);
-//         return res.status(400).json({ status: false, message: "Something went wrong!" });
-//     }
-// };
-
-// module.exports.getForm2 = async (req, res) => {
-//     try {
-//         let ulbId = req.query.ulb;
-//         let roleName = req.query.role;
-//         let from2AnswerFromDb = await XviFcForm1DataCollection.findOne({ ulb: ObjectId(ulbId) });
-//         let xviFCForm2Tabs = await XviFcForm1Tabs.find({ formType: "form2" }).lean();
-//         let xviFCForm2Table = tempDbForm2;
-
-//         let role = roleName;
-//         let currentFormStatus = from2AnswerFromDb && from2AnswerFromDb.formStatus ? from2AnswerFromDb.formStatus : '';
-
-//         for (let index = 0; index < keysForm2.length; index++) {
-//             if (xviFCForm2Table.hasOwnProperty(keysForm2[index])) {
-//                 let obj = xviFCForm2Table[keysForm2[index]];
-//                 xviFCForm2Table[keysForm2[index]] = getColumnWiseDataForm2(keysForm2[index], obj, xviFCForm2Table.isDraft, "", role, currentFormStatus);
-//                 xviFCForm2Table['readonly'] = role == 'ULB' && (currentFormStatus == 'IN_PROGRESS' || currentFormStatus == 'NOT_STARTED') ? false : true;
-//             }
-//         }
-
-//         // Create a json structure - questions.
-//         let from2QuestionFromDb = await getModifiedTabsXvifcForm2(xviFCForm2Tabs, xviFCForm2Table);
-
-//         if (from2AnswerFromDb) {
-//             for (let eachQuestionObj of from2QuestionFromDb) {
-//                 let indexOfKey = from2AnswerFromDb.tab.findIndex(x => x.tabKey === eachQuestionObj.key);
-
-//                 if (indexOfKey > -1) {
-//                     if (from2AnswerFromDb.tab[indexOfKey].tabKey == eachQuestionObj.key) {
-
-//                         for (let selectedData of from2AnswerFromDb.tab[indexOfKey].data) {
-//                             if (eachQuestionObj.key == "financialData" || eachQuestionObj.key == "serviceLevelBenchmark") {
-//                                 let questionKeyFinancialData = selectedData.key.split("_")[1]
-//                                 let yearDataIndex = eachQuestionObj.data[questionKeyFinancialData].year.findIndex(x => x.key === selectedData.key)
-//                                 if (yearDataIndex > -1 && selectedData.key == eachQuestionObj.data[questionKeyFinancialData].year[yearDataIndex].key) {
-//                                     eachQuestionObj.data[questionKeyFinancialData].year[yearDataIndex].value = selectedData.saveAsDraftValue;
-//                                 }
-//                             }
-
-//                             if (eachQuestionObj.key == "uploadDoc") {
-//                                 let questionKeyFinancialData = selectedData.key.split("_")[1]
-//                                 let yearDataIndex = eachQuestionObj.data[questionKeyFinancialData].year.findIndex(x => x.key === selectedData.key)
-//                                 if (yearDataIndex > -1 && selectedData.key == eachQuestionObj.data[questionKeyFinancialData].year[yearDataIndex].key) {
-//                                     eachQuestionObj.data[questionKeyFinancialData].year[yearDataIndex].file.name = selectedData.file[0].name;
-//                                     eachQuestionObj.data[questionKeyFinancialData].year[yearDataIndex].file.url = selectedData.file[0].url;
-//                                 }
-//                             }
-
-//                             if (eachQuestionObj.key == "demographicData" || eachQuestionObj.key == 'accountPractice') {
-//                                 if (selectedData.key && eachQuestionObj.data[selectedData.key] && selectedData.key == eachQuestionObj.data[selectedData.key].key) {
-//                                     eachQuestionObj.data[selectedData.key].value = selectedData.saveAsDraftValue;
-
-//                                 }
-//                             }
-
-//                         }
-//                     }
-//                 }
-//             }
-//         }
-
-//         // Add Primary keys to the keyDetails{}  - financialData.
-//         let financialData = from2QuestionFromDb[1].data;
-//         from2QuestionFromDb[1].data = await getUpdatedFinancialData_headersForm2(financialData, Object.keys(financialData));
-
-//         // Update the json with the pdf links - Already on Cityfinance.
-//         let fileDataJson = from2QuestionFromDb[2].data.auditedAnnualFySt.year;
-//         from2QuestionFromDb[2].data.auditedAnnualFySt.year = await getUploadDocLinks(ulbId, fileDataJson);
-
-//         // Add Primary keys to the keyDetails{} - accountingPractices.
-//         let accountingPractices = from2QuestionFromDb[3].data;
-//         from2QuestionFromDb[3].data = await getUpdatedAccountingPractices_headers(accountingPractices, Object.keys(accountingPractices));
-
-//         // Add Primary keys to the keyDetails{} - serviceLevelBenchmark.
-//         let serviceLevelBenchmark = from2QuestionFromDb[4].data;
-//         from2QuestionFromDb[4].data = await getUpdatedServiceLevelBenchmark_headers(serviceLevelBenchmark, Object.keys(serviceLevelBenchmark));
-
-//         let viewData = {
-//             ulb: ulbId,
-//             // ulbName: ulbData.name,
-//             // stateId: stateId,
-//             // stateName: stateData.name,
-//             tabs: from2QuestionFromDb,
-//             financialYearTableHeaderForm2
-//         };
-
-//         return res.status(200).json({ status: true, message: "Success fetched data!", data: viewData });
-//     } catch (error) {
-//         console.log("err", error);
-//         return res.status(400).json({ status: false, message: "Something went wrong!" });
-//     }
-// };
 
 module.exports.submitFrom1 = async (req, res) => {
     try {
@@ -620,72 +441,6 @@ module.exports.submitFrom2 = async (req, res) => {
         return res.status(400).json({ status: false, message: error });
     }
 };
-
-// Clone.
-// module.exports.getForm1 = async (req, res) => {
-//     try {
-//         let ulbId = req.query.ulb;
-//         let ulbData = await Ulb.findOne({ _id: ObjectId(ulbId) }, { name: 1, state: 1 });
-//         let stateId = ulbData.state;
-//         let stateData = await State.findOne({ _id: ObjectId(stateId) }, { name: 1 });
-//         let xviFCForm1Tabs = await XviFcForm1Tabs.find().lean();
-//         let xviFCForm1Table = tempDb;
-
-//         let role = "ULB";
-//         let currentFormStatus = "PENDING";
-
-//         for (let index = 0; index < keys.length; index++) {
-//             if (xviFCForm1Table.hasOwnProperty(keys[index])) {
-//                 let obj = xviFCForm1Table[keys[index]];
-//                 xviFCForm1Table[keys[index]] = getColumnWiseData(keys[index], obj, xviFCForm1Table.isDraft, "", role, currentFormStatus);
-//                 xviFCForm1Table['readonly'] = true;
-
-//             } else {
-//                 xviFCForm1Table[keys[index]] = getColumnWiseData(
-//                     keys[index],
-//                     {
-//                         value: "",
-//                         status: "PENDING",
-//                     },
-//                     null,
-//                     "",
-//                     role,
-//                     // data?.currentFormStatus
-//                     currentFormStatus
-//                 );
-//             }
-//         }
-
-//         // Create a json structure - questions.
-//         let modifiedTabs = await getModifiedTabsXvifcForm1(xviFCForm1Tabs, xviFCForm1Table);
-
-//         // Update the json with the pdf links - Already on Cityfinance.
-//         let fileDataJson = modifiedTabs[2].data.auditedAnnualFySt.year;
-//         modifiedTabs[2].data.auditedAnnualFySt.year = await getUploadDocLinks(ulbId, fileDataJson);
-
-//         // Add Primary keys to the keyDetails{}  - financialData.
-//         let financialData = modifiedTabs[1].data;
-//         modifiedTabs[1].data = await getUpdatedFinancialData_headers(financialData, Object.keys(financialData));
-
-//         // Add Primary keys to the keyDetails{} - accountingPractices.
-//         let accountingPractices = modifiedTabs[3].data;
-//         modifiedTabs[3].data = await getUpdatedAccountingPractices_headers(accountingPractices, Object.keys(accountingPractices));
-
-//         let viewData = {
-//             ulb: ulbId,
-//             ulbName: ulbData.name,
-//             stateId: stateId,
-//             stateName: stateData.name,
-//             tabs: modifiedTabs,
-//             financialYearTableHeader
-//         };
-
-//         return res.status(200).json({ status: true, message: "Success fetched data!", data: viewData });
-//     } catch (error) {
-//         console.log("err", error);
-//         return res.status(400).json({ status: false, message: "Something went wrong!" });
-//     }
-// };
 
 // Json structure.
 let keyDetails = {
@@ -795,7 +550,7 @@ let keyDetails = {
         options: ["2015-16", "2016-17", "2017-18", "2018-19", "2019-20", "2020-21", "2021-22", "2022-23"],
         showInputBox: "",
         key: 'yearOfConstitution',
-        displayPriority: '',
+        displayPriority: '8',
         label: 'In which year was the ULB constituted?',
         info: '',
         required: true,
@@ -811,7 +566,7 @@ let keyDetails = {
         options: ["Accounts Finalized & Audited", "Accounts Finalized but Not Audited", "Accounts not Finalized - Provisional data"],
         showInputBox: "",
         key: 'sourceOfFd',
-        displayPriority: '',
+        displayPriority: '*',
         label: 'Please select the source of Financial Data',
         info: '',
         required: true,
@@ -1275,9 +1030,9 @@ let keyDetails = {
     },
     auditedAnnualFySt: {
         instruction: [
-            { "instruction_1": "Text 1" },
-            { "instruction_2": "Text 2" },
-            { "instruction_3": "Text 3" },
+            { "instruction": "Annual Financial Statement should include: Income and Expenditure Statement, Balance Sheet, Schedules to IES and BS, Auditor's Report and if available Receipts & Payments Statement." },
+            { "instruction": " All documents pertaining to a specific financial year should be combined into a single PDF before uploading & should not exceed 20 MB." },
+            { "instruction": "Please use the following format for naming the documents to be uploaded: nameofthedocument_FY_ULB Name. || Example: Annual accounts_15-16_Jaipur municipal corporation" },
         ],
         formFieldType: 'file',
         key: 'auditedAnnualFySt',
@@ -1399,7 +1154,7 @@ let keyDetailsForm2 = {
         options: ["2015-16", "2016-17", "2017-18", "2018-19", "2019-20", "2020-21", "2021-22", "2022-23"],
         showInputBox: "",
         key: 'yearOfConstitution',
-        displayPriority: '',
+        displayPriority: '8',
         label: 'In which year was the ULB constituted?',
         info: '',
         required: true,
@@ -1415,7 +1170,7 @@ let keyDetailsForm2 = {
         options: ["2015-16", "2016-17", "2017-18", "2018-19", "2019-20", "2020-21", "2021-22", "2022-23"],
         showInputBox: "",
         key: 'yearOfSlb',
-        displayPriority: '',
+        displayPriority: '9',
         label: 'From which year is Service Level Benchmark data available?',
         info: '',
         required: true,
@@ -1431,7 +1186,7 @@ let keyDetailsForm2 = {
         options: ["Accounts Finalized & Audited", "Accounts Finalized but Not Audited", "Accounts not Finalized - Provisional data"],
         showInputBox: "",
         key: 'sourceOfFd',
-        displayPriority: '',
+        displayPriority: '*',
         label: 'Please select the source of Financial Data',
         info: '',
         required: true,
@@ -2189,9 +1944,9 @@ let keyDetailsForm2 = {
     },
     auditedAnnualFySt: {
         instruction: [
-            { "instruction_1": "Text 1" },
-            { "instruction_2": "Text 2" },
-            { "instruction_3": "Text 3" },
+            { "instruction": "Annual Financial Statement should include: Income and Expenditure Statement, Balance Sheet, Schedules to IES and BS, Auditor's Report and if available Receipts & Payments Statement." },
+            { "instruction": " All documents pertaining to a specific financial year should be combined into a single PDF before uploading & should not exceed 20 MB." },
+            { "instruction": "Please use the following format for naming the documents to be uploaded: nameofthedocument_FY_ULB Name. || Example: Annual accounts_15-16_Jaipur municipal corporation" },
         ],
         formFieldType: 'file',
         key: 'auditedAnnualFySt',
@@ -2217,7 +1972,7 @@ let keyDetailsForm2 = {
         logic: '',
         min: 0,
         max: 100,
-        decimal: ''
+        decimal: 2,
     },
     perCapitaOfWs: {
         formFieldType: 'number',
@@ -2232,7 +1987,7 @@ let keyDetailsForm2 = {
         logic: '',
         min: 0,
         max: 999,
-        decimal: '',
+        decimal: 2,
         warning: { "value": 135, "condition": "gt", "message": 'Please note that the entered value exceeds the threshold of 135 lpcd' }
     },
     extentOfMeteringWs: {
@@ -2248,7 +2003,7 @@ let keyDetailsForm2 = {
         logic: '',
         min: 0,
         max: 100,
-        decimal: ''
+        decimal: 2,
     },
     extentOfNonRevenueWs: {
         formFieldType: 'number',
@@ -2263,7 +2018,7 @@ let keyDetailsForm2 = {
         logic: '',
         min: 0,
         max: 100,
-        decimal: ''
+        decimal: 2,
     },
     continuityOfWs: {
         formFieldType: 'number',
@@ -2278,7 +2033,7 @@ let keyDetailsForm2 = {
         logic: '',
         min: 0,
         max: 24,
-        decimal: ''
+        decimal: 2,
     },
     efficiencyInRedressalCustomerWs: {
         formFieldType: 'number',
@@ -2293,7 +2048,7 @@ let keyDetailsForm2 = {
         logic: '',
         min: 0,
         max: 100,
-        decimal: '',
+        decimal: 2,
         warning: { "value": 80, "condition": "gt", "message": 'Please note that the entered value exceeds the threshold of 80 lpcd' }
     },
     qualityOfWs: {
@@ -2309,7 +2064,7 @@ let keyDetailsForm2 = {
         logic: '',
         min: 0,
         max: 100,
-        decimal: ''
+        decimal: 2,
     },
     costRecoveryInWs: {
         formFieldType: 'number',
@@ -2324,7 +2079,7 @@ let keyDetailsForm2 = {
         logic: '',
         min: 0,
         max: 100,
-        decimal: ''
+        decimal: 2,
     },
     efficiencyInCollectionRelatedWs: {
         formFieldType: 'number',
@@ -2339,7 +2094,7 @@ let keyDetailsForm2 = {
         logic: '',
         min: 0,
         max: 100,
-        decimal: '',
+        decimal: 2,
         warning: { "value": 90, "condition": "gt", "message": 'Please note that the entered value exceeds the threshold of 90 lpcd' }
     },
     coverageOfToiletsSew: {
@@ -2355,7 +2110,7 @@ let keyDetailsForm2 = {
         logic: '',
         min: 0,
         max: 100,
-        decimal: ''
+        decimal: 2,
     },
     coverageOfSewNet: {
         formFieldType: 'number',
@@ -2370,7 +2125,7 @@ let keyDetailsForm2 = {
         logic: '',
         min: 0,
         max: 100,
-        decimal: ''
+        decimal: 2,
     },
     collectionEfficiencySew: {
         formFieldType: 'number',
@@ -2385,7 +2140,7 @@ let keyDetailsForm2 = {
         logic: '',
         min: 0,
         max: 100,
-        decimal: ''
+        decimal: 2,
     },
     adequacyOfSew: {
         formFieldType: 'number',
@@ -2400,7 +2155,7 @@ let keyDetailsForm2 = {
         logic: '',
         min: 0,
         max: 100,
-        decimal: ''
+        decimal: 2,
     },
     qualityOfSew: {
         formFieldType: 'number',
@@ -2415,7 +2170,7 @@ let keyDetailsForm2 = {
         logic: '',
         min: 0,
         max: 100,
-        decimal: ''
+        decimal: 2,
     },
     extentOfReuseSew: {
         formFieldType: 'number',
@@ -2430,7 +2185,7 @@ let keyDetailsForm2 = {
         logic: '',
         min: 0,
         max: 100,
-        decimal: ''
+        decimal: 2,
     },
     efficiencyInRedressalCustomerSew: {
         formFieldType: 'number',
@@ -2445,7 +2200,7 @@ let keyDetailsForm2 = {
         logic: '',
         min: 0,
         max: 100,
-        decimal: ''
+        decimal: 2,
     },
     extentOfCostWaterSew: {
         formFieldType: 'number',
@@ -2460,7 +2215,7 @@ let keyDetailsForm2 = {
         logic: '',
         min: 0,
         max: 100,
-        decimal: ''
+        decimal: 2,
     },
     efficiencyInCollectionSew: {
         formFieldType: 'number',
@@ -2475,7 +2230,7 @@ let keyDetailsForm2 = {
         logic: '',
         min: 0,
         max: 100,
-        decimal: '',
+        decimal: 2,
         warning: { "value": 90, "condition": "gt", "message": 'Please note that the entered value exceeds the threshold of 90 lpcd' }
     },
     householdLevelCoverageLevelSwm: {
@@ -2491,7 +2246,7 @@ let keyDetailsForm2 = {
         logic: '',
         min: 0,
         max: 100,
-        decimal: ''
+        decimal: 2,
     },
     efficiencyOfCollectionSwm: {
         formFieldType: 'number',
@@ -2506,7 +2261,7 @@ let keyDetailsForm2 = {
         logic: '',
         min: 0,
         max: 100,
-        decimal: ''
+        decimal: 2,
     },
     extentOfSegregationSwm: {
         formFieldType: 'number',
@@ -2521,7 +2276,7 @@ let keyDetailsForm2 = {
         logic: '',
         min: 0,
         max: 100,
-        decimal: ''
+        decimal: 2,
     },
     extentOfMunicipalSwm: {
         formFieldType: 'number',
@@ -2536,7 +2291,7 @@ let keyDetailsForm2 = {
         logic: '',
         min: 0,
         max: 100,
-        decimal: '',
+        decimal: 2,
         warning: { "value": 80, "condition": "gt", "message": 'Please note that the entered value exceeds the threshold of 80 lpcd' }
     },
     extentOfScientificSolidSwm: {
@@ -2552,7 +2307,7 @@ let keyDetailsForm2 = {
         logic: '',
         min: 0,
         max: 100,
-        decimal: ''
+        decimal: 2,
     },
     extentOfCostInSwm: {
         formFieldType: 'number',
@@ -2567,7 +2322,7 @@ let keyDetailsForm2 = {
         logic: '',
         min: 0,
         max: 100,
-        decimal: ''
+        decimal: 2,
     },
     efficiencyInCollectionSwmUser: {
         formFieldType: 'number',
@@ -2582,7 +2337,7 @@ let keyDetailsForm2 = {
         logic: '',
         min: 0,
         max: 100,
-        decimal: '',
+        decimal: 2,
         warning: { "value": 90, "condition": "gt", "message": 'Please note that the entered value exceeds the threshold of 90 lpcd' }
     },
     efficiencyInRedressalCustomerSwm: {
@@ -2598,7 +2353,7 @@ let keyDetailsForm2 = {
         logic: '',
         min: 0,
         max: 100,
-        decimal: '',
+        decimal: 2,
         warning: { "value": 80, "condition": "gt", "message": 'Please note that the entered value exceeds the threshold of 80 lpcd' }
     },
     coverageOfStormDrainage: {
@@ -2614,7 +2369,7 @@ let keyDetailsForm2 = {
         logic: '',
         min: 0,
         max: 100,
-        decimal: ''
+        decimal: 2,
     },
     incidenceOfWaterLogging: {
         formFieldType: 'number',
@@ -2629,9 +2384,8 @@ let keyDetailsForm2 = {
         logic: '',
         min: 0,
         max: 9999,
-        decimal: ''
+        decimal: 2,
     }
-
 }
 
 // Json structure - with updated Year[].

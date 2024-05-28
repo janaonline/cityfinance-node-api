@@ -1,7 +1,7 @@
 const { years } = require("./xviFC_year");
 // module.exports.notRequiredValidations = ['caMembershipNo', 'population11', 'otherUpload']
 
-let financialYearTableHeader = ["2015-16", "2016-17", "2017-18", "2018-19", "2019-20", "2020-21", "2021-22", "2022-23"];
+let financialYearTableHeader = ["2022-23", "2021-22", "2020-21", "2019-20", "2018-19", "2017-18", "2016-17", "2015-16"];
 
 const xviFcForm1Json = () => {
     return {
