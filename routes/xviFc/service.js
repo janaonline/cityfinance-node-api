@@ -400,7 +400,65 @@ async function getForm2(userId, roleName) {
 
 };
 
-module.exports.submitFrom1 = async (req, res) => {
+module.exports.saveAsDraftForm1 = async (req, res) => {
+    try {
+        let ulbData_form1 = req.body;
+        let ulbId = ObjectId(req.query.ulb);
+        let existingSubmitData = await XviFcForm1DataCollection.find({ ulb: ulbId });
+
+        if (existingSubmitData.length <= 0) {
+            ulbData_form1 = await XviFcForm1DataCollection.findOneAndUpdate({ ulb: ulbId }, ulbData_form1, { upsert: true });
+            return res.status(200).json({ status: true, message: "DB successfully updated", data: updatedData ? updatedData : "" });
+        }
+        else if (existingSubmitData.length > 0 && existingSubmitData[0].formStatus === 'IN_PROGRESS') {
+            // If tab sent is less that total tab 
+            for (let form1Data of existingSubmitData[0].tab) {
+                index = ulbData_form1.tab.findIndex(x => x.tabKey === form1Data.tabKey);
+                if (index <= -1) {
+                    ulbData_form1.tab.push(form1Data);
+                }
+            }
+
+            let updatedData = await XviFcForm1DataCollection.findOneAndUpdate({ ulb: ulbId }, ulbData_form1, { upsert: true });
+            return res.status(200).json({ status: true, message: "DB successfully updated", data: updatedData ? updatedData : "" });
+        } else {
+            return res.status(200).json({ status: true, message: "Form already submitted!" });
+        }
+    } catch (error) {
+        console.log(error);
+        return res.status(400).json({ status: false, message: error });
+    }
+};
+
+module.exports.submitForm1 = async (req, res) => {
+    try {
+        let ulbData_form1 = req.body;
+        let ulbId = ObjectId(req.query.ulb);
+        let existingSubmitData = await XviFcForm1DataCollection.find({ ulb: ulbId });
+        let validateSubmitData = ulbData_form1.formId === 16 ? ulbData_form1.tab.length === 4 : (ulbData_form1.formId === 17 ? ulbData_form1.tab.length === 5 : false); // Check if all the tabs data are sent from fortend.
+
+        if (existingSubmitData.length > 0 && existingSubmitData[0].formStatus === 'IN_PROGRESS' && validateSubmitData) {
+            // When form is submitted -> update the "value" from "saveAsDraftValue".
+            for (let selectForm1Tab of ulbData_form1.tab) {
+                for (let eachQuesInSelectedTab of selectForm1Tab.data) {
+                    eachQuesInSelectedTab.value = eachQuesInSelectedTab.saveAsDraftValue;
+                }
+            }
+            ulbData_form1.formStatus = 'SUBMITTED';
+
+            let updatedData = await XviFcForm1DataCollection.findOneAndUpdate({ ulb: ulbId }, ulbData_form1, { upsert: true });
+            return res.status(200).json({ status: true, message: "DB successfully updated", data: updatedData ? updatedData : "" });
+        } else {
+            let errorMessage = existingSubmitData.length > 0 && (existingSubmitData[0].formStatus !== 'IN_PROGRESS') ? "Form already submitted!" : "Invalid form data!";
+            return res.status(200).json({ status: true, message: errorMessage });
+        }
+    } catch (error) {
+        console.log(error);
+        return res.status(400).json({ status: false, message: error });
+    }
+};
+
+module.exports.saveAsDraftForm2 = async (req, res) => {
     try {
         let ulbData_form1 = req.body;
         let ulbId = ObjectId(req.query.ulb);
@@ -2033,13 +2091,13 @@ let keyDetailsForm2 = {
         logic: '',
         min: 0,
         max: 24,
-        decimal: 2,
+        decimal: 0,
     },
     efficiencyInRedressalCustomerWs: {
         formFieldType: 'number',
         key: 'efficiencyInRedressalCustomerWs',
         displayPriority: 6,
-        label: 'Efficiency in redressal of customer complaints (%)',
+        label: 'Efficiency in redressal of customer complaints related to water supply (%)',
         info: '',
         placeholder: 'Percent|Range(0-100)',
         required: true,
@@ -2191,7 +2249,7 @@ let keyDetailsForm2 = {
         formFieldType: 'number',
         key: 'efficiencyInRedressalCustomerSew',
         displayPriority: 16,
-        label: 'Efficiency in redressal of customer complaints (%)',
+        label: 'Efficiency in redressal of customer complaints related to sewerage (%)',
         info: '',
         placeholder: 'Percent|Range(0-100)',
         required: true,
@@ -2344,7 +2402,7 @@ let keyDetailsForm2 = {
         formFieldType: 'number',
         key: 'efficiencyInRedressalCustomerSwm',
         displayPriority: 26,
-        label: 'Efficiency in redressal of customer complaints (%)',
+        label: 'Efficiency in redressal of customer complaints related to SWM (%)',
         info: '',
         placeholder: 'Percent|Range(0-100)',
         required: true,
@@ -2384,7 +2442,7 @@ let keyDetailsForm2 = {
         logic: '',
         min: 0,
         max: 9999,
-        decimal: 2,
+        decimal: 0,
     }
 }
 
@@ -3871,8 +3929,10 @@ async function getUploadDocLinks(ulbId, fileDataJson) {
             let fy = echYrObj.label.split(" ")[1];
 
             if (alreadyOnCfPdfs[fy]) {
-                echYrObj.isPdfAvailable = alreadyOnCfPdfs[fy].availablePdfData.url ? true : false;
+                echYrObj.isPdfAvailable = alreadyOnCfPdfs[fy].availablePdfData[0].url ? true : false;
                 echYrObj.fileAlreadyOnCf = alreadyOnCfPdfs[fy].availablePdfData;
+            } else {
+                echYrObj.isPdfAvailable = false;
             }
         }
     }

@@ -23,7 +23,9 @@ router.get('/fetch_form', xviFcService.getForm);
 router.post('/create_tabs', xviFcService.createxviFcForm1Tabs);
 router.post('/create_formJson', xviFcService.createxviFcForm1Json);
 router.post('/create_formJson2', xviFcService.createxviFcForm2Json);
-router.post('/submit_form1', xviFcService.submitFrom1);
+router.post('/saveAsDraft_form1', xviFcService.saveAsDraftForm1);
+router.post('/submit_form1', xviFcService.submitForm1);
+router.post('/saveAsDraft_form2', xviFcService.saveAsDraftForm2);
 router.post('/submit_form2', xviFcService.submitFrom2);
 
 

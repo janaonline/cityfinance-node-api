@@ -25,10 +25,15 @@ const xviFcForm1DataCollectionSchema = new Schema(
                     file: [{
                         name: { type: String },
                         url: { type: String },
-                        annualAccountType: { type: String },
-                        isPdfAvailable: { type: Boolean, default: false },
-                        nameAvailableOnCf: { type: String },
-                        urlAvailableOnCf: { type: String }
+                    }],
+                    isPdfAvailable: { type: Boolean, default: false },
+                    fileApprovedByULB: { type: Boolean, default: true },
+                    filesRejected: { type: String },
+                    fileRejectReason: { type: String },
+                    fileAlreadyOnCf: [{
+                        type: { type: String },
+                        name: { type: String },
+                        url: { type: String },
                     }]
                 }
             ]

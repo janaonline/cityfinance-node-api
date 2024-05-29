@@ -3561,6 +3561,14 @@ function getInputKeysByType(selectedKeyDetails, dataSource) {
                     "type": "",
                     "label": ""
                 }];
+                eachYearobj["fileRejectOptions"] = [
+                    "Balance Sheet",
+                    "Schedules To Balance Sheet",
+                    "Income And Expenditure",
+                    "Schedules To Income And Expenditure",
+                    "Cash Flow Statement",
+                    "Auditor Report",
+                ];
             }
 
             yearData.push(eachYearobj);
