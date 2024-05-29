@@ -3872,8 +3872,7 @@ async function getUploadDocLinks(ulbId, fileDataJson) {
 
             if (alreadyOnCfPdfs[fy]) {
                 echYrObj.isPdfAvailable = alreadyOnCfPdfs[fy].availablePdfData.url ? true : false;
-                echYrObj.fileAlreadyOnCf = [];
-                echYrObj.fileAlreadyOnCf.push(alreadyOnCfPdfs[fy].availablePdfData)
+                echYrObj.fileAlreadyOnCf = alreadyOnCfPdfs[fy].availablePdfData;
             }
         }
     }
