@@ -256,27 +256,29 @@ async function getForm1(userId, roleName) {
                 if (from1AnswerFromDb.tab[indexOfKey].tabKey == eachQuestionObj.key) {
 
                     for (let selectedData of from1AnswerFromDb.tab[indexOfKey].data) {
+
                         if (eachQuestionObj.key == "financialData") {
-                            let questionKeyFinancialData = selectedData.key.split("_")[1]
-                            let yearDataIndex = eachQuestionObj.data[questionKeyFinancialData].year.findIndex(x => x.key === selectedData.key)
-                            if (yearDataIndex > -1 && selectedData.key == eachQuestionObj.data[questionKeyFinancialData].year[yearDataIndex].key) {
-                                eachQuestionObj.data[questionKeyFinancialData].year[yearDataIndex].value = selectedData.saveAsDraftValue;
+                            for (let eachObj of eachQuestionObj.data) {
+                                let yearDataIndex = eachObj.year.findIndex(x => x.key === selectedData.key)
+                                if (yearDataIndex > -1 && selectedData.key == eachObj.year[yearDataIndex].key) {
+                                    eachObj.year[yearDataIndex].value = selectedData.saveAsDraftValue;
+                                }
                             }
                         }
 
                         if (eachQuestionObj.key == "uploadDoc") {
-                            let questionKeyFinancialData = selectedData.key.split("_")[1]
-                            let yearDataIndex = eachQuestionObj.data[questionKeyFinancialData].year.findIndex(x => x.key === selectedData.key)
-                            if (yearDataIndex > -1 && selectedData.key == eachQuestionObj.data[questionKeyFinancialData].year[yearDataIndex].key) {
-                                eachQuestionObj.data[questionKeyFinancialData].year[yearDataIndex].file.name = selectedData.file[0].name;
-                                eachQuestionObj.data[questionKeyFinancialData].year[yearDataIndex].file.url = selectedData.file[0].url;
+                            for (let eachObj of eachQuestionObj.data) {
+                                let yearDataIndex = eachObj.year.findIndex(x => x.key === selectedData.key)
+                                if (yearDataIndex > -1 && selectedData.key == eachObj.year[yearDataIndex].key) {
+                                    eachObj.year[yearDataIndex].file.name = selectedData.file[0].name;
+                                    eachObj.year[yearDataIndex].file.url = selectedData.file[0].url;
+                                }
                             }
                         }
 
                         if (eachQuestionObj.key == "demographicData" || eachQuestionObj.key == 'accountPractice') {
                             if (selectedData.key && eachQuestionObj.data[selectedData.key] && selectedData.key == eachQuestionObj.data[selectedData.key].key) {
                                 eachQuestionObj.data[selectedData.key].value = selectedData.saveAsDraftValue;
-
                             }
                         }
 
@@ -291,8 +293,8 @@ async function getForm1(userId, roleName) {
     from1QuestionFromDb[1].data = await getUpdatedFinancialData_headers(financialData, Object.keys(financialData));
 
     // Update the json with the pdf links - Already on Cityfinance.
-    let fileDataJson = from1QuestionFromDb[2].data.auditedAnnualFySt.year;
-    from1QuestionFromDb[2].data.auditedAnnualFySt.year = await getUploadDocLinks(ulbId, fileDataJson);
+    let fileDataJson = from1QuestionFromDb[2].data[0].year;
+    from1QuestionFromDb[2].data[0].year = await getUploadDocLinks(ulbId, fileDataJson);
 
     // Add Primary keys to the keyDetails{} - accountingPractices.
     let accountingPractices = from1QuestionFromDb[3].data;
@@ -340,23 +342,25 @@ async function getForm2(userId, roleName) {
                 if (from2AnswerFromDb.tab[indexOfKey].tabKey == eachQuestionObj.key) {
 
                     for (let selectedData of from2AnswerFromDb.tab[indexOfKey].data) {
+
                         if (eachQuestionObj.key == "financialData" || eachQuestionObj.key == "serviceLevelBenchmark") {
-                            let questionKeyFinancialData = selectedData.key.split("_")[1]
-                            let yearDataIndex = eachQuestionObj.data[questionKeyFinancialData].year.findIndex(x => x.key === selectedData.key)
-                            if (yearDataIndex > -1 && selectedData.key == eachQuestionObj.data[questionKeyFinancialData].year[yearDataIndex].key) {
-                                eachQuestionObj.data[questionKeyFinancialData].year[yearDataIndex].value = selectedData.saveAsDraftValue;
+                            for (let eachObj of eachQuestionObj.data) {
+                                let yearDataIndex = eachObj.year.findIndex(x => x.key === selectedData.key)
+                                if (yearDataIndex > -1 && selectedData.key == eachObj.year[yearDataIndex].key) {
+                                    eachObj.year[yearDataIndex].value = selectedData.saveAsDraftValue;
+                                }
                             }
                         }
 
                         if (eachQuestionObj.key == "uploadDoc") {
-                            let questionKeyFinancialData = selectedData.key.split("_")[1]
-                            let yearDataIndex = eachQuestionObj.data[questionKeyFinancialData].year.findIndex(x => x.key === selectedData.key)
-                            if (yearDataIndex > -1 && selectedData.key == eachQuestionObj.data[questionKeyFinancialData].year[yearDataIndex].key) {
-                                eachQuestionObj.data[questionKeyFinancialData].year[yearDataIndex].file.name = selectedData.file[0].name;
-                                eachQuestionObj.data[questionKeyFinancialData].year[yearDataIndex].file.url = selectedData.file[0].url;
+                            for (let eachObj of eachQuestionObj.data) {
+                                let yearDataIndex = eachObj.year.findIndex(x => x.key === selectedData.key)
+                                if (yearDataIndex > -1 && selectedData.key == eachObj.year[yearDataIndex].key) {
+                                    eachObj.year[yearDataIndex].file.name = selectedData.file[0].name;
+                                    eachObj.year[yearDataIndex].file.url = selectedData.file[0].url;
+                                }
                             }
                         }
-
                         if (eachQuestionObj.key == "demographicData" || eachQuestionObj.key == 'accountPractice') {
                             if (selectedData.key && eachQuestionObj.data[selectedData.key] && selectedData.key == eachQuestionObj.data[selectedData.key].key) {
                                 eachQuestionObj.data[selectedData.key].value = selectedData.saveAsDraftValue;
@@ -375,8 +379,8 @@ async function getForm2(userId, roleName) {
     from2QuestionFromDb[1].data = await getUpdatedFinancialData_headersForm2(financialData, Object.keys(financialData));
 
     // Update the json with the pdf links - Already on Cityfinance.
-    let fileDataJson = from2QuestionFromDb[2].data.auditedAnnualFySt.year;
-    from2QuestionFromDb[2].data.auditedAnnualFySt.year = await getUploadDocLinks(ulbId, fileDataJson);
+    let fileDataJson = from2QuestionFromDb[2].data[0].year;
+    from2QuestionFromDb[2].data[0].year = await getUploadDocLinks(ulbId, fileDataJson);
 
     // Add Primary keys to the keyDetails{} - accountingPractices.
     let accountingPractices = from2QuestionFromDb[3].data;
@@ -408,7 +412,7 @@ module.exports.saveAsDraftForm1 = async (req, res) => {
 
         if (existingSubmitData.length <= 0) {
             ulbData_form1 = await XviFcForm1DataCollection.findOneAndUpdate({ ulb: ulbId }, ulbData_form1, { upsert: true });
-            return res.status(200).json({ status: true, message: "DB successfully updated", data: updatedData ? updatedData : "" });
+            return res.status(200).json({ status: true, message: "DB successfully updated", data: ulbData_form1 ? ulbData_form1 : "" });
         }
         else if (existingSubmitData.length > 0 && existingSubmitData[0].formStatus === 'IN_PROGRESS') {
             // If tab sent is less that total tab 
@@ -3585,62 +3589,62 @@ class tabsUpdationServiceFR {
         this.detail = { ...xviFCForm1Table };
     }
     async getDataForDemographicDataTab() {
-        return {
-            "nameOfUlb": { ...this.detail.nameOfUlb },
-            "nameOfState": { ...this.detail.nameOfState },
-            "pop2011": { ...this.detail.pop2011 },
-            "popApril2024": { ...this.detail.popApril2024 },
-            "areaOfUlb": { ...this.detail.areaOfUlb },
-            "yearOfElection": { ...this.detail.yearOfElection },
-            "isElected": { ...this.detail.isElected },
-            "yearOfConstitution": { ...this.detail.yearOfConstitution },
-        };
+        return [
+            { ...this.detail.nameOfUlb },
+            { ...this.detail.nameOfState },
+            { ...this.detail.pop2011 },
+            { ...this.detail.popApril2024 },
+            { ...this.detail.areaOfUlb },
+            { ...this.detail.yearOfElection },
+            { ...this.detail.isElected },
+            { ...this.detail.yearOfConstitution },
+        ];
     }
     async getDataForfinancialData() {
-        return {
-            "sourceOfFd": { ...this.detail.sourceOfFd },
-            "taxRevenue": { ...this.detail.taxRevenue },
-            "feeAndUserCharges": { ...this.detail.feeAndUserCharges },
-            "interestIncome": { ...this.detail.interestIncome },
-            "otherIncome": { ...this.detail.otherIncome },
-            "totOwnRevenue": { ...this.detail.totOwnRevenue },
-            "centralGrants": { ...this.detail.centralGrants },
-            "otherGrants": { ...this.detail.otherGrants },
-            "totalGrants": { ...this.detail.totalGrants },
-            "assignedRevAndCom": { ...this.detail.assignedRevAndCom },
-            "otherRevenue": { ...this.detail.otherRevenue },
-            "totalRevenue": { ...this.detail.totalRevenue },
-            "establishmentExp": { ...this.detail.establishmentExp },
-            "oAndmExp": { ...this.detail.oAndmExp },
-            "interestAndfinacialChar": { ...this.detail.interestAndfinacialChar },
-            "otherRevenueExp": { ...this.detail.otherRevenueExp },
-            "totalRevenueExp": { ...this.detail.totalRevenueExp },
-            "capExp": { ...this.detail.capExp },
-            "totalExp": { ...this.detail.totalExp },
-            "grossBorrowing": { ...this.detail.grossBorrowing }
-        };
+        return [
+            { ...this.detail.sourceOfFd },
+            { ...this.detail.taxRevenue },
+            { ...this.detail.feeAndUserCharges },
+            { ...this.detail.interestIncome },
+            { ...this.detail.otherIncome },
+            { ...this.detail.totOwnRevenue },
+            { ...this.detail.centralGrants },
+            { ...this.detail.otherGrants },
+            { ...this.detail.totalGrants },
+            { ...this.detail.assignedRevAndCom },
+            { ...this.detail.otherRevenue },
+            { ...this.detail.totalRevenue },
+            { ...this.detail.establishmentExp },
+            { ...this.detail.oAndmExp },
+            { ...this.detail.interestAndfinacialChar },
+            { ...this.detail.otherRevenueExp },
+            { ...this.detail.totalRevenueExp },
+            { ...this.detail.capExp },
+            { ...this.detail.totalExp },
+            { ...this.detail.grossBorrowing }
+        ];
     }
     async getDataForAccountingPractices() {
-        return {
-            "accSystem": { ...this.detail.accSystem },
-            "accProvision": { ...this.detail.accProvision },
-            "accInCashBasis": { ...this.detail.accInCashBasis },
-            "fsTransactionRecord": { ...this.detail.fsTransactionRecord },
-            "fsPreparedBy": { ...this.detail.fsPreparedBy },
-            "revReceiptRecord": { ...this.detail.revReceiptRecord },
-            "expRecord": { ...this.detail.expRecord },
-            "accSoftware": { ...this.detail.accSoftware },
-            "onlineAccSysIntegrate": { ...this.detail.onlineAccSysIntegrate },
-            "muniAudit": { ...this.detail.muniAudit },
-            "totSanction": { ...this.detail.totSanction },
-            "totVacancy": { ...this.detail.totVacancy },
-            "accPosition": { ...this.detail.accPosition },
-        };
+        return [
+            { ...this.detail.accSystem },
+            { ...this.detail.accProvision },
+            { ...this.detail.accInCashBasis },
+            { ...this.detail.fsTransactionRecord },
+            { ...this.detail.fsPreparedBy },
+            { ...this.detail.revReceiptRecord },
+            { ...this.detail.expRecord },
+            { ...this.detail.accSoftware },
+            { ...this.detail.onlineAccSysIntegrate },
+            { ...this.detail.muniAudit },
+            { ...this.detail.totSanction },
+            { ...this.detail.totVacancy },
+            { ...this.detail.accPosition },
+        ];
     }
     async getDataForUploadDoc() {
-        return {
-            "auditedAnnualFySt": { ...this.detail.auditedAnnualFySt }
-        }
+        return [
+            { ...this.detail.auditedAnnualFySt }
+        ];
     }
 }
 async function getModifiedTabsXvifcForm2(tabs, xviFCForm2Table) {
@@ -3649,7 +3653,9 @@ async function getModifiedTabsXvifcForm2(tabs, xviFCForm2Table) {
         let service = new tabsUpdationServiceFR2(xviFCForm2Table);
         for (var tab of modifiedTabs) {
             if (tab.id === priorTabsForXviFcForm2["demographicData"]) {
-                tab.data = await service.getDataForDemographicDataTab();
+                let tempVar = await service.getDataForDemographicDataTab();
+                tab.data = [];
+                tab.data = tempVar
             } else if (tab.id === priorTabsForXviFcForm2["financialData"]) {
                 tab.data = await service.getDataForfinancialData();
             } else if (tab.id === priorTabsForXviFcForm2["accountPractice"]) {
@@ -3677,86 +3683,84 @@ class tabsUpdationServiceFR2 {
         this.detail = { ...xviFCForm1Table };
     }
     async getDataForDemographicDataTab() {
-        return {
-            "nameOfUlb": { ...this.detail.nameOfUlb },
-            "nameOfState": { ...this.detail.nameOfState },
-            "pop2011": { ...this.detail.pop2011 },
-            "popApril2024": { ...this.detail.popApril2024 },
-            "areaOfUlb": { ...this.detail.areaOfUlb },
-            "yearOfElection": { ...this.detail.yearOfElection },
-            "isElected": { ...this.detail.isElected },
-            "yearOfConstitution": { ...this.detail.yearOfConstitution },
-            "yearOfSlb": { ...this.detail.yearOfSlb },
-        };
+        return [
+            { ...this.detail.nameOfUlb },
+            { ...this.detail.nameOfState },
+            { ...this.detail.pop2011 },
+            { ...this.detail.popApril2024 },
+            { ...this.detail.areaOfUlb },
+            { ...this.detail.yearOfElection },
+            { ...this.detail.isElected },
+            { ...this.detail.yearOfConstitution },
+            { ...this.detail.yearOfSlb },
+        ];
     }
     async getDataForfinancialData() {
-        return {
-            "sourceOfFd": { ...this.detail.sourceOfFd },
-            "pTax": { ...this.detail.pTax },
-            "otherTax": { ...this.detail.otherTax },
-            "taxRevenue": { ...this.detail.taxRevenue },
-            "feeAndUserCharges": { ...this.detail.feeAndUserCharges },
-            "interestIncome": { ...this.detail.interestIncome },
-            "otherIncome": { ...this.detail.otherIncome },
-            "rentalIncome": { ...this.detail.rentalIncome },
-            "totOwnRevenue": { ...this.detail.totOwnRevenue },
-            "centralSponsoredScheme": { ...this.detail.centralSponsoredScheme },
-            "unionFinanceGrants": { ...this.detail.unionFinanceGrants },
-            "centralGrants": { ...this.detail.centralGrants },
-            "sfcGrants": { ...this.detail.sfcGrants },
-            "grantsOtherThanSfc": { ...this.detail.grantsOtherThanSfc },
-            "grantsWithoutState": { ...this.detail.grantsWithoutState },
-            "otherGrants": { ...this.detail.otherGrants },
-            "totalGrants": { ...this.detail.totalGrants },
-            "assignedRevAndCom": { ...this.detail.assignedRevAndCom },
-            "otherRevenue": { ...this.detail.otherRevenue },
-            "totalRevenue": { ...this.detail.totalRevenue },
-            "salaries": { ...this.detail.salaries },
-            "pension": { ...this.detail.pension },
-            "otherExp": { ...this.detail.otherExp },
-            "establishmentExp": { ...this.detail.establishmentExp },
-            "oAndmExp": { ...this.detail.oAndmExp },
-            "interestAndfinacialChar": { ...this.detail.interestAndfinacialChar },
-            "otherRevenueExp": { ...this.detail.otherRevenueExp },
-            "adExp": { ...this.detail.adExp },
-            "totalRevenueExp": { ...this.detail.totalRevenueExp },
-            "capExp": { ...this.detail.capExp },
-            "totalExp": { ...this.detail.totalExp },
-            "centralStateBorrow": { ...this.detail.centralStateBorrow },
-            "bonds": { ...this.detail.bonds },
-            "bankAndFinancial": { ...this.detail.bankAndFinancial },
-            "otherBorrowing": { ...this.detail.otherBorrowing },
-            "grossBorrowing": { ...this.detail.grossBorrowing },
-            "receivablePTax": { ...this.detail.receivablePTax },
-            "receivableFee": { ...this.detail.receivableFee },
-            "otherReceivable": { ...this.detail.otherReceivable },
-            "totalReceivable": { ...this.detail.totalReceivable },
-            "totalCashAndBankBal": { ...this.detail.totalCashAndBankBal },
-            "accSystem": { ...this.detail.accSystem },
-            "accProvision": { ...this.detail.accProvision },
-        };
+        return [
+            { ...this.detail.sourceOfFd },
+            { ...this.detail.pTax },
+            { ...this.detail.otherTax },
+            { ...this.detail.taxRevenue },
+            { ...this.detail.feeAndUserCharges },
+            { ...this.detail.interestIncome },
+            { ...this.detail.otherIncome },
+            { ...this.detail.rentalIncome },
+            { ...this.detail.totOwnRevenue },
+            { ...this.detail.centralSponsoredScheme },
+            { ...this.detail.unionFinanceGrants },
+            { ...this.detail.centralGrants },
+            { ...this.detail.sfcGrants },
+            { ...this.detail.grantsOtherThanSfc },
+            { ...this.detail.grantsWithoutState },
+            { ...this.detail.otherGrants },
+            { ...this.detail.totalGrants },
+            { ...this.detail.assignedRevAndCom },
+            { ...this.detail.otherRevenue },
+            { ...this.detail.totalRevenue },
+            { ...this.detail.salaries },
+            { ...this.detail.pension },
+            { ...this.detail.otherExp },
+            { ...this.detail.establishmentExp },
+            { ...this.detail.oAndmExp },
+            { ...this.detail.interestAndfinacialChar },
+            { ...this.detail.otherRevenueExp },
+            { ...this.detail.adExp },
+            { ...this.detail.totalRevenueExp },
+            { ...this.detail.capExp },
+            { ...this.detail.totalExp },
+            { ...this.detail.centralStateBorrow },
+            { ...this.detail.bonds },
+            { ...this.detail.bankAndFinancial },
+            { ...this.detail.otherBorrowing },
+            { ...this.detail.grossBorrowing },
+            { ...this.detail.receivablePTax },
+            { ...this.detail.receivableFee },
+            { ...this.detail.otherReceivable },
+            { ...this.detail.totalReceivable },
+            { ...this.detail.totalCashAndBankBal }
+        ];
     }
     async getDataForAccountingPractices() {
-        return {
-            "accSystem": { ...this.detail.accSystem },
-            "accProvision": { ...this.detail.accProvision },
-            "accInCashBasis": { ...this.detail.accInCashBasis },
-            "fsTransactionRecord": { ...this.detail.fsTransactionRecord },
-            "fsPreparedBy": { ...this.detail.fsPreparedBy },
-            "revReceiptRecord": { ...this.detail.revReceiptRecord },
-            "expRecord": { ...this.detail.expRecord },
-            "accSoftware": { ...this.detail.accSoftware },
-            "onlineAccSysIntegrate": { ...this.detail.onlineAccSysIntegrate },
-            "muniAudit": { ...this.detail.muniAudit },
-            "totSanction": { ...this.detail.totSanction },
-            "totVacancy": { ...this.detail.totVacancy },
-            "accPosition": { ...this.detail.accPosition },
-        };
+        return [
+            { ...this.detail.accSystem },
+            { ...this.detail.accProvision },
+            { ...this.detail.accInCashBasis },
+            { ...this.detail.fsTransactionRecord },
+            { ...this.detail.fsPreparedBy },
+            { ...this.detail.revReceiptRecord },
+            { ...this.detail.expRecord },
+            { ...this.detail.accSoftware },
+            { ...this.detail.onlineAccSysIntegrate },
+            { ...this.detail.muniAudit },
+            { ...this.detail.totSanction },
+            { ...this.detail.totVacancy },
+            { ...this.detail.accPosition },
+        ];
     }
     async getDataForUploadDoc() {
-        return {
-            "auditedAnnualFySt": { ...this.detail.auditedAnnualFySt }
-        }
+        return [
+            { ...this.detail.auditedAnnualFySt }
+        ];
     }
     async getDataForServiceLevelBenchmark() {
         return {
@@ -3980,24 +3984,48 @@ async function getUpdatedFinancialData_headers(allFinancialData, allFinancialDat
     let borrowings = [
         "grossBorrowing"
     ];
-    let data = {
-        commonPrimaryKey: {},
-        revenue: { "label": "I. REVENUE" },
-        expenditure: { "label": "II. EXPENDITURE" },
-        borrowings: { "label": "III. BORROWINGS" }
-    };
-    for (let key of allFinancialDataKeys) {
-        if (commonPrimaryKey.indexOf(key) > -1) {
-            data.commonPrimaryKey[key] = allFinancialData[key];
+    let data = [
+        {
+            "key": "commonPrimaryKey",
+            "section": 'accordion',
+            "formFieldType": "table",
+            "label": "",
+            "tableRow": []
+        },
+        {
+            "key": "revenue",
+            "section": 'accordion',
+            "formFieldType": "table",
+            "label": "I. REVENUE",
+            "tableRow": []
+        },
+        {
+            "key": "expenditure",
+            "section": 'accordion',
+            "formFieldType": "table",
+            "label": "II. EXPENDITURE",
+            "tableRow": []
+        },
+        {
+            "key": "borrowings",
+            "section": 'accordion',
+            "formFieldType": "table",
+            "label": "III. BORROWINGS",
+            "tableRow": []
         }
-        if (revenue.indexOf(key) > -1) {
-            data.revenue[key] = allFinancialData[key];
+    ];
+    for (let eachObj of allFinancialData) {
+        if (commonPrimaryKey.indexOf(eachObj.key) > -1) {
+            data[0].tableRow.push(eachObj);
         }
-        if (expenditure.indexOf(key) > -1) {
-            data.expenditure[key] = allFinancialData[key];
+        if (revenue.indexOf(eachObj.key) > -1) {
+            data[1].tableRow.push(eachObj);
         }
-        if (borrowings.indexOf(key) > -1) {
-            data.borrowings[key] = allFinancialData[key];
+        if (expenditure.indexOf(eachObj.key) > -1) {
+            data[2].tableRow.push(eachObj);
+        }
+        if (borrowings.indexOf(eachObj.key) > -1) {
+            data[3].tableRow.push(eachObj);
         }
     }
     return data;
@@ -4057,32 +4085,68 @@ async function getUpdatedFinancialData_headersForm2(allFinancialData, allFinanci
     let cashAndBank = [
         "totalCashAndBankBal",
     ]
-    let data = {
-        commonPrimaryKey: {},
-        revenue: { "label": "I. REVENUE" },
-        expenditure: { "label": "II. EXPENDITURE" },
-        borrowings: { "label": "III. BORROWINGS" },
-        receivables: { "label": "IV. RECEIVABLES" },
-        cashAndBank: { "label": "V. CASH and BANK BALANCE" },
-    };
-    for (let key of allFinancialDataKeys) {
-        if (commonPrimaryKey.indexOf(key) > -1) {
-            data.commonPrimaryKey[key] = allFinancialData[key];
+    let data = [
+        {
+            "key": "commonPrimaryKey",
+            "section": 'accordion',
+            "formFieldType": "table",
+            "label": "",
+            "tableRow": []
+        },
+        {
+            "key": "revenue",
+            "section": 'accordion',
+            "formFieldType": "table",
+            "label": "I. REVENUE",
+            "tableRow": []
+        },
+        {
+            "key": "expenditure",
+            "section": 'accordion',
+            "formFieldType": "table",
+            "label": "II. EXPENDITURE",
+            "tableRow": []
+        },
+        {
+            "key": "borrowings",
+            "section": 'accordion',
+            "formFieldType": "table",
+            "label": "III. BORROWINGS",
+            "tableRow": []
+        },
+        {
+            "key": "receivables",
+            "section": 'accordion',
+            "formFieldType": "table",
+            "label": "IV. RECEIVABLES",
+            "tableRow": []
+        },
+        {
+            "key": "cashAndBank",
+            "section": 'accordion',
+            "formFieldType": "table",
+            "label": "V. CASH and BANK BALANCE",
+            "tableRow": []
+        },
+    ];
+    for (let eachObj of allFinancialData) {
+        if (commonPrimaryKey.indexOf(eachObj.key) > -1) {
+            data[0].tableRow.push(eachObj);
         }
-        if (revenue.indexOf(key) > -1) {
-            data.revenue[key] = allFinancialData[key];
+        if (revenue.indexOf(eachObj.key) > -1) {
+            data[1].tableRow.push(eachObj);
         }
-        if (expenditure.indexOf(key) > -1) {
-            data.expenditure[key] = allFinancialData[key];
+        if (expenditure.indexOf(eachObj.key) > -1) {
+            data[2].tableRow.push(eachObj);
         }
-        if (borrowings.indexOf(key) > -1) {
-            data.borrowings[key] = allFinancialData[key];
+        if (borrowings.indexOf(eachObj.key) > -1) {
+            data[3].tableRow.push(eachObj);
         }
-        if (receivables.indexOf(key) > -1) {
-            data.receivables[key] = allFinancialData[key];
+        if (receivables.indexOf(eachObj.key) > -1) {
+            data[4].tableRow.push(eachObj);
         }
-        if (cashAndBank.indexOf(key) > -1) {
-            data.cashAndBank[key] = allFinancialData[key];
+        if (cashAndBank.indexOf(eachObj.key) > -1) {
+            data[5].tableRow.push(eachObj);
         }
     }
     return data;
@@ -4106,16 +4170,28 @@ async function getUpdatedAccountingPractices_headers(accountingPracticesData, ac
         "totVacancy",
         "accPosition",
     ];
-    let data = {
-        accSysAndProcess: { "label": "I. Accounting Systems and Processes" },
-        staffing: { "label": "II.Staffing - Finance & Accounts Department" },
-    };
-    for (key of accountingPracticesKeys) {
-        if (accSysAndProcess.indexOf(key) > -1) {
-            data.accSysAndProcess[key] = accountingPracticesData[key];
+    let data = [
+        {
+            "key": 'accSysAndProcess',
+            "section": 'accordion',
+            "formFieldType": "section",
+            "label": "I. Accounting Systems and Processes",
+            "formArrays": []
+        },
+        {
+            "key": 'staffing',
+            "section": 'accordion',
+            "formFieldType": "section",
+            "label": "II.Staffing - Finance & Accounts Department",
+            "formArrays": []
+        },
+    ];
+    for (eachObj of accountingPracticesData) {
+        if (accSysAndProcess.indexOf(eachObj.key) > -1) {
+            data[0].formArrays.push(eachObj);
         }
-        if (staffing.indexOf(key) > -1) {
-            data.staffing[key] = accountingPracticesData[key];
+        if (staffing.indexOf(eachObj.key) > -1) {
+            data[1].formArrays.push(eachObj);
         }
     }
     return data;
