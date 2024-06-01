@@ -205,7 +205,7 @@ module.exports.getForm = async (req, res) => {
 
     if (userForm.formType == "form1") {
         try {
-            let form1Data = await getForm1(ulbId, req.query.role);
+            let form1Data = await getForm1(ulbId, req.query.role, "");
             return res.status(200).json({ status: true, message: "Success fetched data!", data: form1Data });
         }
         catch (error) {
@@ -227,10 +227,66 @@ module.exports.getForm = async (req, res) => {
 
 };
 
-async function getForm1(userId, roleName) {
+async function validateValues(quesType, ansValue, isPdf = "", fileUrl = "", fileName = "", max = "", min = "", decimal = "") {
+    let validation = [];
+    if (!ansValue && quesType !== 'file') {
+        validation.push({
+            name: "required",
+            validator: 'required',
+            message: "This field cannot be empty!"
+        });
+    }
+    else if (["text", "radio", "dropdown"].includes(quesType) && typeof (ansValue) != 'string') {
+        validation.push({
+            name: "required",
+            validator: 'required',
+            message: "This field must be string!"
+        });
+    }
+    else if (quesType === 'number' && typeof (ansValue) != 'number') {
+        validation.push({
+            name: "required",
+            validator: 'required',
+            message: "This field must be number!"
+        });
+    }
+    else if (quesType === 'file' && !isPdf && !fileUrl && !fileName) {
+        validation.push({
+            name: "required",
+            validator: 'required',
+            message: "This field cannot be empty!"
+        });
+    }
+    else if (quesType === 'number' && typeof (ansValue) == 'number') {
+        if (ansValue > max) {
+            validation.push({
+                name: "required",
+                validator: 'required',
+                message: "This filed is out of range!"
+            });
+        }
+        if (ansValue < min) {
+            validation.push({
+                name: "required",
+                validator: 'required',
+                message: "This filed is min!"
+            });
+        }
+        if (ansValue.toString().includes(".") && ansValue.toString().split('.')[1].length > decimal) {
+            validation.push({
+                name: "required",
+                validator: 'required',
+                message: "This filed must be in range - decimal"
+            });
+        }
+    }
+    return validation;
+}
+
+async function getForm1(userId, roleName, submittedData) {
     let ulbId = userId;
     let role = roleName;
-    let from1AnswerFromDb = await XviFcForm1DataCollection.findOne({ ulb: ObjectId(ulbId) });
+    let from1AnswerFromDb = submittedData ? submittedData : await XviFcForm1DataCollection.findOne({ ulb: ObjectId(ulbId) });
     let xviFCForm1Tabs = await XviFcForm1Tabs.find({ formType: "form1" }).lean();
     let xviFCForm1Table = tempDb;
 
@@ -246,7 +302,7 @@ async function getForm1(userId, roleName) {
 
     // Create a json structure - questions.
     let from1QuestionFromDb = await getModifiedTabsXvifcForm1(xviFCForm1Tabs, xviFCForm1Table);
-
+    let validationCounter = 0;
 
     if (from1AnswerFromDb) {
         for (let eachQuestionObj of from1QuestionFromDb) {
@@ -262,6 +318,12 @@ async function getForm1(userId, roleName) {
                                 let yearDataIndex = eachObj.year.findIndex(x => x.key === selectedData.key)
                                 if (yearDataIndex > -1 && selectedData.key == eachObj.year[yearDataIndex].key) {
                                     eachObj.year[yearDataIndex].value = selectedData.saveAsDraftValue;
+
+                                    if (submittedData) {
+                                        let validationArr = await validateValues(selectedData.formFieldType, selectedData.saveAsDraftValue, "", "", "", eachObj.max, eachObj.min, eachObj.decimal);
+                                        eachObj.year[yearDataIndex].validation = validationArr;
+                                        validationCounter = validationArr.length > 0 ? validationCounter + 1 : validationCounter;
+                                    }
                                 }
                             }
                         }
@@ -272,16 +334,32 @@ async function getForm1(userId, roleName) {
                                 if (yearDataIndex > -1 && selectedData.key == eachObj.year[yearDataIndex].key) {
                                     eachObj.year[yearDataIndex].file.name = selectedData.file[0].name;
                                     eachObj.year[yearDataIndex].file.url = selectedData.file[0].url;
+
+
+                                    if (submittedData) {
+                                        let validationArr = await validateValues(selectedData.formFieldType, selectedData.saveAsDraftValue, selectedData.isPdfAvailable, eachObj.year[yearDataIndex].file.url, eachObj.year[yearDataIndex].file.name, "", "", "");
+                                        eachObj.year[yearDataIndex].validation = [];
+                                        eachObj.year[yearDataIndex].validation = validationArr;
+                                        validationCounter = validationArr.length > 0 ? validationCounter + 1 : validationCounter;
+                                    }
                                 }
                             }
                         }
 
-                        if (eachQuestionObj.key == "demographicData" || eachQuestionObj.key == 'accountPractice') {
-                            if (selectedData.key && eachQuestionObj.data[selectedData.key] && selectedData.key == eachQuestionObj.data[selectedData.key].key) {
-                                eachQuestionObj.data[selectedData.key].value = selectedData.saveAsDraftValue;
+                        if (eachQuestionObj.key == "demographicData" || eachQuestionObj.key == "accountPractice") {
+                            for (let eachObj of eachQuestionObj.data) {
+                                if (selectedData.key && eachObj.key && selectedData.key == eachObj.key) {
+                                    eachObj.value = selectedData.saveAsDraftValue;
+
+                                    if (submittedData) {
+                                        let validationArr = await validateValues(selectedData.formFieldType, selectedData.saveAsDraftValue, "", "", "", eachObj.max, eachObj.min, eachObj.decimal);
+                                        eachObj.validation = [];
+                                        eachObj.validation = validationArr;
+                                        validationCounter = validationArr.length > 0 ? validationCounter + 1 : validationCounter;
+                                    }
+                                }
                             }
                         }
-
                     }
                 }
             }
@@ -306,6 +384,7 @@ async function getForm1(userId, roleName) {
         // stateId: stateId,
         // stateName: stateData.name,
         tabs: from1QuestionFromDb,
+        validationCounter,
         financialYearTableHeader
     };
 
@@ -362,6 +441,7 @@ async function getForm2(userId, roleName) {
                             }
                         }
                         if (eachQuestionObj.key == "demographicData" || eachQuestionObj.key == 'accountPractice') {
+
                             if (selectedData.key && eachQuestionObj.data[selectedData.key] && selectedData.key == eachQuestionObj.data[selectedData.key].key) {
                                 eachQuestionObj.data[selectedData.key].value = selectedData.saveAsDraftValue;
 
@@ -438,20 +518,23 @@ module.exports.submitForm1 = async (req, res) => {
     try {
         let ulbData_form1 = req.body;
         let ulbId = ObjectId(req.query.ulb);
+        let roleName = "ULB"; // TODO: make dynamic.
         let existingSubmitData = await XviFcForm1DataCollection.find({ ulb: ulbId });
-        let validateSubmitData = ulbData_form1.formId === 16 ? ulbData_form1.tab.length === 4 : (ulbData_form1.formId === 17 ? ulbData_form1.tab.length === 5 : false); // Check if all the tabs data are sent from fortend.
+        let validateSubmitData = ulbData_form1.formId === 16 ? ulbData_form1.tab.length === 4 : (ulbData_form1.formId === 17 ? ulbData_form1.tab.length === 5 : false); // Check if all the tabs data are sent from frontend.
 
         if (existingSubmitData.length > 0 && existingSubmitData[0].formStatus === 'IN_PROGRESS' && validateSubmitData) {
-            // When form is submitted -> update the "value" from "saveAsDraftValue".
-            for (let selectForm1Tab of ulbData_form1.tab) {
-                for (let eachQuesInSelectedTab of selectForm1Tab.data) {
-                    eachQuesInSelectedTab.value = eachQuesInSelectedTab.saveAsDraftValue;
-                }
-            }
-            ulbData_form1.formStatus = 'SUBMITTED';
+            // Check validation and update data from "saveAsDraftValue" to "value".
+            let getFormData = await getForm1(ulbId, roleName, ulbData_form1);
+            // let validatedData = await checkValidations(ulbData_form1, getFormData);
 
-            let updatedData = await XviFcForm1DataCollection.findOneAndUpdate({ ulb: ulbId }, ulbData_form1, { upsert: true });
-            return res.status(200).json({ status: true, message: "DB successfully updated", data: updatedData ? updatedData : "" });
+            if (getFormData.validationCounter > 0) {
+                return res.status(200).json({ status: true, message: "Validation failed", data: getFormData });
+            } else {
+                ulbData_form1.formStatus = 'SUBMITTED';
+
+                let updatedData = await XviFcForm1DataCollection.findOneAndUpdate({ ulb: ulbId }, ulbData_form1, { upsert: true });
+                return res.status(200).json({ status: true, message: "DB successfully updated", data: updatedData });
+            }
         } else {
             let errorMessage = existingSubmitData.length > 0 && (existingSubmitData[0].formStatus !== 'IN_PROGRESS') ? "Form already submitted!" : "Invalid form data!";
             return res.status(200).json({ status: true, message: errorMessage });
@@ -3990,42 +4073,42 @@ async function getUpdatedFinancialData_headers(allFinancialData, allFinancialDat
             "section": 'accordion',
             "formFieldType": "table",
             "label": "",
-            "tableRow": []
+            "data": []
         },
         {
             "key": "revenue",
             "section": 'accordion',
             "formFieldType": "table",
             "label": "I. REVENUE",
-            "tableRow": []
+            "data": []
         },
         {
             "key": "expenditure",
             "section": 'accordion',
             "formFieldType": "table",
             "label": "II. EXPENDITURE",
-            "tableRow": []
+            "data": []
         },
         {
             "key": "borrowings",
             "section": 'accordion',
             "formFieldType": "table",
             "label": "III. BORROWINGS",
-            "tableRow": []
+            "data": []
         }
     ];
     for (let eachObj of allFinancialData) {
         if (commonPrimaryKey.indexOf(eachObj.key) > -1) {
-            data[0].tableRow.push(eachObj);
+            data[0].data.push(eachObj);
         }
         if (revenue.indexOf(eachObj.key) > -1) {
-            data[1].tableRow.push(eachObj);
+            data[1].data.push(eachObj);
         }
         if (expenditure.indexOf(eachObj.key) > -1) {
-            data[2].tableRow.push(eachObj);
+            data[2].data.push(eachObj);
         }
         if (borrowings.indexOf(eachObj.key) > -1) {
-            data[3].tableRow.push(eachObj);
+            data[3].data.push(eachObj);
         }
     }
     return data;
@@ -4091,62 +4174,62 @@ async function getUpdatedFinancialData_headersForm2(allFinancialData, allFinanci
             "section": 'accordion',
             "formFieldType": "table",
             "label": "",
-            "tableRow": []
+            "data": []
         },
         {
             "key": "revenue",
             "section": 'accordion',
             "formFieldType": "table",
             "label": "I. REVENUE",
-            "tableRow": []
+            "data": []
         },
         {
             "key": "expenditure",
             "section": 'accordion',
             "formFieldType": "table",
             "label": "II. EXPENDITURE",
-            "tableRow": []
+            "data": []
         },
         {
             "key": "borrowings",
             "section": 'accordion',
             "formFieldType": "table",
             "label": "III. BORROWINGS",
-            "tableRow": []
+            "data": []
         },
         {
             "key": "receivables",
             "section": 'accordion',
             "formFieldType": "table",
             "label": "IV. RECEIVABLES",
-            "tableRow": []
+            "data": []
         },
         {
             "key": "cashAndBank",
             "section": 'accordion',
             "formFieldType": "table",
             "label": "V. CASH and BANK BALANCE",
-            "tableRow": []
+            "data": []
         },
     ];
     for (let eachObj of allFinancialData) {
         if (commonPrimaryKey.indexOf(eachObj.key) > -1) {
-            data[0].tableRow.push(eachObj);
+            data[0].data.push(eachObj);
         }
         if (revenue.indexOf(eachObj.key) > -1) {
-            data[1].tableRow.push(eachObj);
+            data[1].data.push(eachObj);
         }
         if (expenditure.indexOf(eachObj.key) > -1) {
-            data[2].tableRow.push(eachObj);
+            data[2].data.push(eachObj);
         }
         if (borrowings.indexOf(eachObj.key) > -1) {
-            data[3].tableRow.push(eachObj);
+            data[3].data.push(eachObj);
         }
         if (receivables.indexOf(eachObj.key) > -1) {
-            data[4].tableRow.push(eachObj);
+            data[4].data.push(eachObj);
         }
         if (cashAndBank.indexOf(eachObj.key) > -1) {
-            data[5].tableRow.push(eachObj);
+            data[5].data.push(eachObj);
         }
     }
     return data;
@@ -4176,22 +4259,22 @@ async function getUpdatedAccountingPractices_headers(accountingPracticesData, ac
             "section": 'accordion',
             "formFieldType": "section",
             "label": "I. Accounting Systems and Processes",
-            "formArrays": []
+            "data": []
         },
         {
             "key": 'staffing',
             "section": 'accordion',
             "formFieldType": "section",
             "label": "II.Staffing - Finance & Accounts Department",
-            "formArrays": []
+            "data": []
         },
     ];
     for (eachObj of accountingPracticesData) {
         if (accSysAndProcess.indexOf(eachObj.key) > -1) {
-            data[0].formArrays.push(eachObj);
+            data[0].data.push(eachObj);
         }
         if (staffing.indexOf(eachObj.key) > -1) {
-            data[1].formArrays.push(eachObj);
+            data[1].data.push(eachObj);
         }
     }
     return data;
