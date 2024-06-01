@@ -214,7 +214,7 @@ module.exports.getForm = async (req, res) => {
         }
     } else if (userForm.formType == "form2") {
         try {
-            let form2Data = await getForm2(ulbId, req.query.role);
+            let form2Data = await getForm2(ulbId, req.query.role, "");
             return res.status(200).json({ status: true, message: "Success fetched data!", data: form2Data });
         }
         catch (error) {
@@ -392,11 +392,11 @@ async function getForm1(userId, roleName, submittedData) {
 
 }
 
-async function getForm2(userId, roleName) {
+async function getForm2(userId, roleName, submittedData) {
 
     let ulbId = userId;
     let role = roleName;
-    let from2AnswerFromDb = await XviFcForm1DataCollection.findOne({ ulb: ObjectId(ulbId) });
+    let from2AnswerFromDb = submittedData ? submittedData : await XviFcForm1DataCollection.findOne({ ulb: ObjectId(ulbId) });
     let xviFCForm2Tabs = await XviFcForm1Tabs.find({ formType: "form2" }).lean();
     let xviFCForm2Table = tempDbForm2;
 
@@ -412,6 +412,7 @@ async function getForm2(userId, roleName) {
 
     // Create a json structure - questions.
     let from2QuestionFromDb = await getModifiedTabsXvifcForm2(xviFCForm2Tabs, xviFCForm2Table);
+    let validationCounter = 0;
 
     if (from2AnswerFromDb) {
         for (let eachQuestionObj of from2QuestionFromDb) {
@@ -427,6 +428,12 @@ async function getForm2(userId, roleName) {
                                 let yearDataIndex = eachObj.year.findIndex(x => x.key === selectedData.key)
                                 if (yearDataIndex > -1 && selectedData.key == eachObj.year[yearDataIndex].key) {
                                     eachObj.year[yearDataIndex].value = selectedData.saveAsDraftValue;
+
+                                    if (submittedData) {
+                                        let validationArr = await validateValues(selectedData.formFieldType, selectedData.saveAsDraftValue, "", "", "", eachObj.max, eachObj.min, eachObj.decimal);
+                                        eachObj.year[yearDataIndex].validation = validationArr;
+                                        validationCounter = validationArr.length > 0 ? validationCounter + 1 : validationCounter;
+                                    }
                                 }
                             }
                         }
@@ -437,14 +444,30 @@ async function getForm2(userId, roleName) {
                                 if (yearDataIndex > -1 && selectedData.key == eachObj.year[yearDataIndex].key) {
                                     eachObj.year[yearDataIndex].file.name = selectedData.file[0].name;
                                     eachObj.year[yearDataIndex].file.url = selectedData.file[0].url;
+
+
+                                    if (submittedData) {
+                                        let validationArr = await validateValues(selectedData.formFieldType, selectedData.saveAsDraftValue, selectedData.isPdfAvailable, eachObj.year[yearDataIndex].file.url, eachObj.year[yearDataIndex].file.name, "", "", "");
+                                        eachObj.year[yearDataIndex].validation = [];
+                                        eachObj.year[yearDataIndex].validation = validationArr;
+                                        validationCounter = validationArr.length > 0 ? validationCounter + 1 : validationCounter;
+                                    }
                                 }
                             }
                         }
+
                         if (eachQuestionObj.key == "demographicData" || eachQuestionObj.key == 'accountPractice') {
+                            for (let eachObj of eachQuestionObj.data) {
+                                if (selectedData.key && eachObj.key && selectedData.key == eachObj.key) {
+                                    eachObj.value = selectedData.saveAsDraftValue;
 
-                            if (selectedData.key && eachQuestionObj.data[selectedData.key] && selectedData.key == eachQuestionObj.data[selectedData.key].key) {
-                                eachQuestionObj.data[selectedData.key].value = selectedData.saveAsDraftValue;
-
+                                    if (submittedData) {
+                                        let validationArr = await validateValues(selectedData.formFieldType, selectedData.saveAsDraftValue, "", "", "", eachObj.max, eachObj.min, eachObj.decimal);
+                                        eachObj.validation = [];
+                                        eachObj.validation = validationArr;
+                                        validationCounter = validationArr.length > 0 ? validationCounter + 1 : validationCounter;
+                                    }
+                                }
                             }
                         }
 
@@ -476,7 +499,7 @@ async function getForm2(userId, roleName) {
         // stateId: stateId,
         // stateName: stateData.name,
         tabs: from2QuestionFromDb,
-        // financialYearTableHeaderForm2
+        validationCounter,
         financialYearTableHeader
     };
 
@@ -492,25 +515,33 @@ module.exports.saveAsDraftForm1 = async (req, res) => {
 
         if (existingSubmitData.length <= 0) {
             ulbData_form1 = await XviFcForm1DataCollection.findOneAndUpdate({ ulb: ulbId }, ulbData_form1, { upsert: true });
-            return res.status(200).json({ status: true, message: "DB successfully updated", data: ulbData_form1 ? ulbData_form1 : "" });
+            return res.status(200).json({ status: true, message: "Data successfully saved as draft!" });
         }
         else if (existingSubmitData.length > 0 && existingSubmitData[0].formStatus === 'IN_PROGRESS') {
-            // If tab sent is less that total tab 
+            // If tab sent is less that total tab - keep what is there in DB, add only sent tab.
             for (let form1Data of existingSubmitData[0].tab) {
                 index = ulbData_form1.tab.findIndex(x => x.tabKey === form1Data.tabKey);
+                // Check each question.
+                for (let eachObj of form1Data.data) {
+                    quesIndex = ulbData_form1.tab[index].data.findIndex((x) => x.key === eachObj.key);
+                    if (quesIndex <= -1) {
+                        ulbData_form1.tab[index].data.push(eachObj);
+                    }
+                }
+                // Check tab.
                 if (index <= -1) {
                     ulbData_form1.tab.push(form1Data);
                 }
             }
 
             let updatedData = await XviFcForm1DataCollection.findOneAndUpdate({ ulb: ulbId }, ulbData_form1, { upsert: true });
-            return res.status(200).json({ status: true, message: "DB successfully updated", data: updatedData ? updatedData : "" });
+            return res.status(200).json({ status: true, message: "Data successfully saved as draft!" });
         } else {
             return res.status(200).json({ status: true, message: "Form already submitted!" });
         }
     } catch (error) {
         console.log(error);
-        return res.status(400).json({ status: false, message: error });
+        return res.status(400).json({ status: false, message: "Data not saved as draft!" });
     }
 };
 
@@ -528,16 +559,16 @@ module.exports.submitForm1 = async (req, res) => {
             // let validatedData = await checkValidations(ulbData_form1, getFormData);
 
             if (getFormData.validationCounter > 0) {
-                return res.status(200).json({ status: true, message: "Validation failed", data: getFormData });
+                return res.status(200).json({ status: true, message: "Validation failed" });
             } else {
                 ulbData_form1.formStatus = 'SUBMITTED';
 
                 let updatedData = await XviFcForm1DataCollection.findOneAndUpdate({ ulb: ulbId }, ulbData_form1, { upsert: true });
-                return res.status(200).json({ status: true, message: "DB successfully updated", data: updatedData });
+                return res.status(200).json({ status: true, message: "DB successfully updated" });
             }
         } else {
             let errorMessage = existingSubmitData.length > 0 && (existingSubmitData[0].formStatus !== 'IN_PROGRESS') ? "Form already submitted!" : "Invalid form data!";
-            return res.status(200).json({ status: true, message: errorMessage });
+            return res.status(400).json({ status: true, message: errorMessage });
         }
     } catch (error) {
         console.log(error);
@@ -551,16 +582,32 @@ module.exports.saveAsDraftForm2 = async (req, res) => {
         let ulbId = ObjectId(req.query.ulb);
         let existingSubmitData = await XviFcForm1DataCollection.find({ ulb: ulbId });
 
-        if (existingSubmitData.length > 0) {
+        if (existingSubmitData.length <= 0) {
+            ulbData_form1 = await XviFcForm1DataCollection.findOneAndUpdate({ ulb: ulbId }, ulbData_form1, { upsert: true });
+            return res.status(200).json({ status: true, message: "Data successfully saved as draft!" });
+        }
+        else if (existingSubmitData.length > 0 && existingSubmitData[0].formStatus === 'IN_PROGRESS') {
+            // If tab sent is less that total tab - keep what is there in DB, add only sent tab.
             for (let form1Data of existingSubmitData[0].tab) {
                 index = ulbData_form1.tab.findIndex(x => x.tabKey === form1Data.tabKey);
+                // Check each question.
+                for (let eachObj of form1Data.data) {
+                    quesIndex = ulbData_form1.tab[index].data.findIndex((x) => x.key === eachObj.key);
+                    if (quesIndex <= -1) {
+                        ulbData_form1.tab[index].data.push(eachObj);
+                    }
+                }
+                // Check tab.
                 if (index <= -1) {
                     ulbData_form1.tab.push(form1Data);
                 }
             }
+
+            let updatedData = await XviFcForm1DataCollection.findOneAndUpdate({ ulb: ulbId }, ulbData_form1, { upsert: true });
+            return res.status(200).json({ status: true, message: "Data successfully saved as draft!" });
+        } else {
+            return res.status(200).json({ status: true, message: "Form already submitted!" });
         }
-        let updatedData = await XviFcForm1DataCollection.findOneAndUpdate({ ulb: ulbId }, ulbData_form1, { upsert: true });
-        return res.status(200).json({ status: true, message: "DB successfully updated", data: updatedData ? updatedData : "" });
     } catch (error) {
         return res.status(400).json({ status: false, message: error });
     }
@@ -570,19 +617,29 @@ module.exports.submitFrom2 = async (req, res) => {
     try {
         let ulbData_form1 = req.body;
         let ulbId = ObjectId(req.query.ulb);
+        let roleName = "ULB"; // TODO: make dynamic.
         let existingSubmitData = await XviFcForm1DataCollection.find({ ulb: ulbId });
+        let validateSubmitData = ulbData_form1.formId === 16 ? ulbData_form1.tab.length === 4 : (ulbData_form1.formId === 17 ? ulbData_form1.tab.length === 5 : false); // Check if all the tabs data are sent from frontend.
 
-        if (existingSubmitData.length > 0) {
-            for (let form1Data of existingSubmitData[0].tab) {
-                index = ulbData_form1.tab.findIndex(x => x.tabKey === form1Data.tabKey);
-                if (index <= -1) {
-                    ulbData_form1.tab.push(form1Data);
-                }
+        if (existingSubmitData.length > 0 && existingSubmitData[0].formStatus === 'IN_PROGRESS' && validateSubmitData) {
+            // Check validation and update data from "saveAsDraftValue" to "value".
+            let getFormData = await getForm2(ulbId, roleName, ulbData_form1);
+            // let validatedData = await checkValidations(ulbData_form1, getFormData);
+
+            if (getFormData.validationCounter > 0) {
+                return res.status(200).json({ status: true, message: "Validation failed" });
+            } else {
+                ulbData_form1.formStatus = 'SUBMITTED';
+
+                let updatedData = await XviFcForm1DataCollection.findOneAndUpdate({ ulb: ulbId }, ulbData_form1, { upsert: true });
+                return res.status(200).json({ status: true, message: "DB successfully updated" });
             }
+        } else {
+            let errorMessage = existingSubmitData.length > 0 && (existingSubmitData[0].formStatus !== 'IN_PROGRESS') ? "Form already submitted!" : "Invalid form data!";
+            return res.status(400).json({ status: true, message: errorMessage });
         }
-        let updatedData = await XviFcForm1DataCollection.findOneAndUpdate({ ulb: ulbId }, ulbData_form1, { upsert: true });
-        return res.status(200).json({ status: true, message: "DB successfully updated", data: updatedData ? updatedData : "" });
     } catch (error) {
+        console.log(error);
         return res.status(400).json({ status: false, message: error });
     }
 };
@@ -692,7 +749,7 @@ let keyDetails = {
     },
     yearOfConstitution: {
         formFieldType: 'dropdown',
-        options: ["2015-16", "2016-17", "2017-18", "2018-19", "2019-20", "2020-21", "2021-22", "2022-23"],
+        options: ["Before 2015-16", "In 2015-16", "2016-17", "2017-18", "2018-19", "2019-20", "2020-21", "2021-22", "2022-23"],
         showInputBox: "",
         key: 'yearOfConstitution',
         displayPriority: '8',
@@ -1296,7 +1353,7 @@ let keyDetailsForm2 = {
     },
     yearOfConstitution: {
         formFieldType: 'dropdown',
-        options: ["2015-16", "2016-17", "2017-18", "2018-19", "2019-20", "2020-21", "2021-22", "2022-23"],
+        options: ["Before 2015-16", "In 2015-16", "2016-17", "2017-18", "2018-19", "2019-20", "2020-21", "2021-22", "2022-23"],
         showInputBox: "",
         key: 'yearOfConstitution',
         displayPriority: '8',
@@ -3846,36 +3903,36 @@ class tabsUpdationServiceFR2 {
         ];
     }
     async getDataForServiceLevelBenchmark() {
-        return {
-            "coverageOfWs": { ...this.detail.coverageOfWs },
-            "perCapitaOfWs": { ...this.detail.perCapitaOfWs },
-            "extentOfMeteringWs": { ...this.detail.extentOfMeteringWs },
-            "extentOfNonRevenueWs": { ...this.detail.extentOfNonRevenueWs },
-            "continuityOfWs": { ...this.detail.continuityOfWs },
-            "efficiencyInRedressalCustomerWs": { ...this.detail.efficiencyInRedressalCustomerWs },
-            "qualityOfWs": { ...this.detail.qualityOfWs },
-            "costRecoveryInWs": { ...this.detail.costRecoveryInWs },
-            "efficiencyInCollectionRelatedWs": { ...this.detail.efficiencyInCollectionRelatedWs },
-            "coverageOfToiletsSew": { ...this.detail.coverageOfToiletsSew },
-            "coverageOfSewNet": { ...this.detail.coverageOfSewNet },
-            "collectionEfficiencySew": { ...this.detail.collectionEfficiencySew },
-            "adequacyOfSew": { ...this.detail.adequacyOfSew },
-            "qualityOfSew": { ...this.detail.qualityOfSew },
-            "extentOfReuseSew": { ...this.detail.extentOfReuseSew },
-            "efficiencyInRedressalCustomerSew": { ...this.detail.efficiencyInRedressalCustomerSew },
-            "extentOfCostWaterSew": { ...this.detail.extentOfCostWaterSew },
-            "efficiencyInCollectionSew": { ...this.detail.efficiencyInCollectionSew },
-            "householdLevelCoverageLevelSwm": { ...this.detail.householdLevelCoverageLevelSwm },
-            "efficiencyOfCollectionSwm": { ...this.detail.efficiencyOfCollectionSwm },
-            "extentOfSegregationSwm": { ...this.detail.extentOfSegregationSwm },
-            "extentOfMunicipalSwm": { ...this.detail.extentOfMunicipalSwm },
-            "extentOfScientificSolidSwm": { ...this.detail.extentOfScientificSolidSwm },
-            "extentOfCostInSwm": { ...this.detail.extentOfCostInSwm },
-            "efficiencyInCollectionSwmUser": { ...this.detail.efficiencyInCollectionSwmUser },
-            "efficiencyInRedressalCustomerSwm": { ...this.detail.efficiencyInRedressalCustomerSwm },
-            "coverageOfStormDrainage": { ...this.detail.coverageOfStormDrainage },
-            "incidenceOfWaterLogging": { ...this.detail.incidenceOfWaterLogging },
-        }
+        return [
+            { ...this.detail.coverageOfWs },
+            { ...this.detail.perCapitaOfWs },
+            { ...this.detail.extentOfMeteringWs },
+            { ...this.detail.extentOfNonRevenueWs },
+            { ...this.detail.continuityOfWs },
+            { ...this.detail.efficiencyInRedressalCustomerWs },
+            { ...this.detail.qualityOfWs },
+            { ...this.detail.costRecoveryInWs },
+            { ...this.detail.efficiencyInCollectionRelatedWs },
+            { ...this.detail.coverageOfToiletsSew },
+            { ...this.detail.coverageOfSewNet },
+            { ...this.detail.collectionEfficiencySew },
+            { ...this.detail.adequacyOfSew },
+            { ...this.detail.qualityOfSew },
+            { ...this.detail.extentOfReuseSew },
+            { ...this.detail.efficiencyInRedressalCustomerSew },
+            { ...this.detail.extentOfCostWaterSew },
+            { ...this.detail.efficiencyInCollectionSew },
+            { ...this.detail.householdLevelCoverageLevelSwm },
+            { ...this.detail.efficiencyOfCollectionSwm },
+            { ...this.detail.extentOfSegregationSwm },
+            { ...this.detail.extentOfMunicipalSwm },
+            { ...this.detail.extentOfScientificSolidSwm },
+            { ...this.detail.extentOfCostInSwm },
+            { ...this.detail.efficiencyInCollectionSwmUser },
+            { ...this.detail.efficiencyInRedressalCustomerSwm },
+            { ...this.detail.coverageOfStormDrainage },
+            { ...this.detail.incidenceOfWaterLogging },
+        ];
     }
 }
 
@@ -4317,24 +4374,49 @@ async function getUpdatedServiceLevelBenchmark_headers(serviceLevelBenchmarkData
         "coverageOfStormDrainage",
         "incidenceOfWaterLogging",
     ];
-    let data = {
-        waterSupply: { "label": "I. WATER SUPPLY" },
-        sewerage: { "label": "II. SEWERAGE" },
-        solidWaste: { "label": "III. SOLID WASTE MANAGEMENT" },
-        stromWater: { "label": "IV. STROM WATER DRAINAGE" },
-    };
-    for (key of serviceLevelBenchmarkKeys) {
-        if (waterSupply.indexOf(key) > -1) {
-            data.waterSupply[key] = serviceLevelBenchmarkData[key];
+    let data = [
+        {
+            "key": "waterSupply",
+            "section": 'accordion',
+            "formFieldType": "table",
+            "data": [],
+            "label": "I. WATER SUPPLY"
+        },
+        {
+            "key": "sewerage",
+            "section": 'accordion',
+            "formFieldType": "table",
+            "data": [],
+            "label": "II. SEWERAGE"
+        },
+        {
+            "key": "solidWaste",
+            "section": 'accordion',
+            "formFieldType": "table",
+            "data": [],
+            "label": "III. SOLID WASTE MANAGEMENT"
+        },
+        {
+            "key": "stromWater",
+            "section": 'accordion',
+            "formFieldType": "table",
+            "data": [],
+            "label": "IV. STROM WATER DRAINAGE"
+        },
+    ];
+
+    for (let eachObj of serviceLevelBenchmarkData) {
+        if (waterSupply.indexOf(eachObj.key) > -1) {
+            data[0].data.push(eachObj);
         }
-        if (sewerage.indexOf(key) > -1) {
-            data.sewerage[key] = serviceLevelBenchmarkData[key];
+        if (sewerage.indexOf(eachObj.key) > -1) {
+            data[1].data.push(eachObj);
         }
-        if (solidWaste.indexOf(key) > -1) {
-            data.solidWaste[key] = serviceLevelBenchmarkData[key];
+        if (solidWaste.indexOf(eachObj.key) > -1) {
+            data[2].data.push(eachObj);
         }
-        if (stromWater.indexOf(key) > -1) {
-            data.stromWater[key] = serviceLevelBenchmarkData[key];
+        if (stromWater.indexOf(eachObj.key) > -1) {
+            data[3].data.push(eachObj);
         }
     }
     return data;
