@@ -45,25 +45,16 @@ module.exports.getIE = function (req, res) {
         return;
     }
 
-    ulbCodeArr = [];
-    for (i = 0; i < req.body.ulbList.length; i++) {
-        if (req.body.ulbList[i].code) {
-            // Get all the ulb codes, for whose balance sheet has been requested
-            ulbCodeArr.push(req.body.ulbList[i].code);
-        }
-    }
-
     let payload = {};
     payload['head_of_account'] = { $match: { "lineitems.headOfAccount": { $in: ['Revenue', 'Expense'] } } };
-    payload['ulb_code'] = { $match: { "ulbs.code": { $in: ulbCodeArr } } };
-
+    
     // For all the ulb codes, ulb its will also be there
     let ulbIds = req.body.ulbIds ? req.body.ulbIds.map(m => mongoose.Types.ObjectId(m)) : "NA";
 
     var aggregateCondition = condition(ulbIds);
 
     // using both, ulb codes and ulb ids for filtering data from ledger collection
-    aggregateCondition.splice(3, 0, payload['ulb_code'], payload['head_of_account']);
+    aggregateCondition.splice(3, 0, payload['head_of_account']);
 
     UlbLedger.aggregate(aggregateCondition).exec((err, result) => {
         if (err) {
@@ -93,17 +84,17 @@ module.exports.getBS = function (req, res) {
         return;
     }
 
-    ulbCodeArr = [];
-    for (i = 0; i < req.body.ulbList.length; i++) {
-        if (req.body.ulbList[i].code) {
-            // Get all the ulb codes, for whose balance sheet has been requested
-            ulbCodeArr.push(req.body.ulbList[i].code);
-        }
-    }
+    // ulbCodeArr = [];
+    // for (i = 0; i < req.body.ulbList.length; i++) {
+    //     if (req.body.ulbList[i].code) {
+    //         // Get all the ulb codes, for whose balance sheet has been requested
+    //         ulbCodeArr.push(req.body.ulbList[i].code);
+    //     }
+    // }
 
     let payload = {};
     payload['head_of_account'] = { $match: { "lineitems.headOfAccount": { $in: ['Asset', 'Liability'] } } };
-    payload['ulb_code'] = { $match: { "ulbs.code": { $in: ulbCodeArr } } };
+    // payload['ulb_code'] = { $match: { "ulbs.code": { $in: ulbCodeArr } } };
 
     // For all the ulb codes, ulb its will also be there
     let ulbIds = req.body.ulbIds ? req.body.ulbIds.map(m => mongoose.Types.ObjectId(m)) : "NA";
@@ -111,7 +102,8 @@ module.exports.getBS = function (req, res) {
     var aggregateCondition = condition(ulbIds);
     // make aggregate condition to find out ledgers which will be included in balance sheet
     // using both, ulb codes and ulb ids for filtering data from ledger collection
-    aggregateCondition.splice(3, 0, payload['ulb_code'], payload['head_of_account']);
+    // aggregateCondition.splice(3, 0, payload['ulb_code'], payload['head_of_account']);
+    aggregateCondition.splice(3, 0, payload['head_of_account']);
 
     UlbLedger.aggregate(aggregateCondition).exec(function (err, result) {
         if (err) {
@@ -461,7 +453,7 @@ module.exports.getAllLedgersCsv = async function (req, res) {
                     financialYear: "$financialYear",
                     amount: 1,
                     population: 1,
-                    audit_status:{$ifNull:["$audit_status",""]}
+                    audit_status: { $ifNull: ["$audit_status", ""] }
                 }
             }
 
@@ -479,7 +471,7 @@ module.exports.getAllLedgersCsv = async function (req, res) {
                 el.code = el.line_item ? el.line_item.code : "";
                 el.head_of_account = el.line_item ? el.line_item.headOfAccount : "";
                 el.ulb.name = el.ulb ? el.ulb.name.toString().replace(/[,]/g, ' | ') : "";
-                let str = el.ulb.name + "," + el.ulb.code + "," + el.ulb.amrut +"," + el.audit_status + "," + el.head_of_account + "," + el.code + "," + line_item + "," + el.financialYear + "," + el.amount + "\r\n";
+                let str = el.ulb.name + "," + el.ulb.code + "," + el.ulb.amrut + "," + el.audit_status + "," + el.head_of_account + "," + el.code + "," + line_item + "," + el.financialYear + "," + el.amount + "\r\n";
                 res.write(str);
             }
         })
@@ -487,7 +479,7 @@ module.exports.getAllLedgersCsv = async function (req, res) {
             res.end()
         })
     } catch (error) {
-         console.log("error",error)
+        console.log("error", error)
     }
 }
 //@LedgerLog
@@ -1018,33 +1010,33 @@ module.exports.report = async (req, res) => {
 
         res.flushHeaders();
         try {
-          const cursor = AnnualAccount.aggregate(query)
-            .allowDiskUse(true)
-            .cursor({ batchSize: 500 })
-            .addCursorFlag("noCursorTimeout", true)
-            .exec();
-          cursor.on("data", (el) => {
-            res.write(
-              el.ulbName +
-                "," +
-                el.Code +
-                "," +
-                el.state +
-                "," +
-                year +
-                "," +
-                el.standardized_excel +
-                "\r\n"
-            );
-          });
-          cursor.on("end", (el) => {
-            return res.end();
-          });
+            const cursor = AnnualAccount.aggregate(query)
+                .allowDiskUse(true)
+                .cursor({ batchSize: 500 })
+                .addCursorFlag("noCursorTimeout", true)
+                .exec();
+            cursor.on("data", (el) => {
+                res.write(
+                    el.ulbName +
+                    "," +
+                    el.Code +
+                    "," +
+                    el.state +
+                    "," +
+                    year +
+                    "," +
+                    el.standardized_excel +
+                    "\r\n"
+                );
+            });
+            cursor.on("end", (el) => {
+                return res.end();
+            });
         } catch (err) {
-          return res.status(400).json({
-            success: false,
-            msg: "Invalid Payload",
-          });
+            return res.status(400).json({
+                success: false,
+                msg: "Invalid Payload",
+            });
         }
     }
 

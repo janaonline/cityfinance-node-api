@@ -49,6 +49,7 @@ const DULY_ELECTED = new Schema({
 const UlbSchema = new Schema({
     name: { type: String, required: true },
     regionalName: { type: String, default: "" },
+    keywords: { type: String },
     code: { type: String, required: true, index: { unique: true } },
     state: { type: Schema.Types.ObjectId, ref: 'State', required: true },
     ulbType: { type: Schema.Types.ObjectId, ref: 'UlbType', required: true },
@@ -57,7 +58,7 @@ const UlbSchema = new Schema({
     area: { type: Number, default: 0 },
     population: { type: Number, default: 0 },
     location: {
-        type: { 
+        type: {
             lat: { type: String },
             lng: { type: String },
         },
@@ -77,10 +78,10 @@ const UlbSchema = new Schema({
     gsdp: GSDP_ELIGIILITY,
     dulyElected: DULY_ELECTED,
     isActive: { type: Boolean, default: 1 },
-    access_2021:{ type: Boolean, default: 1 },
-    access_2122:{ type: Boolean, default: 1 },
-    access_2223:{ type: Boolean, default: 1 },
-    access_2324:{ type: Boolean, default: 1 },
-    access_2425:{ type: Boolean, default: 1 },
+    access_2021: { type: Boolean, default: 1 },
+    access_2122: { type: Boolean, default: 1 },
+    access_2223: { type: Boolean, default: 1 },
+    access_2324: { type: Boolean, default: 1 },
+    access_2425: { type: Boolean, default: 1 },
 }, { timestamp: { createdAt: "createdAt", updatedAt: "modifiedAt" } });
 module.exports = mongoose.model('Ulb', UlbSchema);

@@ -11,7 +11,6 @@ let years = {
     "2024-25":"606aafcf4dff55e6c075d424",
     "2025-26":"606aafda4dff55e6c075d48f",
 }
-
 const getDesiredYear = (yearIdOrName, yearDiffercnce = 0) => {
     const entries = Object.entries(years);
     const yearIndex = entries.findIndex((entry) => entry.includes('' + yearIdOrName));
@@ -34,7 +33,6 @@ function getAllCurrAndPrevYearsObjectIds(yearId) {
     const previousYears = Object.values(years).slice(0, yearIndex+1);
     return previousYears.map(id => new ObjectId(id));
 }
-
 
 module.exports = {
     years,

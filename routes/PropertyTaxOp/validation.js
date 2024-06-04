@@ -1,4 +1,3 @@
-const { isBeyond2023_24 } = require('../../service/years');
 const { propertyTaxOpFormJson } = require('./fydynemic')
 const keysWithChild = {
     // "taxTypeDemand": [
@@ -340,7 +339,7 @@ const validationJson = {
             "collectIncludingCess"
         ],
         "sequence": [
-            "1.17"
+            "1.13"
         ],
         "message": "Total collections made via online channel should be less than or equal to total property tax collections.",
         "displayNumber": "3.2"
@@ -810,7 +809,7 @@ const getValue = (formFieldType, byData) => {
 const getVavidationObject = (sortKey, byData) => {
     return new Promise(async (resolve, reject) => {
         try {
-            const { tabs } = await propertyTaxOpFormJson({});
+            const { tabs } = await propertyTaxOpFormJson();
             const { data } = tabs[0];
             const { yearData } = data[sortKey];
             const { year, type } = byData;
@@ -822,233 +821,5 @@ const getVavidationObject = (sortKey, byData) => {
     })
 }
 
-let newYearValidationJson = {
-    "userChargesCollection": {
-        "logic": "ltequal",
-        "fields": [
-            "userChargesDmnd"
-        ],
-        "sequence": [
-            "1.16"
-        ],
-        "message": "User charges collections must be less than or equal to User charges demand.",
-    },
-    "totalMappedPropertiesUlb": {
-        "logic": "sum",
-        "fields": [
-            "totalPropertiesTaxDm",
-            "totalPropertiesTax"
-        ],
-        "sequence": [
-            "2.2",
-            "2.3"
-        ],
-        "message": "Sum should be equal to Total number of properties exempted from paying property tax and Total number of properties from which property tax was demanded.",
-        "displayNumber": "2.1"
-    },
-    "totalPropertiesTaxDmCollected": {
-        "logic": "multiple",
-        "multipleValidations": [
-            {
-                "logic": "sum",
-                "fields": [
-                    'resNoPropertyTaxCollected',
-                    'comNoPropertyTaxCollected',
-                    'indNoPropertyTaxCollected',
-                    'govNoPropertyTaxCollected',
-                    'insNoPropertyTaxCollected',
-                    "otherNoPropertyTaxCollected"
-                ],
-                "sequence": [
-                    "2.8",
-                    "2.12",
-                    "2.16",
-                    "2.20",
-                    "2.24",
-                    "2.29"
-                ],
-                "message": "Sum should be equal to total number of properties from which property tax is collected",
-                "displayNumber": "2.4"
-            },
-            {
-                "logic": "ltequal",
-                "fields": [
-                    "totalPropertiesTaxDm"
-                ],
-                "sequence": [
-                    "2.3"
-                ],
-                "message": " Value must be less than or equal to Total number of properties from which property tax was demanded.",
-                "displayNumber": "2.4"
-            },
-
-        ],
-        "displayNumber": "2.4"
-    },
-    "waterChrgConnectionCol": {
-        "logic": "multiple",
-        "multipleValidations": [
-            {
-                "logic": "sum",
-                "fields": [
-                    "resNoWaterChrgCollected",
-                    "comNoWaterChrgCollected",
-                    "indNoWaterChrgCollected",
-                    "othersNoWaterChrgCollected"
-                ],
-                "sequence": [
-                    "5.16",
-                    "5.20",
-                    "5.24",
-                    "5.29"
-                ],
-                "message": "The sum should be equal to total number of connections from which water charges was collected.",
-            },
-            {
-                "logic": "ltequal",
-                "fields": [
-                    "waterChrgConnectionDm"
-                ],
-                "sequence": [
-                    "5.11"
-                ],
-                "message": "Value must be less than or equal to Total Number of connections from which water charges was demanded",
-            },
-        ],
-        "displayNumber": "5.12"
-
-    },
-    "waterChrgCol": {
-        "logic": "multiple",
-        "multipleValidations": [
-            {
-                "logic": "sum",
-                "fields": [
-                    "resValueWaterChrgCollected",
-                    "comValueWaterChrgCollected",
-                    "indValueWaterChrgCollected",
-                    "othersValueWaterChrgCollected"
-                ],
-                "sequence": [
-                    "5.15",
-                    "5.19",
-                    "5.23",
-                    "5.28"
-                ],
-                "message": `Total water charges collection figures should be equal to the sum total of all the water charges collected under the "connection" type`
-            },
-            {
-                "logic": "sum",
-                "fields": [
-                    "cuWaterChrgCol",
-                    "arWaterChrgCol",
-                ],
-                "sequence": [
-                    "5.9",
-                    "5.10",
-                ],
-                "message": "Sum of current and arrears should be equal to total water charges collection.",
-                "displayNumber": "5.8"
-            },
-            {
-                "logic": "ltequal",
-                "fields": [
-                    "waterChrgDm"
-                ],
-                "sequence": [
-                    "5.5",
-                ],
-                "message": "Value must be less than or equal to Total water charges demand",
-                "displayNumber": "5.8"
-            }
-        ],
-        "displayNumber": "5.8"
-    },
-    "totalSewergeChrgCol": {
-        "logic": "multiple",
-        "multipleValidations": [
-            {
-                "logic": "sum",
-                "fields": [
-                    "curSewergeChrgCol",
-                    "arrSewergeChrgCol"
-                ],
-                "sequence": [
-                    "6.9",
-                    "6.10"
-                ],
-                "message": "Sum of current and arrears should match the total charges collection."
-            },
-            {
-                "logic": "sum",
-                "fields": [
-                    "resValueSewerageTaxCollected",
-                    "comValueSewerageTaxCollected",
-                    "indValueSewerageTaxCollected",
-                    "otherValueSewerageTaxCollected"
-                ],
-                "sequence": [
-                    "6.15",
-                    "6.19",
-                    "6.23",
-                    "6.28"
-                ],
-                "message": `Total sewerage charges collection figures should be equal to the sum total of all the sewerage charges collected under the "connection" type`
-            },
-            {
-                "logic": "ltequal",
-                "fields": [
-                    "totalSewergeChrgDm"
-                ],
-                "sequence": [
-                    "6.5",
-                ],
-                "message": `Value must be less than or equal to Total sewerage charges demand`
-            },
-        ],
-        "displayNumber": "6.8"
-
-    },
-    "totalSewergeConnectionCol": {
-        "logic": "multiple",
-        "multipleValidations": [
-            {
-
-                "logic": "sum",
-                "fields": [
-                    "resNoSewerageTaxCollected",
-                    "comNoSewerageTaxCollected",
-                    "indNoSewerageTaxCollected",
-                    "otherNoSewerageTaxCollected"
-                ],
-                "sequence": [
-                    "6.16",
-                    "6.20",
-                    "6.24",
-                    "6.29"
-                ],
-                "message": "The sum should be equal to total number of connections from which sewerage charges were collected."
-            },
-            {
-                "logic": "ltequal",
-                "fields": [
-                    "totalSewergeChrgDm"
-                ],
-                "sequence": [
-                    "6.11",
-                ],
-                "message": ` Value must be less than or equal to "Total number of connections from which sewerage charges was demanded`
-            },
-        ],
-        "displayNumber": "6.12"
-    }
-}
-
-const getValidationJson = (design_year) => {
-    if(!isBeyond2023_24(design_year)) return validationJson;
-
-    return  { ...validationJson, ...newYearValidationJson};
-};
-
-module.exports.getValidationJson = getValidationJson;
+module.exports.validationJson = validationJson
 module.exports.keysWithChild = keysWithChild

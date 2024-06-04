@@ -4,10 +4,14 @@ const LoginHistory = require('../../models/LoginHistory');
 const User = require('../../models/User');
 const Response = require('../../service').response;
 const Service = require('../../service');
-const ObjectId = require('mongoose').Types.ObjectId;
+const mongoose = require('mongoose');
+const ObjectId = mongoose.Types.ObjectId;
 const moment = require('moment');
 const AnnualAccountData = require('../../models/AnnualAccounts')
 const Year = require('../../models/Year')
+const { years } = require("../../service/years");
+
+
 module.exports.create = async (req, res) => {
     let user = req.decoded;
     let data = req.body;
@@ -1241,6 +1245,7 @@ module.exports.findFiles = async (req, res, next) => {
 }
 
 module.exports.sourceFiles = async (req, res) => {
+    // mongoose.set('debug', true);
     try {
         if (req.decoded) {
             let lh_id = ObjectId(req.decoded.lh_id); // Login history id
@@ -1272,204 +1277,167 @@ module.exports.sourceFiles = async (req, res) => {
             'overallReport.pdfUrl': 1,
             'overallReport.excelUrl': 1,
         };
-        let select_ann = {
 
-        };
-        if (year == '2019-20')
-            select_ann = {
-                'audited.provisional_data.bal_sheet.pdf.url': 1,
-                'audited.provisional_data.bal_sheet_schedules.pdf.url': 1,
-                'audited.provisional_data.inc_exp.pdf.url': 1,
-                'audited.provisional_data.inc_exp_schedules.pdf.url': 1,
-                'audited.provisional_data.cash_flow.pdf.url': 1,
-                'audited.provisional_data.auditor_report.pdf.url': 1,
-
-                'audited.provisional_data.bal_sheet.excel.url': 1,
-                'audited.provisional_data.bal_sheet_schedules.excel.url': 1,
-                'audited.provisional_data.inc_exp.excel.url': 1,
-                'audited.provisional_data.inc_exp_schedules.excel.url': 1,
-                'audited.provisional_data.cash_flow.excel.url': 1,
-                'audited.provisional_data.auditor_report.excel.url': 1,
-
-            };
-        if (year == '2020-21')
-            select_ann = {
-                'unAudited.provisional_data.bal_sheet.pdf.url': 1,
-                'unAudited.provisional_data.bal_sheet_schedules.pdf.url': 1,
-                'unAudited.provisional_data.inc_exp.pdf.url': 1,
-                'unAudited.provisional_data.inc_exp_schedules.pdf.url': 1,
-                'unAudited.provisional_data.cash_flow.pdf.url': 1,
-                'unAudited.provisional_data.auditor_report.pdf.url': 1,
-
-                'unAudited.provisional_data.bal_sheet.excel.url': 1,
-                'unAudited.provisional_data.bal_sheet_schedules.excel.url': 1,
-                'unAudited.provisional_data.inc_exp.excel.url': 1,
-                'unAudited.provisional_data.inc_exp_schedules.excel.url': 1,
-                'unAudited.provisional_data.cash_flow.excel.url': 1,
-                'unAudited.provisional_data.auditor_report.excel.url': 1,
-
-            };
-
-        let data
-        if (year != '2019-20' && year != '2020-21' && year != '2021-22') {
-            data = await UlbFinancialData.find(condition, select).exec();
-        } else {
-
-            data = await AnnualAccountData.find(obj, select_ann).lean().exec();
-        }
-
-
-
-        if (req.decoded) {
-            let lh = await LoginHistory.update(
-                { _id: lh_id },
-                { $push: { reports: allId[0] } }
-            );
-        }
+        let data;
         let result = [];
-        for (const objectData of data) {
-            const { pdf, excel } = getSourceFiles(objectData, year);
-            if(pdf.length || excel.length) {
-                result.push({ pdf, excel });
+        const yearSplit = Number(year.split('-')[0]);
+        // less than year 2019 data present in UlbFinancialData
+        if (yearSplit < 2019) {
+            data = await UlbFinancialData.find(condition, select).exec();
+
+            for (const objectData of data) {
+                const { pdf, excel } = getSourceFiles(objectData, year);
+                if (pdf.length || excel.length) {
+                    result.push({ pdf, excel });
+                }
             }
+        } else {
+            result = await getAnnualAccounts(ulbId, year);
         }
-        return Response.OK(res, data.length ? result : {});
+
+        return Response.OK(res, result);
     } catch (e) {
         return Response.DbError(res, e);
     }
 };
 
+function getCond(ulbId, yearId, type) {
+    let cond = {
+        ulb: ulbId,
+        [type + '.year']: ObjectId(yearId),
+        ...(type === 'audited' && { 'audited.provisional_data.bal_sheet.pdf.url': { $ne: null } })
+    };
+    return cond;
+}
+
+async function getAnnualAccounts(ulbId, year) {
+    const yearId = years[year];
+    let doc;
+    let type = 'audited';
+    let res = await AnnualAccountData.findOne(getCond(ulbId, yearId, 'audited'), { audited: 1 })
+        .lean().exec();
+    if (res) {
+        doc = res.audited?.provisional_data;
+    }
+    if (!res) {
+        type = 'unAudited';
+        let resUnAudited = await AnnualAccountData.findOne(getCond(ulbId, yearId, 'unAudited'), { unAudited: 1 })
+            .lean().exec();
+        doc = resUnAudited ? resUnAudited.unAudited?.provisional_data : null;
+    }
+    return getNewSourceFiles(doc, type);
+}
+
+function getNewSourceFiles(data, type) {
+    let o = {
+        pdf: [],
+        excel: [],
+        type
+    };
+    // data = (year == '2019-20') ? doc.audited.provisional_data : doc.unAudited.provisional_data;
+    const formats = [
+        { key: 'bal_sheet', name: 'Balance Sheet' },
+        { key: 'bal_sheet_schedules', name: 'Schedules To Balance Sheet' },
+        { key: 'inc_exp', name: 'Income And Expenditure' },
+        { key: 'inc_exp_schedules', name: 'Schedules To Income And Expenditure' },
+        { key: 'cash_flow', name: 'Cash Flow Statement' },
+        { key: 'auditor_report', name: 'Auditor Report' },
+    ];
+
+    for (let file of formats) {
+        if (data && data[file.key]) {
+            if (data[file.key].pdf?.url) {
+                o.pdf.push({ name: file.name, url: data[file.key].pdf?.url })
+            }
+            if (data[file.key].excel?.url) {
+                o.excel.push({ name: file.name, url: data[file.key].excel?.url })
+            }
+        }
+    }
+    return o;
+}
 function getSourceFiles(obj, year) {
     let o = {
         pdf: [],
         excel: [],
     };
-    if (year != '2019-20' && year != '2020-21') {
-        obj.balanceSheet && obj.balanceSheet.pdfUrl
-            ? o.pdf.push({ name: 'Balance Sheet', url: obj.balanceSheet.pdfUrl })
-            : '';
-        obj.balanceSheet && obj.balanceSheet.excelUrl
-            ? o.excel.push({
-                name: 'Balance Sheet',
-                url: obj.balanceSheet.excelUrl,
-            })
-            : '';
+    obj.balanceSheet && obj.balanceSheet.pdfUrl
+        ? o.pdf.push({ name: 'Balance Sheet', url: obj.balanceSheet.pdfUrl })
+        : '';
+    obj.balanceSheet && obj.balanceSheet.excelUrl
+        ? o.excel.push({
+            name: 'Balance Sheet',
+            url: obj.balanceSheet.excelUrl,
+        })
+        : '';
 
-        obj.schedulesToBalanceSheet && obj.schedulesToBalanceSheet.pdfUrl
-            ? o.pdf.push({
-                name: 'Schedules To Balance Sheet',
-                url: obj.schedulesToBalanceSheet.pdfUrl,
-            })
-            : '';
-        obj.schedulesToBalanceSheet && obj.schedulesToBalanceSheet.excelUrl
-            ? o.excel.push({
-                name: 'Schedules To Balance Sheet',
-                url: obj.schedulesToBalanceSheet.excelUrl,
-            })
-            : '';
+    obj.schedulesToBalanceSheet && obj.schedulesToBalanceSheet.pdfUrl
+        ? o.pdf.push({
+            name: 'Schedules To Balance Sheet',
+            url: obj.schedulesToBalanceSheet.pdfUrl,
+        })
+        : '';
+    obj.schedulesToBalanceSheet && obj.schedulesToBalanceSheet.excelUrl
+        ? o.excel.push({
+            name: 'Schedules To Balance Sheet',
+            url: obj.schedulesToBalanceSheet.excelUrl,
+        })
+        : '';
 
-        obj.incomeAndExpenditure && obj.incomeAndExpenditure.pdfUrl
-            ? o.pdf.push({
-                name: 'Income And Expenditure',
-                url: obj.incomeAndExpenditure.pdfUrl,
-            })
-            : '';
-        obj.incomeAndExpenditure && obj.incomeAndExpenditure.excelUrl
-            ? o.excel.push({
-                name: 'Income And Expenditure',
-                url: obj.incomeAndExpenditure.excelUrl,
-            })
-            : '';
+    obj.incomeAndExpenditure && obj.incomeAndExpenditure.pdfUrl
+        ? o.pdf.push({
+            name: 'Income And Expenditure',
+            url: obj.incomeAndExpenditure.pdfUrl,
+        })
+        : '';
+    obj.incomeAndExpenditure && obj.incomeAndExpenditure.excelUrl
+        ? o.excel.push({
+            name: 'Income And Expenditure',
+            url: obj.incomeAndExpenditure.excelUrl,
+        })
+        : '';
 
-        obj.schedulesToIncomeAndExpenditure &&
-            obj.schedulesToIncomeAndExpenditure.pdfUrl
-            ? o.pdf.push({
-                name: 'Schedules To Income And Expenditure',
-                url: obj.schedulesToIncomeAndExpenditure.pdfUrl,
-            })
-            : '';
-        obj.schedulesToIncomeAndExpenditure &&
-            obj.schedulesToIncomeAndExpenditure.excelUrl
-            ? o.excel.push({
-                name: 'Schedules To Income And Expenditure',
-                url: obj.schedulesToIncomeAndExpenditure.excelUrl,
-            })
-            : '';
+    obj.schedulesToIncomeAndExpenditure &&
+        obj.schedulesToIncomeAndExpenditure.pdfUrl
+        ? o.pdf.push({
+            name: 'Schedules To Income And Expenditure',
+            url: obj.schedulesToIncomeAndExpenditure.pdfUrl,
+        })
+        : '';
+    obj.schedulesToIncomeAndExpenditure &&
+        obj.schedulesToIncomeAndExpenditure.excelUrl
+        ? o.excel.push({
+            name: 'Schedules To Income And Expenditure',
+            url: obj.schedulesToIncomeAndExpenditure.excelUrl,
+        })
+        : '';
 
-        obj.trialBalance && obj.trialBalance.pdfUrl
-            ? o.pdf.push({ name: 'Trial Balance', url: obj.trialBalance.pdfUrl })
-            : '';
-        obj.trialBalance && obj.trialBalance.excelUrl
-            ? o.excel.push({
-                name: 'Trial Balance',
-                url: obj.trialBalance.excelUrl,
-            })
-            : '';
+    obj.trialBalance && obj.trialBalance.pdfUrl
+        ? o.pdf.push({ name: 'Trial Balance', url: obj.trialBalance.pdfUrl })
+        : '';
+    obj.trialBalance && obj.trialBalance.excelUrl
+        ? o.excel.push({
+            name: 'Trial Balance',
+            url: obj.trialBalance.excelUrl,
+        })
+        : '';
 
-        obj.auditReport && obj.auditReport.pdfUrl
-            ? o.pdf.push({ name: 'Audit Report', url: obj.auditReport.pdfUrl })
-            : '';
-        obj.auditReport && obj.auditReport.excelUrl
-            ? o.excel.push({ name: 'Audit Report', url: obj.auditReport.excelUrl })
-            : '';
+    obj.auditReport && obj.auditReport.pdfUrl
+        ? o.pdf.push({ name: 'Audit Report', url: obj.auditReport.pdfUrl })
+        : '';
+    obj.auditReport && obj.auditReport.excelUrl
+        ? o.excel.push({ name: 'Audit Report', url: obj.auditReport.excelUrl })
+        : '';
 
-        obj.overallReport && obj.overallReport.pdfUrl
-            ? o.pdf.push({ name: 'Overall Report', url: obj.overallReport.pdfUrl })
-            : '';
-        obj.overallReport && obj.overallReport.excelUrl
-            ? o.excel.push({
-                name: 'Overall Report',
-                url: obj.overallReport.excelUrl,
-            })
-            : '';
-    } else {
-        let data = (year == '2019-20') ? obj.audited.provisional_data : obj.unAudited.provisional_data;
-
-        data.bal_sheet && data.bal_sheet.pdf.url
-            ? o.pdf.push({ name: 'Balance Sheet', url: data.bal_sheet.pdf?.url })
-            : '';
-        data.bal_sheet && data.bal_sheet?.excel?.url
-            ? o.excel.push({ name: 'Balance Sheet', url: data.bal_sheet?.excel?.url })
-            : '';
-
-        data.bal_sheet_schedules && data.bal_sheet_schedules.pdf.url
-            ? o.pdf.push({ name: 'Schedules To Balance Sheet', url: data.bal_sheet_schedules.pdf?.url })
-            : '';
-        data.bal_sheet_schedules && data.bal_sheet_schedules?.excel?.url
-            ? o.excel.push({ name: 'Schedules To Balance Sheet', url: data.bal_sheet_schedules?.excel?.url })
-            : '';
-
-        data.inc_exp && data.inc_exp.pdf.url
-            ? o.pdf.push({ name: 'Income And Expenditure', url: data.inc_exp.pdf?.url })
-            : '';
-        data.inc_exp && data.inc_exp?.excel?.url
-            ? o.excel.push({ name: 'Income And Expenditure', url: data.inc_exp?.excel?.url })
-            : '';
-
-        data.inc_exp_schedules && data.inc_exp_schedules.pdf.url
-            ? o.pdf.push({ name: 'Schedules To Income And Expenditure', url: data.inc_exp_schedules.pdf?.url })
-            : '';
-        data.inc_exp_schedules && data.inc_exp_schedules?.excel?.url
-            ? o.excel.push({ name: 'Schedules To Income And Expenditure', url: data.inc_exp_schedules?.excel?.url })
-            : '';
-
-        data.cash_flow && data.cash_flow.pdf.url
-            ? o.pdf.push({ name: 'Cash Flow Statement', url: data.cash_flow.pdf?.url })
-            : '';
-        data.cash_flow && data.cash_flow?.excel?.url
-            ? o.excel.push({ name: 'Cash Flow Statement', url: data.cash_flow?.excel?.url })
-            : '';
-
-
-        data?.auditor_report && data?.auditor_report.pdf.url
-            ? o.pdf.push({ name: 'Auditor Report', url: data.auditor_report.pdf?.url })
-            : '';
-
-
-
-
-    }
-
+    obj.overallReport && obj.overallReport.pdfUrl
+        ? o.pdf.push({ name: 'Overall Report', url: obj.overallReport.pdfUrl })
+        : '';
+    obj.overallReport && obj.overallReport.excelUrl
+        ? o.excel.push({
+            name: 'Overall Report',
+            url: obj.overallReport.excelUrl,
+        })
+        : '';
 
     return o;
 }

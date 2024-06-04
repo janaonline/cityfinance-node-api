@@ -3862,15 +3862,7 @@ async function sequentialReview(req, res) {
             ? (designYear = "designYear")
             : (designYear = "design_year");
 
-        let modelName = null;
-
-        if(formId === FORMIDs['twentyEightSlb']) {
-            modelName = ModelNames['twentyEightSlbs'];
-        } else if(formId === FORMIDs['PTO']) {
-            modelName = ModelNames['propTaxOp'];
-        } else {
-            modelName = ModelNames['dur']; 
-        }
+        const modelName = formId === FORMIDs['twentyEightSlb'] ? ModelNames['twentyEightSlbs'] : ModelNames['dur'];
 
         let query = {
             ulb: { $in: ulbs },
@@ -4028,7 +4020,6 @@ async function rejectForm2223(form, modelName, user) {
             modifiedAt: new Date(),
         };
         delete form["history"];
-        Object.assign(form,updateObj)
         let updatedForm = await moongose.model(modelName).findOneAndUpdate(
             { _id: form._id },
             {
