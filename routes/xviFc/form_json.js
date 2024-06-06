@@ -576,7 +576,7 @@ let form2TempDb = {
     },
 }
 
-function getInputKeysByType(selectedKeyDetails, dataSource) {
+function getInputKeysByType(selectedKeyDetails, dataSource, frontendYear_Fd, frontendYear_Slb) {
 
     let obj = {
         key: selectedKeyDetails.key,
@@ -613,11 +613,13 @@ function getInputKeysByType(selectedKeyDetails, dataSource) {
     if (selectedKeyDetails.year > 1) {
         let positionCounter = 1;
         let yearData = [];
-        for (let year of financialYearTableHeader) {
+        let index = frontendYear_Fd ? financialYearTableHeader.indexOf(frontendYear_Fd) : frontendYear_Slb ? financialYearTableHeader.indexOf(frontendYear_Slb) + 1 : -1;
+      
+        for (let i = 0; i < index; i++) {
             let eachYearobj = {};
             eachYearobj.warning = [];
-            eachYearobj["label"] = `FY ${year}`;
-            eachYearobj["key"] = `fy${year}_${selectedKeyDetails.key}`;
+            eachYearobj["label"] = `FY ${financialYearTableHeader[i]}`;
+            eachYearobj["key"] = `fy${financialYearTableHeader[i]}_${selectedKeyDetails.key}`;
             eachYearobj["postion"] = positionCounter++;
             eachYearobj["type"] = selectedKeyDetails.key;
             eachYearobj["formFieldType"] = selectedKeyDetails.formFieldType;

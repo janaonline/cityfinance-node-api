@@ -6,7 +6,7 @@ const UlbLedger = require("../../models/UlbLedger");
 const AnnualAccountData = require("../../models/AnnualAccounts");
 const XviFcForm1Tabs = require("../../models/XviFcForm1Tab");
 const FormsJson = require("../../models/FormsJson");
-const XviFcForm1DataCollection = require("../../models/XviFcForm1DataCollection");
+const XviFcForm1DataCollection = require("../../models/XviFcFormDataCollection");
 const Year = require("../../models/Year");
 
 const { financialYearTableHeader, priorTabsForXviFcForm, form1QuestionKeys, form2QuestionKeys, form1TempDb, form2TempDb, getInputKeysByType } = require("./form_json");
@@ -134,11 +134,12 @@ module.exports.createxviFcFormJson = async (req, res) => {
 
 module.exports.getForm = async (req, res) => {
     let ulbId = req.query.ulb;
-    let userForm = await Ulb.findOne({ _id: ObjectId(ulbId) }, { formType: 1 }).lean();
+    let userForm = await Ulb.findOne({ _id: ObjectId(ulbId) }, { formType: 1, name: 1, state: 1, _id: 1 }).lean();
+    let stateData = await State.findOne({ _id: ObjectId(userForm.state) }, { name: 1, _id: 1 }).lean();
 
     if (userForm.formType == "form1") {
         try {
-            let form1Data = await getForm1(ulbId, req.query.role, "");
+            let form1Data = await getForm1(userForm, stateData, req.query.role, "");
             return res.status(200).json({ status: true, message: `Sucessfully fetched form 1!`, data: form1Data });
         }
         catch (error) {
@@ -147,7 +148,7 @@ module.exports.getForm = async (req, res) => {
         }
     } else if (userForm.formType == "form2") {
         try {
-            let form2Data = await getForm2(ulbId, req.query.role, "");
+            let form2Data = await getForm2(userForm, stateData, req.query.role, "");
             return res.status(200).json({ status: true, message: `Sucessfully fetched form 2`, data: form2Data });
         }
         catch (error) {
@@ -176,9 +177,11 @@ module.exports.saveAsDraftForm = async (req, res) => {
                 index = ulbData_form.tab.findIndex(x => x.tabKey === formData.tabKey);
                 // Check each question.
                 for (let eachObj of formData.data) {
-                    quesIndex = ulbData_form.tab[index].data.findIndex((x) => x.key === eachObj.key);
-                    if (quesIndex <= -1) {
-                        ulbData_form.tab[index].data.push(eachObj);
+                    if (index > -1) {
+                        quesIndex = ulbData_form.tab[index].data.findIndex((x) => x.key === eachObj.key);
+                        if (quesIndex <= -1) {
+                            ulbData_form.tab[index].data.push(eachObj);
+                        }
                     }
                 }
                 // Check tab.
@@ -216,6 +219,7 @@ module.exports.submitFrom = async (req, res) => {
                 return res.status(400).json({ status: true, message: "Validation failed", data: getFormData });
             } else {
                 ulbData_form.formStatus = 'SUBMITTED';
+                ulbData_form.tracker.push({ eventName: "SUBMITTED", eventDate: new Date(), submittedBy: ulbId });
 
                 let updatedData = await XviFcForm1DataCollection.findOneAndUpdate({ ulb: ulbId }, ulbData_form, { upsert: true });
                 return res.status(200).json({ status: true, message: "DB successfully updated" });
@@ -286,9 +290,12 @@ async function validateValues(quesType, ansValue, isPdf = "", fileUrl = "", file
     return validation;
 }
 
-async function getForm1(userId, roleName, submittedData) {
-    let ulbId = userId;
+async function getForm1(ulbData, stateData, roleName, submittedData) {
+    let ulbId = ulbData._id;
     let role = roleName;
+    let demographicTabIndex;
+    let IndexOfYearOfConstitution;
+    let frontendYear_Fd;
     let from1AnswerFromDb = submittedData ? submittedData : await XviFcForm1DataCollection.findOne({ ulb: ObjectId(ulbId) });
     let xviFCForm1Tabs = await XviFcForm1Tabs.find().lean();
 
@@ -296,14 +303,19 @@ async function getForm1(userId, roleName, submittedData) {
     xviFCForm1Tabs.forEach((tab) => {
         tab.formType = "form1";
     });
-
     let xviFCForm1Table = form1TempDb;
     let currentFormStatus = from1AnswerFromDb && from1AnswerFromDb.formStatus ? from1AnswerFromDb.formStatus : '';
+    // Get index of year of constitution from demographic data.
+    if (from1AnswerFromDb) {
+        demographicTabIndex = from1AnswerFromDb.tab.findIndex((x) => { return x.tabKey == "demographicData" });
+        IndexOfYearOfConstitution = from1AnswerFromDb.tab[demographicTabIndex].data.findIndex((x) => { return x.key == "yearOfConstitution" });
+        frontendYear_Fd = from1AnswerFromDb.tab[demographicTabIndex].data[IndexOfYearOfConstitution].saveAsDraftValue;
+    }
 
     for (let index = 0; index < form1QuestionKeys.length; index++) {
         if (xviFCForm1Table.hasOwnProperty(form1QuestionKeys[index])) {
             let obj = xviFCForm1Table[form1QuestionKeys[index]];
-            xviFCForm1Table[form1QuestionKeys[index]] = getColumnWiseData(keyDetailsForm1, form1QuestionKeys[index], obj, xviFCForm1Table.isDraft, "", role, currentFormStatus);
+            xviFCForm1Table[form1QuestionKeys[index]] = getColumnWiseData(keyDetailsForm1, form1QuestionKeys[index], obj, xviFCForm1Table.isDraft, "", role, currentFormStatus, frontendYear_Fd);
             xviFCForm1Table['readonly'] = role == 'ULB' && (currentFormStatus == 'IN_PROGRESS' || currentFormStatus == 'NOT_STARTED') ? false : true;
         }
     }
@@ -388,9 +400,9 @@ async function getForm1(userId, roleName, submittedData) {
 
     let viewData = {
         ulb: ulbId,
-        // ulbName: ulbData.name,
-        // stateId: stateId,
-        // stateName: stateData.name,
+        ulbName: ulbData.name,
+        stateId: stateData._id,
+        stateName: stateData.name,
         tabs: from1QuestionFromDb,
         validationCounter,
         financialYearTableHeader
@@ -400,10 +412,15 @@ async function getForm1(userId, roleName, submittedData) {
 
 }
 
-async function getForm2(userId, roleName, submittedData) {
+async function getForm2(ulbData, stateData, roleName, submittedData) {
 
-    let ulbId = userId;
+    let ulbId = ulbData._id;
     let role = roleName;
+    let demographicTabIndex;
+    let IndexOfYearOfConstitution;
+    let frontendYear_Fd;
+    let frontendYear_Slb;
+    let IndexOfYearOfSlb;
     let from2AnswerFromDb = submittedData ? submittedData : await XviFcForm1DataCollection.findOne({ ulb: ObjectId(ulbId) });
     let xviFCForm2Tabs = await XviFcForm1Tabs.find().lean();
     xviFCForm2Tabs = xviFCForm2Tabs.filter((x) => { return x.formType == "form1_2" || x.formType == "form2" });
@@ -412,6 +429,17 @@ async function getForm2(userId, roleName, submittedData) {
     });
     let xviFCForm2Table = Object.assign(form1TempDb, form2TempDb);
     let currentFormStatus = from2AnswerFromDb && from2AnswerFromDb.formStatus ? from2AnswerFromDb.formStatus : '';
+
+    // Get index of year of constitution from demographic data.
+    if (from2AnswerFromDb) {
+        demographicTabIndex = from2AnswerFromDb.tab.findIndex((x) => { return x.tabKey == "demographicData" });
+        IndexOfYearOfConstitution = from2AnswerFromDb.tab[demographicTabIndex].data.findIndex((x) => { return x.key == "yearOfConstitution" });
+        frontendYear_Fd = from2AnswerFromDb.tab[demographicTabIndex].data[IndexOfYearOfConstitution].saveAsDraftValue;
+        // Get index of year of slb.
+        IndexOfYearOfSlb = from2AnswerFromDb.tab[demographicTabIndex].data.findIndex((x) => { return x.key == "yearOfSlb" });
+        frontendYear_Slb = from2AnswerFromDb.tab[demographicTabIndex].data[IndexOfYearOfSlb].saveAsDraftValue;
+    }
+
     let keyDetails = Object.assign(keyDetailsForm1, keyDetailsForm2);
     let mergedForm2QuestionKeys = form1QuestionKeys.concat(form2QuestionKeys);
 
@@ -419,7 +447,7 @@ async function getForm2(userId, roleName, submittedData) {
     for (let index = 0; index < mergedForm2QuestionKeys.length; index++) {
         if (xviFCForm2Table.hasOwnProperty(mergedForm2QuestionKeys[index])) {
             let obj = xviFCForm2Table[mergedForm2QuestionKeys[index]];
-            xviFCForm2Table[mergedForm2QuestionKeys[index]] = getColumnWiseData(keyDetails, mergedForm2QuestionKeys[index], obj, xviFCForm2Table.isDraft, "", role, currentFormStatus);
+            xviFCForm2Table[mergedForm2QuestionKeys[index]] = getColumnWiseData(keyDetails, mergedForm2QuestionKeys[index], obj, xviFCForm2Table.isDraft, "", role, currentFormStatus, frontendYear_Fd, frontendYear_Slb);
             xviFCForm2Table['readonly'] = role == 'ULB' && (currentFormStatus == 'IN_PROGRESS' || currentFormStatus == 'NOT_STARTED') ? false : true;
         }
     }
@@ -508,9 +536,9 @@ async function getForm2(userId, roleName, submittedData) {
 
     let viewData = {
         ulb: ulbId,
-        // ulbName: ulbData.name,
-        // stateId: stateId,
-        // stateName: stateData.name,
+        ulbName: ulbData.name,
+        stateId: stateData._id,
+        stateName: stateData.name,
         tabs: from2QuestionFromDb,
         validationCounter,
         financialYearTableHeader
@@ -520,13 +548,13 @@ async function getForm2(userId, roleName, submittedData) {
 
 };
 
-const getColumnWiseData = (allKeys, key, obj, isDraft, dataSource = "", role, formStatus) => {
+const getColumnWiseData = (allKeys, key, obj, isDraft, dataSource = "", role, formStatus, frontendYear_Fd, frontendYear_Slb) => {
     switch (key) {
         case "nameOfUlb": {
             return {
                 ...getInputKeysByType(allKeys["nameOfUlb"], dataSource),
                 ...obj,
-                readonly: false,
+                readonly: true
                 // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
@@ -535,7 +563,7 @@ const getColumnWiseData = (allKeys, key, obj, isDraft, dataSource = "", role, fo
             return {
                 ...getInputKeysByType(allKeys["nameOfState"], dataSource),
                 ...obj,
-                readonly: false,
+                readonly: true,
                 // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
@@ -544,7 +572,7 @@ const getColumnWiseData = (allKeys, key, obj, isDraft, dataSource = "", role, fo
             return {
                 ...getInputKeysByType(allKeys["pop2011"], dataSource),
                 ...obj,
-                readonly: false,
+                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true,
                 // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
@@ -553,7 +581,7 @@ const getColumnWiseData = (allKeys, key, obj, isDraft, dataSource = "", role, fo
             return {
                 ...getInputKeysByType(allKeys["popApril2024"], dataSource),
                 ...obj,
-                readonly: false,
+                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true,
                 // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
@@ -562,7 +590,7 @@ const getColumnWiseData = (allKeys, key, obj, isDraft, dataSource = "", role, fo
             return {
                 ...getInputKeysByType(allKeys["areaOfUlb"], dataSource),
                 ...obj,
-                readonly: false,
+                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true,
                 // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
@@ -571,7 +599,7 @@ const getColumnWiseData = (allKeys, key, obj, isDraft, dataSource = "", role, fo
             return {
                 ...getInputKeysByType(allKeys["yearOfElection"], dataSource),
                 ...obj,
-                readonly: false,
+                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true,
                 // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
@@ -580,772 +608,772 @@ const getColumnWiseData = (allKeys, key, obj, isDraft, dataSource = "", role, fo
             return {
                 ...getInputKeysByType(allKeys["isElected"], dataSource),
                 ...obj,
-                readonly: false,
+                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true,
                 // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "yearOfConstitution": {
             return {
-                ...getInputKeysByType(allKeys["yearOfConstitution"], dataSource),
+                ...getInputKeysByType(allKeys["yearOfConstitution"], dataSource, frontendYear_Fd),
                 ...obj,
-                readonly: false,
+                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true,
                 // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "yearOfSlb": {
             return {
-                ...getInputKeysByType(allKeys["yearOfSlb"], dataSource),
+                ...getInputKeysByType(allKeys["yearOfSlb"], dataSource, frontendYear_Fd, frontendYear_Slb),
                 ...obj,
-                readonly: false,
+                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true,
                 // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "sourceOfFd": {
             return {
-                ...getInputKeysByType(allKeys["sourceOfFd"], dataSource),
+                ...getInputKeysByType(allKeys["sourceOfFd"], dataSource, frontendYear_Fd),
                 ...obj,
-                readonly: false,
+                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true,
                 // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "pTax": {
             return {
-                ...getInputKeysByType(allKeys["pTax"], dataSource),
+                ...getInputKeysByType(allKeys["pTax"], dataSource, frontendYear_Fd),
                 ...obj,
-                readonly: false,
+                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
                 // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "otherTax": {
             return {
-                ...getInputKeysByType(allKeys["otherTax"], dataSource),
+                ...getInputKeysByType(allKeys["otherTax"], dataSource, frontendYear_Fd),
                 ...obj,
-                readonly: false,
+                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
                 // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "taxRevenue": {
             return {
-                ...getInputKeysByType(allKeys["taxRevenue"], dataSource),
+                ...getInputKeysByType(allKeys["taxRevenue"], dataSource, frontendYear_Fd),
                 ...obj,
-                readonly: false,
+                readonly: allKeys["taxRevenue"].validation == 'sum' ? true : formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
                 // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "feeAndUserCharges": {
             return {
-                ...getInputKeysByType(allKeys["feeAndUserCharges"], dataSource),
+                ...getInputKeysByType(allKeys["feeAndUserCharges"], dataSource, frontendYear_Fd),
                 ...obj,
-                readonly: false,
+                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
                 // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "interestIncome": {
             return {
-                ...getInputKeysByType(allKeys["interestIncome"], dataSource),
+                ...getInputKeysByType(allKeys["interestIncome"], dataSource, frontendYear_Fd),
                 ...obj,
-                readonly: false,
+                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
                 // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "otherIncome": {
             return {
-                ...getInputKeysByType(allKeys["otherIncome"], dataSource),
+                ...getInputKeysByType(allKeys["otherIncome"], dataSource, frontendYear_Fd),
                 ...obj,
-                readonly: false,
+                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
                 // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "rentalIncome": {
             return {
-                ...getInputKeysByType(allKeys["rentalIncome"], dataSource),
+                ...getInputKeysByType(allKeys["rentalIncome"], dataSource, frontendYear_Fd),
                 ...obj,
-                readonly: false,
+                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
                 // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "totOwnRevenue": {
             return {
-                ...getInputKeysByType(allKeys["totOwnRevenue"], dataSource),
+                ...getInputKeysByType(allKeys["totOwnRevenue"], dataSource, frontendYear_Fd),
                 ...obj,
-                readonly: false,
+                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
                 // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "centralSponsoredScheme": {
             return {
-                ...getInputKeysByType(allKeys["centralSponsoredScheme"], dataSource),
+                ...getInputKeysByType(allKeys["centralSponsoredScheme"], dataSource, frontendYear_Fd),
                 ...obj,
-                readonly: false,
+                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
                 // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "unionFinanceGrants": {
             return {
-                ...getInputKeysByType(allKeys["unionFinanceGrants"], dataSource),
+                ...getInputKeysByType(allKeys["unionFinanceGrants"], dataSource, frontendYear_Fd),
                 ...obj,
-                readonly: false,
+                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
                 // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "centralGrants": {
             return {
-                ...getInputKeysByType(allKeys["centralGrants"], dataSource),
+                ...getInputKeysByType(allKeys["centralGrants"], dataSource, frontendYear_Fd),
                 ...obj,
-                readonly: false,
+                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
                 // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "sfcGrants": {
             return {
-                ...getInputKeysByType(allKeys["sfcGrants"], dataSource),
+                ...getInputKeysByType(allKeys["sfcGrants"], dataSource, frontendYear_Fd),
                 ...obj,
-                readonly: false,
+                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
                 // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "grantsOtherThanSfc": {
             return {
-                ...getInputKeysByType(allKeys["grantsOtherThanSfc"], dataSource),
+                ...getInputKeysByType(allKeys["grantsOtherThanSfc"], dataSource, frontendYear_Fd),
                 ...obj,
-                readonly: false,
+                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
                 // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "grantsWithoutState": {
             return {
-                ...getInputKeysByType(allKeys["grantsWithoutState"], dataSource),
+                ...getInputKeysByType(allKeys["grantsWithoutState"], dataSource, frontendYear_Fd),
                 ...obj,
-                readonly: false,
+                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
                 // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "otherGrants": {
             return {
-                ...getInputKeysByType(allKeys["otherGrants"], dataSource),
+                ...getInputKeysByType(allKeys["otherGrants"], dataSource, frontendYear_Fd),
                 ...obj,
-                readonly: false,
+                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
                 // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "totalGrants": {
             return {
-                ...getInputKeysByType(allKeys["totalGrants"], dataSource),
+                ...getInputKeysByType(allKeys["totalGrants"], dataSource, frontendYear_Fd),
                 ...obj,
-                readonly: false,
+                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
                 // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "assignedRevAndCom": {
             return {
-                ...getInputKeysByType(allKeys["assignedRevAndCom"], dataSource),
+                ...getInputKeysByType(allKeys["assignedRevAndCom"], dataSource, frontendYear_Fd),
                 ...obj,
-                readonly: false,
+                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
                 // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "otherRevenue": {
             return {
-                ...getInputKeysByType(allKeys["otherRevenue"], dataSource),
+                ...getInputKeysByType(allKeys["otherRevenue"], dataSource, frontendYear_Fd),
                 ...obj,
-                readonly: false,
+                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
                 // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "totalRevenue": {
             return {
-                ...getInputKeysByType(allKeys["totalRevenue"], dataSource),
+                ...getInputKeysByType(allKeys["totalRevenue"], dataSource, frontendYear_Fd),
                 ...obj,
-                readonly: false,
+                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
                 // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "salaries": {
             return {
-                ...getInputKeysByType(allKeys["salaries"], dataSource),
+                ...getInputKeysByType(allKeys["salaries"], dataSource, frontendYear_Fd),
                 ...obj,
-                readonly: false,
+                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
                 // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "pension": {
             return {
-                ...getInputKeysByType(allKeys["pension"], dataSource),
+                ...getInputKeysByType(allKeys["pension"], dataSource, frontendYear_Fd),
                 ...obj,
-                readonly: false,
+                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
                 // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "otherExp": {
             return {
-                ...getInputKeysByType(allKeys["otherExp"], dataSource),
+                ...getInputKeysByType(allKeys["otherExp"], dataSource, frontendYear_Fd),
                 ...obj,
-                readonly: false,
+                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
                 // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "establishmentExp": {
             return {
-                ...getInputKeysByType(allKeys["establishmentExp"], dataSource),
+                ...getInputKeysByType(allKeys["establishmentExp"], dataSource, frontendYear_Fd),
                 ...obj,
-                readonly: false,
+                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
                 // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "oAndmExp": {
             return {
-                ...getInputKeysByType(allKeys["oAndmExp"], dataSource),
+                ...getInputKeysByType(allKeys["oAndmExp"], dataSource, frontendYear_Fd),
                 ...obj,
-                readonly: false,
+                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
                 // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "interestAndfinacialChar": {
             return {
-                ...getInputKeysByType(allKeys["interestAndfinacialChar"], dataSource),
+                ...getInputKeysByType(allKeys["interestAndfinacialChar"], dataSource, frontendYear_Fd),
                 ...obj,
-                readonly: false,
+                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
                 // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "otherRevenueExp": {
             return {
-                ...getInputKeysByType(allKeys["otherRevenueExp"], dataSource),
+                ...getInputKeysByType(allKeys["otherRevenueExp"], dataSource, frontendYear_Fd),
                 ...obj,
-                readonly: false,
+                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
                 // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "adExp": {
             return {
-                ...getInputKeysByType(allKeys["adExp"], dataSource),
+                ...getInputKeysByType(allKeys["adExp"], dataSource, frontendYear_Fd),
                 ...obj,
-                readonly: false,
+                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
                 // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "totalRevenueExp": {
             return {
-                ...getInputKeysByType(allKeys["totalRevenueExp"], dataSource),
+                ...getInputKeysByType(allKeys["totalRevenueExp"], dataSource, frontendYear_Fd),
                 ...obj,
-                readonly: false,
+                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
                 // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "capExp": {
             return {
-                ...getInputKeysByType(allKeys["capExp"], dataSource),
+                ...getInputKeysByType(allKeys["capExp"], dataSource, frontendYear_Fd),
                 ...obj,
-                readonly: false,
+                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
                 // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "totalExp": {
             return {
-                ...getInputKeysByType(allKeys["totalExp"], dataSource),
+                ...getInputKeysByType(allKeys["totalExp"], dataSource, frontendYear_Fd),
                 ...obj,
-                readonly: false,
+                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
                 // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "centralStateBorrow": {
             return {
-                ...getInputKeysByType(allKeys["centralStateBorrow"], dataSource),
+                ...getInputKeysByType(allKeys["centralStateBorrow"], dataSource, frontendYear_Fd),
                 ...obj,
-                readonly: false,
+                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
                 // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "bonds": {
             return {
-                ...getInputKeysByType(allKeys["bonds"], dataSource),
+                ...getInputKeysByType(allKeys["bonds"], dataSource, frontendYear_Fd),
                 ...obj,
-                readonly: false,
+                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
                 // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "bankAndFinancial": {
             return {
-                ...getInputKeysByType(allKeys["bankAndFinancial"], dataSource),
+                ...getInputKeysByType(allKeys["bankAndFinancial"], dataSource, frontendYear_Fd),
                 ...obj,
-                readonly: false,
+                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
                 // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "otherBorrowing": {
             return {
-                ...getInputKeysByType(allKeys["otherBorrowing"], dataSource),
+                ...getInputKeysByType(allKeys["otherBorrowing"], dataSource, frontendYear_Fd),
                 ...obj,
-                readonly: false,
+                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
                 // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "grossBorrowing": {
             return {
-                ...getInputKeysByType(allKeys["grossBorrowing"], dataSource),
+                ...getInputKeysByType(allKeys["grossBorrowing"], dataSource, frontendYear_Fd),
                 ...obj,
-                readonly: false,
+                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
                 // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "receivablePTax": {
             return {
-                ...getInputKeysByType(allKeys["receivablePTax"], dataSource),
+                ...getInputKeysByType(allKeys["receivablePTax"], dataSource, frontendYear_Fd),
                 ...obj,
-                readonly: false,
+                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
                 // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "receivableFee": {
             return {
-                ...getInputKeysByType(allKeys["receivableFee"], dataSource),
+                ...getInputKeysByType(allKeys["receivableFee"], dataSource, frontendYear_Fd),
                 ...obj,
-                readonly: false,
+                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
                 // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "otherReceivable": {
             return {
-                ...getInputKeysByType(allKeys["otherReceivable"], dataSource),
+                ...getInputKeysByType(allKeys["otherReceivable"], dataSource, frontendYear_Fd),
                 ...obj,
-                readonly: false,
+                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
                 // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "totalReceivable": {
             return {
-                ...getInputKeysByType(allKeys["totalReceivable"], dataSource),
+                ...getInputKeysByType(allKeys["totalReceivable"], dataSource, frontendYear_Fd),
                 ...obj,
-                readonly: false,
+                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
                 // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "totalCashAndBankBal": {
             return {
-                ...getInputKeysByType(allKeys["totalCashAndBankBal"], dataSource),
+                ...getInputKeysByType(allKeys["totalCashAndBankBal"], dataSource, frontendYear_Fd),
                 ...obj,
-                readonly: false,
+                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
                 // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "accSystem": {
             return {
-                ...getInputKeysByType(allKeys["accSystem"], dataSource),
+                ...getInputKeysByType(allKeys["accSystem"], dataSource, frontendYear_Fd),
                 ...obj,
-                readonly: false,
+                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
                 // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "accProvision": {
             return {
-                ...getInputKeysByType(allKeys["accProvision"], dataSource),
+                ...getInputKeysByType(allKeys["accProvision"], dataSource, frontendYear_Fd),
                 ...obj,
-                readonly: false,
+                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
                 // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "accInCashBasis": {
             return {
-                ...getInputKeysByType(allKeys["accInCashBasis"], dataSource),
+                ...getInputKeysByType(allKeys["accInCashBasis"], dataSource, frontendYear_Fd),
                 ...obj,
-                readonly: false,
+                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
                 // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "fsTransactionRecord": {
             return {
-                ...getInputKeysByType(allKeys["fsTransactionRecord"], dataSource),
+                ...getInputKeysByType(allKeys["fsTransactionRecord"], dataSource, frontendYear_Fd),
                 ...obj,
-                readonly: false,
+                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
                 // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "fsPreparedBy": {
             return {
-                ...getInputKeysByType(allKeys["fsPreparedBy"], dataSource),
+                ...getInputKeysByType(allKeys["fsPreparedBy"], dataSource, frontendYear_Fd),
                 ...obj,
-                readonly: false,
+                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
                 // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "revReceiptRecord": {
             return {
-                ...getInputKeysByType(allKeys["revReceiptRecord"], dataSource),
+                ...getInputKeysByType(allKeys["revReceiptRecord"], dataSource, frontendYear_Fd),
                 ...obj,
-                readonly: false,
+                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
                 // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "expRecord": {
             return {
-                ...getInputKeysByType(allKeys["expRecord"], dataSource),
+                ...getInputKeysByType(allKeys["expRecord"], dataSource, frontendYear_Fd),
                 ...obj,
-                readonly: false,
+                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
                 // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "accSoftware": {
             return {
-                ...getInputKeysByType(allKeys["accSoftware"], dataSource),
+                ...getInputKeysByType(allKeys["accSoftware"], dataSource, frontendYear_Fd),
                 ...obj,
-                readonly: false,
+                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
                 // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "onlineAccSysIntegrate": {
             return {
-                ...getInputKeysByType(allKeys["onlineAccSysIntegrate"], dataSource),
+                ...getInputKeysByType(allKeys["onlineAccSysIntegrate"], dataSource, frontendYear_Fd),
                 ...obj,
-                readonly: false,
+                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
                 // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "muniAudit": {
             return {
-                ...getInputKeysByType(allKeys["muniAudit"], dataSource),
+                ...getInputKeysByType(allKeys["muniAudit"], dataSource, frontendYear_Fd),
                 ...obj,
-                readonly: false,
+                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
                 // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "totSanction": {
             return {
-                ...getInputKeysByType(allKeys["totSanction"], dataSource),
+                ...getInputKeysByType(allKeys["totSanction"], dataSource, frontendYear_Fd),
                 ...obj,
-                readonly: false,
+                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
                 // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "totVacancy": {
             return {
-                ...getInputKeysByType(allKeys["totVacancy"], dataSource),
+                ...getInputKeysByType(allKeys["totVacancy"], dataSource, frontendYear_Fd),
                 ...obj,
-                readonly: false,
+                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
                 // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "accPosition": {
             return {
-                ...getInputKeysByType(allKeys["accPosition"], dataSource),
+                ...getInputKeysByType(allKeys["accPosition"], dataSource, frontendYear_Fd),
                 ...obj,
-                readonly: false,
+                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
                 // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "auditedAnnualFySt": {
             return {
-                ...getInputKeysByType(allKeys["auditedAnnualFySt"], dataSource),
+                ...getInputKeysByType(allKeys["auditedAnnualFySt"], dataSource, frontendYear_Fd),
                 ...obj,
-                readonly: false,
+                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
                 // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "coverageOfWs": {
             return {
-                ...getInputKeysByType(allKeys["coverageOfWs"], dataSource),
+                ...getInputKeysByType(allKeys["coverageOfWs"], dataSource, '', frontendYear_Slb),
                 ...obj,
-                readonly: false,
+                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
                 // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "perCapitaOfWs": {
             return {
-                ...getInputKeysByType(allKeys["perCapitaOfWs"], dataSource),
+                ...getInputKeysByType(allKeys["perCapitaOfWs"], dataSource, '', frontendYear_Slb),
                 ...obj,
-                readonly: false,
+                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
                 // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "extentOfMeteringWs": {
             return {
-                ...getInputKeysByType(allKeys["extentOfMeteringWs"], dataSource),
+                ...getInputKeysByType(allKeys["extentOfMeteringWs"], dataSource, '', frontendYear_Slb),
                 ...obj,
-                readonly: false,
+                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
                 // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "extentOfNonRevenueWs": {
             return {
-                ...getInputKeysByType(allKeys["extentOfNonRevenueWs"], dataSource),
+                ...getInputKeysByType(allKeys["extentOfNonRevenueWs"], dataSource, '', frontendYear_Slb),
                 ...obj,
-                readonly: false,
+                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
                 // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "continuityOfWs": {
             return {
-                ...getInputKeysByType(allKeys["continuityOfWs"], dataSource),
+                ...getInputKeysByType(allKeys["continuityOfWs"], dataSource, '', frontendYear_Slb),
                 ...obj,
-                readonly: false,
+                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
                 // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "efficiencyInRedressalCustomerWs": {
             return {
-                ...getInputKeysByType(allKeys["efficiencyInRedressalCustomerWs"], dataSource),
+                ...getInputKeysByType(allKeys["efficiencyInRedressalCustomerWs"], dataSource, '', frontendYear_Slb),
                 ...obj,
-                readonly: false,
+                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
                 // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "qualityOfWs": {
             return {
-                ...getInputKeysByType(allKeys["qualityOfWs"], dataSource),
+                ...getInputKeysByType(allKeys["qualityOfWs"], dataSource, '', frontendYear_Slb),
                 ...obj,
-                readonly: false,
+                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
                 // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "costRecoveryInWs": {
             return {
-                ...getInputKeysByType(allKeys["costRecoveryInWs"], dataSource),
+                ...getInputKeysByType(allKeys["costRecoveryInWs"], dataSource, '', frontendYear_Slb),
                 ...obj,
-                readonly: false,
+                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
                 // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "efficiencyInCollectionRelatedWs": {
             return {
-                ...getInputKeysByType(allKeys["efficiencyInCollectionRelatedWs"], dataSource),
+                ...getInputKeysByType(allKeys["efficiencyInCollectionRelatedWs"], dataSource, '', frontendYear_Slb),
                 ...obj,
-                readonly: false,
+                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
                 // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "coverageOfToiletsSew": {
             return {
-                ...getInputKeysByType(allKeys["coverageOfToiletsSew"], dataSource),
+                ...getInputKeysByType(allKeys["coverageOfToiletsSew"], dataSource, '', frontendYear_Slb),
                 ...obj,
-                readonly: false,
+                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
                 // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "coverageOfSewNet": {
             return {
-                ...getInputKeysByType(allKeys["coverageOfSewNet"], dataSource),
+                ...getInputKeysByType(allKeys["coverageOfSewNet"], dataSource, '', frontendYear_Slb),
                 ...obj,
-                readonly: false,
+                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
                 // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "collectionEfficiencySew": {
             return {
-                ...getInputKeysByType(allKeys["collectionEfficiencySew"], dataSource),
+                ...getInputKeysByType(allKeys["collectionEfficiencySew"], dataSource, '', frontendYear_Slb),
                 ...obj,
-                readonly: false,
+                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
                 // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "adequacyOfSew": {
             return {
-                ...getInputKeysByType(allKeys["adequacyOfSew"], dataSource),
+                ...getInputKeysByType(allKeys["adequacyOfSew"], dataSource, '', frontendYear_Slb),
                 ...obj,
-                readonly: false,
+                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
                 // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "qualityOfSew": {
             return {
-                ...getInputKeysByType(allKeys["qualityOfSew"], dataSource),
+                ...getInputKeysByType(allKeys["qualityOfSew"], dataSource, '', frontendYear_Slb),
                 ...obj,
-                readonly: false,
+                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
                 // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "extentOfReuseSew": {
             return {
-                ...getInputKeysByType(allKeys["extentOfReuseSew"], dataSource),
+                ...getInputKeysByType(allKeys["extentOfReuseSew"], dataSource, '', frontendYear_Slb),
                 ...obj,
-                readonly: false,
+                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
                 // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "efficiencyInRedressalCustomerSew": {
             return {
-                ...getInputKeysByType(allKeys["efficiencyInRedressalCustomerSew"], dataSource),
+                ...getInputKeysByType(allKeys["efficiencyInRedressalCustomerSew"], dataSource, '', frontendYear_Slb),
                 ...obj,
-                readonly: false,
+                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
                 // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "extentOfCostWaterSew": {
             return {
-                ...getInputKeysByType(allKeys["extentOfCostWaterSew"], dataSource),
+                ...getInputKeysByType(allKeys["extentOfCostWaterSew"], dataSource, '', frontendYear_Slb),
                 ...obj,
-                readonly: false,
+                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
                 // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "efficiencyInCollectionSew": {
             return {
-                ...getInputKeysByType(allKeys["efficiencyInCollectionSew"], dataSource),
+                ...getInputKeysByType(allKeys["efficiencyInCollectionSew"], dataSource, '', frontendYear_Slb),
                 ...obj,
-                readonly: false,
+                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
                 // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "householdLevelCoverageLevelSwm": {
             return {
-                ...getInputKeysByType(allKeys["householdLevelCoverageLevelSwm"], dataSource),
+                ...getInputKeysByType(allKeys["householdLevelCoverageLevelSwm"], dataSource, '', frontendYear_Slb),
                 ...obj,
-                readonly: false,
+                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
                 // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "efficiencyOfCollectionSwm": {
             return {
-                ...getInputKeysByType(allKeys["efficiencyOfCollectionSwm"], dataSource),
+                ...getInputKeysByType(allKeys["efficiencyOfCollectionSwm"], dataSource, '', frontendYear_Slb),
                 ...obj,
-                readonly: false,
+                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
                 // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "extentOfSegregationSwm": {
             return {
-                ...getInputKeysByType(allKeys["extentOfSegregationSwm"], dataSource),
+                ...getInputKeysByType(allKeys["extentOfSegregationSwm"], dataSource, '', frontendYear_Slb),
                 ...obj,
-                readonly: false,
+                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
                 // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "extentOfMunicipalSwm": {
             return {
-                ...getInputKeysByType(allKeys["extentOfMunicipalSwm"], dataSource),
+                ...getInputKeysByType(allKeys["extentOfMunicipalSwm"], dataSource, '', frontendYear_Slb),
                 ...obj,
-                readonly: false,
+                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
                 // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "extentOfScientificSolidSwm": {
             return {
-                ...getInputKeysByType(allKeys["extentOfScientificSolidSwm"], dataSource),
+                ...getInputKeysByType(allKeys["extentOfScientificSolidSwm"], dataSource, '', frontendYear_Slb),
                 ...obj,
-                readonly: false,
+                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
                 // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "extentOfCostInSwm": {
             return {
-                ...getInputKeysByType(allKeys["extentOfCostInSwm"], dataSource),
+                ...getInputKeysByType(allKeys["extentOfCostInSwm"], dataSource, '', frontendYear_Slb),
                 ...obj,
-                readonly: false,
+                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
                 // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "efficiencyInCollectionSwmUser": {
             return {
-                ...getInputKeysByType(allKeys["efficiencyInCollectionSwmUser"], dataSource),
+                ...getInputKeysByType(allKeys["efficiencyInCollectionSwmUser"], dataSource, '', frontendYear_Slb),
                 ...obj,
-                readonly: false,
+                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
                 // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "efficiencyInRedressalCustomerSwm": {
             return {
-                ...getInputKeysByType(allKeys["efficiencyInRedressalCustomerSwm"], dataSource),
+                ...getInputKeysByType(allKeys["efficiencyInRedressalCustomerSwm"], dataSource, '', frontendYear_Slb),
                 ...obj,
-                readonly: false,
+                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
                 // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "coverageOfStormDrainage": {
             return {
-                ...getInputKeysByType(allKeys["coverageOfStormDrainage"], dataSource),
+                ...getInputKeysByType(allKeys["coverageOfStormDrainage"], dataSource, '', frontendYear_Slb),
                 ...obj,
-                readonly: false,
+                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
                 // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "incidenceOfWaterLogging": {
             return {
-                ...getInputKeysByType(allKeys["incidenceOfWaterLogging"], dataSource),
+                ...getInputKeysByType(allKeys["incidenceOfWaterLogging"], dataSource, '', frontendYear_Slb),
                 ...obj,
-                readonly: false,
+                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
                 // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
