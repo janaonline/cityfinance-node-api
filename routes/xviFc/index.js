@@ -20,4 +20,6 @@ router.get('/fetch_form', xviFcService.getForm);
 router.post('/saveAsDraft', xviFcService.saveAsDraftForm);
 router.post('/submit_form', xviFcService.submitFrom);
 
+router.get('/form_list', xviFcService.formList);
+
 module.exports = router;

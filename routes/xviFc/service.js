@@ -10,7 +10,7 @@ const XviFcForm1DataCollection = require("../../models/XviFcFormDataCollection")
 const Year = require("../../models/Year");
 
 const { financialYearTableHeader, priorTabsForXviFcForm, form1QuestionKeys, form2QuestionKeys, form1TempDb, form2TempDb, getInputKeysByType } = require("./form_json");
-const { tabsUpdationService, keyDetailsForm1, keyDetailsForm2 } = require("../../util/xvifc_form")
+const { tabsUpdationService, keyDetailsForm1, keyDetailsForm2, getFromWiseKeyDetails } = require("../../util/xvifc_form")
 
 // One time function.
 module.exports.createxviFcFormTabs = async (req, res) => {
@@ -56,13 +56,14 @@ module.exports.createxviFcFormJson = async (req, res) => {
                 tab.formType = "form2";
             });
         }
-        let xviFcFormTable = form_type === 'form1' ? form1TempDb : form_type === 'form2' ? Object.assign(form1TempDb, form2TempDb) : "Form not found!!";
+        let xviFcFormTable = form_type === 'form1' ? form1TempDb : form_type === 'form2' ? form2TempDb : "Form not found!!";
 
         if (xviFcFormTable === "Form not found!!") {
             return res.status(404).json({ status: false, message: "Form not found!!" });
         }
         let formKeys = form_type === 'form1' ? form1QuestionKeys : form_type === 'form2' ? form1QuestionKeys.concat(form2QuestionKeys) : [];
-        let allKeysDetails = form_type === 'form1' ? keyDetailsForm1 : form_type === 'form2' ? Object.assign(keyDetailsForm1, keyDetailsForm2) : {};
+        let allKeysDetails = form_type === 'form1' ? keyDetailsForm1 : form_type === 'form2' ? keyDetailsForm2 : {};
+        allKeysDetails["formType"] = form_type;
 
         for (let index = 0; index < formKeys.length; index++) {
             if (xviFcFormTable.hasOwnProperty(formKeys[index])) {
@@ -134,7 +135,7 @@ module.exports.createxviFcFormJson = async (req, res) => {
 
 module.exports.getForm = async (req, res) => {
     let ulbId = req.query.ulb;
-    let userForm = await Ulb.findOne({ _id: ObjectId(ulbId) }, { formType: 1, name: 1, state: 1, _id: 1 }).lean();
+    let userForm = await Ulb.findOne({ _id: ObjectId(ulbId) }, { formType: 1, name: 1, state: 1, _id: 1, censusCode: 1, sbCode: 1 }).lean();
     let stateData = await State.findOne({ _id: ObjectId(userForm.state) }, { name: 1, _id: 1 }).lean();
 
     if (userForm.formType == "form1") {
@@ -312,10 +313,14 @@ async function getForm1(ulbData, stateData, roleName, submittedData) {
         frontendYear_Fd = from1AnswerFromDb.tab[demographicTabIndex].data[IndexOfYearOfConstitution].saveAsDraftValue;
     }
 
+    // let keyDetails = await getFromWiseKeyDetails("form1");
+    let keyDetails = keyDetailsForm1;
+    keyDetails["formType"] = "form1";
     for (let index = 0; index < form1QuestionKeys.length; index++) {
         if (xviFCForm1Table.hasOwnProperty(form1QuestionKeys[index])) {
             let obj = xviFCForm1Table[form1QuestionKeys[index]];
-            xviFCForm1Table[form1QuestionKeys[index]] = getColumnWiseData(keyDetailsForm1, form1QuestionKeys[index], obj, xviFCForm1Table.isDraft, "", role, currentFormStatus, frontendYear_Fd);
+
+            xviFCForm1Table[form1QuestionKeys[index]] = getColumnWiseData(keyDetails, form1QuestionKeys[index], obj, xviFCForm1Table.isDraft, "", role, currentFormStatus, frontendYear_Fd);
             xviFCForm1Table['readonly'] = role == 'ULB' && (currentFormStatus == 'IN_PROGRESS' || currentFormStatus == 'NOT_STARTED') ? false : true;
         }
     }
@@ -335,6 +340,16 @@ async function getForm1(ulbData, stateData, roleName, submittedData) {
 
                         if (eachQuestionObj.key == "financialData") {
                             for (let eachObj of eachQuestionObj.data) {
+
+                                // console.log(achObj.sumOf2)
+                                // console.log(eachObj.autoSumValidation2)
+
+                                // if (eachObj.sumOf2 && eachObj.autoSumValidation2) {
+                                //     console.log("inside")
+                                //     delete eachObj.sumOf2;
+                                //     delete eachObj.autoSumValidation2;
+                                // }
+
                                 let yearDataIndex = eachObj.year.findIndex(x => x.key === selectedData.key)
                                 if (yearDataIndex > -1 && selectedData.key == eachObj.year[yearDataIndex].key) {
                                     eachObj.year[yearDataIndex].value = selectedData.saveAsDraftValue;
@@ -400,6 +415,8 @@ async function getForm1(ulbData, stateData, roleName, submittedData) {
 
     let viewData = {
         ulb: ulbId,
+        censusCode: ulbData.censusCode,
+        sbCode: ulbData.sbCode,
         ulbName: ulbData.name,
         stateId: stateData._id,
         stateName: stateData.name,
@@ -427,7 +444,9 @@ async function getForm2(ulbData, stateData, roleName, submittedData) {
     xviFCForm2Tabs.forEach((tab) => {
         tab.formType = "form2";
     });
-    let xviFCForm2Table = Object.assign(form1TempDb, form2TempDb);
+    // let xviFCForm2Table = Object.assign(form1TempDb, form2TempDb);
+    // let xviFCForm2Table = { ...form1TempDb, ...form2TempDb };
+    let xviFCForm2Table = form2TempDb;
     let currentFormStatus = from2AnswerFromDb && from2AnswerFromDb.formStatus ? from2AnswerFromDb.formStatus : '';
 
     // Get index of year of constitution from demographic data.
@@ -440,9 +459,14 @@ async function getForm2(ulbData, stateData, roleName, submittedData) {
         frontendYear_Slb = from2AnswerFromDb.tab[demographicTabIndex].data[IndexOfYearOfSlb].saveAsDraftValue;
     }
 
-    let keyDetails = Object.assign(keyDetailsForm1, keyDetailsForm2);
-    let mergedForm2QuestionKeys = form1QuestionKeys.concat(form2QuestionKeys);
 
+
+    // let keyDetails = Object.assign(keyDetailsForm1, keyDetailsForm2);
+    // let keyDetails = { ...keyDetailsForm1, ...keyDetailsForm2 };
+    let keyDetails = keyDetailsForm2;
+    keyDetails["formType"] = "form2";
+
+    let mergedForm2QuestionKeys = form1QuestionKeys.concat(form2QuestionKeys);
 
     for (let index = 0; index < mergedForm2QuestionKeys.length; index++) {
         if (xviFCForm2Table.hasOwnProperty(mergedForm2QuestionKeys[index])) {
@@ -465,7 +489,16 @@ async function getForm2(ulbData, stateData, roleName, submittedData) {
                     for (let selectedData of from2AnswerFromDb.tab[indexOfKey].data) {
 
                         if (eachQuestionObj.key == "financialData" || eachQuestionObj.key == "serviceLevelBenchmark") {
+
                             for (let eachObj of eachQuestionObj.data) {
+
+                                if (eachObj.sumOf2 && eachObj.autoSumValidation2) {
+                                    eachObj.sumOf = eachObj.sumOf2;
+                                    eachObj.autoSumValidation = eachObj.autoSumValidation2;
+                                    delete eachObj.sumOf2;
+                                    delete eachObj.autoSumValidation2;
+                                }
+
                                 let yearDataIndex = eachObj.year.findIndex(x => x.key === selectedData.key)
                                 if (yearDataIndex > -1 && selectedData.key == eachObj.year[yearDataIndex].key) {
                                     eachObj.year[yearDataIndex].value = selectedData.saveAsDraftValue;
@@ -537,6 +570,8 @@ async function getForm2(ulbData, stateData, roleName, submittedData) {
     let viewData = {
         ulb: ulbId,
         ulbName: ulbData.name,
+        censusCode: ulbData.censusCode,
+        sbCode: ulbData.sbCode,
         stateId: stateData._id,
         stateName: stateData.name,
         tabs: from2QuestionFromDb,
@@ -552,829 +587,741 @@ const getColumnWiseData = (allKeys, key, obj, isDraft, dataSource = "", role, fo
     switch (key) {
         case "nameOfUlb": {
             return {
-                ...getInputKeysByType(allKeys["nameOfUlb"], dataSource),
+                ...getInputKeysByType(allKeys["nameOfUlb"], true, dataSource, allKeys["formType"]),
                 ...obj,
-                readonly: true
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
-                // rejectReason:"",
             };
         }
         case "nameOfState": {
             return {
-                ...getInputKeysByType(allKeys["nameOfState"], dataSource),
+                ...getInputKeysByType(allKeys["nameOfState"], true, dataSource, allKeys["formType"]),
                 ...obj,
-                readonly: true,
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
-                // rejectReason:"",
             };
         }
         case "pop2011": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["pop2011"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["pop2011"], dataSource),
+                ...getInputKeysByType(allKeys["pop2011"], isReadOnly, dataSource, allKeys["formType"]),
                 ...obj,
-                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true,
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "popApril2024": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["popApril2024"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["popApril2024"], dataSource),
+                ...getInputKeysByType(allKeys["popApril2024"], isReadOnly, dataSource, allKeys["formType"]),
                 ...obj,
-                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true,
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "areaOfUlb": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["areaOfUlb"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["areaOfUlb"], dataSource),
+                ...getInputKeysByType(allKeys["areaOfUlb"], isReadOnly, dataSource, allKeys["formType"]),
                 ...obj,
-                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true,
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "yearOfElection": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["yearOfElection"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["yearOfElection"], dataSource),
+                ...getInputKeysByType(allKeys["yearOfElection"], isReadOnly, dataSource, allKeys["formType"]),
                 ...obj,
-                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true,
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "isElected": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["isElected"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["isElected"], dataSource),
+                ...getInputKeysByType(allKeys["isElected"], isReadOnly, dataSource, allKeys["formType"]),
                 ...obj,
-                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true,
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "yearOfConstitution": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["yearOfConstitution"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["yearOfConstitution"], dataSource, frontendYear_Fd),
+                ...getInputKeysByType(allKeys["yearOfConstitution"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true,
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "yearOfSlb": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["yearOfSlb"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["yearOfSlb"], dataSource, frontendYear_Fd, frontendYear_Slb),
+                ...getInputKeysByType(allKeys["yearOfSlb"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd, frontendYear_Slb),
                 ...obj,
-                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true,
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "sourceOfFd": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["sourceOfFd"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["sourceOfFd"], dataSource, frontendYear_Fd),
+                ...getInputKeysByType(allKeys["sourceOfFd"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true,
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "pTax": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["pTax"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["pTax"], dataSource, frontendYear_Fd),
+                ...getInputKeysByType(allKeys["pTax"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
+                // rejectReason:"",
+            };
+        }
+        case "noOfRegiProperty": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["noOfRegiProperty"].autoSumValidation);
+            return {
+                ...getInputKeysByType(allKeys["noOfRegiProperty"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
+                ...obj,
                 // rejectReason:"",
             };
         }
         case "otherTax": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["otherTax"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["otherTax"], dataSource, frontendYear_Fd),
+                ...getInputKeysByType(allKeys["otherTax"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "taxRevenue": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["taxRevenue"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["taxRevenue"], dataSource, frontendYear_Fd),
+                ...getInputKeysByType(allKeys["taxRevenue"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                readonly: allKeys["taxRevenue"].validation == 'sum' ? true : formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "feeAndUserCharges": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["feeAndUserCharges"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["feeAndUserCharges"], dataSource, frontendYear_Fd),
+                ...getInputKeysByType(allKeys["feeAndUserCharges"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "interestIncome": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["interestIncome"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["interestIncome"], dataSource, frontendYear_Fd),
+                ...getInputKeysByType(allKeys["interestIncome"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "otherIncome": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["otherIncome"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["otherIncome"], dataSource, frontendYear_Fd),
+                ...getInputKeysByType(allKeys["otherIncome"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "rentalIncome": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["rentalIncome"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["rentalIncome"], dataSource, frontendYear_Fd),
+                ...getInputKeysByType(allKeys["rentalIncome"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "totOwnRevenue": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["totOwnRevenue"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["totOwnRevenue"], dataSource, frontendYear_Fd),
+                ...getInputKeysByType(allKeys["totOwnRevenue"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "centralSponsoredScheme": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["centralSponsoredScheme"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["centralSponsoredScheme"], dataSource, frontendYear_Fd),
+                ...getInputKeysByType(allKeys["centralSponsoredScheme"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "unionFinanceGrants": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["unionFinanceGrants"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["unionFinanceGrants"], dataSource, frontendYear_Fd),
+                ...getInputKeysByType(allKeys["unionFinanceGrants"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "centralGrants": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["centralGrants"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["centralGrants"], dataSource, frontendYear_Fd),
+                ...getInputKeysByType(allKeys["centralGrants"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "sfcGrants": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["sfcGrants"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["sfcGrants"], dataSource, frontendYear_Fd),
+                ...getInputKeysByType(allKeys["sfcGrants"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "grantsOtherThanSfc": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["grantsOtherThanSfc"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["grantsOtherThanSfc"], dataSource, frontendYear_Fd),
+                ...getInputKeysByType(allKeys["grantsOtherThanSfc"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "grantsWithoutState": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["grantsWithoutState"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["grantsWithoutState"], dataSource, frontendYear_Fd),
+                ...getInputKeysByType(allKeys["grantsWithoutState"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "otherGrants": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["otherGrants"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["otherGrants"], dataSource, frontendYear_Fd),
+                ...getInputKeysByType(allKeys["otherGrants"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "totalGrants": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["totalGrants"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["totalGrants"], dataSource, frontendYear_Fd),
+                ...getInputKeysByType(allKeys["totalGrants"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "assignedRevAndCom": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["assignedRevAndCom"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["assignedRevAndCom"], dataSource, frontendYear_Fd),
+                ...getInputKeysByType(allKeys["assignedRevAndCom"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "otherRevenue": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["otherRevenue"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["otherRevenue"], dataSource, frontendYear_Fd),
+                ...getInputKeysByType(allKeys["otherRevenue"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "totalRevenue": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["totalRevenue"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["totalRevenue"], dataSource, frontendYear_Fd),
+                ...getInputKeysByType(allKeys["totalRevenue"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
-                // rejectReason:"",
+                // rejectReason: "",
             };
         }
         case "salaries": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["salaries"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["salaries"], dataSource, frontendYear_Fd),
+                ...getInputKeysByType(allKeys["salaries"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "pension": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["pension"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["pension"], dataSource, frontendYear_Fd),
+                ...getInputKeysByType(allKeys["pension"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "otherExp": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["otherExp"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["otherExp"], dataSource, frontendYear_Fd),
+                ...getInputKeysByType(allKeys["otherExp"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "establishmentExp": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["establishmentExp"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["establishmentExp"], dataSource, frontendYear_Fd),
+                ...getInputKeysByType(allKeys["establishmentExp"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "oAndmExp": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["oAndmExp"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["oAndmExp"], dataSource, frontendYear_Fd),
+                ...getInputKeysByType(allKeys["oAndmExp"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "interestAndfinacialChar": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["interestAndfinacialChar"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["interestAndfinacialChar"], dataSource, frontendYear_Fd),
+                ...getInputKeysByType(allKeys["interestAndfinacialChar"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "otherRevenueExp": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["otherRevenueExp"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["otherRevenueExp"], dataSource, frontendYear_Fd),
+                ...getInputKeysByType(allKeys["otherRevenueExp"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "adExp": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["adExp"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["adExp"], dataSource, frontendYear_Fd),
+                ...getInputKeysByType(allKeys["adExp"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "totalRevenueExp": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["totalRevenueExp"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["totalRevenueExp"], dataSource, frontendYear_Fd),
+                ...getInputKeysByType(allKeys["totalRevenueExp"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "capExp": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["capExp"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["capExp"], dataSource, frontendYear_Fd),
+                ...getInputKeysByType(allKeys["capExp"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "totalExp": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["totalExp"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["totalExp"], dataSource, frontendYear_Fd),
+                ...getInputKeysByType(allKeys["totalExp"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "centralStateBorrow": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["centralStateBorrow"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["centralStateBorrow"], dataSource, frontendYear_Fd),
+                ...getInputKeysByType(allKeys["centralStateBorrow"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "bonds": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["bonds"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["bonds"], dataSource, frontendYear_Fd),
+                ...getInputKeysByType(allKeys["bonds"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "bankAndFinancial": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["bankAndFinancial"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["bankAndFinancial"], dataSource, frontendYear_Fd),
+                ...getInputKeysByType(allKeys["bankAndFinancial"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "otherBorrowing": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["otherBorrowing"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["otherBorrowing"], dataSource, frontendYear_Fd),
+                ...getInputKeysByType(allKeys["otherBorrowing"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "grossBorrowing": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["grossBorrowing"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["grossBorrowing"], dataSource, frontendYear_Fd),
+                ...getInputKeysByType(allKeys["grossBorrowing"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "receivablePTax": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["receivablePTax"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["receivablePTax"], dataSource, frontendYear_Fd),
+                ...getInputKeysByType(allKeys["receivablePTax"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "receivableFee": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["receivableFee"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["receivableFee"], dataSource, frontendYear_Fd),
+                ...getInputKeysByType(allKeys["receivableFee"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "otherReceivable": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["otherReceivable"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["otherReceivable"], dataSource, frontendYear_Fd),
+                ...getInputKeysByType(allKeys["otherReceivable"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "totalReceivable": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["totalReceivable"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["totalReceivable"], dataSource, frontendYear_Fd),
+                ...getInputKeysByType(allKeys["totalReceivable"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "totalCashAndBankBal": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["totalCashAndBankBal"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["totalCashAndBankBal"], dataSource, frontendYear_Fd),
+                ...getInputKeysByType(allKeys["totalCashAndBankBal"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "accSystem": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["accSystem"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["accSystem"], dataSource, frontendYear_Fd),
+                ...getInputKeysByType(allKeys["accSystem"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "accProvision": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["accProvision"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["accProvision"], dataSource, frontendYear_Fd),
+                ...getInputKeysByType(allKeys["accProvision"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "accInCashBasis": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["accInCashBasis"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["accInCashBasis"], dataSource, frontendYear_Fd),
+                ...getInputKeysByType(allKeys["accInCashBasis"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "fsTransactionRecord": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["fsTransactionRecord"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["fsTransactionRecord"], dataSource, frontendYear_Fd),
+                ...getInputKeysByType(allKeys["fsTransactionRecord"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "fsPreparedBy": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["fsPreparedBy"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["fsPreparedBy"], dataSource, frontendYear_Fd),
+                ...getInputKeysByType(allKeys["fsPreparedBy"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "revReceiptRecord": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["revReceiptRecord"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["revReceiptRecord"], dataSource, frontendYear_Fd),
+                ...getInputKeysByType(allKeys["revReceiptRecord"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "expRecord": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["expRecord"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["expRecord"], dataSource, frontendYear_Fd),
+                ...getInputKeysByType(allKeys["expRecord"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "accSoftware": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["accSoftware"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["accSoftware"], dataSource, frontendYear_Fd),
+                ...getInputKeysByType(allKeys["accSoftware"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "onlineAccSysIntegrate": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["onlineAccSysIntegrate"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["onlineAccSysIntegrate"], dataSource, frontendYear_Fd),
+                ...getInputKeysByType(allKeys["onlineAccSysIntegrate"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "muniAudit": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["muniAudit"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["muniAudit"], dataSource, frontendYear_Fd),
+                ...getInputKeysByType(allKeys["muniAudit"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "totSanction": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["totSanction"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["totSanction"], dataSource, frontendYear_Fd),
+                ...getInputKeysByType(allKeys["totSanction"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "totVacancy": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["totVacancy"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["totVacancy"], dataSource, frontendYear_Fd),
+                ...getInputKeysByType(allKeys["totVacancy"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "accPosition": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["accPosition"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["accPosition"], dataSource, frontendYear_Fd),
+                ...getInputKeysByType(allKeys["accPosition"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "auditedAnnualFySt": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["auditedAnnualFySt"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["auditedAnnualFySt"], dataSource, frontendYear_Fd),
+                ...getInputKeysByType(allKeys["auditedAnnualFySt"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "coverageOfWs": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["coverageOfWs"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["coverageOfWs"], dataSource, '', frontendYear_Slb),
+                ...getInputKeysByType(allKeys["coverageOfWs"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
                 ...obj,
-                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "perCapitaOfWs": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["perCapitaOfWs"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["perCapitaOfWs"], dataSource, '', frontendYear_Slb),
+                ...getInputKeysByType(allKeys["perCapitaOfWs"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
                 ...obj,
-                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "extentOfMeteringWs": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["extentOfMeteringWs"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["extentOfMeteringWs"], dataSource, '', frontendYear_Slb),
+                ...getInputKeysByType(allKeys["extentOfMeteringWs"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
                 ...obj,
-                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "extentOfNonRevenueWs": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["extentOfNonRevenueWs"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["extentOfNonRevenueWs"], dataSource, '', frontendYear_Slb),
+                ...getInputKeysByType(allKeys["extentOfNonRevenueWs"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
                 ...obj,
-                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "continuityOfWs": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["continuityOfWs"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["continuityOfWs"], dataSource, '', frontendYear_Slb),
+                ...getInputKeysByType(allKeys["continuityOfWs"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
                 ...obj,
-                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "efficiencyInRedressalCustomerWs": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["efficiencyInRedressalCustomerWs"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["efficiencyInRedressalCustomerWs"], dataSource, '', frontendYear_Slb),
+                ...getInputKeysByType(allKeys["efficiencyInRedressalCustomerWs"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
                 ...obj,
-                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "qualityOfWs": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["qualityOfWs"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["qualityOfWs"], dataSource, '', frontendYear_Slb),
+                ...getInputKeysByType(allKeys["qualityOfWs"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
                 ...obj,
-                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "costRecoveryInWs": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["costRecoveryInWs"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["costRecoveryInWs"], dataSource, '', frontendYear_Slb),
+                ...getInputKeysByType(allKeys["costRecoveryInWs"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
                 ...obj,
-                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "efficiencyInCollectionRelatedWs": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["efficiencyInCollectionRelatedWs"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["efficiencyInCollectionRelatedWs"], dataSource, '', frontendYear_Slb),
+                ...getInputKeysByType(allKeys["efficiencyInCollectionRelatedWs"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
                 ...obj,
-                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "coverageOfToiletsSew": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["coverageOfToiletsSew"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["coverageOfToiletsSew"], dataSource, '', frontendYear_Slb),
+                ...getInputKeysByType(allKeys["coverageOfToiletsSew"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
                 ...obj,
-                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "coverageOfSewNet": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["coverageOfSewNet"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["coverageOfSewNet"], dataSource, '', frontendYear_Slb),
+                ...getInputKeysByType(allKeys["coverageOfSewNet"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
                 ...obj,
-                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "collectionEfficiencySew": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["collectionEfficiencySew"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["collectionEfficiencySew"], dataSource, '', frontendYear_Slb),
+                ...getInputKeysByType(allKeys["collectionEfficiencySew"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
                 ...obj,
-                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "adequacyOfSew": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["adequacyOfSew"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["adequacyOfSew"], dataSource, '', frontendYear_Slb),
+                ...getInputKeysByType(allKeys["adequacyOfSew"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
                 ...obj,
-                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "qualityOfSew": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["qualityOfSew"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["qualityOfSew"], dataSource, '', frontendYear_Slb),
+                ...getInputKeysByType(allKeys["qualityOfSew"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
                 ...obj,
-                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "extentOfReuseSew": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["extentOfReuseSew"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["extentOfReuseSew"], dataSource, '', frontendYear_Slb),
+                ...getInputKeysByType(allKeys["extentOfReuseSew"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
                 ...obj,
-                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "efficiencyInRedressalCustomerSew": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["efficiencyInRedressalCustomerSew"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["efficiencyInRedressalCustomerSew"], dataSource, '', frontendYear_Slb),
+                ...getInputKeysByType(allKeys["efficiencyInRedressalCustomerSew"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
                 ...obj,
-                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "extentOfCostWaterSew": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["extentOfCostWaterSew"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["extentOfCostWaterSew"], dataSource, '', frontendYear_Slb),
+                ...getInputKeysByType(allKeys["extentOfCostWaterSew"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
                 ...obj,
-                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "efficiencyInCollectionSew": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["efficiencyInCollectionSew"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["efficiencyInCollectionSew"], dataSource, '', frontendYear_Slb),
+                ...getInputKeysByType(allKeys["efficiencyInCollectionSew"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
                 ...obj,
-                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "householdLevelCoverageLevelSwm": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["householdLevelCoverageLevelSwm"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["householdLevelCoverageLevelSwm"], dataSource, '', frontendYear_Slb),
+                ...getInputKeysByType(allKeys["householdLevelCoverageLevelSwm"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
                 ...obj,
-                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "efficiencyOfCollectionSwm": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["efficiencyOfCollectionSwm"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["efficiencyOfCollectionSwm"], dataSource, '', frontendYear_Slb),
+                ...getInputKeysByType(allKeys["efficiencyOfCollectionSwm"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
                 ...obj,
-                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "extentOfSegregationSwm": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["extentOfSegregationSwm"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["extentOfSegregationSwm"], dataSource, '', frontendYear_Slb),
+                ...getInputKeysByType(allKeys["extentOfSegregationSwm"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
                 ...obj,
-                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "extentOfMunicipalSwm": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["extentOfMunicipalSwm"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["extentOfMunicipalSwm"], dataSource, '', frontendYear_Slb),
+                ...getInputKeysByType(allKeys["extentOfMunicipalSwm"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
                 ...obj,
-                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "extentOfScientificSolidSwm": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["extentOfScientificSolidSwm"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["extentOfScientificSolidSwm"], dataSource, '', frontendYear_Slb),
+                ...getInputKeysByType(allKeys["extentOfScientificSolidSwm"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
                 ...obj,
-                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "extentOfCostInSwm": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["extentOfCostInSwm"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["extentOfCostInSwm"], dataSource, '', frontendYear_Slb),
+                ...getInputKeysByType(allKeys["extentOfCostInSwm"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
                 ...obj,
-                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "efficiencyInCollectionSwmUser": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["efficiencyInCollectionSwmUser"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["efficiencyInCollectionSwmUser"], dataSource, '', frontendYear_Slb),
+                ...getInputKeysByType(allKeys["efficiencyInCollectionSwmUser"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
                 ...obj,
-                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "efficiencyInRedressalCustomerSwm": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["efficiencyInRedressalCustomerSwm"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["efficiencyInRedressalCustomerSwm"], dataSource, '', frontendYear_Slb),
+                ...getInputKeysByType(allKeys["efficiencyInRedressalCustomerSwm"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
                 ...obj,
-                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "coverageOfStormDrainage": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["coverageOfStormDrainage"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["coverageOfStormDrainage"], dataSource, '', frontendYear_Slb),
+                ...getInputKeysByType(allKeys["coverageOfStormDrainage"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
                 ...obj,
-                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "incidenceOfWaterLogging": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["incidenceOfWaterLogging"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["incidenceOfWaterLogging"], dataSource, '', frontendYear_Slb),
+                ...getInputKeysByType(allKeys["incidenceOfWaterLogging"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
                 ...obj,
-                readonly: formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
@@ -1382,6 +1329,16 @@ const getColumnWiseData = (allKeys, key, obj, isDraft, dataSource = "", role, fo
         // code block
     }
 };
+
+/**
+ * Function to check if the question is readonly.
+ * If form status is IN_PROGRESS or NOT_STARTED - readonly = true.
+ * If validation = "sum" i.e if question is autosum - readonly = true.
+ * If validation = "sum" i.e if question is auto sum - class = "fw-bold".
+ */
+function getReadOnly(formStatus, autosumValidation) {
+    return autosumValidation == 'sum' ? true : formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
+}
 
 async function getModifiedTabsXvifcForm(tabs, xviFcFormTable, formType) {
     try {
@@ -1658,6 +1615,7 @@ async function getUpdatedFinancialData_headersForm2(allFinancialData) {
     ];
     let revenue = [
         "pTax",
+        "noOfRegiProperty",
         "otherTax",
         "taxRevenue",
         "feeAndUserCharges",
@@ -1795,14 +1753,14 @@ async function getUpdatedAccountingPractices_headers(accountingPracticesData) {
         {
             "key": 'accSysAndProcess',
             "section": 'accordion',
-            "formFieldType": "section",
+            "formFieldType": "questionnaire",
             "label": "I. Accounting Systems and Processes",
             "data": []
         },
         {
             "key": 'staffing',
             "section": 'accordion',
-            "formFieldType": "section",
+            "formFieldType": "questionnaire",
             "label": "II.Staffing - Finance & Accounts Department",
             "data": []
         },
@@ -1901,4 +1859,82 @@ async function getUpdatedServiceLevelBenchmark_headers(serviceLevelBenchmarkData
         }
     }
     return data;
+}
+
+// ------ Review Table + Dashboard. ------
+module.exports.formList = async (req, res) => {
+    let stateId = req.query.state;
+    let listOfUlbsFromState = await XviFcForm1DataCollection.find({ state: stateId }, { tab: 0 }).lean();
+
+    if (listOfUlbsFromState) {
+        let reviewTableData = [];
+        let obj = {};
+
+        for (let eachUlbForm of listOfUlbsFromState) {
+            let ulbData = await XviFcForm1DataCollection.find({ ulb: ObjectId(eachUlbForm.ulb) }, { tab: 1 }).lean();
+
+            // // Get Data submission %.
+            // for (let eachTab of ulbData[0].tab) {
+            //     if (eachTab.data) await getSubmissionPer(eachTab);
+            // }
+
+            let demographicDataSubmission = await getSubmissionPer(ulbData[0].tab[0].data);
+            console.log(demographicDataSubmission);
+
+            obj["stateName"] = "Assam"; //eachUlbForm.stateName;
+            obj["ulbName"] = "ULB name"; //eachUlbForm.ulbName;
+            obj["censusCode"] = "801213"; //eachUlbForm.censusCode ? eachUlbForm.censusCode : eachUlbForm.sbCode;
+            obj["ulbCategory"] = eachUlbForm.formId == 16 ? "Category 1" : eachUlbForm.formId == 17 ? "Category 2" : "";
+            obj["formStatus"] = eachUlbForm.formStatus;
+            obj["dataSubmitted"] = "80%"; //eachUlbForm.dataSubmitted;
+            obj["action"] = "View"; //eachUlbForm.action;
+
+            reviewTableData.push(obj);
+        }
+
+        return res.status(200).json({ status: true, message: "", data: reviewTableData });
+    } else {
+        return res.status(404).json({ status: false, message: "Soemthing went wrong" });
+    }
+
+};
+
+async function getSubmissionPer(eachTabData) {
+    let denominator = {
+        demographicDataForm1: 8,
+        demographicDataForm2: 9,
+        uplodDoc: 0,
+        financialData: 0,
+        accountingPractices: 13,
+        serviceLevelBenchmark: 0
+    };
+
+    let numeratorSaveAsDraft = 0;
+    let numeratorSubmit = 0;
+
+
+    for (eachAns of eachTabData) {
+
+        if (eachAns.key && eachAns.key == "yearOfConstitution") {
+            denominator["financialData"] = 2022 - Number(eachAns.saveAsDraftValue.split("-")[0]);
+            denominator["uplodDoc"] = 2022 - Number(eachAns.saveAsDraftValue.split("-")[0]);
+        }
+        if (eachAns.key && eachAns.key == "yearOfSlb") {
+            denominator["serviceLevelBenchmark"] = 2022 - Number(eachAns.saveAsDraftValue.split("-")[0]) + 1;
+        }
+
+        if (eachAns.saveAsDraftValue) numeratorSaveAsDraft += 1;
+        if (eachAns.value) numeratorSubmit += 1;
+    }
+
+    let saveAsDraftPer = denominator.demographicDataForm2 ? (numeratorSaveAsDraft / denominator.demographicDataForm2) * 100 : 0;
+    let submitPer = denominator.demographicDataForm2 ? (numeratorSubmit / denominator.demographicDataForm2) * 100 : 0;
+
+    return {
+        denominator,
+        numeratorSaveAsDraft,
+        numeratorSubmit,
+        saveAsDraftPer,
+        submitPer,
+    };
 }

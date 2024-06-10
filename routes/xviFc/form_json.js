@@ -59,6 +59,7 @@ let form2QuestionKeys = [
     "yearOfSlb",
 
     "pTax",
+    "noOfRegiProperty",
     "otherTax",
     "rentalIncome",
     "centralSponsoredScheme",
@@ -323,13 +324,229 @@ let form1TempDb = {
         isDraft: true
     },
 }
+
 let form2TempDb = {
+    "nameOfUlb": {
+        status: "Na",
+        value: "",
+        isDraft: true
+    },
+    "nameOfState": {
+        status: "Na",
+        value: "",
+        isDraft: true
+    },
+    "pop2011": {
+        status: "Na",
+        value: "",
+        isDraft: true
+    },
+    "popApril2024": {
+        status: "Na",
+        value: "",
+        isDraft: true
+    },
+    "areaOfUlb": {
+        status: "Na",
+        value: "",
+        isDraft: true
+    },
+    "yearOfElection": {
+        status: "Na",
+        value: "",
+        isDraft: true
+    },
+    "isElected": {
+        status: "Na",
+        value: "",
+        isDraft: true
+    },
+    "yearOfConstitution": {
+        status: "Na",
+        value: "",
+        isDraft: true
+    },
+    "sourceOfFd": {
+        status: "Na",
+        value: "",
+        isDraft: true
+    },
+    "taxRevenue": {
+        status: "Na",
+        value: "",
+        isDraft: true
+    },
+    "feeAndUserCharges": {
+        status: "Na",
+        value: "",
+        isDraft: true
+    },
+    "interestIncome": {
+        status: "Na",
+        value: "",
+        isDraft: true
+    },
+    "otherIncome": {
+        status: "Na",
+        value: "",
+        isDraft: true
+    },
+    "totOwnRevenue": {
+        status: "Na",
+        value: "",
+        isDraft: true
+    },
+    "centralGrants": {
+        status: "Na",
+        value: "",
+        isDraft: true
+    },
+    "otherGrants": {
+        status: "Na",
+        value: "",
+        isDraft: true
+    },
+    "totalGrants": {
+        status: "Na",
+        value: "",
+        isDraft: true
+    },
+    "assignedRevAndCom": {
+        status: "Na",
+        value: "",
+        isDraft: true
+    },
+    "otherRevenue": {
+        status: "Na",
+        value: "",
+        isDraft: true
+    },
+    "totalRevenue": {
+        status: "Na",
+        value: "",
+        isDraft: true
+    },
+    "establishmentExp": {
+        status: "Na",
+        value: "",
+        isDraft: true
+    },
+    "oAndmExp": {
+        status: "Na",
+        value: "",
+        isDraft: true
+    },
+    "interestAndfinacialChar": {
+        status: "Na",
+        value: "",
+        isDraft: true
+    },
+    "otherRevenueExp": {
+        status: "Na",
+        value: "",
+        isDraft: true
+    },
+    "totalRevenueExp": {
+        status: "Na",
+        value: "",
+        isDraft: true
+    },
+    "capExp": {
+        status: "Na",
+        value: "",
+        isDraft: true
+    },
+    "totalExp": {
+        status: "Na",
+        value: "",
+        isDraft: true
+    },
+    "grossBorrowing": {
+        status: "Na",
+        value: "",
+        isDraft: true
+    },
+    "accSystem": {
+        status: "Na",
+        value: "",
+        isDraft: true
+    },
+    "accProvision": {
+        status: "Na",
+        value: "",
+        isDraft: true
+    },
+    "accInCashBasis": {
+        status: "Na",
+        value: "",
+        isDraft: true
+    },
+    "fsTransactionRecord": {
+        status: "Na",
+        value: "",
+        isDraft: true
+    },
+    "fsPreparedBy": {
+        status: "Na",
+        value: "",
+        isDraft: true
+    },
+    "revReceiptRecord": {
+        status: "Na",
+        value: "",
+        isDraft: true
+    },
+    "expRecord": {
+        status: "Na",
+        value: "",
+        isDraft: true
+    },
+    "accSoftware": {
+        status: "Na",
+        value: "",
+        isDraft: true
+    },
+    "onlineAccSysIntegrate": {
+        status: "Na",
+        value: "",
+        isDraft: true
+    },
+    "muniAudit": {
+        status: "Na",
+        value: "",
+        isDraft: true
+    },
+    "totSanction": {
+        status: "Na",
+        value: "",
+        isDraft: true
+    },
+    "totVacancy": {
+        status: "Na",
+        value: "",
+        isDraft: true
+    },
+    "accPosition": {
+        status: "Na",
+        value: "",
+        isDraft: true
+    },
+    "auditedAnnualFySt": {
+        status: "Na",
+        value: "",
+        isDraft: true
+    },
     "yearOfSlb": {
         status: "Na",
         value: "",
         isDraft: true
     },
     "pTax": {
+        status: "Na",
+        value: "",
+        isDraft: true
+    },
+    "noOfRegiProperty": {
         status: "Na",
         value: "",
         isDraft: true
@@ -576,27 +793,69 @@ let form2TempDb = {
     },
 }
 
-function getInputKeysByType(selectedKeyDetails, dataSource, frontendYear_Fd, frontendYear_Slb) {
+function getInputKeysByType(selectedKeyDetails, isReadOnly, dataSource, formType, frontendYear_Fd, frontendYear_Slb) {
 
     let obj = {
         key: selectedKeyDetails.key,
+        readOnly: isReadOnly,
+        class: selectedKeyDetails.autoSumValidation && selectedKeyDetails.autoSumValidation == 'sum' ? selectedKeyDetails.class + " " + "fw-bold" : selectedKeyDetails.class,
         label: selectedKeyDetails.label,
         postion: selectedKeyDetails.displayPriority,
+        quesPos: selectedKeyDetails.quesPos,
         required: selectedKeyDetails.required,
         info: selectedKeyDetails.info,
         placeHolder: "",
         formFieldType: selectedKeyDetails.formFieldType,
         canShow: true,
+        validations: selectedKeyDetails.validations,
     }
 
-    if (selectedKeyDetails.formFieldType === "number") {
+    if (selectedKeyDetails.required == true) {
+        obj.validations.push(
+            {
+                name: "required",
+                validator: 'required',
+                message: "Please fill in this required field."
+            },
+        )
+    }
+
+    if (selectedKeyDetails.formFieldType === "number" || selectedKeyDetails.formFieldType === "amount") {
         obj.warning = [];
+        obj.sumOf = [];
         obj.max = selectedKeyDetails.max;
         obj.min = selectedKeyDetails.min;
         obj.decimal = selectedKeyDetails.decimal;
-        obj.validation = selectedKeyDetails.validation;
-        obj.logic = selectedKeyDetails.logic;
+        obj.autoSumValidation = selectedKeyDetails.autoSumValidation;
+        obj.sumOf = selectedKeyDetails.sumOf;
+
+        // obj.autoSumValidation = selectedKeyDetails.autoSumValidation;
+        // obj.autoSumValidation2 = selectedKeyDetails.autoSumValidation2;
+        // obj.sumOf = selectedKeyDetails.sumOf;
+        // obj.sumOf2 = selectedKeyDetails.sumOf2;
+
         obj.warning.push({ "value": 0, "condition": "eq", "message": 'Are you sure you want to continue with 0' });
+
+        obj.validations.push(
+            {
+                name: "min",
+                validator: selectedKeyDetails.min,
+                message: selectedKeyDetails.max > 99999999999999 ? "Please enter a valid number with at most 15 digits." : `Please enter a number between ${selectedKeyDetails.min} and ${selectedKeyDetails.max}.`
+            },
+            {
+                name: "max",
+                validator: selectedKeyDetails.max,
+                message: selectedKeyDetails.max > 99999999999999 ? "Please enter a valid number with at most 15 digits." : `Please enter a number between ${selectedKeyDetails.min} and ${selectedKeyDetails.max}.`
+            },
+        )
+        obj.validations.push(
+            {
+                name: "decimal",
+                validator: selectedKeyDetails.decimal,
+                message: !selectedKeyDetails.decimal ? "Please enter a whole number for this field." : `Please enter number with at most ${selectedKeyDetails.decimal} places.`,
+            }
+        )
+
     }
     else if (selectedKeyDetails.formFieldType === "radio" || selectedKeyDetails.formFieldType === "dropdown") {
         obj.options = selectedKeyDetails.options;
@@ -614,7 +873,9 @@ function getInputKeysByType(selectedKeyDetails, dataSource, frontendYear_Fd, fro
         let positionCounter = 1;
         let yearData = [];
         let index = frontendYear_Fd ? financialYearTableHeader.indexOf(frontendYear_Fd) : frontendYear_Slb ? financialYearTableHeader.indexOf(frontendYear_Slb) + 1 : -1;
-      
+
+        // console.log("frontendYear_Fd", frontendYear_Fd);
+
         for (let i = 0; i < index; i++) {
             let eachYearobj = {};
             eachYearobj.warning = [];
@@ -625,7 +886,7 @@ function getInputKeysByType(selectedKeyDetails, dataSource, frontendYear_Fd, fro
             eachYearobj["formFieldType"] = selectedKeyDetails.formFieldType;
             eachYearobj["value"] = "";
 
-            if (selectedKeyDetails.formFieldType === "number") eachYearobj.warning.push({ "value": 0, "condition": "eq", "message": 'Are you sure you want to continue with 0' });
+            if (selectedKeyDetails.formFieldType === "number" || selectedKeyDetails.formFieldType === "amount") eachYearobj.warning.push({ "value": 0, "condition": "eq", "message": 'Are you sure you want to continue with 0' });
 
             if (selectedKeyDetails.formFieldType === "file") {
                 eachYearobj["isPdfAvailable"] = "";
@@ -647,6 +908,10 @@ function getInputKeysByType(selectedKeyDetails, dataSource, frontendYear_Fd, fro
                     "Cash Flow Statement",
                     "Auditor Report",
                 ];
+                eachYearobj["verifyStatus"] = 1;
+                eachYearobj["rejectOption"] = "";
+                eachYearobj["rejectReason"] = "";
+                eachYearobj["allowedFileTypes"] = ['pdf'];
             }
 
             yearData.push(eachYearobj);
