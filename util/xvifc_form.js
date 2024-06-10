@@ -1525,13 +1525,13 @@ let keyDetailsForm2 = {
         quesPos: 14,
         validations: [],
         label: 'Number of registered properties',
-        info: '',
+        info: 'Please enter the total number of properties that have been officially registered',
         required: true,
         year: 8,
         autoSumValidation: '',
         logic: '',
         min: 0,
-        max: 0,
+        max: 2000000,
         decimal: 0
     },
     otherTax: {

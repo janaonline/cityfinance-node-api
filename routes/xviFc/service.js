@@ -499,16 +499,18 @@ async function getForm2(ulbData, stateData, roleName, submittedData) {
 
                             for (let eachObj of eachQuestionObj.data) {
 
-                                if (eachObj.sumOf2 && eachObj.autoSumValidation2) {
-                                    eachObj.sumOf = eachObj.sumOf2;
-                                    eachObj.autoSumValidation = eachObj.autoSumValidation2;
-                                    delete eachObj.sumOf2;
-                                    delete eachObj.autoSumValidation2;
-                                }
+                                // if (eachObj.sumOf2 && eachObj.autoSumValidation2) {
+                                //     eachObj.sumOf = eachObj.sumOf2;
+                                //     eachObj.autoSumValidation = eachObj.autoSumValidation2;
+                                //     delete eachObj.sumOf2;
+                                //     delete eachObj.autoSumValidation2;
+                                // }
 
 
-                                let yearDataIndex = eachObj.year.findIndex(x => x.key === selectedData.key)
+                                let yearDataIndex = eachObj.year.findIndex((x) => { return x.key === selectedData.key })
+
                                 if (yearDataIndex > -1 && selectedData.key == eachObj.year[yearDataIndex].key) {
+
                                     eachObj.year[yearDataIndex].value = selectedData.saveAsDraftValue;
 
                                     if (submittedData) {
