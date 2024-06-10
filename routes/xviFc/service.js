@@ -2,32 +2,18 @@ const ObjectId = require("mongoose").Types.ObjectId;
 const Ulb = require("../../models/Ulb");
 const State = require("../../models/State");
 const UlbLedger = require("../../models/UlbLedger");
-const DataCollectionForm = require("../../models/DataCollectionForm");
+// const DataCollectionForm = require("../../models/DataCollectionForm");
 const AnnualAccountData = require("../../models/AnnualAccounts");
 const XviFcForm1Tabs = require("../../models/XviFcForm1Tab");
 const FormsJson = require("../../models/FormsJson");
-const XviFcForm1DataCollection = require("../../models/XviFcForm1DataCollection");
-const { financialYearTableHeader, tempDb, keys, getInputKeysByType } = require("./form1_json");
-const { financialYearTableHeaderForm2, tempDbForm2, keysForm2, getInputKeysByTypeForm2 } = require("./form2_json");
-const { getFromForUlb } = require("./ulbsAccessForm");
-const { yearsObj } = require("./xviFC_year");
+const XviFcForm1DataCollection = require("../../models/XviFcFormDataCollection");
+const Year = require("../../models/Year");
 
-let priorTabsForXviFcForm1 = {
-    "demographicData": "s1",
-    "financialData": "s2",
-    "uploadDoc": "s3",
-    "accountPractice": "s4",
-};
+const { financialYearTableHeader, priorTabsForXviFcForm, form1QuestionKeys, form2QuestionKeys, form1TempDb, form2TempDb, getInputKeysByType } = require("./form_json");
+const { tabsUpdationService, keyDetailsForm1, keyDetailsForm2, getFromWiseKeyDetails } = require("../../util/xvifc_form")
 
-let priorTabsForXviFcForm2 = {
-    "demographicData": "s1",
-    "financialData": "s2",
-    "uploadDoc": "s3",
-    "accountPractice": "s4",
-    "serviceLevelBenchmark": "s5"
-};
-
-module.exports.createxviFcForm1Tabs = async (req, res) => {
+// One time function.
+module.exports.createxviFcFormTabs = async (req, res) => {
     let response = {
         success: true,
         message: "",
@@ -48,30 +34,50 @@ module.exports.createxviFcForm1Tabs = async (req, res) => {
     res.status(400).json(response);
 };
 
-module.exports.createxviFcForm1Json = async (req, res) => {
+module.exports.createxviFcFormJson = async (req, res) => {
     try {
+
         let ulbId = req.query.ulb;
-        let ulbData = await Ulb.findOne({ _id: ObjectId(ulbId) }, { name: 1, state: 1 });
-        let stateId = ulbData.state;
-        let stateData = await State.findOne({ _id: ObjectId(stateId) }, { name: 1 });
-
-        let xviFCForm1Tabs = await XviFcForm1Tabs.find({ formType: "form1" }).lean();
-        let xviFCForm1Table = tempDb;
         let role = "ULB";
-        let currentFormStatus = "PENDING";
+        let currentFormStatus = "NOT_STARTED";
+        let ulbData = await Ulb.findOne({ _id: ObjectId(ulbId) }, { name: 1, state: 1, formType: 1 }).lean();
+        let form_type = ulbData.formType;
+        let stateId = ulbData.state;
+        let xviFcFormTabs = await XviFcForm1Tabs.find().lean();
+        if (form_type == "form1") {
+            xviFcFormTabs = xviFcFormTabs.filter((x) => { return x.formType == "form1_2" || x.formType == "form1" });
+            xviFcFormTabs.forEach((tab) => {
+                tab.formType = "form1";
+            });
+        }
+        if (form_type == "form2") {
+            xviFcFormTabs = xviFcFormTabs.filter((x) => { return x.formType == "form1_2" || x.formType == "form2" });
+            xviFcFormTabs.forEach((tab) => {
+                tab.formType = "form2";
+            });
+        }
+        let xviFcFormTable = form_type === 'form1' ? form1TempDb : form_type === 'form2' ? form2TempDb : "Form not found!!";
 
-        for (let index = 0; index < keys.length; index++) {
-            if (xviFCForm1Table.hasOwnProperty(keys[index])) {
-                let obj = xviFCForm1Table[keys[index]];
-                xviFCForm1Table[keys[index]] = getColumnWiseData(keys[index], obj, xviFCForm1Table.isDraft, "", role, currentFormStatus);
-                xviFCForm1Table['readonly'] = true;
+        if (xviFcFormTable === "Form not found!!") {
+            return res.status(404).json({ status: false, message: "Form not found!!" });
+        }
+        let formKeys = form_type === 'form1' ? form1QuestionKeys : form_type === 'form2' ? form1QuestionKeys.concat(form2QuestionKeys) : [];
+        let allKeysDetails = form_type === 'form1' ? keyDetailsForm1 : form_type === 'form2' ? keyDetailsForm2 : {};
+        allKeysDetails["formType"] = form_type;
 
+        for (let index = 0; index < formKeys.length; index++) {
+            if (xviFcFormTable.hasOwnProperty(formKeys[index])) {
+                let obj = xviFcFormTable[formKeys[index]];
+
+                xviFcFormTable[formKeys[index]] = getColumnWiseData(allKeysDetails, formKeys[index], obj, xviFcFormTable.isDraft, "", role, currentFormStatus);
+                xviFcFormTable['readonly'] = true;
             } else {
-                xviFCForm1Table[keys[index]] = getColumnWiseData(
-                    keys[index],
+                xviFcFormTable[formKeys[index]] = getColumnWiseData(
+                    formKeys,
+                    formKeys[index],
                     {
                         value: "",
-                        status: "PENDING",
+                        status: "NOT_STARTED",
                     },
                     null,
                     "",
@@ -83,96 +89,25 @@ module.exports.createxviFcForm1Json = async (req, res) => {
         }
 
         // Create a json structure - questions.
-        let modifiedTabs = await getModifiedTabsXvifcForm1(xviFCForm1Tabs, xviFCForm1Table);
+        let modifiedTabs = await getModifiedTabsXvifcForm(xviFcFormTabs, xviFcFormTable, form_type);
 
         // Update the json with the pdf links - Already on Cityfinance.
-        let fileDataJson = modifiedTabs[2].data.auditedAnnualFySt.year;
-        modifiedTabs[2].data.auditedAnnualFySt.year = await getUploadDocLinks(ulbId, fileDataJson);
+        let fileDataJson = modifiedTabs[2].data[0].year;
+        modifiedTabs[2].data[0].year = await getUploadDocLinks(ulbId, fileDataJson);
 
         // Add Primary keys to the keyDetails{}  - financialData.
         let financialData = modifiedTabs[1].data;
-        modifiedTabs[1].data = await getUpdatedFinancialData_headers(financialData, Object.keys(financialData));
+        modifiedTabs[1].data = form_type === 'form1' ? await getUpdatedFinancialData_headers(financialData) : form_type === 'form2' ? await getUpdatedFinancialData_headersForm2(financialData) : "";
 
         // Add Primary keys to the keyDetails{} - accountingPractices.
         let accountingPractices = modifiedTabs[3].data;
-        modifiedTabs[3].data = await getUpdatedAccountingPractices_headers(accountingPractices, Object.keys(accountingPractices));
-
-        let viewData = {
-            ulb: "",
-            ulbName: "",
-            stateId: "",
-            stateName: "",
-            tabs: modifiedTabs,
-            financialYearTableHeader
-        };
-
-
-        let dataArray = req.body;
-        dataArray["data"] = viewData;
-        let temp = await FormsJson.create(dataArray);
-        delete temp.modifiedAt;
-        // delete temp.create;
-        temp.save();
-
-        return res.status(200).json({ status: true, message: "DB successfully updated", data: dataArray });
-    } catch (error) {
-        console.log("err", error);
-        return res.status(400).json({ status: false, message: "Something went wrong!" });
-    }
-};
-
-module.exports.createxviFcForm2Json = async (req, res) => {
-    try {
-
-        let ulbId = req.query.ulb;
-        let ulbData = await Ulb.findOne({ _id: ObjectId(ulbId) }, { name: 1, state: 1 });
-        let stateId = ulbData.state;
-        let stateData = await State.findOne({ _id: ObjectId(stateId) }, { name: 1 });
-
-        let xviFCForm2Tabs = await XviFcForm1Tabs.find({ formType: "form2" }).lean();
-        let xviFCForm2Table = tempDbForm2;
-        let role = "ULB";
-        let currentFormStatus = "PENDING";
-
-        for (let index = 0; index < keysForm2.length; index++) {
-            if (xviFCForm2Table.hasOwnProperty(keysForm2[index])) {
-                let obj = xviFCForm2Table[keysForm2[index]];
-                xviFCForm2Table[keysForm2[index]] = getColumnWiseDataForm2(keysForm2[index], obj, xviFCForm2Table.isDraft, "", role, currentFormStatus);
-                xviFCForm2Table['readonly'] = true;
-            } else {
-                xviFCForm2Table[keysForm2[index]] = getColumnWiseDataForm2(
-                    keys[index],
-                    {
-                        value: "",
-                        status: "PENDING",
-                    },
-                    null,
-                    "",
-                    role,
-                    // data?.currentFormStatus
-                    currentFormStatus
-                );
-            }
-        }
-
-        // Create a json structure - questions.
-        let modifiedTabs = await getModifiedTabsXvifcForm2(xviFCForm2Tabs, xviFCForm2Table);
-
-        // Update the json with the pdf links - Already on Cityfinance.
-        let fileDataJson = modifiedTabs[2].data.auditedAnnualFySt.year;
-        modifiedTabs[2].data.auditedAnnualFySt.year = await getUploadDocLinks(ulbId, fileDataJson);
-
-        // Add Primary keys to the keyDetails{}  - financialData.
-        let financialData = modifiedTabs[1].data;
-        modifiedTabs[1].data = await getUpdatedFinancialData_headersForm2(financialData, Object.keys(financialData));
-
-        // Add Primary keys to the keyDetails{} - accountingPractices.
-        let accountingPractices = modifiedTabs[3].data;
-        modifiedTabs[3].data = await getUpdatedAccountingPractices_headers(accountingPractices, Object.keys(accountingPractices));
+        modifiedTabs[3].data = await getUpdatedAccountingPractices_headers(accountingPractices);
 
         // Add Primary keys to the keyDetails{} - serviceLevelBenchmark.
-        let serviceLevelBenchmark = modifiedTabs[4].data;
-        modifiedTabs[4].data = await getUpdatedServiceLevelBenchmark_headers(serviceLevelBenchmark, Object.keys(serviceLevelBenchmark));
+        if (form_type === 'form2') {
+            let serviceLevelBenchmark = modifiedTabs[4].data;
+            modifiedTabs[4].data = await getUpdatedServiceLevelBenchmark_headers(serviceLevelBenchmark);
+        }
 
         let viewData = {
             ulb: "",
@@ -180,7 +115,6 @@ module.exports.createxviFcForm2Json = async (req, res) => {
             stateId: "",
             stateName: "",
             tabs: modifiedTabs,
-            // financialYearTableHeaderForm2
             financialYearTableHeader
         };
 
@@ -192,7 +126,7 @@ module.exports.createxviFcForm2Json = async (req, res) => {
         // delete temp.create;
         temp.save();
 
-        return res.status(200).json({ status: true, message: "DB successfully updated", data: dataArray });
+        return res.status(201).json({ status: true, message: "Form json created!", data: dataArray });
     } catch (error) {
         console.log("err", error);
         return res.status(400).json({ status: false, message: "Something went wrong!" });
@@ -201,12 +135,13 @@ module.exports.createxviFcForm2Json = async (req, res) => {
 
 module.exports.getForm = async (req, res) => {
     let ulbId = req.query.ulb;
-    let userForm = await Ulb.findOne({ _id: ObjectId(ulbId) }, { formType: 1 }).lean();
+    let userForm = await Ulb.findOne({ _id: ObjectId(ulbId) }, { formType: 1, name: 1, state: 1, _id: 1, censusCode: 1, sbCode: 1 }).lean();
+    let stateData = await State.findOne({ _id: ObjectId(userForm.state) }, { name: 1, _id: 1 }).lean();
 
     if (userForm.formType == "form1") {
         try {
-            let form1Data = await getForm1(ulbId, req.query.role, "");
-            return res.status(200).json({ status: true, message: "Success fetched data!", data: form1Data });
+            let form1Data = await getForm1(userForm, stateData, req.query.role, "");
+            return res.status(200).json({ status: true, message: `Sucessfully fetched form 1!`, data: form1Data });
         }
         catch (error) {
             console.log("err", error);
@@ -214,17 +149,90 @@ module.exports.getForm = async (req, res) => {
         }
     } else if (userForm.formType == "form2") {
         try {
-            let form2Data = await getForm2(ulbId, req.query.role);
-            return res.status(200).json({ status: true, message: "Success fetched data!", data: form2Data });
+            let form2Data = await getForm2(userForm, stateData, req.query.role, "");
+            return res.status(200).json({ status: true, message: `Sucessfully fetched form 2`, data: form2Data });
         }
         catch (error) {
             console.log("err", error);
             return res.status(400).json({ status: false, message: "Something went wrong!" });
         }
     } else {
-        return res.status(400).json({ status: false, message: "Form not found for the user." });
+        return res.status(404).json({ status: false, message: "Form not found for the user." });
     }
 
+};
+
+module.exports.saveAsDraftForm = async (req, res) => {
+    try {
+        let ulbData_form = req.body;
+        let ulbId = ObjectId(req.query.ulb);
+        let existingSubmitData = await XviFcForm1DataCollection.find({ ulb: ulbId });
+
+        if (existingSubmitData.length <= 0) {
+            ulbData_form = await XviFcForm1DataCollection.findOneAndUpdate({ ulb: ulbId }, ulbData_form, { upsert: true });
+            return res.status(200).json({ status: true, message: "Data successfully saved as draft!" });
+        }
+        else if (existingSubmitData.length > 0 && existingSubmitData[0].formStatus === 'IN_PROGRESS') {
+            // If tab sent is less that total tab - keep what is there in DB, add only sent tab.
+            for (let formData of existingSubmitData[0].tab) {
+                index = ulbData_form.tab.findIndex(x => x.tabKey === formData.tabKey);
+                // Check each question.
+                for (let eachObj of formData.data) {
+                    if (index > -1) {
+                        quesIndex = ulbData_form.tab[index].data.findIndex((x) => x.key === eachObj.key);
+                        if (quesIndex <= -1) {
+                            ulbData_form.tab[index].data.push(eachObj);
+                        }
+                    }
+                }
+                // Check tab.
+                if (index <= -1) {
+                    ulbData_form.tab.push(formData);
+                }
+            }
+
+            let updatedData = await XviFcForm1DataCollection.findOneAndUpdate({ ulb: ulbId }, ulbData_form, { upsert: true });
+            return res.status(200).json({ status: true, message: "Data successfully saved as draft!" });
+        } else {
+            return res.status(208).json({ status: true, message: "Form already submitted!" });
+        }
+    } catch (error) {
+        console.log(error);
+        return res.status(400).json({ status: false, message: "Data not saved as draft!" });
+    }
+};
+
+module.exports.submitFrom = async (req, res) => {
+    try {
+        let ulbData_form = req.body;
+        let ulbId = ObjectId(req.query.ulb);
+        let roleName = "ULB"; // TODO: make dynamic.
+        let existingSubmitData = await XviFcForm1DataCollection.find({ ulb: ulbId });
+        let validateSubmitData = ulbData_form.formId === 16 ? ulbData_form.tab.length === 4 : (ulbData_form.formId === 17 ? ulbData_form.tab.length === 5 : false); // Get count of tabs received from frontend.
+
+        if (existingSubmitData.length > 0 && existingSubmitData[0].formStatus === 'IN_PROGRESS' && validateSubmitData) {
+            // Check validation and update data from "saveAsDraftValue" to "value".
+
+            let getFormData = ulbData_form.formId == 16 ? await getForm1(ulbId, roleName, ulbData_form) : ulbData_form.formId == 17 ? await getForm2(ulbId, roleName, ulbData_form) : "";
+            // let validatedData = await checkValidations(ulbData_form, getFormData);
+
+            if (getFormData.validationCounter > 0) {
+                return res.status(400).json({ status: true, message: "Validation failed", data: getFormData });
+            } else {
+                ulbData_form.formStatus = 'SUBMITTED';
+                ulbData_form.tracker.push({ eventName: "SUBMITTED", eventDate: new Date(), submittedBy: ulbId });
+
+                let updatedData = await XviFcForm1DataCollection.findOneAndUpdate({ ulb: ulbId }, ulbData_form, { upsert: true });
+                return res.status(200).json({ status: true, message: "DB successfully updated" });
+            }
+        } else {
+            let errorMessage = existingSubmitData.length > 0 && (existingSubmitData[0].formStatus !== 'IN_PROGRESS') ? "Form already submitted!" : "Either data is incomplete or form not found!";
+            return res.status(400).json({ status: true, message: errorMessage });
+        }
+    } catch (error) {
+        console.log(error);
+        return res.status(400).json({ status: false, message: error });
+    }
 };
 
 async function validateValues(quesType, ansValue, isPdf = "", fileUrl = "", fileName = "", max = "", min = "", decimal = "") {
@@ -283,26 +291,46 @@ async function validateValues(quesType, ansValue, isPdf = "", fileUrl = "", file
     return validation;
 }
 
-async function getForm1(userId, roleName, submittedData) {
-    let ulbId = userId;
+async function getForm1(ulbData, stateData, roleName, submittedData) {
+    let ulbId = ulbData._id;
     let role = roleName;
+    let demographicTabIndex;
+    let IndexOfYearOfConstitution;
+    let frontendYear_Fd;
     let from1AnswerFromDb = submittedData ? submittedData : await XviFcForm1DataCollection.findOne({ ulb: ObjectId(ulbId) });
-    let xviFCForm1Tabs = await XviFcForm1Tabs.find({ formType: "form1" }).lean();
-    let xviFCForm1Table = tempDb;
+    let xviFCForm1Tabs = await XviFcForm1Tabs.find().lean();
 
+    xviFCForm1Tabs = xviFCForm1Tabs.filter((x) => { return x.formType == "form1_2" || x.formType == "form1" });
+    xviFCForm1Tabs.forEach((tab) => {
+        tab.formType = "form1";
+    });
+    let xviFCForm1Table = form1TempDb;
     let currentFormStatus = from1AnswerFromDb && from1AnswerFromDb.formStatus ? from1AnswerFromDb.formStatus : '';
+    // Get index of year of constitution from demographic data.
+    if (from1AnswerFromDb) {
+        demographicTabIndex = from1AnswerFromDb.tab.findIndex((x) => { return x.tabKey == "demographicData" });
+        IndexOfYearOfConstitution = from1AnswerFromDb.tab[demographicTabIndex].data.findIndex((x) => { return x.key == "yearOfConstitution" });
+        frontendYear_Fd = from1AnswerFromDb.tab[demographicTabIndex].data[IndexOfYearOfConstitution].saveAsDraftValue;
+    }
 
-    for (let index = 0; index < keys.length; index++) {
-        if (xviFCForm1Table.hasOwnProperty(keys[index])) {
-            let obj = xviFCForm1Table[keys[index]];
-            xviFCForm1Table[keys[index]] = getColumnWiseData(keys[index], obj, xviFCForm1Table.isDraft, "", role, currentFormStatus);
+    // let keyDetails = await getFromWiseKeyDetails("form1");
+    let keyDetails = keyDetailsForm1;
+    keyDetails["formType"] = "form1";
+    for (let index = 0; index < form1QuestionKeys.length; index++) {
+        if (xviFCForm1Table.hasOwnProperty(form1QuestionKeys[index])) {
+            let obj = xviFCForm1Table[form1QuestionKeys[index]];
+
+            xviFCForm1Table[form1QuestionKeys[index]] = getColumnWiseData(keyDetails, form1QuestionKeys[index], obj, xviFCForm1Table.isDraft, "", role, currentFormStatus, frontendYear_Fd);
             xviFCForm1Table['readonly'] = role == 'ULB' && (currentFormStatus == 'IN_PROGRESS' || currentFormStatus == 'NOT_STARTED') ? false : true;
         }
     }
 
     // Create a json structure - questions.
-    let from1QuestionFromDb = await getModifiedTabsXvifcForm1(xviFCForm1Tabs, xviFCForm1Table);
+    let from1QuestionFromDb = await getModifiedTabsXvifcForm(xviFCForm1Tabs, xviFCForm1Table, "form1");
     let validationCounter = 0;
+
+    from1QuestionFromDb[0].data[0].value = ulbData.name;
+    from1QuestionFromDb[0].data[1].value = stateData.name;
 
     if (from1AnswerFromDb) {
         for (let eachQuestionObj of from1QuestionFromDb) {
@@ -315,6 +343,16 @@ async function getForm1(userId, roleName, submittedData) {
 
                         if (eachQuestionObj.key == "financialData") {
                             for (let eachObj of eachQuestionObj.data) {
+
+                                // console.log(achObj.sumOf2)
+                                // console.log(eachObj.autoSumValidation2)
+
+                                // if (eachObj.sumOf2 && eachObj.autoSumValidation2) {
+                                //     console.log("inside")
+                                //     delete eachObj.sumOf2;
+                                //     delete eachObj.autoSumValidation2;
+                                // }
+
                                 let yearDataIndex = eachObj.year.findIndex(x => x.key === selectedData.key)
                                 if (yearDataIndex > -1 && selectedData.key == eachObj.year[yearDataIndex].key) {
                                     eachObj.year[yearDataIndex].value = selectedData.saveAsDraftValue;
@@ -351,6 +389,9 @@ async function getForm1(userId, roleName, submittedData) {
                                 if (selectedData.key && eachObj.key && selectedData.key == eachObj.key) {
                                     eachObj.value = selectedData.saveAsDraftValue;
 
+                                    if (eachObj.key == "nameOfUlb") eachObj.value = ulbData.name;
+                                    if (eachObj.key == "nameOfState") eachObj.value = stateData.name;
+
                                     if (submittedData) {
                                         let validationArr = await validateValues(selectedData.formFieldType, selectedData.saveAsDraftValue, "", "", "", eachObj.max, eachObj.min, eachObj.decimal);
                                         eachObj.validation = [];
@@ -368,7 +409,7 @@ async function getForm1(userId, roleName, submittedData) {
 
     // Add Primary keys to the keyDetails{}  - financialData.
     let financialData = from1QuestionFromDb[1].data;
-    from1QuestionFromDb[1].data = await getUpdatedFinancialData_headers(financialData, Object.keys(financialData));
+    from1QuestionFromDb[1].data = await getUpdatedFinancialData_headers(financialData);
 
     // Update the json with the pdf links - Already on Cityfinance.
     let fileDataJson = from1QuestionFromDb[2].data[0].year;
@@ -376,13 +417,15 @@ async function getForm1(userId, roleName, submittedData) {
 
     // Add Primary keys to the keyDetails{} - accountingPractices.
     let accountingPractices = from1QuestionFromDb[3].data;
-    from1QuestionFromDb[3].data = await getUpdatedAccountingPractices_headers(accountingPractices, Object.keys(accountingPractices));
+    from1QuestionFromDb[3].data = await getUpdatedAccountingPractices_headers(accountingPractices);
 
     let viewData = {
         ulb: ulbId,
-        // ulbName: ulbData.name,
-        // stateId: stateId,
-        // stateName: stateData.name,
+        censusCode: ulbData.censusCode,
+        sbCode: ulbData.sbCode,
+        ulbName: ulbData.name,
+        stateId: stateData._id,
+        stateName: stateData.name,
         tabs: from1QuestionFromDb,
         validationCounter,
         financialYearTableHeader
@@ -392,26 +435,56 @@ async function getForm1(userId, roleName, submittedData) {
 
 }
 
-async function getForm2(userId, roleName) {
+async function getForm2(ulbData, stateData, roleName, submittedData) {
 
-    let ulbId = userId;
+    let ulbId = ulbData._id;
     let role = roleName;
-    let from2AnswerFromDb = await XviFcForm1DataCollection.findOne({ ulb: ObjectId(ulbId) });
-    let xviFCForm2Tabs = await XviFcForm1Tabs.find({ formType: "form2" }).lean();
-    let xviFCForm2Table = tempDbForm2;
-
+    let demographicTabIndex;
+    let IndexOfYearOfConstitution;
+    let frontendYear_Fd;
+    let frontendYear_Slb;
+    let IndexOfYearOfSlb;
+    let from2AnswerFromDb = submittedData ? submittedData : await XviFcForm1DataCollection.findOne({ ulb: ObjectId(ulbId) });
+    let xviFCForm2Tabs = await XviFcForm1Tabs.find().lean();
+    xviFCForm2Tabs = xviFCForm2Tabs.filter((x) => { return x.formType == "form1_2" || x.formType == "form2" });
+    xviFCForm2Tabs.forEach((tab) => {
+        tab.formType = "form2";
+    });
+    // let xviFCForm2Table = Object.assign(form1TempDb, form2TempDb);
+    // let xviFCForm2Table = { ...form1TempDb, ...form2TempDb };
+    let xviFCForm2Table = form2TempDb;
     let currentFormStatus = from2AnswerFromDb && from2AnswerFromDb.formStatus ? from2AnswerFromDb.formStatus : '';
 
-    for (let index = 0; index < keysForm2.length; index++) {
-        if (xviFCForm2Table.hasOwnProperty(keysForm2[index])) {
-            let obj = xviFCForm2Table[keysForm2[index]];
-            xviFCForm2Table[keysForm2[index]] = getColumnWiseDataForm2(keysForm2[index], obj, xviFCForm2Table.isDraft, "", role, currentFormStatus);
+
+    // Get index of year of constitution from demographic data.
+    if (from2AnswerFromDb) {
+        demographicTabIndex = from2AnswerFromDb.tab.findIndex((x) => { return x.tabKey == "demographicData" });
+        IndexOfYearOfConstitution = from2AnswerFromDb.tab[demographicTabIndex].data.findIndex((x) => { return x.key == "yearOfConstitution" });
+        frontendYear_Fd = from2AnswerFromDb.tab[demographicTabIndex].data[IndexOfYearOfConstitution].saveAsDraftValue;
+        // Get index of year of slb.
+        IndexOfYearOfSlb = from2AnswerFromDb.tab[demographicTabIndex].data.findIndex((x) => { return x.key == "yearOfSlb" });
+        frontendYear_Slb = from2AnswerFromDb.tab[demographicTabIndex].data[IndexOfYearOfSlb].saveAsDraftValue;
+    }
+
+
+
+    // let keyDetails = Object.assign(keyDetailsForm1, keyDetailsForm2);
+    // let keyDetails = { ...keyDetailsForm1, ...keyDetailsForm2 };
+    let keyDetails = keyDetailsForm2;
+    keyDetails["formType"] = "form2";
+
+    let mergedForm2QuestionKeys = form1QuestionKeys.concat(form2QuestionKeys);
+
+    for (let index = 0; index < mergedForm2QuestionKeys.length; index++) {
+        if (xviFCForm2Table.hasOwnProperty(mergedForm2QuestionKeys[index])) {
+            let obj = xviFCForm2Table[mergedForm2QuestionKeys[index]];
+            xviFCForm2Table[mergedForm2QuestionKeys[index]] = getColumnWiseData(keyDetails, mergedForm2QuestionKeys[index], obj, xviFCForm2Table.isDraft, "", role, currentFormStatus, frontendYear_Fd, frontendYear_Slb);
             xviFCForm2Table['readonly'] = role == 'ULB' && (currentFormStatus == 'IN_PROGRESS' || currentFormStatus == 'NOT_STARTED') ? false : true;
         }
     }
-
     // Create a json structure - questions.
-    let from2QuestionFromDb = await getModifiedTabsXvifcForm2(xviFCForm2Tabs, xviFCForm2Table);
+    let from2QuestionFromDb = await getModifiedTabsXvifcForm(xviFCForm2Tabs, xviFCForm2Table, "form2");
+    let validationCounter = 0;
 
     if (from2AnswerFromDb) {
         for (let eachQuestionObj of from2QuestionFromDb) {
@@ -423,10 +496,28 @@ async function getForm2(userId, roleName) {
                     for (let selectedData of from2AnswerFromDb.tab[indexOfKey].data) {
 
                         if (eachQuestionObj.key == "financialData" || eachQuestionObj.key == "serviceLevelBenchmark") {
+
                             for (let eachObj of eachQuestionObj.data) {
-                                let yearDataIndex = eachObj.year.findIndex(x => x.key === selectedData.key)
+
+                                // if (eachObj.sumOf2 && eachObj.autoSumValidation2) {
+                                //     eachObj.sumOf = eachObj.sumOf2;
+                                //     eachObj.autoSumValidation = eachObj.autoSumValidation2;
+                                //     delete eachObj.sumOf2;
+                                //     delete eachObj.autoSumValidation2;
+                                // }
+
+
+                                let yearDataIndex = eachObj.year.findIndex((x) => { return x.key === selectedData.key })
+
                                 if (yearDataIndex > -1 && selectedData.key == eachObj.year[yearDataIndex].key) {
+
                                     eachObj.year[yearDataIndex].value = selectedData.saveAsDraftValue;
+
+                                    if (submittedData) {
+                                        let validationArr = await validateValues(selectedData.formFieldType, selectedData.saveAsDraftValue, "", "", "", eachObj.max, eachObj.min, eachObj.decimal);
+                                        eachObj.year[yearDataIndex].validation = validationArr;
+                                        validationCounter = validationArr.length > 0 ? validationCounter + 1 : validationCounter;
+                                    }
                                 }
                             }
                         }
@@ -437,14 +528,34 @@ async function getForm2(userId, roleName) {
                                 if (yearDataIndex > -1 && selectedData.key == eachObj.year[yearDataIndex].key) {
                                     eachObj.year[yearDataIndex].file.name = selectedData.file[0].name;
                                     eachObj.year[yearDataIndex].file.url = selectedData.file[0].url;
+
+
+                                    if (submittedData) {
+                                        let validationArr = await validateValues(selectedData.formFieldType, selectedData.saveAsDraftValue, selectedData.isPdfAvailable, eachObj.year[yearDataIndex].file.url, eachObj.year[yearDataIndex].file.name, "", "", "");
+                                        eachObj.year[yearDataIndex].validation = [];
+                                        eachObj.year[yearDataIndex].validation = validationArr;
+                                        validationCounter = validationArr.length > 0 ? validationCounter + 1 : validationCounter;
+                                    }
                                 }
                             }
                         }
+
                         if (eachQuestionObj.key == "demographicData" || eachQuestionObj.key == 'accountPractice') {
+                            for (let eachObj of eachQuestionObj.data) {
 
-                            if (selectedData.key && eachQuestionObj.data[selectedData.key] && selectedData.key == eachQuestionObj.data[selectedData.key].key) {
-                                eachQuestionObj.data[selectedData.key].value = selectedData.saveAsDraftValue;
+                                if (selectedData.key == "nameOfUlb") selectedData.saveAsDraftValue = ulbData.name;
+                                if (selectedData.key == "nameOfState") selectedData.saveAsDraftValue = stateData.name;
 
+                                if (selectedData.key && eachObj.key && selectedData.key == eachObj.key) {
+                                    eachObj.value = selectedData.saveAsDraftValue;
+
+                                    if (submittedData) {
+                                        let validationArr = await validateValues(selectedData.formFieldType, selectedData.saveAsDraftValue, "", "", "", eachObj.max, eachObj.min, eachObj.decimal);
+                                        eachObj.validation = [];
+                                        eachObj.validation = validationArr;
+                                        validationCounter = validationArr.length > 0 ? validationCounter + 1 : validationCounter;
+                                    }
+                                }
                             }
                         }
 
@@ -454,9 +565,13 @@ async function getForm2(userId, roleName) {
         }
     }
 
+    from2QuestionFromDb[0].data[0].value = ulbData.name;
+    from2QuestionFromDb[0].data[1].value = stateData.name;
+
+
     // Add Primary keys to the keyDetails{}  - financialData.
     let financialData = from2QuestionFromDb[1].data;
-    from2QuestionFromDb[1].data = await getUpdatedFinancialData_headersForm2(financialData, Object.keys(financialData));
+    from2QuestionFromDb[1].data = await getUpdatedFinancialData_headersForm2(financialData);
 
     // Update the json with the pdf links - Already on Cityfinance.
     let fileDataJson = from2QuestionFromDb[2].data[0].year;
@@ -464,19 +579,21 @@ async function getForm2(userId, roleName) {
 
     // Add Primary keys to the keyDetails{} - accountingPractices.
     let accountingPractices = from2QuestionFromDb[3].data;
-    from2QuestionFromDb[3].data = await getUpdatedAccountingPractices_headers(accountingPractices, Object.keys(accountingPractices));
+    from2QuestionFromDb[3].data = await getUpdatedAccountingPractices_headers(accountingPractices);
 
     // Add Primary keys to the keyDetails{} - serviceLevelBenchmark.
     let serviceLevelBenchmark = from2QuestionFromDb[4].data;
-    from2QuestionFromDb[4].data = await getUpdatedServiceLevelBenchmark_headers(serviceLevelBenchmark, Object.keys(serviceLevelBenchmark));
+    from2QuestionFromDb[4].data = await getUpdatedServiceLevelBenchmark_headers(serviceLevelBenchmark);
 
     let viewData = {
         ulb: ulbId,
-        // ulbName: ulbData.name,
-        // stateId: stateId,
-        // stateName: stateData.name,
+        ulbName: ulbData.name,
+        censusCode: ulbData.censusCode,
+        sbCode: ulbData.sbCode,
+        stateId: stateData._id,
+        stateName: stateData.name,
         tabs: from2QuestionFromDb,
-        // financialYearTableHeaderForm2
+        validationCounter,
         financialYearTableHeader
     };
 
@@ -484,3154 +601,745 @@ async function getForm2(userId, roleName) {
 
 };
 
-module.exports.saveAsDraftForm1 = async (req, res) => {
-    try {
-        let ulbData_form1 = req.body;
-        let ulbId = ObjectId(req.query.ulb);
-        let existingSubmitData = await XviFcForm1DataCollection.find({ ulb: ulbId });
-
-        if (existingSubmitData.length <= 0) {
-            ulbData_form1 = await XviFcForm1DataCollection.findOneAndUpdate({ ulb: ulbId }, ulbData_form1, { upsert: true });
-            return res.status(200).json({ status: true, message: "DB successfully updated", data: ulbData_form1 ? ulbData_form1 : "" });
-        }
-        else if (existingSubmitData.length > 0 && existingSubmitData[0].formStatus === 'IN_PROGRESS') {
-            // If tab sent is less that total tab 
-            for (let form1Data of existingSubmitData[0].tab) {
-                index = ulbData_form1.tab.findIndex(x => x.tabKey === form1Data.tabKey);
-                if (index <= -1) {
-                    ulbData_form1.tab.push(form1Data);
-                }
-            }
-
-            let updatedData = await XviFcForm1DataCollection.findOneAndUpdate({ ulb: ulbId }, ulbData_form1, { upsert: true });
-            return res.status(200).json({ status: true, message: "DB successfully updated", data: updatedData ? updatedData : "" });
-        } else {
-            return res.status(200).json({ status: true, message: "Form already submitted!" });
-        }
-    } catch (error) {
-        console.log(error);
-        return res.status(400).json({ status: false, message: error });
-    }
-};
-
-module.exports.submitForm1 = async (req, res) => {
-    try {
-        let ulbData_form1 = req.body;
-        let ulbId = ObjectId(req.query.ulb);
-        let roleName = "ULB"; // TODO: make dynamic.
-        let existingSubmitData = await XviFcForm1DataCollection.find({ ulb: ulbId });
-        let validateSubmitData = ulbData_form1.formId === 16 ? ulbData_form1.tab.length === 4 : (ulbData_form1.formId === 17 ? ulbData_form1.tab.length === 5 : false); // Check if all the tabs data are sent from frontend.
-
-        if (existingSubmitData.length > 0 && existingSubmitData[0].formStatus === 'IN_PROGRESS' && validateSubmitData) {
-            // Check validation and update data from "saveAsDraftValue" to "value".
-            let getFormData = await getForm1(ulbId, roleName, ulbData_form1);
-            // let validatedData = await checkValidations(ulbData_form1, getFormData);
-
-            if (getFormData.validationCounter > 0) {
-                return res.status(200).json({ status: true, message: "Validation failed", data: getFormData });
-            } else {
-                ulbData_form1.formStatus = 'SUBMITTED';
-
-                let updatedData = await XviFcForm1DataCollection.findOneAndUpdate({ ulb: ulbId }, ulbData_form1, { upsert: true });
-                return res.status(200).json({ status: true, message: "DB successfully updated", data: updatedData });
-            }
-        } else {
-            let errorMessage = existingSubmitData.length > 0 && (existingSubmitData[0].formStatus !== 'IN_PROGRESS') ? "Form already submitted!" : "Invalid form data!";
-            return res.status(200).json({ status: true, message: errorMessage });
-        }
-    } catch (error) {
-        console.log(error);
-        return res.status(400).json({ status: false, message: error });
-    }
-};
-
-module.exports.saveAsDraftForm2 = async (req, res) => {
-    try {
-        let ulbData_form1 = req.body;
-        let ulbId = ObjectId(req.query.ulb);
-        let existingSubmitData = await XviFcForm1DataCollection.find({ ulb: ulbId });
-
-        if (existingSubmitData.length > 0) {
-            for (let form1Data of existingSubmitData[0].tab) {
-                index = ulbData_form1.tab.findIndex(x => x.tabKey === form1Data.tabKey);
-                if (index <= -1) {
-                    ulbData_form1.tab.push(form1Data);
-                }
-            }
-        }
-        let updatedData = await XviFcForm1DataCollection.findOneAndUpdate({ ulb: ulbId }, ulbData_form1, { upsert: true });
-        return res.status(200).json({ status: true, message: "DB successfully updated", data: updatedData ? updatedData : "" });
-    } catch (error) {
-        return res.status(400).json({ status: false, message: error });
-    }
-};
-
-module.exports.submitFrom2 = async (req, res) => {
-    try {
-        let ulbData_form1 = req.body;
-        let ulbId = ObjectId(req.query.ulb);
-        let existingSubmitData = await XviFcForm1DataCollection.find({ ulb: ulbId });
-
-        if (existingSubmitData.length > 0) {
-            for (let form1Data of existingSubmitData[0].tab) {
-                index = ulbData_form1.tab.findIndex(x => x.tabKey === form1Data.tabKey);
-                if (index <= -1) {
-                    ulbData_form1.tab.push(form1Data);
-                }
-            }
-        }
-        let updatedData = await XviFcForm1DataCollection.findOneAndUpdate({ ulb: ulbId }, ulbData_form1, { upsert: true });
-        return res.status(200).json({ status: true, message: "DB successfully updated", data: updatedData ? updatedData : "" });
-    } catch (error) {
-        return res.status(400).json({ status: false, message: error });
-    }
-};
-
-// Json structure.
-let keyDetails = {
-    nameOfUlb: {
-        formFieldType: 'text',
-        key: 'nameOfUlb',
-        displayPriority: '1',
-        label: 'Name of ULB',
-        info: '',
-        required: true,
-        year: 1,
-        validation: '',
-        logic: '',
-        min: "",
-        max: "",
-        decimal: ""
-    },
-    nameOfState: {
-        formFieldType: 'text',
-        key: 'nameOfState',
-        displayPriority: '2',
-        label: 'Name of State/Union Territory ',
-        info: '',
-        required: true,
-        year: 1,
-        validation: '',
-        logic: '',
-        min: "",
-        max: "",
-        decimal: ""
-    },
-    pop2011: {
-        formFieldType: 'number',
-        key: 'pop2011',
-        displayPriority: '3',
-        label: 'Population as per Census 2011',
-        info: '',
-        required: true,
-        year: 1,
-        validation: '',
-        logic: '',
-        min: 0,
-        max: 1000000,
-        decimal: 0
-    },
-    popApril2024: {
-        formFieldType: 'number',
-        key: 'popApril2024',
-        displayPriority: '4',
-        label: 'Population as per 01 April 2024',
-        info: '',
-        required: true,
-        year: 1,
-        validation: '',
-        logic: '',
-        min: 0,
-        max: 1000000,
-        decimal: 0
-    },
-    areaOfUlb: {
-        formFieldType: 'number',
-        key: 'areaOfUlb',
-        displayPriority: '5',
-        label: 'Area of the ULB (in Sq. Km.)',
-        info: '',
-        required: true,
-        year: 1,
-        validation: '',
-        logic: '',
-        min: 0.1,
-        max: 1000,
-        decimal: 2
-    },
-    yearOfElection: {
-        formFieldType: 'dropdown',
-        options: ["2000", "2001", "2002", "2003", "2004", "2005", "2006", "2007", "2008", "2009", "2010", "2011", "2012", "2013", "2014", "2015", "2016", "2017", "2018", "2019", "2020", "2021", "2022", "2023", "2024"],
-        showInputBox: "",
-        key: 'yearOfElection',
-        displayPriority: '6',
-        label: "Which is the latest year when ULB's election was held?",
-        info: '',
-        required: true,
-        year: 1,
-        validation: '',
-        logic: '',
-        min: "",
-        max: "",
-        decimal: ""
-    },
-    isElected: {
-        formFieldType: 'radio',
-        options: ['Yes', 'No'],
-        key: 'isElected',
-        displayPriority: '7',
-        label: 'Is the elected body in place as on 01 April 2024?',
-        info: '',
-        required: true,
-        year: 1,
-        validation: '',
-        logic: '',
-        min: "",
-        max: "",
-        decimal: ""
-    },
-    yearOfConstitution: {
-        formFieldType: 'dropdown',
-        options: ["2015-16", "2016-17", "2017-18", "2018-19", "2019-20", "2020-21", "2021-22", "2022-23"],
-        showInputBox: "",
-        key: 'yearOfConstitution',
-        displayPriority: '8',
-        label: 'In which year was the ULB constituted?',
-        info: '',
-        required: true,
-        year: 1,
-        validation: '',
-        logic: '',
-        min: "",
-        max: "",
-        decimal: ""
-    },
-    sourceOfFd: {
-        formFieldType: 'dropdown',
-        options: ["Accounts Finalized & Audited", "Accounts Finalized but Not Audited", "Accounts not Finalized - Provisional data"],
-        showInputBox: "",
-        key: 'sourceOfFd',
-        displayPriority: '*',
-        label: 'Please select the source of Financial Data',
-        info: '',
-        required: true,
-        year: 8,
-        validation: '',
-        logic: '',
-        min: "",
-        max: "",
-        decimal: ""
-    },
-    taxRevenue: {
-        formFieldType: 'number',
-        key: 'taxRevenue',
-        displayPriority: '1.1',
-        label: 'Tax Revenue',
-        info: 'Tax revenue shall include property, water, drainage, sewerage,professional, entertainment and advertisment tax and all other tax revenues.',
-        required: true,
-        year: 8,
-        validation: '',
-        logic: '',
-        min: -999999999999999,
-        max: 999999999999999,
-        decimal: 0
-    },
-    feeAndUserCharges: {
-        formFieldType: 'number',
-        key: 'feeAndUserCharges',
-        displayPriority: '1.2',
-        label: 'Fee and User Charges',
-        info: 'Fees & user charges shall include Water supply, Fees & Sanitation / Sewerage, Garbage collection / Solid waste management, and all other fees & user charges.',
-        required: true,
-        year: 8,
-        validation: '',
-        logic: '',
-        min: -999999999999999,
-        max: 999999999999999,
-        decimal: 0
-    },
-    interestIncome: {
-        formFieldType: 'number',
-        key: 'interestIncome',
-        displayPriority: '1.3',
-        label: 'Interest Income',
-        info: 'Interest income shall include sale from assets, land and other assets.',
-        required: true,
-        year: 8,
-        validation: '',
-        logic: '',
-        min: -999999999999999,
-        max: 999999999999999,
-        decimal: 0
-    },
-    otherIncome: {
-        formFieldType: 'number',
-        key: 'otherIncome',
-        displayPriority: '1.4',
-        label: 'Other Income',
-        info: 'Other income shall include sale & hire charges, income from investments,interest earned, etc.',
-        required: true,
-        year: 8,
-        validation: '',
-        logic: '',
-        min: -999999999999999,
-        max: 999999999999999,
-        decimal: 0
-    },
-    totOwnRevenue: {
-        formFieldType: 'number',
-        key: 'totOwnRevenue',
-        displayPriority: '1',
-        label: 'Total Own Revenue',
-        info: 'Total own revenue shall include tax revenue, fees & user charges, interest income, and other income.',
-        required: true,
-        year: 8,
-        validation: 'sum',
-        logic: ['1.1', '1.2', '1.3', '1.4'],
-        min: -999999999999999,
-        max: 999999999999999,
-        decimal: 0
-    },
-    centralGrants: {
-        formFieldType: 'number',
-        key: 'centralGrants',
-        displayPriority: '2.1',
-        label: "Grants for Centre's Initiatives ",
-        info: "These grants shall include Union Finance Commission grants, Grants received for Centrally Sponsored Schemes (including state's matching share).",
-        required: true,
-        year: 8,
-        validation: '',
-        logic: '',
-        min: -999999999999999,
-        max: 999999999999999,
-        decimal: 0
-    },
-    otherGrants: {
-        formFieldType: 'number',
-        key: 'otherGrants',
-        displayPriority: '2.2',
-        label: "Other Grants (including State's grants)",
-        info: 'These grants shall include State Finance Commission grants, Other State ,Grants, Other grants etc.',
-        required: true,
-        year: 8,
-        validation: '',
-        logic: '',
-        min: -999999999999999,
-        max: 999999999999999,
-        decimal: 0
-    },
-    totalGrants: {
-        formFieldType: 'number',
-        key: 'totalGrants',
-        displayPriority: '2',
-        label: 'Total Grants',
-        info: '',
-        required: true,
-        year: 8,
-        validation: 'sum',
-        logic: ['2.1', '2.2'],
-        min: -999999999999999,
-        max: 999999999999999,
-        decimal: 0
-    },
-    assignedRevAndCom: {
-        formFieldType: 'number',
-        key: 'assignedRevAndCom',
-        displayPriority: '3',
-        label: 'Assigned Revenue and Compensation',
-        info: 'Assigned Revenue includes share in the revenues of the state government ,allocated to the ULB. This includes Entertainment Tax, Duty on Transfer of Properties,etc.',
-        required: true,
-        year: 8,
-        validation: '',
-        logic: '',
-        min: -999999999999999,
-        max: 999999999999999,
-        decimal: 0
-    },
-    otherRevenue: {
-        formFieldType: 'number',
-        key: 'otherRevenue',
-        displayPriority: '4',
-        label: 'Other Revenue',
-        info: 'Other Revenue shall include any other sources of revenue except own ,revenue, assigned revenue and grants',
-        required: true,
-        year: 8,
-        validation: '',
-        logic: '',
-        min: -999999999999999,
-        max: 999999999999999,
-        decimal: 0
-    },
-    totalRevenue: {
-        formFieldType: 'number',
-        key: 'totalRevenue',
-        displayPriority: '5',
-        label: 'Total Revenues',
-        info: 'Total Revenue is the sum of: (a) tax revenues, (b) non-tax revenues, (c) assigned (shared) revenue, (c) grants-in-aid, (d) other receipts, etc.',
-        required: true,
-        year: 8,
-        validation: 'sum',
-        logic: ['1', '2', '3', '4'],
-        min: -999999999999999,
-        max: 999999999999999,
-        decimal: 0
-    },
-    establishmentExp: {
-        formFieldType: 'number',
-        key: 'establishmentExp',
-        displayPriority: '6.1',
-        label: 'Establishment Expenses',
-        info: 'Expenses directly incurred on human resources of the ULB such as ,wages, and employee benefits such as retirement and pensions are called establishment expenses',
-        required: true,
-        year: 8,
-        validation: '',
-        logic: '',
-        min: -999999999999999,
-        max: 999999999999999,
-        decimal: 0
-    },
-    oAndmExp: {
-        formFieldType: 'number',
-        key: 'oAndmExp',
-        displayPriority: '6.2',
-        label: 'Operation and Maintenance Expenditure',
-        info: 'Operation and Maintenance Expenditure shall include O&M expense on water supply + O&M expense on sanitation / sewerage + All other O&M expenses.',
-        required: true,
-        year: 8,
-        validation: '',
-        logic: '',
-        min: -999999999999999,
-        max: 999999999999999,
-        decimal: 0
-    },
-    interestAndfinacialChar: {
-        formFieldType: 'number',
-        key: 'interestAndfinacialChar',
-        displayPriority: '6.3',
-        label: 'Interest and Finance Charges',
-        info: 'Interest and Finance Charges shall include Interest on Loans from Central Govt, State Govt, International agencies, govt bodies, banks, bank charges and other financial expenses, etc.',
-        required: true,
-        year: 8,
-        validation: '',
-        logic: '',
-        min: -999999999999999,
-        max: 999999999999999,
-        decimal: 0
-    },
-    otherRevenueExp: {
-        formFieldType: 'number',
-        key: 'otherRevenueExp',
-        displayPriority: '6.4',
-        label: 'Other Revenue Expenditure',
-        info: 'Other expenses shall include programme expenses, revenue grants, contributions & subsidies.',
-        required: true,
-        year: 8,
-        validation: '',
-        logic: '',
-        min: -999999999999999,
-        max: 999999999999999,
-        decimal: 0
-    },
-    totalRevenueExp: {
-        formFieldType: 'number',
-        key: 'totalRevenueExp',
-        displayPriority: '6',
-        label: 'Total Revenue Expenditure',
-        info: 'Total expenditure shall include establishment expenses, operations & maintenance + interest & finance charges and other expenditure.',
-        required: true,
-        year: 8,
-        validation: 'sum',
-        logic: ['6.1', '6.2', '6.3', '6.4'],
-        min: -999999999999999,
-        max: 999999999999999,
-        decimal: 0
-    },
-    capExp: {
-        formFieldType: 'number',
-        key: 'capExp',
-        displayPriority: '7',
-        label: 'Capital Expenditure',
-        info: 'Capital Expenditure = (Closing Balance Gross Block + Closing Balance Capital Work in Progress) - (Opening Balance Gross Block + Opening Balance Capital Work in Progress)',
-        required: true,
-        year: 8,
-        validation: '',
-        logic: '',
-        min: -999999999999999,
-        max: 999999999999999,
-        decimal: 0
-    },
-    totalExp: {
-        formFieldType: 'number',
-        key: 'totalExp',
-        displayPriority: '8',
-        label: 'Total Expenditure',
-        info: 'Total Expenditure = Revenue Expenditure + Capital Expenditure',
-        required: true,
-        year: 8,
-        validation: 'sum',
-        logic: ['6', '7'],
-        min: -999999999999999,
-        max: 999999999999999,
-        decimal: 0
-    },
-    grossBorrowing: {
-        formFieldType: 'number',
-        key: 'grossBorrowing',
-        displayPriority: '9',
-        label: 'Gross Borrowings',
-        info: 'Gross Borrowings = Sum of All Secured and Unsecured Loans',
-        required: true,
-        year: 8,
-        validation: '',
-        logic: '',
-        min: -999999999999999,
-        max: 999999999999999,
-        decimal: 0
-    },
-    accSystem: {
-        formFieldType: 'radio',
-        options: [
-            'Cash Basis of Accounting',
-            'Accrual Basis of Accounting',
-            'Modified Cash/ Accrual Accounting'
-        ],
-        showInputBox: '',
-        key: 'accSystem',
-        displayPriority: '1',
-        label: 'What is the accounting system being followed by the ULB?',
-        info: {
-            "Cash basis of accounting": "Revenues and expenses are recognised/recorded when the related cash receipts or cash payments take place.",
-            "Accrual basis of accounting": "Revenues and expneses are  recognised/recorded as they are earned or incurred (and not as money is received or paid) and recorded in the financial statements of the periods to which they relate.",
-            "Modified": "Revenues are recognized/recorded when cash is received and expenses when they are paid, with the exception of capitalizing long-term assets and recording their related depreciation."
-        },
-        required: true,
-        year: 1
-    },
-    accProvision: {
-        formFieldType: 'radio',
-        options: [
-            'National Municipal Accounting Manual',
-            'State-specific Municipal Accounting Manual',
-            'Other (Please specify)'
-        ],
-        showInputBox: 'Other (Please specify)',
-        key: 'accProvision',
-        displayPriority: '2',
-        label: 'What accounting provisions or framework does the ULB follow?',
-        info: '',
-        required: true,
-        year: 1
-    },
-    accInCashBasis: {
-        formFieldType: 'radio',
-        options: ['Yes (Please specify)', 'No'],
-        showInputBox: 'Yes (Please specify)',
-        key: 'accInCashBasis',
-        displayPriority: '3',
-        label: 'Are there any accounts/books/registers maintained in cash basis?',
-        info: 'Types of registers maintained: cash book, receipt register, register of bills for payment, collection register, deposit register, register of fixed assets etc.',
-        required: true,
-        year: 1
-    },
-    fsTransactionRecord: {
-        formFieldType: 'radio',
-        options: ['Yes', 'No'],
-        showInputBox: '',
-        key: 'fsTransactionRecord',
-        displayPriority: '4',
-        label: 'Does the ULB initially record transactions on a cash basis and subsequently prepare accrual accounts for consolidation of financial statements?',
-        info: '',
-        required: true,
-        year: 1
-    },
-    fsPreparedBy: {
-        formFieldType: 'radio',
-        options: [
-            'Internally (by Accounts Department)',
-            'External Chartered Accountants',
-            'Both'
-        ],
-        showInputBox: '',
-        key: 'fsPreparedBy',
-        displayPriority: '5',
-        label: "Are the Financial Statements prepared internally by the ULB's accounting department, or are they compiled by an external Chartered Accountant?",
-        info: '',
-        required: true,
-        year: 1
-    },
-    revReceiptRecord: {
-        formFieldType: 'radio',
-        options: [
-            'Recorded when cash is received',
-            'Recorded when they are accrued',
-            'Both (Please specify which transactions are recognised in accrual basis)'
-        ],
-        showInputBox: 'Both (Please specify which transactions are recognised in accrual basis)',
-        key: 'revReceiptRecord',
-        displayPriority: '6',
-        label: 'Is the revenue receipt recorded when the cash is received or when it is accrued/event occurs?',
-        info: '',
-        required: true,
-        year: 1
-    },
-    expRecord: {
-        formFieldType: 'radio',
-        options: [
-            'Recorded when cash is paid',
-            'Recorded when they are accrued',
-            'Both (Please specify which transactions are recognised in accrual basis)'
-        ],
-        showInputBox: 'Both (Please specify which transactions are recognised in accrual basis)',
-        key: 'expRecord',
-        displayPriority: '7',
-        label: 'Is the expense recorded when it is paid or when it is incurred/event occurs?',
-        info: '',
-        required: true,
-        year: 1
-    },
-    accSoftware: {
-        formFieldType: 'radio',
-        options: [
-            'Centralized system provided by the State',
-            'Standalone software',
-            'Tally',
-            'Other (Please specify)',
-            'None'
-        ],
-        showInputBox: 'Other (Please specify)',
-        key: 'accSoftware',
-        displayPriority: '8',
-        label: 'What accounting software is currently in use by the ULB?',
-        info: '',
-        required: true,
-        year: 1
-    },
-    onlineAccSysIntegrate: {
-        formFieldType: 'radio',
-        options: [
-            'Yes (Please specify which all system, e.g., tax collection, payroll, asset management)',
-            'No'
-        ],
-        showInputBox: 'Yes (Please specify which all system, e.g., tax collection, payroll, asset management)',
-        key: 'onlineAccSysIntegrate',
-        displayPriority: '9',
-        label: 'Does the online accounting system integrate seamlessly with other municipal systems?',
-        info: '',
-        required: true,
-        year: 1
-    },
-    muniAudit: {
-        formFieldType: 'radio',
-        options: ['External Chartered Accountant (CA)', 'State Audit Department'],
-        showInputBox: '',
-        key: 'muniAudit',
-        displayPriority: '10',
-        label: 'Who does the municipal audit of financial statements ?',
-        info: '',
-        required: true,
-        year: 1
-    },
-    totSanction: {
-        formFieldType: 'number',
-        key: 'totSanction',
-        displayPriority: '11',
-        label: 'What is the total sanctioned posts for finance & accounts related positions?',
-        info: '',
-        required: true,
-        year: 1,
-        max: 9999,
-        min: 0,
-        decimal: 0,
-        validation: '',
-        logic: '',
-    },
-    totVacancy: {
-        formFieldType: 'number',
-        key: 'totVacancy',
-        displayPriority: '12',
-        label: 'What is the total vacancy across finance & accounts related positions?',
-        info: '',
-        required: true,
-        year: 1,
-        max: 9999,
-        min: 0,
-        decimal: 0,
-        validation: 'lessThan',
-        logic: '11',
-    },
-    accPosition: {
-        formFieldType: 'number',
-        key: 'accPosition',
-        displayPriority: '13',
-        label: 'How many finance & accounts related positions currently are filled on contractual basis or outsourced?',
-        info: '',
-        required: true,
-        year: 1,
-        max: 9999,
-        min: 0,
-        decimal: 0,
-        validation: '',
-        logic: '',
-    },
-    auditedAnnualFySt: {
-        instruction: [
-            { "instruction": "Annual Financial Statement should include: Income and Expenditure Statement, Balance Sheet, Schedules to IES and BS, Auditor's Report and if available Receipts & Payments Statement." },
-            { "instruction": " All documents pertaining to a specific financial year should be combined into a single PDF before uploading & should not exceed 20 MB." },
-            { "instruction": "Please use the following format for naming the documents to be uploaded: nameofthedocument_FY_ULB Name. || Example: Annual accounts_15-16_Jaipur municipal corporation" },
-        ],
-        formFieldType: 'file',
-        key: 'auditedAnnualFySt',
-        displayPriority: '',
-        label: 'Copy of Audited Annual Financial Statements preferably in English',
-        info: '',
-        required: true,
-        year: 8,
-        max: 5,
-        min: 0,
-        decimal: 0
-    },
-}
-
-let keyDetailsForm2 = {
-    nameOfUlb: {
-        formFieldType: 'text',
-        key: 'nameOfUlb',
-        displayPriority: '1',
-        label: 'Name of ULB',
-        info: '',
-        required: true,
-        year: 1,
-        validation: '',
-        logic: '',
-        min: "",
-        max: "",
-        decimal: ""
-    },
-    nameOfState: {
-        formFieldType: 'text',
-        key: 'nameOfState',
-        displayPriority: '2',
-        label: 'Name of State/Union Territory ',
-        info: '',
-        required: true,
-        year: 1,
-        validation: '',
-        logic: '',
-        min: "",
-        max: "",
-        decimal: ""
-    },
-    pop2011: {
-        formFieldType: 'number',
-        key: 'pop2011',
-        displayPriority: '3',
-        label: 'Population as per Census 2011',
-        info: '',
-        required: true,
-        year: 1,
-        validation: '',
-        logic: '',
-        min: 0,
-        max: 1000000,
-        decimal: 0
-    },
-    popApril2024: {
-        formFieldType: 'number',
-        key: 'popApril2024',
-        displayPriority: '4',
-        label: 'Population as per 01 April 2024',
-        info: '',
-        required: true,
-        year: 1,
-        validation: '',
-        logic: '',
-        min: 0,
-        max: 1000000,
-        decimal: 0
-    },
-    areaOfUlb: {
-        formFieldType: 'number',
-        key: 'areaOfUlb',
-        displayPriority: '5',
-        label: 'Area of the ULB (in Sq. Km.)',
-        info: '',
-        required: true,
-        year: 1,
-        validation: '',
-        logic: '',
-        min: 0.1,
-        max: 1000,
-        decimal: 2
-    },
-    yearOfElection: {
-        formFieldType: 'dropdown',
-        options: ["2000", "2001", "2002", "2003", "2004", "2005", "2006", "2007", "2008", "2009", "2010", "2011", "2012", "2013", "2014", "2015", "2016", "2017", "2018", "2019", "2020", "2021", "2022", "2023", "2024"],
-        showInputBox: "",
-        key: 'yearOfElection',
-        displayPriority: '6',
-        label: "Which is the latest year when ULB's election was held?",
-        info: '',
-        required: true,
-        year: 1,
-        validation: '',
-        logic: '',
-        min: "",
-        max: "",
-        decimal: ""
-    },
-    isElected: {
-        formFieldType: 'radio',
-        options: ['Yes', 'No'],
-        key: 'isElected',
-        displayPriority: '7',
-        label: 'Is the elected body in place as on 01 April 2024?',
-        info: '',
-        required: true,
-        year: 1,
-        validation: '',
-        logic: '',
-        min: "",
-        max: "",
-        decimal: ""
-    },
-    yearOfConstitution: {
-        formFieldType: 'dropdown',
-        options: ["2015-16", "2016-17", "2017-18", "2018-19", "2019-20", "2020-21", "2021-22", "2022-23"],
-        showInputBox: "",
-        key: 'yearOfConstitution',
-        displayPriority: '8',
-        label: 'In which year was the ULB constituted?',
-        info: '',
-        required: true,
-        year: 1,
-        validation: '',
-        logic: '',
-        min: "",
-        max: "",
-        decimal: ""
-    },
-    yearOfSlb: {
-        formFieldType: 'dropdown',
-        options: ["2015-16", "2016-17", "2017-18", "2018-19", "2019-20", "2020-21", "2021-22", "2022-23"],
-        showInputBox: "",
-        key: 'yearOfSlb',
-        displayPriority: '9',
-        label: 'From which year is Service Level Benchmark data available?',
-        info: '',
-        required: true,
-        year: 1,
-        validation: '',
-        logic: '',
-        min: "",
-        max: "",
-        decimal: ""
-    },
-    sourceOfFd: {
-        formFieldType: 'dropdown',
-        options: ["Accounts Finalized & Audited", "Accounts Finalized but Not Audited", "Accounts not Finalized - Provisional data"],
-        showInputBox: "",
-        key: 'sourceOfFd',
-        displayPriority: '*',
-        label: 'Please select the source of Financial Data',
-        info: '',
-        required: true,
-        year: 8,
-        validation: '',
-        logic: '',
-        min: "",
-        max: "",
-        decimal: ""
-    },
-    pTax: {
-        formFieldType: 'number',
-        key: 'pTax',
-        displayPriority: '1.1.1',
-        label: 'Property Tax',
-        info: 'Property tax shall include only proprty tax levied on residential and commercial properties',
-        required: true,
-        year: 8,
-        validation: '',
-        logic: '',
-        min: -999999999999999,
-        max: 999999999999999,
-        decimal: 0
-    },
-    otherTax: {
-        formFieldType: 'number',
-        key: 'otherTax',
-        displayPriority: '1.1.2',
-        label: 'Other Tax',
-        info: 'Other Tax shall include any tax other than property tax levied by the ULB',
-        required: true,
-        year: 8,
-        validation: '',
-        logic: '',
-        min: -999999999999999,
-        max: 999999999999999,
-        decimal: 0
-    },
-    taxRevenue: {
-        formFieldType: 'number',
-        key: 'taxRevenue',
-        displayPriority: '1.1',
-        label: 'Tax Revenue',
-        info: 'Tax revenue shall include property, water, drainage, sewerage,professional, entertainment and advertisment tax and all other tax revenues.',
-        required: true,
-        year: 8,
-        validation: 'sum',
-        logic: ['1.1.1', '1.1.2'],
-        min: -999999999999999,
-        max: 999999999999999,
-        decimal: 0
-    },
-    feeAndUserCharges: {
-        formFieldType: 'number',
-        key: 'feeAndUserCharges',
-        displayPriority: '1.2',
-        label: 'Fee and User Charges',
-        info: 'Fees & user charges shall include Water supply, Fees & Sanitation / Sewerage, Garbage collection / Solid waste management, and all other fees & user charges.',
-        required: true,
-        year: 8,
-        validation: '',
-        logic: '',
-        min: -999999999999999,
-        max: 999999999999999,
-        decimal: 0
-    },
-    interestIncome: {
-        formFieldType: 'number',
-        key: 'interestIncome',
-        displayPriority: '1.3',
-        label: 'Interest Income',
-        info: 'Interest income shall include sale from assets, land and other assets.',
-        required: true,
-        year: 8,
-        validation: '',
-        logic: '',
-        min: -999999999999999,
-        max: 999999999999999,
-        decimal: 0
-    },
-    otherIncome: {
-        formFieldType: 'number',
-        key: 'otherIncome',
-        displayPriority: '1.4',
-        label: 'Other Income',
-        info: 'Other income shall include sale & hire charges, income from investments,interest earned, etc.',
-        required: true,
-        year: 8,
-        validation: '',
-        logic: '',
-        min: -999999999999999,
-        max: 999999999999999,
-        decimal: 0
-    },
-    rentalIncome: {
-        formFieldType: 'number',
-        key: 'rentalIncome',
-        displayPriority: '1.5',
-        label: 'Rental Income from Municipal Properties',
-        info: 'Rental Income shall include rental incomes earned out of shopping complexes, markets, office buildings, etc',
-        required: true,
-        year: 8,
-        validation: '',
-        logic: '',
-        min: -999999999999999,
-        max: 999999999999999,
-        decimal: 0
-    },
-    totOwnRevenue: {
-        formFieldType: 'number',
-        key: 'totOwnRevenue',
-        displayPriority: '1',
-        label: 'Total Own Revenue',
-        info: 'Total own revenue shall include tax revenue, fees & user charges, interest income, and other income.',
-        required: true,
-        year: 8,
-        validation: 'sum',
-        logic: ['1.1', '1.2', '1.3', '1.4', '1.5'],
-        min: -999999999999999,
-        max: 999999999999999,
-        decimal: 0
-    },
-    centralSponsoredScheme: {
-        formFieldType: 'number',
-        key: 'centralSponsoredScheme',
-        displayPriority: '2.1.1',
-        label: "Centrally Sponsored Schemes (Total Centre and State Share)",
-        info: "Centrally Sponsored Scheme shall include  Grants received for Centrally Sponsored Schemes (including state's matching share)",
-        required: true,
-        year: 8,
-        validation: '',
-        logic: '',
-        min: -999999999999999,
-        max: 999999999999999,
-        decimal: 0
-    },
-    unionFinanceGrants: {
-        formFieldType: 'number',
-        key: 'unionFinanceGrants',
-        displayPriority: '2.1.2',
-        label: "Union Finance Commission Grants",
-        info: "Union Finance Commission Grants shall include Union Finance Commission grants",
-        required: true,
-        year: 8,
-        validation: '',
-        logic: '',
-        min: -999999999999999,
-        max: 999999999999999,
-        decimal: 0
-    },
-    centralGrants: {
-        formFieldType: 'number',
-        key: 'centralGrants',
-        displayPriority: '2.1',
-        label: "Grants for Centre's Initiatives ",
-        info: "Grants for Centre's Initiatives is the sum of all Central Govt. grants such as Union Finance Commission grants, Grants received for Centrally Sponsored Schemes (including state's matching share)",
-        required: true,
-        year: 8,
-        validation: 'sum',
-        logic: ['2.1.1', '2.1.2'],
-        min: -999999999999999,
-        max: 999999999999999,
-        decimal: 0
-    },
-    sfcGrants: {
-        formFieldType: 'number',
-        key: 'sfcGrants',
-        displayPriority: '2.2.1',
-        label: "State Finance Commission Devolution and Grants",
-        info: "State Finance Commission Devolution and Grants shall include State Finance Commission grants",
-        required: true,
-        year: 8,
-        validation: '',
-        logic: '',
-        min: -999999999999999,
-        max: 999999999999999,
-        decimal: 0
-    },
-    grantsOtherThanSfc: {
-        formFieldType: 'number',
-        key: 'grantsOtherThanSfc',
-        displayPriority: '2.2.2',
-        label: "Grants from State (other than SFC)",
-        info: "Grants from State shall include  Other State Grants (excluding State Finance Commission grants)",
-        required: true,
-        year: 8,
-        validation: '',
-        logic: '',
-        min: -999999999999999,
-        max: 999999999999999,
-        decimal: 0
-    },
-    grantsWithoutState: {
-        formFieldType: 'number',
-        key: 'grantsWithoutState',
-        displayPriority: '2.2.3',
-        label: "Other grants",
-        info: "Other Grants shall include any other grants received by the ULB",
-        required: true,
-        year: 8,
-        validation: '',
-        logic: '',
-        min: -999999999999999,
-        max: 999999999999999,
-        decimal: 0
-    },
-    otherGrants: {
-        formFieldType: 'number',
-        key: 'otherGrants',
-        displayPriority: '2.2',
-        label: "Other Grants (including State's grants)",
-        info: "Other Grants (including State's grants) is the sum of State Finance Commission grants, Other State Grants, Other grants etc.",
-        required: true,
-        year: 8,
-        validation: 'sum',
-        logic: ['2.2.1', '2.2.2', '2.2.3'],
-        min: -999999999999999,
-        max: 999999999999999,
-        decimal: 0
-    },
-    totalGrants: {
-        formFieldType: 'number',
-        key: 'totalGrants',
-        displayPriority: '2',
-        label: 'Total Grants',
-        info: '',
-        required: true,
-        year: 8,
-        validation: 'sum',
-        logic: ['2.1', '2.2'],
-        min: -999999999999999,
-        max: 999999999999999,
-        decimal: 0
-    },
-    assignedRevAndCom: {
-        formFieldType: 'number',
-        key: 'assignedRevAndCom',
-        displayPriority: '3',
-        label: 'Assigned Revenue and Compensation',
-        info: 'Assigned Revenue includes share in the revenues of the state government ,allocated to the ULB. This includes Entertainment Tax, Duty on Transfer of Properties,etc.',
-        required: true,
-        year: 8,
-        validation: '',
-        logic: '',
-        min: -999999999999999,
-        max: 999999999999999,
-        decimal: 0
-    },
-    otherRevenue: {
-        formFieldType: 'number',
-        key: 'otherRevenue',
-        displayPriority: '4',
-        label: 'Other Revenue',
-        info: 'Other Revenue shall include any other sources of revenue except own ,revenue, assigned revenue and grants',
-        required: true,
-        year: 8,
-        validation: '',
-        logic: '',
-        min: -999999999999999,
-        max: 999999999999999,
-        decimal: 0
-    },
-    totalRevenue: {
-        formFieldType: 'number',
-        key: 'totalRevenue',
-        displayPriority: '5',
-        label: 'Total Revenues',
-        info: 'Total Revenue is the sum of: (a) tax revenues, (b) non-tax revenues, (c) assigned (shared) revenue, (c) grants-in-aid, (d) other receipts, etc.',
-        required: true,
-        year: 8,
-        validation: 'sum',
-        logic: ['1', '2', '3', '4'],
-        min: -999999999999999,
-        max: 999999999999999,
-        decimal: 0
-    },
-    salaries: {
-        formFieldType: 'number',
-        key: 'salaries',
-        displayPriority: '6.1.1',
-        label: 'Salaries, Bonus and Wages',
-        info: 'Salaries, Bonus & Wages shall include expenses directly incurred on human resources of the ULB such as wages, salaries and bonus',
-        required: true,
-        year: 8,
-        validation: '',
-        logic: '',
-        min: -999999999999999,
-        max: 999999999999999,
-        decimal: 0
-    },
-    pension: {
-        formFieldType: 'number',
-        key: 'pension',
-        displayPriority: '6.1.2',
-        label: 'Pension',
-        info: 'Pension shall include expenses directly incurred on human resources of the ULB such as pension',
-        required: true,
-        year: 8,
-        validation: '',
-        logic: '',
-        min: -999999999999999,
-        max: 999999999999999,
-        decimal: 0
-    },
-    otherExp: {
-        formFieldType: 'number',
-        key: 'otherExp',
-        displayPriority: '6.1.3',
-        label: 'Others',
-        info: 'Others shall include any other expenses directly incurred on human resources of the ULB',
-        required: true,
-        year: 8,
-        validation: '',
-        logic: '',
-        min: -999999999999999,
-        max: 999999999999999,
-        decimal: 0
-    },
-    establishmentExp: {
-        formFieldType: 'number',
-        key: 'establishmentExp',
-        displayPriority: '6.1',
-        label: 'Establishment Expenses',
-        info: 'Expenses directly incurred on human resources of the ULB such as ,wages, and employee benefits such as retirement and pensions are called establishment expenses',
-        required: true,
-        year: 8,
-        validation: 'sum',
-        logic: ['6.1.1', '6.1.2', '6.1.3'],
-        min: -999999999999999,
-        max: 999999999999999,
-        decimal: 0
-    },
-    oAndmExp: {
-        formFieldType: 'number',
-        key: 'oAndmExp',
-        displayPriority: '6.2',
-        label: 'Operation and Maintenance Expenditure',
-        info: 'Operation and Maintenance Expenditure shall include O&M expense on water supply + O&M expense on sanitation / sewerage + All other O&M expenses.',
-        required: true,
-        year: 8,
-        validation: '',
-        logic: '',
-        min: -999999999999999,
-        max: 999999999999999,
-        decimal: 0
-    },
-    interestAndfinacialChar: {
-        formFieldType: 'number',
-        key: 'interestAndfinacialChar',
-        displayPriority: '6.3',
-        label: 'Interest and Finance Charges',
-        info: 'Interest and Finance Charges shall include Interest on Loans from Central Govt, State Govt, International agencies, govt bodies, banks, bank charges and other financial expenses, etc.',
-        required: true,
-        year: 8,
-        validation: '',
-        logic: '',
-        min: -999999999999999,
-        max: 999999999999999,
-        decimal: 0
-    },
-    otherRevenueExp: {
-        formFieldType: 'number',
-        key: 'otherRevenueExp',
-        displayPriority: '6.4',
-        label: 'Other Revenue Expenditure',
-        info: 'Other expenses shall include programme expenses, revenue grants, contributions & subsidies.',
-        required: true,
-        year: 8,
-        validation: '',
-        logic: '',
-        min: -999999999999999,
-        max: 999999999999999,
-        decimal: 0
-    },
-    adExp: {
-        formFieldType: 'number',
-        key: 'adExp',
-        displayPriority: '6.5',
-        label: 'Administrative Expenses',
-        info: 'Administrative Expenses shall include Indirect expenses  which relate to the ULB as a whole, such as Rents, Rates & Taxes, Office maintenance, Communications, Books & periodicals, Printing & Stationary, Travel Expenditure, Law Charges etc. ',
-        required: true,
-        year: 8,
-        validation: '',
-        logic: '',
-        min: -999999999999999,
-        max: 999999999999999,
-        decimal: 0
-    },
-    totalRevenueExp: {
-        formFieldType: 'number',
-        key: 'totalRevenueExp',
-        displayPriority: '6',
-        label: 'Total Revenue Expenditure',
-        info: 'Total expenditure shall include establishment expenses, operations & maintenance + interest & finance charges and other expenditure.',
-        required: true,
-        year: 8,
-        validation: 'sum',
-        logic: ['6.1', '6.2', '6.3', '6.4'],
-        min: -999999999999999,
-        max: 999999999999999,
-        decimal: 0
-    },
-    capExp: {
-        formFieldType: 'number',
-        key: 'capExp',
-        displayPriority: '7',
-        label: 'Capital Expenditure',
-        info: 'Capital Expenditure = (Closing Balance Gross Block + Closing Balance Capital Work in Progress) - (Opening Balance Gross Block + Opening Balance Capital Work in Progress)',
-        required: true,
-        year: 8,
-        validation: '',
-        logic: '',
-        min: -999999999999999,
-        max: 999999999999999,
-        decimal: 0
-    },
-    totalExp: {
-        formFieldType: 'number',
-        key: 'totalExp',
-        displayPriority: '8',
-        label: 'Total Expenditure',
-        info: 'Total Expenditure = Revenue Expenditure + Capital Expenditure',
-        required: true,
-        year: 8,
-        validation: 'sum',
-        logic: ['6', '7'],
-        min: -999999999999999,
-        max: 999999999999999,
-        decimal: 0
-    },
-    centralStateBorrow: {
-        formFieldType: 'number',
-        key: 'centralStateBorrow',
-        displayPriority: '9.1',
-        label: 'Central and State Government',
-        info: 'Central and State Government includes the sum of All Secured and Unsecured Loans from Central and State Government',
-        required: true,
-        year: 8,
-        validation: '',
-        logic: '',
-        min: -999999999999999,
-        max: 999999999999999,
-        decimal: ''
-    },
-    bonds: {
-        formFieldType: 'number',
-        key: 'bonds',
-        displayPriority: '9.2',
-        label: 'Bonds',
-        info: 'Bonds includes the sum of bond amounts issued by the ULB',
-        required: true,
-        year: 8,
-        validation: '',
-        logic: '',
-        min: -999999999999999,
-        max: 999999999999999,
-        decimal: ''
-    },
-    bankAndFinancial: {
-        formFieldType: 'number',
-        key: 'bankAndFinancial',
-        displayPriority: '9.3',
-        label: 'Banks and Financial Institutions',
-        info: 'Banks and Financial Institutions includes the sum of all secured and Unsecured Loans from banks and other financial institution',
-        required: true,
-        year: 8,
-        validation: '',
-        logic: '',
-        min: -999999999999999,
-        max: 999999999999999,
-        decimal: ''
-    },
-    otherBorrowing: {
-        formFieldType: 'number',
-        key: 'otherBorrowing',
-        displayPriority: '9.4',
-        label: 'Others',
-        info: 'Others includes the sum of all other types of loans',
-        required: true,
-        year: 8,
-        validation: '',
-        logic: '',
-        min: -999999999999999,
-        max: 999999999999999,
-        decimal: ''
-    },
-    grossBorrowing: {
-        formFieldType: 'number',
-        key: 'grossBorrowing',
-        displayPriority: '9',
-        label: 'Gross Borrowings',
-        info: 'Gross Borrowings = Sum of All Secured and Unsecured Loans',
-        required: true,
-        year: 8,
-        validation: 'sum',
-        logic: ['9.1', '9.2', '9.3', '9.4'],
-        min: -999999999999999,
-        max: 999999999999999,
-        decimal: ''
-    },
-    receivablePTax: {
-        formFieldType: 'number',
-        key: 'receivablePTax',
-        displayPriority: '10.1',
-        label: 'Receivables for Property Tax',
-        info: 'Receivables for Property Tax includes total amounts due towards property taxes',
-        required: true,
-        year: 8,
-        validation: '',
-        logic: '',
-        min: -999999999999999,
-        max: 999999999999999,
-        decimal: ''
-    },
-    receivableFee: {
-        formFieldType: 'number',
-        key: 'receivableFee',
-        displayPriority: '10.2',
-        label: 'Receivables for Fee and User Charges',
-        info: 'Receivables for Fee and User Chargesincludes total amounts due towards fee and user charges',
-        required: true,
-        year: 8,
-        validation: '',
-        logic: '',
-        min: -999999999999999,
-        max: 999999999999999,
-        decimal: ''
-    },
-    otherReceivable: {
-        formFieldType: 'number',
-        key: 'otherReceivable',
-        displayPriority: '10.3',
-        label: 'Other Receivables',
-        info: 'Other Receivables shall include any other amount due for taxes, goods sold or services rendered by ULB',
-        required: true,
-        year: 8,
-        validation: '',
-        logic: '',
-        min: -999999999999999,
-        max: 999999999999999,
-        decimal: ''
-    },
-    totalReceivable: {
-        formFieldType: 'number',
-        key: 'totalReceivable',
-        displayPriority: '10',
-        label: 'Total Receivables',
-        info: 'Total Receivables is the sum of total amounts due for taxes, goods sold or services rendered by ULB',
-        required: true,
-        year: 8,
-        validation: 'sum',
-        logic: ['10.1', '10.2', '10.3'],
-        min: -999999999999999,
-        max: 999999999999999,
-        decimal: ''
-    },
-    totalCashAndBankBal: {
-        formFieldType: 'number',
-        key: 'totalCashAndBankBal',
-        displayPriority: '11',
-        label: 'Total Cash and Bank Balance',
-        info: 'Total Cash & Bank Balance shall include cash held by the ULB and any money held in any bank/post office by the ULB (including municipal fund, special fund and grant funds)',
-        required: true,
-        year: 8,
-        validation: '',
-        logic: '',
-        min: -999999999999999,
-        max: 999999999999999,
-        decimal: ''
-    },
-    accSystem: {
-        formFieldType: 'radio',
-        options: [
-            'Cash Basis of Accounting',
-            'Accrual Basis of Accounting',
-            'Modified Cash/ Accrual Accounting'
-        ],
-        showInputBox: '',
-        key: 'accSystem',
-        displayPriority: '1',
-        label: 'What is the accounting system being followed by the ULB?',
-        info: {
-            "Cash basis of accounting": "Revenues and expenses are recognised/recorded when the related cash receipts or cash payments take place.",
-            "Accrual basis of accounting": "Revenues and expneses are  recognised/recorded as they are earned or incurred (and not as money is received or paid) and recorded in the financial statements of the periods to which they relate.",
-            "Modified": "Revenues are recognized/recorded when cash is received and expenses when they are paid, with the exception of capitalizing long-term assets and recording their related depreciation."
-        },
-        required: true,
-        year: 1
-    },
-    accProvision: {
-        formFieldType: 'radio',
-        options: [
-            'National Municipal Accounting Manual',
-            'State-specific Municipal Accounting Manual',
-            'Other (Please specify)'
-        ],
-        showInputBox: 'Other (Please specify)',
-        key: 'accProvision',
-        displayPriority: '2',
-        label: 'What accounting provisions or framework does the ULB follow?',
-        info: '',
-        required: true,
-        year: 1
-    },
-    accInCashBasis: {
-        formFieldType: 'radio',
-        options: ['Yes (Please specify)', 'No'],
-        showInputBox: 'Yes (Please specify)',
-        key: 'accInCashBasis',
-        displayPriority: '3',
-        label: 'Are there any accounts/books/registers maintained in cash basis?',
-        info: 'Types of registers maintained: cash book, receipt register, register of bills for payment, collection register, deposit register, register of fixed assets etc.',
-        required: true,
-        year: 1
-    },
-    fsTransactionRecord: {
-        formFieldType: 'radio',
-        options: ['Yes', 'No'],
-        showInputBox: '',
-        key: 'fsTransactionRecord',
-        displayPriority: '4',
-        label: 'Does the ULB initially record transactions on a cash basis and subsequently prepare accrual accounts for consolidation of financial statements?',
-        info: '',
-        required: true,
-        year: 1
-    },
-    fsPreparedBy: {
-        formFieldType: 'radio',
-        options: [
-            'Internally (by Accounts Department)',
-            'External Chartered Accountants',
-            'Both'
-        ],
-        showInputBox: '',
-        key: 'fsPreparedBy',
-        displayPriority: '5',
-        label: "Are the Financial Statements prepared internally by the ULB's accounting department, or are they compiled by an external Chartered Accountant?",
-        info: '',
-        required: true,
-        year: 1
-    },
-    revReceiptRecord: {
-        formFieldType: 'radio',
-        options: [
-            'Recorded when cash is received',
-            'Recorded when they are accrued',
-            'Both (Please specify which transactions are recognised in accrual basis)'
-        ],
-        showInputBox: 'Both (Please specify which transactions are recognised in accrual basis)',
-        key: 'revReceiptRecord',
-        displayPriority: '6',
-        label: 'Is the revenue receipt recorded when the cash is received or when it is accrued/event occurs?',
-        info: '',
-        required: true,
-        year: 1
-    },
-    expRecord: {
-        formFieldType: 'radio',
-        options: [
-            'Recorded when cash is paid',
-            'Recorded when they are accrued',
-            'Both (Please specify which transactions are recognised in accrual basis)'
-        ],
-        showInputBox: 'Both (Please specify which transactions are recognised in accrual basis)',
-        key: 'expRecord',
-        displayPriority: '7',
-        label: 'Is the expense recorded when it is paid or when it is incurred/event occurs?',
-        info: '',
-        required: true,
-        year: 1
-    },
-    accSoftware: {
-        formFieldType: 'radio',
-        options: [
-            'Centralized system provided by the State',
-            'Standalone software',
-            'Tally',
-            'Other (Please specify)',
-            'None'
-        ],
-        showInputBox: 'Other (Please specify)',
-        key: 'accSoftware',
-        displayPriority: '8',
-        label: 'What accounting software is currently in use by the ULB?',
-        info: '',
-        required: true,
-        year: 1
-    },
-    onlineAccSysIntegrate: {
-        formFieldType: 'radio',
-        options: [
-            'Yes (Please specify which all system, e.g., tax collection, payroll, asset management)',
-            'No'
-        ],
-        showInputBox: 'Yes (Please specify which all system, e.g., tax collection, payroll, asset management)',
-        key: 'onlineAccSysIntegrate',
-        displayPriority: '9',
-        label: 'Does the online accounting system integrate seamlessly with other municipal systems?',
-        info: '',
-        required: true,
-        year: 1
-    },
-    muniAudit: {
-        formFieldType: 'radio',
-        options: ['External Chartered Accountant (CA)', 'State Audit Department'],
-        showInputBox: '',
-        key: 'muniAudit',
-        displayPriority: '10',
-        label: 'Who does the municipal audit of financial statements ?',
-        info: '',
-        required: true,
-        year: 1
-    },
-    totSanction: {
-        formFieldType: 'number',
-        key: 'totSanction',
-        displayPriority: '11',
-        label: 'What is the total sanctioned posts for finance & accounts related positions?',
-        info: '',
-        required: true,
-        year: 1,
-        max: 9999,
-        min: 0,
-        decimal: 0,
-        validation: '',
-        logic: '',
-    },
-    totVacancy: {
-        formFieldType: 'number',
-        key: 'totVacancy',
-        displayPriority: '12',
-        label: 'What is the total vacancy across finance & accounts related positions?',
-        info: '',
-        required: true,
-        year: 1,
-        max: 9999,
-        min: 0,
-        decimal: 0,
-        validation: 'lessThan',
-        logic: '11',
-    },
-    accPosition: {
-        formFieldType: 'number',
-        key: 'accPosition',
-        displayPriority: '13',
-        label: 'How many finance & accounts related positions currently are filled on contractual basis or outsourced?',
-        info: '',
-        required: true,
-        year: 1,
-        max: 9999,
-        min: 0,
-        decimal: 0,
-        validation: '',
-        logic: '',
-    },
-    auditedAnnualFySt: {
-        instruction: [
-            { "instruction": "Annual Financial Statement should include: Income and Expenditure Statement, Balance Sheet, Schedules to IES and BS, Auditor's Report and if available Receipts & Payments Statement." },
-            { "instruction": " All documents pertaining to a specific financial year should be combined into a single PDF before uploading & should not exceed 20 MB." },
-            { "instruction": "Please use the following format for naming the documents to be uploaded: nameofthedocument_FY_ULB Name. || Example: Annual accounts_15-16_Jaipur municipal corporation" },
-        ],
-        formFieldType: 'file',
-        key: 'auditedAnnualFySt',
-        displayPriority: '',
-        label: 'Copy of Audited Annual Financial Statements preferably in English',
-        info: '',
-        required: true,
-        year: 8,
-        max: 5,
-        min: 0,
-        decimal: 0
-    },
-    coverageOfWs: {
-        formFieldType: 'number',
-        key: 'coverageOfWs',
-        displayPriority: 1,
-        label: 'Coverage of water supply connections (%)',
-        info: '',
-        placeholder: 'Percent|Range(0-100)',
-        required: true,
-        year: 8,
-        validation: '',
-        logic: '',
-        min: 0,
-        max: 100,
-        decimal: 2,
-    },
-    perCapitaOfWs: {
-        formFieldType: 'number',
-        key: 'perCapitaOfWs',
-        displayPriority: 2,
-        label: 'Per capita supply of water(lpcd)',
-        info: '',
-        placeholder: 'litres per capita per day (lpcd)|Range(0-999)',
-        required: true,
-        year: 8,
-        validation: '',
-        logic: '',
-        min: 0,
-        max: 999,
-        decimal: 2,
-        warning: { "value": 135, "condition": "gt", "message": 'Please note that the entered value exceeds the threshold of 135 lpcd' }
-    },
-    extentOfMeteringWs: {
-        formFieldType: 'number',
-        key: 'extentOfMeteringWs',
-        displayPriority: 3,
-        label: 'Extent of metering of water connections (%)',
-        info: '',
-        placeholder: 'Percent|Range(0-100)',
-        required: true,
-        year: 8,
-        validation: '',
-        logic: '',
-        min: 0,
-        max: 100,
-        decimal: 2,
-    },
-    extentOfNonRevenueWs: {
-        formFieldType: 'number',
-        key: 'extentOfNonRevenueWs',
-        displayPriority: 4,
-        label: 'Extent of non-revenue water (NRW) (%)',
-        info: '',
-        placeholder: 'Percent|Range(0-100)',
-        required: true,
-        year: 8,
-        validation: '',
-        logic: '',
-        min: 0,
-        max: 100,
-        decimal: 2,
-    },
-    continuityOfWs: {
-        formFieldType: 'number',
-        key: 'continuityOfWs',
-        displayPriority: 5,
-        label: 'Continuity of water supplied (hours)',
-        info: '',
-        placeholder: 'Hours per day|Range(0-24)',
-        required: true,
-        year: 8,
-        validation: '',
-        logic: '',
-        min: 0,
-        max: 24,
-        decimal: 0,
-    },
-    efficiencyInRedressalCustomerWs: {
-        formFieldType: 'number',
-        key: 'efficiencyInRedressalCustomerWs',
-        displayPriority: 6,
-        label: 'Efficiency in redressal of customer complaints related to water supply (%)',
-        info: '',
-        placeholder: 'Percent|Range(0-100)',
-        required: true,
-        year: 8,
-        validation: '',
-        logic: '',
-        min: 0,
-        max: 100,
-        decimal: 2,
-        warning: { "value": 80, "condition": "gt", "message": 'Please note that the entered value exceeds the threshold of 80 lpcd' }
-    },
-    qualityOfWs: {
-        formFieldType: 'number',
-        key: 'qualityOfWs',
-        displayPriority: 7,
-        label: 'Quality of water supplied (%)',
-        info: '',
-        placeholder: 'Percent|Range(0-100)',
-        required: true,
-        year: 8,
-        validation: '',
-        logic: '',
-        min: 0,
-        max: 100,
-        decimal: 2,
-    },
-    costRecoveryInWs: {
-        formFieldType: 'number',
-        key: 'costRecoveryInWs',
-        displayPriority: 8,
-        label: 'Cost recovery in water supply service (%)',
-        info: '',
-        placeholder: 'Percent|Range(0-100)',
-        required: true,
-        year: 8,
-        validation: '',
-        logic: '',
-        min: 0,
-        max: 100,
-        decimal: 2,
-    },
-    efficiencyInCollectionRelatedWs: {
-        formFieldType: 'number',
-        key: 'efficiencyInCollectionRelatedWs',
-        displayPriority: 9,
-        label: 'Efficiency in collection of water supply-related charges (%)',
-        info: '',
-        placeholder: 'Percent|Range(0-100)',
-        required: true,
-        year: 8,
-        validation: '',
-        logic: '',
-        min: 0,
-        max: 100,
-        decimal: 2,
-        warning: { "value": 90, "condition": "gt", "message": 'Please note that the entered value exceeds the threshold of 90 lpcd' }
-    },
-    coverageOfToiletsSew: {
-        formFieldType: 'number',
-        key: 'coverageOfToiletsSew',
-        displayPriority: 10,
-        label: 'Coverage of toilets (%)',
-        info: '',
-        placeholder: 'Percent|Range(0-100)',
-        required: true,
-        year: 8,
-        validation: '',
-        logic: '',
-        min: 0,
-        max: 100,
-        decimal: 2,
-    },
-    coverageOfSewNet: {
-        formFieldType: 'number',
-        key: 'coverageOfSewNet',
-        displayPriority: 11,
-        label: 'Coverage of sewerage network (%)',
-        info: '',
-        placeholder: 'Percent|Range(0-100)',
-        required: true,
-        year: 8,
-        validation: '',
-        logic: '',
-        min: 0,
-        max: 100,
-        decimal: 2,
-    },
-    collectionEfficiencySew: {
-        formFieldType: 'number',
-        key: 'collectionEfficiencySew',
-        displayPriority: 12,
-        label: 'Collection efficiency of sewerage network (%)',
-        info: '',
-        placeholder: 'Percent|Range(0-100)',
-        required: true,
-        year: 8,
-        validation: '',
-        logic: '',
-        min: 0,
-        max: 100,
-        decimal: 2,
-    },
-    adequacyOfSew: {
-        formFieldType: 'number',
-        key: 'adequacyOfSew',
-        displayPriority: 13,
-        label: 'Adequacy of sewerage treatment capacity (%)',
-        info: '',
-        placeholder: 'Percent|Range(0-100)',
-        required: true,
-        year: 8,
-        validation: '',
-        logic: '',
-        min: 0,
-        max: 100,
-        decimal: 2,
-    },
-    qualityOfSew: {
-        formFieldType: 'number',
-        key: 'qualityOfSew',
-        displayPriority: 14,
-        label: 'Quality of sewerage treatment (%)',
-        info: '',
-        placeholder: 'Percent|Range(0-100)',
-        required: true,
-        year: 8,
-        validation: '',
-        logic: '',
-        min: 0,
-        max: 100,
-        decimal: 2,
-    },
-    extentOfReuseSew: {
-        formFieldType: 'number',
-        key: 'extentOfReuseSew',
-        displayPriority: 15,
-        label: 'Extent of reuse and recycling of sewage (%)',
-        info: '',
-        placeholder: 'Percent|Range(0-100)',
-        required: true,
-        year: 8,
-        validation: '',
-        logic: '',
-        min: 0,
-        max: 100,
-        decimal: 2,
-    },
-    efficiencyInRedressalCustomerSew: {
-        formFieldType: 'number',
-        key: 'efficiencyInRedressalCustomerSew',
-        displayPriority: 16,
-        label: 'Efficiency in redressal of customer complaints related to sewerage (%)',
-        info: '',
-        placeholder: 'Percent|Range(0-100)',
-        required: true,
-        year: 8,
-        validation: '',
-        logic: '',
-        min: 0,
-        max: 100,
-        decimal: 2,
-    },
-    extentOfCostWaterSew: {
-        formFieldType: 'number',
-        key: 'extentOfCostWaterSew',
-        displayPriority: 17,
-        label: 'Extent of cost recovery in waste water management (%)',
-        info: '',
-        placeholder: 'Percent|Range(0-100)',
-        required: true,
-        year: 8,
-        validation: '',
-        logic: '',
-        min: 0,
-        max: 100,
-        decimal: 2,
-    },
-    efficiencyInCollectionSew: {
-        formFieldType: 'number',
-        key: 'efficiencyInCollectionSew',
-        displayPriority: 18,
-        label: 'Efficiency in collection of sewage water charges (%)',
-        info: '',
-        placeholder: 'Percent|Range(0-100)',
-        required: true,
-        year: 8,
-        validation: '',
-        logic: '',
-        min: 0,
-        max: 100,
-        decimal: 2,
-        warning: { "value": 90, "condition": "gt", "message": 'Please note that the entered value exceeds the threshold of 90 lpcd' }
-    },
-    householdLevelCoverageLevelSwm: {
-        formFieldType: 'number',
-        key: 'householdLevelCoverageLevelSwm',
-        displayPriority: 19,
-        label: 'Household level coverage (%)',
-        info: '',
-        placeholder: 'Percent|Range(0-100)',
-        required: true,
-        year: 8,
-        validation: '',
-        logic: '',
-        min: 0,
-        max: 100,
-        decimal: 2,
-    },
-    efficiencyOfCollectionSwm: {
-        formFieldType: 'number',
-        key: 'efficiencyOfCollectionSwm',
-        displayPriority: 20,
-        label: 'Efficiency of collection of municipal solid waste (%)',
-        info: '',
-        placeholder: 'Percent|Range(0-100)',
-        required: true,
-        year: 8,
-        validation: '',
-        logic: '',
-        min: 0,
-        max: 100,
-        decimal: 2,
-    },
-    extentOfSegregationSwm: {
-        formFieldType: 'number',
-        key: 'extentOfSegregationSwm',
-        displayPriority: 21,
-        label: 'Extent of segregation of municipal solid waste (%)',
-        info: '',
-        placeholder: 'Percent|Range(0-100)',
-        required: true,
-        year: 8,
-        validation: '',
-        logic: '',
-        min: 0,
-        max: 100,
-        decimal: 2,
-    },
-    extentOfMunicipalSwm: {
-        formFieldType: 'number',
-        key: 'extentOfMunicipalSwm',
-        displayPriority: 22,
-        label: 'Extent of municipal solid waste recovered (%)',
-        info: '',
-        placeholder: 'Percent|Range(0-100)',
-        required: true,
-        year: 8,
-        validation: '',
-        logic: '',
-        min: 0,
-        max: 100,
-        decimal: 2,
-        warning: { "value": 80, "condition": "gt", "message": 'Please note that the entered value exceeds the threshold of 80 lpcd' }
-    },
-    extentOfScientificSolidSwm: {
-        formFieldType: 'number',
-        key: 'extentOfScientificSolidSwm',
-        displayPriority: 23,
-        label: 'Extent of scientific disposal of municipal solid waste (%)',
-        info: '',
-        placeholder: 'Percent|Range(0-100)',
-        required: true,
-        year: 8,
-        validation: '',
-        logic: '',
-        min: 0,
-        max: 100,
-        decimal: 2,
-    },
-    extentOfCostInSwm: {
-        formFieldType: 'number',
-        key: 'extentOfCostInSwm',
-        displayPriority: 24,
-        label: 'Extent of cost recovery in SWM services (%)',
-        info: '',
-        placeholder: 'Percent|Range(0-100)',
-        required: true,
-        year: 8,
-        validation: '',
-        logic: '',
-        min: 0,
-        max: 100,
-        decimal: 2,
-    },
-    efficiencyInCollectionSwmUser: {
-        formFieldType: 'number',
-        key: 'efficiencyInCollectionSwmUser',
-        displayPriority: 25,
-        label: 'Efficiency in collection of SWM user charges (%)',
-        info: '',
-        placeholder: 'Percent|Range(0-100)',
-        required: true,
-        year: 8,
-        validation: '',
-        logic: '',
-        min: 0,
-        max: 100,
-        decimal: 2,
-        warning: { "value": 90, "condition": "gt", "message": 'Please note that the entered value exceeds the threshold of 90 lpcd' }
-    },
-    efficiencyInRedressalCustomerSwm: {
-        formFieldType: 'number',
-        key: 'efficiencyInRedressalCustomerSwm',
-        displayPriority: 26,
-        label: 'Efficiency in redressal of customer complaints related to SWM (%)',
-        info: '',
-        placeholder: 'Percent|Range(0-100)',
-        required: true,
-        year: 8,
-        validation: '',
-        logic: '',
-        min: 0,
-        max: 100,
-        decimal: 2,
-        warning: { "value": 80, "condition": "gt", "message": 'Please note that the entered value exceeds the threshold of 80 lpcd' }
-    },
-    coverageOfStormDrainage: {
-        formFieldType: 'number',
-        key: 'coverageOfStormDrainage',
-        displayPriority: 27,
-        label: 'Coverage of storm water drainage network (%)',
-        info: '',
-        placeholder: 'Percent|Range(0-100)',
-        required: true,
-        year: 8,
-        validation: '',
-        logic: '',
-        min: 0,
-        max: 100,
-        decimal: 2,
-    },
-    incidenceOfWaterLogging: {
-        formFieldType: 'number',
-        key: 'incidenceOfWaterLogging',
-        displayPriority: 28,
-        label: 'Incidence of water logging',
-        info: '',
-        placeholder: 'Nos. per year|Range(0-9999)',
-        required: true,
-        year: 8,
-        validation: '',
-        logic: '',
-        min: 0,
-        max: 9999,
-        decimal: 0,
-    }
-}
-
-// Json structure - with updated Year[].
-const getColumnWiseData = (key, obj, isDraft, dataSource = "", role, formStatus) => {
-    switch (key) {
-        case "nameOfUlb":
-            return {
-                ...getInputKeysByType(keyDetails["nameOfUlb"], dataSource),
-                ...obj,
-                readonly: false,
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
-                // rejectReason:"",
-            };
-        case "nameOfState":
-            return {
-                ...getInputKeysByType(keyDetails["nameOfState"], dataSource),
-                ...obj,
-                readonly: true,
-                // rejectReason:"",
-            };
-        case "pop2011":
-            return {
-                ...getInputKeysByType(keyDetails["pop2011"], dataSource),
-                ...obj,
-                readonly: false,
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
-                // rejectReason:"",
-            };
-        case "popApril2024":
-            return {
-                ...getInputKeysByType(keyDetails["popApril2024"], dataSource),
-                ...obj,
-                readonly: false,
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
-                // rejectReason:"",
-            };
-        case "areaOfUlb":
-            return {
-                ...getInputKeysByType(keyDetails["areaOfUlb"], dataSource),
-                ...obj,
-                readonly: false,
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
-                // rejectReason:"",
-            };
-        case "yearOfElection":
-            return {
-                ...getInputKeysByType(keyDetails["yearOfElection"], dataSource),
-                ...obj,
-                readonly: false,
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
-                // rejectReason:"",
-            };
-        case "isElected":
-            return {
-                ...getInputKeysByType(keyDetails["isElected"], dataSource),
-                ...obj,
-                readonly: false,
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
-                // rejectReason:"",
-            };
-        case "yearOfConstitution":
-            return {
-                ...getInputKeysByType(keyDetails["yearOfConstitution"], dataSource),
-                ...obj,
-                readonly: false
-            };
-        case "sourceOfFd":
-            return {
-                ...getInputKeysByType(keyDetails["sourceOfFd"], dataSource),
-                ...obj,
-                readonly: false
-            };
-        case "taxRevenue":
-            return {
-                ...getInputKeysByType(keyDetails["taxRevenue"], dataSource),
-                ...obj,
-                readonly: false
-            };
-        case "feeAndUserCharges":
-            return {
-                ...getInputKeysByType(keyDetails["feeAndUserCharges"], dataSource),
-                ...obj,
-                readonly: false
-            };
-        case "interestIncome":
-            return {
-                ...getInputKeysByType(keyDetails["interestIncome"], dataSource),
-                ...obj,
-                readonly: false
-            };
-        case "otherIncome":
-            return {
-                ...getInputKeysByType(keyDetails["otherIncome"], dataSource),
-                ...obj,
-                readonly: false
-            };
-        case "totOwnRevenue":
-            return {
-                ...getInputKeysByType(keyDetails["totOwnRevenue"], dataSource),
-                ...obj,
-                readonly: false
-            };
-        case "centralGrants":
-            return {
-                ...getInputKeysByType(keyDetails["centralGrants"], dataSource),
-                ...obj,
-                readonly: false
-            };
-        case "otherGrants":
-            return {
-                ...getInputKeysByType(keyDetails["otherGrants"], dataSource),
-                ...obj,
-                readonly: false
-            };
-        case "totalGrants":
-            return {
-                ...getInputKeysByType(keyDetails["totalGrants"], dataSource),
-                ...obj,
-                readonly: false
-            };
-        case "assignedRevAndCom":
-            return {
-                ...getInputKeysByType(keyDetails["assignedRevAndCom"], dataSource),
-                ...obj,
-                readonly: false
-            };
-        case "otherRevenue":
-            return {
-                ...getInputKeysByType(keyDetails["otherRevenue"], dataSource),
-                ...obj,
-                readonly: false
-            };
-        case "totalRevenue":
-            return {
-                ...getInputKeysByType(keyDetails["totalRevenue"], dataSource),
-                ...obj,
-                readonly: false
-            };
-        case "establishmentExp":
-            return {
-                ...getInputKeysByType(keyDetails["establishmentExp"], dataSource),
-                ...obj,
-                readonly: false
-            };
-        case "oAndmExp":
-            return {
-                ...getInputKeysByType(keyDetails["oAndmExp"], dataSource),
-                ...obj,
-                readonly: false
-            };
-        case "interestAndfinacialChar":
-            return {
-                ...getInputKeysByType(keyDetails["interestAndfinacialChar"], dataSource),
-                ...obj,
-                readonly: false
-            };
-        case "otherRevenueExp":
-            return {
-                ...getInputKeysByType(keyDetails["otherRevenueExp"], dataSource),
-                ...obj,
-                readonly: false
-            };
-        case "totalRevenueExp":
-            return {
-                ...getInputKeysByType(keyDetails["totalRevenueExp"], dataSource),
-                ...obj,
-                readonly: false
-            };
-        case "capExp":
-            return {
-                ...getInputKeysByType(keyDetails["capExp"], dataSource),
-                ...obj,
-                readonly: false
-            };
-        case "totalExp":
-            return {
-                ...getInputKeysByType(keyDetails["totalExp"], dataSource),
-                ...obj,
-                readonly: false
-            };
-        case "grossBorrowing":
-            return {
-                ...getInputKeysByType(keyDetails["grossBorrowing"], dataSource),
-                ...obj,
-                readonly: false
-            };
-        case "accSystem":
-            return {
-                ...getInputKeysByType(keyDetails["accSystem"], dataSource),
-                ...obj,
-                readonly: false
-            };
-        case "accProvision":
-            return {
-                ...getInputKeysByType(keyDetails["accProvision"], dataSource),
-                ...obj,
-                readonly: false
-            };
-        case "accInCashBasis":
-            return {
-                ...getInputKeysByType(keyDetails["accInCashBasis"], dataSource),
-                ...obj,
-                readonly: false
-            };
-        case "fsTransactionRecord":
-            return {
-                ...getInputKeysByType(keyDetails["fsTransactionRecord"], dataSource),
-                ...obj,
-                readonly: false
-            };
-        case "fsPreparedBy":
-            return {
-                ...getInputKeysByType(keyDetails["fsPreparedBy"], dataSource),
-                ...obj,
-                readonly: false
-            };
-        case "revReceiptRecord":
-            return {
-                ...getInputKeysByType(keyDetails["revReceiptRecord"], dataSource),
-                ...obj,
-                readonly: false
-            };
-        case "expRecord":
-            return {
-                ...getInputKeysByType(keyDetails["expRecord"], dataSource),
-                ...obj,
-                readonly: false
-            };
-        case "accSoftware":
-            return {
-                ...getInputKeysByType(keyDetails["accSoftware"], dataSource),
-                ...obj,
-                readonly: false
-            };
-        case "onlineAccSysIntegrate":
-            return {
-                ...getInputKeysByType(keyDetails["onlineAccSysIntegrate"], dataSource),
-                ...obj,
-                readonly: false
-            };
-        case "muniAudit":
-            return {
-                ...getInputKeysByType(keyDetails["muniAudit"], dataSource),
-                ...obj,
-                readonly: false
-            };
-        case "totSanction":
-            return {
-                ...getInputKeysByType(keyDetails["totSanction"], dataSource),
-                ...obj,
-                readonly: false
-            };
-        case "totVacancy":
-            return {
-                ...getInputKeysByType(keyDetails["totVacancy"], dataSource),
-                ...obj,
-                readonly: false
-            };
-        case "accPosition":
-            return {
-                ...getInputKeysByType(keyDetails["accPosition"], dataSource),
-                ...obj,
-                readonly: false
-            };
-        case "auditedAnnualFySt":
-            return {
-                ...getInputKeysByType(keyDetails["auditedAnnualFySt"], dataSource),
-                ...obj,
-                readonly: false
-            };
-        default:
-        // code block
-    }
-};
-const getColumnWiseDataForm2 = (key, obj, isDraft, dataSource = "", role, formStatus) => {
+const getColumnWiseData = (allKeys, key, obj, isDraft, dataSource = "", role, formStatus, frontendYear_Fd, frontendYear_Slb) => {
     switch (key) {
         case "nameOfUlb": {
             return {
-                ...getInputKeysByTypeForm2(keyDetailsForm2["nameOfUlb"], dataSource),
+                ...getInputKeysByType(allKeys["nameOfUlb"], true, dataSource, allKeys["formType"]),
                 ...obj,
-                readonly: false,
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
-                // rejectReason:"",
             };
         }
         case "nameOfState": {
             return {
-                ...getInputKeysByTypeForm2(keyDetailsForm2["nameOfState"], dataSource),
+                ...getInputKeysByType(allKeys["nameOfState"], true, dataSource, allKeys["formType"]),
                 ...obj,
-                readonly: false,
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
-                // rejectReason:"",
             };
         }
         case "pop2011": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["pop2011"].autoSumValidation);
             return {
-                ...getInputKeysByTypeForm2(keyDetailsForm2["pop2011"], dataSource),
+                ...getInputKeysByType(allKeys["pop2011"], isReadOnly, dataSource, allKeys["formType"]),
                 ...obj,
-                readonly: false,
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "popApril2024": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["popApril2024"].autoSumValidation);
             return {
-                ...getInputKeysByTypeForm2(keyDetailsForm2["popApril2024"], dataSource),
+                ...getInputKeysByType(allKeys["popApril2024"], isReadOnly, dataSource, allKeys["formType"]),
                 ...obj,
-                readonly: false,
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "areaOfUlb": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["areaOfUlb"].autoSumValidation);
             return {
-                ...getInputKeysByTypeForm2(keyDetailsForm2["areaOfUlb"], dataSource),
+                ...getInputKeysByType(allKeys["areaOfUlb"], isReadOnly, dataSource, allKeys["formType"]),
                 ...obj,
-                readonly: false,
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "yearOfElection": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["yearOfElection"].autoSumValidation);
             return {
-                ...getInputKeysByTypeForm2(keyDetailsForm2["yearOfElection"], dataSource),
+                ...getInputKeysByType(allKeys["yearOfElection"], isReadOnly, dataSource, allKeys["formType"]),
                 ...obj,
-                readonly: false,
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "isElected": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["isElected"].autoSumValidation);
             return {
-                ...getInputKeysByTypeForm2(keyDetailsForm2["isElected"], dataSource),
+                ...getInputKeysByType(allKeys["isElected"], isReadOnly, dataSource, allKeys["formType"]),
                 ...obj,
-                readonly: false,
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "yearOfConstitution": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["yearOfConstitution"].autoSumValidation);
             return {
-                ...getInputKeysByTypeForm2(keyDetailsForm2["yearOfConstitution"], dataSource),
+                ...getInputKeysByType(allKeys["yearOfConstitution"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                readonly: false,
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "yearOfSlb": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["yearOfSlb"].autoSumValidation);
             return {
-                ...getInputKeysByTypeForm2(keyDetailsForm2["yearOfSlb"], dataSource),
+                ...getInputKeysByType(allKeys["yearOfSlb"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd, frontendYear_Slb),
                 ...obj,
-                readonly: false,
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "sourceOfFd": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["sourceOfFd"].autoSumValidation);
             return {
-                ...getInputKeysByTypeForm2(keyDetailsForm2["sourceOfFd"], dataSource),
+                ...getInputKeysByType(allKeys["sourceOfFd"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                readonly: false,
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "pTax": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["pTax"].autoSumValidation);
             return {
-                ...getInputKeysByTypeForm2(keyDetailsForm2["pTax"], dataSource),
+                ...getInputKeysByType(allKeys["pTax"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                readonly: false,
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
+                // rejectReason:"",
+            };
+        }
+        case "noOfRegiProperty": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["noOfRegiProperty"].autoSumValidation);
+            return {
+                ...getInputKeysByType(allKeys["noOfRegiProperty"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
+                ...obj,
                 // rejectReason:"",
             };
         }
         case "otherTax": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["otherTax"].autoSumValidation);
             return {
-                ...getInputKeysByTypeForm2(keyDetailsForm2["otherTax"], dataSource),
+                ...getInputKeysByType(allKeys["otherTax"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                readonly: false,
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "taxRevenue": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["taxRevenue"].autoSumValidation);
             return {
-                ...getInputKeysByTypeForm2(keyDetailsForm2["taxRevenue"], dataSource),
+                ...getInputKeysByType(allKeys["taxRevenue"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                readonly: false,
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "feeAndUserCharges": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["feeAndUserCharges"].autoSumValidation);
             return {
-                ...getInputKeysByTypeForm2(keyDetailsForm2["feeAndUserCharges"], dataSource),
+                ...getInputKeysByType(allKeys["feeAndUserCharges"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                readonly: false,
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "interestIncome": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["interestIncome"].autoSumValidation);
             return {
-                ...getInputKeysByTypeForm2(keyDetailsForm2["interestIncome"], dataSource),
+                ...getInputKeysByType(allKeys["interestIncome"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                readonly: false,
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "otherIncome": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["otherIncome"].autoSumValidation);
             return {
-                ...getInputKeysByTypeForm2(keyDetailsForm2["otherIncome"], dataSource),
+                ...getInputKeysByType(allKeys["otherIncome"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                readonly: false,
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "rentalIncome": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["rentalIncome"].autoSumValidation);
             return {
-                ...getInputKeysByTypeForm2(keyDetailsForm2["rentalIncome"], dataSource),
+                ...getInputKeysByType(allKeys["rentalIncome"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                readonly: false,
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "totOwnRevenue": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["totOwnRevenue"].autoSumValidation);
             return {
-                ...getInputKeysByTypeForm2(keyDetailsForm2["totOwnRevenue"], dataSource),
+                ...getInputKeysByType(allKeys["totOwnRevenue"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                readonly: false,
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "centralSponsoredScheme": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["centralSponsoredScheme"].autoSumValidation);
             return {
-                ...getInputKeysByTypeForm2(keyDetailsForm2["centralSponsoredScheme"], dataSource),
+                ...getInputKeysByType(allKeys["centralSponsoredScheme"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                readonly: false,
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "unionFinanceGrants": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["unionFinanceGrants"].autoSumValidation);
             return {
-                ...getInputKeysByTypeForm2(keyDetailsForm2["unionFinanceGrants"], dataSource),
+                ...getInputKeysByType(allKeys["unionFinanceGrants"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                readonly: false,
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "centralGrants": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["centralGrants"].autoSumValidation);
             return {
-                ...getInputKeysByTypeForm2(keyDetailsForm2["centralGrants"], dataSource),
+                ...getInputKeysByType(allKeys["centralGrants"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                readonly: false,
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "sfcGrants": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["sfcGrants"].autoSumValidation);
             return {
-                ...getInputKeysByTypeForm2(keyDetailsForm2["sfcGrants"], dataSource),
+                ...getInputKeysByType(allKeys["sfcGrants"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                readonly: false,
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "grantsOtherThanSfc": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["grantsOtherThanSfc"].autoSumValidation);
             return {
-                ...getInputKeysByTypeForm2(keyDetailsForm2["grantsOtherThanSfc"], dataSource),
+                ...getInputKeysByType(allKeys["grantsOtherThanSfc"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                readonly: false,
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "grantsWithoutState": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["grantsWithoutState"].autoSumValidation);
             return {
-                ...getInputKeysByTypeForm2(keyDetailsForm2["grantsWithoutState"], dataSource),
+                ...getInputKeysByType(allKeys["grantsWithoutState"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                readonly: false,
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "otherGrants": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["otherGrants"].autoSumValidation);
             return {
-                ...getInputKeysByTypeForm2(keyDetailsForm2["otherGrants"], dataSource),
+                ...getInputKeysByType(allKeys["otherGrants"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                readonly: false,
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "totalGrants": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["totalGrants"].autoSumValidation);
             return {
-                ...getInputKeysByTypeForm2(keyDetailsForm2["totalGrants"], dataSource),
+                ...getInputKeysByType(allKeys["totalGrants"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                readonly: false,
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "assignedRevAndCom": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["assignedRevAndCom"].autoSumValidation);
             return {
-                ...getInputKeysByTypeForm2(keyDetailsForm2["assignedRevAndCom"], dataSource),
+                ...getInputKeysByType(allKeys["assignedRevAndCom"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                readonly: false,
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "otherRevenue": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["otherRevenue"].autoSumValidation);
             return {
-                ...getInputKeysByTypeForm2(keyDetailsForm2["otherRevenue"], dataSource),
+                ...getInputKeysByType(allKeys["otherRevenue"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                readonly: false,
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "totalRevenue": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["totalRevenue"].autoSumValidation);
             return {
-                ...getInputKeysByTypeForm2(keyDetailsForm2["totalRevenue"], dataSource),
+                ...getInputKeysByType(allKeys["totalRevenue"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                readonly: false,
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
-                // rejectReason:"",
+                // rejectReason: "",
             };
         }
         case "salaries": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["salaries"].autoSumValidation);
             return {
-                ...getInputKeysByTypeForm2(keyDetailsForm2["salaries"], dataSource),
+                ...getInputKeysByType(allKeys["salaries"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                readonly: false,
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "pension": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["pension"].autoSumValidation);
             return {
-                ...getInputKeysByTypeForm2(keyDetailsForm2["pension"], dataSource),
+                ...getInputKeysByType(allKeys["pension"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                readonly: false,
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "otherExp": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["otherExp"].autoSumValidation);
             return {
-                ...getInputKeysByTypeForm2(keyDetailsForm2["otherExp"], dataSource),
+                ...getInputKeysByType(allKeys["otherExp"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                readonly: false,
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "establishmentExp": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["establishmentExp"].autoSumValidation);
             return {
-                ...getInputKeysByTypeForm2(keyDetailsForm2["establishmentExp"], dataSource),
+                ...getInputKeysByType(allKeys["establishmentExp"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                readonly: false,
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "oAndmExp": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["oAndmExp"].autoSumValidation);
             return {
-                ...getInputKeysByTypeForm2(keyDetailsForm2["oAndmExp"], dataSource),
+                ...getInputKeysByType(allKeys["oAndmExp"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                readonly: false,
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "interestAndfinacialChar": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["interestAndfinacialChar"].autoSumValidation);
             return {
-                ...getInputKeysByTypeForm2(keyDetailsForm2["interestAndfinacialChar"], dataSource),
+                ...getInputKeysByType(allKeys["interestAndfinacialChar"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                readonly: false,
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "otherRevenueExp": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["otherRevenueExp"].autoSumValidation);
             return {
-                ...getInputKeysByTypeForm2(keyDetailsForm2["otherRevenueExp"], dataSource),
+                ...getInputKeysByType(allKeys["otherRevenueExp"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                readonly: false,
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "adExp": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["adExp"].autoSumValidation);
             return {
-                ...getInputKeysByTypeForm2(keyDetailsForm2["adExp"], dataSource),
+                ...getInputKeysByType(allKeys["adExp"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                readonly: false,
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "totalRevenueExp": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["totalRevenueExp"].autoSumValidation);
             return {
-                ...getInputKeysByTypeForm2(keyDetailsForm2["totalRevenueExp"], dataSource),
+                ...getInputKeysByType(allKeys["totalRevenueExp"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                readonly: false,
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "capExp": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["capExp"].autoSumValidation);
             return {
-                ...getInputKeysByTypeForm2(keyDetailsForm2["capExp"], dataSource),
+                ...getInputKeysByType(allKeys["capExp"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                readonly: false,
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "totalExp": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["totalExp"].autoSumValidation);
             return {
-                ...getInputKeysByTypeForm2(keyDetailsForm2["totalExp"], dataSource),
+                ...getInputKeysByType(allKeys["totalExp"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                readonly: false,
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "centralStateBorrow": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["centralStateBorrow"].autoSumValidation);
             return {
-                ...getInputKeysByTypeForm2(keyDetailsForm2["centralStateBorrow"], dataSource),
+                ...getInputKeysByType(allKeys["centralStateBorrow"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                readonly: false,
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "bonds": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["bonds"].autoSumValidation);
             return {
-                ...getInputKeysByTypeForm2(keyDetailsForm2["bonds"], dataSource),
+                ...getInputKeysByType(allKeys["bonds"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                readonly: false,
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "bankAndFinancial": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["bankAndFinancial"].autoSumValidation);
             return {
-                ...getInputKeysByTypeForm2(keyDetailsForm2["bankAndFinancial"], dataSource),
+                ...getInputKeysByType(allKeys["bankAndFinancial"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                readonly: false,
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "otherBorrowing": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["otherBorrowing"].autoSumValidation);
             return {
-                ...getInputKeysByTypeForm2(keyDetailsForm2["otherBorrowing"], dataSource),
+                ...getInputKeysByType(allKeys["otherBorrowing"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                readonly: false,
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "grossBorrowing": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["grossBorrowing"].autoSumValidation);
             return {
-                ...getInputKeysByTypeForm2(keyDetailsForm2["grossBorrowing"], dataSource),
+                ...getInputKeysByType(allKeys["grossBorrowing"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                readonly: false,
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "receivablePTax": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["receivablePTax"].autoSumValidation);
             return {
-                ...getInputKeysByTypeForm2(keyDetailsForm2["receivablePTax"], dataSource),
+                ...getInputKeysByType(allKeys["receivablePTax"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                readonly: false,
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "receivableFee": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["receivableFee"].autoSumValidation);
             return {
-                ...getInputKeysByTypeForm2(keyDetailsForm2["receivableFee"], dataSource),
+                ...getInputKeysByType(allKeys["receivableFee"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                readonly: false,
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "otherReceivable": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["otherReceivable"].autoSumValidation);
             return {
-                ...getInputKeysByTypeForm2(keyDetailsForm2["otherReceivable"], dataSource),
+                ...getInputKeysByType(allKeys["otherReceivable"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                readonly: false,
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "totalReceivable": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["totalReceivable"].autoSumValidation);
             return {
-                ...getInputKeysByTypeForm2(keyDetailsForm2["totalReceivable"], dataSource),
+                ...getInputKeysByType(allKeys["totalReceivable"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                readonly: false,
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "totalCashAndBankBal": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["totalCashAndBankBal"].autoSumValidation);
             return {
-                ...getInputKeysByTypeForm2(keyDetailsForm2["totalCashAndBankBal"], dataSource),
+                ...getInputKeysByType(allKeys["totalCashAndBankBal"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                readonly: false,
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "accSystem": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["accSystem"].autoSumValidation);
             return {
-                ...getInputKeysByTypeForm2(keyDetailsForm2["accSystem"], dataSource),
+                ...getInputKeysByType(allKeys["accSystem"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                readonly: false,
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "accProvision": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["accProvision"].autoSumValidation);
             return {
-                ...getInputKeysByTypeForm2(keyDetailsForm2["accProvision"], dataSource),
+                ...getInputKeysByType(allKeys["accProvision"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                readonly: false,
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "accInCashBasis": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["accInCashBasis"].autoSumValidation);
             return {
-                ...getInputKeysByTypeForm2(keyDetailsForm2["accInCashBasis"], dataSource),
+                ...getInputKeysByType(allKeys["accInCashBasis"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                readonly: false,
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "fsTransactionRecord": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["fsTransactionRecord"].autoSumValidation);
             return {
-                ...getInputKeysByTypeForm2(keyDetailsForm2["fsTransactionRecord"], dataSource),
+                ...getInputKeysByType(allKeys["fsTransactionRecord"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                readonly: false,
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "fsPreparedBy": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["fsPreparedBy"].autoSumValidation);
             return {
-                ...getInputKeysByTypeForm2(keyDetailsForm2["fsPreparedBy"], dataSource),
+                ...getInputKeysByType(allKeys["fsPreparedBy"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                readonly: false,
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "revReceiptRecord": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["revReceiptRecord"].autoSumValidation);
             return {
-                ...getInputKeysByTypeForm2(keyDetailsForm2["revReceiptRecord"], dataSource),
+                ...getInputKeysByType(allKeys["revReceiptRecord"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                readonly: false,
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "expRecord": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["expRecord"].autoSumValidation);
             return {
-                ...getInputKeysByTypeForm2(keyDetailsForm2["expRecord"], dataSource),
+                ...getInputKeysByType(allKeys["expRecord"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                readonly: false,
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "accSoftware": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["accSoftware"].autoSumValidation);
             return {
-                ...getInputKeysByTypeForm2(keyDetailsForm2["accSoftware"], dataSource),
+                ...getInputKeysByType(allKeys["accSoftware"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                readonly: false,
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "onlineAccSysIntegrate": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["onlineAccSysIntegrate"].autoSumValidation);
             return {
-                ...getInputKeysByTypeForm2(keyDetailsForm2["onlineAccSysIntegrate"], dataSource),
+                ...getInputKeysByType(allKeys["onlineAccSysIntegrate"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                readonly: false,
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "muniAudit": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["muniAudit"].autoSumValidation);
             return {
-                ...getInputKeysByTypeForm2(keyDetailsForm2["muniAudit"], dataSource),
+                ...getInputKeysByType(allKeys["muniAudit"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                readonly: false,
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "totSanction": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["totSanction"].autoSumValidation);
             return {
-                ...getInputKeysByTypeForm2(keyDetailsForm2["totSanction"], dataSource),
+                ...getInputKeysByType(allKeys["totSanction"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                readonly: false,
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "totVacancy": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["totVacancy"].autoSumValidation);
             return {
-                ...getInputKeysByTypeForm2(keyDetailsForm2["totVacancy"], dataSource),
+                ...getInputKeysByType(allKeys["totVacancy"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                readonly: false,
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "accPosition": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["accPosition"].autoSumValidation);
             return {
-                ...getInputKeysByTypeForm2(keyDetailsForm2["accPosition"], dataSource),
+                ...getInputKeysByType(allKeys["accPosition"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                readonly: false,
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "auditedAnnualFySt": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["auditedAnnualFySt"].autoSumValidation);
             return {
-                ...getInputKeysByTypeForm2(keyDetailsForm2["auditedAnnualFySt"], dataSource),
+                ...getInputKeysByType(allKeys["auditedAnnualFySt"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                readonly: false,
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "coverageOfWs": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["coverageOfWs"].autoSumValidation);
             return {
-                ...getInputKeysByTypeForm2(keyDetailsForm2["coverageOfWs"], dataSource),
+                ...getInputKeysByType(allKeys["coverageOfWs"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
                 ...obj,
-                readonly: false,
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "perCapitaOfWs": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["perCapitaOfWs"].autoSumValidation);
             return {
-                ...getInputKeysByTypeForm2(keyDetailsForm2["perCapitaOfWs"], dataSource),
+                ...getInputKeysByType(allKeys["perCapitaOfWs"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
                 ...obj,
-                readonly: false,
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "extentOfMeteringWs": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["extentOfMeteringWs"].autoSumValidation);
             return {
-                ...getInputKeysByTypeForm2(keyDetailsForm2["extentOfMeteringWs"], dataSource),
+                ...getInputKeysByType(allKeys["extentOfMeteringWs"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
                 ...obj,
-                readonly: false,
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "extentOfNonRevenueWs": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["extentOfNonRevenueWs"].autoSumValidation);
             return {
-                ...getInputKeysByTypeForm2(keyDetailsForm2["extentOfNonRevenueWs"], dataSource),
+                ...getInputKeysByType(allKeys["extentOfNonRevenueWs"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
                 ...obj,
-                readonly: false,
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "continuityOfWs": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["continuityOfWs"].autoSumValidation);
             return {
-                ...getInputKeysByTypeForm2(keyDetailsForm2["continuityOfWs"], dataSource),
+                ...getInputKeysByType(allKeys["continuityOfWs"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
                 ...obj,
-                readonly: false,
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "efficiencyInRedressalCustomerWs": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["efficiencyInRedressalCustomerWs"].autoSumValidation);
             return {
-                ...getInputKeysByTypeForm2(keyDetailsForm2["efficiencyInRedressalCustomerWs"], dataSource),
+                ...getInputKeysByType(allKeys["efficiencyInRedressalCustomerWs"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
                 ...obj,
-                readonly: false,
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "qualityOfWs": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["qualityOfWs"].autoSumValidation);
             return {
-                ...getInputKeysByTypeForm2(keyDetailsForm2["qualityOfWs"], dataSource),
+                ...getInputKeysByType(allKeys["qualityOfWs"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
                 ...obj,
-                readonly: false,
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "costRecoveryInWs": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["costRecoveryInWs"].autoSumValidation);
             return {
-                ...getInputKeysByTypeForm2(keyDetailsForm2["costRecoveryInWs"], dataSource),
+                ...getInputKeysByType(allKeys["costRecoveryInWs"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
                 ...obj,
-                readonly: false,
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "efficiencyInCollectionRelatedWs": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["efficiencyInCollectionRelatedWs"].autoSumValidation);
             return {
-                ...getInputKeysByTypeForm2(keyDetailsForm2["efficiencyInCollectionRelatedWs"], dataSource),
+                ...getInputKeysByType(allKeys["efficiencyInCollectionRelatedWs"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
                 ...obj,
-                readonly: false,
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "coverageOfToiletsSew": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["coverageOfToiletsSew"].autoSumValidation);
             return {
-                ...getInputKeysByTypeForm2(keyDetailsForm2["coverageOfToiletsSew"], dataSource),
+                ...getInputKeysByType(allKeys["coverageOfToiletsSew"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
                 ...obj,
-                readonly: false,
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "coverageOfSewNet": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["coverageOfSewNet"].autoSumValidation);
             return {
-                ...getInputKeysByTypeForm2(keyDetailsForm2["coverageOfSewNet"], dataSource),
+                ...getInputKeysByType(allKeys["coverageOfSewNet"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
                 ...obj,
-                readonly: false,
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "collectionEfficiencySew": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["collectionEfficiencySew"].autoSumValidation);
             return {
-                ...getInputKeysByTypeForm2(keyDetailsForm2["collectionEfficiencySew"], dataSource),
+                ...getInputKeysByType(allKeys["collectionEfficiencySew"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
                 ...obj,
-                readonly: false,
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "adequacyOfSew": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["adequacyOfSew"].autoSumValidation);
             return {
-                ...getInputKeysByTypeForm2(keyDetailsForm2["adequacyOfSew"], dataSource),
+                ...getInputKeysByType(allKeys["adequacyOfSew"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
                 ...obj,
-                readonly: false,
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "qualityOfSew": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["qualityOfSew"].autoSumValidation);
             return {
-                ...getInputKeysByTypeForm2(keyDetailsForm2["qualityOfSew"], dataSource),
+                ...getInputKeysByType(allKeys["qualityOfSew"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
                 ...obj,
-                readonly: false,
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "extentOfReuseSew": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["extentOfReuseSew"].autoSumValidation);
             return {
-                ...getInputKeysByTypeForm2(keyDetailsForm2["extentOfReuseSew"], dataSource),
+                ...getInputKeysByType(allKeys["extentOfReuseSew"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
                 ...obj,
-                readonly: false,
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "efficiencyInRedressalCustomerSew": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["efficiencyInRedressalCustomerSew"].autoSumValidation);
             return {
-                ...getInputKeysByTypeForm2(keyDetailsForm2["efficiencyInRedressalCustomerSew"], dataSource),
+                ...getInputKeysByType(allKeys["efficiencyInRedressalCustomerSew"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
                 ...obj,
-                readonly: false,
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "extentOfCostWaterSew": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["extentOfCostWaterSew"].autoSumValidation);
             return {
-                ...getInputKeysByTypeForm2(keyDetailsForm2["extentOfCostWaterSew"], dataSource),
+                ...getInputKeysByType(allKeys["extentOfCostWaterSew"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
                 ...obj,
-                readonly: false,
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "efficiencyInCollectionSew": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["efficiencyInCollectionSew"].autoSumValidation);
             return {
-                ...getInputKeysByTypeForm2(keyDetailsForm2["efficiencyInCollectionSew"], dataSource),
+                ...getInputKeysByType(allKeys["efficiencyInCollectionSew"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
                 ...obj,
-                readonly: false,
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "householdLevelCoverageLevelSwm": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["householdLevelCoverageLevelSwm"].autoSumValidation);
             return {
-                ...getInputKeysByTypeForm2(keyDetailsForm2["householdLevelCoverageLevelSwm"], dataSource),
+                ...getInputKeysByType(allKeys["householdLevelCoverageLevelSwm"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
                 ...obj,
-                readonly: false,
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "efficiencyOfCollectionSwm": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["efficiencyOfCollectionSwm"].autoSumValidation);
             return {
-                ...getInputKeysByTypeForm2(keyDetailsForm2["efficiencyOfCollectionSwm"], dataSource),
+                ...getInputKeysByType(allKeys["efficiencyOfCollectionSwm"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
                 ...obj,
-                readonly: false,
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "extentOfSegregationSwm": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["extentOfSegregationSwm"].autoSumValidation);
             return {
-                ...getInputKeysByTypeForm2(keyDetailsForm2["extentOfSegregationSwm"], dataSource),
+                ...getInputKeysByType(allKeys["extentOfSegregationSwm"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
                 ...obj,
-                readonly: false,
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "extentOfMunicipalSwm": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["extentOfMunicipalSwm"].autoSumValidation);
             return {
-                ...getInputKeysByTypeForm2(keyDetailsForm2["extentOfMunicipalSwm"], dataSource),
+                ...getInputKeysByType(allKeys["extentOfMunicipalSwm"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
                 ...obj,
-                readonly: false,
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "extentOfScientificSolidSwm": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["extentOfScientificSolidSwm"].autoSumValidation);
             return {
-                ...getInputKeysByTypeForm2(keyDetailsForm2["extentOfScientificSolidSwm"], dataSource),
+                ...getInputKeysByType(allKeys["extentOfScientificSolidSwm"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
                 ...obj,
-                readonly: false,
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "extentOfCostInSwm": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["extentOfCostInSwm"].autoSumValidation);
             return {
-                ...getInputKeysByTypeForm2(keyDetailsForm2["extentOfCostInSwm"], dataSource),
+                ...getInputKeysByType(allKeys["extentOfCostInSwm"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
                 ...obj,
-                readonly: false,
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "efficiencyInCollectionSwmUser": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["efficiencyInCollectionSwmUser"].autoSumValidation);
             return {
-                ...getInputKeysByTypeForm2(keyDetailsForm2["efficiencyInCollectionSwmUser"], dataSource),
+                ...getInputKeysByType(allKeys["efficiencyInCollectionSwmUser"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
                 ...obj,
-                readonly: false,
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "efficiencyInRedressalCustomerSwm": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["efficiencyInRedressalCustomerSwm"].autoSumValidation);
             return {
-                ...getInputKeysByTypeForm2(keyDetailsForm2["efficiencyInRedressalCustomerSwm"], dataSource),
+                ...getInputKeysByType(allKeys["efficiencyInRedressalCustomerSwm"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
                 ...obj,
-                readonly: false,
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "coverageOfStormDrainage": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["coverageOfStormDrainage"].autoSumValidation);
             return {
-                ...getInputKeysByTypeForm2(keyDetailsForm2["coverageOfStormDrainage"], dataSource),
+                ...getInputKeysByType(allKeys["coverageOfStormDrainage"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
                 ...obj,
-                readonly: false,
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
         case "incidenceOfWaterLogging": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["incidenceOfWaterLogging"].autoSumValidation);
             return {
-                ...getInputKeysByTypeForm2(keyDetailsForm2["incidenceOfWaterLogging"], dataSource),
+                ...getInputKeysByType(allKeys["incidenceOfWaterLogging"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
                 ...obj,
-                readonly: false,
-                // readonly: getReadOnly(formStatus, isDraft, role, obj.status),
                 // rejectReason:"",
             };
         }
@@ -3640,112 +1348,32 @@ const getColumnWiseDataForm2 = (key, obj, isDraft, dataSource = "", role, formSt
     }
 };
 
-async function getModifiedTabsXvifcForm1(tabs, xviFCForm1Table) {
+/**
+ * Function to check if the question is readonly.
+ * If form status is IN_PROGRESS or NOT_STARTED - readonly = true.
+ * If validation = "sum" i.e if question is autosum - readonly = true.
+ * If validation = "sum" i.e if question is auto sum - class = "fw-bold".
+ */
+function getReadOnly(formStatus, autosumValidation) {
+    return autosumValidation == 'sum' ? true : formStatus == 'IN_PROGRESS' || formStatus == 'NOT_STARTED' ? false : true
+}
+
+async function getModifiedTabsXvifcForm(tabs, xviFcFormTable, formType) {
     try {
         let modifiedTabs = [...tabs];
-        let service = new tabsUpdationServiceFR(xviFCForm1Table);
+        let service = new tabsUpdationService(xviFcFormTable);
         for (var tab of modifiedTabs) {
-            if (tab.id === priorTabsForXviFcForm1["demographicData"]) {
-                tab.data = await service.getDataForDemographicDataTab();
-            } else if (tab.id === priorTabsForXviFcForm1["financialData"]) {
-                tab.data = await service.getDataForfinancialData();
-            } else if (tab.id === priorTabsForXviFcForm1["accountPractice"]) {
-                tab.data = await service.getDataForAccountingPractices();
-            } else if (tab.id === priorTabsForXviFcForm1["uploadDoc"]) {
-                tab.data = await service.getDataForUploadDoc();
-            }
-            // else {
-            //     tab.data = service.getDynamicObjects(tab.key);
-            // }
-            //     tab.feedback = await service.getFeedbackForTabs(
-            //         conditionForFeedbacks,
-            //         tab._id
-            //     );
-        }
-        return modifiedTabs;
-    } catch (err) {
-        console.log("error in getModifiedTabsFiscalRanking ::: ", err.message);
-    }
-}
-class tabsUpdationServiceFR {
-    constructor(xviFCForm1Table) {
-        this.detail = { ...xviFCForm1Table };
-    }
-    async getDataForDemographicDataTab() {
-        return [
-            { ...this.detail.nameOfUlb },
-            { ...this.detail.nameOfState },
-            { ...this.detail.pop2011 },
-            { ...this.detail.popApril2024 },
-            { ...this.detail.areaOfUlb },
-            { ...this.detail.yearOfElection },
-            { ...this.detail.isElected },
-            { ...this.detail.yearOfConstitution },
-        ];
-    }
-    async getDataForfinancialData() {
-        return [
-            { ...this.detail.sourceOfFd },
-            { ...this.detail.taxRevenue },
-            { ...this.detail.feeAndUserCharges },
-            { ...this.detail.interestIncome },
-            { ...this.detail.otherIncome },
-            { ...this.detail.totOwnRevenue },
-            { ...this.detail.centralGrants },
-            { ...this.detail.otherGrants },
-            { ...this.detail.totalGrants },
-            { ...this.detail.assignedRevAndCom },
-            { ...this.detail.otherRevenue },
-            { ...this.detail.totalRevenue },
-            { ...this.detail.establishmentExp },
-            { ...this.detail.oAndmExp },
-            { ...this.detail.interestAndfinacialChar },
-            { ...this.detail.otherRevenueExp },
-            { ...this.detail.totalRevenueExp },
-            { ...this.detail.capExp },
-            { ...this.detail.totalExp },
-            { ...this.detail.grossBorrowing }
-        ];
-    }
-    async getDataForAccountingPractices() {
-        return [
-            { ...this.detail.accSystem },
-            { ...this.detail.accProvision },
-            { ...this.detail.accInCashBasis },
-            { ...this.detail.fsTransactionRecord },
-            { ...this.detail.fsPreparedBy },
-            { ...this.detail.revReceiptRecord },
-            { ...this.detail.expRecord },
-            { ...this.detail.accSoftware },
-            { ...this.detail.onlineAccSysIntegrate },
-            { ...this.detail.muniAudit },
-            { ...this.detail.totSanction },
-            { ...this.detail.totVacancy },
-            { ...this.detail.accPosition },
-        ];
-    }
-    async getDataForUploadDoc() {
-        return [
-            { ...this.detail.auditedAnnualFySt }
-        ];
-    }
-}
-async function getModifiedTabsXvifcForm2(tabs, xviFCForm2Table) {
-    try {
-        let modifiedTabs = [...tabs];
-        let service = new tabsUpdationServiceFR2(xviFCForm2Table);
-        for (var tab of modifiedTabs) {
-            if (tab.id === priorTabsForXviFcForm2["demographicData"]) {
-                let tempVar = await service.getDataForDemographicDataTab();
+            if (tab.id === priorTabsForXviFcForm["demographicData"]) {
+                let tempVar = await service.getDataForDemographicDataTab(formType);
                 tab.data = [];
                 tab.data = tempVar
-            } else if (tab.id === priorTabsForXviFcForm2["financialData"]) {
-                tab.data = await service.getDataForfinancialData();
-            } else if (tab.id === priorTabsForXviFcForm2["accountPractice"]) {
+            } else if (tab.id === priorTabsForXviFcForm["financialData"]) {
+                tab.data = await service.getDataForfinancialData(formType);
+            } else if (tab.id === priorTabsForXviFcForm["accountPractice"]) {
                 tab.data = await service.getDataForAccountingPractices();
-            } else if (tab.id === priorTabsForXviFcForm2["uploadDoc"]) {
+            } else if (tab.id === priorTabsForXviFcForm["uploadDoc"]) {
                 tab.data = await service.getDataForUploadDoc();
-            } else if (tab.id === priorTabsForXviFcForm2["serviceLevelBenchmark"]) {
+            } else if (tab.id === priorTabsForXviFcForm["serviceLevelBenchmark"]) {
                 tab.data = await service.getDataForServiceLevelBenchmark();
             }
             // else {
@@ -3759,123 +1387,6 @@ async function getModifiedTabsXvifcForm2(tabs, xviFCForm2Table) {
         return modifiedTabs;
     } catch (err) {
         console.log("error in getModifiedTabsFiscalRanking ::: ", err.message);
-    }
-}
-class tabsUpdationServiceFR2 {
-    constructor(xviFCForm1Table) {
-        this.detail = { ...xviFCForm1Table };
-    }
-    async getDataForDemographicDataTab() {
-        return [
-            { ...this.detail.nameOfUlb },
-            { ...this.detail.nameOfState },
-            { ...this.detail.pop2011 },
-            { ...this.detail.popApril2024 },
-            { ...this.detail.areaOfUlb },
-            { ...this.detail.yearOfElection },
-            { ...this.detail.isElected },
-            { ...this.detail.yearOfConstitution },
-            { ...this.detail.yearOfSlb },
-        ];
-    }
-    async getDataForfinancialData() {
-        return [
-            { ...this.detail.sourceOfFd },
-            { ...this.detail.pTax },
-            { ...this.detail.otherTax },
-            { ...this.detail.taxRevenue },
-            { ...this.detail.feeAndUserCharges },
-            { ...this.detail.interestIncome },
-            { ...this.detail.otherIncome },
-            { ...this.detail.rentalIncome },
-            { ...this.detail.totOwnRevenue },
-            { ...this.detail.centralSponsoredScheme },
-            { ...this.detail.unionFinanceGrants },
-            { ...this.detail.centralGrants },
-            { ...this.detail.sfcGrants },
-            { ...this.detail.grantsOtherThanSfc },
-            { ...this.detail.grantsWithoutState },
-            { ...this.detail.otherGrants },
-            { ...this.detail.totalGrants },
-            { ...this.detail.assignedRevAndCom },
-            { ...this.detail.otherRevenue },
-            { ...this.detail.totalRevenue },
-            { ...this.detail.salaries },
-            { ...this.detail.pension },
-            { ...this.detail.otherExp },
-            { ...this.detail.establishmentExp },
-            { ...this.detail.oAndmExp },
-            { ...this.detail.interestAndfinacialChar },
-            { ...this.detail.otherRevenueExp },
-            { ...this.detail.adExp },
-            { ...this.detail.totalRevenueExp },
-            { ...this.detail.capExp },
-            { ...this.detail.totalExp },
-            { ...this.detail.centralStateBorrow },
-            { ...this.detail.bonds },
-            { ...this.detail.bankAndFinancial },
-            { ...this.detail.otherBorrowing },
-            { ...this.detail.grossBorrowing },
-            { ...this.detail.receivablePTax },
-            { ...this.detail.receivableFee },
-            { ...this.detail.otherReceivable },
-            { ...this.detail.totalReceivable },
-            { ...this.detail.totalCashAndBankBal }
-        ];
-    }
-    async getDataForAccountingPractices() {
-        return [
-            { ...this.detail.accSystem },
-            { ...this.detail.accProvision },
-            { ...this.detail.accInCashBasis },
-            { ...this.detail.fsTransactionRecord },
-            { ...this.detail.fsPreparedBy },
-            { ...this.detail.revReceiptRecord },
-            { ...this.detail.expRecord },
-            { ...this.detail.accSoftware },
-            { ...this.detail.onlineAccSysIntegrate },
-            { ...this.detail.muniAudit },
-            { ...this.detail.totSanction },
-            { ...this.detail.totVacancy },
-            { ...this.detail.accPosition },
-        ];
-    }
-    async getDataForUploadDoc() {
-        return [
-            { ...this.detail.auditedAnnualFySt }
-        ];
-    }
-    async getDataForServiceLevelBenchmark() {
-        return {
-            "coverageOfWs": { ...this.detail.coverageOfWs },
-            "perCapitaOfWs": { ...this.detail.perCapitaOfWs },
-            "extentOfMeteringWs": { ...this.detail.extentOfMeteringWs },
-            "extentOfNonRevenueWs": { ...this.detail.extentOfNonRevenueWs },
-            "continuityOfWs": { ...this.detail.continuityOfWs },
-            "efficiencyInRedressalCustomerWs": { ...this.detail.efficiencyInRedressalCustomerWs },
-            "qualityOfWs": { ...this.detail.qualityOfWs },
-            "costRecoveryInWs": { ...this.detail.costRecoveryInWs },
-            "efficiencyInCollectionRelatedWs": { ...this.detail.efficiencyInCollectionRelatedWs },
-            "coverageOfToiletsSew": { ...this.detail.coverageOfToiletsSew },
-            "coverageOfSewNet": { ...this.detail.coverageOfSewNet },
-            "collectionEfficiencySew": { ...this.detail.collectionEfficiencySew },
-            "adequacyOfSew": { ...this.detail.adequacyOfSew },
-            "qualityOfSew": { ...this.detail.qualityOfSew },
-            "extentOfReuseSew": { ...this.detail.extentOfReuseSew },
-            "efficiencyInRedressalCustomerSew": { ...this.detail.efficiencyInRedressalCustomerSew },
-            "extentOfCostWaterSew": { ...this.detail.extentOfCostWaterSew },
-            "efficiencyInCollectionSew": { ...this.detail.efficiencyInCollectionSew },
-            "householdLevelCoverageLevelSwm": { ...this.detail.householdLevelCoverageLevelSwm },
-            "efficiencyOfCollectionSwm": { ...this.detail.efficiencyOfCollectionSwm },
-            "extentOfSegregationSwm": { ...this.detail.extentOfSegregationSwm },
-            "extentOfMunicipalSwm": { ...this.detail.extentOfMunicipalSwm },
-            "extentOfScientificSolidSwm": { ...this.detail.extentOfScientificSolidSwm },
-            "extentOfCostInSwm": { ...this.detail.extentOfCostInSwm },
-            "efficiencyInCollectionSwmUser": { ...this.detail.efficiencyInCollectionSwmUser },
-            "efficiencyInRedressalCustomerSwm": { ...this.detail.efficiencyInRedressalCustomerSwm },
-            "coverageOfStormDrainage": { ...this.detail.coverageOfStormDrainage },
-            "incidenceOfWaterLogging": { ...this.detail.incidenceOfWaterLogging },
-        }
     }
 }
 
@@ -4028,17 +1539,19 @@ async function getUploadDocLinks(ulbId, fileDataJson) {
 }
 
 // Pass mongoDB year ID and get year.
-function findYearById(mongoObjId) {
-    for (let [year, yearId] of Object.entries(yearsObj)) {
-        if (yearId == mongoObjId) {
-            return year;
+async function findYearById(mongoObjId) {
+    let years = await Year.find().lean();
+
+    for (let yearObj of years) {
+        if (yearObj._id == mongoObjId) {
+            return yearObj.year;
         }
     }
     return null; // ID not found
 }
 
 // Update the json - add the keys/ questions as per the key header - Financial Data - Form 1 Json.
-async function getUpdatedFinancialData_headers(allFinancialData, allFinancialDataKeys) {
+async function getUpdatedFinancialData_headers(allFinancialData) {
     let commonPrimaryKey = [
         "sourceOfFd"
     ];
@@ -4114,12 +1627,13 @@ async function getUpdatedFinancialData_headers(allFinancialData, allFinancialDat
     return data;
 }
 // Update the json - add the keys/ questions as per the key header - Financial Data - Form 2 Json.
-async function getUpdatedFinancialData_headersForm2(allFinancialData, allFinancialDataKeys) {
+async function getUpdatedFinancialData_headersForm2(allFinancialData) {
     let commonPrimaryKey = [
         "sourceOfFd"
     ];
     let revenue = [
         "pTax",
+        "noOfRegiProperty",
         "otherTax",
         "taxRevenue",
         "feeAndUserCharges",
@@ -4235,7 +1749,7 @@ async function getUpdatedFinancialData_headersForm2(allFinancialData, allFinanci
     return data;
 }
 // Update the json - add the keys/ questions as per the key header - Accounting Practices.
-async function getUpdatedAccountingPractices_headers(accountingPracticesData, accountingPracticesKeys) {
+async function getUpdatedAccountingPractices_headers(accountingPracticesData) {
     let accSysAndProcess = [
         "accSystem",
         "accProvision",
@@ -4257,14 +1771,14 @@ async function getUpdatedAccountingPractices_headers(accountingPracticesData, ac
         {
             "key": 'accSysAndProcess',
             "section": 'accordion',
-            "formFieldType": "section",
+            "formFieldType": "questionnaire",
             "label": "I. Accounting Systems and Processes",
             "data": []
         },
         {
             "key": 'staffing',
             "section": 'accordion',
-            "formFieldType": "section",
+            "formFieldType": "questionnaire",
             "label": "II.Staffing - Finance & Accounts Department",
             "data": []
         },
@@ -4280,7 +1794,7 @@ async function getUpdatedAccountingPractices_headers(accountingPracticesData, ac
     return data;
 }
 // Update the json - add the keys/ questions as per the key header - Service Level Benchmark.
-async function getUpdatedServiceLevelBenchmark_headers(serviceLevelBenchmarkData, serviceLevelBenchmarkKeys) {
+async function getUpdatedServiceLevelBenchmark_headers(serviceLevelBenchmarkData) {
     let waterSupply = [
         "coverageOfWs",
         "perCapitaOfWs",
@@ -4317,25 +1831,128 @@ async function getUpdatedServiceLevelBenchmark_headers(serviceLevelBenchmarkData
         "coverageOfStormDrainage",
         "incidenceOfWaterLogging",
     ];
-    let data = {
-        waterSupply: { "label": "I. WATER SUPPLY" },
-        sewerage: { "label": "II. SEWERAGE" },
-        solidWaste: { "label": "III. SOLID WASTE MANAGEMENT" },
-        stromWater: { "label": "IV. STROM WATER DRAINAGE" },
-    };
-    for (key of serviceLevelBenchmarkKeys) {
-        if (waterSupply.indexOf(key) > -1) {
-            data.waterSupply[key] = serviceLevelBenchmarkData[key];
+    let data = [
+        {
+            "key": "waterSupply",
+            "section": 'accordion',
+            "formFieldType": "table",
+            "data": [],
+            "label": "I. WATER SUPPLY"
+        },
+        {
+            "key": "sewerage",
+            "section": 'accordion',
+            "formFieldType": "table",
+            "data": [],
+            "label": "II. SEWERAGE"
+        },
+        {
+            "key": "solidWaste",
+            "section": 'accordion',
+            "formFieldType": "table",
+            "data": [],
+            "label": "III. SOLID WASTE MANAGEMENT"
+        },
+        {
+            "key": "stromWater",
+            "section": 'accordion',
+            "formFieldType": "table",
+            "data": [],
+            "label": "IV. STROM WATER DRAINAGE"
+        },
+    ];
+
+    for (let eachObj of serviceLevelBenchmarkData) {
+        if (waterSupply.indexOf(eachObj.key) > -1) {
+            data[0].data.push(eachObj);
         }
-        if (sewerage.indexOf(key) > -1) {
-            data.sewerage[key] = serviceLevelBenchmarkData[key];
+        if (sewerage.indexOf(eachObj.key) > -1) {
+            data[1].data.push(eachObj);
         }
-        if (solidWaste.indexOf(key) > -1) {
-            data.solidWaste[key] = serviceLevelBenchmarkData[key];
+        if (solidWaste.indexOf(eachObj.key) > -1) {
+            data[2].data.push(eachObj);
         }
-        if (stromWater.indexOf(key) > -1) {
-            data.stromWater[key] = serviceLevelBenchmarkData[key];
+        if (stromWater.indexOf(eachObj.key) > -1) {
+            data[3].data.push(eachObj);
         }
     }
     return data;
+}
+
+// ------ Review Table + Dashboard. ------
+module.exports.formList = async (req, res) => {
+    let stateId = req.query.state;
+    let listOfUlbsFromState = await XviFcForm1DataCollection.find({ state: stateId }, { tab: 0 }).lean();
+
+    if (listOfUlbsFromState) {
+        let reviewTableData = [];
+        let obj = {};
+
+        for (let eachUlbForm of listOfUlbsFromState) {
+            let ulbData = await XviFcForm1DataCollection.find({ ulb: ObjectId(eachUlbForm.ulb) }, { tab: 1 }).lean();
+
+            // // Get Data submission %.
+            // for (let eachTab of ulbData[0].tab) {
+            //     if (eachTab.data) await getSubmissionPer(eachTab);
+            // }
+
+            let demographicDataSubmission = await getSubmissionPer(ulbData[0].tab[0].data);
+            console.log(demographicDataSubmission);
+
+            obj["stateName"] = "Assam"; //eachUlbForm.stateName;
+            obj["ulbName"] = "ULB name"; //eachUlbForm.ulbName;
+            obj["censusCode"] = "801213"; //eachUlbForm.censusCode ? eachUlbForm.censusCode : eachUlbForm.sbCode;
+            obj["ulbCategory"] = eachUlbForm.formId == 16 ? "Category 1" : eachUlbForm.formId == 17 ? "Category 2" : "";
+            obj["formStatus"] = eachUlbForm.formStatus;
+            obj["dataSubmitted"] = "80%"; //eachUlbForm.dataSubmitted;
+            obj["action"] = "View"; //eachUlbForm.action;
+
+            reviewTableData.push(obj);
+        }
+
+        return res.status(200).json({ status: true, message: "", data: reviewTableData });
+    } else {
+        return res.status(404).json({ status: false, message: "Soemthing went wrong" });
+    }
+
+};
+
+async function getSubmissionPer(eachTabData) {
+    let denominator = {
+        demographicDataForm1: 8,
+        demographicDataForm2: 9,
+        uplodDoc: 0,
+        financialData: 0,
+        accountingPractices: 13,
+        serviceLevelBenchmark: 0
+    };
+
+    let numeratorSaveAsDraft = 0;
+    let numeratorSubmit = 0;
+
+
+    for (eachAns of eachTabData) {
+
+        if (eachAns.key && eachAns.key == "yearOfConstitution") {
+            denominator["financialData"] = 2022 - Number(eachAns.saveAsDraftValue.split("-")[0]);
+            denominator["uplodDoc"] = 2022 - Number(eachAns.saveAsDraftValue.split("-")[0]);
+        }
+        if (eachAns.key && eachAns.key == "yearOfSlb") {
+            denominator["serviceLevelBenchmark"] = 2022 - Number(eachAns.saveAsDraftValue.split("-")[0]) + 1;
+        }
+
+        if (eachAns.saveAsDraftValue) numeratorSaveAsDraft += 1;
+        if (eachAns.value) numeratorSubmit += 1;
+    }
+
+    let saveAsDraftPer = denominator.demographicDataForm2 ? (numeratorSaveAsDraft / denominator.demographicDataForm2) * 100 : 0;
+    let submitPer = denominator.demographicDataForm2 ? (numeratorSubmit / denominator.demographicDataForm2) * 100 : 0;
+
+    return {
+        denominator,
+        numeratorSaveAsDraft,
+        numeratorSubmit,
+        saveAsDraftPer,
+        submitPer,
+    };
 }

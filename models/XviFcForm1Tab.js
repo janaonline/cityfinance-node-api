@@ -9,6 +9,7 @@ const XviFcForm1TabsSchema = new Schema({
     },
     id: {
         type: String,
+        unique: true,
     },
     key: {
         type: String,
@@ -18,13 +19,8 @@ const XviFcForm1TabsSchema = new Schema({
         type: String,
         default: ""
     },
-    text: {
-        type: String,
-        default: "",
-    },
     displayPriority: {
         type: Number,
-        // required: [true, "Display priority is required."]
     },
     formType: {
         type: String,

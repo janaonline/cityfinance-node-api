@@ -1,9 +1,14 @@
-const { years } = require("./xviFC_year");
-// module.exports.notRequiredValidations = ['caMembershipNo', 'population11', 'otherUpload']
-
 let financialYearTableHeader = ["2022-23", "2021-22", "2020-21", "2019-20", "2018-19", "2017-18", "2016-17", "2015-16"];
 
-let eachQuestionkeysForm2 = [
+let priorTabsForXviFcForm = {
+    "demographicData": "s1",
+    "financialData": "s2",
+    "uploadDoc": "s3",
+    "accountPractice": "s4",
+    "serviceLevelBenchmark": "s5"
+};
+
+let form1QuestionKeys = [
     "nameOfUlb",
     "nameOfState",
     "pop2011",
@@ -12,49 +17,27 @@ let eachQuestionkeysForm2 = [
     "yearOfElection",
     "isElected",
     "yearOfConstitution",
-    "yearOfSlb",
 
     "sourceOfFd",
-    "pTax",
-    "otherTax",
     "taxRevenue",
     "feeAndUserCharges",
     "interestIncome",
     "otherIncome",
-    "rentalIncome",
     "totOwnRevenue",
-    "centralSponsoredScheme",
-    "unionFinanceGrants",
     "centralGrants",
-    "sfcGrants",
-    "grantsOtherThanSfc",
-    "grantsWithoutState",
     "otherGrants",
     "totalGrants",
     "assignedRevAndCom",
     "otherRevenue",
     "totalRevenue",
-    "salaries",
-    "pension",
-    "otherExp",
     "establishmentExp",
     "oAndmExp",
     "interestAndfinacialChar",
     "otherRevenueExp",
-    "adExp",
     "totalRevenueExp",
     "capExp",
     "totalExp",
-    "centralStateBorrow",
-    "bonds",
-    "bankAndFinancial",
-    "otherBorrowing",
     "grossBorrowing",
-    "receivablePTax",
-    "receivableFee",
-    "otherReceivable",
-    "totalReceivable",
-    "totalCashAndBankBal",
 
     "accSystem",
     "accProvision",
@@ -70,7 +53,33 @@ let eachQuestionkeysForm2 = [
     "totVacancy",
     "accPosition",
 
-    "auditedAnnualFySt",
+    "auditedAnnualFySt"
+];
+let form2QuestionKeys = [
+    "yearOfSlb",
+
+    "pTax",
+    "noOfRegiProperty",
+    "otherTax",
+    "rentalIncome",
+    "centralSponsoredScheme",
+    "unionFinanceGrants",
+    "sfcGrants",
+    "grantsOtherThanSfc",
+    "grantsWithoutState",
+    "salaries",
+    "pension",
+    "otherExp",
+    "adExp",
+    "centralStateBorrow",
+    "bonds",
+    "bankAndFinancial",
+    "otherBorrowing",
+    "receivablePTax",
+    "receivableFee",
+    "otherReceivable",
+    "totalReceivable",
+    "totalCashAndBankBal",
 
     "coverageOfWs",
     "perCapitaOfWs",
@@ -99,10 +108,11 @@ let eachQuestionkeysForm2 = [
     "efficiencyInCollectionSwmUser",
     "efficiencyInRedressalCustomerSwm",
     "coverageOfStormDrainage",
-    "incidenceOfWaterLogging"
-]
+    "incidenceOfWaterLogging",
 
-let tempDb2 = {
+];
+
+let form1TempDb = {
     "nameOfUlb": {
         status: "Na",
         value: "",
@@ -143,22 +153,7 @@ let tempDb2 = {
         value: "",
         isDraft: true
     },
-    "yearOfSlb": {
-        status: "Na",
-        value: "",
-        isDraft: true
-    },
     "sourceOfFd": {
-        status: "Na",
-        value: "",
-        isDraft: true
-    },
-    "pTax": {
-        status: "Na",
-        value: "",
-        isDraft: true
-    },
-    "otherTax": {
         status: "Na",
         value: "",
         isDraft: true
@@ -183,42 +178,12 @@ let tempDb2 = {
         value: "",
         isDraft: true
     },
-    "rentalIncome": {
-        status: "Na",
-        value: "",
-        isDraft: true
-    },
     "totOwnRevenue": {
         status: "Na",
         value: "",
         isDraft: true
     },
-    "centralSponsoredScheme": {
-        status: "Na",
-        value: "",
-        isDraft: true
-    },
-    "unionFinanceGrants": {
-        status: "Na",
-        value: "",
-        isDraft: true
-    },
     "centralGrants": {
-        status: "Na",
-        value: "",
-        isDraft: true
-    },
-    "sfcGrants": {
-        status: "Na",
-        value: "",
-        isDraft: true
-    },
-    "grantsOtherThanSfc": {
-        status: "Na",
-        value: "",
-        isDraft: true
-    },
-    "grantsWithoutState": {
         status: "Na",
         value: "",
         isDraft: true
@@ -248,21 +213,6 @@ let tempDb2 = {
         value: "",
         isDraft: true
     },
-    "salaries": {
-        status: "Na",
-        value: "",
-        isDraft: true
-    },
-    "pension": {
-        status: "Na",
-        value: "",
-        isDraft: true
-    },
-    "otherExp": {
-        status: "Na",
-        value: "",
-        isDraft: true
-    },
     "establishmentExp": {
         status: "Na",
         value: "",
@@ -283,11 +233,6 @@ let tempDb2 = {
         value: "",
         isDraft: true
     },
-    "adExp": {
-        status: "Na",
-        value: "",
-        isDraft: true
-    },
     "totalRevenueExp": {
         status: "Na",
         value: "",
@@ -303,52 +248,7 @@ let tempDb2 = {
         value: "",
         isDraft: true
     },
-    "centralStateBorrow": {
-        status: "Na",
-        value: "",
-        isDraft: true
-    },
-    "bonds": {
-        status: "Na",
-        value: "",
-        isDraft: true
-    },
-    "bankAndFinancial": {
-        status: "Na",
-        value: "",
-        isDraft: true
-    },
-    "otherBorrowing": {
-        status: "Na",
-        value: "",
-        isDraft: true
-    },
     "grossBorrowing": {
-        status: "Na",
-        value: "",
-        isDraft: true
-    },
-    "receivablePTax": {
-        status: "Na",
-        value: "",
-        isDraft: true
-    },
-    "receivableFee": {
-        status: "Na",
-        value: "",
-        isDraft: true
-    },
-    "otherReceivable": {
-        status: "Na",
-        value: "",
-        isDraft: true
-    },
-    "totalReceivable": {
-        status: "Na",
-        value: "",
-        isDraft: true
-    },
-    "totalCashAndBankBal": {
         status: "Na",
         value: "",
         isDraft: true
@@ -419,6 +319,334 @@ let tempDb2 = {
         isDraft: true
     },
     "auditedAnnualFySt": {
+        status: "Na",
+        value: "",
+        isDraft: true
+    },
+}
+
+let form2TempDb = {
+    "nameOfUlb": {
+        status: "Na",
+        value: "",
+        isDraft: true
+    },
+    "nameOfState": {
+        status: "Na",
+        value: "",
+        isDraft: true
+    },
+    "pop2011": {
+        status: "Na",
+        value: "",
+        isDraft: true
+    },
+    "popApril2024": {
+        status: "Na",
+        value: "",
+        isDraft: true
+    },
+    "areaOfUlb": {
+        status: "Na",
+        value: "",
+        isDraft: true
+    },
+    "yearOfElection": {
+        status: "Na",
+        value: "",
+        isDraft: true
+    },
+    "isElected": {
+        status: "Na",
+        value: "",
+        isDraft: true
+    },
+    "yearOfConstitution": {
+        status: "Na",
+        value: "",
+        isDraft: true
+    },
+    "sourceOfFd": {
+        status: "Na",
+        value: "",
+        isDraft: true
+    },
+    "taxRevenue": {
+        status: "Na",
+        value: "",
+        isDraft: true
+    },
+    "feeAndUserCharges": {
+        status: "Na",
+        value: "",
+        isDraft: true
+    },
+    "interestIncome": {
+        status: "Na",
+        value: "",
+        isDraft: true
+    },
+    "otherIncome": {
+        status: "Na",
+        value: "",
+        isDraft: true
+    },
+    "totOwnRevenue": {
+        status: "Na",
+        value: "",
+        isDraft: true
+    },
+    "centralGrants": {
+        status: "Na",
+        value: "",
+        isDraft: true
+    },
+    "otherGrants": {
+        status: "Na",
+        value: "",
+        isDraft: true
+    },
+    "totalGrants": {
+        status: "Na",
+        value: "",
+        isDraft: true
+    },
+    "assignedRevAndCom": {
+        status: "Na",
+        value: "",
+        isDraft: true
+    },
+    "otherRevenue": {
+        status: "Na",
+        value: "",
+        isDraft: true
+    },
+    "totalRevenue": {
+        status: "Na",
+        value: "",
+        isDraft: true
+    },
+    "establishmentExp": {
+        status: "Na",
+        value: "",
+        isDraft: true
+    },
+    "oAndmExp": {
+        status: "Na",
+        value: "",
+        isDraft: true
+    },
+    "interestAndfinacialChar": {
+        status: "Na",
+        value: "",
+        isDraft: true
+    },
+    "otherRevenueExp": {
+        status: "Na",
+        value: "",
+        isDraft: true
+    },
+    "totalRevenueExp": {
+        status: "Na",
+        value: "",
+        isDraft: true
+    },
+    "capExp": {
+        status: "Na",
+        value: "",
+        isDraft: true
+    },
+    "totalExp": {
+        status: "Na",
+        value: "",
+        isDraft: true
+    },
+    "grossBorrowing": {
+        status: "Na",
+        value: "",
+        isDraft: true
+    },
+    "accSystem": {
+        status: "Na",
+        value: "",
+        isDraft: true
+    },
+    "accProvision": {
+        status: "Na",
+        value: "",
+        isDraft: true
+    },
+    "accInCashBasis": {
+        status: "Na",
+        value: "",
+        isDraft: true
+    },
+    "fsTransactionRecord": {
+        status: "Na",
+        value: "",
+        isDraft: true
+    },
+    "fsPreparedBy": {
+        status: "Na",
+        value: "",
+        isDraft: true
+    },
+    "revReceiptRecord": {
+        status: "Na",
+        value: "",
+        isDraft: true
+    },
+    "expRecord": {
+        status: "Na",
+        value: "",
+        isDraft: true
+    },
+    "accSoftware": {
+        status: "Na",
+        value: "",
+        isDraft: true
+    },
+    "onlineAccSysIntegrate": {
+        status: "Na",
+        value: "",
+        isDraft: true
+    },
+    "muniAudit": {
+        status: "Na",
+        value: "",
+        isDraft: true
+    },
+    "totSanction": {
+        status: "Na",
+        value: "",
+        isDraft: true
+    },
+    "totVacancy": {
+        status: "Na",
+        value: "",
+        isDraft: true
+    },
+    "accPosition": {
+        status: "Na",
+        value: "",
+        isDraft: true
+    },
+    "auditedAnnualFySt": {
+        status: "Na",
+        value: "",
+        isDraft: true
+    },
+    "yearOfSlb": {
+        status: "Na",
+        value: "",
+        isDraft: true
+    },
+    "pTax": {
+        status: "Na",
+        value: "",
+        isDraft: true
+    },
+    "noOfRegiProperty": {
+        status: "Na",
+        value: "",
+        isDraft: true
+    },
+    "otherTax": {
+        status: "Na",
+        value: "",
+        isDraft: true
+    },
+    "rentalIncome": {
+        status: "Na",
+        value: "",
+        isDraft: true
+    },
+    "centralSponsoredScheme": {
+        status: "Na",
+        value: "",
+        isDraft: true
+    },
+    "unionFinanceGrants": {
+        status: "Na",
+        value: "",
+        isDraft: true
+    },
+    "sfcGrants": {
+        status: "Na",
+        value: "",
+        isDraft: true
+    },
+    "grantsOtherThanSfc": {
+        status: "Na",
+        value: "",
+        isDraft: true
+    },
+    "grantsWithoutState": {
+        status: "Na",
+        value: "",
+        isDraft: true
+    },
+    "salaries": {
+        status: "Na",
+        value: "",
+        isDraft: true
+    },
+    "pension": {
+        status: "Na",
+        value: "",
+        isDraft: true
+    },
+    "otherExp": {
+        status: "Na",
+        value: "",
+        isDraft: true
+    },
+    "adExp": {
+        status: "Na",
+        value: "",
+        isDraft: true
+    },
+    "centralStateBorrow": {
+        status: "Na",
+        value: "",
+        isDraft: true
+    },
+    "bonds": {
+        status: "Na",
+        value: "",
+        isDraft: true
+    },
+    "bankAndFinancial": {
+        status: "Na",
+        value: "",
+        isDraft: true
+    },
+    "otherBorrowing": {
+        status: "Na",
+        value: "",
+        isDraft: true
+    },
+    "receivablePTax": {
+        status: "Na",
+        value: "",
+        isDraft: true
+    },
+    "receivableFee": {
+        status: "Na",
+        value: "",
+        isDraft: true
+    },
+    "otherReceivable": {
+        status: "Na",
+        value: "",
+        isDraft: true
+    },
+    "totalReceivable": {
+        status: "Na",
+        value: "",
+        isDraft: true
+    },
+    "totalCashAndBankBal": {
         status: "Na",
         value: "",
         isDraft: true
@@ -565,26 +793,71 @@ let tempDb2 = {
     },
 }
 
-function getInputKeysByType(selectedKeyDetails, dataSource) {
+function getInputKeysByType(selectedKeyDetails, isReadOnly, dataSource, formType, frontendYear_Fd, frontendYear_Slb) {
+
     let obj = {
         key: selectedKeyDetails.key,
+        readonly: isReadOnly,
+        class: selectedKeyDetails.autoSumValidation && selectedKeyDetails.autoSumValidation == 'sum' ? selectedKeyDetails.class + " " + "fw-bold" : selectedKeyDetails.class,
         label: selectedKeyDetails.label,
-        postion: selectedKeyDetails.displayPriority,
+        position: selectedKeyDetails.displayPriority,
+        quesPos: selectedKeyDetails.quesPos,
         required: selectedKeyDetails.required,
         info: selectedKeyDetails.info,
-        placeHolder: selectedKeyDetails.placeHolder ? selectedKeyDetails.placeHolder : "",
+        placeHolder: "",
         formFieldType: selectedKeyDetails.formFieldType,
         canShow: true,
+        validations: selectedKeyDetails.validations,
     }
 
-    if (selectedKeyDetails.formFieldType === "number") {
+    if (selectedKeyDetails.required == true) {
+        obj.validations = [];
+        obj.validations.push(
+            {
+                name: "required",
+                validator: 'required',
+                message: "Please fill in this required field."
+            },
+        )
+    }
+
+    if (selectedKeyDetails.formFieldType === "number" || selectedKeyDetails.formFieldType === "amount") {
         obj.warning = [];
+        obj.sumOf = [];
+        obj.validations = [];
         obj.max = selectedKeyDetails.max;
         obj.min = selectedKeyDetails.min;
         obj.decimal = selectedKeyDetails.decimal;
-        obj.validation = selectedKeyDetails.validation;
-        obj.logic = selectedKeyDetails.logic;
+        obj.autoSumValidation = selectedKeyDetails.autoSumValidation;
+        obj.sumOf = selectedKeyDetails.sumOf;
+
+        // obj.autoSumValidation = selectedKeyDetails.autoSumValidation;
+        // obj.autoSumValidation2 = selectedKeyDetails.autoSumValidation2;
+        // obj.sumOf = selectedKeyDetails.sumOf;
+        // obj.sumOf2 = selectedKeyDetails.sumOf2;
+
         obj.warning.push({ "value": 0, "condition": "eq", "message": 'Are you sure you want to continue with 0' });
+
+        obj.validations.push(
+            {
+                name: "min",
+                validator: selectedKeyDetails.min,
+                message: selectedKeyDetails.max > 99999999999999 ? "Please enter a valid number with at most 15 digits." : `Please enter a number between ${selectedKeyDetails.min} and ${selectedKeyDetails.max}.`
+            },
+            {
+                name: "max",
+                validator: selectedKeyDetails.max,
+                message: selectedKeyDetails.max > 99999999999999 ? "Please enter a valid number with at most 15 digits." : `Please enter a number between ${selectedKeyDetails.min} and ${selectedKeyDetails.max}.`
+            },
+        )
+        obj.validations.push(
+            {
+                name: "decimal",
+                validator: selectedKeyDetails.decimal,
+                message: !selectedKeyDetails.decimal ? "Please enter a whole number for this field." : `Please enter number with at most ${selectedKeyDetails.decimal} places.`,
+            }
+        )
+
     }
     else if (selectedKeyDetails.formFieldType === "radio" || selectedKeyDetails.formFieldType === "dropdown") {
         obj.options = selectedKeyDetails.options;
@@ -601,20 +874,22 @@ function getInputKeysByType(selectedKeyDetails, dataSource) {
     if (selectedKeyDetails.year > 1) {
         let positionCounter = 1;
         let yearData = [];
-        for (let year of financialYearTableHeader) {
+        let index = frontendYear_Fd ? financialYearTableHeader.indexOf(frontendYear_Fd) : frontendYear_Slb ? financialYearTableHeader.indexOf(frontendYear_Slb) + 1 : -1;
+
+        // console.log("frontendYear_Fd", frontendYear_Fd);
+
+        for (let i = 0; i < index; i++) {
             let eachYearobj = {};
             eachYearobj.warning = [];
-            eachYearobj["label"] = `FY ${year}`;
-            eachYearobj["key"] = `fy${year}_${selectedKeyDetails.key}`;
-            eachYearobj["postion"] = positionCounter++;
+            eachYearobj["label"] = `FY ${financialYearTableHeader[i]}`;
+            // eachYearobj["key"] = `fy${financialYearTableHeader[i]}_${selectedKeyDetails.key}`;
+            eachYearobj["key"] = financialYearTableHeader[i];
+            eachYearobj["position"] = positionCounter++;
             eachYearobj["type"] = selectedKeyDetails.key;
             eachYearobj["formFieldType"] = selectedKeyDetails.formFieldType;
             eachYearobj["value"] = "";
 
-            if (selectedKeyDetails.formFieldType === "number") {
-                eachYearobj.warning.push({ "value": 0, "condition": "eq", "message": 'Are you sure you want to continue with 0' });
-                if (selectedKeyDetails.warning) eachYearobj.warning.push(selectedKeyDetails.warning);
-            }
+            if (selectedKeyDetails.formFieldType === "number" || selectedKeyDetails.formFieldType === "amount") eachYearobj.warning.push({ "value": 0, "condition": "eq", "message": 'Are you sure you want to continue with 0' });
 
             if (selectedKeyDetails.formFieldType === "file") {
                 eachYearobj["isPdfAvailable"] = "";
@@ -636,6 +911,10 @@ function getInputKeysByType(selectedKeyDetails, dataSource) {
                     "Cash Flow Statement",
                     "Auditor Report",
                 ];
+                eachYearobj["verifyStatus"] = 1;
+                eachYearobj["rejectOption"] = "";
+                eachYearobj["rejectReason"] = "";
+                eachYearobj["allowedFileTypes"] = ['pdf'];
             }
 
             yearData.push(eachYearobj);
@@ -644,11 +923,12 @@ function getInputKeysByType(selectedKeyDetails, dataSource) {
     } else obj.value = "";
 
     return obj;
-
 }
 
-// module.exports.xviFcForm1Tabs = xviFcForm1Tabs; Getting from DB.
-module.exports.financialYearTableHeaderForm2 = financialYearTableHeader;
-module.exports.tempDbForm2 = tempDb2;
-module.exports.keysForm2 = eachQuestionkeysForm2;
-module.exports.getInputKeysByTypeForm2 = getInputKeysByType;
+module.exports.financialYearTableHeader = financialYearTableHeader;
+module.exports.priorTabsForXviFcForm = priorTabsForXviFcForm;
+module.exports.form1QuestionKeys = form1QuestionKeys;
+module.exports.form2QuestionKeys = form2QuestionKeys;
+module.exports.form1TempDb = form1TempDb;
+module.exports.form2TempDb = form2TempDb;
+module.exports.getInputKeysByType = getInputKeysByType;
