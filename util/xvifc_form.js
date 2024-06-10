@@ -281,7 +281,7 @@ let keyDetailsForm1 = {
         autoSumValidation: '',
         // autoSumValidation2: 'sum',
         sumOf: [],
-        // sumOf2: ['sfcGrants', 'grantsOtherThanSfc', 'otherGrantsWithoutState'],
+        // sumOf2: ['sfcGrants', 'grantsOtherThanSfc', 'grantsWithoutState'],
         min: -999999999999999,
         max: 999999999999999,
         decimal: 0
@@ -1021,7 +1021,7 @@ let keyDetailsForm2 = {
         // autoSumValidation: '',
         autoSumValidation: 'sum',
         // sumOf: [],
-        sumOf: ['sfcGrants', 'grantsOtherThanSfc', 'otherGrantsWithoutState'],
+        sumOf: ['sfcGrants', 'grantsOtherThanSfc', 'grantsWithoutState'],
         min: -999999999999999,
         max: 999999999999999,
         decimal: 0
@@ -1108,7 +1108,7 @@ let keyDetailsForm2 = {
         autoSumValidation: '',
         autoSumValidation2: 'sum',
         sumOf: ['salaries', 'pension', 'otherExp'],
-        sumOf2: '',
+        // sumOf2: '',
         min: -999999999999999,
         max: 999999999999999,
         decimal: 0
