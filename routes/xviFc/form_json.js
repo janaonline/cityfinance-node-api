@@ -800,7 +800,7 @@ function getInputKeysByType(selectedKeyDetails, isReadOnly, dataSource, formType
         readOnly: isReadOnly,
         class: selectedKeyDetails.autoSumValidation && selectedKeyDetails.autoSumValidation == 'sum' ? selectedKeyDetails.class + " " + "fw-bold" : selectedKeyDetails.class,
         label: selectedKeyDetails.label,
-        postion: selectedKeyDetails.displayPriority,
+        position: selectedKeyDetails.displayPriority,
         quesPos: selectedKeyDetails.quesPos,
         required: selectedKeyDetails.required,
         info: selectedKeyDetails.info,
@@ -884,7 +884,7 @@ function getInputKeysByType(selectedKeyDetails, isReadOnly, dataSource, formType
             eachYearobj["label"] = `FY ${financialYearTableHeader[i]}`;
             // eachYearobj["key"] = `fy${financialYearTableHeader[i]}_${selectedKeyDetails.key}`;
             eachYearobj["key"] = financialYearTableHeader[i];
-            eachYearobj["postion"] = positionCounter++;
+            eachYearobj["position"] = positionCounter++;
             eachYearobj["type"] = selectedKeyDetails.key;
             eachYearobj["formFieldType"] = selectedKeyDetails.formFieldType;
             eachYearobj["value"] = "";
