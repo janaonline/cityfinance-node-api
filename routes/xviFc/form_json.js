@@ -797,7 +797,7 @@ function getInputKeysByType(selectedKeyDetails, isReadOnly, dataSource, formType
 
     let obj = {
         key: selectedKeyDetails.key,
-        readOnly: isReadOnly,
+        readonly: isReadOnly,
         class: selectedKeyDetails.autoSumValidation && selectedKeyDetails.autoSumValidation == 'sum' ? selectedKeyDetails.class + " " + "fw-bold" : selectedKeyDetails.class,
         label: selectedKeyDetails.label,
         position: selectedKeyDetails.displayPriority,
