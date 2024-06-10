@@ -882,7 +882,8 @@ function getInputKeysByType(selectedKeyDetails, isReadOnly, dataSource, formType
             let eachYearobj = {};
             eachYearobj.warning = [];
             eachYearobj["label"] = `FY ${financialYearTableHeader[i]}`;
-            eachYearobj["key"] = `fy${financialYearTableHeader[i]}_${selectedKeyDetails.key}`;
+            // eachYearobj["key"] = `fy${financialYearTableHeader[i]}_${selectedKeyDetails.key}`;
+            eachYearobj["key"] = financialYearTableHeader[i];
             eachYearobj["postion"] = positionCounter++;
             eachYearobj["type"] = selectedKeyDetails.key;
             eachYearobj["formFieldType"] = selectedKeyDetails.formFieldType;
