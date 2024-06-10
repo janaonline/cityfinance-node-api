@@ -811,6 +811,7 @@ function getInputKeysByType(selectedKeyDetails, isReadOnly, dataSource, formType
     }
 
     if (selectedKeyDetails.required == true) {
+        obj.validations = [];
         obj.validations.push(
             {
                 name: "required",
@@ -823,6 +824,7 @@ function getInputKeysByType(selectedKeyDetails, isReadOnly, dataSource, formType
     if (selectedKeyDetails.formFieldType === "number" || selectedKeyDetails.formFieldType === "amount") {
         obj.warning = [];
         obj.sumOf = [];
+        obj.validations = [];
         obj.max = selectedKeyDetails.max;
         obj.min = selectedKeyDetails.min;
         obj.decimal = selectedKeyDetails.decimal;

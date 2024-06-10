@@ -329,6 +329,9 @@ async function getForm1(ulbData, stateData, roleName, submittedData) {
     let from1QuestionFromDb = await getModifiedTabsXvifcForm(xviFCForm1Tabs, xviFCForm1Table, "form1");
     let validationCounter = 0;
 
+    from1QuestionFromDb[0].data[0].value = ulbData.name;
+    from1QuestionFromDb[0].data[1].value = stateData.name;
+
     if (from1AnswerFromDb) {
         for (let eachQuestionObj of from1QuestionFromDb) {
             let indexOfKey = from1AnswerFromDb.tab.findIndex(x => x.tabKey === eachQuestionObj.key);
@@ -385,6 +388,9 @@ async function getForm1(ulbData, stateData, roleName, submittedData) {
                             for (let eachObj of eachQuestionObj.data) {
                                 if (selectedData.key && eachObj.key && selectedData.key == eachObj.key) {
                                     eachObj.value = selectedData.saveAsDraftValue;
+
+                                    if (eachObj.key == "nameOfUlb") eachObj.value = ulbData.name;
+                                    if (eachObj.key == "nameOfState") eachObj.value = stateData.name;
 
                                     if (submittedData) {
                                         let validationArr = await validateValues(selectedData.formFieldType, selectedData.saveAsDraftValue, "", "", "", eachObj.max, eachObj.min, eachObj.decimal);
@@ -449,6 +455,7 @@ async function getForm2(ulbData, stateData, roleName, submittedData) {
     let xviFCForm2Table = form2TempDb;
     let currentFormStatus = from2AnswerFromDb && from2AnswerFromDb.formStatus ? from2AnswerFromDb.formStatus : '';
 
+
     // Get index of year of constitution from demographic data.
     if (from2AnswerFromDb) {
         demographicTabIndex = from2AnswerFromDb.tab.findIndex((x) => { return x.tabKey == "demographicData" });
@@ -499,6 +506,7 @@ async function getForm2(ulbData, stateData, roleName, submittedData) {
                                     delete eachObj.autoSumValidation2;
                                 }
 
+
                                 let yearDataIndex = eachObj.year.findIndex(x => x.key === selectedData.key)
                                 if (yearDataIndex > -1 && selectedData.key == eachObj.year[yearDataIndex].key) {
                                     eachObj.year[yearDataIndex].value = selectedData.saveAsDraftValue;
@@ -532,6 +540,10 @@ async function getForm2(ulbData, stateData, roleName, submittedData) {
 
                         if (eachQuestionObj.key == "demographicData" || eachQuestionObj.key == 'accountPractice') {
                             for (let eachObj of eachQuestionObj.data) {
+
+                                if (selectedData.key == "nameOfUlb") selectedData.saveAsDraftValue = ulbData.name;
+                                if (selectedData.key == "nameOfState") selectedData.saveAsDraftValue = stateData.name;
+
                                 if (selectedData.key && eachObj.key && selectedData.key == eachObj.key) {
                                     eachObj.value = selectedData.saveAsDraftValue;
 
@@ -550,6 +562,10 @@ async function getForm2(ulbData, stateData, roleName, submittedData) {
             }
         }
     }
+
+    from2QuestionFromDb[0].data[0].value = ulbData.name;
+    from2QuestionFromDb[0].data[1].value = stateData.name;
+
 
     // Add Primary keys to the keyDetails{}  - financialData.
     let financialData = from2QuestionFromDb[1].data;
