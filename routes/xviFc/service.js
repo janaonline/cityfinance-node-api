@@ -466,8 +466,6 @@ async function getForm2(ulbData, stateData, roleName, submittedData) {
         frontendYear_Slb = from2AnswerFromDb.tab[demographicTabIndex].data[IndexOfYearOfSlb].saveAsDraftValue;
     }
 
-
-
     // let keyDetails = Object.assign(keyDetailsForm1, keyDetailsForm2);
     // let keyDetails = { ...keyDetailsForm1, ...keyDetailsForm2 };
     let keyDetails = keyDetailsForm2;
@@ -1646,7 +1644,7 @@ async function getUpdatedFinancialData_headersForm2(allFinancialData) {
         "centralGrants",
         "sfcGrants",
         "grantsOtherThanSfc",
-        "otherGrantsWithoutState",
+        "grantsWithoutState",
         "otherGrants",
         "totalGrants",
         "assignedRevAndCom",

@@ -828,15 +828,18 @@ function getInputKeysByType(selectedKeyDetails, isReadOnly, dataSource, formType
         obj.max = selectedKeyDetails.max;
         obj.min = selectedKeyDetails.min;
         obj.decimal = selectedKeyDetails.decimal;
-        obj.autoSumValidation = selectedKeyDetails.autoSumValidation;
-        obj.sumOf = selectedKeyDetails.sumOf;
-
+        if (selectedKeyDetails.sumOf && selectedKeyDetails.sumOf.length > 0) {
+            obj.autoSumValidation = selectedKeyDetails.autoSumValidation;
+            obj.sumOf = selectedKeyDetails.sumOf;
+            obj.sumOrder = selectedKeyDetails.sumOrder;
+        }
         // obj.autoSumValidation = selectedKeyDetails.autoSumValidation;
         // obj.autoSumValidation2 = selectedKeyDetails.autoSumValidation2;
         // obj.sumOf = selectedKeyDetails.sumOf;
         // obj.sumOf2 = selectedKeyDetails.sumOf2;
 
         obj.warning.push({ "value": 0, "condition": "eq", "message": 'Are you sure you want to continue with 0' });
+        if (selectedKeyDetails.warning) obj.warning.push(selectedKeyDetails.warning);
 
         obj.validations.push(
             {
@@ -857,7 +860,7 @@ function getInputKeysByType(selectedKeyDetails, isReadOnly, dataSource, formType
                 message: !selectedKeyDetails.decimal ? "Please enter a whole number for this field." : `Please enter number with at most ${selectedKeyDetails.decimal} places.`,
             }
         )
-
+        if (selectedKeyDetails.validation) obj.validations.push(selectedKeyDetails.validation);
     }
     else if (selectedKeyDetails.formFieldType === "radio" || selectedKeyDetails.formFieldType === "dropdown") {
         obj.options = selectedKeyDetails.options;
@@ -876,11 +879,9 @@ function getInputKeysByType(selectedKeyDetails, isReadOnly, dataSource, formType
         let yearData = [];
         let index = frontendYear_Fd ? financialYearTableHeader.indexOf(frontendYear_Fd) : frontendYear_Slb ? financialYearTableHeader.indexOf(frontendYear_Slb) + 1 : -1;
 
-        // console.log("frontendYear_Fd", frontendYear_Fd);
-
         for (let i = 0; i < index; i++) {
             let eachYearobj = {};
-            eachYearobj.warning = [];
+            // eachYearobj.warning = [];
             eachYearobj["label"] = `FY ${financialYearTableHeader[i]}`;
             // eachYearobj["key"] = `fy${financialYearTableHeader[i]}_${selectedKeyDetails.key}`;
             eachYearobj["key"] = financialYearTableHeader[i];
@@ -889,7 +890,7 @@ function getInputKeysByType(selectedKeyDetails, isReadOnly, dataSource, formType
             eachYearobj["formFieldType"] = selectedKeyDetails.formFieldType;
             eachYearobj["value"] = "";
 
-            if (selectedKeyDetails.formFieldType === "number" || selectedKeyDetails.formFieldType === "amount") eachYearobj.warning.push({ "value": 0, "condition": "eq", "message": 'Are you sure you want to continue with 0' });
+            // if (selectedKeyDetails.formFieldType === "number" || selectedKeyDetails.formFieldType === "amount") eachYearobj.warning.push({ "value": 0, "condition": "eq", "message": 'Are you sure you want to continue with 0' });
 
             if (selectedKeyDetails.formFieldType === "file") {
                 eachYearobj["isPdfAvailable"] = "";
