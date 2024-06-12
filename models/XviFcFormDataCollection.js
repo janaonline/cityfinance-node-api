@@ -35,7 +35,8 @@ const xviFcFormDataCollectionSchema = new Schema(
                         type: { type: String },
                         name: { type: String },
                         url: { type: String },
-                    }]
+                    }],
+                    reason: { type: String },
                 }
             ]
         }],
