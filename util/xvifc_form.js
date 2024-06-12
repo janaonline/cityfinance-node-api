@@ -288,7 +288,7 @@ let keyDetailsForm1 = {
         decimal: 0
     },
     totalGrants: {
-        class: 'dotted-border-bottom-primary',
+        class: 'dotted-border-top-primary',
         formFieldType: 'amount',
         key: 'totalGrants',
         displayPriority: '2',
@@ -306,7 +306,7 @@ let keyDetailsForm1 = {
         decimal: 0
     },
     assignedRevAndCom: {
-        class: 'dotted-border-bottom-primary',
+        class: 'dotted-border-top-primary ',
         formFieldType: 'amount',
         key: 'assignedRevAndCom',
         displayPriority: '3',
@@ -323,7 +323,7 @@ let keyDetailsForm1 = {
         decimal: 0
     },
     otherRevenue: {
-        class: 'dotted-border-bottom-primary',
+        class: 'dotted-border-top-primary ',
         formFieldType: 'amount',
         key: 'otherRevenue',
         displayPriority: '4',
@@ -340,7 +340,7 @@ let keyDetailsForm1 = {
         decimal: 0
     },
     totalRevenue: {
-        class: 'dotted-border-bottom-primary',
+        class: 'dotted-border-top-primary ',
         formFieldType: 'amount',
         key: 'totalRevenue',
         displayPriority: '5',
@@ -438,7 +438,7 @@ let keyDetailsForm1 = {
         info: 'Total expenditure shall include establishment expenses, operations & maintenance + interest & finance charges and other expenditure.',
         required: true,
         year: 8,
-        // autoSumValidation: 'sum',
+        autoSumValidation: 'sum',
         sumOrder: 1,
         sumOf: ['establishmentExp', 'oAndmExp', 'interestAndfinacialChar', 'otherRevenueExp'],
         // sumOf2: ['establishmentExp', 'oAndmExp', 'interestAndfinacialChar', 'otherRevenueExp', 'adExp'],
@@ -447,7 +447,7 @@ let keyDetailsForm1 = {
         decimal: 0
     },
     capExp: {
-        class: 'dotted-border-bottom-primary',
+        class: 'dotted-border-top-primary ',
         formFieldType: 'amount',
         key: 'capExp',
         displayPriority: '7',
@@ -464,7 +464,7 @@ let keyDetailsForm1 = {
         decimal: 0
     },
     totalExp: {
-        class: 'dotted-border-bottom-primary',
+        class: 'dotted-border-top-primary ',
         formFieldType: 'amount',
         key: 'totalExp',
         displayPriority: '8',
@@ -1040,7 +1040,7 @@ let keyDetailsForm2 = {
         decimal: 0
     },
     totalGrants: {
-        class: 'dotted-border-bottom-primary',
+        class: 'dotted-border-top-primary ',
         formFieldType: 'amount',
         displayPriority: '2',
         quesPos: 20,
@@ -1057,7 +1057,7 @@ let keyDetailsForm2 = {
         decimal: 0
     },
     assignedRevAndCom: {
-        class: 'dotted-border-bottom-primary',
+        class: 'dotted-border-top-primary ',
         formFieldType: 'amount',
         key: 'assignedRevAndCom',
         displayPriority: '3',
@@ -1074,7 +1074,7 @@ let keyDetailsForm2 = {
         decimal: 0
     },
     otherRevenue: {
-        class: 'dotted-border-bottom-primary',
+        class: 'dotted-border-top-primary ',
         formFieldType: 'amount',
         key: 'otherRevenue',
         displayPriority: '4',
@@ -1091,7 +1091,7 @@ let keyDetailsForm2 = {
         decimal: 0
     },
     totalRevenue: {
-        class: 'dotted-border-bottom-primary',
+        class: 'dotted-border-top-primary ',
         formFieldType: 'amount',
         key: 'totalRevenue',
         displayPriority: '5',
@@ -1199,7 +1199,7 @@ let keyDetailsForm2 = {
         decimal: 0
     },
     capExp: {
-        class: 'dotted-border-bottom-primary',
+        class: 'dotted-border-top-primary ',
         formFieldType: 'amount',
         key: 'capExp',
         displayPriority: '7',
@@ -1216,7 +1216,7 @@ let keyDetailsForm2 = {
         decimal: 0
     },
     totalExp: {
-        class: 'dotted-border-bottom-primary',
+        class: 'dotted-border-top-primary ',
         formFieldType: 'amount',
         key: 'totalExp',
         displayPriority: '8',
@@ -1448,7 +1448,12 @@ let keyDetailsForm2 = {
         key: 'totVacancy',
         displayPriority: '12',
         quesPos: 64,
-        validations: [],
+        validations: {
+            "name": "lt",
+            "validator": 0,
+            "field": "totSanction",
+            "message": "'Total vacancy across finance & accounts related positions' cannot be greater than 'Total sanctioned posts for finance & accounts related positions '"
+        },
         label: 'What is the total vacancy across finance & accounts related positions?',
         info: '',
         required: true,

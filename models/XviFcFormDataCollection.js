@@ -4,7 +4,7 @@ const { Schema } = mongoose;
 // const { pdfSchema } = require("../util/masterFunctions");
 const { } = require("../util/FormNames");
 
-const FORM_FIELD_TYPE = ["text", "number", "dropdown", "radio"];
+const FORM_FIELD_TYPE = ["text", "number", "dropdown", "radio", "file"];
 
 const xviFcFormDataCollectionSchema = new Schema(
     {
@@ -18,15 +18,15 @@ const xviFcFormDataCollectionSchema = new Schema(
                 {
                     year: { type: String, default: "" },
                     displayPriority: { type: String, default: null },
-                    formFieldType: { type: String, default: "number", enum: FORM_FIELD_TYPE, message: `ERROR: STATUS MUST BE ONE OF ${FORM_FIELD_TYPE}` },
+                    formFieldType: { type: String, enum: FORM_FIELD_TYPE, message: `ERROR: STATUS MUST BE ONE OF ${FORM_FIELD_TYPE}` },
                     key: { type: String, required: true },
                     value: { type: Schema.Types.Mixed, default: null },
                     saveAsDraftValue: { type: Schema.Types.Mixed, default: null },
                     isActive: { type: Boolean, default: 1 },
-                    file: [{
+                    file: {
                         name: { type: String },
                         url: { type: String },
-                    }],
+                    },
                     isPdfAvailable: { type: Boolean, default: false },
                     fileApprovedByULB: { type: Boolean, default: true },
                     filesRejected: { type: String },

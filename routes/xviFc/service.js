@@ -169,7 +169,7 @@ module.exports.saveAsDraftForm = async (req, res) => {
         let existingSubmitData = await XviFcForm1DataCollection.find({ ulb: ulbId });
 
         if (existingSubmitData.length <= 0) {
-            ulbData_form = await XviFcForm1DataCollection.findOneAndUpdate({ ulb: ulbId }, ulbData_form, { upsert: true });
+            ulbData_form = await XviFcForm1DataCollection.findOneAndUpdate({ ulb: ulbId }, ulbData_form, { upsert: true }).exec();
             return res.status(200).json({ status: true, message: "Data successfully saved as draft!" });
         }
         else if (existingSubmitData.length > 0 && existingSubmitData[0].formStatus === 'IN_PROGRESS') {
@@ -191,7 +191,7 @@ module.exports.saveAsDraftForm = async (req, res) => {
                 }
             }
 
-            let updatedData = await XviFcForm1DataCollection.findOneAndUpdate({ ulb: ulbId }, ulbData_form, { upsert: true });
+            let updatedData = await XviFcForm1DataCollection.findOneAndUpdate({ ulb: ulbId }, ulbData_form, { upsert: true }).exec();;
             return res.status(200).json({ status: true, message: "Data successfully saved as draft!" });
         } else {
             return res.status(208).json({ status: true, message: "Form already submitted!" });
@@ -222,7 +222,7 @@ module.exports.submitFrom = async (req, res) => {
                 ulbData_form.formStatus = 'SUBMITTED';
                 ulbData_form.tracker.push({ eventName: "SUBMITTED", eventDate: new Date(), submittedBy: ulbId });
 
-                let updatedData = await XviFcForm1DataCollection.findOneAndUpdate({ ulb: ulbId }, ulbData_form, { upsert: true });
+                let updatedData = await XviFcForm1DataCollection.findOneAndUpdate({ ulb: ulbId }, ulbData_form, { upsert: true }).exec();
                 return res.status(200).json({ status: true, message: "DB successfully updated" });
             }
         } else {
@@ -305,7 +305,7 @@ async function getForm1(ulbData, stateData, roleName, submittedData) {
         tab.formType = "form1";
     });
     let xviFCForm1Table = form1TempDb;
-    let currentFormStatus = from1AnswerFromDb && from1AnswerFromDb.formStatus ? from1AnswerFromDb.formStatus : '';
+    let currentFormStatus = from1AnswerFromDb && from1AnswerFromDb.formStatus ? from1AnswerFromDb.formStatus : 'NOT_STARTED';
     // Get index of year of constitution from demographic data.
     if (from1AnswerFromDb) {
         demographicTabIndex = from1AnswerFromDb.tab.findIndex((x) => { return x.tabKey == "demographicData" });
@@ -369,9 +369,16 @@ async function getForm1(ulbData, stateData, roleName, submittedData) {
                         if (eachQuestionObj.key == "uploadDoc") {
                             for (let eachObj of eachQuestionObj.data) {
                                 let yearDataIndex = eachObj.year.findIndex(x => x.key === selectedData.key)
+
+                                // console.log("selectedData.key", selectedData);
+                                // console.log("yearDataIndex", yearDataIndex);
+
                                 if (yearDataIndex > -1 && selectedData.key == eachObj.year[yearDataIndex].key) {
-                                    eachObj.year[yearDataIndex].file.name = selectedData.file[0].name;
-                                    eachObj.year[yearDataIndex].file.url = selectedData.file[0].url;
+
+                                    // console.log("selectedData", selectedData.file);
+
+                                    eachObj.year[yearDataIndex].file.name = selectedData.file.name;
+                                    eachObj.year[yearDataIndex].file.url = selectedData.file.url;
 
 
                                     if (submittedData) {
@@ -453,7 +460,7 @@ async function getForm2(ulbData, stateData, roleName, submittedData) {
     // let xviFCForm2Table = Object.assign(form1TempDb, form2TempDb);
     // let xviFCForm2Table = { ...form1TempDb, ...form2TempDb };
     let xviFCForm2Table = form2TempDb;
-    let currentFormStatus = from2AnswerFromDb && from2AnswerFromDb.formStatus ? from2AnswerFromDb.formStatus : '';
+    let currentFormStatus = from2AnswerFromDb && from2AnswerFromDb.formStatus ? from2AnswerFromDb.formStatus : 'NOT_STARTED';
 
 
     // Get index of year of constitution from demographic data.
@@ -524,8 +531,8 @@ async function getForm2(ulbData, stateData, roleName, submittedData) {
                             for (let eachObj of eachQuestionObj.data) {
                                 let yearDataIndex = eachObj.year.findIndex(x => x.key === selectedData.key)
                                 if (yearDataIndex > -1 && selectedData.key == eachObj.year[yearDataIndex].key) {
-                                    eachObj.year[yearDataIndex].file.name = selectedData.file[0].name;
-                                    eachObj.year[yearDataIndex].file.url = selectedData.file[0].url;
+                                    eachObj.year[yearDataIndex].file.name = selectedData.file.name;
+                                    eachObj.year[yearDataIndex].file.url = selectedData.file.url;
 
 
                                     if (submittedData) {
