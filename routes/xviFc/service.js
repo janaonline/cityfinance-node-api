@@ -398,6 +398,7 @@ async function getForm1(ulbData, stateData, roleName, submittedData) {
 
                                     if (eachObj.key == "nameOfUlb") eachObj.value = ulbData.name;
                                     if (eachObj.key == "nameOfState") eachObj.value = stateData.name;
+                                    if (selectedData.reason) eachObj.reason = selectedData.reason;
 
                                     if (submittedData) {
                                         let validationArr = await validateValues(selectedData.formFieldType, selectedData.saveAsDraftValue, "", "", "", eachObj.max, eachObj.min, eachObj.decimal);
@@ -553,6 +554,8 @@ async function getForm2(ulbData, stateData, roleName, submittedData) {
 
                                 if (selectedData.key && eachObj.key && selectedData.key == eachObj.key) {
                                     eachObj.value = selectedData.saveAsDraftValue;
+
+                                    if (selectedData.reason) eachObj.reason = selectedData.reason;
 
                                     if (submittedData) {
                                         let validationArr = await validateValues(selectedData.formFieldType, selectedData.saveAsDraftValue, "", "", "", eachObj.max, eachObj.min, eachObj.decimal);

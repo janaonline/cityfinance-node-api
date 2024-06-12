@@ -809,22 +809,22 @@ function getInputKeysByType(selectedKeyDetails, isReadOnly, dataSource, formType
         canShow: true,
         validations: selectedKeyDetails.validations,
     }
-
-    if (selectedKeyDetails.required == true) {
-        obj.validations = [];
+    obj.validations = [];
+    if (selectedKeyDetails.required === true) {
+        // obj.validations = [];
         obj.validations.push(
             {
                 name: "required",
                 validator: 'required',
                 message: "Please fill in this required field."
-            },
+            }
         )
     }
 
     if (selectedKeyDetails.formFieldType === "number" || selectedKeyDetails.formFieldType === "amount") {
         obj.warning = [];
         obj.sumOf = [];
-        obj.validations = [];
+        // obj.validations = [];
         obj.max = selectedKeyDetails.max;
         obj.min = selectedKeyDetails.min;
         obj.decimal = selectedKeyDetails.decimal;
@@ -860,12 +860,12 @@ function getInputKeysByType(selectedKeyDetails, isReadOnly, dataSource, formType
                 message: !selectedKeyDetails.decimal ? "Please enter a whole number for this field." : `Please enter number with at most ${selectedKeyDetails.decimal} places.`,
             }
         )
-        if (selectedKeyDetails.validation) obj.validations.push(selectedKeyDetails.validation);
+        if (selectedKeyDetails.validations) obj.validations.push(selectedKeyDetails.validations);
     }
     else if (selectedKeyDetails.formFieldType === "radio" || selectedKeyDetails.formFieldType === "dropdown") {
         obj.options = selectedKeyDetails.options;
         obj.showInputBox = selectedKeyDetails.showInputBox;
-        obj.inputBoxValue = "";
+        obj.reason = "";
     }
     else if (selectedKeyDetails.formFieldType === "file") {
         obj.max = selectedKeyDetails.max;
@@ -925,7 +925,7 @@ function getInputKeysByType(selectedKeyDetails, isReadOnly, dataSource, formType
                 eachYearobj["verifyStatus"] = 1;
                 eachYearobj["rejectOption"] = "";
                 eachYearobj["rejectReason"] = "";
-                // eachYearobj["allowedFileTypes"] = ['pdf'];
+                eachYearobj["allowedFileTypes"] = ['pdf'];
             }
 
             yearData.push(eachYearobj);
