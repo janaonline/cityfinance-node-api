@@ -88,7 +88,7 @@ let keyDetailsForm1 = {
     yearOfElection: {
         class: '',
         formFieldType: 'dropdown',
-        options: ["2023-24", "2022-23", "2021-22", "2020-21", "2019-20", "2018-19", "2017-18", "2016-17", "2015-16", "Before 2015-16"],
+        options: ["2024-25", "2023-24", "2022-23", "2021-22", "2020-21", "2019-20", "2018-19", "2017-18", "2016-17", "2015-16", "Before 2015-16"],
         showInputBox: "",
         key: 'yearOfElection',
         displayPriority: '6',
@@ -125,7 +125,7 @@ let keyDetailsForm1 = {
     yearOfConstitution: {
         class: '',
         formFieldType: 'dropdown',
-        options: ["2023-34", "2022-23", "2021-22", "2020-21", "2019-20", "2018-19", "2017-18", "2016-17", "In 2015-16", "Before 2015-16"],
+        options: ["2022-23", "2021-22", "2020-21", "2019-20", "2018-19", "2017-18", "2016-17", "In 2015-16", "Before 2015-16"],
         showInputBox: "",
         key: 'yearOfConstitution',
         displayPriority: '8',
@@ -242,6 +242,7 @@ let keyDetailsForm1 = {
         required: true,
         year: 8,
         autoSumValidation: 'sum',
+        sumOrder: 1,
         sumOf: ['taxRevenue', 'feeAndUserCharges', 'interestIncome', 'otherIncome'],
         // sumOf2: ['taxRevenue', 'feeAndUserCharges', 'interestIncome', 'otherIncome', 'rentalIncome'],
         min: -999999999999999,
@@ -287,7 +288,7 @@ let keyDetailsForm1 = {
         decimal: 0
     },
     totalGrants: {
-        class: '',
+        class: 'dotted-border-top-primary',
         formFieldType: 'amount',
         key: 'totalGrants',
         displayPriority: '2',
@@ -298,13 +299,14 @@ let keyDetailsForm1 = {
         required: true,
         year: 8,
         autoSumValidation: 'sum',
+        sumOrder: 1,
         sumOf: ['centralGrants', 'otherGrants'],
         min: -999999999999999,
         max: 999999999999999,
         decimal: 0
     },
     assignedRevAndCom: {
-        class: '',
+        class: 'dotted-border-top-primary ',
         formFieldType: 'amount',
         key: 'assignedRevAndCom',
         displayPriority: '3',
@@ -321,7 +323,7 @@ let keyDetailsForm1 = {
         decimal: 0
     },
     otherRevenue: {
-        class: '',
+        class: 'dotted-border-top-primary ',
         formFieldType: 'amount',
         key: 'otherRevenue',
         displayPriority: '4',
@@ -338,7 +340,7 @@ let keyDetailsForm1 = {
         decimal: 0
     },
     totalRevenue: {
-        class: '',
+        class: 'dotted-border-top-primary ',
         formFieldType: 'amount',
         key: 'totalRevenue',
         displayPriority: '5',
@@ -349,6 +351,7 @@ let keyDetailsForm1 = {
         required: true,
         year: 8,
         autoSumValidation: 'sum',
+        sumOrder: 2,
         sumOf: ['totOwnRevenue', 'totalGrants', 'assignedRevAndCom', 'otherRevenue'],
         min: -999999999999999,
         max: 999999999999999,
@@ -435,7 +438,8 @@ let keyDetailsForm1 = {
         info: 'Total expenditure shall include establishment expenses, operations & maintenance + interest & finance charges and other expenditure.',
         required: true,
         year: 8,
-        // autoSumValidation: 'sum',
+        autoSumValidation: 'sum',
+        sumOrder: 1,
         sumOf: ['establishmentExp', 'oAndmExp', 'interestAndfinacialChar', 'otherRevenueExp'],
         // sumOf2: ['establishmentExp', 'oAndmExp', 'interestAndfinacialChar', 'otherRevenueExp', 'adExp'],
         min: -999999999999999,
@@ -443,7 +447,7 @@ let keyDetailsForm1 = {
         decimal: 0
     },
     capExp: {
-        class: '',
+        class: 'dotted-border-top-primary ',
         formFieldType: 'amount',
         key: 'capExp',
         displayPriority: '7',
@@ -460,7 +464,7 @@ let keyDetailsForm1 = {
         decimal: 0
     },
     totalExp: {
-        class: '',
+        class: 'dotted-border-top-primary ',
         formFieldType: 'amount',
         key: 'totalExp',
         displayPriority: '8',
@@ -471,6 +475,7 @@ let keyDetailsForm1 = {
         required: true,
         year: 8,
         autoSumValidation: 'sum',
+        sumOrder: 2,
         sumOf: ['totalRevenueExp', 'capExp'],
         min: -999999999999999,
         max: 999999999999999,
@@ -690,8 +695,12 @@ let keyDetailsForm1 = {
         key: 'totVacancy',
         displayPriority: '12',
         quesPos: 64,
-        validations: [],
-        label: 'What is the total vacancy across finance & accounts related positions?',
+        validations: {
+            "name": "lt",
+            "validator": 0,
+            "field": "totSanction",
+            "message": "'Total vacancy across finance & accounts related positions' cannot be greater than 'Total sanctioned posts for finance & accounts related positions '"
+        },
         info: '',
         required: true,
         year: 1,
@@ -828,7 +837,7 @@ let keyDetailsForm2 = {
     yearOfElection: {
         class: '',
         formFieldType: 'dropdown',
-        options: ["2023-24", "2022-23", "2021-22", "2020-21", "2019-20", "2018-19", "2017-18", "2016-17", "2015-16", "Before 2015-16"],
+        options: ["2024-25", "2023-24", "2022-23", "2021-22", "2020-21", "2019-20", "2018-19", "2017-18", "2016-17", "2015-16", "Before 2015-16"],
         showInputBox: "",
         key: 'yearOfElection',
         displayPriority: '6',
@@ -865,7 +874,7 @@ let keyDetailsForm2 = {
     yearOfConstitution: {
         class: '',
         formFieldType: 'dropdown',
-        options: ["2023-34", "2022-23", "2021-22", "2020-21", "2019-20", "2018-19", "2017-18", "2016-17", "In 2015-16", "Before 2015-16"],
+        options: ["2022-23", "2021-22", "2020-21", "2019-20", "2018-19", "2017-18", "2016-17", "In 2015-16", "Before 2015-16"],
         showInputBox: "",
         key: 'yearOfConstitution',
         displayPriority: '8',
@@ -914,6 +923,7 @@ let keyDetailsForm2 = {
         // autoSumValidation: '',
         autoSumValidation: 'sum',
         // sumOf: '',
+        sumOrder: 1,
         sumOf: ['pTax', 'otherTax'],
         min: -999999999999999,
         max: 999999999999999,
@@ -983,6 +993,7 @@ let keyDetailsForm2 = {
         year: 8,
         autoSumValidation: 'sum',
         // sumOf: ['taxRevenue', 'feeAndUserCharges', 'interestIncome', 'otherIncome'],
+        sumOrder: 2,
         sumOf: ['taxRevenue', 'feeAndUserCharges', 'interestIncome', 'otherIncome', 'rentalIncome'],
         min: -999999999999999,
         max: 999999999999999,
@@ -1002,6 +1013,7 @@ let keyDetailsForm2 = {
         // autoSumValidation: '',
         autoSumValidation: 'sum',
         // sumOf: [],
+        sumOrder: 1,
         sumOf: ['centralSponsoredScheme', 'unionFinanceGrants'],
         min: -999999999999999,
         max: 999999999999999,
@@ -1021,15 +1033,15 @@ let keyDetailsForm2 = {
         // autoSumValidation: '',
         autoSumValidation: 'sum',
         // sumOf: [],
+        sumOrder: 1,
         sumOf: ['sfcGrants', 'grantsOtherThanSfc', 'grantsWithoutState'],
         min: -999999999999999,
         max: 999999999999999,
         decimal: 0
     },
     totalGrants: {
-        class: '',
+        class: 'dotted-border-top-primary ',
         formFieldType: 'amount',
-        key: 'totalGrants',
         displayPriority: '2',
         quesPos: 20,
         validations: [],
@@ -1038,13 +1050,14 @@ let keyDetailsForm2 = {
         required: true,
         year: 8,
         autoSumValidation: 'sum',
+        sumOrder: 2,
         sumOf: ['centralGrants', 'otherGrants'],
         min: -999999999999999,
         max: 999999999999999,
         decimal: 0
     },
     assignedRevAndCom: {
-        class: '',
+        class: 'dotted-border-top-primary ',
         formFieldType: 'amount',
         key: 'assignedRevAndCom',
         displayPriority: '3',
@@ -1061,7 +1074,7 @@ let keyDetailsForm2 = {
         decimal: 0
     },
     otherRevenue: {
-        class: '',
+        class: 'dotted-border-top-primary ',
         formFieldType: 'amount',
         key: 'otherRevenue',
         displayPriority: '4',
@@ -1078,7 +1091,7 @@ let keyDetailsForm2 = {
         decimal: 0
     },
     totalRevenue: {
-        class: '',
+        class: 'dotted-border-top-primary ',
         formFieldType: 'amount',
         key: 'totalRevenue',
         displayPriority: '5',
@@ -1089,6 +1102,7 @@ let keyDetailsForm2 = {
         required: true,
         year: 8,
         autoSumValidation: 'sum',
+        sumOrder: 3,
         sumOf: ['totOwnRevenue', 'totalGrants', 'assignedRevAndCom', 'otherRevenue'],
         min: -999999999999999,
         max: 999999999999999,
@@ -1107,6 +1121,7 @@ let keyDetailsForm2 = {
         year: 8,
         autoSumValidation: '',
         autoSumValidation2: 'sum',
+        sumOrder: 1,
         sumOf: ['salaries', 'pension', 'otherExp'],
         // sumOf2: '',
         min: -999999999999999,
@@ -1176,6 +1191,7 @@ let keyDetailsForm2 = {
         required: true,
         year: 8,
         autoSumValidation: 'sum',
+        sumOrder: 2,
         // sumOf: ['establishmentExp', 'oAndmExp', 'interestAndfinacialChar', 'otherRevenueExp'],
         sumOf: ['establishmentExp', 'oAndmExp', 'interestAndfinacialChar', 'otherRevenueExp', 'adExp'],
         min: -999999999999999,
@@ -1183,7 +1199,7 @@ let keyDetailsForm2 = {
         decimal: 0
     },
     capExp: {
-        class: '',
+        class: 'dotted-border-top-primary ',
         formFieldType: 'amount',
         key: 'capExp',
         displayPriority: '7',
@@ -1200,7 +1216,7 @@ let keyDetailsForm2 = {
         decimal: 0
     },
     totalExp: {
-        class: '',
+        class: 'dotted-border-top-primary ',
         formFieldType: 'amount',
         key: 'totalExp',
         displayPriority: '8',
@@ -1211,6 +1227,7 @@ let keyDetailsForm2 = {
         required: true,
         year: 8,
         autoSumValidation: 'sum',
+        sumOrder: 3,
         sumOf: ['totalRevenueExp', 'capExp'],
         min: -999999999999999,
         max: 999999999999999,
@@ -1230,6 +1247,7 @@ let keyDetailsForm2 = {
         // autoSumValidation: '',
         autoSumValidation: 'sum',
         // sumOf: [],
+        sumOrder: 2,
         sumOf: ['centralStateBorrow', 'bonds', 'bankAndFinancial', 'otherBorrowing'],
         min: -999999999999999,
         max: 999999999999999,
@@ -1430,7 +1448,12 @@ let keyDetailsForm2 = {
         key: 'totVacancy',
         displayPriority: '12',
         quesPos: 64,
-        validations: [],
+        validations: {
+            "name": "lt",
+            "validator": 0,
+            "field": "totSanction",
+            "message": "'Total vacancy across finance & accounts related positions' cannot be greater than 'Total sanctioned posts for finance & accounts related positions '"
+        },
         label: 'What is the total vacancy across finance & accounts related positions?',
         info: '',
         required: true,
@@ -1484,7 +1507,7 @@ let keyDetailsForm2 = {
     yearOfSlb: {
         class: '',
         formFieldType: 'dropdown',
-        options: ["2023-24", "2022-23", "2021-22", "2020-21", "2019-20", "2018-19", "2017-18", "2016-17", "2015-16"],
+        options: ["2022-23", "2021-22", "2020-21", "2019-20", "2018-19", "2017-18", "2016-17", "2015-16"],
         showInputBox: "",
         key: 'yearOfSlb',
         displayPriority: '9',
@@ -1852,6 +1875,7 @@ let keyDetailsForm2 = {
         required: true,
         year: 8,
         autoSumValidation: 'sum',
+        sumOrder: 2,
         sumOf: ['receivablePTax', 'receivableFee', 'otherReceivable'],
         min: -999999999999999,
         max: 999999999999999,
@@ -2387,40 +2411,6 @@ let keyDetailsForm2 = {
     }
 }
 
-// async function getFromWiseKeyDetails(formType) {
-
-//     let tempkeyDetailsForm1 = {};
-
-//     if (formType == 'form1') {
-//         tempkeyDetailsForm1 = JSON.parse(JSON.stringify(keyDetailsForm1));
-//         return tempkeyDetailsForm1;
-//     }
-//     // if (formType == 'form2') {
-//     //     tempkeyDetailsForm1 = JSON.parse(JSON.stringify(keyDetailsForm1));
-//     //     tempkeyDetailsForm1.taxRevenue.autoSumValidation = 'sum';
-//     //     tempkeyDetailsForm1.taxRevenue.logic = ['1.1.1', '1.1.2'];
-
-//     //     tempkeyDetailsForm1.totOwnRevenue.autoSumValidation = 'sum';
-//     //     tempkeyDetailsForm1.totOwnRevenue.logic = ['1.1', '1.2', '1.3', '1.4', '1.5'];
-
-//     //     tempkeyDetailsForm1.centralGrants.autoSumValidation = 'sum';
-//     //     tempkeyDetailsForm1.centralGrants.logic = ['2.1.1', '2.1.2'];
-
-//     //     tempkeyDetailsForm1.otherGrants.autoSumValidation = 'sum';
-//     //     tempkeyDetailsForm1.otherGrants.logic = ['2.2.1', '2.2.2', '2.2.3'];
-
-//     //     tempkeyDetailsForm1.establishmentExp.autoSumValidation = 'sum';
-//     //     tempkeyDetailsForm1.establishmentExp.logic = ['6.1.1', '6.1.2', '6.1.3'];
-
-//     //     tempkeyDetailsForm1.totalRevenueExp.autoSumValidation = 'sum';
-//     //     tempkeyDetailsForm1.totalRevenueExp.logic = ['6.1', '6.2', '6.3', '6.4', '6.5'];
-
-//     //     tempkeyDetailsForm1.grossBorrowing.autoSumValidation = 'sum';
-//     //     tempkeyDetailsForm1.grossBorrowing.logic = ['9.1', '9.2', '9.3', '9.4'];
-
-//     //     return Object.assign(tempkeyDetailsForm1, keyDetailsForm2);
-//     // }
-// }
 
 class tabsUpdationService {
 

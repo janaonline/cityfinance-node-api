@@ -828,15 +828,18 @@ function getInputKeysByType(selectedKeyDetails, isReadOnly, dataSource, formType
         obj.max = selectedKeyDetails.max;
         obj.min = selectedKeyDetails.min;
         obj.decimal = selectedKeyDetails.decimal;
-        obj.autoSumValidation = selectedKeyDetails.autoSumValidation;
-        obj.sumOf = selectedKeyDetails.sumOf;
-
+        if (selectedKeyDetails.sumOf && selectedKeyDetails.sumOf.length > 0) {
+            obj.autoSumValidation = selectedKeyDetails.autoSumValidation;
+            obj.sumOf = selectedKeyDetails.sumOf;
+            obj.sumOrder = selectedKeyDetails.sumOrder;
+        }
         // obj.autoSumValidation = selectedKeyDetails.autoSumValidation;
         // obj.autoSumValidation2 = selectedKeyDetails.autoSumValidation2;
         // obj.sumOf = selectedKeyDetails.sumOf;
         // obj.sumOf2 = selectedKeyDetails.sumOf2;
 
         obj.warning.push({ "value": 0, "condition": "eq", "message": 'Are you sure you want to continue with 0' });
+        if (selectedKeyDetails.warning) obj.warning.push(selectedKeyDetails.warning);
 
         obj.validations.push(
             {
@@ -857,7 +860,7 @@ function getInputKeysByType(selectedKeyDetails, isReadOnly, dataSource, formType
                 message: !selectedKeyDetails.decimal ? "Please enter a whole number for this field." : `Please enter number with at most ${selectedKeyDetails.decimal} places.`,
             }
         )
-
+        if (selectedKeyDetails.validation) obj.validations.push(selectedKeyDetails.validation);
     }
     else if (selectedKeyDetails.formFieldType === "radio" || selectedKeyDetails.formFieldType === "dropdown") {
         obj.options = selectedKeyDetails.options;
@@ -867,29 +870,37 @@ function getInputKeysByType(selectedKeyDetails, isReadOnly, dataSource, formType
     else if (selectedKeyDetails.formFieldType === "file") {
         obj.max = selectedKeyDetails.max;
         obj.min = selectedKeyDetails.min;
-        obj.bottomText = "Maximum of 5MB";
+        obj.bottomText = "Maximum of 20MB";
         obj.instruction = selectedKeyDetails.instruction;
     }
 
     if (selectedKeyDetails.year > 1) {
         let positionCounter = 1;
         let yearData = [];
-        let index = frontendYear_Fd ? financialYearTableHeader.indexOf(frontendYear_Fd) : frontendYear_Slb ? financialYearTableHeader.indexOf(frontendYear_Slb) + 1 : -1;
 
-        // console.log("frontendYear_Fd", frontendYear_Fd);
+        if (frontendYear_Fd && frontendYear_Fd.includes("In")) frontendYear_Fd = "2015-16";
+        if (frontendYear_Fd && frontendYear_Fd.includes("Before")) frontendYear_Fd = "2014-15";
+
+        let index = -1;
+        if (frontendYear_Fd == "2014-15") {
+            index = financialYearTableHeader.length;
+        } else {
+            index = frontendYear_Fd ? financialYearTableHeader.indexOf(frontendYear_Fd) : frontendYear_Slb ? financialYearTableHeader.indexOf(frontendYear_Slb) + 1 : -1;
+        }
 
         for (let i = 0; i < index; i++) {
             let eachYearobj = {};
-            eachYearobj.warning = [];
+            // eachYearobj.warning = [];
             eachYearobj["label"] = `FY ${financialYearTableHeader[i]}`;
-            // eachYearobj["key"] = `fy${financialYearTableHeader[i]}_${selectedKeyDetails.key}`;
-            eachYearobj["key"] = financialYearTableHeader[i];
+            eachYearobj["key"] = `fy${financialYearTableHeader[i]}_${selectedKeyDetails.key}`;
+            eachYearobj["year"] = financialYearTableHeader[i];
             eachYearobj["position"] = positionCounter++;
-            eachYearobj["type"] = selectedKeyDetails.key;
+            // eachYearobj["type"] = selectedKeyDetails.key;
+            eachYearobj["refKey"] = selectedKeyDetails.key;
             eachYearobj["formFieldType"] = selectedKeyDetails.formFieldType;
             eachYearobj["value"] = "";
 
-            if (selectedKeyDetails.formFieldType === "number" || selectedKeyDetails.formFieldType === "amount") eachYearobj.warning.push({ "value": 0, "condition": "eq", "message": 'Are you sure you want to continue with 0' });
+            // if (selectedKeyDetails.formFieldType === "number" || selectedKeyDetails.formFieldType === "amount") eachYearobj.warning.push({ "value": 0, "condition": "eq", "message": 'Are you sure you want to continue with 0' });
 
             if (selectedKeyDetails.formFieldType === "file") {
                 eachYearobj["isPdfAvailable"] = "";
@@ -914,7 +925,7 @@ function getInputKeysByType(selectedKeyDetails, isReadOnly, dataSource, formType
                 eachYearobj["verifyStatus"] = 1;
                 eachYearobj["rejectOption"] = "";
                 eachYearobj["rejectReason"] = "";
-                eachYearobj["allowedFileTypes"] = ['pdf'];
+                // eachYearobj["allowedFileTypes"] = ['pdf'];
             }
 
             yearData.push(eachYearobj);

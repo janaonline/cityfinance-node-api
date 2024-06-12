@@ -14,11 +14,11 @@ router.post('/onboard', passport.authenticate('jwt', { session: false }), (req, 
 });
 
 // router.post('/', verifyToken, xviFcService.get);
-router.post('/create_tabs', xviFcService.createxviFcFormTabs);
-router.post('/create_formJson', xviFcService.createxviFcFormJson);
-router.get('/fetch_form', xviFcService.getForm);
-router.post('/saveAsDraft', xviFcService.saveAsDraftForm);
-router.post('/submit_form', xviFcService.submitFrom);
+router.post('/create_tabs', verifyToken, xviFcService.createxviFcFormTabs);
+router.post('/create_formJson', verifyToken, xviFcService.createxviFcFormJson);
+router.get('/fetch_form', verifyToken, xviFcService.getForm);
+router.post('/saveAsDraft', verifyToken, xviFcService.saveAsDraftForm);
+router.post('/submit_form', verifyToken, xviFcService.submitFrom);
 
 router.get('/form_list', xviFcService.formList);
 
