@@ -168,9 +168,9 @@ let keyDetailsForm1 = {
         info: 'Tax revenue shall include property, water, drainage, sewerage,professional, entertainment and advertisment tax and all other tax revenues.',
         required: true,
         year: 8,
-        autoSumValidation: '',
+        // autoSumValidation: '',
         // autoSumValidation2: 'sum',
-        sumOf: '',
+        // sumOf: '',
         // sumOf2: ['pTax', 'otherTax'],
         min: -999999999999999,
         max: 999999999999999,
@@ -187,8 +187,8 @@ let keyDetailsForm1 = {
         info: 'Fees & user charges shall include Water supply, Fees & Sanitation / Sewerage, Garbage collection / Solid waste management, and all other fees & user charges.',
         required: true,
         year: 8,
-        autoSumValidation: '',
-        logic: '',
+        // autoSumValidation: '',
+        // logic: '',
         min: -999999999999999,
         max: 999999999999999,
         decimal: 0
@@ -204,8 +204,8 @@ let keyDetailsForm1 = {
         info: 'Interest income shall include sale from assets, land and other assets.',
         required: true,
         year: 8,
-        autoSumValidation: '',
-        logic: '',
+        // autoSumValidation: '',
+        // logic: '',
         min: -999999999999999,
         max: 999999999999999,
         decimal: 0
@@ -221,8 +221,8 @@ let keyDetailsForm1 = {
         info: 'Other income shall include sale & hire charges, income from investments,interest earned, etc.',
         required: true,
         year: 8,
-        autoSumValidation: '',
-        logic: '',
+        // autoSumValidation: '',
+        // logic: '',
         min: -999999999999999,
         max: 999999999999999,
         decimal: 0
@@ -303,7 +303,7 @@ let keyDetailsForm1 = {
         decimal: 0
     },
     assignedRevAndCom: {
-        class: 'dotted-border-top-primary ',
+        class: 'dotted-border-top-primary fw-bold',
         formFieldType: 'amount',
         key: 'assignedRevAndCom',
         displayPriority: '3',
@@ -320,7 +320,7 @@ let keyDetailsForm1 = {
         decimal: 0
     },
     otherRevenue: {
-        class: 'dotted-border-top-primary ',
+        class: 'dotted-border-top-primary fw-bold',
         formFieldType: 'amount',
         key: 'otherRevenue',
         displayPriority: '4',
@@ -365,9 +365,9 @@ let keyDetailsForm1 = {
         info: 'Expenses directly incurred on human resources of the ULB such as ,wages, and employee benefits such as retirement and pensions are called establishment expenses',
         required: true,
         year: 8,
-        autoSumValidation: '',
+        // autoSumValidation: '',
         // autoSumValidation2: 'sum',
-        sumOf: ['salaries', 'pension', 'otherExp'],
+        // sumOf: ['salaries', 'pension', 'otherExp'],
         // sumOf2: '',
         min: -999999999999999,
         max: 999999999999999,
@@ -444,7 +444,7 @@ let keyDetailsForm1 = {
         decimal: 0
     },
     capExp: {
-        class: 'dotted-border-top-primary ',
+        class: 'dotted-border-top-primary fw-bold',
         formFieldType: 'amount',
         key: 'capExp',
         displayPriority: '7',
@@ -479,7 +479,7 @@ let keyDetailsForm1 = {
         decimal: 0
     },
     grossBorrowing: {
-        class: '',
+        class: 'fw-bold',
         formFieldType: 'amount',
         key: 'grossBorrowing',
         displayPriority: '9',
@@ -501,20 +501,15 @@ let keyDetailsForm1 = {
         class: '',
         formFieldType: 'radio',
         options: [
-            { id: 'Cash Basis of Accounting' },
-            { id: 'Accrual Basis of Accounting' },
-            { id: 'Modified Cash/ Accrual Accounting' },
+            { id: 'Cash Basis of Accounting', info: "Revenues and expenses are recognised/recorded when the related cash receipts or cash payments take place." },
+            { id: 'Accrual Basis of Accounting', info: "Revenues and expneses are  recognised/recorded as they are earned or incurred (and not as money is received or paid) and recorded in the financial statements of the periods to which they relate." },
+            { id: 'Modified Cash/ Accrual Accounting', info: "Revenues are recognized/recorded when cash is received and expenses when they are paid, with the exception of capitalizing long-term assets and recording their related depreciation." },
         ],
         key: 'accSystem',
         displayPriority: '1',
         quesPos: 53,
         validations: [],
         label: 'What is the accounting system being followed by the ULB?',
-        info: {
-            "Cash basis of accounting": "Revenues and expenses are recognised/recorded when the related cash receipts or cash payments take place.",
-            "Accrual basis of accounting": "Revenues and expneses are  recognised/recorded as they are earned or incurred (and not as money is received or paid) and recorded in the financial statements of the periods to which they relate.",
-            "Modified": "Revenues are recognized/recorded when cash is received and expenses when they are paid, with the exception of capitalizing long-term assets and recording their related depreciation."
-        },
         required: true,
         year: 1
     },
@@ -1044,11 +1039,11 @@ let keyDetailsForm2 = {
         class: 'dotted-border-top-primary ',
         formFieldType: 'amount',
         key: 'totalGrants',
+        info: 'Assigned Revenue includes share in the revenues of the state government ,allocated to the ULB. This includes Entertainment Tax, Duty on Transfer of Properties,etc.',
         displayPriority: '2',
         quesPos: 20,
         validations: [],
         label: 'Total Grants',
-        info: '',
         required: true,
         year: 8,
         autoSumValidation: 'sum',
@@ -1059,7 +1054,7 @@ let keyDetailsForm2 = {
         decimal: 0
     },
     assignedRevAndCom: {
-        class: 'dotted-border-top-primary ',
+        class: 'dotted-border-top-primary fw-bold',
         formFieldType: 'amount',
         key: 'assignedRevAndCom',
         displayPriority: '3',
@@ -1076,7 +1071,7 @@ let keyDetailsForm2 = {
         decimal: 0
     },
     otherRevenue: {
-        class: 'dotted-border-top-primary ',
+        class: 'dotted-border-top-primary fw-bold',
         formFieldType: 'amount',
         key: 'otherRevenue',
         displayPriority: '4',
@@ -1121,11 +1116,9 @@ let keyDetailsForm2 = {
         info: 'Expenses directly incurred on human resources of the ULB such as ,wages, and employee benefits such as retirement and pensions are called establishment expenses',
         required: true,
         year: 8,
-        autoSumValidation: '',
-        autoSumValidation2: 'sum',
+        autoSumValidation: 'sum',
         sumOrder: 1,
         sumOf: ['salaries', 'pension', 'otherExp'],
-        // sumOf2: '',
         min: -999999999999999,
         max: 999999999999999,
         decimal: 0
@@ -1194,14 +1187,13 @@ let keyDetailsForm2 = {
         year: 8,
         autoSumValidation: 'sum',
         sumOrder: 2,
-        // sumOf: ['establishmentExp', 'oAndmExp', 'interestAndfinacialChar', 'otherRevenueExp'],
         sumOf: ['establishmentExp', 'oAndmExp', 'interestAndfinacialChar', 'otherRevenueExp', 'adExp'],
         min: -999999999999999,
         max: 999999999999999,
         decimal: 0
     },
     capExp: {
-        class: 'dotted-border-top-primary ',
+        class: 'dotted-border-top-primary fw-bold',
         formFieldType: 'amount',
         key: 'capExp',
         displayPriority: '7',
@@ -1246,9 +1238,7 @@ let keyDetailsForm2 = {
         info: 'Gross Borrowings = Sum of All Secured and Unsecured Loans',
         required: true,
         year: 8,
-        // autoSumValidation: '',
         autoSumValidation: 'sum',
-        // sumOf: [],
         sumOrder: 2,
         sumOf: ['centralStateBorrow', 'bonds', 'bankAndFinancial', 'otherBorrowing'],
         min: -999999999999999,
@@ -1259,20 +1249,15 @@ let keyDetailsForm2 = {
         class: '',
         formFieldType: 'radio',
         options: [
-            { id: 'Cash Basis of Accounting' },
-            { id: 'Accrual Basis of Accounting' },
-            { id: 'Modified Cash/ Accrual Accounting' },
+            { id: 'Cash Basis of Accounting', info: "Revenues and expenses are recognised/recorded when the related cash receipts or cash payments take place." },
+            { id: 'Accrual Basis of Accounting', info: "Revenues and expneses are  recognised/recorded as they are earned or incurred (and not as money is received or paid) and recorded in the financial statements of the periods to which they relate." },
+            { id: 'Modified Cash/ Accrual Accounting', info: "Revenues are recognized/recorded when cash is received and expenses when they are paid, with the exception of capitalizing long-term assets and recording their related depreciation." },
         ],
         key: 'accSystem',
         displayPriority: '1',
         quesPos: 53,
         validations: [],
         label: 'What is the accounting system being followed by the ULB?',
-        info: {
-            "Cash basis of accounting": "Revenues and expenses are recognised/recorded when the related cash receipts or cash payments take place.",
-            "Accrual basis of accounting": "Revenues and expneses are  recognised/recorded as they are earned or incurred (and not as money is received or paid) and recorded in the financial statements of the periods to which they relate.",
-            "Modified": "Revenues are recognized/recorded when cash is received and expenses when they are paid, with the exception of capitalizing long-term assets and recording their related depreciation."
-        },
         required: true,
         year: 1
     },
@@ -1889,7 +1874,7 @@ let keyDetailsForm2 = {
         decimal: ''
     },
     totalCashAndBankBal: {
-        class: '',
+        class: 'fw-bold',
         formFieldType: 'amount',
         key: 'totalCashAndBankBal',
         displayPriority: '11',

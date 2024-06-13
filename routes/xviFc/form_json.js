@@ -55,6 +55,35 @@ let form1QuestionKeys = [
 
     "auditedAnnualFySt"
 ];
+let slbKeys = ["coverageOfWs",
+    "perCapitaOfWs",
+    "extentOfMeteringWs",
+    "extentOfNonRevenueWs",
+    "continuityOfWs",
+    "efficiencyInRedressalCustomerWs",
+    "qualityOfWs",
+    "costRecoveryInWs",
+    "efficiencyInCollectionRelatedWs",
+    "coverageOfToiletsSew",
+    "coverageOfSewNet",
+    "collectionEfficiencySew",
+    "adequacyOfSew",
+    "qualityOfSew",
+    "extentOfReuseSew",
+    "efficiencyInRedressalCustomerSew",
+    "extentOfCostWaterSew",
+    "efficiencyInCollectionSew",
+    "householdLevelCoverageLevelSwm",
+    "efficiencyOfCollectionSwm",
+    "extentOfSegregationSwm",
+    "extentOfMunicipalSwm",
+    "extentOfScientificSolidSwm",
+    "extentOfCostInSwm",
+    "efficiencyInCollectionSwmUser",
+    "efficiencyInRedressalCustomerSwm",
+    "coverageOfStormDrainage",
+    "incidenceOfWaterLogging"]
+
 let form2QuestionKeys = [
     "yearOfSlb",
 
@@ -793,7 +822,7 @@ let form2TempDb = {
     },
 }
 
-function getInputKeysByType(selectedKeyDetails, isReadOnly, dataSource, formType, frontendYear_Fd, frontendYear_Slb) {
+async function getInputKeysByType(selectedKeyDetails, isReadOnly, dataSource, formType, frontendYear_Fd, frontendYear_Slb) {
 
     let obj = {
         key: selectedKeyDetails.key,
@@ -810,6 +839,7 @@ function getInputKeysByType(selectedKeyDetails, isReadOnly, dataSource, formType
         validations: selectedKeyDetails.validations,
     }
     obj.validations = [];
+    obj.year = [];
     if (selectedKeyDetails.required === true) {
         // obj.validations = [];
         obj.validations.push(
@@ -864,7 +894,7 @@ function getInputKeysByType(selectedKeyDetails, isReadOnly, dataSource, formType
     }
     else if (selectedKeyDetails.formFieldType === "radio" || selectedKeyDetails.formFieldType === "dropdown") {
         obj.options = selectedKeyDetails.options;
-        obj.showInputBox = selectedKeyDetails.showInputBox;
+        //obj.showInputBox = selectedKeyDetails.showInputBox;
         obj.reason = "";
     }
     else if (selectedKeyDetails.formFieldType === "file") {
@@ -874,64 +904,62 @@ function getInputKeysByType(selectedKeyDetails, isReadOnly, dataSource, formType
         obj.instruction = selectedKeyDetails.instruction;
     }
 
-    if (selectedKeyDetails.year > 1) {
-        let positionCounter = 1;
-        let yearData = [];
+    // if (selectedKeyDetails.year > 1) {
+    //     let positionCounter = 1;
+    //     let yearData = [];
+    //     if (frontendYear_Fd && frontendYear_Fd.includes("In")) frontendYear_Fd = "2015-16";
+    //     if (frontendYear_Fd && frontendYear_Fd.includes("Before")) frontendYear_Fd = "2014-15";
 
-        if (frontendYear_Fd && frontendYear_Fd.includes("In")) frontendYear_Fd = "2015-16";
-        if (frontendYear_Fd && frontendYear_Fd.includes("Before")) frontendYear_Fd = "2014-15";
+    //     let index = -1;
+    //     if (frontendYear_Fd == "2014-15") {
+    //         index = financialYearTableHeader.length;
+    //     } else {
+    //         index = frontendYear_Fd ? financialYearTableHeader.indexOf(frontendYear_Fd) : frontendYear_Slb ? financialYearTableHeader.indexOf(frontendYear_Slb) + 1 : -1;
+    //     }
+    //     for (let i = 0; i < index; i++) {
+    //         let eachYearobj = {};
+    //         // eachYearobj.warning = [];
+    //         eachYearobj["label"] = `FY ${financialYearTableHeader[i]}`;
+    //         eachYearobj["key"] = `fy${financialYearTableHeader[i]}_${selectedKeyDetails.key}`;
+    //         eachYearobj["year"] = financialYearTableHeader[i];
+    //         eachYearobj["position"] = positionCounter++;
+    //         // eachYearobj["type"] = selectedKeyDetails.key;
+    //         eachYearobj["refKey"] = selectedKeyDetails.key;
+    //         eachYearobj["formFieldType"] = selectedKeyDetails.formFieldType;
+    //         eachYearobj["value"] = "";
 
-        let index = -1;
-        if (frontendYear_Fd == "2014-15") {
-            index = financialYearTableHeader.length;
-        } else {
-            index = frontendYear_Fd ? financialYearTableHeader.indexOf(frontendYear_Fd) : frontendYear_Slb ? financialYearTableHeader.indexOf(frontendYear_Slb) + 1 : -1;
-        }
+    //         // if (selectedKeyDetails.formFieldType === "number" || selectedKeyDetails.formFieldType === "amount") eachYearobj.warning.push({ "value": 0, "condition": "eq", "message": 'Are you sure you want to continue with 0' });
 
-        for (let i = 0; i < index; i++) {
-            let eachYearobj = {};
-            // eachYearobj.warning = [];
-            eachYearobj["label"] = `FY ${financialYearTableHeader[i]}`;
-            eachYearobj["key"] = `fy${financialYearTableHeader[i]}_${selectedKeyDetails.key}`;
-            eachYearobj["year"] = financialYearTableHeader[i];
-            eachYearobj["position"] = positionCounter++;
-            // eachYearobj["type"] = selectedKeyDetails.key;
-            eachYearobj["refKey"] = selectedKeyDetails.key;
-            eachYearobj["formFieldType"] = selectedKeyDetails.formFieldType;
-            eachYearobj["value"] = "";
+    //         if (selectedKeyDetails.formFieldType === "file") {
+    //             eachYearobj["isPdfAvailable"] = "";
+    //             eachYearobj["file"] = {
+    //                 "name": "",
+    //                 "url": ""
+    //             };
+    //             eachYearobj["fileAlreadyOnCf"] = [{
+    //                 "name": "",
+    //                 "url": "",
+    //                 "type": "",
+    //                 "label": ""
+    //             }];
+    //             eachYearobj["fileRejectOptions"] = [
+    //                 "Balance Sheet",
+    //                 "Schedules To Balance Sheet",
+    //                 "Income And Expenditure",
+    //                 "Schedules To Income And Expenditure",
+    //                 "Cash Flow Statement",
+    //                 "Auditor Report",
+    //             ];
+    //             eachYearobj["verifyStatus"] = 1;
+    //             eachYearobj["rejectOption"] = "";
+    //             eachYearobj["rejectReason"] = "";
+    //             eachYearobj["allowedFileTypes"] = ['pdf'];
+    //         }
 
-            // if (selectedKeyDetails.formFieldType === "number" || selectedKeyDetails.formFieldType === "amount") eachYearobj.warning.push({ "value": 0, "condition": "eq", "message": 'Are you sure you want to continue with 0' });
-
-            if (selectedKeyDetails.formFieldType === "file") {
-                eachYearobj["isPdfAvailable"] = "";
-                eachYearobj["file"] = {
-                    "name": "",
-                    "url": ""
-                };
-                eachYearobj["fileAlreadyOnCf"] = [{
-                    "name": "",
-                    "url": "",
-                    "type": "",
-                    "label": ""
-                }];
-                eachYearobj["fileRejectOptions"] = [
-                    "Balance Sheet",
-                    "Schedules To Balance Sheet",
-                    "Income And Expenditure",
-                    "Schedules To Income And Expenditure",
-                    "Cash Flow Statement",
-                    "Auditor Report",
-                ];
-                eachYearobj["verifyStatus"] = 1;
-                eachYearobj["rejectOption"] = "";
-                eachYearobj["rejectReason"] = "";
-                eachYearobj["allowedFileTypes"] = ['pdf'];
-            }
-
-            yearData.push(eachYearobj);
-        }
-        obj.year = yearData;
-    } else obj.value = "";
+    //         yearData.push(eachYearobj);
+    //     }
+    //     obj.year = yearData;
+    // } else obj.value = "";
 
     return obj;
 }
@@ -942,4 +970,5 @@ module.exports.form1QuestionKeys = form1QuestionKeys;
 module.exports.form2QuestionKeys = form2QuestionKeys;
 module.exports.form1TempDb = form1TempDb;
 module.exports.form2TempDb = form2TempDb;
+module.exports.slbKeys=slbKeys;
 module.exports.getInputKeysByType = getInputKeysByType;
