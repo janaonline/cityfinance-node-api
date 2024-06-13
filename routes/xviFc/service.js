@@ -9,7 +9,7 @@ const FormsJson = require("../../models/FormsJson");
 const XviFcForm1DataCollection = require("../../models/XviFcFormDataCollection");
 const Year = require("../../models/Year");
 
-const { financialYearTableHeader, priorTabsForXviFcForm, form1QuestionKeys, form2QuestionKeys, form1TempDb, form2TempDb, getInputKeysByType } = require("./form_json");
+const { financialYearTableHeader, priorTabsForXviFcForm, form1QuestionKeys, form2QuestionKeys, slbKeys,form1TempDb, form2TempDb, getInputKeysByType } = require("./form_json");
 const { tabsUpdationService, keyDetailsForm1, keyDetailsForm2, getFromWiseKeyDetails } = require("../../util/xvifc_form")
 
 // One time function.
@@ -69,10 +69,10 @@ module.exports.createxviFcFormJson = async (req, res) => {
             if (xviFcFormTable.hasOwnProperty(formKeys[index])) {
                 let obj = xviFcFormTable[formKeys[index]];
 
-                xviFcFormTable[formKeys[index]] = getColumnWiseData(allKeysDetails, formKeys[index], obj, xviFcFormTable.isDraft, "", role, currentFormStatus);
+                xviFcFormTable[formKeys[index]] = await getColumnWiseData(allKeysDetails, formKeys[index], obj, xviFcFormTable.isDraft, "", role, currentFormStatus);
                 xviFcFormTable['readonly'] = true;
             } else {
-                xviFcFormTable[formKeys[index]] = getColumnWiseData(
+                xviFcFormTable[formKeys[index]] = await getColumnWiseData(
                     formKeys,
                     formKeys[index],
                     {
@@ -207,13 +207,14 @@ module.exports.submitFrom = async (req, res) => {
         let ulbData_form = req.body;
         let ulbId = ObjectId(req.query.ulb);
         let roleName = "ULB"; // TODO: make dynamic.
+        let userForm = await Ulb.findOne({ _id: ulbId }, { formType: 1, name: 1, state: 1, _id: 1, censusCode: 1, sbCode: 1 }).lean();
         let existingSubmitData = await XviFcForm1DataCollection.find({ ulb: ulbId });
-        let validateSubmitData = ulbData_form.formId === 16 ? ulbData_form.tab.length === 4 : (ulbData_form.formId === 17 ? ulbData_form.tab.length === 5 : false); // Get count of tabs received from frontend.
+        let validateSubmitData = userForm.formType === 'form1' ? ulbData_form.tab.length === 4 : (userForm.formType === 'form2' ? ulbData_form.tab.length === 5 : false); // Get count of tabs received from frontend.
 
         if (existingSubmitData.length > 0 && existingSubmitData[0].formStatus === 'IN_PROGRESS' && validateSubmitData) {
             // Check validation and update data from "saveAsDraftValue" to "value".
 
-            let getFormData = ulbData_form.formId == 16 ? await getForm1(ulbId, roleName, ulbData_form) : ulbData_form.formId == 17 ? await getForm2(ulbId, roleName, ulbData_form) : "";
+            let getFormData = userForm.formType === 'form1' ? await getForm1(ulbId, roleName, ulbData_form) : userForm.formType === 'form2' ? await getForm2(ulbId, roleName, ulbData_form) : "";
             // let validatedData = await checkValidations(ulbData_form, getFormData);
 
             if (getFormData.validationCounter > 0) {
@@ -315,15 +316,75 @@ async function getForm1(ulbData, stateData, roleName, submittedData) {
 
     // let keyDetails = await getFromWiseKeyDetails("form1");
     let keyDetails = keyDetailsForm1;
-    keyDetails["formType"] = "form1";
+        keyDetails["formType"] = "form1";
     for (let index = 0; index < form1QuestionKeys.length; index++) {
         if (xviFCForm1Table.hasOwnProperty(form1QuestionKeys[index])) {
             let obj = xviFCForm1Table[form1QuestionKeys[index]];
 
-            xviFCForm1Table[form1QuestionKeys[index]] = getColumnWiseData(keyDetails, form1QuestionKeys[index], obj, xviFCForm1Table.isDraft, "", role, currentFormStatus, frontendYear_Fd);
+            xviFCForm1Table[form1QuestionKeys[index]] = await getColumnWiseData(keyDetails, form1QuestionKeys[index], obj, xviFCForm1Table.isDraft, "", role, currentFormStatus, frontendYear_Fd);
             xviFCForm1Table['readonly'] = role == 'ULB' && (currentFormStatus == 'IN_PROGRESS' || currentFormStatus == 'NOT_STARTED') ? false : true;
+
+            if (keyDetails[form1QuestionKeys[index]].year > 1) {
+                let selectedKeyDetails ={};
+                let quekey = form1QuestionKeys[index];
+                    selectedKeyDetails = keyDetails[quekey];
+                let positionCounter = 1;
+                let yearData = [];
+                if (frontendYear_Fd && frontendYear_Fd.includes("In")) frontendYear_Fd = "2015-16";
+                if (frontendYear_Fd && frontendYear_Fd.includes("Before")) frontendYear_Fd = "2014-15";
+        
+                let yindex = -1;
+                if (frontendYear_Fd == "2014-15") {
+                    yindex = financialYearTableHeader.length;
+                } else {
+                    //index = frontendYear_Fd ? financialYearTableHeader.indexOf(frontendYear_Fd) : frontendYear_Slb ? financialYearTableHeader.indexOf(frontendYear_Slb) + 1 : -1;
+                    yindex = frontendYear_Fd ? financialYearTableHeader.indexOf(frontendYear_Fd) :  -1;
+                }
+                for (let i = 0; i < yindex; i++) {
+                    let eachYearobj = {};
+                    eachYearobj["label"] = `FY ${financialYearTableHeader[i]}`;
+                    eachYearobj["key"] = `fy${financialYearTableHeader[i]}_${selectedKeyDetails.key}`;
+                    eachYearobj["year"] = financialYearTableHeader[i];
+                    eachYearobj["position"] = positionCounter++;
+                    eachYearobj["refKey"] = selectedKeyDetails.key;
+                    eachYearobj["formFieldType"] = selectedKeyDetails.formFieldType;
+                    eachYearobj["value"] = "";
+                    if (selectedKeyDetails.formFieldType === "file") {
+                        eachYearobj["isPdfAvailable"] = "";
+                        eachYearobj["file"] = {
+                            "name": "",
+                            "url": ""
+                        };
+                        eachYearobj["fileAlreadyOnCf"] = [{
+                            "name": "",
+                            "url": "",
+                            "type": "",
+                            "label": ""
+                        }];
+                        eachYearobj["fileRejectOptions"] = [
+                            "Balance Sheet",
+                            "Schedules To Balance Sheet",
+                            "Income And Expenditure",
+                            "Schedules To Income And Expenditure",
+                            "Cash Flow Statement",
+                            "Auditor Report",
+                        ];
+                        eachYearobj["verifyStatus"] = 1;
+                        eachYearobj["rejectOption"] = "";
+                        eachYearobj["rejectReason"] = "";
+                        eachYearobj["allowedFileTypes"] = ['pdf'];
+                    }
+                   
+                    yearData.push(eachYearobj);
+                }
+                xviFCForm1Table[form1QuestionKeys[index]].year = yearData
+            } 
         }
     }
+
+
+  
+
 
     // Create a json structure - questions.
     let from1QuestionFromDb = await getModifiedTabsXvifcForm(xviFCForm1Tabs, xviFCForm1Table, "form1");
@@ -477,17 +538,78 @@ async function getForm2(ulbData, stateData, roleName, submittedData) {
     // let keyDetails = Object.assign(keyDetailsForm1, keyDetailsForm2);
     // let keyDetails = { ...keyDetailsForm1, ...keyDetailsForm2 };
     let keyDetails = keyDetailsForm2;
-    keyDetails["formType"] = "form2";
+        keyDetails["formType"] = "form2";
 
     let mergedForm2QuestionKeys = form1QuestionKeys.concat(form2QuestionKeys);
 
     for (let index = 0; index < mergedForm2QuestionKeys.length; index++) {
         if (xviFCForm2Table.hasOwnProperty(mergedForm2QuestionKeys[index])) {
             let obj = xviFCForm2Table[mergedForm2QuestionKeys[index]];
-            xviFCForm2Table[mergedForm2QuestionKeys[index]] = getColumnWiseData(keyDetails, mergedForm2QuestionKeys[index], obj, xviFCForm2Table.isDraft, "", role, currentFormStatus, frontendYear_Fd, frontendYear_Slb);
+            xviFCForm2Table[mergedForm2QuestionKeys[index]] = await getColumnWiseData(keyDetails, mergedForm2QuestionKeys[index], obj, xviFCForm2Table.isDraft, "", role, currentFormStatus, frontendYear_Fd, frontendYear_Slb);
             xviFCForm2Table['readonly'] = role == 'ULB' && (currentFormStatus == 'IN_PROGRESS' || currentFormStatus == 'NOT_STARTED') ? false : true;
+        
+            if (keyDetails[mergedForm2QuestionKeys[index]].year > 1) {
+                let selectedKeyDetails ={};
+                let quekey = mergedForm2QuestionKeys[index];
+                    selectedKeyDetails = keyDetails[quekey];
+                let positionCounter = 1;
+                let yearData = [];
+                if (frontendYear_Fd && frontendYear_Fd.includes("In")) frontendYear_Fd = "2015-16";
+                if (frontendYear_Fd && frontendYear_Fd.includes("Before")) frontendYear_Fd = "2014-15";
+        
+                let yindex = -1;
+                if (frontendYear_Fd == "2014-15") {
+                    yindex = financialYearTableHeader.length;
+                } else {
+                    if(slbKeys.includes(mergedForm2QuestionKeys[index])){
+                        yindex = frontendYear_Slb ? financialYearTableHeader.indexOf(frontendYear_Slb) + 1 : -1;
+                    }else{
+                          yindex = frontendYear_Fd ? financialYearTableHeader.indexOf(frontendYear_Fd) :  -1;
+                    }                  
+                }
+                for (let i = 0; i < yindex; i++) {
+                    let eachYearobj = {};
+                    eachYearobj["label"] = `FY ${financialYearTableHeader[i]}`;
+                    eachYearobj["key"] = `fy${financialYearTableHeader[i]}_${selectedKeyDetails.key}`;
+                    eachYearobj["year"] = financialYearTableHeader[i];
+                    eachYearobj["position"] = positionCounter++;
+                    eachYearobj["refKey"] = selectedKeyDetails.key;
+                    eachYearobj["formFieldType"] = selectedKeyDetails.formFieldType;
+                    eachYearobj["value"] = "";
+                    if (selectedKeyDetails.formFieldType === "file") {
+                        eachYearobj["isPdfAvailable"] = "";
+                        eachYearobj["file"] = {
+                            "name": "",
+                            "url": ""
+                        };
+                        eachYearobj["fileAlreadyOnCf"] = [{
+                            "name": "",
+                            "url": "",
+                            "type": "",
+                            "label": ""
+                        }];
+                        eachYearobj["fileRejectOptions"] = [
+                            "Balance Sheet",
+                            "Schedules To Balance Sheet",
+                            "Income And Expenditure",
+                            "Schedules To Income And Expenditure",
+                            "Cash Flow Statement",
+                            "Auditor Report",
+                        ];
+                        eachYearobj["verifyStatus"] = 1;
+                        eachYearobj["rejectOption"] = "";
+                        eachYearobj["rejectReason"] = "";
+                        eachYearobj["allowedFileTypes"] = ['pdf'];
+                    }
+                   
+                    yearData.push(eachYearobj);
+                }
+                xviFCForm2Table[mergedForm2QuestionKeys[index]].year = yearData
+            } 
+        
         }
     }
+    //console.log(xviFCForm2Table['sourceOfFd'])
     // Create a json structure - questions.
     let from2QuestionFromDb = await getModifiedTabsXvifcForm(xviFCForm2Tabs, xviFCForm2Table, "form2");
     let validationCounter = 0;
@@ -609,24 +731,24 @@ async function getForm2(ulbData, stateData, roleName, submittedData) {
 
 };
 
-const getColumnWiseData = (allKeys, key, obj, isDraft, dataSource = "", role, formStatus, frontendYear_Fd, frontendYear_Slb) => {
+async function  getColumnWiseData (allKeys, key, obj, isDraft, dataSource = "", role, formStatus, frontendYear_Fd, frontendYear_Slb)  {
     switch (key) {
         case "nameOfUlb": {
             return {
-                ...getInputKeysByType(allKeys["nameOfUlb"], true, dataSource, allKeys["formType"]),
+                ...await getInputKeysByType(allKeys["nameOfUlb"], true, dataSource, allKeys["formType"]),
                 ...obj,
             };
         }
         case "nameOfState": {
             return {
-                ...getInputKeysByType(allKeys["nameOfState"], true, dataSource, allKeys["formType"]),
+                ...await getInputKeysByType(allKeys["nameOfState"], true, dataSource, allKeys["formType"]),
                 ...obj,
             };
         }
         case "pop2011": {
             let isReadOnly = getReadOnly(formStatus, allKeys["pop2011"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["pop2011"], isReadOnly, dataSource, allKeys["formType"]),
+                ...await getInputKeysByType(allKeys["pop2011"], isReadOnly, dataSource, allKeys["formType"]),
                 ...obj,
                 // rejectReason:"",
             };
@@ -634,7 +756,7 @@ const getColumnWiseData = (allKeys, key, obj, isDraft, dataSource = "", role, fo
         case "popApril2024": {
             let isReadOnly = getReadOnly(formStatus, allKeys["popApril2024"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["popApril2024"], isReadOnly, dataSource, allKeys["formType"]),
+                ...await getInputKeysByType(allKeys["popApril2024"], isReadOnly, dataSource, allKeys["formType"]),
                 ...obj,
                 // rejectReason:"",
             };
@@ -642,7 +764,7 @@ const getColumnWiseData = (allKeys, key, obj, isDraft, dataSource = "", role, fo
         case "areaOfUlb": {
             let isReadOnly = getReadOnly(formStatus, allKeys["areaOfUlb"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["areaOfUlb"], isReadOnly, dataSource, allKeys["formType"]),
+                ...await getInputKeysByType(allKeys["areaOfUlb"], isReadOnly, dataSource, allKeys["formType"]),
                 ...obj,
                 // rejectReason:"",
             };
@@ -650,7 +772,7 @@ const getColumnWiseData = (allKeys, key, obj, isDraft, dataSource = "", role, fo
         case "yearOfElection": {
             let isReadOnly = getReadOnly(formStatus, allKeys["yearOfElection"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["yearOfElection"], isReadOnly, dataSource, allKeys["formType"]),
+                ...await getInputKeysByType(allKeys["yearOfElection"], isReadOnly, dataSource, allKeys["formType"]),
                 ...obj,
                 // rejectReason:"",
             };
@@ -658,7 +780,7 @@ const getColumnWiseData = (allKeys, key, obj, isDraft, dataSource = "", role, fo
         case "isElected": {
             let isReadOnly = getReadOnly(formStatus, allKeys["isElected"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["isElected"], isReadOnly, dataSource, allKeys["formType"]),
+                ...await getInputKeysByType(allKeys["isElected"], isReadOnly, dataSource, allKeys["formType"]),
                 ...obj,
                 // rejectReason:"",
             };
@@ -666,7 +788,7 @@ const getColumnWiseData = (allKeys, key, obj, isDraft, dataSource = "", role, fo
         case "yearOfConstitution": {
             let isReadOnly = getReadOnly(formStatus, allKeys["yearOfConstitution"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["yearOfConstitution"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
+                ...await getInputKeysByType(allKeys["yearOfConstitution"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
                 // rejectReason:"",
             };
@@ -674,7 +796,7 @@ const getColumnWiseData = (allKeys, key, obj, isDraft, dataSource = "", role, fo
         case "yearOfSlb": {
             let isReadOnly = getReadOnly(formStatus, allKeys["yearOfSlb"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["yearOfSlb"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd, frontendYear_Slb),
+                ...await getInputKeysByType(allKeys["yearOfSlb"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd, frontendYear_Slb),
                 ...obj,
                 // rejectReason:"",
             };
@@ -682,7 +804,7 @@ const getColumnWiseData = (allKeys, key, obj, isDraft, dataSource = "", role, fo
         case "sourceOfFd": {
             let isReadOnly = getReadOnly(formStatus, allKeys["sourceOfFd"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["sourceOfFd"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
+                ...await getInputKeysByType(allKeys["sourceOfFd"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
                 // rejectReason:"",
             };
@@ -690,7 +812,7 @@ const getColumnWiseData = (allKeys, key, obj, isDraft, dataSource = "", role, fo
         case "pTax": {
             let isReadOnly = getReadOnly(formStatus, allKeys["pTax"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["pTax"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
+                ...await getInputKeysByType(allKeys["pTax"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
                 // rejectReason:"",
             };
@@ -698,7 +820,7 @@ const getColumnWiseData = (allKeys, key, obj, isDraft, dataSource = "", role, fo
         case "noOfRegiProperty": {
             let isReadOnly = getReadOnly(formStatus, allKeys["noOfRegiProperty"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["noOfRegiProperty"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
+                ...await getInputKeysByType(allKeys["noOfRegiProperty"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
                 // rejectReason:"",
             };
@@ -706,7 +828,7 @@ const getColumnWiseData = (allKeys, key, obj, isDraft, dataSource = "", role, fo
         case "otherTax": {
             let isReadOnly = getReadOnly(formStatus, allKeys["otherTax"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["otherTax"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
+                ...await getInputKeysByType(allKeys["otherTax"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
                 // rejectReason:"",
             };
@@ -714,7 +836,7 @@ const getColumnWiseData = (allKeys, key, obj, isDraft, dataSource = "", role, fo
         case "taxRevenue": {
             let isReadOnly = getReadOnly(formStatus, allKeys["taxRevenue"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["taxRevenue"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
+                ...await getInputKeysByType(allKeys["taxRevenue"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
                 // rejectReason:"",
             };
@@ -722,7 +844,7 @@ const getColumnWiseData = (allKeys, key, obj, isDraft, dataSource = "", role, fo
         case "feeAndUserCharges": {
             let isReadOnly = getReadOnly(formStatus, allKeys["feeAndUserCharges"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["feeAndUserCharges"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
+                ...await getInputKeysByType(allKeys["feeAndUserCharges"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
                 // rejectReason:"",
             };
@@ -730,7 +852,7 @@ const getColumnWiseData = (allKeys, key, obj, isDraft, dataSource = "", role, fo
         case "interestIncome": {
             let isReadOnly = getReadOnly(formStatus, allKeys["interestIncome"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["interestIncome"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
+                ...await getInputKeysByType(allKeys["interestIncome"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
                 // rejectReason:"",
             };
@@ -738,7 +860,7 @@ const getColumnWiseData = (allKeys, key, obj, isDraft, dataSource = "", role, fo
         case "otherIncome": {
             let isReadOnly = getReadOnly(formStatus, allKeys["otherIncome"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["otherIncome"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
+                ...await getInputKeysByType(allKeys["otherIncome"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
                 // rejectReason:"",
             };
@@ -746,7 +868,7 @@ const getColumnWiseData = (allKeys, key, obj, isDraft, dataSource = "", role, fo
         case "rentalIncome": {
             let isReadOnly = getReadOnly(formStatus, allKeys["rentalIncome"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["rentalIncome"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
+                ...await getInputKeysByType(allKeys["rentalIncome"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
                 // rejectReason:"",
             };
@@ -754,7 +876,7 @@ const getColumnWiseData = (allKeys, key, obj, isDraft, dataSource = "", role, fo
         case "totOwnRevenue": {
             let isReadOnly = getReadOnly(formStatus, allKeys["totOwnRevenue"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["totOwnRevenue"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
+                ...await getInputKeysByType(allKeys["totOwnRevenue"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
                 // rejectReason:"",
             };
@@ -762,7 +884,7 @@ const getColumnWiseData = (allKeys, key, obj, isDraft, dataSource = "", role, fo
         case "centralSponsoredScheme": {
             let isReadOnly = getReadOnly(formStatus, allKeys["centralSponsoredScheme"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["centralSponsoredScheme"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
+                ...await getInputKeysByType(allKeys["centralSponsoredScheme"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
                 // rejectReason:"",
             };
@@ -770,7 +892,7 @@ const getColumnWiseData = (allKeys, key, obj, isDraft, dataSource = "", role, fo
         case "unionFinanceGrants": {
             let isReadOnly = getReadOnly(formStatus, allKeys["unionFinanceGrants"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["unionFinanceGrants"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
+                ...await getInputKeysByType(allKeys["unionFinanceGrants"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
                 // rejectReason:"",
             };
@@ -778,7 +900,7 @@ const getColumnWiseData = (allKeys, key, obj, isDraft, dataSource = "", role, fo
         case "centralGrants": {
             let isReadOnly = getReadOnly(formStatus, allKeys["centralGrants"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["centralGrants"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
+                ...await getInputKeysByType(allKeys["centralGrants"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
                 // rejectReason:"",
             };
@@ -786,7 +908,7 @@ const getColumnWiseData = (allKeys, key, obj, isDraft, dataSource = "", role, fo
         case "sfcGrants": {
             let isReadOnly = getReadOnly(formStatus, allKeys["sfcGrants"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["sfcGrants"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
+                ...await getInputKeysByType(allKeys["sfcGrants"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
                 // rejectReason:"",
             };
@@ -794,7 +916,7 @@ const getColumnWiseData = (allKeys, key, obj, isDraft, dataSource = "", role, fo
         case "grantsOtherThanSfc": {
             let isReadOnly = getReadOnly(formStatus, allKeys["grantsOtherThanSfc"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["grantsOtherThanSfc"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
+                ...await getInputKeysByType(allKeys["grantsOtherThanSfc"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
                 // rejectReason:"",
             };
@@ -802,7 +924,7 @@ const getColumnWiseData = (allKeys, key, obj, isDraft, dataSource = "", role, fo
         case "grantsWithoutState": {
             let isReadOnly = getReadOnly(formStatus, allKeys["grantsWithoutState"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["grantsWithoutState"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
+                ...await getInputKeysByType(allKeys["grantsWithoutState"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
                 // rejectReason:"",
             };
@@ -810,7 +932,7 @@ const getColumnWiseData = (allKeys, key, obj, isDraft, dataSource = "", role, fo
         case "otherGrants": {
             let isReadOnly = getReadOnly(formStatus, allKeys["otherGrants"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["otherGrants"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
+                ...await getInputKeysByType(allKeys["otherGrants"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
                 // rejectReason:"",
             };
@@ -818,7 +940,7 @@ const getColumnWiseData = (allKeys, key, obj, isDraft, dataSource = "", role, fo
         case "totalGrants": {
             let isReadOnly = getReadOnly(formStatus, allKeys["totalGrants"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["totalGrants"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
+                ...await getInputKeysByType(allKeys["totalGrants"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
                 // rejectReason:"",
             };
@@ -826,7 +948,7 @@ const getColumnWiseData = (allKeys, key, obj, isDraft, dataSource = "", role, fo
         case "assignedRevAndCom": {
             let isReadOnly = getReadOnly(formStatus, allKeys["assignedRevAndCom"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["assignedRevAndCom"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
+                ...await getInputKeysByType(allKeys["assignedRevAndCom"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
                 // rejectReason:"",
             };
@@ -834,7 +956,7 @@ const getColumnWiseData = (allKeys, key, obj, isDraft, dataSource = "", role, fo
         case "otherRevenue": {
             let isReadOnly = getReadOnly(formStatus, allKeys["otherRevenue"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["otherRevenue"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
+                ...await getInputKeysByType(allKeys["otherRevenue"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
                 // rejectReason:"",
             };
@@ -842,7 +964,7 @@ const getColumnWiseData = (allKeys, key, obj, isDraft, dataSource = "", role, fo
         case "totalRevenue": {
             let isReadOnly = getReadOnly(formStatus, allKeys["totalRevenue"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["totalRevenue"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
+                ...await getInputKeysByType(allKeys["totalRevenue"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
                 // rejectReason: "",
             };
@@ -850,7 +972,7 @@ const getColumnWiseData = (allKeys, key, obj, isDraft, dataSource = "", role, fo
         case "salaries": {
             let isReadOnly = getReadOnly(formStatus, allKeys["salaries"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["salaries"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
+                ...await getInputKeysByType(allKeys["salaries"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
                 // rejectReason:"",
             };
@@ -858,7 +980,7 @@ const getColumnWiseData = (allKeys, key, obj, isDraft, dataSource = "", role, fo
         case "pension": {
             let isReadOnly = getReadOnly(formStatus, allKeys["pension"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["pension"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
+                ...await getInputKeysByType(allKeys["pension"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
                 // rejectReason:"",
             };
@@ -866,7 +988,7 @@ const getColumnWiseData = (allKeys, key, obj, isDraft, dataSource = "", role, fo
         case "otherExp": {
             let isReadOnly = getReadOnly(formStatus, allKeys["otherExp"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["otherExp"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
+                ...await getInputKeysByType(allKeys["otherExp"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
                 // rejectReason:"",
             };
@@ -874,7 +996,7 @@ const getColumnWiseData = (allKeys, key, obj, isDraft, dataSource = "", role, fo
         case "establishmentExp": {
             let isReadOnly = getReadOnly(formStatus, allKeys["establishmentExp"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["establishmentExp"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
+                ...await getInputKeysByType(allKeys["establishmentExp"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
                 // rejectReason:"",
             };
@@ -882,7 +1004,7 @@ const getColumnWiseData = (allKeys, key, obj, isDraft, dataSource = "", role, fo
         case "oAndmExp": {
             let isReadOnly = getReadOnly(formStatus, allKeys["oAndmExp"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["oAndmExp"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
+                ...await getInputKeysByType(allKeys["oAndmExp"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
                 // rejectReason:"",
             };
@@ -890,7 +1012,7 @@ const getColumnWiseData = (allKeys, key, obj, isDraft, dataSource = "", role, fo
         case "interestAndfinacialChar": {
             let isReadOnly = getReadOnly(formStatus, allKeys["interestAndfinacialChar"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["interestAndfinacialChar"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
+                ...await getInputKeysByType(allKeys["interestAndfinacialChar"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
                 // rejectReason:"",
             };
@@ -898,7 +1020,7 @@ const getColumnWiseData = (allKeys, key, obj, isDraft, dataSource = "", role, fo
         case "otherRevenueExp": {
             let isReadOnly = getReadOnly(formStatus, allKeys["otherRevenueExp"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["otherRevenueExp"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
+                ...await getInputKeysByType(allKeys["otherRevenueExp"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
                 // rejectReason:"",
             };
@@ -906,7 +1028,7 @@ const getColumnWiseData = (allKeys, key, obj, isDraft, dataSource = "", role, fo
         case "adExp": {
             let isReadOnly = getReadOnly(formStatus, allKeys["adExp"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["adExp"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
+                ...await getInputKeysByType(allKeys["adExp"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
                 // rejectReason:"",
             };
@@ -914,7 +1036,7 @@ const getColumnWiseData = (allKeys, key, obj, isDraft, dataSource = "", role, fo
         case "totalRevenueExp": {
             let isReadOnly = getReadOnly(formStatus, allKeys["totalRevenueExp"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["totalRevenueExp"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
+                ...await getInputKeysByType(allKeys["totalRevenueExp"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
                 // rejectReason:"",
             };
@@ -922,7 +1044,7 @@ const getColumnWiseData = (allKeys, key, obj, isDraft, dataSource = "", role, fo
         case "capExp": {
             let isReadOnly = getReadOnly(formStatus, allKeys["capExp"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["capExp"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
+                ...await getInputKeysByType(allKeys["capExp"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
                 // rejectReason:"",
             };
@@ -930,7 +1052,7 @@ const getColumnWiseData = (allKeys, key, obj, isDraft, dataSource = "", role, fo
         case "totalExp": {
             let isReadOnly = getReadOnly(formStatus, allKeys["totalExp"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["totalExp"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
+                ...await getInputKeysByType(allKeys["totalExp"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
                 // rejectReason:"",
             };
@@ -938,7 +1060,7 @@ const getColumnWiseData = (allKeys, key, obj, isDraft, dataSource = "", role, fo
         case "centralStateBorrow": {
             let isReadOnly = getReadOnly(formStatus, allKeys["centralStateBorrow"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["centralStateBorrow"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
+                ...await getInputKeysByType(allKeys["centralStateBorrow"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
                 // rejectReason:"",
             };
@@ -946,7 +1068,7 @@ const getColumnWiseData = (allKeys, key, obj, isDraft, dataSource = "", role, fo
         case "bonds": {
             let isReadOnly = getReadOnly(formStatus, allKeys["bonds"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["bonds"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
+                ...await getInputKeysByType(allKeys["bonds"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
                 // rejectReason:"",
             };
@@ -954,7 +1076,7 @@ const getColumnWiseData = (allKeys, key, obj, isDraft, dataSource = "", role, fo
         case "bankAndFinancial": {
             let isReadOnly = getReadOnly(formStatus, allKeys["bankAndFinancial"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["bankAndFinancial"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
+                ...await getInputKeysByType(allKeys["bankAndFinancial"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
                 // rejectReason:"",
             };
@@ -962,7 +1084,7 @@ const getColumnWiseData = (allKeys, key, obj, isDraft, dataSource = "", role, fo
         case "otherBorrowing": {
             let isReadOnly = getReadOnly(formStatus, allKeys["otherBorrowing"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["otherBorrowing"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
+                ...await getInputKeysByType(allKeys["otherBorrowing"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
                 // rejectReason:"",
             };
@@ -970,7 +1092,7 @@ const getColumnWiseData = (allKeys, key, obj, isDraft, dataSource = "", role, fo
         case "grossBorrowing": {
             let isReadOnly = getReadOnly(formStatus, allKeys["grossBorrowing"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["grossBorrowing"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
+                ...await getInputKeysByType(allKeys["grossBorrowing"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
                 // rejectReason:"",
             };
@@ -978,7 +1100,7 @@ const getColumnWiseData = (allKeys, key, obj, isDraft, dataSource = "", role, fo
         case "receivablePTax": {
             let isReadOnly = getReadOnly(formStatus, allKeys["receivablePTax"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["receivablePTax"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
+                ...await getInputKeysByType(allKeys["receivablePTax"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
                 // rejectReason:"",
             };
@@ -986,7 +1108,7 @@ const getColumnWiseData = (allKeys, key, obj, isDraft, dataSource = "", role, fo
         case "receivableFee": {
             let isReadOnly = getReadOnly(formStatus, allKeys["receivableFee"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["receivableFee"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
+                ...await getInputKeysByType(allKeys["receivableFee"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
                 // rejectReason:"",
             };
@@ -994,7 +1116,7 @@ const getColumnWiseData = (allKeys, key, obj, isDraft, dataSource = "", role, fo
         case "otherReceivable": {
             let isReadOnly = getReadOnly(formStatus, allKeys["otherReceivable"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["otherReceivable"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
+                ...await getInputKeysByType(allKeys["otherReceivable"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
                 // rejectReason:"",
             };
@@ -1002,7 +1124,7 @@ const getColumnWiseData = (allKeys, key, obj, isDraft, dataSource = "", role, fo
         case "totalReceivable": {
             let isReadOnly = getReadOnly(formStatus, allKeys["totalReceivable"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["totalReceivable"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
+                ...await getInputKeysByType(allKeys["totalReceivable"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
                 // rejectReason:"",
             };
@@ -1010,7 +1132,7 @@ const getColumnWiseData = (allKeys, key, obj, isDraft, dataSource = "", role, fo
         case "totalCashAndBankBal": {
             let isReadOnly = getReadOnly(formStatus, allKeys["totalCashAndBankBal"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["totalCashAndBankBal"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
+                ...await getInputKeysByType(allKeys["totalCashAndBankBal"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
                 // rejectReason:"",
             };
@@ -1018,7 +1140,7 @@ const getColumnWiseData = (allKeys, key, obj, isDraft, dataSource = "", role, fo
         case "accSystem": {
             let isReadOnly = getReadOnly(formStatus, allKeys["accSystem"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["accSystem"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
+                ...await getInputKeysByType(allKeys["accSystem"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
                 // rejectReason:"",
             };
@@ -1026,7 +1148,7 @@ const getColumnWiseData = (allKeys, key, obj, isDraft, dataSource = "", role, fo
         case "accProvision": {
             let isReadOnly = getReadOnly(formStatus, allKeys["accProvision"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["accProvision"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
+                ...await getInputKeysByType(allKeys["accProvision"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
                 // rejectReason:"",
             };
@@ -1034,7 +1156,7 @@ const getColumnWiseData = (allKeys, key, obj, isDraft, dataSource = "", role, fo
         case "accInCashBasis": {
             let isReadOnly = getReadOnly(formStatus, allKeys["accInCashBasis"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["accInCashBasis"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
+                ...await getInputKeysByType(allKeys["accInCashBasis"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
                 // rejectReason:"",
             };
@@ -1042,7 +1164,7 @@ const getColumnWiseData = (allKeys, key, obj, isDraft, dataSource = "", role, fo
         case "fsTransactionRecord": {
             let isReadOnly = getReadOnly(formStatus, allKeys["fsTransactionRecord"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["fsTransactionRecord"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
+                ...await getInputKeysByType(allKeys["fsTransactionRecord"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
                 // rejectReason:"",
             };
@@ -1050,7 +1172,7 @@ const getColumnWiseData = (allKeys, key, obj, isDraft, dataSource = "", role, fo
         case "fsPreparedBy": {
             let isReadOnly = getReadOnly(formStatus, allKeys["fsPreparedBy"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["fsPreparedBy"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
+                ...await getInputKeysByType(allKeys["fsPreparedBy"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
                 // rejectReason:"",
             };
@@ -1058,7 +1180,7 @@ const getColumnWiseData = (allKeys, key, obj, isDraft, dataSource = "", role, fo
         case "revReceiptRecord": {
             let isReadOnly = getReadOnly(formStatus, allKeys["revReceiptRecord"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["revReceiptRecord"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
+                ...await getInputKeysByType(allKeys["revReceiptRecord"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
                 // rejectReason:"",
             };
@@ -1066,7 +1188,7 @@ const getColumnWiseData = (allKeys, key, obj, isDraft, dataSource = "", role, fo
         case "expRecord": {
             let isReadOnly = getReadOnly(formStatus, allKeys["expRecord"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["expRecord"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
+                ...await getInputKeysByType(allKeys["expRecord"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
                 // rejectReason:"",
             };
@@ -1074,7 +1196,7 @@ const getColumnWiseData = (allKeys, key, obj, isDraft, dataSource = "", role, fo
         case "accSoftware": {
             let isReadOnly = getReadOnly(formStatus, allKeys["accSoftware"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["accSoftware"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
+                ...await getInputKeysByType(allKeys["accSoftware"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
                 // rejectReason:"",
             };
@@ -1082,7 +1204,7 @@ const getColumnWiseData = (allKeys, key, obj, isDraft, dataSource = "", role, fo
         case "onlineAccSysIntegrate": {
             let isReadOnly = getReadOnly(formStatus, allKeys["onlineAccSysIntegrate"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["onlineAccSysIntegrate"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
+                ...await getInputKeysByType(allKeys["onlineAccSysIntegrate"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
                 // rejectReason:"",
             };
@@ -1090,7 +1212,7 @@ const getColumnWiseData = (allKeys, key, obj, isDraft, dataSource = "", role, fo
         case "muniAudit": {
             let isReadOnly = getReadOnly(formStatus, allKeys["muniAudit"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["muniAudit"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
+                ...await getInputKeysByType(allKeys["muniAudit"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
                 // rejectReason:"",
             };
@@ -1098,7 +1220,7 @@ const getColumnWiseData = (allKeys, key, obj, isDraft, dataSource = "", role, fo
         case "totSanction": {
             let isReadOnly = getReadOnly(formStatus, allKeys["totSanction"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["totSanction"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
+                ...await getInputKeysByType(allKeys["totSanction"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
                 // rejectReason:"",
             };
@@ -1106,7 +1228,7 @@ const getColumnWiseData = (allKeys, key, obj, isDraft, dataSource = "", role, fo
         case "totVacancy": {
             let isReadOnly = getReadOnly(formStatus, allKeys["totVacancy"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["totVacancy"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
+                ...await getInputKeysByType(allKeys["totVacancy"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
                 // rejectReason:"",
             };
@@ -1114,7 +1236,7 @@ const getColumnWiseData = (allKeys, key, obj, isDraft, dataSource = "", role, fo
         case "accPosition": {
             let isReadOnly = getReadOnly(formStatus, allKeys["accPosition"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["accPosition"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
+                ...await getInputKeysByType(allKeys["accPosition"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
                 // rejectReason:"",
             };
@@ -1122,7 +1244,7 @@ const getColumnWiseData = (allKeys, key, obj, isDraft, dataSource = "", role, fo
         case "auditedAnnualFySt": {
             let isReadOnly = getReadOnly(formStatus, allKeys["auditedAnnualFySt"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["auditedAnnualFySt"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
+                ...await getInputKeysByType(allKeys["auditedAnnualFySt"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
                 // rejectReason:"",
             };
@@ -1130,7 +1252,7 @@ const getColumnWiseData = (allKeys, key, obj, isDraft, dataSource = "", role, fo
         case "coverageOfWs": {
             let isReadOnly = getReadOnly(formStatus, allKeys["coverageOfWs"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["coverageOfWs"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
+                ...await getInputKeysByType(allKeys["coverageOfWs"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
                 ...obj,
                 // rejectReason:"",
             };
@@ -1138,7 +1260,7 @@ const getColumnWiseData = (allKeys, key, obj, isDraft, dataSource = "", role, fo
         case "perCapitaOfWs": {
             let isReadOnly = getReadOnly(formStatus, allKeys["perCapitaOfWs"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["perCapitaOfWs"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
+                ...await getInputKeysByType(allKeys["perCapitaOfWs"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
                 ...obj,
                 // rejectReason:"",
             };
@@ -1146,7 +1268,7 @@ const getColumnWiseData = (allKeys, key, obj, isDraft, dataSource = "", role, fo
         case "extentOfMeteringWs": {
             let isReadOnly = getReadOnly(formStatus, allKeys["extentOfMeteringWs"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["extentOfMeteringWs"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
+                ...await getInputKeysByType(allKeys["extentOfMeteringWs"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
                 ...obj,
                 // rejectReason:"",
             };
@@ -1154,7 +1276,7 @@ const getColumnWiseData = (allKeys, key, obj, isDraft, dataSource = "", role, fo
         case "extentOfNonRevenueWs": {
             let isReadOnly = getReadOnly(formStatus, allKeys["extentOfNonRevenueWs"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["extentOfNonRevenueWs"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
+                ...await getInputKeysByType(allKeys["extentOfNonRevenueWs"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
                 ...obj,
                 // rejectReason:"",
             };
@@ -1162,7 +1284,7 @@ const getColumnWiseData = (allKeys, key, obj, isDraft, dataSource = "", role, fo
         case "continuityOfWs": {
             let isReadOnly = getReadOnly(formStatus, allKeys["continuityOfWs"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["continuityOfWs"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
+                ...await getInputKeysByType(allKeys["continuityOfWs"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
                 ...obj,
                 // rejectReason:"",
             };
@@ -1170,7 +1292,7 @@ const getColumnWiseData = (allKeys, key, obj, isDraft, dataSource = "", role, fo
         case "efficiencyInRedressalCustomerWs": {
             let isReadOnly = getReadOnly(formStatus, allKeys["efficiencyInRedressalCustomerWs"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["efficiencyInRedressalCustomerWs"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
+                ...await getInputKeysByType(allKeys["efficiencyInRedressalCustomerWs"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
                 ...obj,
                 // rejectReason:"",
             };
@@ -1178,7 +1300,7 @@ const getColumnWiseData = (allKeys, key, obj, isDraft, dataSource = "", role, fo
         case "qualityOfWs": {
             let isReadOnly = getReadOnly(formStatus, allKeys["qualityOfWs"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["qualityOfWs"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
+                ...await getInputKeysByType(allKeys["qualityOfWs"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
                 ...obj,
                 // rejectReason:"",
             };
@@ -1186,7 +1308,7 @@ const getColumnWiseData = (allKeys, key, obj, isDraft, dataSource = "", role, fo
         case "costRecoveryInWs": {
             let isReadOnly = getReadOnly(formStatus, allKeys["costRecoveryInWs"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["costRecoveryInWs"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
+                ...await getInputKeysByType(allKeys["costRecoveryInWs"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
                 ...obj,
                 // rejectReason:"",
             };
@@ -1194,7 +1316,7 @@ const getColumnWiseData = (allKeys, key, obj, isDraft, dataSource = "", role, fo
         case "efficiencyInCollectionRelatedWs": {
             let isReadOnly = getReadOnly(formStatus, allKeys["efficiencyInCollectionRelatedWs"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["efficiencyInCollectionRelatedWs"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
+                ...await getInputKeysByType(allKeys["efficiencyInCollectionRelatedWs"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
                 ...obj,
                 // rejectReason:"",
             };
@@ -1202,7 +1324,7 @@ const getColumnWiseData = (allKeys, key, obj, isDraft, dataSource = "", role, fo
         case "coverageOfToiletsSew": {
             let isReadOnly = getReadOnly(formStatus, allKeys["coverageOfToiletsSew"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["coverageOfToiletsSew"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
+                ...await getInputKeysByType(allKeys["coverageOfToiletsSew"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
                 ...obj,
                 // rejectReason:"",
             };
@@ -1210,7 +1332,7 @@ const getColumnWiseData = (allKeys, key, obj, isDraft, dataSource = "", role, fo
         case "coverageOfSewNet": {
             let isReadOnly = getReadOnly(formStatus, allKeys["coverageOfSewNet"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["coverageOfSewNet"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
+                ...await getInputKeysByType(allKeys["coverageOfSewNet"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
                 ...obj,
                 // rejectReason:"",
             };
@@ -1218,7 +1340,7 @@ const getColumnWiseData = (allKeys, key, obj, isDraft, dataSource = "", role, fo
         case "collectionEfficiencySew": {
             let isReadOnly = getReadOnly(formStatus, allKeys["collectionEfficiencySew"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["collectionEfficiencySew"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
+                ...await getInputKeysByType(allKeys["collectionEfficiencySew"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
                 ...obj,
                 // rejectReason:"",
             };
@@ -1226,7 +1348,7 @@ const getColumnWiseData = (allKeys, key, obj, isDraft, dataSource = "", role, fo
         case "adequacyOfSew": {
             let isReadOnly = getReadOnly(formStatus, allKeys["adequacyOfSew"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["adequacyOfSew"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
+                ...await getInputKeysByType(allKeys["adequacyOfSew"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
                 ...obj,
                 // rejectReason:"",
             };
@@ -1234,7 +1356,7 @@ const getColumnWiseData = (allKeys, key, obj, isDraft, dataSource = "", role, fo
         case "qualityOfSew": {
             let isReadOnly = getReadOnly(formStatus, allKeys["qualityOfSew"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["qualityOfSew"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
+                ...await getInputKeysByType(allKeys["qualityOfSew"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
                 ...obj,
                 // rejectReason:"",
             };
@@ -1242,7 +1364,7 @@ const getColumnWiseData = (allKeys, key, obj, isDraft, dataSource = "", role, fo
         case "extentOfReuseSew": {
             let isReadOnly = getReadOnly(formStatus, allKeys["extentOfReuseSew"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["extentOfReuseSew"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
+                ...await getInputKeysByType(allKeys["extentOfReuseSew"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
                 ...obj,
                 // rejectReason:"",
             };
@@ -1250,7 +1372,7 @@ const getColumnWiseData = (allKeys, key, obj, isDraft, dataSource = "", role, fo
         case "efficiencyInRedressalCustomerSew": {
             let isReadOnly = getReadOnly(formStatus, allKeys["efficiencyInRedressalCustomerSew"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["efficiencyInRedressalCustomerSew"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
+                ...await getInputKeysByType(allKeys["efficiencyInRedressalCustomerSew"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
                 ...obj,
                 // rejectReason:"",
             };
@@ -1258,7 +1380,7 @@ const getColumnWiseData = (allKeys, key, obj, isDraft, dataSource = "", role, fo
         case "extentOfCostWaterSew": {
             let isReadOnly = getReadOnly(formStatus, allKeys["extentOfCostWaterSew"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["extentOfCostWaterSew"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
+                ...await getInputKeysByType(allKeys["extentOfCostWaterSew"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
                 ...obj,
                 // rejectReason:"",
             };
@@ -1266,7 +1388,7 @@ const getColumnWiseData = (allKeys, key, obj, isDraft, dataSource = "", role, fo
         case "efficiencyInCollectionSew": {
             let isReadOnly = getReadOnly(formStatus, allKeys["efficiencyInCollectionSew"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["efficiencyInCollectionSew"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
+                ...await getInputKeysByType(allKeys["efficiencyInCollectionSew"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
                 ...obj,
                 // rejectReason:"",
             };
@@ -1274,7 +1396,7 @@ const getColumnWiseData = (allKeys, key, obj, isDraft, dataSource = "", role, fo
         case "householdLevelCoverageLevelSwm": {
             let isReadOnly = getReadOnly(formStatus, allKeys["householdLevelCoverageLevelSwm"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["householdLevelCoverageLevelSwm"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
+                ...await getInputKeysByType(allKeys["householdLevelCoverageLevelSwm"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
                 ...obj,
                 // rejectReason:"",
             };
@@ -1282,7 +1404,7 @@ const getColumnWiseData = (allKeys, key, obj, isDraft, dataSource = "", role, fo
         case "efficiencyOfCollectionSwm": {
             let isReadOnly = getReadOnly(formStatus, allKeys["efficiencyOfCollectionSwm"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["efficiencyOfCollectionSwm"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
+                ...await getInputKeysByType(allKeys["efficiencyOfCollectionSwm"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
                 ...obj,
                 // rejectReason:"",
             };
@@ -1290,7 +1412,7 @@ const getColumnWiseData = (allKeys, key, obj, isDraft, dataSource = "", role, fo
         case "extentOfSegregationSwm": {
             let isReadOnly = getReadOnly(formStatus, allKeys["extentOfSegregationSwm"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["extentOfSegregationSwm"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
+                ...await getInputKeysByType(allKeys["extentOfSegregationSwm"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
                 ...obj,
                 // rejectReason:"",
             };
@@ -1298,7 +1420,7 @@ const getColumnWiseData = (allKeys, key, obj, isDraft, dataSource = "", role, fo
         case "extentOfMunicipalSwm": {
             let isReadOnly = getReadOnly(formStatus, allKeys["extentOfMunicipalSwm"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["extentOfMunicipalSwm"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
+                ...await getInputKeysByType(allKeys["extentOfMunicipalSwm"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
                 ...obj,
                 // rejectReason:"",
             };
@@ -1306,7 +1428,7 @@ const getColumnWiseData = (allKeys, key, obj, isDraft, dataSource = "", role, fo
         case "extentOfScientificSolidSwm": {
             let isReadOnly = getReadOnly(formStatus, allKeys["extentOfScientificSolidSwm"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["extentOfScientificSolidSwm"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
+                ...await getInputKeysByType(allKeys["extentOfScientificSolidSwm"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
                 ...obj,
                 // rejectReason:"",
             };
@@ -1314,7 +1436,7 @@ const getColumnWiseData = (allKeys, key, obj, isDraft, dataSource = "", role, fo
         case "extentOfCostInSwm": {
             let isReadOnly = getReadOnly(formStatus, allKeys["extentOfCostInSwm"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["extentOfCostInSwm"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
+                ...await getInputKeysByType(allKeys["extentOfCostInSwm"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
                 ...obj,
                 // rejectReason:"",
             };
@@ -1322,7 +1444,7 @@ const getColumnWiseData = (allKeys, key, obj, isDraft, dataSource = "", role, fo
         case "efficiencyInCollectionSwmUser": {
             let isReadOnly = getReadOnly(formStatus, allKeys["efficiencyInCollectionSwmUser"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["efficiencyInCollectionSwmUser"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
+                ...await getInputKeysByType(allKeys["efficiencyInCollectionSwmUser"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
                 ...obj,
                 // rejectReason:"",
             };
@@ -1330,7 +1452,7 @@ const getColumnWiseData = (allKeys, key, obj, isDraft, dataSource = "", role, fo
         case "efficiencyInRedressalCustomerSwm": {
             let isReadOnly = getReadOnly(formStatus, allKeys["efficiencyInRedressalCustomerSwm"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["efficiencyInRedressalCustomerSwm"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
+                ...await getInputKeysByType(allKeys["efficiencyInRedressalCustomerSwm"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
                 ...obj,
                 // rejectReason:"",
             };
@@ -1338,7 +1460,7 @@ const getColumnWiseData = (allKeys, key, obj, isDraft, dataSource = "", role, fo
         case "coverageOfStormDrainage": {
             let isReadOnly = getReadOnly(formStatus, allKeys["coverageOfStormDrainage"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["coverageOfStormDrainage"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
+                ...await getInputKeysByType(allKeys["coverageOfStormDrainage"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
                 ...obj,
                 // rejectReason:"",
             };
@@ -1346,7 +1468,7 @@ const getColumnWiseData = (allKeys, key, obj, isDraft, dataSource = "", role, fo
         case "incidenceOfWaterLogging": {
             let isReadOnly = getReadOnly(formStatus, allKeys["incidenceOfWaterLogging"].autoSumValidation);
             return {
-                ...getInputKeysByType(allKeys["incidenceOfWaterLogging"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
+                ...await getInputKeysByType(allKeys["incidenceOfWaterLogging"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
                 ...obj,
                 // rejectReason:"",
             };
