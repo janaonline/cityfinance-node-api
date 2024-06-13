@@ -215,12 +215,13 @@ module.exports.submitFrom = async (req, res) => {
             // Check validation and update data from "saveAsDraftValue" to "value".
 
             let getFormData = userForm.formType === 'form1' ? await getForm1(ulbId, roleName, ulbData_form) : userForm.formType === 'form2' ? await getForm2(ulbId, roleName, ulbData_form) : "";
-            // let validatedData = await checkValidations(ulbData_form, getFormData);
+             // let validatedData = await checkValidations(ulbData_form, getFormData);
 
             if (getFormData.validationCounter > 0) {
                 return res.status(400).json({ status: true, message: "Validation failed", data: getFormData });
             } else {
                 ulbData_form.formStatus = 'SUBMITTED';
+                ulbData_form.tracker = []
                 ulbData_form.tracker.push({ eventName: "SUBMITTED", eventDate: new Date(), submittedBy: ulbId });
 
                 let updatedData = await XviFcForm1DataCollection.findOneAndUpdate({ ulb: ulbId }, ulbData_form, { upsert: true }).exec();
