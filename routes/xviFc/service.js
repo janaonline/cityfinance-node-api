@@ -1563,9 +1563,7 @@ async function getUploadDocLinks(ulbId, fileDataJson) {
                 "year": "", "collection": "annualAccounts", "type": "", "availablePdfData": []
             };
             let obj = {}
-
-            if (yearsLedgerDataAvailable.indexOf(findYearById(echObj.audited.year)) > -1 && echObj.audited.provisional_data.bal_sheet.pdf.url) {
-
+            if (yearsLedgerDataAvailable.indexOf(await findYearById(echObj.audited.year)) > -1 && echObj.audited.provisional_data.bal_sheet.pdf.url) {
                 obj.name = echObj.audited.provisional_data.bal_sheet.pdf.name
                 obj.url = echObj.audited.provisional_data.bal_sheet.pdf.url
                 obj.type = 'bal_sheet'
@@ -1602,16 +1600,17 @@ async function getUploadDocLinks(ulbId, fileDataJson) {
                 obj.label = 'Auditor Report'
                 tempObj.availablePdfData.push(obj);
                 // tempObj.availablePdfData = echObj.audited.provisional_data.bal_sheet.pdf;
-                tempObj.year = findYearById(echObj.audited.year);
+                tempObj.year = await findYearById(echObj.audited.year);
                 tempObj.type = "audited";
                 alreadyOnCfPdfs[tempObj.year] = tempObj;
+
                 tempObj = {
                     "year": "", "collection": "annualAccounts", "type": "", "availablePdfData": []
                 };
                 obj = {};
             };
 
-            if (yearsLedgerDataAvailable.indexOf(findYearById(echObj.unAudited.year)) > -1 && echObj.unAudited.provisional_data.bal_sheet.pdf.url) {
+            if (yearsLedgerDataAvailable.indexOf(await findYearById(echObj.unAudited.year)) > -1 && echObj.unAudited.provisional_data.bal_sheet.pdf.url) {
                 obj.name = echObj.unAudited.provisional_data.bal_sheet.pdf.name
                 obj.url = echObj.unAudited.provisional_data.bal_sheet.pdf.url
                 obj.type = 'bal_sheet'
@@ -1642,7 +1641,7 @@ async function getUploadDocLinks(ulbId, fileDataJson) {
                 obj.label = 'Cash Flow Statement'
                 tempObj.availablePdfData.push(obj);
                 // tempObj.availablePdfData = echObj.unAudited.provisional_data.bal_sheet.pdf;
-                tempObj.year = findYearById(echObj.unAudited.year);
+                tempObj.year = await findYearById(echObj.unAudited.year);
                 tempObj.type = "unaudited";
                 alreadyOnCfPdfs[tempObj.year] = tempObj;
                 tempObj = {
@@ -1670,14 +1669,35 @@ async function getUploadDocLinks(ulbId, fileDataJson) {
 
 // Pass mongoDB year ID and get year.
 async function findYearById(mongoObjId) {
-    let years = await Year.find().lean();
+    let yearData = [
+        {"id": "606aadac4dff55e6c075c507",  "year":"2020-21"},
+        {"id": "606aaf854dff55e6c075d219",  "year":"2021-22"},
+        {"id": "606aafb14dff55e6c075d3ae",  "year":"2022-23"},
+        {"id": "606aafc14dff55e6c075d3ec",  "year":"2023-24"},
+        {"id": "606aafcf4dff55e6c075d424",  "year":"2024-25"},
+        {"id": "606aafda4dff55e6c075d48f",  "year":"2025-26"},
+        {"id": "607697074dff55e6c0be33ba",  "year":"2019-20"},
+        {"id": "63735a4bd44534713673bfbf",  "year":"2017-18"},
+        {"id": "63735a5bd44534713673c1ca",  "year":"2018-19"}
+        ]
 
-    for (let yearObj of years) {
-        if (yearObj._id == mongoObjId) {
-            return yearObj.year;
-        }
-    }
-    return null; // ID not found
+    let yearIndex = yearData.findIndex((x)=>{ return x.id == mongoObjId})
+      
+    if(yearIndex>-1) { return yearData[yearIndex].year}
+      else return '';
+        
+    // let years = await Year.find().lean();
+
+
+
+    // for (let yearObj of years) {
+    //     console.log("yearObj",yearObj);
+    //     if (yearObj._id == mongoObjId) {
+    //         console.log("yearObj._id>>>>",yearObj._id)
+    //         return yearObj.year;
+    //     }
+    // }
+   // return null; // ID not found
 }
 
 // Update the json - add the keys/ questions as per the key header - Financial Data - Form 1 Json.
