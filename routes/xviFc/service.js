@@ -1988,7 +1988,7 @@ async function getUpdatedServiceLevelBenchmark_headers(serviceLevelBenchmarkData
             "section": 'accordion',
             "formFieldType": "table",
             "data": [],
-            "label": "IV. STROM WATER DRAINAGE"
+            "label": "IV. STORM WATER DRAINAGE"
         },
     ];
 
