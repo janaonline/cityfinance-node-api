@@ -1,5 +1,6 @@
-const { years } = require("../../service/years")
-const { apiUrls } = require("../CommonActionAPI/service")
+const { years, getDesiredYear, isBeyond2023_24 } = require("../../service/years")
+const { apiUrls } = require("../CommonActionAPI/service");
+const { isSingleYearIndicator, ensureArray } = require('../../util/helper');
 
 const parentRadioQuestionKeys = [
   "ulbCollectPtax",
@@ -22,10 +23,10 @@ const mandatDisplayPrioritiesForCurrYear = [
 
 const propertyTaxOpFormJson = ({role, design_year, ptoData, ptoMaper = []}) => {
   let readOnly = role === "ULB" ? false : true
-  return {
+  const json =  {
     "_id": null,
     "ulb": "5fa24660072dab780a6f141e",
-    "design_year": "606aafb14dff55e6c075d3ae",
+    "design_year": design_year || "606aafb14dff55e6c075d3ae",
     "isDraft": null,
     "tabs": [
       {
@@ -81,7 +82,7 @@ const propertyTaxOpFormJson = ({role, design_year, ptoData, ptoMaper = []}) => {
                 "value": "",
                 "file": "",
                 "min": "1800",
-                "max": "2023",
+                "max": ('' + new Date().getFullYear()),
                 "required": true,
                 "type": "ulbFinancialYear",
                 "year": "63735a5bd44534713673c1ca",
@@ -10573,6 +10574,46 @@ const propertyTaxOpFormJson = ({role, design_year, ptoData, ptoMaper = []}) => {
 
 
 
+function compareWithMapper18_19(ptoMaper, type, value) {
+  return ptoMaper.find(item => {
+    return item.type == type && 
+    ('' + item.year) == getDesiredYear('2018-19').yearId &&
+    ensureArray(value).includes(item.value);
+  });
+}
+
+function getRadioParentDependencyObject(indicator) {
+  const entries = Object.entries(skipLogicDependencies);
+  const parentValues = entries.reduce((acc, [key, { skippable }]) => {
+    const [_, parentKey] = key.split('.');
+    if (skippable[indicator.key] && parentRadioQuestionKeys.includes(parentKey)) {
+      acc[parentKey] = skippable[indicator.key].value;
+    }
+    return acc;
+  }, {});
+  return parentValues;
+}
+
+function modifyJsonForChild(copyChildFrom) {
+  copyChildFrom.forEach((copyChild) => {
+    const { yearData } = copyChild
+    const lastChildYear = yearData[yearData.length - 1]
+    const { yearName, yearId } = getDesiredYear(lastChildYear.year, 1)
+    const nextYear = JSON.parse(JSON.stringify(lastChildYear))
+    yearData.forEach((yearObj) => {
+      yearObj.readonly = true;
+      yearObj.placeholder = "N/A";
+      yearObj.notApplicable = true;
+      yearObj.required = false;
+    })
+    nextYear["key"] = `FY${yearName}`
+    nextYear["label"] = `FY ${yearName}`
+    nextYear["year"] = yearId
+    nextYear["postion"] = String(+nextYear["postion"] + 1)
+    yearData.push(nextYear)
+  })
+}
+
 function getInputKeysByType(formType, type, label, dataSource = null, position, required = true, mn = false, info = "") {
   let maximum = 9999999999
   let min = 0
@@ -11526,7 +11567,7 @@ let skipLogicDependencies = {
         "years": [
           0
         ]
-      },
+      }
     }
   },
   "data.notificationPropertyTax.yearData.0": {
@@ -11587,6 +11628,12 @@ let skipLogicDependencies = {
     ],
     "skippable": {
       "entityWaterCharges": {
+        "value": "Yes",
+        "years": [
+          0
+        ]
+      },
+      "entityNameWaterCharges": {
         "value": "Yes",
         "years": [
           0
@@ -11863,6 +11910,12 @@ let skipLogicDependencies = {
       }
     ],
     "skippable": {
+      "entityNaSewerageCharges": {
+        "value": "Yes",
+        "years": [
+          0
+        ]
+      },
       "entitySewerageCharges": {
         "value": "Yes",
         "years": [
@@ -12205,7 +12258,7 @@ function getSkippableKeys(skipLogics) {
   return results;
 }
 
-let dynamicJson = propertyTaxOpFormJson()['tabs'][0]['data']
+let dynamicJson = propertyTaxOpFormJson({})['tabs'][0]['data']
 let {childKeys, questionIndicators,indicatorsWithNoyears} = fetchIndicatorsOrDp(dynamicJson)
 
 
