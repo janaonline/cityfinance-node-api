@@ -161,6 +161,123 @@ module.exports.getForm = async (req, res) => {
     }
 
 };
+// module.exports.getULBListForStateId = async (req, res) => {
+//     try {
+//         let stateId = req.query.stateId;
+//         let ulbFormListForStateId = await XviFcForm1DataCollection.find({ state: ObjectId(stateId) });
+       
+//         return res.status(200).json(ulbFormListForStateId);
+
+//         // let { state, _id } = req.decoded;
+//         // let stateId = state;
+//         // let stateId = req.query.stateId;
+//         // let ulbFormListForStateId = await XviFcForm1DataCollection.find({ state: ObjectId(stateId) });
+//         // if (!ulbFormListForStateId.length) {
+//         //     return res.status(404).json({ status: false, message: "No data found!" });
+//         //   }
+      
+//         //   // Extract unique ULB IDs from the initial response
+//         //   let ulbIds = ulbFormListForStateId.map(doc => ObjectId(doc.ulb));
+//         //   ulbIds = [...new Set(ulbIds)]; // Remove duplicates if any
+      
+//         //   // Fetch ULB details from ULB collection
+//         //   let ulbDetails = await Ulb.find({ _id: { $in: ulbIds } });
+      
+//         //   // Map ULB details by ID for easy access
+//         //   let ulbDetailsMap = ulbDetails.reduce((acc, ulb) => {
+//         //     acc[ulb._id.toString()] = ulb;
+//         //     return acc;
+//         //   }, {});
+      
+//         //   // Merge ULB details with the initial response
+//         //   let result = ulbFormListForStateId.map(doc => {
+//         //     let ulbDetail = ulbDetailsMap[doc.ulb];
+//         //     return { ...doc, ulbDetail };
+//         //   });
+      
+//         //   return res.status(200).json(result);
+
+//     } catch (error) {
+//         console.log("err", error);
+//         return res.status(400).json({ status: false, message: "Something went wrong!" });
+//     }
+// };
+
+module.exports.getULBListForStateId = async (req, res) => {
+        try {
+            /* uncomment below lines when consuming state id from login session*/
+		    // let { state, _id } = req.decoded;
+            // let stateId = state;
+
+            let page = parseInt(req.query.page) || 1;
+            let perPage = parseInt(req.query.perPage) || 10;
+    
+            let stateId = req.query.stateId;
+            let query = {};
+            if (stateId) {
+                query.state = ObjectId(stateId);
+            }
+            let formStatus = req.query.formStatus;
+            if (formStatus) {
+                query.formStatus = formStatus;
+            }
+            let ulbType = req.query.formId;
+            if (ulbType) {
+                query.formId = ulbType;
+            }
+            
+            // Query to get the ULBs for a given stateId
+            let ulbFormListForStateId = await XviFcForm1DataCollection.find(query)
+                .skip((page - 1) * perPage)
+                .limit(perPage);
+    
+            if (!ulbFormListForStateId.length) {
+                return res.status(404).json({ status: false, message: "No data found!" });
+            }
+    
+            // Extract the relevant fields
+            let result = ulbFormListForStateId.map(doc => {
+                const _id = doc._id;
+                const ulb = doc.ulb;
+                const state = doc.state;
+                const formStatus = doc.formStatus;
+                const ulbType = doc.formId;
+                /* once added in form table, make it dynamic for below constants */
+                const ulbName = "Barpeta Municipal Board"; //doc.ulbName; 
+                const stateName = "Assam"; // doc.stateName
+                const censusCode = "801557"; // doc.censusCode
+                let ulbCategory="Category 2";
+                if(ulbType==16){ // not fall under specific census code condition (no 28SLB to show)
+                    ulbCategory="Category 1";
+                }
+                return {
+                    _id:doc._id,
+                    ulbId: ulb,
+                    stateId: state,
+                    ulbName: ulbName,
+                    censusCode:censusCode,
+                    stateName: stateName,
+                    formStatus: formStatus,
+                    ulbType: ulbType,
+                    ulbCategory: ulbCategory
+                };
+            });
+    
+            // Get the total count for pagination purposes
+            const totalCount = await XviFcForm1DataCollection.countDocuments(query);
+    
+            return res.status(200).json({
+                currentPage: page,
+                perPage: perPage,  
+                totalRecords: totalCount,
+                totalPages: Math.ceil(totalCount / perPage),
+                data: result
+            });
+        } catch (error) {
+            console.log("err", error);
+            return res.status(400).json({ status: false, message: "Something went wrong!" });
+        }
+  };
 
 module.exports.saveAsDraftForm = async (req, res) => {
     try {
