@@ -10,7 +10,8 @@ const XviFcForm1DataCollection = require("../../models/XviFcFormDataCollection")
 const Year = require("../../models/Year");
 
 const { financialYearTableHeader, priorTabsForXviFcForm, form1QuestionKeys, form2QuestionKeys, slbKeys,form1TempDb, form2TempDb, getInputKeysByType } = require("./form_json");
-const { tabsUpdationService, keyDetailsForm1, keyDetailsForm2, getFromWiseKeyDetails } = require("../../util/xvifc_form")
+const { tabsUpdationService, keyDetailsForm1, keyDetailsForm2, getFromWiseKeyDetails } = require("../../util/xvifc_form");
+const XviFcFormDataCollection = require("../../models/XviFcFormDataCollection");
 
 // One time function.
 module.exports.createxviFcFormTabs = async (req, res) => {
@@ -227,7 +228,7 @@ module.exports.getULBListForStateId = async (req, res) => {
             }
             
             // Query to get the ULBs for a given stateId
-            let ulbFormListForStateId = await XviFcForm1DataCollection.find(query)
+            let ulbFormListForStateId = await XviFcFormDataCollection.find(query)
                 .skip((page - 1) * perPage)
                 .limit(perPage);
     
@@ -264,7 +265,7 @@ module.exports.getULBListForStateId = async (req, res) => {
             });
     
             // Get the total count for pagination purposes
-            const totalCount = await XviFcForm1DataCollection.countDocuments(query);
+            const totalCount = await XviFcFormDataCollection.countDocuments(query);
     
             return res.status(200).json({
                 currentPage: page,
