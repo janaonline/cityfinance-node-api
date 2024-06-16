@@ -9,7 +9,7 @@ const FormsJson = require("../../models/FormsJson");
 const XviFcForm1DataCollection = require("../../models/XviFcFormDataCollection");
 const Year = require("../../models/Year");
 
-const { financialYearTableHeader, priorTabsForXviFcForm, form1QuestionKeys, form2QuestionKeys, slbKeys,form1TempDb, form2TempDb, getInputKeysByType } = require("./form_json");
+const { financialYearTableHeader, priorTabsForXviFcForm, form1QuestionKeys, form2QuestionKeys, slbKeys, form1TempDb, form2TempDb, getInputKeysByType } = require("./form_json");
 const { tabsUpdationService, keyDetailsForm1, keyDetailsForm2, getFromWiseKeyDetails } = require("../../util/xvifc_form")
 
 // One time function.
@@ -168,6 +168,17 @@ module.exports.saveAsDraftForm = async (req, res) => {
         let ulbId = ObjectId(req.query.ulb);
         let existingSubmitData = await XviFcForm1DataCollection.find({ ulb: ulbId });
 
+        let userForm = await Ulb.findOne({ _id: ulbId }, { formType: 1, name: 1, state: 1, _id: 1, censusCode: 1, sbCode: 1 }).lean();
+        let stateData = await State.findOne({ _id: userForm.state }, { name: 1 }).lean();
+        // ulbData_form.submittedAt = new Date();
+        // ulbData_form.submittedBy = userForm.ulbId;
+        ulbData_form.censusCode = userForm.censusCode;
+        ulbData_form.sbCode = userForm.sbCode;
+        ulbData_form.ulbName = userForm.name;
+        ulbData_form.state = userForm.state;
+        ulbData_form.formId = userForm.formType == 'form1' ? 16 : userForm.formType == 'form2' ? 17 : 'N/A';
+        ulbData_form.stateName = stateData.name;
+
         if (existingSubmitData.length <= 0) {
             ulbData_form = await XviFcForm1DataCollection.findOneAndUpdate({ ulb: ulbId }, ulbData_form, { upsert: true }).exec();
             return res.status(200).json({ status: true, message: "Data successfully saved as draft!" });
@@ -208,6 +219,7 @@ module.exports.submitFrom = async (req, res) => {
         let ulbId = ObjectId(req.query.ulb);
         let roleName = "ULB"; // TODO: make dynamic.
         let userForm = await Ulb.findOne({ _id: ulbId }, { formType: 1, name: 1, state: 1, _id: 1, censusCode: 1, sbCode: 1 }).lean();
+        let stateData = await State.findOne({ _id: userForm.state }, { name: 1 }).lean();
         let existingSubmitData = await XviFcForm1DataCollection.find({ ulb: ulbId });
         let validateSubmitData = userForm.formType === 'form1' ? ulbData_form.tab.length === 4 : (userForm.formType === 'form2' ? ulbData_form.tab.length === 5 : false); // Get count of tabs received from frontend.
 
@@ -215,7 +227,7 @@ module.exports.submitFrom = async (req, res) => {
             // Check validation and update data from "saveAsDraftValue" to "value".
 
             let getFormData = userForm.formType === 'form1' ? await getForm1(ulbId, roleName, ulbData_form) : userForm.formType === 'form2' ? await getForm2(ulbId, roleName, ulbData_form) : "";
-             // let validatedData = await checkValidations(ulbData_form, getFormData);
+            // let validatedData = await checkValidations(ulbData_form, getFormData);
 
             if (getFormData.validationCounter > 0) {
                 return res.status(400).json({ status: true, message: "Validation failed", data: getFormData });
@@ -223,6 +235,13 @@ module.exports.submitFrom = async (req, res) => {
                 ulbData_form.formStatus = 'SUBMITTED';
                 ulbData_form.tracker = []
                 ulbData_form.tracker.push({ eventName: "SUBMITTED", eventDate: new Date(), submittedBy: ulbId });
+                ulbData_form.submittedAt = new Date();
+                ulbData_form.submittedBy = userForm.ulbId;
+                ulbData_form.censusCode = userForm.censusCode;
+                ulbData_form.sbCode = userForm.sbCode;
+                ulbData_form.ulbName = userForm.name;
+                ulbData_form.stateId = userForm.state;
+                ulbData_form.stateName = stateData.name;
 
                 let updatedData = await XviFcForm1DataCollection.findOneAndUpdate({ ulb: ulbId }, ulbData_form, { upsert: true }).exec();
                 return res.status(200).json({ status: true, message: "DB successfully updated" });
@@ -317,7 +336,7 @@ async function getForm1(ulbData, stateData, roleName, submittedData) {
 
     // let keyDetails = await getFromWiseKeyDetails("form1");
     let keyDetails = keyDetailsForm1;
-        keyDetails["formType"] = "form1";
+    keyDetails["formType"] = "form1";
     for (let index = 0; index < form1QuestionKeys.length; index++) {
         if (xviFCForm1Table.hasOwnProperty(form1QuestionKeys[index])) {
             let obj = xviFCForm1Table[form1QuestionKeys[index]];
@@ -326,20 +345,20 @@ async function getForm1(ulbData, stateData, roleName, submittedData) {
             xviFCForm1Table['readonly'] = role == 'ULB' && (currentFormStatus == 'IN_PROGRESS' || currentFormStatus == 'NOT_STARTED') ? false : true;
 
             if (keyDetails[form1QuestionKeys[index]].year > 1) {
-                let selectedKeyDetails ={};
+                let selectedKeyDetails = {};
                 let quekey = form1QuestionKeys[index];
-                    selectedKeyDetails = keyDetails[quekey];
+                selectedKeyDetails = keyDetails[quekey];
                 let positionCounter = 1;
                 let yearData = [];
                 if (frontendYear_Fd && frontendYear_Fd.includes("In")) frontendYear_Fd = "2015-16";
                 if (frontendYear_Fd && frontendYear_Fd.includes("Before")) frontendYear_Fd = "2014-15";
-        
+
                 let yindex = -1;
                 if (frontendYear_Fd == "2014-15") {
                     yindex = financialYearTableHeader.length;
                 } else {
                     //index = frontendYear_Fd ? financialYearTableHeader.indexOf(frontendYear_Fd) : frontendYear_Slb ? financialYearTableHeader.indexOf(frontendYear_Slb) + 1 : -1;
-                    yindex = frontendYear_Fd ? financialYearTableHeader.indexOf(frontendYear_Fd) :  -1;
+                    yindex = frontendYear_Fd ? financialYearTableHeader.indexOf(frontendYear_Fd) : -1;
                 }
                 for (let i = 0; i < yindex; i++) {
                     let eachYearobj = {};
@@ -375,16 +394,16 @@ async function getForm1(ulbData, stateData, roleName, submittedData) {
                         eachYearobj["rejectReason"] = "";
                         eachYearobj["allowedFileTypes"] = ['pdf'];
                     }
-                   
+
                     yearData.push(eachYearobj);
                 }
                 xviFCForm1Table[form1QuestionKeys[index]].year = yearData
-            } 
+            }
         }
     }
 
 
-  
+
 
 
     // Create a json structure - questions.
@@ -539,7 +558,7 @@ async function getForm2(ulbData, stateData, roleName, submittedData) {
     // let keyDetails = Object.assign(keyDetailsForm1, keyDetailsForm2);
     // let keyDetails = { ...keyDetailsForm1, ...keyDetailsForm2 };
     let keyDetails = keyDetailsForm2;
-        keyDetails["formType"] = "form2";
+    keyDetails["formType"] = "form2";
 
     let mergedForm2QuestionKeys = form1QuestionKeys.concat(form2QuestionKeys);
 
@@ -548,25 +567,25 @@ async function getForm2(ulbData, stateData, roleName, submittedData) {
             let obj = xviFCForm2Table[mergedForm2QuestionKeys[index]];
             xviFCForm2Table[mergedForm2QuestionKeys[index]] = await getColumnWiseData(keyDetails, mergedForm2QuestionKeys[index], obj, xviFCForm2Table.isDraft, "", role, currentFormStatus, frontendYear_Fd, frontendYear_Slb);
             xviFCForm2Table['readonly'] = role == 'ULB' && (currentFormStatus == 'IN_PROGRESS' || currentFormStatus == 'NOT_STARTED') ? false : true;
-        
+
             if (keyDetails[mergedForm2QuestionKeys[index]].year > 1) {
-                let selectedKeyDetails ={};
+                let selectedKeyDetails = {};
                 let quekey = mergedForm2QuestionKeys[index];
-                    selectedKeyDetails = keyDetails[quekey];
+                selectedKeyDetails = keyDetails[quekey];
                 let positionCounter = 1;
                 let yearData = [];
                 if (frontendYear_Fd && frontendYear_Fd.includes("In")) frontendYear_Fd = "2015-16";
                 if (frontendYear_Fd && frontendYear_Fd.includes("Before")) frontendYear_Fd = "2014-15";
-        
+
                 let yindex = -1;
                 if (frontendYear_Fd == "2014-15") {
                     yindex = financialYearTableHeader.length;
                 } else {
-                    if(slbKeys.includes(mergedForm2QuestionKeys[index])){
+                    if (slbKeys.includes(mergedForm2QuestionKeys[index])) {
                         yindex = frontendYear_Slb ? financialYearTableHeader.indexOf(frontendYear_Slb) + 1 : -1;
-                    }else{
-                          yindex = frontendYear_Fd ? financialYearTableHeader.indexOf(frontendYear_Fd) :  -1;
-                    }                  
+                    } else {
+                        yindex = frontendYear_Fd ? financialYearTableHeader.indexOf(frontendYear_Fd) : -1;
+                    }
                 }
                 for (let i = 0; i < yindex; i++) {
                     let eachYearobj = {};
@@ -602,12 +621,12 @@ async function getForm2(ulbData, stateData, roleName, submittedData) {
                         eachYearobj["rejectReason"] = "";
                         eachYearobj["allowedFileTypes"] = ['pdf'];
                     }
-                   
+
                     yearData.push(eachYearobj);
                 }
                 xviFCForm2Table[mergedForm2QuestionKeys[index]].year = yearData
-            } 
-        
+            }
+
         }
     }
     //console.log(xviFCForm2Table['sourceOfFd'])
@@ -732,7 +751,7 @@ async function getForm2(ulbData, stateData, roleName, submittedData) {
 
 };
 
-async function  getColumnWiseData (allKeys, key, obj, isDraft, dataSource = "", role, formStatus, frontendYear_Fd, frontendYear_Slb)  {
+async function getColumnWiseData(allKeys, key, obj, isDraft, dataSource = "", role, formStatus, frontendYear_Fd, frontendYear_Slb) {
     switch (key) {
         case "nameOfUlb": {
             return {
@@ -1671,22 +1690,22 @@ async function getUploadDocLinks(ulbId, fileDataJson) {
 // Pass mongoDB year ID and get year.
 async function findYearById(mongoObjId) {
     let yearData = [
-        {"id": "606aadac4dff55e6c075c507",  "year":"2020-21"},
-        {"id": "606aaf854dff55e6c075d219",  "year":"2021-22"},
-        {"id": "606aafb14dff55e6c075d3ae",  "year":"2022-23"},
-        {"id": "606aafc14dff55e6c075d3ec",  "year":"2023-24"},
-        {"id": "606aafcf4dff55e6c075d424",  "year":"2024-25"},
-        {"id": "606aafda4dff55e6c075d48f",  "year":"2025-26"},
-        {"id": "607697074dff55e6c0be33ba",  "year":"2019-20"},
-        {"id": "63735a4bd44534713673bfbf",  "year":"2017-18"},
-        {"id": "63735a5bd44534713673c1ca",  "year":"2018-19"}
-        ]
+        { "id": "606aadac4dff55e6c075c507", "year": "2020-21" },
+        { "id": "606aaf854dff55e6c075d219", "year": "2021-22" },
+        { "id": "606aafb14dff55e6c075d3ae", "year": "2022-23" },
+        { "id": "606aafc14dff55e6c075d3ec", "year": "2023-24" },
+        { "id": "606aafcf4dff55e6c075d424", "year": "2024-25" },
+        { "id": "606aafda4dff55e6c075d48f", "year": "2025-26" },
+        { "id": "607697074dff55e6c0be33ba", "year": "2019-20" },
+        { "id": "63735a4bd44534713673bfbf", "year": "2017-18" },
+        { "id": "63735a5bd44534713673c1ca", "year": "2018-19" }
+    ]
 
-    let yearIndex = yearData.findIndex((x)=>{ return x.id == mongoObjId})
-      
-    if(yearIndex>-1) { return yearData[yearIndex].year}
-      else return '';
-        
+    let yearIndex = yearData.findIndex((x) => { return x.id == mongoObjId })
+
+    if (yearIndex > -1) { return yearData[yearIndex].year }
+    else return '';
+
     // let years = await Year.find().lean();
 
 
@@ -1698,7 +1717,7 @@ async function findYearById(mongoObjId) {
     //         return yearObj.year;
     //     }
     // }
-   // return null; // ID not found
+    // return null; // ID not found
 }
 
 // Update the json - add the keys/ questions as per the key header - Financial Data - Form 1 Json.
@@ -2032,78 +2051,152 @@ async function getUpdatedServiceLevelBenchmark_headers(serviceLevelBenchmarkData
 
 // ------ Review Table + Dashboard. ------
 module.exports.formList = async (req, res) => {
+
+    let user = req.decoded,
+        filter = req.query.filter ? JSON.parse(req.query.filter) : (req.body.filter ? req.body.filter : {}),
+        sort = req.query.sort ? JSON.parse(req.query.sort) : (req.body.sort ? req.body.sort : {}),
+        skip = req.query.skip ? parseInt(req.query.skip) : 0,
+        limit = req.query.limit ? parseInt(req.query.limit) : 2;
+
+    console.log("filter", filter);
     let stateId = req.query.state;
-    let listOfUlbsFromState = await XviFcForm1DataCollection.find({ state: stateId }, { tab: 0 }).lean();
+    // let listOfUlbsFromState = await XviFcForm1DataCollection.find({ state: stateId }).sort(sort).skip(skip).limit(limit).lean();
+    let listOfUlbsFromState = await XviFcForm1DataCollection.find({ $and: [{ "state": ObjectId(stateId) }, filter] }).sort(sort).skip(skip).limit(limit).lean();
+    let totalUlbForm = await XviFcForm1DataCollection.find({ state: stateId }).count().lean();
 
     if (listOfUlbsFromState) {
         let reviewTableData = [];
-        let obj = {};
 
         for (let eachUlbForm of listOfUlbsFromState) {
-            let ulbData = await XviFcForm1DataCollection.find({ ulb: ObjectId(eachUlbForm.ulb) }, { tab: 1 }).lean();
+            let obj = {};
+            let allTabDataPercent = [];
+            // let ulbData = await XviFcForm1DataCollection.find({ ulb: ObjectId(eachUlbForm.ulb) }, { tab: 1 }).lean();
+            let ulbData = eachUlbForm.tab;
 
-            // // Get Data submission %.
-            // for (let eachTab of ulbData[0].tab) {
-            //     if (eachTab.data) await getSubmissionPer(eachTab);
-            // }
+            // Get Data submission %.
+            let dataSubmissionPercent = 0;
+            for (let eachTab of ulbData) {
+                if (eachTab.data.length > 0) {
+                    let eachTabPercent = await getSubmissionPercent(eachTab, eachUlbForm.formId);
+                    dataSubmissionPercent += eachTabPercent.submissionPercent;
+                    allTabDataPercent.push(eachTabPercent);
+                }
+            }
 
-            let demographicDataSubmission = await getSubmissionPer(ulbData[0].tab[0].data);
-            console.log(demographicDataSubmission);
-
-            obj["stateName"] = "Assam"; //eachUlbForm.stateName;
-            obj["ulbName"] = "ULB name"; //eachUlbForm.ulbName;
-            obj["censusCode"] = "801213"; //eachUlbForm.censusCode ? eachUlbForm.censusCode : eachUlbForm.sbCode;
+            obj["stateName"] = eachUlbForm.stateName;
+            obj["ulbName"] = eachUlbForm.ulbName;
+            obj["censusCode"] = eachUlbForm.censusCode ? eachUlbForm.censusCode : eachUlbForm.sbCode;
             obj["ulbCategory"] = eachUlbForm.formId == 16 ? "Category 1" : eachUlbForm.formId == 17 ? "Category 2" : "";
             obj["formStatus"] = eachUlbForm.formStatus;
-            obj["dataSubmitted"] = "80%"; //eachUlbForm.dataSubmitted;
-            obj["action"] = "View"; //eachUlbForm.action;
+            obj["dataSubmitted"] = Number((dataSubmissionPercent / allTabDataPercent.length).toFixed(2));
+            obj["action"] = (eachUlbForm.formStatus == 'UNDER_REVIEW_BY_XVIFC' && user.role == 'XVIFC') || (eachUlbForm.formStatus == 'UNDER_REVIEW_BY_STATE' && user.role == 'XVIFC_STATE') ? 'Review' : 'View';
 
             reviewTableData.push(obj);
         }
 
-        return res.status(200).json({ status: true, message: "", data: reviewTableData });
+        return res.status(200).json({ status: true, message: "", data: reviewTableData, totalForms: totalUlbForm });
     } else {
         return res.status(404).json({ status: false, message: "Soemthing went wrong" });
     }
 
 };
 
-async function getSubmissionPer(eachTabData) {
-    let denominator = {
-        demographicDataForm1: 8,
-        demographicDataForm2: 9,
-        uplodDoc: 0,
-        financialData: 0,
-        accountingPractices: 13,
-        serviceLevelBenchmark: 0
-    };
+let denominator = {
+    demographicData: 8,
+    uploadDoc: 0,
+    financialData: 0,
+    accountPractice: 13,
+    serviceLevelBenchmark: 0
+};
+
+async function getSubmissionPercent(eachTabData, formId) {
 
     let numeratorSaveAsDraft = 0;
-    let numeratorSubmit = 0;
+    let baseYear = Number(financialYearTableHeader[0].split("-")[1]);
 
+    for (eachAns of eachTabData.data) {
 
-    for (eachAns of eachTabData) {
-
-        if (eachAns.key && eachAns.key == "yearOfConstitution") {
-            denominator["financialData"] = 2022 - Number(eachAns.saveAsDraftValue.split("-")[0]);
-            denominator["uplodDoc"] = 2022 - Number(eachAns.saveAsDraftValue.split("-")[0]);
+        if (eachTabData.tabKey == 'demographicData') {
+            if (eachAns.key == "yearOfConstitution") {
+                let temp = baseYear - Number(eachAns.saveAsDraftValue.split("-")[1]);
+                denominator["financialData"] = formId == 16 ? temp * 20 : temp * 42;
+                denominator["uploadDoc"] = formId == 16 ? temp * 1 : temp * 1;
+            }
+            if (eachAns.key == "yearOfSlb") {
+                denominator["serviceLevelBenchmark"] = (baseYear - Number(eachAns.saveAsDraftValue.split("-")[1]) + 1) * 28;
+            }
+            denominator.demographicData = formId == 16 ? 8 : 9;
         }
-        if (eachAns.key && eachAns.key == "yearOfSlb") {
-            denominator["serviceLevelBenchmark"] = 2022 - Number(eachAns.saveAsDraftValue.split("-")[0]) + 1;
-        }
 
-        if (eachAns.saveAsDraftValue) numeratorSaveAsDraft += 1;
-        if (eachAns.value) numeratorSubmit += 1;
+        if (eachTabData.tabKey == 'uploadDoc') {
+            if (eachAns.file.url) numeratorSaveAsDraft += 1;
+        } else {
+            if (eachAns.saveAsDraftValue) numeratorSaveAsDraft += 1;
+        }
     }
 
-    let saveAsDraftPer = denominator.demographicDataForm2 ? (numeratorSaveAsDraft / denominator.demographicDataForm2) * 100 : 0;
-    let submitPer = denominator.demographicDataForm2 ? (numeratorSubmit / denominator.demographicDataForm2) * 100 : 0;
-
     return {
-        denominator,
-        numeratorSaveAsDraft,
-        numeratorSubmit,
-        saveAsDraftPer,
-        submitPer,
+        key: eachTabData.tabKey,
+        numerator: numeratorSaveAsDraft,
+        denominator: denominator[eachTabData.tabKey],
+        submissionPercent: Number(((numeratorSaveAsDraft / denominator[eachTabData.tabKey]) * 100).toFixed(2)),
     };
 }
+
+module.exports.searchByUlb = async (req, res) => {
+    let stateId = req.query.state;
+
+    const { matchingWord, onlyUlb } = req.body;
+    if (!matchingWord)
+        return Response.BadRequest(res, null, "Provide word to match");
+    let query = {
+        $and: [{ ulbName: { $regex: `${matchingWord}`, $options: 'im' } }, { "state": ObjectId(stateId) }]
+    };
+
+    let user = req.decoded,
+        // filter = req.query.filter ? JSON.parse(req.query.filter) : (req.body.filter ? req.body.filter : {}),
+        sort = req.query.sort ? JSON.parse(req.query.sort) : (req.body.sort ? req.body.sort : {}),
+        skip = req.query.skip ? parseInt(req.query.skip) : 0,
+        limit = req.query.limit ? parseInt(req.query.limit) : 2;
+
+    console.log("sort", sort);
+    // let listOfUlbsFromState = await XviFcForm1DataCollection.find({ state: stateId }).sort(sort).skip(skip).limit(limit).lean();
+    let listOfUlbsFromState = await XviFcForm1DataCollection.find(query).sort(sort).skip(skip).limit(limit).lean();
+    let totalUlbForm = await XviFcForm1DataCollection.find({ state: stateId }).count().lean();
+
+    if (listOfUlbsFromState) {
+        let reviewTableData = [];
+
+        for (let eachUlbForm of listOfUlbsFromState) {
+            let obj = {};
+            let allTabDataPercent = [];
+            // let ulbData = await XviFcForm1DataCollection.find({ ulb: ObjectId(eachUlbForm.ulb) }, { tab: 1 }).lean();
+            let ulbData = eachUlbForm.tab;
+
+            // Get Data submission %.
+            let dataSubmissionPercent = 0;
+            for (let eachTab of ulbData) {
+                if (eachTab.data.length > 0) {
+                    let eachTabPercent = await getSubmissionPercent(eachTab, eachUlbForm.formId);
+                    dataSubmissionPercent += eachTabPercent.submissionPercent;
+                    allTabDataPercent.push(eachTabPercent);
+                }
+            }
+
+            obj["stateName"] = eachUlbForm.stateName;
+            obj["ulbName"] = eachUlbForm.ulbName;
+            obj["censusCode"] = eachUlbForm.censusCode ? eachUlbForm.censusCode : eachUlbForm.sbCode;
+            obj["ulbCategory"] = eachUlbForm.formId == 16 ? "Category 1" : eachUlbForm.formId == 17 ? "Category 2" : "";
+            obj["formStatus"] = eachUlbForm.formStatus;
+            obj["dataSubmitted"] = Number((dataSubmissionPercent / allTabDataPercent.length).toFixed(2));
+            obj["action"] = (eachUlbForm.formStatus == 'UNDER_REVIEW_BY_XVIFC' && user.role == 'XVIFC') || (eachUlbForm.formStatus == 'UNDER_REVIEW_BY_STATE' && user.role == 'XVIFC_STATE') ? 'Review' : 'View';
+
+            reviewTableData.push(obj);
+        }
+
+        return res.status(200).json({ status: true, message: "", data: reviewTableData, totalForms: totalUlbForm });
+    } else {
+        return res.status(404).json({ status: false, message: "Soemthing went wrong" });
+    }
+
+};

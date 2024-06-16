@@ -39,7 +39,7 @@ module.exports.getUSer = (reqBody) => {
                 let url = `${process.env.HOSTNAME}/account-reactivate`;
                 reject(`Email not verified yet. Please <a href='${url}'>click here</a> to send the activation link on your registered email`);
             }
-            else if ((user.role != 'ADMIN' && user.role != 'USER' && user.role != 'STATE' && user.role != 'PARTNER' && user.role != 'MoHUA' && user?.role != "PMU" && user?.role != "AAINA" && user?.role != "XVIFC") && emailFlag){
+            else if ((user.role != 'ADMIN' && user.role != 'USER' && user.role != 'STATE' && user.role != 'XVIFC_STATE' && user.role != 'PARTNER' && user.role != 'MoHUA' && user?.role != "PMU" && user?.role != "AAINA" && user?.role != "XVIFC") && emailFlag){
                 if (user.role == 'ULB' && emailFlag) {
                     reject(`Please use ULB Code/Census Code for login`)
                 }

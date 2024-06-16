@@ -40,6 +40,10 @@ const xviFcFormDataCollectionSchema = new Schema(
                 }
             ]
         }],
+        censusCode: { type: String },
+        sbCode: { type: String },
+        ulbName: { type: String },
+        stateName: { type: String },
         formId: { type: Number, required: true },
         formStatus: { type: String, requird: true },
         rejectReason_state: { type: String, default: "" },
