@@ -10,10 +10,11 @@ const ScoringFiscalRanking = require('../../models/ScoringFiscalRanking');
 const { registerCustomQueryHandler } = require('puppeteer');
 const { getMultipleRandomElements } = require('../../service/common');
 const { getPaginationParams, isValidObjectId, getPageNo, getPopulationBucket } = require('../../service/common');
+const { assesmentParamLabels, abYears, afsYears, getTableHeaderDocs, rmEpFGHeader } = require('./response-data');
 const e = require('express');
 
-const abYears = ['2020-21', '2021-22', '2022-23', '2023-24'];
-const afsYears = ['2018-19', '2019-20', '2020-21', '2021-22'];
+// const abYears = ['2020-21', '2021-22', '2022-23', '2023-24'];
+// const afsYears = ['2018-19', '2019-20', '2020-21', '2021-22'];
 
 async function getScoreFR(populationBucket, indicator, order = -1) {
 	const condition = { isActive: true, populationBucket };
@@ -50,7 +51,7 @@ module.exports.getUlbDetails = async (req, res) => {
 		const condition1 = { isActive: true, populationBucket: ulb.populationBucket };
 		const populationBucketUlbCount = await ScoringFiscalRanking.countDocuments(condition1).lean();
 
-		const condition2 = { isActive: true, populationBucket: ulb.populationBucket };
+		const condition2 = { isActive: true, populationBucket: ulb.populationBucket, currentFormStatus: 11 };
 		const topUlbs = await ScoringFiscalRanking.find(condition2, { name: 1, ulb: 1, populationBucket: 1, censusCode: 1, sbCode: 1, _id: 0 }).sort({ 'overAll.rank': 1 }).limit(10).lean();
 
 		const conditionFs = {
@@ -145,7 +146,7 @@ module.exports.getUlbsBySate = async (req, res) => {
 		const total = await ScoringFiscalRanking.countDocuments(condition);
 		const state = await State.findById(stateId).select('fiscalRanking name annualBudgets auditedAccounts').lean();
 		const data = getUlbData(ulbs, req.query);
-		const header = getTableHeaderDocs();
+		const header = getTableHeaderDocs;
 		const footer = ['', '', '', '', ''];
 		state.annualBudgets?.forEach(y => {
 			footer.push(y.total);
@@ -167,90 +168,6 @@ module.exports.getUlbsBySate = async (req, res) => {
 		});
 	}
 };
-// Table header
-function getTableHeaderDocs() {
-	const data = {
-		'columns': [
-			{
-				'label': 'S.No',
-				'key': 'sNo',
-				'class': 'th-common-cls',
-				'width': '2',
-			},
-			{
-				'label': 'ULB Name',
-				'key': 'ulbName',
-				'sort': 1,
-				'query': '',
-				'sortable': true,
-				'class': 'th-color-cls',
-			},
-			{
-				'label': 'Population Category',
-				'key': 'populationCategory',
-				'sortable': true,
-				'class': 'th-common-cls',
-			},
-			{
-				'label': 'ULB Participated',
-				'key': 'isUlbParticipated',
-				'sortable': true,
-				'class': 'th-common-cls',
-			},
-			{
-				'label': 'CFR Ranked',
-				'key': 'isUlbRanked',
-				'sortable': true,
-				'class': 'th-common-cls',
-			},
-			{
-				'label': 'Annual Financial Statement Available',
-				'key': 'auditedAccounts2018-19',
-				'colspan': 4,
-				'class': 'th-common-cls',
-			},
-			{
-				'label': '',
-				'key': 'auditedAccounts2019-20',
-				'hidden': true,
-			},
-			{
-				'label': '',
-				'key': 'auditedAccounts2020-21',
-				'hidden': true,
-			},
-			{
-				'label': '',
-				'key': 'auditedAccounts2021-22',
-				'hidden': true,
-			},
-			{
-				'label': 'Annual Budget Available',
-				'key': 'annualBudgets2020-21',
-				'colspan': 4,
-				'class': 'th-common-cls',
-			},
-			{
-				'label': '',
-				'key': 'annualBudgets2021-22',
-				'hidden': true,
-			},
-			{
-				'label': '',
-				'key': 'annualBudgets2022-23',
-				'hidden': true,
-			},
-			{
-				'label': '',
-				'key': 'annualBudgets2023-24',
-				'hidden': true,
-			},
-		],
-		'subHeaders': ['', '', '', '', '', ...afsYears, ...abYears],
-		'name': '',
-	};
-	return data;
-}
 
 // Table data
 function getUlbData(ulbs, query) {
@@ -303,47 +220,7 @@ function getUlbData(ulbs, query) {
 	return tableData;
 }
 
-//<<-- ULB details - Assessment parameter score -->>
-function getTableHeader(type, ulb) {
-	let score = '300';
-	if (type === 'resourceMobilization') {
-		score = 600;
-	}
-	const columns = [
-		{
-			'label': 'S. No',
-			'key': 'sNo',
-		},
-		{
-			'label': 'Indicator',
-			'key': 'indicator',
-		},
-		{
-			'label': 'Units',
-			'key': 'unit',
-		},
-		{
-			'label': 'ULB performance',
-			'key': 'ulbPerformance',
-		},
-		{
-			'label': 'Highest performance',
-			'info': 'In population category',
-			'key': 'highPerformance',
-		},
-		{
-			'label': 'Lowest performance',
-			'info': 'In population category',
-			'key': 'lowPerformance',
-		},
-		{
-			'label': 'ULB Score',
-			'info': `Out of ${score}`,
-			'key': 'ulbScore',
-		},
-	];
-	return { columns, 'lastRow': ['', '', '', '', '', 'Total', ulb[type].score] };
-}
+
 async function getMaxMinScore(populationBucket, indicator, order) {
 	// mongoose.set('debug',true);
 	const condition = { isActive: true, populationBucket, currentFormStatus: { $in: [11] } };
@@ -351,88 +228,15 @@ async function getMaxMinScore(populationBucket, indicator, order) {
 	return res;
 }
 async function getTableData(ulb, type) {
-	let indicators = [
-		{
-			units: 'Rs.',
-			sno: '1',
-			key: 'totalBudgetDataPC_1',
-			type: 'resourceMobilization',
-			title: 'Total Budget size per capita (Actual Total Reciepts)',
-		},
-		{ units: 'Rs.', sno: '2', key: 'ownRevenuePC_2', type: 'resourceMobilization', title: 'Own Revenue per capita' },
-		{ units: 'Rs.', sno: '3', key: 'pTaxPC_3', type: 'resourceMobilization', title: 'Property Tax per capita' },
-		{
-			units: '%',
-			sno: '4',
-			key: 'cagrInTotalBud_4',
-			type: 'resourceMobilization',
-			title: 'Growth (3 Year CAGR) in Total Budget Size (Total actual reciept)',
-		},
-		{ units: '%', sno: '5', key: 'cagrInOwnRevPC_5', type: 'resourceMobilization', title: 'Growth (3 Year CAGR) in Own Revenue per capita' },
-		{ units: '%', sno: '6', key: 'cagrInPropTax_6', type: 'resourceMobilization', title: 'Growth (3 Year CAGR) in Property Tax per capita' },
-		{ units: 'Rs.', sno: '7', key: 'capExPCAvg_7', type: 'expenditurePerformance', title: 'Capital Expenditure per capita (3-year average)' },
-		{ units: '%', sno: '8', key: 'cagrInCapExpen_8', type: 'expenditurePerformance', title: 'Growth (3-Year CAGR) in Capex per capita' },
-		{
-			units: 'Rs.',
-			sno: '9',
-			key: 'omExpTotalRevExpen_9',
-			type: 'expenditurePerformance',
-			title: 'O&M expenses to Total Revenue Expenditure (TRE) (3- year average)',
-		},
-		{
-			units: 'No. of months',
-			sno: '10a',
-			key: 'avgMonthsForULBAuditMarks_10a',
-			type: 'fiscalGovernance',
-			title:
-				'For Timely Audit - Average number of months taken by ULB in closing audit (i.e. Date of audit report minus date of FY close), average of 3 year period',
-		},
-		{
-			units: 'Yes/ No',
-			sno: '10b',
-			key: 'aaPushishedMarks_10b',
-			type: 'fiscalGovernance',
-			title: 'For Publication of Annual Accounts - Availability for last 3 years on Cityfinance/ Own website',
-		},
-		{
-			units: 'Yes/ No',
-			sno: '11a',
-			key: 'gisBasedPTaxMarks_11a',
-			type: 'fiscalGovernance',
-			title: 'For Property-tax - whether property tax records are linked to GIS-based system?',
-		},
-		{
-			units: 'Yes/ No',
-			sno: '11b',
-			key: 'accSoftwareMarks_11b',
-			type: 'fiscalGovernance',
-			title:
-				'For Accounting - whether accounting is done on either standalone software like Tally, e-biz etc, or a state-level centralized system like ERP, Digit etc.',
-		},
-		{
-			units: '%',
-			sno: '12',
-			key: 'receiptsVariance_12',
-			type: 'fiscalGovernance',
-			title: 'Budget vs. Actual (Variance %) for Total Receipts (3-year average)',
-		},
-		{ units: 'No. of days', sno: '13', key: 'ownRevRecOutStanding_13', type: 'fiscalGovernance', title: 'Own Revenue Receivables Outstanding' },
-		{
-			units: '%',
-			sno: '14',
-			key: 'digitalToTotalOwnRev_14',
-			type: 'fiscalGovernance',
-			title: 'Digital Own Revenue Collection (DORC) to Total Own Revenue Collection (TORC)',
-		},
-		{ units: '%', sno: '15', key: 'propUnderTaxCollNet_15', type: 'fiscalGovernance', title: 'Properties under Tax Collection net' },
-	];
+	let indicators = assesmentParamLabels;
 
 	const filteredIndicators = indicators.filter((e) => e.type === type);
 	// console.log('filteredIndicators', filteredIndicators);
 	let data = [];
 	for (const indicator of filteredIndicators) {
-		const highest = await getMaxMinScore(ulb.populationBucket, indicator.key, -1);
-		const lowest = await getMaxMinScore(ulb.populationBucket, indicator.key, 1);
+		// TODO: to be removed
+		// const highest = await getMaxMinScore(ulb.populationBucket, indicator.key, -1);
+		// const lowest = await getMaxMinScore(ulb.populationBucket, indicator.key, 1);
 		let ulbPerformance = ulb[indicator.key].score;
 
 		let ele = {
@@ -475,7 +279,7 @@ async function getTableData(ulb, type) {
 		data.push(ele);
 	}
 	// console.log('data',data);
-	const header = getTableHeader(type, ulb);
+	const header = rmEpFGHeader(type, ulb);
 	return { ...header, data };
 }
 
