@@ -342,6 +342,7 @@ async function getForm1(ulbData, stateData, roleName, submittedData) {
             let obj = xviFCForm1Table[form1QuestionKeys[index]];
 
             xviFCForm1Table[form1QuestionKeys[index]] = await getColumnWiseData(keyDetails, form1QuestionKeys[index], obj, xviFCForm1Table.isDraft, "", role, currentFormStatus, frontendYear_Fd);
+            xviFCForm1Table[form1QuestionKeys[index]].readonly = xviFCForm1Table[form1QuestionKeys[index]].autosumValidation == 'sum' ? true : currentFormStatus == 'IN_PROGRESS' || currentFormStatus == 'NOT_STARTED' ? false : true
             xviFCForm1Table['readonly'] = role == 'ULB' && (currentFormStatus == 'IN_PROGRESS' || currentFormStatus == 'NOT_STARTED') ? false : true;
 
             if (keyDetails[form1QuestionKeys[index]].year > 1) {
@@ -516,6 +517,7 @@ async function getForm1(ulbData, stateData, roleName, submittedData) {
         stateId: stateData._id,
         stateName: stateData.name,
         tabs: from1QuestionFromDb,
+        formStatus:currentFormStatus,
         validationCounter,
         financialYearTableHeader
     };
@@ -566,6 +568,7 @@ async function getForm2(ulbData, stateData, roleName, submittedData) {
         if (xviFCForm2Table.hasOwnProperty(mergedForm2QuestionKeys[index])) {
             let obj = xviFCForm2Table[mergedForm2QuestionKeys[index]];
             xviFCForm2Table[mergedForm2QuestionKeys[index]] = await getColumnWiseData(keyDetails, mergedForm2QuestionKeys[index], obj, xviFCForm2Table.isDraft, "", role, currentFormStatus, frontendYear_Fd, frontendYear_Slb);
+            xviFCForm2Table[mergedForm2QuestionKeys[index]].readonly = xviFCForm1Table[form1QuestionKeys[index]].autosumValidation == 'sum' ? true : currentFormStatus == 'IN_PROGRESS' || currentFormStatus == 'NOT_STARTED' ? false : true
             xviFCForm2Table['readonly'] = role == 'ULB' && (currentFormStatus == 'IN_PROGRESS' || currentFormStatus == 'NOT_STARTED') ? false : true;
 
             if (keyDetails[mergedForm2QuestionKeys[index]].year > 1) {
@@ -743,6 +746,7 @@ async function getForm2(ulbData, stateData, roleName, submittedData) {
         stateId: stateData._id,
         stateName: stateData.name,
         tabs: from2QuestionFromDb,
+        formStatus:currentFormStatus,
         validationCounter,
         financialYearTableHeader
     };
