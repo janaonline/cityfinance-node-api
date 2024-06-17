@@ -2148,7 +2148,7 @@ module.exports.searchByUlb = async (req, res) => {
 
     const { matchingWord, onlyUlb } = req.body;
     if (!matchingWord)
-        return Response.BadRequest(res, null, "Provide word to match");
+        return res.status(400).json({ message: "ULB not found!" });
     let query = {
         $and: [{ ulbName: { $regex: `${matchingWord}`, $options: 'im' } }, { "state": ObjectId(stateId) }]
     };

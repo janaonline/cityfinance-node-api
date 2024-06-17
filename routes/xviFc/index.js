@@ -20,7 +20,7 @@ router.get('/fetch_form', verifyToken, xviFcService.getForm);
 router.post('/saveAsDraft', verifyToken, xviFcService.saveAsDraftForm);
 router.post('/submit_form', verifyToken, xviFcService.submitFrom);
 
-router.get('/form_list', verifyToken, xviFcService.formList);
-router.get('/search', verifyToken, xviFcService.searchByUlb);
+router.post('/form_list', verifyToken, xviFcService.formList);
+router.post('/search', verifyToken, xviFcService.searchByUlb);
 
 module.exports = router;
