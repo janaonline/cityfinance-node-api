@@ -37,6 +37,9 @@ const xviFcFormDataCollectionSchema = new Schema(
                         url: { type: String },
                     }],
                     reason: { type: String },
+                    verifyStatus: { type: Number },
+                    rejectOption: { type: Schema.Types.Mixed },
+                    rejectReason: { type: String },
                 }
             ]
         }],
