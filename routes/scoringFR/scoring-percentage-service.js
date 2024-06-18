@@ -35,8 +35,6 @@ function calculateAverage(numbers) {
 	return Number(sum / numbers.length);
 }
 
-let decimalPlace = 3;
-
 async function getMaxMinScore(populationBucket, indicator, order) {
 	// mongoose.set('debug',true);
 	const condition = { isActive: true, populationBucket, currentFormStatus: { $in: [11] } };
@@ -127,12 +125,11 @@ async function calculateFRPercentage(populationBucket) {
 		const digitalToTotalOwnRev_14 = await updatePercentage_formula1(ulb, 'digitalToTotalOwnRev_14', 50);
 		const propUnderTaxCollNet_15 = await updatePercentage_formula1(ulb, 'propUnderTaxCollNet_15', 50);
 
-		const resourceMobilization = parseFloat((totalBudgetDataPC_1.percentage + ownRevenuePC_2.percentage + pTaxPC_3.percentage + cagrInTotalBud_4.percentage + cagrInOwnRevPC_5.percentage + cagrInPropTax_6.percentage).toFixed(decimalPlace));
-		const expenditurePerformance = parseFloat((capExPCAvg_7.percentage + cagrInCapExpen_8.percentage + omExpTotalRevExpen_9.percentage).toFixed(decimalPlace));
-		const fiscalGovernance = parseFloat((avgMonthsForULBAuditMarks_10a.percentage + aaPushishedMarks_10b.percentage + gisBasedPTaxMarks_11a.percentage + gisBasedPTaxMarks_11a.percentage +
-			receiptsVariance_12.percentage + ownRevRecOutStanding_13.percentage + digitalToTotalOwnRev_14.percentage + propUnderTaxCollNet_15.percentage).toFixed(decimalPlace));
+		const resourceMobilization = Number(totalBudgetDataPC_1.percentage + ownRevenuePC_2.percentage + pTaxPC_3.percentage + cagrInTotalBud_4.percentage + cagrInOwnRevPC_5.percentage + cagrInPropTax_6.percentage);
+		const expenditurePerformance = Number(capExPCAvg_7.percentage + cagrInCapExpen_8.percentage + omExpTotalRevExpen_9.percentage);
+		const fiscalGovernance = Number(avgMonthsForULBAuditMarks_10a.percentage + aaPushishedMarks_10b.percentage + gisBasedPTaxMarks_11a.percentage + accSoftwareMarks_11b.percentage + receiptsVariance_12.percentage + ownRevRecOutStanding_13.percentage + digitalToTotalOwnRev_14.percentage + propUnderTaxCollNet_15.percentage);
 
-		const overAll = parseFloat((resourceMobilization + expenditurePerformance + fiscalGovernance).toFixed(decimalPlace));
+		const overAll = Number(resourceMobilization + expenditurePerformance + fiscalGovernance);
 		const updateData = {
 			'totalBudgetDataPC_1': totalBudgetDataPC_1,
 			'ownRevenuePC_2': ownRevenuePC_2,
