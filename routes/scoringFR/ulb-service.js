@@ -77,10 +77,10 @@ module.exports.getUlbDetails = async (req, res) => {
 			stateId: ulb.state,
 			stateName: state.name,
 			stateCode: state.code,
-			overAll: ulb.overAll,
-			resourceMobilization: ulb.resourceMobilization,
-			expenditurePerformance: ulb.expenditurePerformance,
-			fiscalGovernance: ulb.fiscalGovernance,
+			overAll: { ...ulb.overAll, score: Number(ulb.overAll.score.toFixed(2)) },
+			resourceMobilization: { ...ulb.resourceMobilization, score: Number(ulb.resourceMobilization.score.toFixed(2)) },
+			expenditurePerformance: { ...ulb.expenditurePerformance, score: Number(ulb.expenditurePerformance.score.toFixed(2)) },
+			fiscalGovernance: { ...ulb.fiscalGovernance, score: Number(ulb.fiscalGovernance.score.toFixed(2)) },
 			location: ulb.location,
 		};
 		const shuffledTopUlbs = getMultipleRandomElements(topUlbs, 4);
@@ -237,13 +237,13 @@ async function getTableData(ulb, type) {
 		// TODO: to be removed
 		// const highest = await getMaxMinScore(ulb.populationBucket, indicator.key, -1);
 		// const lowest = await getMaxMinScore(ulb.populationBucket, indicator.key, 1);
-		let ulbPerformance = ulb[indicator.key].score;
+		let ulbPerformance = Number(ulb[indicator.key].score.toFixed(2));
 
 		let ele = {
 			'sNo': indicator.sno,
 			'indicator': indicator.title,
 			'unit': indicator.units,
-			'ulbScore': (ulb[indicator.key].percentage).toFixed(2),
+			'ulbScore': Number((ulb[indicator.key].percentage).toFixed(2)),
 			'highPerformance': '-',
 			'highPerformanceConfig': {
 				title: '-'
@@ -256,17 +256,17 @@ async function getTableData(ulb, type) {
 		if (['aaPushishedMarks_10b', 'gisBasedPTaxMarks_11a', 'accSoftwareMarks_11b'].includes(indicator.key)) {
 			ulbPerformance = ulb[indicator.key].score ? 'Yes' : 'No';
 		} else if (indicator.key === 'avgMonthsForULBAuditMarks_10a') {
-			ulbPerformance = ulb[indicator.key].values;
+			ulbPerformance = Number(ulb[indicator.key].values.toFixed(2));
 		} else {
 			const highest = await getMaxMinScore(ulb.populationBucket, indicator.key, -1);
 			const lowest = await getMaxMinScore(ulb.populationBucket, indicator.key, 1);
 			ele = {
 				...ele,
-				'highPerformance': highest[indicator.key].score,
+				'highPerformance': Number(highest[indicator.key].score.toFixed(2)),
 				'highPerformanceConfig': {
 					title: highest.name
 				},
-				'lowPerformance': lowest[indicator.key].score,
+				'lowPerformance': Number(lowest[indicator.key].score.toFixed(2)),
 				'lowPerformanceConfig': {
 					title: lowest.name
 				},
@@ -291,10 +291,10 @@ function getSearchedUlb(ulbs, indicator) {
 	const stateAvgData = [];
 
 	for (const ulb of ulbs) {
-		indicatorData.push(ulb[indicator].score);
-		populationAvgData.push(ulb[indicator].populationBucketAvg);
-		nationalAvgData.push(ulb[indicator].nationalAvg);
-		stateAvgData.push(ulb[indicator].stateAvg);
+		indicatorData.push(Number(ulb[indicator].score.toFixed(2)));
+		populationAvgData.push(Number(ulb[indicator].populationBucketAvg.toFixed(2)));
+		nationalAvgData.push(Number(ulb[indicator].nationalAvg.toFixed(2)));
+		stateAvgData.push(Number(ulb[indicator].stateAvg.toFixed(2)));
 	}
 
 	// function to convert camelCase into proper case.

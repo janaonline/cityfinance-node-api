@@ -347,7 +347,7 @@ module.exports.topRankedUlbs = async (req, res) => {
 		// moongose.set('debug', true);
 		let { category, sortBy, order, state, populationBucket, limit } = req.query;
 		let condition = { isActive: true, currentFormStatus };
-		 
+		
 		limit = limit ? parseInt(limit) : 0;
 
 		if (state) {
@@ -467,10 +467,10 @@ async function fetchFiveUlbs(ulbRes, sortBy, state) {
 				},
 				ulb,
 				'ulbNameLink': `/rankings/ulb/${ulb.censusCode ? ulb.censusCode : ulb.sbCode ? ulb.sbCode : ulb.ulb}`,
-				'overallScore': ulb.overAll.score,
-				'resourceMobilizationScore': ulb.resourceMobilization.score,
-				'expenditurePerformanceScore': ulb.expenditurePerformance.score,
-				'fiscalGovernanceScore': ulb.fiscalGovernance.score,
+				'overallScore': Number(ulb.overAll.score.toFixed(2)),
+				'resourceMobilizationScore': Number(ulb.resourceMobilization.score.toFixed(2)),
+				'expenditurePerformanceScore': Number(ulb.expenditurePerformance.score.toFixed(2)),
+				'fiscalGovernanceScore': Number(ulb.fiscalGovernance.score.toFixed(2)),
 			};
 
 			ulbScore.push(ulbData);
@@ -506,11 +506,11 @@ function findassessmentParameterScore(ulbRes, key, state, stateRes) {
 	map1Data = [];
 	for (ulb of ulbRes) {
 		var ulbData = {
-			[`${key}Score`]: ulb[key].score,
+			[`${key}Score`]: Number(ulb[key].score.toFixed(2)),
 			[`${key}Rank`]: ulb[key].rank,
 			'ulbName': ulb.name,
 			'ulbNameLink': `/rankings/ulb/${ulb.censusCode ? ulb.censusCode : ulb.sbCode ? ulb.sbCode : ulb.ulb}`,
-			'overallScore': ulb.overAll.score,
+			'overallScore': Number(ulb.overAll.score.toFixed(2)),
 			'overallRank': ulb.overAll.rank,
 		};
 		const ulbLocation = { ...ulb.location, name: ulb.name };
