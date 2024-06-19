@@ -124,7 +124,7 @@ let keyDetailsForm1 = {
     yearOfConstitution: {
         class: '',
         formFieldType: 'dropdown',
-        options: ["2022-23", "2021-22", "2020-21", "2019-20", "2018-19", "2017-18", "2016-17", "In 2015-16", "Before 2015-16"],
+        options: ["After 2022-23", "2022-23", "2021-22", "2020-21", "2019-20", "2018-19", "2017-18", "2016-17", "In 2015-16", "Before 2015-16"],
         key: 'yearOfConstitution',
         displayPriority: '8',
         quesPos: 8,
@@ -228,7 +228,7 @@ let keyDetailsForm1 = {
         decimal: 0
     },
     totOwnRevenue: {
-        class: '',
+        class: 'autoSum',
         formFieldType: 'amount',
         key: 'totOwnRevenue',
         displayPriority: '1',
@@ -236,7 +236,7 @@ let keyDetailsForm1 = {
         validations: [],
         label: 'Total Own Revenue',
         info: 'Total own revenue shall include tax revenue, fees & user charges, interest income, and other income.',
-        required: true,
+        required: false,
         year: 8,
         autoSumValidation: 'sum',
         sumOrder: 1,
@@ -285,7 +285,7 @@ let keyDetailsForm1 = {
         decimal: 0
     },
     totalGrants: {
-        class: 'dotted-border-top-primary',
+        class: 'dotted-border-top-primary autoSum',
         formFieldType: 'amount',
         key: 'totalGrants',
         displayPriority: '2',
@@ -293,7 +293,7 @@ let keyDetailsForm1 = {
         validations: [],
         label: 'Total Grants',
         info: '',
-        required: true,
+        required: false,
         year: 8,
         autoSumValidation: 'sum',
         sumOrder: 1,
@@ -337,7 +337,7 @@ let keyDetailsForm1 = {
         decimal: 0
     },
     totalRevenue: {
-        class: 'dotted-border-top-primary ',
+        class: 'dotted-border-top-primary autoSum',
         formFieldType: 'amount',
         key: 'totalRevenue',
         displayPriority: '5',
@@ -345,7 +345,7 @@ let keyDetailsForm1 = {
         validations: [],
         label: 'Total Revenues',
         info: 'Total Revenue is the sum of: (a) tax revenues, (b) non-tax revenues, (c) assigned (shared) revenue, (c) grants-in-aid, (d) other receipts, etc.',
-        required: true,
+        required: false,
         year: 8,
         autoSumValidation: 'sum',
         sumOrder: 2,
@@ -425,7 +425,7 @@ let keyDetailsForm1 = {
         decimal: 0
     },
     totalRevenueExp: {
-        class: '',
+        class: 'autoSum',
         formFieldType: 'amount',
         key: 'totalRevenueExp',
         displayPriority: '6',
@@ -433,7 +433,7 @@ let keyDetailsForm1 = {
         validations: [],
         label: 'Total Revenue Expenditure',
         info: 'Total expenditure shall include establishment expenses, operations & maintenance + interest & finance charges and other expenditure.',
-        required: true,
+        required: false,
         year: 8,
         autoSumValidation: 'sum',
         sumOrder: 1,
@@ -461,7 +461,7 @@ let keyDetailsForm1 = {
         decimal: 0
     },
     totalExp: {
-        class: 'dotted-border-top-primary ',
+        class: 'dotted-border-top-primary autoSum',
         formFieldType: 'amount',
         key: 'totalExp',
         displayPriority: '8',
@@ -469,7 +469,7 @@ let keyDetailsForm1 = {
         validations: [],
         label: 'Total Expenditure',
         info: 'Total Expenditure = Revenue Expenditure + Capital Expenditure',
-        required: true,
+        required: false,
         year: 8,
         autoSumValidation: 'sum',
         sumOrder: 2,
@@ -694,7 +694,7 @@ let keyDetailsForm1 = {
         displayPriority: '12',
         quesPos: 64,
         validations: {
-            "name": "lt",
+            "name": "lessThan",
             "validator": 0,
             "field": "totSanction",
             "message": "'Total vacancy across finance & accounts related positions' cannot be greater than 'Total sanctioned posts for finance & accounts related positions '"
@@ -872,7 +872,7 @@ let keyDetailsForm2 = {
     yearOfConstitution: {
         class: '',
         formFieldType: 'dropdown',
-        options: ["2022-23", "2021-22", "2020-21", "2019-20", "2018-19", "2017-18", "2016-17", "In 2015-16", "Before 2015-16"],
+        options: ["After 2022-23", "2022-23", "2021-22", "2020-21", "2019-20", "2018-19", "2017-18", "2016-17", "In 2015-16", "Before 2015-16"],
         key: 'yearOfConstitution',
         displayPriority: '8',
         quesPos: 8,
@@ -906,7 +906,7 @@ let keyDetailsForm2 = {
         decimal: ""
     },
     taxRevenue: {
-        class: '',
+        class: 'autoSum',
         formFieldType: 'amount',
         key: 'taxRevenue',
         displayPriority: '1.1',
@@ -914,7 +914,7 @@ let keyDetailsForm2 = {
         validations: [],
         label: 'Tax Revenue',
         info: 'Tax revenue shall include property, water, drainage, sewerage,professional, entertainment and advertisment tax and all other tax revenues.',
-        required: true,
+        required: false,
         year: 8,
         // autoSumValidation: '',
         autoSumValidation: 'sum',
@@ -977,7 +977,7 @@ let keyDetailsForm2 = {
         decimal: 0
     },
     totOwnRevenue: {
-        class: '',
+        class: 'autoSum',
         formFieldType: 'amount',
         key: 'totOwnRevenue',
         displayPriority: '1',
@@ -985,7 +985,7 @@ let keyDetailsForm2 = {
         validations: [],
         label: 'Total Own Revenue',
         info: 'Total own revenue shall include tax revenue, fees & user charges, interest income, and other income.',
-        required: true,
+        required: false,
         year: 8,
         autoSumValidation: 'sum',
         // sumOf: ['taxRevenue', 'feeAndUserCharges', 'interestIncome', 'otherIncome'],
@@ -996,7 +996,7 @@ let keyDetailsForm2 = {
         decimal: 0
     },
     centralGrants: {
-        class: '',
+        class: 'autoSum',
         formFieldType: 'amount',
         key: 'centralGrants',
         displayPriority: '2.1',
@@ -1004,7 +1004,7 @@ let keyDetailsForm2 = {
         validations: [],
         label: "Grants for Centre's Initiatives ",
         info: "These grants shall include Union Finance Commission grants, Grants received for Centrally Sponsored Schemes (including state's matching share).",
-        required: true,
+        required: false,
         year: 8,
         // autoSumValidation: '',
         autoSumValidation: 'sum',
@@ -1016,7 +1016,7 @@ let keyDetailsForm2 = {
         decimal: 0
     },
     otherGrants: {
-        class: '',
+        class: 'autoSum',
         formFieldType: 'amount',
         key: 'otherGrants',
         displayPriority: '2.2',
@@ -1024,7 +1024,7 @@ let keyDetailsForm2 = {
         validations: [],
         label: "Other Grants (including State's grants)",
         info: 'These grants shall include State Finance Commission grants, Other State ,Grants, Other grants etc.',
-        required: true,
+        required: false,
         year: 8,
         // autoSumValidation: '',
         autoSumValidation: 'sum',
@@ -1036,7 +1036,7 @@ let keyDetailsForm2 = {
         decimal: 0
     },
     totalGrants: {
-        class: 'dotted-border-top-primary ',
+        class: 'dotted-border-top-primary autoSum',
         formFieldType: 'amount',
         key: 'totalGrants',
         info: 'Assigned Revenue includes share in the revenues of the state government ,allocated to the ULB. This includes Entertainment Tax, Duty on Transfer of Properties,etc.',
@@ -1044,7 +1044,7 @@ let keyDetailsForm2 = {
         quesPos: 20,
         validations: [],
         label: 'Total Grants',
-        required: true,
+        required: false,
         year: 8,
         autoSumValidation: 'sum',
         sumOrder: 2,
@@ -1088,7 +1088,7 @@ let keyDetailsForm2 = {
         decimal: 0
     },
     totalRevenue: {
-        class: 'dotted-border-top-primary ',
+        class: 'dotted-border-top-primary autoSum',
         formFieldType: 'amount',
         key: 'totalRevenue',
         displayPriority: '5',
@@ -1096,7 +1096,7 @@ let keyDetailsForm2 = {
         validations: [],
         label: 'Total Revenues',
         info: 'Total Revenue is the sum of: (a) tax revenues, (b) non-tax revenues, (c) assigned (shared) revenue, (c) grants-in-aid, (d) other receipts, etc.',
-        required: true,
+        required: false,
         year: 8,
         autoSumValidation: 'sum',
         sumOrder: 3,
@@ -1106,7 +1106,7 @@ let keyDetailsForm2 = {
         decimal: 0
     },
     establishmentExp: {
-        class: '',
+        class: 'autoSum',
         formFieldType: 'amount',
         key: 'establishmentExp',
         displayPriority: '6.1',
@@ -1114,7 +1114,7 @@ let keyDetailsForm2 = {
         validations: [],
         label: 'Establishment Expenses',
         info: 'Expenses directly incurred on human resources of the ULB such as ,wages, and employee benefits such as retirement and pensions are called establishment expenses',
-        required: true,
+        required: false,
         year: 8,
         autoSumValidation: 'sum',
         sumOrder: 1,
@@ -1175,7 +1175,7 @@ let keyDetailsForm2 = {
         decimal: 0
     },
     totalRevenueExp: {
-        class: '',
+        class: 'autoSum',
         formFieldType: 'amount',
         key: 'totalRevenueExp',
         displayPriority: '6',
@@ -1183,7 +1183,7 @@ let keyDetailsForm2 = {
         validations: [],
         label: 'Total Revenue Expenditure',
         info: 'Total expenditure shall include establishment expenses, operations & maintenance + interest & finance charges and other expenditure.',
-        required: true,
+        required: false,
         year: 8,
         autoSumValidation: 'sum',
         sumOrder: 2,
@@ -1210,7 +1210,7 @@ let keyDetailsForm2 = {
         decimal: 0
     },
     totalExp: {
-        class: 'dotted-border-top-primary ',
+        class: 'dotted-border-top-primary autoSum',
         formFieldType: 'amount',
         key: 'totalExp',
         displayPriority: '8',
@@ -1218,7 +1218,7 @@ let keyDetailsForm2 = {
         validations: [],
         label: 'Total Expenditure',
         info: 'Total Expenditure = Revenue Expenditure + Capital Expenditure',
-        required: true,
+        required: false,
         year: 8,
         autoSumValidation: 'sum',
         sumOrder: 3,
@@ -1228,7 +1228,7 @@ let keyDetailsForm2 = {
         decimal: 0
     },
     grossBorrowing: {
-        class: '',
+        class: 'autoSum',
         formFieldType: 'amount',
         key: 'grossBorrowing',
         displayPriority: '9',
@@ -1236,7 +1236,7 @@ let keyDetailsForm2 = {
         validations: [],
         label: 'Gross Borrowings',
         info: 'Gross Borrowings = Sum of All Secured and Unsecured Loans',
-        required: true,
+        required: false,
         year: 8,
         autoSumValidation: 'sum',
         sumOrder: 2,
@@ -1442,7 +1442,7 @@ let keyDetailsForm2 = {
         displayPriority: '12',
         quesPos: 64,
         validations: {
-            "name": "lt",
+            "name": "lessThan",
             "validator": 0,
             "field": "totSanction",
             "message": "'Total vacancy across finance & accounts related positions' cannot be greater than 'Total sanctioned posts for finance & accounts related positions '"
@@ -1500,7 +1500,7 @@ let keyDetailsForm2 = {
     yearOfSlb: {
         class: '',
         formFieldType: 'dropdown',
-        options: ["2022-23", "2021-22", "2020-21", "2019-20", "2018-19", "2017-18", "2016-17", "2015-16"],
+        options: ["2023-24", "2022-23", "2021-22", "2020-21", "2019-20", "2018-19", "2017-18", "2016-17", "2015-16"],
         key: 'yearOfSlb',
         displayPriority: '9',
         quesPos: 9,
@@ -1856,7 +1856,7 @@ let keyDetailsForm2 = {
         decimal: ''
     },
     totalReceivable: {
-        class: '',
+        class: 'autoSum',
         formFieldType: 'amount',
         key: 'totalReceivable',
         displayPriority: '10',
@@ -1864,7 +1864,7 @@ let keyDetailsForm2 = {
         validations: [],
         label: 'Total Receivables',
         info: 'Total Receivables is the sum of total amounts due for taxes, goods sold or services rendered by ULB',
-        required: true,
+        required: false,
         year: 8,
         autoSumValidation: 'sum',
         sumOrder: 2,
@@ -1925,7 +1925,7 @@ let keyDetailsForm2 = {
         min: 0,
         max: 999,
         decimal: 2,
-        warning: { "value": 135, "condition": "gt", "message": 'Please note that the entered value exceeds the threshold of 135 lpcd' }
+        warning: { "value": 135, "condition": "greaterThan", "message": 'Please note that the entered value exceeds the threshold of 135 lpcd' }
     },
     extentOfMeteringWs: {
         class: '',
@@ -1970,7 +1970,7 @@ let keyDetailsForm2 = {
         displayPriority: 5,
         quesPos: 70,
         validations: [],
-        label: 'Continuity of water supplied (hours)',
+        label: 'Continuity of water supplied (hours/ day)',
         info: '',
         placeholder: 'Hours per day|Range(0-24)',
         required: true,
@@ -1998,7 +1998,7 @@ let keyDetailsForm2 = {
         min: 0,
         max: 100,
         decimal: 2,
-        warning: { "value": 80, "condition": "gt", "message": 'Please note that the entered value exceeds the threshold of 80 lpcd' }
+        warning: { "value": 80, "condition": "greaterThan", "message": 'Please note that the entered value exceeds the threshold of 80 lpcd' }
     },
     qualityOfWs: {
         class: '',
@@ -2053,7 +2053,7 @@ let keyDetailsForm2 = {
         min: 0,
         max: 100,
         decimal: 2,
-        warning: { "value": 90, "condition": "gt", "message": 'Please note that the entered value exceeds the threshold of 90 lpcd' }
+        warning: { "value": 90, "condition": "greaterThan", "message": 'Please note that the entered value exceeds the threshold of 90 lpcd' }
     },
     coverageOfToiletsSew: {
         class: '',
@@ -2216,7 +2216,7 @@ let keyDetailsForm2 = {
         min: 0,
         max: 100,
         decimal: 2,
-        warning: { "value": 90, "condition": "gt", "message": 'Please note that the entered value exceeds the threshold of 90 lpcd' }
+        warning: { "value": 90, "condition": "greaterThan", "message": 'Please note that the entered value exceeds the threshold of 90 lpcd' }
     },
     householdLevelCoverageLevelSwm: {
         class: '',
@@ -2289,7 +2289,7 @@ let keyDetailsForm2 = {
         min: 0,
         max: 100,
         decimal: 2,
-        warning: { "value": 80, "condition": "gt", "message": 'Please note that the entered value exceeds the threshold of 80 lpcd' }
+        warning: { "value": 80, "condition": "greaterThan", "message": 'Please note that the entered value exceeds the threshold of 80 lpcd' }
     },
     extentOfScientificSolidSwm: {
         class: '',
@@ -2344,7 +2344,7 @@ let keyDetailsForm2 = {
         min: 0,
         max: 100,
         decimal: 2,
-        warning: { "value": 90, "condition": "gt", "message": 'Please note that the entered value exceeds the threshold of 90 lpcd' }
+        warning: { "value": 90, "condition": "greaterThan", "message": 'Please note that the entered value exceeds the threshold of 90 lpcd' }
     },
     efficiencyInRedressalCustomerSwm: {
         class: '',
@@ -2363,7 +2363,7 @@ let keyDetailsForm2 = {
         min: 0,
         max: 100,
         decimal: 2,
-        warning: { "value": 80, "condition": "gt", "message": 'Please note that the entered value exceeds the threshold of 80 lpcd' }
+        warning: { "value": 80, "condition": "greaterThan", "message": 'Please note that the entered value exceeds the threshold of 80 lpcd' }
     },
     coverageOfStormDrainage: {
         class: '',
@@ -2390,7 +2390,7 @@ let keyDetailsForm2 = {
         displayPriority: 28,
         quesPos: 93,
         validations: [],
-        label: 'Incidence of water logging',
+        label: 'Number of incidents of water logging',
         info: '',
         placeholder: 'Nos. per year|Range(0-9999)',
         required: true,

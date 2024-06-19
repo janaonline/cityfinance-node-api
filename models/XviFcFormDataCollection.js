@@ -37,9 +37,16 @@ const xviFcFormDataCollectionSchema = new Schema(
                         url: { type: String },
                     }],
                     reason: { type: String },
+                    verifyStatus: { type: Number },
+                    rejectOption: { type: Schema.Types.Mixed },
+                    rejectReason: { type: String },
                 }
             ]
         }],
+        censusCode: { type: String },
+        sbCode: { type: String },
+        ulbName: { type: String },
+        stateName: { type: String },
         formId: { type: Number, required: true },
         formStatus: { type: String, requird: true },
         rejectReason_state: { type: String, default: "" },

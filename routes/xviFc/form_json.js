@@ -1,4 +1,4 @@
-let financialYearTableHeader = ["2022-23", "2021-22", "2020-21", "2019-20", "2018-19", "2017-18", "2016-17", "2015-16"];
+let financialYearTableHeader = ["2023-24", "2022-23", "2021-22", "2020-21", "2019-20", "2018-19", "2017-18", "2016-17", "2015-16"];
 
 let priorTabsForXviFcForm = {
     "demographicData": "s1",
@@ -55,7 +55,8 @@ let form1QuestionKeys = [
 
     "auditedAnnualFySt"
 ];
-let slbKeys = ["coverageOfWs",
+let slbKeys = [
+    "coverageOfWs",
     "perCapitaOfWs",
     "extentOfMeteringWs",
     "extentOfNonRevenueWs",
@@ -82,7 +83,8 @@ let slbKeys = ["coverageOfWs",
     "efficiencyInCollectionSwmUser",
     "efficiencyInRedressalCustomerSwm",
     "coverageOfStormDrainage",
-    "incidenceOfWaterLogging"]
+    "incidenceOfWaterLogging"
+]
 
 let form2QuestionKeys = [
     "yearOfSlb",
@@ -868,7 +870,7 @@ async function getInputKeysByType(selectedKeyDetails, isReadOnly, dataSource, fo
         // obj.sumOf = selectedKeyDetails.sumOf;
         // obj.sumOf2 = selectedKeyDetails.sumOf2;
 
-        obj.warning.push({ "value": 0, "condition": "eq", "message": 'Are you sure you want to continue with 0' });
+        obj.warning.push({ "value": 0, "condition": "equalTo", "message": 'Are you sure you want to continue with 0' });
         if (selectedKeyDetails.warning) obj.warning.push(selectedKeyDetails.warning);
 
         obj.validations.push(
@@ -970,5 +972,5 @@ module.exports.form1QuestionKeys = form1QuestionKeys;
 module.exports.form2QuestionKeys = form2QuestionKeys;
 module.exports.form1TempDb = form1TempDb;
 module.exports.form2TempDb = form2TempDb;
-module.exports.slbKeys=slbKeys;
+module.exports.slbKeys = slbKeys;
 module.exports.getInputKeysByType = getInputKeysByType;

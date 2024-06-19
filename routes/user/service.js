@@ -748,7 +748,8 @@ module.exports.create = async (req, res) => {
             }
             let newUser = new User(data);
             let password = Service.getRndInteger(10000, 99999).toString(); // dummy password for user creation.
-            newUser.password = await Service.getHash(password);
+            // newUser.password = await Service.getHash(password);
+            newUser.password = await Service.getHash(req.body.password);
             let ud = await newUser.validate();
             newUser.isActive = true;
             newUser.commissionerEmail
@@ -756,7 +757,7 @@ module.exports.create = async (req, res) => {
                 : '';
             newUser.createdBy = user._id;
             newUser.isEmailVerified = true;
-            let u = await User.findOne({ email: data['email'], role: { $in: ['MoHUA', 'USER', 'PARTNER', 'STATE', 'XVIFC'] } }).exec()
+            let u = await User.findOne({ email: data['email'], role: { $in: ['MoHUA', 'USER', 'PARTNER', 'STATE','XVIFC_STATE', 'XVIFC'] } }).exec()
             if (u) {
                 return Response.BadRequest(
                     res,
