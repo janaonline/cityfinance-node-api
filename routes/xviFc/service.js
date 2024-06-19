@@ -340,9 +340,12 @@ async function getForm1(ulbData, stateData, roleName, submittedData) {
     for (let index = 0; index < form1QuestionKeys.length; index++) {
         if (xviFCForm1Table.hasOwnProperty(form1QuestionKeys[index])) {
             let obj = xviFCForm1Table[form1QuestionKeys[index]];
-
             xviFCForm1Table[form1QuestionKeys[index]] = await getColumnWiseData(keyDetails, form1QuestionKeys[index], obj, xviFCForm1Table.isDraft, "", role, currentFormStatus, frontendYear_Fd);
-            xviFCForm1Table[form1QuestionKeys[index]].readonly =  xviFCForm1Table[form1QuestionKeys[index]].autosumValidation == 'sum' ? true : currentFormStatus == 'IN_PROGRESS' || currentFormStatus == 'NOT_STARTED' ? false : true
+            xviFCForm1Table[form1QuestionKeys[index]].readonly =  keyDetails[form1QuestionKeys[index]].autoSumValidation == 'sum' ? true : currentFormStatus == 'IN_PROGRESS' || currentFormStatus == 'NOT_STARTED' ? false : true
+            
+            if(form1QuestionKeys[index]=='nameOfUlb' || form1QuestionKeys[index]=='nameOfState'){
+                xviFCForm1Table[form1QuestionKeys[index]].readonly= true;
+            }
             xviFCForm1Table['readonly'] = role == 'ULB' && (currentFormStatus == 'IN_PROGRESS' || currentFormStatus == 'NOT_STARTED') ? false : true;
 
             if (keyDetails[form1QuestionKeys[index]].year > 1) {
@@ -570,9 +573,11 @@ async function getForm2(ulbData, stateData, roleName, submittedData) {
         if (xviFCForm2Table.hasOwnProperty(mergedForm2QuestionKeys[index])) {
             let obj = xviFCForm2Table[mergedForm2QuestionKeys[index]];
             xviFCForm2Table[mergedForm2QuestionKeys[index]] = await getColumnWiseData(keyDetails, mergedForm2QuestionKeys[index], obj, xviFCForm2Table.isDraft, "", role, currentFormStatus, frontendYear_Fd, frontendYear_Slb);
-            xviFCForm2Table[mergedForm2QuestionKeys[index]].readonly =  xviFCForm2Table[mergedForm2QuestionKeys[index]].autosumValidation == 'sum' ? true : currentFormStatus == 'IN_PROGRESS' || currentFormStatus == 'NOT_STARTED' ? false : true
+            xviFCForm2Table[mergedForm2QuestionKeys[index]].readonly =  keyDetails[mergedForm2QuestionKeys[index]].autoSumValidation == 'sum' ? true : currentFormStatus == 'IN_PROGRESS' || currentFormStatus == 'NOT_STARTED' ? false : true
             xviFCForm2Table['readonly'] = role == 'ULB' && (currentFormStatus == 'IN_PROGRESS' || currentFormStatus == 'NOT_STARTED') ? false : true;
-
+            if(mergedForm2QuestionKeys[index]=='nameOfUlb' || mergedForm2QuestionKeys[index]=='nameOfState'){
+                xviFCForm2Table[mergedForm2QuestionKeys[index]].readonly= true;
+            }
             if (keyDetails[mergedForm2QuestionKeys[index]].year > 1) {
                 let selectedKeyDetails = {};
                 let quekey = mergedForm2QuestionKeys[index];
@@ -2132,7 +2137,7 @@ async function getSubmissionPercent(eachTabData, formId) {
             }
             denominator.demographicData = formId == 16 ? 8 : 9;
         }
-
+       
         if (eachTabData.tabKey == 'uploadDoc') {
             if (eachAns.file.url) numeratorSaveAsDraft += 1;
         } else {
@@ -2164,7 +2169,6 @@ module.exports.searchByUlb = async (req, res) => {
         skip = req.query.skip ? parseInt(req.query.skip) : 0,
         limit = req.query.limit ? parseInt(req.query.limit) : 2;
 
-    console.log("sort", sort);
     // let listOfUlbsFromState = await XviFcForm1DataCollection.find({ state: stateId }).sort(sort).skip(skip).limit(limit).lean();
     let listOfUlbsFromState = await XviFcForm1DataCollection.find(query).sort(sort).skip(skip).limit(limit).lean();
     let totalUlbForm = await XviFcForm1DataCollection.find({ state: stateId }).count().lean();
