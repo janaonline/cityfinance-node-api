@@ -341,10 +341,10 @@ async function getForm1(ulbData, stateData, roleName, submittedData) {
         if (xviFCForm1Table.hasOwnProperty(form1QuestionKeys[index])) {
             let obj = xviFCForm1Table[form1QuestionKeys[index]];
             xviFCForm1Table[form1QuestionKeys[index]] = await getColumnWiseData(keyDetails, form1QuestionKeys[index], obj, xviFCForm1Table.isDraft, "", role, currentFormStatus, frontendYear_Fd);
-            xviFCForm1Table[form1QuestionKeys[index]].readonly =  keyDetails[form1QuestionKeys[index]].autoSumValidation == 'sum' ? true : currentFormStatus == 'IN_PROGRESS' || currentFormStatus == 'NOT_STARTED' ? false : true
-            
-            if(form1QuestionKeys[index]=='nameOfUlb' || form1QuestionKeys[index]=='nameOfState'){
-                xviFCForm1Table[form1QuestionKeys[index]].readonly= true;
+            xviFCForm1Table[form1QuestionKeys[index]].readonly = keyDetails[form1QuestionKeys[index]].autoSumValidation == 'sum' ? true : currentFormStatus == 'IN_PROGRESS' || currentFormStatus == 'NOT_STARTED' ? false : true
+
+            if (form1QuestionKeys[index] == 'nameOfUlb' || form1QuestionKeys[index] == 'nameOfState') {
+                xviFCForm1Table[form1QuestionKeys[index]].readonly = true;
             }
             xviFCForm1Table['readonly'] = role == 'ULB' && (currentFormStatus == 'IN_PROGRESS' || currentFormStatus == 'NOT_STARTED') ? false : true;
 
@@ -573,10 +573,10 @@ async function getForm2(ulbData, stateData, roleName, submittedData) {
         if (xviFCForm2Table.hasOwnProperty(mergedForm2QuestionKeys[index])) {
             let obj = xviFCForm2Table[mergedForm2QuestionKeys[index]];
             xviFCForm2Table[mergedForm2QuestionKeys[index]] = await getColumnWiseData(keyDetails, mergedForm2QuestionKeys[index], obj, xviFCForm2Table.isDraft, "", role, currentFormStatus, frontendYear_Fd, frontendYear_Slb);
-            xviFCForm2Table[mergedForm2QuestionKeys[index]].readonly =  keyDetails[mergedForm2QuestionKeys[index]].autoSumValidation == 'sum' ? true : currentFormStatus == 'IN_PROGRESS' || currentFormStatus == 'NOT_STARTED' ? false : true
+            xviFCForm2Table[mergedForm2QuestionKeys[index]].readonly = keyDetails[mergedForm2QuestionKeys[index]].autoSumValidation == 'sum' ? true : currentFormStatus == 'IN_PROGRESS' || currentFormStatus == 'NOT_STARTED' ? false : true
             xviFCForm2Table['readonly'] = role == 'ULB' && (currentFormStatus == 'IN_PROGRESS' || currentFormStatus == 'NOT_STARTED') ? false : true;
-            if(mergedForm2QuestionKeys[index]=='nameOfUlb' || mergedForm2QuestionKeys[index]=='nameOfState'){
-                xviFCForm2Table[mergedForm2QuestionKeys[index]].readonly= true;
+            if (mergedForm2QuestionKeys[index] == 'nameOfUlb' || mergedForm2QuestionKeys[index] == 'nameOfState') {
+                xviFCForm2Table[mergedForm2QuestionKeys[index]].readonly = true;
             }
             if (keyDetails[mergedForm2QuestionKeys[index]].year > 1) {
                 let selectedKeyDetails = {};
@@ -2070,36 +2070,103 @@ module.exports.formList = async (req, res) => {
         limit = req.query.limit ? parseInt(req.query.limit) : 2;
 
     let stateId = req.query.state;
-    //let listOfUlbsFromState = await XviFcForm1DataCollection.find({ state: ObjectId(stateId) }).sort(sort).skip(skip).limit(limit).lean();
-    let listOfUlbsFromState = await XviFcForm1DataCollection.find({ $and: [{ "state": ObjectId(stateId) }, filter] }).sort(sort).skip(skip).limit(limit).lean();
-    let totalUlbForm = await XviFcForm1DataCollection.find({ state: stateId }).count().lean();
 
-    if (listOfUlbsFromState) {
+    let listOfUlbsFromState = await Ulb.aggregate([
+        {
+            $lookup: {
+                from: "xvifcformdatacollections",
+                localField: "_id",
+                foreignField: "ulb",
+                as: "tab",
+            },
+        },
+        {
+            $lookup: {
+                from: "states",
+                localField: "state",
+                foreignField: "_id",
+                as: "stateResult",
+            },
+        },
+        {
+            $match: { $and: [{ state: ObjectId(stateId) }, { isActive: true }] }
+        },
+        {
+            $unwind: {
+                path: "$tab",
+                preserveNullAndEmptyArrays: true
+            }
+        },
+        {
+            $unwind: {
+                path: "$stateResult",
+                preserveNullAndEmptyArrays: true
+            }
+        },
+        {
+            $group: {
+                _id: "$_id",
+                formType: { $first: "$formType" },
+                censusCode: { $first: "$censusCode" },
+                sbCode: { $first: "$sbCode" },
+                name: { $first: "$name" },
+                state: { $first: "$state" },
+                stateName: { $first: "$stateResult.name" },
+                formStatus: { $first: "$tab.formStatus" },
+                tabs: { $first: "$tab.tab" },
+                isActive: { $first: "$isActive" },
+                tab: { $first: "$tab" }
+            }
+        },
+        {
+            $project: {
+                _id: 1,
+                censusCode: 1,
+                sbCode: 1,
+                code: 1,
+                name: 1,
+                state: 1,
+                isActive: 1,
+                formType: 1,
+                tabs: 1,
+                stateName: 1,
+                formStatus: 1,
+            }
+        }
+    ]).skip(skip).limit(limit).allowDiskUse(true);
+
+    //let listOfUlbsFromState = await XviFcForm1DataCollection.find({ state: ObjectId(stateId) }).sort(sort).skip(skip).limit(limit).lean();
+    // let listOfUlbsFromState = await XviFcForm1DataCollection.find({ $and: [{ "state": ObjectId(stateId) }, filter] }).sort(sort).skip(skip).limit(limit).lean();
+    let totalUlbForm = await Ulb.find({ $and: [{ state: stateId }, { isActive: true }] }).count().lean();
+
+    if (listOfUlbsFromState.length > 0) {
         let reviewTableData = [];
 
         for (let eachUlbForm of listOfUlbsFromState) {
             let obj = {};
             let allTabDataPercent = [];
             // let ulbData = await XviFcForm1DataCollection.find({ ulb: ObjectId(eachUlbForm.ulb) }, { tab: 1 }).lean();
-            let ulbData = eachUlbForm.tab;
+            let ulbData = eachUlbForm.tabs;
 
             // Get Data submission %.
             let dataSubmissionPercent = 0;
-            for (let eachTab of ulbData) {
-                if (eachTab.data.length > 0) {
-                    let eachTabPercent = await getSubmissionPercent(eachTab, eachUlbForm.formId);
-                    dataSubmissionPercent += eachTabPercent.submissionPercent;
-                    allTabDataPercent.push(eachTabPercent);
+            if (ulbData) {
+                for (let eachTab of ulbData) {
+                    if (eachTab.data.length > 0) {
+                        let eachTabPercent = await getSubmissionPercent(eachTab, eachUlbForm.formId);
+                        dataSubmissionPercent += eachTabPercent.submissionPercent;
+                        allTabDataPercent.push(eachTabPercent);
+                    }
                 }
             }
-
             obj["stateName"] = eachUlbForm.stateName;
             obj["ulbName"] = eachUlbForm.ulbName;
             obj["censusCode"] = eachUlbForm.censusCode ? eachUlbForm.censusCode : eachUlbForm.sbCode;
-            obj["ulbCategory"] = eachUlbForm.formId == 16 ? "Category 1" : eachUlbForm.formId == 17 ? "Category 2" : "";
-            obj["formStatus"] = eachUlbForm.formStatus;
-            obj["dataSubmitted"] = Number((dataSubmissionPercent / allTabDataPercent.length).toFixed(2));
-            obj["action"] = (eachUlbForm.formStatus == 'UNDER_REVIEW_BY_XVIFC' && user.role == 'XVIFC') || (eachUlbForm.formStatus == 'UNDER_REVIEW_BY_STATE' && user.role == 'XVIFC_STATE') ? 'Review' : 'View';
+            obj["ulbCategory"] = eachUlbForm.formType == 'form1' ? "Category 1" : eachUlbForm.formType == 'form2' ? "Category 2" : "";
+            obj["formStatus"] = eachUlbForm.formStatus ? eachUlbForm.formStatus : "NOT_STARTED";
+            obj["dataSubmitted"] = ulbData ? Number((dataSubmissionPercent / allTabDataPercent.length).toFixed(2)) : 0;
+            obj["action"] = (eachUlbForm.formStatus == 'UNDER_REVIEW_BY_XVIFC' && user.role == 'XVIFC') || (eachUlbForm.formStatus == 'UNDER_REVIEW_BY_STATE' && user.role == 'XVIFC_STATE') || (eachUlbForm.formStatus == 'SUBMITTED') ? 'Review' : 'View';
+            obj["statusClass"] = eachUlbForm.formStatus == 'IN_PROGRESS' ? 'status-in-progress' : eachUlbForm.formStatus == 'SUBMITTED' ? 'status-under-review' : 'status-not-started';
 
             reviewTableData.push(obj);
         }
@@ -2137,7 +2204,7 @@ async function getSubmissionPercent(eachTabData, formId) {
             }
             denominator.demographicData = formId == 16 ? 8 : 9;
         }
-       
+
         if (eachTabData.tabKey == 'uploadDoc') {
             if (eachAns.file.url) numeratorSaveAsDraft += 1;
         } else {
