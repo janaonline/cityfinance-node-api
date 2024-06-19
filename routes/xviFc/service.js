@@ -2065,8 +2065,8 @@ module.exports.formList = async (req, res) => {
         limit = req.query.limit ? parseInt(req.query.limit) : 2;
 
     let stateId = req.query.state;
-    let listOfUlbsFromState = await XviFcForm1DataCollection.find({ state: ObjectId(stateId) }).skip(skip).limit(limit).lean();
-    //let listOfUlbsFromState = await XviFcForm1DataCollection.find({ $and: [{ "state": ObjectId(stateId) }, filter] }).sort(sort).skip(skip).limit(limit).lean();
+    //let listOfUlbsFromState = await XviFcForm1DataCollection.find({ state: ObjectId(stateId) }).sort(sort).skip(skip).limit(limit).lean();
+    let listOfUlbsFromState = await XviFcForm1DataCollection.find({ $and: [{ "state": ObjectId(stateId) }, filter] }).sort(sort).skip(skip).limit(limit).lean();
     let totalUlbForm = await XviFcForm1DataCollection.find({ state: stateId }).count().lean();
 
     if (listOfUlbsFromState) {
