@@ -192,6 +192,28 @@ const validate = (data, role,_id)=>{
                         message:"Department contact number already taken."
                     }
                 ],
+                XVIFC_STATE:[
+                    {
+                        key:"mobile",
+                        type:"mobile",
+                        message:"Mobile number already taken."
+                    },
+                    {
+                        key:"email",
+                        type:"email",
+                        message:"Email already taken."
+                    },
+                    {
+                        key:"departmentEmail",
+                        type:"email",
+                        message:"Department email already taken."
+                    },
+                    {
+                        key:"departmentContactNumber",
+                        type:"mobile",
+                        message:"Department contact number already taken."
+                    }
+                ],
                 PARTNER:[
                     {
                         key:"mobile",

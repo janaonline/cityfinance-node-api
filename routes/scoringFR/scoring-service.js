@@ -100,7 +100,7 @@ function totalBudgetPerCapita(ulbRes, fsData, fsMapper2021_22) {
                 ? 0
                 : (totalRecActual_2021_22 - (totalRcptWaterSupply + totalRcptSanitation)) / ulbRes.population;
 
-        return parseFloat(totalBudget.toFixed(2));
+        return Number(totalBudget);
     } catch (e) {
         return 0;
     }
@@ -124,7 +124,7 @@ function ownRevenuePerCapita(ulbRes, fsData, fsMapper2021_22) {
             ulbRes.population === 0
                 ? console.log('Population is 0')
                 : (totalOwnRevenue_2021_22 - (ownRevenueWaterSupply + ownRevenueSanitation)) / ulbRes.population;
-        return parseFloat(ownRevenueData.toFixed(2));
+        return Number(ownRevenueData);
     } catch (e) {
         return 0;
     }
@@ -136,7 +136,7 @@ function pTaxPerCapita(ulbRes, fsMapper2021_22) {
         // Property tax of 21-22 / population.
         const pTaxPerCapita =
             ulbRes.population === 0 ? console.log('Population is 0') : getNumberValue(fsMapper2021_22, 'propertyTax') / ulbRes.population;
-        return parseFloat(pTaxPerCapita.toFixed(2));
+        return Number(pTaxPerCapita);
     } catch (e) {
         return 0;
     }
@@ -175,7 +175,7 @@ function cagrInTotalBudget(fsData, fsMapper2018_19, fsMapper2021_22) {
         }
 
         return {
-            score: parseFloat(CAGRInTotalBudget.toFixed(2)),
+            score: Number(CAGRInTotalBudget),
             ...(infinity && { infinity })
         };
 
@@ -220,7 +220,7 @@ function cagrInOwnRevenue(fsData, fsMapper2018_19, fsMapper2021_22) {
         }
 
         return {
-            score: parseFloat(cagrInOwnRevenue.toFixed(2)),
+            score: Number(cagrInOwnRevenue),
             ...(infinity && { infinity })
         };
     } catch (e) {
@@ -249,7 +249,7 @@ function cagrInPTax(fsMapper2018_19, fsMapper2021_22) {
         }
 
         return {
-            score: parseFloat(cagrInPTax.toFixed(2)),
+            score: Number(cagrInPTax),
             ...(infinity && { infinity })
         };
 
@@ -291,7 +291,7 @@ function capExPerCapitaAvg(ulbRes, fsData, fsMapper2019_20, fsMapper2020_21, fsM
             ? 0
             : calculateAverage(arr) / ulbRes.population;
 
-        return parseFloat(CapExPerCapitaAvg.toFixed(2));
+        return Number(CapExPerCapitaAvg);
     } catch (e) {
         return 0;
     }
@@ -327,7 +327,7 @@ function cagrInCapEx(fsData, fsMapper2018_19, fsMapper2021_22) {
             const pow1 = Math.cbrt(totalCapEx);
             cagrInCapEx = (pow1 - 1) * 100;
         }
-        return { score: parseFloat(cagrInCapEx.toFixed(2)), ...(infinity && { infinity }) };
+        return { score: Number(cagrInCapEx), ...(infinity && { infinity }) };
     } catch (e) {
         return 0;
     }
@@ -368,7 +368,7 @@ function omExpTotalRevEx(fsData, fsMapper2019_20, fsMapper2020_21, fsMapper2021_
         // Handling 0/ 0
         const omExpTotalRevEx = avgOfOmExp === 0 || avgOfRevExp === 0 ? 0 : avgOfOmExp / avgOfRevExp;
 
-        return parseFloat(omExpTotalRevEx.toFixed(2));
+        return Number(omExpTotalRevEx);
     } catch (e) {
         return 0;
     }
@@ -398,14 +398,13 @@ function avgMonthsForULBAudit(fsMapper2019_20, fsMapper2020_21, fsMapper2021_22)
         const noOfMonths_2021_22 = getMonthDifference(end_april_2022, start_ulbValue2021_22);
 
         // Array is created to find average.
-        const arr = [noOfMonths_2019_20, noOfMonths_2020_21, noOfMonths_2021_22];
-        const avgMonth = (calculateAverage(arr)).toFixed(2);
+        const arr = [Math.abs(noOfMonths_2019_20), Math.abs(noOfMonths_2020_21), Math.abs(noOfMonths_2021_22)];
+        const avgMonth = Number(calculateAverage(arr));
 
         // If average month is less than 12 then ULB gets 25 marks else 0 marks;
         const avgMonthsForULBAudit = avgMonth <= 12 && avgMonth > 0 ? 25 : 0;
 
         return { score: avgMonthsForULBAudit, values: avgMonth };
-
     } catch (e) {
         return 0;
     }
@@ -492,7 +491,7 @@ function totalReceiptsVariance(fsMapper2019_20, fsMapper2020_21, fsMapper2021_22
         } else {
             totalReceiptsVariance = ((avgOFActual - avgOfEstimate) / avgOfEstimate) * 100;
         }
-        score = parseFloat(totalReceiptsVariance.toFixed(2));
+        score = Number(totalReceiptsVariance);
 
     }
     return { score, ...(infinity && { infinity }) };
@@ -517,7 +516,7 @@ function ownRevRecOut(fsMapperNoYear, fsMapper2021_22) {
         } else {
             ownRevRecOut = (ownRevArea / ownRev2021_22) * 365;
         }
-        return { score: parseFloat(ownRevRecOut.toFixed(2)), ...(infinity && { infinity }) };
+        return { score: Number(ownRevRecOut), ...(infinity && { infinity }) };
     } catch (e) {
         return 0;
     }
@@ -531,7 +530,7 @@ function digtalOwnRevToTotalOwnRev(fsMapperNoYear) {
         const totalOwnRev = getNumberValue(fsMapperNoYear, 'fy_21_22_cash') + digitalOwnRev;
         const digtalOwnRevToTotalOwnRev = digitalOwnRev === 0 || totalOwnRev === 0 ? 0 : (digitalOwnRev / totalOwnRev) * 100;
 
-        return parseFloat(digtalOwnRevToTotalOwnRev.toFixed(2));
+        return Number(digtalOwnRevToTotalOwnRev);
     } catch (e) {
         return 0;
     }
@@ -546,7 +545,7 @@ function propUnderTaxColl(fsMapperNoYear) {
         let tempPropUnderTaxColl = paidPTax === 0 || denominator === 0 ? 0 : (paidPTax / denominator);
         const propUnderTaxColl = tempPropUnderTaxColl > 1 || tempPropUnderTaxColl < 0 ? 0 : tempPropUnderTaxColl * 100;
 
-        return parseFloat(propUnderTaxColl.toFixed(2));
+        return Number(propUnderTaxColl);
     } catch (e) {
         return 0;
     }
