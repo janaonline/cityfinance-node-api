@@ -2157,7 +2157,8 @@ module.exports.formList = async (req, res) => {
                 }
             }
             obj["stateName"] = eachUlbForm.stateName;
-            obj["ulbName"] = eachUlbForm.ulbName;
+            obj["ulbName"] = eachUlbForm.name;
+            obj["ulbId"] = eachUlbForm._id;
             obj["censusCode"] = eachUlbForm.censusCode ? eachUlbForm.censusCode : eachUlbForm.sbCode;
             obj["ulbCategory"] = eachUlbForm.formType == 'form1' ? "Category 1" : eachUlbForm.formType == 'form2' ? "Category 2" : "";
             obj["formStatus"] = eachUlbForm.formStatus ? eachUlbForm.formStatus : "NOT_STARTED";
