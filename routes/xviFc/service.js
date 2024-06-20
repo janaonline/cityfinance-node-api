@@ -2064,7 +2064,7 @@ module.exports.formList = async (req, res) => {
         filter = req.query.filter ? JSON.parse(req.query.filter) : (req.body.filter ? req.body.filter : {}),
         sort = req.query.sort ? JSON.parse(req.query.sort) : (req.body.sort ? req.body.sort : {}),
         skip = req.query.skip ? parseInt(req.query.skip) : 0,
-        limit = req.query.limit ? parseInt(req.query.limit) : 2;
+        limit = req.query.limit ? parseInt(req.query.limit) : 10;
 
     let stateId = req.query.state;
 
@@ -2129,8 +2129,12 @@ module.exports.formList = async (req, res) => {
                 stateName: 1,
                 formStatus: 1,
             }
-        }
-    ]).skip(skip).limit(limit).allowDiskUse(true);
+        },
+        { $sort: { formStatus: -1, name: 1 } },
+        { $skip: skip * limit },
+        { $limit: limit }
+    ]).allowDiskUse(true);
+
 
     //let listOfUlbsFromState = await XviFcForm1DataCollection.find({ state: ObjectId(stateId) }).sort(sort).skip(skip).limit(limit).lean();
     // let listOfUlbsFromState = await XviFcForm1DataCollection.find({ $and: [{ "state": ObjectId(stateId) }, filter] }).sort(sort).skip(skip).limit(limit).lean();
