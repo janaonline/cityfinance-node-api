@@ -429,14 +429,9 @@ async function getForm1(ulbData, stateData, roleName, submittedData) {
                         if (eachQuestionObj.key == "financialData") {
                             for (let eachObj of eachQuestionObj.data) {
 
-                                // console.log(achObj.sumOf2)
-                                // console.log(eachObj.autoSumValidation2)
-
-                                // if (eachObj.sumOf2 && eachObj.autoSumValidation2) {
-                                //     console.log("inside")
-                                //     delete eachObj.sumOf2;
-                                //     delete eachObj.autoSumValidation2;
-                                // }
+                                if (eachObj.year.length <= 0) {
+                                    eachQuestionObj.message = "We are collecting data till the year 2023-24. Since your ULB was recently constituted, it's not mandatory for you to fill in the financial section data. Please fill in the rest of the form";
+                                }
 
                                 let yearDataIndex = eachObj.year.findIndex(x => x.key === selectedData.key)
                                 if (yearDataIndex > -1 && selectedData.key == eachObj.year[yearDataIndex].key) {
@@ -455,8 +450,9 @@ async function getForm1(ulbData, stateData, roleName, submittedData) {
                             for (let eachObj of eachQuestionObj.data) {
                                 let yearDataIndex = eachObj.year.findIndex(x => x.key === selectedData.key)
 
-                                // console.log("selectedData.key", selectedData);
-                                // console.log("yearDataIndex", yearDataIndex);
+                                if (eachObj.year.length <= 0) {
+                                    eachQuestionObj.message = "We are collecting data till the year 2023-24. Since your ULB was recently constituted, it's not mandatory for you to fill in the financial section data. Please fill in the rest of the form"
+                                }
 
                                 if (yearDataIndex > -1 && selectedData.key == eachObj.year[yearDataIndex].key) {
 
@@ -657,13 +653,9 @@ async function getForm2(ulbData, stateData, roleName, submittedData) {
 
                             for (let eachObj of eachQuestionObj.data) {
 
-                                // if (eachObj.sumOf2 && eachObj.autoSumValidation2) {
-                                //     eachObj.sumOf = eachObj.sumOf2;
-                                //     eachObj.autoSumValidation = eachObj.autoSumValidation2;
-                                //     delete eachObj.sumOf2;
-                                //     delete eachObj.autoSumValidation2;
-                                // }
-
+                                if (eachObj.year.length <= 0) {
+                                    eachQuestionObj.message = "We are collecting data till the year 2023-24. Since your ULB was recently constituted, it's not mandatory for you to fill in the financial section data. Please fill in the rest of the form"
+                                }
 
                                 let yearDataIndex = eachObj.year.findIndex((x) => { return x.key === selectedData.key })
 
@@ -683,6 +675,11 @@ async function getForm2(ulbData, stateData, roleName, submittedData) {
                         if (eachQuestionObj.key == "uploadDoc") {
                             for (let eachObj of eachQuestionObj.data) {
                                 let yearDataIndex = eachObj.year.findIndex(x => x.key === selectedData.key)
+
+                                if (eachObj.year.length <= 0) {
+                                    eachQuestionObj.message = "We are collecting data till the year 2023-24. Since your ULB was recently constituted, it's not mandatory for you to fill in the financial section data. Please fill in the rest of the form"
+                                }
+
                                 if (yearDataIndex > -1 && selectedData.key == eachObj.year[yearDataIndex].key) {
                                     eachObj.year[yearDataIndex].file.name = selectedData.file.name;
                                     eachObj.year[yearDataIndex].file.url = selectedData.file.url;

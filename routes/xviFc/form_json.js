@@ -848,7 +848,7 @@ async function getInputKeysByType(selectedKeyDetails, isReadOnly, dataSource, fo
             {
                 name: "required",
                 validator: 'required',
-                message: "Please fill in this required field."
+                message: "Please fill the required field."
             }
         )
     }
