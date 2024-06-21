@@ -232,11 +232,11 @@ module.exports.submitFrom = async (req, res) => {
             if (getFormData.validationCounter > 0) {
                 return res.status(400).json({ status: true, message: "Validation failed", data: getFormData });
             } else {
-                ulbData_form.formStatus = 'SUBMITTED';
+                ulbData_form.formStatus = 'UNDER_REVIEW_BY_STATE';
                 ulbData_form.tracker = []
-                ulbData_form.tracker.push({ eventName: "SUBMITTED", eventDate: new Date(), submittedBy: ulbId });
+                ulbData_form.tracker.push({ eventName: "UNDER_REVIEW_BY_STATE", eventDate: new Date(), submittedBy: ulbId });
                 ulbData_form.submittedAt = new Date();
-                ulbData_form.submittedBy = userForm.ulbId;
+                ulbData_form.submittedBy = ulbId;
                 ulbData_form.censusCode = userForm.censusCode;
                 ulbData_form.sbCode = userForm.sbCode;
                 ulbData_form.ulbName = userForm.name;
@@ -427,6 +427,7 @@ async function getForm1(ulbData, stateData, roleName, submittedData) {
                     for (let selectedData of from1AnswerFromDb.tab[indexOfKey].data) {
 
                         if (eachQuestionObj.key == "financialData") {
+                            eachQuestionObj.instruction = "All data should be in consonance with audited accounts or information already submitted on CityFinance, wherever applicable";
                             for (let eachObj of eachQuestionObj.data) {
 
                                 if (eachObj.year.length <= 0) {
@@ -643,14 +644,14 @@ async function getForm2(ulbData, stateData, roleName, submittedData) {
     if (from2AnswerFromDb) {
         for (let eachQuestionObj of from2QuestionFromDb) {
             let indexOfKey = from2AnswerFromDb.tab.findIndex(x => x.tabKey === eachQuestionObj.key);
-
+               
             if (indexOfKey > -1) {
                 if (from2AnswerFromDb.tab[indexOfKey].tabKey == eachQuestionObj.key) {
 
                     for (let selectedData of from2AnswerFromDb.tab[indexOfKey].data) {
 
                         if (eachQuestionObj.key == "financialData" || eachQuestionObj.key == "serviceLevelBenchmark") {
-
+                            if(eachQuestionObj.key == "financialData") eachQuestionObj.instruction = "All data should be in consonance with audited accounts or information already submitted on CityFinance, wherever applicable";
                             for (let eachObj of eachQuestionObj.data) {
 
                                 if (eachObj.year.length <= 0) {
@@ -2242,7 +2243,7 @@ module.exports.formList = async (req, res) => {
             obj["formStatus"] = eachUlbForm.formStatus ? eachUlbForm.formStatus : "NOT_STARTED";
             obj["dataSubmitted"] = ulbData ? Math.round(Number(dataSubmissionPercent / allTabDataPercent.length)) : 0;
             obj["action"] = (eachUlbForm.formStatus == 'UNDER_REVIEW_BY_XVIFC' && user.role == 'XVIFC') || (eachUlbForm.formStatus == 'UNDER_REVIEW_BY_STATE' && user.role == 'XVIFC_STATE') || (eachUlbForm.formStatus == 'SUBMITTED') ? 'Review' : 'View';
-            obj["statusClass"] = eachUlbForm.formStatus == 'IN_PROGRESS' ? 'status-in-progress' : eachUlbForm.formStatus == 'SUBMITTED' ? 'status-under-review' : 'status-not-started';
+            obj["statusClass"] = eachUlbForm.formStatus == 'IN_PROGRESS' ? 'status-in-progress' : eachUlbForm.formStatus == 'SUBMITTED' || eachUlbForm.formStatus == 'UNDER_REVIEW_BY_STATE' ? 'status-under-review' : 'status-not-started';
 
             reviewTableData.push(obj);
         }
