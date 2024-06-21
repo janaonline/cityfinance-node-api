@@ -556,7 +556,8 @@ async function getForm2(ulbData, stateData, roleName, submittedData) {
         frontendYear_Fd = from2AnswerFromDb.tab[demographicTabIndex].data[IndexOfYearOfConstitution].saveAsDraftValue;
         // Get index of year of slb.
         IndexOfYearOfSlb = from2AnswerFromDb.tab[demographicTabIndex].data.findIndex((x) => { return x.key == "yearOfSlb" });
-        frontendYear_Slb = from2AnswerFromDb.tab[demographicTabIndex].data[IndexOfYearOfSlb].saveAsDraftValue;
+        if (IndexOfYearOfSlb > -1)
+            frontendYear_Slb = from2AnswerFromDb.tab[demographicTabIndex].data[IndexOfYearOfSlb].saveAsDraftValue;
     }
 
     // let keyDetails = Object.assign(keyDetailsForm1, keyDetailsForm2);
@@ -644,14 +645,14 @@ async function getForm2(ulbData, stateData, roleName, submittedData) {
     if (from2AnswerFromDb) {
         for (let eachQuestionObj of from2QuestionFromDb) {
             let indexOfKey = from2AnswerFromDb.tab.findIndex(x => x.tabKey === eachQuestionObj.key);
-               
+
             if (indexOfKey > -1) {
                 if (from2AnswerFromDb.tab[indexOfKey].tabKey == eachQuestionObj.key) {
 
                     for (let selectedData of from2AnswerFromDb.tab[indexOfKey].data) {
 
                         if (eachQuestionObj.key == "financialData" || eachQuestionObj.key == "serviceLevelBenchmark") {
-                            if(eachQuestionObj.key == "financialData") eachQuestionObj.instruction = "All data should be in consonance with audited accounts or information already submitted on CityFinance, wherever applicable";
+                            if (eachQuestionObj.key == "financialData") eachQuestionObj.instruction = "All data should be in consonance with audited accounts or information already submitted on CityFinance, wherever applicable";
                             for (let eachObj of eachQuestionObj.data) {
 
                                 if (eachObj.year.length <= 0) {
@@ -1592,7 +1593,7 @@ async function getUploadDocLinks(ulbId, fileDataJson) {
                 "year": "", "collection": "annualAccounts", "type": "", "availablePdfData": []
             };
             let obj = {}
-            if (yearsLedgerDataAvailable.indexOf(await findYearById(echObj.audited.year)) > -1 && echObj.audited.provisional_data.bal_sheet.pdf.url) {
+            if (yearsLedgerDataAvailable.indexOf(await findYearById(echObj.audited.year)) > -1 && echObj.audited.provisional_data && echObj.audited.provisional_data.bal_sheet.pdf.url) {
                 obj.name = echObj.audited.provisional_data.bal_sheet.pdf.name
                 obj.url = echObj.audited.provisional_data.bal_sheet.pdf.url
                 obj.type = 'bal_sheet'
@@ -1639,7 +1640,7 @@ async function getUploadDocLinks(ulbId, fileDataJson) {
                 obj = {};
             };
 
-            if (yearsLedgerDataAvailable.indexOf(await findYearById(echObj.unAudited.year)) > -1 && echObj.unAudited.provisional_data.bal_sheet.pdf.url) {
+            if (yearsLedgerDataAvailable.indexOf(await findYearById(echObj.unAudited.year)) > -1 && echObj.unAudited.provisional_data && echObj.unAudited.provisional_data.bal_sheet.pdf.url) {
                 obj.name = echObj.unAudited.provisional_data.bal_sheet.pdf.name
                 obj.url = echObj.unAudited.provisional_data.bal_sheet.pdf.url
                 obj.type = 'bal_sheet'
