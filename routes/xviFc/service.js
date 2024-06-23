@@ -420,14 +420,15 @@ async function getForm1(ulbData, stateData, roleName, submittedData) {
     if (from1AnswerFromDb) {
         for (let eachQuestionObj of from1QuestionFromDb) {
             let indexOfKey = from1AnswerFromDb.tab.findIndex(x => x.tabKey === eachQuestionObj.key);
-
+            if (eachQuestionObj.key == "financialData") {
+                eachQuestionObj.instruction = "All data should be in consonance with audited accounts or information already submitted on CityFinance, wherever applicable.";
+            }
             if (indexOfKey > -1) {
                 if (from1AnswerFromDb.tab[indexOfKey].tabKey == eachQuestionObj.key) {
 
                     for (let selectedData of from1AnswerFromDb.tab[indexOfKey].data) {
 
                         if (eachQuestionObj.key == "financialData") {
-                            eachQuestionObj.instruction = "All data should be in consonance with audited accounts or information already submitted on CityFinance, wherever applicable";
                             for (let eachObj of eachQuestionObj.data) {
 
                                 if (eachObj.year.length <= 0) {
@@ -645,14 +646,14 @@ async function getForm2(ulbData, stateData, roleName, submittedData) {
     if (from2AnswerFromDb) {
         for (let eachQuestionObj of from2QuestionFromDb) {
             let indexOfKey = from2AnswerFromDb.tab.findIndex(x => x.tabKey === eachQuestionObj.key);
-
+            if (eachQuestionObj.key == "financialData") eachQuestionObj.instruction = "All data should be in consonance with audited accounts or information already submitted on CityFinance, wherever applicable.";
             if (indexOfKey > -1) {
                 if (from2AnswerFromDb.tab[indexOfKey].tabKey == eachQuestionObj.key) {
 
                     for (let selectedData of from2AnswerFromDb.tab[indexOfKey].data) {
 
                         if (eachQuestionObj.key == "financialData" || eachQuestionObj.key == "serviceLevelBenchmark") {
-                            if (eachQuestionObj.key == "financialData") eachQuestionObj.instruction = "All data should be in consonance with audited accounts or information already submitted on CityFinance, wherever applicable";
+                          
                             for (let eachObj of eachQuestionObj.data) {
 
                                 if (eachObj.year.length <= 0) {
@@ -2238,7 +2239,7 @@ module.exports.formList = async (req, res) => {
             obj["stateId"] = eachUlbForm.state;
             // obj["ulbName"] = eachUlbForm.name;
             obj["ulbName"] = eachUlbForm.ulbName ? eachUlbForm.ulbName : eachUlbForm.name;
-            obj["ulbId"] = eachUlbForm._id;
+            obj["ulbId"] = eachUlbForm.ulb ? eachUlbForm.ulb : eachUlbForm._id;
             obj["censusCode"] = eachUlbForm.censusCode ? eachUlbForm.censusCode : eachUlbForm.sbCode;
             obj["ulbCategory"] = eachUlbForm.formType == 'form1' ? "Category 1" : eachUlbForm.formType == 'form2' ? "Category 2" : "";
             obj["formStatus"] = eachUlbForm.formStatus ? eachUlbForm.formStatus : "NOT_STARTED";
