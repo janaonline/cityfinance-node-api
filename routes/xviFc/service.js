@@ -2230,6 +2230,7 @@ module.exports.formList = async (req, res) => {
                 for (let eachTab of ulbData) {
                     if (eachTab.data.length > 0) {
                         // eachUlbForm.name = eachUlbForm.ulbName ? eachUlbForm.ulbName : eachUlbForm.name;
+                        eachUlbForm.formId = eachUlbForm.formId ? eachUlbForm.formId : eachUlbForm.formType == 'form1' ? 16  : 17;
                         let eachTabPercent = await getSubmissionPercent(eachTab, eachUlbForm.formId);
                         dataSubmissionPercent += eachTabPercent.submissionPercent;
                         allTabDataPercent.push(eachTabPercent);
@@ -2289,7 +2290,7 @@ async function getSubmissionPercent(eachTabData, formId) {
         if (eachTabData.tabKey == 'uploadDoc') {
             if (eachAns.file.url) numeratorSaveAsDraft += 1;
         } else {
-            if (eachAns.saveAsDraftValue) numeratorSaveAsDraft += 1;
+            if (eachAns.saveAsDraftValue || eachAns.saveAsDraftValue==0) numeratorSaveAsDraft += 1;
         }
     }
 
