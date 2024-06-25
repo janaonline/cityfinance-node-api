@@ -2064,7 +2064,7 @@ async function getUpdatedServiceLevelBenchmark_headers(serviceLevelBenchmarkData
 
 // ------ Review Table + Dashboard. ------
 module.exports.formList = async (req, res) => {
-
+   let tabCount=0;
     let user = req.decoded,
         filter = req.query.filter ? JSON.parse(req.query.filter) : (req.body.filter ? req.body.filter : {}),
         sort = req.query.sort ? JSON.parse(req.query.sort) : (req.body.sort ? req.body.sort : {}),
@@ -2223,14 +2223,19 @@ module.exports.formList = async (req, res) => {
             let allTabDataPercent = [];
             // let ulbData = await XviFcForm1DataCollection.find({ ulb: ObjectId(eachUlbForm.ulb) }, { tab: 1 }).lean();
             let ulbData = eachUlbForm.tabs ? eachUlbForm.tabs : eachUlbForm.tab;
-
+            
             // Get Data submission %.
             let dataSubmissionPercent = 0;
-            if (ulbData) {
+            if (ulbData && ulbData.length>0) {
+                let demographicDataIndex = ulbData.findIndex((x)=>{return x.tabKey == 'demographicData'})
+                let temp = ulbData[0];
+                    ulbData[0]=ulbData[demographicDataIndex];
+                    ulbData[demographicDataIndex]= temp;
                 for (let eachTab of ulbData) {
                     if (eachTab.data.length > 0) {
                         // eachUlbForm.name = eachUlbForm.ulbName ? eachUlbForm.ulbName : eachUlbForm.name;
                         eachUlbForm.formId = eachUlbForm.formId ? eachUlbForm.formId : eachUlbForm.formType == 'form1' ? 16  : 17;
+                        tabCount = eachUlbForm.formId==16 ? 4: 5;
                         let eachTabPercent = await getSubmissionPercent(eachTab, eachUlbForm.formId);
                         dataSubmissionPercent += eachTabPercent.submissionPercent;
                         allTabDataPercent.push(eachTabPercent);
@@ -2246,7 +2251,7 @@ module.exports.formList = async (req, res) => {
             obj["censusCode"] = eachUlbForm.censusCode ? eachUlbForm.censusCode : eachUlbForm.sbCode;
             obj["ulbCategory"] = eachUlbForm.formType == 'form1' ? "Category 1" : eachUlbForm.formType == 'form2' ? "Category 2" : "";
             obj["formStatus"] = eachUlbForm.formStatus ? eachUlbForm.formStatus : "NOT_STARTED";
-            obj["dataSubmitted"] = ulbData ? Math.round(Number(dataSubmissionPercent / allTabDataPercent.length)) : 0;
+            obj["dataSubmitted"] = ulbData ? Math.round(Number(dataSubmissionPercent / tabCount)) : 0;
             obj["action"] = (eachUlbForm.formStatus == 'UNDER_REVIEW_BY_XVIFC' && user.role == 'XVIFC') || (eachUlbForm.formStatus == 'UNDER_REVIEW_BY_STATE' && user.role == 'XVIFC_STATE') || (eachUlbForm.formStatus == 'SUBMITTED') ? 'Review' : 'View';
             obj["statusClass"] = eachUlbForm.formStatus == 'IN_PROGRESS' ? 'status-in-progress' : eachUlbForm.formStatus == 'SUBMITTED' || eachUlbForm.formStatus == 'UNDER_REVIEW_BY_STATE' ? 'status-under-review' : 'status-not-started';
 
@@ -2265,7 +2270,10 @@ let denominator = {
     uploadDoc: 0,
     financialData: 0,
     accountPractice: 13,
-    serviceLevelBenchmark: 0
+    serviceLevelBenchmark: 0,
+    yearOfSlb:'',
+    yearOfConstitution:''
+
 };
 
 async function getSubmissionPercent(eachTabData, formId) {
@@ -2278,19 +2286,57 @@ async function getSubmissionPercent(eachTabData, formId) {
         if (eachTabData.tabKey == 'demographicData') {
             if (eachAns.key == "yearOfConstitution") {
                 let temp = baseYear - Number(eachAns.saveAsDraftValue.split("-")[1]);
+                 if(eachAns.saveAsDraftValue.includes('Before')){
+                    temp = temp+1;
+                 }
                 denominator["financialData"] = formId == 16 ? temp * 20 : temp * 42;
                 denominator["uploadDoc"] = formId == 16 ? temp * 1 : temp * 1;
+                denominator.yearOfConstitution = eachAns.saveAsDraftValue;
             }
             if (eachAns.key == "yearOfSlb") {
                 denominator["serviceLevelBenchmark"] = (baseYear - Number(eachAns.saveAsDraftValue.split("-")[1]) + 1) * 28;
+                denominator.yearOfSlb = eachAns.saveAsDraftValue;
             }
-            denominator.demographicData = formId == 16 ? 8 : 9;
         }
+        denominator.demographicData = formId == 16 ? 8 : 9;
 
         if (eachTabData.tabKey == 'uploadDoc') {
-            if (eachAns.file.url) numeratorSaveAsDraft += 1;
-        } else {
-            if (eachAns.saveAsDraftValue || eachAns.saveAsDraftValue==0) numeratorSaveAsDraft += 1;
+            if (eachAns.file.url || eachAns.isPdfAvailable) numeratorSaveAsDraft += 1;
+        }
+        else if (eachTabData.tabKey == 'demographicData' || eachTabData.tabKey == 'accountPractice') {
+            if (eachAns.saveAsDraftValue || eachAns.saveAsDraftValue === 0) numeratorSaveAsDraft += 1;
+        }
+        else {
+            let frontendYear_Fd;
+            let frontendYear_Slb;
+            if (eachTabData.tabKey == "financialData") {
+                frontendYear_Fd = denominator.yearOfConstitution;
+
+                if (frontendYear_Fd && frontendYear_Fd.includes("In")) frontendYear_Fd = "2015-16";
+                if (frontendYear_Fd && frontendYear_Fd.includes("Before")) frontendYear_Fd = "2014-15";
+
+                let yindex = -1;
+                if (frontendYear_Fd == "2014-15") {
+                    yindex = financialYearTableHeader.length;
+                } else {
+                    yindex = frontendYear_Fd ? financialYearTableHeader.indexOf(frontendYear_Fd) : -1;
+                }
+
+                let tempYearArr = financialYearTableHeader.slice(0, yindex);
+                if (tempYearArr.includes(eachAns.year) && (eachAns.saveAsDraftValue || eachAns.saveAsDraftValue === 0)) {
+                    numeratorSaveAsDraft += 1;
+                }
+            } else if (eachTabData.tabKey == "serviceLevelBenchmark") {
+                frontendYear_Slb = denominator.yearOfSlb;
+                let yindex = -1;
+
+                yindex = frontendYear_Slb ? financialYearTableHeader.indexOf(frontendYear_Slb) + 1 : -1;
+                let tempYearArr = financialYearTableHeader.slice(0, yindex);
+                if (tempYearArr.includes(eachAns.year) && (eachAns.saveAsDraftValue || eachAns.saveAsDraftValue === 0)) {
+                    numeratorSaveAsDraft += 1;
+                }
+            }
+
         }
     }
 
