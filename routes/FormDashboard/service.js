@@ -1741,8 +1741,10 @@ function createFormResponseObjects(formCategory, ulbResponse, formData, modelNam
 function appendDesignYearToUrl(url, design_year) {
     try {
         const splitUrl = url.split("state-form");
-        const newUrl = `${splitUrl[0]}state-form/${design_year}/${splitUrl[1].substring(1)}`;
-        return newUrl;
+        if(splitUrl.length>1){
+            return `${splitUrl[0]}state-form/${design_year}/${splitUrl[1].substring(1)}`;
+        }
+        return url;
     } catch (err) {
         throw Error(`appendDesignYearToUrl:: ${err.message}`)
     }
