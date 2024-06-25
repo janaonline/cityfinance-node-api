@@ -1553,147 +1553,149 @@ async function getModifiedTabsXvifcForm(tabs, xviFcFormTable, formType) {
 
 /**
  * Function to update the json with the pdf links - Already on Cityfinance.
- * Step 1: Check if data is available in "UlbLedger" collection - Get the years for which data is available.
+ * Step 1: Find the pdf with formStatus - "Under review by State", "Under review by MoHUA", "Apporved by MoHUA".
  * Step 2: For those years find document (pdf) links in "DataCollectionForm" & "AnnualAccountData" collection.
  * Priority: AnnualAccountData (Audited) > AnnualAccountData (Unaudited) > Document from "DataCollectionForm" collection.
  */
 async function getUploadDocLinks(ulbId, fileDataJson) {
     // Get years from UlbLedger.
-    let yearsLedgerDataAvailable = await UlbLedger.distinct("financialYear", { $and: [{ "financialYear": { $in: financialYearTableHeader } }, { "ulb": ObjectId(ulbId) }] });
+    // let yearsLedgerDataAvailable = await UlbLedger.distinct("financialYear", { $and: [{ "financialYear": { $in: financialYearTableHeader } }, { "ulb": ObjectId(ulbId) }] });
 
     // Get pdf links from "DataCollectionForm" collection.
-    if (yearsLedgerDataAvailable.length > 0) {
-        let alreadyOnCfPdfs = {};
-        // for (let year of yearsLedgerDataAvailable) {
+    // if (yearsLedgerDataAvailable.length > 0) {
+    let alreadyOnCfPdfs = {};
+    // for (let year of yearsLedgerDataAvailable) {
 
-        //     let dynamicKey = 'documents.financial_year_' + year.replace("-", "_");
-        //     let tempDyanamicKey = 'financial_year_' + year.replace("-", "_");
-        //     //let availablePdfData = await DataCollectionForm.find({ [`${dynamicKey}`]: { '$exists': 1 }, "ulb": ObjectId(ulbId) }, { [`${dynamicKey}`]: 1 });
+    //     let dynamicKey = 'documents.financial_year_' + year.replace("-", "_");
+    //     let tempDyanamicKey = 'financial_year_' + year.replace("-", "_");
+    //     //let availablePdfData = await DataCollectionForm.find({ [`${dynamicKey}`]: { '$exists': 1 }, "ulb": ObjectId(ulbId) }, { [`${dynamicKey}`]: 1 });
 
-        //     if (
-        //         availablePdfData[0] &&
-        //         availablePdfData[0].documents[tempDyanamicKey].pdf.length > 0 &&
-        //         availablePdfData[0].documents[tempDyanamicKey].pdf[0].url
-        //     ) {
-        //         let obj={}
-        //         let temp = { "year": "", "collection": "dataCollectionForm", "availablePdfData": [] };
-        //         obj.name=availablePdfData[0].documents[tempDyanamicKey].pdf[0].name
-        //         obj.url=availablePdfData[0].documents[tempDyanamicKey].pdf[0].url
-        //         obj.type=''
-        //         obj.label=''
-        //         temp.availablePdfData.push(obj);
-        //         temp.year = year;
-        //         alreadyOnCfPdfs[year] = temp;
-        //     }
-        // }
+    //     if (
+    //         availablePdfData[0] &&
+    //         availablePdfData[0].documents[tempDyanamicKey].pdf.length > 0 &&
+    //         availablePdfData[0].documents[tempDyanamicKey].pdf[0].url
+    //     ) {
+    //         let obj={}
+    //         let temp = { "year": "", "collection": "dataCollectionForm", "availablePdfData": [] };
+    //         obj.name=availablePdfData[0].documents[tempDyanamicKey].pdf[0].name
+    //         obj.url=availablePdfData[0].documents[tempDyanamicKey].pdf[0].url
+    //         obj.type=''
+    //         obj.label=''
+    //         temp.availablePdfData.push(obj);
+    //         temp.year = year;
+    //         alreadyOnCfPdfs[year] = temp;
+    //     }
+    // }
 
-        // Get pdf links from "AnnualAccountDatas" collection.
-        let availablePdfData_aa = await AnnualAccountData.find({ "ulb": ObjectId(ulbId) });
-        for (let echObj of availablePdfData_aa) {
-            let tempObj = {
+    // Get pdf links from "AnnualAccountDatas" collection.
+    let availablePdfData_aa = await AnnualAccountData.find({ "ulb": ObjectId(ulbId) });
+    let currentFormStatus = [3, 4, 6];
+
+    for (let echObj of availablePdfData_aa) {
+        let tempObj = {
+            "year": "", "collection": "annualAccounts", "type": "", "availablePdfData": []
+        };
+        let obj = {}
+        if (echObj.audited.provisional_data && echObj.audited.provisional_data.bal_sheet.pdf.url && (currentFormStatus.includes(echObj.currentFormStatus) || echObj.status == 'APPROVED')) {
+            obj.name = echObj.audited.provisional_data.bal_sheet.pdf.name
+            obj.url = echObj.audited.provisional_data.bal_sheet.pdf.url
+            obj.type = 'bal_sheet'
+            obj.label = 'Balance Sheet'
+            tempObj.availablePdfData.push(obj);
+            obj = {}
+            obj.name = echObj.audited.provisional_data.bal_sheet_schedules.pdf.name
+            obj.url = echObj.audited.provisional_data.bal_sheet_schedules.pdf.url
+            obj.type = 'bal_sheet_schedules'
+            obj.label = 'Schedules To Balance Sheet'
+            tempObj.availablePdfData.push(obj);
+            obj = {}
+            obj.name = echObj.audited.provisional_data.inc_exp.pdf.name
+            obj.url = echObj.audited.provisional_data.inc_exp.pdf.url
+            obj.type = 'inc_exp'
+            obj.label = 'Income And Expenditure'
+            tempObj.availablePdfData.push(obj);
+            obj = {}
+            obj.name = echObj.audited.provisional_data.inc_exp_schedules.pdf.name
+            obj.url = echObj.audited.provisional_data.inc_exp_schedules.pdf.url
+            obj.type = 'inc_exp_schedules'
+            obj.label = 'Schedules To Income And Expenditure'
+            tempObj.availablePdfData.push(obj);
+            obj = {}
+            obj.name = echObj.audited.provisional_data.cash_flow.pdf.name
+            obj.url = echObj.audited.provisional_data.cash_flow.pdf.url
+            obj.type = 'cash_flow'
+            obj.label = 'Cash Flow Statement'
+            tempObj.availablePdfData.push(obj);
+            obj = {}
+            obj.name = echObj.audited.provisional_data.auditor_report.pdf.name
+            obj.url = echObj.audited.provisional_data.auditor_report.pdf.url
+            obj.type = 'auditor_report'
+            obj.label = 'Auditor Report'
+            tempObj.availablePdfData.push(obj);
+            // tempObj.availablePdfData = echObj.audited.provisional_data.bal_sheet.pdf;
+            tempObj.year = await findYearById(echObj.audited.year);
+            tempObj.type = "audited";
+            alreadyOnCfPdfs[tempObj.year] = tempObj;
+
+            tempObj = {
                 "year": "", "collection": "annualAccounts", "type": "", "availablePdfData": []
             };
-            let obj = {}
-            if (yearsLedgerDataAvailable.indexOf(await findYearById(echObj.audited.year)) > -1 && echObj.audited.provisional_data && echObj.audited.provisional_data.bal_sheet.pdf.url) {
-                obj.name = echObj.audited.provisional_data.bal_sheet.pdf.name
-                obj.url = echObj.audited.provisional_data.bal_sheet.pdf.url
-                obj.type = 'bal_sheet'
-                obj.label = 'Balance Sheet'
-                tempObj.availablePdfData.push(obj);
-                obj = {}
-                obj.name = echObj.audited.provisional_data.bal_sheet_schedules.pdf.name
-                obj.url = echObj.audited.provisional_data.bal_sheet_schedules.pdf.url
-                obj.type = 'bal_sheet_schedules'
-                obj.label = 'Schedules To Balance Sheet'
-                tempObj.availablePdfData.push(obj);
-                obj = {}
-                obj.name = echObj.audited.provisional_data.inc_exp.pdf.name
-                obj.url = echObj.audited.provisional_data.inc_exp.pdf.url
-                obj.type = 'inc_exp'
-                obj.label = 'Income And Expenditure'
-                tempObj.availablePdfData.push(obj);
-                obj = {}
-                obj.name = echObj.audited.provisional_data.inc_exp_schedules.pdf.name
-                obj.url = echObj.audited.provisional_data.inc_exp_schedules.pdf.url
-                obj.type = 'inc_exp_schedules'
-                obj.label = 'Schedules To Income And Expenditure'
-                tempObj.availablePdfData.push(obj);
-                obj = {}
-                obj.name = echObj.audited.provisional_data.cash_flow.pdf.name
-                obj.url = echObj.audited.provisional_data.cash_flow.pdf.url
-                obj.type = 'cash_flow'
-                obj.label = 'Cash Flow Statement'
-                tempObj.availablePdfData.push(obj);
-                obj = {}
-                obj.name = echObj.audited.provisional_data.auditor_report.pdf.name
-                obj.url = echObj.audited.provisional_data.auditor_report.pdf.url
-                obj.type = 'auditor_report'
-                obj.label = 'Auditor Report'
-                tempObj.availablePdfData.push(obj);
-                // tempObj.availablePdfData = echObj.audited.provisional_data.bal_sheet.pdf;
-                tempObj.year = await findYearById(echObj.audited.year);
-                tempObj.type = "audited";
-                alreadyOnCfPdfs[tempObj.year] = tempObj;
+            obj = {};
+        };
 
-                tempObj = {
-                    "year": "", "collection": "annualAccounts", "type": "", "availablePdfData": []
-                };
-                obj = {};
+        if (echObj.unAudited.provisional_data && echObj.unAudited.provisional_data.bal_sheet.pdf.url && (currentFormStatus.includes(echObj.currentFormStatus) || echObj.status == 'APPROVED')) {
+            obj.name = echObj.unAudited.provisional_data.bal_sheet.pdf.name
+            obj.url = echObj.unAudited.provisional_data.bal_sheet.pdf.url
+            obj.type = 'bal_sheet'
+            obj.label = 'Balance Sheet'
+            tempObj.availablePdfData.push(obj);
+            obj = {}
+            obj.name = echObj.unAudited.provisional_data.bal_sheet_schedules.pdf.name
+            obj.url = echObj.unAudited.provisional_data.bal_sheet_schedules.pdf.url
+            obj.type = 'bal_sheet_schedules'
+            obj.label = 'Schedules To Balance Sheet'
+            tempObj.availablePdfData.push(obj);
+            obj = {}
+            obj.name = echObj.unAudited.provisional_data.inc_exp.pdf.name
+            obj.url = echObj.unAudited.provisional_data.inc_exp.pdf.url
+            obj.type = 'inc_exp'
+            obj.label = 'Income And Expenditure'
+            tempObj.availablePdfData.push(obj);
+            obj = {}
+            obj.name = echObj.unAudited.provisional_data.inc_exp_schedules.pdf.name
+            obj.url = echObj.unAudited.provisional_data.inc_exp_schedules.pdf.url
+            obj.type = 'inc_exp_schedules'
+            obj.label = 'Schedules To Income And Expenditure'
+            tempObj.availablePdfData.push(obj);
+            obj = {}
+            obj.name = echObj.unAudited.provisional_data.cash_flow.pdf.name
+            obj.url = echObj.unAudited.provisional_data.cash_flow.pdf.url
+            obj.type = 'cash_flow'
+            obj.label = 'Cash Flow Statement'
+            tempObj.availablePdfData.push(obj);
+            // tempObj.availablePdfData = echObj.unAudited.provisional_data.bal_sheet.pdf;
+            tempObj.year = await findYearById(echObj.unAudited.year);
+            tempObj.type = "unaudited";
+            alreadyOnCfPdfs[tempObj.year] = tempObj;
+            tempObj = {
+                "year": "", "collection": "annualAccounts", "type": "", "availablePdfData": []
             };
-
-            if (yearsLedgerDataAvailable.indexOf(await findYearById(echObj.unAudited.year)) > -1 && echObj.unAudited.provisional_data && echObj.unAudited.provisional_data.bal_sheet.pdf.url) {
-                obj.name = echObj.unAudited.provisional_data.bal_sheet.pdf.name
-                obj.url = echObj.unAudited.provisional_data.bal_sheet.pdf.url
-                obj.type = 'bal_sheet'
-                obj.label = 'Balance Sheet'
-                tempObj.availablePdfData.push(obj);
-                obj = {}
-                obj.name = echObj.unAudited.provisional_data.bal_sheet_schedules.pdf.name
-                obj.url = echObj.unAudited.provisional_data.bal_sheet_schedules.pdf.url
-                obj.type = 'bal_sheet_schedules'
-                obj.label = 'Schedules To Balance Sheet'
-                tempObj.availablePdfData.push(obj);
-                obj = {}
-                obj.name = echObj.unAudited.provisional_data.inc_exp.pdf.name
-                obj.url = echObj.unAudited.provisional_data.inc_exp.pdf.url
-                obj.type = 'inc_exp'
-                obj.label = 'Income And Expenditure'
-                tempObj.availablePdfData.push(obj);
-                obj = {}
-                obj.name = echObj.unAudited.provisional_data.inc_exp_schedules.pdf.name
-                obj.url = echObj.unAudited.provisional_data.inc_exp_schedules.pdf.url
-                obj.type = 'inc_exp_schedules'
-                obj.label = 'Schedules To Income And Expenditure'
-                tempObj.availablePdfData.push(obj);
-                obj = {}
-                obj.name = echObj.unAudited.provisional_data.cash_flow.pdf.name
-                obj.url = echObj.unAudited.provisional_data.cash_flow.pdf.url
-                obj.type = 'cash_flow'
-                obj.label = 'Cash Flow Statement'
-                tempObj.availablePdfData.push(obj);
-                // tempObj.availablePdfData = echObj.unAudited.provisional_data.bal_sheet.pdf;
-                tempObj.year = await findYearById(echObj.unAudited.year);
-                tempObj.type = "unaudited";
-                alreadyOnCfPdfs[tempObj.year] = tempObj;
-                tempObj = {
-                    "year": "", "collection": "annualAccounts", "type": "", "availablePdfData": []
-                };
-                obj = {};
-            }
-        }
-
-        // Append the links in the json.
-        for (let echYrObj of fileDataJson) {
-            let fy = echYrObj.label.split(" ")[1];
-
-            if (alreadyOnCfPdfs[fy]) {
-                echYrObj.isPdfAvailable = alreadyOnCfPdfs[fy].availablePdfData[0].url ? true : false;
-                echYrObj.fileAlreadyOnCf = alreadyOnCfPdfs[fy].availablePdfData;
-            } else {
-                echYrObj.isPdfAvailable = false;
-            }
+            obj = {};
         }
     }
+
+    // Append the links in the json.
+    for (let echYrObj of fileDataJson) {
+        let fy = echYrObj.label.split(" ")[1];
+
+        if (alreadyOnCfPdfs[fy]) {
+            echYrObj.isPdfAvailable = alreadyOnCfPdfs[fy].availablePdfData[0].url ? true : false;
+            echYrObj.fileAlreadyOnCf = alreadyOnCfPdfs[fy].availablePdfData;
+        } else {
+            echYrObj.isPdfAvailable = false;
+        }
+    }
+    // }
     return fileDataJson;
 
 }
@@ -2228,6 +2230,7 @@ module.exports.formList = async (req, res) => {
                 for (let eachTab of ulbData) {
                     if (eachTab.data.length > 0) {
                         // eachUlbForm.name = eachUlbForm.ulbName ? eachUlbForm.ulbName : eachUlbForm.name;
+                        eachUlbForm.formId = eachUlbForm.formId ? eachUlbForm.formId : eachUlbForm.formType == 'form1' ? 16  : 17;
                         let eachTabPercent = await getSubmissionPercent(eachTab, eachUlbForm.formId);
                         dataSubmissionPercent += eachTabPercent.submissionPercent;
                         allTabDataPercent.push(eachTabPercent);
@@ -2287,7 +2290,7 @@ async function getSubmissionPercent(eachTabData, formId) {
         if (eachTabData.tabKey == 'uploadDoc') {
             if (eachAns.file.url) numeratorSaveAsDraft += 1;
         } else {
-            if (eachAns.saveAsDraftValue) numeratorSaveAsDraft += 1;
+            if (eachAns.saveAsDraftValue || eachAns.saveAsDraftValue==0) numeratorSaveAsDraft += 1;
         }
     }
 
