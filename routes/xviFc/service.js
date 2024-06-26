@@ -2264,7 +2264,7 @@ module.exports.formList = async (req, res) => {
             reviewTableData.push(obj);
         }
 
-        return res.status(200).json({ status: true, message: "", data: reviewTableData, totalForms: totalUlbForm, dashboard: dashboardData });
+        return res.status(200).json({ status: true, message: "", data: reviewTableData, totalForms: totalUlbForm });
     } else {
         return res.status(404).json({ status: false, message: "ULB not found.", data: listOfUlbsFromState });
     }
