@@ -2264,6 +2264,14 @@ module.exports.formList = async (req, res) => {
             reviewTableData.push(obj);
         }
 
+        if (filter.stateName) {
+            reviewTableData = reviewTableData.filter((x) => { return x.stateName == filter.stateName });
+        }
+        if (filter.formId) {
+            filter.formId = filter.formId == 16 ? 'Category 1' : 'Category 2';
+            reviewTableData = reviewTableData.filter((x) => { return x.ulbCategory == filter.formId });
+        }
+
         return res.status(200).json({ status: true, message: "", data: reviewTableData, totalForms: totalUlbForm });
     } else {
         return res.status(404).json({ status: false, message: "ULB not found.", data: listOfUlbsFromState });
