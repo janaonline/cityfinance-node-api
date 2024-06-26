@@ -21,6 +21,11 @@ router.post('/saveAsDraft', verifyToken, xviFcService.saveAsDraftForm);
 router.post('/submit_form', verifyToken, xviFcService.submitFrom);
 
 router.post('/form_list', verifyToken, xviFcService.formList);
-router.post('/search', verifyToken, xviFcService.searchByUlb);
+// router.post('/search', verifyToken, xviFcService.searchByUlb);
+
+router.post('/approve', verifyToken, xviFcService.approveUlbForms);
+router.post('/reject', verifyToken, xviFcService.rejectUlbForms);
+
+router.get('/progressReport', verifyToken, xviFcService.progressReport);
 
 module.exports = router;
