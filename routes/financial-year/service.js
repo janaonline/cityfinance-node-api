@@ -142,7 +142,7 @@ module.exports.access = catchAsync(async function (req, res) {
             "path": "design_year"
         }).lean()
         const role = req.decoded.role;
-        if(role !== "ULB"){
+        if(role == "STATE" && process.env.ENV === ENV['prod']) {
             years =  years.filter(year=> year?.design_year?._id.toString() !== YEAR_CONSTANTS['24_25'])
         }
         let MoHUA_arr = years.map(returnYearUrl, { "type": "mohuaUrl", "role": "mohua" })
