@@ -197,9 +197,9 @@ module.exports.saveAsDraftForm = async (req, res) => {
                 for (let eachObj of formData.data) {
                     if (index > -1) {
                         quesIndex = ulbData_form.tab[index].data.findIndex((x) => x.key === eachObj.key);
-                        if (quesIndex <= -1) {
+                        // if (quesIndex <= -1) {
                             ulbData_form.tab[index].data.push(eachObj);
-                        }
+                        // }
                     }
                 }
                 // Check tab.
