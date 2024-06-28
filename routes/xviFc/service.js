@@ -197,9 +197,9 @@ module.exports.saveAsDraftForm = async (req, res) => {
                 for (let eachObj of formData.data) {
                     if (index > -1) {
                         quesIndex = ulbData_form.tab[index].data.findIndex((x) => x.key === eachObj.key);
-                        if (quesIndex <= -1) {
+                        // if (quesIndex <= -1) {
                             ulbData_form.tab[index].data.push(eachObj);
-                        }
+                        // }
                     }
                 }
                 // Check tab.
@@ -2318,7 +2318,7 @@ async function getSubmissionPercent(eachTabData, formId) {
         denominator.demographicData = formId == 16 ? 8 : 9;
 
         if (eachTabData.tabKey == 'uploadDoc') {
-            if (eachAns.file.url || eachAns.isPdfAvailable) numeratorSaveAsDraft += 1;
+            if (eachAns.file.url || eachAns.verifyStatus == 2 || eachAns.verifyStatus == 3) numeratorSaveAsDraft += 1;
         }
         else if (eachTabData.tabKey == 'demographicData' || eachTabData.tabKey == 'accountPractice') {
             if (eachAns.saveAsDraftValue || eachAns.saveAsDraftValue === 0) numeratorSaveAsDraft += 1;
