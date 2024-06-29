@@ -197,9 +197,13 @@ module.exports.saveAsDraftForm = async (req, res) => {
                 for (let eachObj of formData.data) {
                     if (index > -1) {
                         quesIndex = ulbData_form.tab[index].data.findIndex((x) => x.key === eachObj.key);
-                        // if (quesIndex <= -1) {
+                        if (quesIndex <= -1) {
                             ulbData_form.tab[index].data.push(eachObj);
-                        // }
+                        } else {
+                            if (ulbData_form.tab[index].data[quesIndex]) {
+                                eachObj = ulbData_form.tab[index].data[quesIndex];
+                            }
+                        }
                     }
                 }
                 // Check tab.
@@ -2089,7 +2093,7 @@ module.exports.formList = async (req, res) => {
     let listOfUlbsFromState = [];
     let totalUlbForm = 0;
 
-    if (!filter.formStatus) {
+    if (!filter.formStatus || (filter.formStatus == 'NOT_STARTED' && Object.keys(sort).length > 0) || filter.formStatus == 'NOT_STARTED') {
         listOfUlbsFromState = await Ulb.aggregate([
             {
                 $lookup: {
@@ -2132,6 +2136,7 @@ module.exports.formList = async (req, res) => {
                     ulbName: { $first: "$name" },
                     state: { $first: "$state" },
                     stateName: { $first: "$stateResult.name" },
+                    isUT: { $first: "$stateResult.isUT" },
                     formStatus: { $first: "$tab.formStatus" },
                     tabs: { $first: "$tab.tab" },
                     isActive: { $first: "$isActive" },
@@ -2152,6 +2157,7 @@ module.exports.formList = async (req, res) => {
                     tabs: 1,
                     stateName: 1,
                     formStatus: 1,
+                    isUT: 1,
                 }
             },
             { $sort: Object.keys(sort).length > 0 ? sort : { formStatus: -1, name: 1 } },
@@ -2160,61 +2166,65 @@ module.exports.formList = async (req, res) => {
         ]).allowDiskUse(true);
         totalUlbForm = await Ulb.find(matchParams).count().lean();
 
-    } else if ((filter.formStatus == 'NOT_STARTED' && Object.keys(sort).length > 0) || filter.formStatus == 'NOT_STARTED') {
-        listOfUlbsFromState = await Ulb.aggregate([
-            {
-                $lookup: {
-                    from: "states",
-                    localField: "state",
-                    foreignField: "_id",
-                    as: "stateResult",
-                },
-            },
-            {
-                $match: matchParams
-            },
-            {
-                $unwind: {
-                    path: "$stateResult",
-                    preserveNullAndEmptyArrays: true
-                }
-            },
-            {
-                $group: {
-                    _id: "$_id",
-                    formType: { $first: "$formType" },
-                    censusCode: { $first: "$censusCode" },
-                    sbCode: { $first: "$sbCode" },
-                    name: { $first: "$name" },
-                    ulbName: { $first: "$name" },
-                    state: { $first: "$state" },
-                    stateName: { $first: "$stateResult.name" },
-                    formStatus: { $first: "$tab.formStatus" },
-                    isActive: { $first: "$isActive" },
-                }
-            },
-            {
-                $project: {
-                    _id: 1,
-                    censusCode: 1,
-                    sbCode: 1,
-                    code: 1,
-                    name: 1,
-                    ulbName: 1,
-                    state: 1,
-                    isActive: 1,
-                    formType: 1,
-                    stateName: 1,
-                    formStatus: 1,
-                }
-            },
-            { $sort: Object.keys(sort).length > 0 ? sort : { formStatus: -1, name: 1 } },
-            { $skip: skip * limit },
-            { $limit: limit }
-        ]).allowDiskUse(true);
-        totalUlbForm = await Ulb.find(matchParams).count().lean();
+    }
+    // else if ((filter.formStatus == 'NOT_STARTED' && Object.keys(sort).length > 0) || filter.formStatus == 'NOT_STARTED') {
+    //     listOfUlbsFromState = await Ulb.aggregate([
+    //         {
+    //             $lookup: {
+    //                 from: "states",
+    //                 localField: "state",
+    //                 foreignField: "_id",
+    //                 as: "stateResult",
+    //             },
+    //         },
+    //         {
+    //             $match: matchParams
+    //         },
+    //         {
+    //             $unwind: {
+    //                 path: "$stateResult",
+    //                 preserveNullAndEmptyArrays: true
+    //             }
+    //         },
+    //         {
+    //             $group: {
+    //                 _id: "$_id",
+    //                 formType: { $first: "$formType" },
+    //                 censusCode: { $first: "$censusCode" },
+    //                 sbCode: { $first: "$sbCode" },
+    //                 name: { $first: "$name" },
+    //                 ulbName: { $first: "$name" },
+    //                 state: { $first: "$state" },
+    //                 stateName: { $first: "$stateResult.name" },
+    //                 isUT: { $first: "$stateResult.isUT" },
+    //                 formStatus: { $first: "$tab.formStatus" },
+    //                 isActive: { $first: "$isActive" },
+    //             }
+    //         },
+    //         {
+    //             $project: {
+    //                 _id: 1,
+    //                 censusCode: 1,
+    //                 sbCode: 1,
+    //                 code: 1,
+    //                 name: 1,
+    //                 ulbName: 1,
+    //                 state: 1,
+    //                 isActive: 1,
+    //                 formType: 1,
+    //                 stateName: 1,
+    //                 formStatus: 1,
+    //                 isUT: 1,
+    //             }
+    //         },
+    //         { $sort: Object.keys(sort).length > 0 ? sort : { formStatus: -1, name: 1 } },
+    //         { $skip: skip * limit },
+    //         { $limit: limit }
+    //     ]).allowDiskUse(true);
+    //     totalUlbForm = await Ulb.find(matchParams).count().lean();
 
-    } else {
+    // } 
+    else {
         matchParams = user.role == 'XVIFC' ? filter : user.role == 'XVIFC_STATE' ? { $and: [{ state: ObjectId(stateId) }, filter, { ulbName: { $regex: `${searchText}`, $options: 'im' } }] } : "";
         listOfUlbsFromState = await XviFcForm1DataCollection.find(matchParams).sort(Object.keys(sort).length > 0 ? sort : { formStatus: -1, ulbName: 1 }).skip(skip).limit(limit).lean();
         totalUlbForm = await XviFcForm1DataCollection.find(matchParams).count().lean();
@@ -2261,9 +2271,14 @@ module.exports.formList = async (req, res) => {
             obj["action"] = (eachUlbForm.formStatus == 'UNDER_REVIEW_BY_XVIFC' && user.role == 'XVIFC') || (eachUlbForm.formStatus == 'UNDER_REVIEW_BY_STATE' && user.role == 'XVIFC_STATE') || (eachUlbForm.formStatus == 'SUBMITTED') ? 'Review' : 'View';
             obj["statusClass"] = eachUlbForm.formStatus == 'IN_PROGRESS' ? 'status-in-progress' : eachUlbForm.formStatus == 'SUBMITTED' || eachUlbForm.formStatus == 'UNDER_REVIEW_BY_STATE' ? 'status-under-review' : 'status-not-started';
 
-            reviewTableData.push(obj);
+            if (!eachUlbForm.isUT)
+                reviewTableData.push(obj);
         }
 
+        let formStatus = ['IN_PROGRESS', 'UNDER_REVIEW_BY_STATE', 'RETURNED_BY_STATE', 'UNDER_REVIEW_BY_XVIFC', 'RETURNED_REVIEW_BY_XVIFC', 'APPROVED_REVIEW_BY_XVIFC'];
+        if (filter.formStatus == 'NOT_STARTED') {
+            reviewTableData = reviewTableData.filter((x) => { return !formStatus.includes(x.formStatus) });
+        }
         if (filter.stateName) {
             reviewTableData = reviewTableData.filter((x) => { return x.stateName == filter.stateName });
         }
@@ -2373,9 +2388,11 @@ module.exports.approveUlbForms = async (req, res) => {
         let approveData = {};
         let ulbData_form = await XviFcForm1DataCollection.findOne({ ulb: ObjectId(ulbId) });
 
+        // State Approval.
         if (user.role == 'XVIFC_STATE' && ulbData_form.formStatus == 'UNDER_REVIEW_BY_STATE') {
             approveData = await approveByState(user.state);
         } else { return res.status(400).json({ status: false, message: 'Action cannot be taken as the current form status is ' + ulbData_form.formStatus }); }
+        // XVIFC Approval.
         if (user.role == 'XVIFC' && ulbData_form.formStatus == 'UNDER_REVIEW_BY_XVIFC') {
             approveData = await approveByXvifc(user._id);
         } else { return res.status(400).json({ status: false, message: 'Action cannot be taken as the current form status is ' + ulbData_form.formStatus }); }
@@ -2503,6 +2520,7 @@ module.exports.progressReport = async (req, res) => {
                 ulbName: { $first: "$name" },
                 state: { $first: "$state" },
                 stateName: { $first: "$stateResult.name" },
+                isUT: { $first: "$stateResult.isUT" },
                 formStatus: { $first: "$tab.formStatus" },
                 tabs: { $first: "$tab.tab" },
                 isActive: { $first: "$isActive" },
@@ -2523,6 +2541,7 @@ module.exports.progressReport = async (req, res) => {
                 tabs: 1,
                 stateName: 1,
                 formStatus: 1,
+                isUT: 1,
             }
         },
         { $sort: { formStatus: -1, stateName: 1, name: 1 } }
@@ -2567,14 +2586,16 @@ module.exports.progressReport = async (req, res) => {
                 obj[tab.key] = tab.submissionPercent;
             }
 
-            reviewTableData.push(obj);
+            if (!eachUlbForm.isUT)
+                reviewTableData.push(obj);
         }
 
         let formStatusData = await getFormStatusSummary(reviewTableData);
 
         // Create a new workbook and add a worksheet
         const workbook = new ExcelJS.Workbook();
-        const worksheet_1 = workbook.addWorksheet('XVI FC_Progress');
+        let sheetName = user.role == 'XVIFC' ? 'XVIFC Progress' : 'State Progress';
+        const worksheet_1 = workbook.addWorksheet(sheetName);
         const worksheet_2 = workbook.addWorksheet('Form Status Summary');
 
         // Define the columns
