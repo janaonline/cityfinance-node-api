@@ -2384,24 +2384,46 @@ async function getSubmissionPercent(eachTabData, formId) {
 module.exports.approveUlbForms = async (req, res) => {
     try {
         let user = req.decoded;
-        let ulbId = req.body.ulb;
-        let approveData = {};
-        let ulbData_form = await XviFcForm1DataCollection.findOne({ ulb: ObjectId(ulbId) });
+        // let ulbId = req.body.ulb;
+        let ulbIds = req.body.ulbs;
+        let approveDataList = [];
+        let ulbDataForms = await XviFcForm1DataCollection.find({ ulb: { $in: ulbIds.map(id => ObjectId(id)) } });
 
-        // State Approval.
-        if (user.role == 'XVIFC_STATE' && ulbData_form.formStatus == 'UNDER_REVIEW_BY_STATE') {
-            approveData = await approveByState(user.state);
-        } else { return res.status(400).json({ status: false, message: 'Action cannot be taken as the current form status is ' + ulbData_form.formStatus }); }
-        // XVIFC Approval.
-        if (user.role == 'XVIFC' && ulbData_form.formStatus == 'UNDER_REVIEW_BY_XVIFC') {
-            approveData = await approveByXvifc(user._id);
-        } else { return res.status(400).json({ status: false, message: 'Action cannot be taken as the current form status is ' + ulbData_form.formStatus }); }
+        for (let ulbDataForm of ulbDataForms) {
+            let approveData = {};
 
-        ulbData_form.formStatus = approveData.formStatus;
-        ulbData_form.tracker.push(approveData.tracker);
+            // State Approval
+            if (user.role == 'XVIFC_STATE' && ulbDataForm.formStatus == 'UNDER_REVIEW_BY_STATE' && user.state == ulbDataForm.state) {
+                approveData = await approveByState(user.state);
+            }
+            // XVIFC Approval
+            else if (user.role == 'XVIFC' && ulbDataForm.formStatus == 'UNDER_REVIEW_BY_XVIFC') {
+                approveData = await approveByXvifc(user._id);
+            }
+            else {
+                return res.status(400).json({ status: false, message: `Action cannot be taken as the current form status is ${ulbDataForm.formStatus} for ULB ID ${ulbDataForm.ulb}` });
+            }
 
-        let updatedData = await XviFcForm1DataCollection.findOneAndUpdate({ ulb: ObjectId(ulbId) }, ulbData_form, { upsert: true }).exec();
-        return res.status(200).json({ status: true, message: "Form approved successfully." });
+            ulbDataForm.formStatus = approveData.formStatus;
+            ulbDataForm.tracker.push(approveData.tracker);
+
+            approveDataList.push({
+                updateOne: {
+                    filter: { ulb: ObjectId(ulbDataForm.ulb) },
+                    update: {
+                        $set: {
+                            formStatus: ulbDataForm.formStatus,
+                            tracker: ulbDataForm.tracker
+                        }
+                    }
+                }
+            });
+        }
+
+        if (approveDataList.length > 0) {
+            await XviFcForm1DataCollection.bulkWrite(approveDataList);
+            return res.status(200).json({ status: true, message: "Form approved successfully." });
+        }
     } catch (error) {
         console.log(error);
         return res.status(400).json({ status: false, message: error });
@@ -2426,25 +2448,48 @@ async function approveByXvifc(userId) {
 module.exports.rejectUlbForms = async (req, res) => {
     try {
         let user = req.decoded;
-        let ulbId = req.body.ulb;
+        let ulbIds = req.body.ulbs;
         let rejectMessage = req.body.rejectMessage;
-        let rejectData = {};
-        let ulbData_form = await XviFcForm1DataCollection.findOne({ ulb: ObjectId(ulbId) });
+        let rejectionDataList = [];
+        let ulbDataForms = await XviFcForm1DataCollection.find({ ulb: { $in: ulbIds.map(id => ObjectId(id)) } });
 
-        if (user.role == 'XVIFC_STATE' && ulbData_form.formStatus == 'UNDER_REVIEW_BY_STATE') {
-            rejectData = await rejectedByState(user.state, rejectMessage);
-        } else { return res.status(400).json({ status: false, message: 'Action cannot be taken as the current form status is ' + ulbData_form.formStatus }); }
-        if (user.role == 'XVIFC' && ulbData_form.formStatus == 'UNDER_REVIEW_BY_XVIFC') {
-            rejectData = await rejectedByXvifc(user._id, rejectMessage);
-        } else { return res.status(400).json({ status: false, message: 'Action cannot be taken as the current form status is ' + ulbData_form.formStatus }); }
+        for (let ulbDataForm of ulbDataForms) {
+            let rejectData = {};
 
-        ulbData_form.formStatus = rejectData.formStatus;
-        ulbData_form.tracker.push(rejectData.tracker);
-        ulbData_form.rejectReason = rejectMessage;
-        ulbData_form.rejectedBy = rejectData.rejectedBy;
+            // Rejection State.
+            if (user.role == 'XVIFC_STATE' && ulbDataForm.formStatus == 'UNDER_REVIEW_BY_STATE' && user.state == ulbDataForm.state) {
+                rejectData = await rejectedByState(user.state, rejectMessage);
+            }
+            // Rejection XVIFC.
+            else if (user.role == 'XVIFC' && ulbDataForm.formStatus == 'UNDER_REVIEW_BY_XVIFC') {
+                rejectData = await rejectedByXvifc(user._id, rejectMessage);
+            }
+            else { return res.status(400).json({ status: false, message: 'Action cannot be taken as the current form status is ' + ulbDataForm.formStatus }); }
 
-        let updatedData = await XviFcForm1DataCollection.findOneAndUpdate({ ulb: ObjectId(ulbId) }, ulbData_form, { upsert: true }).exec();
-        return res.status(200).json({ status: true, message: "Form returned successfully." });
+            ulbDataForm.formStatus = rejectData.formStatus;
+            ulbDataForm.tracker.push(rejectData.tracker);
+            ulbDataForm.rejectReason = rejectMessage;
+            ulbDataForm.rejectedBy = rejectData.rejectedBy;
+
+            rejectionDataList.push({
+                updateOne: {
+                    filter: { ulb: ObjectId(ulbDataForm.ulb) },
+                    update: {
+                        $set: {
+                            formStatus: ulbDataForm.formStatus,
+                            tracker: ulbDataForm.tracker,
+                            rejectReason: ulbDataForm.rejectReason,
+                            rejectedBy: ulbDataForm.rejectedBy,
+                        }
+                    }
+                }
+            });
+        }
+
+        if (rejectionDataList.length > 0) {
+            await XviFcForm1DataCollection.bulkWrite(rejectionDataList);
+            return res.status(200).json({ status: true, message: "Form rejected successfully." });
+        }
     } catch (error) {
         console.log(error);
         return res.status(400).json({ status: false, message: error });
