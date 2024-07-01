@@ -2091,7 +2091,7 @@ module.exports.formList = async (req, res) => {
 
 
     let listOfUlbsFromState = [];
-    let totalUlbForm = 0;
+    // let totalUlbForm = 0;
 
     if (!filter.formStatus || (filter.formStatus == 'NOT_STARTED' && Object.keys(sort).length > 0) || filter.formStatus == 'NOT_STARTED') {
         listOfUlbsFromState = await Ulb.aggregate([
@@ -2164,70 +2164,13 @@ module.exports.formList = async (req, res) => {
             { $skip: skip * limit },
             { $limit: limit }
         ]).allowDiskUse(true);
-        totalUlbForm = await Ulb.find(matchParams).count().lean();
+        // totalUlbForm = await Ulb.find(matchParams).count().lean();
 
     }
-    // else if ((filter.formStatus == 'NOT_STARTED' && Object.keys(sort).length > 0) || filter.formStatus == 'NOT_STARTED') {
-    //     listOfUlbsFromState = await Ulb.aggregate([
-    //         {
-    //             $lookup: {
-    //                 from: "states",
-    //                 localField: "state",
-    //                 foreignField: "_id",
-    //                 as: "stateResult",
-    //             },
-    //         },
-    //         {
-    //             $match: matchParams
-    //         },
-    //         {
-    //             $unwind: {
-    //                 path: "$stateResult",
-    //                 preserveNullAndEmptyArrays: true
-    //             }
-    //         },
-    //         {
-    //             $group: {
-    //                 _id: "$_id",
-    //                 formType: { $first: "$formType" },
-    //                 censusCode: { $first: "$censusCode" },
-    //                 sbCode: { $first: "$sbCode" },
-    //                 name: { $first: "$name" },
-    //                 ulbName: { $first: "$name" },
-    //                 state: { $first: "$state" },
-    //                 stateName: { $first: "$stateResult.name" },
-    //                 isUT: { $first: "$stateResult.isUT" },
-    //                 formStatus: { $first: "$tab.formStatus" },
-    //                 isActive: { $first: "$isActive" },
-    //             }
-    //         },
-    //         {
-    //             $project: {
-    //                 _id: 1,
-    //                 censusCode: 1,
-    //                 sbCode: 1,
-    //                 code: 1,
-    //                 name: 1,
-    //                 ulbName: 1,
-    //                 state: 1,
-    //                 isActive: 1,
-    //                 formType: 1,
-    //                 stateName: 1,
-    //                 formStatus: 1,
-    //                 isUT: 1,
-    //             }
-    //         },
-    //         { $sort: Object.keys(sort).length > 0 ? sort : { formStatus: -1, name: 1 } },
-    //         { $skip: skip * limit },
-    //         { $limit: limit }
-    //     ]).allowDiskUse(true);
-    //     totalUlbForm = await Ulb.find(matchParams).count().lean();
-
-    // } 
     else {
         matchParams = user.role == 'XVIFC' ? filter : user.role == 'XVIFC_STATE' ? { $and: [{ state: ObjectId(stateId) }, filter, { ulbName: { $regex: `${searchText}`, $options: 'im' } }] } : "";
         listOfUlbsFromState = await XviFcForm1DataCollection.find(matchParams).sort(Object.keys(sort).length > 0 ? sort : { formStatus: -1, ulbName: 1 }).skip(skip).limit(limit).lean();
-        totalUlbForm = await XviFcForm1DataCollection.find(matchParams).count().lean();
+        // totalUlbForm = await XviFcForm1DataCollection.find(matchParams).count().lean();
     }
 
     if (listOfUlbsFromState.length > 0) {
@@ -2287,7 +2230,7 @@ module.exports.formList = async (req, res) => {
             reviewTableData = reviewTableData.filter((x) => { return x.ulbCategory == filter.formId });
         }
 
-        return res.status(200).json({ status: true, message: "", data: reviewTableData, totalForms: totalUlbForm });
+        return res.status(200).json({ status: true, message: "", data: reviewTableData, totalForms: reviewTableData.length });
     } else {
         return res.status(404).json({ status: false, message: "ULB not found.", data: listOfUlbsFromState });
     }
@@ -2603,7 +2546,11 @@ module.exports.progressReport = async (req, res) => {
 
             // Get Data submission %.
             let dataSubmissionPercent = 0;
-            if (ulbData) {
+            if (ulbData && ulbData.length > 0) {
+                let demographicDataIndex = ulbData.findIndex((x) => { return x.tabKey == 'demographicData' })
+                let temp = ulbData[0];
+                ulbData[0] = ulbData[demographicDataIndex];
+                ulbData[demographicDataIndex] = temp;
                 for (let eachTab of ulbData) {
                     if (eachTab.data.length > 0) {
                         eachUlbForm.formId = eachUlbForm.formId ? eachUlbForm.formId : eachUlbForm.formType == 'form1' ? 16 : 17;
