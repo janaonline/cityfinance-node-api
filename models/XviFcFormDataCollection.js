@@ -51,7 +51,7 @@ const xviFcFormDataCollectionSchema = new Schema(
         formStatus: { type: String, requird: true },
         rejectReason: { type: String },
         rejectedBy: { type: Schema.Types.ObjectId, ref: "User" },
-        tracker: [{ eventName: { type: String, default: null }, eventDate: { type: Date }, reason: { type: String }, submittedBy: { type: Schema.Types.ObjectId, ref: "User", required: true } }],
+        tracker: [{ eventName: { type: String, default: null }, eventDate: { type: Date }, reason: { type: String }, remark: { type: String }, submittedBy: { type: Schema.Types.ObjectId, ref: "User", required: true } }],
         submittedAt: { type: Date },
         submittedBy: { type: Schema.Types.ObjectId, ref: "User", required: true },
         isActive: { type: Boolean, default: 1 },
