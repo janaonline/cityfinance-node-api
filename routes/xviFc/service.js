@@ -425,6 +425,8 @@ async function getForm1(ulbData, stateData, roleName, submittedData) {
     from1QuestionFromDb[0].data[0].value = ulbData.name;
     from1QuestionFromDb[0].data[1].value = stateData.name;
 
+    from1QuestionFromDb[1].instruction = "All data should be in consonance with audited accounts or information already submitted on CityFinance, wherever applicable.";
+
     if (from1AnswerFromDb) {
         for (let eachQuestionObj of from1QuestionFromDb) {
             let indexOfKey = from1AnswerFromDb.tab.findIndex(x => x.tabKey === eachQuestionObj.key);
@@ -739,6 +741,8 @@ async function getForm2(ulbData, stateData, roleName, submittedData) {
     from2QuestionFromDb[0].data[0].value = ulbData.name;
     from2QuestionFromDb[0].data[1].value = stateData.name;
 
+
+    from2QuestionFromDb[1].instruction = "All data should be in consonance with audited accounts or information already submitted on CityFinance, wherever applicable.";
 
     // Add Primary keys to the keyDetails{}  - financialData.
     let financialData = from2QuestionFromDb[1].data;
