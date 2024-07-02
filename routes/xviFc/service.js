@@ -2374,8 +2374,10 @@ module.exports.approveUlbForms = async (req, res) => {
                 approveData = await approveByState(user.state);
             }
             // XVIFC Approval
-            else if (user.role == 'XVIFC' && ulbDataForm.formStatus == 'UNDER_REVIEW_BY_XVIFC') {
+            else if (user.role == 'XVIFC' && (ulbDataForm.formStatus == 'UNDER_REVIEW_BY_XVIFC' || ulbDataForm.formStatus == 'UNDER_REVIEW_BY_STATE')) {
                 approveData = await approveByXvifc(user._id);
+                if (ulbDataForm.formStatus == 'UNDER_REVIEW_BY_STATE')
+                    approveData.tracker.remark = "State verification was bypassed by XVIFC";
             }
             else {
                 return res.status(400).json({ status: false, message: `Action cannot be taken as the current form status is ${ulbDataForm.formStatus} for ULB ID ${ulbDataForm.ulb}` });
@@ -2438,8 +2440,10 @@ module.exports.rejectUlbForms = async (req, res) => {
                 rejectData = await rejectedByState(user.state, rejectMessage);
             }
             // Rejection XVIFC.
-            else if (user.role == 'XVIFC' && ulbDataForm.formStatus == 'UNDER_REVIEW_BY_XVIFC') {
+            else if (user.role == 'XVIFC' && (ulbDataForm.formStatus == 'UNDER_REVIEW_BY_XVIFC' || ulbDataForm.formStatus == 'UNDER_REVIEW_BY_STATE')) {
                 rejectData = await rejectedByXvifc(user._id, rejectMessage);
+                if (ulbDataForm.formStatus == 'UNDER_REVIEW_BY_STATE')
+                    rejectData.tracker.remark = "State verification was bypassed by XVIFC";
             }
             else { return res.status(400).json({ status: false, message: 'Action cannot be taken as the current form status is ' + ulbDataForm.formStatus }); }
 
