@@ -2091,6 +2091,10 @@ module.exports.formList = async (req, res) => {
     let matchParams = user.role == 'XVIFC' ? { isActive: true } : user.role == 'XVIFC_STATE' ? { $and: [{ state: ObjectId(stateId) }, { isActive: true }] } : "";
     let searchText = req.body.searchText ? req.body.searchText : "";
 
+    if (filter.formStatus == "") {
+        delete filter.formStatus;
+    }
+
     matchParams = user.role == 'XVIFC' ? {
         $and: [{ name: { $regex: `${searchText}`, $options: 'im' } }, { isActive: true }, { isUT: false }, filter]
     } : user.role == 'XVIFC_STATE' ? { $and: [{ state: ObjectId(stateId) }, { isActive: true }, filter, { name: { $regex: `${searchText}`, $options: 'im' } }] } : "";
