@@ -695,7 +695,9 @@ async function getForm2(ulbData, stateData, roleName, submittedData) {
                                 if (yearDataIndex > -1 && selectedData.key == eachObj.year[yearDataIndex].key) {
                                     eachObj.year[yearDataIndex].file.name = selectedData.file.name;
                                     eachObj.year[yearDataIndex].file.url = selectedData.file.url;
-
+                                    eachObj.year[yearDataIndex].verifyStatus = selectedData.verifyStatus ? selectedData.verifyStatus : 1;
+                                    eachObj.year[yearDataIndex].rejectOption = selectedData.rejectOption ? selectedData.rejectOption : "";
+                                    eachObj.year[yearDataIndex].rejectReason = selectedData.rejectReason ? selectedData.rejectReason : "";
 
                                     if (submittedData) {
                                         let validationArr = await validateValues(selectedData.formFieldType, selectedData.saveAsDraftValue, selectedData.isPdfAvailable, eachObj.year[yearDataIndex].file.url, eachObj.year[yearDataIndex].file.name, "", "", "");
@@ -2598,12 +2600,12 @@ module.exports.progressReport = async (req, res) => {
             { header: 'Census Code', key: 'censusCode', width: 12 },
             { header: 'ULB Category', key: 'ulbCategory', width: 12 },
             { header: 'Form Status', key: 'formStatus', width: 20 },
-            { header: 'Data Submitted (%)', key: 'dataSubmitted', width: 15 },
-            { header: 'Demographic Data Filled (%)', key: 'demographicData', width: 15 },
-            { header: 'Financial Data Filled (%)', key: 'financialData', width: 15 },
-            { header: 'Document Upload (%)', key: 'uploadDoc', width: 15 },
-            { header: 'Accounting Practices Data Filled (%)', key: 'accountPractice', width: 15 },
-            { header: 'Service Level Benchmark Data Filled (%)', key: 'serviceLevelBenchmark', width: 15 },
+            { header: 'Data Submitted (%)', key: 'dataSubmitted', width: 15, style: { numFmt: '0.00' } },
+            { header: 'Demographic Data Filled (%)', key: 'demographicData', width: 15, style: { numFmt: '0.00' } },
+            { header: 'Financial Data Filled (%)', key: 'financialData', width: 15, style: { numFmt: '0.00' } },
+            { header: 'Document Upload (%)', key: 'uploadDoc', width: 15, style: { numFmt: '0.00' } },
+            { header: 'Accounting Practices Data Filled (%)', key: 'accountPractice', width: 15, style: { numFmt: '0.00' } },
+            { header: 'Service Level Benchmark Data Filled (%)', key: 'serviceLevelBenchmark', width: 15, style: { numFmt: '0.00' } },
         ];
         worksheet_2.columns = [
             { header: '#', key: 'rowSlNo', width: 10 },
