@@ -53,7 +53,9 @@ let form1QuestionKeys = [
     "totVacancy",
     "accPosition",
 
-    "auditedAnnualFySt"
+    "auditedAnnualFySt",
+    "gazetteUpload",
+    "pop2024Upload",
 ];
 let slbKeys = [
     "coverageOfWs",
@@ -354,6 +356,16 @@ let form1TempDb = {
         value: "",
         isDraft: true
     },
+    "gazetteUpload": {
+        status: "Na",
+        value: "",
+        isDraft: true
+    },
+    "pop2024Upload": {
+        status: "Na",
+        value: "",
+        isDraft: true
+    },
 }
 
 let form2TempDb = {
@@ -563,6 +575,16 @@ let form2TempDb = {
         isDraft: true
     },
     "auditedAnnualFySt": {
+        status: "Na",
+        value: "",
+        isDraft: true
+    },
+    "gazetteUpload": {
+        status: "Na",
+        value: "",
+        isDraft: true
+    },
+    "pop2024Upload": {
         status: "Na",
         value: "",
         isDraft: true

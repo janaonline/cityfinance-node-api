@@ -754,6 +754,38 @@ let keyDetailsForm1 = {
         min: 0,
         decimal: 0
     },
+    gazetteUpload: {
+        instruction: [],
+        class: '',
+        formFieldType: 'file',
+        key: 'gazetteUpload',
+        displayPriority: '',
+        quesPos: 94,
+        validations: [],
+        label: 'Please upload the Gazette notification regarding the constitution of the ULB.',
+        info: '',
+        required: false,
+        year: 1,
+        max: 20,
+        min: 0,
+        decimal: 0
+    },
+    pop2024Upload: {
+        instruction: [],
+        class: '',
+        formFieldType: 'file',
+        key: 'pop2024Upload',
+        displayPriority: '',
+        quesPos: 95,
+        validations: [],
+        label: 'Please upload the supporting document for the population estimate as on 01 April 2024.',
+        info: '',
+        required: false,
+        year: 1,
+        max: 20,
+        min: 0,
+        decimal: 0
+    },
 }
 let keyDetailsForm2 = {
     nameOfUlb: {
@@ -1510,8 +1542,38 @@ let keyDetailsForm2 = {
         min: 0,
         decimal: 0
     },
-
-
+    gazetteUpload: {
+        instruction: [],
+        class: '',
+        formFieldType: 'file',
+        key: 'gazetteUpload',
+        displayPriority: '',
+        quesPos: 94,
+        validations: [],
+        label: 'Please upload the Gazette notification regarding the constitution of the ULB.',
+        info: '',
+        required: false,
+        year: 1,
+        max: 20,
+        min: 0,
+        decimal: 0
+    },
+    pop2024Upload: {
+        instruction: [],
+        class: '',
+        formFieldType: 'file',
+        key: 'pop2024Upload',
+        displayPriority: '',
+        quesPos: 95,
+        validations: [],
+        label: 'Please upload the supporting document for the population estimate as on 01 April 2024.',
+        info: '',
+        required: false,
+        year: 1,
+        max: 20,
+        min: 0,
+        decimal: 0
+    },
 
     yearOfSlb: {
         class: '',
@@ -2510,7 +2572,11 @@ class tabsUpdationService {
         return await arrangeFormData(formData);
     }
     async getDataForUploadDoc() {
-        let formData = [{ ...this.detail.auditedAnnualFySt }];
+        let formData = [
+            { ...this.detail.auditedAnnualFySt },
+            { ...this.detail.gazetteUpload },
+            { ...this.detail.pop2024Upload },
+        ];
         return await arrangeFormData(formData);
     }
     async getDataForServiceLevelBenchmark() {
