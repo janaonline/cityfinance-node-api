@@ -425,13 +425,13 @@ async function getForm1(ulbData, stateData, roleName, submittedData) {
     from1QuestionFromDb[0].data[0].value = ulbData.name;
     from1QuestionFromDb[0].data[1].value = stateData.name;
 
-    from1QuestionFromDb[1].instruction = "All data should be in consonance with audited accounts or information already submitted on CityFinance, wherever applicable.";
+    from1QuestionFromDb[1].instruction = "All data should be in consonance with audited accounts or information already submitted on CityFinance, wherever applicable. Amount entered should be in Rupees.";
 
     if (from1AnswerFromDb) {
         for (let eachQuestionObj of from1QuestionFromDb) {
             let indexOfKey = from1AnswerFromDb.tab.findIndex(x => x.tabKey === eachQuestionObj.key);
             if (eachQuestionObj.key == "financialData") {
-                eachQuestionObj.instruction = "All data should be in consonance with audited accounts or information already submitted on CityFinance, wherever applicable.";
+                eachQuestionObj.instruction = "All data should be in consonance with audited accounts or information already submitted on CityFinance, wherever applicable. Amount entered should be in Rupees.";
             }
             if (indexOfKey > -1) {
                 if (from1AnswerFromDb.tab[indexOfKey].tabKey == eachQuestionObj.key) {
@@ -657,7 +657,7 @@ async function getForm2(ulbData, stateData, roleName, submittedData) {
     if (from2AnswerFromDb) {
         for (let eachQuestionObj of from2QuestionFromDb) {
             let indexOfKey = from2AnswerFromDb.tab.findIndex(x => x.tabKey === eachQuestionObj.key);
-            if (eachQuestionObj.key == "financialData") eachQuestionObj.instruction = "All data should be in consonance with audited accounts or information already submitted on CityFinance, wherever applicable.";
+            if (eachQuestionObj.key == "financialData") eachQuestionObj.instruction = "All data should be in consonance with audited accounts or information already submitted on CityFinance, wherever applicable. Amount entered should be in Rupees.";
             if (indexOfKey > -1) {
                 if (from2AnswerFromDb.tab[indexOfKey].tabKey == eachQuestionObj.key) {
 
@@ -742,7 +742,7 @@ async function getForm2(ulbData, stateData, roleName, submittedData) {
     from2QuestionFromDb[0].data[1].value = stateData.name;
 
 
-    from2QuestionFromDb[1].instruction = "All data should be in consonance with audited accounts or information already submitted on CityFinance, wherever applicable.";
+    from2QuestionFromDb[1].instruction = "All data should be in consonance with audited accounts or information already submitted on CityFinance, wherever applicable. Amount entered should be in Rupees.";
 
     // Add Primary keys to the keyDetails{}  - financialData.
     let financialData = from2QuestionFromDb[1].data;

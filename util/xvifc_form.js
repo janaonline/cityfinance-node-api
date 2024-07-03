@@ -67,7 +67,7 @@ let keyDetailsForm1 = {
         min: 0,
         max: 100000000,
         decimal: 0,
-        validations: {
+        warning: {
             "name": "greaterThanEqualTo",
             "validator": 0,
             "field": "pop2011",
@@ -81,7 +81,7 @@ let keyDetailsForm1 = {
         displayPriority: '5',
         quesPos: 5,
         validations: [],
-        label: 'Area of the ULB (in Sq. Km.)',
+        label: 'Area as on 01 April 2024 (in Sq. Km.)',
         info: '',
         required: true,
         year: 1,
@@ -333,7 +333,7 @@ let keyDetailsForm1 = {
         quesPos: 29,
         validations: [],
         label: 'Other Revenue',
-        info: 'Other Revenue shall include any other sources of revenue except own ,revenue, assigned revenue and grants',
+        info: 'Other Revenue shall include any other sources of revenue except own revenue, assigned revenue and grants',
         required: true,
         year: 8,
         autoSumValidation: '',
@@ -350,7 +350,7 @@ let keyDetailsForm1 = {
         quesPos: 30,
         validations: [],
         label: 'Total Revenues',
-        info: 'Total Revenue is the sum of: (a) tax revenues, (b) non-tax revenues, (c) assigned (shared) revenue, (c) grants-in-aid, (d) other receipts, etc.',
+        info: 'Total Revenue is the sum of (a)Tax revenues, (b)Non-tax revenues, (c)Total grants (d)Assigned revenue, (e) Other revenue, etc.',
         required: false,
         year: 8,
         autoSumValidation: 'sum',
@@ -655,7 +655,7 @@ let keyDetailsForm1 = {
         displayPriority: '9',
         quesPos: 61,
         validations: [],
-        label: 'Does the online accounting system integrate seamlessly with other municipal systems?',
+        label: 'Does the online accounting system integrate seamlessly with other municipal/ State/ Central systems?',
         info: '',
         required: true,
         year: 1
@@ -666,7 +666,9 @@ let keyDetailsForm1 = {
         options: [
             { id: 'External Chartered Accountant (CA)' },
             { id: 'State Audit Department' },
+            { id: 'Other (Please specify)', showInputBox: true },
         ],
+        reason: '',
         key: 'muniAudit',
         displayPriority: '10',
         quesPos: 62,
@@ -821,7 +823,7 @@ let keyDetailsForm2 = {
         min: 0,
         max: 100000000,
         decimal: 0,
-        validations: {
+        warning: {
             "name": "greaterThanEqualTo",
             "validator": 0,
             "field": "pop2011",
@@ -835,7 +837,7 @@ let keyDetailsForm2 = {
         displayPriority: '5',
         quesPos: 5,
         validations: [],
-        label: 'Area of the ULB (in Sq. Km.)',
+        label: 'Area as on 01 April 2024 (in Sq. Km.)',
         info: '',
         required: true,
         year: 1,
@@ -1051,7 +1053,7 @@ let keyDetailsForm2 = {
         class: 'dotted-border-top-primary autoSum',
         formFieldType: 'amount',
         key: 'totalGrants',
-        info: 'Assigned Revenue includes share in the revenues of the state government ,allocated to the ULB. This includes Entertainment Tax, Duty on Transfer of Properties,etc.',
+        info: 'Total Grants is the sum of all grants received by ULB from State, Central govt and others.',
         displayPriority: '2',
         quesPos: 20,
         validations: [],
@@ -1090,7 +1092,7 @@ let keyDetailsForm2 = {
         quesPos: 29,
         validations: [],
         label: 'Other Revenue',
-        info: 'Other Revenue shall include any other sources of revenue except own ,revenue, assigned revenue and grants',
+        info: 'Other Revenue shall include any other sources of revenue except own revenue, assigned revenue and grants',
         required: true,
         year: 8,
         autoSumValidation: '',
@@ -1107,7 +1109,7 @@ let keyDetailsForm2 = {
         quesPos: 30,
         validations: [],
         label: 'Total Revenues',
-        info: 'Total Revenue is the sum of: (a) tax revenues, (b) non-tax revenues, (c) assigned (shared) revenue, (c) grants-in-aid, (d) other receipts, etc.',
+        info: 'Total Revenue is the sum of (a)Tax revenues, (b)Non-tax revenues, (c)Total grants (d)Assigned revenue, (e) Other revenue, etc.',
         required: false,
         year: 8,
         autoSumValidation: 'sum',
@@ -1409,7 +1411,7 @@ let keyDetailsForm2 = {
         displayPriority: '9',
         quesPos: 61,
         validations: [],
-        label: 'Does the online accounting system integrate seamlessly with other municipal systems?',
+        label: 'Does the online accounting system integrate seamlessly with other municipal/ State/ Central systems?',
         info: '',
         required: true,
         year: 1
@@ -1420,7 +1422,9 @@ let keyDetailsForm2 = {
         options: [
             { id: 'External Chartered Accountant (CA)' },
             { id: 'State Audit Department' },
+            { id: 'Other (Please specify)', showInputBox: true },
         ],
+        reason: '',
         key: 'muniAudit',
         displayPriority: '10',
         quesPos: 62,
@@ -1535,7 +1539,7 @@ let keyDetailsForm2 = {
         quesPos: 13,
         validations: [],
         label: 'Property Tax',
-        info: 'Property tax shall include only proprty tax levied on residential and commercial properties',
+        info: 'Property tax shall include only property tax levied on residential and commercial properties',
         required: true,
         year: 8,
         autoSumValidation: '',
@@ -2010,7 +2014,7 @@ let keyDetailsForm2 = {
         min: 0,
         max: 100,
         decimal: 2,
-        warning: { "value": 80, "condition": "greaterThan", "message": 'Please note that the entered value exceeds the threshold of 80 lpcd' }
+        warning: { "value": 80, "condition": "greaterThan", "message": 'Please note that the entered value exceeds the performance benchmark of 80%' }
     },
     qualityOfWs: {
         class: '',
@@ -2065,7 +2069,7 @@ let keyDetailsForm2 = {
         min: 0,
         max: 100,
         decimal: 2,
-        warning: { "value": 90, "condition": "greaterThan", "message": 'Please note that the entered value exceeds the threshold of 90 lpcd' }
+        warning: { "value": 90, "condition": "greaterThan", "message": 'Please note that the entered value exceeds the performance benchmark of 90%' }
     },
     coverageOfToiletsSew: {
         class: '',
@@ -2228,7 +2232,7 @@ let keyDetailsForm2 = {
         min: 0,
         max: 100,
         decimal: 2,
-        warning: { "value": 90, "condition": "greaterThan", "message": 'Please note that the entered value exceeds the threshold of 90 lpcd' }
+        warning: { "value": 90, "condition": "greaterThan", "message": 'Please note that the entered value exceeds the performance benchmark of 90%' }
     },
     householdLevelCoverageLevelSwm: {
         class: '',
@@ -2301,7 +2305,7 @@ let keyDetailsForm2 = {
         min: 0,
         max: 100,
         decimal: 2,
-        warning: { "value": 80, "condition": "greaterThan", "message": 'Please note that the entered value exceeds the threshold of 80 lpcd' }
+        warning: { "value": 90, "condition": "greaterThan", "message": 'Please note that the entered value exceeds the performance benchmark of 90%' }
     },
     extentOfScientificSolidSwm: {
         class: '',
@@ -2356,7 +2360,7 @@ let keyDetailsForm2 = {
         min: 0,
         max: 100,
         decimal: 2,
-        warning: { "value": 90, "condition": "greaterThan", "message": 'Please note that the entered value exceeds the threshold of 90 lpcd' }
+        warning: { "value": 90, "condition": "greaterThan", "message": 'Please note that the entered value exceeds the performance benchmark of 90%' }
     },
     efficiencyInRedressalCustomerSwm: {
         class: '',
@@ -2375,7 +2379,7 @@ let keyDetailsForm2 = {
         min: 0,
         max: 100,
         decimal: 2,
-        warning: { "value": 80, "condition": "greaterThan", "message": 'Please note that the entered value exceeds the threshold of 80 lpcd' }
+        warning: { "value": 80, "condition": "greaterThan", "message": 'Please note that the entered value exceeds the performance benchmark of 80%' }
     },
     coverageOfStormDrainage: {
         class: '',
