@@ -711,7 +711,8 @@ async function getForm2(ulbData, stateData, roleName, submittedData) {
                                     eachQuestionObj.message = "We are collecting data till the year 2023-24. Since your ULB was recently constituted, it's not mandatory for you to fill in the financial section data. Please fill in the rest of the form."
                                 }
 
-                                if (eachObj.key == 'gazetteUpload' || eachObj.key == 'pop2024Upload') {
+                                let yearIndex = eachObj.year.findIndex(x => x.key === selectedData.key);
+                                if (yearIndex > -1 && (eachObj.key == 'gazetteUpload' || eachObj.key == 'pop2024Upload')) {
                                     eachObj.year = [];
                                     eachObj.year[0] = {
                                         "label": "",
@@ -722,9 +723,10 @@ async function getForm2(ulbData, stateData, roleName, submittedData) {
                                         "formFieldType": 'file',
                                         "file": { "name": "", "url": "" }
                                     }
-                                    let yearDataIndex = eachObj.year.findIndex(x => x.key === selectedData.key);
-                                    eachObj.year[0].file.name = yearDataIndex > -1 && selectedData && selectedData.file.name ? selectedData.file.name : "";
-                                    eachObj.year[0].file.url = yearDataIndex > -1 && selectedData && selectedData.file.url ? selectedData.file.url : "";
+
+                                    eachObj.year[0].file.name = yearIndex > -1 && selectedData && selectedData.file.name ? selectedData.file.name : "";
+                                    eachObj.year[0].file.url = yearIndex > -1 && selectedData && selectedData.file.url ? selectedData.file.url : "";
+
                                 }
 
                                 let yearDataIndex = eachObj.year.findIndex(x => x.key === selectedData.key)
