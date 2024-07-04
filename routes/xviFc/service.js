@@ -413,7 +413,7 @@ async function getForm1(ulbData, stateData, roleName, submittedData) {
 
                     yearData.push(eachYearobj);
                 }
-                xviFCForm1Table[form1QuestionKeys[index]].year = yearData
+                xviFCForm1Table[form1QuestionKeys[index]].year = yearData;
             }
         }
     }
@@ -425,13 +425,13 @@ async function getForm1(ulbData, stateData, roleName, submittedData) {
     from1QuestionFromDb[0].data[0].value = ulbData.name;
     from1QuestionFromDb[0].data[1].value = stateData.name;
 
-    from1QuestionFromDb[1].instruction = "All data should be in consonance with audited accounts or information already submitted on CityFinance, wherever applicable.";
+    from1QuestionFromDb[1].instruction = "All data should be in consonance with audited accounts or information already submitted on CityFinance, wherever applicable. Amount entered should be in Rupees.";
 
     if (from1AnswerFromDb) {
         for (let eachQuestionObj of from1QuestionFromDb) {
             let indexOfKey = from1AnswerFromDb.tab.findIndex(x => x.tabKey === eachQuestionObj.key);
             if (eachQuestionObj.key == "financialData") {
-                eachQuestionObj.instruction = "All data should be in consonance with audited accounts or information already submitted on CityFinance, wherever applicable.";
+                eachQuestionObj.instruction = "All data should be in consonance with audited accounts or information already submitted on CityFinance, wherever applicable. Amount entered should be in Rupees.";
             }
             if (indexOfKey > -1) {
                 if (from1AnswerFromDb.tab[indexOfKey].tabKey == eachQuestionObj.key) {
@@ -460,9 +460,16 @@ async function getForm1(ulbData, stateData, roleName, submittedData) {
 
                         if (eachQuestionObj.key == "uploadDoc") {
                             for (let eachObj of eachQuestionObj.data) {
+
+                                if (eachObj.key == 'gazetteUpload' || eachObj.key == 'pop2024Upload') {
+                                    eachObj.file = { "name": "", "url": "" };
+                                    eachObj.file.name = selectedData && selectedData.file.name ? selectedData.file.name : "";
+                                    eachObj.file.url = selectedData && selectedData.file.url ? selectedData.file.url : "";
+                                }
+
                                 let yearDataIndex = eachObj.year.findIndex(x => x.key === selectedData.key)
 
-                                if (eachObj.year.length <= 0) {
+                                if (eachObj.year.length <= 0 && eachObj.key == 'auditedAnnualFySt') {
                                     eachQuestionObj.message = "We are collecting data till the year 2023-24. Since your ULB was recently constituted, it's not mandatory for you to fill in the financial section data. Please fill in the rest of the form"
                                 }
 
@@ -657,7 +664,7 @@ async function getForm2(ulbData, stateData, roleName, submittedData) {
     if (from2AnswerFromDb) {
         for (let eachQuestionObj of from2QuestionFromDb) {
             let indexOfKey = from2AnswerFromDb.tab.findIndex(x => x.tabKey === eachQuestionObj.key);
-            if (eachQuestionObj.key == "financialData") eachQuestionObj.instruction = "All data should be in consonance with audited accounts or information already submitted on CityFinance, wherever applicable.";
+            if (eachQuestionObj.key == "financialData") eachQuestionObj.instruction = "All data should be in consonance with audited accounts or information already submitted on CityFinance, wherever applicable. Amount entered should be in Rupees.";
             if (indexOfKey > -1) {
                 if (from2AnswerFromDb.tab[indexOfKey].tabKey == eachQuestionObj.key) {
 
@@ -688,11 +695,17 @@ async function getForm2(ulbData, stateData, roleName, submittedData) {
 
                         if (eachQuestionObj.key == "uploadDoc") {
                             for (let eachObj of eachQuestionObj.data) {
-                                let yearDataIndex = eachObj.year.findIndex(x => x.key === selectedData.key)
-
-                                if (eachObj.year.length <= 0) {
-                                    eachQuestionObj.message = "We are collecting data till the year 2023-24. Since your ULB was recently constituted, it's not mandatory for you to fill in the financial section data. Please fill in the rest of the form"
+                                if (eachObj.year.length <= 0 && eachObj.key == 'auditedAnnualFySt') {
+                                    eachQuestionObj.message = "We are collecting data till the year 2023-24. Since your ULB was recently constituted, it's not mandatory for you to fill in the financial section data. Please fill in the rest of the form."
                                 }
+
+                                if (eachObj.key == 'gazetteUpload' || eachObj.key == 'pop2024Upload') {
+                                    eachObj.file = { "name": "", "url": "" };
+                                    eachObj.file.name = selectedData && selectedData.file.name ? selectedData.file.name : "";
+                                    eachObj.file.url = selectedData && selectedData.file.url ? selectedData.file.url : "";
+                                }
+
+                                let yearDataIndex = eachObj.year.findIndex(x => x.key === selectedData.key)
 
                                 if (yearDataIndex > -1 && selectedData.key == eachObj.year[yearDataIndex].key) {
                                     eachObj.year[yearDataIndex].file.name = selectedData.file.name;
@@ -742,7 +755,7 @@ async function getForm2(ulbData, stateData, roleName, submittedData) {
     from2QuestionFromDb[0].data[1].value = stateData.name;
 
 
-    from2QuestionFromDb[1].instruction = "All data should be in consonance with audited accounts or information already submitted on CityFinance, wherever applicable.";
+    from2QuestionFromDb[1].instruction = "All data should be in consonance with audited accounts or information already submitted on CityFinance, wherever applicable. Amount entered should be in Rupees.";
 
     // Add Primary keys to the keyDetails{}  - financialData.
     let financialData = from2QuestionFromDb[1].data;
@@ -1291,6 +1304,22 @@ async function getColumnWiseData(allKeys, key, obj, isDraft, dataSource = "", ro
             let isReadOnly = getReadOnly(formStatus, allKeys["auditedAnnualFySt"].autoSumValidation);
             return {
                 ...await getInputKeysByType(allKeys["auditedAnnualFySt"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
+                ...obj,
+                // rejectReason:"",
+            };
+        }
+        case "gazetteUpload": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["gazetteUpload"].autoSumValidation);
+            return {
+                ...await getInputKeysByType(allKeys["gazetteUpload"], isReadOnly, dataSource, allKeys["formType"]),
+                ...obj,
+                // rejectReason:"",
+            };
+        }
+        case "pop2024Upload": {
+            let isReadOnly = getReadOnly(formStatus, allKeys["pop2024Upload"].autoSumValidation);
+            return {
+                ...await getInputKeysByType(allKeys["pop2024Upload"], isReadOnly, dataSource, allKeys["formType"]),
                 ...obj,
                 // rejectReason:"",
             };
@@ -2091,10 +2120,6 @@ module.exports.formList = async (req, res) => {
     let matchParams = user.role == 'XVIFC' ? { isActive: true } : user.role == 'XVIFC_STATE' ? { $and: [{ state: ObjectId(stateId) }, { isActive: true }] } : "";
     let searchText = req.body.searchText ? req.body.searchText : "";
 
-    if (filter.formStatus == "") {
-        delete filter.formStatus;
-    }
-
     matchParams = user.role == 'XVIFC' ? {
         $and: [{ name: { $regex: `${searchText}`, $options: 'im' } }, { isActive: true }, { isUT: false }, filter]
     } : user.role == 'XVIFC_STATE' ? { $and: [{ state: ObjectId(stateId) }, { isActive: true }, filter, { name: { $regex: `${searchText}`, $options: 'im' } }] } : "";
@@ -2206,10 +2231,7 @@ module.exports.formList = async (req, res) => {
             ]
         ).allowDiskUse(true);
 
-        console.log(listOfUlbsFromState);
-        console.log("total", listOfUlbsFromState.totalCount);
-
-        totalUlbForm = listOfUlbsFromState[0].totalCount[0].count;
+        totalUlbForm = listOfUlbsFromState[0].totalCount.length > 0 ? listOfUlbsFromState[0].totalCount[0].count : 0;
         listOfUlbsFromState = listOfUlbsFromState[0].paginatedResults;
     }
     else {
