@@ -174,10 +174,6 @@ let keyDetailsForm1 = {
         info: 'Tax revenue shall include property, water, drainage, sewerage,professional, entertainment and advertisment tax and all other tax revenues.',
         required: true,
         year: 8,
-        // autoSumValidation: '',
-        // autoSumValidation2: 'sum',
-        // sumOf: '',
-        // sumOf2: ['pTax', 'otherTax'],
         min: -999999999999999,
         max: 999999999999999,
         decimal: 0
@@ -193,8 +189,6 @@ let keyDetailsForm1 = {
         info: 'Fees & user charges shall include Water supply, Fees & Sanitation / Sewerage, Garbage collection / Solid waste management, and all other fees & user charges.',
         required: true,
         year: 8,
-        // autoSumValidation: '',
-        // logic: '',
         min: -999999999999999,
         max: 999999999999999,
         decimal: 0
@@ -210,8 +204,6 @@ let keyDetailsForm1 = {
         info: 'Interest income shall include sale from assets, land and other assets.',
         required: true,
         year: 8,
-        // autoSumValidation: '',
-        // logic: '',
         min: -999999999999999,
         max: 999999999999999,
         decimal: 0
@@ -227,8 +219,6 @@ let keyDetailsForm1 = {
         info: 'Other income shall include sale & hire charges, income from investments,interest earned, etc.',
         required: true,
         year: 8,
-        // autoSumValidation: '',
-        // logic: '',
         min: -999999999999999,
         max: 999999999999999,
         decimal: 0
@@ -247,7 +237,6 @@ let keyDetailsForm1 = {
         autoSumValidation: 'sum',
         sumOrder: 1,
         sumOf: ['taxRevenue', 'feeAndUserCharges', 'interestIncome', 'otherIncome'],
-        // sumOf2: ['taxRevenue', 'feeAndUserCharges', 'interestIncome', 'otherIncome', 'rentalIncome'],
         min: -999999999999999,
         max: 999999999999999,
         decimal: 0
@@ -264,9 +253,7 @@ let keyDetailsForm1 = {
         required: true,
         year: 8,
         autoSumValidation: '',
-        // autoSumValidation2: 'sum',
         sumOf: [],
-        // sumOf2: ['centralSponsoredScheme', 'unionFinanceGrants'],
         min: -999999999999999,
         max: 999999999999999,
         decimal: 0
@@ -283,9 +270,7 @@ let keyDetailsForm1 = {
         required: true,
         year: 8,
         autoSumValidation: '',
-        // autoSumValidation2: 'sum',
         sumOf: [],
-        // sumOf2: ['sfcGrants', 'grantsOtherThanSfc', 'grantsWithoutState'],
         min: -999999999999999,
         max: 999999999999999,
         decimal: 0
@@ -371,10 +356,6 @@ let keyDetailsForm1 = {
         info: 'Expenses directly incurred on human resources of the ULB such as ,wages, and employee benefits such as retirement and pensions are called establishment expenses',
         required: true,
         year: 8,
-        // autoSumValidation: '',
-        // autoSumValidation2: 'sum',
-        // sumOf: ['salaries', 'pension', 'otherExp'],
-        // sumOf2: '',
         min: -999999999999999,
         max: 999999999999999,
         decimal: 0
@@ -444,7 +425,6 @@ let keyDetailsForm1 = {
         autoSumValidation: 'sum',
         sumOrder: 1,
         sumOf: ['establishmentExp', 'oAndmExp', 'interestAndfinacialChar', 'otherRevenueExp'],
-        // sumOf2: ['establishmentExp', 'oAndmExp', 'interestAndfinacialChar', 'otherRevenueExp', 'adExp'],
         min: -999999999999999,
         max: 999999999999999,
         decimal: 0
@@ -496,9 +476,7 @@ let keyDetailsForm1 = {
         required: true,
         year: 8,
         autoSumValidation: '',
-        // autoSumValidation2: 'sum',
         sumOf: [],
-        // sumOf2: ['centralStateBorrow', 'bonds', 'bankAndFinancial', 'otherBorrowing'],
         min: -999999999999999,
         max: 999999999999999,
         decimal: 0
@@ -738,7 +716,9 @@ let keyDetailsForm1 = {
         instruction: [
             { "instruction": "Annual Financial Statement should include: Income and Expenditure Statement, Balance Sheet, Schedules to IES and BS, Auditor's Report and if available Receipts & Payments Statement." },
             { "instruction": " All documents pertaining to a specific financial year should be combined into a single PDF before uploading & should not exceed 20 MB." },
-            { "instruction": "Please use the following format for naming the documents to be uploaded: nameofthedocument_FY_ULB Name. || Example: Annual accounts_15-16_Jaipur municipal corporation" },
+            { "instruction": "Please use the following format for naming the documents to be uploaded: nameofthedocument_FY_ULB Name. || Example: Annual accounts_15-16_Jaipur municipal corporation." },
+            { "instruction": "Date of Constitution: Please upload the Gazette notification regarding the constitution of the ULB (applicable only for ULBs constituted in 2015-16 or later)." },
+            { "instruction": "Population: Please upload the supporting document for the population estimate as on 01 April 2024." }
         ],
         class: '',
         formFieldType: 'file',
@@ -978,9 +958,7 @@ let keyDetailsForm2 = {
         info: 'Tax revenue shall include property, water, drainage, sewerage,professional, entertainment and advertisment tax and all other tax revenues.',
         required: false,
         year: 8,
-        // autoSumValidation: '',
         autoSumValidation: 'sum',
-        // sumOf: '',
         sumOrder: 1,
         sumOf: ['pTax', 'otherTax'],
         min: -999999999999999,
@@ -1050,7 +1028,6 @@ let keyDetailsForm2 = {
         required: false,
         year: 8,
         autoSumValidation: 'sum',
-        // sumOf: ['taxRevenue', 'feeAndUserCharges', 'interestIncome', 'otherIncome'],
         sumOrder: 2,
         sumOf: ['taxRevenue', 'feeAndUserCharges', 'interestIncome', 'otherIncome', 'rentalIncome'],
         min: -999999999999999,
@@ -1068,9 +1045,7 @@ let keyDetailsForm2 = {
         info: "These grants shall include Union Finance Commission grants, Grants received for Centrally Sponsored Schemes (including state's matching share).",
         required: false,
         year: 8,
-        // autoSumValidation: '',
         autoSumValidation: 'sum',
-        // sumOf: [],
         sumOrder: 1,
         sumOf: ['centralSponsoredScheme', 'unionFinanceGrants'],
         min: -999999999999999,
@@ -1088,9 +1063,7 @@ let keyDetailsForm2 = {
         info: 'These grants shall include State Finance Commission grants, Other State ,Grants, Other grants etc.',
         required: false,
         year: 8,
-        // autoSumValidation: '',
         autoSumValidation: 'sum',
-        // sumOf: [],
         sumOrder: 1,
         sumOf: ['sfcGrants', 'grantsOtherThanSfc', 'grantsWithoutState'],
         min: -999999999999999,
@@ -1542,7 +1515,9 @@ let keyDetailsForm2 = {
         instruction: [
             { "instruction": "Annual Financial Statement should include: Income and Expenditure Statement, Balance Sheet, Schedules to IES and BS, Auditor's Report and if available Receipts & Payments Statement." },
             { "instruction": " All documents pertaining to a specific financial year should be combined into a single PDF before uploading & should not exceed 20 MB." },
-            { "instruction": "Please use the following format for naming the documents to be uploaded: nameofthedocument_FY_ULB Name. || Example: Annual accounts_15-16_Jaipur municipal corporation" },
+            { "instruction": "Please use the following format for naming the documents to be uploaded: nameofthedocument_FY_ULB Name. || Example: Annual accounts_15-16_Jaipur municipal corporation." },
+            { "instruction": "Date of Constitution: Please upload the Gazette notification regarding the constitution of the ULB (applicable only for ULBs constituted in 2015-16 or later)." },
+            { "instruction": "Population: Please upload the supporting document for the population estimate as on 01 April 2024." }
         ],
         class: '',
         formFieldType: 'file',
@@ -2035,7 +2010,7 @@ let keyDetailsForm2 = {
         min: 0,
         max: 999,
         decimal: 2,
-        warning: { "value": 135, "condition": "greaterThan", "message": 'Please note that the entered value exceeds the threshold of 135 lpcd' }
+        warning: { "value": 135, "condition": "greaterThan", "message": 'Please note that the entered value exceeds the performance benchmark of 135 lpcd' }
     },
     extentOfMeteringWs: {
         class: '',
@@ -2652,5 +2627,4 @@ async function arrangeFormData(formData) {
 
 module.exports.keyDetailsForm1 = keyDetailsForm1;
 module.exports.keyDetailsForm2 = keyDetailsForm2;
-// module.exports.getFromWiseKeyDetails = getFromWiseKeyDetails;
 module.exports.tabsUpdationService = tabsUpdationService;

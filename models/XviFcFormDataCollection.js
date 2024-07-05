@@ -1,11 +1,8 @@
 require("./dbConnect");
 const mongoose = require("mongoose");
 const { Schema } = mongoose;
-// const { pdfSchema } = require("../util/masterFunctions");
 const { } = require("../util/FormNames");
-
 const FORM_FIELD_TYPE = ["text", "number", "dropdown", "radio", "file"];
-
 const xviFcFormDataCollectionSchema = new Schema(
     {
         ulb: { type: Schema.Types.ObjectId, ref: "Ulb", required: true, unique: true },

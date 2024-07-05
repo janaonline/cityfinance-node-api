@@ -1,16 +1,13 @@
 const ObjectId = require("mongoose").Types.ObjectId;
 const Ulb = require("../../models/Ulb");
 const State = require("../../models/State");
-const UlbLedger = require("../../models/UlbLedger");
-// const DataCollectionForm = require("../../models/DataCollectionForm");
 const AnnualAccountData = require("../../models/AnnualAccounts");
 const XviFcForm1Tabs = require("../../models/XviFcForm1Tab");
 const FormsJson = require("../../models/FormsJson");
 const XviFcForm1DataCollection = require("../../models/XviFcFormDataCollection");
-const Year = require("../../models/Year");
 
 const { financialYearTableHeader, priorTabsForXviFcForm, form1QuestionKeys, form2QuestionKeys, slbKeys, form1TempDb, form2TempDb, getInputKeysByType } = require("./form_json");
-const { tabsUpdationService, keyDetailsForm1, keyDetailsForm2, getFromWiseKeyDetails } = require("../../util/xvifc_form")
+const { tabsUpdationService, keyDetailsForm1, keyDetailsForm2 } = require("../../util/xvifc_form")
 const ExcelJS = require('exceljs');
 
 
@@ -125,7 +122,6 @@ module.exports.createxviFcFormJson = async (req, res) => {
         dataArray["data"] = viewData;
         let temp = await FormsJson.create(dataArray);
         delete temp.modifiedAt;
-        // delete temp.create;
         temp.save();
 
         return res.status(201).json({ status: true, message: "Form json created!", data: dataArray });
@@ -173,8 +169,6 @@ module.exports.saveAsDraftForm = async (req, res) => {
         let userForm = await Ulb.findOne({ _id: ulbId }, { formType: 1, name: 1, state: 1, _id: 1, censusCode: 1, sbCode: 1 }).lean();
         let stateData = await State.findOne({ _id: userForm.state }, { name: 1 }).lean();
         let ulbEligibleStatus = ['NOT_STARTED', 'IN_PROGRESS', 'RETURNED_BY_STATE', 'RETURNED_BY_XVIFC'];
-        // ulbData_form.submittedAt = new Date();
-        // ulbData_form.submittedBy = userForm.ulbId;
         ulbData_form.censusCode = userForm.censusCode;
         ulbData_form.sbCode = userForm.sbCode;
         ulbData_form.ulbName = userForm.name;
@@ -235,9 +229,7 @@ module.exports.submitFrom = async (req, res) => {
 
         if (existingSubmitData.length > 0 && existingSubmitData[0].formStatus === 'IN_PROGRESS' && validateSubmitData) {
             // Check validation and update data from "saveAsDraftValue" to "value".
-
             let getFormData = userForm.formType === 'form1' ? await getForm1(ulbId, roleName, ulbData_form) : userForm.formType === 'form2' ? await getForm2(ulbId, roleName, ulbData_form) : "";
-            // let validatedData = await checkValidations(ulbData_form, getFormData);
 
             if (getFormData.validationCounter > 0) {
                 return res.status(400).json({ status: true, message: "Validation failed", data: getFormData });
@@ -373,7 +365,6 @@ async function getForm1(ulbData, stateData, roleName, submittedData) {
                 if (frontendYear_Fd == "2014-15") {
                     yindex = financialYearTableHeader.length;
                 } else {
-                    //index = frontendYear_Fd ? financialYearTableHeader.indexOf(frontendYear_Fd) : frontendYear_Slb ? financialYearTableHeader.indexOf(frontendYear_Slb) + 1 : -1;
                     yindex = frontendYear_Fd ? financialYearTableHeader.indexOf(frontendYear_Fd) : -1;
                 }
                 for (let i = 0; i < yindex; i++) {
@@ -471,6 +462,9 @@ async function getForm1(ulbData, stateData, roleName, submittedData) {
                                         "position": 1,
                                         "refKey": eachObj.key,
                                         "formFieldType": 'file',
+                                        "allowedFileTypes": ['pdf'],
+                                        "max": 20,
+                                        "bottomText": "Maximum of 20MB",
                                         "file": { "name": "", "url": "" }
                                     }
 
@@ -486,8 +480,6 @@ async function getForm1(ulbData, stateData, roleName, submittedData) {
                                 }
 
                                 if (yearDataIndex > -1 && eachObj.key == 'auditedAnnualFySt' && selectedData.key == eachObj.year[yearDataIndex].key) {
-
-                                    // console.log("selectedData", selectedData.file);
 
                                     eachObj.year[yearDataIndex].file.name = selectedData.file.name;
                                     eachObj.year[yearDataIndex].file.url = selectedData.file.url;
@@ -573,8 +565,6 @@ async function getForm2(ulbData, stateData, roleName, submittedData) {
     xviFCForm2Tabs.forEach((tab) => {
         tab.formType = "form2";
     });
-    // let xviFCForm2Table = Object.assign(form1TempDb, form2TempDb);
-    // let xviFCForm2Table = { ...form1TempDb, ...form2TempDb };
     let xviFCForm2Table = form2TempDb;
     let currentFormStatus = from2AnswerFromDb && from2AnswerFromDb.formStatus ? from2AnswerFromDb.formStatus : 'NOT_STARTED';
     let ulbEligibleStatus = ['NOT_STARTED', 'IN_PROGRESS', 'RETURNED_BY_STATE', 'RETURNED_BY_XVIFC'];
@@ -591,11 +581,8 @@ async function getForm2(ulbData, stateData, roleName, submittedData) {
             frontendYear_Slb = from2AnswerFromDb.tab[demographicTabIndex].data[IndexOfYearOfSlb].saveAsDraftValue;
     }
 
-    // let keyDetails = Object.assign(keyDetailsForm1, keyDetailsForm2);
-    // let keyDetails = { ...keyDetailsForm1, ...keyDetailsForm2 };
     let keyDetails = keyDetailsForm2;
     keyDetails["formType"] = "form2";
-
     let mergedForm2QuestionKeys = form1QuestionKeys.concat(form2QuestionKeys);
 
     for (let index = 0; index < mergedForm2QuestionKeys.length; index++) {
@@ -668,7 +655,6 @@ async function getForm2(ulbData, stateData, roleName, submittedData) {
 
         }
     }
-    //console.log(xviFCForm2Table['sourceOfFd'])
     // Create a json structure - questions.
     let from2QuestionFromDb = await getModifiedTabsXvifcForm(xviFCForm2Tabs, xviFCForm2Table, "form2");
     let validationCounter = 0;
@@ -721,6 +707,9 @@ async function getForm2(ulbData, stateData, roleName, submittedData) {
                                         "position": 1,
                                         "refKey": eachObj.key,
                                         "formFieldType": 'file',
+                                        "allowedFileTypes": ['pdf'],
+                                        "max": 20,
+                                        "bottomText": "Maximum of 20MB",
                                         "file": { "name": "", "url": "" }
                                     }
 
@@ -833,7 +822,6 @@ async function getColumnWiseData(allKeys, key, obj, isDraft, dataSource = "", ro
             return {
                 ...await getInputKeysByType(allKeys["pop2011"], isReadOnly, dataSource, allKeys["formType"]),
                 ...obj,
-                // rejectReason:"",
             };
         }
         case "popApril2024": {
@@ -841,7 +829,6 @@ async function getColumnWiseData(allKeys, key, obj, isDraft, dataSource = "", ro
             return {
                 ...await getInputKeysByType(allKeys["popApril2024"], isReadOnly, dataSource, allKeys["formType"]),
                 ...obj,
-                // rejectReason:"",
             };
         }
         case "areaOfUlb": {
@@ -849,7 +836,6 @@ async function getColumnWiseData(allKeys, key, obj, isDraft, dataSource = "", ro
             return {
                 ...await getInputKeysByType(allKeys["areaOfUlb"], isReadOnly, dataSource, allKeys["formType"]),
                 ...obj,
-                // rejectReason:"",
             };
         }
         case "yearOfElection": {
@@ -857,7 +843,6 @@ async function getColumnWiseData(allKeys, key, obj, isDraft, dataSource = "", ro
             return {
                 ...await getInputKeysByType(allKeys["yearOfElection"], isReadOnly, dataSource, allKeys["formType"]),
                 ...obj,
-                // rejectReason:"",
             };
         }
         case "isElected": {
@@ -865,7 +850,6 @@ async function getColumnWiseData(allKeys, key, obj, isDraft, dataSource = "", ro
             return {
                 ...await getInputKeysByType(allKeys["isElected"], isReadOnly, dataSource, allKeys["formType"]),
                 ...obj,
-                // rejectReason:"",
             };
         }
         case "yearOfConstitution": {
@@ -873,7 +857,6 @@ async function getColumnWiseData(allKeys, key, obj, isDraft, dataSource = "", ro
             return {
                 ...await getInputKeysByType(allKeys["yearOfConstitution"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                // rejectReason:"",
             };
         }
         case "yearOfSlb": {
@@ -881,7 +864,6 @@ async function getColumnWiseData(allKeys, key, obj, isDraft, dataSource = "", ro
             return {
                 ...await getInputKeysByType(allKeys["yearOfSlb"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd, frontendYear_Slb),
                 ...obj,
-                // rejectReason:"",
             };
         }
         case "sourceOfFd": {
@@ -889,7 +871,6 @@ async function getColumnWiseData(allKeys, key, obj, isDraft, dataSource = "", ro
             return {
                 ...await getInputKeysByType(allKeys["sourceOfFd"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                // rejectReason:"",
             };
         }
         case "pTax": {
@@ -897,7 +878,6 @@ async function getColumnWiseData(allKeys, key, obj, isDraft, dataSource = "", ro
             return {
                 ...await getInputKeysByType(allKeys["pTax"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                // rejectReason:"",
             };
         }
         case "noOfRegiProperty": {
@@ -905,7 +885,6 @@ async function getColumnWiseData(allKeys, key, obj, isDraft, dataSource = "", ro
             return {
                 ...await getInputKeysByType(allKeys["noOfRegiProperty"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                // rejectReason:"",
             };
         }
         case "otherTax": {
@@ -913,7 +892,6 @@ async function getColumnWiseData(allKeys, key, obj, isDraft, dataSource = "", ro
             return {
                 ...await getInputKeysByType(allKeys["otherTax"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                // rejectReason:"",
             };
         }
         case "taxRevenue": {
@@ -921,7 +899,6 @@ async function getColumnWiseData(allKeys, key, obj, isDraft, dataSource = "", ro
             return {
                 ...await getInputKeysByType(allKeys["taxRevenue"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                // rejectReason:"",
             };
         }
         case "feeAndUserCharges": {
@@ -929,7 +906,6 @@ async function getColumnWiseData(allKeys, key, obj, isDraft, dataSource = "", ro
             return {
                 ...await getInputKeysByType(allKeys["feeAndUserCharges"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                // rejectReason:"",
             };
         }
         case "interestIncome": {
@@ -937,7 +913,6 @@ async function getColumnWiseData(allKeys, key, obj, isDraft, dataSource = "", ro
             return {
                 ...await getInputKeysByType(allKeys["interestIncome"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                // rejectReason:"",
             };
         }
         case "otherIncome": {
@@ -945,7 +920,6 @@ async function getColumnWiseData(allKeys, key, obj, isDraft, dataSource = "", ro
             return {
                 ...await getInputKeysByType(allKeys["otherIncome"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                // rejectReason:"",
             };
         }
         case "rentalIncome": {
@@ -953,7 +927,6 @@ async function getColumnWiseData(allKeys, key, obj, isDraft, dataSource = "", ro
             return {
                 ...await getInputKeysByType(allKeys["rentalIncome"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                // rejectReason:"",
             };
         }
         case "totOwnRevenue": {
@@ -961,7 +934,6 @@ async function getColumnWiseData(allKeys, key, obj, isDraft, dataSource = "", ro
             return {
                 ...await getInputKeysByType(allKeys["totOwnRevenue"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                // rejectReason:"",
             };
         }
         case "centralSponsoredScheme": {
@@ -969,7 +941,6 @@ async function getColumnWiseData(allKeys, key, obj, isDraft, dataSource = "", ro
             return {
                 ...await getInputKeysByType(allKeys["centralSponsoredScheme"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                // rejectReason:"",
             };
         }
         case "unionFinanceGrants": {
@@ -977,7 +948,6 @@ async function getColumnWiseData(allKeys, key, obj, isDraft, dataSource = "", ro
             return {
                 ...await getInputKeysByType(allKeys["unionFinanceGrants"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                // rejectReason:"",
             };
         }
         case "centralGrants": {
@@ -985,7 +955,6 @@ async function getColumnWiseData(allKeys, key, obj, isDraft, dataSource = "", ro
             return {
                 ...await getInputKeysByType(allKeys["centralGrants"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                // rejectReason:"",
             };
         }
         case "sfcGrants": {
@@ -993,7 +962,6 @@ async function getColumnWiseData(allKeys, key, obj, isDraft, dataSource = "", ro
             return {
                 ...await getInputKeysByType(allKeys["sfcGrants"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                // rejectReason:"",
             };
         }
         case "grantsOtherThanSfc": {
@@ -1001,7 +969,6 @@ async function getColumnWiseData(allKeys, key, obj, isDraft, dataSource = "", ro
             return {
                 ...await getInputKeysByType(allKeys["grantsOtherThanSfc"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                // rejectReason:"",
             };
         }
         case "grantsWithoutState": {
@@ -1009,7 +976,6 @@ async function getColumnWiseData(allKeys, key, obj, isDraft, dataSource = "", ro
             return {
                 ...await getInputKeysByType(allKeys["grantsWithoutState"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                // rejectReason:"",
             };
         }
         case "otherGrants": {
@@ -1017,7 +983,6 @@ async function getColumnWiseData(allKeys, key, obj, isDraft, dataSource = "", ro
             return {
                 ...await getInputKeysByType(allKeys["otherGrants"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                // rejectReason:"",
             };
         }
         case "totalGrants": {
@@ -1025,7 +990,6 @@ async function getColumnWiseData(allKeys, key, obj, isDraft, dataSource = "", ro
             return {
                 ...await getInputKeysByType(allKeys["totalGrants"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                // rejectReason:"",
             };
         }
         case "assignedRevAndCom": {
@@ -1033,7 +997,6 @@ async function getColumnWiseData(allKeys, key, obj, isDraft, dataSource = "", ro
             return {
                 ...await getInputKeysByType(allKeys["assignedRevAndCom"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                // rejectReason:"",
             };
         }
         case "otherRevenue": {
@@ -1041,7 +1004,6 @@ async function getColumnWiseData(allKeys, key, obj, isDraft, dataSource = "", ro
             return {
                 ...await getInputKeysByType(allKeys["otherRevenue"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                // rejectReason:"",
             };
         }
         case "totalRevenue": {
@@ -1049,7 +1011,6 @@ async function getColumnWiseData(allKeys, key, obj, isDraft, dataSource = "", ro
             return {
                 ...await getInputKeysByType(allKeys["totalRevenue"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                // rejectReason: "",
             };
         }
         case "salaries": {
@@ -1057,7 +1018,6 @@ async function getColumnWiseData(allKeys, key, obj, isDraft, dataSource = "", ro
             return {
                 ...await getInputKeysByType(allKeys["salaries"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                // rejectReason:"",
             };
         }
         case "pension": {
@@ -1065,7 +1025,6 @@ async function getColumnWiseData(allKeys, key, obj, isDraft, dataSource = "", ro
             return {
                 ...await getInputKeysByType(allKeys["pension"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                // rejectReason:"",
             };
         }
         case "otherExp": {
@@ -1073,7 +1032,6 @@ async function getColumnWiseData(allKeys, key, obj, isDraft, dataSource = "", ro
             return {
                 ...await getInputKeysByType(allKeys["otherExp"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                // rejectReason:"",
             };
         }
         case "establishmentExp": {
@@ -1081,7 +1039,6 @@ async function getColumnWiseData(allKeys, key, obj, isDraft, dataSource = "", ro
             return {
                 ...await getInputKeysByType(allKeys["establishmentExp"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                // rejectReason:"",
             };
         }
         case "oAndmExp": {
@@ -1089,7 +1046,6 @@ async function getColumnWiseData(allKeys, key, obj, isDraft, dataSource = "", ro
             return {
                 ...await getInputKeysByType(allKeys["oAndmExp"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                // rejectReason:"",
             };
         }
         case "interestAndfinacialChar": {
@@ -1097,7 +1053,6 @@ async function getColumnWiseData(allKeys, key, obj, isDraft, dataSource = "", ro
             return {
                 ...await getInputKeysByType(allKeys["interestAndfinacialChar"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                // rejectReason:"",
             };
         }
         case "otherRevenueExp": {
@@ -1105,7 +1060,6 @@ async function getColumnWiseData(allKeys, key, obj, isDraft, dataSource = "", ro
             return {
                 ...await getInputKeysByType(allKeys["otherRevenueExp"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                // rejectReason:"",
             };
         }
         case "adExp": {
@@ -1113,7 +1067,6 @@ async function getColumnWiseData(allKeys, key, obj, isDraft, dataSource = "", ro
             return {
                 ...await getInputKeysByType(allKeys["adExp"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                // rejectReason:"",
             };
         }
         case "totalRevenueExp": {
@@ -1121,7 +1074,6 @@ async function getColumnWiseData(allKeys, key, obj, isDraft, dataSource = "", ro
             return {
                 ...await getInputKeysByType(allKeys["totalRevenueExp"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                // rejectReason:"",
             };
         }
         case "capExp": {
@@ -1129,7 +1081,6 @@ async function getColumnWiseData(allKeys, key, obj, isDraft, dataSource = "", ro
             return {
                 ...await getInputKeysByType(allKeys["capExp"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                // rejectReason:"",
             };
         }
         case "totalExp": {
@@ -1137,7 +1088,6 @@ async function getColumnWiseData(allKeys, key, obj, isDraft, dataSource = "", ro
             return {
                 ...await getInputKeysByType(allKeys["totalExp"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                // rejectReason:"",
             };
         }
         case "centralStateBorrow": {
@@ -1145,7 +1095,6 @@ async function getColumnWiseData(allKeys, key, obj, isDraft, dataSource = "", ro
             return {
                 ...await getInputKeysByType(allKeys["centralStateBorrow"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                // rejectReason:"",
             };
         }
         case "bonds": {
@@ -1153,7 +1102,6 @@ async function getColumnWiseData(allKeys, key, obj, isDraft, dataSource = "", ro
             return {
                 ...await getInputKeysByType(allKeys["bonds"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                // rejectReason:"",
             };
         }
         case "bankAndFinancial": {
@@ -1161,7 +1109,6 @@ async function getColumnWiseData(allKeys, key, obj, isDraft, dataSource = "", ro
             return {
                 ...await getInputKeysByType(allKeys["bankAndFinancial"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                // rejectReason:"",
             };
         }
         case "otherBorrowing": {
@@ -1169,7 +1116,6 @@ async function getColumnWiseData(allKeys, key, obj, isDraft, dataSource = "", ro
             return {
                 ...await getInputKeysByType(allKeys["otherBorrowing"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                // rejectReason:"",
             };
         }
         case "grossBorrowing": {
@@ -1177,7 +1123,6 @@ async function getColumnWiseData(allKeys, key, obj, isDraft, dataSource = "", ro
             return {
                 ...await getInputKeysByType(allKeys["grossBorrowing"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                // rejectReason:"",
             };
         }
         case "receivablePTax": {
@@ -1185,7 +1130,6 @@ async function getColumnWiseData(allKeys, key, obj, isDraft, dataSource = "", ro
             return {
                 ...await getInputKeysByType(allKeys["receivablePTax"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                // rejectReason:"",
             };
         }
         case "receivableFee": {
@@ -1193,7 +1137,6 @@ async function getColumnWiseData(allKeys, key, obj, isDraft, dataSource = "", ro
             return {
                 ...await getInputKeysByType(allKeys["receivableFee"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                // rejectReason:"",
             };
         }
         case "otherReceivable": {
@@ -1201,7 +1144,6 @@ async function getColumnWiseData(allKeys, key, obj, isDraft, dataSource = "", ro
             return {
                 ...await getInputKeysByType(allKeys["otherReceivable"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                // rejectReason:"",
             };
         }
         case "totalReceivable": {
@@ -1209,7 +1151,6 @@ async function getColumnWiseData(allKeys, key, obj, isDraft, dataSource = "", ro
             return {
                 ...await getInputKeysByType(allKeys["totalReceivable"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                // rejectReason:"",
             };
         }
         case "totalCashAndBankBal": {
@@ -1217,7 +1158,6 @@ async function getColumnWiseData(allKeys, key, obj, isDraft, dataSource = "", ro
             return {
                 ...await getInputKeysByType(allKeys["totalCashAndBankBal"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                // rejectReason:"",
             };
         }
         case "accSystem": {
@@ -1225,7 +1165,6 @@ async function getColumnWiseData(allKeys, key, obj, isDraft, dataSource = "", ro
             return {
                 ...await getInputKeysByType(allKeys["accSystem"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                // rejectReason:"",
             };
         }
         case "accProvision": {
@@ -1233,7 +1172,6 @@ async function getColumnWiseData(allKeys, key, obj, isDraft, dataSource = "", ro
             return {
                 ...await getInputKeysByType(allKeys["accProvision"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                // rejectReason:"",
             };
         }
         case "accInCashBasis": {
@@ -1241,7 +1179,6 @@ async function getColumnWiseData(allKeys, key, obj, isDraft, dataSource = "", ro
             return {
                 ...await getInputKeysByType(allKeys["accInCashBasis"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                // rejectReason:"",
             };
         }
         case "fsTransactionRecord": {
@@ -1249,7 +1186,6 @@ async function getColumnWiseData(allKeys, key, obj, isDraft, dataSource = "", ro
             return {
                 ...await getInputKeysByType(allKeys["fsTransactionRecord"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                // rejectReason:"",
             };
         }
         case "fsPreparedBy": {
@@ -1257,7 +1193,6 @@ async function getColumnWiseData(allKeys, key, obj, isDraft, dataSource = "", ro
             return {
                 ...await getInputKeysByType(allKeys["fsPreparedBy"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                // rejectReason:"",
             };
         }
         case "revReceiptRecord": {
@@ -1265,7 +1200,6 @@ async function getColumnWiseData(allKeys, key, obj, isDraft, dataSource = "", ro
             return {
                 ...await getInputKeysByType(allKeys["revReceiptRecord"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                // rejectReason:"",
             };
         }
         case "expRecord": {
@@ -1273,7 +1207,6 @@ async function getColumnWiseData(allKeys, key, obj, isDraft, dataSource = "", ro
             return {
                 ...await getInputKeysByType(allKeys["expRecord"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                // rejectReason:"",
             };
         }
         case "accSoftware": {
@@ -1281,7 +1214,6 @@ async function getColumnWiseData(allKeys, key, obj, isDraft, dataSource = "", ro
             return {
                 ...await getInputKeysByType(allKeys["accSoftware"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                // rejectReason:"",
             };
         }
         case "onlineAccSysIntegrate": {
@@ -1289,7 +1221,6 @@ async function getColumnWiseData(allKeys, key, obj, isDraft, dataSource = "", ro
             return {
                 ...await getInputKeysByType(allKeys["onlineAccSysIntegrate"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                // rejectReason:"",
             };
         }
         case "muniAudit": {
@@ -1297,7 +1228,6 @@ async function getColumnWiseData(allKeys, key, obj, isDraft, dataSource = "", ro
             return {
                 ...await getInputKeysByType(allKeys["muniAudit"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                // rejectReason:"",
             };
         }
         case "totSanction": {
@@ -1305,7 +1235,6 @@ async function getColumnWiseData(allKeys, key, obj, isDraft, dataSource = "", ro
             return {
                 ...await getInputKeysByType(allKeys["totSanction"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                // rejectReason:"",
             };
         }
         case "totVacancy": {
@@ -1313,7 +1242,6 @@ async function getColumnWiseData(allKeys, key, obj, isDraft, dataSource = "", ro
             return {
                 ...await getInputKeysByType(allKeys["totVacancy"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                // rejectReason:"",
             };
         }
         case "accPosition": {
@@ -1321,7 +1249,6 @@ async function getColumnWiseData(allKeys, key, obj, isDraft, dataSource = "", ro
             return {
                 ...await getInputKeysByType(allKeys["accPosition"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                // rejectReason:"",
             };
         }
         case "auditedAnnualFySt": {
@@ -1329,7 +1256,6 @@ async function getColumnWiseData(allKeys, key, obj, isDraft, dataSource = "", ro
             return {
                 ...await getInputKeysByType(allKeys["auditedAnnualFySt"], isReadOnly, dataSource, allKeys["formType"], frontendYear_Fd),
                 ...obj,
-                // rejectReason:"",
             };
         }
         case "gazetteUpload": {
@@ -1337,7 +1263,6 @@ async function getColumnWiseData(allKeys, key, obj, isDraft, dataSource = "", ro
             return {
                 ...await getInputKeysByType(allKeys["gazetteUpload"], isReadOnly, dataSource, allKeys["formType"]),
                 ...obj,
-                // rejectReason:"",
             };
         }
         case "pop2024Upload": {
@@ -1345,7 +1270,6 @@ async function getColumnWiseData(allKeys, key, obj, isDraft, dataSource = "", ro
             return {
                 ...await getInputKeysByType(allKeys["pop2024Upload"], isReadOnly, dataSource, allKeys["formType"]),
                 ...obj,
-                // rejectReason:"",
             };
         }
         case "coverageOfWs": {
@@ -1353,7 +1277,6 @@ async function getColumnWiseData(allKeys, key, obj, isDraft, dataSource = "", ro
             return {
                 ...await getInputKeysByType(allKeys["coverageOfWs"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
                 ...obj,
-                // rejectReason:"",
             };
         }
         case "perCapitaOfWs": {
@@ -1361,7 +1284,6 @@ async function getColumnWiseData(allKeys, key, obj, isDraft, dataSource = "", ro
             return {
                 ...await getInputKeysByType(allKeys["perCapitaOfWs"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
                 ...obj,
-                // rejectReason:"",
             };
         }
         case "extentOfMeteringWs": {
@@ -1369,7 +1291,6 @@ async function getColumnWiseData(allKeys, key, obj, isDraft, dataSource = "", ro
             return {
                 ...await getInputKeysByType(allKeys["extentOfMeteringWs"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
                 ...obj,
-                // rejectReason:"",
             };
         }
         case "extentOfNonRevenueWs": {
@@ -1377,7 +1298,6 @@ async function getColumnWiseData(allKeys, key, obj, isDraft, dataSource = "", ro
             return {
                 ...await getInputKeysByType(allKeys["extentOfNonRevenueWs"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
                 ...obj,
-                // rejectReason:"",
             };
         }
         case "continuityOfWs": {
@@ -1385,7 +1305,6 @@ async function getColumnWiseData(allKeys, key, obj, isDraft, dataSource = "", ro
             return {
                 ...await getInputKeysByType(allKeys["continuityOfWs"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
                 ...obj,
-                // rejectReason:"",
             };
         }
         case "efficiencyInRedressalCustomerWs": {
@@ -1393,7 +1312,6 @@ async function getColumnWiseData(allKeys, key, obj, isDraft, dataSource = "", ro
             return {
                 ...await getInputKeysByType(allKeys["efficiencyInRedressalCustomerWs"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
                 ...obj,
-                // rejectReason:"",
             };
         }
         case "qualityOfWs": {
@@ -1401,7 +1319,6 @@ async function getColumnWiseData(allKeys, key, obj, isDraft, dataSource = "", ro
             return {
                 ...await getInputKeysByType(allKeys["qualityOfWs"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
                 ...obj,
-                // rejectReason:"",
             };
         }
         case "costRecoveryInWs": {
@@ -1409,7 +1326,6 @@ async function getColumnWiseData(allKeys, key, obj, isDraft, dataSource = "", ro
             return {
                 ...await getInputKeysByType(allKeys["costRecoveryInWs"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
                 ...obj,
-                // rejectReason:"",
             };
         }
         case "efficiencyInCollectionRelatedWs": {
@@ -1417,7 +1333,6 @@ async function getColumnWiseData(allKeys, key, obj, isDraft, dataSource = "", ro
             return {
                 ...await getInputKeysByType(allKeys["efficiencyInCollectionRelatedWs"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
                 ...obj,
-                // rejectReason:"",
             };
         }
         case "coverageOfToiletsSew": {
@@ -1425,7 +1340,6 @@ async function getColumnWiseData(allKeys, key, obj, isDraft, dataSource = "", ro
             return {
                 ...await getInputKeysByType(allKeys["coverageOfToiletsSew"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
                 ...obj,
-                // rejectReason:"",
             };
         }
         case "coverageOfSewNet": {
@@ -1433,7 +1347,6 @@ async function getColumnWiseData(allKeys, key, obj, isDraft, dataSource = "", ro
             return {
                 ...await getInputKeysByType(allKeys["coverageOfSewNet"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
                 ...obj,
-                // rejectReason:"",
             };
         }
         case "collectionEfficiencySew": {
@@ -1441,7 +1354,6 @@ async function getColumnWiseData(allKeys, key, obj, isDraft, dataSource = "", ro
             return {
                 ...await getInputKeysByType(allKeys["collectionEfficiencySew"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
                 ...obj,
-                // rejectReason:"",
             };
         }
         case "adequacyOfSew": {
@@ -1449,7 +1361,6 @@ async function getColumnWiseData(allKeys, key, obj, isDraft, dataSource = "", ro
             return {
                 ...await getInputKeysByType(allKeys["adequacyOfSew"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
                 ...obj,
-                // rejectReason:"",
             };
         }
         case "qualityOfSew": {
@@ -1457,7 +1368,6 @@ async function getColumnWiseData(allKeys, key, obj, isDraft, dataSource = "", ro
             return {
                 ...await getInputKeysByType(allKeys["qualityOfSew"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
                 ...obj,
-                // rejectReason:"",
             };
         }
         case "extentOfReuseSew": {
@@ -1465,7 +1375,6 @@ async function getColumnWiseData(allKeys, key, obj, isDraft, dataSource = "", ro
             return {
                 ...await getInputKeysByType(allKeys["extentOfReuseSew"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
                 ...obj,
-                // rejectReason:"",
             };
         }
         case "efficiencyInRedressalCustomerSew": {
@@ -1473,7 +1382,6 @@ async function getColumnWiseData(allKeys, key, obj, isDraft, dataSource = "", ro
             return {
                 ...await getInputKeysByType(allKeys["efficiencyInRedressalCustomerSew"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
                 ...obj,
-                // rejectReason:"",
             };
         }
         case "extentOfCostWaterSew": {
@@ -1481,7 +1389,6 @@ async function getColumnWiseData(allKeys, key, obj, isDraft, dataSource = "", ro
             return {
                 ...await getInputKeysByType(allKeys["extentOfCostWaterSew"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
                 ...obj,
-                // rejectReason:"",
             };
         }
         case "efficiencyInCollectionSew": {
@@ -1489,7 +1396,6 @@ async function getColumnWiseData(allKeys, key, obj, isDraft, dataSource = "", ro
             return {
                 ...await getInputKeysByType(allKeys["efficiencyInCollectionSew"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
                 ...obj,
-                // rejectReason:"",
             };
         }
         case "householdLevelCoverageLevelSwm": {
@@ -1497,7 +1403,6 @@ async function getColumnWiseData(allKeys, key, obj, isDraft, dataSource = "", ro
             return {
                 ...await getInputKeysByType(allKeys["householdLevelCoverageLevelSwm"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
                 ...obj,
-                // rejectReason:"",
             };
         }
         case "efficiencyOfCollectionSwm": {
@@ -1505,7 +1410,6 @@ async function getColumnWiseData(allKeys, key, obj, isDraft, dataSource = "", ro
             return {
                 ...await getInputKeysByType(allKeys["efficiencyOfCollectionSwm"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
                 ...obj,
-                // rejectReason:"",
             };
         }
         case "extentOfSegregationSwm": {
@@ -1513,7 +1417,6 @@ async function getColumnWiseData(allKeys, key, obj, isDraft, dataSource = "", ro
             return {
                 ...await getInputKeysByType(allKeys["extentOfSegregationSwm"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
                 ...obj,
-                // rejectReason:"",
             };
         }
         case "extentOfMunicipalSwm": {
@@ -1521,7 +1424,6 @@ async function getColumnWiseData(allKeys, key, obj, isDraft, dataSource = "", ro
             return {
                 ...await getInputKeysByType(allKeys["extentOfMunicipalSwm"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
                 ...obj,
-                // rejectReason:"",
             };
         }
         case "extentOfScientificSolidSwm": {
@@ -1529,7 +1431,6 @@ async function getColumnWiseData(allKeys, key, obj, isDraft, dataSource = "", ro
             return {
                 ...await getInputKeysByType(allKeys["extentOfScientificSolidSwm"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
                 ...obj,
-                // rejectReason:"",
             };
         }
         case "extentOfCostInSwm": {
@@ -1537,7 +1438,6 @@ async function getColumnWiseData(allKeys, key, obj, isDraft, dataSource = "", ro
             return {
                 ...await getInputKeysByType(allKeys["extentOfCostInSwm"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
                 ...obj,
-                // rejectReason:"",
             };
         }
         case "efficiencyInCollectionSwmUser": {
@@ -1545,7 +1445,6 @@ async function getColumnWiseData(allKeys, key, obj, isDraft, dataSource = "", ro
             return {
                 ...await getInputKeysByType(allKeys["efficiencyInCollectionSwmUser"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
                 ...obj,
-                // rejectReason:"",
             };
         }
         case "efficiencyInRedressalCustomerSwm": {
@@ -1553,7 +1452,6 @@ async function getColumnWiseData(allKeys, key, obj, isDraft, dataSource = "", ro
             return {
                 ...await getInputKeysByType(allKeys["efficiencyInRedressalCustomerSwm"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
                 ...obj,
-                // rejectReason:"",
             };
         }
         case "coverageOfStormDrainage": {
@@ -1561,7 +1459,6 @@ async function getColumnWiseData(allKeys, key, obj, isDraft, dataSource = "", ro
             return {
                 ...await getInputKeysByType(allKeys["coverageOfStormDrainage"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
                 ...obj,
-                // rejectReason:"",
             };
         }
         case "incidenceOfWaterLogging": {
@@ -1569,7 +1466,6 @@ async function getColumnWiseData(allKeys, key, obj, isDraft, dataSource = "", ro
             return {
                 ...await getInputKeysByType(allKeys["incidenceOfWaterLogging"], isReadOnly, dataSource, allKeys["formType"], '', frontendYear_Slb),
                 ...obj,
-                // rejectReason:"",
             };
         }
         default:
@@ -1606,13 +1502,6 @@ async function getModifiedTabsXvifcForm(tabs, xviFcFormTable, formType) {
             } else if (tab.id === priorTabsForXviFcForm["serviceLevelBenchmark"]) {
                 tab.data = await service.getDataForServiceLevelBenchmark();
             }
-            // else {
-            //     tab.data = service.getDynamicObjects(tab.key);
-            // }
-            //     tab.feedback = await service.getFeedbackForTabs(
-            //         conditionForFeedbacks,
-            //         tab._id
-            //     );
         }
         return modifiedTabs;
     } catch (err) {
@@ -1627,34 +1516,7 @@ async function getModifiedTabsXvifcForm(tabs, xviFcFormTable, formType) {
  * Priority: AnnualAccountData (Audited) > AnnualAccountData (Unaudited) > Document from "DataCollectionForm" collection.
  */
 async function getUploadDocLinks(ulbId, fileDataJson) {
-    // Get years from UlbLedger.
-    // let yearsLedgerDataAvailable = await UlbLedger.distinct("financialYear", { $and: [{ "financialYear": { $in: financialYearTableHeader } }, { "ulb": ObjectId(ulbId) }] });
-
-    // Get pdf links from "DataCollectionForm" collection.
-    // if (yearsLedgerDataAvailable.length > 0) {
     let alreadyOnCfPdfs = {};
-    // for (let year of yearsLedgerDataAvailable) {
-
-    //     let dynamicKey = 'documents.financial_year_' + year.replace("-", "_");
-    //     let tempDyanamicKey = 'financial_year_' + year.replace("-", "_");
-    //     //let availablePdfData = await DataCollectionForm.find({ [`${dynamicKey}`]: { '$exists': 1 }, "ulb": ObjectId(ulbId) }, { [`${dynamicKey}`]: 1 });
-
-    //     if (
-    //         availablePdfData[0] &&
-    //         availablePdfData[0].documents[tempDyanamicKey].pdf.length > 0 &&
-    //         availablePdfData[0].documents[tempDyanamicKey].pdf[0].url
-    //     ) {
-    //         let obj={}
-    //         let temp = { "year": "", "collection": "dataCollectionForm", "availablePdfData": [] };
-    //         obj.name=availablePdfData[0].documents[tempDyanamicKey].pdf[0].name
-    //         obj.url=availablePdfData[0].documents[tempDyanamicKey].pdf[0].url
-    //         obj.type=''
-    //         obj.label=''
-    //         temp.availablePdfData.push(obj);
-    //         temp.year = year;
-    //         alreadyOnCfPdfs[year] = temp;
-    //     }
-    // }
 
     // Get pdf links from "AnnualAccountDatas" collection.
     let availablePdfData_aa = await AnnualAccountData.find({ "ulb": ObjectId(ulbId) });
@@ -1764,7 +1626,6 @@ async function getUploadDocLinks(ulbId, fileDataJson) {
             echYrObj.isPdfAvailable = false;
         }
     }
-    // }
     return fileDataJson;
 
 }
@@ -1787,19 +1648,6 @@ async function findYearById(mongoObjId) {
 
     if (yearIndex > -1) { return yearData[yearIndex].year }
     else return '';
-
-    // let years = await Year.find().lean();
-
-
-
-    // for (let yearObj of years) {
-    //     console.log("yearObj",yearObj);
-    //     if (yearObj._id == mongoObjId) {
-    //         console.log("yearObj._id>>>>",yearObj._id)
-    //         return yearObj.year;
-    //     }
-    // }
-    // return null; // ID not found
 }
 
 // Update the json - add the keys/ questions as per the key header - Financial Data - Form 1 Json.
@@ -2295,7 +2143,6 @@ module.exports.formList = async (req, res) => {
             eachUlbForm.formType = eachUlbForm.formId ? eachUlbForm.formId == 16 ? 'form1' : 'form2' : eachUlbForm.formType;
             obj["stateName"] = eachUlbForm.stateName;
             obj["stateId"] = eachUlbForm.state;
-            // obj["ulbName"] = eachUlbForm.name;
             obj["ulbName"] = eachUlbForm.ulbName ? eachUlbForm.ulbName : eachUlbForm.name;
             obj["ulbId"] = eachUlbForm.ulb ? eachUlbForm.ulb : eachUlbForm._id;
             obj["censusCode"] = eachUlbForm.censusCode ? eachUlbForm.censusCode : eachUlbForm.sbCode;
@@ -2309,7 +2156,6 @@ module.exports.formList = async (req, res) => {
                 reviewTableData.push(obj);
         }
 
-        let formStatus = ['IN_PROGRESS', 'UNDER_REVIEW_BY_STATE', 'RETURNED_BY_STATE', 'UNDER_REVIEW_BY_XVIFC', 'RETURNED_REVIEW_BY_XVIFC', 'APPROVED_REVIEW_BY_XVIFC'];
         if (filter.formId) {
             filter.formId = filter.formId == 16 ? 'Category 1' : 'Category 2';
             reviewTableData = reviewTableData.filter((x) => { return x.ulbCategory == filter.formId });
@@ -2551,7 +2397,6 @@ module.exports.progressReport = async (req, res) => {
     let totalUlbForm = 0;
     let tabCount = 0;
 
-    // listOfUlbsFromState = await XviFcForm1DataCollection.find(matchParams).sort({ formStatus: -1, ulbName: 1 }).lean();
     listOfUlbsFromState = await Ulb.aggregate([
         {
             $lookup: {
@@ -2735,7 +2580,6 @@ module.exports.progressReport = async (req, res) => {
         // Send the buffer as the response
         return res.send(buffer);
 
-        // return res.status(200).json({ status: true, message: "", data: reviewTableData });
     } else {
         return res.status(404).json({ status: false, message: "Data download failed." });
     }
