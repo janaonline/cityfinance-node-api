@@ -765,7 +765,15 @@ let keyDetailsForm1 = {
         label: 'Please upload the Gazette notification regarding the constitution of the ULB.',
         info: '',
         required: false,
-        year: 1,
+        year: [{
+            "label": "",
+            "key": "gazetteUpload",
+            "year": "",
+            "position": 1,
+            "refKey": "gazetteUpload",
+            "formFieldType": 'file',
+            "file": { "name": "", "url": "" }
+        }],
         max: 20,
         min: 0,
         decimal: 0
@@ -781,7 +789,15 @@ let keyDetailsForm1 = {
         label: 'Please upload the supporting document for the population estimate as on 01 April 2024.',
         info: '',
         required: false,
-        year: 1,
+        year: [{
+            "label": "",
+            "key": "pop2024Upload",
+            "year": "",
+            "position": 1,
+            "refKey": "pop2024Upload",
+            "formFieldType": 'file',
+            "file": { "name": "", "url": "" }
+        }],
         max: 20,
         min: 0,
         decimal: 0
@@ -1553,7 +1569,15 @@ let keyDetailsForm2 = {
         label: 'Please upload the Gazette notification regarding the constitution of the ULB.',
         info: '',
         required: false,
-        year: 1,
+        year: [{
+            "label": "",
+            "key": "gazetteUpload",
+            "year": "",
+            "position": 1,
+            "refKey": "gazetteUpload",
+            "formFieldType": 'file',
+            "file": { "name": "", "url": "" }
+        }],
         max: 20,
         min: 0,
         decimal: 0
@@ -1569,7 +1593,15 @@ let keyDetailsForm2 = {
         label: 'Please upload the supporting document for the population estimate as on 01 April 2024.',
         info: '',
         required: false,
-        year: 1,
+        year: [{
+            "label": "",
+            "key": "pop2024Upload",
+            "year": "",
+            "position": 1,
+            "refKey": "pop2024Upload",
+            "formFieldType": 'file',
+            "file": { "name": "", "url": "" }
+        }],
         max: 20,
         min: 0,
         decimal: 0

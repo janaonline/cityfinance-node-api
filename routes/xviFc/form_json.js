@@ -922,6 +922,7 @@ async function getInputKeysByType(selectedKeyDetails, isReadOnly, dataSource, fo
         obj.min = selectedKeyDetails.min;
         obj.bottomText = "Maximum of 20MB";
         obj.instruction = selectedKeyDetails.instruction;
+        obj.year = obj.key == 'gazetteUpload' || obj.key == 'pop2024Upload' ? selectedKeyDetails.year : [];
     }
 
     return obj;

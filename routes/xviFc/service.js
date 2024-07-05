@@ -461,10 +461,22 @@ async function getForm1(ulbData, stateData, roleName, submittedData) {
                         if (eachQuestionObj.key == "uploadDoc") {
                             for (let eachObj of eachQuestionObj.data) {
 
-                                if (eachObj.key == 'gazetteUpload' || eachObj.key == 'pop2024Upload') {
-                                    eachObj.file = { "name": "", "url": "" };
-                                    eachObj.file.name = selectedData && selectedData.file.name ? selectedData.file.name : "";
-                                    eachObj.file.url = selectedData && selectedData.file.url ? selectedData.file.url : "";
+                                let yearIndex = eachObj.year.findIndex(x => x.key === selectedData.key);
+                                if (yearIndex > -1 && (eachObj.key == 'gazetteUpload' || eachObj.key == 'pop2024Upload')) {
+                                    eachObj.year = [];
+                                    eachObj.year[0] = {
+                                        "label": "",
+                                        "key": eachObj.key,
+                                        "year": "",
+                                        "position": 1,
+                                        "refKey": eachObj.key,
+                                        "formFieldType": 'file',
+                                        "file": { "name": "", "url": "" }
+                                    }
+
+                                    eachObj.year[0].file.name = yearIndex > -1 && selectedData && selectedData.file.name ? selectedData.file.name : "";
+                                    eachObj.year[0].file.url = yearIndex > -1 && selectedData && selectedData.file.url ? selectedData.file.url : "";
+
                                 }
 
                                 let yearDataIndex = eachObj.year.findIndex(x => x.key === selectedData.key)
@@ -473,7 +485,7 @@ async function getForm1(ulbData, stateData, roleName, submittedData) {
                                     eachQuestionObj.message = "We are collecting data till the year 2023-24. Since your ULB was recently constituted, it's not mandatory for you to fill in the financial section data. Please fill in the rest of the form"
                                 }
 
-                                if (yearDataIndex > -1 && selectedData.key == eachObj.year[yearDataIndex].key) {
+                                if (yearDataIndex > -1 && eachObj.key == 'auditedAnnualFySt' && selectedData.key == eachObj.year[yearDataIndex].key) {
 
                                     // console.log("selectedData", selectedData.file);
 
@@ -699,15 +711,27 @@ async function getForm2(ulbData, stateData, roleName, submittedData) {
                                     eachQuestionObj.message = "We are collecting data till the year 2023-24. Since your ULB was recently constituted, it's not mandatory for you to fill in the financial section data. Please fill in the rest of the form."
                                 }
 
-                                if (eachObj.key == 'gazetteUpload' || eachObj.key == 'pop2024Upload') {
-                                    eachObj.file = { "name": "", "url": "" };
-                                    eachObj.file.name = selectedData && selectedData.file.name ? selectedData.file.name : "";
-                                    eachObj.file.url = selectedData && selectedData.file.url ? selectedData.file.url : "";
+                                let yearIndex = eachObj.year.findIndex(x => x.key === selectedData.key);
+                                if (yearIndex > -1 && (eachObj.key == 'gazetteUpload' || eachObj.key == 'pop2024Upload')) {
+                                    eachObj.year = [];
+                                    eachObj.year[0] = {
+                                        "label": "",
+                                        "key": eachObj.key,
+                                        "year": "",
+                                        "position": 1,
+                                        "refKey": eachObj.key,
+                                        "formFieldType": 'file',
+                                        "file": { "name": "", "url": "" }
+                                    }
+
+                                    eachObj.year[0].file.name = yearIndex > -1 && selectedData && selectedData.file.name ? selectedData.file.name : "";
+                                    eachObj.year[0].file.url = yearIndex > -1 && selectedData && selectedData.file.url ? selectedData.file.url : "";
+
                                 }
 
                                 let yearDataIndex = eachObj.year.findIndex(x => x.key === selectedData.key)
 
-                                if (yearDataIndex > -1 && selectedData.key == eachObj.year[yearDataIndex].key) {
+                                if (yearDataIndex > -1 && eachObj.key == 'auditedAnnualFySt' && selectedData.key == eachObj.year[yearDataIndex].key) {
                                     eachObj.year[yearDataIndex].file.name = selectedData.file.name;
                                     eachObj.year[yearDataIndex].file.url = selectedData.file.url;
                                     eachObj.year[yearDataIndex].verifyStatus = selectedData.verifyStatus ? selectedData.verifyStatus : 1;
@@ -2325,26 +2349,22 @@ async function getSubmissionPercent(eachTabData, formId) {
                 denominator["financialData"] = formId == 16 ? temp * 20 : temp * 42;
                 denominator["uploadDoc"] = formId == 16 ? temp * 1 : temp * 1;
                 denominator.yearOfConstitution = eachAns.saveAsDraftValue;
-                denominator.yearOfConstitution = eachAns.saveAsDraftValue;
             }
             if (eachAns.key == "yearOfSlb" && eachAns.saveAsDraftValue) {
                 denominator["serviceLevelBenchmark"] = (baseYear - Number(eachAns.saveAsDraftValue.split("-")[1]) + 1) * 28;
-                denominator.yearOfSlb = eachAns.saveAsDraftValue;
                 denominator.yearOfSlb = eachAns.saveAsDraftValue;
             }
         }
         denominator.demographicData = formId == 16 ? 8 : 9;
 
-        if (eachTabData.tabKey == 'uploadDoc') {
-            if (eachAns.file.url || eachAns.verifyStatus == 2 || eachAns.verifyStatus == 3) numeratorSaveAsDraft += 1;
-        }
-        else if (eachTabData.tabKey == 'demographicData' || eachTabData.tabKey == 'accountPractice') {
+
+        if (eachTabData.tabKey == 'demographicData' || eachTabData.tabKey == 'accountPractice') {
             if (eachAns.saveAsDraftValue || eachAns.saveAsDraftValue === 0) numeratorSaveAsDraft += 1;
         }
         else {
             let frontendYear_Fd;
             let frontendYear_Slb;
-            if (eachTabData.tabKey == "financialData") {
+            if (eachTabData.tabKey == "financialData" || eachTabData.tabKey == 'uploadDoc') {
                 frontendYear_Fd = denominator.yearOfConstitution;
 
                 if (frontendYear_Fd && frontendYear_Fd.includes("In")) frontendYear_Fd = "2015-16";
@@ -2361,6 +2381,9 @@ async function getSubmissionPercent(eachTabData, formId) {
                 if (tempYearArr.includes(eachAns.year) && (eachAns.saveAsDraftValue || eachAns.saveAsDraftValue === 0)) {
                     numeratorSaveAsDraft += 1;
                 }
+                if (eachTabData.tabKey == 'uploadDoc') {
+                    if (tempYearArr.includes(eachAns.year) && (eachAns.key != 'gazetteUpload' && eachAns.key != 'pop2024Upload') && (eachAns.file.url || eachAns.verifyStatus == 2 || eachAns.verifyStatus == 3)) numeratorSaveAsDraft += 1;
+                }
             } else if (eachTabData.tabKey == "serviceLevelBenchmark") {
                 frontendYear_Slb = denominator.yearOfSlb;
                 let yindex = -1;
@@ -2374,7 +2397,6 @@ async function getSubmissionPercent(eachTabData, formId) {
 
         }
     }
-
     return {
         key: eachTabData.tabKey,
         numerator: numeratorSaveAsDraft,
@@ -2655,8 +2677,9 @@ module.exports.progressReport = async (req, res) => {
         const worksheet_2 = workbook.addWorksheet('Form Status Summary');
 
         // Define the columns
+        // Submission % of each tab
         worksheet_1.columns = [
-            { header: '#', key: 'rowSlNo', width: 10 },
+            { header: '#', key: 'rowSlNo', width: 7 },
             { header: 'State', key: 'stateName', width: 15 },
             { header: 'ULB Name', key: 'ulbName', width: 40 },
             { header: 'Census Code', key: 'censusCode', width: 12 },
@@ -2669,17 +2692,18 @@ module.exports.progressReport = async (req, res) => {
             { header: 'Accounting Practices Data Filled (%)', key: 'accountPractice', width: 15, style: { numFmt: '0.00' } },
             { header: 'Service Level Benchmark Data Filled (%)', key: 'serviceLevelBenchmark', width: 15, style: { numFmt: '0.00' } },
         ];
+        // Form status count.
         worksheet_2.columns = [
-            { header: '#', key: 'rowSlNo', width: 10 },
+            { header: '#', key: 'rowSlNo', width: 7 },
             { header: 'State', key: 'stateName', width: 25 },
-            { header: 'Total ULBs', key: 'totalUlbs', width: 10 },
-            { header: 'Not Started', key: 'NOT_STARTED', width: 10 },
-            { header: 'In Progress', key: 'IN_PROGRESS', width: 10 },
-            { header: 'Under review by State', key: 'UNDER_REVIEW_BY_STATE', width: 10 },
-            { header: 'Returned by State', key: 'RETURNED_BY_STATE', width: 10 },
-            { header: 'Under review by XVIFC', key: 'UNDER_REVIEW_BY_XVIFC', width: 10 },
-            { header: 'Returned by XVIFC', key: 'RETURNED_REVIEW_BY_XVIFC', width: 10 },
-            { header: 'Approved by XVIFC', key: 'APPROVED_REVIEW_BY_XVIFC', width: 10 },
+            { header: 'Total ULBs', key: 'totalUlbs', width: 12 },
+            { header: 'Not Started', key: 'NOT_STARTED', width: 12 },
+            { header: 'In Progress', key: 'IN_PROGRESS', width: 12 },
+            { header: 'Under review by State', key: 'UNDER_REVIEW_BY_STATE', width: 12 },
+            { header: 'Returned by State', key: 'RETURNED_BY_STATE', width: 12 },
+            { header: 'Under review by XVIFC', key: 'UNDER_REVIEW_BY_XVIFC', width: 12 },
+            { header: 'Returned by XVIFC', key: 'RETURNED_REVIEW_BY_XVIFC', width: 12 },
+            { header: 'Approved by XVIFC', key: 'APPROVED_REVIEW_BY_XVIFC', width: 12 },
         ];
 
         // Add rows to the worksheet
