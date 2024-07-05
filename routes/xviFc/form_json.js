@@ -865,7 +865,6 @@ async function getInputKeysByType(selectedKeyDetails, isReadOnly, dataSource, fo
     obj.validations = [];
     obj.year = [];
     if (selectedKeyDetails.required === true) {
-        // obj.validations = [];
         obj.validations.push(
             {
                 name: "required",
@@ -878,7 +877,6 @@ async function getInputKeysByType(selectedKeyDetails, isReadOnly, dataSource, fo
     if (selectedKeyDetails.formFieldType === "number" || selectedKeyDetails.formFieldType === "amount") {
         obj.warning = [];
         obj.sumOf = [];
-        // obj.validations = [];
         obj.max = selectedKeyDetails.max;
         obj.min = selectedKeyDetails.min;
         obj.decimal = selectedKeyDetails.decimal;
@@ -914,7 +912,6 @@ async function getInputKeysByType(selectedKeyDetails, isReadOnly, dataSource, fo
     }
     else if (selectedKeyDetails.formFieldType === "radio" || selectedKeyDetails.formFieldType === "dropdown") {
         obj.options = selectedKeyDetails.options;
-        //obj.showInputBox = selectedKeyDetails.showInputBox;
         obj.reason = "";
     }
     else if (selectedKeyDetails.formFieldType === "file") {
@@ -923,6 +920,7 @@ async function getInputKeysByType(selectedKeyDetails, isReadOnly, dataSource, fo
         obj.bottomText = "Maximum of 20MB";
         obj.instruction = selectedKeyDetails.instruction;
         obj.year = obj.key == 'gazetteUpload' || obj.key == 'pop2024Upload' ? selectedKeyDetails.year : [];
+        obj.allowedFileTypes = ['pdf'];
     }
 
     return obj;
