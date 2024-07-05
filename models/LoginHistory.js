@@ -8,9 +8,9 @@ const LoginHistorySchema = new Schema({
         type: String,
         default: "15thFC",
         enum: {
-            values: ["fiscalRankings", "15thFC", "AAINA"],
-            message: "ERROR: STATUS BE EITHER 'Fiscal Ranking'/ '15th FC'",
-        },
+            values: ["fiscalRankings", "15thFC", "AAINA", "XVIFC"],
+            message: "ERROR: STATUS BE EITHER 'Fiscal Ranking'/ '15th FC'/ '16th FC",
+        }
     },
     reports: { type: Array, default: [] },
     isActive: { type: Boolean, default: 1 },
