@@ -71,7 +71,7 @@ let keyDetailsForm1 = {
             "name": "greaterThanEqualTo",
             "validator": 0,
             "field": "pop2011",
-            "message": "'Population as per 01 April 2024' must be greater than or equal to 'Population as per Census 2011'."
+            "message": "Population as per 2024 value entered is lower than Population as per Census 2011."
         },
     },
     areaOfUlb: {
@@ -855,7 +855,7 @@ let keyDetailsForm2 = {
             "name": "greaterThanEqualTo",
             "validator": 0,
             "field": "pop2011",
-            "message": "'Population as per 01 April 2024' must be greater than or equal to 'Population as per Census 2011'."
+            "message": "Population as per 2024 value entered is lower than Population as per Census 2011."
         },
     },
     areaOfUlb: {
@@ -2093,7 +2093,7 @@ let keyDetailsForm2 = {
         quesPos: 72,
         validations: [],
         label: 'Quality of water supplied (%)',
-        info: '',
+        info: 'Water quality is assessed based on the essential parameters of BIS 10500 standard.',
         placeholder: 'Percent|Range(0-100)',
         required: true,
         year: 8,
