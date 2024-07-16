@@ -4,6 +4,15 @@ const ExcelJS = require('exceljs');
 // const { xviFcFormData } = require("./temp");
 const { financialYearTableHeader } = require("./form_json");
 
+function toTitleCase(str) {
+    return str.replace(
+        /\w\S*/g,
+        function (txt) {
+            return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
+        }
+    );
+}
+
 let fin_slb_year = {
     financialData_year: "",
     yearOfConstitution: "",
@@ -65,7 +74,7 @@ async function getEachTabData(eachTab, obj) {
                     tempArr[index]['nameOfState'] = obj.nameOfState;
                     tempArr[index]['censusCode'] = obj["censusCode"];
                     tempArr[index]['formId'] = obj["formId"];
-                    tempArr[index]['formStatus'] = obj["formStatus"];
+                    tempArr[index]['formStatus'] = toTitleCase(obj["formStatus"].split("_").join(" "));
                     let key = eachAns["key"].split("_")[1];
                     tempArr[index][`${key}`] = eachAns["value"];
                     tempArr[index]['yearByUser'] =
@@ -91,7 +100,7 @@ async function getEachTabData(eachTab, obj) {
                     tempObj['nameOfState'] = obj.nameOfState;
                     tempObj['censusCode'] = obj["censusCode"];
                     tempObj['formId'] = obj["formId"];
-                    tempObj['formStatus'] = obj["formStatus"];
+                    tempObj['formStatus'] = toTitleCase(obj["formStatus"].split("_").join(" "));
                     let key = eachAns["key"].split("_")[1];
                     tempObj[`${key}`] = eachAns["value"];
                     tempObj['yearByUser'] =
@@ -162,7 +171,7 @@ module.exports.dataDump = async (req, res) => {
             obj["nameOfUlb"] = ulbForm.ulbName;
             obj["censusCode"] = Number(ulbForm.censusCode ? ulbForm.censusCode : ulbForm.sbCode);
             obj["formId"] = ulbForm.formId == 16 ? 'Category 1' : 'Category 2';
-            obj["formStatus"] = ulbForm.formStatus;
+            obj["formStatus"] = toTitleCase(ulbForm.formStatus.split("_").join(" "));
 
             switch (eachTab.tabKey) {
                 case "demographicData": demographicDataAllUlbs.push(await getEachTabData(eachTab, obj)); break;
@@ -191,9 +200,9 @@ module.exports.dataDump = async (req, res) => {
     // Create a new workbook and add a worksheet
     const workbook = new ExcelJS.Workbook();
     const worksheet_1 = workbook.addWorksheet('Demographic_Data_All_ULBs');
-    const worksheet_2 = workbook.addWorksheet('Financial_All_ULBs');
+    const worksheet_2 = workbook.addWorksheet('Financial & Docs_All_ULBs');
     const worksheet_3 = workbook.addWorksheet('Accounting_Practice_All_ULBs');
-    const worksheet_4 = workbook.addWorksheet('Financial_Selected_ULBs');
+    const worksheet_4 = workbook.addWorksheet('Financial & Docs_Selected_ULBs');
     const worksheet_5 = workbook.addWorksheet('ServiceLevelBenchmark');
     // const worksheet_6 = workbook.addWorksheet('Documents_All_ULBs');
 
@@ -293,7 +302,7 @@ module.exports.dataDump = async (req, res) => {
         { header: "In which year was the ULB constituted?", key: "yearByUser", width: 15 },
         { header: "Please select the source of Financial Data", key: "sourceOfFd", width: 15 },
         { header: "Property Tax", key: "pTax", width: 15 },
-        { header: "Registered properties", key: "noOfRegiProperty", width: 15 },
+        { header: "Number of registered properties", key: "noOfRegiProperty", width: 15 },
         { header: "Other Tax", key: "otherTax", width: 15 },
         { header: "Tax Revenue", key: "taxRevenue", width: 15 },
         { header: "Fee and User Charges", key: "feeAndUserCharges", width: 15 },
@@ -357,7 +366,7 @@ module.exports.dataDump = async (req, res) => {
         { header: "Per capita supply of water(lpcd)", key: "perCapitaOfWs", width: 15 },
         { header: "Extent of metering of water connections (%)", key: "extentOfMeteringWs", width: 15 },
         { header: "Extent of non-revenue water (NRW) (%)", key: "extentOfNonRevenueWs", width: 15 },
-        { header: "Continuity of water supplied (hours)", key: "continuityOfWs", width: 15 },
+        { header: "Continuity of water supplied (hours/day)", key: "continuityOfWs", width: 15 },
         { header: "Efficiency in redressal of customer complaints related to water supply (%)", key: "efficiencyInRedressalCustomerWs", width: 15 },
         { header: "Quality of water supplied (%)", key: "qualityOfWs", width: 15 },
         { header: "Cost recovery in water supply service (%)", key: "costRecoveryInWs", width: 15 },
@@ -380,7 +389,7 @@ module.exports.dataDump = async (req, res) => {
         { header: "Efficiency in collection of SWM user charges (%)", key: "efficiencyInCollectionSwmUser", width: 15 },
         { header: "Efficiency in redressal of customer complaints related to SWM (%)", key: "efficiencyInRedressalCustomerSwm", width: 15 },
         { header: "Coverage of storm water drainage network (%)", key: "coverageOfStormDrainage", width: 15 },
-        { header: "Incidence of water logging", key: "incidenceOfWaterLogging", width: 15 },
+        { header: "Number of incidents of water logging", key: "incidenceOfWaterLogging", width: 15 },
     ]
     // Documents Uploaded - This is added in financial sheet.
     // worksheet_6.columns = [
