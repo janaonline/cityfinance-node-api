@@ -2166,7 +2166,7 @@ module.exports.formList = async (req, res) => {
             obj["ulbCategory"] = eachUlbForm.formType == 'form1' ? "Category 1" : eachUlbForm.formType == 'form2' ? "Category 2" : "";
             obj["formStatus"] = eachUlbForm.formStatus ? eachUlbForm.formStatus : "NOT_STARTED";
             obj["dataSubmitted"] = ulbData ? Math.round(Number(dataSubmissionPercent / tabCount)) : 0;
-            obj["action"] = (eachUlbForm.formStatus == 'UNDER_REVIEW_BY_XVIFC' && user.role == 'XVIFC') || (eachUlbForm.formStatus == 'UNDER_REVIEW_BY_STATE' && user.role == 'XVIFC_STATE') || (eachUlbForm.formStatus == 'SUBMITTED') ? 'Review' : 'View';
+            obj["action"] = ((eachUlbForm.formStatus == 'UNDER_REVIEW_BY_XVIFC' || eachUlbForm.formStatus == 'UNDER_REVIEW_BY_STATE') && user.role == 'XVIFC') || (eachUlbForm.formStatus == 'UNDER_REVIEW_BY_STATE' && user.role == 'XVIFC_STATE') || (eachUlbForm.formStatus == 'SUBMITTED') ? 'Review' : 'View';
             obj["statusClass"] = eachUlbForm.formStatus == 'IN_PROGRESS' ? 'status-in-progress' : eachUlbForm.formStatus == 'SUBMITTED' || eachUlbForm.formStatus == 'UNDER_REVIEW_BY_STATE' ? 'status-under-review' : 'status-not-started';
 
             if (!eachUlbForm.isUT)
@@ -2263,7 +2263,7 @@ async function getSubmissionPercent(eachTabData, formId) {
 
         }
     }
-    
+
     return {
         key: eachTabData.tabKey,
         numerator: numeratorSaveAsDraft,
