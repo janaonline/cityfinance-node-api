@@ -550,6 +550,7 @@ async function getForm1(ulbData, stateData, roleName, submittedData) {
         stateName: stateData.name,
         tabs: from1QuestionFromDb,
         formStatus: currentFormStatus,
+        rejectReason: from1AnswerFromDb && from1AnswerFromDb.rejectReason ? from1AnswerFromDb.rejectReason : "",
         validationCounter,
         financialYearTableHeader
     };
@@ -812,6 +813,7 @@ async function getForm2(ulbData, stateData, roleName, submittedData) {
         stateName: stateData.name,
         tabs: from2QuestionFromDb,
         formStatus: currentFormStatus,
+        rejectReason: from2AnswerFromDb && from2AnswerFromDb.rejectReason ? from2AnswerFromDb.rejectReason : "",
         validationCounter,
         financialYearTableHeader
     };
@@ -2125,7 +2127,7 @@ module.exports.formList = async (req, res) => {
     }
     else {
         matchParams = user.role == 'XVIFC' ? filter : user.role == 'XVIFC_STATE' ? { $and: [{ state: ObjectId(stateId) }, filter, { ulbName: { $regex: `${searchText}`, $options: 'im' } }] } : "";
-        listOfUlbsFromState = await XviFcForm1DataCollection.find(matchParams).sort(Object.keys(sort).length > 0 ? sort : { formStatus: -1, ulbName: 1 }).skip(skip).limit(limit).lean();
+        listOfUlbsFromState = await XviFcForm1DataCollection.find(matchParams).sort(Object.keys(sort).length > 0 ? sort : { formStatus: -1, ulbName: 1 }).skip(skip * limit).limit(limit).lean();
         totalUlbForm = await XviFcForm1DataCollection.find(matchParams).count().lean();
     }
 
