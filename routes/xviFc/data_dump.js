@@ -31,7 +31,7 @@ async function getEachTabData(eachTab, obj) {
             if (eachAns["key"] == 'gazetteUpload' || eachAns["key"] == 'pop2024Upload') {
                 obj[eachAns["key"]] = eachAns["file"]["url"] ? baseUrl_s3 + eachAns["file"]["url"] : "N/A";
             } else {
-                obj[eachAns["key"]] = eachAns["value"];
+                obj[eachAns["key"]] = isNaN(Number(eachAns["value"])) ? eachAns["value"] : Number(eachAns["value"]);
             }
             // Get the answer of yearOfSlb and yearOfConstitution.
             if (eachAns["key"] == 'yearOfConstitution') {
@@ -76,7 +76,7 @@ async function getEachTabData(eachTab, obj) {
                     tempArr[index]['formId'] = obj["formId"];
                     tempArr[index]['formStatus'] = toTitleCase(obj["formStatus"].split("_").join(" "));
                     let key = eachAns["key"].split("_")[1];
-                    tempArr[index][`${key}`] = eachAns["value"];
+                    tempArr[index][`${key}`] = isNaN(Number(eachAns["value"])) ? eachAns["value"] : Number(eachAns["value"]);
                     tempArr[index]['yearByUser'] =
                         eachTab.tabKey == 'financialData' || eachTab.tabKey == 'uploadDoc' ? fin_slb_year.yearOfConstitution :
                             eachTab.tabKey == 'serviceLevelBenchmark' ? fin_slb_year.serviceLevelBenchmark_year :
@@ -102,7 +102,7 @@ async function getEachTabData(eachTab, obj) {
                     tempObj['formId'] = obj["formId"];
                     tempObj['formStatus'] = toTitleCase(obj["formStatus"].split("_").join(" "));
                     let key = eachAns["key"].split("_")[1];
-                    tempObj[`${key}`] = eachAns["value"];
+                    tempObj[`${key}`] = isNaN(Number(eachAns["value"])) ? eachAns["value"] : Number(eachAns["value"]);
                     tempObj['yearByUser'] =
                         eachTab.tabKey == 'financialData' || eachTab.tabKey == 'uploadDoc' ? fin_slb_year.yearOfConstitution :
                             eachTab.tabKey == 'serviceLevelBenchmark' ? fin_slb_year.serviceLevelBenchmark_year :
