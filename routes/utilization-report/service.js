@@ -9,19 +9,30 @@ const Category = require("../../models/Category");
 const FORM_STATUS = require("../../util/newStatusList");
 const Year = require('../../models/Year')
 const catchAsync = require('../../util/catchAsync')
-const { calculateStatus, checkForUndefinedVaribales, canTakenAction, mutateResponse, changePayloadFormat, decideDisabledFields, checkIfUlbHasAccess } = require('../CommonActionAPI/service')
-const { getKeyByValue,checkForCalculationsForDurForm } = require("../../util/masterFunctions")
+const {
+  calculateStatus,
+  checkForUndefinedVaribales,
+  canTakenAction,
+  mutateResponse,
+  changePayloadFormat,
+  decideDisabledFields,
+  checkIfUlbHasAccess,
+  isYearWithinRange,
+  getFinancialYear
+} = require("../CommonActionAPI/service");
+const { getKeyByValue,checkForCalculationsForDurForm, getAccessYear } = require("../../util/masterFunctions")
 const Service = require('../../service');
-const { FormNames, ULB_ACCESSIBLE_YEARS, MASTER_STATUS_ID, PREV_MASTER_FORM_STATUS } = require('../../util/FormNames');
+const { FormNames, ULB_ACCESSIBLE_YEARS, MASTER_STATUS_ID, PREV_MASTER_FORM_STATUS, FORM_STATUS_CODES, MASTER_STATUS } = require('../../util/FormNames');
 const MasterForm = require('../../models/MasterForm')
-const { YEAR_CONSTANTS } = require("../../util/FormNames");
+const { YEAR_CONSTANTS, YEAR_CONSTANTS_IDS } = require("../../util/FormNames");
 const { ModelNames } = require('../../util/15thFCstatus')
 const { createAndUpdateFormMaster, getMasterForm } = require('../../routes/CommonFormSubmission/service')
 
 let DurPageLinks = {
   "2021-22": "",
   "2022-23": "ulbform/ulbform-overview",
-  "2023-24": "ulbform2223/utilisation-report"
+  "2023-24": "ulbform2223/utilisation-report",
+  "2024-25": `ulb-form/${YEAR_CONSTANTS["23_24"]}/utilisation-report`
 }
 const YEAR2223 = 202223;
 async function getCorrectDataSet() {
@@ -55,6 +66,7 @@ const {
 const { ElasticBeanstalk } = require("aws-sdk");
 const { forever } = require("request");
 const { years } = require("../../service/years");
+const { getPreviousYear, isYearWithinCurrentFY } = require("../sidemenu/service");
 const time = () => {
   var dt = new Date();
   dt.setHours(dt.getHours() + 5);
@@ -168,8 +180,9 @@ module.exports.createOrUpdate = async (req, res) => {
       formData["designYear"] = ObjectId(designYear);
       yearInNumber =  Number(getKeyByValue(years,designYear).split('-').join(''))
     }
-    if (formData.designYear.toString() === YEAR_CONSTANTS["23_24"] && formData.ulb) {
+    if ( isYearWithinRange(formData.designYear.toString()) && formData.ulb) {
       formData.status = currentMasterFormStatus;
+      formData.projects =  addKeysInProject(formData?.projects);
       let params = {
         modelName: ModelNames["dur"],
         formData,
@@ -179,7 +192,10 @@ module.exports.createOrUpdate = async (req, res) => {
       };
       let response = await createAndUpdateFormMaster(params);
       if (!formData.isDraft) {
-        await updateForNextForms(designYear, ulb, formData)
+        await updateForNextForms(designYear, ulb, formData);
+        //email trigger after form submission
+        Service.sendEmail(mailOptions);
+
       }
       return response
     }
@@ -399,7 +415,26 @@ module.exports.createOrUpdate = async (req, res) => {
     return Response.BadRequest(res, {}, err.message);
   }
 };
-
+/**
+ * The function `addKeysInProject` adds a `dpr_status` key with a value of `null` to each project in
+ * the input array if the key does not already exist.
+ * @param projects - An array of project objects. Each project object may or may not have a property
+ * named "dpr_status".
+ * @returns The `addKeysInProject` function is returning the `projects` array with the `dpr_status` key
+ * added to each project if it doesn't already exist.
+ */
+function addKeysInProject(projects){
+  try {
+     projects.forEach(project=>{
+      if(project.hasOwnProperty('dpr_status') && !project['dpr_status']){
+        project['dpr_status'] = null
+      }
+     })
+    return projects
+  } catch (error) {
+    throw new Error(`addKeysInProject:  ${error.message}`)
+  }
+}
 exports.read = async (req, res) => {
   try {
     const reports = await UtilizationReport.find(
@@ -875,193 +910,309 @@ function utilReportObject() {
   return obj;
 }
 module.exports.read2223 = catchAsync(async (req, res, next) => {
-  let ulb = req.query.ulb;
-  let design_year = req.query.design_year;
-  let role = req.decoded.role;
+  try {
+    let ulb = req.query.ulb;
+    let design_year = req.query.design_year;
+    let role = req.decoded.role;
 
-  if (!ulb || !design_year) {
-    return res.status(400).json({
-      success: false,
-      message: "Data Missing"
-    })
-  }
-  let ulbData = await Ulb.findOne({ _id: ObjectId(ulb) }).lean();
-
-  /* Checking if the user has access to the form. */
-  // if(!ulbData.access_2122){
-  //   return res.status(200).json({
-  //     success: false,
-  //     message: `Last year form access not allowed.`,
-  //     data: utilReportObject()
-  //   })
-  // }
-  let userData = await User.findOne({ isNodalOfficer: true, state: ulbData.state })
-  let currentYear = await Year.findOne({ _id: ObjectId(design_year) }).lean()
-  let ulbAccess = checkIfUlbHasAccess(ulbData, currentYear)
-  // current year
-  let currentYearVal = currentYear['year']
-  // find Previous year
-  let prevYearVal = currentYearVal.split("-");
-  prevYearVal = Number(prevYearVal[0]) - 1 + "-" + (Number(prevYearVal[1]) - 1);
-  let currentDesignYear = getKeyByValue(years, design_year)
-  prevYear = await Year.findOne({ year: prevYearVal }).lean()
-  let prevData = await getDataSet(ulb, prevYear, design_year);
-  let isDraft = prevData && Object.keys(prevData).includes("isSubmit") ? !prevData.isSubmit : prevData?.isDraft
-  //check if prevyear util report is atleast approved by state
-  // let prevUtilStatus = calculateStatus(prevUtilReport.status, prevUtilReport.actionTakenByRole, prevUtilReport.isDraft, "ULB")
-
-  // if (
-  //   !(
-  //     prevUtilStatus === FORM_STATUS.Approved_By_MoHUA ||
-  //     prevUtilStatus === FORM_STATUS.Approved_By_State ||
-  //     prevUtilStatus === FORM_STATUS.Under_Review_By_MoHUA
-  //   )
-  // ) {
-  //   return res.status(200).json({
-  //     success: false,
-  //     message: `last year form not approved.`,
-  //     data: utilReportObject(),
-  //   });
-  // }
-  let status = ''
-  if (!prevData) {
-    status = 'Not Started'
-  } else {
-    prevData = prevData?.history?.length > 0 ? prevData?.history[prevData?.history?.length - 1] : prevData;
-    isDraft = prevData && Object.keys(prevData).includes("isSubmit") ? !prevData?.isSubmit : prevData?.isDraft
-    status = calculateStatus(prevData?.status, prevData?.actionTakenByRole, isDraft, "ULB")
-  }
-  let host = "";
-  if (req.headers.host === BackendHeaderHost.Demo) {
-    host = FrontendHeaderHost.Demo;
-  }
-  req.headers.host = host !== "" ? host : req.headers.host;
-  let obj = {}
-  if (!ulbAccess) {
-    obj['action'] = 'not_show';
-    obj['url'] = ``;
-  }
-  else {
-    if ([FORM_STATUS.Under_Review_By_MoHUA, FORM_STATUS.Approved_By_MoHUA, FORM_STATUS.Approved_By_State].includes(status)) {
-      obj['action'] = 'not_show';
-      obj['url'] = ``;
-    } else if (status == FORM_STATUS.Under_Review_By_State) {
-      let msg = role == "ULB" ? `Dear User, Your previous Year's form status is - ${status}. Kindly contact your State Nodal Officer at Mobile - ${userData.mobile ?? 'Not Available'} or Email - ${userData.email ?? `contact@${process.env.PROD_HOST}`}` : `Dear User, The ${ulbData.name} has not yet filled Detailed Utilization Report Form for the previous year. You will be able to mark your response once STATE approves previous year's form.`
-      obj['action'] = 'note';
-      obj['url'] = msg;
-    } else {
-      let msg = role == "ULB" ? `Dear User, Your previous Year's form status is - ${status ? status : 'Not Submitted'} .Kindly submit Detailed Utilization Report Form for the previous year at - <a href=https://${req.headers.host}/${DurPageLinks[currentDesignYear]} target="_blank">Click Here!</a> in order to submit this year's form . ` : `Dear User, The ${ulbData.name} has not yet filled Detailed Utilization Report Form for the previous year. You will be able to mark your response once STATE approves previous year's form.`
-      obj['action'] = 'note'
-      obj['url'] = msg;
-    }
-  }
-
-  let condition = {
-    ulb: ObjectId(ulb),
-    designYear: ObjectId(currentYear._id)
-  }
-  let fetchedData = await UtilizationReport.findOne(condition, { history: 0 }).lean()
-
-  if (fetchedData) {
-    if (fetchedData.designYear.toString() === YEAR_CONSTANTS["23_24"]) {
-      let params = {
-        modelName: ModelNames["twentyEightSlbs"],
-        currentFormStatus: fetchedData.currentFormStatus,
-        formType: "ULB",
-        actionTakenByRole: role,
-      };
-      const canTakeActionOnMasterForm = await getMasterForm(params);
-      const prevYearStatus = calculateStatus(
-        prevData?.status,
-        prevData?.actionTakenByRole,
-        prevData?.isDraft,
-        "ULB"
-      )
-      const previousStatusInCaps =  prevYearStatus.toUpperCase().split(' ').join('_')
-      Object.assign(fetchedData, canTakeActionOnMasterForm,{
-        prevYearStatus,
-        prevYearStatusId: PREV_MASTER_FORM_STATUS[previousStatusInCaps]
+    if (!ulb || !design_year) {
+      return res.status(400).json({
+        success: false,
+        message: "Data Missing",
       });
-      // if (prevData && role === "MoHUA") {
-      //   if (!(prevData.actionTakenByRole === "MoHUA" && !prevData.isDraft && prevData.status === "APPROVED")) {
-      //     fetchedData['canTakeAction'] = false;
-      //   }
-      // }
+    }
+    let ulbData = await Ulb.findOne({ _id: ObjectId(ulb) }).lean();
+
+    /* Checking if the user has access to the form. */
+    // if(!ulbData.access_2122){
+    //   return res.status(200).json({
+    //     success: false,
+    //     message: `Last year form access not allowed.`,
+    //     data: utilReportObject()
+    //   })
+    // }
+    let userData = await User.findOne({
+      isNodalOfficer: true,
+      state: ulbData.state,
+    });
+    let currentYear = await Year.findOne({ _id: ObjectId(design_year) }).lean();
+    let ulbAccess = checkIfUlbHasAccess(ulbData, currentYear);
+    // let ulbAccessBeforeCreationId = getPreviousYear(currentYear._id.toString(),2);
+    // let ulbAccessBeforeCreation = checkIfUlbHasAccess(
+    //   ulbData, 
+    //   ulbAccessBeforeCreationId
+    // )
+    // current year
+    let currentYearVal = currentYear["year"];
+    // find Previous year
+    let prevYearVal = currentYearVal.split("-");
+    prevYearVal =
+      Number(prevYearVal[0]) - 1 + "-" + (Number(prevYearVal[1]) - 1);
+    let currentDesignYear = getKeyByValue(years, design_year);
+    prevYear = await Year.findOne({ year: prevYearVal }).lean();
+    let prevData = await getDataSet(ulb, prevYear, design_year);
+    let isDraft =
+      prevData && Object.keys(prevData).includes("isSubmit")
+        ? !prevData.isSubmit
+        : prevData?.isDraft;
+    //check if prevyear util report is atleast approved by state
+    // let prevUtilStatus = calculateStatus(prevUtilReport.status, prevUtilReport.actionTakenByRole, prevUtilReport.isDraft, "ULB")
+
+    // if (
+    //   !(
+    //     prevUtilStatus === FORM_STATUS.Approved_By_MoHUA ||
+    //     prevUtilStatus === FORM_STATUS.Approved_By_State ||
+    //     prevUtilStatus === FORM_STATUS.Under_Review_By_MoHUA
+    //   )
+    // ) {
+    //   return res.status(200).json({
+    //     success: false,
+    //     message: `last year form not approved.`,
+    //     data: utilReportObject(),
+    //   });
+    // }
+    let status = "";
+    if (!prevData) {
+      status = "Not Started";
     } else {
-      const prevYearStatus = calculateStatus(
+      prevData =
+        prevData?.history?.length > 0
+          ? prevData?.history[prevData?.history?.length - 1]
+          : prevData;
+      isDraft =
+        prevData && Object.keys(prevData).includes("isSubmit")
+          ? !prevData?.isSubmit
+          : prevData?.isDraft;
+      status = calculateStatus(
         prevData?.status,
         prevData?.actionTakenByRole,
-        !prevData?.isSubmit,
+        isDraft,
         "ULB"
       );
-      const previousStatusInCaps =  prevYearStatus.toUpperCase().split(' ').join('_')
-      Object.assign(fetchedData, {
-        canTakeAction: canTakenAction(
-          fetchedData["status"],
-          fetchedData["actionTakenByRole"],
-          fetchedData["isDraft"],
-          "ULB",
-          role
-        ),
-        prevYearStatus,
-        prevYearStatusId: PREV_MASTER_FORM_STATUS[previousStatusInCaps]
-      });
-      // if (prevData && role === "MoHUA") {
-      //   if (!(prevData.actionTakenByRole === "MoHUA" && !prevData.isDraft && prevData.status === "APPROVED")) {
-      //     fetchedData['canTakeAction'] = false;
-      //   }
-      // }
+      if (prevData?.currentFormStatus) status = MASTER_STATUS_ID[prevData?.currentFormStatus];
+    }
+    let host = "";
+    if (req.headers.host === BackendHeaderHost.Demo) {
+      host = FrontendHeaderHost.Demo;
+    }
+    req.headers.host = host !== "" ? host : req.headers.host;
+    let obj = {};
+    let currenYearAccess = getAccessYear(currentYear._id.toString(), null);
+    if (!ulbData[currenYearAccess]) {
+      let msg =
+        role == "ULB"
+          ? `Dear User, You are not eligible to access this form. Kindly contact your State Nodal Officer at Mobile - ${
+              userData.mobile ?? "Not Available"
+            } or Email - ${
+              userData.email ?? `contact@${process.env.PROD_HOST}`
+            }`
+          : `Dear User, The ${ulbData.name} is not eligible to access Detailed Utilization Report Form.`;
+      obj["action"] = "note";
+      obj["url"] = msg;
+    } else if(!ulbData?.dur_2425) {
+      if (
+        [
+          FORM_STATUS.Under_Review_By_MoHUA,
+          FORM_STATUS.Approved_By_MoHUA,
+          FORM_STATUS.Approved_By_State,
+          MASTER_STATUS_ID[MASTER_STATUS['Submission Acknowledged By MoHUA']]
+        ].includes(status)
+      ) {
+        obj["action"] = "not_show";
+        obj["url"] = ``;
+      } else if (status == FORM_STATUS.Under_Review_By_State) {
+        let msg =
+          role == "ULB"
+            ? `Dear User, Your previous Year's form status is - ${status}. Kindly contact your State Nodal Officer at Mobile - ${
+                userData.mobile ?? "Not Available"
+              } or Email - ${
+                userData.email ?? `contact@${process.env.PROD_HOST}`
+              }`
+            : `Dear User, The ${ulbData.name} has not yet filled Detailed Utilization Report Form for the previous year. You will be able to mark your response once STATE approves previous year's form.`;
+        obj["action"] = "note";
+        obj["url"] = msg;
+      } else if(ulbAccess){
+        let msg =
+          role == "ULB"
+            ? `Dear User, Your previous Year's form status is - ${
+                status ? status : "Not Submitted"
+              } .Kindly submit Detailed Utilization Report Form for the previous year at - <a href=https://${
+                req.headers.host
+              }/${
+                DurPageLinks[currentDesignYear]
+              } target="_blank">Click Here!</a> in order to submit this year's form . `
+            : `Dear User, The ${ulbData.name} has not yet filled Detailed Utilization Report Form for the previous year. You will be able to mark your response once STATE approves previous year's form.`;
+        obj["action"] = "note";
+        obj["url"] = msg;
+      }
     }
 
+    let newlyCreated = checkIfNewlyCreatedUlb(design_year, ulbData?.createdAt);
+    if( isYearWithinCurrentFY(design_year) && !ulbAccess && !ulbData?.dur_2425){
+      let msg = `Dear ${ulbData.name}, You will be eligible to fill the DUR form from next year.`
+      obj["action"] = "note";
+      obj["url"] = msg;
+    }
+    let condition = {
+      ulb: ObjectId(ulb),
+      designYear: ObjectId(currentYear._id),
+    };
+    let fetchedData = await UtilizationReport.findOne(condition, {
+      history: 0,
+    }).lean();
 
-    /* Checking if the ulbData.access_2122 is not true, then it is setting the
+    if (fetchedData) {
+      if (isYearWithinRange(fetchedData.designYear.toString())) {
+        let params = {
+          modelName: ModelNames["dur"],
+          currentFormStatus: fetchedData.currentFormStatus,
+          formType: "ULB",
+          actionTakenByRole: role,
+        };
+        const canTakeActionOnMasterForm = await getMasterForm(params);
+        let prevYearStatus = calculateStatus(
+          prevData?.status,
+          prevData?.actionTakenByRole,
+          prevData?.isDraft,
+          "ULB"
+        );
+        if (prevData?.currentFormStatus) prevYearStatus = MASTER_STATUS_ID[prevData?.currentFormStatus];
+        let previousStatusInCaps = prevYearStatus
+          .toUpperCase()
+          .split(" ")
+          .join("_");
+        let prevYearStatusId = prevData?.currentFormStatus
+          ? FORM_STATUS_CODES[previousStatusInCaps]
+          : PREV_MASTER_FORM_STATUS[previousStatusInCaps];
+        Object.assign(fetchedData, canTakeActionOnMasterForm, {
+          prevYearStatus,
+          prevYearStatusId,
+        });
+
+        // if (prevData && role === "MoHUA") {
+        //   if (!(prevData.actionTakenByRole === "MoHUA" && !prevData.isDraft && prevData.status === "APPROVED")) {
+        //     fetchedData['canTakeAction'] = false;
+        //   }
+        // }
+      } else {
+        const prevYearStatus = calculateStatus(
+          prevData?.status,
+          prevData?.actionTakenByRole,
+          !prevData?.isSubmit,
+          "ULB"
+        );
+        const previousStatusInCaps = prevYearStatus
+          .toUpperCase()
+          .split(" ")
+          .join("_");
+        Object.assign(fetchedData, {
+          canTakeAction: canTakenAction(
+            fetchedData["status"],
+            fetchedData["actionTakenByRole"],
+            fetchedData["isDraft"],
+            "ULB",
+            role
+          ),
+          prevYearStatus,
+          prevYearStatusId: PREV_MASTER_FORM_STATUS[previousStatusInCaps],
+        });
+        // if (prevData && role === "MoHUA") {
+        //   if (!(prevData.actionTakenByRole === "MoHUA" && !prevData.isDraft && prevData.status === "APPROVED")) {
+        //     fetchedData['canTakeAction'] = false;
+        //   }
+        // }
+      }
+
+      /* Checking if the ulbData.access_2122 is not true, then it is setting the
        unUtilizedPrevYr to 0. */
-    !ulbAccess ? fetchedData.grantPosition.unUtilizedPrevYr = 0 : "";
+      !ulbAccess ? (fetchedData.grantPosition.unUtilizedPrevYr = 0) : "";
 
-    /* The code is checking if the action property of the obj object is equal to "note". If it
+      /* The code is checking if the action property of the obj object is equal to "note". If it
     is, then it is assigning the fetchedData object to the obj object. */
-    obj["action"] === "note" ? Object.assign(fetchedData, obj) : "";
-    /* The above code is checking if the fetchedData has grantPosition property and if it has then it is
+      obj["action"] === "note" ? Object.assign(fetchedData, obj) : "";
+      /* The above code is checking if the fetchedData has grantPosition property and if it has then it is
     checking if the value of the property is a number or not. If it is a number then it is converting
     it to a fixed number with 2 decimal places. */
-    if (fetchedData?.grantPosition) {
-      typeof (fetchedData?.grantPosition.unUtilizedPrevYr) === "number" ? fetchedData.grantPosition.unUtilizedPrevYr = Number(Number(fetchedData?.grantPosition.unUtilizedPrevYr).toFixed(2)) : ""
-      typeof (fetchedData?.grantPosition.receivedDuringYr) === "number" ? fetchedData.grantPosition.receivedDuringYr = Number(Number(fetchedData?.grantPosition.receivedDuringYr).toFixed(2)) : ""
-      typeof (fetchedData?.grantPosition.expDuringYr) === "number" ? fetchedData.grantPosition.expDuringYr = Number(Number(fetchedData?.grantPosition.expDuringYr).toFixed(2)) : ""
-      // fetchedData?.grantPosition.closingBal !== "" && fetchedData?.grantPosition.closingBal !== null ? fetchedData.grantPosition.closingBal = Number(Number(fetchedData?.grantPosition.closingBal).toFixed(2)) : ""
+      if (fetchedData?.grantPosition) {
+        typeof fetchedData?.grantPosition.unUtilizedPrevYr === "number"
+          ? (fetchedData.grantPosition.unUtilizedPrevYr = Number(
+              Number(fetchedData?.grantPosition.unUtilizedPrevYr).toFixed(2)
+            ))
+          : "";
+        typeof fetchedData?.grantPosition.receivedDuringYr === "number"
+          ? (fetchedData.grantPosition.receivedDuringYr = Number(
+              Number(fetchedData?.grantPosition.receivedDuringYr).toFixed(2)
+            ))
+          : "";
+        typeof fetchedData?.grantPosition.expDuringYr === "number"
+          ? (fetchedData.grantPosition.expDuringYr = Number(
+              Number(fetchedData?.grantPosition.expDuringYr).toFixed(2)
+            ))
+          : "";
+        // fetchedData?.grantPosition.closingBal !== "" && fetchedData?.grantPosition.closingBal !== null ? fetchedData.grantPosition.closingBal = Number(Number(fetchedData?.grantPosition.closingBal).toFixed(2)) : ""
 
-      //new  implementation
-      typeof (fetchedData?.grantPosition.closingBal) === "number" ? fetchedData.grantPosition.closingBal = Number(Number(fetchedData?.grantPosition.closingBal).toFixed(2)) : ""
+        //new  implementation
+        typeof fetchedData?.grantPosition.closingBal === "number"
+          ? (fetchedData.grantPosition.closingBal = Number(
+              Number(fetchedData?.grantPosition.closingBal).toFixed(2)
+            ))
+          : "";
+      }
+      fetchedData["ulbName"] = ulbData.name;
+      req.form = fetchedData;
+      Object.assign(req.form, obj);
+      next();
+      // return res.status(200).json({
+      //   success: true,
+      //   data: fetchedData
+      // })
+    } else {
+      condition["designYear"] = ObjectId(prevYear._id);
+      fetchedData = await UtilizationReport.findOne(condition).lean();
+      let sampleData = new UtilizationReport();
+      sampleData.grantPosition.unUtilizedPrevYr = ulbAccess 
+        ? fetchedData?.grantPosition?.closingBal ?? 0
+        : 0;
+      sampleData = sampleData.toObject();
+      // sampleData = sampleData.lean()
+      sampleData["url"] = obj["url"];
+      sampleData["action"] = obj["action"];
+      sampleData["canTakeAction"] = false;
+      sampleData["ulbName"] = ulbData.name;
+      // Object.assign(sampleData,obj )
+      req.form = sampleData;
+      next();
+      // return res.status(200).json({
+      //   success: true,
+      //   data: sampleData
+      // })
     }
-    fetchedData['ulbName'] = ulbData.name
-    req.form = fetchedData
-    Object.assign(req.form, obj)
-    next()
-    // return res.status(200).json({
-    //   success: true,
-    //   data: fetchedData
-    // })
-  } else {
-    condition['designYear'] = ObjectId(prevYear._id)
-    fetchedData = await UtilizationReport.findOne(condition).lean()
-    let sampleData = new UtilizationReport();
-    sampleData.grantPosition.unUtilizedPrevYr = ulbAccess ? (fetchedData?.grantPosition?.closingBal ?? 0) : 0;
-    sampleData = sampleData.toObject()
-    // sampleData = sampleData.lean()
-    sampleData['url'] = obj['url']
-    sampleData['action'] = obj['action']
-    sampleData['canTakeAction'] = false;
-    sampleData['ulbName'] = ulbData.name
-    // Object.assign(sampleData,obj )
-    req.form = sampleData
-    next()
-    // return res.status(200).json({
-    //   success: true,
-    //   data: sampleData
-    // })
+  } catch (error) {
+    return Response.BadRequest(res);
   }
-
 })
+
+/**
+ * The function `checkIfNewlyCreatedUlb` checks if a ULB (Urban Local Body) was newly created in the
+ * current financial year based on the design year provided.
+ * @param design_year - The `design_year` parameter in the `checkIfNewlyCreatedUlb` function represents
+ * the year in which a ULB (Urban Local Body) is accessing form.
+ * @returns The function `checkIfNewlyCreatedUlb` returns a boolean value - `true` if the design year
+ * is not the same as the current financial year, and `false` if they are the same.
+ */
+function checkIfNewlyCreatedUlb(design_year, creationDate){
+  try {
+    let creationFinancialYear = getFinancialYear(creationDate);
+    if(YEAR_CONSTANTS_IDS[design_year] === creationFinancialYear){
+      return true;
+    };
+    return false;
+  } catch (error) {
+    throw new Error(`checkIfNewlyCreatedUlb:: ${error.message}`)
+  }
+}
+
+module.exports.checkIfNewlyCreatedUlb = checkIfNewlyCreatedUlb
 
 module.exports.dataRepair = async function (req, res, next) {
   try {

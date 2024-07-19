@@ -77,43 +77,53 @@ const ScoringFiscalRankingSchema = new Schema(
 		ownRevenuePC_2: scoreFields,
 		pTaxPC_3: scoreFields,
 		cagrInTotalBud_4: {
-            ...scoreFields,
-            infinity: {
-                type: Boolean
-            },
-        },
+			...scoreFields,
+			infinity: {
+				type: Boolean
+			},
+		},
 		cagrInOwnRevPC_5: {
-            ...scoreFields,
-            infinity: { // divide by 0
-                type: Boolean
-            },
-        },
+			...scoreFields,
+			infinity: { // divide by 0
+				type: Boolean
+			},
+		},
 		cagrInPropTax_6: {
-            ...scoreFields,
-            infinity: { // divide by 0
-                type: Boolean
-            },
-        },
+			...scoreFields,
+			infinity: { // divide by 0
+				type: Boolean
+			},
+		},
 		capExPCAvg_7: scoreFields,
 		cagrInCapExpen_8: {
-            ...scoreFields,
-            infinity: { // divide by 0
-                type: Boolean
-            },
-        },
+			...scoreFields,
+			infinity: { // divide by 0
+				type: Boolean
+			},
+		},
 		omExpTotalRevExpen_9: scoreFields,
 		avgMonthsForULBAuditMarks_10a: {
-            ...scoreFields,
-            values: {
-                type: Number,
-                default: 0,
-            },
-        },
+			...scoreFields,
+			values: {
+				type: Number,
+				default: 0,
+			},
+		},
 		aaPushishedMarks_10b: scoreFields,
 		gisBasedPTaxMarks_11a: scoreFields,
 		accSoftwareMarks_11b: scoreFields,
-		receiptsVariance_12: scoreFields,
-		ownRevRecOutStanding_13: scoreFields,
+		receiptsVariance_12: {
+			...scoreFields,
+			infinity: { // divide by 0
+				type: Boolean
+			},
+		},
+		ownRevRecOutStanding_13: {
+			...scoreFields,
+			infinity: { // divide by 0
+				type: Boolean
+			},
+		},
 		digitalToTotalOwnRev_14: scoreFields,
 		propUnderTaxCollNet_15: scoreFields,
 		resourceMobilization: sumScoreFields,

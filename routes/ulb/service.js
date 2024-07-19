@@ -8,6 +8,7 @@ const XVFcForms = require("../../models/XVFinanceComissionReForms");
 const service = require("../../service");
 const Response = require("../../service").response;
 const moment = require("moment");
+const mongoose = require("mongoose");
 const ObjectId = require("mongoose").Types.ObjectId;
 const axios = require("axios");
 const Redis = require("../../service/redis");
@@ -871,9 +872,9 @@ module.exports.getUlbs = async (req, res) => {
       .json({ message: "", errMessage: e.message, success: false });
   }
 };
-module.exports.getUlbsWithAuditStatus = async (req, res) => {
-  try {
-    let query = {};
+// TODO: check and optimize
+async function getOldQueryData(req) {
+  let query = {};
     if (req.query.state) {
       query["state"] = Schema.Types.ObjectId(req.query.state);
     }
@@ -976,6 +977,50 @@ module.exports.getUlbsWithAuditStatus = async (req, res) => {
         },
       },
     ]).allowDiskUse(true);
+    return ulbs;
+}
+module.exports.getUlbsWithAuditStatus = async (req, res) => {
+  // mongoose.set('debug', true);
+  try {
+    let ulbs = [];
+    if (req.body.newQuery1) {
+      let query = { isActive: true };
+      if (req.query.state) {
+        query["state"] = ObjectId(req.query.state);
+      }
+      ulbs = await Ulb.aggregate([{
+        '$match': query
+      }, {
+        '$lookup': {
+          from: 'ulbledgers',
+          as: 'ulbLedger',
+          foreignField: 'ulb',
+          localField: '_id'
+        }
+      }, {
+        $match: {
+          "ulbLedger": {
+            $ne: []
+          }
+        }
+      }, {
+        $project: {
+          _id: 1,
+          name: 1,
+          code: 1,
+          state: 1,
+          ulbType: 1,
+          location: 1,
+          population: 1,
+          area: 1
+        }
+      }]).exec();
+      // ulbs = await Ulb.find(query, "_id name code state ulbType area population location")
+      //   .exec();
+    } else {
+      ulbs = await getOldQueryData(req);
+    }
+    
     return res.status(200).json({
       message: "Ulb list with population and coordinates and population.",
       success: true,

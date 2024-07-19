@@ -26,7 +26,8 @@ module.exports.YEAR_CONSTANTS = {
     "20_21": "606aadac4dff55e6c075c507",
     "21_22": "606aaf854dff55e6c075d219",
     "22_23": "606aafb14dff55e6c075d3ae",
-    "23_24": "606aafc14dff55e6c075d3ec"
+    "23_24": "606aafc14dff55e6c075d3ec",
+    "24_25": "606aafcf4dff55e6c075d424"
 }
 module.exports.YEAR_CONSTANTS_IDS = {
     "63735a4bd44534713673bfbf": "2017-18",
@@ -35,13 +36,15 @@ module.exports.YEAR_CONSTANTS_IDS = {
     "606aadac4dff55e6c075c507": "2020-21",
     "606aaf854dff55e6c075d219": "2021-22",
     "606aafb14dff55e6c075d3ae": "2022-23",
-    "606aafc14dff55e6c075d3ec": "2023-24"
+    "606aafc14dff55e6c075d3ec": "2023-24",
+    "606aafcf4dff55e6c075d424": "2024-25"
 }
 
 module.exports.ULB_ACCESSIBLE_YEARS = {
     "2021-22": "access_2122",
     "2022-23": "access_2223",
-    "2023-24": "access_2324"
+    "2023-24": "access_2324",
+    "2024-25": "access_2425"
 }
 
 module.exports.MASTER_STATUS = {
@@ -68,6 +71,20 @@ module.exports.MASTER_FORM_STATUS = {
     RETURNED_BY_STATE: 5,
     SUBMISSION_ACKNOWLEDGED_BY_MoHUA: 6,
     RETURNED_BY_MoHUA: 7,
+    VERIFICATION_NOT_STARTED: 8,
+    VERIFICATION_IN_PROGRESS: 9,
+    RETURNED_BY_PMU: 10,
+    SUBMISSION_ACKNOWLEDGED_BY_PMU: 11,
+}
+module.exports.FORM_STATUS_CODES = {
+    NO_STATUS: -1,
+    NOT_STARTED: 1,
+    IN_PROGRESS: 2,
+    UNDER_REVIEW_BY_STATE: 3,
+    UNDER_REVIEW_BY_MOHUA: 4,
+    RETURNED_BY_STATE: 5,
+    SUBMISSION_ACKNOWLEDGED_BY_MOHUA: 6,
+    RETURNED_BY_MOHUA: 7,
     VERIFICATION_NOT_STARTED: 8,
     VERIFICATION_IN_PROGRESS: 9,
     RETURNED_BY_PMU: 10,
@@ -215,7 +232,8 @@ module.exports.TEST_EMAIL= {
     test1 : "testingdhwani@gmail.com",
     test2: "mohamma.zuhaib@janaagraha.org",
     test3:"hariprasad.v@janaagraha.org",
-    test4:"navinder.singh@janaagraha.org"
+    test4:"navinder.singh@janaagraha.org",
+    // test5: "niyaz.ahmad@dhwaniris.com"
 }
 
 

@@ -696,13 +696,16 @@ function UASubmittedForms(forms, formCategory, design_year, modelName) {
 function getQuery(modelName, formType, designYear, formCategory, stateId){
     let query = [];
     let condition = {};
+    let designYearField = "design_year";
+    if(modelName == CollectionNames.dur) designYearField = "designYear"
+        
     let nmpcConditionUlb = [],
         mpcConditionUlb = [];
     const defaultProjectStage = {
         actionTakenByRole:1,
         isDraft:1,
         ulb:1,
-        design_year:1,
+        [designYearField]:1,
         status:1
     }
         nmpcConditionUlb =[
@@ -1299,7 +1302,7 @@ const dashboard = async (req, res) => {
                 } else if (approvedFormPercent[modelName] < cutOff) {
                   formData.status = "Not yet eligible for Grant Claim";
                 }
-                ({ ulbResponse, stateResponse } = createFormResponseObjects(formCategory, ulbResponse, formData, modelName, submittedFormPercent, approvedFormPercent, totalApprovedUlbForm, totalSubmittedUlbForm, totalForms, cutOff, ulbResponseArray, stateResponse, totalApprovedStateForm, totalSubmittedStateForm, stateResponseArray));
+                ({ ulbResponse, stateResponse } = createFormResponseObjects(formCategory, ulbResponse, formData, modelName, submittedFormPercent, approvedFormPercent, totalApprovedUlbForm, totalSubmittedUlbForm, totalForms, cutOff, ulbResponseArray, stateResponse, totalApprovedStateForm, totalSubmittedStateForm, stateResponseArray, data.design_year));
                 // calculateIndicatorFormRes(statesFormData, state, hasUA, data, indicatorFormCount, indicatorFormValidationCount, ulbResponseArray, cutOff, indicatorSidemenuForm, stateResponseArray);
                   statesFormData[state] = {
                     ulbResponse: (
@@ -1684,7 +1687,10 @@ function getCityTypeData(data) {
  * state category.
  * @returns an object that contains the `ulbResponse` and `stateResponse` variables.
  */
-function createFormResponseObjects(formCategory, ulbResponse, formData, modelName, submittedFormPercent, approvedFormPercent, totalApprovedUlbForm, totalSubmittedUlbForm, totalForms, cutOff, ulbResponseArray, stateResponse, totalApprovedStateForm, totalSubmittedStateForm, stateResponseArray) {
+function createFormResponseObjects(formCategory, ulbResponse, formData, modelName, submittedFormPercent, approvedFormPercent, totalApprovedUlbForm, totalSubmittedUlbForm, totalForms, cutOff, ulbResponseArray, stateResponse, totalApprovedStateForm, totalSubmittedStateForm, stateResponseArray, design_year) {
+    if(![YEAR_CONSTANTS['22_23']].includes(design_year)){
+        formData['link'] = appendDesignYearToUrl(formData['link'], design_year)
+    }
     if (formCategory === "ULB") {
         ulbResponse = {
             formName: formData["formName"],
@@ -1722,6 +1728,26 @@ function createFormResponseObjects(formCategory, ulbResponse, formData, modelNam
         stateResponseArray.push(stateResponse);
     }
     return { ulbResponse, stateResponse };
+}
+
+/**
+ * The function `appendDesignYearToUrl` appends a design year to a specific part of a URL.
+ * @param url - The `url` parameter is a string representing a URL that contains the substring
+ * "state-form".
+ * @param design_year - Design year is the year in which the design was created or modified.
+ * @returns The function `appendDesignYearToUrl` returns a new URL with the `design_year` appended to the
+ * original URL after the "state-form" segment.
+ */
+function appendDesignYearToUrl(url, design_year) {
+    try {
+        const splitUrl = url.split("state-form");
+        if(splitUrl.length>1){
+            return `${splitUrl[0]}state-form/${design_year}/${splitUrl[1].substring(1)}`;
+        }
+        return url;
+    } catch (err) {
+        throw Error(`appendDesignYearToUrl:: ${err.message}`)
+    }
 }
 
 /**
