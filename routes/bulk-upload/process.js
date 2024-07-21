@@ -109,7 +109,7 @@ module.exports = function (req, res) {
                                 } else {
                                     try {
 
-                                      await processData(file, financialYear, data._id, balanceSheet, design_year, user);
+                                        await processData(file, financialYear, data._id, balanceSheet, design_year, user);
                                         return res.status(200).json({
                                             timestamp: moment().unix(),
                                             success: true,
@@ -152,7 +152,7 @@ module.exports = function (req, res) {
 
                     // extract the overviewSheet and dataSheet
                     let { overviewSheet, dataSheet } = await readXlsxFile(reqFile, design_year, user.role);
-                    console.log(">>>>>>.visited here")
+                    // console.log(">>>>>>.visited here")
                     // validate overview sheet 
 
                     let objOfSheet
@@ -218,7 +218,7 @@ module.exports = function (req, res) {
                             // Update in the request log collection, the current status of file
                             aborted = true;
                             await updateLog(reqId, { message: e.message, completed: 0, status: "FAILED" });
-                            console.log("Exception", e);
+                            // console.log("Exception", e);
                             break;
                         }
                     }
@@ -226,24 +226,24 @@ module.exports = function (req, res) {
                         await updateLog(reqId, { completed: 0, status: "FAILED" });
                     } else {
                         //await session.commitTransaction();
-                        console.log('updating Log function executed')
+                        // console.log('updating Log function executed')
                         await updateLog(reqId, { message: `Completed`, completed: 1, status: "SUCCESS" });
                         Redis.resetDashboard();
                     }
 
                 } catch (e) {
-                    console.log("processData: Caught Exception", e.message, e);
+                    // console.log("processData: Caught Exception", e.message, e);
                     await updateLog(reqId, { message: e.message, completed: 0, status: "FAILED" });
                 }
             } catch (e) {
-                console.log("Exception Caught while extracting file => ", e);
+                // console.log("Exception Caught while extracting file => ", e);
                 errors.push("Exception Caught while extracting file");
                 await updateLog(reqId, { message: e.message, completed: 0, status: "FAILED" });
             }
         }
         async function readXlsxFile(file, design_year, role) {
             if (role === 'ULB' && design_year) {
-                console.log('entered new if')
+                // console.log('entered new if')
                 return new Promise(async (resolve, reject) => {
                     let exceltojson;
                     try {
@@ -270,7 +270,7 @@ module.exports = function (req, res) {
                             if (dataSheet) {
                                 resolve({ overviewSheet, dataSheet });
                             } else {
-                                console.log("readXlsxFile: sheet count")
+                                // console.log("readXlsxFile: sheet count")
                                 reject({ message: "Two sheet is required in the file." });
                             }
                         }, e => {
@@ -279,14 +279,14 @@ module.exports = function (req, res) {
                             reject(e);
                         })
                     } catch (e) {
-                        console.log("readXlsxFile: Exception", e)
+                        // console.log("readXlsxFile: Exception", e)
                         reject({ message: "Caught Exception while reading file.", errMessage: e.message });
                     }
                 });
 
 
             } else {
-                console.log('entered old if')
+                // console.log('entered old if')
                 return new Promise(async (resolve, reject) => {
                     let exceltojson;
                     try {
@@ -327,7 +327,7 @@ module.exports = function (req, res) {
                             if (overviewSheet && dataSheet) {
                                 resolve({ overviewSheet, dataSheet });
                             } else {
-                                console.log("readXlsxFile: sheet count")
+                                // console.log("readXlsxFile: sheet count")
                                 reject({ message: "Two sheet is required in the file." });
                             }
                         }, e => {
@@ -336,7 +336,7 @@ module.exports = function (req, res) {
                             reject(e);
                         })
                     } catch (e) {
-                        console.log("readXlsxFile: Exception", e)
+                        // console.log("readXlsxFile: Exception", e)
                         reject({ message: "Caught Exception while reading file.", errMessage: e.message });
                     }
                 });
@@ -347,14 +347,14 @@ module.exports = function (req, res) {
             return new Promise(async (resolve, reject) => {
                 if (data.length < 2) {
                     // means less than two entries are there in the sheet;
-                    console.log("validateOverview : data.length < 2")
+                    // console.log("validateOverview : data.length < 2")
                     reject({ message: "Overview sheet has less than two rows, Please check" });
                 } else {
                     let d = Object.keys(data[0]);
                     var filtered = d.filter(function (el) { return el; });
-                    console.log(filtered)
+                    // console.log(filtered)
                     if (filtered.length != overviewHeader.length) {
-                        console.log("===>overview header is missing");
+                        // console.log("===>overview header is missing");
                         reject({ message: "Overview header is missing" });
                     }
                     else {
@@ -371,7 +371,7 @@ module.exports = function (req, res) {
                         // converting data in rows here in obj;
                         eachRow["basic details"] ? objOfSheet[eachRow["basic details"]] = eachRow.value : "Means row is empty remove it"
                     }
-                    console.log(objOfSheet)
+                    // console.log(objOfSheet)
                     for (let key of Object.keys(objOfSheet)) {
                         objOfSheet[overViewSheet[key]] = objOfSheet[key];
                         delete objOfSheet[key];
@@ -382,19 +382,19 @@ module.exports = function (req, res) {
                     // console.log(state)
                     // Find whether ulb code exists or not
                     let ulb = await Ulb.findOne({
-                      code: objOfSheet.ulb_code,
-                      state: state._id,
-                    //   isActive: true,
+                        code: objOfSheet.ulb_code,
+                        state: state._id,
+                        //   isActive: true,
                     }).exec();
                     // console.log(ulb)
                     if (!state) {
-                        console.log("validateOverview: !state")
+                        // console.log("validateOverview: !state")
                         reject({ message: "State code " + objOfSheet.state_code + " or " + " State name " + objOfSheet.state + " do not exists in states master" });
                     } else if (!ulb) {
-                        console.log("validateOverview: !ulb")
+                        // console.log("validateOverview: !ulb")
                         reject({ message: "Ulb code " + objOfSheet.ulb_code + " do not exists in ulb's master for " + objOfSheet.state_code + " state" });
                     } else if (objOfSheet.year != financialYear) {
-                        console.log("validateOverview: objOfSheet.year != financialYear")
+                        // console.log("validateOverview: objOfSheet.year != financialYear")
                         reject({ message: "Selected financial year: " + financialYear + " while sheet has year:" + objOfSheet.year })
                     }
                     Object.assign(objOfSheet, JSON.parse(JSON.stringify(ulb)));
@@ -412,7 +412,7 @@ module.exports = function (req, res) {
                 let d = Object.keys(data[0]);
                 var filtered = d.filter(function (el) { return el; });
                 if (filtered.length != inputHeader.length) {
-                    console.log("===>Input sheet header is missing");
+                    // console.log("===>Input sheet header is missing");
                     reject({ message: "Input sheet header is missing" });
                 }
                 else {
@@ -424,13 +424,12 @@ module.exports = function (req, res) {
                         }
                     }
                 }
-                let fieldsWithCode=0, fieldsWithNoAmount= 0;
+                let fieldsWithCode = 0, fieldsWithNoAmount = 0;
                 for (let eachRow of data) {
                     if (eachRow["code"]) {
-                      fieldsWithCode++;
-                      /* Checking if the amount in inr is empty or not. If it is empty, it is incrementing the
-fieldsWithNoAmount variable. */
-                      !eachRow["amount in inr"] ? fieldsWithNoAmount++ : "";
+                        fieldsWithCode++;
+                        /* Checking if the amount in inr is empty or not. If it is empty, it is incrementing the fieldsWithNoAmount variable. */
+                        !eachRow["amount in inr"] ? fieldsWithNoAmount++ : "";
                     }
                     // removing all the - values and converting them to 0
                     eachRow["amount in inr"] = eachRow["amount in inr"] == "-" ? eachRow["amount in inr"] = "0" : eachRow["amount in inr"];
@@ -449,13 +448,13 @@ fieldsWithNoAmount variable. */
                     }
                 }
                 if (fieldsWithCode === fieldsWithNoAmount) {
-                  errors.push("File cannot be blank");
+                    errors.push("File cannot be blank");
                 }
                 var message = validateBalanceSheet(balanceSheet, inputSheetObj);
 
                 if (message) {
                     // if balance sheet is invalid, means sum doesn't matches
-                    console.log("validateData: message", message)
+                    // console.log("validateData: message", message)
                     reject({ message: message });
                 } else {
 
@@ -473,7 +472,7 @@ fieldsWithNoAmount variable. */
                         }
                     }
                     if (errors.length) {
-                        console.log("validateData: errors.length", errors)
+                        // console.log("validateData: errors.length", errors)
                         reject({ message: errors.join(","), errMessage: "" })
                     } else {
                         Object.assign(objOfSheet, { ledger: JSON.parse(JSON.stringify(inputSheetObj)) });
@@ -497,7 +496,7 @@ fieldsWithNoAmount variable. */
                                 query,
                                 update: {
                                     amount: objOfSheet.ledger[el],
-                                    audit_status:objOfSheet.audit_status
+                                    audit_status: objOfSheet.audit_status
                                 }, options: {
                                     upsert: true,
                                     setDefaultsOnInsert: true,
@@ -517,7 +516,7 @@ fieldsWithNoAmount variable. */
                     // console.log(d)
                     resolve(d);
                 } catch (e) {
-                    console.log("updateLog: Caught Exception.", e)
+                    // console.log("updateLog: Caught Exception.", e)
                     reject({ message: "Exception while updating the status.", err: e.message });
                 }
             });
@@ -537,7 +536,7 @@ fieldsWithNoAmount variable. */
                 }
             }
             // for checking this non numeric case;
-            if(isNaN(balanceSheet?.liability) || isNaN(balanceSheet?.assets) ){
+            if (isNaN(balanceSheet?.liability) || isNaN(balanceSheet?.assets)) {
                 message = "Please enter valid amount in Balance Sheet"
                 return message;
             }
