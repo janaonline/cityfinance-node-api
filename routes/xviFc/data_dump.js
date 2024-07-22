@@ -4,14 +4,6 @@ const ExcelJS = require('exceljs');
 // const { xviFcFormData } = require("./temp");
 const { financialYearTableHeader } = require("./form_json");
 
-function toTitleCase(str) {
-    return str.replace(
-        /\w\S*/g,
-        function (txt) {
-            return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
-        }
-    );
-}
 
 let fin_slb_year = {
     financialData_year: "",
@@ -74,7 +66,7 @@ async function getEachTabData(eachTab, obj) {
                     tempArr[index]['nameOfState'] = obj.nameOfState;
                     tempArr[index]['censusCode'] = obj["censusCode"];
                     tempArr[index]['formId'] = obj["formId"];
-                    tempArr[index]['formStatus'] = toTitleCase(obj["formStatus"].split("_").join(" "));
+                    tempArr[index]['formStatus'] = obj["formStatus"].split("_").join(" ");
                     let key = eachAns["key"].split("_")[1];
                     tempArr[index][`${key}`] = isNaN(Number(eachAns["value"])) ? eachAns["value"] : Number(eachAns["value"]);
                     tempArr[index]['yearByUser'] =
@@ -100,7 +92,7 @@ async function getEachTabData(eachTab, obj) {
                     tempObj['nameOfState'] = obj.nameOfState;
                     tempObj['censusCode'] = obj["censusCode"];
                     tempObj['formId'] = obj["formId"];
-                    tempObj['formStatus'] = toTitleCase(obj["formStatus"].split("_").join(" "));
+                    tempObj['formStatus'] = obj["formStatus"].split("_").join(" ");
                     let key = eachAns["key"].split("_")[1];
                     tempObj[`${key}`] = isNaN(Number(eachAns["value"])) ? eachAns["value"] : Number(eachAns["value"]);
                     tempObj['yearByUser'] =
@@ -171,7 +163,7 @@ module.exports.dataDump = async (req, res) => {
             obj["nameOfUlb"] = ulbForm.ulbName;
             obj["censusCode"] = Number(ulbForm.censusCode ? ulbForm.censusCode : ulbForm.sbCode);
             obj["formId"] = ulbForm.formId == 16 ? 'Category 1' : 'Category 2';
-            obj["formStatus"] = toTitleCase(ulbForm.formStatus.split("_").join(" "));
+            obj["formStatus"] = ulbForm.formStatus.split("_").join(" ");
 
             switch (eachTab.tabKey) {
                 case "demographicData": demographicDataAllUlbs.push(await getEachTabData(eachTab, obj)); break;

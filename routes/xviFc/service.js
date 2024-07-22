@@ -417,14 +417,6 @@ async function getForm1(ulbData, stateData, roleName, submittedData) {
     from1QuestionFromDb[0].data[1].value = stateData.name;
 
     from1QuestionFromDb[1].instruction = "All data should be in consonance with audited accounts or information already submitted on CityFinance, wherever applicable. Amount entered should be in Rupees.";
-    let indexOfYearOfConstitution = from1QuestionFromDb[0].data.findIndex((x) => { return x.key == 'yearOfConstitution' })
-    if (from1QuestionFromDb[0].data[indexOfYearOfConstitution].value == 'After 2022-23') {
-        from1QuestionFromDb[1].message = "We are collecting data till the year 2023-24. Since your ULB was recently constituted, it's not mandatory for you to fill in the financial section data. Please fill in the rest of the form";
-        from1QuestionFromDb[2].message = "We are collecting data till the year 2023-24. Since your ULB was recently constituted, it's not mandatory for you to fill in the financial section data. Please fill in the rest of the form";
-    } else {
-        from1QuestionFromDb[1].message = '';
-        from1QuestionFromDb[2].message = '';
-    }
 
     if (from1AnswerFromDb) {
         for (let eachQuestionObj of from1QuestionFromDb) {
@@ -528,6 +520,17 @@ async function getForm1(ulbData, stateData, roleName, submittedData) {
             }
         }
     }
+
+    let indexOfYearOfConstitution = from1QuestionFromDb[0].data.findIndex((x) => { return x.key == 'yearOfConstitution' });
+
+    if (from1QuestionFromDb[0].data[indexOfYearOfConstitution].value == 'After 2022-23') {
+        from1QuestionFromDb[1].message = "We are collecting data till the year 2023-24. Since your ULB was recently constituted, it's not mandatory for you to fill in the financial section data. Please fill in the rest of the form";
+        from1QuestionFromDb[2].message = "We are collecting data till the year 2023-24. Since your ULB was recently constituted, it's not mandatory for you to fill in the financial section data. Please fill in the rest of the form";
+    } else {
+        from1QuestionFromDb[1].message = '';
+        from1QuestionFromDb[2].message = '';
+    }
+
 
     // Add Primary keys to the keyDetails{}  - financialData.
     let financialData = from1QuestionFromDb[1].data;
