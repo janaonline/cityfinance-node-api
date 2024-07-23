@@ -20,8 +20,7 @@ module.exports = function(req, res, next) {
             }
         });
     } else {
-       
-        return Response.UnAuthorized(res, {},`No token provided`);
+        return Response.UnAuthorized(res, { sessionExpired: true }, `Session Expired!`);
 
     }
 };
