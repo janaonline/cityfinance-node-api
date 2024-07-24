@@ -4,14 +4,14 @@ const ExcelJS = require('exceljs');
 // const { xviFcFormData } = require("./temp");
 const { financialYearTableHeader } = require("./form_json");
 
+let baseUrl_s3 = process.env.ENV == "production" ? process.env.AWS_STORAGE_URL_PROD : process.env.AWS_STORAGE_URL_STG;
+let baseUrl = process.env.HOSTNAME + 'resources-dashboard/data-sets/balanceSheet?';
 
 let fin_slb_year = {
     financialData_year: "",
     yearOfConstitution: "",
     serviceLevelBenchmark_year: "",
 };
-let baseUrl_s3 = 'https://jana-cityfinance-stg.s3.ap-south-1.amazonaws.com';
-let baseUrl = 'https://staging.cityfinance.in/resources-dashboard/data-sets/balanceSheet?';
 
 // ----- All data report ----- //
 async function getEachTabData(eachTab, obj) {
@@ -119,9 +119,14 @@ async function getEachTabData(eachTab, obj) {
 }
 
 module.exports.dataDump = async (req, res) => {
-    // Fetch data from database.
+    let user = req.decoded;
     let formStatuses = ['UNDER_REVIEW_BY_STATE', 'UNDER_REVIEW_BY_XVIFC', 'APPROVED_BY_XVIFC'];
-    let xviFcFormData = await XviFcForm1DataCollection.find({ "formStatus": { $in: formStatuses } });
+
+    let query = [{ "formStatus": { $in: formStatuses } }];
+    if (user.role == 'XVIFC_STATE') query.push({ "state": ObjectId(user.state) });
+    // Fetch data from database.
+    let xviFcFormData = await XviFcForm1DataCollection.find({ $and: query });
+
     let demographicDataAllUlbs = [];
     let financialDataAllUlbs = [];
     let accountPracticeAllUlbs = [];
@@ -450,7 +455,6 @@ module.exports.dataDump = async (req, res) => {
     const dateString = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')}`;
     const timeString = `${now.getHours().toString().padStart(2, '0')}-${now.getMinutes().toString().padStart(2, '0')}-${now.getSeconds().toString().padStart(2, '0')}`;
     const filename = `XVIFC_DataDump_${dateString}_${timeString}.xlsx`;
-    // const filename = `XVIFC_DataDump.xlsx`;
 
     // Set the response headers
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
