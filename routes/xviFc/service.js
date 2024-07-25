@@ -134,7 +134,11 @@ module.exports.createxviFcFormJson = async (req, res) => {
 module.exports.getForm = async (req, res) => {
     let ulbId = req.query.ulb;
     let userForm = await Ulb.findOne({ _id: ObjectId(ulbId) }, { formType: 1, name: 1, state: 1, _id: 1, censusCode: 1, sbCode: 1 }).lean();
-    let stateData = await State.findOne({ _id: ObjectId(userForm.state) }, { name: 1, _id: 1 }).lean();
+    let stateData = await State.findOne({ _id: ObjectId(userForm.state) }, { name: 1, _id: 1, isUT: 1 }).lean();
+
+    if (stateData.isUT) {
+        return res.status(404).json({ status: false, message: "Form not found for the user (UT)." });
+    }
 
     if (userForm.formType == "form1") {
         try {
