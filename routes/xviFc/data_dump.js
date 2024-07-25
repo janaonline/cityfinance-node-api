@@ -121,9 +121,11 @@ async function getEachTabData(eachTab, obj) {
 module.exports.dataDump = async (req, res) => {
     let user = req.decoded;
     let formStatuses = ['UNDER_REVIEW_BY_STATE', 'UNDER_REVIEW_BY_XVIFC', 'APPROVED_BY_XVIFC'];
+    let utIds = ['5dcf9d7216a06aed41c748dc', '5dcf9d7316a06aed41c748e4', '5dcf9d7316a06aed41c748e5', '5dcf9d7316a06aed41c748ea', '5dcf9d7316a06aed41c748ee', '5dcf9d7416a06aed41c748f6', '5efd6a2fb5cd039b5c0cfed2', '5fa25a6e0fb1d349c0fdfbc7'];
 
     let query = [{ "formStatus": { $in: formStatuses } }];
     if (user.role == 'XVIFC_STATE') query.push({ "state": ObjectId(user.state) });
+    if (user.role == 'XVIFC') query.push({ 'state': { $nin: utIds } });
     // Fetch data from database.
     let xviFcFormData = await XviFcForm1DataCollection.find({ $and: query });
 
