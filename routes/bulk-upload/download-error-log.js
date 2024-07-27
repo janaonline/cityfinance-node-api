@@ -1,19 +1,28 @@
 const ExcelJS = require('exceljs');
 
+// Validate input data
+const validateInput = (fileProcessingTracker, filesToUpload) => {
+    if (typeof fileProcessingTracker !== 'object' || !Array.isArray(filesToUpload)) {
+        throw new Error('Invalid input data');
+    } else if (Object.keys(fileProcessingTracker).length != filesToUpload.length) {
+        throw new Error('Incomplete data received');
+    }
+};
+
 module.exports = async function (req, res) {
     try {
-        let fileProcessingTracker = req.body.fileProcessingTracker;
-        let filesToUpload = req.body.filesToUpload;
-        let ErrorLog = [];
+        const fileProcessingTracker = req.body.fileProcessingTracker;
+        const filesToUpload = req.body.filesToUpload;
 
-        for (let index = 0; index < filesToUpload.length; index++) {
-            let obj = {};
-            obj["name"] = filesToUpload[index];
-            obj["status"] = fileProcessingTracker[index].status;
-            obj["message"] = fileProcessingTracker[index].message;
+        // Validate the input data
+        validateInput(fileProcessingTracker, filesToUpload);
 
-            ErrorLog.push(obj);
-        }
+        const ErrorLog = filesToUpload.map((file, index) => ({
+            name: file,
+            status: fileProcessingTracker[index]?.status || 'Unknown',
+            message: fileProcessingTracker[index]?.message || 'No message'
+        }));
+
         // Create a new workbook and add a worksheet
         const workbook = new ExcelJS.Workbook();
         const worksheet_1 = workbook.addWorksheet("Error Log");
@@ -49,7 +58,8 @@ module.exports = async function (req, res) {
         // Send the buffer as the response
         return res.send(buffer);
     } catch (e) {
-        return;
+        console.error(e.message);
+        return res.status(500).send(`Error encountered: ${e.message}`);
     }
 
 }
