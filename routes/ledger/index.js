@@ -4,6 +4,11 @@ const passport = require('passport');
 const ledgerService = require('./service');
 const verifyToken = require('../auth/services/verifyToken').verifyToken;
 const ufdService = require('../ulb-financial-data/service');
+const ledgerDump = require('./ledger-dump');
+
+// Create new ledger download template - 28 July 24.
+router.get('/getLedgerDump', ledgerDump.getLedgerDump);
+
 // Route to download all the existing ledgers in the system
 router.get('/getAllLegdersCsv', ledgerService.getAllLedgersCsv);
 router.get('/lastUpdated', ledgerService.lastUpdated);
