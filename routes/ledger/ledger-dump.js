@@ -1,4 +1,5 @@
-const ULBLedger = require('../../models/UlbLedger')
+const ULBLedger = require('../../models/UlbLedger');
+const LedgerLog = require('../../models/LedgerLog');
 const ExcelJS = require('exceljs');
 const moment = require('moment');
 
@@ -175,9 +176,13 @@ function updateTotals(rowObj, key, lineItemIdStr, amount, categoryArr, categoryK
     }
 }
 
-// Fetch data from DB
+// Fetch data from DB - Input sheet.
 async function fetchAllData(findQuery) {
     return ULBLedger.find(findQuery.query, findQuery.projection).cursor();
+}
+// Fetch data from DB - Overview sheet.
+async function fetchAllDataOverview(findQuery) {
+    return LedgerLog.find().cursor();
 }
 
 module.exports.getLedgerDump = async (req, res) => {
@@ -188,20 +193,29 @@ module.exports.getLedgerDump = async (req, res) => {
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet('ledgerDump');
 
+    console.time('columns');
     // Define columns
     let columns = [];
     for (let lineitem of lineitems) {
         columns.push({ header: lineitem.code ? `${lineitem.name} (${lineitem.code})` : lineitem.name, key: lineitem.key, width: lineitem.width });
     }
     worksheet.columns = columns;
+    console.timeEnd('columns');
 
-    // Fetch data from DB
-    const cursor = await fetchAllData(findQuery);
+    console.time('overview');
+    // Fetch data from DB - Overview sheet.
+    const overviewData = [];
+    const cursorOverview = await fetchAllDataOverview();
+    for (let doc = await cursorOverview.next(); doc != null; doc = await cursorOverview.next()) {
+        overviewData.push(doc);
+    }
+    console.timeEnd('overview');
+
+    console.time('input-in-array');
+    // Iterate through each document in the cursor (array received from DB) - Input Sheet.
+    const cursorInputData = await fetchAllData(findQuery);
     let eachRowObj = {};
-
-    // Iterate through each document in the cursor (array received from DB)
-    for (let doc = await cursor.next(); doc != null; doc = await cursor.next()) {
-        // for (let doc of cursor) {
+    for (let doc = await cursorInputData.next(); doc != null; doc = await cursorInputData.next()) {
         const key = `${doc.ulb}_${doc.financialYear}`;
 
         if (!eachRowObj[key]) {
@@ -223,11 +237,36 @@ module.exports.getLedgerDump = async (req, res) => {
 
         eachRowObj[key][doc.lineItem] = doc.amount;
     }
+    console.timeEnd('input-in-array');
 
-    // Add the rows to the worksheet.
+    // Create a lookup map for overviewData for faster access
+    const overviewLookup = overviewData.reduce((acc, ulbObj) => {
+        const key = `${ulbObj.ulb_id}_${ulbObj.year}`;
+        acc[key] = ulbObj;
+        return acc;
+    }, {});
+    console.time('enter');
+    // Iterate through each row in eachRowObj
     Object.values(eachRowObj).forEach((row) => {
+        const key = `${row.ulb_code}_${row.year}`;
+        const ulbOverviewObj = overviewLookup[key];
+
+        if (ulbOverviewObj) {
+            row["ulb_code"] = ulbOverviewObj.ulb_code;
+            row["ulb"] = ulbOverviewObj.ulb;
+            row["state"] = ulbOverviewObj.state;
+            row["audit_status"] = ulbOverviewObj.audit_status;
+            row["isStandardizable"] = ulbOverviewObj.isStandardizable;
+            row["isStandardizableComment"] = ulbOverviewObj.isStandardizableComment;
+            row["dataFlag"] = ulbOverviewObj.dataFlag;
+            row["dataFlagComment"] = ulbOverviewObj.dataFlagComment;
+        }
+
         worksheet.addRow(row);
     });
+    console.timeEnd('enter');
+
+
 
     let filename = `All_Ledgers_${(moment().format("DD-MMM-YY_HH-mm-ss"))}`;
     // Stream the workbook to the response
