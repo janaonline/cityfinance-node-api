@@ -73,13 +73,14 @@ let lineitems =
     [
         { 'code': null, 'key': 'ulb_code', 'isActive': true, 'name': 'ULB Code', 'width': 15 },
         { 'code': null, 'key': 'ulb', 'isActive': true, 'name': 'ULB Name', 'width': 15 },
-        { 'code': null, 'key': 'population', 'isActive': true, 'name': 'Census 2011 Population', 'width': 15 },
+        // { 'code': null, 'key': 'population', 'isActive': true, 'name': 'Census 2011 Population', 'width': 15 },
         { 'code': null, 'key': 'state', 'isActive': true, 'name': 'State', 'width': 15 },
-        { 'code': null, 'key': 'amrut', 'isActive': true, 'name': 'AMRUT', 'width': 15 },
+        // { 'code': null, 'key': 'amrut', 'isActive': true, 'name': 'AMRUT', 'width': 15 },
         { 'code': null, 'key': 'year', 'isActive': true, 'name': 'Financial Year', 'width': 15 },
         { 'code': null, 'key': 'audit_status', 'isActive': true, 'name': 'Audited/ Provisional', 'width': 15 },
         { 'code': null, 'key': 'toBeUpdated_1', 'isActive': true, 'name': 'Audit date', 'width': 15 },
         { 'code': null, 'key': 'toBeUpdated_2', 'isActive': true, 'name': 'Auditor Name', 'width': 15 },
+        { 'code': null, 'key': 'isStandardizable', 'isActive': true, 'name': 'Is Standardizable?', 'width': 15 },
         { 'code': null, 'key': 'isStandardizableComment', 'isActive': true, 'name': 'File Comments ', 'width': 15 },
         { 'code': null, 'key': 'dataFlagComment', 'isActive': true, 'name': 'Data Comments', 'width': 15 },
         { 'code': null, 'key': 'dataFlag', 'isActive': true, 'name': 'No. of Data Flags failed', 'width': 15 },
@@ -172,7 +173,9 @@ let lineitems =
 function updateTotals(rowObj, key, lineItemIdStr, amount, categoryArr, categoryKey) {
     if (categoryArr.includes(lineItemIdStr)) {
         if (!rowObj[key][categoryKey]) rowObj[key][categoryKey] = 0;
-        rowObj[key][categoryKey] += Number(amount);
+        if (amount !== null && amount !== "") {
+            rowObj[key][categoryKey] += Number(amount);
+        }
     }
 }
 
@@ -186,92 +189,94 @@ async function fetchAllDataOverview(findQuery) {
 }
 
 module.exports.getLedgerDump = async (req, res) => {
-    const findQuery = {};
-    findQuery.query = req.query.financialYear ? { financialYear: req.query.financialYear } : {};
-    findQuery.projection = { amount: 1, audit_status: 1, financialYear: 1, lineItem: 1, ulb: 1 };
+    try {
+        const findQuery = {};
+        findQuery.query = req.query.financialYear ? { financialYear: req.query.financialYear } : {};
+        findQuery.projection = { amount: 1, audit_status: 1, financialYear: 1, lineItem: 1, ulb: 1 };
 
-    const workbook = new ExcelJS.Workbook();
-    const worksheet = workbook.addWorksheet('ledgerDump');
+        const workbook = new ExcelJS.Workbook();
+        const worksheet = workbook.addWorksheet('ledgerDump');
 
-    console.time('columns');
-    // Define columns
-    let columns = [];
-    for (let lineitem of lineitems) {
-        columns.push({ header: lineitem.code ? `${lineitem.name} (${lineitem.code})` : lineitem.name, key: lineitem.key, width: lineitem.width });
-    }
-    worksheet.columns = columns;
-    console.timeEnd('columns');
+        // Define columns
+        const columns = lineitems.map((lineitem) => ({
+            header: lineitem.code ? `${lineitem.name} (${lineitem.code})` : lineitem.name,
+            key: lineitem.key,
+            width: lineitem.width
+        }));
+        worksheet.columns = columns;
 
-    console.time('overview');
-    // Fetch data from DB - Overview sheet.
-    const overviewData = [];
-    const cursorOverview = await fetchAllDataOverview();
-    for (let doc = await cursorOverview.next(); doc != null; doc = await cursorOverview.next()) {
-        overviewData.push(doc);
-    }
-    console.timeEnd('overview');
-
-    console.time('input-in-array');
-    // Iterate through each document in the cursor (array received from DB) - Input Sheet.
-    const cursorInputData = await fetchAllData(findQuery);
-    let eachRowObj = {};
-    for (let doc = await cursorInputData.next(); doc != null; doc = await cursorInputData.next()) {
-        const key = `${doc.ulb}_${doc.financialYear}`;
-
-        if (!eachRowObj[key]) {
-            eachRowObj[key] = {
-                // ulb_id: doc.ulb,
-                ulb_code: doc.ulb,
-                year: doc.financialYear,
-                audit_status: doc.audit_status
-            };
-        }
-        const lineItemIdStr = doc.lineItem.toString();
-
-        updateTotals(eachRowObj, key, lineItemIdStr, doc.amount, totOwnRevenueArr, "totOwnRevenue");
-        updateTotals(eachRowObj, key, lineItemIdStr, doc.amount, totRevenueArr, "totRevenue");
-        updateTotals(eachRowObj, key, lineItemIdStr, doc.amount, revExpenditureArr, "revExpenditure");
-        updateTotals(eachRowObj, key, lineItemIdStr, doc.amount, totExpenditureArr, "totExpenditure");
-        updateTotals(eachRowObj, key, lineItemIdStr, doc.amount, capexArr, "capex");
-        updateTotals(eachRowObj, key, lineItemIdStr, doc.amount, bsSizeArr, "bsSize");
-
-        eachRowObj[key][doc.lineItem] = doc.amount;
-    }
-    console.timeEnd('input-in-array');
-
-    // Create a lookup map for overviewData for faster access
-    const overviewLookup = overviewData.reduce((acc, ulbObj) => {
-        const key = `${ulbObj.ulb_id}_${ulbObj.year}`;
-        acc[key] = ulbObj;
-        return acc;
-    }, {});
-    console.time('enter');
-    // Iterate through each row in eachRowObj
-    Object.values(eachRowObj).forEach((row) => {
-        const key = `${row.ulb_code}_${row.year}`;
-        const ulbOverviewObj = overviewLookup[key];
-
-        if (ulbOverviewObj) {
-            row["ulb_code"] = ulbOverviewObj.ulb_code;
-            row["ulb"] = ulbOverviewObj.ulb;
-            row["state"] = ulbOverviewObj.state;
-            row["audit_status"] = ulbOverviewObj.audit_status;
-            row["isStandardizable"] = ulbOverviewObj.isStandardizable;
-            row["isStandardizableComment"] = ulbOverviewObj.isStandardizableComment;
-            row["dataFlag"] = ulbOverviewObj.dataFlag;
-            row["dataFlagComment"] = ulbOverviewObj.dataFlagComment;
+        // Fetch data from DB - Overview sheet.
+        const overviewData = [];
+        const cursorOverview = await fetchAllDataOverview();
+        for (let doc = await cursorOverview.next(); doc != null; doc = await cursorOverview.next()) {
+            overviewData.push(doc);
         }
 
-        worksheet.addRow(row);
-    });
-    console.timeEnd('enter');
+        // Iterate through each document in the cursor (array received from DB) - Input Sheet.
+        const cursorInputData = await fetchAllData(findQuery);
+        let eachRowObj = {};
+        for (let doc = await cursorInputData.next(); doc != null; doc = await cursorInputData.next()) {
+            const key = `${doc.ulb}_${doc.financialYear}`;
 
+            if (!eachRowObj[key]) {
+                eachRowObj[key] = {
+                    // ulb_id: doc.ulb,
+                    ulb_code: doc.ulb,
+                    year: doc.financialYear,
+                    audit_status: doc.audit_status
+                };
+            }
+            const lineItemIdStr = doc.lineItem.toString();
 
+            updateTotals(eachRowObj, key, lineItemIdStr, doc.amount, totOwnRevenueArr, "totOwnRevenue");
+            updateTotals(eachRowObj, key, lineItemIdStr, doc.amount, totRevenueArr, "totRevenue");
+            updateTotals(eachRowObj, key, lineItemIdStr, doc.amount, revExpenditureArr, "revExpenditure");
+            updateTotals(eachRowObj, key, lineItemIdStr, doc.amount, totExpenditureArr, "totExpenditure");
+            updateTotals(eachRowObj, key, lineItemIdStr, doc.amount, capexArr, "capex");
+            updateTotals(eachRowObj, key, lineItemIdStr, doc.amount, bsSizeArr, "bsSize");
 
-    let filename = `All_Ledgers_${(moment().format("DD-MMM-YY_HH-mm-ss"))}`;
-    // Stream the workbook to the response
-    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-    res.setHeader('Content-Disposition', `attachment; filename=${filename}.xlsx`);
-    await workbook.xlsx.write(res);
-    res.end();
+            if (doc.amount === null || doc.amount === "") {
+                eachRowObj[key][doc.lineItem] = "N/A";
+            } else {
+                eachRowObj[key][doc.lineItem] = doc.amount;
+            }
+        }
+
+        // Create a lookup map for overviewData for faster access
+        const overviewLookup = overviewData.reduce((acc, ulbObj) => {
+            const key = `${ulbObj.ulb_id}_${ulbObj.year}`;
+            acc[key] = ulbObj;
+            return acc;
+        }, {});
+
+        // Iterate through each row in eachRowObj
+        Object.values(eachRowObj).forEach((row) => {
+            const key = `${row.ulb_code}_${row.year}`;
+            const ulbOverviewObj = overviewLookup[key];
+
+            if (ulbOverviewObj) {
+                row["ulb_code"] = ulbOverviewObj.ulb_code;
+                row["ulb"] = ulbOverviewObj.ulb;
+                row["state"] = ulbOverviewObj.state;
+                row["audit_status"] = ulbOverviewObj.audit_status;
+                row["isStandardizable"] = ulbOverviewObj.isStandardizable;
+                row["isStandardizableComment"] = ulbOverviewObj.isStandardizableComment;
+                row["dataFlag"] = ulbOverviewObj.dataFlag;
+                row["dataFlagComment"] = ulbOverviewObj.dataFlagComment;
+            }
+
+            worksheet.addRow(row);
+        });
+
+        let filename = `All_Ledgers_${(moment().format("DD-MMM-YY_HH-mm-ss"))}`;
+        // Stream the workbook to the response
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        res.setHeader('Content-Disposition', `attachment; filename=${filename}.xlsx`);
+        await workbook.xlsx.write(res);
+        res.end();
+
+    } catch (error) {
+        console.error('Error generating ledger dump:', error);
+        res.status(500).send(`Internal Server Error: ${error.message}`);
+    }
 }
