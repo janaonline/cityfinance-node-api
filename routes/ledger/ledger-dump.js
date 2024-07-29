@@ -2,57 +2,71 @@ const ULBLedger = require('../../models/UlbLedger')
 const ExcelJS = require('exceljs');
 const moment = require('moment');
 
-async function fetchAllData(findQuery) {
-    return ULBLedger.find(findQuery.query, findQuery.projection).cursor();
-}
+const totOwnRevenueArr = [
+    '5dd10c2485c951b54ec1d74b',
+    '5dd10c2685c951b54ec1d762',
+    '5dd10c2485c951b54ec1d74a',
+    '5dd10c2885c951b54ec1d77e',
+    '5dd10c2385c951b54ec1d748',
+];
 
-module.exports.getLedgerDump = async (req, res) => {
-    const findQuery = {};
-    findQuery.query = req.query.financialYear ? { financialYear: req.query.financialYear } : {};
-    findQuery.projection = { amount: 1, audit_status: 1, financialYear: 1, lineItem: 1, ulb: 1 };
+const totRevenueArr = [
+    '5dd10c2485c951b54ec1d74b',
+    '5dd10c2485c951b54ec1d74f',
+    '5dd10c2685c951b54ec1d762',
+    '5dd10c2485c951b54ec1d74a',
+    '5dd10c2885c951b54ec1d77e',
+    '5dd10c2685c951b54ec1d761',
+    '5dd10c2585c951b54ec1d75b',
+    '5dd10c2785c951b54ec1d778',
+    '5dd10c2385c951b54ec1d748',
+    '5dd10c2785c951b54ec1d776',
+];
 
-    const workbook = new ExcelJS.Workbook();
-    const worksheet = workbook.addWorksheet('ledgerDump');
+const revExpenditureArr = [
+    '5dd10c2385c951b54ec1d743',
+    '5dd10c2585c951b54ec1d753',
+    '5dd10c2585c951b54ec1d75a',
+    '5dd10c2585c951b54ec1d756',
+    '5dd10c2685c951b54ec1d760',
+];
 
-    // Define columns
-    let columns = [];
-    for (let lineitem of lineitems) {
-        columns.push({ header: lineitem.code ? `${lineitem.name} (${lineitem.code})` : lineitem.name, key: lineitem.key, width: lineitem.width });
-    }
-    worksheet.columns = columns;
+const totExpenditureArr = [
+    '5dd10c2585c951b54ec1d753',
+    '5dd10c2585c951b54ec1d75a',
+    '5dd10c2585c951b54ec1d756',
+    '5dd10c2685c951b54ec1d760',
+    '5dd10c2785c951b54ec1d77c',
+    '5dd10c2585c951b54ec1d75f',
+    '5dd10c2485c951b54ec1d74e',
+    '5dd10c2385c951b54ec1d746',
+    '5dd10c2585c951b54ec1d755',
+    '5dd10c2385c951b54ec1d744',
+    '5dd10c2585c951b54ec1d75e',
+];
 
-    // Fetch data from DB
-    const cursor = await fetchAllData(findQuery);
-    let eachRowObj = {};
+const capexArr = [
+    '5dd10c2785c951b54ec1d779',
+    '5dd10c2785c951b54ec1d774',
+];
 
-    // Iterate through each document in the cursor (array received from DB)
-    for (let doc = await cursor.next(); doc != null; doc = await cursor.next()) {
-        // for (let doc of cursor) {
-        const key = `${doc.ulb}_${doc.financialYear}`;
+const bsSizeArr = [
+    '5dd10c2385c951b54ec1d742',
+    '5dd10c2785c951b54ec1d779',
+    '5dd10c2785c951b54ec1d77b',
+    '5dd10c2785c951b54ec1d774',
+    '5dd10c2785c951b54ec1d77d',
+    '5dd10c2585c951b54ec1d751',
+    '5dd10c2885c951b54ec1d77f',
+    '5dd10c2885c951b54ec1d781',
+    '5dd10c2685c951b54ec1d76d',
+    '5dd10c2785c951b54ec1d777',
+    '5dd10c2585c951b54ec1d757',
+    '5dd10c2685c951b54ec1d76a',
+    '5dd10c2585c951b54ec1d75c',
 
-        if (!eachRowObj[key]) {
-            eachRowObj[key] = {
-                // ulb_id: doc.ulb,
-                ulb_code: doc.ulb,
-                year: doc.financialYear,
-                audit_status: doc.audit_status
-            };
-        }
-        eachRowObj[key][doc.lineItem] = doc.amount;
-    }
+];
 
-    // Add the rows to the worksheet.
-    Object.values(eachRowObj).forEach((row) => {
-        worksheet.addRow(row);
-    });
-
-    let filename = `All_Ledgers_${(moment().format("DD-MMM-YY_HH-mm-ss"))}`;
-    // Stream the workbook to the response
-    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-    res.setHeader('Content-Disposition', `attachment; filename=${filename}.xlsx`);
-    await workbook.xlsx.write(res);
-    res.end();
-}
 
 let lineitems =
     [
@@ -152,3 +166,73 @@ let lineitems =
         { 'code': 31001, 'key': '5dd10c2885c951b54ec1d780', 'isActive': true, 'name': 'Municipal (General) Fund', 'width': 15 },
         { 'code': 31002, 'key': '5dd10c2585c951b54ec1d758', 'isActive': true, 'name': 'Rounding off differences', 'width': 15 },
     ];
+
+// Calculate Totals.
+function updateTotals(rowObj, key, lineItemIdStr, amount, categoryArr, categoryKey) {
+    if (categoryArr.includes(lineItemIdStr)) {
+        if (!rowObj[key][categoryKey]) rowObj[key][categoryKey] = 0;
+        rowObj[key][categoryKey] += Number(amount);
+    }
+}
+
+// Fetch data from DB
+async function fetchAllData(findQuery) {
+    return ULBLedger.find(findQuery.query, findQuery.projection).cursor();
+}
+
+module.exports.getLedgerDump = async (req, res) => {
+    const findQuery = {};
+    findQuery.query = req.query.financialYear ? { financialYear: req.query.financialYear } : {};
+    findQuery.projection = { amount: 1, audit_status: 1, financialYear: 1, lineItem: 1, ulb: 1 };
+
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('ledgerDump');
+
+    // Define columns
+    let columns = [];
+    for (let lineitem of lineitems) {
+        columns.push({ header: lineitem.code ? `${lineitem.name} (${lineitem.code})` : lineitem.name, key: lineitem.key, width: lineitem.width });
+    }
+    worksheet.columns = columns;
+
+    // Fetch data from DB
+    const cursor = await fetchAllData(findQuery);
+    let eachRowObj = {};
+
+    // Iterate through each document in the cursor (array received from DB)
+    for (let doc = await cursor.next(); doc != null; doc = await cursor.next()) {
+        // for (let doc of cursor) {
+        const key = `${doc.ulb}_${doc.financialYear}`;
+
+        if (!eachRowObj[key]) {
+            eachRowObj[key] = {
+                // ulb_id: doc.ulb,
+                ulb_code: doc.ulb,
+                year: doc.financialYear,
+                audit_status: doc.audit_status
+            };
+        }
+        const lineItemIdStr = doc.lineItem.toString();
+
+        updateTotals(eachRowObj, key, lineItemIdStr, doc.amount, totOwnRevenueArr, "totOwnRevenue");
+        updateTotals(eachRowObj, key, lineItemIdStr, doc.amount, totRevenueArr, "totRevenue");
+        updateTotals(eachRowObj, key, lineItemIdStr, doc.amount, revExpenditureArr, "revExpenditure");
+        updateTotals(eachRowObj, key, lineItemIdStr, doc.amount, totExpenditureArr, "totExpenditure");
+        updateTotals(eachRowObj, key, lineItemIdStr, doc.amount, capexArr, "capex");
+        updateTotals(eachRowObj, key, lineItemIdStr, doc.amount, bsSizeArr, "bsSize");
+
+        eachRowObj[key][doc.lineItem] = doc.amount;
+    }
+
+    // Add the rows to the worksheet.
+    Object.values(eachRowObj).forEach((row) => {
+        worksheet.addRow(row);
+    });
+
+    let filename = `All_Ledgers_${(moment().format("DD-MMM-YY_HH-mm-ss"))}`;
+    // Stream the workbook to the response
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename=${filename}.xlsx`);
+    await workbook.xlsx.write(res);
+    res.end();
+}
