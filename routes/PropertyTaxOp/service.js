@@ -1342,7 +1342,7 @@ exports.getView = async function (req, res, next) {
         fyDynemic['design_year'] = ptoData?.design_year || req.query.design_year;
         fyDynemic['statusId'] = ptoData?.currentFormStatus || MASTER_STATUS['Not Started'];
         fyDynemic['status'] = MASTER_STATUS_ID[ptoData?.currentFormStatus] || MASTER_STATUS_ID[1];
-        fyDynemic['pullid'] = 103;
+        fyDynemic['pullid'] = 100;
         let params = {
             status: ptoData?.currentFormStatus,
             formType: "ULB",
