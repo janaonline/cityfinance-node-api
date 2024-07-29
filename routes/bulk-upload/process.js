@@ -501,7 +501,8 @@ module.exports = function (req, res) {
                 // Merge ULB data into the objOfSheet{} and add additional fields from ulbs collection.
                 Object.assign(objOfSheet, JSON.parse(JSON.stringify(ulb)), {
                     ulb_code_year: `${objOfSheet.ulb_code}_${objOfSheet.year}`,
-                    state_name: state.name
+                    state_name: state.name,
+                    ulb_id: ulb._id,
                 });
 
                 return objOfSheet;

@@ -18,7 +18,8 @@ const LedgerLogSchema = mongoose.Schema({
 	ulb_id: {
 		type: Schema.Types.ObjectId,
 		ref: 'Ulb',
-		default: null
+		default: null,
+		required: true
 	},
 	financialYear: {
 		type: String,
