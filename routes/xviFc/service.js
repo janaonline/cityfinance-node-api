@@ -137,7 +137,7 @@ module.exports.getForm = async (req, res) => {
     let stateData = await State.findOne({ _id: ObjectId(userForm.state) }, { name: 1, _id: 1, isUT: 1 }).lean();
 
     if (stateData.isUT) {
-        return res.status(404).json({ status: false, message: "Form not found for the user (UT)." });
+        return res.status(404).json({ status: false, message: "As of now, ULBs from Union Territories are not required to upload any information related to the XVIFC Data Collection module. If you have any queries or need assistance, please feel free to contact us at 16fcgrant@cityfinance.in" });
     }
 
     if (userForm.formType == "form1") {
