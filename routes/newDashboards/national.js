@@ -18,7 +18,7 @@ const { query } = require("express");
 
 exports.dataAvailabilityState = async (req, res) => {
   try {
-    const { financialYear, stateId, population, ulbType, csv, value } = req.query;
+        const { financialYear, stateId, population, ulbType, csv, value } = req.query;
     if (!financialYear) throw { message: "financial year is missing." };
     let filterCondition = {},
       ulbLedgers;
@@ -30,13 +30,13 @@ exports.dataAvailabilityState = async (req, res) => {
       .select("_id population ulbType")
       .lean();
 
-    let totalUlbs = Ulb.countDocuments();
+    let totalUlbs = Ulb.countDocuments({ "isActive": true });
     if (financialYear) filterCondition["financialYear"] = financialYear;
 
     let temp = await Promise.all([ulbs, totalUlbs]);
     ulbs = temp[0];
     totalUlbs = temp[1];
-    
+
     filterCondition = {
       ulb: { $in: ulbs.map((ech) => ObjectId(ech._id)) },
     };
@@ -45,9 +45,9 @@ exports.dataAvailabilityState = async (req, res) => {
       ulbLedgers = await Indicators.distinct("ulb", filterCondition).lean();
     }else{
       Object.assign(filterCondition, {financialYear: financialYear})
-        ulbLedgers = await UlbLedger.distinct("ulb", filterCondition).lean();
+      ulbLedgers = await UlbLedger.distinct("ulb", filterCondition).lean();
     }
-  
+
 
 
 
@@ -162,11 +162,11 @@ async function createdUlbTypeData(ulbs, ulbLedgers, totalUlbs) {
       }
     });
     let displayNameMapper = {
-        numberOfULBs: "Number Of ULBs",
-        ulbsWithData: "ULBs With Data",
-        DataAvailPercentage: "Data Availability Percentage",
-        urbanPopulationPercentage: "Urban Population Percentage",
-      },
+      numberOfULBs: "Number Of ULBs",
+      ulbsWithData: "ULBs With Data",
+      DataAvailPercentage: "Data Availability Percentage",
+      urbanPopulationPercentage: "Urban Population Percentage",
+    },
       columns = [
         { key: "ulbType", display_name: "ULB Type" },
         ...Object.keys(ulbTypeMap.Average).map((each) => {
@@ -229,11 +229,11 @@ async function createPopulationData(ulbs, totalUlbs, ulbLedgers) {
     },
   };
   const lengthOfUlbs = ulbs.length;
-  let aa = 0;
+    let aa = 0;
   for (let x = 0; x < lengthOfUlbs; ++x) {
     const specific = ulbs[x];
     if (specific.population < 1e5 && specific.population != null) {
-      populationMap["< 100 Thousand"]["numberOfULBs"].push(specific._id);
+      populationMap["< 100 Thousand"]["numberOfULBs"].push(specific);
     } else if (
       specific.population >= 1e5 &&
       specific.population <= 5e5 &&
@@ -311,11 +311,11 @@ async function createPopulationData(ulbs, totalUlbs, ulbLedgers) {
   populationMap["Average"]["urbanPopulationPercentage"] =
     sumOfUrbanPopulPercentage / 5;
   let displayNameMapper = {
-      numberOfULBs: "Number Of ULBs",
-      ulbsWithData: "ULBs With Data",
-      DataAvailPercentage: "Data Availability Percentage",
-      urbanPopulationPercentage: "Urban Population Percentage",
-    },
+    numberOfULBs: "Number Of ULBs",
+    ulbsWithData: "ULBs With Data",
+    DataAvailPercentage: "Data Availability Percentage",
+    urbanPopulationPercentage: "Urban Population Percentage",
+  },
     columns = [
       { key: "ulbType", display_name: "Population Category" },
       ...Object.keys(populationMap.Average).map((each) => {
@@ -473,10 +473,10 @@ exports.nationalDashRevenue = async (req, res) => {
         responsePayload.data = populationMap;
       }
       let displayNameMapper = {
-          revenue: "Revenue (in Cr)",
-          revenuePerCapita: "Revenue Per Capita (in Rs.)",
-          DataAvailPercentage: "Data Availability Percentage",
-        },
+        revenue: "Revenue (in Cr)",
+        revenuePerCapita: "Revenue Per Capita (in Rs.)",
+        DataAvailPercentage: "Data Availability Percentage",
+      },
         columns = [
           {
             key: "ulb_pop_category",
@@ -527,7 +527,7 @@ exports.nationalDashRevenue = async (req, res) => {
         responsePayload.data = ulbLeds[0];
         let nationalArr = responsePayload.data.national,
           individualArr = responsePayload.data.individual,
-           stateArr = responsePayload.data?.state;
+          stateArr = responsePayload.data?.state;
         let lineItemMap = new Map(),
           ulbTypeMap = new Map();
         const lineItems = await LineItem.find().lean();
@@ -541,11 +541,11 @@ exports.nationalDashRevenue = async (req, res) => {
           return each;
         });
         let national_Format = {}, state_Format = {}
-          individual_Format = {
-            Municipality: {},
-            "Municipal Corporation": {},
-            "Town Panchayat": {},
-          };
+        individual_Format = {
+          Municipality: {},
+          "Municipal Corporation": {},
+          "Town Panchayat": {},
+        };
         nationalArr.map((each) => {
           let lineName = lineItemMap.get(each._id.lineItem.toString());
           if (ownRevenueLineItems.includes(lineName)) {
@@ -814,10 +814,10 @@ exports.nationalDashExpenditure = async (req, res) => {
         responsePayload.data = populationMap;
       }
       let displayNameMapper = {
-          expenditure: "Expenditure (in Cr)",
-          expenditurePerCapita: "Expenditure Per Capita (in Rs.)",
-          DataAvailPercentage: "Data Availability Percentage",
-        },
+        expenditure: "Expenditure (in Cr)",
+        expenditurePerCapita: "Expenditure Per Capita (in Rs.)",
+        DataAvailPercentage: "Data Availability Percentage",
+      },
         columns = [
           {
             key: "ulb_pop_category",
@@ -955,7 +955,7 @@ exports.nationalDashExpenditure = async (req, res) => {
             national_Format[lineName] = otherAmount ;
           }
           if(lineName != "Other Expenditure" )
-          national_Format[lineName] = each.amount;
+            national_Format[lineName] = each.amount;
           return each;
         });
         responsePayload.data.national = national_Format;
@@ -967,7 +967,7 @@ exports.nationalDashExpenditure = async (req, res) => {
             state_Format[lineName] = otherAmount ;
           }
           if(lineName != "Other Expenditure" )
-          state_Format[lineName] = each.amount;
+            state_Format[lineName] = each.amount;
           return each;
         });
         responsePayload.data.state = state_Format;
@@ -1073,12 +1073,12 @@ async function createTableData(type, data, ulbsCountInIndia) {
   if (type == "ulbType") {
     columns[0].display_name = "ULB Type";
     ulbTypes = await UlbType.find().lean();
-  
+
     for (const value of data.individual) {
-       for(let elem in  value){
-         if(typeof value[elem] != 'string' )
-      value[elem] =  value[elem].toFixed(0)
-    }
+      for(let elem in  value){
+        if(typeof value[elem] != 'string' )
+          value[elem] =  value[elem].toFixed(0)
+      }
       let tempData = {
         ulbType: ulbTypes.find((val) => val._id.toString() == value._id).name,
         ...value,
@@ -1334,10 +1334,10 @@ exports.nationalDashOwnRevenue = async (req, res) => {
         responsePayload.data = populationMap;
       }
       let displayNameMapper = {
-          Ownrevenue: "Own Revenue (in Cr)",
-          OwnrevenuePerCapita: "Own Revenue Per Capita (in Rs.)",
-          DataAvailPercentage: "Data Availability Percentage",
-        },
+        Ownrevenue: "Own Revenue (in Cr)",
+        OwnrevenuePerCapita: "Own Revenue Per Capita (in Rs.)",
+        DataAvailPercentage: "Data Availability Percentage",
+      },
         columns = [
           {
             key: "ulb_pop_category",
@@ -1371,7 +1371,7 @@ exports.nationalDashOwnRevenue = async (req, res) => {
         responsePayload.data = ulbLeds[0];
         let nationalArr = responsePayload.data.national,
           individualArr = responsePayload.data.individual,
-           stateArr = responsePayload.data?.state;
+          stateArr = responsePayload.data?.state;
         let lineItemMap = new Map(),
           ulbTypeMap = new Map();
         const lineItems = await LineItem.find().lean();
@@ -1573,7 +1573,7 @@ exports.nationalDashCapexpense = async (req, res) => {
           (val.amount_410 -
             oldYearValues.amount_410 +
             (val.amount_412 - oldYearValues.amount_412)
-        )/1e7);
+          )/1e7);
         newData.perCapita = Math.round(newData.amount *1e7 / val.population);
         newData.percentage =
           Math.round((val.noOfUlbs / HashTable[val.ulbType]) * 100) + "%";
@@ -1653,14 +1653,14 @@ exports.nationalDashCapexpense = async (req, res) => {
         rows.push(newData);
       }
     }
-rows.unshift({
-  "amount":0,
-  "perCapita":0,
-  "percentage": "0%",
-  "ulb_pop_category": "Average"})
-  let temp = rows[2];
-  rows[2] = rows[3];
-  rows[3] = temp ;
+    rows.unshift({
+      "amount":0,
+      "perCapita":0,
+      "percentage": "0%",
+      "ulb_pop_category": "Average"})
+    let temp = rows[2];
+    rows[2] = rows[3];
+    rows[3] = temp ;
     responsePayload.data = { rows, columns, keys: ["amount", "perCapita"] };
 
     if (csv) {
