@@ -78,8 +78,9 @@ let lineitems =
         // { 'code': null, 'key': 'amrut', 'isActive': true, 'name': 'AMRUT', 'width': 15 },
         { 'code': null, 'key': 'year', 'isActive': true, 'name': 'Financial Year', 'width': 15 },
         { 'code': null, 'key': 'audit_status', 'isActive': true, 'name': 'Audited/ Provisional', 'width': 15 },
-        { 'code': null, 'key': 'toBeUpdated_1', 'isActive': true, 'name': 'Audit date', 'width': 15 },
-        { 'code': null, 'key': 'toBeUpdated_2', 'isActive': true, 'name': 'Auditor Name', 'width': 15 },
+        { 'code': null, 'key': 'audit_firm', 'isActive': true, 'name': 'Audit firm name', 'width': 15 },
+        { 'code': null, 'key': 'partner_name', 'isActive': true, 'name': 'Partner name', 'width': 15 },
+        // { 'code': null, 'key': 'icai_membership_number', 'isActive': true, 'name': 'ICAI No.', 'width': 15 },
         { 'code': null, 'key': 'isStandardizable', 'isActive': true, 'name': 'Is Standardizable?', 'width': 15 },
         { 'code': null, 'key': 'isStandardizableComment', 'isActive': true, 'name': 'File Comments ', 'width': 15 },
         { 'code': null, 'key': 'dataFlagComment', 'isActive': true, 'name': 'Data Comments', 'width': 15 },
@@ -184,7 +185,7 @@ async function fetchAllData(findQuery) {
     return ULBLedger.find(findQuery.query, findQuery.projection).cursor();
 }
 // Fetch data from DB - Overview sheet.
-async function fetchAllDataOverview(findQuery) {
+async function fetchAllDataOverview() {
     return LedgerLog.find().cursor();
 }
 
@@ -258,7 +259,9 @@ module.exports.getLedgerDump = async (req, res) => {
                 row["ulb_code"] = ulbOverviewObj.ulb_code;
                 row["ulb"] = ulbOverviewObj.ulb;
                 row["state"] = ulbOverviewObj.state;
-                row["audit_status"] = ulbOverviewObj.audit_status;
+                row["audit_firm"] = ulbOverviewObj.audit_firm;
+                row["partner_name"] = ulbOverviewObj.partner_name;
+                row["icai_membership_number"] = ulbOverviewObj.icai_membership_number;
                 row["isStandardizable"] = ulbOverviewObj.isStandardizable;
                 row["isStandardizableComment"] = ulbOverviewObj.isStandardizableComment;
                 row["dataFlag"] = ulbOverviewObj.dataFlag;
