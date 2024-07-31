@@ -306,6 +306,7 @@ module.exports = function (req, res) {
             } else {
                 const sheetNames = getSheetNames(file.path);
                 const inputSheet = sheetNames.filter((sheet) => { return sheet.toLowerCase() == CONSTANTS.LEDGER.BULK_ENTRY.INPUT_SHEET_NAME.toLowerCase() });
+                const overviewSheet = sheetNames.filter((sheet) => { return sheet.toLowerCase() == CONSTANTS.LEDGER.BULK_ENTRY.OVERVIEW_SHEET_NAME.toLowerCase() });
 
                 return new Promise(async (resolve, reject) => {
                     let exceltojson;
@@ -317,7 +318,7 @@ module.exports = function (req, res) {
                                 input: file.path,
                                 output: null, //since we don't need output.json
                                 lowerCaseHeaders: true,
-                                sheet: CONSTANTS.LEDGER.BULK_ENTRY.OVERVIEW_SHEET_NAME,
+                                sheet: overviewSheet,
                             }, function (err, sheet) {
                                 if (err) {
                                     rjct({ message: "Error: OVERVIEW_SHEET_NAME" })
