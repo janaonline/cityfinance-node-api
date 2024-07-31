@@ -752,7 +752,8 @@ let keyDetailsForm1 = {
             "position": 1,
             "refKey": "gazetteUpload",
             "formFieldType": 'file',
-            "file": { "name": "", "url": "" }
+            "file": { "name": "", "url": "" },
+            "allowedFileTypes": ["pdf"],
         }],
         max: 20,
         min: 0,
@@ -776,7 +777,8 @@ let keyDetailsForm1 = {
             "position": 1,
             "refKey": "pop2024Upload",
             "formFieldType": 'file',
-            "file": { "name": "", "url": "" }
+            "file": { "name": "", "url": "" },
+            "allowedFileTypes": ["pdf"],
         }],
         max: 20,
         min: 0,
@@ -1551,7 +1553,8 @@ let keyDetailsForm2 = {
             "position": 1,
             "refKey": "gazetteUpload",
             "formFieldType": 'file',
-            "file": { "name": "", "url": "" }
+            "file": { "name": "", "url": "" },
+            "allowedFileTypes": ["pdf"],
         }],
         max: 20,
         min: 0,
@@ -1575,7 +1578,8 @@ let keyDetailsForm2 = {
             "position": 1,
             "refKey": "pop2024Upload",
             "formFieldType": 'file',
-            "file": { "name": "", "url": "" }
+            "file": { "name": "", "url": "" },
+            "allowedFileTypes": ["pdf"],
         }],
         max: 20,
         min: 0,
