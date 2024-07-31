@@ -134,11 +134,11 @@ module.exports.createxviFcFormJson = async (req, res) => {
 module.exports.getForm = async (req, res) => {
     let ulbId = req.query.ulb;
     let userForm = await Ulb.findOne({ _id: ObjectId(ulbId) }, { formType: 1, name: 1, state: 1, _id: 1, censusCode: 1, sbCode: 1 }).lean();
-    let stateData = await State.findOne({ _id: ObjectId(userForm.state) }, { name: 1, _id: 1, isUT: 1 }).lean();
+    let stateData = await State.findOne({ _id: ObjectId(userForm.state) }, { name: 1, _id: 1 }).lean();
 
-    if (stateData.isUT) {
-        return res.status(404).json({ status: false, message: "As of now, ULBs from Union Territories are not required to upload any information related to the XVIFC Data Collection module. If you have any queries or need assistance, please feel free to contact us at 16fcgrant@cityfinance.in" });
-    }
+    // if (stateData.isUT) {
+    //     return res.status(404).json({ status: false, message: "As of now, ULBs from Union Territories are not required to upload any information related to the XVIFC Data Collection module. If you have any queries or need assistance, please feel free to contact us at 16fcgrant@cityfinance.in" });
+    // }
 
     if (userForm.formType == "form1") {
         try {
@@ -2019,13 +2019,13 @@ module.exports.formList = async (req, res) => {
     let searchText = req.body.searchText ? req.body.searchText : "";
 
     matchParams = user.role == 'XVIFC' ? {
-        $and: [{ name: { $regex: `${searchText}`, $options: 'im' } }, { isActive: true }, { isUT: false }, filter]
+        $and: [{ name: { $regex: `${searchText}`, $options: 'im' } }, { isActive: true }, filter]
     } : user.role == 'XVIFC_STATE' ? { $and: [{ state: ObjectId(stateId) }, { isActive: true }, filter, { name: { $regex: `${searchText}`, $options: 'im' } }] } : "";
 
     if (filter.formStatus == 'NOT_STARTED') {
         filter.formStatus = null;
         matchParams = user.role == 'XVIFC' ? {
-            $and: [{ name: { $regex: `${searchText}`, $options: 'im' } }, { isActive: true }, { isUT: false }, filter]
+            $and: [{ name: { $regex: `${searchText}`, $options: 'im' } }, { isActive: true }, filter]
         } : user.role == 'XVIFC_STATE' ? { $and: [{ state: ObjectId(stateId) }, { isActive: true }, filter, { name: { $regex: `${searchText}`, $options: 'im' } }] } : "";
     }
 
@@ -2073,7 +2073,6 @@ module.exports.formList = async (req, res) => {
                         ulbName: { $first: "$name" },
                         state: { $first: "$state" },
                         stateName: { $first: "$stateResult.name" },
-                        isUT: { $first: "$stateResult.isUT" },
                         formStatus: { $first: "$tab.formStatus" },
                         tabs: { $first: "$tab.tab" },
                         isActive: { $first: "$isActive" },
@@ -2108,8 +2107,7 @@ module.exports.formList = async (req, res) => {
                         formId: 1,
                         tabs: 1,
                         stateName: 1,
-                        formStatus: 1,
-                        isUT: 1,
+                        formStatus: 1
                     }
                 },
                 {
@@ -2178,8 +2176,8 @@ module.exports.formList = async (req, res) => {
             obj["action"] = ((eachUlbForm.formStatus == 'UNDER_REVIEW_BY_XVIFC' || eachUlbForm.formStatus == 'UNDER_REVIEW_BY_STATE') && user.role == 'XVIFC') || (eachUlbForm.formStatus == 'UNDER_REVIEW_BY_STATE' && user.role == 'XVIFC_STATE') || (eachUlbForm.formStatus == 'SUBMITTED') ? 'Review' : 'View';
             obj["statusClass"] = eachUlbForm.formStatus == 'IN_PROGRESS' ? 'status-in-progress' : eachUlbForm.formStatus == 'SUBMITTED' || eachUlbForm.formStatus == 'UNDER_REVIEW_BY_STATE' ? 'status-under-review' : 'status-not-started';
 
-            if (!eachUlbForm.isUT)
-                reviewTableData.push(obj);
+            // if (!eachUlbForm.isUT)
+            reviewTableData.push(obj);
         }
 
         if (filter.formId) {
@@ -2469,7 +2467,6 @@ module.exports.progressReport = async (req, res) => {
                 ulbName: { $first: "$name" },
                 state: { $first: "$state" },
                 stateName: { $first: "$stateResult.name" },
-                isUT: { $first: "$stateResult.isUT" },
                 formStatus: { $first: "$tab.formStatus" },
                 tabs: { $first: "$tab.tab" },
                 isActive: { $first: "$isActive" },
@@ -2489,8 +2486,7 @@ module.exports.progressReport = async (req, res) => {
                 formType: 1,
                 tabs: 1,
                 stateName: 1,
-                formStatus: 1,
-                isUT: 1,
+                formStatus: 1
             }
         },
         { $sort: { formStatus: -1, stateName: 1, name: 1 } }
@@ -2539,7 +2535,7 @@ module.exports.progressReport = async (req, res) => {
                 obj[tab.key] = tab.submissionPercent;
             }
 
-            if (!eachUlbForm.isUT)
+            // if (!eachUlbForm.isUT)
                 reviewTableData.push(obj);
         }
 
