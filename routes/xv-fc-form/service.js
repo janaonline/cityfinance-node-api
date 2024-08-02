@@ -1618,28 +1618,28 @@ module.exports.slbDownload = catchAsync(async (req, res) => {
     'SLB Form Status',
 
     'Water supplied in litre per capita per day(lpcd)* - Actual Indicator 2020-21',
-    'Water supplied in litre per capita per day(lpcd)* - Actual Indicator 2021-22',
-    'Water supplied in litre per capita per day(lpcd)* - Actual Indicator 2022-23',
-    'Water supplied in litre per capita per day(lpcd)* - Actual Indicator 2023-24',
-    'Water supplied in litre per capita per day(lpcd)* - Actual Indicator 2024-25',
+    'Water supplied in litre per capita per day(lpcd)* - Target Indicator 2021-22',
+    'Water supplied in litre per capita per day(lpcd)* - Target Indicator 2022-23',
+    'Water supplied in litre per capita per day(lpcd)* - Target Indicator 2023-24',
+    'Water supplied in litre per capita per day(lpcd)* - Target Indicator 2024-25',
 
     '% of Non-revenue water * - Actual Indicator 2020-21',
-    '% of Non-revenue water * - Actual Indicator 2021-22',
-    '% of Non-revenue water * - Actual Indicator 2022-23',
-    '% of Non-revenue water * - Actual Indicator 2023-24',
-    '% of Non-revenue water * - Actual Indicator 2024-25',
+    '% of Non-revenue water * - Target Indicator 2021-22',
+    '% of Non-revenue water * - Target Indicator 2022-23',
+    '% of Non-revenue water * - Target Indicator 2023-24',
+    '% of Non-revenue water * - Target Indicator 2024-25',
 
     '% of households covered with sewerage/septage services * - Actual Indicator 2020-21',
-    '% of households covered with sewerage/septage services * - Actual Indicator 2021-22',
-    '% of households covered with sewerage/septage services * - Actual Indicator 2022-23',
-    '% of households covered with sewerage/septage services * - Actual Indicator 2023-24',
-    '% of households covered with sewerage/septage services * - Actual Indicator 2024-25',
+    '% of households covered with sewerage/septage services * - Target Indicator 2021-22',
+    '% of households covered with sewerage/septage services * - Target Indicator 2022-23',
+    '% of households covered with sewerage/septage services * - Target Indicator 2023-24',
+    '% of households covered with sewerage/septage services * - Target Indicator 2024-25',
 
     '% of households covered with piped water supply * - Actual Indicator 2020-21',
-    '% of households covered with piped water supply * - Actual Indicator 2021-22',
-    '% of households covered with piped water supply * - Actual Indicator 2022-23',
-    '% of households covered with piped water supply * - Actual Indicator 2023-24',
-    '% of households covered with piped water supply * - Actual Indicator 2024-25'
+    '% of households covered with piped water supply * - Target Indicator 2021-22',
+    '% of households covered with piped water supply * - Target Indicator 2022-23',
+    '% of households covered with piped water supply * - Target Indicator 2023-24',
+    '% of households covered with piped water supply * - Target Indicator 2024-25'
   ];
   let headersKey = [
     'design_year.year',
