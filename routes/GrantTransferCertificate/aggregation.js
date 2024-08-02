@@ -399,7 +399,8 @@ module.exports.pfmsFormsAggregation = (params) => {
     let query = [
         {
             "$match": {
-                "state": state
+                "state": state,
+                "isActive": true,
             }
         },
         {
@@ -465,6 +466,11 @@ module.exports.pfmsFormsAggregation = (params) => {
                     }
                 ],
                 "as": "pfmsAccount"
+            }
+        },
+        {
+            "$match": {
+                "state": state
             }
         },
         {
