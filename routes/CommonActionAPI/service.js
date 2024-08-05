@@ -17,6 +17,7 @@ const PropertyTaxFloorRate = require('../../models/PropertyTaxFloorRate');
 const StateFinanceCommissionFormation = require('../../models/StateFinanceCommissionFormation');
 const TwentyEightSlbsForm = require('../../models/TwentyEightSlbsForm');
 const GrantTransferCertificate = require('../../models/GrantTransferCertificate');
+const SFC = require('../../models/SFC');
 const { FormNames, FORM_LEVEL, MASTER_STATUS, YEAR_CONSTANTS, ULB_ACCESSIBLE_YEARS, USER_ROLE, MODEL_PATH, MASTER_FORM_STATUS } = require('../../util/FormNames');
 const { calculateTabwiseStatus } = require('../annual-accounts/utilFunc');
 const { modelPath } = require('../../util/masterFunctions')
@@ -575,6 +576,9 @@ function getCollectionName(formName) {
     switch (formName) {
         case "Grant Transfer Certificate":
             collection = GrantTransferCertificate;
+            break;
+        case "State Finance Commission Form":
+            collection = SFC;
             break;
         case "Detailed Utilisation Report":
             collection = UtilizationReport;
