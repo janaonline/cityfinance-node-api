@@ -1,5 +1,6 @@
 const catchAsync = require('../../util/catchAsync')
 const Sidemenu = require('../../models/Sidemenu')
+const mongoose = require("mongoose");
 const ObjectId = require("mongoose").Types.ObjectId;
 const Year = require('../../models/Year');
 const { ULBMASTER } = require('../../_helper/constants');
@@ -22,6 +23,7 @@ const { YEAR_CONSTANTS, MASTER_STATUS_ID, MASTER_FORM_STATUS, YEAR_CONSTANTS_IDS
 var outDatedYears = ["2018-19","2019-20","2021-22","2022-23"]
 //STate Forms
 const SFC = require('../../models/StateFinanceCommissionFormation')
+const SFC_new = require('../../models/SFC')
 const PTFR = require('../../models/PropertyTaxFloorRate')
 const GTC_STATE = require('../../models/GrantTransferCertificate')
 const GrantDistribution = require('../../models/GrantDistribution')
@@ -293,6 +295,7 @@ const getformStatus = (data)=>{
 }
 
 module.exports.get = catchAsync(async (req, res) => {
+  // mongoose.set('debug', true);
   try {  
   let user = req.decoded;
   let role = req.query.role;
@@ -329,6 +332,7 @@ module.exports.get = catchAsync(async (req, res) => {
   
   let output = [];
   let ulbInfo;
+  let data = await Sidemenu.find({ year: ObjectId(year), role: role, isActive: true }).lean();
   if (role == 'ULB') {
     ulbInfo = await Ulb.findOne({ _id: ObjectId(_id) }).lean();
     isUA = ulbInfo?.isUA;
@@ -386,7 +390,8 @@ module.exports.get = catchAsync(async (req, res) => {
       state: ObjectId(_id),
       design_year: ObjectId(year)
     }
-    let formArr = [SFC, PTFR, GTC_STATE,GrantDistribution ,ActionPlan, WaterRejuvenation,GrantDistribution]
+    let formArr = [SFC, SFC_new, PTFR, GTC_STATE,GrantDistribution ,ActionPlan, WaterRejuvenation,GrantDistribution]
+
     for (el of formArr) {
       dbCondition = {...condition}
       if (![GTC_STATE,GrantDistribution].includes(el)) {
@@ -395,8 +400,13 @@ module.exports.get = catchAsync(async (req, res) => {
       }
         let formData = await el.findOne(dbCondition).lean()
         if (formData) {
-          if (formData.design_year.toString() === YEAR_CONSTANTS['23_24']) {
-            output.push(findStatusAndTooltipMaster({ formData, formId: FormModelMappingMaster_State[el['modelName']], loggedInUserRole: user.role, viewFor: role }))
+          const year = YEAR_CONSTANTS_IDS[formData.design_year.toString()];
+          const yearSplit = Number(year.split('-')[0]);
+          // greater than equal 2023 get dynamic formId
+          if (yearSplit >= 2023) {
+          // if (formData.design_year.toString() === YEAR_CONSTANTS['23_24']) {
+            // output.push(findStatusAndTooltipMaster({ formData, formId: FormModelMappingMaster_State[el['modelName']], loggedInUserRole: user.role, viewFor: role }))
+            output.push(findStatusAndTooltipMaster({ formData, formId: getFormId(data,el), loggedInUserRole: user.role, viewFor: role }))
           } else {
             output.push(findStatusAndTooltip(formData, FormModelMapping_State[el['modelName']], el['modelName'], user.role, role))
           }
@@ -408,18 +418,18 @@ module.exports.get = catchAsync(async (req, res) => {
         if (formDataArray.length > 0) {
           if(outDatedYears.includes(getKeyByValue(years,year))){
             formData = getGTCFinalForm(formDataArray);
-            output.push(findStatusAndTooltip(formData, FormModelMapping_State[el['modelName']], el['modelName'], user.role, role))
+            output.push(findStatusAndTooltip(formData, getFormId(data,el), el['modelName'], user.role, role))
+            // output.push(findStatusAndTooltip(formData, FormModelMapping_State[el['modelName']], el['modelName'], user.role, role))
           }
           else{
             formData = await getformStatus(formDataArray)
-            output.push(findStatusAndTooltipMaster({ formData, formId: FormModelMappingMaster_State[el['modelName']], loggedInUserRole: user.role, viewFor: role }))
+            output.push(findStatusAndTooltipMaster({ formData, formId: getFormId(data,el), loggedInUserRole: user.role, viewFor: role }))
           }
         }
       }
     }
   }
 
-  let data = await Sidemenu.find({ year: ObjectId(year), role: role, isActive: true }).lean();
   let baseYearForms = [CollectionName.slb]
   
   if (data.length) {
@@ -563,6 +573,10 @@ module.exports.get = catchAsync(async (req, res) => {
 }
 
 })
+
+function getFormId(data, el) {
+  return data.find(e=>e.path === el['modelName'])?._id;
+}
 
 /**
  * The function `updateConditionIfUlbAlreadyExistedPreviously` updates a condition if a ULB (Urban
