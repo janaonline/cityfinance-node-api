@@ -186,6 +186,24 @@ const moneyInformation = async (req, res) => {
                 }
             }
         },
+          expense: {
+            $sum: {
+              $cond: {
+                if: {
+                  $and: [
+                    {
+                      $ne: ["$lineitems.code", "280"]
+                    },
+                    {
+                      $ne: ["$lineitems.code", "290"]
+                    }
+                  ]
+                },
+                then: "$amount",
+                else: 0
+              }
+            }
+          },
           totalGrant: {
             $sum: {
               $cond: {
@@ -222,6 +240,7 @@ const moneyInformation = async (req, res) => {
     ])
     let revenue = data.find(el => el._id == 'Revenue') ;
     let assets = data.find(el => el._id == 'Asset') ;
+    let totExpense = data.find(el => el._id == 'Expense') ;
     
     let taxRevenueObj = {
       _id: 'TaxRevenue',
@@ -235,10 +254,16 @@ const moneyInformation = async (req, res) => {
       _id: 'BalanceSheetSize',
       amount: assets?.amount
     }
+    let expenseObj = {
+      _id: 'Expense',
+      amount: totExpense?.expense
+    }
   
-data.push(ownRevenue[0],taxRevenueObj, grantObj, balanceSheet )
-
-    return Response.OK(res, data,message);
+  let index = data.findIndex((x)=>{return x._id == "Expense"})
+      data[index]=expenseObj;
+  data.push(ownRevenue[0],taxRevenueObj, grantObj, balanceSheet )
+    
+  return Response.OK(res, data,message);
   } catch (err) {
     console.log(err)
     console.error(err.message);
