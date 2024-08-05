@@ -136,6 +136,10 @@ module.exports.getForm = async (req, res) => {
     let userForm = await Ulb.findOne({ _id: ObjectId(ulbId) }, { formType: 1, name: 1, state: 1, _id: 1, censusCode: 1, sbCode: 1 }).lean();
     let stateData = await State.findOne({ _id: ObjectId(userForm.state) }, { name: 1, _id: 1 }).lean();
 
+    // if (stateData.isUT) {
+    //     return res.status(404).json({ status: false, message: "As of now, ULBs from Union Territories are not required to upload any information related to the XVIFC Data Collection module. If you have any queries or need assistance, please feel free to contact us at 16fcgrant@cityfinance.in" });
+    // }
+
     if (userForm.formType == "form1") {
         try {
             let form1Data = await getForm1(userForm, stateData, req.query.role, "");
@@ -521,6 +525,17 @@ async function getForm1(ulbData, stateData, roleName, submittedData) {
         }
     }
 
+    let indexOfYearOfConstitution = from1QuestionFromDb[0].data.findIndex((x) => { return x.key == 'yearOfConstitution' });
+
+    if (from1QuestionFromDb[0].data[indexOfYearOfConstitution].value == 'After 2022-23') {
+        from1QuestionFromDb[1].message = "We are collecting data till the year 2023-24. Since your ULB was recently constituted, it's not mandatory for you to fill in the financial section data. Please fill in the rest of the form";
+        from1QuestionFromDb[2].message = "We are collecting data till the year 2023-24. Since your ULB was recently constituted, it's not mandatory for you to fill in the financial section data. Please fill in the rest of the form";
+    } else {
+        from1QuestionFromDb[1].message = '';
+        from1QuestionFromDb[2].message = '';
+    }
+
+
     // Add Primary keys to the keyDetails{}  - financialData.
     let financialData = from1QuestionFromDb[1].data;
     from1QuestionFromDb[1].data = await getUpdatedFinancialData_headers(financialData);
@@ -542,6 +557,7 @@ async function getForm1(ulbData, stateData, roleName, submittedData) {
         stateName: stateData.name,
         tabs: from1QuestionFromDb,
         formStatus: currentFormStatus,
+        rejectReason: from1AnswerFromDb && from1AnswerFromDb.rejectReason ? from1AnswerFromDb.rejectReason : "",
         validationCounter,
         financialYearTableHeader
     };
@@ -767,7 +783,16 @@ async function getForm2(ulbData, stateData, roleName, submittedData) {
     from2QuestionFromDb[0].data[0].value = ulbData.name;
     from2QuestionFromDb[0].data[1].value = stateData.name;
 
-
+    let indexOfYearOfConstitution = from2QuestionFromDb[0].data.findIndex((x) => { return x.key == 'yearOfConstitution' });
+    if (from2QuestionFromDb[0].data[indexOfYearOfConstitution].value == 'After 2022-23') {
+        from2QuestionFromDb[1].message = "We are collecting data till the year 2023-24. Since your ULB was recently constituted, it's not mandatory for you to fill in the financial section data. Please fill in the rest of the form";
+        from2QuestionFromDb[2].message = "We are collecting data till the year 2023-24. Since your ULB was recently constituted, it's not mandatory for you to fill in the financial section data. Please fill in the rest of the form";
+        from2QuestionFromDb[4].message = "We are collecting data till the year 2023-24. Since your ULB was recently constituted, it's not mandatory for you to fill in the financial section data. Please fill in the rest of the form";
+    } else {
+        from2QuestionFromDb[1].message = '';
+        from2QuestionFromDb[2].message = '';
+        from2QuestionFromDb[4].message = '';
+    }
     from2QuestionFromDb[1].instruction = "All data should be in consonance with audited accounts or information already submitted on CityFinance, wherever applicable. Amount entered should be in Rupees.";
 
     // Add Primary keys to the keyDetails{}  - financialData.
@@ -795,6 +820,7 @@ async function getForm2(ulbData, stateData, roleName, submittedData) {
         stateName: stateData.name,
         tabs: from2QuestionFromDb,
         formStatus: currentFormStatus,
+        rejectReason: from2AnswerFromDb && from2AnswerFromDb.rejectReason ? from2AnswerFromDb.rejectReason : "",
         validationCounter,
         financialYearTableHeader
     };
@@ -1993,13 +2019,13 @@ module.exports.formList = async (req, res) => {
     let searchText = req.body.searchText ? req.body.searchText : "";
 
     matchParams = user.role == 'XVIFC' ? {
-        $and: [{ name: { $regex: `${searchText}`, $options: 'im' } }, { isActive: true }, { isUT: false }, filter]
+        $and: [{ name: { $regex: `${searchText}`, $options: 'im' } }, { isActive: true }, filter]
     } : user.role == 'XVIFC_STATE' ? { $and: [{ state: ObjectId(stateId) }, { isActive: true }, filter, { name: { $regex: `${searchText}`, $options: 'im' } }] } : "";
 
     if (filter.formStatus == 'NOT_STARTED') {
         filter.formStatus = null;
         matchParams = user.role == 'XVIFC' ? {
-            $and: [{ name: { $regex: `${searchText}`, $options: 'im' } }, { isActive: true }, { isUT: false }, filter]
+            $and: [{ name: { $regex: `${searchText}`, $options: 'im' } }, { isActive: true }, filter]
         } : user.role == 'XVIFC_STATE' ? { $and: [{ state: ObjectId(stateId) }, { isActive: true }, filter, { name: { $regex: `${searchText}`, $options: 'im' } }] } : "";
     }
 
@@ -2047,7 +2073,6 @@ module.exports.formList = async (req, res) => {
                         ulbName: { $first: "$name" },
                         state: { $first: "$state" },
                         stateName: { $first: "$stateResult.name" },
-                        isUT: { $first: "$stateResult.isUT" },
                         formStatus: { $first: "$tab.formStatus" },
                         tabs: { $first: "$tab.tab" },
                         isActive: { $first: "$isActive" },
@@ -2082,8 +2107,7 @@ module.exports.formList = async (req, res) => {
                         formId: 1,
                         tabs: 1,
                         stateName: 1,
-                        formStatus: 1,
-                        isUT: 1,
+                        formStatus: 1
                     }
                 },
                 {
@@ -2108,7 +2132,7 @@ module.exports.formList = async (req, res) => {
     }
     else {
         matchParams = user.role == 'XVIFC' ? filter : user.role == 'XVIFC_STATE' ? { $and: [{ state: ObjectId(stateId) }, filter, { ulbName: { $regex: `${searchText}`, $options: 'im' } }] } : "";
-        listOfUlbsFromState = await XviFcForm1DataCollection.find(matchParams).sort(Object.keys(sort).length > 0 ? sort : { formStatus: -1, ulbName: 1 }).skip(skip).limit(limit).lean();
+        listOfUlbsFromState = await XviFcForm1DataCollection.find(matchParams).sort(Object.keys(sort).length > 0 ? sort : { formStatus: -1, ulbName: 1 }).skip(skip * limit).limit(limit).lean();
         totalUlbForm = await XviFcForm1DataCollection.find(matchParams).count().lean();
     }
 
@@ -2149,11 +2173,11 @@ module.exports.formList = async (req, res) => {
             obj["ulbCategory"] = eachUlbForm.formType == 'form1' ? "Category 1" : eachUlbForm.formType == 'form2' ? "Category 2" : "";
             obj["formStatus"] = eachUlbForm.formStatus ? eachUlbForm.formStatus : "NOT_STARTED";
             obj["dataSubmitted"] = ulbData ? Math.round(Number(dataSubmissionPercent / tabCount)) : 0;
-            obj["action"] = (eachUlbForm.formStatus == 'UNDER_REVIEW_BY_XVIFC' && user.role == 'XVIFC') || (eachUlbForm.formStatus == 'UNDER_REVIEW_BY_STATE' && user.role == 'XVIFC_STATE') || (eachUlbForm.formStatus == 'SUBMITTED') ? 'Review' : 'View';
+            obj["action"] = ((eachUlbForm.formStatus == 'UNDER_REVIEW_BY_XVIFC' || eachUlbForm.formStatus == 'UNDER_REVIEW_BY_STATE') && user.role == 'XVIFC') || (eachUlbForm.formStatus == 'UNDER_REVIEW_BY_STATE' && user.role == 'XVIFC_STATE') || (eachUlbForm.formStatus == 'SUBMITTED') ? 'Review' : 'View';
             obj["statusClass"] = eachUlbForm.formStatus == 'IN_PROGRESS' ? 'status-in-progress' : eachUlbForm.formStatus == 'SUBMITTED' || eachUlbForm.formStatus == 'UNDER_REVIEW_BY_STATE' ? 'status-under-review' : 'status-not-started';
 
-            if (!eachUlbForm.isUT)
-                reviewTableData.push(obj);
+            // if (!eachUlbForm.isUT)
+            reviewTableData.push(obj);
         }
 
         if (filter.formId) {
@@ -2192,12 +2216,15 @@ async function getSubmissionPercent(eachTabData, formId) {
                 if (eachAns.saveAsDraftValue.includes('Before')) {
                     temp = temp + 1;
                 }
+                if (eachAns.saveAsDraftValue.includes('After')) {
+                    temp = 0;
+                }
                 denominator["financialData"] = formId == 16 ? temp * 20 : temp * 42;
                 denominator["uploadDoc"] = formId == 16 ? temp * 1 : temp * 1;
                 denominator.yearOfConstitution = eachAns.saveAsDraftValue;
             }
             if (eachAns.key == "yearOfSlb" && eachAns.saveAsDraftValue) {
-                denominator["serviceLevelBenchmark"] = (baseYear - Number(eachAns.saveAsDraftValue.split("-")[1]) + 1) * 28;
+                denominator["serviceLevelBenchmark"] = eachAns.saveAsDraftValue.includes('After') ? 0 : (baseYear - Number(eachAns.saveAsDraftValue.split("-")[1]) + 1) * 28;
                 denominator.yearOfSlb = eachAns.saveAsDraftValue;
             }
         }
@@ -2243,11 +2270,12 @@ async function getSubmissionPercent(eachTabData, formId) {
 
         }
     }
+
     return {
         key: eachTabData.tabKey,
         numerator: numeratorSaveAsDraft,
         denominator: denominator[eachTabData.tabKey],
-        submissionPercent: Number((numeratorSaveAsDraft / denominator[eachTabData.tabKey]) * 100)
+        submissionPercent: denominator[eachTabData.tabKey] == 0 ? 0 : Number((numeratorSaveAsDraft / denominator[eachTabData.tabKey]) * 100)
     };
 }
 
@@ -2439,7 +2467,6 @@ module.exports.progressReport = async (req, res) => {
                 ulbName: { $first: "$name" },
                 state: { $first: "$state" },
                 stateName: { $first: "$stateResult.name" },
-                isUT: { $first: "$stateResult.isUT" },
                 formStatus: { $first: "$tab.formStatus" },
                 tabs: { $first: "$tab.tab" },
                 isActive: { $first: "$isActive" },
@@ -2459,8 +2486,7 @@ module.exports.progressReport = async (req, res) => {
                 formType: 1,
                 tabs: 1,
                 stateName: 1,
-                formStatus: 1,
-                isUT: 1,
+                formStatus: 1
             }
         },
         { $sort: { formStatus: -1, stateName: 1, name: 1 } }
@@ -2509,7 +2535,7 @@ module.exports.progressReport = async (req, res) => {
                 obj[tab.key] = tab.submissionPercent;
             }
 
-            if (!eachUlbForm.isUT)
+            // if (!eachUlbForm.isUT)
                 reviewTableData.push(obj);
         }
 
@@ -2571,7 +2597,8 @@ module.exports.progressReport = async (req, res) => {
         const now = new Date();
         const dateString = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')}`;
         const timeString = `${now.getHours().toString().padStart(2, '0')}-${now.getMinutes().toString().padStart(2, '0')}-${now.getSeconds().toString().padStart(2, '0')}`;
-        const filename = `${user.role}_FORM_PROGRESS_${dateString}_${timeString}.xlsx`;
+        let file = user.role == 'XVIFC' ? 'XVIFC' : user.name + '_XVIFC';
+        const filename = `${file}_FORM_PROGRESS_${dateString}_${timeString}.xlsx`;
 
         // Set the response headers
         res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
