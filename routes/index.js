@@ -233,6 +233,10 @@ router.use('/property-tax-floor-rate', PropertyTaxFloorRate);
 const StateFinanceCommissionFormation = require('./state-finance-commission-formation');
 router.use('/state-finance-commission-formation', StateFinanceCommissionFormation);
 
+//state-finance-commission- form submission
+const sfc = require('./sfc');
+router.use('/sfc', sfc);
+
 //calculate-recommendation
 const calculateRecommendation = require('./Scoring');
 router.use('/calculate-recommendation', calculateRecommendation);
