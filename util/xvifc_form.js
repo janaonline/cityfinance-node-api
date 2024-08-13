@@ -112,7 +112,7 @@ let keyDetailsForm1 = {
     yearOfElection: {
         class: '',
         formFieldType: 'dropdown',
-        options: ["2024-25", "2023-24", "2022-23", "2021-22", "2020-21", "2019-20", "2018-19", "2017-18", "2016-17", "2015-16", "Before 2015-16", "Elections not conducted yet since formation"],
+        options: ["Elections not conducted yet since formation","2024-25", "2023-24", "2022-23", "2021-22", "2020-21", "2019-20", "2018-19", "2017-18", "2016-17", "2015-16", "Before 2015-16"],
         key: 'yearOfElection',
         displayPriority: '7',
         quesPos: 7,
@@ -898,7 +898,7 @@ let keyDetailsForm2 = {
     yearOfElection: {
         class: '',
         formFieldType: 'dropdown',
-        options: ["2024-25", "2023-24", "2022-23", "2021-22", "2020-21", "2019-20", "2018-19", "2017-18", "2016-17", "2015-16", "Before 2015-16", "Elections not conducted yet since formation"],
+        options: ["Elections not conducted yet since formation","2024-25", "2023-24", "2022-23", "2021-22", "2020-21", "2019-20", "2018-19", "2017-18", "2016-17", "2015-16", "Before 2015-16"],
         key: 'yearOfElection',
         displayPriority: '7',
         quesPos: 7,
