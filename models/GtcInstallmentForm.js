@@ -25,7 +25,7 @@ const installmentFormSchema = new Schema(
         },
         year : {
             type:String,
-            enum:["2022-23","2023-24"],
+            enum:["2022-23","2023-24", "2024-25"],
             required:[true,"year must be  2022-2023 / 2023-2024"]
         },
         design_year : {type:Schema.Types.ObjectId,ref:"Year"},
