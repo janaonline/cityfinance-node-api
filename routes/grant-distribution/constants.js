@@ -68,6 +68,21 @@ function getChildQuestion(params){
         "question":`(A) Upload Grant Allocation for  Water Supply and SWM - FY (${year})`,
         "quesText":"Upload Grant Allocation for Water Supply and SWM",
         "disableMsg":""
+      },
+      "nonmillion_tied_untied_2024-25_1":{
+        "question":`(A) Upload Grant Allocation to ULBs - 1st Installment (${year})`,
+        "quesText":"Upload Grant Allocation to ULBs",
+        "disableMsg":""
+      },
+      "nonmillion_tied_untied_2024-25_2":{
+        "question":`(B) Upload Grant Allocation to ULBs - 2nd Installment (${year})`,
+        "quesText":"Upload Grant Allocation to ULBs",
+        "disableMsg":`1st Installment (${year}) Grant allocation has to be uploaded first before uploading 2nd Installment (${year}) Grant allocation to ULBs`
+      },
+      "million_tied_2024-25_1" : {
+        "question":`(A) Upload Grant Allocation for  Water Supply and SWM - FY (${year})`,
+        "quesText":"Upload Grant Allocation for Water Supply and SWM",
+        "disableMsg":""
       }
     }
   }
