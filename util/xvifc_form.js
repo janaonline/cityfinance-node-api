@@ -71,7 +71,7 @@ let keyDetailsForm1 = {
             "name": "greaterThanEqualTo",
             "validator": 0,
             "field": "pop2011",
-            "message": "'Population as per 01 April 2024' must be greater than or equal to 'Population as per Census 2011'."
+            "message": "Population as per 2024 value entered is lower than Population as per Census 2011."
         },
     },
     areaOfUlb: {
@@ -112,7 +112,7 @@ let keyDetailsForm1 = {
     yearOfElection: {
         class: '',
         formFieldType: 'dropdown',
-        options: ["2024-25", "2023-24", "2022-23", "2021-22", "2020-21", "2019-20", "2018-19", "2017-18", "2016-17", "2015-16", "Before 2015-16"],
+        options: ["Elections not conducted yet since formation","2024-25", "2023-24", "2022-23", "2021-22", "2020-21", "2019-20", "2018-19", "2017-18", "2016-17", "2015-16", "Before 2015-16"],
         key: 'yearOfElection',
         displayPriority: '7',
         quesPos: 7,
@@ -201,7 +201,7 @@ let keyDetailsForm1 = {
         quesPos: 17,
         validations: [],
         label: 'Interest Income',
-        info: 'Interest income shall include sale from assets, land and other assets.',
+        info: 'Interest income includes interest earned from Bank Accounts, interest on loans and advances to employees, others, etc.',
         required: true,
         year: 8,
         min: -999999999999999,
@@ -216,7 +216,7 @@ let keyDetailsForm1 = {
         quesPos: 18,
         validations: [],
         label: 'Other Income',
-        info: 'Other income shall include sale & hire charges, income from investments,interest earned, etc.',
+        info: 'Other income includes sale & hire, sale of assets, sale of land,sale of other assets, income from investments, etc.',
         required: true,
         year: 8,
         min: -999999999999999,
@@ -752,7 +752,8 @@ let keyDetailsForm1 = {
             "position": 1,
             "refKey": "gazetteUpload",
             "formFieldType": 'file',
-            "file": { "name": "", "url": "" }
+            "file": { "name": "", "url": "" },
+            "allowedFileTypes": ["pdf"],
         }],
         max: 20,
         min: 0,
@@ -776,7 +777,8 @@ let keyDetailsForm1 = {
             "position": 1,
             "refKey": "pop2024Upload",
             "formFieldType": 'file',
-            "file": { "name": "", "url": "" }
+            "file": { "name": "", "url": "" },
+            "allowedFileTypes": ["pdf"],
         }],
         max: 20,
         min: 0,
@@ -855,7 +857,7 @@ let keyDetailsForm2 = {
             "name": "greaterThanEqualTo",
             "validator": 0,
             "field": "pop2011",
-            "message": "'Population as per 01 April 2024' must be greater than or equal to 'Population as per Census 2011'."
+            "message": "Population as per 2024 value entered is lower than Population as per Census 2011."
         },
     },
     areaOfUlb: {
@@ -896,7 +898,7 @@ let keyDetailsForm2 = {
     yearOfElection: {
         class: '',
         formFieldType: 'dropdown',
-        options: ["2024-25", "2023-24", "2022-23", "2021-22", "2020-21", "2019-20", "2018-19", "2017-18", "2016-17", "2015-16", "Before 2015-16"],
+        options: ["Elections not conducted yet since formation","2024-25", "2023-24", "2022-23", "2021-22", "2020-21", "2019-20", "2018-19", "2017-18", "2016-17", "2015-16", "Before 2015-16"],
         key: 'yearOfElection',
         displayPriority: '7',
         quesPos: 7,
@@ -990,7 +992,7 @@ let keyDetailsForm2 = {
         quesPos: 17,
         validations: [],
         label: 'Interest Income',
-        info: 'Interest income shall include sale from assets, land and other assets.',
+        info: 'Interest income includes interest earned from Bank Accounts, interest on loans and advances to employees, others, etc.',
         required: true,
         year: 8,
         autoSumValidation: '',
@@ -1007,7 +1009,7 @@ let keyDetailsForm2 = {
         quesPos: 18,
         validations: [],
         label: 'Other Income',
-        info: 'Other income shall include sale & hire charges, income from investments,interest earned, etc.',
+        info: 'Other income includes sale & hire, sale of assets, sale of land,sale of other assets, income from investments, etc.',
         required: true,
         year: 8,
         autoSumValidation: '',
@@ -1551,7 +1553,8 @@ let keyDetailsForm2 = {
             "position": 1,
             "refKey": "gazetteUpload",
             "formFieldType": 'file',
-            "file": { "name": "", "url": "" }
+            "file": { "name": "", "url": "" },
+            "allowedFileTypes": ["pdf"],
         }],
         max: 20,
         min: 0,
@@ -1575,7 +1578,8 @@ let keyDetailsForm2 = {
             "position": 1,
             "refKey": "pop2024Upload",
             "formFieldType": 'file',
-            "file": { "name": "", "url": "" }
+            "file": { "name": "", "url": "" },
+            "allowedFileTypes": ["pdf"],
         }],
         max: 20,
         min: 0,
@@ -2093,7 +2097,7 @@ let keyDetailsForm2 = {
         quesPos: 72,
         validations: [],
         label: 'Quality of water supplied (%)',
-        info: '',
+        info: 'Water quality is assessed based on the essential parameters of BIS 10500 standard.',
         placeholder: 'Percent|Range(0-100)',
         required: true,
         year: 8,

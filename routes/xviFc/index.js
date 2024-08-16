@@ -3,6 +3,7 @@ const router = express.Router();
 const passport = require('passport');
 const verifyToken = require('../auth/services/verifyToken').verifyToken;
 const xviFcService = require('./service');
+const xviFcDataDump = require('./data_dump');
 const Constants = require('../../_helper/constants');
 
 router.post('/onboard', passport.authenticate('jwt', { session: false }), (req, res, next) => {
@@ -25,5 +26,6 @@ router.post('/approve', verifyToken, xviFcService.approveUlbForms);
 router.post('/reject', verifyToken, xviFcService.rejectUlbForms);
 
 router.get('/progressReport', verifyToken, xviFcService.progressReport);
+router.get('/dataDump', verifyToken, xviFcDataDump.dataDump);
 
 module.exports = router;

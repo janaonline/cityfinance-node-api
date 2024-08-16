@@ -4,9 +4,11 @@ module.exports = async function (req, res) {
         if (req.body && Array.isArray(req.body)) {
             let data = [];
             for (single of req.body) {
+                const file_name = encodeURIComponent(single.file_name.replace(/([^a-z0-9_.-]+)/gi, ''));
+                // const file_name = encodeURIComponent(single.file_name);
                 const params = {
                     folder: single.folder,
-                    file_name: encodeURIComponent(single.file_name), 
+                    file_name,
                     mime_type: single.mime_type
                 }
                 // get unresolved signed url
