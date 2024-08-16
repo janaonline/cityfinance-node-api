@@ -141,6 +141,7 @@ module.exports.access = catchAsync(async function (req, res) {
             "path": "design_year"
         }).lean()
         const role = req.decoded.role;
+        // Todo: to be removed
         if(role == "STATE" && process.env.ENV === ENV['prod']) {
             years =  years.filter(year=> year?.design_year?._id.toString() !== YEAR_CONSTANTS['24_25'])
         }
