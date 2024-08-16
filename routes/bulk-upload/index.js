@@ -2,6 +2,7 @@ const verifyToken = require('../auth/services/verifyToken').verifyToken;
 const BulkUpload = {
     processData: require('./process'),
     getProcessStatus: require('./get-process-status'),
+    downloadErrorLog: require('./download-error-log.js'),
     ulbLocationUpdate: require('./ulb-location-update'),
     stateUlbCountUpdate: require("./state-ulb-count-update"),
     csvToJSON: require('./csv-to-json'),
@@ -58,6 +59,7 @@ router.get('/resource/all', BulkUpload.getResource);
 
 router.post('/processData', verifyToken, BulkUpload.processData);
 router.get('/getProcessStatus/:_id', verifyToken, BulkUpload.getProcessStatus);
+router.post('/downloadErrorLog', verifyToken, BulkUpload.downloadErrorLog);
 router.post('/uploadLedger', multerUpload.single('csv'), BulkUpload.csvToJSON, BulkUpload.uploadLedger);
 
 router.post('/bulk/bonds-upload', multerUpload.single('files'), BulkUpload.bondUpload);

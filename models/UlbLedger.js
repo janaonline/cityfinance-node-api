@@ -8,19 +8,16 @@ const Fiscalrankingmappers = require("./FiscalRankingMapper");
 
 const { MASTER_STATUS, YEAR_CONSTANTS, } = require("../util/FormNames");
 const LedgerSchema = mongoose.Schema({
-    ulb: { type: Schema.Types.ObjectId, ref: 'Ulb', index: true },
+    ulb: { type: Schema.Types.ObjectId, ref: 'Ulb', index: true, required: [true, 'ULB ID is mandatory'] },
     design_year: { type: Schema.Types.ObjectId, ref: 'Year', default: null },
-    lineItem: { type: Schema.Types.ObjectId, ref: 'LineItem' },
-    audit_status: {
-        type: String,
-        default: ""
-    },
-    financialYear: { type: String, required: true, index: true, enum: ["2015-16", "2016-17", "2017-18"] },
-    amount: { type: Number, required: true },
+    lineItem: { type: Schema.Types.ObjectId, ref: 'LineItem', required: [true, 'Line Item is mandatory'] },
+    audit_status: { type: String, enum: ['Audited', 'Unaudited'], default: "", required: [true, 'Audit Status is mandatory'] },
+    financialYear: { type: String, required: true, index: true },
+    amount: { type: Number },
     modifiedAt: { type: Date, default: Date.now() },
     createdAt: { type: Date, default: Date.now() },
     isActive: { type: Boolean, default: 1 }
-});
+}, { timestamps: true });
 
 
 async function rejectMapperFields(calculatedFields, year, frId, displayPriority) {
