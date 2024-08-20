@@ -4,9 +4,9 @@ const https = require('https');
 const http = require('http');
 const urlencode = require("urlencode");
 const baseDir = "uploads/";
-const {ENV} = require('./../../util/FormNames');
+const { ENV } = require('./../../util/FormNames');
 const { getStorageBaseUrl } = require('../../service/getBlobUrl');
-const SECRET ={
+const SECRET = {
     AWS_STORAGE_URL_STG: process.env.AWS_STORAGE_URL_STG,
     AWS_STORAGE_URL_PROD: process.env.AWS_STORAGE_URL_PROD,
     ENV: process.env.ENV
@@ -98,7 +98,7 @@ const downloadFileToDisk = function (url, _cb) {
                 });
             });
         } else {
-            console.log("url", url)
+            // console.log("url", url)
             const req = http.get(url, function (response) {
                 response.pipe(file);
                 file.on('finish', function () {
