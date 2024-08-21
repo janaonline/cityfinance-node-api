@@ -130,6 +130,38 @@ const questionKeys = [
     { 'displayPriority': '7.1', 'header': 'Upload Signed PDF', 'key': 'signedPdf', 'multipleYear': false, 'childData': null },
 ];
 
+// Helper: Input 24-25 --> Output 23-24
+async function getPrevYearStr(currYear) {
+    return currYear.split('-').map((ele) => Number(ele) - 1).join("-");
+};
+
+// Helper: Get object key from object value.
+async function getObjKeyFromObjValue(obj, value) {
+    return Object.keys(obj).find((key) => obj[key] === value) || null;
+};
+
+// Get keys to calculate ULB growth rate.
+async function getKeysToCalcGrowthRate(designYearStr, yearObj, stateGsdpData) {
+    // ULB keys.
+    const currDatatYearKeyStr = await getPrevYearStr(designYearStr);
+    const prevDatatYearKey = await getPrevYearStr(currDatatYearKeyStr);
+
+    const currDataYearKey = await (getObjKeyFromObjValue(yearObj, currDatatYearKeyStr));
+    const prevDataYearKey = await (getObjKeyFromObjValue(yearObj, prevDatatYearKey));
+
+    // State key.
+    const key = prevDatatYearKey.split('-')[1] //23
+    const year = '20' + Number(key) - 5 + '-' + key; // 2018-23
+
+    const stateGsdpNo = stateGsdpData.find((ele) => ele.year === year)?.currentPrice
+
+    return {
+        currDataYearKey: 'collectIncludingCess_' + currDataYearKey,
+        prevDataYearKey: 'collectIncludingCess_' + prevDataYearKey,
+        stateGsdpNo: stateGsdpNo
+    };
+}
+
 // Updated the "yearObj" based on the "designYear" received from query params - yearObj will be used to create excel headers, fetch data from DB.
 async function getEligibleYears(designYear, yearObj) {
     try {
@@ -139,10 +171,12 @@ async function getEligibleYears(designYear, yearObj) {
 
         // Get mongo id of (designYear - 1).
         let temp = yearObj[designYear];
-        let prevYear = temp.split('-').map((ele) => Number(ele) - 1).join("-");
+        let prevYear = await getPrevYearStr(temp);
+        // let prevYear = temp.split('-').map((ele) => Number(ele) - 1).join("-");
         let dataYear = "63735a5bd44534713673c1ca";
         if (designYear == "606aafc14dff55e6c075d3ec") dataYear = "63735a5bd44534713673c1ca";
-        else dataYear = Object.keys(yearObj).find((key) => yearObj[key] === prevYear);
+        // else dataYear = Object.keys(yearObj).find((key) => yearObj[key] === prevYear);
+        else dataYear = getObjKeyFromObjValue(yearObj, prevYear);
 
         // Delete unwanted years from "yearObj".
         if (designYear) {
@@ -171,6 +205,8 @@ async function getColumHeaders(eligibleDataYear, yearObj) {
         { header: "State", key: "state", width: 20 },
         { header: "Design Year", key: "design_year", width: 12 },
         { header: "Form Status", key: "currentFormStatus", width: 25 },
+        { header: "State GSDP", key: "stateGsdp", width: 12 },
+        { header: "ULB Growth Rate", key: "ulbGrowthRate", width: 12 },
         // { header: "State Comments", key: "rejectReason_state", width: 12 },
         // { header: "State Files", key: "", width: 12 },
         // { header: "MoHUA Comments", key: "rejectReason_mohua", width: 12 },
@@ -246,17 +282,27 @@ async function fetchPtaxData(designYear) {
                 from: "states",
                 localField: "state",
                 foreignField: "_id",
-                as: "state"
+                as: "stateCollection"
+            }
+        },
+        {
+            $lookup: {
+                from: "state_gsdp",
+                localField: "state",
+                foreignField: "stateId",
+                as: "stateGsdp"
             }
         },
         {
             $project: {
-                "state.name": 1,
+                "stateCollection.name": 1,
+                "stateCollection._id": 1,
+                "stateGsdp.data": 1,
                 name: 1,
                 code: 1,
                 censusCode: 1,
                 sbCode: 1,
-                // state: 1
+                state: 1
             }
         },
         {
@@ -319,12 +365,14 @@ module.exports.pTax = async (req, res) => {
         }
 
         const designYear = req.query.designYear || '606aafc14dff55e6c075d3ec';
+        const designYearStr = yearObj[designYear] || '2023-24';
         const eligibleDataYear = await getEligibleYears(designYear, yearObj);
         const workbook = new ExcelJS.Workbook();
         const worksheet = workbook.addWorksheet('ptax');
 
         // Define columns
-        worksheet.columns = await getColumHeaders(eligibleDataYear, yearObj);
+        let columns1 = await getColumHeaders(eligibleDataYear, yearObj);
+        worksheet.columns = columns1;
 
         // Get the data from all 3 ptax collections.
         const cursorOps = await fetchPtaxData(designYear);
@@ -368,13 +416,26 @@ module.exports.pTax = async (req, res) => {
             mappers["code"] = doc.code;
             mappers["censusCode"] = Number(doc.censusCode ? doc.censusCode : doc.sbCode);
             // mappers["sbCode"] = doc.sbCode;
-            mappers["state"] = doc.state[0].name;
-            mappers["currentFormStatus"] = Object.keys(MASTER_STATUS).find((key) => MASTER_STATUS[key] == Number(latestYearOpsData?.currentFormStatus)) || 'Not Started'; 2
+            mappers["state"] = doc.stateCollection[0].name;
+            // mappers["currentFormStatus"] = Object.keys(MASTER_STATUS).find((key) => MASTER_STATUS[key] == Number(latestYearOpsData?.currentFormStatus)) || 'Not Started';
+            mappers["currentFormStatus"] = await getObjKeyFromObjValue(MASTER_STATUS, Number(latestYearOpsData?.currentFormStatus)) || 'Not Started';
             mappers["design_year"] = YEAR_CONSTANTS_IDS[designYear] || null;
             // mappers["rejectReason_state"] = latestYearOpsData?.rejectReason_state || null;
             // mappers["rejectReason_mohua"] = latestYearOpsData?.rejectReason_mohua || null;
 
             mappers = Object.assign(mappers, childDataTemp);
+
+            // Fetch data to calculate ulb growth rate and state gsdp.
+            let { currDataYearKey, prevDataYearKey, stateGsdpNo } = await getKeysToCalcGrowthRate(designYearStr, yearObj, doc.stateGsdp[0].data);
+
+            // Calculate ULB growth rate.
+            if (!mappers[currDataYearKey]) mappers[currDataYearKey] = 0;
+            if (!mappers[prevDataYearKey]) mappers[prevDataYearKey] = 0;
+            mappers.ulbGrowthRate = mappers[prevDataYearKey] === 0 ? 0 : Number((((mappers[currDataYearKey] - mappers[prevDataYearKey]) / mappers[prevDataYearKey]) * 100).toFixed(2));
+
+            // Update state gsdp data.
+            mappers.stateGsdp = Number(stateGsdpNo.toFixed(2)) || "N/A";
+
             tempArr.push(mappers);
         }
         // return res.send({ tempArr, columns1 })
