@@ -65,7 +65,7 @@ const bsSizeArr = [
     '5dd10c2585c951b54ec1d757',
     '5dd10c2685c951b54ec1d76a',
     '5dd10c2585c951b54ec1d75c',
-
+    '5dd10c2685c951b54ec1d766',
 ];
 
 // Get Line Items From DB.
@@ -73,6 +73,10 @@ async function getLineItemsFromDB() {
 
     // Headers for the input sheet data.
     const lineItems = await LineItem.find({}, { _id: 1, isActive: 1, name: 1, code: 1 }).lean();
+    lineItems.forEach(item => {
+        item.code = Number(item.code);
+    });
+    lineItems.sort((a, b) => a.code - b.code);
 
     // Headers for the overview data. 
     const overviewHeaders = [
