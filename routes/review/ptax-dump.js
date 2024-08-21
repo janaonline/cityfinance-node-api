@@ -132,6 +132,7 @@ const questionKeys = [
 
 // Helper: Input 24-25 --> Output 23-24
 async function getPrevYearStr(currYear) {
+    if (!currYear.includes('-')) throw new Error("Invalid year: getPrevYearStr");
     return currYear.split('-').map((ele) => Number(ele) - 1).join("-");
 };
 
@@ -141,7 +142,7 @@ async function getObjKeyFromObjValue(obj, value) {
 };
 
 // Get keys to calculate ULB growth rate.
-async function getKeysToCalcGrowthRate(designYearStr, yearObj, stateGsdpData) {
+async function getKeysToCalcGrowthRate(designYearStr, yearObj, stateGsdpData = []) {
     // ULB keys.
     const currDatatYearKeyStr = await getPrevYearStr(designYearStr);
     const prevDatatYearKey = await getPrevYearStr(currDatatYearKeyStr);
@@ -150,10 +151,11 @@ async function getKeysToCalcGrowthRate(designYearStr, yearObj, stateGsdpData) {
     const prevDataYearKey = await (getObjKeyFromObjValue(yearObj, prevDatatYearKey));
 
     // State key.
+    if (!stateGsdpData.length) throw new Error("State GSDP data not found!");
     const key = prevDatatYearKey.split('-')[1] //23
     const year = '20' + Number(key) - 5 + '-' + key; // 2018-23
 
-    const stateGsdpNo = stateGsdpData.find((ele) => ele.year === year)?.currentPrice
+    const stateGsdpNo = stateGsdpData.find((ele) => ele.year === year)?.currentPrice || 0;
 
     return {
         currDataYearKey: 'collectIncludingCess_' + currDataYearKey,
@@ -283,6 +285,11 @@ async function fetchPtaxData(designYear) {
                 localField: "state",
                 foreignField: "_id",
                 as: "stateCollection"
+            }
+        },
+        {
+            $match: {
+                "stateCollection.isUT": false
             }
         },
         {
@@ -426,7 +433,7 @@ module.exports.pTax = async (req, res) => {
             mappers = Object.assign(mappers, childDataTemp);
 
             // Fetch data to calculate ulb growth rate and state gsdp.
-            let { currDataYearKey, prevDataYearKey, stateGsdpNo } = await getKeysToCalcGrowthRate(designYearStr, yearObj, doc.stateGsdp[0].data);
+            let { currDataYearKey, prevDataYearKey, stateGsdpNo } = await getKeysToCalcGrowthRate(designYearStr, yearObj, doc.stateGsdp[0]?.data);
 
             // Calculate ULB growth rate.
             if (!mappers[currDataYearKey]) mappers[currDataYearKey] = 0;
@@ -458,6 +465,6 @@ module.exports.pTax = async (req, res) => {
 
     } catch (error) {
         console.error('Error generating dump:', error);
-        res.status(500).send(`Internal Server Error: ${error.message}`);
+        res.status(500).json({ message: `Internal Server Error: ${error.message}` });
     }
 }
