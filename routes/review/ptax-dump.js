@@ -394,7 +394,7 @@ module.exports.pTax = async (req, res) => {
 
                 if (ulbObj.value) { acc[key] = isNaN(ulbObj.value) ? ulbObj.value : (ulbObj.value === '' ? null : Number(ulbObj.value)) }
                 else if (ulbObj?.file?.url) { acc[key] = baseUrl_s3 + ulbObj.file.url; }
-                else if (ulbObj.date) { acc[key] = moment(ulbObj.date).format('DD-MMM-YYYY'); }
+                else if (ulbObj.date) { acc[key] = moment(ulbObj.date.toString()).format('DD-MMM-YYYY'); }
                 else { acc[key] = null; }
 
                 return acc;
@@ -410,7 +410,7 @@ module.exports.pTax = async (req, res) => {
                     acc[key] = isNaN(ulbObj.value) ? ulbObj.value : (ulbObj.value === '' ? null : Number(ulbObj.value));
                 }
                 else if (ulbObj?.file?.url) { acc[key] = baseUrl_s3 + ulbObj.file.url; }
-                else if (ulbObj.date) { acc[key] = moment(ulbObj.date).format('DD-MMM-YYYY'); }
+                else if (ulbObj.date) { acc[key] = moment(ulbObj.date.toString()).format('DD-MMM-YYYY'); }
                 else { acc[key] = null; }
 
                 return acc;
