@@ -244,21 +244,23 @@ module.exports.get = async (req, res) => {
 async function createCSV(params) {
   const { formType, collectionName, res, loggedInUserRole, req, query, year } = params;
   try {
-    // const prevYear = year.split("-").map((ele) => Number(ele) - 1).join("-");
-    // const prevYearObjId = await Year.findOne({ year: prevYear }, { _id: 1 });
-    // const prevYearDur = await UtilizationReport.find({ designYear: ObjectId(prevYearObjId._id) }, { grantPosition: 1, ulb: 1 })
-    // let prevYearDurObj = prevYearDur.reduce((acc, curr) => {
-    //   if (curr) {
-    //     curr["grantPosition"]["unUtilizedPrevYr"] = curr["grantPosition"]["closingBal"];
-    //     curr["grantPosition"]["receivedDuringYr"] = '';
-    //     curr["grantPosition"]["expDuringYr"] = '';
-    //     curr["grantPosition"]["closingBal"] = '';
+  let prevYearDurObj={};
+   if(collectionName==CollectionNames.dur) {
+    const prevYear = year.split("-").map((ele) => Number(ele) - 1).join("-");
+    const prevYearObjId = await Year.findOne({ year: prevYear }, { _id: 1 });
+    const prevYearDur = await UtilizationReport.find({ designYear: ObjectId(prevYearObjId._id) }, { grantPosition: 1, ulb: 1 })
+          prevYearDurObj = prevYearDur.reduce((acc, curr) => {
+      if (curr) {
+        curr["grantPosition"]["unUtilizedPrevYr"] = curr["grantPosition"]["closingBal"];
+        curr["grantPosition"]["receivedDuringYr"] = '';
+        curr["grantPosition"]["expDuringYr"] = '';
+        curr["grantPosition"]["closingBal"] = '';
 
-    //     acc[curr["ulb"]] = { "grantPosition": curr["grantPosition"] };
-    //     return acc;
-    //   }
-    // }, {});
-
+        acc[curr["ulb"]] = { "grantPosition": curr["grantPosition"] };
+        return acc;
+      }
+    }, {});
+   }
     let ratingList = []
     if (['ODF', 'GFC'].includes(collectionName)) {
       // let ratingIds = [...new Set(data.map(e => e?.formData?.rating))].filter(e => e !== undefined)
@@ -288,7 +290,7 @@ async function createCSV(params) {
         if (!el?.formData) {
           el['formStatus'] = "Not Started";
           // TODO:  uncomment
-          // el['formData'] = prevYearDurObj[el['ulbId']];
+           el['formData'] = prevYearDurObj[el['ulbId']];
         } else {
           el['formStatus'] = MASTER_STATUS_ID[el?.formData?.currentFormStatus]
         }
