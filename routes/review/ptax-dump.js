@@ -172,13 +172,8 @@ async function getEligibleYears(designYear, yearObj) {
         when designYear = 23-24 -> dataYear should be 18-19; exception. */
 
         // Get mongo id of (designYear - 1).
-        let temp = yearObj[designYear];
-        let prevYear = await getPrevYearStr(temp);
-        // let prevYear = temp.split('-').map((ele) => Number(ele) - 1).join("-");
-        let dataYear = "63735a5bd44534713673c1ca";
-        if (designYear == "606aafc14dff55e6c075d3ec") dataYear = "63735a5bd44534713673c1ca";
-        // else dataYear = Object.keys(yearObj).find((key) => yearObj[key] === prevYear);
-        else dataYear = getObjKeyFromObjValue(yearObj, prevYear);
+        const prevYear = await getPrevYearStr(yearObj[designYear]);
+        const dataYear = designYear === "606aafc14dff55e6c075d3ec" ? "63735a5bd44534713673c1ca" : await getObjKeyFromObjValue(yearObj, prevYear);
 
         // Delete unwanted years from "yearObj".
         if (designYear) {
@@ -203,17 +198,11 @@ async function getColumHeaders(eligibleDataYear, yearObj) {
         { header: "ULB Name", key: "name", width: 25 },
         { header: "CF Code", key: "code", width: 12 },
         { header: "Census Code", key: "censusCode", width: 12 },
-        // { header: "SB Code", key: "sbCode", width: 12 },
         { header: "State", key: "state", width: 20 },
         { header: "Design Year", key: "design_year", width: 12 },
         { header: "Form Status", key: "currentFormStatus", width: 25 },
         { header: "State GSDP", key: "stateGsdp", width: 12 },
         { header: "ULB Growth Rate", key: "ulbGrowthRate", width: 12 },
-        // { header: "State Comments", key: "rejectReason_state", width: 12 },
-        // { header: "State Files", key: "", width: 12 },
-        // { header: "MoHUA Comments", key: "rejectReason_mohua", width: 12 },
-        // { header: "MoHUA Files", key: "", width: 12 },
-
     ];
     let columnsHeader = questionKeys.flatMap((ele) => {
         // If sub questions (childData) is present dynamically created headers for the child + dynamicaaly create headers for all the years (multipleYear).
@@ -260,7 +249,7 @@ async function getColumHeaders(eligibleDataYear, yearObj) {
 }
 
 // Fetch data from all 3 ptax collections.
-async function fetchPtaxData(designYear) {
+async function fetchPtaxData(designYear, stateId) {
 
     // Used as a filter to fetch data for specific year.
     const designYearOps = [
@@ -268,16 +257,18 @@ async function fetchPtaxData(designYear) {
         '606aafcf4dff55e6c075d424', // 24-25
         '606aafda4dff55e6c075d48f', // 25-26
     ];
-    const target = designYearOps
-        .slice(0, designYearOps.indexOf(designYear) + 1)
-        .map(ObjectId);
+    const target = designYearOps.slice(0, designYearOps.indexOf(designYear) + 1).map(ObjectId);
+
+    // Create match parameter.
+    let match = {
+        // _id: ObjectId("5fa24660072dab780a6f13bd"),
+        isActive: true,
+    };
+    if (stateId) match = { ...match, state: ObjectId(stateId) }
 
     return Ulb.aggregate([
         {
-            $match: {
-                // _id: ObjectId("5fa24660072dab780a6f13bd"),
-                isActive: true
-            }
+            $match: match
         },
         {
             $lookup: {
@@ -360,6 +351,15 @@ async function fetchPtaxData(designYear) {
 
 module.exports.pTax = async (req, res) => {
     try {
+
+        const user = req.decoded || null;
+        let stateId = null;
+        // Download - State
+        if (user?.role === 'STATE') {
+            stateId = user.state;
+        }
+        stateId = req.query.state || null;
+
         const yearObj = {
             '63735a5bd44534713673c1ca': '2018-19',
             '607697074dff55e6c0be33ba': '2019-20',
@@ -371,7 +371,7 @@ module.exports.pTax = async (req, res) => {
             '606aafda4dff55e6c075d48f': '2025-26',
         }
 
-        const designYear = req.query.designYear || '606aafc14dff55e6c075d3ec';
+        const designYear = req.query.design_year || '606aafc14dff55e6c075d3ec';
         const designYearStr = yearObj[designYear] || '2023-24';
         const eligibleDataYear = await getEligibleYears(designYear, yearObj);
         const workbook = new ExcelJS.Workbook();
@@ -382,7 +382,7 @@ module.exports.pTax = async (req, res) => {
         worksheet.columns = columns1;
 
         // Get the data from all 3 ptax collections.
-        const cursorOps = await fetchPtaxData(designYear);
+        const cursorOps = await fetchPtaxData(designYear, stateId);
         let tempArr = [];
         let mappers = {};
         let childDataTemp = {};
@@ -422,13 +422,9 @@ module.exports.pTax = async (req, res) => {
             mappers["name"] = doc.name;
             mappers["code"] = doc.code;
             mappers["censusCode"] = Number(doc.censusCode ? doc.censusCode : doc.sbCode);
-            // mappers["sbCode"] = doc.sbCode;
             mappers["state"] = doc.stateCollection[0].name;
-            // mappers["currentFormStatus"] = Object.keys(MASTER_STATUS).find((key) => MASTER_STATUS[key] == Number(latestYearOpsData?.currentFormStatus)) || 'Not Started';
             mappers["currentFormStatus"] = await getObjKeyFromObjValue(MASTER_STATUS, Number(latestYearOpsData?.currentFormStatus)) || 'Not Started';
             mappers["design_year"] = YEAR_CONSTANTS_IDS[designYear] || null;
-            // mappers["rejectReason_state"] = latestYearOpsData?.rejectReason_state || null;
-            // mappers["rejectReason_mohua"] = latestYearOpsData?.rejectReason_mohua || null;
 
             mappers = Object.assign(mappers, childDataTemp);
 
