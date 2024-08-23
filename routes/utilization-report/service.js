@@ -1028,7 +1028,7 @@ module.exports.read2223 = catchAsync(async (req, res, next) => {
               } or Email - ${
                 userData.email ?? `contact@${process.env.PROD_HOST}`
               }`
-            : `Dear User, The ${ulbData.name} has not yet filled Detailed Utilization Report Form for the previous year. You will be able to mark your response once STATE approves previous year's form.`;
+            : `Dear User, The ${ulbData.name} has not yet filled Detailed Utilization Report Form for the previous year. Response can be marked upon approval of previous year's.`;
         obj["action"] = "note";
         obj["url"] = msg;
       } else if(ulbAccess) {
@@ -1041,7 +1041,7 @@ module.exports.read2223 = catchAsync(async (req, res, next) => {
               }/${
                 DurPageLinks[currentDesignYear]
               } target="_blank">Click Here!</a> in order to submit this year's form . `
-            : `Dear User, The ${ulbData.name} has not yet filled Detailed Utilization Report Form for the previous year. You will be able to mark your response once STATE approves previous year's form.`;
+            : `Dear User, The ${ulbData.name} has not yet filled Detailed Utilization Report Form for the previous year. Response can be marked upon approval of previous year's.`;
         obj["action"] = "note";
         obj["url"] = msg;
       }
