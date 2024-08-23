@@ -257,6 +257,7 @@ async function fetchPtaxData(designYear, stateId) {
         '606aafcf4dff55e6c075d424', // 24-25
         '606aafda4dff55e6c075d48f', // 25-26
     ];
+    // Send only designYear if only specific year data is required.
     const target = designYearOps.slice(0, designYearOps.indexOf(designYear) + 1).map(ObjectId);
 
     // Create match parameter.
@@ -358,7 +359,7 @@ module.exports.pTax = async (req, res) => {
         if (user?.role === 'STATE') {
             stateId = user.state;
         }
-        stateId = req.query.state || null;
+        stateId = req.query.state || user.state;
 
         const yearObj = {
             '63735a5bd44534713673c1ca': '2018-19',
@@ -383,7 +384,7 @@ module.exports.pTax = async (req, res) => {
 
         // Get the data from all 3 ptax collections.
         const cursorOps = await fetchPtaxData(designYear, stateId);
-        let tempArr = [];
+        // let tempArr = [];
         let mappers = {};
         let childDataTemp = {};
         // Iterate through each document in the cursor (array received from DB).
@@ -394,8 +395,8 @@ module.exports.pTax = async (req, res) => {
 
                 if (ulbObj.value) { acc[key] = isNaN(ulbObj.value) ? ulbObj.value : (ulbObj.value === '' ? null : Number(ulbObj.value)) }
                 else if (ulbObj?.file?.url) { acc[key] = baseUrl_s3 + ulbObj.file.url; }
-                else if (ulbObj.date) { acc[key] = moment(ulbObj.date.toString()).format('DD-MMM-YYYY'); }
-                else { acc[key] = null; }
+                else if (ulbObj.date) { acc[key] = moment(ulbObj.date).format('DD-MMM-YYYY'); }
+                // else { acc[key] = null; }
 
                 return acc;
             }, {});
@@ -410,13 +411,13 @@ module.exports.pTax = async (req, res) => {
                     acc[key] = isNaN(ulbObj.value) ? ulbObj.value : (ulbObj.value === '' ? null : Number(ulbObj.value));
                 }
                 else if (ulbObj?.file?.url) { acc[key] = baseUrl_s3 + ulbObj.file.url; }
-                else if (ulbObj.date) { acc[key] = moment(ulbObj.date.toString()).format('DD-MMM-YYYY'); }
-                else { acc[key] = null; }
+                else if (ulbObj.date) { acc[key] = moment(ulbObj.date).format('DD-MMM-YYYY'); }
+                // else { acc[key] = null; }
 
                 return acc;
             }, {});
 
-            // Get the design year form the ops collection arr.
+            // Get all the data from the specific design year.
             let latestYearOpsData = doc.propertytaxop.find((ele) => ele.design_year.toString() == designYear);
 
             mappers["name"] = doc.name;
@@ -434,19 +435,23 @@ module.exports.pTax = async (req, res) => {
             // Calculate ULB growth rate.
             if (!mappers[currDataYearKey]) mappers[currDataYearKey] = 0;
             if (!mappers[prevDataYearKey]) mappers[prevDataYearKey] = 0;
-            mappers.ulbGrowthRate = mappers[prevDataYearKey] === 0 ? 0 : Number((((mappers[currDataYearKey] - mappers[prevDataYearKey]) / mappers[prevDataYearKey]) * 100).toFixed(2));
+            mappers.ulbGrowthRate =
+                mappers[prevDataYearKey] === 0 || (mappers[currDataYearKey] === 0 && mappers[prevDataYearKey] === 0) ?
+                    0 :
+                    Number((((mappers[currDataYearKey] - mappers[prevDataYearKey]) / mappers[prevDataYearKey]) * 100).toFixed(2));
 
             // Update state gsdp data.
             mappers.stateGsdp = Number(stateGsdpNo.toFixed(2)) || "N/A";
 
-            tempArr.push(mappers);
+            // tempArr.push(mappers);
+            worksheet.addRow(mappers);
         }
         // return res.send({ tempArr, columns1 })
 
-        // Iterate through each row in eachRowObj
-        tempArr.forEach((row) => {
-            worksheet.addRow(row);
-        });
+        // // Iterate through each row in eachRowObj
+        // tempArr.forEach((row) => {
+        //     worksheet.addRow(row);
+        // });
         // Style header.
         worksheet.getRow(1).alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
         worksheet.views = [
