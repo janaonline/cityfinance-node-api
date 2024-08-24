@@ -22,7 +22,7 @@ const questionKeys = [
     { 'displayPriority': '1.12', 'header': 'Total property tax demand (excluding cess, other taxes, user charges if any)', 'key': 'dmdexcludingCess', 'multipleYear': true, 'childData': null },
     { 'displayPriority': '1.13', 'header': 'Other tax demand (Demand figure for each type of tax other than property tax collected)', 'key': 'taxTypeDemandChild', 'multipleYear': true, 'childData': 10 },
     { 'displayPriority': '1.14', 'header': 'Cess demand (Demand figure for each type of cess collected)', 'key': 'cessDemandChild', 'multipleYear': true, 'childData': 10 },
-    { 'displayPriority': '1.15', 'header': 'Do you collect any user charges along with Property Tax?', 'key': 'doesUserChargesDmnd', 'multipleYear': true, 'childData': null },
+    { 'displayPriority': '1.15', 'header': 'Do you collect any user charges along with Property Tax?', 'key': 'doesUserChargesDmnd', 'multipleYear': false, 'childData': null },
     { 'displayPriority': '1.16', 'header': 'User charges demand (Demand figure for each type of user charge collected along with property tax)', 'key': 'userChargesDmndChild', 'multipleYear': true, 'childData': 5 },
     { 'displayPriority': '1.17', 'header': 'Total property tax collection (including cess, other taxes, AND excluding user charges if user charges are collected with property tax)', 'key': 'collectIncludingCess', 'multipleYear': true, 'childData': null },
     { 'displayPriority': '1.18', 'header': 'Current property tax collection (including cess, other taxes, AND excluding user charges if user charges are collected with property tax)', 'key': 'cuCollectIncludingCess', 'multipleYear': true, 'childData': null },
@@ -55,7 +55,7 @@ const questionKeys = [
     { 'displayPriority': '2.22', 'header': 'Number of properties from which property tax was demanded', 'key': 'insNoPropertyTaxDm', 'multipleYear': true, 'childData': null },
     { 'displayPriority': '2.23', 'header': 'Value of property tax collected (INR lakhs)', 'key': 'insValuePropertyTaxCollected', 'multipleYear': true, 'childData': null },
     { 'displayPriority': '2.24', 'header': 'Number of properties from which property tax was collected', 'key': 'insNoPropertyTaxCollected', 'multipleYear': true, 'childData': null },
-    { 'displayPriority': '2.25', 'header': 'Property Type', 'key': 'otherValuePropertyType', 'multipleYear': true, 'childData': null },
+    // { 'displayPriority': '2.25', 'header': 'Connection Type', 'key': 'otherValuePropertyType', 'multipleYear': true, 'childData': null },
     { 'displayPriority': '2.26', 'header': 'Value of property tax demanded (INR lakhs)', 'key': 'otherValuePropertyTaxDm', 'multipleYear': true, 'childData': 10 },
     { 'displayPriority': '2.27', 'header': 'Number of properties from which property tax was demanded', 'key': 'otherNoPropertyTaxDm', 'multipleYear': true, 'childData': 10 },
     { 'displayPriority': '2.28', 'header': 'Value of property tax collected (INR lakhs)', 'key': 'otherValuePropertyTaxCollected', 'multipleYear': true, 'childData': 10 },
@@ -63,10 +63,10 @@ const questionKeys = [
     { 'displayPriority': '3.1', 'header': 'Number of properties that paid online (through website or mobile application)', 'key': 'noOfPropertiesPaidOnline', 'multipleYear': true, 'childData': null },
     { 'displayPriority': '3.2', 'header': 'Total collections made via online channel i.e. through website or mobile application (INR lakhs)', 'key': 'totalCollectionOnline', 'multipleYear': true, 'childData': null },
     { 'displayPriority': '4.1', 'header': 'Please submit the property tax rate card', 'key': 'propertyTaxValuationDetails', 'multipleYear': false, 'childData': null },
-    { 'displayPriority': '5.1', 'header': 'Are water charges being collected in the ULB?', 'key': 'notificationWaterCharges', 'multipleYear': true, 'childData': null },
+    { 'displayPriority': '5.1', 'header': 'Are water charges being collected in the ULB?', 'key': 'notificationWaterCharges', 'multipleYear': false, 'childData': null },
     { 'displayPriority': '5.2', 'header': 'Which entity is collecting the water charges?', 'key': 'entityWaterCharges', 'multipleYear': true, 'childData': null },
     { 'displayPriority': '5.3', 'header': 'Please fill the name of', 'key': 'entity	', 'multipleYear': true, 'childData': null },
-    { 'displayPriority': '5.4', 'header': 'Upload a copy of gazette notification that notifies water charges', 'key': 'notificationWaterChargesFile', 'multipleYear': true, 'childData': null },
+    { 'displayPriority': '5.4', 'header': 'Upload a copy of gazette notification that notifies water charges', 'key': 'notificationWaterChargesFile', 'multipleYear': false, 'childData': null },
     { 'displayPriority': '5.5', 'header': 'Total water charges demand', 'key': 'waterChrgDm', 'multipleYear': true, 'childData': null },
     { 'displayPriority': '5.6', 'header': 'Current water charges demand', 'key': 'cuWaterChrgDm', 'multipleYear': true, 'childData': null },
     { 'displayPriority': '5.7', 'header': 'Arrear water charges demand', 'key': 'arWaterChrgDm', 'multipleYear': true, 'childData': null },
@@ -87,7 +87,7 @@ const questionKeys = [
     { 'displayPriority': '5.22', 'header': 'Number of connections from which water charges was demanded', 'key': 'indNoWaterChrgDm', 'multipleYear': true, 'childData': null },
     { 'displayPriority': '5.23', 'header': 'Value of water charges collected from connections (INR lakhs)', 'key': 'indValueWaterChrgCollected', 'multipleYear': true, 'childData': null },
     { 'displayPriority': '5.24', 'header': 'Number of connections from which water charges was collected', 'key': 'indNoWaterChrgCollected', 'multipleYear': true, 'childData': null },
-    { 'displayPriority': '5.25', 'header': 'Property Type', 'key': 'othersValueWaterType', 'multipleYear': true, 'childData': null },
+    // { 'displayPriority': '5.25', 'header': 'Connection Type', 'key': 'othersValueWaterType', 'multipleYear': true, 'childData': null },
     { 'displayPriority': '5.26', 'header': 'Value of water charges demanded (INR lakhs)', 'key': 'othersValueWaterChrgDm', 'multipleYear': true, 'childData': 10 },
     { 'displayPriority': '5.27', 'header': 'Number of connections from which water charges was demanded', 'key': 'othersNoWaterChrgDm', 'multipleYear': true, 'childData': 10 },
     { 'displayPriority': '5.28', 'header': 'Value of water charges collected from connections (INR lakhs)', 'key': 'othersValueWaterChrgCollected', 'multipleYear': true, 'childData': 10 },
@@ -119,7 +119,7 @@ const questionKeys = [
     { 'displayPriority': '6.22', 'header': 'Number of connections from which sewerage charges was demanded', 'key': 'indNoSewerageTaxDm', 'multipleYear': true, 'childData': null },
     { 'displayPriority': '6.23', 'header': 'Value of sewerage charges collected from connections (INR lakhs)', 'key': 'indValueSewerageTaxCollected', 'multipleYear': true, 'childData': null },
     { 'displayPriority': '6.24', 'header': 'Number of connections from which sewerage charges was collected', 'key': 'indNoSewerageTaxCollected', 'multipleYear': true, 'childData': null },
-    { 'displayPriority': '6.25', 'header': 'Property Type', 'key': 'otherValueSewerageType', 'multipleYear': true, 'childData': null },
+    // { 'displayPriority': '6.25', 'header': 'Connection Type', 'key': 'otherValueSewerageType', 'multipleYear': true, 'childData': null },
     { 'displayPriority': '6.26', 'header': 'Value of sewerage charges demanded (INR lakhs)', 'key': 'otherValueSewerageTaxDm', 'multipleYear': true, 'childData': 10 },
     { 'displayPriority': '6.27', 'header': 'Number of connections from which sewerage charges was demanded', 'key': 'otherNoSewerageTaxDm', 'multipleYear': true, 'childData': 10 },
     { 'displayPriority': '6.28', 'header': 'Value of sewerage charges collected from connections (INR lakhs)', 'key': 'otherValueSewerageTaxCollected', 'multipleYear': true, 'childData': 10 },
@@ -257,7 +257,6 @@ async function fetchPtaxData(designYear, stateId) {
         '606aafcf4dff55e6c075d424', // 24-25
         '606aafda4dff55e6c075d48f', // 25-26
     ];
-    // Send only designYear if only specific year data is required.
     const target = designYearOps.slice(0, designYearOps.indexOf(designYear) + 1).map(ObjectId);
 
     // Create match parameter.
@@ -433,13 +432,12 @@ module.exports.pTax = async (req, res) => {
             let { currDataYearKey, prevDataYearKey, stateGsdpNo } = await getKeysToCalcGrowthRate(designYearStr, yearObj, doc.stateGsdp[0]?.data);
 
             // Calculate ULB growth rate.
-            if (!mappers[currDataYearKey]) mappers[currDataYearKey] = 0;
-            if (!mappers[prevDataYearKey]) mappers[prevDataYearKey] = 0;
+            if (!mappers[currDataYearKey]) mappers[currDataYearKey] = null;
+            if (!mappers[prevDataYearKey]) mappers[prevDataYearKey] = null;
             mappers.ulbGrowthRate =
-                mappers[prevDataYearKey] === 0 || (mappers[currDataYearKey] === 0 && mappers[prevDataYearKey] === 0) ?
-                    0 :
-                    Number((((mappers[currDataYearKey] - mappers[prevDataYearKey]) / mappers[prevDataYearKey]) * 100).toFixed(2));
-
+                (mappers[currDataYearKey] && mappers[prevDataYearKey]) ?
+                    Number((((mappers[currDataYearKey] - mappers[prevDataYearKey]) / mappers[prevDataYearKey]) * 100).toFixed(2)) :
+                    mappers.ulbGrowthRate = 'N/A';
             // Update state gsdp data.
             mappers.stateGsdp = Number(stateGsdpNo.toFixed(2)) || "N/A";
 
