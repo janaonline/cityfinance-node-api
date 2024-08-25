@@ -201,8 +201,8 @@ async function getColumHeaders(eligibleDataYear, yearObj) {
         { header: "State", key: "state", width: 20 },
         { header: "Design Year", key: "design_year", width: 12 },
         { header: "Form Status", key: "currentFormStatus", width: 25 },
-        { header: "State GSDP", key: "stateGsdp", width: 12 },
-        { header: "ULB Growth Rate", key: "ulbGrowthRate", width: 12 },
+        { header: "State GSDP (%)", key: "stateGsdp", width: 12 },
+        { header: "ULB Growth Rate (%)", key: "ulbGrowthRate", width: 12 },
     ];
     let columnsHeader = questionKeys.flatMap((ele) => {
         // If sub questions (childData) is present dynamically created headers for the child + dynamicaaly create headers for all the years (multipleYear).
@@ -210,8 +210,14 @@ async function getColumHeaders(eligibleDataYear, yearObj) {
             let headers = [];
             for (let i = 1; i <= ele.childData; i++) {
                 if (ele.multipleYear) {
+                    let isInputValueHeaderAdded = false;
                     Object.entries(yearObj).forEach(([key, value]) => {
-                        headers.push({ header: `Input Value`, key: `${ele.key}_${key}_child_${i}`, width: 15 });
+                        // headers.push({ header: `Input Value`, key: `${ele.key}_${key}_child_${i}`, width: 15 });
+                        if (!isInputValueHeaderAdded) {
+                            // Add the "Input Value" header only once in the first iteration.
+                            headers.push({ header: `Input Value`, key: `${ele.key}_child_${i}`, width: 15 });
+                            isInputValueHeaderAdded = true;
+                        }
                         headers.push({
                             header: `${value}_${ele.displayPriority}.${i}_${ele.header}`,
                             key: `${ele.key}_${key}_${i}`,
@@ -383,38 +389,43 @@ module.exports.pTax = async (req, res) => {
 
         // Get the data from all 3 ptax collections.
         const cursorOps = await fetchPtaxData(designYear, stateId);
-        // let tempArr = [];
         let mappers = {};
         let childDataTemp = {};
         // Iterate through each document in the cursor (array received from DB).
         for (let doc = await cursorOps.next(); doc != null; doc = await cursorOps.next()) {
+            // Initialize mappers
+            mappers = {};
+            childDataTemp = {};
+
             // Create data from taxOpMappers - assign values to the keys.
-            mappers = doc.propertytaxopmapper.reduce((acc, ulbObj) => {
+            for (const ulbObj of doc.propertytaxopmapper) {
                 const key = `${ulbObj.type}_${ulbObj.year}`;
 
-                if (ulbObj.value) { acc[key] = isNaN(ulbObj.value) ? ulbObj.value : (ulbObj.value === '' ? null : Number(ulbObj.value)) }
-                else if (ulbObj?.file?.url) { acc[key] = baseUrl_s3 + ulbObj.file.url; }
-                else if (ulbObj.date) { acc[key] = moment(ulbObj.date).format('DD-MMM-YYYY'); }
-                // else { acc[key] = null; }
+                if (ulbObj.value) {
+                    mappers[key] = isNaN(ulbObj.value) ? ulbObj.value : (ulbObj.value === '' ? null : Number(ulbObj.value));
+                } else if (ulbObj?.file?.url) {
+                    mappers[key] = baseUrl_s3 + ulbObj.file.url;
+                } else if (ulbObj.date) {
+                    mappers[key] = moment(ulbObj.date).format('DD-MMM-YYYY');
+                }
+            }
 
-                return acc;
-            }, {});
             // Create data from mapperChild - assign values to the keys.
-            childDataTemp = doc.propertymapperchilddata.reduce((acc, ulbObj) => {
+            for (const ulbObj of doc.propertymapperchilddata) {
                 const key = `${ulbObj.type}_${ulbObj.year}_${ulbObj.replicaNumber}`;
 
                 if (ulbObj.value) {
                     if (ulbObj.textValue) {
-                        acc[`${ulbObj.type}_${ulbObj.year}_child_${ulbObj.replicaNumber}`] = ulbObj.textValue || "Check!";
+                        childDataTemp[`${ulbObj.type}_child_${ulbObj.replicaNumber}`] = ulbObj.textValue || "Check!";
+                        // childDataTemp[`${ulbObj.type}_${ulbObj.year}_child_${ulbObj.replicaNumber}`] = ulbObj.textValue || "Check!";
                     }
-                    acc[key] = isNaN(ulbObj.value) ? ulbObj.value : (ulbObj.value === '' ? null : Number(ulbObj.value));
+                    childDataTemp[key] = isNaN(ulbObj.value) ? ulbObj.value : (ulbObj.value === '' ? null : Number(ulbObj.value));
+                } else if (ulbObj?.file?.url) {
+                    childDataTemp[key] = baseUrl_s3 + ulbObj.file.url;
+                } else if (ulbObj.date) {
+                    childDataTemp[key] = moment(ulbObj.date).format('DD-MMM-YYYY');
                 }
-                else if (ulbObj?.file?.url) { acc[key] = baseUrl_s3 + ulbObj.file.url; }
-                else if (ulbObj.date) { acc[key] = moment(ulbObj.date).format('DD-MMM-YYYY'); }
-                // else { acc[key] = null; }
-
-                return acc;
-            }, {});
+            }
 
             // Get all the data from the specific design year.
             let latestYearOpsData = doc.propertytaxop.find((ele) => ele.design_year.toString() == designYear);
@@ -437,19 +448,16 @@ module.exports.pTax = async (req, res) => {
             mappers.ulbGrowthRate =
                 (mappers[currDataYearKey] && mappers[prevDataYearKey]) ?
                     Number((((mappers[currDataYearKey] - mappers[prevDataYearKey]) / mappers[prevDataYearKey]) * 100).toFixed(2)) :
-                    mappers.ulbGrowthRate = 'N/A';
+                    'N/A';
+
             // Update state gsdp data.
             mappers.stateGsdp = Number(stateGsdpNo.toFixed(2)) || "N/A";
 
-            // tempArr.push(mappers);
+            // temp.push(mappers);
             worksheet.addRow(mappers);
         }
         // return res.send({ tempArr, columns1 })
 
-        // // Iterate through each row in eachRowObj
-        // tempArr.forEach((row) => {
-        //     worksheet.addRow(row);
-        // });
         // Style header.
         worksheet.getRow(1).alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
         worksheet.views = [
