@@ -1,4 +1,5 @@
 const Ulb = require('../../models/Ulb');
+const State = require('../../models/State');
 const ObjectId = require("mongoose").Types.ObjectId;
 const ExcelJS = require('exceljs');
 const moment = require('moment');
@@ -64,8 +65,8 @@ const questionKeys = [
     { 'displayPriority': '3.2', 'header': 'Total collections made via online channel i.e. through website or mobile application (INR lakhs)', 'key': 'totalCollectionOnline', 'multipleYear': true, 'childData': null },
     { 'displayPriority': '4.1', 'header': 'Please submit the property tax rate card', 'key': 'propertyTaxValuationDetails', 'multipleYear': false, 'childData': null },
     { 'displayPriority': '5.1', 'header': 'Are water charges being collected in the ULB?', 'key': 'notificationWaterCharges', 'multipleYear': false, 'childData': null },
-    { 'displayPriority': '5.2', 'header': 'Which entity is collecting the water charges?', 'key': 'entityWaterCharges', 'multipleYear': true, 'childData': null },
-    { 'displayPriority': '5.3', 'header': 'Please fill the name of', 'key': 'entity	', 'multipleYear': true, 'childData': null },
+    { 'displayPriority': '5.2', 'header': 'Which entity is collecting the water charges?', 'key': 'entityWaterCharges', 'multipleYear': false, 'childData': null },
+    { 'displayPriority': '5.3', 'header': 'Please fill the name of entity', 'key': 'entity	', 'multipleYear': false, 'childData': null },
     { 'displayPriority': '5.4', 'header': 'Upload a copy of gazette notification that notifies water charges', 'key': 'notificationWaterChargesFile', 'multipleYear': false, 'childData': null },
     { 'displayPriority': '5.5', 'header': 'Total water charges demand', 'key': 'waterChrgDm', 'multipleYear': true, 'childData': null },
     { 'displayPriority': '5.6', 'header': 'Current water charges demand', 'key': 'cuWaterChrgDm', 'multipleYear': true, 'childData': null },
@@ -255,7 +256,7 @@ async function getColumHeaders(eligibleDataYear, yearObj) {
 }
 
 // Fetch data from all 3 ptax collections.
-async function fetchPtaxData(designYear, stateId) {
+async function fetchPtaxData(designYear, stateId, stateIdsArr) {
 
     // Used as a filter to fetch data for specific year.
     const designYearOps = [
@@ -269,6 +270,9 @@ async function fetchPtaxData(designYear, stateId) {
     let match = {
         // _id: ObjectId("5fa24660072dab780a6f13bd"),
         isActive: true,
+        state: {
+            $in: stateIdsArr
+        }
     };
     if (stateId) match = { ...match, state: ObjectId(stateId) }
 
@@ -277,31 +281,7 @@ async function fetchPtaxData(designYear, stateId) {
             $match: match
         },
         {
-            $lookup: {
-                from: "states",
-                localField: "state",
-                foreignField: "_id",
-                as: "stateCollection"
-            }
-        },
-        {
-            $match: {
-                "stateCollection.isUT": false
-            }
-        },
-        {
-            $lookup: {
-                from: "state_gsdp",
-                localField: "state",
-                foreignField: "stateId",
-                as: "stateGsdp"
-            }
-        },
-        {
             $project: {
-                "stateCollection.name": 1,
-                "stateCollection._id": 1,
-                "stateGsdp.data": 1,
                 name: 1,
                 code: 1,
                 censusCode: 1,
@@ -355,6 +335,37 @@ async function fetchPtaxData(designYear, stateId) {
     ]).cursor().exec()
 }
 
+// Fetch state GSDP data.
+async function fetchStateData() {
+    return State.aggregate([
+        {
+            $match: {
+                isUT: false
+            }
+        },
+        {
+            $lookup: {
+                from: "state_gsdp",
+                localField: "_id",
+                foreignField: "stateId",
+                as: "stateData"
+            }
+        },
+        {
+            $unwind: {
+                path: "$stateData",
+            }
+        },
+        {
+            $project: {
+                "_id": 1,
+                "stateData.stateName": 1,
+                "stateData.data": 1,
+            }
+        }
+    ]);
+}
+
 module.exports.pTax = async (req, res) => {
     try {
 
@@ -387,15 +398,30 @@ module.exports.pTax = async (req, res) => {
         let columns1 = await getColumHeaders(eligibleDataYear, yearObj);
         worksheet.columns = columns1;
 
+        // Fetch State Data.
+        let stateDataObj = {};
+        const stateData = await fetchStateData();
+        for (let stateEle of stateData) {
+            stateDataObj[stateEle._id] = stateEle?.stateData;
+        }
+        const stateIdsArr = Object.keys(stateDataObj).map(ObjectId);
+
         // Get the data from all 3 ptax collections.
-        const cursorOps = await fetchPtaxData(designYear, stateId);
+        const cursorOps = await fetchPtaxData(designYear, stateId, stateIdsArr);
+        // let tempArr = [];
         let mappers = {};
-        let childDataTemp = {};
+        let childDataObj = {};
+
         // Iterate through each document in the cursor (array received from DB).
         for (let doc = await cursorOps.next(); doc != null; doc = await cursorOps.next()) {
             // Initialize mappers
             mappers = {};
-            childDataTemp = {};
+            childDataObj = {};
+
+            // Create data from mapperChild - assign values to the keys.
+            for (const ulbObj of doc.propertymapperchilddata) {
+                childDataObj[ulbObj._id] = { replicaNumber: ulbObj.replicaNumber, type: ulbObj.type, year: ulbObj.year, textValue: ulbObj.textValue, value: ulbObj.value };
+            }
 
             // Create data from taxOpMappers - assign values to the keys.
             for (const ulbObj of doc.propertytaxopmapper) {
@@ -408,39 +434,41 @@ module.exports.pTax = async (req, res) => {
                 } else if (ulbObj.date) {
                     mappers[key] = moment(ulbObj.date).format('DD-MMM-YYYY');
                 }
-            }
 
-            // Create data from mapperChild - assign values to the keys.
-            for (const ulbObj of doc.propertymapperchilddata) {
-                const key = `${ulbObj.type}_${ulbObj.year}_${ulbObj.replicaNumber}`;
+                // Create key value pair from the child data.
+                const childDataArr = ulbObj?.child;
+                if (childDataArr?.length > 0) {
+                    for (let childDataId of childDataArr) {
+                        const childDataIdStr = childDataId.toString();
+                        const childObj = childDataObj[childDataIdStr];
 
-                if (ulbObj.value) {
-                    if (ulbObj.textValue) {
-                        childDataTemp[`${ulbObj.type}_child_${ulbObj.replicaNumber}`] = ulbObj.textValue || "Check!";
-                        // childDataTemp[`${ulbObj.type}_${ulbObj.year}_child_${ulbObj.replicaNumber}`] = ulbObj.textValue || "Check!";
+                        if (childObj.value) {
+                            if (childObj.textValue) {
+                                mappers[`${childObj.type}_child_${childObj.replicaNumber}`] = childObj.textValue || "Check!";
+                            }
+                            mappers[`${childObj.type}_${childObj.year}_${childObj.replicaNumber}`] = isNaN(childObj.value) ? childObj.value : (childObj.value === '' ? null : Number(childObj.value));
+                        }
                     }
-                    childDataTemp[key] = isNaN(ulbObj.value) ? ulbObj.value : (ulbObj.value === '' ? null : Number(ulbObj.value));
-                } else if (ulbObj?.file?.url) {
-                    childDataTemp[key] = baseUrl_s3 + ulbObj.file.url;
-                } else if (ulbObj.date) {
-                    childDataTemp[key] = moment(ulbObj.date).format('DD-MMM-YYYY');
                 }
             }
 
             // Get all the data from the specific design year.
             let latestYearOpsData = doc.propertytaxop.find((ele) => ele.design_year.toString() == designYear);
 
+            // Fetch State.
+            const state = stateDataObj[doc.state.toString()];
+
             mappers["name"] = doc.name;
             mappers["code"] = doc.code;
             mappers["censusCode"] = Number(doc.censusCode ? doc.censusCode : doc.sbCode);
-            mappers["state"] = doc.stateCollection[0].name;
+            mappers["state"] = state?.stateName;
+            // mappers["state"] = doc.stateCollection[0].name;
             mappers["currentFormStatus"] = await getObjKeyFromObjValue(MASTER_STATUS, Number(latestYearOpsData?.currentFormStatus)) || 'Not Started';
             mappers["design_year"] = YEAR_CONSTANTS_IDS[designYear] || null;
 
-            mappers = Object.assign(mappers, childDataTemp);
-
             // Fetch data to calculate ulb growth rate and state gsdp.
-            let { currDataYearKey, prevDataYearKey, stateGsdpNo } = await getKeysToCalcGrowthRate(designYearStr, yearObj, doc.stateGsdp[0]?.data);
+            let { currDataYearKey, prevDataYearKey, stateGsdpNo } = await getKeysToCalcGrowthRate(designYearStr, yearObj, state?.data);
+            // let { currDataYearKey, prevDataYearKey, stateGsdpNo } = await getKeysToCalcGrowthRate(designYearStr, yearObj, doc.stateGsdp[0]?.data);
 
             // Calculate ULB growth rate.
             if (!mappers[currDataYearKey]) mappers[currDataYearKey] = null;
@@ -452,11 +480,10 @@ module.exports.pTax = async (req, res) => {
 
             // Update state gsdp data.
             mappers.stateGsdp = Number(stateGsdpNo.toFixed(2)) || "N/A";
-
-            // temp.push(mappers);
+            // tempArr.push(mappers);
             worksheet.addRow(mappers);
         }
-        // return res.send({ tempArr, columns1 })
+        // return res.send({ tempArr, childDataObj })
 
         // Style header.
         worksheet.getRow(1).alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
