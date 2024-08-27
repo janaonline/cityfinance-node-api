@@ -244,23 +244,23 @@ module.exports.get = async (req, res) => {
 async function createCSV(params) {
   const { formType, collectionName, res, loggedInUserRole, req, query, year } = params;
   try {
-  let prevYearDurObj={};
-   if(collectionName==CollectionNames.dur) {
-    const prevYear = year.split("-").map((ele) => Number(ele) - 1).join("-");
-    const prevYearObjId = await Year.findOne({ year: prevYear }, { _id: 1 });
-    const prevYearDur = await UtilizationReport.find({ designYear: ObjectId(prevYearObjId._id) }, { grantPosition: 1, ulb: 1 })
-          prevYearDurObj = prevYearDur.reduce((acc, curr) => {
-      if (curr) {
-        curr["grantPosition"]["unUtilizedPrevYr"] = curr["grantPosition"]["closingBal"];
-        curr["grantPosition"]["receivedDuringYr"] = '';
-        curr["grantPosition"]["expDuringYr"] = '';
-        curr["grantPosition"]["closingBal"] = '';
+    let prevYearDurObj={};
+    if(collectionName==CollectionNames.dur) {
+      const prevYear = year.split("-").map((ele) => Number(ele) - 1).join("-");
+      const prevYearObjId = await Year.findOne({ year: prevYear }, { _id: 1 });
+      const prevYearDur = await UtilizationReport.find({ designYear: ObjectId(prevYearObjId._id) }, { grantPosition: 1, ulb: 1 })
+      prevYearDurObj = prevYearDur.reduce((acc, curr) => {
+        if (curr) {
+          curr["grantPosition"]["unUtilizedPrevYr"] = curr["grantPosition"]["closingBal"];
+          curr["grantPosition"]["receivedDuringYr"] = '';
+          curr["grantPosition"]["expDuringYr"] = '';
+          curr["grantPosition"]["closingBal"] = '';
 
-        acc[curr["ulb"]] = { "grantPosition": curr["grantPosition"] };
-        return acc;
-      }
-    }, {});
-   }
+          acc[curr["ulb"]] = { "grantPosition": curr["grantPosition"] };
+          return acc;
+        }
+      }, {});
+    }
     let ratingList = []
     if (['ODF', 'GFC'].includes(collectionName)) {
       // let ratingIds = [...new Set(data.map(e => e?.formData?.rating))].filter(e => e !== undefined)
@@ -290,9 +290,11 @@ async function createCSV(params) {
         if (!el?.formData) {
           el['formStatus'] = "Not Started";
           // TODO:  uncomment
-           el['formData'] = prevYearDurObj[el['ulbId']];
+          el['formData'] = prevYearDurObj[el['ulbId']];
         } else {
-          el['formStatus'] = MASTER_STATUS_ID[el?.formData?.currentFormStatus]
+          if (collectionName === CollectionNames.pfms && el?.formData?.status) {
+            el['formStatus'] = calculateStatus(el?.formData?.status, el?.formData?.actionTakenByRole, el?.formData?.isDraft, "ULB");
+          } else el['formStatus'] = MASTER_STATUS_ID[el?.formData?.currentFormStatus]
         }
         let row = "";
         if (collectionName !== CollectionNames.annual && collectionName !== CollectionNames['28SLB']) {
@@ -1050,18 +1052,35 @@ const computeQuery = (params) => {
   const decadePrefixtoSlice = 2;
   const accessYear = checkUlbAccess(yearData.year, decadePrefixtoSlice);
   condition[accessYear] = true;
-  if ([CollectionNames.pfms].includes(formName)) {
+  // Used as a filter to fetch data for specific year.
+  const designYearOps = [
+    '606aafb14dff55e6c075d3ae', // 22-23
+    '606aafc14dff55e6c075d3ec', // 23-24
+    '606aafcf4dff55e6c075d424', // 24-25
+    '606aafda4dff55e6c075d48f', // 25-26
+  ];
+  let pipeLineYrCondObj = {
+    $eq: [dY, "$$firstUser"],
+  };
+  let target = ObjectId(design_year);
+  // Send only designYear if only specific year data is required.
+  if ([CollectionNames.pfms].includes(formName) && !csv) {
     let lastYearAccess = getLastYearUlbAccess(yearData.year);
     condition[lastYearAccess] = false;
   }
+  if ([CollectionNames.pfms].includes(formName) && csv === true) {
+    target = designYearOps.slice(0, designYearOps.indexOf(design_year) + 1).map(ObjectId);
+    pipeLineYrCondObj = {
+      $in: ["$design_year", "$$firstUser"],
+    };
+  }
+
   let pipeLine = [
     {
       $match: {
         $expr: {
           $and: [
-            {
-              $eq: [dY, "$$firstUser"],
-            },
+            pipeLineYrCondObj,
             {
               $eq: ["$ulb", "$$secondUser"],
             },
@@ -1114,7 +1133,7 @@ const computeQuery = (params) => {
           $lookup: {
             from: dbCollectionName,
             let: {
-              firstUser: ObjectId(design_year),
+              firstUser: target,
               secondUser: "$_id",
             },
             pipeline: pipeLine,
@@ -1806,6 +1825,14 @@ function createDynamicElements(collectionName, formType, entity) {
               },${actions["responseFile_state"]["url"] ?? ""},${actions["responseFile_mohua"]["url"] ?? ""
               }`;
             break;
+
+          case CollectionNames.pfms:
+            data["cert"]["name"] = removeEscapeChars(data["cert"]["name"]);
+            data["otherDocs"]["name"] = removeEscapeChars(data["otherDocs"]["name"]);
+            data["PFMSAccountNumber"] ? data["PFMSAccountNumber"] = `'${data["PFMSAccountNumber"]}'` : ""
+            entity = ` ${data?.design_year?.year ?? ""}, ${entity?.formStatus ?? ""}, ${data?.createdAt ?? ""}, ${data?.ulbSubmit ?? ""},${entity.filled ?? ""}, ${data["linkPFMS"] ?? ""},${data["PFMSAccountNumber"] ?? ""},${data["isUlbLinkedWithPFMS"] ?? ""},${data["cert"]["url"] ?? ""},${data["cert"]["name"] ?? ""},${data["otherDocs"]["url"] ?? ""},${data["otherDocs"]["name"] ?? ""},${actions["state_status"] ?? ""},${actions["rejectReason_state"] ?? ""},${actions["mohua_status"] ?? ""},${actions["rejectReason_mohua"] ?? ""},${actions["responseFile_state"]["url"] ?? ""},${actions["responseFile_mohua"]["url"] ?? ""} `;
+            break;
+
           case CollectionNames['28SLB']:
             let actualYear = data?.data?.[0]?.actual?.year ? YEAR_CONSTANTS_IDS[data.data[0].actual.year] : "";
             let i = 0;
