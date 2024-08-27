@@ -280,32 +280,8 @@ async function fetchPtaxData(designYear, stateId, stateIdsArr) {
         {
             $match: match
         },
-        // {
-        //     $lookup: {
-        //         from: "states",
-        //         localField: "state",
-        //         foreignField: "_id",
-        //         as: "stateCollection"
-        //     }
-        // },
-        // {
-        //     $match: {
-        //         "stateCollection.isUT": false
-        //     }
-        // },
-        // {
-        //     $lookup: {
-        //         from: "state_gsdp",
-        //         localField: "state",
-        //         foreignField: "stateId",
-        //         as: "stateGsdp"
-        //     }
-        // },
         {
             $project: {
-                // "stateCollection.name": 1,
-                // "stateCollection._id": 1,
-                // "stateGsdp.data": 1,
                 name: 1,
                 code: 1,
                 censusCode: 1,
@@ -432,10 +408,10 @@ module.exports.pTax = async (req, res) => {
 
         // Get the data from all 3 ptax collections.
         const cursorOps = await fetchPtaxData(designYear, stateId, stateIdsArr);
-        let tempArr = [];
+        // let tempArr = [];
         let mappers = {};
         let childDataObj = {};
-        console.time("data+manipulation");
+
         // Iterate through each document in the cursor (array received from DB).
         for (let doc = await cursorOps.next(); doc != null; doc = await cursorOps.next()) {
             // Initialize mappers
@@ -482,11 +458,6 @@ module.exports.pTax = async (req, res) => {
             // Fetch State.
             const state = stateDataObj[doc.state.toString()];
 
-            // console.log("state--->", state)
-            // console.log("Name--->", doc.name);
-            // console.log("state", JSON.stringify(state, null, 2));
-
-
             mappers["name"] = doc.name;
             mappers["code"] = doc.code;
             mappers["censusCode"] = Number(doc.censusCode ? doc.censusCode : doc.sbCode);
@@ -509,11 +480,10 @@ module.exports.pTax = async (req, res) => {
 
             // Update state gsdp data.
             mappers.stateGsdp = Number(stateGsdpNo.toFixed(2)) || "N/A";
-            tempArr.push(mappers);
+            // tempArr.push(mappers);
             worksheet.addRow(mappers);
         }
         // return res.send({ tempArr, childDataObj })
-        console.timeEnd("data+manipulation");
 
         // Style header.
         worksheet.getRow(1).alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
