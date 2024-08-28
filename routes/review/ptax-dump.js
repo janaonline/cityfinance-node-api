@@ -432,7 +432,9 @@ module.exports.pTax = async (req, res) => {
                 } else if (ulbObj?.file?.url) {
                     mappers[key] = baseUrl_s3 + ulbObj.file.url;
                 } else if (ulbObj.date) {
-                    mappers[key] = moment(ulbObj.date).format('DD-MMM-YYYY');
+                    // mappers[key] = moment(ulbObj.date).format('DD-MMM-YYYY');
+                    let fullDate = ulbObj.date.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
+                    mappers[key] = moment(fullDate, 'D/M/YYYY, h:mm:ss a').format('DD-MMM-YY');;
                 }
 
                 // Create key value pair from the child data.
