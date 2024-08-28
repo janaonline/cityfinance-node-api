@@ -66,7 +66,7 @@ const questionKeys = [
     { 'displayPriority': '4.1', 'header': 'Please submit the property tax rate card', 'key': 'propertyTaxValuationDetails', 'multipleYear': false, 'childData': null },
     { 'displayPriority': '5.1', 'header': 'Are water charges being collected in the ULB?', 'key': 'notificationWaterCharges', 'multipleYear': false, 'childData': null },
     { 'displayPriority': '5.2', 'header': 'Which entity is collecting the water charges?', 'key': 'entityWaterCharges', 'multipleYear': false, 'childData': null },
-    { 'displayPriority': '5.3', 'header': 'Please fill the name of entity', 'key': 'entity	', 'multipleYear': false, 'childData': null },
+    { 'displayPriority': '5.3', 'header': 'Please fill the name of entity', 'key': 'entityNameWaterCharges', 'multipleYear': false, 'childData': null },
     { 'displayPriority': '5.4', 'header': 'Upload a copy of gazette notification that notifies water charges', 'key': 'notificationWaterChargesFile', 'multipleYear': false, 'childData': null },
     { 'displayPriority': '5.5', 'header': 'Total water charges demand', 'key': 'waterChrgDm', 'multipleYear': true, 'childData': null },
     { 'displayPriority': '5.6', 'header': 'Current water charges demand', 'key': 'cuWaterChrgDm', 'multipleYear': true, 'childData': null },
@@ -432,7 +432,9 @@ module.exports.pTax = async (req, res) => {
                 } else if (ulbObj?.file?.url) {
                     mappers[key] = baseUrl_s3 + ulbObj.file.url;
                 } else if (ulbObj.date) {
-                    mappers[key] = moment(ulbObj.date).format('DD-MMM-YYYY');
+                    // mappers[key] = moment(ulbObj.date).format('DD-MMM-YYYY');
+                    let fullDate = ulbObj.date.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
+                    mappers[key] = moment(fullDate, 'D/M/YYYY, h:mm:ss a').format('DD-MMM-YY');;
                 }
 
                 // Create key value pair from the child data.
