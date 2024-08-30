@@ -47,6 +47,16 @@ let alerts = {
     }
 }
 
+async function getGtcMessage(yearId){
+    return {
+        "prevForm":`Your previous year's GTC form is not complete. <a href="${process.env.HOSTNAME}/state-form/${yearId}/gtCertificate">Click Here!</a> to access previous year form.`,
+        "installmentMsg":(year)=>{
+            return `1st Installment (${year}) GTC has to be uploaded first before uploading 2nd Installment (${year}) GTC`
+        }
+    }
+}
+
+
 let warnings = {
     "electedMpcToMpc": "Total Elected MPCs should be less than equal to Total MPCs",
     "electedNmpcToNmpc": "Total Elected NMPCs should be less than equal to Total NMPCs",
@@ -610,10 +620,16 @@ const checkForPreviousForms = async (design_year, state) => {
         if(['606aafcf4dff55e6c075d424'].includes(design_year)) { // 24-25
             reqLength = 5;
         }
+        
         // TODO: The number 5 must be dynamic. For 23-24 it is 8 and 24-25 it is 5.
         if (gtcFormsLength < reqLength) {
             validator.valid = false
-            validator.message = alerts['prevForm'] //Your previous year's GTC form is not complete....
+            if (['606aafc14dff55e6c075d3ec'].includes(design_year)){
+                validator.message = alerts['prevForm'] //Your previous year's GTC form is not complete....
+            } else {
+                let prevYearForm = await getGtcMessage(yearId);
+                validator.message = prevYearForm['prevForm']; 
+            }
         }
     }
     catch (err) {
