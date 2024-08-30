@@ -1930,7 +1930,7 @@ module.exports.get = catchAsync(async (req, res) => {
     let total;
     let design_year = req.query.design_year;
     let design_year_Str = await Year.findOne({ _id: ObjectId(design_year) }, { year: 1 });
-    let form = req.query.formId
+    let form = req.query.formId == "15.1" ? '6603c8149cae333f1b0b9212' : req.query.formId;
     if (!design_year || !form) {
       return res.status(400).json({
         success: false,
