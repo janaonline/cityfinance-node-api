@@ -2509,7 +2509,7 @@ module.exports.progressReport = async (req, res) => {
                 ulbData[0] = ulbData[demographicDataIndex];
                 ulbData[demographicDataIndex] = temp;
                 for (let eachTab of ulbData) {
-                    if (eachTab.data.length > 0) {
+                    if (eachTab?.data?.length > 0) {
                         eachUlbForm.formId = eachUlbForm.formId ? eachUlbForm.formId : eachUlbForm.formType == 'form1' ? 16 : 17;
                         tabCount = eachUlbForm.formId == 16 ? 4 : 5;
                         let eachTabPercent = await getSubmissionPercent(eachTab, eachUlbForm.formId);
