@@ -1,5 +1,6 @@
 const catchAsync = require('../../util/catchAsync')
 const Sidemenu = require('../../models/Sidemenu')
+const Year = require('../../models/Year')
 const CollectionNames = require('../../util/collectionName')
 const { calculateStatus, canTakeActionOrViewOnly } = require('../CommonActionAPI/service')
 const ObjectId = require("mongoose").Types.ObjectId;
@@ -34,7 +35,7 @@ function formatDate(date) {
   }catch(err){
       throw Error({message: `formatDate:: ${err.message}`})
   }
-  
+
 }
 
 function createDynamicColumns(collectionName) {
@@ -64,6 +65,12 @@ function createDynamicColumns(collectionName) {
       break;
     case CollectionNames.sfc:
       columns = `Financial Year, Form Status, Created, Submitted On, Filled Status, Constituted State Finance Commission,  State Act/GO/Notification Url, State Act/GO/Notification Name , MoHUA Review Status, MoHUA Comments, MoHUA file Url`
+      break;
+    case CollectionNames.sfcForm:
+      // if (design_year == '606aafcf4dff55e6c075d424')
+      columns = `Financial Year, Form Status, Created, Submitted On, Filled Status, Is SFC constituted?, Please upload Notification of SFC constitution, Date of SFC Constitution, Award Period of SFC, Action Taken Report, Please upload SFC Report, Date of release of SFC report, MoHUA Review Status, MoHUA Comments, MoHUA file Url`;
+      // else
+      // columns = `Financial Year, Form Status, Created, Submitted On, Filled Status, Constituted State Finance Commission,  State Act/GO/Notification Url, State Act/GO/Notification Name , MoHUA Review Status, MoHUA Comments, MoHUA file Url`;
       break;
     case CollectionNames.state_gtc:
       columns = `Financial Year, Form Status, Created, Submitted On, Filled Status, Type, File Url, File Name,  MoHUA Review Status, MoHUA Comments, MoHUA file Url `
@@ -964,7 +971,7 @@ function removeEscapeChars(entity) {
   return !entity ? entity : entity.replace(/(\n|,)/gm, " ");
 }
 
-async function createDynamicElements(collectionName, formType, entity) {
+async function createDynamicElements(collectionName, formType, entity, design_year_Str) {
   if (!entity.formData) {
     entity["filled"] = "No";
     entity['formData'] = createDynamicObject(collectionName, formType);
@@ -1016,7 +1023,7 @@ async function createDynamicElements(collectionName, formType, entity) {
 
   if (!entity["formData"]["design_year"]) {
     entity["formData"]["design_year"] = {
-      year: ""
+      year: collectionName =='sfc-form' ? design_year_Str || "" : ""
     }
   }
 
@@ -1261,6 +1268,28 @@ async function createDynamicElements(collectionName, formType, entity) {
             },${actions["rejectReason_mohua"] ?? ""}, ${actions["responseFile_mohua"]["url"] ?? ""
             }`;
           break;
+        case CollectionNames.sfcForm:
+          if (data && data.data) {
+            let arr = [];
+            arr.push(data?.design_year?.year ?? "");
+            arr.push(MASTER_STATUS_ID[data?.currentFormStatus] ?? "");
+            arr.push(data?.createdAt ?? "");
+            arr.push(data?.stateSubmit ?? "");
+            arr.push(data?.data[0]?.value ?? "");
+            for (let ele of data.data) {
+              if (ele?.value) arr.push(ele.value ?? "")
+              else if (ele?.file) arr.push(ele?.file?.url ?? "")
+              else if (ele?.date) arr.push(formatDate(ele?.date) ?? "")
+            }
+            arr.push(data?.status ?? "");
+            arr.push(data?.rejectReason_mohua ?? "");
+            arr.push(data?.responseFile_mohua?.url ?? "");
+            entity = arr.join(",")
+          } else {
+            entity = `${data?.design_year?.year ?? ""}, ${entity?.formStatus ?? ""},,,,,,,,,,,,,`;
+          }
+          break;
+
         case CollectionNames.state_gtc:
           entity = `${data?.design_year?.year ?? ""}, ${entity?.formStatus ?? ""}, ${data?.createdAt ?? ""}, ${data?.stateSubmit ?? ""},${entity.filled ?? ""}, ${data.type ?? ""}, ${data.file['url'] ?? ""}, ${data.file['name']}, ${actions["mohua_status"] ?? ""},${actions["rejectReason_mohua"] ?? ""}, ${actions["responseFile_mohua"]["url"] ?? ""} `
           break;
@@ -1275,7 +1304,6 @@ async function createDynamicElements(collectionName, formType, entity) {
             });
             data.categoryWiseData_wm = wm;
           }
-          console.log("su", data);
           if (
             data?.categoryWiseData_swm &&
             data?.categoryWiseData_swm.length > 0
@@ -1875,142 +1903,204 @@ function createDynamicQuery(collectionName, oldQuery, userRole, csv) {
 
 module.exports.get = catchAsync(async (req, res) => {
   try {
-  
-  let loggedInUserRole = req.decoded.role
-  let filter = {};
-  const ulbColumnNames = {
-    sNo: "S No.",
-    ulbName: "ULB Name",
-    stateName: "State Name",
-    censusCode: "Census/SB Code",
-    ulbType: "ULB Type",
-    populationType: "Population Type",
-    UA: "UA",
-    formStatus: "Form Status",
-    filled: "Filled Status",
-    filled_audited: "Audited Filled Status",
-    filled_provisional: "Provisional Filled Status",
-    action: "Action"
-  }
-  const stateColumnNames = {
-    sNo: "S No.",
-    stateName: "State Name",
-    formStatus: "Form Status"
 
-  }
-  //    formId --> sidemenu collection --> e.g Annual Accounts --> _id = formId
-  let total;
-  let design_year = req.query.design_year;
-  let form = req.query.formId
-  if (!design_year || !form) {
-    return res.status(400).json({
-      success: false,
-      message: "Missing FormId or Design Year"
-    })
-  }
-  let skip = req.query.skip ? parseInt(req.query.skip) : 0
-  let limit = req.query.limit ? parseInt(req.query.limit) : 10
-  let csv = req.query.csv == "true"
-  let keys;
-  let formTab = await Sidemenu.findOne({ _id: ObjectId(form) }).lean();
-  if (loggedInUserRole == "STATE") {
-    delete ulbColumnNames['stateName']
-  }
-  let title_value = formTab.role == 'ULB' ? 'Review Grant Application' : 'Review State Forms';
+    let loggedInUserRole = req.decoded.role
+    let filter = {};
+    const ulbColumnNames = {
+      sNo: "S No.",
+      ulbName: "ULB Name",
+      stateName: "State Name",
+      censusCode: "Census/SB Code",
+      ulbType: "ULB Type",
+      populationType: "Population Type",
+      UA: "UA",
+      formStatus: "Form Status",
+      filled: "Filled Status",
+      filled_audited: "Audited Filled Status",
+      filled_provisional: "Provisional Filled Status",
+      action: "Action"
+    }
+    const stateColumnNames = {
+      sNo: "S No.",
+      stateName: "State Name",
+      formStatus: "Form Status"
 
-  if ((loggedInUserRole == "MoHUA" || loggedInUserRole == "ADMIN") && title_value === "Review Grant Application") {
-    delete ulbColumnNames['stateName']
-  }
+    }
+    //    formId --> sidemenu collection --> e.g Annual Accounts --> _id = formId
+    let total;
+    let design_year = req.query.design_year;
+    let design_year_Str = await Year.findOne({ _id: ObjectId(design_year) }, { year: 1 });
+    let form = req.query.formId == "15.1" ? '6603c8149cae333f1b0b9212' : req.query.formId;
+    if (!design_year || !form) {
+      return res.status(400).json({
+        success: false,
+        message: "Missing FormId or Design Year"
+      })
+    }
+    let skip = req.query.skip ? parseInt(req.query.skip) : 0
+    let limit = req.query.limit ? parseInt(req.query.limit) : 10
+    let csv = req.query.csv == "true"
+    let keys;
+    let formTab = await Sidemenu.findOne({ _id: ObjectId(form) }).lean();
+    if (loggedInUserRole == "STATE") {
+      delete ulbColumnNames['stateName']
+    }
+    let title_value = formTab.role == 'ULB' ? 'Review Grant Application' : 'Review State Forms';
 
-  let dbCollectionName = formTab?.dbCollectionName
-  let formType = formTab.role
-  if (formType === "ULB") {
-    filter['ulbName'] = req.query.ulbName != 'null' ? req.query.ulbName : ""
-    filter['censusCode'] = req.query.censusCode != 'null' ? req.query.censusCode : ""
-    filter['populationType'] = req.query.populationType != 'null' ? req.query.populationType : ""
-    filter['state'] = req.query.stateName != 'null' ? req.query.stateName : ""
-    filter['ulbType'] = req.query.ulbType != 'null' ? req.query.ulbType : ""
-    filter['UA'] = req.query.UA != 'null' ? req.query.UA : ""
-    filter['status'] = req.query.status != 'null' ? req.query.status : ""
-    keys = calculateKeys(filter['status'], formType);
-
-    Object.assign(filter, keys)
-    delete filter['status']
-
-    // filled1 -> will be used for all the forms and Provisional of Annual accounts
-    // filled2 -> only for annual accounts -> audited section
-    filter['filled1'] = req.query.filled1 != 'null' ? req.query.filled1 : ""
-    filter['filled2'] = req.query.filled2 != 'null' ? req.query.filled2 : ""
-    if (filter["censusCode"]) {
-      let code = filter["censusCode"];
-      var digit = code.toString()[0];
-      if (digit == "9") {
-        delete filter["censusCode"];
-        filter["sbCode"] = code;
-      }
+    if ((loggedInUserRole == "MoHUA" || loggedInUserRole == "ADMIN") && title_value === "Review Grant Application") {
+      delete ulbColumnNames['stateName']
     }
 
-  }
-  if (formTab.collectionName == CollectionNames.annual) {
-    filter['filled_audited'] = filter['filled1']
-    filter['filled_provisional'] = filter['filled2']
-    delete filter['filled1']
-    delete filter['filled2']
-  } else {
-    filter['filled'] = filter['filled1']
-    delete filter['filled1']
-  }
-  if (formType == 'STATE') {
-    // filter['state'] = req.query.stateName
-    // filter['status'] = req.query.status 
-    filter['status'] = req.query.status != 'null' ? req.query.status : "";
-    filter['state'] = req.query.state != 'null' ? req.query.state : ""
-    keys = calculateKeys(filter['status'], formType);
-    Object.assign(filter, keys)
-    delete filter['status']
-  }
-  let state = req.query.state ?? req.decoded.state
-  if (req.decoded.role === "STATE") {
-    state = req.decoded.state
-  }
-  let getQuery = req.query.getQuery == 'true'
-  if (!design_year || !form) {
-    return res.status(400).json({
-      success: false,
-      message: "Data Missing"
+    let dbCollectionName = formTab?.dbCollectionName
+    let formType = formTab.role
+    if (formType === "ULB") {
+      filter['ulbName'] = req.query.ulbName != 'null' ? req.query.ulbName : ""
+      filter['censusCode'] = req.query.censusCode != 'null' ? req.query.censusCode : ""
+      filter['populationType'] = req.query.populationType != 'null' ? req.query.populationType : ""
+      filter['state'] = req.query.stateName != 'null' ? req.query.stateName : ""
+      filter['ulbType'] = req.query.ulbType != 'null' ? req.query.ulbType : ""
+      filter['UA'] = req.query.UA != 'null' ? req.query.UA : ""
+      filter['status'] = req.query.status != 'null' ? req.query.status : ""
+      keys = calculateKeys(filter['status'], formType);
+
+      Object.assign(filter, keys)
+      delete filter['status']
+
+      // filled1 -> will be used for all the forms and Provisional of Annual accounts
+      // filled2 -> only for annual accounts -> audited section
+      filter['filled1'] = req.query.filled1 != 'null' ? req.query.filled1 : ""
+      filter['filled2'] = req.query.filled2 != 'null' ? req.query.filled2 : ""
+      if (filter["censusCode"]) {
+        let code = filter["censusCode"];
+        var digit = code.toString()[0];
+        if (digit == "9") {
+          delete filter["censusCode"];
+          filter["sbCode"] = code;
+        }
+      }
+
+    }
+    if (formTab.collectionName == CollectionNames.annual) {
+      filter['filled_audited'] = filter['filled1']
+      filter['filled_provisional'] = filter['filled2']
+      delete filter['filled1']
+      delete filter['filled2']
+    } else {
+      filter['filled'] = filter['filled1']
+      delete filter['filled1']
+    }
+    if (formType == 'STATE') {
+      // filter['state'] = req.query.stateName
+      // filter['status'] = req.query.status 
+      filter['status'] = req.query.status != 'null' ? req.query.status : "";
+      filter['state'] = req.query.state != 'null' ? req.query.state : ""
+      keys = calculateKeys(filter['status'], formType);
+      Object.assign(filter, keys)
+      delete filter['status']
+    }
+    let state = req.query.state ?? req.decoded.state
+    if (req.decoded.role === "STATE") {
+      state = req.decoded.state
+    }
+    let getQuery = req.query.getQuery == 'true'
+    if (!design_year || !form) {
+      return res.status(400).json({
+        success: false,
+        message: "Data Missing"
+      })
+    }
+    //path -> file of models
+    let path = formTab.path
+    let collectionName = formTab.collectionName;
+    if (collectionName == CollectionNames.annual) {
+      delete ulbColumnNames['filled']
+    } else {
+      delete ulbColumnNames.filled_audited
+      delete ulbColumnNames.filled_provisional
+    }
+    let isFormOptional = formTab.optional
+    // const model = require(`../../models/${path}`)
+    let newFilter = await Service.mapFilterNew(filter);
+    statusSpecificCases(req.query.status, newFilter);
+    let folderName = formTab?.folderName;
+
+    let query = computeQuery(collectionName, formType, isFormOptional, state, design_year, csv, skip, limit, newFilter, dbCollectionName, folderName);
+    if (getQuery) return res.json({
+      query: query[0]
     })
-  }
-  //path -> file of models
-  let path = formTab.path
-  let collectionName = formTab.collectionName;
-  if (collectionName == CollectionNames.annual) {
-    delete ulbColumnNames['filled']
-  } else {
-    delete ulbColumnNames.filled_audited
-    delete ulbColumnNames.filled_provisional
-  }
-  let isFormOptional = formTab.optional
-  // const model = require(`../../models/${path}`)
-  let newFilter = await Service.mapFilterNew(filter);
-  statusSpecificCases(req.query.status, newFilter);
-  let folderName = formTab?.folderName;
 
-  let query = computeQuery(collectionName, formType, isFormOptional, state, design_year, csv, skip, limit, newFilter, dbCollectionName, folderName);
-  if (getQuery) return res.json({
-    query: query[0] 
-  })
+    // if csv - then no skip and limit, else with skip and limit
+    if (csv) {
+      await createCSV({ formType, collectionName, res, loggedInUserRole, query, design_year_Str: design_year_Str.year });
+      return;
+    }
+    let data = formType == "ULB" ? Ulb.aggregate(query[0]).allowDiskUse(true) : State.aggregate(query[0]).allowDiskUse(true)
+    total = formType == "ULB" ? Ulb.aggregate(query[1]).allowDiskUse(true) : State.aggregate(query[1]).allowDiskUse(true)
+    let allData = await Promise.all([data, total]);
+    data = allData[0]
+    total = allData[1].length ? allData[1][0]['total'] : 0;
+    if(!data.length){
+      return res.status(200).json({
+        success: true,
+        data: data,
+        total: total,
+        columnNames: formType == 'ULB' ? ulbColumnNames : stateColumnNames,
+        statusList: formType == 'ULB' ? List.ulbFormStatus : List.stateFormStatus,
+        ulbType: formType == 'ULB' ? List.ulbType : {},
+        populationType: formType == 'ULB' ? List.populationType : {},
+        title: formType == 'ULB' ? 'Review Grant Application' : 'Review State Forms'
+      })
+    }
+    //  if(collectionName == CollectionNames.dur || collectionName == CollectionNames.gfc ||
+    //     collectionName == CollectionNames.odf || collectionName == CollectionNames.slb || 
+    //     collectionName === CollectionNames.sfc || collectionName === CollectionNames.propTaxState || collectionName === CollectionNames.annual )
+    let approvedUlbs = await masterForms2122(collectionName, data);
+    const sequentialReview = `Cannot review since last year form is not approved by MoHUA.`
+    data.forEach(el => {
+      el['info'] = '';
+      el['prevYearStatus'] = '';
+      el['prevYearStatusId'] = '';
+      if (!el.formData) {
+        el['formStatus'] = "Not Started";
+        el['cantakeAction'] = false;
+      } else {
+        el['formStatus'] = calculateStatus(el.formData.status, el.formData.actionTakenByRole, el.formData.isDraft, formType);
+        el['cantakeAction'] = req.decoded.role === "ADMIN" ? false : canTakeActionOrViewOnly(el, loggedInUserRole)
+        if (collectionName === CollectionNames.dur || collectionName === CollectionNames['28SLB']) {
+          //   el['cantakeAction'] = req.decoded.role === "ADMIN" ? false : canTakeActionOrViewOnly(el, loggedInUserRole);
+          //   if (!(approvedUlbs.find(ulb => ulb.toString() === el.ulbId.toString())) && loggedInUserRole === "MoHUA") {
+          //     el['cantakeAction'] = false
+          //     el['formStatus'] === STATUS_LIST['Under_Review_By_MoHUA'] ? el['info'] = sequentialReview : ""
+          //   }
+          el['prevYearStatus'] = approvedUlbs[el._id] ?? STATUS_LIST['Not_Started'];
+        const previousStatus =  el['prevYearStatus']?.toUpperCase().split(' ').join('_')
+        el['prevYearStatusId'] = PREV_MASTER_FORM_STATUS[previousStatus] ??  PREV_MASTER_FORM_STATUS['NOT_STARTED']
 
-  // if csv - then no skip and limit, else with skip and limit
-  if (csv) {
-    await createCSV({ formType, collectionName, res, loggedInUserRole, query });
-    return;
-  }
-  let data = formType == "ULB" ? Ulb.aggregate(query[0]).allowDiskUse(true) : State.aggregate(query[0]).allowDiskUse(true)
-  total = formType == "ULB" ? Ulb.aggregate(query[1]).allowDiskUse(true) : State.aggregate(query[1]).allowDiskUse(true)
-  let allData = await Promise.all([data, total]);
-  data = allData[0]
-  total = allData[1].length ? allData[1][0]['total'] : 0;
-  if(!data.length){
+        }
+        // else {
+        // el['cantakeAction'] = req.decoded.role === "ADMIN" ? false : canTakeActionOrViewOnly(el, loggedInUserRole)
+        // }
+      }
+    })
+
+    if (
+      collectionName === CollectionNames.state_gtc ||
+      collectionName === CollectionNames.state_grant_alloc
+    ) {
+      data.forEach((element) => {
+        // element.stateName = element["stateName"];
+        let { status, pending } = countStatusData(element, collectionName);
+        element.formStatus = status;
+        if (pending > 0 && collectionName === CollectionNames.state_gtc) {
+          element.cantakeAction = true;
+        }
+      });
+    }
+
+    data.forEach(el => {
+      if (el.formData || el.formData === "") delete el.formData;
+
+    })
     return res.status(200).json({
       success: true,
       data: data,
@@ -2021,68 +2111,6 @@ module.exports.get = catchAsync(async (req, res) => {
       populationType: formType == 'ULB' ? List.populationType : {},
       title: formType == 'ULB' ? 'Review Grant Application' : 'Review State Forms'
     })
-  }
-  //  if(collectionName == CollectionNames.dur || collectionName == CollectionNames.gfc ||
-  //     collectionName == CollectionNames.odf || collectionName == CollectionNames.slb || 
-  //     collectionName === CollectionNames.sfc || collectionName === CollectionNames.propTaxState || collectionName === CollectionNames.annual )
-  let approvedUlbs = await masterForms2122(collectionName, data);
-  const sequentialReview = `Cannot review since last year form is not approved by MoHUA.`
-  data.forEach(el => {
-    el['info'] = '';
-    el['prevYearStatus'] = '';
-    el['prevYearStatusId'] = '';
-    if (!el.formData) {
-      el['formStatus'] = "Not Started";
-      el['cantakeAction'] = false;
-    } else {
-      el['formStatus'] = calculateStatus(el.formData.status, el.formData.actionTakenByRole, el.formData.isDraft, formType);
-      el['cantakeAction'] = req.decoded.role === "ADMIN" ? false : canTakeActionOrViewOnly(el, loggedInUserRole)
-      if (collectionName === CollectionNames.dur || collectionName === CollectionNames['28SLB']) {
-      //   el['cantakeAction'] = req.decoded.role === "ADMIN" ? false : canTakeActionOrViewOnly(el, loggedInUserRole);
-      //   if (!(approvedUlbs.find(ulb => ulb.toString() === el.ulbId.toString())) && loggedInUserRole === "MoHUA") {
-      //     el['cantakeAction'] = false
-      //     el['formStatus'] === STATUS_LIST['Under_Review_By_MoHUA'] ? el['info'] = sequentialReview : ""
-      //   }
-        el['prevYearStatus'] = approvedUlbs[el._id] ?? STATUS_LIST['Not_Started'];
-        const previousStatus =  el['prevYearStatus']?.toUpperCase().split(' ').join('_')
-        el['prevYearStatusId'] = PREV_MASTER_FORM_STATUS[previousStatus] ??  PREV_MASTER_FORM_STATUS['NOT_STARTED']
-
-      } 
-      // else {
-        // el['cantakeAction'] = req.decoded.role === "ADMIN" ? false : canTakeActionOrViewOnly(el, loggedInUserRole)
-      // }
-    }
-  })
-
-  if (
-    collectionName === CollectionNames.state_gtc ||
-    collectionName === CollectionNames.state_grant_alloc
-  ) {
-    data.forEach((element) => {
-      // element.stateName = element["stateName"];
-      let { status, pending } = countStatusData(element, collectionName);
-      element.formStatus = status;
-      if (pending > 0 && collectionName === CollectionNames.state_gtc) {
-        element.cantakeAction = true;
-      }
-    });
-  }
-
-  //  console.log(data)
-  data.forEach(el => {
-    if (el.formData || el.formData === "") delete el.formData;
-
-  })
-  return res.status(200).json({
-    success: true,
-    data: data,
-    total: total,
-    columnNames: formType == 'ULB' ? ulbColumnNames : stateColumnNames,
-    statusList: formType == 'ULB' ? List.ulbFormStatus : List.stateFormStatus,
-    ulbType: formType == 'ULB' ? List.ulbType : {},
-    populationType: formType == 'ULB' ? List.populationType : {},
-    title: formType == 'ULB' ? 'Review Grant Application' : 'Review State Forms'
-  })
   } catch (error) {
     return Response.BadRequest(res, "Something went wrong!")
   }
@@ -2103,7 +2131,7 @@ function statusSpecificCases(status, newFilter) {
     }
   } catch (error) {
     throw Error({message: `statusSpecificCases: ${error.message}`})
-    
+
   }
 }
 
@@ -2113,7 +2141,7 @@ function statusSpecificCases(status, newFilter) {
  * object, and query.
  */
 async function createCSV(params) {
-  const { formType, collectionName, res, loggedInUserRole, query } =
+  const { formType, collectionName, res, loggedInUserRole, query, design_year_Str } =
     params;
   try {
     let data =
@@ -2123,11 +2151,11 @@ async function createCSV(params) {
     data.forEach((el) => {
       el["formStatus"] = el.formData
         ? calculateStatus(
-            el.formData.status,
-            el.formData.actionTakenByRole,
-            el.formData.isDraft,
-            formType
-          )
+          el.formData.status,
+          el.formData.actionTakenByRole,
+          el.formData.isDraft,
+          formType
+        )
         : MASTER_STATUS_ID[MASTER_FORM_STATUS['NOT_STARTED']];
     });
     if (formType === "ULB") {
@@ -2141,7 +2169,7 @@ async function createCSV(params) {
       if (collectionName != CollectionNames.annual && collectionName != CollectionNames['28SLB']) {
         res.write(
           "\ufeff" +
-            `${fixedColumns.toString()} ${dynamicColumns.toString()} \r\n`
+          `${fixedColumns.toString()} ${dynamicColumns.toString()} \r\n`
         );
 
         res.flushHeaders();
@@ -2166,22 +2194,22 @@ async function createCSV(params) {
           }
           res.write(
             "\ufeff" +
-              el.stateName +
-              "," +
-              el.ulbName +
-              "," +
-              el.ulbCode +
-              "," +
-              el.censusCode +
-              "," +
-              el.populationType +
-              "," +
-              el.isUA +
-              "," +
-              el.UA +
-              "," +
-              dynamicElementData.toString() +
-              "\r\n"
+            el.stateName +
+            "," +
+            el.ulbName +
+            "," +
+            el.ulbCode +
+            "," +
+            el.censusCode +
+            "," +
+            el.populationType +
+            "," +
+            el.isUA +
+            "," +
+            el.UA +
+            "," +
+            dynamicElementData.toString() +
+            "\r\n"
           );
         }
         res.end();
@@ -2189,7 +2217,7 @@ async function createCSV(params) {
       } else {
         res.write(
           "\ufeff" +
-            `State Name, ULB Name, City Finance Code, Census Code, Population Category, UA, UA Name, ${dynamicColumns.toString()}  \r\n`
+          `State Name, ULB Name, City Finance Code, Census Code, Population Category, UA, UA Name, ${dynamicColumns.toString()}  \r\n`
         );
 
         res.flushHeaders();
@@ -2216,41 +2244,41 @@ async function createCSV(params) {
 
           res.write(
             "\ufeff" +
-              el.stateName +
-              "," +
-              el.ulbName +
-              "," +
-              el.ulbCode +
-              "," +
-              el.censusCode +
-              "," +
-              el.populationType +
-              "," +
-              el.isUA +
-              "," +
-              el.UA +
-              "," +
-              row1.toString() +
-              "\r\n"
+            el.stateName +
+            "," +
+            el.ulbName +
+            "," +
+            el.ulbCode +
+            "," +
+            el.censusCode +
+            "," +
+            el.populationType +
+            "," +
+            el.isUA +
+            "," +
+            el.UA +
+            "," +
+            row1.toString() +
+            "\r\n"
           );
           res.write(
             "\ufeff" +
-              el.stateName +
-              "," +
-              el.ulbName +
-              "," +
-              el.ulbCode +
-              "," +
-              el.censusCode +
-              "," +
-              el.populationType +
-              "," +
-              el.isUA +
-              "," +
-              el.UA +
-              "," +
-              row2.toString() +
-              "\r\n"
+            el.stateName +
+            "," +
+            el.ulbName +
+            "," +
+            el.ulbCode +
+            "," +
+            el.censusCode +
+            "," +
+            el.populationType +
+            "," +
+            el.isUA +
+            "," +
+            el.UA +
+            "," +
+            row2.toString() +
+            "\r\n"
           );
         }
         res.end();
@@ -2288,7 +2316,7 @@ async function createCSV(params) {
         let dynamicColumns = createDynamicColumns(collectionName);
         res.write(
           "\ufeff" +
-            `${fixedColumns.toString()} ${dynamicColumns.toString()} \r\n`
+          `${fixedColumns.toString()} ${dynamicColumns.toString()} \r\n`
         );
 
         res.flushHeaders();
@@ -2299,19 +2327,20 @@ async function createCSV(params) {
             let dynamicElementData = await createDynamicElements(
               collectionName,
               formType,
-              el
+              el,
+              design_year_Str
             );
 
             res.write(
               "\ufeff" +
-                el.stateName +
-                "," +
-                el.stateCode +
-                "," +
-                el.regionalName +
-                "," +
-                dynamicElementData.toString() +
-                "\r\n"
+              el.stateName +
+              "," +
+              el.stateCode +
+              "," +
+              el.regionalName +
+              "," +
+              dynamicElementData.toString() +
+              "\r\n"
             );
           }
         } else {
@@ -2481,6 +2510,14 @@ const computeQuery = (formName, userRole, isFormOptional, state, design_year, cs
         filledQueryExpression = {
           $cond: {
             if: { $eq: [`$formData.constitutedSfc`, "Yes"] },
+            then: STATUS_LIST.Submitted,
+            else: STATUS_LIST.Not_Submitted,
+          },
+        };
+      case CollectionNames.sfcForm:
+        filledQueryExpression = {
+          $cond: {
+            if: { $eq: [`$formData.data[0].sfcConstituted`, "Yes"] },
             then: STATUS_LIST.Submitted,
             else: STATUS_LIST.Not_Submitted,
           },
