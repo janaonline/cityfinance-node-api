@@ -1032,7 +1032,7 @@ let newYearValidationJson = {
             {
                 "logic": "ltequal",
                 "fields": [
-                    "totalSewergeChrgDm"
+                    "totalSewergeConnectionDm"
                 ],
                 "sequence": [
                     "6.11",
