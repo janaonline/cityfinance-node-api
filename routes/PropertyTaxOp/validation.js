@@ -1013,7 +1013,6 @@ let newYearValidationJson = {
         "logic": "multiple",
         "multipleValidations": [
             {
-
                 "logic": "sum",
                 "fields": [
                     "resNoSewerageTaxCollected",
@@ -1032,12 +1031,12 @@ let newYearValidationJson = {
             {
                 "logic": "ltequal",
                 "fields": [
-                    "totalSewergeConnectionCol"
+                    "totalSewergeConnectionDm"
                 ],
                 "sequence": [
-                    "6.11",
+                    "6.11"
                 ],
-                "message": ` Value must be less than or equal to "Total number of connections from which sewerage charges was demanded`
+                "message": ` Value must be lesser than or equal to "Total number of connections from which sewerage charges was demanded`
             },
         ],
         "displayNumber": "6.12"
