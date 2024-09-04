@@ -1291,6 +1291,7 @@ async function createDynamicElements(collectionName, formType, entity, design_ye
           break;
 
         case CollectionNames.state_gtc:
+          entity["formStatus"] = MASTER_STATUS_ID[data?.currentFormStatus] ?? entity?.currentFormStatus;
           entity = `${data?.design_year?.year ?? ""}, ${entity?.formStatus ?? ""}, ${data?.createdAt ?? ""}, ${data?.stateSubmit ?? ""},${entity.filled ?? ""}, ${data.type ?? ""}, ${data.file['url'] ?? ""}, ${data.file['name']}, ${actions["mohua_status"] ?? ""},${actions["rejectReason_mohua"] ?? ""}, ${actions["responseFile_mohua"]["url"] ?? ""} `
           break;
 
@@ -1930,7 +1931,12 @@ module.exports.get = catchAsync(async (req, res) => {
     let total;
     let design_year = req.query.design_year;
     let design_year_Str = await Year.findOne({ _id: ObjectId(design_year) }, { year: 1 });
-    let form = req.query.formId == "15.1" ? '6603c8149cae333f1b0b9212' : req.query.formId;
+    
+    let form = req.query.formId == "15.1" ? 
+                '6603c8149cae333f1b0b9212' : 
+                  req.query.formId == "7" ? 
+                  '63ff31d63ae39326f4b2f473' : 
+                    req.query.formId;
     if (!design_year || !form) {
       return res.status(400).json({
         success: false,
