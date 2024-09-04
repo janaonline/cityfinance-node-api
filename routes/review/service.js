@@ -1262,6 +1262,7 @@ async function createDynamicElements(collectionName, formType, entity) {
             }`;
           break;
         case CollectionNames.state_gtc:
+          entity["formStatus"] = MASTER_STATUS_ID[data?.currentFormStatus] ?? entity?.currentFormStatus;
           entity = `${data?.design_year?.year ?? ""}, ${entity?.formStatus ?? ""}, ${data?.createdAt ?? ""}, ${data?.stateSubmit ?? ""},${entity.filled ?? ""}, ${data.type ?? ""}, ${data.file['url'] ?? ""}, ${data.file['name']}, ${actions["mohua_status"] ?? ""},${actions["rejectReason_mohua"] ?? ""}, ${actions["responseFile_mohua"]["url"] ?? ""} `
           break;
 
@@ -1901,7 +1902,8 @@ module.exports.get = catchAsync(async (req, res) => {
   //    formId --> sidemenu collection --> e.g Annual Accounts --> _id = formId
   let total;
   let design_year = req.query.design_year;
-  let form = req.query.formId
+  // let form = req.query.formId
+  let form = req.query.formId == "7" ? '63ff31d63ae39326f4b2f473' : req.query.formId;
   if (!design_year || !form) {
     return res.status(400).json({
       success: false,
