@@ -1294,7 +1294,7 @@ async function createDynamicElements(collectionName, formType, entity, design_ye
           break;
 
         case CollectionNames.state_gtc:
-          entity["formStatus"] = MASTER_STATUS_ID[data?.currentFormStatus] ?? entity?.currentFormStatus;
+          entity["formStatus"] = MASTER_STATUS_ID[data?.currentFormStatus] ?? entity?.formStatus;
           entity = `${data?.design_year?.year ?? ""}, ${entity?.formStatus ?? ""}, ${data?.createdAt ?? ""}, ${data?.stateSubmit ?? ""},${entity.filled ?? ""}, ${data.type ?? ""}, ${data.file['url'] ?? ""}, ${data.file['name']}, ${actions["mohua_status"] ?? ""},${actions["rejectReason_mohua"] ?? ""}, ${actions["responseFile_mohua"]["url"] ?? ""} `
           break;
 
