@@ -68,7 +68,7 @@ function createDynamicColumns(collectionName) {
       break;
     case CollectionNames.sfcForm:
       // if (design_year == '606aafcf4dff55e6c075d424')
-      columns = `Financial Year, Form Status, Created, Submitted On, Filled Status, Is SFC constituted?, Please upload Notification of SFC constitution, Date of SFC Constitution, Award Period of SFC, Action Taken Report, Please upload SFC Report, Date of release of SFC report, MoHUA Review Status, MoHUA Comments, MoHUA file Url`;
+      columns = `Financial Year, Form Status, Created, Submitted On, Filled Status, Is SFC constituted?, Please upload Notification of SFC constitution, Date of SFC Constitution, Award Period of SFC, Action Taken Report, Please upload SFC Report, Date of release of SFC report, MoHUA Comments, MoHUA file Url`;
       // else
       // columns = `Financial Year, Form Status, Created, Submitted On, Filled Status, Constituted State Finance Commission,  State Act/GO/Notification Url, State Act/GO/Notification Name , MoHUA Review Status, MoHUA Comments, MoHUA file Url`;
       break;
@@ -1279,9 +1279,12 @@ async function createDynamicElements(collectionName, formType, entity, design_ye
             for (let ele of data.data) {
               if (ele?.value) arr.push(ele.value ?? "")
               else if (ele?.file) arr.push(ele?.file?.url ?? "")
-              else if (ele?.date) arr.push(formatDate(ele?.date) ?? "")
+              else if (ele?.date) {
+                let fullDate = ele?.date.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
+                arr.push(formatDate(fullDate) ?? "")
+              }
             }
-            arr.push(data?.status ?? "");
+            // arr.push(data?.status ?? "");
             arr.push(data?.rejectReason_mohua ?? "");
             arr.push(data?.responseFile_mohua?.url ?? "");
             entity = arr.join(",")
