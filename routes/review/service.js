@@ -19,6 +19,8 @@ const MasterForm = require('../../models/MasterForm');
 const { PREV_MASTER_FORM_STATUS, MASTER_STATUS_ID, MASTER_FORM_STATUS } = require('../../util/FormNames');
 const { concatenateUrls } = require('../../service/common');
 const Response = require("../../service").response;
+const moment = require('moment');
+ 
 
 function padTo2Digits(num) {
   return num.toString().padStart(2, '0');
@@ -1280,8 +1282,7 @@ async function createDynamicElements(collectionName, formType, entity, design_ye
               if (ele?.value) arr.push(ele.value ?? "")
               else if (ele?.file) arr.push(ele?.file?.url ?? "")
               else if (ele?.date) {
-                let fullDate = ele?.date.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
-                arr.push(formatDate(fullDate) ?? "")
+                arr.push( moment(ele?.date).format('DD-MM-YY'));
               }
             }
             // arr.push(data?.status ?? "");
