@@ -1282,7 +1282,7 @@ async function createDynamicElements(collectionName, formType, entity, design_ye
               if (ele?.value) arr.push(ele.value ?? "")
               else if (ele?.file) arr.push(ele?.file?.url ?? "")
               else if (ele?.date) {
-                arr.push( moment(ele?.date).format('DD-MM-YY'));
+                arr.push( moment(ele?.date).format('DD-MMM-YY'));
               }
             }
             // arr.push(data?.status ?? "");
