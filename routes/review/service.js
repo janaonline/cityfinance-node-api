@@ -73,7 +73,7 @@ function createDynamicColumns(collectionName) {
       // columns = `Financial Year, Form Status, Created, Submitted On, Filled Status, Constituted State Finance Commission,  State Act/GO/Notification Url, State Act/GO/Notification Name , MoHUA Review Status, MoHUA Comments, MoHUA file Url`;
       break;
     case CollectionNames.state_gtc:
-      columns = `Financial Year, Form Status, Created, Submitted On, Filled Status, Type, File Url, File Name,  MoHUA Review Status, MoHUA Comments, MoHUA file Url `
+      columns = `Financial Year, Form Status, Created, Filled Status, Type, File Url, File Name, MoHUA Comments, MoHUA file Url `
       break;
     default:
       columns = '';
@@ -1295,7 +1295,7 @@ async function createDynamicElements(collectionName, formType, entity, design_ye
 
         case CollectionNames.state_gtc:
           entity["formStatus"] = MASTER_STATUS_ID[data?.currentFormStatus] ?? entity?.formStatus;
-          entity = `${data?.design_year?.year ?? ""}, ${entity?.formStatus ?? ""}, ${data?.createdAt ?? ""}, ${data?.stateSubmit ?? ""},${entity.filled ?? ""}, ${data.type ?? ""}, ${data.file['url'] ?? ""}, ${data.file['name']}, ${actions["mohua_status"] ?? ""},${actions["rejectReason_mohua"] ?? ""}, ${actions["responseFile_mohua"]["url"] ?? ""} `
+          entity = `${data?.design_year?.year ?? ""}, ${entity?.formStatus ?? ""}, ${data?.createdAt ?? ""},${entity.filled ?? ""}, ${data.type ?? ""}, ${data.file['url'] ?? ""}, ${data.file['name']},${actions["rejectReason_mohua"] ?? ""}, ${actions["responseFile_mohua"]["url"] ?? ""} `
           break;
 
           if (
@@ -1441,7 +1441,7 @@ async function createDynamicElements(collectionName, formType, entity, design_ye
           break;
         case CollectionNames.state_gtc:
           // entity = sortGtcData(entity);
-          entity = `${data?.design_year?.year ?? ""}, ${entity?.formStatus ?? ""}, ${data?.createdAt ?? ""}, ${data?.stateSubmit ?? ""},${entity.filled ?? ""}, ${data.type ?? ""}, ${data.file['url'] ?? ""}, ${data.file['name']}, ${actions["mohua_status"] ?? ""},${actions["rejectReason_mohua"] ?? ""}, ${actions["responseFile_mohua"]["url"] ?? ""} `
+          entity = `${data?.design_year?.year ?? ""}, ${entity?.formStatus ?? ""}, ${data?.createdAt ?? ""},${entity.filled ?? ""}, ${data.type ?? ""}, ${data.file['url'] ?? ""}, ${data.file['name']},${actions["rejectReason_mohua"] ?? ""}, ${actions["responseFile_mohua"]["url"] ?? ""} `
           break;
 
       }
