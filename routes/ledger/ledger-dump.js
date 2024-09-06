@@ -198,6 +198,7 @@ module.exports.getLedgerDump = async (req, res) => {
                 row["ulb_code"] = ulbOverviewObj.ulb_code;
                 row["ulb"] = ulbOverviewObj.ulb;
                 row["state"] = ulbOverviewObj.state;
+                row["audit_status"] = ulbOverviewObj.audit_status;
                 row["audit_firm"] = ulbOverviewObj.audit_firm;
                 row["partner_name"] = ulbOverviewObj.partner_name;
                 row["icai_membership_number"] = ulbOverviewObj.icai_membership_number;
