@@ -16,6 +16,6 @@ module.exports = {
 		"staging":process.env.REDIS_DEMO
     },
     CAPTCHA:{
-    	SECRETKEY:"6LcT9_gUAAAAAFpE5Pog4Kfe7bfiUzT8SMeP4Va3"
+    	SECRETKEY:process.env.CAPTCHA_SECRET_KEY
     }
 }
