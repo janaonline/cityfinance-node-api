@@ -149,16 +149,14 @@ function setFields(formData) {
     area: 'AREA - as per 2011',
     population: 'POPULATION as per 2011 CENSUS',
     dulyElected: 'STATUS (DULY ELECTED - YES/NO)',
+    remarks: 'REMARKS',
     gaTied: `GRANT ALLOCATION - ${installment} Installment TIED`,
     ga15fcPercTied: '%FC GRANT ALLOCATED TIED',
-    remarks: 'REMARKS',
   };
   if (formData.type === 'nonmillion_tied_untied') {
-      delete fields['remarks']
     const fields1 = {
       gaUnTied: `GRANT ALLOCATION - ${installment} Installment UNTIED`,
       ga15fcPercUnTied: '%FC GRANT ALLOCATED UNTIED',
-      remarks: 'REMARKS',
     };
     fields = { ...fields, ...fields1 }
   }
