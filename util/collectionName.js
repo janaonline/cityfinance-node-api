@@ -14,5 +14,6 @@ module.exports = {
     "state_grant_claim": "GrantClaim",
     "28SLB": "TwentyEightSlbsForm",
     "waterRej": "WaterRejenuvationRecycling",
-    "GrantClaim": "GrantClaim"
+    "GrantClaim": "GrantClaim",
+    "sfcForm": "sfc-form"
 } 
