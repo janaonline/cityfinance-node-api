@@ -36,7 +36,7 @@ function formatDate(date) {
   }catch(err){
       throw Error({message: `formatDate:: ${err.message}`})
   }
-  
+
 }
 
 function createDynamicColumns(collectionName) {
