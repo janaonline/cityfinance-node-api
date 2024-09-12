@@ -599,7 +599,8 @@ function detailsGrantTransferredManipulate(params) {
     } else if (["transDate"].includes(tKey)) {
       tArr.push(tfgObj && tfgObj[tKey] ? formatDate(tfgObj[tKey]) : "");
     } else {
-      tArr.push(getToValueInObj(tfgObj[tKey]));
+      // if (tfgObj) tArr.push(getToValueInObj(tfgObj[tKey]));
+      tfgObj ? tArr.push(getToValueInObj(tfgObj[tKey])) : tArr.push("");
     }
   }
   return tArr;
