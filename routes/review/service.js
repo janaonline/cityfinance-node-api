@@ -20,7 +20,6 @@ const { PREV_MASTER_FORM_STATUS, MASTER_STATUS_ID, MASTER_FORM_STATUS } = requir
 const { concatenateUrls } = require('../../service/common');
 const Response = require("../../service").response;
 const moment = require('moment');
- 
 
 function padTo2Digits(num) {
   return num.toString().padStart(2, '0');
