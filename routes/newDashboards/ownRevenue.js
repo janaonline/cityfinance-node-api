@@ -623,7 +623,7 @@ const cardsData = async (req, res) => {
 
    
 
-    let matchObj = {};
+    let matchObj = {"ulb.isActive": true};
     if (ulb  && ulb != ""){
       Object.assign(matchObj, { "ulb.name": ulb });
     }else{
