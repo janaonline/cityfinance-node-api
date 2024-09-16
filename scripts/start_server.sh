@@ -1,4 +1,5 @@
 #!/bin/bash
-su ubuntu
+export PATH="$PATH:/usr/local/nvm/versions/node/v20.17.0/bin/"
 cd /var/www/html/cityfinance/cityfinance-node-api
-pm2 start server.js --name cf-node-api
+npm i
+/usr/local/nvm/versions/node/v20.17.0/bin/pm2 start server.js --name cityfinance-node-api
