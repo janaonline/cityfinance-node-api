@@ -56,7 +56,7 @@ jobs:
             cd /var/www/html/development-cicd/cityfinance-node-api
             git pull
             npm i
-            pm2 restart server.js --name 'development-node-cicd-api'
+            pm2 restart server.js --name 'development-cityfinance-node-api'
     # - name: Send acknowledgment to Microsoft Teams
     #   run: |
     #                 curl -H 'Content-Type: application/json' -d '{
