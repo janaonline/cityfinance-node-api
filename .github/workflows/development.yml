@@ -1,12 +1,12 @@
 # This workflow will do a clean installation of node dependencies, cache/restore them, build the source code and run tests across different versions of node
 # For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-nodejs
 
-name: Check Staging branch 
+name: Check development branch 
 
 on:
     push:
       branches:
-        - "staging"
+        - "development"
 
 jobs:
   lint:
@@ -53,10 +53,10 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: 22
           script: |
-            cd /var/www/html/staging-cicd/cityfinance-node-api
+            cd /var/www/html/development-cicd/cityfinance-node-api
             git pull
             npm i
-            pm2 restart server.js --name 'staging-cityfinance-node-api'
+            pm2 restart server.js --name 'development-cityfinance-node-api'
     # - name: Send acknowledgment to Microsoft Teams
     #   run: |
     #                 curl -H 'Content-Type: application/json' -d '{
