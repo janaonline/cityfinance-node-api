@@ -17,3 +17,4 @@ const LoginHistorySchema = new Schema({
     inactiveSessionTime: { type: Number }
 });
 module.exports = mongoose.model('LoginHistory', LoginHistorySchema);
+
