@@ -1,2 +1,2 @@
 #!/bin/bash
-pm2 stop cf-node-ap
+/usr/local/nvm/versions/node/v20.17.0/bin/pm2 stop all
