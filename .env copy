@@ -1,0 +1,49 @@
+PORT=8080
+
+BASEURL = "http://test.cityfinance.in/api/v1"
+
+CONNECTION_STRING="mongodb://janaagraha-stgadmin:nsDbuVrN4yk2VdPDvBbZtVAUeN@35.154.137.67:20595/perfect_06feb24?retryWrites=false&authSource=admin"
+SECRET='perfectsecret'
+ENV="staging"
+
+HOSTNAME="http://test.cityfinance.in"
+EMAILSERVICE="gmail"
+REDIS_DEMO="redis://127.0.0.1:6379"
+# REDIS_DEMO="redis://10.0.11.51:6379"
+
+EMAIL="cityfinance1@dhwaniris.com"
+PASS="Cityfinance@634"
+P_EMAIL="cityfinance2@dhwaniris.com"
+p_PASS="Cityfinance@753"
+MSG91_AUTH_KEY = ""
+SENDER_ID = "BALAJN"
+TEMPLATE_ID = "62a84daa44643321973bbc7b"
+
+SES_ACCESS_KEYID = 
+SES_SECRET_ACCESS_KEY =
+SES_REGION = "ap-south-1"
+
+SECRET="perfectsecret"
+EMAIL="support@cityfinance.in"
+PASS=""
+
+#aws s3 bucket
+AWS_ACCESS_KEY_ID=
+AWS_SECRET_ACCESS_KEY=
+AWS_REGION="ap-south-1"
+AWS_IMG_BUCKET="jana-cityfinance-live"
+AWS_STORAGE_URL_PROD= "https://jana-cityfinance-live.s3.ap-south-1.amazonaws.com"
+AWS_STORAGE_URL_STG= "https://jana-cityfinance-stg.s3.ap-south-1.amazonaws.com"
+
+STAGING_HOST ="staging.cityfinance.in"
+DEMO_HOST_BACKEND ='democityfinanceapi.dhwaniris.in'
+DEMO_HOST_FRONTEND ='democityfinance.dhwaniris.in'
+PROD_HOST  ='cityfinance.in'
+USER_IDENTITY =""
+
+AZURE_STORAGE_ACCOUNT_KEY =
+AZURE_STORAGE_ACCOUNT_NAME = "janaagrahstorage"
+AZURE_CONTAINER_NAME = 
+AZURE_STORAGE_CONNECTION_STRING = 
+AZURE_STORAGE_URL = 'https://janaagrahstorage.blob.core.windows.net/jana-cityfinance-live'
+
