@@ -1301,6 +1301,7 @@ module.exports.sourceFiles = async (req, res) => {
     }
 };
 
+// Create condition to fetch data.
 function getCond(ulbId, yearId, type) {
     let cond = {
         ulb: ulbId,
