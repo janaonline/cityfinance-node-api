@@ -926,19 +926,23 @@ exports.datasetDownload = catchAsync(async (req, res) => {
   columns = [
     {
       header: "Head Of Account",
-      key: "headOfAccount"
+      key: "headOfAccount",
+      width: 16,
     },
     {
       header: "Code",
-      key: "code"
+      key: "code",
+      width: 8,
     },
     {
       header: "Line Item",
-      key: "lineIteName"
+      key: "lineIteName",
+      width: 55,
     },
     {
       header: "Amount in INR",
-      key: "amount"
+      key: "amount",
+      width: 13,
     }
 
   ]
@@ -958,25 +962,20 @@ exports.datasetDownload = catchAsync(async (req, res) => {
     // } else if (el.category == "balance") {
     //   headofAccounts.push("Asset", "Liability")
     // }
-    let lineItems = await LineItem.aggregate([{
-      $match: {
-        $or: [{ headOfAccount: { $in: headofAccounts } }]
-
+    let lineItems = await LineItem.aggregate([
+      { $match: { $or: [{ headOfAccount: { $in: headofAccounts } }] } },
+      {
+        $group: {
+          _id: null,
+          id: { $addToSet: "$_id" }
+        }
+      },
+      {
+        $project: {
+          "_id": 0,
+          "id": 1
+        }
       }
-    },
-    {
-      $group: {
-        _id: null,
-        id: { $addToSet: "$_id" }
-      }
-    },
-    {
-      $project: {
-        "_id": 0,
-        "id": 1
-      }
-    }
-
     ])
     ledgerData = await UlbLedger.aggregate([
       {
@@ -986,7 +985,6 @@ exports.datasetDownload = catchAsync(async (req, res) => {
           lineItem: { $in: lineItems[0]['id'] }
         }
       },
-
       {
         $lookup: {
           from: "lineitems",
@@ -1008,11 +1006,8 @@ exports.datasetDownload = catchAsync(async (req, res) => {
       },
       { $sort: { "code": 1 } }
     ])
-    // console.log("1")
   }
-  // console.log("2")
-  // rows = ledgerData
-  // console.log(ledgerData, columns)
+
   output = {
     columns: columns,
     rows: ledgerData
@@ -1022,34 +1017,71 @@ exports.datasetDownload = catchAsync(async (req, res) => {
 
 let getExcel = async (req, res, data) => {
   try {
-    // console.log(data);
+
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet("Data");
+
+    // Add an image occupying the top 2 rows
     const imageId2 = workbook.addImage({
       buffer: fs.readFileSync("uploads/logos/Group 1.jpeg"),
       extension: "png",
     });
+
+    // Position the image from column 0, row 0 to column 4, row 2 (spanning rows 1-2)
     worksheet.addImage(imageId2, {
       tl: { col: 0, row: 0 },
-      br: { col: 8, row: 2 }
+      br: { col: 4, row: 2 },
     });
-    // worksheet.addImage(imageId2, "A1:F3");
-    // data.columns.push({ header: "S.no", key: "sno" });
-    worksheet.columns = data.columns.map((value) => {
-      let temp = {
-        header: value.header,
-        key: value.key,
-      };
-      return temp;
-    });
-    worksheet.insertRow(1, {});
-    worksheet.insertRow(1, {});
-    worksheet.insertRow(1, {});
-    data.rows.map((value, i) => {
-      // value.sno = i + 1;
-      console.log(value)
+
+    // Insert an empty row after the image
+    worksheet.insertRow(3, {});  // Empty row in the 3rd row
+
+    // Set up columns and headers for data
+    worksheet.addRow(data.columns.map(col => col.header));
+    worksheet.columns = data.columns.map((value) => ({
+      header: value.header,
+      key: value.key,
+      width: value.width
+    }));
+
+    // Add the data rows starting from the 4th row
+    data.rows.forEach((value, i) => {
       worksheet.addRow(value);
     });
+
+
+
+    // // console.log(data);
+    // const workbook = new ExcelJS.Workbook();
+    // const worksheet = workbook.addWorksheet("Data");
+    // const imageId2 = workbook.addImage({
+    //   buffer: fs.readFileSync("uploads/logos/Group 1.jpeg"),
+    //   extension: "png",
+    // });
+    // worksheet.addImage(imageId2, {
+    //   tl: { col: 0, row: 0 },
+    //   br: { col: 4, row: 2 }
+    // });
+    // // worksheet.addImage(imageId2, "A1:F3");
+    // // data.columns.push({ header: "S.no", key: "sno" });
+    // worksheet.columns = data.columns.map((value) => {
+    //   let temp = {
+    //     header: value.header,
+    //     key: value.key,
+    //     width: value.width
+    //   };
+    //   return temp;
+    // });
+    // worksheet.insertRow(1, {});
+    // worksheet.insertRow(1, {});
+    // worksheet.insertRow(1, {});
+    // data.rows.map((value, i) => {
+    //   // value.sno = i + 1;
+    //   // console.log("value ----> ", value)
+    //   worksheet.addRow(value);
+    // });
+
+    
     worksheet.addRow({ headOfAccount: `Can't find what you are looking for? Reach out to us at contact@${process.env.PROD_HOST}` });
     res.setHeader(
       "Content-Type",
@@ -1066,490 +1098,500 @@ let getExcel = async (req, res, data) => {
 };
 
 exports.dataset = catchAsync(async (req, res) => {
-  let { year, state, ulb, type, category, nature, getQuery, globalName, getCount, skip, limit } = req.query;
-  let finalData = [];
+  console.log("inside data set---------------------")
+  try {
+    let { year, state, ulb, type, category, nature, getQuery, globalName, getCount, skip, limit } = req.query;
+    let finalData = [];
 
-  if (!category || !year || !type) {
-    return res.status(400).json({
-      success: false,
-      message: "Missing either category or year or type!",
-    });
-  }
+    if (!category || !year || !type) {
+      return res.status(400).json({
+        success: false,
+        message: "Missing either category or year or type!",
+      });
+    }
 
-  if (type == "Raw Data PDF") type = "pdf";
-  else if (type == "Raw Data Excel") type = "excel";
-  else if (type == "Standardised Excel") {
-    let data = [];
-    const distinctYears = await UlbLedger.distinct("financialYear").lean();
+    if (type == "Raw Data PDF") type = "pdf";
+    else if (type == "Raw Data Excel") type = "excel";
+    else if (type == "Standardised Excel") {
+      let data = [];
+      const distinctYears = await UlbLedger.distinct("financialYear").lean();
 
-    if (distinctYears.includes(year)) {
-      // Fetch the ULB basic details from UlbLedgers - Wrapper. (/datasets will get data or excel)
-      let query = await helper.getStandardizedUlbsList(ulb, state, year, skip, limit);
-      data = await UlbLedger.aggregate(query)
-    } else data = [];
+      if (distinctYears.includes(year)) {
+        // Fetch the ULB basic details from UlbLedgers - Wrapper. (/datasets will get data or excel)
+        let query = await helper.getStandardizedUlbsList(ulb, state, year, skip, limit);
+        data = await UlbLedger.aggregate(query)
+      } else data = [];
 
+      return res.status(200).json({
+        success: true,
+        data: data
+      })
+
+    }
+    // console.log("(year)---->", year);
+    // console.log("(state)---->", state);
+    // console.log("(ulb)---->", ulb);
+    // console.log("(type)---->", type);
+    // console.log("(category)---->", category);
+    // console.log("(nature)---->", nature);
+    // console.log("(getQuery)---->", getQuery);
+    // console.log("(globalName)---->", globalName);
+    // console.log("(getCount)---->", getCount);
+    // console.log("(skip)---->", skip);
+    // console.log("(limit)---->", limit);
+    // console.log("test", Number(year.split("-")[1]));
+
+    // Fetch the ULB names - Raw files.
+    // 19-20 onwards
+    if (Number(year.split("-")[1] > 19)) {
+      let query = await helper.getRawUlbsList19Onwards(year, state, ulb, type, category, skip, limit);
+      finalData = await Ulb.aggregate(query);
+      // console.log(JSON.stringify(query, null, 2));
+      // console.log(finalData);
+    }
+    // 2015-16 to 2018-19
+    else {
+      let query = await helper.getRawUlbsList15To18(year, state, ulb, type, category, skip, limit);
+      finalData = await Ulb.aggregate(query);
+      // console.log(JSON.stringify(query, null, 2));
+      // console.log(finalData);
+    }
+
+    // audited: ""
+    // fileName: "Karnataka_Hootagalli Town Municipal Council_balance_2023-24_unAudited"
+    // fileUrl: ["/ULB/2024-25/annual_accounts/KA325/Balance_Sheet_7c7f49c2-0b52-4579-8e98-700b86ef14ae.pdf",…]
+    // modifiedAt: "2024-08-30T07:35:46.843Z"
+    // state: "Karnataka"
+    // type: "pdf"
+    // ulbId: "62786ff5d3303e47867588ca"
+    // ulbName: "Hootagalli Town Municipal Council"
+    // year: "2023-24"
+
+    // if (year != "2019-20" && year != "2020-21" && !(Number(year.split("-")[1]) > 20)) {
+    //   let query_dataCollection = [
+    //     {
+    //       $lookup: {
+    //         from: "ulbs",
+    //         localField: "ulb",
+    //         foreignField: "_id",
+    //         as: "ulb",
+    //       },
+    //     },
+    //     {
+    //       $unwind: "$ulb",
+    //     },
+    //     {
+    //       $lookup: {
+    //         from: "states",
+    //         localField: "ulb.state",
+    //         foreignField: "_id",
+    //         as: "state",
+    //       },
+    //     },
+    //     {
+    //       $unwind: "$state",
+    //     },
+    //   ];
+    //   let query_extn = [
+    //     {
+    //       $project: {
+    //         ulbId: "$ulb._id",
+    //         state: "$state.name",
+    //         ulbName: "$ulb.name",
+    //         modifiedAt: "$modifiedAt",
+    //         "2015-16_income_pdf": "$documents.financial_year_2015_16.pdf",
+    //         "2015-16_income_excel": "$documents.financial_year_2015_16.excel",
+    //         "2015-16_balance_pdf": "$documents.financial_year_2015_16.pdf",
+    //         "2015-16_balance_excel": "$documents.financial_year_2015_16.excel",
+    //         "2016-17_income_pdf": "$documents.financial_year_2016_17.pdf",
+    //         "2016-17_income_excel": "$documents.financial_year_2016_17.excel",
+    //         "2016-17_balance_pdf": "$documents.financial_year_2016_17.pdf",
+    //         "2016-17_balance_excel": "$documents.financial_year_2016_17.excel",
+    //         "2017-18_income_pdf": "$documents.financial_year_2017_18.pdf",
+    //         "2017-18_income_excel": "$documents.financial_year_2017_18.excel",
+    //         "2017-18_balance_pdf": "$documents.financial_year_2017_18.pdf",
+    //         "2017-18_balance_excel": "$documents.financial_year_2017_18.excel",
+    //         "2018-19_income_pdf": "$documents.financial_year_2018_19.pdf",
+    //         "2018-19_income_excel": "$documents.financial_year_2018_19.excel",
+    //         "2018-19_balance_pdf": "$documents.financial_year_2018_19.pdf",
+    //         "2018-19_balance_excel": "$documents.financial_year_2018_19.excel",
+    //       },
+    //     },
+
+    //     {
+    //       $project: {
+    //         ulbId: 1,
+    //         ulbName: 1,
+    //         state: 1,
+    //         modifiedAt: 1,
+    //         file: { $arrayElemAt: [`$${year}_${category}_${type}`, 0] },
+    //       },
+    //     },
+    //     {
+    //       $match: {
+    //         "file.url": { $exists: true, $ne: null },
+    //       },
+    //     },
+    //     {
+    //       $sort: {
+    //         modifiedAt: -1,
+    //       },
+    //     },
+    //   ];
+
+    //   if (ulb && ulb != "undefined") {
+    //     query_dataCollection.push({
+    //       $match: {
+    //         "ulb.name": ulb,
+    //       },
+    //     });
+    //   } else if (state && ObjectId.isValid(state)) {
+    //     query_dataCollection.push({
+    //       $match: {
+    //         "state._id": ObjectId(state),
+    //       },
+    //     });
+    //   }
+    //   query_dataCollection.push(...query_extn);
+    //   if (getQuery) return res.status(200).json(query_dataCollection);
+    //   let fileData = await DataCollection.aggregate(query_dataCollection);
+
+    //   fileData.forEach((el) => {
+    //     let data = {
+    //       ulbId: null,
+    //       ulbName: "",
+    //       state: "",
+    //       fileName: "",
+    //       fileUrl: "",
+    //       modifiedAt: "",
+    //       type: type,
+    //       audited: "",
+    //       year: "",
+    //     };
+    //     data.ulbId = el?.ulbId;
+    //     data.state = el?.state;
+    //     data.ulbName = el?.ulbName;
+    //     data.modifiedAt = el?.modifiedAt;
+    //     data.year = year;
+    //     data.fileName = `${el?.state}_${el?.ulbName}_${category}_${year}`;
+    //     data.fileUrl = [el?.file?.url];
+    //     finalData.push(data);
+    //   });
+    // } else {
+    //   let query = [
+    //     {
+    //       $lookup: {
+    //         from: "ulbs",
+    //         localField: "ulb",
+    //         foreignField: "_id",
+    //         as: "ulb",
+    //       },
+    //     },
+    //     {
+    //       $unwind: "$ulb",
+    //     },
+    //     {
+    //       $lookup: {
+    //         from: "states",
+    //         localField: "ulb.state",
+    //         foreignField: "_id",
+    //         as: "state",
+    //       },
+    //     },
+    //     {
+    //       $unwind: "$state",
+    //     },
+    //     {
+    //       $lookup: {
+    //         from: "years",
+    //         localField: "unAudited.year",
+    //         foreignField: "_id",
+    //         as: "unAuditedYear"
+    //       }
+    //     },
+    //     {
+    //       $unwind: "$unAuditedYear"
+    //     },
+    //     {
+    //       $lookup: {
+    //         from: "years",
+    //         localField: "audited.year",
+    //         foreignField: "_id",
+    //         as: "auditedYear"
+    //       }
+    //     },
+    //     {
+    //       $unwind: "$auditedYear"
+    //     },
+    //   ];
+    //   if (ulb && ulb != "undefined") {
+    //     query.push({
+    //       $match: {
+    //         "ulb.name": ulb,
+    //       },
+    //     });
+    //   } else if (state && ObjectId.isValid(state)) {
+    //     query.push({
+    //       $match: {
+    //         "state._id": ObjectId(state),
+    //       },
+    //     });
+    //   }
+    //   //match for audited and unAudited docs with given year
+    //   const queryYear = await Year.findOne({ year }).lean();
+    //   let queryUnaudited = query.slice();
+    //   query.push({
+    //     $match: {
+    //       $expr: {
+    //         $or: [
+    //           // {$eq: [ "$unAuditedYear._id",  queryYear._id ]},
+    //           { $eq: ["$auditedYear._id", ObjectId(queryYear._id)] }
+    //         ]
+    //       },
+    //     }
+    //   })
+    //   queryUnaudited.push({
+    //     $match: {
+    //       $expr: {
+    //         $or: [
+    //           { $eq: ["$unAuditedYear._id", ObjectId(queryYear._id)] },
+    //           // {$eq: ["$auditedYear._id", queryYear._id]}
+    //         ]
+    //       },
+    //     }
+    //   })
+    //   // if (year == "2019-20") {
+    //   let query_extn = [
+    //     {
+    //       $project: {
+    //         ulbId: "$ulb._id",
+    //         ulbName: "$ulb.name",
+    //         state: "$state.name",
+    //         modifiedAt: "$modifiedAt",
+    //         [`${year}_balance_pdf`]: [
+    //           "$audited.provisional_data.bal_sheet.pdf.url",
+    //           "$audited.provisional_data.bal_sheet_schedules.pdf.url",
+    //         ],
+    //         [`${year}_balance_excel`]: [
+    //           "$audited.provisional_data.bal_sheet.excel.url",
+    //           "$audited.provisional_data.bal_sheet_schedules.excel.url",
+    //         ],
+    //         [`${year}_income_pdf`]: [
+    //           "$audited.provisional_data.inc_exp.pdf.url",
+    //           "$audited.provisional_data.inc_exp_schedules.pdf.url",
+    //         ],
+    //         [`${year}_income_excel`]: [
+    //           "$audited.provisional_data.inc_exp.excel.url",
+    //           "$audited.provisional_data.inc_exp_schedules.excel.url",
+    //         ],
+    //       },
+    //     },
+    //     {
+    //       $project: {
+    //         ulbId: 1,
+    //         ulbName: 1,
+    //         state: 1,
+    //         modifiedAt: 1,
+    //         file: `$${year}_${category}_${type}`,
+    //       },
+    //     },
+    //     {
+    //       $match: {
+    //         file: {
+    //           $exists: true,
+    //           $ne: null
+    //         },
+    //       },
+    //     },
+    //     {
+    //       $sort: {
+    //         modifiedAt: -1,
+    //       },
+    //     },
+    //   ];
+    //   let query_extn_unAudited = [
+    //     {
+    //       $project: {
+    //         ulbId: "$ulb._id",
+    //         ulbName: "$ulb.name",
+    //         state: "$state.name",
+    //         modifiedAt: "$modifiedAt",
+    //         [`${year}_balance_pdf`]: [
+    //           "$unAudited.provisional_data.bal_sheet.pdf.url",
+    //           "$unAudited.provisional_data.bal_sheet_schedules.pdf.url",
+    //         ],
+    //         [`${year}_balance_excel`]: [
+    //           "$unAudited.provisional_data.bal_sheet.excel.url",
+    //           "$unAudited.provisional_data.bal_sheet_schedules.excel.url",
+    //         ],
+    //         [`${year}_income_pdf`]: [
+    //           "$unAudited.provisional_data.inc_exp.pdf.url",
+    //           "$unAudited.provisional_data.inc_exp_schedules.pdf.url",
+    //         ],
+    //         [`${year}_income_excel`]: [
+    //           "$unAudited.provisional_data.inc_exp.excel.url",
+    //           "$unAudited.provisional_data.inc_exp_schedules.excel.url",
+    //         ],
+    //       },
+    //     },
+    //     {
+    //       $project: {
+    //         ulbId: 1,
+    //         ulbName: 1,
+    //         state: 1,
+    //         modifiedAt: 1,
+    //         file: `$${year}_${category}_${type}`,
+    //       },
+    //     },
+    //     {
+    //       $match: {
+    //         file: {
+    //           $exists: true,
+    //           $ne: null
+    //         },
+    //       },
+    //     },
+    //     {
+    //       $sort: {
+    //         modifiedAt: -1,
+    //       },
+    //     },
+    //   ]
+    //   query.push(...query_extn);
+    //   queryUnaudited.push(...query_extn_unAudited);
+    //   if (getQuery) return res.status(200).json({ query, queryUnaudited });
+    //   let [fileData, fileDataUnAudited] = await Promise.all([AnnualAccountData.aggregate(query), AnnualAccountData.aggregate(queryUnaudited)]);
+
+    //   [fileData, fileDataUnAudited].forEach((outerEl, idx) => {
+    //     let fileType = ""
+    //     idx === 0 ? fileType = "audited" : fileType = "unAudited"
+    //     outerEl.forEach((el) => {
+    //       let data = {
+    //         ulbId: null,
+    //         ulbName: "",
+    //         state: "",
+    //         fileName: "",
+    //         fileUrl: "",
+    //         modifiedAt: "",
+    //         type: type,
+    //         audited: "",
+    //         year: "",
+    //       };
+    //       data.ulbId = el?.ulbId;
+    //       data.state = el?.state;
+    //       data.ulbName = el?.ulbName;
+    //       data.modifiedAt = el?.modifiedAt;
+    //       data.year = year;
+    //       data.fileName = `${el?.state}_${el?.ulbName}_${category}_${year}_${fileType}`;
+    //       data.fileUrl = el?.file;
+
+    //       let fileLength = 0
+    //       if (data.fileUrl?.length) {
+    //         for (let fileDoc of data.fileUrl) {
+    //           fileDoc ? fileLength++ : ""
+    //         }
+    //       }
+    //       if (fileLength > 0) finalData.push(data);
+    //     })
+    //   }
+
+
+    //   )
+
+
+    //   // } 
+    //   // else if (year == "2020-21") {
+    //   //   let query_extn = [
+    //   //     {
+    //   //       $project: {
+    //   //         ulbId: "$ulb._id",
+    //   //         ulbName: "$ulb.name",
+    //   //         state: "$state.name",
+    //   //         modifiedAt: "$modifiedAt",
+    //   //         "2020-21_balance_pdf":
+    //   //           ["$unAudited.provisional_data.bal_sheet.pdf.url",
+    //   //             "$unAudited.provisional_data.bal_sheet_schedules.pdf.url"],
+    //   //         "2020-21_balance_excel":
+    //   //           ["$unAudited.provisional_data.bal_sheet.excel.url",
+    //   //             "$unAudited.provisional_data.bal_sheet_schedules.excel.url"
+    //   //           ],
+    //   //         "2020-21_income_pdf": ["$unAudited.provisional_data.inc_exp.pdf.url",
+    //   //           "$unAudited.provisional_data.inc_exp_schedules.pdf.url"],
+    //   //         "2020-21_income_excel":
+    //   //           ["$unAudited.provisional_data.inc_exp.excel.url",
+    //   //             "$unAudited.provisional_data.inc_exp_schedules.excel.url"
+    //   //           ],
+    //   //       },
+    //   //     },
+    //   //     {
+    //   //       $project: {
+    //   //         ulbId: 1,
+    //   //         ulbName: 1,
+    //   //         state: 1,
+    //   //         modifiedAt: 1,
+    //   //         file: `$${year}_${category}_${type}`,
+    //   //       },
+    //   //     },
+    //   //     {
+    //   //       $match: {
+    //   //         file: { $exists: true, $ne: null },
+    //   //       },
+    //   //     },
+    //   //     {
+    //   //       $sort: {
+    //   //         modifiedAt: -1,
+    //   //       },
+    //   //     },
+    //   //   ];
+    //   //   query.push(...query_extn);
+    //   //   if (getQuery) return res.status(200).json(query);
+    //   //   let fileData = await AnnualAccountData.aggregate(query);
+
+    //   //   fileData.forEach((el) => {
+    //   //     let data = {
+    //   //       ulbId: null,
+    //   //       ulbName: "",
+    //   //       state: "",
+    //   //       fileName: "",
+    //   //       fileUrl: "",
+    //   //       modifiedAt: "",
+    //   //       type: type,
+    //   //       audited: "",
+    //   //       year: "",
+    //   //     };
+    //   //     data.ulbId = el?.ulbId;
+    //   //     data.state = el?.state;
+    //   //     data.ulbName = el?.ulbName;
+    //   //     data.modifiedAt = el?.modifiedAt;
+    //   //     data.year = year;
+    //   //     data.fileName = `${el?.state}_${el?.ulbName}_${category}_${year}`;
+    //   //     data.fileUrl = el?.file;
+
+    //   //     finalData.push(data);
+    //   //   });
+    //   // }
+    // }
+
+    if (globalName) {
+      finalData = finalData.filter((val) => {
+        return val.fileName.toLowerCase().includes(globalName.toLowerCase());
+      });
+    }
+    if (getCount) { finalData = finalData.length }
+
+    // console.log("final data", JSON.stringify(finalData, null, 2))
     return res.status(200).json({
       success: true,
-      data: data
+      data: finalData
     })
 
+  } catch (error) {
+    console.error("Failed to load data: ", error);
+    return res.status(400).json({
+      success: false,
+      error: error
+    })
   }
-  // console.log("(year)---->", year);
-  // console.log("(state)---->", state);
-  // console.log("(ulb)---->", ulb);
-  // console.log("(type)---->", type);
-  // console.log("(category)---->", category);
-  // console.log("(nature)---->", nature);
-  // console.log("(getQuery)---->", getQuery);
-  // console.log("(globalName)---->", globalName);
-  // console.log("(getCount)---->", getCount);
-  // console.log("(skip)---->", skip);
-  // console.log("(limit)---->", limit);
-  // console.log("test", Number(year.split("-")[1]));
-
-  // Fetch the ULB names - Raw files.
-  // 19-20 onwards
-  if (Number(year.split("-")[1] > 19)) {
-    let query = await helper.getRawUlbsList19Onwards(year, state, ulb, type, category, skip, limit);
-    finalData = await Ulb.aggregate(query);
-    // console.log(JSON.stringify(query, null, 2));
-    // console.log(finalData);
-  }
-  // 2015-16 to 2018-19
-  else {
-    let query = await helper.getRawUlbsList15To18(year, state, ulb, type, category, skip, limit);
-    finalData = await Ulb.aggregate(query);
-    // console.log(JSON.stringify(query, null, 2));
-    // console.log(finalData);
-  }
-
-  // audited: ""
-  // fileName: "Karnataka_Hootagalli Town Municipal Council_balance_2023-24_unAudited"
-  // fileUrl: ["/ULB/2024-25/annual_accounts/KA325/Balance_Sheet_7c7f49c2-0b52-4579-8e98-700b86ef14ae.pdf",…]
-  // modifiedAt: "2024-08-30T07:35:46.843Z"
-  // state: "Karnataka"
-  // type: "pdf"
-  // ulbId: "62786ff5d3303e47867588ca"
-  // ulbName: "Hootagalli Town Municipal Council"
-  // year: "2023-24"
-
-  // if (year != "2019-20" && year != "2020-21" && !(Number(year.split("-")[1]) > 20)) {
-  //   let query_dataCollection = [
-  //     {
-  //       $lookup: {
-  //         from: "ulbs",
-  //         localField: "ulb",
-  //         foreignField: "_id",
-  //         as: "ulb",
-  //       },
-  //     },
-  //     {
-  //       $unwind: "$ulb",
-  //     },
-  //     {
-  //       $lookup: {
-  //         from: "states",
-  //         localField: "ulb.state",
-  //         foreignField: "_id",
-  //         as: "state",
-  //       },
-  //     },
-  //     {
-  //       $unwind: "$state",
-  //     },
-  //   ];
-  //   let query_extn = [
-  //     {
-  //       $project: {
-  //         ulbId: "$ulb._id",
-  //         state: "$state.name",
-  //         ulbName: "$ulb.name",
-  //         modifiedAt: "$modifiedAt",
-  //         "2015-16_income_pdf": "$documents.financial_year_2015_16.pdf",
-  //         "2015-16_income_excel": "$documents.financial_year_2015_16.excel",
-  //         "2015-16_balance_pdf": "$documents.financial_year_2015_16.pdf",
-  //         "2015-16_balance_excel": "$documents.financial_year_2015_16.excel",
-  //         "2016-17_income_pdf": "$documents.financial_year_2016_17.pdf",
-  //         "2016-17_income_excel": "$documents.financial_year_2016_17.excel",
-  //         "2016-17_balance_pdf": "$documents.financial_year_2016_17.pdf",
-  //         "2016-17_balance_excel": "$documents.financial_year_2016_17.excel",
-  //         "2017-18_income_pdf": "$documents.financial_year_2017_18.pdf",
-  //         "2017-18_income_excel": "$documents.financial_year_2017_18.excel",
-  //         "2017-18_balance_pdf": "$documents.financial_year_2017_18.pdf",
-  //         "2017-18_balance_excel": "$documents.financial_year_2017_18.excel",
-  //         "2018-19_income_pdf": "$documents.financial_year_2018_19.pdf",
-  //         "2018-19_income_excel": "$documents.financial_year_2018_19.excel",
-  //         "2018-19_balance_pdf": "$documents.financial_year_2018_19.pdf",
-  //         "2018-19_balance_excel": "$documents.financial_year_2018_19.excel",
-  //       },
-  //     },
-
-  //     {
-  //       $project: {
-  //         ulbId: 1,
-  //         ulbName: 1,
-  //         state: 1,
-  //         modifiedAt: 1,
-  //         file: { $arrayElemAt: [`$${year}_${category}_${type}`, 0] },
-  //       },
-  //     },
-  //     {
-  //       $match: {
-  //         "file.url": { $exists: true, $ne: null },
-  //       },
-  //     },
-  //     {
-  //       $sort: {
-  //         modifiedAt: -1,
-  //       },
-  //     },
-  //   ];
-
-  //   if (ulb && ulb != "undefined") {
-  //     query_dataCollection.push({
-  //       $match: {
-  //         "ulb.name": ulb,
-  //       },
-  //     });
-  //   } else if (state && ObjectId.isValid(state)) {
-  //     query_dataCollection.push({
-  //       $match: {
-  //         "state._id": ObjectId(state),
-  //       },
-  //     });
-  //   }
-  //   query_dataCollection.push(...query_extn);
-  //   if (getQuery) return res.status(200).json(query_dataCollection);
-  //   let fileData = await DataCollection.aggregate(query_dataCollection);
-
-  //   fileData.forEach((el) => {
-  //     let data = {
-  //       ulbId: null,
-  //       ulbName: "",
-  //       state: "",
-  //       fileName: "",
-  //       fileUrl: "",
-  //       modifiedAt: "",
-  //       type: type,
-  //       audited: "",
-  //       year: "",
-  //     };
-  //     data.ulbId = el?.ulbId;
-  //     data.state = el?.state;
-  //     data.ulbName = el?.ulbName;
-  //     data.modifiedAt = el?.modifiedAt;
-  //     data.year = year;
-  //     data.fileName = `${el?.state}_${el?.ulbName}_${category}_${year}`;
-  //     data.fileUrl = [el?.file?.url];
-  //     finalData.push(data);
-  //   });
-  // } else {
-  //   let query = [
-  //     {
-  //       $lookup: {
-  //         from: "ulbs",
-  //         localField: "ulb",
-  //         foreignField: "_id",
-  //         as: "ulb",
-  //       },
-  //     },
-  //     {
-  //       $unwind: "$ulb",
-  //     },
-  //     {
-  //       $lookup: {
-  //         from: "states",
-  //         localField: "ulb.state",
-  //         foreignField: "_id",
-  //         as: "state",
-  //       },
-  //     },
-  //     {
-  //       $unwind: "$state",
-  //     },
-  //     {
-  //       $lookup: {
-  //         from: "years",
-  //         localField: "unAudited.year",
-  //         foreignField: "_id",
-  //         as: "unAuditedYear"
-  //       }
-  //     },
-  //     {
-  //       $unwind: "$unAuditedYear"
-  //     },
-  //     {
-  //       $lookup: {
-  //         from: "years",
-  //         localField: "audited.year",
-  //         foreignField: "_id",
-  //         as: "auditedYear"
-  //       }
-  //     },
-  //     {
-  //       $unwind: "$auditedYear"
-  //     },
-  //   ];
-  //   if (ulb && ulb != "undefined") {
-  //     query.push({
-  //       $match: {
-  //         "ulb.name": ulb,
-  //       },
-  //     });
-  //   } else if (state && ObjectId.isValid(state)) {
-  //     query.push({
-  //       $match: {
-  //         "state._id": ObjectId(state),
-  //       },
-  //     });
-  //   }
-  //   //match for audited and unAudited docs with given year
-  //   const queryYear = await Year.findOne({ year }).lean();
-  //   let queryUnaudited = query.slice();
-  //   query.push({
-  //     $match: {
-  //       $expr: {
-  //         $or: [
-  //           // {$eq: [ "$unAuditedYear._id",  queryYear._id ]},
-  //           { $eq: ["$auditedYear._id", ObjectId(queryYear._id)] }
-  //         ]
-  //       },
-  //     }
-  //   })
-  //   queryUnaudited.push({
-  //     $match: {
-  //       $expr: {
-  //         $or: [
-  //           { $eq: ["$unAuditedYear._id", ObjectId(queryYear._id)] },
-  //           // {$eq: ["$auditedYear._id", queryYear._id]}
-  //         ]
-  //       },
-  //     }
-  //   })
-  //   // if (year == "2019-20") {
-  //   let query_extn = [
-  //     {
-  //       $project: {
-  //         ulbId: "$ulb._id",
-  //         ulbName: "$ulb.name",
-  //         state: "$state.name",
-  //         modifiedAt: "$modifiedAt",
-  //         [`${year}_balance_pdf`]: [
-  //           "$audited.provisional_data.bal_sheet.pdf.url",
-  //           "$audited.provisional_data.bal_sheet_schedules.pdf.url",
-  //         ],
-  //         [`${year}_balance_excel`]: [
-  //           "$audited.provisional_data.bal_sheet.excel.url",
-  //           "$audited.provisional_data.bal_sheet_schedules.excel.url",
-  //         ],
-  //         [`${year}_income_pdf`]: [
-  //           "$audited.provisional_data.inc_exp.pdf.url",
-  //           "$audited.provisional_data.inc_exp_schedules.pdf.url",
-  //         ],
-  //         [`${year}_income_excel`]: [
-  //           "$audited.provisional_data.inc_exp.excel.url",
-  //           "$audited.provisional_data.inc_exp_schedules.excel.url",
-  //         ],
-  //       },
-  //     },
-  //     {
-  //       $project: {
-  //         ulbId: 1,
-  //         ulbName: 1,
-  //         state: 1,
-  //         modifiedAt: 1,
-  //         file: `$${year}_${category}_${type}`,
-  //       },
-  //     },
-  //     {
-  //       $match: {
-  //         file: {
-  //           $exists: true,
-  //           $ne: null
-  //         },
-  //       },
-  //     },
-  //     {
-  //       $sort: {
-  //         modifiedAt: -1,
-  //       },
-  //     },
-  //   ];
-  //   let query_extn_unAudited = [
-  //     {
-  //       $project: {
-  //         ulbId: "$ulb._id",
-  //         ulbName: "$ulb.name",
-  //         state: "$state.name",
-  //         modifiedAt: "$modifiedAt",
-  //         [`${year}_balance_pdf`]: [
-  //           "$unAudited.provisional_data.bal_sheet.pdf.url",
-  //           "$unAudited.provisional_data.bal_sheet_schedules.pdf.url",
-  //         ],
-  //         [`${year}_balance_excel`]: [
-  //           "$unAudited.provisional_data.bal_sheet.excel.url",
-  //           "$unAudited.provisional_data.bal_sheet_schedules.excel.url",
-  //         ],
-  //         [`${year}_income_pdf`]: [
-  //           "$unAudited.provisional_data.inc_exp.pdf.url",
-  //           "$unAudited.provisional_data.inc_exp_schedules.pdf.url",
-  //         ],
-  //         [`${year}_income_excel`]: [
-  //           "$unAudited.provisional_data.inc_exp.excel.url",
-  //           "$unAudited.provisional_data.inc_exp_schedules.excel.url",
-  //         ],
-  //       },
-  //     },
-  //     {
-  //       $project: {
-  //         ulbId: 1,
-  //         ulbName: 1,
-  //         state: 1,
-  //         modifiedAt: 1,
-  //         file: `$${year}_${category}_${type}`,
-  //       },
-  //     },
-  //     {
-  //       $match: {
-  //         file: {
-  //           $exists: true,
-  //           $ne: null
-  //         },
-  //       },
-  //     },
-  //     {
-  //       $sort: {
-  //         modifiedAt: -1,
-  //       },
-  //     },
-  //   ]
-  //   query.push(...query_extn);
-  //   queryUnaudited.push(...query_extn_unAudited);
-  //   if (getQuery) return res.status(200).json({ query, queryUnaudited });
-  //   let [fileData, fileDataUnAudited] = await Promise.all([AnnualAccountData.aggregate(query), AnnualAccountData.aggregate(queryUnaudited)]);
-
-  //   [fileData, fileDataUnAudited].forEach((outerEl, idx) => {
-  //     let fileType = ""
-  //     idx === 0 ? fileType = "audited" : fileType = "unAudited"
-  //     outerEl.forEach((el) => {
-  //       let data = {
-  //         ulbId: null,
-  //         ulbName: "",
-  //         state: "",
-  //         fileName: "",
-  //         fileUrl: "",
-  //         modifiedAt: "",
-  //         type: type,
-  //         audited: "",
-  //         year: "",
-  //       };
-  //       data.ulbId = el?.ulbId;
-  //       data.state = el?.state;
-  //       data.ulbName = el?.ulbName;
-  //       data.modifiedAt = el?.modifiedAt;
-  //       data.year = year;
-  //       data.fileName = `${el?.state}_${el?.ulbName}_${category}_${year}_${fileType}`;
-  //       data.fileUrl = el?.file;
-
-  //       let fileLength = 0
-  //       if (data.fileUrl?.length) {
-  //         for (let fileDoc of data.fileUrl) {
-  //           fileDoc ? fileLength++ : ""
-  //         }
-  //       }
-  //       if (fileLength > 0) finalData.push(data);
-  //     })
-  //   }
-
-
-  //   )
-
-
-  //   // } 
-  //   // else if (year == "2020-21") {
-  //   //   let query_extn = [
-  //   //     {
-  //   //       $project: {
-  //   //         ulbId: "$ulb._id",
-  //   //         ulbName: "$ulb.name",
-  //   //         state: "$state.name",
-  //   //         modifiedAt: "$modifiedAt",
-  //   //         "2020-21_balance_pdf":
-  //   //           ["$unAudited.provisional_data.bal_sheet.pdf.url",
-  //   //             "$unAudited.provisional_data.bal_sheet_schedules.pdf.url"],
-  //   //         "2020-21_balance_excel":
-  //   //           ["$unAudited.provisional_data.bal_sheet.excel.url",
-  //   //             "$unAudited.provisional_data.bal_sheet_schedules.excel.url"
-  //   //           ],
-  //   //         "2020-21_income_pdf": ["$unAudited.provisional_data.inc_exp.pdf.url",
-  //   //           "$unAudited.provisional_data.inc_exp_schedules.pdf.url"],
-  //   //         "2020-21_income_excel":
-  //   //           ["$unAudited.provisional_data.inc_exp.excel.url",
-  //   //             "$unAudited.provisional_data.inc_exp_schedules.excel.url"
-  //   //           ],
-  //   //       },
-  //   //     },
-  //   //     {
-  //   //       $project: {
-  //   //         ulbId: 1,
-  //   //         ulbName: 1,
-  //   //         state: 1,
-  //   //         modifiedAt: 1,
-  //   //         file: `$${year}_${category}_${type}`,
-  //   //       },
-  //   //     },
-  //   //     {
-  //   //       $match: {
-  //   //         file: { $exists: true, $ne: null },
-  //   //       },
-  //   //     },
-  //   //     {
-  //   //       $sort: {
-  //   //         modifiedAt: -1,
-  //   //       },
-  //   //     },
-  //   //   ];
-  //   //   query.push(...query_extn);
-  //   //   if (getQuery) return res.status(200).json(query);
-  //   //   let fileData = await AnnualAccountData.aggregate(query);
-
-  //   //   fileData.forEach((el) => {
-  //   //     let data = {
-  //   //       ulbId: null,
-  //   //       ulbName: "",
-  //   //       state: "",
-  //   //       fileName: "",
-  //   //       fileUrl: "",
-  //   //       modifiedAt: "",
-  //   //       type: type,
-  //   //       audited: "",
-  //   //       year: "",
-  //   //     };
-  //   //     data.ulbId = el?.ulbId;
-  //   //     data.state = el?.state;
-  //   //     data.ulbName = el?.ulbName;
-  //   //     data.modifiedAt = el?.modifiedAt;
-  //   //     data.year = year;
-  //   //     data.fileName = `${el?.state}_${el?.ulbName}_${category}_${year}`;
-  //   //     data.fileUrl = el?.file;
-
-  //   //     finalData.push(data);
-  //   //   });
-  //   // }
-  // }
-
-  if (globalName) {
-    finalData = finalData.filter((val) => {
-      return val.fileName.toLowerCase().includes(globalName.toLowerCase());
-    });
-  }
-  if (getCount) { finalData = finalData.length }
-
-  // console.log("final data", JSON.stringify(finalData, null, 2))
-  return res.status(200).json({
-    success: true,
-    data: finalData
-  })
 })
 
 exports.nmpcEligibility = catchAsync(async (req, res) => {
