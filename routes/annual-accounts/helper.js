@@ -170,6 +170,14 @@ module.exports.getRawUlbsList19Onwards = async (year = "2021-22", stateId = null
                 }
             },
             {
+                $match: {
+                    $or: [
+                        { audited: { $ne: null } },
+                        { unAudited: { $ne: null } }
+                    ]
+                }
+            },
+            {
                 $project: {
                     // audited: true,
                     fileName: {
