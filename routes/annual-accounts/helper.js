@@ -1,18 +1,19 @@
 const ObjectId = require("mongoose").Types.ObjectId;
+const { years } = require("../../service/years");
 
 /* Create year (key and value) from db */
 // TODO: Make this dynamic.
-const years = {
-    '2017-18': '63735a4bd44534713673bfbf',
-    '2018-19': '63735a5bd44534713673c1ca',
-    '2019-20': '607697074dff55e6c0be33ba',
-    '2020-21': '606aadac4dff55e6c075c507',
-    '2021-22': '606aaf854dff55e6c075d219',
-    '2022-23': '606aafb14dff55e6c075d3ae',
-    '2023-24': '606aafc14dff55e6c075d3ec',
-    '2024-25': '606aafcf4dff55e6c075d424',
-    '2025-26': '606aafda4dff55e6c075d48f',
-}
+// const years = {
+//     '2017-18': '63735a4bd44534713673bfbf',
+//     '2018-19': '63735a5bd44534713673c1ca',
+//     '2019-20': '607697074dff55e6c0be33ba',
+//     '2020-21': '606aadac4dff55e6c075c507',
+//     '2021-22': '606aaf854dff55e6c075d219',
+//     '2022-23': '606aafb14dff55e6c075d3ae',
+//     '2023-24': '606aafc14dff55e6c075d3ec',
+//     '2024-25': '606aafcf4dff55e6c075d424',
+//     '2025-26': '606aafda4dff55e6c075d48f',
+// }
 
 /* Get the list of basic details of ULBs present in "UlbLedger" i.e "Standardised Excel".*/
 module.exports.getStandardizedUlbsList = async (ulbName = null, stateId = null, year = "2021-22", skip = 0, limit = 10) => {
@@ -76,8 +77,8 @@ module.exports.getStandardizedUlbsList = async (ulbName = null, stateId = null, 
                     }
                 }
             },
-            { $skip: skip },
-            { $limit: limit },
+            { $skip: Number(skip) },
+            { $limit: Number(limit) },
         ]
     } catch (error) {
         console.error("Failed to create query: ", error);
@@ -97,8 +98,8 @@ module.exports.getRawUlbsList19Onwards = async (year = "2021-22", stateId = null
             unAuditedArr.push({ $eq: ["$aaData.unAudited.submit_annual_accounts", true] });
         }
         if (type === "excel") {
-            auditedArr.push({ $eq: ["$aaData.unAudited.submit_standardized_data", true] });
-            unAuditedArr.push({ $eq: ["$aaData.unAudited.submit_standardized_data", true] });
+            auditedArr.push({ $ne: ["$aaData.unAudited.provisional_data.bal_sheet.excel.url", ""] });
+            unAuditedArr.push({ $ne: ["$aaData.unAudited.provisional_data.bal_sheet.excel.url", ""] });
         }
 
         if (ulbName) ulb_state_match = Object.assign({}, ulb_state_match, { "name": ulbName });
@@ -179,7 +180,13 @@ module.exports.getRawUlbsList19Onwards = async (year = "2021-22", stateId = null
             },
             {
                 $project: {
-                    // audited: true,
+                    auditType: {
+                        $cond: [
+                            { $eq: ["$audited", null] },
+                            "unAudited",
+                            "audited"
+                        ]
+                    },
                     fileName: {
                         $cond: [
                             { $eq: ["$audited", null] },
@@ -203,8 +210,8 @@ module.exports.getRawUlbsList19Onwards = async (year = "2021-22", stateId = null
             // "aaData.modifiedAt": -1
             //   }
             // },
-            { $skip: skip },
-            { $limit: limit }
+            { $skip: Number(skip) },
+            { $limit: Number(limit) }
         ]
     } catch (error) {
         console.error("Failed to create query: ", error);
@@ -275,9 +282,9 @@ module.exports.getRawUlbsList15To18 = async (year = "2015-16", stateId = null, u
                     "aaData.modifiedAt": 1,
                 }
             },
+            { $match: { [`${type}.url`]: { $ne: null } } },
             {
                 $project: {
-                    // audited: true,
                     fileName: {
                         $cond: [
                             { $ne: [`$${type}.url`, null] },
@@ -294,8 +301,8 @@ module.exports.getRawUlbsList15To18 = async (year = "2015-16", stateId = null, u
                     year: year
                 }
             },
-            { $skip: skip },
-            { $limit: limit }
+            { $skip: Number(skip) },
+            { $limit: Number(limit) }
         ]
 
     } catch (error) {
