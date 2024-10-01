@@ -918,7 +918,7 @@ function checkIfUlbHasPreviousYearAccess(ulbData, userYear) {
     let ulbVariable = "access_"
     let currentYear = userYear.year
     let prevYearArr = currentYear.split("-")
-    let comparePrevYear = `${(prevYearArr[0] - 1)}${(prevYearArr[1] - 1)}`
+    let comparePrevYear = `${(prevYearArr[0] - 1)}-${(prevYearArr[1] - 1)}`;
     // if user created and preyear same then return false
     if (comparePrevYear === creationFinancialYear) {
       return false;
