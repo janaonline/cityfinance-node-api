@@ -20,7 +20,7 @@ const {
   isYearWithinRange,
   getFinancialYear
 } = require("../CommonActionAPI/service");
-const { getKeyByValue,checkForCalculationsForDurForm, getAccessYear } = require("../../util/masterFunctions")
+const { getKeyByValue, checkForCalculationsForDurForm, getAccessYear } = require("../../util/masterFunctions")
 const Service = require('../../service');
 const { FormNames, ULB_ACCESSIBLE_YEARS, MASTER_STATUS_ID, PREV_MASTER_FORM_STATUS, FORM_STATUS_CODES, MASTER_STATUS } = require('../../util/FormNames');
 const MasterForm = require('../../models/MasterForm')
@@ -178,11 +178,11 @@ module.exports.createOrUpdate = async (req, res) => {
     let yearInNumber;
     if (designYear) {
       formData["designYear"] = ObjectId(designYear);
-      yearInNumber =  Number(getKeyByValue(years,designYear).split('-').join(''))
+      yearInNumber = Number(getKeyByValue(years, designYear).split('-').join(''))
     }
-    if ( isYearWithinRange(formData.designYear.toString()) && formData.ulb) {
+    if (isYearWithinRange(formData.designYear.toString()) && formData.ulb) {
       formData.status = currentMasterFormStatus;
-      formData.projects =  addKeysInProject(formData?.projects);
+      formData.projects = addKeysInProject(formData?.projects);
       let params = {
         modelName: ModelNames["dur"],
         formData,
@@ -380,7 +380,7 @@ module.exports.createOrUpdate = async (req, res) => {
           Service.sendEmail(mailOptions);
         }
       } else {
-        
+
         if (!isProjectLoaded && yearInNumber > YEAR2223) {
           delete req.body['projects']
         }
@@ -423,13 +423,13 @@ module.exports.createOrUpdate = async (req, res) => {
  * @returns The `addKeysInProject` function is returning the `projects` array with the `dpr_status` key
  * added to each project if it doesn't already exist.
  */
-function addKeysInProject(projects){
+function addKeysInProject(projects) {
   try {
-     projects.forEach(project=>{
-      if(project.hasOwnProperty('dpr_status') && !project['dpr_status']){
+    projects.forEach(project => {
+      if (project.hasOwnProperty('dpr_status') && !project['dpr_status']) {
         project['dpr_status'] = null
       }
-     })
+    })
     return projects
   } catch (error) {
     throw new Error(`addKeysInProject:  ${error.message}`)
@@ -909,6 +909,31 @@ function utilReportObject() {
 
   return obj;
 }
+
+function checkIfUlbHasPreviousYearAccess(ulbData, userYear) {
+  try {
+
+    let creationFinancialYear = getFinancialYear(ulbData?.createdAt);
+
+    let ulbVariable = "access_"
+    let currentYear = userYear.year
+    let prevYearArr = currentYear.split("-")
+    let comparePrevYear = `${(prevYearArr[0] - 1)}-${(prevYearArr[1] - 1)}`;
+    // if user created and preyear same then return false
+    if (comparePrevYear === creationFinancialYear) {
+      return false;
+    }
+
+    let prevYear = `${(prevYearArr[0] - 1).toString().slice(-2)}${(prevYearArr[1] - 1).toString()}`;
+    ulbVariable += prevYear
+    return ulbData[ulbVariable]
+  }
+  catch (err) {
+    console.log("error in checkIfUlbHasPreviousYearAccess ::: ", err.message)
+    return false
+  }
+}
+
 module.exports.read2223 = catchAsync(async (req, res, next) => {
   try {
     let ulb = req.query.ulb;
@@ -936,7 +961,8 @@ module.exports.read2223 = catchAsync(async (req, res, next) => {
       state: ulbData.state,
     });
     let currentYear = await Year.findOne({ _id: ObjectId(design_year) }).lean();
-    let ulbAccess = checkIfUlbHasAccess(ulbData, currentYear);
+    // let ulbAccess = checkIfUlbHasAccess(ulbData, currentYear);
+    let ulbAccess = checkIfUlbHasPreviousYearAccess(ulbData, currentYear);
     // let ulbAccessBeforeCreationId = getPreviousYear(currentYear._id.toString(),2);
     // let ulbAccessBeforeCreation = checkIfUlbHasAccess(
     //   ulbData, 
@@ -1001,15 +1027,13 @@ module.exports.read2223 = catchAsync(async (req, res, next) => {
     if (!ulbData[currenYearAccess]) {
       let msg =
         role == "ULB"
-          ? `Dear User, You are not eligible to access this form. Kindly contact your State Nodal Officer at Mobile - ${
-              userData.mobile ?? "Not Available"
-            } or Email - ${
-              userData.email ?? `contact@${process.env.PROD_HOST}`
-            }`
+          ? `Dear User, You are not eligible to access this form. Kindly contact your State Nodal Officer at Mobile - ${userData.mobile ?? "Not Available"
+          } or Email - ${userData.email ?? `contact@${process.env.PROD_HOST}`
+          }`
           : `Dear User, The ${ulbData.name} is not eligible to access Detailed Utilization Report Form.`;
       obj["action"] = "note";
       obj["url"] = msg;
-    } else if(!ulbData?.dur_2425) {
+    } else if (!ulbData?.dur_2425) {
       if (
         [
           FORM_STATUS.Under_Review_By_MoHUA,
@@ -1023,24 +1047,19 @@ module.exports.read2223 = catchAsync(async (req, res, next) => {
       } else if (status == FORM_STATUS.Under_Review_By_State) {
         let msg =
           role == "ULB"
-            ? `Dear User, Your previous Year's form status is - ${status}. Kindly contact your State Nodal Officer at Mobile - ${
-                userData.mobile ?? "Not Available"
-              } or Email - ${
-                userData.email ?? `contact@${process.env.PROD_HOST}`
-              }`
+            ? `Dear User, Your previous Year's form status is - ${status}. Kindly contact your State Nodal Officer at Mobile - ${userData.mobile ?? "Not Available"
+            } or Email - ${userData.email ?? `contact@${process.env.PROD_HOST}`
+            }`
             : `Dear User, The ${ulbData.name} has not yet filled Detailed Utilization Report Form for the previous year. Response can be marked upon approval of previous year's.`;
         obj["action"] = "note";
         obj["url"] = msg;
-      } else if(ulbAccess) {
+      } else if (ulbAccess) {
         let msg =
           role == "ULB"
-            ? `Dear User, Your previous Year's form status is - ${
-                status ? status : "Not Submitted"
-              } .Kindly submit Detailed Utilization Report Form for the previous year at - <a href=https://${
-                req.headers.host
-              }/${
-                DurPageLinks[currentDesignYear]
-              } target="_blank">Click Here!</a> in order to submit this year's form . `
+            ? `Dear User, Your previous Year's form status is - ${status ? status : "Not Submitted"
+            } .Kindly submit Detailed Utilization Report Form for the previous year at - <a href=https://${req.headers.host
+            }/${DurPageLinks[currentDesignYear]
+            } target="_blank">Click Here!</a> in order to submit this year's form . `
             : `Dear User, The ${ulbData.name} has not yet filled Detailed Utilization Report Form for the previous year. Response can be marked upon approval of previous year's.`;
         obj["action"] = "note";
         obj["url"] = msg;
@@ -1048,7 +1067,7 @@ module.exports.read2223 = catchAsync(async (req, res, next) => {
     }
 
     let newlyCreated = checkIfNewlyCreatedUlb(design_year, ulbData?.createdAt);
-    if( isYearWithinCurrentFY(design_year) && !ulbAccess && !ulbData?.dur_2425){
+    if (newlyCreated) {
       let msg = `Dear ${ulbData.name}, You will be eligible to fill the DUR form from next year.`
       obj["action"] = "note";
       obj["url"] = msg;
@@ -1136,26 +1155,26 @@ module.exports.read2223 = catchAsync(async (req, res, next) => {
       if (fetchedData?.grantPosition) {
         typeof fetchedData?.grantPosition.unUtilizedPrevYr === "number"
           ? (fetchedData.grantPosition.unUtilizedPrevYr = Number(
-              Number(fetchedData?.grantPosition.unUtilizedPrevYr).toFixed(2)
-            ))
+            Number(fetchedData?.grantPosition.unUtilizedPrevYr).toFixed(2)
+          ))
           : "";
         typeof fetchedData?.grantPosition.receivedDuringYr === "number"
           ? (fetchedData.grantPosition.receivedDuringYr = Number(
-              Number(fetchedData?.grantPosition.receivedDuringYr).toFixed(2)
-            ))
+            Number(fetchedData?.grantPosition.receivedDuringYr).toFixed(2)
+          ))
           : "";
         typeof fetchedData?.grantPosition.expDuringYr === "number"
           ? (fetchedData.grantPosition.expDuringYr = Number(
-              Number(fetchedData?.grantPosition.expDuringYr).toFixed(2)
-            ))
+            Number(fetchedData?.grantPosition.expDuringYr).toFixed(2)
+          ))
           : "";
         // fetchedData?.grantPosition.closingBal !== "" && fetchedData?.grantPosition.closingBal !== null ? fetchedData.grantPosition.closingBal = Number(Number(fetchedData?.grantPosition.closingBal).toFixed(2)) : ""
 
         //new  implementation
         typeof fetchedData?.grantPosition.closingBal === "number"
           ? (fetchedData.grantPosition.closingBal = Number(
-              Number(fetchedData?.grantPosition.closingBal).toFixed(2)
-            ))
+            Number(fetchedData?.grantPosition.closingBal).toFixed(2)
+          ))
           : "";
       }
       fetchedData["ulbName"] = ulbData.name;
@@ -1170,7 +1189,7 @@ module.exports.read2223 = catchAsync(async (req, res, next) => {
       condition["designYear"] = ObjectId(prevYear._id);
       fetchedData = await UtilizationReport.findOne(condition).lean();
       let sampleData = new UtilizationReport();
-      sampleData.grantPosition.unUtilizedPrevYr = ulbAccess 
+      sampleData.grantPosition.unUtilizedPrevYr = ulbAccess
         ? fetchedData?.grantPosition?.closingBal ?? 0
         : 0;
       sampleData = sampleData.toObject();
@@ -1200,10 +1219,10 @@ module.exports.read2223 = catchAsync(async (req, res, next) => {
  * @returns The function `checkIfNewlyCreatedUlb` returns a boolean value - `true` if the design year
  * is not the same as the current financial year, and `false` if they are the same.
  */
-function checkIfNewlyCreatedUlb(design_year, creationDate){
+function checkIfNewlyCreatedUlb(design_year, creationDate) {
   try {
     let creationFinancialYear = getFinancialYear(creationDate);
-    if(YEAR_CONSTANTS_IDS[design_year] === creationFinancialYear){
+    if (YEAR_CONSTANTS_IDS[design_year] === creationFinancialYear) {
       return true;
     };
     return false;
@@ -1281,30 +1300,30 @@ module.exports.dataRepair = async function (req, res, next) {
     // ]
 
     let ulbIds = req.body?.ulbs;
-    let condition,cond;
-    if(Boolean(req.body?.flag2324)){
+    let condition, cond;
+    if (Boolean(req.body?.flag2324)) {
       cond = {
         "designYear": ObjectId("606aafc14dff55e6c075d3ec"), /// 2023-24
         "financialYear": ObjectId("606aafc14dff55e6c075d3ec"), /// 2022-23
         "ulb": { $in: ulbIds },
       }
-       condition = {
+      condition = {
         "designYear": ObjectId("606aafb14dff55e6c075d3ae"), /// 2022-23
         "financialYear": ObjectId("606aaf854dff55e6c075d219"), /// 2021-22
-         "ulb": { $in: ulbIds },
-        
+        "ulb": { $in: ulbIds },
+
       }
-    }else{
+    } else {
       condition = {
-       "designYear": ObjectId("606aaf854dff55e6c075d219"), /// 2021-22
-       "financialYear": ObjectId("606aadac4dff55e6c075c507"), /// 2020-21
-       "ulb": { $in: ulbIds },
-     }
+        "designYear": ObjectId("606aaf854dff55e6c075d219"), /// 2021-22
+        "financialYear": ObjectId("606aadac4dff55e6c075c507"), /// 2020-21
+        "ulb": { $in: ulbIds },
+      }
       cond = {
-       "designYear": ObjectId("606aafb14dff55e6c075d3ae"), /// 2022-23
-       "financialYear": ObjectId("606aaf854dff55e6c075d219"), /// 2021-22
-       "ulb": { $in: ulbIds }
-     }
+        "designYear": ObjectId("606aafb14dff55e6c075d3ae"), /// 2022-23
+        "financialYear": ObjectId("606aaf854dff55e6c075d219"), /// 2021-22
+        "ulb": { $in: ulbIds }
+      }
     }
     const utiReportData = await UtilizationReport.find(condition, {
       "_id": 1,
@@ -1339,9 +1358,9 @@ const utilisationUpdate = (objData) => {
                   unUtilizedPrevYr: prevUtil.grantPosition.closingBal,
                   receivedDuringYr: currentUtilReport.grantPosition.receivedDuringYr,
                   expDuringYr: currentUtilReport.grantPosition.expDuringYr,
-                 /* The above code is calculating the closing balance by adding the unutilized amount
-                 from the previous year, the received amount during the year, and subtracting the
-                 expenses during the year. */
+                  /* The above code is calculating the closing balance by adding the unutilized amount
+                  from the previous year, the received amount during the year, and subtracting the
+                  expenses during the year. */
                   closingBal: (
                     parseFloat(prevUtil.grantPosition.closingBal) +
                     parseFloat(
