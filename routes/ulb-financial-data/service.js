@@ -1314,12 +1314,13 @@ async function getAnnualAccounts(ulbId, year, auditType) {
     const yearId = years[year];
     let doc;
     let type = auditType || 'audited';
+    // console.log("type --->", type)
     if (type === 'audited') {
         let res = await AnnualAccountData.findOne(getCond(ulbId, yearId, 'audited'), { audited: 1 }).lean().exec();
         doc = res.audited?.provisional_data;
     }
-    if (type === 'unAudited') {
-        // type = 'unAudited';
+    if (type === 'unAudited' || Object.keys(doc).length === 0) {
+        type = 'unAudited';
         let resUnAudited = await AnnualAccountData.findOne(getCond(ulbId, yearId, 'unAudited'), { unAudited: 1 }).lean().exec();
         doc = resUnAudited ? resUnAudited.unAudited?.provisional_data : null;
     }
