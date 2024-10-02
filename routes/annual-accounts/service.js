@@ -1081,7 +1081,7 @@ let getExcel = async (req, res, data) => {
     //   worksheet.addRow(value);
     // });
 
-    
+
     worksheet.addRow({ headOfAccount: `Can't find what you are looking for? Reach out to us at contact@${process.env.PROD_HOST}` });
     res.setHeader(
       "Content-Type",
@@ -1102,6 +1102,8 @@ exports.dataset = catchAsync(async (req, res) => {
   try {
     let { year, state, ulb, type, category, nature, getQuery, globalName, getCount, skip, limit } = req.query;
     let finalData = [];
+
+    if (globalName) limit = 5000;
 
     if (!category || !year || !type) {
       return res.status(400).json({

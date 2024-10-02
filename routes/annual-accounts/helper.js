@@ -1,19 +1,7 @@
 const ObjectId = require("mongoose").Types.ObjectId;
 const { years } = require("../../service/years");
 
-/* Create year (key and value) from db */
-// TODO: Make this dynamic.
-// const years = {
-//     '2017-18': '63735a4bd44534713673bfbf',
-//     '2018-19': '63735a5bd44534713673c1ca',
-//     '2019-20': '607697074dff55e6c0be33ba',
-//     '2020-21': '606aadac4dff55e6c075c507',
-//     '2021-22': '606aaf854dff55e6c075d219',
-//     '2022-23': '606aafb14dff55e6c075d3ae',
-//     '2023-24': '606aafc14dff55e6c075d3ec',
-//     '2024-25': '606aafcf4dff55e6c075d424',
-//     '2025-26': '606aafda4dff55e6c075d48f',
-// }
+
 
 /* Get the list of basic details of ULBs present in "UlbLedger" i.e "Standardised Excel".*/
 module.exports.getStandardizedUlbsList = async (ulbName = null, stateId = null, year = "2021-22", skip = 0, limit = 10) => {
@@ -93,17 +81,63 @@ module.exports.getRawUlbsList19Onwards = async (year = "2021-22", stateId = null
         let auditedArr = [{ $eq: ["$aaData.audited.year", { $toObjectId: year_id }] }];
         let unAuditedArr = [{ $eq: ["$aaData.unAudited.year", { $toObjectId: year_id }] }];
 
-        if (type === "pdf") {
-            auditedArr.push({ $eq: ["$aaData.audited.submit_annual_accounts", true] });
-            unAuditedArr.push({ $eq: ["$aaData.unAudited.submit_annual_accounts", true] });
+        // Add a check - check if balance sheet url is available.
+        if (type === "pdf" || type === "excel") {
+            addUrlCheck(auditedArr, unAuditedArr, 'audited', type);
+            addUrlCheck(unAuditedArr, unAuditedArr, 'unAudited', type);
         }
-        if (type === "excel") {
-            auditedArr.push({ $ne: ["$aaData.unAudited.provisional_data.bal_sheet.excel.url", ""] });
-            unAuditedArr.push({ $ne: ["$aaData.unAudited.provisional_data.bal_sheet.excel.url", ""] });
-        }
+
+        // if (type === "pdf") {
+        //     auditedArr.push({
+        //         $and: [
+        //             { $ne: ["$aaData.audited.provisional_data.bal_sheet.pdf.url", null] },
+        //             { $ne: ["$aaData.audited.provisional_data.bal_sheet.pdf.url", ""] }
+        //         ]
+        //     });
+        //     unAuditedArr.push({
+        //         $and: [
+        //             { $ne: ["$aaData.unAudited.provisional_data.bal_sheet.pdf.url", null] },
+        //             { $ne: ["$aaData.unAudited.provisional_data.bal_sheet.pdf.url", ""] }
+        //         ]
+        //     });
+        // }
+        // if (type === "excel") {
+        //     auditedArr.push({
+        //         $and: [
+        //             { $ne: ["$aaData.audited.provisional_data.bal_sheet.excel.url", null] },
+        //             { $ne: ["$aaData.audited.provisional_data.bal_sheet.excel.url", ""] }
+        //         ]
+        //     });
+        //     unAuditedArr.push({
+        //         $and: [
+        //             { $ne: ["$aaData.unAudited.provisional_data.bal_sheet.excel.url", null] },
+        //             { $ne: ["$aaData.unAudited.provisional_data.bal_sheet.excel.url", ""] }
+        //         ]
+        //     });
+        // }
+
 
         if (ulbName) ulb_state_match = Object.assign({}, ulb_state_match, { "name": ulbName });
         if (stateId) ulb_state_match = Object.assign({}, ulb_state_match, { "state": ObjectId(stateId) });
+
+        // Function to push conditions into the arrays
+        function addUrlCheck(auditedArr, unAuditedArr, fileType, type) {
+            const filePath = `$aaData.${fileType}.provisional_data.bal_sheet.${type}.url`;
+
+            auditedArr.push({
+                $and: [
+                    { $ne: [filePath.replace(`${fileType}`, "audited"), null] },
+                    { $ne: [filePath.replace(`${fileType}`, "audited"), ""] }
+                ]
+            });
+
+            unAuditedArr.push({
+                $and: [
+                    { $ne: [filePath.replace(`${fileType}`, "unAudited"), null] },
+                    { $ne: [filePath.replace(`${fileType}`, "unAudited"), ""] }
+                ]
+            });
+        }
 
         return [
             { $match: ulb_state_match },
