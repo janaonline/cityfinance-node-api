@@ -22,18 +22,20 @@ const STATUS_LIST = require('../../util/newStatusList')
 const LineItem = require('../../models/LineItem')
 const { groupByKey } = require('../../util/group_list_by_key')
 const ExcelJS = require("exceljs");
-const { canTakenAction, canTakenActionMaster, getMasterAction,checkIfUlbHasAccess,calculateStatus, isYearWithinRange } = require('../CommonActionAPI/service')
+const { canTakenAction, canTakenActionMaster, getMasterAction, checkIfUlbHasAccess, calculateStatus, isYearWithinRange } = require('../CommonActionAPI/service')
 const fs = require("fs");
 const Service = require('../../service');
-const { FormNames, YEAR_CONSTANTS,  MASTER_STATUS, FORMIDs, FORM_LEVEL, FORM_LEVEL_SHORTKEY, MASTER_STATUS_ID } = require('../../util/FormNames');
-const {BackendHeaderHost, FrontendHeaderHost} = require('../../util/envUrl');
-const {saveCurrentStatus, saveFormHistory, saveStatusHistory, getShortKeys} = require('../../util/masterFunctions');
+const { FormNames, YEAR_CONSTANTS, MASTER_STATUS, FORMIDs, FORM_LEVEL, FORM_LEVEL_SHORTKEY, MASTER_STATUS_ID } = require('../../util/FormNames');
+const { BackendHeaderHost, FrontendHeaderHost } = require('../../util/envUrl');
+const { saveCurrentStatus, saveFormHistory, saveStatusHistory, getShortKeys } = require('../../util/masterFunctions');
 const CurrentStatus = require("../../models/CurrentStatus");
-const {getSeparatedShortKeys, saveFormLevelHistory} = require('../../routes/CommonActionAPI/service')
+const { getSeparatedShortKeys, saveFormLevelHistory } = require('../../routes/CommonActionAPI/service')
 var https = require('https');
 var request = require('request');
 const { concatenateUrls } = require("../../service/common");
 const { getPreviousYear, isYearWithinCurrentFY } = require("../sidemenu/service");
+
+const helper = require("./helper.js");
 
 // function doRequest(url) {
 //   return new Promise(function (resolve, reject) {
@@ -169,7 +171,7 @@ function doRequest(url) {
       method: 'HEAD'
     }
     request(options, function (error, resp, body) {
-      console.log("resp?.statusCode",resp?.statusCode)
+      console.log("resp?.statusCode", resp?.statusCode)
       if (!error && resp?.statusCode == 200) {
         reject(url);
       } else {
@@ -350,7 +352,7 @@ exports.createUpdate = async (req, res) => {
 
     req.body.actionTakenBy = req?.decoded._id;
     req.body.actionTakenByRole = req?.decoded.role;
-    const {_id: actionTakenBy, role: actionTakenByRole} =  req?.decoded;
+    const { _id: actionTakenBy, role: actionTakenByRole } = req?.decoded;
     const formName = FormNames["annualAcc"];
     const masterFormId = FORMIDs['AnnualAccount']
     const { name: ulbName } = req.decoded;
@@ -509,10 +511,10 @@ exports.createUpdate = async (req, res) => {
           };
         } else {
           // formCurrentStatus = await CurrentStatus.findOne({
-            // recordId: formData2324._id,
+          // recordId: formData2324._id,
           // }).lean();
           formCurrentStatus = {
-            status:  formData2324.currentFormStatus
+            status: formData2324.currentFormStatus
           };
         }
 
@@ -549,57 +551,57 @@ exports.createUpdate = async (req, res) => {
               // { session }
             );
           }
-          let shortKeys = await getShortKeys({formId: masterFormId});
+          let shortKeys = await getShortKeys({ formId: masterFormId });
           if (!Array.isArray(shortKeys) || shortKeys.length <= 0) {
             return Response.BadRequest(res, {}, "ShortKeys not found");
           }
           // const {outer : tabLevelShortKeysArray} = getSeparatedShortKeys(shortKeys);
-          if(formData2324 ){
+          if (formData2324) {
             await checkIfSubmitSelectionChanged(formData2324, req);
           }
           //filter shortKeys based on Tab selection
           shortKeys = filterTabShortKeys(req, shortKeys);
           let notApprovedShortKeys;
           const tabSeparator = "_";
-          if(formData2324 ){
-          notApprovedShortKeys = await filterApprovedShortKeys(shortKeys, formData2324._id, formCurrentStatus['status']);
+          if (formData2324) {
+            notApprovedShortKeys = await filterApprovedShortKeys(shortKeys, formData2324._id, formCurrentStatus['status']);
           }
-          if(Array.isArray(notApprovedShortKeys) && notApprovedShortKeys.length){
-            await updateStateCurrentStatus(notApprovedShortKeys,formData2324._id, formCurrentStatus['status']);
+          if (Array.isArray(notApprovedShortKeys) && notApprovedShortKeys.length) {
+            await updateStateCurrentStatus(notApprovedShortKeys, formData2324._id, formCurrentStatus['status']);
             // let separator = ".";
             // const dotSeparator = "."
-        
-            shortKeys = notApprovedShortKeys.map(el=>{
-               if(el.match(tabRegex)) {
-                 let splittedArray = el.split(tabSeparator)
-                 el = splittedArray[splittedArray.length - 1];
-                 return el;
-               }else{
+
+            shortKeys = notApprovedShortKeys.map(el => {
+              if (el.match(tabRegex)) {
+                let splittedArray = el.split(tabSeparator)
+                el = splittedArray[splittedArray.length - 1];
                 return el;
-               }
-          })
+              } else {
+                return el;
+              }
+            })
           }
           let currentULBStatusesInProgress
-          if(formData2324){
-             currentULBStatusesInProgress =  await CurrentStatus.find({
+          if (formData2324) {
+            currentULBStatusesInProgress = await CurrentStatus.find({
               recordId: formData2324._id,
-               actionTakenByRole: "ULB",
-               status:  MASTER_STATUS['In Progress']
-              }).lean();
+              actionTakenByRole: "ULB",
+              status: MASTER_STATUS['In Progress']
+            }).lean();
 
           }
-          if(Array.isArray(currentULBStatusesInProgress) && currentULBStatusesInProgress.length){
-            shortKeys = currentULBStatusesInProgress.map(el=>{
-                if(el.shortKey.match(tabRegex)) {
-                  let splittedArray = el.shortKey.split(tabSeparator)
-                  el = splittedArray[splittedArray.length - 1];
-                  return el;
-                }else{
-                  return el.shortKey;
-                }
-           })
+          if (Array.isArray(currentULBStatusesInProgress) && currentULBStatusesInProgress.length) {
+            shortKeys = currentULBStatusesInProgress.map(el => {
+              if (el.shortKey.match(tabRegex)) {
+                let splittedArray = el.shortKey.split(tabSeparator)
+                el = splittedArray[splittedArray.length - 1];
+                return el;
+              } else {
+                return el.shortKey;
+              }
+            })
           }
-            
+
           if (formBodyStatus === MASTER_STATUS["In Progress"]) {
             for (let shortKey of shortKeys) {
               if (TAB_OBJ[shortKey]) {
@@ -670,7 +672,7 @@ exports.createUpdate = async (req, res) => {
             }
             Service.sendEmail(mailOptions);
             // Save Form Level History
-            await saveFormLevelHistory(masterFormId, formSubmit, actionTakenByRole, actionTakenBy,MASTER_STATUS["Under Review By State"]);
+            await saveFormLevelHistory(masterFormId, formSubmit, actionTakenByRole, actionTakenBy, MASTER_STATUS["Under Review By State"]);
             // await session.commitTransaction();
             return Response.OK(res, {}, "Form Submitted");
           }
@@ -845,28 +847,28 @@ exports.createUpdate = async (req, res) => {
       isCompleted: !annualAccountData.isDraft,
     });
   } catch (err) {
-    console.log("error :: ",err.message)
+    console.log("error :: ", err.message)
     console.error(err.message);
     return Response.BadRequest(res, {}, err.message);
   }
 };
 
-async function filterApprovedShortKeys(shortKeys, recordId, formStatus){
-  let statuses , statusesShortKeys;
-  if(formStatus === MASTER_STATUS['Returned By State']){
+async function filterApprovedShortKeys(shortKeys, recordId, formStatus) {
+  let statuses, statusesShortKeys;
+  if (formStatus === MASTER_STATUS['Returned By State']) {
     // statuses = statuses.filter(el=>{
-      //   return el.actionTakenByRole === "STATE" && el.status !== MASTER_STATUS['Under Review by MoHUA'] 
-      // })
-      statuses = await CurrentStatus.find({recordId,actionTakenByRole: "STATE", status: MASTER_STATUS['Returned By State']}).lean();
-  }else if(formStatus === MASTER_STATUS['Returned By MoHUA']){
+    //   return el.actionTakenByRole === "STATE" && el.status !== MASTER_STATUS['Under Review by MoHUA'] 
+    // })
+    statuses = await CurrentStatus.find({ recordId, actionTakenByRole: "STATE", status: MASTER_STATUS['Returned By State'] }).lean();
+  } else if (formStatus === MASTER_STATUS['Returned By MoHUA']) {
     // statuses = statuses.filter(el =>{
     //   return el.actionTakenByRole === "MoHUA" && el.status !== MASTER_STATUS['Approved by MoHUA'] 
     // })
-    statuses = await CurrentStatus.find({recordId,actionTakenByRole: "MoHUA", status: MASTER_STATUS['Returned By MoHUA']}).lean();
+    statuses = await CurrentStatus.find({ recordId, actionTakenByRole: "MoHUA", status: MASTER_STATUS['Returned By MoHUA'] }).lean();
 
   }
-  if(Array.isArray(statuses) && statuses.length){
-    statusesShortKeys = statuses.map(status=>{
+  if (Array.isArray(statuses) && statuses.length) {
+    statusesShortKeys = statuses.map(status => {
       return status.shortKey;
     });
   }
@@ -889,29 +891,29 @@ async function filterApprovedShortKeys(shortKeys, recordId, formStatus){
 }
 
 
-async function updateStateCurrentStatus(notApprovedShortKeys, recordId, formCurrentStatus){
+async function updateStateCurrentStatus(notApprovedShortKeys, recordId, formCurrentStatus) {
   try {
     let role, status;
-    status =  MASTER_STATUS['No Status'];
-    if(formCurrentStatus ===  MASTER_STATUS['Returned By State']){
+    status = MASTER_STATUS['No Status'];
+    if (formCurrentStatus === MASTER_STATUS['Returned By State']) {
       role = "STATE";
-    }else if (formCurrentStatus ===  MASTER_STATUS['Returned By MoHUA']){
+    } else if (formCurrentStatus === MASTER_STATUS['Returned By MoHUA']) {
       role = "MoHUA";
       // status =  MASTER_STATUS['']
     }
-    const statuses  = await CurrentStatus.updateMany({
+    const statuses = await CurrentStatus.updateMany({
       recordId,
-      shortKey: {$in: notApprovedShortKeys},
+      shortKey: { $in: notApprovedShortKeys },
       actionTakenByRole: role
-    },{
-      $set:{
+    }, {
+      $set: {
         status
       }
     });
     return;
 
   } catch (error) {
-    throw( `updateStateCurrentStatus :: ${error.message}`)
+    throw (`updateStateCurrentStatus :: ${error.message}`)
   }
 
 
@@ -924,49 +926,56 @@ exports.datasetDownload = catchAsync(async (req, res) => {
   columns = [
     {
       header: "Head Of Account",
-      key: "headOfAccount"
+      key: "headOfAccount",
+      width: 16,
     },
     {
       header: "Code",
-      key: "code"
+      key: "code",
+      width: 8,
     },
     {
       header: "Line Item",
-      key: "lineIteName"
+      key: "lineIteName",
+      width: 55,
     },
     {
       header: "Amount in INR",
-      key: "amount"
+      key: "amount",
+      width: 13,
     }
 
   ]
   let ledgerData = []
   for (let el of data) {
-    let headofAccounts = [];
-    if (el.category == "income") {
-      headofAccounts.push("Revenue", "Expense")
-    } else if (el.category == "balance") {
-      headofAccounts.push("Asset", "Liability")
-    }
-    let lineItems = await LineItem.aggregate([{
-      $match: {
-        $or: [{ headOfAccount: headofAccounts[0] }, { headOfAccount: headofAccounts[1] }]
-
+    let headofAccounts = [
+      "Asset",
+      "Debt",
+      "Expense",
+      "Liability",
+      "Other",
+      "Revenue",
+      "Tax",
+    ];
+    // if (el.category == "income") {
+    //   headofAccounts.push("Revenue", "Expense")
+    // } else if (el.category == "balance") {
+    //   headofAccounts.push("Asset", "Liability")
+    // }
+    let lineItems = await LineItem.aggregate([
+      { $match: { $or: [{ headOfAccount: { $in: headofAccounts } }] } },
+      {
+        $group: {
+          _id: null,
+          id: { $addToSet: "$_id" }
+        }
+      },
+      {
+        $project: {
+          "_id": 0,
+          "id": 1
+        }
       }
-    },
-    {
-      $group: {
-        _id: null,
-        id: { $addToSet: "$_id" }
-      }
-    },
-    {
-      $project: {
-        "_id": 0,
-        "id": 1
-      }
-    }
-
     ])
     ledgerData = await UlbLedger.aggregate([
       {
@@ -976,7 +985,6 @@ exports.datasetDownload = catchAsync(async (req, res) => {
           lineItem: { $in: lineItems[0]['id'] }
         }
       },
-
       {
         $lookup: {
           from: "lineitems",
@@ -998,11 +1006,8 @@ exports.datasetDownload = catchAsync(async (req, res) => {
       },
       { $sort: { "code": 1 } }
     ])
-    // console.log("1")
   }
-  // console.log("2")
-  // rows = ledgerData
-  // console.log(ledgerData, columns)
+
   output = {
     columns: columns,
     rows: ledgerData
@@ -1012,34 +1017,71 @@ exports.datasetDownload = catchAsync(async (req, res) => {
 
 let getExcel = async (req, res, data) => {
   try {
-    // console.log(data);
+
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet("Data");
+
+    // Add an image occupying the top 2 rows
     const imageId2 = workbook.addImage({
       buffer: fs.readFileSync("uploads/logos/Group 1.jpeg"),
       extension: "png",
     });
+
+    // Position the image from column 0, row 0 to column 4, row 2 (spanning rows 1-2)
     worksheet.addImage(imageId2, {
       tl: { col: 0, row: 0 },
-      br: { col: 8, row: 2 }
+      br: { col: 4, row: 2 },
     });
-    // worksheet.addImage(imageId2, "A1:F3");
-    // data.columns.push({ header: "S.no", key: "sno" });
-    worksheet.columns = data.columns.map((value) => {
-      let temp = {
-        header: value.header,
-        key: value.key,
-      };
-      return temp;
-    });
-    worksheet.insertRow(1, {});
-    worksheet.insertRow(1, {});
-    worksheet.insertRow(1, {});
-    data.rows.map((value, i) => {
-      // value.sno = i + 1;
-      console.log(value)
+
+    // Insert an empty row after the image
+    worksheet.insertRow(3, {});  // Empty row in the 3rd row
+
+    // Set up columns and headers for data
+    worksheet.addRow(data.columns.map(col => col.header));
+    worksheet.columns = data.columns.map((value) => ({
+      header: value.header,
+      key: value.key,
+      width: value.width
+    }));
+
+    // Add the data rows starting from the 4th row
+    data.rows.forEach((value, i) => {
       worksheet.addRow(value);
     });
+
+
+
+    // // console.log(data);
+    // const workbook = new ExcelJS.Workbook();
+    // const worksheet = workbook.addWorksheet("Data");
+    // const imageId2 = workbook.addImage({
+    //   buffer: fs.readFileSync("uploads/logos/Group 1.jpeg"),
+    //   extension: "png",
+    // });
+    // worksheet.addImage(imageId2, {
+    //   tl: { col: 0, row: 0 },
+    //   br: { col: 4, row: 2 }
+    // });
+    // // worksheet.addImage(imageId2, "A1:F3");
+    // // data.columns.push({ header: "S.no", key: "sno" });
+    // worksheet.columns = data.columns.map((value) => {
+    //   let temp = {
+    //     header: value.header,
+    //     key: value.key,
+    //     width: value.width
+    //   };
+    //   return temp;
+    // });
+    // worksheet.insertRow(1, {});
+    // worksheet.insertRow(1, {});
+    // worksheet.insertRow(1, {});
+    // data.rows.map((value, i) => {
+    //   // value.sno = i + 1;
+    //   // console.log("value ----> ", value)
+    //   worksheet.addRow(value);
+    // });
+
+    
     worksheet.addRow({ headOfAccount: `Can't find what you are looking for? Reach out to us at contact@${process.env.PROD_HOST}` });
     res.setHeader(
       "Content-Type",
@@ -1056,471 +1098,138 @@ let getExcel = async (req, res, data) => {
 };
 
 exports.dataset = catchAsync(async (req, res) => {
-  let {
-    year,
-    state,
-    ulb,
-    type,
-    category,
-    nature,
-    getQuery,
-    globalName,
-    getCount,
-  } = req.query;
-  console.log(category, type);
-  if (!category || !year || !type) {
-    return res.status(400).json({
-      success: false,
-      message: "Missing Categoryor Year or Type",
-    });
-  }
-  let finalData = [];
-  if (type == "Raw Data PDF") {
-    type = "pdf";
-  } else if (type == "Raw Data Excel") {
-    type = "excel";
-  } else if (type == "Standardised Excel") {
-    if (!category)
-      category = "income"
-    let query = [
-      {
-        $match: {
-          financialYear: year
-        }
-      },
-      {
-        $group: {
-          _id: "$ulb",
-          modifiedAt: { $addToSet: "$modifiedAt" }
-        }
-      },
-      {
-        $lookup: {
-          from: "ulbs",
-          localField: "_id",
-          foreignField: "_id",
-          as: "ulb"
-        }
-      },
-      {
-        $unwind: "$ulb"
-      },
-      {
-        $lookup: {
-          from: "states",
-          localField: "ulb.state",
-          foreignField: "_id",
-          as: "state"
-        }
-      },
-      {
-        $unwind: "$state"
-      },
-      {
-        $project: {
-          type: "excel",
-          modifiedAt: { $arrayElemAt: ["$modifiedAt", 0] },
-          state: "$state._id",
-          ulb: "$ulb.name",
-          ulbId: "$ulb._id",
-          section: "standardised",
-          category: category,
-          year: year,
-          fileName: {
-            $concat: ["$state.name", "_", "$ulb.name", "_", category, "_", year]
-          }
+  console.log("inside data set---------------------")
+  try {
+    let { year, state, ulb, type, category, nature, getQuery, globalName, getCount, skip, limit } = req.query;
+    let finalData = [];
 
-        }
-      }
-    ]
-    if (ulb) {
-      query.push({
-        $match: {
-          ulb: ulb
-        }
-      })
+    if (!category || !year || !type) {
+      return res.status(400).json({
+        success: false,
+        message: "Missing either category or year or type!",
+      });
     }
-    if (state) {
-      query.push({
-        $match: {
-          "state": ObjectId(state)
-        }
-      })
-    }
-    let data = await UlbLedger.aggregate(query)
-    if (data.length) {
+
+    if (type == "Raw Data PDF") type = "pdf";
+    else if (type == "Raw Data Excel") type = "excel";
+    else if (type == "Standardised Excel") {
+      let data = [];
+      const distinctYears = await UlbLedger.distinct("financialYear").lean();
+
+      if (distinctYears.includes(year)) {
+        // Fetch the ULB basic details from UlbLedgers - Wrapper. (/datasets will get data or excel)
+        let query = await helper.getStandardizedUlbsList(ulb, state, year, skip, limit);
+        data = await UlbLedger.aggregate(query)
+      } else data = [];
+
       return res.status(200).json({
         success: true,
         data: data
       })
+
+    }
+    // console.log("(year)---->", year);
+    // console.log("(state)---->", state);
+    // console.log("(ulb)---->", ulb);
+    // console.log("(type)---->", type);
+    // console.log("(category)---->", category);
+    // console.log("(nature)---->", nature);
+    // console.log("(getQuery)---->", getQuery);
+    // console.log("(globalName)---->", globalName);
+    // console.log("(getCount)---->", getCount);
+    // console.log("(skip)---->", skip);
+    // console.log("(limit)---->", limit);
+    // console.log("test", Number(year.split("-")[1]));
+
+    // Fetch the ULB names - Raw files.
+    // 19-20 onwards
+    if (Number(year.split("-")[1] > 19)) {
+      let query = await helper.getRawUlbsList19Onwards(year, state, ulb, type, category, skip, limit);
+      finalData = await Ulb.aggregate(query);
+      // console.log(JSON.stringify(query, null, 2));
+      // console.log(finalData);
+    }
+    // 2015-16 to 2018-19
+    else {
+      let query = await helper.getRawUlbsList15To18(year, state, ulb, type, category, skip, limit);
+      finalData = await Ulb.aggregate(query);
+      // console.log(JSON.stringify(query, null, 2));
+      // console.log(finalData);
     }
 
-  }
+    // audited: ""
+    // fileName: "Karnataka_Hootagalli Town Municipal Council_balance_2023-24_unAudited"
+    // fileUrl: ["/ULB/2024-25/annual_accounts/KA325/Balance_Sheet_7c7f49c2-0b52-4579-8e98-700b86ef14ae.pdf",…]
+    // modifiedAt: "2024-08-30T07:35:46.843Z"
+    // state: "Karnataka"
+    // type: "pdf"
+    // ulbId: "62786ff5d3303e47867588ca"
+    // ulbName: "Hootagalli Town Municipal Council"
+    // year: "2023-24"
 
-  if (year != "2019-20" && year != "2020-21" && !(Number(year.split("-")[1])>20)) {
-    let query_dataCollection = [
-      {
-        $lookup: {
-          from: "ulbs",
-          localField: "ulb",
-          foreignField: "_id",
-          as: "ulb",
-        },
-      },
-      {
-        $unwind: "$ulb",
-      },
-      {
-        $lookup: {
-          from: "states",
-          localField: "ulb.state",
-          foreignField: "_id",
-          as: "state",
-        },
-      },
-      {
-        $unwind: "$state",
-      },
-    ];
-    let query_extn = [
-      {
-        $project: {
-          ulbId: "$ulb._id",
-          state: "$state.name",
-          ulbName: "$ulb.name",
-          modifiedAt: "$modifiedAt",
-          "2015-16_income_pdf": "$documents.financial_year_2015_16.pdf",
-          "2015-16_income_excel": "$documents.financial_year_2015_16.excel",
-          "2015-16_balance_pdf": "$documents.financial_year_2015_16.pdf",
-          "2015-16_balance_excel": "$documents.financial_year_2015_16.excel",
-          "2016-17_income_pdf": "$documents.financial_year_2016_17.pdf",
-          "2016-17_income_excel": "$documents.financial_year_2016_17.excel",
-          "2016-17_balance_pdf": "$documents.financial_year_2016_17.pdf",
-          "2016-17_balance_excel": "$documents.financial_year_2016_17.excel",
-          "2017-18_income_pdf": "$documents.financial_year_2017_18.pdf",
-          "2017-18_income_excel": "$documents.financial_year_2017_18.excel",
-          "2017-18_balance_pdf": "$documents.financial_year_2017_18.pdf",
-          "2017-18_balance_excel": "$documents.financial_year_2017_18.excel",
-          "2018-19_income_pdf": "$documents.financial_year_2018_19.pdf",
-          "2018-19_income_excel": "$documents.financial_year_2018_19.excel",
-          "2018-19_balance_pdf": "$documents.financial_year_2018_19.pdf",
-          "2018-19_balance_excel": "$documents.financial_year_2018_19.excel",
-        },
-      },
-
-      {
-        $project: {
-          ulbId: 1,
-          ulbName: 1,
-          state: 1,
-          modifiedAt: 1,
-          file: { $arrayElemAt: [`$${year}_${category}_${type}`, 0] },
-        },
-      },
-      {
-        $match: {
-          "file.url": { $exists: true, $ne: null },
-        },
-      },
-      {
-        $sort: {
-          modifiedAt: -1,
-        },
-      },
-    ];
-
-    if (ulb && ulb != "undefined") {
-      query_dataCollection.push({
-        $match: {
-          "ulb.name": ulb,
-        },
-      });
-    } else if (state && ObjectId.isValid(state)) {
-      query_dataCollection.push({
-        $match: {
-          "state._id": ObjectId(state),
-        },
-      });
-    }
-    query_dataCollection.push(...query_extn);
-    if (getQuery) return res.status(200).json(query_dataCollection);
-    let fileData = await DataCollection.aggregate(query_dataCollection);
-
-    fileData.forEach((el) => {
-      let data = {
-        ulbId: null,
-        ulbName: "",
-        state: "",
-        fileName: "",
-        fileUrl: "",
-        modifiedAt: "",
-        type: type,
-        audited: "",
-        year: "",
-      };
-      data.ulbId = el?.ulbId;
-      data.state = el?.state;
-      data.ulbName = el?.ulbName;
-      data.modifiedAt = el?.modifiedAt;
-      data.year = year;
-      data.fileName = `${el?.state}_${el?.ulbName}_${category}_${year}`;
-      data.fileUrl = [el?.file?.url];
-      finalData.push(data);
-    });
-  } else {
-    let query = [
-      {
-        $lookup: {
-          from: "ulbs",
-          localField: "ulb",
-          foreignField: "_id",
-          as: "ulb",
-        },
-      },
-      {
-        $unwind: "$ulb",
-      },
-      {
-        $lookup: {
-          from: "states",
-          localField: "ulb.state",
-          foreignField: "_id",
-          as: "state",
-        },
-      },
-      {
-        $unwind: "$state",
-      },
-      {
-        $lookup:{
-            from: "years",
-            localField: "unAudited.year",
-            foreignField:"_id",
-            as: "unAuditedYear"
-        }
-    },
-    {
-        $unwind: "$unAuditedYear"
-    },
-    {
-        $lookup:{
-            from: "years",
-            localField: "audited.year",
-            foreignField:"_id",
-            as: "auditedYear"
-        }
-    },
-    {
-        $unwind: "$auditedYear"
-    },
-    ];
-    if (ulb && ulb != "undefined") {
-      query.push({
-        $match: {
-          "ulb.name": ulb,
-        },
-      });
-    } else if (state && ObjectId.isValid(state)) {
-      query.push({
-        $match: {
-          "state._id": ObjectId(state),
-        },
-      });
-    }
-    //match for audited and unAudited docs with given year
-    const queryYear =  await Year.findOne({year}).lean();
-    let queryUnaudited = query.slice();
-    query.push({
-      $match: {
-          $expr: { $or:[
-              // {$eq: [ "$unAuditedYear._id",  queryYear._id ]},
-              {$eq: ["$auditedYear._id", ObjectId(queryYear._id)]}
-              ] },
-      }
-    })
-    queryUnaudited.push({
-      $match: {
-        $expr: { $or:[
-            {$eq: [ "$unAuditedYear._id",  ObjectId(queryYear._id) ]},
-            // {$eq: ["$auditedYear._id", queryYear._id]}
-            ] },
-    }
-    })
-    // if (year == "2019-20") {
-      let query_extn = [
-        {
-          $project: {
-            ulbId: "$ulb._id",
-            ulbName: "$ulb.name",
-            state: "$state.name",
-            modifiedAt: "$modifiedAt",
-            [`${year}_balance_pdf`]: [
-              "$audited.provisional_data.bal_sheet.pdf.url",
-              "$audited.provisional_data.bal_sheet_schedules.pdf.url",
-            ],
-            [`${year}_balance_excel`]: [
-              "$audited.provisional_data.bal_sheet.excel.url",
-              "$audited.provisional_data.bal_sheet_schedules.excel.url",
-            ],
-            [`${year}_income_pdf`]: [
-              "$audited.provisional_data.inc_exp.pdf.url",
-              "$audited.provisional_data.inc_exp_schedules.pdf.url",
-            ],
-            [`${year}_income_excel`]: [
-              "$audited.provisional_data.inc_exp.excel.url",
-              "$audited.provisional_data.inc_exp_schedules.excel.url",
-            ],
-          },
-        },
-        {
-          $project: {
-            ulbId: 1,
-            ulbName: 1,
-            state: 1,
-            modifiedAt: 1,
-            file: `$${year}_${category}_${type}`,
-          },
-        },
-        {
-          $match: {
-            file: { 
-              $exists: true,
-               $ne: null
-           },
-          },
-        },
-        {
-          $sort: {
-            modifiedAt: -1,
-          },
-        },
-      ];
-      let query_extn_unAudited = [
-        {
-          $project: {
-            ulbId: "$ulb._id",
-            ulbName: "$ulb.name",
-            state: "$state.name",
-            modifiedAt: "$modifiedAt",
-            [`${year}_balance_pdf`]: [
-              "$unAudited.provisional_data.bal_sheet.pdf.url",
-              "$unAudited.provisional_data.bal_sheet_schedules.pdf.url",
-            ],
-            [`${year}_balance_excel`]: [
-              "$unAudited.provisional_data.bal_sheet.excel.url",
-              "$unAudited.provisional_data.bal_sheet_schedules.excel.url",
-            ],
-            [`${year}_income_pdf`]: [
-              "$unAudited.provisional_data.inc_exp.pdf.url",
-              "$unAudited.provisional_data.inc_exp_schedules.pdf.url",
-            ],
-            [`${year}_income_excel`]: [
-              "$unAudited.provisional_data.inc_exp.excel.url",
-              "$unAudited.provisional_data.inc_exp_schedules.excel.url",
-            ],
-          },
-        },
-        {
-          $project: {
-            ulbId: 1,
-            ulbName: 1,
-            state: 1,
-            modifiedAt: 1,
-            file: `$${year}_${category}_${type}`,
-          },
-        },
-        {
-          $match: {
-            file: { 
-              $exists: true,
-               $ne: null
-           },
-          },
-        },
-        {
-          $sort: {
-            modifiedAt: -1,
-          },
-        },
-      ]
-      query.push(...query_extn);
-      queryUnaudited.push(...query_extn_unAudited);
-      if (getQuery) return res.status(200).json({query,queryUnaudited});
-      let [fileData, fileDataUnAudited] = await Promise.all( [AnnualAccountData.aggregate(query), AnnualAccountData.aggregate(queryUnaudited)]);
-
-      [fileData,fileDataUnAudited].forEach((outerEl,idx) => {
-        let fileType = ""
-        idx === 0 ?  fileType = "audited": fileType = "unAudited"
-        outerEl.forEach((el) => {
-        let data = {
-          ulbId: null,
-          ulbName: "",
-          state: "",
-          fileName: "",
-          fileUrl: "",
-          modifiedAt: "",
-          type: type,
-          audited: "",
-          year: "",
-        };
-        data.ulbId = el?.ulbId;
-        data.state = el?.state;
-        data.ulbName = el?.ulbName;
-        data.modifiedAt = el?.modifiedAt;
-        data.year = year;
-        data.fileName = `${el?.state}_${el?.ulbName}_${category}_${year}_${fileType}`;
-        data.fileUrl = el?.file;
-        
-        let fileLength = 0
-        if(data.fileUrl?.length){
-          for(let fileDoc of data.fileUrl){
-            fileDoc ?  fileLength++ : ""
-          }
-        }
-        if(fileLength > 0)  finalData.push(data);
-      })
-      }
-      
-      
-      )
-
-
-    // } 
-    // else if (year == "2020-21") {
+    // if (year != "2019-20" && year != "2020-21" && !(Number(year.split("-")[1]) > 20)) {
+    //   let query_dataCollection = [
+    //     {
+    //       $lookup: {
+    //         from: "ulbs",
+    //         localField: "ulb",
+    //         foreignField: "_id",
+    //         as: "ulb",
+    //       },
+    //     },
+    //     {
+    //       $unwind: "$ulb",
+    //     },
+    //     {
+    //       $lookup: {
+    //         from: "states",
+    //         localField: "ulb.state",
+    //         foreignField: "_id",
+    //         as: "state",
+    //       },
+    //     },
+    //     {
+    //       $unwind: "$state",
+    //     },
+    //   ];
     //   let query_extn = [
     //     {
     //       $project: {
     //         ulbId: "$ulb._id",
-    //         ulbName: "$ulb.name",
     //         state: "$state.name",
+    //         ulbName: "$ulb.name",
     //         modifiedAt: "$modifiedAt",
-    //         "2020-21_balance_pdf":
-    //           ["$unAudited.provisional_data.bal_sheet.pdf.url",
-    //             "$unAudited.provisional_data.bal_sheet_schedules.pdf.url"],
-    //         "2020-21_balance_excel":
-    //           ["$unAudited.provisional_data.bal_sheet.excel.url",
-    //             "$unAudited.provisional_data.bal_sheet_schedules.excel.url"
-    //           ],
-    //         "2020-21_income_pdf": ["$unAudited.provisional_data.inc_exp.pdf.url",
-    //           "$unAudited.provisional_data.inc_exp_schedules.pdf.url"],
-    //         "2020-21_income_excel":
-    //           ["$unAudited.provisional_data.inc_exp.excel.url",
-    //             "$unAudited.provisional_data.inc_exp_schedules.excel.url"
-    //           ],
+    //         "2015-16_income_pdf": "$documents.financial_year_2015_16.pdf",
+    //         "2015-16_income_excel": "$documents.financial_year_2015_16.excel",
+    //         "2015-16_balance_pdf": "$documents.financial_year_2015_16.pdf",
+    //         "2015-16_balance_excel": "$documents.financial_year_2015_16.excel",
+    //         "2016-17_income_pdf": "$documents.financial_year_2016_17.pdf",
+    //         "2016-17_income_excel": "$documents.financial_year_2016_17.excel",
+    //         "2016-17_balance_pdf": "$documents.financial_year_2016_17.pdf",
+    //         "2016-17_balance_excel": "$documents.financial_year_2016_17.excel",
+    //         "2017-18_income_pdf": "$documents.financial_year_2017_18.pdf",
+    //         "2017-18_income_excel": "$documents.financial_year_2017_18.excel",
+    //         "2017-18_balance_pdf": "$documents.financial_year_2017_18.pdf",
+    //         "2017-18_balance_excel": "$documents.financial_year_2017_18.excel",
+    //         "2018-19_income_pdf": "$documents.financial_year_2018_19.pdf",
+    //         "2018-19_income_excel": "$documents.financial_year_2018_19.excel",
+    //         "2018-19_balance_pdf": "$documents.financial_year_2018_19.pdf",
+    //         "2018-19_balance_excel": "$documents.financial_year_2018_19.excel",
     //       },
     //     },
+
     //     {
     //       $project: {
     //         ulbId: 1,
     //         ulbName: 1,
     //         state: 1,
     //         modifiedAt: 1,
-    //         file: `$${year}_${category}_${type}`,
+    //         file: { $arrayElemAt: [`$${year}_${category}_${type}`, 0] },
     //       },
     //     },
     //     {
     //       $match: {
-    //         file: { $exists: true, $ne: null },
+    //         "file.url": { $exists: true, $ne: null },
     //       },
     //     },
     //     {
@@ -1529,9 +1238,23 @@ exports.dataset = catchAsync(async (req, res) => {
     //       },
     //     },
     //   ];
-    //   query.push(...query_extn);
-    //   if (getQuery) return res.status(200).json(query);
-    //   let fileData = await AnnualAccountData.aggregate(query);
+
+    //   if (ulb && ulb != "undefined") {
+    //     query_dataCollection.push({
+    //       $match: {
+    //         "ulb.name": ulb,
+    //       },
+    //     });
+    //   } else if (state && ObjectId.isValid(state)) {
+    //     query_dataCollection.push({
+    //       $match: {
+    //         "state._id": ObjectId(state),
+    //       },
+    //     });
+    //   }
+    //   query_dataCollection.push(...query_extn);
+    //   if (getQuery) return res.status(200).json(query_dataCollection);
+    //   let fileData = await DataCollection.aggregate(query_dataCollection);
 
     //   fileData.forEach((el) => {
     //     let data = {
@@ -1551,24 +1274,324 @@ exports.dataset = catchAsync(async (req, res) => {
     //     data.modifiedAt = el?.modifiedAt;
     //     data.year = year;
     //     data.fileName = `${el?.state}_${el?.ulbName}_${category}_${year}`;
-    //     data.fileUrl = el?.file;
-
+    //     data.fileUrl = [el?.file?.url];
     //     finalData.push(data);
     //   });
+    // } else {
+    //   let query = [
+    //     {
+    //       $lookup: {
+    //         from: "ulbs",
+    //         localField: "ulb",
+    //         foreignField: "_id",
+    //         as: "ulb",
+    //       },
+    //     },
+    //     {
+    //       $unwind: "$ulb",
+    //     },
+    //     {
+    //       $lookup: {
+    //         from: "states",
+    //         localField: "ulb.state",
+    //         foreignField: "_id",
+    //         as: "state",
+    //       },
+    //     },
+    //     {
+    //       $unwind: "$state",
+    //     },
+    //     {
+    //       $lookup: {
+    //         from: "years",
+    //         localField: "unAudited.year",
+    //         foreignField: "_id",
+    //         as: "unAuditedYear"
+    //       }
+    //     },
+    //     {
+    //       $unwind: "$unAuditedYear"
+    //     },
+    //     {
+    //       $lookup: {
+    //         from: "years",
+    //         localField: "audited.year",
+    //         foreignField: "_id",
+    //         as: "auditedYear"
+    //       }
+    //     },
+    //     {
+    //       $unwind: "$auditedYear"
+    //     },
+    //   ];
+    //   if (ulb && ulb != "undefined") {
+    //     query.push({
+    //       $match: {
+    //         "ulb.name": ulb,
+    //       },
+    //     });
+    //   } else if (state && ObjectId.isValid(state)) {
+    //     query.push({
+    //       $match: {
+    //         "state._id": ObjectId(state),
+    //       },
+    //     });
+    //   }
+    //   //match for audited and unAudited docs with given year
+    //   const queryYear = await Year.findOne({ year }).lean();
+    //   let queryUnaudited = query.slice();
+    //   query.push({
+    //     $match: {
+    //       $expr: {
+    //         $or: [
+    //           // {$eq: [ "$unAuditedYear._id",  queryYear._id ]},
+    //           { $eq: ["$auditedYear._id", ObjectId(queryYear._id)] }
+    //         ]
+    //       },
+    //     }
+    //   })
+    //   queryUnaudited.push({
+    //     $match: {
+    //       $expr: {
+    //         $or: [
+    //           { $eq: ["$unAuditedYear._id", ObjectId(queryYear._id)] },
+    //           // {$eq: ["$auditedYear._id", queryYear._id]}
+    //         ]
+    //       },
+    //     }
+    //   })
+    //   // if (year == "2019-20") {
+    //   let query_extn = [
+    //     {
+    //       $project: {
+    //         ulbId: "$ulb._id",
+    //         ulbName: "$ulb.name",
+    //         state: "$state.name",
+    //         modifiedAt: "$modifiedAt",
+    //         [`${year}_balance_pdf`]: [
+    //           "$audited.provisional_data.bal_sheet.pdf.url",
+    //           "$audited.provisional_data.bal_sheet_schedules.pdf.url",
+    //         ],
+    //         [`${year}_balance_excel`]: [
+    //           "$audited.provisional_data.bal_sheet.excel.url",
+    //           "$audited.provisional_data.bal_sheet_schedules.excel.url",
+    //         ],
+    //         [`${year}_income_pdf`]: [
+    //           "$audited.provisional_data.inc_exp.pdf.url",
+    //           "$audited.provisional_data.inc_exp_schedules.pdf.url",
+    //         ],
+    //         [`${year}_income_excel`]: [
+    //           "$audited.provisional_data.inc_exp.excel.url",
+    //           "$audited.provisional_data.inc_exp_schedules.excel.url",
+    //         ],
+    //       },
+    //     },
+    //     {
+    //       $project: {
+    //         ulbId: 1,
+    //         ulbName: 1,
+    //         state: 1,
+    //         modifiedAt: 1,
+    //         file: `$${year}_${category}_${type}`,
+    //       },
+    //     },
+    //     {
+    //       $match: {
+    //         file: {
+    //           $exists: true,
+    //           $ne: null
+    //         },
+    //       },
+    //     },
+    //     {
+    //       $sort: {
+    //         modifiedAt: -1,
+    //       },
+    //     },
+    //   ];
+    //   let query_extn_unAudited = [
+    //     {
+    //       $project: {
+    //         ulbId: "$ulb._id",
+    //         ulbName: "$ulb.name",
+    //         state: "$state.name",
+    //         modifiedAt: "$modifiedAt",
+    //         [`${year}_balance_pdf`]: [
+    //           "$unAudited.provisional_data.bal_sheet.pdf.url",
+    //           "$unAudited.provisional_data.bal_sheet_schedules.pdf.url",
+    //         ],
+    //         [`${year}_balance_excel`]: [
+    //           "$unAudited.provisional_data.bal_sheet.excel.url",
+    //           "$unAudited.provisional_data.bal_sheet_schedules.excel.url",
+    //         ],
+    //         [`${year}_income_pdf`]: [
+    //           "$unAudited.provisional_data.inc_exp.pdf.url",
+    //           "$unAudited.provisional_data.inc_exp_schedules.pdf.url",
+    //         ],
+    //         [`${year}_income_excel`]: [
+    //           "$unAudited.provisional_data.inc_exp.excel.url",
+    //           "$unAudited.provisional_data.inc_exp_schedules.excel.url",
+    //         ],
+    //       },
+    //     },
+    //     {
+    //       $project: {
+    //         ulbId: 1,
+    //         ulbName: 1,
+    //         state: 1,
+    //         modifiedAt: 1,
+    //         file: `$${year}_${category}_${type}`,
+    //       },
+    //     },
+    //     {
+    //       $match: {
+    //         file: {
+    //           $exists: true,
+    //           $ne: null
+    //         },
+    //       },
+    //     },
+    //     {
+    //       $sort: {
+    //         modifiedAt: -1,
+    //       },
+    //     },
+    //   ]
+    //   query.push(...query_extn);
+    //   queryUnaudited.push(...query_extn_unAudited);
+    //   if (getQuery) return res.status(200).json({ query, queryUnaudited });
+    //   let [fileData, fileDataUnAudited] = await Promise.all([AnnualAccountData.aggregate(query), AnnualAccountData.aggregate(queryUnaudited)]);
+
+    //   [fileData, fileDataUnAudited].forEach((outerEl, idx) => {
+    //     let fileType = ""
+    //     idx === 0 ? fileType = "audited" : fileType = "unAudited"
+    //     outerEl.forEach((el) => {
+    //       let data = {
+    //         ulbId: null,
+    //         ulbName: "",
+    //         state: "",
+    //         fileName: "",
+    //         fileUrl: "",
+    //         modifiedAt: "",
+    //         type: type,
+    //         audited: "",
+    //         year: "",
+    //       };
+    //       data.ulbId = el?.ulbId;
+    //       data.state = el?.state;
+    //       data.ulbName = el?.ulbName;
+    //       data.modifiedAt = el?.modifiedAt;
+    //       data.year = year;
+    //       data.fileName = `${el?.state}_${el?.ulbName}_${category}_${year}_${fileType}`;
+    //       data.fileUrl = el?.file;
+
+    //       let fileLength = 0
+    //       if (data.fileUrl?.length) {
+    //         for (let fileDoc of data.fileUrl) {
+    //           fileDoc ? fileLength++ : ""
+    //         }
+    //       }
+    //       if (fileLength > 0) finalData.push(data);
+    //     })
+    //   }
+
+
+    //   )
+
+
+    //   // } 
+    //   // else if (year == "2020-21") {
+    //   //   let query_extn = [
+    //   //     {
+    //   //       $project: {
+    //   //         ulbId: "$ulb._id",
+    //   //         ulbName: "$ulb.name",
+    //   //         state: "$state.name",
+    //   //         modifiedAt: "$modifiedAt",
+    //   //         "2020-21_balance_pdf":
+    //   //           ["$unAudited.provisional_data.bal_sheet.pdf.url",
+    //   //             "$unAudited.provisional_data.bal_sheet_schedules.pdf.url"],
+    //   //         "2020-21_balance_excel":
+    //   //           ["$unAudited.provisional_data.bal_sheet.excel.url",
+    //   //             "$unAudited.provisional_data.bal_sheet_schedules.excel.url"
+    //   //           ],
+    //   //         "2020-21_income_pdf": ["$unAudited.provisional_data.inc_exp.pdf.url",
+    //   //           "$unAudited.provisional_data.inc_exp_schedules.pdf.url"],
+    //   //         "2020-21_income_excel":
+    //   //           ["$unAudited.provisional_data.inc_exp.excel.url",
+    //   //             "$unAudited.provisional_data.inc_exp_schedules.excel.url"
+    //   //           ],
+    //   //       },
+    //   //     },
+    //   //     {
+    //   //       $project: {
+    //   //         ulbId: 1,
+    //   //         ulbName: 1,
+    //   //         state: 1,
+    //   //         modifiedAt: 1,
+    //   //         file: `$${year}_${category}_${type}`,
+    //   //       },
+    //   //     },
+    //   //     {
+    //   //       $match: {
+    //   //         file: { $exists: true, $ne: null },
+    //   //       },
+    //   //     },
+    //   //     {
+    //   //       $sort: {
+    //   //         modifiedAt: -1,
+    //   //       },
+    //   //     },
+    //   //   ];
+    //   //   query.push(...query_extn);
+    //   //   if (getQuery) return res.status(200).json(query);
+    //   //   let fileData = await AnnualAccountData.aggregate(query);
+
+    //   //   fileData.forEach((el) => {
+    //   //     let data = {
+    //   //       ulbId: null,
+    //   //       ulbName: "",
+    //   //       state: "",
+    //   //       fileName: "",
+    //   //       fileUrl: "",
+    //   //       modifiedAt: "",
+    //   //       type: type,
+    //   //       audited: "",
+    //   //       year: "",
+    //   //     };
+    //   //     data.ulbId = el?.ulbId;
+    //   //     data.state = el?.state;
+    //   //     data.ulbName = el?.ulbName;
+    //   //     data.modifiedAt = el?.modifiedAt;
+    //   //     data.year = year;
+    //   //     data.fileName = `${el?.state}_${el?.ulbName}_${category}_${year}`;
+    //   //     data.fileUrl = el?.file;
+
+    //   //     finalData.push(data);
+    //   //   });
+    //   // }
     // }
+
+    if (globalName) {
+      finalData = finalData.filter((val) => {
+        return val.fileName.toLowerCase().includes(globalName.toLowerCase());
+      });
+    }
+    if (getCount) { finalData = finalData.length }
+
+    // console.log("final data", JSON.stringify(finalData, null, 2))
+    return res.status(200).json({
+      success: true,
+      data: finalData
+    })
+
+  } catch (error) {
+    console.error("Failed to load data: ", error);
+    return res.status(400).json({
+      success: false,
+      error: error
+    })
   }
-  if (globalName) {
-    finalData = finalData.filter((val) => {
-      return val.fileName.toLowerCase().includes(globalName.toLowerCase());
-    });
-  }
-  if (getCount) {
-    finalData = finalData.length;
-  }
-  return res.status(200).json({
-    success: true,
-    data: finalData
-  })
 })
 
 exports.nmpcEligibility = catchAsync(async (req, res) => {
@@ -1910,7 +1933,7 @@ exports.nmpcEligibility = catchAsync(async (req, res) => {
   })
 
 })
-exports.getAccounts = async (req, res,next) => {
+exports.getAccounts = async (req, res, next) => {
   try {
     let role = req.decoded.role;
     let { design_year, ulb } = req.query;
@@ -1919,24 +1942,24 @@ exports.getAccounts = async (req, res,next) => {
     }
     let ulbData = await Ulb.findOne({ _id: ObjectId(ulb) }).lean();
     let currYearData = await Year.findOne({ _id: ObjectId(design_year) }).lean();
-    let ulbAccess = checkIfUlbHasAccess(ulbData,currYearData)
+    let ulbAccess = checkIfUlbHasAccess(ulbData, currYearData)
     let prevYearVal;
     prevYearVal = findPreviousYear(currYearData.year);
     let prevYearData = await Year.findOne({ year: prevYearVal }).lean();
     let prevStatus = await AnnualAccountData.findOne({
       ulb: ObjectId(ulb),
       design_year: prevYearData._id
-    }).select({ status: 1, isDraft: 1, actionTakenByRole: 1, currentFormStatus:1 }).lean()
+    }).select({ status: 1, isDraft: 1, actionTakenByRole: 1, currentFormStatus: 1 }).lean()
 
     let status = '';
     if (prevStatus) {
       status = calculateStatus(prevStatus.status, prevStatus.actionTakenByRole, prevStatus.isDraft, "ULB")
-      if(!prevStatus.status){
+      if (!prevStatus.status) {
         status = MASTER_STATUS_ID[prevStatus.currentFormStatus]
       }
     }
     let annualAccountData = {}
-    
+
     let dataCollection = {}
     dataCollection = await DataCollection.findOne({ ulb: ObjectId(ulb) }).lean()
     let dataSubmittedByOpenPage = false
@@ -1962,9 +1985,9 @@ exports.getAccounts = async (req, res,next) => {
       } else {
         annualAccountData['action'] = 'redirect'
         annualAccountData['url'] = `Your previous Year's form status is - ${status ? status : 'Not Submitted'} .Kindly submit Annual Accounts for the previous year at - <a href=https://${host}/upload-annual-accounts target="_blank">Click Here!</a> . `;
-        if(isYearWithinRange(design_year)){
-          let previousYearId = getPreviousYear(design_year,1);
-          let formRedirectionUrl = isYearWithinCurrentFY(design_year) ?  `ulb-form/${previousYearId}/annual_acc` : 'ulbform2223/annual_acc';
+        if (isYearWithinRange(design_year)) {
+          let previousYearId = getPreviousYear(design_year, 1);
+          let formRedirectionUrl = isYearWithinCurrentFY(design_year) ? `ulb-form/${previousYearId}/annual_acc` : 'ulbform2223/annual_acc';
           annualAccountData['url'] = `Your previous Year's form status is - ${status ? status : 'Not Submitted'} .Kindly submit Annual Accounts for the previous year at - <a href=https://${host}/${formRedirectionUrl} target="_blank">Click Here!</a> . `;
         }
       }
@@ -1979,7 +2002,7 @@ exports.getAccounts = async (req, res,next) => {
       ulb: ObjectId(ulb),
       design_year
     }
-    if(isYearWithinRange(design_year.toString())){
+    if (isYearWithinRange(design_year.toString())) {
       filters['design_year'] = prevYearData._id
       filters['audited.submit_annual_accounts'] = true
     }
@@ -1993,7 +2016,7 @@ exports.getAccounts = async (req, res,next) => {
       next()
       return
     }
-    
+
     annualAccountData = JSON.parse(JSON.stringify(annualAccountData));
     if (
       req.decoded.role === "MoHUA" &&
@@ -2027,9 +2050,9 @@ exports.getAccounts = async (req, res,next) => {
         formType: "ULB",
         loggedInUser: role,
       };
-      let bodyParams  = {
+      let bodyParams = {
         ulb,
-        design_year : design_year.toString(),
+        design_year: design_year.toString(),
         formId: FORMIDs['AnnualAccount'],
         flag: true
       }
@@ -2038,7 +2061,7 @@ exports.getAccounts = async (req, res,next) => {
       Object.assign(annualAccountData, {
         canTakeAction: canTakenActionMaster(params),
       });
-    }else{
+    } else {
       Object.assign(annualAccountData, { canTakeAction: canTakenAction(annualAccountData['status'], annualAccountData['actionTakenByRole'], annualAccountData['isDraft'], "ULB", role) })
     }
     // Object.assign(annualAccountData, {canTakeAction: false })
@@ -2075,9 +2098,9 @@ exports.getAccounts = async (req, res,next) => {
   }
 };
 
-async function addActionKeys(annualAccountData, body, res, role, req){
+async function addActionKeys(annualAccountData, body, res, role, req) {
   try {
-    const MoHUAResponse =  "MoHUA";
+    const MoHUAResponse = "MoHUA";
     const FIRST_INDEX = 0;
     // let {data:{data: statusResponses}} = await axios.post(
     //   `https://${host}/api/v1/common-action/getMasterAction`,
@@ -2086,18 +2109,18 @@ async function addActionKeys(annualAccountData, body, res, role, req){
     // );
     req.body = body;
     let statusResponses = await getMasterAction(req, res);
-    let stateResponse =  await CurrentStatus.find(
+    let stateResponse = await CurrentStatus.find(
       {
-      recordId: ObjectId(annualAccountData._id),
-      actionTakenByRole: "STATE"
-    }).lean();
-    
-    annualAccountData  = JSON.parse(JSON.stringify(annualAccountData))
-    if (Object.keys(statusResponses).length > 1  && statusResponses.hasOwnProperty(MoHUAResponse)){
+        recordId: ObjectId(annualAccountData._id),
+        actionTakenByRole: "STATE"
+      }).lean();
 
-      annualAccountData = await addCanTakeActionKeys(annualAccountData, statusResponses[MoHUAResponse], role , stateResponse)
-    }else{
-      annualAccountData = await addCanTakeActionKeys(annualAccountData, statusResponses[Object.keys(statusResponses)[FIRST_INDEX]], role ,stateResponse)
+    annualAccountData = JSON.parse(JSON.stringify(annualAccountData))
+    if (Object.keys(statusResponses).length > 1 && statusResponses.hasOwnProperty(MoHUAResponse)) {
+
+      annualAccountData = await addCanTakeActionKeys(annualAccountData, statusResponses[MoHUAResponse], role, stateResponse)
+    } else {
+      annualAccountData = await addCanTakeActionKeys(annualAccountData, statusResponses[Object.keys(statusResponses)[FIRST_INDEX]], role, stateResponse)
     }
     return annualAccountData;
   } catch (error) {
@@ -2105,7 +2128,7 @@ async function addActionKeys(annualAccountData, body, res, role, req){
   }
 }
 
-async function addCanTakeActionKeys(annualAccountData, statuses=[], role, stateResponse=[]){
+async function addCanTakeActionKeys(annualAccountData, statuses = [], role, stateResponse = []) {
   try {
     const tabRegex = /^tab_/g;
     const keyArray = ["audited", "unAudited"];
@@ -2114,26 +2137,26 @@ async function addCanTakeActionKeys(annualAccountData, statuses=[], role, stateR
     const dotSeparator = "."
     const tabSeparator = "_";
 
-    let tabShortKeys = statuses.map(el=>{
-        separator = el.shortKey.match(tabRegex) ?  tabSeparator : dotSeparator;
-        let splittedArray = el.shortKey.split(separator);
-        el.shortKey = splittedArray[splittedArray.length - 1];
-        el.tabKey = splittedArray[0]
-        return el;
+    let tabShortKeys = statuses.map(el => {
+      separator = el.shortKey.match(tabRegex) ? tabSeparator : dotSeparator;
+      let splittedArray = el.shortKey.split(separator);
+      el.shortKey = splittedArray[splittedArray.length - 1];
+      el.tabKey = splittedArray[0]
+      return el;
     })
-    stateResponse = stateResponse.map(el=>{
-      separator = el.shortKey.match(tabRegex) ?  tabSeparator : dotSeparator;
+    stateResponse = stateResponse.map(el => {
+      separator = el.shortKey.match(tabRegex) ? tabSeparator : dotSeparator;
       let splittedArray = el.shortKey.split(separator)
       el.shortKey = splittedArray[splittedArray.length - 1];
       return el;
-  })
+    })
     let data = JSON.parse(JSON.stringify(annualAccountData));
     await appendKeys(keyArray, data, provisionalKey, tabShortKeys, role, stateResponse);
-    
+
     return data;
   } catch (error) {
-    console.log("error in addCanTakeActionKeys ::: ",error.message)
-     return {}
+    console.log("error in addCanTakeActionKeys ::: ", error.message)
+    return {}
   }
 }
 const TAB_OBJ = {
@@ -2141,9 +2164,9 @@ const TAB_OBJ = {
   unAudited: 'unAudited'
 }
 const TAB_RESPONSE = {
-  BOTH_NO : 2,
-  AUDITED_YES: [8,7],
-  UNAUDITED_YES: [7,6],
+  BOTH_NO: 2,
+  AUDITED_YES: [8, 7],
+  UNAUDITED_YES: [7, 6],
   AUDITED_UNAUDITED_YES: 13
 }
 async function appendKeys(keyArray, data, provisionalKey, tabShortKeys, role, stateResponses) {
@@ -2153,18 +2176,18 @@ async function appendKeys(keyArray, data, provisionalKey, tabShortKeys, role, st
     loggedInUser: role,
   };
   let formLevelCanTakeAction = canTakenActionMaster(params);
-  stateResponses =  filterStateStatuses(stateResponses, tabShortKeys)
+  stateResponses = filterStateStatuses(stateResponses, tabShortKeys)
 
-  let totalKeys = tabShortKeys?.length ;
+  let totalKeys = tabShortKeys?.length;
   let continueFlagAudited = false, continueFlagUnaudited = false;
-  if(totalKeys === TAB_RESPONSE['BOTH_NO']){
+  if (totalKeys === TAB_RESPONSE['BOTH_NO']) {
     continueFlagAudited = true;
     continueFlagUnaudited = true;
-  }else if(TAB_RESPONSE['AUDITED_YES'].includes(totalKeys) && tabShortKeys.find(el=>  el.shortKey === "auditor_report") ){
+  } else if (TAB_RESPONSE['AUDITED_YES'].includes(totalKeys) && tabShortKeys.find(el => el.shortKey === "auditor_report")) {
     continueFlagUnaudited = true;
-  }else if( TAB_RESPONSE['UNAUDITED_YES'].includes(totalKeys)){
+  } else if (TAB_RESPONSE['UNAUDITED_YES'].includes(totalKeys)) {
     continueFlagAudited = true;
-  }else if(totalKeys === TAB_RESPONSE['AUDITED_UNAUDITED_YES']){
+  } else if (totalKeys === TAB_RESPONSE['AUDITED_UNAUDITED_YES']) {
   }
   for (let key of keyArray) {
     let statusData = tabShortKeys.find(el => {
@@ -2177,57 +2200,57 @@ async function appendKeys(keyArray, data, provisionalKey, tabShortKeys, role, st
         formType: "ULB",
         loggedInUser: role,
       };
-      if(Array.isArray(stateResponses) && stateResponses.length){
+      if (Array.isArray(stateResponses) && stateResponses.length) {
         stateStatusData = stateResponses.find(el => {
           return el.shortKey === key;
         });
       }
-      data[key]['canTakeAction'] = !formLevelCanTakeAction ? formLevelCanTakeAction :  canTakenActionMaster(params);
+      data[key]['canTakeAction'] = !formLevelCanTakeAction ? formLevelCanTakeAction : canTakenActionMaster(params);
       data[key]['statusId'] = statusData['statusId'];
       data[key]['status'] = statusData['status'];
       data[key]['rejectReason'] = statusData['rejectReason'];
-      if(stateStatusData){
+      if (stateStatusData) {
         data[key]['rejectReason_state'] = stateStatusData['rejectReason']
-      }else{
+      } else {
         data[key]['rejectReason_state'] = ""
       }
       // if(statusData.statusId)
-      if (continueFlagUnaudited && statusData.shortKey === keyArray[1]){
+      if (continueFlagUnaudited && statusData.shortKey === keyArray[1]) {
         continue;
       }
-      if(continueFlagAudited && statusData.shortKey === keyArray[0]){
+      if (continueFlagAudited && statusData.shortKey === keyArray[0]) {
         continue;
       }
     }
     let tabData = data[key][provisionalKey];
-    
+
     for (let entity in tabData) {
       let statusData = tabShortKeys.find(el => {
         return el.shortKey === entity && key === el.tabKey;
       });
-      let stateStatusData;  
+      let stateStatusData;
       if (statusData) {
         let params = {
           status: statusData.statusId,
           formType: "ULB",
           loggedInUser: role,
         };
-        if(Array.isArray(stateResponses) && stateResponses.length){
+        if (Array.isArray(stateResponses) && stateResponses.length) {
           stateStatusData = stateResponses.find(el => {
             return el.shortKey === entity;
           });
         }
-        tabData[entity]['canTakeAction'] = !formLevelCanTakeAction ? formLevelCanTakeAction :  canTakenActionMaster(params);
+        tabData[entity]['canTakeAction'] = !formLevelCanTakeAction ? formLevelCanTakeAction : canTakenActionMaster(params);
         tabData[entity]['statusId'] = statusData['statusId'];
         tabData[entity]['status'] = statusData['status'];
         tabData[entity]['rejectReason'] = statusData['rejectReason'];
-        if(stateStatusData){
+        if (stateStatusData) {
           tabData[entity]['rejectReason_state'] = stateStatusData['rejectReason']
-        }else{
+        } else {
           tabData[entity]['rejectReason_state'] = ""
         }
-        if(["bal_sheet","inc_exp"].includes(entity)){
-          tabData = addExtraKeysToNumericFields(statusData,stateStatusData,tabData, params, formLevelCanTakeAction);
+        if (["bal_sheet", "inc_exp"].includes(entity)) {
+          tabData = addExtraKeysToNumericFields(statusData, stateStatusData, tabData, params, formLevelCanTakeAction);
         }
       }
     }
@@ -2235,47 +2258,47 @@ async function appendKeys(keyArray, data, provisionalKey, tabShortKeys, role, st
 }
 
 
-function filterStateStatuses(stateResponses, shortKeyData){
+function filterStateStatuses(stateResponses, shortKeyData) {
   try {
-    if(shortKeyData.find(el=> el.actionTakenByRole === "MoHUA")){
+    if (shortKeyData.find(el => el.actionTakenByRole === "MoHUA")) {
       return stateResponses;
-    }else{
+    } else {
       return [];
     }
   } catch (error) {
-    throw(`filterStateStatuses:: ${error.message}`)
+    throw (`filterStateStatuses:: ${error.message}`)
   }
 }
 
-function addExtraKeysToNumericFields(statusData,stateStatusData,tabData, params,formLevelCanTakeAction){
-  
+function addExtraKeysToNumericFields(statusData, stateStatusData, tabData, params, formLevelCanTakeAction) {
+
   const shortKeysToAppend = {
     "bal_sheet": [
-        "assets",
-        "f_assets",
-        "s_grant",
-        "c_grant",
+      "assets",
+      "f_assets",
+      "s_grant",
+      "c_grant",
     ],
     "inc_exp": ["revenue", "expense"],
   };
-  
-  for(let key in shortKeysToAppend){
-    if(statusData?.shortKey === key){
-      for(let entity of shortKeysToAppend[key]){
+
+  for (let key in shortKeysToAppend) {
+    if (statusData?.shortKey === key) {
+      for (let entity of shortKeysToAppend[key]) {
         tabData[entity] = {
-              canTakeAction: false,
-              statusId: 0,
-              status: "",
-              rejectReason : "",
-              value: tabData[entity]
-            };
+          canTakeAction: false,
+          statusId: 0,
+          status: "",
+          rejectReason: "",
+          value: tabData[entity]
+        };
         tabData[entity]['canTakeAction'] = !formLevelCanTakeAction ? formLevelCanTakeAction : canTakenActionMaster(params);
         tabData[entity]['statusId'] = statusData['statusId'];
         tabData[entity]['status'] = statusData['status'];
         tabData[entity]['rejectReason'] = statusData['rejectReason'];
-        if(stateStatusData){
+        if (stateStatusData) {
           tabData[entity]['rejectReason_state'] = stateStatusData['rejectReason']
-        }else{
+        } else {
           tabData[entity]['rejectReason_state'] = ""
         }
       }
@@ -2290,10 +2313,10 @@ function filterTabShortKeys(req, shortKeys) {
     let output = shortKeys;
     const provisionalKey = "provisional_data";
     const keysToRemove = ['pdf', 'excel', provisionalKey];
-    const customKeysForAAToRemove = ['f_assets','assets','s_grant','c_grant','revenue','expense'];
-    let outputAudited =[], outputUnAudited = [];
-    outputAudited = extractTabKeys(req, shortKeys, separator,TAB_OBJ['audited']);
-    outputUnAudited = extractTabKeys(req, shortKeys, separator,TAB_OBJ['unAudited']);
+    const customKeysForAAToRemove = ['f_assets', 'assets', 's_grant', 'c_grant', 'revenue', 'expense'];
+    let outputAudited = [], outputUnAudited = [];
+    outputAudited = extractTabKeys(req, shortKeys, separator, TAB_OBJ['audited']);
+    outputUnAudited = extractTabKeys(req, shortKeys, separator, TAB_OBJ['unAudited']);
     output = [...outputAudited, ...outputUnAudited];
     let result = []
     for (let element of output) {
@@ -2301,53 +2324,53 @@ function filterTabShortKeys(req, shortKeys) {
       if (elArray.length > 2 && elArray.includes(provisionalKey)) {
 
         elArray = removeElementsFromArray(elArray, keysToRemove);
-        let flag =true;
-        for(let customKey of customKeysForAAToRemove ){
+        let flag = true;
+        for (let customKey of customKeysForAAToRemove) {
 
-          if(elArray.includes(customKey)){
-            flag =false
+          if (elArray.includes(customKey)) {
+            flag = false
             break;
           }
         }
         element = elArray.join(separator);
-        if(!result.includes(element) && flag){
+        if (!result.includes(element) && flag) {
           result.push(element)
         }
 
       }
     }
-       return result;
+    return result;
   } catch (error) {
-     throw (error.message);
+    throw (error.message);
   }
 }
 
-async function checkIfSubmitSelectionChanged(form, req){
+async function checkIfSubmitSelectionChanged(form, req) {
   try {
     form = JSON.parse(JSON.stringify(form))
     let formId = form._id;
-    for(let tab in TAB_OBJ){
+    for (let tab in TAB_OBJ) {
       if (req.body[TAB_OBJ[tab]].submit_annual_accounts !== form[TAB_OBJ[tab]].submit_annual_accounts) {
         await CurrentStatus.deleteMany({
           recordId: formId
         })
       }
     }
-    return ;
+    return;
   } catch (error) {
-    throw(error.message)
+    throw (error.message)
   }
-  
+
 }
 
-function extractTabKeys(req, shortKeys, separator,tabName) {
+function extractTabKeys(req, shortKeys, separator, tabName) {
   let output = [];
   const FIRST_INDEX = 0;
   if (req.body[tabName].submit_annual_accounts) {
     output = shortKeys.filter((el) => {
       return el.split(separator)[FIRST_INDEX] === TAB_OBJ[tabName];
     });
-  }else{
+  } else {
     output.push(`${tabName}.provisional_data.excel`)
   }
   return output;
@@ -2355,15 +2378,15 @@ function extractTabKeys(req, shortKeys, separator,tabName) {
 
 function removeElementsFromArray(elArray, keysToRemove) {
   try {
-    for(let key of keysToRemove){
+    for (let key of keysToRemove) {
       let keyToRemoveIndex = elArray.indexOf(key);
-      if(keyToRemoveIndex>=0){
+      if (keyToRemoveIndex >= 0) {
         elArray.splice(keyToRemoveIndex, 1);
       }
     }
     return elArray
   } catch (error) {
-    throw(error.message)
+    throw (error.message)
   }
   // return elArray
 }
@@ -2460,16 +2483,16 @@ exports.getCSVAudited = catchAsync(async (req, res) => {
     },
     {
       $addFields: {
-           "audited.year": {
-       $convert:
-         {
+        "audited.year": {
+          $convert:
+          {
             input: "$audited.year",
             to: "objectId",
             onError: "$audited.year",
-         }            
-               }
-      }    
-   },
+          }
+        }
+      }
+    },
     {
       $lookup: {
         from: "years",
@@ -2533,11 +2556,11 @@ exports.getCSVAudited = catchAsync(async (req, res) => {
           if (!el.auditor_report) {
             el.auditor_report = 'Not Submitted'
           }
-          el = calculateCSVFormStatus(statusList,el);
+          el = calculateCSVFormStatus(statusList, el);
           // if(el.status && el.role && el.hasOwnProperty('isDraft') && el.isDraft !== null){
           //   el.formStatus =  calculateStatus(el.status,el.role, el.isDraft,"ULB");
           // }
-          
+
         }
 
         for (el of data) {
@@ -2655,16 +2678,16 @@ exports.getCSVUnaudited = catchAsync(async (req, res) => {
     { $unwind: "$state" },
     {
       $addFields: {
-           "unAudited.year": {
-       $convert:
-         {
+        "unAudited.year": {
+          $convert:
+          {
             input: "$unAudited.year",
             to: "objectId",
             onError: "$unAudited.year",
-         }            
-               }
-      }    
-   },
+          }
+        }
+      }
+    },
     {
       $lookup: {
         from: "years",
@@ -2734,7 +2757,7 @@ exports.getCSVUnaudited = catchAsync(async (req, res) => {
           //   }
 
           // } else if (el.role == 'STATE' && el.isDraft) {
-            // el['formStatus'] = statusList[4]
+          // el['formStatus'] = statusList[4]
           // } else if (el.role == 'STATE' && !el.isDraft) {
           //   if (el.status == 'APPROVED') {
           //     el['formStatus'] = statusList[3]
@@ -2751,12 +2774,12 @@ exports.getCSVUnaudited = catchAsync(async (req, res) => {
           //     el['formStatus'] = statusList[9]
 
           //   }
-          
-        // }
-        el = calculateCSVFormStatus(statusList, el)
-        // if(el.status && el.role && el.hasOwnProperty('isDraft') && el.isDraft !== null){
-        //   el.formStatus =  calculateStatus(el.status,el.role, el.isDraft,"ULB");
-        // }
+
+          // }
+          el = calculateCSVFormStatus(statusList, el)
+          // if(el.status && el.role && el.hasOwnProperty('isDraft') && el.isDraft !== null){
+          //   el.formStatus =  calculateStatus(el.status,el.role, el.isDraft,"ULB");
+          // }
         }
         for (el of data) {
           el = JSON.parse(JSON.stringify(el));
@@ -3036,7 +3059,7 @@ exports.action = async (req, res) => {
     currentAnnualAccountData.audited = req.body.audited;
     currentAnnualAccountData.unAudited = req.body.unAudited
     currentAnnualAccountData.modifiedAt = new Date();
-    currentAnnualAccountData.status= req.body.status;
+    currentAnnualAccountData.status = req.body.status;
     currentAnnualAccountData.actionTakenByRole = actionTakenByRole;
     currentAnnualAccountData.actionTakenBy = req.body.actionTakenBy;
 
@@ -3061,7 +3084,7 @@ exports.action = async (req, res) => {
   }
 };
 
-function calculateCSVFormStatus(statusList,el) {
+function calculateCSVFormStatus(statusList, el) {
   if (el.role == 'ULB' && el.isDraft) {
     el['formStatus'] = statusList[0];
   } else if (el.role == 'ULB' && !el.isDraft) {
