@@ -913,20 +913,15 @@ function utilReportObject() {
 function checkIfUlbHasPreviousYearAccess(ulbData, userYear) {
   try {
 
-    let creationFinancialYear = getFinancialYear(ulbData?.createdAt);
-
     let ulbVariable = "access_"
     let currentYear = userYear.year
     let prevYearArr = currentYear.split("-")
-    let comparePrevYear = `${(prevYearArr[0] - 1)}-${(prevYearArr[1] - 1)}`;
-    // if user created and preyear same then return false
-    if (comparePrevYear === creationFinancialYear) {
-      return false;
-    }
 
+    // check 2 previous year access
+    let twoPrevYear = `${(prevYearArr[0] - 2).toString().slice(-2)}${(prevYearArr[1] - 2)}`;
     let prevYear = `${(prevYearArr[0] - 1).toString().slice(-2)}${(prevYearArr[1] - 1).toString()}`;
-    ulbVariable += prevYear
-    return ulbData[ulbVariable]
+    
+    return ulbData[ulbVariable + twoPrevYear] && ulbData[ulbVariable + prevYear];
   }
   catch (err) {
     console.log("error in checkIfUlbHasPreviousYearAccess ::: ", err.message)
@@ -1066,8 +1061,9 @@ module.exports.read2223 = catchAsync(async (req, res, next) => {
       }
     }
 
-    let newlyCreated = checkIfNewlyCreatedUlb(design_year, ulbData?.createdAt);
-    if (newlyCreated) {
+    // let newlyCreated = checkIfNewlyCreatedUlb(design_year, ulbData?.createdAt);
+    // Check design year is first access year
+    if (!checkIfUlbHasAccess(ulbData, currentYear)) {
       let msg = `Dear ${ulbData.name}, You will be eligible to fill the DUR form from next year.`
       obj["action"] = "note";
       obj["url"] = msg;
