@@ -24,6 +24,12 @@ const isBeyond2023_24 = design_year =>  {
     const { yearIndex: yearIndex23_24 } = getDesiredYear('2023-24');
     return designYearIndex > yearIndex23_24;
 }
+const isBeyondYear = (design_year, compareYear) => {
+    if (!design_year) return false;
+    const { yearIndex: designYearIndex } = getDesiredYear(design_year);
+    const { yearIndex: yearIndex23_24 } = getDesiredYear(compareYear);
+    return designYearIndex > yearIndex23_24;
+}
 
 function getAllCurrAndPrevYearsObjectIds(yearId) {
     const yearIndex = Object.values(years).indexOf("" + yearId);
@@ -38,5 +44,6 @@ module.exports = {
     years,
     getDesiredYear,
     isBeyond2023_24,
+    isBeyondYear,
     getAllCurrAndPrevYearsObjectIds
 }
