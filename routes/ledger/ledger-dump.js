@@ -68,11 +68,23 @@ const bsSizeArr = [
     '5dd10c2685c951b54ec1d766',
 ];
 
+// Line items eliminated: ["1001", "1002", "1003", "1004", "1005", "1006", "1007"]
+const lineItemEliminated = [
+    ObjectId('5df8c7b9f280e1079283cf37'),
+    ObjectId('5df8c7d2f280e1079283cf38'),
+    ObjectId('5df8c7e4f280e1079283cf39'),
+    ObjectId('5df8c7f1f280e1079283cf3a'),
+    ObjectId('5df8c7fdf280e1079283cf3b'),
+    ObjectId('5df8c80df280e1079283cf3c'),
+    ObjectId('5df8c826f280e1079283cf3d'),
+];
+
 // Get Line Items From DB.
 async function getLineItemsFromDB() {
 
     // Headers for the input sheet data.
-    const lineItems = await LineItem.find({}, { _id: 1, isActive: 1, name: 1, code: 1 }).lean();
+    const lineItems = await LineItem.find({ "code": { $nin: ["1001", "1002", "1003", "1004", "1005", "1006", "1007"] } }, { _id: 1, isActive: 1, name: 1, code: 1 }).lean();
+    // const lineItems = await LineItem.find({}, { _id: 1, isActive: 1, name: 1, code: 1 }).lean();
     lineItems.forEach(item => {
         item.code = Number(item.code);
     });
@@ -82,7 +94,7 @@ async function getLineItemsFromDB() {
     const overviewHeaders = [
         { 'code': null, '_id': 'ulb_code', 'isActive': true, 'name': 'ULB Code' },
         { 'code': null, '_id': 'ulb', 'isActive': true, 'name': 'ULB Name' },
-        // { 'code': null, '_id': 'population', 'isActive': true, 'name': 'Census 2011 Population'},
+        { 'code': null, '_id': 'population', 'isActive': true, 'name': 'Population' },
         { 'code': null, '_id': 'state', 'isActive': true, 'name': 'State' },
         // { 'code': null, '_id': 'amrut', 'isActive': true, 'name': 'AMRUT'},
         { 'code': null, '_id': 'year', 'isActive': true, 'name': 'Financial Year' },
@@ -116,20 +128,15 @@ function updateTotals(rowObj, key, lineItemIdStr, amount, categoryArr, categoryK
 }
 
 // Fetch data from DB - Input sheet.
-async function fetchAllData(findQuery) {
+async function fetchAllData(yearFromQuery) {
     // return ULBLedger.find(findQuery.query, findQuery.projection).cursor();
+
+    let matchCondition = [{ $not: { $in: ["$$ulbledger.lineItem", lineItemEliminated] } }];
+    // if (yearFromQuery) matchCondition.push({ $eq: ["$$ulbledger.financialYear", yearFromQuery] });
+
     return Ulb.aggregate(
         [
-            // {
-            //     $match: {
-            //         _id: ObjectId("5dd24b8f91344e2300876ca9")
-            //     }
-            // },
-            {
-                $project: {
-                    _id: 1
-                }
-            },
+            { $project: { _id: 1 } },
             {
                 $lookup: {
                     from: "ulbledgers",
@@ -140,24 +147,35 @@ async function fetchAllData(findQuery) {
             },
             {
                 $project: {
+                    ulbledgers: {
+                        $filter: {
+                            input: "$ulbledgers",
+                            as: "ulbledger",
+                            cond: { $and: matchCondition }
+                        }
+                    }
+                }
+            },
+            {
+                $project: {
                     "ulbledgers.lineItem": 1,
                     "ulbledgers.amount": 1,
                     "ulbledgers.financialYear": 1
                 }
             }
         ]
+
     ).cursor().exec();
 }
 // Fetch data from DB - Overview sheet.
-async function fetchAllDataOverview() {
+async function fetchAllDataOverview(yearFromQuery) {
     // return LedgerLog.find({ ulb: ObjectId("5dd24b8f91344e2300876ca9") }).cursor();
+
+    // let matchCondition = {};
+    // if (yearFromQuery) matchCondition = { $eq: ["$$ledgerlog.year", yearFromQuery] };
+
     return Ulb.aggregate(
         [
-            // {
-            //     $match: {
-            //         _id: ObjectId("5dd24b8f91344e2300876ca9")
-            //     }
-            // },
             {
                 $project: {
                     _id: 1,
@@ -175,6 +193,17 @@ async function fetchAllDataOverview() {
                     as: "ledgerlogs"
                 }
             },
+            // {
+            //     $project: {
+            //         ledgerlogs: {
+            //             $filter: {
+            //                 input: "$ledgerlogs",
+            //                 as: "ledgerlog",
+            //                 cond: matchCondition
+            //             }
+            //         }
+            //     }
+            // },
             {
                 $project: {
                     "ledgerlogs.excel_url": 0,
@@ -199,10 +228,7 @@ module.exports.getLedgerDump = async (req, res) => {
         // Create an array of line items (used to define headers of excel)
         let lineitems = await getLineItemsFromDB();
 
-        const findQuery = {};
-        findQuery.query = req.query.financialYear ? { financialYear: req.query.financialYear } : { ulb: ObjectId("5dd24b8f91344e2300876ca9") };
-        findQuery.projection = { amount: 1, audit_status: 1, financialYear: 1, lineItem: 1, ulb: 1 };
-
+        let yearFromQuery = req.query.financialYear || "";
         const workbook = new ExcelJS.Workbook();
         const worksheet = workbook.addWorksheet('ledgerDump');
 
@@ -216,8 +242,9 @@ module.exports.getLedgerDump = async (req, res) => {
 
         // Fetch data from DB - Overview sheet.
         const overviewData = {};
-        const cursorOverview = await fetchAllDataOverview();
+        const cursorOverview = await fetchAllDataOverview(yearFromQuery);
         for (let doc = await cursorOverview.next(); doc != null; doc = await cursorOverview.next()) {
+            // console.log("doc", JSON.stringify(doc, null, 2))
             let { _id, population, state, code, name } = doc;
             for (let eachYearOverviewData of doc.ledgerlogs) {
                 let key = `${doc._id}_${eachYearOverviewData.year}`;
@@ -226,7 +253,7 @@ module.exports.getLedgerDump = async (req, res) => {
         }
 
         // Iterate through each document in the cursor (array received from DB) - Input Sheet.
-        const cursorInputData = await fetchAllData(findQuery);
+        const cursorInputData = await fetchAllData(yearFromQuery);
         let eachRowObj = {};
         for (let doc = await cursorInputData.next(); doc != null; doc = await cursorInputData.next()) {
             for (let eachLineItem of doc.ulbledgers) {
@@ -251,6 +278,7 @@ module.exports.getLedgerDump = async (req, res) => {
                 }
             }
         }
+        // console.log("eachRowObj", JSON.stringify(eachRowObj, null, 2));
 
         // Iterate through each row in eachRowObj
         Object.values(eachRowObj).forEach((row) => {
@@ -275,11 +303,12 @@ module.exports.getLedgerDump = async (req, res) => {
             worksheet.addRow(row);
         });
 
-        let filename = `All_Ledgers_${(moment().format("DD-MMM-YY_HH-mm-ss"))}`;
         // Stream the workbook to the response
+        let filename = `All_Ledgers_${(moment().format("DD-MMM-YY_HH-mm-ss"))}`;
+        const buffer = await workbook.xlsx.writeBuffer();
         res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
         res.setHeader('Content-Disposition', `attachment; filename=${filename}.xlsx`);
-        await workbook.xlsx.write(res);
+        res.send(buffer);
         res.end();
 
     } catch (error) {
