@@ -136,6 +136,7 @@ async function fetchAllData(yearFromQuery) {
 
     return Ulb.aggregate(
         [
+            { $match: { isActive: true } },
             { $project: { _id: 1 } },
             {
                 $lookup: {
@@ -176,6 +177,7 @@ async function fetchAllDataOverview(yearFromQuery) {
 
     return Ulb.aggregate(
         [
+            { $match: { isActive: true } },
             {
                 $project: {
                     _id: 1,
@@ -286,6 +288,7 @@ module.exports.getLedgerDump = async (req, res) => {
             const ulbOverviewObj = overviewData[key];
 
             if (ulbOverviewObj) {
+                // row["year"] = ulbOverviewObj.year;
                 row["ulb_code"] = ulbOverviewObj.code; // from ulbs collection.
                 row["population"] = ulbOverviewObj.population; // from ulbs collection.
                 row["ulb"] = ulbOverviewObj.name; // from ulbs collection.
@@ -300,8 +303,29 @@ module.exports.getLedgerDump = async (req, res) => {
                 row["dataFlagComment"] = ulbOverviewObj.dataFlagComment;
             }
 
+            delete overviewData[key];
             worksheet.addRow(row);
         });
+
+        // Add the remaining data from "Overview" collection.
+        Object.values(overviewData).forEach((row) => {
+            let tempObj = {};
+            tempObj["ulb_code"] = row.code; // from ulbs collection.
+            tempObj["population"] = row.population; // from ulbs collection.
+            tempObj["ulb"] = row.name; // from ulbs collection.
+            tempObj["year"] = row.year;
+            tempObj["state"] = row.state;
+            tempObj["audit_status"] = row.audit_status;
+            tempObj["audit_firm"] = row.audit_firm;
+            tempObj["partner_name"] = row.partner_name;
+            tempObj["icai_membership_number"] = row.icai_membership_number;
+            tempObj["isStandardizable"] = row.isStandardizable;
+            tempObj["isStandardizableComment"] = row.isStandardizableComment;
+            tempObj["dataFlag"] = row.dataFlag;
+            tempObj["dataFlagComment"] = row.dataFlagComment;
+
+            worksheet.addRow(tempObj);
+        })
 
         // Stream the workbook to the response
         let filename = `All_Ledgers_${(moment().format("DD-MMM-YY_HH-mm-ss"))}`;
