@@ -41,7 +41,6 @@
     });
    },1000)
    server.timeout = 5 * 60 * 1000;
-   server.requestTimeout = 500000;
    /**
     * Listen on provided port, on all network interfaces.
     */
