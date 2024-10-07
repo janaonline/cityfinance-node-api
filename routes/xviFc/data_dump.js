@@ -472,6 +472,8 @@ module.exports.dataDump = async (req, res) => {
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     res.setHeader('Content-Disposition', `attachment; filename=${filename}`);
 
+    req.setTimeout(500000);
+
     // Send the buffer as the response
     return res.send(buffer);
 };
