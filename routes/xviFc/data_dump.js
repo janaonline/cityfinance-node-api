@@ -132,9 +132,8 @@ module.exports.dataDump = async (req, res) => {
     // if (user.role == 'XVIFC') query.push({ 'state': { $nin: utIds } });
 
     // Fetch data from database.
-    // let xviFcFormData = await XviFcForm1DataCollection.find({ $and: query });
     let xviFcFormData = await XviFcForm1DataCollection.aggregate(
-        [{ $match: { formStatus: { $in: formStatuses } } }]
+        [{ $match: { $and: query } }]
     )
 
     let demographicDataAllUlbs = [];
