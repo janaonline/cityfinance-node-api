@@ -46,16 +46,23 @@ const DULY_ELECTED = new Schema({
 });
 
 const UlbSchema = new Schema({
-    name: { type: String, required: true },
-    regionalName: { type: String, default: "" },
-    keywords: { type: String },
     code: { type: String, required: true, index: { unique: true } },
-    state: { type: Schema.Types.ObjectId, ref: 'State', required: true },
+    name: { type: String, required: true },
+    censusCode: { type: String, default: null },
+    sbCode: { type: String, default: null }, /*Swatch Bharat Code*/
+    population: { type: Number, default: 0 },
+    area: { type: Number, default: 0 },
+    wards: { type: Number, default: 0 },
     ulbType: { type: Schema.Types.ObjectId, ref: 'UlbType', required: true },
     natureOfUlb: { type: String, default: null },
-    wards: { type: Number, default: 0 },
-    area: { type: Number, default: 0 },
-    population: { type: Number, default: 0 },
+    regionalName: { type: String, default: "" },
+    isActive: { type: Boolean, default: 1 },
+    access_2021: { type: Boolean, default: 1 },
+    access_2122: { type: Boolean, default: 1 },
+    access_2223: { type: Boolean, default: 1 },
+    access_2324: { type: Boolean, default: 1 },
+    access_2425: { type: Boolean, default: 1 },
+    state: { type: Schema.Types.ObjectId, ref: 'State', required: true },
     location: {
         type: {
             lat: { type: String },
@@ -66,21 +73,23 @@ const UlbSchema = new Schema({
             lng: "0.0"
         }
     },
-    sbCode: { type: String, default: null }, /*Swatch Bharat Code*/
-    censusCode: { type: String, default: null },
-    isMillionPlus: { type: String, enum: ["YES", "No"], default: "No" },
+    district: { type: String, default: "" },
+    censusType: { type: String, default: "" },
     isUA: { type: String, enum: ["YES", "No"], default: "No" },
     UA: { type: Schema.Types.ObjectId, ref: 'UA' },
+    isMillionPlus: { type: String, enum: ["YES", "No"], default: "No" },
     amrut: { type: String, default: "" },
-    modifiedAt: { type: Date, default: Date.now() },
+    lgdCode: { type: String, default: "" },
+    population_source: { type: String, default: "" },
+    areaSource: { type: String, default: "" },
+    wardSource: { type: String, default: "" },
+    districtSoure: { type: String, default: "" },
+    creditRating: { type: String, default: "" },
     createdAt: { type: Date, default: Date.now() },
+    modifiedAt: { type: Date, default: Date.now() },
+    keywords: { type: String },
     gsdp: GSDP_ELIGIILITY,
     dulyElected: DULY_ELECTED,
-    isActive: { type: Boolean, default: 1 },
-    access_2021: { type: Boolean, default: 1 },
-    access_2122: { type: Boolean, default: 1 },
-    access_2223: { type: Boolean, default: 1 },
-    access_2324: { type: Boolean, default: 1 },
-    access_2425: { type: Boolean, default: 1 },
+
 }, { timestamp: { createdAt: "createdAt", updatedAt: "modifiedAt" } });
 module.exports = mongoose.model('Ulb', UlbSchema);
