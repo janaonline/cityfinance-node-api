@@ -489,9 +489,12 @@ module.exports = function (req, res) {
 
                         // if (eachRow["code"]) {
                         let code = eachRow["code"].trim();
+                        if (amount.includes('.')) {
+                            errors.push(`Line item code ${code} cannot be decimal ${amount}`);
+                        }
                         inputSheetObj[code] = amount ? Number(amount) : null;
                         if (isNaN(inputSheetObj[code])) {
-                            errors.push(`Line item code ${code} value is not applicable`);
+                            errors.push(`Line item code ${code} value is not applicable ${inputSheetObj[code]}`);
                         }
                     }
                 }
