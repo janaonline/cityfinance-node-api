@@ -55,7 +55,6 @@ const UlbSchema = new Schema({
     wards: { type: Number, default: 0 },
     ulbType: { type: Schema.Types.ObjectId, ref: 'UlbType', required: true },
     natureOfUlb: { type: String, default: null },
-    regionalName: { type: String, default: "" },
     isActive: { type: Boolean, default: 1 },
     access_2021: { type: Boolean, default: 1 },
     access_2122: { type: Boolean, default: 1 },
@@ -88,6 +87,7 @@ const UlbSchema = new Schema({
     createdAt: { type: Date, default: Date.now() },
     modifiedAt: { type: Date, default: Date.now() },
     keywords: { type: String },
+    regionalName: { type: String, default: "" },
     gsdp: GSDP_ELIGIILITY,
     dulyElected: DULY_ELECTED,
 

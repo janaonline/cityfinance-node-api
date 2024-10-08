@@ -822,6 +822,168 @@ module.exports.getAllULBSCSV = function (req, res) {
   });
 };
 
+// Helper: to convert string to number.
+function convertToNumber(key, dataType) {
+  return {
+    $convert: {
+      input: `$${key}`,
+      to: dataType,
+      onError: null,
+      onNull: null
+    }
+  }
+}
+// Dump of ULBs collection.
+module.exports.masterDump = async function (req, res) {
+
+  const workbook = new ExcelJS.Workbook();
+  const worksheet = workbook.addWorksheet('Master')
+
+  // Headers for the dump.
+  // If any additional line item has to be added: add "key" (key in DB/ schema) and "header".
+  worksheet.columns = [
+    { header: 'ULB Code', key: 'code', width: 12 },
+    { header: 'ULB Name', key: 'name', width: 30 },
+    { header: 'Census Code', key: 'censusCode', width: 12 },
+    { header: 'Alternate Code', key: 'sbCode', width: 12 },
+    { header: 'Consolidated Code', key: 'consolidatedCode', width: 13 },
+    { header: 'Census 2011 Population', key: 'population', width: 12 },
+    { header: 'Population Category', key: 'popCat', width: 12 },
+    { header: 'Area', key: 'area', width: 12 },
+    { header: 'Wards', key: 'wards', width: 12 },
+    { header: 'ULB Type', key: 'ulbTypeIs', width: 21 },
+    { header: 'Nature of ULB', key: 'natureOfUlb', width: 21 },
+    { header: 'Active Status', key: 'isActive', width: 12 },
+    { header: 'State Name', key: 'stateName', width: 30 },
+    { header: 'State Code', key: 'stateCode', width: 12 },
+    { header: 'Is UT', key: 'isUt', width: 12 },
+    { header: 'Latitude', key: 'lat', width: 12 },
+    { header: 'Longitude', key: 'lng', width: 12 },
+    { header: 'District Name', key: 'district', width: 20 },
+    { header: 'Census Type', key: 'censusType', width: 20 },
+    { header: 'UA Name', key: 'uaName', width: 12 },
+    { header: 'UA Code', key: 'uaCode', width: 12 },
+    { header: 'Is MillionPlus', key: 'isMillionPlus', width: 12 },
+    { header: 'AMRUT Status', key: 'amrut', width: 12 },
+    { header: 'LGD Codes', key: 'lgdCode', width: 12 },
+    { header: 'Population Source', key: 'population_source', width: 20 },
+    { header: 'Area Source', key: 'areaSource', width: 20 },
+    { header: 'Wards Source', key: 'wardSource', width: 20 },
+    { header: 'District Source', key: 'districtSoure', width: 20 },
+    { header: 'Latest Credit Rating', key: 'creditRating', width: 20 },
+    { header: ' Created On', key: 'createdAt', width: 20 },
+    { header: ' Modified On ', key: 'modifiedAt', width: 20 },
+  ];
+
+  // Fetch Data from DB.
+  let ulbDataCursor = await Ulb.aggregate(
+    [
+      {
+        $lookup: {
+          from: "states",
+          localField: "state",
+          foreignField: "_id",
+          as: "stateData"
+        }
+      },
+      {
+        $lookup: {
+          from: "ulbtypes",
+          localField: "ulbType",
+          foreignField: "_id",
+          as: "ulbTypeData"
+        }
+      },
+      {
+        $lookup: {
+          from: "uas",
+          localField: "UA",
+          foreignField: "_id",
+          as: "uaData"
+        }
+      },
+      {
+        $addFields: {
+          stateName: { $arrayElemAt: ["$stateData.name", 0] },
+          stateCode: { $arrayElemAt: ["$stateData.code", 0] },
+          isUt: { $arrayElemAt: ["$stateData.isUT", 0] },
+          uaCode: { $arrayElemAt: ["$uaData.UACode", 0] },
+          uaName: { $arrayElemAt: ["$uaData.name", 0] },
+          ulbTypeIs: { $arrayElemAt: ["$ulbTypeData.name", 0] },
+          createdAt: { $dateToString: { format: "%d-%b-%Y", date: "$createdAt" } },
+          modifiedAt: { $dateToString: { format: "%d-%b-%Y", date: "$modifiedAt" } },
+          lat: convertToNumber("location.lat", "double"),
+          lng: convertToNumber("location.lng", "double"),
+          censusCode: convertToNumber("censusCode", "int"),
+          sbCode: convertToNumber("sbCode", "int"),
+          lgdCode: convertToNumber("lgdCode", "int"),
+          area: convertToNumber("area", "double"),
+          wards: convertToNumber("wards", "int"),
+          population: convertToNumber("population", "int"),
+          consolidatedCode: {
+            $cond: [
+              { $ne: ["$censusCode", null] },
+              convertToNumber("censusCode", "int"),
+              convertToNumber("sbCode", "int")
+            ]
+          },
+          popCat: {
+            $switch: {
+              branches: [
+                { case: { $lt: ["$population", 100000] }, then: "<100K" },
+                { case: { $and: [{ $gte: ["$population", 100000] }, { $lt: ["$population", 500000] }] }, then: "100K-500K" },
+                { case: { $and: [{ $gte: ["$population", 500000] }, { $lt: ["$population", 1000000] }] }, then: "500K-1M" },
+                { case: { $and: [{ $gte: ["$population", 1000000] }, { $lt: ["$population", 4000000] }] }, then: "1M-4M" },
+                { case: { $gte: ["$population", 4000000] }, then: "4M+" }
+              ],
+              default: "Unknown"
+            }
+          }
+        }
+      },
+      { $unset: ["uaData", "stateData", "ulbTypeData"] },
+      {
+        $project: {
+          UA: 0,
+          location: 0,
+          state: 0,
+          regionalName: 0,
+          ulbType: 0,
+          population_old: 0,
+          access_2021: 0,
+          access_2122: 0,
+          access_2223: 0,
+          access_2324: 0,
+          access_2425: 0,
+          isDulyElected: 0,
+          isGsdpEligible: 0
+        }
+      }
+    ]
+    // );
+  ).cursor().exec();
+
+  // Add data to excel.
+  for (let doc = await ulbDataCursor.next(); doc != null; doc = await ulbDataCursor.next()) {
+    worksheet.addRow(doc);
+  }
+
+  // Style header.
+  worksheet.getRow(1).alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
+  worksheet.views = [
+    { state: 'normal', zoomScale: 90 }
+  ];
+
+  // Stream the workbook to the response
+  const buffer = await workbook.xlsx.writeBuffer();
+  let filename = `CF_ULB_Master_${(moment().format("DD-MMM-YY_HH-mm-ss"))}`;
+  res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+  res.setHeader('Content-Disposition', `attachment; filename=${filename}.xlsx`);
+  res.send(buffer);
+  res.end();
+
+}
+
 module.exports.getPopulate = async (req, res, next) => {
   try {
     let data = await Ulb.find({}, "_id name code state ulbType")
