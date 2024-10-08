@@ -894,6 +894,11 @@ let ulbIdArr = ulb;
       let stateData = calData(rawData[0], filterName);
       let ulbIDObj = await Ulb.aggregate([
         {
+          $match: {
+            state: ObjectId(state)
+          } 
+         },
+        {
           $group: {
             _id: "",
             "<100k": {
