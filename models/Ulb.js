@@ -1,24 +1,23 @@
 const { stringify } = require('urlencode');
-
 require('./dbConnect');
 
-const GSDP_ELIGIILITY = new Schema({ 
+const GSDP_ELIGIILITY = new Schema({
     "2023-24": {
-        "eligible" : {
+        "eligible": {
             type: Boolean,
             default: false
         },
-        "upload" : {
+        "upload": {
             type: Boolean,
             default: false
         },
     },
-    "2024-25" : {
-        "eligible" : {
+    "2024-25": {
+        "eligible": {
             type: Boolean,
             default: false
         },
-        "upload" : {
+        "upload": {
             type: Boolean,
             default: false
         }

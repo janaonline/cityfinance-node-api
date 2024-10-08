@@ -15,7 +15,7 @@ const Redis = require("../../service/redis");
 const ExcelJS = require("exceljs");
 const { GSDP_OPT, DULY_ELECTED_OPT } = require("../../util/FormNames");
 const { checkForUndefinedVaribales } = require("../CommonActionAPI/service");
-const { ERROR_CODE} = require('../../util/Error_Constants')
+const { ERROR_CODE } = require('../../util/Error_Constants')
 module.exports.getFilteredUlb = async function (req, res) {
   let query = {};
   let query1 = {};
@@ -283,14 +283,14 @@ module.exports.post = async function (req, res) {
 module.exports.bulkPost = async function (req, res) {
   // state and ulb type is compulsory
   try {
-       let {d, baseCode, baseSbCode, baseStateCode} = req.body
+    let { d, baseCode, baseSbCode, baseStateCode } = req.body
     let i = 1;
     d.map(e => {
       e['area'] = Number(e['area']);
-      e['population']  = Number(e['population'])
+      e['population'] = Number(e['population'])
       e['UA'] = null;
       e['sbCode'] = baseSbCode + i + "";
-      e['code'] = baseStateCode + (baseCode + (i++)) 
+      e['code'] = baseStateCode + (baseCode + (i++))
     });
     await createData({ data: d });
     return res.status(200).send({
@@ -709,9 +709,9 @@ module.exports.getAllULBSCSV = function (req, res) {
         isMillionPlus: 1,
         censusCode: 1,
         sbCode: 1,
-        isGsdpEligible : 1,
-        isDulyElected : 1,
-        electedDate:{$dateToString:{ format: "%d/%m/%Y", date: "$electedDate" }  }
+        isGsdpEligible: 1,
+        isDulyElected: 1,
+        electedDate: { $dateToString: { format: "%d/%m/%Y", date: "$electedDate" } }
       },
     },
     {
@@ -737,19 +737,21 @@ module.exports.getAllULBSCSV = function (req, res) {
         sbCode: { $cond: ["$sbCode", "$sbCode", "NA"] },
         UA: { $cond: ["$UA", "$UA.name", "NA"] },
         UA_Code: { $cond: ["$UA", "$UA.UACode", "NA"] },
-        isGsdpEligible :  { 
+        isGsdpEligible: {
           $cond: [
             { $eq: [{ $ifNull: ["$isGsdpEligible", false] }, true] },
             GSDP_OPT['ELIGIBLE'],
             GSDP_OPT['NOT_ELIGIBLE'],
-          ]},
-        isDulyElected :{
+          ]
+        },
+        isDulyElected: {
           $cond: [
             { $eq: [{ $ifNull: ["$isDulyElected", false] }, true] },
             DULY_ELECTED_OPT['DULY_ELECTED'],
             DULY_ELECTED_OPT['NOT_ELECTED']
-          ]},
-        electedDate:{ $cond: ["$electedDate", "$electedDate", ""] }
+          ]
+        },
+        electedDate: { $cond: ["$electedDate", "$electedDate", ""] }
       },
     },
   ]).exec((err, data) => {
@@ -777,12 +779,12 @@ module.exports.getAllULBSCSV = function (req, res) {
           "," +
           el.isActive +
           "," +
-          ","+
+          "," +
           el.state.name +
           "," +
           el.state.code +
           "," +
-          ","+
+          "," +
           el.natureOfUlb +
           "," +
           el.area +
@@ -875,109 +877,109 @@ module.exports.getUlbs = async (req, res) => {
 // TODO: check and optimize
 async function getOldQueryData(req) {
   let query = {};
-    if (req.query.state) {
-      query["state"] = Schema.Types.ObjectId(req.query.state);
-    }
-    let condition = { isActive: true };
-    let financialYear =
-      req.body.year && req.body.year.length ? req.body.year : null;
-    financialYear
-      ? (condition["financialYear"] = { $in: financialYear })
-      : null;
+  if (req.query.state) {
+    query["state"] = Schema.Types.ObjectId(req.query.state);
+  }
+  let condition = { isActive: true };
+  let financialYear =
+    req.body.year && req.body.year.length ? req.body.year : null;
+  financialYear
+    ? (condition["financialYear"] = { $in: financialYear })
+    : null;
 
-    let auditLineItem = await LineItem.findOne({ code: "1001" }).exec();
-    if (financialYear && financialYear.length) {
-      let commonUlbs = await getUlbs(financialYear);
-      condition["ulb"] = { $in: commonUlbs };
-    }
-    // if(auditLineItem){
-    //   condition["lineItem"] = auditLineItem._id;
-    // }
-    let ulbs = await UlbLedger.aggregate([
-      { $match: condition },
-      {
-        $group: {
-          _id: {
-            ulb: "$ulb",
-          },
-          lineItem: {
-            $addToSet: { _id: "$lineItem", amount: "$amount" },
-          },
+  let auditLineItem = await LineItem.findOne({ code: "1001" }).exec();
+  if (financialYear && financialYear.length) {
+    let commonUlbs = await getUlbs(financialYear);
+    condition["ulb"] = { $in: commonUlbs };
+  }
+  // if(auditLineItem){
+  //   condition["lineItem"] = auditLineItem._id;
+  // }
+  let ulbs = await UlbLedger.aggregate([
+    { $match: condition },
+    {
+      $group: {
+        _id: {
+          ulb: "$ulb",
+        },
+        lineItem: {
+          $addToSet: { _id: "$lineItem", amount: "$amount" },
         },
       },
-      {
-        $project: {
-          ulb: "$_id.ulb",
-          lineItem: {
-            $filter: {
-              input: "$lineItem",
-              as: "lineItem",
-              cond: {
-                $and: [
-                  {
-                    $eq: ["$$lineItem._id", auditLineItem._id],
-                  },
-                ],
-              },
-            },
-          },
-        },
-      },
-      {
-        $project: {
-          ulb: 1,
-          lineItem: { $arrayElemAt: ["$lineItem", 0] },
-        },
-      },
-      {
-        $project: {
-          ulb: 1,
-          amount: "$lineItem.amount",
-        },
-      },
-      {
-        $project: {
-          ulb: 1,
-          auditStatus: {
-            $switch: {
-              branches: [
+    },
+    {
+      $project: {
+        ulb: "$_id.ulb",
+        lineItem: {
+          $filter: {
+            input: "$lineItem",
+            as: "lineItem",
+            cond: {
+              $and: [
                 {
-                  case: { $eq: ["$amount", 0] },
-                  then: "unaudited",
-                },
-                {
-                  case: { $gt: ["$amount", 0] },
-                  then: "audited",
+                  $eq: ["$$lineItem._id", auditLineItem._id],
                 },
               ],
-              default: "auditNA",
             },
           },
         },
       },
-      {
-        $lookup: {
-          from: "ulbs",
-          as: "ulb",
-          foreignField: "_id",
-          localField: "ulb",
+    },
+    {
+      $project: {
+        ulb: 1,
+        lineItem: { $arrayElemAt: ["$lineItem", 0] },
+      },
+    },
+    {
+      $project: {
+        ulb: 1,
+        amount: "$lineItem.amount",
+      },
+    },
+    {
+      $project: {
+        ulb: 1,
+        auditStatus: {
+          $switch: {
+            branches: [
+              {
+                case: { $eq: ["$amount", 0] },
+                then: "unaudited",
+              },
+              {
+                case: { $gt: ["$amount", 0] },
+                then: "audited",
+              },
+            ],
+            default: "auditNA",
+          },
         },
       },
-      { $unwind: "$ulb" },
-      {
-        $project: {
-          state: "$ulb.state",
-          code: "$ulb.code",
-          name: "$ulb.name",
-          _id: "$ulb._id",
-          area: "$ulb.area",
-          population: "$ulb.population",
-          auditStatus: 1,
-          location: "$ulb.location",
-        },
+    },
+    {
+      $lookup: {
+        from: "ulbs",
+        as: "ulb",
+        foreignField: "_id",
+        localField: "ulb",
       },
-    ]).allowDiskUse(true);
-    return ulbs;
+    },
+    { $unwind: "$ulb" },
+    {
+      $project: {
+        state: "$ulb.state",
+        code: "$ulb.code",
+        name: "$ulb.name",
+        _id: "$ulb._id",
+        area: "$ulb.area",
+        population: "$ulb.population",
+        auditStatus: 1,
+        location: "$ulb.location",
+      },
+    },
+  ]).allowDiskUse(true);
+  return ulbs;
 }
 module.exports.getUlbsWithAuditStatus = async (req, res) => {
   // mongoose.set('debug', true);
@@ -1020,7 +1022,7 @@ module.exports.getUlbsWithAuditStatus = async (req, res) => {
     } else {
       ulbs = await getOldQueryData(req);
     }
-    
+
     return res.status(200).json({
       message: "Ulb list with population and coordinates and population.",
       success: true,
@@ -1201,22 +1203,22 @@ module.exports.truncateSbCode = async (req, res) => {
 }
 
 /*It is an asynchronous function that handles a request to update fields in a database. */
-module.exports.updateFields = async (req, res)=>{
-  try{
-    const { data, modelPath, filter, filterOperator} = req.body;
+module.exports.updateFields = async (req, res) => {
+  try {
+    const { data, modelPath, filter, filterOperator } = req.body;
     let validObj = Object.keys(req.body).length && checkForUndefinedVaribales(req.body);
-    if(!validObj.valid){
+    if (!validObj.valid) {
       throw Error(`${validObj.message ?? 'Fields missing'}`)
     }
     // const Model =  require(`../../models/${modelPath}`);
     let query = getQuery(filter, data, filterOperator);
     let output = await Ulb.bulkWrite(query);
-    return Response.OK(res,output);
-  }catch(error){
-    if(Object.keys(ERROR_CODE).includes(error.code)){
+    return Response.OK(res, output);
+  } catch (error) {
+    if (Object.keys(ERROR_CODE).includes(error.code)) {
       return Response.BadRequest(res, {}, ERROR_CODE[error.code]);
     }
-    return Response.BadRequest(res, {},error.message);
+    return Response.BadRequest(res, {}, error.message);
   }
 }
 
@@ -1241,25 +1243,25 @@ function getQuery(filter, data, filterOperator) {
 
     data.forEach((obj) => {
       let filterQuery = filterArray.map((filter) => {
-        const keyInFilter = getObjectKey(filter,0)
+        const keyInFilter = getObjectKey(filter, 0)
         if (obj[keyInFilter]) {
-           filter[keyInFilter] = obj[keyInFilter];
+          filter[keyInFilter] = obj[keyInFilter];
           delete obj[keyInFilter];
           return filter;
-        } 
+        }
         return;
       });
       filterQuery = filterQuery.filter((el) => el && el);
       query.push({
         updateOne: {
-           filter: { [filterOperator]: JSON.parse(JSON.stringify(filterQuery)) },
-           update: { $set : obj}
-          }
+          filter: { [filterOperator]: JSON.parse(JSON.stringify(filterQuery)) },
+          update: { $set: obj }
+        }
       });
     });
     return query;
   } catch (error) {
-    throw Error({message: `getQuery : ${error.message}`})
+    throw Error({ message: `getQuery : ${error.message}` })
   }
 }
 
@@ -1270,10 +1272,10 @@ function getQuery(filter, data, filterOperator) {
  * @param idx - The `idx` parameter is the index of the key you want to retrieve from the `obj` object.
  * @returns the key at the specified index in the object.
  */
-function getObjectKey(obj, idx){
+function getObjectKey(obj, idx) {
   try {
     return Object.keys(obj)[idx];
   } catch (error) {
-    throw Error({message: `${error.message}`})
+    throw Error({ message: `${error.message}` })
   }
 }
