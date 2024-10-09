@@ -176,12 +176,14 @@ module.exports = function (req, res) {
                         }
                     }
                     let query;
+                    let du = {};
                     if (user.role != 'ULB' && !design_year) {
                         delete objOfSheet['state'];
                         objOfSheet['state'] = objOfSheet.state_name;
                         query = { ulb_code_year: objOfSheet.ulb_code_year }
 
-                        let du = {
+                        du = {};
+                        du = {
                             query,
                             update: Object.assign({ lastModifiedAt: new Date() }, objOfSheet),
                             options: { upsert: true, setDefaultsOnInsert: true, new: true, runValidators: true }
@@ -189,8 +191,8 @@ module.exports = function (req, res) {
                         delete du.update._id;
                         delete du.update.__v;
 
-                        // insert the oviewViewSheet content in ledger logs
-                        let ud = await LedgerLog.findOneAndUpdate(du.query, du.update, du.options);
+                        // insert the oviewViewSheet content in ledger logs - Before checking input sheet Overview data is getting updated.
+                        // let ud = await LedgerLog.findOneAndUpdate(du.query, du.update, du.options);
 
                     } else if (user.role === 'ULB' && design_year) {
                         query = {
@@ -198,6 +200,10 @@ module.exports = function (req, res) {
                             financialYear: (financialYear),
                             design_year: ObjectId(design_year)
                         }
+                    }
+
+                    async function uploadOverviewDataInDb() {
+                        await LedgerLog.findOneAndUpdate(du.query, du.update, du.options);
                     }
 
                     // Check Input sheet only if "isStandardizable === Yes" or if ULB is filling the standardized excel.
@@ -212,6 +218,10 @@ module.exports = function (req, res) {
                             try {
                                 if (user.role != 'ULB' && !design_year) {
                                     let result = await UlbLedger.findOneAndUpdate(el.query, el.update, options);
+
+                                    // Function call to update overview data only if input data is valid.
+                                    await uploadOverviewDataInDb();
+
                                     responseArr.push(result);
                                     // Update in the request log collection, the current status of file
                                     await updateLog(reqId, { message: `Status: (${responseArr.length}/${inputDataArr.length}) processed`, completed: 0 });
@@ -240,6 +250,9 @@ module.exports = function (req, res) {
                         }
                     } else {
                         console.log("isStandardizable is 'No'");
+                        // Update overview data in collection.
+                        await uploadOverviewDataInDb();
+                        
                         await updateLog(reqId, { message: `Completed (isStandardized is No)`, completed: 1, status: "SUCCESS" });
                         Redis.resetDashboard();
                     }
