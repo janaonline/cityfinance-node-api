@@ -678,7 +678,7 @@ async function formRedirectionBasedOnCreation(model, ulb, design_year){
  */
 function isYearWithinCurrentFY(year){
   try {
-    return ![YEAR_CONSTANTS["23_24"],YEAR_CONSTANTS["22_23"]].includes(year)
+    return ![YEAR_CONSTANTS["23_24"],YEAR_CONSTANTS["22_23"]].includes(year);
   } catch (error) {
     throw new Error(`isYearWithinCurrentFY:: ${error.message}`)
   }

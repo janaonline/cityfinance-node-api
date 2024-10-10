@@ -24,6 +24,9 @@ async function getEachTabData(eachTab, obj) {
                 obj[eachAns["key"]] = eachAns["file"]["url"] ? baseUrl_s3 + eachAns["file"]["url"] : "N/A";
             } else {
                 obj[eachAns["key"]] = isNaN(Number(eachAns["value"])) ? eachAns["value"] : Number(eachAns["value"]);
+                if (eachTab.tabKey == 'accountPractice' && eachAns["reason"]) {
+                    obj[`${eachAns["key"]}Key`] = eachAns["reason"] || "";
+                }
             }
             // Get the answer of yearOfSlb and yearOfConstitution.
             if (eachAns["key"] == 'yearOfConstitution') {
@@ -119,6 +122,7 @@ async function getEachTabData(eachTab, obj) {
 }
 
 module.exports.dataDump = async (req, res) => {
+    req.setTimeout(500000);
     let user = req.decoded;
     let formStatuses = ['UNDER_REVIEW_BY_STATE', 'UNDER_REVIEW_BY_XVIFC', 'APPROVED_BY_XVIFC'];
     let utIds = ['5dcf9d7216a06aed41c748dc', '5dcf9d7316a06aed41c748e4', '5dcf9d7316a06aed41c748e5', '5dcf9d7316a06aed41c748ea', '5dcf9d7316a06aed41c748ee', '5dcf9d7416a06aed41c748f6', '5efd6a2fb5cd039b5c0cfed2', '5fa25a6e0fb1d349c0fdfbc7'];
@@ -126,8 +130,11 @@ module.exports.dataDump = async (req, res) => {
     let query = [{ "formStatus": { $in: formStatuses } }];
     if (user.role == 'XVIFC_STATE') query.push({ "state": ObjectId(user.state) });
     // if (user.role == 'XVIFC') query.push({ 'state': { $nin: utIds } });
+
     // Fetch data from database.
-    let xviFcFormData = await XviFcForm1DataCollection.find({ $and: query });
+    let xviFcFormData = await XviFcForm1DataCollection.aggregate(
+        [{ $match: { $and: query } }]
+    )
 
     let demographicDataAllUlbs = [];
     let financialDataAllUlbs = [];
@@ -276,14 +283,21 @@ module.exports.dataDump = async (req, res) => {
 
         { header: "What is the accounting system being followed by the ULB?", key: "accSystem", width: 15 },
         { header: "What accounting provisions or framework does the ULB follow?", key: "accProvision", width: 15 },
+        { header: "Reason for please specify", key: "accProvisionKey", width: 15 },
         { header: "Are there any accounts/books/registers maintained in cash basis?", key: "accInCashBasis", width: 15 },
+        { header: "Reason for please specify", key: "accInCashBasisKey", width: 15 },
         { header: "Does the ULB initially record transactions on a cash basis and subsequently prepare accrual accounts for consolidation of financial statements?", key: "fsTransactionRecord", width: 15 },
         { header: "Are the Financial Statements prepared internally by the ULB's accounting department, or are they compiled by an external Chartered Accountant?", key: "fsPreparedBy", width: 15 },
         { header: "Is the revenue receipt recorded when the cash is received or when it is accrued/event occurs? ", key: "revReceiptRecord", width: 15 },
+        { header: "Reason for please specify", key: "revReceiptRecordKey", width: 15 },
         { header: "Is the expense recorded when it is paid or when it is incurred/event occurs?", key: "expRecord", width: 15 },
+        { header: "Reason for please specify", key: "expRecordKey", width: 15 },
         { header: "What accounting software is currently in use by the ULB?", key: "accSoftware", width: 15 },
+        { header: "Reason for please specify", key: "accSoftwareKey", width: 15 },
         { header: "Does the online accounting system integrate seamlessly with other municipal/ State/ Central systems?", key: "onlineAccSysIntegrate", width: 15 },
+        { header: "Reason for please specify", key: "onlineAccSysIntegrateKey", width: 15 },
         { header: "Who does the municipal audit of financial statements ?", key: "muniAudit", width: 15 },
+        { header: "Reason for please specify", key: "muniAuditKey", width: 15 },
         { header: "What is the total sanctioned posts for finance & accounts related positions?", key: "totSanction", width: 15 },
         { header: "What is the total vacancy across finance & accounts related positions?", key: "totVacancy", width: 15 },
         { header: "How many finance & accounts related positions currently are filled on contractual basis or outsourced?", key: "accPosition", width: 15 },
