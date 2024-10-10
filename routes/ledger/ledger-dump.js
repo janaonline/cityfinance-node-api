@@ -1,8 +1,8 @@
-const ULBLedger = require('../../models/UlbLedger');
-const LedgerLog = require('../../models/LedgerLog');
 const LineItem = require('../../models/LineItem');
+const Ulb = require('../../models/Ulb');
 const ExcelJS = require('exceljs');
 const moment = require('moment');
+const ObjectId = require("mongoose").Types.ObjectId
 
 const totOwnRevenueArr = [
     '5dd10c2485c951b54ec1d74b',
@@ -68,11 +68,23 @@ const bsSizeArr = [
     '5dd10c2685c951b54ec1d766',
 ];
 
+// Line items eliminated: ["1001", "1002", "1003", "1004", "1005", "1006", "1007"]
+const lineItemEliminated = [
+    ObjectId('5df8c7b9f280e1079283cf37'),
+    ObjectId('5df8c7d2f280e1079283cf38'),
+    ObjectId('5df8c7e4f280e1079283cf39'),
+    ObjectId('5df8c7f1f280e1079283cf3a'),
+    ObjectId('5df8c7fdf280e1079283cf3b'),
+    ObjectId('5df8c80df280e1079283cf3c'),
+    ObjectId('5df8c826f280e1079283cf3d'),
+];
+
 // Get Line Items From DB.
 async function getLineItemsFromDB() {
 
     // Headers for the input sheet data.
-    const lineItems = await LineItem.find({}, { _id: 1, isActive: 1, name: 1, code: 1 }).lean();
+    const lineItems = await LineItem.find({ "code": { $nin: ["1001", "1002", "1003", "1004", "1005", "1006", "1007"] } }, { _id: 1, isActive: 1, name: 1, code: 1 }).lean();
+    // const lineItems = await LineItem.find({}, { _id: 1, isActive: 1, name: 1, code: 1 }).lean();
     lineItems.forEach(item => {
         item.code = Number(item.code);
     });
@@ -82,7 +94,7 @@ async function getLineItemsFromDB() {
     const overviewHeaders = [
         { 'code': null, '_id': 'ulb_code', 'isActive': true, 'name': 'ULB Code' },
         { 'code': null, '_id': 'ulb', 'isActive': true, 'name': 'ULB Name' },
-        // { 'code': null, '_id': 'population', 'isActive': true, 'name': 'Census 2011 Population'},
+        { 'code': null, '_id': 'population', 'isActive': true, 'name': 'Population' },
         { 'code': null, '_id': 'state', 'isActive': true, 'name': 'State' },
         // { 'code': null, '_id': 'amrut', 'isActive': true, 'name': 'AMRUT'},
         { 'code': null, '_id': 'year', 'isActive': true, 'name': 'Financial Year' },
@@ -116,24 +128,109 @@ function updateTotals(rowObj, key, lineItemIdStr, amount, categoryArr, categoryK
 }
 
 // Fetch data from DB - Input sheet.
-async function fetchAllData(findQuery) {
-    return ULBLedger.find(findQuery.query, findQuery.projection).cursor();
+async function fetchAllData(yearFromQuery) {
+    // return ULBLedger.find(findQuery.query, findQuery.projection).cursor();
+
+    let matchCondition = [{ $not: { $in: ["$$ulbledger.lineItem", lineItemEliminated] } }];
+    // if (yearFromQuery) matchCondition.push({ $eq: ["$$ulbledger.financialYear", yearFromQuery] });
+
+    return Ulb.aggregate(
+        [
+            { $match: { isActive: true } },
+            { $project: { _id: 1 } },
+            {
+                $lookup: {
+                    from: "ulbledgers",
+                    localField: "_id",
+                    foreignField: "ulb",
+                    as: "ulbledgers"
+                }
+            },
+            {
+                $project: {
+                    ulbledgers: {
+                        $filter: {
+                            input: "$ulbledgers",
+                            as: "ulbledger",
+                            cond: { $and: matchCondition }
+                        }
+                    }
+                }
+            },
+            {
+                $project: {
+                    "ulbledgers.lineItem": 1,
+                    "ulbledgers.amount": 1,
+                    "ulbledgers.financialYear": 1
+                }
+            }
+        ]
+
+    ).cursor().exec();
 }
 // Fetch data from DB - Overview sheet.
-async function fetchAllDataOverview() {
-    return LedgerLog.find().cursor();
+async function fetchAllDataOverview(yearFromQuery) {
+    // return LedgerLog.find({ ulb: ObjectId("5dd24b8f91344e2300876ca9") }).cursor();
+
+    // let matchCondition = {};
+    // if (yearFromQuery) matchCondition = { $eq: ["$$ledgerlog.year", yearFromQuery] };
+
+    return Ulb.aggregate(
+        [
+            { $match: { isActive: true } },
+            {
+                $project: {
+                    _id: 1,
+                    code: 1,
+                    name: 1,
+                    state: 1,
+                    population: 1
+                }
+            },
+            {
+                $lookup: {
+                    from: "ledgerlogs",
+                    localField: "_id",
+                    foreignField: "ulb_id",
+                    as: "ledgerlogs"
+                }
+            },
+            // {
+            //     $project: {
+            //         ledgerlogs: {
+            //             $filter: {
+            //                 input: "$ledgerlogs",
+            //                 as: "ledgerlog",
+            //                 cond: matchCondition
+            //             }
+            //         }
+            //     }
+            // },
+            {
+                $project: {
+                    "ledgerlogs.excel_url": 0,
+                    "ledgerlogs.wards": 0,
+                    "ledgerlogs.ulb_code": 0,
+                    // "ledgerlogs.ulb": 0,
+                    "ledgerlogs.state_code": 0,
+                    // "ledgerlogs.state": 0,
+                    "ledgerlogs.population": 0,
+                    "ledgerlogs.lastModifiedAt": 0,
+                    "ledgerlogs.financialYear": 0,
+                    "ledgerlogs.design_year": 0,
+                    "ledgerlogs.area": 0
+                }
+            }
+        ]
+    ).cursor().exec();
 }
 
 module.exports.getLedgerDump = async (req, res) => {
     try {
-
         // Create an array of line items (used to define headers of excel)
         let lineitems = await getLineItemsFromDB();
 
-        const findQuery = {};
-        findQuery.query = req.query.financialYear ? { financialYear: req.query.financialYear } : {};
-        findQuery.projection = { amount: 1, audit_status: 1, financialYear: 1, lineItem: 1, ulb: 1 };
-
+        let yearFromQuery = req.query.financialYear || "";
         const workbook = new ExcelJS.Workbook();
         const worksheet = workbook.addWorksheet('ledgerDump');
 
@@ -146,57 +243,55 @@ module.exports.getLedgerDump = async (req, res) => {
         worksheet.columns = columns;
 
         // Fetch data from DB - Overview sheet.
-        const overviewData = [];
-        const cursorOverview = await fetchAllDataOverview();
+        const overviewData = {};
+        const cursorOverview = await fetchAllDataOverview(yearFromQuery);
         for (let doc = await cursorOverview.next(); doc != null; doc = await cursorOverview.next()) {
-            overviewData.push(doc);
+            // console.log("doc", JSON.stringify(doc, null, 2))
+            let { _id, population, state, code, name } = doc;
+            for (let eachYearOverviewData of doc.ledgerlogs) {
+                let key = `${doc._id}_${eachYearOverviewData.year}`;
+                overviewData[key] = Object.assign({}, { _id, population, state, code, name }, eachYearOverviewData);
+            }
         }
 
         // Iterate through each document in the cursor (array received from DB) - Input Sheet.
-        const cursorInputData = await fetchAllData(findQuery);
+        const cursorInputData = await fetchAllData(yearFromQuery);
         let eachRowObj = {};
         for (let doc = await cursorInputData.next(); doc != null; doc = await cursorInputData.next()) {
-            const key = `${doc.ulb}_${doc.financialYear}`;
+            for (let eachLineItem of doc.ulbledgers) {
+                const key = `${doc._id}_${eachLineItem.financialYear}`;
+                if (!eachRowObj[key]) {
+                    eachRowObj[key] = {
+                        ulb_id: doc._id,
+                        year: eachLineItem.financialYear,
+                    };
+                }
+                const lineItemIdStr = eachLineItem.lineItem.toString();
 
-            if (!eachRowObj[key]) {
-                eachRowObj[key] = {
-                    // ulb_id: doc.ulb,
-                    ulb_code: doc.ulb,
-                    year: doc.financialYear,
-                    audit_status: doc.audit_status
-                };
-            }
-            const lineItemIdStr = doc.lineItem.toString();
+                updateTotals(eachRowObj, key, lineItemIdStr, eachLineItem.amount, totOwnRevenueArr, "totOwnRevenue");
+                updateTotals(eachRowObj, key, lineItemIdStr, eachLineItem.amount, totRevenueArr, "totRevenue");
+                updateTotals(eachRowObj, key, lineItemIdStr, eachLineItem.amount, revExpenditureArr, "revExpenditure");
+                updateTotals(eachRowObj, key, lineItemIdStr, eachLineItem.amount, totExpenditureArr, "totExpenditure");
+                updateTotals(eachRowObj, key, lineItemIdStr, eachLineItem.amount, capexArr, "capex");
+                updateTotals(eachRowObj, key, lineItemIdStr, eachLineItem.amount, bsSizeArr, "bsSize");
 
-            updateTotals(eachRowObj, key, lineItemIdStr, doc.amount, totOwnRevenueArr, "totOwnRevenue");
-            updateTotals(eachRowObj, key, lineItemIdStr, doc.amount, totRevenueArr, "totRevenue");
-            updateTotals(eachRowObj, key, lineItemIdStr, doc.amount, revExpenditureArr, "revExpenditure");
-            updateTotals(eachRowObj, key, lineItemIdStr, doc.amount, totExpenditureArr, "totExpenditure");
-            updateTotals(eachRowObj, key, lineItemIdStr, doc.amount, capexArr, "capex");
-            updateTotals(eachRowObj, key, lineItemIdStr, doc.amount, bsSizeArr, "bsSize");
-
-            if (doc.amount === null || doc.amount === "") {
-                eachRowObj[key][doc.lineItem] = "N/A";
-            } else {
-                eachRowObj[key][doc.lineItem] = doc.amount;
+                if (eachLineItem.amount !== null && eachLineItem.amount !== "") {
+                    eachRowObj[key][eachLineItem.lineItem] = eachLineItem.amount;
+                }
             }
         }
-
-        // Create a lookup map for overviewData for faster access
-        const overviewLookup = overviewData.reduce((acc, ulbObj) => {
-            const key = `${ulbObj.ulb_id}_${ulbObj.year}`;
-            acc[key] = ulbObj;
-            return acc;
-        }, {});
+        // console.log("eachRowObj", JSON.stringify(eachRowObj, null, 2));
 
         // Iterate through each row in eachRowObj
         Object.values(eachRowObj).forEach((row) => {
-            const key = `${row.ulb_code}_${row.year}`;
-            const ulbOverviewObj = overviewLookup[key];
+            const key = `${row.ulb_id}_${row.year}`;
+            const ulbOverviewObj = overviewData[key];
 
             if (ulbOverviewObj) {
-                row["ulb_code"] = ulbOverviewObj.ulb_code;
-                row["ulb"] = ulbOverviewObj.ulb;
+                // row["year"] = ulbOverviewObj.year;
+                row["ulb_code"] = ulbOverviewObj.code; // from ulbs collection.
+                row["population"] = ulbOverviewObj.population; // from ulbs collection.
+                row["ulb"] = ulbOverviewObj.name; // from ulbs collection.
                 row["state"] = ulbOverviewObj.state;
                 row["audit_status"] = ulbOverviewObj.audit_status;
                 row["audit_firm"] = ulbOverviewObj.audit_firm;
@@ -208,14 +303,36 @@ module.exports.getLedgerDump = async (req, res) => {
                 row["dataFlagComment"] = ulbOverviewObj.dataFlagComment;
             }
 
+            delete overviewData[key];
             worksheet.addRow(row);
         });
 
-        let filename = `All_Ledgers_${(moment().format("DD-MMM-YY_HH-mm-ss"))}`;
+        // Add the remaining data from "Overview" collection.
+        Object.values(overviewData).forEach((row) => {
+            let tempObj = {};
+            tempObj["ulb_code"] = row.code; // from ulbs collection.
+            tempObj["population"] = row.population; // from ulbs collection.
+            tempObj["ulb"] = row.name; // from ulbs collection.
+            tempObj["year"] = row.year;
+            tempObj["state"] = row.state;
+            tempObj["audit_status"] = row.audit_status;
+            tempObj["audit_firm"] = row.audit_firm;
+            tempObj["partner_name"] = row.partner_name;
+            tempObj["icai_membership_number"] = row.icai_membership_number;
+            tempObj["isStandardizable"] = row.isStandardizable;
+            tempObj["isStandardizableComment"] = row.isStandardizableComment;
+            tempObj["dataFlag"] = row.dataFlag;
+            tempObj["dataFlagComment"] = row.dataFlagComment;
+
+            worksheet.addRow(tempObj);
+        })
+
         // Stream the workbook to the response
+        let filename = `All_Ledgers_${(moment().format("DD-MMM-YY_HH-mm-ss"))}`;
+        const buffer = await workbook.xlsx.writeBuffer();
         res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
         res.setHeader('Content-Disposition', `attachment; filename=${filename}.xlsx`);
-        await workbook.xlsx.write(res);
+        res.send(buffer);
         res.end();
 
     } catch (error) {
