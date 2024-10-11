@@ -910,8 +910,8 @@ module.exports.masterDump = async function (req, res) {
           uaCode: { $arrayElemAt: ["$uaData.UACode", 0] },
           uaName: { $arrayElemAt: ["$uaData.name", 0] },
           ulbTypeIs: { $arrayElemAt: ["$ulbTypeData.name", 0] },
-          createdAt: { $dateToString: { format: "%d-%b-%Y", date: "$createdAt" } },
-          modifiedAt: { $dateToString: { format: "%d-%b-%Y", date: "$modifiedAt" } },
+          createdAt: { $dateToString: { format: "%d-%m-%Y", date: "$createdAt" } }, //"%d-%b-%Y"
+          modifiedAt: { $dateToString: { format: "%d-%m-%Y", date: "$modifiedAt" } }, //"%d-%b-%Y"
           lat: convertToNumber("location.lat", "double"),
           lng: convertToNumber("location.lng", "double"),
           censusCode: convertToNumber("censusCode", "int"),
@@ -941,9 +941,12 @@ module.exports.masterDump = async function (req, res) {
           }
         }
       },
-      { $unset: ["uaData", "stateData", "ulbTypeData"] },
+      // { $unset: ["uaData", "stateData", "ulbTypeData"] }, Supported after mongo version 4.2
       {
         $project: {
+          uaData: 0,
+          stateData: 0,
+          ulbTypeData: 0,
           UA: 0,
           location: 0,
           state: 0,
@@ -967,6 +970,19 @@ module.exports.masterDump = async function (req, res) {
   for (let doc = await ulbDataCursor.next(); doc != null; doc = await ulbDataCursor.next()) {
     worksheet.addRow(doc);
   }
+
+  // let rows = [];
+  // for (let doc = await ulbDataCursor.next(); doc != null; doc = await ulbDataCursor.next()) {
+  //   rows.push(doc);
+  //   if (rows.length === 1000) {  // Add in batches of 1000 rows (adjust batch size as needed)
+  //     worksheet.addRows(rows);
+  //     rows = [];  // Clear the array for the next batch
+  //   }
+  // }
+  // // Add any remaining rows
+  // if (rows.length > 0) {
+  //   worksheet.addRows(rows);
+  // }
 
   // Style header.
   worksheet.getRow(1).alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
