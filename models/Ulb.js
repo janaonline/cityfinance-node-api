@@ -84,12 +84,12 @@ const UlbSchema = new Schema({
     wardSource: { type: String, default: "" },
     districtSoure: { type: String, default: "" },
     creditRating: { type: String, default: "" },
-    createdAt: { type: Date, default: Date.now() },
-    modifiedAt: { type: Date, default: Date.now() },
+    // createdAt: { type: Date, default: Date.now() },
+    // modifiedAt: { type: Date, default: Date.now() },
     keywords: { type: String },
     regionalName: { type: String, default: "" },
     gsdp: GSDP_ELIGIILITY,
     dulyElected: DULY_ELECTED,
 
-}, { timestamp: { createdAt: "createdAt", updatedAt: "modifiedAt" } });
+}, { timestamps: { createdAt: "createdAt", updatedAt: "modifiedAt" } });
 module.exports = mongoose.model('Ulb', UlbSchema);
