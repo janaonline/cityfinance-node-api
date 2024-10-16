@@ -176,7 +176,7 @@ module.exports.get = async (req, res) => {
     }, { year: 1, _id: 0 }).lean()
     let folderName = formTab?.folderName;
     let params = { collectionName, formType, isFormOptional, state, design_year, csv, skip, limit, newFilter, dbCollectionName, folderName, yearData }
-    let query = computeQuery(params);
+    let query = await computeQuery(params);
 
     if (getQuery) return res.json({ query: query[0] })
     // if csv - then no skip and limit, else with skip and limit
@@ -1027,7 +1027,7 @@ function getUlbsApprovedByMoHUA(forms) {
  * `formType` (the user role for which the query is being constructed), `isFormOptional` (a boolean
  * indicating whether the
  */
-const computeQuery = (params) => {
+const computeQuery = async (params) => {
   const { collectionName: formName, formType: userRole, isFormOptional, state, design_year, csv, skip, limit, newFilter: filter, dbCollectionName, folderName, yearData } = params
   let filledQueryExpression = {};
   let filledProvisionalExpression = {}, filledAuditedExpression = {};
@@ -1050,6 +1050,13 @@ const computeQuery = (params) => {
   if (state && state !== 'null') {
     condition['state'] = ObjectId(state)
   }
+
+  if(csv && userRole == "ULB" && (!state || state == 'null')){
+    let utList = await State.find({ isUT: true }, { _id: 1 });
+    const uTObjIdArr = utList.map((ele) => ObjectId(ele._id));
+    condition['state'] = { $nin: uTObjIdArr }
+  }
+
   const decadePrefixtoSlice = 2;
   const accessYear = checkUlbAccess(yearData.year, decadePrefixtoSlice);
   condition[accessYear] = true;
@@ -1302,6 +1309,7 @@ const computeQuery = (params) => {
         {
           $match: {
             accessToXVFC: true,
+            isUT: false
           },
         },
       ];

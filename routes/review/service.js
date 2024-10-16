@@ -2033,7 +2033,7 @@ module.exports.get = catchAsync(async (req, res) => {
     statusSpecificCases(req.query.status, newFilter);
     let folderName = formTab?.folderName;
 
-    let query = computeQuery(collectionName, formType, isFormOptional, state, design_year, csv, skip, limit, newFilter, dbCollectionName, folderName);
+    let query = await computeQuery(collectionName, formType, isFormOptional, state, design_year, csv, skip, limit, newFilter, dbCollectionName, folderName);
     if (getQuery) return res.json({
       query: query[0]
     })
@@ -2467,7 +2467,7 @@ function countStatusData(element, collectionName) {
     }
   }
 }
-const computeQuery = (formName, userRole, isFormOptional, state, design_year, csv, skip, limit, filter, dbCollectionName, folderName) => {
+const computeQuery = async (formName, userRole, isFormOptional, state, design_year, csv, skip, limit, filter, dbCollectionName, folderName) => {
   let filledQueryExpression = {}
   if (isFormOptional) {
     // if form is optional check if the deciding condition is true or false
@@ -2576,6 +2576,13 @@ const computeQuery = (formName, userRole, isFormOptional, state, design_year, cs
 
         })
       }
+
+      if(csv && userRole == "ULB" && (!state || state == 'null')){
+        let utList = await State.find({ isUT: true }, { _id: 1 });
+        const uTObjIdArr = utList.map((ele) => ObjectId(ele._id));
+        query.unshift({ $match: { "state": { $nin: uTObjIdArr } } })
+      }
+
       let query_2 = [{
         $lookup: {
           from: dbCollectionName,
@@ -2801,6 +2808,7 @@ const computeQuery = (formName, userRole, isFormOptional, state, design_year, cs
         {
           $match: {
             accessToXVFC: true,
+            isUT: false
           },
         }
       ];
