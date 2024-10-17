@@ -1257,10 +1257,10 @@ module.exports.sourceFiles = async (req, res) => {
         let obj = {}
         let year = req.query.financialYear;
         Object.assign(obj, { ulb: ulbId })
-        if (req.query.financialYear) {
-            condition['financialYear'] = req.query.financialYear;
+        if (req.query.financialYear) condition['financialYear'] = req.query.financialYear;
+        let auditType = null;
+        if (req.query.auditType) auditType = req.query.auditType;
 
-        }
         let select = {
             'balanceSheet.pdfUrl': 1,
             'balanceSheet.excelUrl': 1,
@@ -1292,7 +1292,7 @@ module.exports.sourceFiles = async (req, res) => {
                 }
             }
         } else {
-            result = await getAnnualAccounts(ulbId, year);
+            result = await getAnnualAccounts(ulbId, year, auditType);
         }
 
         return Response.OK(res, result);
@@ -1310,19 +1310,18 @@ function getCond(ulbId, yearId, type) {
     return cond;
 }
 
-async function getAnnualAccounts(ulbId, year) {
+async function getAnnualAccounts(ulbId, year, auditType) {
     const yearId = years[year];
     let doc;
-    let type = 'audited';
-    let res = await AnnualAccountData.findOne(getCond(ulbId, yearId, 'audited'), { audited: 1 })
-        .lean().exec();
-    if (res) {
+    let type = auditType || 'audited';
+    // console.log("type --->", type)
+    if (type === 'audited') {
+        let res = await AnnualAccountData.findOne(getCond(ulbId, yearId, 'audited'), { audited: 1 }).lean().exec();
         doc = res.audited?.provisional_data;
     }
-    if (!res) {
+    if (type === 'unAudited' || Object.keys(doc).length === 0) {
         type = 'unAudited';
-        let resUnAudited = await AnnualAccountData.findOne(getCond(ulbId, yearId, 'unAudited'), { unAudited: 1 })
-            .lean().exec();
+        let resUnAudited = await AnnualAccountData.findOne(getCond(ulbId, yearId, 'unAudited'), { unAudited: 1 }).lean().exec();
         doc = resUnAudited ? resUnAudited.unAudited?.provisional_data : null;
     }
     return getNewSourceFiles(doc, type);
