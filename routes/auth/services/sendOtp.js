@@ -13,8 +13,12 @@ const Ulb = require('../../../models/Ulb')
 const { isValidObjectId } = require('mongoose');
 const ObjectId = require('mongoose').Types.ObjectId;
 const axios = require('axios')
+const { ENV } = require("../../../util/FormNames");
+
 module.exports.sendOtp = catchAsync(async (req, res, next) => {
     try {
+        // check otp enabled only for prod env
+        const isOtpEnabled = process.env.ENV === ENV['prod'];
         let user = await getUSer(req.body);
         let entity, state;
         if (user.role === 'STATE') {
@@ -95,7 +99,11 @@ module.exports.sendOtp = catchAsync(async (req, res, next) => {
                 }
             ).exec();
         }
-        let otp = OtpMethods.generateOTP();
+        let otp = 1234;
+        if (isOtpEnabled) {
+            otp = OtpMethods.generateOTP();
+        }
+
         if (!otp) {
             if (!user) {
                 res.status(500).json({
@@ -105,9 +113,9 @@ module.exports.sendOtp = catchAsync(async (req, res, next) => {
             }
         }
         let msg = `Your OTP to login into CityFinance.in is ${otp}. Do not share this code. If not requested, please contact us at contact@${process.env.PROD_HOST} - City Finance`;
-/* If the user is a state, then the mobile number is the mobile number of the state. If the user is not
-a state, then the mobile number is the mobile number of the accountant. */
-        let mobile = user?.role === "STATE" ? user.mobile : user.accountantConatactNumber ; 
+        /* If the user is a state, then the mobile number is the mobile number of the state. If the user is not
+        a state, then the mobile number is the mobile number of the accountant. */
+        let mobile = user?.role === "STATE" ? user.mobile : user.accountantConatactNumber;
         if (OtpMethods.validatePhoneNumber(mobile) || OtpMethods.ValidateEmail(user.email)) {
             let sendOtp = new SendOtp(process.env.MSG91_AUTH_KEY, msg);
             let Otp = new OTP({
@@ -122,7 +130,7 @@ a state, then the mobile number is the mobile number of the accountant. */
                 role: user.role
             })
             await Otp.save();
-            if (mobile) {
+            if (mobile && isOtpEnabled) {
                 axios.get(`https://api.msg91.com/api/v5/otp?template_id=${process.env.TEMPLATE_ID}&mobile=91${mobile}&authkey=${process.env.MSG91_AUTH_KEY}&otp=${otp}`).then(function (response) {
                     console.log('OTP SENT');
 
@@ -139,7 +147,7 @@ a state, then the mobile number is the mobile number of the accountant. */
                 //     }
                 // });
             }
-            if (user.email) {
+            if (user.email && isOtpEnabled) {
                 let mailOptions = {
                     Destination: {
                         /* required */
