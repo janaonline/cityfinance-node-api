@@ -60,7 +60,7 @@ function createDynamicColumns(collectionName) {
       break;
     case CollectionNames['28SLB']:
       columns = `Financial Year, Form Status, Created, Submitted On, Filled Status, Type, Year,Coverage of water supply connections (Water Supply),Per capita supply of water (lpcd) (Water Supply),Extent of metering of water connections (Water Supply),Extent of non-revenue water (NRW) (Water Supply),Continuity of water supply (Water Supply),Efficiency in redressal of customer complaints (Water Supply),Quality of water supplied (Water Supply),Cost recovery in water supply service (Water Supply),Efficiency in collection of water supply-related charges (Water Supply),Coverage of toilets (Sanitation),Coverage of waste water network services (Sanitation),Collection efficiency of waste water network (Sanitation),Adequacy of waste water treatment capacity (Sanitation),Extent of reuse and recycling of waste water (Sanitation),Quality of waste water treatment (Sanitation),Efficiency in redressal of customer complaints (Sanitation),Extent of cost recovery in waste water management (Sanitation),Efficiency in collection of waste water charges (Solid Waste),Household level coverage of solid waste management services (Solid Waste),Efficiency of collection of municipal solid waste (Solid Waste),Extent of segregation of municipal solid waste (Solid Waste),Extent of municipal solid waste recovered (Solid Waste),Extent of scientific disposal of municipal solid waste (Solid Waste),Extent of cost recovery in SWM services (Solid Waste),Efficiency in collection of SWM related user related charges (Solid Waste),Efficiency in redressal of customer complaints (Solid Waste),Coverage of storm water drainage network (Storm Water),Incidence of water logging (Storm Water),State_Review Status,State_Comments,MoHUA Review Status,MoHUA_Comments,State_File URL,MoHUA_File URL `
-        break;
+      break;
     case CollectionNames.propTaxState:
       columns = `Financial Year,Form Status,Created,Submitted On,Filled Status,Notification Url,Notfication Name,Act Page Number,Minimum Floor Rate Url,Minimum Floor Rate Name,Operationalization of the notification Url,Operationalization of the notification Name,Number of extant acts for municipal bodies,Names of all the extant acts,Extant Acts Url,Extant Acts Name,MoHUA Review Status,MoHUA Comments,MoHUA file Url`;
       break;
@@ -2175,6 +2175,12 @@ async function createCSV(params) {
 
       let fixedColumns = `State Name, ULB Name, City Finance Code, Census Code, Population Category, UA, UA Name,`;
       let dynamicColumns = createDynamicColumns(collectionName);
+     
+      let indiLineList = []
+      if (collectionName === CollectionNames['28SLB']) {
+        indiLineList = await indicatorLineItemList();
+      }
+
       if (collectionName != CollectionNames.annual && collectionName != CollectionNames['28SLB']) {
         res.write(
           "\ufeff" +
@@ -2231,6 +2237,11 @@ async function createCSV(params) {
 
         res.flushHeaders();
         for (let el of data) {
+
+          if (el?.formData && collectionName === CollectionNames['28SLB']) {
+            el.formData.data = setIndicatorSequense(indiLineList, el);
+          }
+
           el = JSON.parse(JSON.stringify(el));
           el = concatenateUrls(el);
           let [row1, row2] = await createDynamicElements(
@@ -2364,6 +2375,36 @@ async function createCSV(params) {
     console.log("CSV Download Error", error);
     return Response.BadRequest(res, {}, error.message);
   }
+}
+
+
+// Rearrage 28 SLBs indicators.
+const setIndicatorSequense = (indicatorList, el) => {
+  let mainArr = []
+  if (indicatorList?.length) {
+    let keysList = ['water supply', 'sanitation', 'solid waste', 'storm water'];
+    for (let index = 0; index < keysList.length; index++) {
+      let fData = indicatorList?.filter(e => e?.type == keysList[index]);
+      for (let kf of fData) {
+        let sequenceData = el?.formData?.data?.find(e => e.indicatorLineItem.toString() == kf._id.toString());
+        if (sequenceData) mainArr.push(sequenceData)
+      }
+    }
+  }
+  return mainArr;
+}
+
+/// Master Form Indicator LineItmem
+const indicatorLineItemList = async () => {
+  return new Promise(async (resolve, reject) => {
+    try {
+      let data = await IndicatorLineItems.find({ "isActive": true }, { "sequence": 1, "type": 1, "name": 1 }).sort({ "sequence": 1 }).lean();
+      resolve(data)
+    } catch (error) {
+      console.log("error", error)
+      reject(error)
+    }
+  })
 }
 
 async function grantAllCsvDownload(el, res) {
