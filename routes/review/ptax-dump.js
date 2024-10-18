@@ -144,23 +144,24 @@ async function getObjKeyFromObjValue(obj, value) {
 
 // Get keys to calculate ULB growth rate.
 async function getKeysToCalcGrowthRate(designYearStr, yearObj, stateGsdpData = []) {
-    // ULB keys.
-    const currDatatYearKeyStr = await getPrevYearStr(designYearStr);
-    const prevDatatYearKey = await getPrevYearStr(currDatatYearKeyStr);
+    // designYearStr = 2023-24
+    // ULB keys. (currentYear-1 and currentYear-2)
+    const currYrMinus1 = await getPrevYearStr(designYearStr); // 2022-23
+    const currYrMinus2 = await getPrevYearStr(currYrMinus1); // 2021-22
 
-    const currDataYearKey = await (getObjKeyFromObjValue(yearObj, currDatatYearKeyStr));
-    const prevDataYearKey = await (getObjKeyFromObjValue(yearObj, prevDatatYearKey));
+    const currYrMinus1ObjId = await (getObjKeyFromObjValue(yearObj, currYrMinus1)); // 606aafb14dff55e6c075d3ae (22-23)
+    const currYrMinus2ObjId = await (getObjKeyFromObjValue(yearObj, currYrMinus2)); // 606aaf854dff55e6c075d219 (21-22)
 
     // State key.
     if (!stateGsdpData.length) throw new Error("State GSDP data not found!");
-    const key = prevDatatYearKey.split('-')[1] //23
-    const year = '20' + Number(key) - 5 + '-' + key; // 2018-23
+    const key = currYrMinus2.split('-')[1] // 22
+    const year = '20' + Number(key) - 5 + '-' + key; // 2017-22
 
     const stateGsdpNo = stateGsdpData.find((ele) => ele.year === year)?.currentPrice || 0;
 
     return {
-        currDataYearKey: 'collectIncludingCess_' + currDataYearKey,
-        prevDataYearKey: 'collectIncludingCess_' + prevDataYearKey,
+        currYrMinus1ObjId: 'collectIncludingCess_' + currYrMinus1ObjId, // 606aafb14dff55e6c075d3ae (22-23)
+        currYrMinus2ObjId: 'collectIncludingCess_' + currYrMinus2ObjId, // 606aaf854dff55e6c075d219 (21-22)
         stateGsdpNo: stateGsdpNo
     };
 }
@@ -469,15 +470,15 @@ module.exports.pTax = async (req, res) => {
             mappers["design_year"] = YEAR_CONSTANTS_IDS[designYear] || null;
 
             // Fetch data to calculate ulb growth rate and state gsdp.
-            let { currDataYearKey, prevDataYearKey, stateGsdpNo } = await getKeysToCalcGrowthRate(designYearStr, yearObj, state?.data);
-            // let { currDataYearKey, prevDataYearKey, stateGsdpNo } = await getKeysToCalcGrowthRate(designYearStr, yearObj, doc.stateGsdp[0]?.data);
+            let { currYrMinus1ObjId, currYrMinus2ObjId, stateGsdpNo } = await getKeysToCalcGrowthRate(designYearStr, yearObj, state?.data);
+            // let { currYrMinus1ObjId, currYrMinus2ObjId, stateGsdpNo } = await getKeysToCalcGrowthRate(designYearStr, yearObj, doc.stateGsdp[0]?.data);
 
             // Calculate ULB growth rate.
-            if (!mappers[currDataYearKey]) mappers[currDataYearKey] = null;
-            if (!mappers[prevDataYearKey]) mappers[prevDataYearKey] = null;
+            if (!mappers[currYrMinus1ObjId]) mappers[currYrMinus1ObjId] = null;
+            if (!mappers[currYrMinus2ObjId]) mappers[currYrMinus2ObjId] = null;
             mappers.ulbGrowthRate =
-                (mappers[currDataYearKey] && mappers[prevDataYearKey]) ?
-                    Number((((mappers[currDataYearKey] - mappers[prevDataYearKey]) / mappers[prevDataYearKey]) * 100).toFixed(2)) :
+                (mappers[currYrMinus1ObjId] && mappers[currYrMinus2ObjId]) ?
+                    Number((((mappers[currYrMinus1ObjId] - mappers[currYrMinus2ObjId]) / mappers[currYrMinus2ObjId]) * 100).toFixed(2)) :
                     'N/A';
 
             // Update state gsdp data.
