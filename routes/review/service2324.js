@@ -1,4 +1,5 @@
 const Ulb = require('../../models/Ulb')
+const UtilizationReport = require('../../models/UtilizationReport')
 const UA = require('../../models/UA')
 const State = require('../../models/State');
 const CurrentStatus = require('../../models/CurrentStatus');
@@ -175,7 +176,7 @@ module.exports.get = async (req, res) => {
     }, { year: 1, _id: 0 }).lean()
     let folderName = formTab?.folderName;
     let params = { collectionName, formType, isFormOptional, state, design_year, csv, skip, limit, newFilter, dbCollectionName, folderName, yearData }
-    let query = computeQuery(params);
+    let query = await computeQuery(params);
 
     if (getQuery) return res.json({ query: query[0] })
     // if csv - then no skip and limit, else with skip and limit
@@ -183,7 +184,7 @@ module.exports.get = async (req, res) => {
     /* CSV DOWNLOAD */
     let data = []
     if (csv) {
-      await createCSV({ formType, collectionName, res, loggedInUserRole, req, query, year:yearData.year });
+      await createCSV({ formType, collectionName, res, loggedInUserRole, req, query, year: yearData.year });
       // res.end();
       return;
     } else {
@@ -243,6 +244,23 @@ module.exports.get = async (req, res) => {
 async function createCSV(params) {
   const { formType, collectionName, res, loggedInUserRole, req, query, year } = params;
   try {
+    let prevYearDurObj={};
+    if(collectionName==CollectionNames.dur) {
+      const prevYear = year.split("-").map((ele) => Number(ele) - 1).join("-");
+      const prevYearObjId = await Year.findOne({ year: prevYear }, { _id: 1 });
+      const prevYearDur = await UtilizationReport.find({ designYear: ObjectId(prevYearObjId._id) }, { grantPosition: 1, ulb: 1 })
+      prevYearDurObj = prevYearDur.reduce((acc, curr) => {
+        if (curr) {
+          curr["grantPosition"]["unUtilizedPrevYr"] = curr["grantPosition"]["closingBal"];
+          curr["grantPosition"]["receivedDuringYr"] = '';
+          curr["grantPosition"]["expDuringYr"] = '';
+          curr["grantPosition"]["closingBal"] = '';
+
+          acc[curr["ulb"]] = { "grantPosition": curr["grantPosition"] };
+          return acc;
+        }
+      }, {});
+    }
     let ratingList = []
     if (['ODF', 'GFC'].includes(collectionName)) {
       // let ratingIds = [...new Set(data.map(e => e?.formData?.rating))].filter(e => e !== undefined)
@@ -257,7 +275,7 @@ async function createCSV(params) {
       res.writeHead(200, { "Content-Type": "text/csv;charset=utf-8,%EF%BB%BF" });
       fixedColumns = `State Name, ULB Name, City Finance Code, Census Code, Population Category, UA, UA Name,`;
       // dynamicColumns = createDynamicColumns(collectionName);
-      res.write("\ufeff" + `${fixedColumns.toString()} ${createDynamicColumns(collectionName, year.split('-')[0]).toString()} \r\n`);
+      res.write("\ufeff" + `${fixedColumns.toString()} ${createDynamicColumns(collectionName).toString()} \r\n`);
       // res.flushHeaders();
       let indiLineList = []
       if (!(collectionName !== CollectionNames.annual && collectionName !== CollectionNames['28SLB'])) {
@@ -271,8 +289,12 @@ async function createCSV(params) {
         el.censusCode = el.censusCode || "NA";
         if (!el?.formData) {
           el['formStatus'] = "Not Started";
+          // TODO:  uncomment
+          el['formData'] = prevYearDurObj[el['ulbId']];
         } else {
-          el['formStatus'] = MASTER_STATUS_ID[el?.formData?.currentFormStatus]
+          if (collectionName === CollectionNames.pfms && el?.formData?.status) {
+            el['formStatus'] = calculateStatus(el?.formData?.status, el?.formData?.actionTakenByRole, el?.formData?.isDraft, "ULB");
+          } else el['formStatus'] = MASTER_STATUS_ID[el?.formData?.currentFormStatus]
         }
         let row = "";
         if (collectionName !== CollectionNames.annual && collectionName !== CollectionNames['28SLB']) {
@@ -577,7 +599,8 @@ function detailsGrantTransferredManipulate(params) {
     } else if (["transDate"].includes(tKey)) {
       tArr.push(tfgObj && tfgObj[tKey] ? formatDate(tfgObj[tKey]) : "");
     } else {
-      tArr.push(getToValueInObj(tfgObj[tKey]));
+      // if (tfgObj) tArr.push(getToValueInObj(tfgObj[tKey]));
+      tfgObj ? tArr.push(getToValueInObj(tfgObj[tKey])) : tArr.push("");
     }
   }
   return tArr;
@@ -836,7 +859,7 @@ function countStatusData(element, collectionName) {
         }
       }
       notStarted = total - pending - approved - rejected;
-      status = ` ${approved} Approved, ${rejected} Rejected, ${pending} Pending`;
+      status = `${approved} Approved, ${rejected} Rejected, ${pending} Pending`;
       if (notStarted > 0) {
         status = `${status}, ${notStarted} Not Started`;
       }
@@ -1004,7 +1027,7 @@ function getUlbsApprovedByMoHUA(forms) {
  * `formType` (the user role for which the query is being constructed), `isFormOptional` (a boolean
  * indicating whether the
  */
-const computeQuery = (params) => {
+const computeQuery = async (params) => {
   const { collectionName: formName, formType: userRole, isFormOptional, state, design_year, csv, skip, limit, newFilter: filter, dbCollectionName, folderName, yearData } = params
   let filledQueryExpression = {};
   let filledProvisionalExpression = {}, filledAuditedExpression = {};
@@ -1027,21 +1050,45 @@ const computeQuery = (params) => {
   if (state && state !== 'null') {
     condition['state'] = ObjectId(state)
   }
+
+  if(csv && userRole == "ULB" && (!state || state == 'null')){
+    let utList = await State.find({ isUT: true }, { _id: 1 });
+    const uTObjIdArr = utList.map((ele) => ObjectId(ele._id));
+    condition['state'] = { $nin: uTObjIdArr }
+  }
+
   const decadePrefixtoSlice = 2;
   const accessYear = checkUlbAccess(yearData.year, decadePrefixtoSlice);
   condition[accessYear] = true;
-  if ([CollectionNames.pfms].includes(formName)) {
+  // Used as a filter to fetch data for specific year.
+  const designYearOps = [
+    '606aafb14dff55e6c075d3ae', // 22-23
+    '606aafc14dff55e6c075d3ec', // 23-24
+    '606aafcf4dff55e6c075d424', // 24-25
+    '606aafda4dff55e6c075d48f', // 25-26
+  ];
+  let pipeLineYrCondObj = {
+    $eq: [dY, "$$firstUser"],
+  };
+  let target = ObjectId(design_year);
+  // Send only designYear if only specific year data is required.
+  if ([CollectionNames.pfms].includes(formName) && !csv) {
     let lastYearAccess = getLastYearUlbAccess(yearData.year);
     condition[lastYearAccess] = false;
   }
+  if ([CollectionNames.pfms].includes(formName) && csv === true) {
+    target = designYearOps.slice(0, designYearOps.indexOf(design_year) + 1).map(ObjectId);
+    pipeLineYrCondObj = {
+      $in: ["$design_year", "$$firstUser"],
+    };
+  }
+
   let pipeLine = [
     {
       $match: {
         $expr: {
           $and: [
-            {
-              $eq: [dY, "$$firstUser"],
-            },
+            pipeLineYrCondObj,
             {
               $eq: ["$ulb", "$$secondUser"],
             },
@@ -1094,7 +1141,7 @@ const computeQuery = (params) => {
           $lookup: {
             from: dbCollectionName,
             let: {
-              firstUser: ObjectId(design_year),
+              firstUser: target,
               secondUser: "$_id",
             },
             pipeline: pipeLine,
@@ -1262,6 +1309,7 @@ const computeQuery = (params) => {
         {
           $match: {
             accessToXVFC: true,
+            isUT: false
           },
         },
       ];
@@ -1716,17 +1764,17 @@ function createDynamicElements(collectionName, formType, entity) {
             if (entity?.formData?.certDate) entity["formData"]["certDate"] = formatDate(entity?.formData.certDate)
             // if (!entity?.formData.certDate) entity.formData.certDate = ""
 
-            entity = ` ${data?.design_year?.year ?? ""}, ${entity?.formStatus ?? ""
-              }, ${data?.createdAt ?? ""}, ${data?.ulbSubmit ?? ""},${entity.filled ?? ""
-              }, ${data["rating"]["name"] ?? ""},${data["rating"]["marks"] ?? ""
+            entity = `${data?.design_year?.year ?? ""},${entity?.formStatus ?? ""
+              },${data?.createdAt ?? ""},${data?.ulbSubmit ?? ""},${entity.filled ?? ""
+              },${data["rating"]["name"] ?? ""},${data["rating"]["marks"] ?? ""
               },${data?.cert?.url ? data?.cert?.url : data?.cert_declaration?.url ?? ""},${data?.cert?.name ? data?.cert?.name : data?.cert_declaration?.name ?? ""},${data["certDate"] ?? ""
               },${actions["state_status"] ?? ""},${actions["rejectReason_state"] ?? ""
               },${actions["mohua_status"] ?? ""},${actions["rejectReason_mohua"] ?? ""
               },${actions["responseFile_state"]["url"] ?? ""},${actions["responseFile_mohua"]["url"] ?? ""
-              } `;
+              }`;
             break;
           case CollectionNames.annual:
-            let auditedEntity, unAuditedEntity;
+            let auditedEntity,unAuditedEntity;
             let unAuditedProvisional = data?.unAudited?.provisional_data;
             let auditedProvisional = data?.audited?.provisional_data;
             let unAuditedStandardized = data?.unAudited?.standardized_data;
@@ -1754,43 +1802,51 @@ function createDynamicElements(collectionName, formType, entity) {
             if (categoryWiseData_swm && categoryWiseData_swm.length > 0) {
               swmData = convertValue({ data: categoryWiseData_swm, keyArr: ["grantUtilised", "numberOfProjects", "totalProjectCost"] });
             }
-            entity = ` ${design_year?.year ?? ""}, ${entity?.formStatus ?? ""
-              }, ${createdAt ?? ""}, ${ulbSubmit ?? ""},${entity.filled ?? ""
-              },${YEAR_CONSTANTS_IDS[financialYear] || ""}, ${(roundValue(grantPosition?.unUtilizedPrevYr)) ?? ""
-              } ,${(roundValue(grantPosition?.receivedDuringYr)) ?? ""
-              }, ${(roundValue(grantPosition?.expDuringYr)) ?? ""
+            entity = `${design_year?.year ?? ""},${entity?.formStatus ?? ""
+              },${createdAt ?? ""},${ulbSubmit ?? ""},${entity.filled ?? ""
+              },${YEAR_CONSTANTS_IDS[financialYear] || ""},${(roundValue(grantPosition?.unUtilizedPrevYr)) ?? ""
+              },${(roundValue(grantPosition?.receivedDuringYr)) ?? ""
+              },${(roundValue(grantPosition?.expDuringYr)) ?? ""
               },${(roundValue(grantPosition?.closingBal)) ?? ""
               },${wmData[0]?.["grantUtilised"] ?? ""
               },${wmData[0]?.["numberOfProjects"] ?? ""
-              }, ${wmData[0]?.["totalProjectCost"] ?? ""
+              },${wmData[0]?.["totalProjectCost"] ?? ""
 
               },${wmData[1]?.["grantUtilised"] ?? ""
               },${wmData[1]?.["numberOfProjects"] ?? ""
-              }, ${wmData[1]?.["totalProjectCost"] ?? ""
+              },${wmData[1]?.["totalProjectCost"] ?? ""
               },${wmData[2]?.["grantUtilised"] ?? ""
               },${wmData[2]?.["numberOfProjects"] ?? ""
-              }, ${wmData[2]?.["totalProjectCost"] ?? ""
+              },${wmData[2]?.["totalProjectCost"] ?? ""
               },${wmData[3]?.["grantUtilised"] ?? ""
               },${wmData[3]?.["numberOfProjects"] ?? ""
-              }, ${wmData[3]?.["totalProjectCost"] ?? ""
+              },${wmData[3]?.["totalProjectCost"] ?? ""
               },${swmData[0]?.["grantUtilised"] ?? ""
               },${swmData[0]?.["numberOfProjects"] ?? ""
-              }, ${swmData[0]?.["totalProjectCost"] ?? ""
+              },${swmData[0]?.["totalProjectCost"] ?? ""
               },${swmData[1]?.["grantUtilised"] ?? ""
               },${swmData[1]?.["numberOfProjects"] ?? ""
-              }, ${swmData[1]?.["totalProjectCost"] ?? ""
-              }, ${removeEscapeChars(name) ?? ""
-              }, ${removeEscapeChars(designation) ?? ""
-              }, ${actions["state_status"] ?? ""},${actions["rejectReason_state"] ?? ""
+              },${swmData[1]?.["totalProjectCost"] ?? ""
+              },${removeEscapeChars(name) ?? ""
+              },${removeEscapeChars(designation) ?? ""
+              },${actions["state_status"] ?? ""},${actions["rejectReason_state"] ?? ""
               },${actions["mohua_status"] ?? ""},${actions["rejectReason_mohua"] ?? ""
               },${actions["responseFile_state"]["url"] ?? ""},${actions["responseFile_mohua"]["url"] ?? ""
               }`;
             break;
+
+          case CollectionNames.pfms:
+            data["cert"]["name"] = removeEscapeChars(data["cert"]["name"]);
+            data["otherDocs"]["name"] = removeEscapeChars(data["otherDocs"]["name"]);
+            data["PFMSAccountNumber"] ? data["PFMSAccountNumber"] = `'${data["PFMSAccountNumber"]}'` : ""
+            entity = `${data?.design_year?.year ?? ""},${entity?.formStatus ?? ""},${data?.createdAt ?? ""},${data?.ulbSubmit ?? ""},${entity.filled ?? ""},${data["linkPFMS"] ?? ""},${data["PFMSAccountNumber"] ?? ""},${data["isUlbLinkedWithPFMS"] ?? ""},${data["cert"]["url"] ?? ""},${data["cert"]["name"] ?? ""},${data["otherDocs"]["url"] ?? ""},${data["otherDocs"]["name"] ?? ""},${actions["state_status"] ?? ""},${actions["rejectReason_state"] ?? ""},${actions["mohua_status"] ?? ""},${actions["rejectReason_mohua"] ?? ""},${actions["responseFile_state"]["url"] ?? ""},${actions["responseFile_mohua"]["url"] ?? ""}`;
+            break;
+
           case CollectionNames['28SLB']:
             let actualYear = data?.data?.[0]?.actual?.year ? YEAR_CONSTANTS_IDS[data.data[0].actual.year] : "";
             let i = 0;
-            let actualEntity = `${data?.design_year?.year ?? ""}, ${entity?.formStatus ?? ""
-              }, ${data?.createdAt ?? ""}, ${data?.ulbSubmit ?? ""},${entity.filled ?? ""
+            let actualEntity = `${data?.design_year?.year ?? ""},${entity?.formStatus ?? ""
+              },${data?.createdAt ?? ""},${data?.ulbSubmit ?? ""},${entity.filled ?? ""
               },Actual,${actualYear || ""},${data["data"][i++]["actual"]["value"] ?? ""
               },${data["data"][i++]["actual"]["value"] ?? ""},${data["data"][i++]["actual"]["value"] ?? ""
               },${data["data"][i++]["actual"]["value"] ?? ""},${data["data"][i++]["actual"]["value"] ?? ""
@@ -1805,13 +1861,13 @@ function createDynamicElements(collectionName, formType, entity) {
               },${data["data"][i++]["actual"]["value"] ?? ""},${data["data"][i++]["actual"]["value"] ?? ""
               },${data["data"][i++]["actual"]["value"] ?? ""},${data["data"][i++]["actual"]["value"] ?? ""
               },${data["data"][i++]["actual"]["value"] ?? ""},${data["data"][i++]["actual"]["value"] ?? ""
-              },${data["data"][i++]["actual"]["value"] ?? ""}, ${actions["state_status"] ?? ""
+              },${data["data"][i++]["actual"]["value"] ?? ""},${actions["state_status"] ?? ""
               },${actions["rejectReason_state"] ?? ""},${actions["mohua_status"] ?? ""
               },${actions["rejectReason_mohua"] ?? ""},${actions["responseFile_state"]["url"] ?? ""
-              },${actions["responseFile_mohua"]["url"] ?? ""} `;
+              },${actions["responseFile_mohua"]["url"] ?? ""},${data?.officerName ?? ""},${data?.designation ?? ""},${data?.cert_declaration?.url ?? ""}`;
             i = 0;
             let targetYear = data?.data?.[0]?.target_1?.year ? YEAR_CONSTANTS_IDS[data.data[0].target_1.year] : "";
-            let targetEntity = `${data?.design_year?.year ?? ""}, ${entity?.formStatus ?? ""}, ${data?.createdAt ?? ""}, ${data?.ulbSubmit ?? ""},${entity.filled ?? ""},Target,${targetYear || ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""}, ${actions["state_status"] ?? ""},${actions["rejectReason_state"] ?? ""},${actions["mohua_status"] ?? ""},${actions["rejectReason_mohua"] ?? ""},${actions["responseFile_state"]["url"] ?? ""},${actions["responseFile_mohua"]["url"] ?? ""} `
+            let targetEntity = `${data?.design_year?.year ?? ""},${entity?.formStatus ?? ""},${data?.createdAt ?? ""},${data?.ulbSubmit ?? ""},${entity.filled ?? ""},Target,${targetYear || ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${data['data'][i++]['target_1']['value'] ?? ""},${actions["state_status"] ?? ""},${actions["rejectReason_state"] ?? ""},${actions["mohua_status"] ?? ""},${actions["rejectReason_mohua"] ?? ""},${actions["responseFile_state"]["url"] ?? ""},${actions["responseFile_mohua"]["url"] ?? ""},${data?.officerName ?? ""},${data?.designation ?? ""},${data?.cert_declaration?.url ?? ""}`
             return [actualEntity, targetEntity];
         };
         break;
@@ -2553,69 +2609,69 @@ function annualAccountCsvFormat(data, auditedEntity, entity, auditedProvisional,
   if (![IN_PROGRESS, UNDER_REVIEW_BY_STATE].includes(entity?.formData?.currentFormStatus)) {
     annualAccountSetCurrentStatus(data, entity?.formData?.currentFormStatus)
   }
-  auditedEntity = auditedEntity = ` ${data?.design_year?.year ?? ""}, ${entity?.formStatus ?? ""
-    }, ${data?.createdAt ?? ""}, ${data?.ulbSubmit ?? ""},${entity?.filled_audited ?? ""
-    }, Audited, ${data?.audited?.year ? YEAR_CONSTANTS_IDS[data?.audited?.year] : ""},${auditedProvisional?.bal_sheet?.pdf?.url ?? ""
-    }, ${auditedProvisional?.bal_sheet?.excel?.url ?? ""}, ${auditedProvisional?.bal_sheet?.state_status ?? ""}, ${auditedProvisional?.bal_sheet?.rejectReason_state ?? ""},${auditedProvisional?.bal_sheet?.mohua_status ?? ""
-    }, ${auditedProvisional?.bal_sheet?.rejectReason_mohua ?? ""},  ${auditedProvisional?.assets ?? ""
-    }, ${auditedProvisional?.f_assets ?? ""}, ${auditedProvisional?.s_grant ?? ""
-    }, ${auditedProvisional?.c_grant ?? ""}, ${auditedProvisional?.bal_sheet_schedules?.pdf?.url ?? ""
-    }, ${auditedProvisional?.bal_sheet_schedules?.excel?.url ?? ""}, ${auditedProvisional?.bal_sheet_schedules?.state_status ?? ""
-    }, ${auditedProvisional?.bal_sheet_schedules?.rejectReason_state}, ${auditedProvisional?.bal_sheet_schedules?.mohua_status ?? ""
-    }, ${auditedProvisional?.bal_sheet_schedules?.rejectReason_mohua ?? ""},${auditedProvisional?.inc_exp?.pdf?.url ?? ""
-    }, ${auditedProvisional?.inc_exp?.excel?.url ?? ""}, ${auditedProvisional?.inc_exp?.state_status ?? ""
-    }, ${auditedProvisional?.inc_exp?.rejectReason_state}, ${auditedProvisional?.inc_exp?.mohua_status ?? ""
-    }, ${auditedProvisional?.inc_exp?.rejectReason_mohua ?? ""}, ${auditedProvisional?.revenue ?? ""
-    }, ${auditedProvisional?.expense ?? ""},${auditedProvisional?.inc_exp_schedules?.pdf?.url ?? ""
-    }, ${auditedProvisional?.inc_exp_schedules?.excel?.url ?? ""}, ${auditedProvisional?.inc_exp_schedules?.state_status ?? ""
-    }, ${auditedProvisional?.inc_exp_schedules?.rejectReason_state},${auditedProvisional?.inc_exp_schedules?.mohua_status ?? ""
-    }, ${auditedProvisional?.inc_exp_schedules?.rejectReason_mohua ?? ""}, ${auditedProvisional?.cash_flow?.pdf?.url ?? ""
-    }, ${auditedProvisional?.cash_flow?.excel?.url ?? ""}, ${auditedProvisional?.cash_flow?.state_status ?? ""
-    }, ${auditedProvisional?.cash_flow?.rejectReason_state}, ${auditedProvisional?.cash_flow?.mohua_status ?? ""
-    }, ${auditedProvisional?.cash_flow?.rejectReason_mohua ?? ""}, ${auditedProvisional?.auditor_report?.pdf?.url ?? ""
-    }, ${auditedProvisional?.auditor_report?.state_status ?? ""
-    }, ${auditedProvisional?.auditor_report?.rejectReason_state},${auditedProvisional?.auditor_report?.mohua_status ?? ""}, ${auditedProvisional?.auditor_report?.rejectReason_mohua ?? ""
-    }, ${data?.audited?.submit_standardized_data ?? ""}, ${auditedStandardized?.excel?.url ?? ""
-    } ,${data?.audited?.submit_annual_accounts === false
+  auditedEntity = auditedEntity = `${data?.design_year?.year ?? ""},${entity?.formStatus ?? ""
+    },${data?.createdAt ?? ""},${data?.ulbSubmit ?? ""},${entity?.filled_audited ?? ""
+    },Audited,${data?.audited?.year ? YEAR_CONSTANTS_IDS[data?.audited?.year] : ""},${auditedProvisional?.bal_sheet?.pdf?.url ?? ""
+    },${auditedProvisional?.bal_sheet?.excel?.url ?? ""},${auditedProvisional?.bal_sheet?.state_status ?? ""},${auditedProvisional?.bal_sheet?.rejectReason_state ?? ""},${auditedProvisional?.bal_sheet?.mohua_status ?? ""
+    },${auditedProvisional?.bal_sheet?.rejectReason_mohua ?? ""},${auditedProvisional?.assets ?? ""
+    },${auditedProvisional?.f_assets ?? ""},${auditedProvisional?.s_grant ?? ""
+    },${auditedProvisional?.c_grant ?? ""},${auditedProvisional?.bal_sheet_schedules?.pdf?.url ?? ""
+    },${auditedProvisional?.bal_sheet_schedules?.excel?.url ?? ""},${auditedProvisional?.bal_sheet_schedules?.state_status ?? ""
+    },${auditedProvisional?.bal_sheet_schedules?.rejectReason_state},${auditedProvisional?.bal_sheet_schedules?.mohua_status ?? ""
+    },${auditedProvisional?.bal_sheet_schedules?.rejectReason_mohua ?? ""},${auditedProvisional?.inc_exp?.pdf?.url ?? ""
+    },${auditedProvisional?.inc_exp?.excel?.url ?? ""},${auditedProvisional?.inc_exp?.state_status ?? ""
+    },${auditedProvisional?.inc_exp?.rejectReason_state},${auditedProvisional?.inc_exp?.mohua_status ?? ""
+    },${auditedProvisional?.inc_exp?.rejectReason_mohua ?? ""},${auditedProvisional?.revenue ?? ""
+    },${auditedProvisional?.expense ?? ""},${auditedProvisional?.inc_exp_schedules?.pdf?.url ?? ""
+    },${auditedProvisional?.inc_exp_schedules?.excel?.url ?? ""},${auditedProvisional?.inc_exp_schedules?.state_status ?? ""
+    },${auditedProvisional?.inc_exp_schedules?.rejectReason_state},${auditedProvisional?.inc_exp_schedules?.mohua_status ?? ""
+    },${auditedProvisional?.inc_exp_schedules?.rejectReason_mohua ?? ""},${auditedProvisional?.cash_flow?.pdf?.url ?? ""
+    },${auditedProvisional?.cash_flow?.excel?.url ?? ""},${auditedProvisional?.cash_flow?.state_status ?? ""
+    },${auditedProvisional?.cash_flow?.rejectReason_state},${auditedProvisional?.cash_flow?.mohua_status ?? ""
+    },${auditedProvisional?.cash_flow?.rejectReason_mohua ?? ""},${auditedProvisional?.auditor_report?.pdf?.url ?? ""
+    },${auditedProvisional?.auditor_report?.state_status ?? ""
+    },${auditedProvisional?.auditor_report?.rejectReason_state},${auditedProvisional?.auditor_report?.mohua_status ?? ""},${auditedProvisional?.auditor_report?.rejectReason_mohua ?? ""
+    },${data?.audited?.submit_standardized_data ?? ""},${auditedStandardized?.excel?.url ?? ""
+    },${data?.audited?.submit_annual_accounts === false
       ? (data?.audited?.rejectReason_state ?? "")
       : ""
-    } ,${data?.audited?.submit_annual_accounts === false
+    },${data?.audited?.submit_annual_accounts === false
       ? (data?.audited?.rejectReason_mohua ?? "")
       : ""
-    },  ${data?.audited?.responseFile_state?.url ?? ""},${data?.audited?.responseFile_mohua?.url ?? "" ?? ""
-    } `;
+    },${data?.audited?.responseFile_state?.url ?? ""},${data?.audited?.responseFile_mohua?.url ?? "" ?? ""
+    }`;
 
-  unAuditedEntity = `${data?.design_year?.year ?? ""}, ${entity?.formStatus ?? ""
-    }, ${data?.createdAt ?? ""}, ${data?.ulbSubmit ?? ""},${entity?.filled_provisional ?? ""
-    }, Provisional,${data?.unAudited?.year ? YEAR_CONSTANTS_IDS[data?.unAudited?.year] : ""}, ${unAuditedProvisional?.bal_sheet?.pdf?.url ?? ""
-    }, ${unAuditedProvisional?.bal_sheet?.excel?.url ?? ""}, ${unAuditedProvisional?.bal_sheet?.state_status ?? ""
-    }, ${unAuditedProvisional?.bal_sheet?.rejectReason_state},  ${unAuditedProvisional?.bal_sheet?.mohua_status ?? ""
-    }, ${unAuditedProvisional?.bal_sheet?.rejectReason_mohua ?? ""},  ${unAuditedProvisional?.assets ?? ""
-    }, ${unAuditedProvisional?.f_assets ?? "" ?? ""}, ${unAuditedProvisional?.s_grant ?? ""
-    }, ${unAuditedProvisional?.c_grant ?? ""}, ${unAuditedProvisional?.bal_sheet_schedules?.pdf?.url ?? ""
-    }, ${unAuditedProvisional?.bal_sheet_schedules?.excel?.url ?? ""}, ${unAuditedProvisional?.bal_sheet_schedules?.state_status ?? ""
-    }, ${unAuditedProvisional?.bal_sheet_schedules?.rejectReason_state}, ${unAuditedProvisional?.bal_sheet_schedules?.mohua_status ?? ""
-    }, ${unAuditedProvisional?.bal_sheet_schedules?.rejectReason_mohua ?? ""
-    }, ${unAuditedProvisional?.inc_exp?.pdf?.url ?? ""}, ${unAuditedProvisional?.inc_exp?.excel?.url ?? ""
-    }, ${unAuditedProvisional?.inc_exp?.state_status ?? ""
-    }, ${unAuditedProvisional?.inc_exp?.rejectReason_state}, ${unAuditedProvisional?.inc_exp?.mohua_status ?? ""}, ${unAuditedProvisional?.inc_exp?.rejectReason_mohua ?? ""
-    },  ${unAuditedProvisional?.revenue ?? ""}, ${unAuditedProvisional?.expense ?? ""
-    },${unAuditedProvisional?.inc_exp_schedules?.pdf?.url ?? ""}, ${unAuditedProvisional?.inc_exp_schedules?.excel?.url ?? ""
-    }, ${unAuditedProvisional?.inc_exp_schedules?.state_status ?? ""
-    }, ${unAuditedProvisional?.inc_exp_schedules?.rejectReason_state},  ${unAuditedProvisional?.inc_exp_schedules?.mohua_status ?? ""}, ${unAuditedProvisional?.inc_exp_schedules?.rejectReason_mohua ?? ""
-    }, ${unAuditedProvisional?.cash_flow?.pdf?.url ?? ""}, ${unAuditedProvisional?.cash_flow?.excel?.url ?? ""
-    }, ${unAuditedProvisional?.cash_flow?.state_status ?? ""
-    }, ${unAuditedProvisional?.cash_flow?.rejectReason_state},  ${unAuditedProvisional?.cash_flow?.mohua_status ?? ""}, ${unAuditedProvisional?.cash_flow?.rejectReason_mohua ?? ""
-    }, , , , , , ${data?.unAudited?.submit_standardized_data ?? ""}, ${unAuditedStandardized?.excel?.url ?? ""
-    } , ${data?.unAudited?.submit_annual_accounts === false
+  unAuditedEntity = `${data?.design_year?.year ?? ""},${entity?.formStatus ?? ""
+    },${data?.createdAt ?? ""},${data?.ulbSubmit ?? ""},${entity?.filled_provisional ?? ""
+    },Provisional,${data?.unAudited?.year ? YEAR_CONSTANTS_IDS[data?.unAudited?.year] : ""},${unAuditedProvisional?.bal_sheet?.pdf?.url ?? ""
+    },${unAuditedProvisional?.bal_sheet?.excel?.url ?? ""},${unAuditedProvisional?.bal_sheet?.state_status ?? ""
+    },${unAuditedProvisional?.bal_sheet?.rejectReason_state},${unAuditedProvisional?.bal_sheet?.mohua_status ?? ""
+    },${unAuditedProvisional?.bal_sheet?.rejectReason_mohua ?? ""},${unAuditedProvisional?.assets ?? ""
+    },${unAuditedProvisional?.f_assets ?? "" ?? ""},${unAuditedProvisional?.s_grant ?? ""
+    },${unAuditedProvisional?.c_grant ?? ""},${unAuditedProvisional?.bal_sheet_schedules?.pdf?.url ?? ""
+    },${unAuditedProvisional?.bal_sheet_schedules?.excel?.url ?? ""},${unAuditedProvisional?.bal_sheet_schedules?.state_status ?? ""
+    },${unAuditedProvisional?.bal_sheet_schedules?.rejectReason_state},${unAuditedProvisional?.bal_sheet_schedules?.mohua_status ?? ""
+    },${unAuditedProvisional?.bal_sheet_schedules?.rejectReason_mohua ?? ""
+    },${unAuditedProvisional?.inc_exp?.pdf?.url ?? ""},${unAuditedProvisional?.inc_exp?.excel?.url ?? ""
+    },${unAuditedProvisional?.inc_exp?.state_status ?? ""
+    },${unAuditedProvisional?.inc_exp?.rejectReason_state},${unAuditedProvisional?.inc_exp?.mohua_status ?? ""},${unAuditedProvisional?.inc_exp?.rejectReason_mohua ?? ""
+    },${unAuditedProvisional?.revenue ?? ""},${unAuditedProvisional?.expense ?? ""
+    },${unAuditedProvisional?.inc_exp_schedules?.pdf?.url ?? ""},${unAuditedProvisional?.inc_exp_schedules?.excel?.url ?? ""
+    },${unAuditedProvisional?.inc_exp_schedules?.state_status ?? ""
+    },${unAuditedProvisional?.inc_exp_schedules?.rejectReason_state},${unAuditedProvisional?.inc_exp_schedules?.mohua_status ?? ""},${unAuditedProvisional?.inc_exp_schedules?.rejectReason_mohua ?? ""
+    },${unAuditedProvisional?.cash_flow?.pdf?.url ?? ""},${unAuditedProvisional?.cash_flow?.excel?.url ?? ""
+    },${unAuditedProvisional?.cash_flow?.state_status ?? ""
+    },${unAuditedProvisional?.cash_flow?.rejectReason_state},${unAuditedProvisional?.cash_flow?.mohua_status ?? ""},${unAuditedProvisional?.cash_flow?.rejectReason_mohua ?? ""
+    },,,,,,${data?.unAudited?.submit_standardized_data ?? ""},${unAuditedStandardized?.excel?.url ?? ""
+    },${data?.unAudited?.submit_annual_accounts === false
       ? (data?.unAudited?.rejectReason_state ?? "")
       : ""
-    }, ${data?.unAudited?.submit_annual_accounts === false
+    },${data?.unAudited?.submit_annual_accounts === false
       ? (data?.unAudited?.rejectReason_mohua ?? "")
       : ""
-    }, ${data?.unAudited?.responseFile_state?.url ?? ""},${data?.unAudited?.responseFile_mohua?.url ?? ""
-    } `;
-  return { auditedEntity, unAuditedEntity };
+    },${data?.unAudited?.responseFile_state?.url ?? ""},${data?.unAudited?.responseFile_mohua?.url ?? ""
+    }`;
+  return { auditedEntity,unAuditedEntity };
 }
 
 const annualAccountSetCurrentStatus = (data, currentFormStatus) => {
@@ -2688,27 +2744,28 @@ const setCurrentStatusQuestionLevel = (statusList, key = null) => {
   }
   return obj;
 }
-function createDynamicColumns(collectionName, year = '') {
+
+function createDynamicColumns(collectionName) {
   let columns = ``;
   switch (collectionName) {
     case CollectionNames.odf:
     case CollectionNames.gfc:
-      columns = `Financial Year,Form Status, Created, Submitted On, Filled Status, Rating, Score, Certificate URL, Certificate Name, Certificate Issue Date,State Review Status, State Comments,MoHUA Review Status, MoHUA Comments, State Review File URL, MoHUA Review File URL `;
+      columns = `Financial Year,Form Status,Created,Submitted On,Filled Status,Rating,Score,Certificate URL,Certificate Name,Certificate Issue Date,State Review Status,State Comments,MoHUA Review Status,MoHUA Comments,State Review File URL,MoHUA Review File URL`;
       break;
     case CollectionNames.pfms:
-      columns = `Financial Year, Form Status, Created, Submitted On, Filled Status, Link PFMS, PFMS Account Number, Is Ulb Linked With PFMS, Certificate URL, Certificate Name, Other Doc URL, Other Doc Name,State Review Status, State Comments,MoHUA Review Status, MoHUA Comments, State Review File URL, MoHUA Review File URL `
+      columns = `Financial Year,Form Status,Created,Submitted On,Filled Status,Link PFMS,PFMS Account Number,Is Ulb Linked With PFMS,Certificate URL,Certificate Name,Other Doc URL,Other Doc Name,State Review Status,State Comments,MoHUA Review Status,MoHUA Comments,State Review File URL,MoHUA Review File URL`
       break;
     case CollectionNames.annual:
       columns = `Financial Year,Form Status,Created,Submitted On,Filled Status,Type,Audited/Provisional Year,Balance Sheet_PDF_URL,Balance Sheet_Excel_URL,Balance Sheet_State Review Status,Balance Sheet_State_Comments,Balance Sheet_MoHUA Review Status,Balance Sheet_MoHUA_Comments,Balance Sheet_Total Amount of Assets,Balance Sheet_Total Amount of Fixed Assets,Balance Sheet_Total Amount of State Grants received,Balance Sheet_Total Amount of Central Grants received,Balance Sheet Schedule_PDF_URL,Balance Sheet Schedule_Excel_URL,Balance Sheet Schedule_State Review Status,Balance Sheet Schedule_State_Comments,Balance Sheet Schedule_MoHUA Review Status,Balance Sheet Schedule_MoHUA_Comments,Income Expenditure_PDF_URL,Income Expenditure_Excel_URL,Income Expenditure_State Review Status,Income Expenditure_State_Comments,Income Expenditure_MoHUA Review Status,Income Expenditure_MoHUA_Comments,Income Expenditure_Total Amount of Revenue,Income Expenditure_Total Amount of Expenses,Income Expenditure Schedule_PDF_URL,Income Expenditure Schedule_Excel_URL,Income Expenditure Schedule_State Review Status,Income Expenditure Schedule_State_Comments,Income Expenditure Schedule_MoHUA Review Status,Income Expenditure Schedule_MoHUA_Comments,Cash Flow Schedule_PDF_URL,Cash Flow Schedule_Excel_URL,Cash Flow Schedule_State Review Status,Cash Flow Schedule_State_Comments,Cash Flow Schedule_MoHUA Review Status,Cash Flow Schedule_MoHUA_Comments,Auditor Report PDF_URL,Auditor Report State Review Status,Auditor Report State_Comments,Auditor Report MoHUA Review Status,Auditor Report MoHUA_Comments,Financials in Standardized Format_Filled Status,Financials in Standardized Format_Excel URL,State Comments if Accounts for 2022-23 is selected No,MoHUA Comments if Accounts for 2022-23 is selected No,State Review File_URL,MoHUA Review File_URL`;
       break;
     case CollectionNames.dur:
-      columns = `Financial Year,Form Status,Created,Submitted On,Filled Status,Tied grants for year,Unutilised Tied Grants from previous installment (INR in lakhs),15th F.C. Tied grant received during the year (1st & 2nd installment taken together) (INR in lakhs),Expenditure incurred during the year i.e. as on 31st March ${year} from Tied grant (INR in lakhs),Closing balance at the end of year (INR in lakhs),WM Rejuvenation of Water Bodies Total Tied Grant Utilised on WM(INR in lakhs),WM Rejuvenation of Water Bodies Number of Projects Undertaken,WM_Rejuvenation of Water Bodies_Total Project Cost Involved,WM_Drinking Water_Total Tied Grant Utilised on WM(INR in lakhs),WM_Drinking Water_Number of Projects Undertaken,WM_Drinking Water_Total Project Cost Involved,WM_Rainwater Harvesting_Total Tied Grant Utilised on WM(INR in lakhs),WM_Rainwater Harvesting_Number of Projects Undertaken,WM_Rainwater Harvesting_Total Project Cost Involved,WM_Water Recycling_Total Tied Grant Utilised on WM(INR in lakhs),WM_Water Recycling_Number of Projects Undertaken,WM_Water Recycling_Total Project Cost Involved,SWM_Sanitation_Total Tied Grant Utilised on SWM(INR in lakhs),SWM_Sanitation_Number of Projects Undertaken,SWM_Sanitation_Total Project Cost Involved(INR in lakhs),SWM_Solid Waste Management_Total Tied Grant Utilised on SWM(INR in lakhs),SWM_Solid Waste Management_Number of Projects Undertaken,SWM_Solid Waste Management_Total Project Cost Involved(INR in lakhs),Name,Designation,State_Review Status,State_Comments,MoHUA Review Status,MoHUA_Comments,State_File URL,MoHUA_File URL`
+      columns = `Financial Year,Form Status,Created,Submitted On,Filled Status,Tied grants for year,Unutilised Tied Grants from previous installment (INR in lakhs),15th F.C. Tied grant received during the year (1st & 2nd installment taken together) (INR in lakhs),Expenditure incurred during the year i.e. as on 31st March 2021 from Tied grant (INR in lakhs),Closing balance at the end of year (INR in lakhs),WM Rejuvenation of Water Bodies Total Tied Grant Utilised on WM(INR in lakhs),WM Rejuvenation of Water Bodies Number of Projects Undertaken,WM_Rejuvenation of Water Bodies_Total Project Cost Involved,WM_Drinking Water_Total Tied Grant Utilised on WM(INR in lakhs),WM_Drinking Water_Number of Projects Undertaken,WM_Drinking Water_Total Project Cost Involved,WM_Rainwater Harvesting_Total Tied Grant Utilised on WM(INR in lakhs),WM_Rainwater Harvesting_Number of Projects Undertaken,WM_Rainwater Harvesting_Total Project Cost Involved,WM_Water Recycling_Total Tied Grant Utilised on WM(INR in lakhs),WM_Water Recycling_Number of Projects Undertaken,WM_Water Recycling_Total Project Cost Involved,SWM_Sanitation_Total Tied Grant Utilised on SWM(INR in lakhs),SWM_Sanitation_Number of Projects Undertaken,SWM_Sanitation_Total Project Cost Involved(INR in lakhs),SWM_Solid Waste Management_Total Tied Grant Utilised on SWM(INR in lakhs),SWM_Solid Waste Management_Number of Projects Undertaken,SWM_Solid Waste Management_Total Project Cost Involved(INR in lakhs),Name,Designation,State_Review Status,State_Comments,MoHUA Review Status,MoHUA_Comments,State_File URL,MoHUA_File URL`
       break;
     case CollectionNames['28SLB']:
-      columns = `Financial Year,Form Status,Created,Submitted On,Filled Status,Type,Year,Coverage of water supply connections,Per capita supply of water(lpcd),Extent of metering of water connections,Extent of non-revenue water (NRW),Continuity of water supply,Efficiency in redressal of customer complaints,Quality of water supplied,Cost recovery in water supply service,Efficiency in collection of water supply-related charges,Coverage of toilets,Coverage of waste water network services,Collection efficiency of waste water network,Adequacy of waste water treatment capacity,Extent of reuse and recycling of waste water,Quality of waste water treatment,Efficiency in redressal of customer complaints,Extent of cost recovery in waste water management,Efficiency in collection of waste water charges,Household level coverage of solid waste management services,Efficiency of collection of municipal solid waste,Extent of segregation of municipal solid waste,Extent of municipal solid waste recovered,Extent of scientific disposal of municipal solid waste,Extent of cost recovery in SWM services,Efficiency in collection of SWM related user related charges,Efficiency in redressal of customer complaints,Coverage of storm water drainage network,Incidence of water logging,State_Review Status,State_Comments,MoHUA Review Status,MoHUA_Comments,State_File URL,MoHUA_File URL `
+      columns = `Financial Year,Form Status,Created,Submitted On,Filled Status,Type,Year,Coverage of water supply connections (Water Supply),Per capita supply of water (lpcd) (Water Supply),Extent of metering of water connections (Water Supply),Extent of non-revenue water (NRW) (Water Supply),Continuity of water supply (Water Supply),Efficiency in redressal of customer complaints (Water Supply),Quality of water supplied (Water Supply),Cost recovery in water supply service (Water Supply),Efficiency in collection of water supply-related charges (Water Supply),Coverage of toilets (Sanitation),Coverage of waste water network services (Sanitation),Collection efficiency of waste water network (Sanitation),Adequacy of waste water treatment capacity (Sanitation),Extent of reuse and recycling of waste water (Sanitation),Quality of waste water treatment (Sanitation),Efficiency in redressal of customer complaints (Sanitation),Extent of cost recovery in waste water management (Sanitation),Efficiency in collection of waste water charges (Solid Waste),Household level coverage of solid waste management services (Solid Waste),Efficiency of collection of municipal solid waste (Solid Waste),Extent of segregation of municipal solid waste (Solid Waste),Extent of municipal solid waste recovered (Solid Waste),Extent of scientific disposal of municipal solid waste (Solid Waste),Extent of cost recovery in SWM services (Solid Waste),Efficiency in collection of SWM related user related charges (Solid Waste),Efficiency in redressal of customer complaints (Solid Waste),Coverage of storm water drainage network (Storm Water),Incidence of water logging (Storm Water),State_Review Status,State_Comments,MoHUA Review Status,MoHUA_Comments,State_File URL,MoHUA_File URL,Name,Designation,Upload`
       break;
     // case CollectionNames['GrantClaim']:
-    //   columns = `State Name, City Finance Code, Regional Name, `
+    //   columns = `State Name,City Finance Code,Regional Name,`
     //   break;
     case CollectionNames['state_gtc']:
       columns = `State Name,City Finance Code,Form Status,Year,Type of ULB,Type of Grant Received (Tied/Untied),Installment Type,Total No: of MPCs,Total No: of NMPCS,Total No: of Duly Elected MPCS,Total No: of Duly Elected NMPCS,Amount Received(In Lakhs),Date of Receipt,Amount Transferred excluding interest (in lakhs),Date of Transfer,Was there any delay in transfer?,No. of days delayed,Rate of interest (annual rate),Amount of interest transferred - If there's any delay (in lakhs),Whether State Finance Commission recommendations available? (Yes/No),If No Upload notification for constitution of SFC issued,If Yes-Whether Grants distributed as per Census 2011 or as per SFC recommendations?,Whether Project works undertaken are uploaded on the website (Yes/No),Upload copy of Property Tax Notification issued,Whether the ULB accounts   for 15th FC Grants linked to PFMS for all transactions,Upload Signed Grant Transfer Certificate,MoHUA Comments,Supporting Document,Review Status`
@@ -2877,7 +2934,7 @@ const excelPTOMapping = async (query) => {
   return new Promise(async (resolve, reject) => {
     try {
       // get mapping for form questions and child questions
-      const questions = propertyTaxOpFormJson()['tabs'][0]['data']
+      const questions = propertyTaxOpFormJson({})['tabs'][0]['data']
       // static, we know the first four rows will be occupied by headers
       const startRowIndex = 5;
       // map form questions with excel columns

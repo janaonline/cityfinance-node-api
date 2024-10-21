@@ -101,6 +101,10 @@ router.use("/ledger", Ledger);
 const User = require("./user");
 router.use("/user", User);
 
+// @fc_Form1
+const XviFc = require("./xviFc");
+router.use("/xviFc", XviFc);
+
 // @form
 const Form = require("./form");
 router.use(Form);
@@ -228,6 +232,10 @@ router.use('/property-tax-floor-rate', PropertyTaxFloorRate);
 //state-finance-commission-formation
 const StateFinanceCommissionFormation = require('./state-finance-commission-formation');
 router.use('/state-finance-commission-formation', StateFinanceCommissionFormation);
+
+//state-finance-commission- form submission
+const sfc = require('./sfc');
+router.use('/sfc', sfc);
 
 //calculate-recommendation
 const calculateRecommendation = require('./Scoring');

@@ -10,7 +10,7 @@ const RequestLogSchema = new Schema({
     completed: { type: Boolean, default: 0 },
     modifiedAt: { type: Date, default: Date.now },
     createdAt: { type: Date, default: Date.now }
-}, { timestamp: { createdAt: "createdAt", updatedAt: "modifiedAt" } });
+}, { timestamps: true });
 RequestLogSchema.index({ url: 1, financialYear: 1 }, { unique: true });
 module.exports = mongoose.model("RequestLog", RequestLogSchema);
 

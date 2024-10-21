@@ -8,13 +8,14 @@ const XVFcForms = require("../../models/XVFinanceComissionReForms");
 const service = require("../../service");
 const Response = require("../../service").response;
 const moment = require("moment");
+const mongoose = require("mongoose");
 const ObjectId = require("mongoose").Types.ObjectId;
 const axios = require("axios");
 const Redis = require("../../service/redis");
 const ExcelJS = require("exceljs");
 const { GSDP_OPT, DULY_ELECTED_OPT } = require("../../util/FormNames");
 const { checkForUndefinedVaribales } = require("../CommonActionAPI/service");
-const { ERROR_CODE} = require('../../util/Error_Constants')
+const { ERROR_CODE } = require('../../util/Error_Constants')
 module.exports.getFilteredUlb = async function (req, res) {
   let query = {};
   let query1 = {};
@@ -282,14 +283,14 @@ module.exports.post = async function (req, res) {
 module.exports.bulkPost = async function (req, res) {
   // state and ulb type is compulsory
   try {
-       let {d, baseCode, baseSbCode, baseStateCode} = req.body
+    let { d, baseCode, baseSbCode, baseStateCode } = req.body
     let i = 1;
     d.map(e => {
       e['area'] = Number(e['area']);
-      e['population']  = Number(e['population'])
+      e['population'] = Number(e['population'])
       e['UA'] = null;
       e['sbCode'] = baseSbCode + i + "";
-      e['code'] = baseStateCode + (baseCode + (i++)) 
+      e['code'] = baseStateCode + (baseCode + (i++))
     });
     await createData({ data: d });
     return res.status(200).send({
@@ -708,9 +709,9 @@ module.exports.getAllULBSCSV = function (req, res) {
         isMillionPlus: 1,
         censusCode: 1,
         sbCode: 1,
-        isGsdpEligible : 1,
-        isDulyElected : 1,
-        electedDate:{$dateToString:{ format: "%d/%m/%Y", date: "$electedDate" }  }
+        isGsdpEligible: 1,
+        isDulyElected: 1,
+        electedDate: { $dateToString: { format: "%d/%m/%Y", date: "$electedDate" } }
       },
     },
     {
@@ -736,19 +737,21 @@ module.exports.getAllULBSCSV = function (req, res) {
         sbCode: { $cond: ["$sbCode", "$sbCode", "NA"] },
         UA: { $cond: ["$UA", "$UA.name", "NA"] },
         UA_Code: { $cond: ["$UA", "$UA.UACode", "NA"] },
-        isGsdpEligible :  { 
+        isGsdpEligible: {
           $cond: [
             { $eq: [{ $ifNull: ["$isGsdpEligible", false] }, true] },
             GSDP_OPT['ELIGIBLE'],
             GSDP_OPT['NOT_ELIGIBLE'],
-          ]},
-        isDulyElected :{
+          ]
+        },
+        isDulyElected: {
           $cond: [
             { $eq: [{ $ifNull: ["$isDulyElected", false] }, true] },
             DULY_ELECTED_OPT['DULY_ELECTED'],
             DULY_ELECTED_OPT['NOT_ELECTED']
-          ]},
-        electedDate:{ $cond: ["$electedDate", "$electedDate", ""] }
+          ]
+        },
+        electedDate: { $cond: ["$electedDate", "$electedDate", ""] }
       },
     },
   ]).exec((err, data) => {
@@ -776,12 +779,12 @@ module.exports.getAllULBSCSV = function (req, res) {
           "," +
           el.isActive +
           "," +
-          ","+
+          "," +
           el.state.name +
           "," +
           el.state.code +
           "," +
-          ","+
+          "," +
           el.natureOfUlb +
           "," +
           el.area +
@@ -818,6 +821,184 @@ module.exports.getAllULBSCSV = function (req, res) {
     }
   });
 };
+
+// Helper: to convert string to number.
+function convertToNumber(key, dataType) {
+  return {
+    $convert: {
+      input: `$${key}`,
+      to: dataType,
+      onError: null,
+      onNull: null
+    }
+  }
+}
+// Dump of ULBs collection.
+module.exports.masterDump = async function (req, res) {
+
+  const workbook = new ExcelJS.Workbook();
+  const worksheet = workbook.addWorksheet('Master')
+
+  // Headers for the dump.
+  // If any additional line item has to be added: add "key" (key in DB/ schema) and "header".
+  worksheet.columns = [
+    { header: 'ULB Code', key: 'code', width: 12 },
+    { header: 'ULB Name', key: 'name', width: 30 },
+    { header: 'Census Code', key: 'censusCode', width: 12 },
+    { header: 'Alternate Code', key: 'sbCode', width: 12 },
+    { header: 'Consolidated Code', key: 'consolidatedCode', width: 13 },
+    { header: 'Census 2011 Population', key: 'population', width: 12 },
+    { header: 'Population Category', key: 'popCat', width: 12 },
+    { header: 'Area', key: 'area', width: 12 },
+    { header: 'Wards', key: 'wards', width: 12 },
+    { header: 'ULB Type', key: 'ulbTypeIs', width: 21 },
+    { header: 'Nature of ULB', key: 'natureOfUlb', width: 21 },
+    { header: 'Active Status', key: 'isActive', width: 12 },
+    { header: 'State Name', key: 'stateName', width: 30 },
+    { header: 'State Code', key: 'stateCode', width: 12 },
+    { header: 'Is UT', key: 'isUt', width: 12 },
+    { header: 'Latitude', key: 'lat', width: 12 },
+    { header: 'Longitude', key: 'lng', width: 12 },
+    { header: 'District Name', key: 'district', width: 20 },
+    { header: 'Census Type', key: 'censusType', width: 20 },
+    { header: 'UA Name', key: 'uaName', width: 12 },
+    { header: 'UA Code', key: 'uaCode', width: 12 },
+    { header: 'Is MillionPlus', key: 'isMillionPlus', width: 12 },
+    { header: 'AMRUT Status', key: 'amrut', width: 12 },
+    { header: 'LGD Codes', key: 'lgdCode', width: 12 },
+    { header: 'Population Source', key: 'population_source', width: 20 },
+    { header: 'Area Source', key: 'areaSource', width: 20 },
+    { header: 'Wards Source', key: 'wardSource', width: 20 },
+    { header: 'District Source', key: 'districtSoure', width: 20 },
+    { header: 'Latest Credit Rating', key: 'creditRating', width: 20 },
+    { header: ' Created On', key: 'createdAt', width: 20 },
+    { header: ' Modified On ', key: 'modifiedAt', width: 20 },
+  ];
+
+  // Fetch Data from DB.
+  let ulbDataCursor = await Ulb.aggregate(
+    [
+      {
+        $lookup: {
+          from: "states",
+          localField: "state",
+          foreignField: "_id",
+          as: "stateData"
+        }
+      },
+      {
+        $lookup: {
+          from: "ulbtypes",
+          localField: "ulbType",
+          foreignField: "_id",
+          as: "ulbTypeData"
+        }
+      },
+      {
+        $lookup: {
+          from: "uas",
+          localField: "UA",
+          foreignField: "_id",
+          as: "uaData"
+        }
+      },
+      {
+        $addFields: {
+          stateName: { $arrayElemAt: ["$stateData.name", 0] },
+          stateCode: { $arrayElemAt: ["$stateData.code", 0] },
+          isUt: { $arrayElemAt: ["$stateData.isUT", 0] },
+          uaCode: { $arrayElemAt: ["$uaData.UACode", 0] },
+          uaName: { $arrayElemAt: ["$uaData.name", 0] },
+          ulbTypeIs: { $arrayElemAt: ["$ulbTypeData.name", 0] },
+          createdAt: { $dateToString: { format: "%d-%m-%Y", date: "$createdAt" } }, //"%d-%b-%Y"
+          modifiedAt: { $dateToString: { format: "%d-%m-%Y", date: "$modifiedAt" } }, //"%d-%b-%Y"
+          lat: convertToNumber("location.lat", "double"),
+          lng: convertToNumber("location.lng", "double"),
+          censusCode: convertToNumber("censusCode", "int"),
+          sbCode: convertToNumber("sbCode", "int"),
+          lgdCode: convertToNumber("lgdCode", "int"),
+          area: convertToNumber("area", "double"),
+          wards: convertToNumber("wards", "int"),
+          population: convertToNumber("population", "int"),
+          consolidatedCode: {
+            $cond: [
+              { $ne: ["$censusCode", null] },
+              convertToNumber("censusCode", "int"),
+              convertToNumber("sbCode", "int")
+            ]
+          },
+          popCat: {
+            $switch: {
+              branches: [
+                { case: { $lt: ["$population", 100000] }, then: "<100K" },
+                { case: { $and: [{ $gte: ["$population", 100000] }, { $lt: ["$population", 500000] }] }, then: "100K-500K" },
+                { case: { $and: [{ $gte: ["$population", 500000] }, { $lt: ["$population", 1000000] }] }, then: "500K-1M" },
+                { case: { $and: [{ $gte: ["$population", 1000000] }, { $lt: ["$population", 4000000] }] }, then: "1M-4M" },
+                { case: { $gte: ["$population", 4000000] }, then: "4M+" }
+              ],
+              default: "Unknown"
+            }
+          }
+        }
+      },
+      // { $unset: ["uaData", "stateData", "ulbTypeData"] }, Supported after mongo version 4.2
+      {
+        $project: {
+          uaData: 0,
+          stateData: 0,
+          ulbTypeData: 0,
+          UA: 0,
+          location: 0,
+          state: 0,
+          regionalName: 0,
+          ulbType: 0,
+          population_old: 0,
+          access_2021: 0,
+          access_2122: 0,
+          access_2223: 0,
+          access_2324: 0,
+          access_2425: 0,
+          isDulyElected: 0,
+          isGsdpEligible: 0
+        }
+      }
+    ]
+    // );
+  ).cursor().exec();
+
+  // Add data to excel.
+  for (let doc = await ulbDataCursor.next(); doc != null; doc = await ulbDataCursor.next()) {
+    worksheet.addRow(doc);
+  }
+
+  // let rows = [];
+  // for (let doc = await ulbDataCursor.next(); doc != null; doc = await ulbDataCursor.next()) {
+  //   rows.push(doc);
+  //   if (rows.length === 1000) {  // Add in batches of 1000 rows (adjust batch size as needed)
+  //     worksheet.addRows(rows);
+  //     rows = [];  // Clear the array for the next batch
+  //   }
+  // }
+  // // Add any remaining rows
+  // if (rows.length > 0) {
+  //   worksheet.addRows(rows);
+  // }
+
+  // Style header.
+  worksheet.getRow(1).alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
+  worksheet.views = [
+    { state: 'normal', zoomScale: 90 }
+  ];
+
+  // Stream the workbook to the response
+  const buffer = await workbook.xlsx.writeBuffer();
+  let filename = `CF_ULB_Master_${(moment().format("DD-MMM-YY_HH-mm-ss"))}`;
+  res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+  res.setHeader('Content-Disposition', `attachment; filename=${filename}.xlsx`);
+  res.send(buffer);
+  res.end();
+
+}
 
 module.exports.getPopulate = async (req, res, next) => {
   try {
@@ -871,111 +1052,155 @@ module.exports.getUlbs = async (req, res) => {
       .json({ message: "", errMessage: e.message, success: false });
   }
 };
-module.exports.getUlbsWithAuditStatus = async (req, res) => {
-  try {
-    let query = {};
-    if (req.query.state) {
-      query["state"] = Schema.Types.ObjectId(req.query.state);
-    }
-    let condition = { isActive: true };
-    let financialYear =
-      req.body.year && req.body.year.length ? req.body.year : null;
-    financialYear
-      ? (condition["financialYear"] = { $in: financialYear })
-      : null;
+// TODO: check and optimize
+async function getOldQueryData(req) {
+  let query = {};
+  if (req.query.state) {
+    query["state"] = Schema.Types.ObjectId(req.query.state);
+  }
+  let condition = { isActive: true };
+  let financialYear =
+    req.body.year && req.body.year.length ? req.body.year : null;
+  financialYear
+    ? (condition["financialYear"] = { $in: financialYear })
+    : null;
 
-    let auditLineItem = await LineItem.findOne({ code: "1001" }).exec();
-    if (financialYear && financialYear.length) {
-      let commonUlbs = await getUlbs(financialYear);
-      condition["ulb"] = { $in: commonUlbs };
-    }
-    // if(auditLineItem){
-    //   condition["lineItem"] = auditLineItem._id;
-    // }
-    let ulbs = await UlbLedger.aggregate([
-      { $match: condition },
-      {
-        $group: {
-          _id: {
-            ulb: "$ulb",
-          },
-          lineItem: {
-            $addToSet: { _id: "$lineItem", amount: "$amount" },
-          },
+  let auditLineItem = await LineItem.findOne({ code: "1001" }).exec();
+  if (financialYear && financialYear.length) {
+    let commonUlbs = await getUlbs(financialYear);
+    condition["ulb"] = { $in: commonUlbs };
+  }
+  // if(auditLineItem){
+  //   condition["lineItem"] = auditLineItem._id;
+  // }
+  let ulbs = await UlbLedger.aggregate([
+    { $match: condition },
+    {
+      $group: {
+        _id: {
+          ulb: "$ulb",
+        },
+        lineItem: {
+          $addToSet: { _id: "$lineItem", amount: "$amount" },
         },
       },
-      {
-        $project: {
-          ulb: "$_id.ulb",
-          lineItem: {
-            $filter: {
-              input: "$lineItem",
-              as: "lineItem",
-              cond: {
-                $and: [
-                  {
-                    $eq: ["$$lineItem._id", auditLineItem._id],
-                  },
-                ],
-              },
-            },
-          },
-        },
-      },
-      {
-        $project: {
-          ulb: 1,
-          lineItem: { $arrayElemAt: ["$lineItem", 0] },
-        },
-      },
-      {
-        $project: {
-          ulb: 1,
-          amount: "$lineItem.amount",
-        },
-      },
-      {
-        $project: {
-          ulb: 1,
-          auditStatus: {
-            $switch: {
-              branches: [
+    },
+    {
+      $project: {
+        ulb: "$_id.ulb",
+        lineItem: {
+          $filter: {
+            input: "$lineItem",
+            as: "lineItem",
+            cond: {
+              $and: [
                 {
-                  case: { $eq: ["$amount", 0] },
-                  then: "unaudited",
-                },
-                {
-                  case: { $gt: ["$amount", 0] },
-                  then: "audited",
+                  $eq: ["$$lineItem._id", auditLineItem._id],
                 },
               ],
-              default: "auditNA",
             },
           },
         },
       },
-      {
-        $lookup: {
-          from: "ulbs",
-          as: "ulb",
-          foreignField: "_id",
-          localField: "ulb",
+    },
+    {
+      $project: {
+        ulb: 1,
+        lineItem: { $arrayElemAt: ["$lineItem", 0] },
+      },
+    },
+    {
+      $project: {
+        ulb: 1,
+        amount: "$lineItem.amount",
+      },
+    },
+    {
+      $project: {
+        ulb: 1,
+        auditStatus: {
+          $switch: {
+            branches: [
+              {
+                case: { $eq: ["$amount", 0] },
+                then: "unaudited",
+              },
+              {
+                case: { $gt: ["$amount", 0] },
+                then: "audited",
+              },
+            ],
+            default: "auditNA",
+          },
         },
       },
-      { $unwind: "$ulb" },
-      {
+    },
+    {
+      $lookup: {
+        from: "ulbs",
+        as: "ulb",
+        foreignField: "_id",
+        localField: "ulb",
+      },
+    },
+    { $unwind: "$ulb" },
+    {
+      $project: {
+        state: "$ulb.state",
+        code: "$ulb.code",
+        name: "$ulb.name",
+        _id: "$ulb._id",
+        area: "$ulb.area",
+        population: "$ulb.population",
+        auditStatus: 1,
+        location: "$ulb.location",
+      },
+    },
+  ]).allowDiskUse(true);
+  return ulbs;
+}
+module.exports.getUlbsWithAuditStatus = async (req, res) => {
+  // mongoose.set('debug', true);
+  try {
+    let ulbs = [];
+    if (req.body.newQuery1) {
+      let query = { isActive: true };
+      if (req.query.state) {
+        query["state"] = ObjectId(req.query.state);
+      }
+      ulbs = await Ulb.aggregate([{
+        '$match': query
+      }, {
+        '$lookup': {
+          from: 'ulbledgers',
+          as: 'ulbLedger',
+          foreignField: 'ulb',
+          localField: '_id'
+        }
+      }, {
+        $match: {
+          "ulbLedger": {
+            $ne: []
+          }
+        }
+      }, {
         $project: {
-          state: "$ulb.state",
-          code: "$ulb.code",
-          name: "$ulb.name",
-          _id: "$ulb._id",
-          area: "$ulb.area",
-          population: "$ulb.population",
-          auditStatus: 1,
-          location: "$ulb.location",
-        },
-      },
-    ]).allowDiskUse(true);
+          _id: 1,
+          name: 1,
+          code: 1,
+          state: 1,
+          ulbType: 1,
+          location: 1,
+          population: 1,
+          area: 1
+        }
+      }]).exec();
+      // ulbs = await Ulb.find(query, "_id name code state ulbType area population location")
+      //   .exec();
+    } else {
+      ulbs = await getOldQueryData(req);
+    }
+
     return res.status(200).json({
       message: "Ulb list with population and coordinates and population.",
       success: true,
@@ -1156,22 +1381,22 @@ module.exports.truncateSbCode = async (req, res) => {
 }
 
 /*It is an asynchronous function that handles a request to update fields in a database. */
-module.exports.updateFields = async (req, res)=>{
-  try{
-    const { data, modelPath, filter, filterOperator} = req.body;
+module.exports.updateFields = async (req, res) => {
+  try {
+    const { data, modelPath, filter, filterOperator } = req.body;
     let validObj = Object.keys(req.body).length && checkForUndefinedVaribales(req.body);
-    if(!validObj.valid){
+    if (!validObj.valid) {
       throw Error(`${validObj.message ?? 'Fields missing'}`)
     }
     // const Model =  require(`../../models/${modelPath}`);
     let query = getQuery(filter, data, filterOperator);
     let output = await Ulb.bulkWrite(query);
-    return Response.OK(res,output);
-  }catch(error){
-    if(Object.keys(ERROR_CODE).includes(error.code)){
+    return Response.OK(res, output);
+  } catch (error) {
+    if (Object.keys(ERROR_CODE).includes(error.code)) {
       return Response.BadRequest(res, {}, ERROR_CODE[error.code]);
     }
-    return Response.BadRequest(res, {},error.message);
+    return Response.BadRequest(res, {}, error.message);
   }
 }
 
@@ -1196,25 +1421,25 @@ function getQuery(filter, data, filterOperator) {
 
     data.forEach((obj) => {
       let filterQuery = filterArray.map((filter) => {
-        const keyInFilter = getObjectKey(filter,0)
+        const keyInFilter = getObjectKey(filter, 0)
         if (obj[keyInFilter]) {
-           filter[keyInFilter] = obj[keyInFilter];
+          filter[keyInFilter] = obj[keyInFilter];
           delete obj[keyInFilter];
           return filter;
-        } 
+        }
         return;
       });
       filterQuery = filterQuery.filter((el) => el && el);
       query.push({
         updateOne: {
-           filter: { [filterOperator]: JSON.parse(JSON.stringify(filterQuery)) },
-           update: { $set : obj}
-          }
+          filter: { [filterOperator]: JSON.parse(JSON.stringify(filterQuery)) },
+          update: { $set: obj }
+        }
       });
     });
     return query;
   } catch (error) {
-    throw Error({message: `getQuery : ${error.message}`})
+    throw Error({ message: `getQuery : ${error.message}` })
   }
 }
 
@@ -1225,10 +1450,10 @@ function getQuery(filter, data, filterOperator) {
  * @param idx - The `idx` parameter is the index of the key you want to retrieve from the `obj` object.
  * @returns the key at the specified index in the object.
  */
-function getObjectKey(obj, idx){
+function getObjectKey(obj, idx) {
   try {
     return Object.keys(obj)[idx];
   } catch (error) {
-    throw Error({message: `${error.message}`})
+    throw Error({ message: `${error.message}` })
   }
 }

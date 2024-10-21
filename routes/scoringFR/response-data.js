@@ -199,44 +199,44 @@ module.exports.overallHeader = [
 
 // Top ranked ulbs RM & EP header - ulb deatils.
 module.exports.rmEpFGHeader = (type, ulb) => {
-	let score = '300';
-	if (type === 'resourceMobilization') {
-		score = 600;
-	}
-	const columns = [
-		{
-			'label': 'S. No',
-			'key': 'sNo',
-		},
-		{
-			'label': 'Indicator',
-			'key': 'indicator',
-		},
-		{
-			'label': 'Units',
-			'key': 'unit',
-		},
-		{
-			'label': 'ULB performance',
-			'key': 'ulbPerformance',
-		},
-		{
-			'label': 'Highest performance',
-			'info': 'In population category',
-			'key': 'highPerformance',
-		},
-		{
-			'label': 'Lowest performance',
-			'info': 'In population category',
-			'key': 'lowPerformance',
-		},
-		{
-			'label': 'ULB Score',
-			'info': `Out of ${score}`,
-			'key': 'ulbScore',
-		},
-	];
-	return { columns, 'lastRow': ['', '', '', '', '', 'Total', ulb[type].score] };
+    let score = '300';
+    if (type === 'resourceMobilization') {
+        score = 600;
+    }
+    const columns = [
+        {
+            'label': 'S. No',
+            'key': 'sNo',
+        },
+        {
+            'label': 'Indicator',
+            'key': 'indicator',
+        },
+        {
+            'label': 'Units',
+            'key': 'unit',
+        },
+        {
+            'label': 'ULB performance',
+            'key': 'ulbPerformance',
+        },
+        {
+            'label': 'Highest performance',
+            'info': 'In population category',
+            'key': 'highPerformance',
+        },
+        {
+            'label': 'Lowest performance',
+            'info': 'In population category',
+            'key': 'lowPerformance',
+        },
+        {
+            'label': 'ULB Score',
+            'info': `Out of ${score}`,
+            'key': 'ulbScore',
+        },
+    ];
+    return { columns, 'lastRow': ['', '', '', '', '', 'Total', Number(ulb[type].score.toFixed(2))] };
 }
 
 // Participated states & UT.
