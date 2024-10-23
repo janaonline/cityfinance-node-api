@@ -546,7 +546,7 @@ function findassessmentParameter(sortBy) {
 				'key': 'overallScore',
 			},
 			{
-				'label': 'Rank',
+				'label': 'Overall Rank',
 				'key': 'overallRank',
 				'sort': 1,
 				'sortable': true,
