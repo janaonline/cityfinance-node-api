@@ -144,6 +144,7 @@ function tableRes(states, query, total) {
 	let tableData = getTableHeaderParticipatedStates;
 	let mapData = [];
 	tableData['total'] = total;
+	tableData['data'] = [];
 	let i = getPageNo(query);
 	for (const state of states) {
 		const rankedtoTotal = state.fiscalRanking && state.fiscalRanking[0].totalUlbs && state.fiscalRanking[0].rankedUlbs ?
