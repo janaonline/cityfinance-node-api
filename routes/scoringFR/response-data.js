@@ -82,92 +82,102 @@ module.exports.assesmentParamLabels = [
 
 // AFS & Budget document details.
 module.exports.getTableHeaderDocs = {
-    'columns': [
-        {
-            'label': 'S.No',
-            'key': 'sNo',
-            'class': 'th-common-cls',
-            'width': '2',
-        },
-        {
-            'label': 'ULB Name',
-            'key': 'ulbName',
-            'sort': 1,
-            'query': '',
-            'sortable': true,
-            'class': 'th-color-cls',
-        },
-        {
-            'label': 'Population Category',
-            'key': 'populationCategory',
-            'sortable': true,
-            'class': 'th-common-cls',
-        },
-        {
-            'label': 'ULB Participated',
-            'key': 'isUlbParticipated',
-            'sortable': true,
-            'class': 'th-common-cls',
-        },
-        {
-            'label': 'CFR Ranked',
-            'key': 'isUlbRanked',
-            'sortable': true,
-            'class': 'th-common-cls',
-        },
-        {
-            'label': 'Annual Financial Statement Available',
-            'key': 'auditedAccounts2018-19',
-            'colspan': 4,
-            'class': 'th-common-cls',
-            'pdfLink': true
-        },
-        {
-            'label': '',
-            'key': 'auditedAccounts2019-20',
-            'hidden': true,
-            'pdfLink': true
-        },
-        {
-            'label': '',
-            'key': 'auditedAccounts2020-21',
-            'hidden': true,
-            'pdfLink': true
-        },
-        {
-            'label': '',
-            'key': 'auditedAccounts2021-22',
-            'hidden': true,
-            'pdfLink': true
-        },
-        {
-            'label': 'Annual Budget Available',
-            'key': 'annualBudgets2020-21',
-            'colspan': 4,
-            'class': 'th-common-cls',
-            'pdfLink': true
-        },
-        {
-            'label': '',
-            'key': 'annualBudgets2021-22',
-            'hidden': true,
-            'pdfLink': true
-        },
-        {
-            'label': '',
-            'key': 'annualBudgets2022-23',
-            'hidden': true,
-            'pdfLink': true
-        },
-        {
-            'label': '',
-            'key': 'annualBudgets2023-24',
-            'hidden': true,
-            'pdfLink': true
-        },
-    ],
-    'subHeaders': ['', '', '', '', '', ...module.exports.abYears, ...module.exports.abYears],
-    'name': '',
+  columns: [
+    {
+      label: 'S.No',
+      key: 'sNo',
+      class: 'th-common-cls',
+      width: '2',
+    },
+    {
+      label: 'ULB Name',
+      key: 'ulbName',
+      sort: 1,
+      query: '',
+      sortable: true,
+      class: 'th-color-cls',
+    },
+    {
+      label: 'Population Category',
+      key: 'populationCategory',
+      sortable: true,
+      class: 'th-common-cls',
+    },
+    {
+      label: 'ULB Participated',
+      key: 'isUlbParticipated',
+      sortable: true,
+      class: 'th-common-cls',
+    },
+    {
+      label: 'CFR Ranked',
+      key: 'isUlbRanked',
+      sortable: true,
+      class: 'th-common-cls',
+    },
+    {
+      label: 'Annual Financial Statement Available',
+      key: 'auditedAccounts2018-19',
+      colspan: 4,
+      class: 'th-common-cls',
+      pdfLink: true,
+    },
+    {
+      label: '',
+      key: 'auditedAccounts2019-20',
+      hidden: true,
+      pdfLink: true,
+    },
+    {
+      label: '',
+      key: 'auditedAccounts2020-21',
+      hidden: true,
+      pdfLink: true,
+    },
+    {
+      label: '',
+      key: 'auditedAccounts2021-22',
+      hidden: true,
+      pdfLink: true,
+    },
+    {
+      label: 'Annual Budget Available',
+      key: 'annualBudgets2020-21',
+      colspan: 4,
+      class: 'th-common-cls',
+      pdfLink: true,
+    },
+    {
+      label: '',
+      key: 'annualBudgets2021-22',
+      hidden: true,
+      pdfLink: true,
+    },
+    {
+      label: '',
+      key: 'annualBudgets2022-23',
+      hidden: true,
+      pdfLink: true,
+    },
+    {
+      label: '',
+      key: 'annualBudgets2023-24',
+      hidden: true,
+      pdfLink: true,
+    },
+  ],
+  subHeaders: [
+    '',
+    '',
+    '',
+    '',
+    '',
+    ...module.exports.abYears,
+    ...module.exports.abYears,
+  ].map((e, i) => {
+    return { label: e, key: i };
+  }),
+  name: '',
 };
 
 //<----- ranking-service.js ----->//
