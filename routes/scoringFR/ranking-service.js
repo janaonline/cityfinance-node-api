@@ -159,7 +159,7 @@ function tableRes(states, query, total) {
 			rankedUlbs: state.fiscalRanking ? state.fiscalRanking[0].rankedUlbs : 0,
 			nonRankedUlbs: state.fiscalRanking ? state.fiscalRanking[0].nonRankedUlbs : 0,
 			rankedtoTotal,
-			nameLink: `/rankings/participated-ulbs/${state._id}`,
+			nameLink: `/cfr/participated-ulbs/${state._id}`,
 		};
 		const participatedCount = {
 			'percentage': state.fiscalRanking ? state.fiscalRanking[0].participatedUlbsPercentage : 0,
@@ -323,7 +323,7 @@ function stateTable(indicator, states, query, total) {
 			'sNo': i++,
 			'totalUlbs': state.fiscalRanking[0] ? state.fiscalRanking[0].totalUlbs : 0,
 			'name': state.name,
-			'nameLink': `/rankings/participated-ulbs/${state._id}`,
+			'nameLink': `/cfr/participated-ulbs/${state._id}`,
 		};
 		years.forEach((year) => {
 			ele[year] = getDocYearCount(state, indicator, year);
@@ -459,7 +459,7 @@ async function fetchFiveUlbs(ulbRes, sortBy, state) {
 	if (sortBy === 'overAll') {
 		map1Data = [];
 		ulbScore = [];
-		for (ulb of ulbRes) {
+		for (const ulb of ulbRes) {
 			const ulbData = {
 				'overallRank': ulb.overAll.rank,
 				'ulbName': ulb.name,
@@ -467,7 +467,7 @@ async function fetchFiveUlbs(ulbRes, sortBy, state) {
 					title: `${ulb.name} (${getPopulationBucket(ulb.populationBucket)})`
 				},
 				ulb,
-				'ulbNameLink': `/rankings/ulb/${ulb.censusCode ? ulb.censusCode : ulb.sbCode ? ulb.sbCode : ulb.ulb}`,
+				'ulbNameLink': `/cfr/ulb/${ulb.censusCode ? ulb.censusCode : ulb.sbCode ? ulb.sbCode : ulb.ulb}`,
 				'overallScore': Number(ulb.overAll.score.toFixed(2)),
 				'resourceMobilizationScore': Number(ulb.resourceMobilization.score.toFixed(2)),
 				'expenditurePerformanceScore': Number(ulb.expenditurePerformance.score.toFixed(2)),
@@ -505,12 +505,12 @@ function setOneUlb(ulb, key, state, stateRes) {
 function findassessmentParameterScore(ulbRes, key, state, stateRes) {
 	ulbScore = [];
 	map1Data = [];
-	for (ulb of ulbRes) {
+	for (const ulb of ulbRes) {
 		var ulbData = {
 			[`${key}Score`]: Number(ulb[key].score.toFixed(2)),
 			[`${key}Rank`]: ulb[key].rank,
 			'ulbName': ulb.name,
-			'ulbNameLink': `/rankings/ulb/${ulb.censusCode ? ulb.censusCode : ulb.sbCode ? ulb.sbCode : ulb.ulb}`,
+			'ulbNameLink': `/cfr/ulb/${ulb.censusCode ? ulb.censusCode : ulb.sbCode ? ulb.sbCode : ulb.ulb}`,
 			'overallScore': Number(ulb.overAll.score.toFixed(2)),
 			'overallRank': ulb.overAll.rank,
 		};
@@ -534,6 +534,7 @@ function findassessmentParameter(sortBy) {
 			{
 				'label': 'ULB Name',
 				'key': 'ulbName',
+				'link': 'ulbNameLink'
 			},
 			{
 				'label': `${label} Score`,
