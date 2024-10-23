@@ -96,6 +96,7 @@ module.exports.getTableHeaderDocs = {
       query: '',
       sortable: true,
       class: 'th-color-cls',
+      link: 'ulbNameLink'
     },
     {
       label: 'Population Category',
@@ -192,6 +193,7 @@ module.exports.overallHeader = [
     {
         'label': 'ULB Name',
         'key': 'ulbName',
+        'link': 'ulbNameLink'
     },
     {
         'label': 'Total ULB Score',
