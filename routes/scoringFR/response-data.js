@@ -120,42 +120,50 @@ module.exports.getTableHeaderDocs = {
             'key': 'auditedAccounts2018-19',
             'colspan': 4,
             'class': 'th-common-cls',
+            'pdfLink': true
         },
         {
             'label': '',
             'key': 'auditedAccounts2019-20',
             'hidden': true,
+            'pdfLink': true
         },
         {
             'label': '',
             'key': 'auditedAccounts2020-21',
             'hidden': true,
+            'pdfLink': true
         },
         {
             'label': '',
             'key': 'auditedAccounts2021-22',
             'hidden': true,
+            'pdfLink': true
         },
         {
             'label': 'Annual Budget Available',
             'key': 'annualBudgets2020-21',
             'colspan': 4,
             'class': 'th-common-cls',
+            'pdfLink': true
         },
         {
             'label': '',
             'key': 'annualBudgets2021-22',
             'hidden': true,
+            'pdfLink': true
         },
         {
             'label': '',
             'key': 'annualBudgets2022-23',
             'hidden': true,
+            'pdfLink': true
         },
         {
             'label': '',
             'key': 'annualBudgets2023-24',
             'hidden': true,
+            'pdfLink': true
         },
     ],
     'subHeaders': ['', '', '', '', '', ...module.exports.abYears, ...module.exports.abYears],
@@ -256,6 +264,7 @@ module.exports.getTableHeaderParticipatedStates = {
             'sortable': true,
             'class': 'th-common-cls',
             'width': '8',
+            'link': 'nameLink'
         },
         // {
         //     'label': 'State Type',
