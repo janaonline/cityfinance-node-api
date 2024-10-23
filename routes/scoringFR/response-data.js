@@ -120,42 +120,50 @@ module.exports.getTableHeaderDocs = {
             'key': 'auditedAccounts2018-19',
             'colspan': 4,
             'class': 'th-common-cls',
+            'pdfLink': true
         },
         {
             'label': '',
             'key': 'auditedAccounts2019-20',
             'hidden': true,
+            'pdfLink': true
         },
         {
             'label': '',
             'key': 'auditedAccounts2020-21',
             'hidden': true,
+            'pdfLink': true
         },
         {
             'label': '',
             'key': 'auditedAccounts2021-22',
             'hidden': true,
+            'pdfLink': true
         },
         {
             'label': 'Annual Budget Available',
             'key': 'annualBudgets2020-21',
             'colspan': 4,
             'class': 'th-common-cls',
+            'pdfLink': true
         },
         {
             'label': '',
             'key': 'annualBudgets2021-22',
             'hidden': true,
+            'pdfLink': true
         },
         {
             'label': '',
             'key': 'annualBudgets2022-23',
             'hidden': true,
+            'pdfLink': true
         },
         {
             'label': '',
             'key': 'annualBudgets2023-24',
             'hidden': true,
+            'pdfLink': true
         },
     ],
     'subHeaders': ['', '', '', '', '', ...module.exports.abYears, ...module.exports.abYears],
@@ -212,31 +220,31 @@ module.exports.rmEpFGHeader = (type, ulb) => {
             'label': 'Indicator',
             'key': 'indicator',
         },
-        {
-            'label': 'Units',
-            'key': 'unit',
-        },
-        {
-            'label': 'ULB performance',
-            'key': 'ulbPerformance',
-        },
-        {
-            'label': 'Highest performance',
-            'info': 'In population category',
-            'key': 'highPerformance',
-        },
-        {
-            'label': 'Lowest performance',
-            'info': 'In population category',
-            'key': 'lowPerformance',
-        },
+        // {
+        //     'label': 'Units',
+        //     'key': 'unit',
+        // },
+        // {
+        //     'label': 'ULB performance',
+        //     'key': 'ulbPerformance',
+        // },
+        // {
+        //     'label': 'Highest performance',
+        //     'info': 'In population category',
+        //     'key': 'highPerformance',
+        // },
+        // {
+        //     'label': 'Lowest performance',
+        //     'info': 'In population category',
+        //     'key': 'lowPerformance',
+        // },
         {
             'label': 'ULB Score',
             'info': `Out of ${score}`,
             'key': 'ulbScore',
         },
     ];
-    return { columns, 'lastRow': ['', '', '', '', '', 'Total', Number(ulb[type].score.toFixed(2))] };
+    return { columns, 'lastRow': ['', 'Total', Number(ulb[type].score.toFixed(2))] };
 }
 
 // Participated states & UT.
@@ -256,14 +264,15 @@ module.exports.getTableHeaderParticipatedStates = {
             'sortable': true,
             'class': 'th-common-cls',
             'width': '8',
+            'link': 'nameLink'
         },
-        {
-            'label': 'State Type',
-            'key': 'stateType',
-            'sortable': false,
-            'class': 'th-common-cls',
-            'width': '6',
-        },
+        // {
+        //     'label': 'State Type',
+        //     'key': 'stateType',
+        //     'sortable': false,
+        //     'class': 'th-common-cls',
+        //     'width': '6',
+        // },
         {
             'label': 'Total ULBs',
             'key': 'totalULBs',
@@ -271,49 +280,50 @@ module.exports.getTableHeaderParticipatedStates = {
             'class': 'th-common-cls',
             'width': '6',
         },
+        // {
+        //     'label': 'Participated ULBs',
+        //     'key': 'participatedUlbs',
+        //     'sortable': true,
+        //     'class': 'th-common-cls',
+        //     'width': '7',
+        // },
         {
-            'label': 'Participated ULBs',
-            'key': 'participatedUlbs',
-            'sortable': true,
-            'class': 'th-common-cls',
-            'width': '7',
-        },
-        {
-            'label': 'Ranked ULBs',
+            'label': 'No. of ULBs Ranked',
             'key': 'rankedUlbs',
             'sortable': true,
             'class': 'th-common-cls',
             'width': '6',
         },
+        // {
+        //     'label': 'Non Ranked ULBs',
+        //     'key': 'nonRankedUlbs',
+        //     'sortable': true,
+        //     'class': 'th-common-cls',
+        //     'width': '7',
+        // },
         {
-            'label': 'Non Ranked ULBs',
-            'key': 'nonRankedUlbs',
-            'sortable': true,
-            'class': 'th-common-cls',
-            'width': '7',
-        },
-        {
-            'label': 'Ranked to Total(%)',
+            'label': '% of Ranked to Total',
             'key': 'rankedtoTotal',
             'sortable': true,
             'class': 'th-color-cls',
             'width': '7',
         },
     ],
-    'subHeaders': [
-        '',
-        '',
-        '',
-        'A',
-        'B',
-        'C',
-        'D',
-        'E = C/ A * 100'
-    ],
+    // 'subHeaders': [
+    //     // '',
+    //     '',
+    //     '',
+    //     'A',
+    //     'B',
+    //     // 'C',
+    //     // 'D',
+    //     // 'E = C/ A * 100'
+    //     'B/ A * 100'
+    // ],
     'name': '',
     'data': [],
     // total,
-    'lastRow': ['', '', 'Total', '$sum', '$sum', '$sum', '$sum', '$sum'],
+    // 'lastRow': ['', '', 'Total', '$sum', '$sum', '$sum', '$sum', '$sum'],
 };
 
 // Filter API.
