@@ -145,6 +145,8 @@ async function getParticipatedState(limit, skip = 0, query = false, select = 'na
 		const rankedCond = ulbRankingStatusFilter === 'ranked' ? { '$ne': 0 } : 0;
 		condition = { ...condition, 'fiscalRanking.rankedUlbs': rankedCond };
 	}
+	condition = { ...condition, 'fiscalRanking.rankedUlbs': { $ne: 0 } };
+	
 	const states = await State.find(condition).select(select).sort(sort).limit(limit).skip(skip).lean();
 	const total = await State.countDocuments(condition);
 	return { data: tableRes(states, query, total) }
@@ -170,7 +172,7 @@ module.exports.participatedState = async (req, res) => {
 // Find participated ULB count state wise.
 function tableRes(states, query, total) {
 	let tableData = getTableHeaderParticipatedStates;
-	let mapData = [];
+	// let mapData = [];
 	tableData['total'] = total;
 	tableData['data'] = [];
 	let i = getPageNo(query);
@@ -189,17 +191,95 @@ function tableRes(states, query, total) {
 			rankedtoTotal,
 			nameLink: `/cfr/participated-ulbs/${state._id}`,
 		};
-		const participatedCount = {
-			'percentage': state.fiscalRanking ? state.fiscalRanking[0].participatedUlbsPercentage : 0,
-			'code': state.code,
-			'_id': state.name,
-			'stateId': state._id,
-		};
+		// const participatedCount = {
+		// 	'percentage': state.fiscalRanking ? state.fiscalRanking[0].participatedUlbsPercentage : 0,
+		// 	'code': state.code,
+		// 	'_id': state.name,
+		// 	'stateId': state._id,
+		// };
 		tableData.data.push(ele);
-		mapData.push(participatedCount);
+		// mapData.push(participatedCount);
 	}
-	return { tableData, mapData };
+	return { tableData };
 }
+
+// <<-- Participated State Map -->>
+module.exports.participatedStateMap = async (req, res) => {
+	try {
+		// mongoose.set('debug', true);
+		const query = req.query;
+		const condition = { isActive: true };
+		let { limit, skip } = getPaginationParams(req.query);
+		const data = await getParticipatedStateMap(limit, skip, query, 'name code fiscalRanking stateType');
+
+		return res.status(200).json({ ...data });
+	} catch (error) {
+		console.log('error', error);
+		return res.status(400).json({
+			status: false,
+			message: error.message,
+		});
+	}
+};
+async function getParticipatedStateMap(limit = 40, skip = 0, query = false, select = 'name') {
+	const { stateType, ulbParticipationFilter, ulbRankingStatusFilter } = query;
+	let condition = { isActive: true };
+	// if (sortBy) {
+	// 	const by = sortArr[sortBy] || 'name'
+	// 	sort = { [by]: order };
+	// }
+	if (['Large', 'Small', 'UT'].includes(stateType)) {
+		condition = { ...condition, stateType };
+	}
+	if (['participated', 'nonParticipated'].includes(ulbParticipationFilter)) {
+		const participateCond =
+		ulbParticipationFilter === 'participated' ? { $ne: 0 } : 0;
+		condition = {
+		...condition,
+		'fiscalRanking.participatedUlbs': participateCond,
+		};
+	}
+	if (['ranked', 'nonRanked'].includes(ulbRankingStatusFilter)) {
+		const rankedCond = ulbRankingStatusFilter === 'ranked' ? { $ne: 0 } : 0;
+		condition = { ...condition, 'fiscalRanking.rankedUlbs': rankedCond };
+	}
+	condition = { ...condition, 'fiscalRanking.rankedUlbs': { $ne: 0 } };
+
+	// const states = await State.find(condition).select(select).sort(sort).limit(limit).skip(skip).lean();
+	const states = await State.find(condition)
+		.select(select)
+		.limit(limit)
+		.skip(skip)
+		.lean();
+	const total = await State.countDocuments(condition);
+	return { data: mapRes(states, query, total) };
+}
+// Find participated ULB count state wise - Map
+function mapRes(states, query, total) {
+	let mapData = [];
+	for (const state of states) {
+		const rankedtoTotal = {
+		percentage:
+			state.fiscalRanking &&
+			state.fiscalRanking[0].totalUlbs &&
+			state.fiscalRanking[0].rankedUlbs
+			? parseFloat(
+				(
+					(state.fiscalRanking[0].rankedUlbs /
+					state.fiscalRanking[0].totalUlbs) *
+					100
+				).toFixed(2)
+				)
+			: 0,
+		code: state.code,
+		_id: state.name,
+		stateId: state._id,
+		};
+		mapData.push(rankedtoTotal);
+	}
+	return { mapData };
+}
+
 
 //<<-- Participated states - Filter -->>
 module.exports.filterApi = async (req, res) => {
