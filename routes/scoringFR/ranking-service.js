@@ -454,10 +454,9 @@ function getMapData() { }
 module.exports.topRankedUlbs = async (req, res) => {
 	try {
 		// moongose.set('debug', true);
-		let { category, sortBy, order, state, populationBucket, limit } = req.query;
+		let { category, sortBy, order, state, populationBucket } = req.query;
 		let condition = { isActive: true, currentFormStatus };
-		
-		limit = limit ? parseInt(limit) : 0;
+		const { limit, skip } = getPaginationParams(req.query);
 
 		if (state) {
 			condition = { ...condition, state: ObjectId(state) };
@@ -483,9 +482,11 @@ module.exports.topRankedUlbs = async (req, res) => {
 		const ulbRes = await ScoringFiscalRanking.find(condition)
 			.select('name ulb location resourceMobilization expenditurePerformance fiscalGovernance overAll state populationBucket')
 			.sort(sort)
+			.skip(skip)
 			.limit(limit)
 			.exec();
-		// console.log(ulbRes)
+
+		const total = await ScoringFiscalRanking.countDocuments(condition);
 
 		await fetchFiveUlbs(ulbRes, by, state);
 		var assessmentParameter = findassessmentParameter(by);
@@ -493,6 +494,7 @@ module.exports.topRankedUlbs = async (req, res) => {
 		return res.status(200).json({
 			'status': true,
 			'message': 'Successfully fetched data!',
+			total,
 			'tableData': { 'columns': assessmentParameter, 'data': [...ulbScore] },
 			'mapDataTopUlbs': [...map1Data],
 			// 'mapDataRankHolders': top-ranked-states API
@@ -521,7 +523,7 @@ function countEle() {
 }
 //<<-- Top Ranked ULBs -->>
 module.exports.topRankedStates = async (req, res) => {
-	moongose.set('debug', true);
+	// moongose.set('debug', true);
 	try {
 		let ulbs = [];
 		for (const indicator of mainIndicators) {
