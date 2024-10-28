@@ -597,13 +597,11 @@ function setOneUlb(ulb, key, state, stateRes) {
 	let ulbLocation = { ...ulb.location, ulbName: ulb.name, [`${key}Rank`]: ulb[key].rank, populationBucket: ulb.populationBucket };
 	if (!state) { // for all states
 		const index = map1Data.findIndex(e => e.state.equals(ulb.state));
-		if (index === -1) {
-			const { name, code } = stateRes.find(e => e._id.equals(ulb.state));
-			ulbLocation = { ...ulbLocation, state: ulb.state, ulbCount: 1, stateName: name, stateCode: code }
-			map1Data.push(ulbLocation);
-		} else {
-			map1Data[index].ulbCount = map1Data[index].ulbCount + 1;
-		}
+		const { name, code } = stateRes.find(e => e._id.equals(ulb.state));
+		ulbLocation = { ...ulbLocation, state: ulb.state, ulbCount: 1, stateName: name, stateCode: code }
+		if (index !== -1) { map1Data[index].ulbCount = map1Data[index].ulbCount + 1; }
+		
+		map1Data.push(ulbLocation);
 	} else {
 		map1Data.push(ulbLocation); // map1 - top ulbs
 	}
