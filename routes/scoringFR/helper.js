@@ -87,6 +87,30 @@ const topRankedUlbsDumpQuery = [
   { $sort: { overAllScore: -1 } },
 ];
 
+// Columns for top 10 ranked ulbs from each pop bucket - getBucketWiseTop10Ulbs()
+const getBucketWiseTop10UlbsColumns = [
+  {
+    label: 'S.No',
+    key: 'sNo',
+  },
+  {
+    label: '4M+',
+    key: 'bucket_1',
+  },
+  {
+    label: '1M to 4M',
+    key: 'bucket_2',
+  },
+  {
+    label: '100K to 1M',
+    key: 'bucket_3',
+  },
+  {
+    label: '<100K',
+    key: 'bucket_4',
+  },
+];
+
 // Query to get top 10 ranked ulbs from each pop bucket - getBucketWiseTop10Ulbs()
 async function getBucketWiseTop10UlbsQuery(limit) {
   return [
@@ -132,3 +156,4 @@ function convertToNumber(key, dataType) {
 module.exports.topRankedUlbsDumpQuery = topRankedUlbsDumpQuery;
 module.exports.topRankedUlbsColumns = topRankedUlbsColumns;
 module.exports.getBucketWiseTop10UlbsQuery = getBucketWiseTop10UlbsQuery;
+module.exports.getBucketWiseTop10UlbsColumns = getBucketWiseTop10UlbsColumns;
