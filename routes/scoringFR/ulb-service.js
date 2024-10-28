@@ -182,6 +182,7 @@ function getUlbData(ulbs, query) {
 			'_id': ulb._id,
 			'sNo': j++,
 			'ulbName': ulb.name,
+			'ulbNameLink': `/cfr/ulb/${ulb.censusCode ? ulb.censusCode : ulb.sbCode ? ulb.sbCode : ulb.ulb}`,
 			populationCategory,
 			'isUlbParticipated': [8, 9, 10, 11].includes(ulb.currentFormStatus) ? 'Yes' : 'No',
 			'isUlbRanked': ulb.overAll.rank ? 'Yes' : 'No',
