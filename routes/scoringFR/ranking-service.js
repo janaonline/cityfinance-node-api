@@ -10,7 +10,7 @@ const ScoringFiscalRanking = require('../../models/ScoringFiscalRanking');
 const { registerCustomQueryHandler } = require('puppeteer');
 const { getTableHeaderParticipatedStates, getFilterOptions, overallHeader } = require('./response-data');
 const { getPaginationParams, getPageNo, getPopulationBucket } = require('../../service/common');
-const { getBucketWiseTop10UlbsQuery } = require('./helper.js');
+const { getBucketWiseTop10UlbsQuery, getBucketWiseTop10UlbsColumns } = require('./helper.js');
 
 const mainIndicators = ['resourceMobilization', 'expenditurePerformance', 'fiscalGovernance', 'overAll'];
 const currentFormStatus = { $in: [11] };
@@ -80,7 +80,7 @@ async function getBucketWiseTop10Ulbs(limit = 10) {
       }
     }
 
-    return BucketWiseTop10UlbsArr;
+    return { columns: getBucketWiseTop10UlbsColumns, BucketWiseTop10UlbsArr };
   } catch (error) {
     console.error('BucketWiseTop10Ulbs: ', error);
     return res.status(400).json({
