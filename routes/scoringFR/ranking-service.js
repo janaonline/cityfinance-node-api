@@ -65,22 +65,22 @@ async function getTopParticipatedState(limit = 10) {
 }
 async function getBucketWiseTop10Ulbs(limit = 10) {
   try {
-    const BucketWiseTop10UlbsArr = [];
+    const bucketWiseTop10UlbsArr = [];
     const query = await getBucketWiseTop10UlbsQuery(limit);
     const BucketWiseQueryRes = await ScoringFiscalRanking.aggregate(query);
 
     for (const popBucketData of BucketWiseQueryRes) {
       for (const [rankedUlb_idx, rankedUlbData] of popBucketData['topScores'].entries()) {
-        if (!BucketWiseTop10UlbsArr[rankedUlb_idx]) {
-          BucketWiseTop10UlbsArr[rankedUlb_idx] = {};
-          BucketWiseTop10UlbsArr[rankedUlb_idx]['sNo'] = rankedUlb_idx + 1;
+        if (!bucketWiseTop10UlbsArr[rankedUlb_idx]) {
+          bucketWiseTop10UlbsArr[rankedUlb_idx] = {};
+          bucketWiseTop10UlbsArr[rankedUlb_idx]['sNo'] = rankedUlb_idx + 1;
         }
-        BucketWiseTop10UlbsArr[rankedUlb_idx][`bucket_${popBucketData._id}`] = rankedUlbData['ulbName'];
-        // BucketWiseTop10UlbsArr[rankedUlb_idx][`bucket_nameLink_${popBucketData._id}`] = `/cfr/ulb/${rankedUlbData['ulbId']}`;
+        bucketWiseTop10UlbsArr[rankedUlb_idx][`bucket_${popBucketData._id}`] = rankedUlbData['ulbName'];
+        // bucketWiseTop10UlbsArr[rankedUlb_idx][`bucket_nameLink_${popBucketData._id}`] = `/cfr/ulb/${rankedUlbData['ulbId']}`;
       }
     }
 
-    return { columns: getBucketWiseTop10UlbsColumns, BucketWiseTop10UlbsArr };
+    return { columns: getBucketWiseTop10UlbsColumns, bucketWiseTop10UlbsArr };
   } catch (error) {
     console.error('BucketWiseTop10Ulbs: ', error);
     return res.status(400).json({
