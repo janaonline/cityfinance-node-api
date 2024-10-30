@@ -65,22 +65,22 @@ async function getTopParticipatedState(limit = 10) {
 }
 async function getBucketWiseTop10Ulbs(limit = 10) {
   try {
-    const BucketWiseTop10UlbsArr = [];
+    const bucketWiseTop10UlbsArr = [];
     const query = await getBucketWiseTop10UlbsQuery(limit);
     const BucketWiseQueryRes = await ScoringFiscalRanking.aggregate(query);
 
     for (const popBucketData of BucketWiseQueryRes) {
       for (const [rankedUlb_idx, rankedUlbData] of popBucketData['topScores'].entries()) {
-        if (!BucketWiseTop10UlbsArr[rankedUlb_idx]) {
-          BucketWiseTop10UlbsArr[rankedUlb_idx] = {};
-          BucketWiseTop10UlbsArr[rankedUlb_idx]['sNo'] = rankedUlb_idx + 1;
+        if (!bucketWiseTop10UlbsArr[rankedUlb_idx]) {
+          bucketWiseTop10UlbsArr[rankedUlb_idx] = {};
+          bucketWiseTop10UlbsArr[rankedUlb_idx]['sNo'] = rankedUlb_idx + 1;
         }
-        BucketWiseTop10UlbsArr[rankedUlb_idx][`bucket_${popBucketData._id}`] = rankedUlbData['ulbName'];
-        // BucketWiseTop10UlbsArr[rankedUlb_idx][`bucket_nameLink_${popBucketData._id}`] = `/cfr/ulb/${rankedUlbData['ulbId']}`;
+        bucketWiseTop10UlbsArr[rankedUlb_idx][`bucket_${popBucketData._id}`] = rankedUlbData['ulbName'];
+        // bucketWiseTop10UlbsArr[rankedUlb_idx][`bucket_nameLink_${popBucketData._id}`] = `/cfr/ulb/${rankedUlbData['ulbId']}`;
       }
     }
 
-    return { columns: getBucketWiseTop10UlbsColumns, BucketWiseTop10UlbsArr };
+    return { columns: getBucketWiseTop10UlbsColumns, bucketWiseTop10UlbsArr };
   } catch (error) {
     console.error('BucketWiseTop10Ulbs: ', error);
     return res.status(400).json({
@@ -454,10 +454,9 @@ function getMapData() { }
 module.exports.topRankedUlbs = async (req, res) => {
 	try {
 		// moongose.set('debug', true);
-		let { category, sortBy, order, state, populationBucket, limit } = req.query;
+		let { category, sortBy, order, state, populationBucket } = req.query;
 		let condition = { isActive: true, currentFormStatus };
-		
-		limit = limit ? parseInt(limit) : 0;
+		const { limit, skip } = getPaginationParams(req.query);
 
 		if (state) {
 			condition = { ...condition, state: ObjectId(state) };
@@ -483,9 +482,11 @@ module.exports.topRankedUlbs = async (req, res) => {
 		const ulbRes = await ScoringFiscalRanking.find(condition)
 			.select('name ulb location resourceMobilization expenditurePerformance fiscalGovernance overAll state populationBucket')
 			.sort(sort)
+			.skip(skip)
 			.limit(limit)
 			.exec();
-		// console.log(ulbRes)
+
+		const total = await ScoringFiscalRanking.countDocuments(condition);
 
 		await fetchFiveUlbs(ulbRes, by, state);
 		var assessmentParameter = findassessmentParameter(by);
@@ -493,6 +494,7 @@ module.exports.topRankedUlbs = async (req, res) => {
 		return res.status(200).json({
 			'status': true,
 			'message': 'Successfully fetched data!',
+			total,
 			'tableData': { 'columns': assessmentParameter, 'data': [...ulbScore] },
 			'mapDataTopUlbs': [...map1Data],
 			// 'mapDataRankHolders': top-ranked-states API
@@ -521,7 +523,7 @@ function countEle() {
 }
 //<<-- Top Ranked ULBs -->>
 module.exports.topRankedStates = async (req, res) => {
-	moongose.set('debug', true);
+	// moongose.set('debug', true);
 	try {
 		let ulbs = [];
 		for (const indicator of mainIndicators) {
@@ -597,13 +599,11 @@ function setOneUlb(ulb, key, state, stateRes) {
 	let ulbLocation = { ...ulb.location, ulbName: ulb.name, [`${key}Rank`]: ulb[key].rank, populationBucket: ulb.populationBucket };
 	if (!state) { // for all states
 		const index = map1Data.findIndex(e => e.state.equals(ulb.state));
-		if (index === -1) {
-			const { name, code } = stateRes.find(e => e._id.equals(ulb.state));
-			ulbLocation = { ...ulbLocation, state: ulb.state, ulbCount: 1, stateName: name, stateCode: code }
-			map1Data.push(ulbLocation);
-		} else {
-			map1Data[index].ulbCount = map1Data[index].ulbCount + 1;
-		}
+		const { name, code } = stateRes.find(e => e._id.equals(ulb.state));
+		ulbLocation = { ...ulbLocation, state: ulb.state, ulbCount: 1, stateName: name, stateCode: code }
+		if (index !== -1) { map1Data[index].ulbCount = map1Data[index].ulbCount + 1; }
+		
+		map1Data.push(ulbLocation);
 	} else {
 		map1Data.push(ulbLocation); // map1 - top ulbs
 	}

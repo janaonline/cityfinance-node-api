@@ -113,6 +113,33 @@ const getBucketWiseTop10UlbsColumns = [
 
 // Query to get top 10 ranked ulbs from each pop bucket - getBucketWiseTop10Ulbs()
 async function getBucketWiseTop10UlbsQuery(limit) {
+  // $sortArray is not supported by current mongo version
+  // return [
+  //   { $match: { 'overAll.score': { $gt: 0 } } },
+  //   {
+  //     $group: {
+  //       _id: '$populationBucket',
+  //       topScores: {
+  //         $push: {
+  //           score: '$overAll.score',
+  //           rank: '$overAll.rank',
+  //           ulbId: '$ulb',
+  //           ulbName: '$name',
+  //         },
+  //       },
+  //     },
+  //   },
+  //   {
+  //     $project: {
+  //       topScores: {
+  //         $slice: [
+  //           { $sortArray: { input: '$topScores', sortBy: { rank: 1 } } },
+  //           limit,
+  //         ],
+  //       },
+  //     },
+  //   },
+  // ];
   return [
     { $match: { 'overAll.score': { $gt: 0 } } },
     {
@@ -128,17 +155,16 @@ async function getBucketWiseTop10UlbsQuery(limit) {
         },
       },
     },
+    { $unwind: "$topScores" },
+    { $sort: { "topScores.rank": 1 } },
     {
-      $project: {
-        topScores: {
-          $slice: [
-            { $sortArray: { input: '$topScores', sortBy: { rank: 1 } } },
-            limit,
-          ],
-        },
+      $group: {
+        _id: "$_id",
+        topScores: { $push: "$topScores" },
       },
     },
-  ];
+    { $project: { topScores: { $slice: ["$topScores", limit] } } }
+  ];  
 }
 
 // Helper: to convert string to number - mongo query.
