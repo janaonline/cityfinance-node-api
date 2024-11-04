@@ -19,6 +19,10 @@ async function getParticipatedUlbCount() {
 	const condition = { isActive: true, currentFormStatus: { $in: [8, 9, 10, 11] } };
 	return await FiscalRanking.countDocuments(condition);
 }
+async function getRankedUlbCount() {
+	const condition = { "overAll.rank": { $ne: 0 } };
+	return await ScoringFiscalRanking.countDocuments(condition);
+}
 async function getParticipatedStateCount() {
 	const condition = { isActive: true, 'fiscalRanking.participatedUlbs': { $ne: 0 } };
 	return await State.countDocuments(condition);
@@ -105,6 +109,7 @@ module.exports.dashboard = async (req, res) => {
 		const data = {
 			totalUlbCount: 4700, //Static number.
 			participatedUlbCount: await getParticipatedUlbCount(),
+			rankedUlbCount: await getRankedUlbCount(),
 			participatedStateCount: await getParticipatedStateCount(),
 			bucketWiseTop10Ulbs: await getBucketWiseTop10Ulbs(),
 			// top3ParticipatedState,
@@ -317,7 +322,7 @@ module.exports.states = async (req, res) => {
 		sortBy = sortBy || 'name';
 		const select = req.params.select
 		let selected = select ? `name fiscalRanking ${select}` : 'name';
-		const condition = { isActive: true };
+		const condition = { isActive: true, isUT: false };
 		const { limit, skip } = getPaginationParams(req.query);
 		const states = await State.find(condition)
 			.select(selected)
