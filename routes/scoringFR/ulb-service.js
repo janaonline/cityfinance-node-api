@@ -51,7 +51,7 @@ module.exports.getUlbDetails = async (req, res) => {
 		const condition1 = { isActive: true, populationBucket: ulb.populationBucket };
 		const populationBucketUlbCount = await ScoringFiscalRanking.countDocuments(condition1).lean();
 
-		const condition2 = { isActive: true, populationBucket: ulb.populationBucket, currentFormStatus: 11 };
+		const condition2 = { isActive: true, populationBucket: ulb.populationBucket, currentFormStatus: 11, ulb: { $ne: ObjectId(searchId) } };
 		const topUlbs = await ScoringFiscalRanking.find(condition2, { name: 1, ulb: 1, populationBucket: 1, censusCode: 1, sbCode: 1, _id: 0 }).sort({ 'overAll.rank': 1 }).limit(10).lean();
 
 		const conditionFs = {
@@ -307,22 +307,22 @@ function getSearchedUlb(ulbs, indicator) {
 	const indicatorName = toProperCase(indicator);
 
 	const graphData = [
-		{
-			'label': 'State Average',
-			'data': stateAvgData,
-			'fill': false,
-			'borderColor': 'rgb(229, 125, 21)',
-			'type': 'line',
-			'lineTension': 0.2,
-		},
-		{
-			'label': 'National Average',
-			'data': nationalAvgData,
-			'fill': false,
-			'borderColor': 'rgba(155, 155, 155, 1)',
-			'type': 'line',
-			'lineTension': 0.2,
-		},
+		// {
+		// 	'label': 'State Average',
+		// 	'data': stateAvgData,
+		// 	'fill': false,
+		// 	'borderColor': 'rgb(229, 125, 21)',
+		// 	'type': 'line',
+		// 	'lineTension': 0.2,
+		// },
+		// {
+		// 	'label': 'National Average',
+		// 	'data': nationalAvgData,
+		// 	'fill': false,
+		// 	'borderColor': 'rgba(155, 155, 155, 1)',
+		// 	'type': 'line',
+		// 	'lineTension': 0.2,
+		// },
 		{
 			'label': 'Population Average',
 			'data': populationAvgData,
