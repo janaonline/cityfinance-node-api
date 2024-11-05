@@ -19,7 +19,7 @@ const data = {
 		// "subHeading": "Fueling Urban Growth",
 		"description":
 			"Resource Mobilization is crucial for ULBs to ensure financial stability and growth. It enables them to provide essential services, infrastructure development, and quality of life improvements for urban residents.",
-		"imgUrl": "../../../assets/fiscal-rankings/RM-Home.png",
+		"imgUrl": "assets/fiscal-rankings/RM-Home.png",
 		// "questions": [
 		// 	{
 		// 		"question": "Why is Resource Mobilization Important?",
@@ -56,7 +56,7 @@ const data = {
 			 "header": "Indicators and Scoring Methodology",
 			// "description":
 				// "Unveiling the Metrics Shaping Urban Financial Strength and How They're Scored. Explore the assessment indicators that drive the financial health of Urban Local Bodies (ULBs) and understand the methodology behind their scoring. Gain insights into the significance of resource mobilization in urban development.",
-			// "imgUrl": "../../../assets/fiscal-rankings/resMobTable.png",
+			// "imgUrl": "assets/fiscal-rankings/resMobTable.png",
 		},
 		"table": {
 			columns,
@@ -142,7 +142,7 @@ const data = {
 		// "subHeading": "Fueling Urban Growth",
 		"description":
 			"Expenditure Performance is critical for ULBs to efficiently allocate resources, ensure quality infrastructure, and deliver services effectively. It contributes to improving the overall living conditions in urban areas.",
-		"imgUrl": "../../../assets/fiscal-rankings/EP-Home.png",
+		"imgUrl": "assets/fiscal-rankings/EP-Home.png",
 		// "questions": [
 		// 	{
 		// 		"question": "Why is Expenditure Performance Important?",
@@ -179,7 +179,7 @@ const data = {
 			 "header": "Indicators and Scoring Methodology",
 			// "description":
 				// "Unveiling the Metrics Shaping Urban Financial Strength and How They're Scored.  Explore the assessment indicators that drive the financial health of Urban Local Bodies (ULBs) and understand the methodology behind their scoring.  Gain insights into the significance of resource mobilization in urban development.",
-			// "imgUrl": "../../../assets/fiscal-rankings/expenTable.png",
+			// "imgUrl": "assets/fiscal-rankings/expenTable.png",
 		},
 		"table": {
 			columns,
@@ -227,7 +227,7 @@ const data = {
 		// "subHeading": "Fueling Urban Growth",
 		"description":
 			"Fiscal Governance is vital for ULBs to maintain transparency, ensure efficient revenue collection, and effectively manage budgets. It enhances financial accountability and the ability to fund essential services.",
-		"imgUrl": "../../../assets/fiscal-rankings/FG-Home.png",
+		"imgUrl": "assets/fiscal-rankings/FG-Home.png",
 		// "questions": [
 		// 	{
 		// 		"question": "Why is Fiscal Governance Important?",
@@ -264,7 +264,7 @@ const data = {
 			 "header": "Indicators and Scoring Methodology",
 			// "description":
 				// "Unveiling the Metrics Shaping Urban Financial Strength and How They're Scored.  Explore the assessment indicators that drive the financial health of Urban Local Bodies (ULBs) and understand the methodology behind their scoring.  Gain insights into the significance of resource mobilization in urban development.",
-			// "imgUrl": "../../../assets/fiscal-rankings/fiscalTable.png",
+			// "imgUrl": "assets/fiscal-rankings/fiscalTable.png",
 		},
 		"table": {
 			columns,
