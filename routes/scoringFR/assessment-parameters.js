@@ -4,8 +4,8 @@ const columns = [
 	{ "label": "Ranking  Indicators ", "key": "rankingIndicators" },
 	{ "label": "Unit", "key": "unit" },
 	{ "label": "Maximum  Score ", "key": "maximumScore" },
-	{ "label": "Financial year(s)", "key": "financialYears" },
-	{ "label": "Data Source", "key": "dataSource" },
+	// { "label": "Financial year(s)", "key": "financialYears" },
+	// { "label": "Data Source", "key": "dataSource" },
 	{ "label": "Formula for computation of indicator ", "key": "formula" },
 	{ "label": "Scoring Methodology (Computation of Scores)", "key": "scoringMethodology" },
 	{ "label": "Scoring Logic ", "key": "scoringLogic" }
@@ -16,22 +16,22 @@ const data = {
 		"id": 1,
 		"key": "resourceMobilisation",
 		"name": "Resource Mobilisation",
-		"subHeading": "Fueling Urban Growth",
+		// "subHeading": "Fueling Urban Growth",
 		"description":
-			"Resource Mobilization is a crucial parameter that evaluates the financial \n                    strength and growth potential of Urban Local Bodies (ULBs). Discover the significance of\n                    resource mobilization, how it's assessed, and its impact on ULB rankings and urban development.",
-		"imgUrl": "../../../assets/fiscal-rankings/smart-industry-control-concept 1.png",
-		"questions": [
-			{
-				"question": "Why is Resource Mobilization Important?",
-				"answer":
-					"Resource Mobilization is crucial for ULBs to ensure financial stability and growth.\n           It enables them to provide essential services,\n           infrastructure development, and quality of life improvements for urban residents.",
-			},
-			{
-				"question": "How Resource Mobilization helps ULB Scoring?",
-				"answer":
-					"Resource Mobilization significantly influences ULB rankings. Higher mobilization indicates better financial health,\n           leading to higher scores and better ULB positions in the rankings.",
-			},
-		],
+			"Resource Mobilization is crucial for ULBs to ensure financial stability and growth. It enables them to provide essential services, infrastructure development, and quality of life improvements for urban residents.",
+		"imgUrl": "../../../assets/fiscal-rankings/RM-Home.png",
+		// "questions": [
+		// 	{
+		// 		"question": "Why is Resource Mobilization Important?",
+		// 		"answer":
+		// 			"Resource Mobilization is crucial for ULBs to ensure financial stability and growth. It enables them to provide essential services, infrastructure development, and quality of life improvements for urban residents.",
+		// 	},
+		// 	{
+		// 		"question": "How Resource Mobilization helps ULB Scoring?",
+		// 		"answer":
+		// 			"Resource Mobilization significantly influences ULB rankings. Higher mobilization indicates better financial health, leading to higher scores and better ULB positions in the rankings.",
+		// 	},
+		// ],
 		"scoringInfo": {
 			"header": "Scoring Information",
 			"items": [
@@ -47,16 +47,16 @@ const data = {
 				},
 				{
 					"key": "maximumScore",
-					"value": 300,
+					"value": 600,
 					"title": "Maximum Score",
 				},
 			],
 		},
 		"scoringMethodology": {
-			"header": "Scoring Methodology",
-			"description":
-				"Unveiling the Metrics Shaping Urban Financial Strength and How They're Scored. \n        Explore the assessment indicators that drive the financial health of Urban Local Bodies (ULBs) and understand the methodology behind their scoring.\n         Gain insights into the significance of resource mobilization in urban development.",
-			"imgUrl": "../../../assets/fiscal-rankings/resMobTable.png",
+			 "header": "Indicators and Scoring Methodology",
+			// "description":
+				// "Unveiling the Metrics Shaping Urban Financial Strength and How They're Scored. Explore the assessment indicators that drive the financial health of Urban Local Bodies (ULBs) and understand the methodology behind their scoring. Gain insights into the significance of resource mobilization in urban development.",
+			// "imgUrl": "../../../assets/fiscal-rankings/resMobTable.png",
 		},
 		"table": {
 			columns,
@@ -68,8 +68,8 @@ const data = {
 					"maximumScore": "100",
 					"financialYears": "2021-22",
 					"dataSource": "Annual budget 2023-24 ",
-					"formula": "[Total budget size (actual receipts) - total receipts for water supply and sanitation<sup><b>#</b></sup>] / ULB Population ",
-					"scoringMethodology": "(ULB number / Highest ULB number)* Maximum score ",
+					"formula": "[Total budget size (actual receipts) - total receipts for water supply and sanitation] / ULB Population ",
+					"scoringMethodology": "(ULB number/ Highest ULB number) * Maximum score ",
 					"scoringLogic": "Higher the better  "
 				},
 				{
@@ -79,7 +79,7 @@ const data = {
 					"maximumScore": "100",
 					"financialYears": "2021-22",
 					"dataSource": "Annual budget 2023-24 ",
-					"formula": "[Total own revenues - own revenues from water supply and sanitation<sup><b>##</b></sup>] / ULB Population ",
+					"formula": "[Total own revenues - own revenues from water supply and sanitation] / ULB Population ",
 					"scoringMethodology": "---same as above--- ",
 					"scoringLogic": "Higher the better  "
 				},
@@ -90,7 +90,7 @@ const data = {
 					"maximumScore": "100",
 					"financialYears": "2021-22",
 					"dataSource": "Annual budget 2023-24 ",
-					"formula": "[Total property tax - tax revenues from water supply and sanitation<sup><b>###</b></sup>] / ULB Population ",
+					"formula": "[Total property tax - tax revenues from water supply and sanitation] / ULB Population ",
 					"scoringMethodology": "---same as above--- ",
 					"scoringLogic": "Higher the better  "
 				},
@@ -102,7 +102,7 @@ const data = {
 					"financialYears": "2018-19 to 2021-22",
 					"dataSource": "Annual budgets 2020-21 to 2023-24",
 					"formula": "3-year CAGR in indicator 1 ",
-					"scoringMethodology": "[(ULB number - Lowest ULB number) / (Highest - Lowest)]* Maximum Score",
+					"scoringMethodology": "[(ULB number - Lowest ULB number)/ (Highest - Lowest)] * Maximum Score",
 					"scoringLogic": "Higher the better  "
 				},
 				{
@@ -128,39 +128,39 @@ const data = {
 					"scoringLogic": "Higher the better "
 				}
 			],
-			"footnotes": [
-				"#Total receipts shall include both revenue and capital receipts; and include own revenues, assigned revenues, grants, transfers etc. for water supply and sanitation purposes. The Own Revenues from Water Supply & Sanitation shall include: (a) Tax revenues such as water tax, drainage tax, sewerage tax; and (b) Non-Tax revenues / Fees & User charges for water supply, sanitation, and/or sewerage. Please note, Fees & User charges for solid waste management / garbage collection shall not be included.",
-				"##The Own Revenues from Water Supply & Sanitation shall include: (a) Tax revenues such as water tax, drainage tax, sewerage tax; and (b) Non-Tax revenues / Fees & User charges for water supply, sanitation, and/or sewerage. Please note, Fees & User charges for solid waste management / garbage collection shall not be included.",
-				"###Tax Revenues from Water Supply & Sanitation shall include: Water tax, Drainage tax, Sewerage tax."
-			]
+			// "footnotes": [
+			// 	"#Total receipts shall include both revenue and capital receipts; and include own revenues, assigned revenues, grants, transfers etc. for water supply and sanitation purposes. The Own Revenues from Water Supply & Sanitation shall include: (a) Tax revenues such as water tax, drainage tax, sewerage tax; and (b) Non-Tax revenues / Fees & User charges for water supply, sanitation, and/or sewerage. Please note, Fees & User charges for solid waste management / garbage collection shall not be included.",
+			// 	"##The Own Revenues from Water Supply & Sanitation shall include: (a) Tax revenues such as water tax, drainage tax, sewerage tax; and (b) Non-Tax revenues / Fees & User charges for water supply, sanitation, and/or sewerage. Please note, Fees & User charges for solid waste management / garbage collection shall not be included.",
+			// 	"###Tax Revenues from Water Supply & Sanitation shall include: Water tax, Drainage tax, Sewerage tax."
+			// ]
 		}
 	},
 	"expenditurePerformance": {
 		"id": 2,
 		"key": "expenditurePerformance",
 		"name": "Expenditure Performance",
-		"subHeading": "Fueling Urban Growth",
+		// "subHeading": "Fueling Urban Growth",
 		"description":
-			"Explore the metrics that gauge Expenditure Performance and learn why it's a pivotal aspect for Urban Local Bodies (ULBs) across India.\n      Understand how Expenditure Performance influences ULB rankings and delve into the scoring methodology.",
-		"imgUrl": "../../../assets/fiscal-rankings/business-people-analyzing-data-graphs-and-charts-displayed-on-the-digital-tablet-screen 1.png",
-		"questions": [
-			{
-				"question": "Why is Expenditure Performance Important?",
-				"answer":
-					"Expenditure Performance is critical for ULBs to efficiently allocate resources, ensure quality infrastructure, and deliver services effectively.\n           It contributes to improving the overall living conditions in urban areas.",
-			},
-			{
-				"question": "How Expenditure Performance Affects ULB Scoring?",
-				"answer":
-					"Expenditure Performance directly impacts ULB rankings.\n           Higher performance in terms of capital expenditure and cost-effective operations & maintenance expenses results in better scores and higher ULB rankings.",
-			},
-		],
+			"Expenditure Performance is critical for ULBs to efficiently allocate resources, ensure quality infrastructure, and deliver services effectively. It contributes to improving the overall living conditions in urban areas.",
+		"imgUrl": "../../../assets/fiscal-rankings/EP-Home.png",
+		// "questions": [
+		// 	{
+		// 		"question": "Why is Expenditure Performance Important?",
+		// 		"answer":
+		// 			"Expenditure Performance is critical for ULBs to efficiently allocate resources, ensure quality infrastructure, and deliver services effectively. It contributes to improving the overall living conditions in urban areas.",
+		// 	},
+		// 	{
+		// 		"question": "How Expenditure Performance Affects ULB Scoring?",
+		// 		"answer":
+		// 			"Expenditure Performance directly impacts ULB rankings. Higher performance in terms of capital expenditure and cost-effective operations & maintenance expenses results in better scores and higher ULB rankings.",
+		// 	},
+		// ],
 		"scoringInfo": {
 			"header": "Scoring Information",
 			"items": [
 				{
 					"key": "numberOfIndicators",
-					"value": 6,
+					"value": 3,
 					"title": "Number of Indicators",
 				},
 				{
@@ -176,10 +176,10 @@ const data = {
 			],
 		},
 		"scoringMethodology": {
-			"header": "Scoring Methodology",
-			"description":
-				"Unveiling the Metrics Shaping Urban Financial Strength and How They're Scored. \n      Explore the assessment indicators that drive the financial health of Urban Local Bodies (ULBs) and understand the methodology behind their scoring.\n       Gain insights into the significance of resource mobilization in urban development.",
-			"imgUrl": "../../../assets/fiscal-rankings/expenTable.png",
+			 "header": "Indicators and Scoring Methodology",
+			// "description":
+				// "Unveiling the Metrics Shaping Urban Financial Strength and How They're Scored.  Explore the assessment indicators that drive the financial health of Urban Local Bodies (ULBs) and understand the methodology behind their scoring.  Gain insights into the significance of resource mobilization in urban development.",
+			// "imgUrl": "../../../assets/fiscal-rankings/expenTable.png",
 		},
 		"table": {
 			columns,
@@ -224,22 +224,22 @@ const data = {
 		"id": 3,
 		"key": "fiscalGovernance",
 		"name": "Fiscal Governance",
-		"subHeading": "Fueling Urban Growth",
+		// "subHeading": "Fueling Urban Growth",
 		"description":
-			"Explore the metrics that define Fiscal Governance and discover why it's a crucial aspect for Urban Local Bodies (ULBs) across India. \n      Gain insights into how Fiscal Governance influences ULB rankings and dive into the scoring methodology.",
-		"imgUrl": "../../../assets/fiscal-rankings/stack-of-money-coin-with-trading-graph-for-finance-investor-cryptocurrency-digital-economy 1.png",
-		"questions": [
-			{
-				"question": "Why is Fiscal Governance Important?",
-				"answer":
-					"Fiscal Governance is vital for ULBs to maintain transparency, ensure efficient revenue collection, \n          and effectively manage budgets. It enhances financial accountability and the ability to fund essential services.",
-			},
-			{
-				"question": "How Fiscal Governance Affects ULB Scoring?",
-				"answer":
-					"Fiscal Governance directly impacts ULB rankings. Timely audits, robust accounting systems,\n           and digital revenue collection contribute to higher scores and improved ULB positions.",
-			},
-		],
+			"Fiscal Governance is vital for ULBs to maintain transparency, ensure efficient revenue collection, and effectively manage budgets. It enhances financial accountability and the ability to fund essential services.",
+		"imgUrl": "../../../assets/fiscal-rankings/FG-Home.png",
+		// "questions": [
+		// 	{
+		// 		"question": "Why is Fiscal Governance Important?",
+		// 		"answer":
+		// 			"Fiscal Governance is vital for ULBs to maintain transparency, ensure efficient revenue collection,   and effectively manage budgets. It enhances financial accountability and the ability to fund essential services.",
+		// 	},
+		// 	{
+		// 		"question": "How Fiscal Governance Affects ULB Scoring?",
+		// 		"answer":
+		// 			"Fiscal Governance directly impacts ULB rankings. Timely audits, robust accounting systems, and digital revenue collection contribute to higher scores and improved ULB positions.",
+		// 	},
+		// ],
 		"scoringInfo": {
 			"header": "Scoring Information",
 			"items": [
@@ -250,7 +250,7 @@ const data = {
 				},
 				{
 					"key": "maximumScoreforIndicator",
-					"value": 100,
+					"value": 50,
 					"title": "Maximum Score for Each Indicator",
 				},
 				{
@@ -261,10 +261,10 @@ const data = {
 			],
 		},
 		"scoringMethodology": {
-			"header": "Scoring Methodology",
-			"description":
-				"Unveiling the Metrics Shaping Urban Financial Strength and How They're Scored. \n      Explore the assessment indicators that drive the financial health of Urban Local Bodies (ULBs) and understand the methodology behind their scoring.\n       Gain insights into the significance of resource mobilization in urban development.",
-			"imgUrl": "../../../assets/fiscal-rankings/fiscalTable.png",
+			 "header": "Indicators and Scoring Methodology",
+			// "description":
+				// "Unveiling the Metrics Shaping Urban Financial Strength and How They're Scored.  Explore the assessment indicators that drive the financial health of Urban Local Bodies (ULBs) and understand the methodology behind their scoring.  Gain insights into the significance of resource mobilization in urban development.",
+			// "imgUrl": "../../../assets/fiscal-rankings/fiscalTable.png",
 		},
 		"table": {
 			columns,
