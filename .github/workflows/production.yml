@@ -26,6 +26,6 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
       - run: |
-          echo "Deploying  branch ${{ env.GITHUB_REF }} to ${{ github.event.inputs.environment }}"
+          echo "Deploying branch ${{ env.GITHUB_REF }} to ${{ github.event.inputs.environment }}"
           commit_hash=`git rev-parse HEAD`
           aws deploy create-deployment --application-name CF-CodeDeployment-Application --deployment-group-name CF-DeploymentGroup-Backend --github-location repository=$GITHUB_REPOSITORY,commitId=$commit_hash --ignore-application-stop-failures --file-exists-behavior OVERWRITE
