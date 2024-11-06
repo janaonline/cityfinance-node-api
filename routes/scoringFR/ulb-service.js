@@ -285,17 +285,17 @@ async function getTableData(ulb, type) {
 }
 
 //<<-- ULB details - Filter -->>
-function getSearchedUlb(ulbs, indicator) {
+function getSearchedUlb(ulbs, indicator, selectedUlbPopBucket) {
 	const indicatorData = [];
 	const populationAvgData = [];
 	const nationalAvgData = [];
 	const stateAvgData = [];
 
 	for (const ulb of ulbs) {
-		indicatorData.push(Number(ulb[indicator].score.toFixed(2)));
-		populationAvgData.push(Number(ulb[indicator].populationBucketAvg.toFixed(2)));
-		nationalAvgData.push(Number(ulb[indicator].nationalAvg.toFixed(2)));
-		stateAvgData.push(Number(ulb[indicator].stateAvg.toFixed(2)));
+		indicatorData.push(Number(ulb[indicator].score?.toFixed(2)));
+		populationAvgData.push(Number(ulb[indicator].populationBucketAvg?.toFixed(2)));
+		nationalAvgData.push(Number(ulb[indicator].nationalAvg?.toFixed(2)));
+		stateAvgData.push(Number(ulb[indicator].stateAvg?.toFixed(2)));
 	}
 
 	// function to convert camelCase into proper case.
@@ -305,6 +305,7 @@ function getSearchedUlb(ulbs, indicator) {
 		});
 	}
 	const indicatorName = toProperCase(indicator);
+	const backgroundColorArr = [];
 
 	const graphData = [
 		// {
@@ -334,7 +335,7 @@ function getSearchedUlb(ulbs, indicator) {
 		{
 			'label': indicatorName,
 			'data': indicatorData,
-			'backgroundColor': 'rgba(11, 90, 207, 1)',
+			'backgroundColor': backgroundColorArr,
 			'borderWidth': 1,
 			'type': 'bar',
 			'barPercentage': 0.5,
@@ -346,6 +347,12 @@ function getSearchedUlb(ulbs, indicator) {
 	// Loop to get ULBs names in an array.
 	for (const ulb of ulbs) {
 		ulbName.push(ulb.name);
+		
+		if (selectedUlbPopBucket != ulb.populationBucket){
+			backgroundColorArr.push('red');
+		} else {
+			backgroundColorArr.push('rgba(11, 90, 207, 1)');
+		}
 	}
 	const data = {
 		'labels': ulbName,
@@ -359,6 +366,7 @@ module.exports.getSearchedUlbDetailsGraph = async (req, res) => {
 	try {
 		// moongose.set('debug', true);
 		const ulbIds = req.query.ulb;
+		const selectedUlbPopBucket = req.query.populationBucket;
 		// const indicator = req.query.indicator;
 
 		const condition = {
@@ -367,13 +375,13 @@ module.exports.getSearchedUlbDetailsGraph = async (req, res) => {
 			// currentFormStatus: { $in: [11] }
 		};
 		let ulbs = await ScoringFiscalRanking.find(condition)
-			.select('name ulb location resourceMobilization expenditurePerformance fiscalGovernance overAll')
+			.select('name ulb location resourceMobilization expenditurePerformance fiscalGovernance overAll populationBucket')
 			.limit(5)
 			.lean();
 
 		const graphData = {};
 		for (const indicator of mainIndicators) {
-			graphData[indicator] = getSearchedUlb(ulbs, indicator);
+			graphData[indicator] = getSearchedUlb(ulbs, indicator, selectedUlbPopBucket);
 		}
 
 		return res.status(200).json({
