@@ -12,10 +12,10 @@ const columns = [
 ];
 
 const data = {
-	"resourceMobilisation": {
+	"resourceMobilization": {
 		"id": 1,
-		"key": "resourceMobilisation",
-		"name": "Resource Mobilisation",
+		"key": "resourceMobilization",
+		"name": "Resource Mobilization",
 		// "subHeading": "Fueling Urban Growth",
 		"description":
 			"Resource Mobilization is crucial for ULBs to ensure financial stability and growth. It enables them to provide essential services, infrastructure development, and quality of life improvements for urban residents.",
