@@ -2,7 +2,7 @@ version: 0.0
 os: linux
 files:
   - source: /
-    destination: /var/www/html/cityfinance/node-api-deploy
+    destination: /var/www/html/cityfinance/cityfinance-node-api
     overwrite: true 
 hooks:
   BeforeInstall:
