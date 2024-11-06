@@ -6,7 +6,7 @@ const topRankedUlbsColumns = [
   { header: 'ULB Name', key: 'name', width: 50 },
   { header: 'Population Category', key: 'popCat', width: 18 },
   {
-    header: 'Resource Mobilisation Score',
+    header: 'Resource Mobilization Score',
     key: 'resourceMobilizationScore',
     style: { numFmt: '0.00' },
     width: 18,
