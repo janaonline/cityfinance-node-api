@@ -86,7 +86,7 @@ module.exports.getTableHeaderDocs = {
     {
       label: 'S.No',
       key: 'sNo',
-      class: 'th-common-cls',
+      class: 'text-center',
       width: '2',
     },
     {
@@ -95,32 +95,32 @@ module.exports.getTableHeaderDocs = {
       sort: 1,
       query: '',
       sortable: true,
-      class: 'th-color-cls',
+      class: '',
       link: 'ulbNameLink'
     },
     {
       label: 'Population Category',
       key: 'populationCategory',
       sortable: true,
-      class: 'th-common-cls',
+      class: '',
     },
     {
       label: 'ULB Participated',
       key: 'isUlbParticipated',
       sortable: true,
-      class: 'th-common-cls',
+      class: '',
     },
     {
       label: 'CFR Ranked',
       key: 'isUlbRanked',
       sortable: true,
-      class: 'th-common-cls',
+      class: '',
     },
     {
       label: 'Annual Financial Statement Available',
       key: 'auditedAccounts2018-19',
       colspan: 4,
-      class: 'th-common-cls',
+      class: '',
       pdfLink: true,
     },
     {
@@ -189,31 +189,37 @@ module.exports.overallHeader = [
         'key': 'overallRank',
         'sort': 1,
         'sortable': true,
+        'class': 'text-center',
     },
     {
         'label': 'ULB Name',
         'key': 'ulbName',
-        'link': 'ulbNameLink'
+        'link': 'ulbNameLink',
+        'class': 'text-start',
     },
     {
         'label': 'Total ULB Score',
         'info': 'Max Score: 1200',
         'key': 'overallScore',
+        'class': 'text-end',
     },
     {
         'label': 'RM Score',
         'info': 'Max Score: 600',
         'key': 'resourceMobilizationScore',
+        'class': 'text-end',
     },
     {
         'label': 'EP Score',
         'info': 'Max Score: 300',
         'key': 'expenditurePerformanceScore',
+        'class': 'text-end',
     },
     {
         'label': 'FG Score',
         'info': 'Max Score: 300',
         'key': 'fiscalGovernanceScore',
+        'class': 'text-end',
     },
 ];
 
@@ -227,6 +233,7 @@ module.exports.rmEpFGHeader = (type, ulb) => {
         {
             'label': 'S. No',
             'key': 'sNo',
+            'class': 'text-center',
         },
         {
             'label': 'Indicator',
@@ -254,9 +261,27 @@ module.exports.rmEpFGHeader = (type, ulb) => {
             'label': 'ULB Score',
             'info': `Out of ${score}`,
             'key': 'ulbScore',
+            'class': 'text-end',
         },
     ];
-    return { columns, 'lastRow': ['', 'Total', Number(ulb[type].score.toFixed(2))] };
+    const lastRow = [
+        {
+            'key': 0,
+            'value': '',
+            'class': ''
+          },
+          {
+            'key': 1,
+            'value': 'Total',
+            'class': 'fw-bold'
+          },
+          {
+            'key': 2,
+            'value':  Number(ulb[type].score.toFixed(2)),
+            'class': 'fw-bold text-end'
+          },
+    ];
+    return { columns, lastRow };
 }
 
 // Participated states & UT.
@@ -266,16 +291,16 @@ module.exports.getTableHeaderParticipatedStates = {
             'label': 'S.No',
             'key': 'sNo',
             'sortable': false,
-            'class': 'th-common-cls',
-            'width': '3',
+            'class': 'text-center',
+            // 'width': '3',
         },
         {
             'label': 'State Name',
             'key': 'name',
             'sort': 1,
             'sortable': true,
-            'class': 'th-common-cls',
-            'width': '8',
+            'class': '',
+            // 'width': '8',
             'link': 'nameLink'
         },
         // {
@@ -289,8 +314,8 @@ module.exports.getTableHeaderParticipatedStates = {
             'label': 'Total ULBs',
             'key': 'totalULBs',
             'sortable': false,
-            'class': 'th-common-cls',
-            'width': '6',
+            'class': 'text-end',
+            // 'width': '6',
         },
         // {
         //     'label': 'Participated ULBs',
@@ -303,8 +328,8 @@ module.exports.getTableHeaderParticipatedStates = {
             'label': 'No. of ULBs Ranked',
             'key': 'rankedUlbs',
             'sortable': true,
-            'class': 'th-common-cls',
-            'width': '6',
+            'class': 'text-end',
+            // 'width': '6',
         },
         // {
         //     'label': 'Non Ranked ULBs',
@@ -317,8 +342,8 @@ module.exports.getTableHeaderParticipatedStates = {
             'label': '% of Ranked to Total',
             'key': 'rankedtoTotal',
             'sortable': true,
-            'class': 'th-color-cls',
-            'width': '7',
+            'class': 'text-end',
+            // 'width': '7',
         },
     ],
     // 'subHeaders': [

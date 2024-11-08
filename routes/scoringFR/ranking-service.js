@@ -127,7 +127,7 @@ module.exports.dashboard = async (req, res) => {
 	}
 };
 async function getParticipatedState(limit, skip = 0, query = false, select = 'name') {
-	let sort = { 'fiscalRanking.participatedUlbsPercentage': -1 };
+	let sort = { 'name': 1 };
 	// mongoose.set('debug', true);
 	const sortArr = { totalUlbs: 'fiscalRanking.totalUlbs', participatedUlbs: 'fiscalRanking.participatedUlbs', rankedUlbs: 'fiscalRanking.rankedUlbs', nonRankedUlbs: 'fiscalRanking.nonRankedUlbs', stateName: 'name', }
 
@@ -643,27 +643,32 @@ function findassessmentParameter(sortBy) {
 				'key': `${sortBy}Rank`,
 				'sort': 1,
 				'sortable': true,
+				'class': 'text-center',
 			},
 			{
 				'label': 'ULB Name',
 				'key': 'ulbName',
-				'link': 'ulbNameLink'
+				'link': 'ulbNameLink',
+				'class': 'text-start',
 			},
 			{
 				'label': `${label} Score`,
 				'info': `Max Score: ${score}`,
 				'key': `${sortBy}Score`,
+				'class': 'text-end',
 			},
 			{
 				'label': 'Total ULB Score',
 				'info': 'Max Score: 1200',
 				'key': 'overallScore',
+				'class': 'text-end',
 			},
 			{
 				'label': 'Overall Rank',
 				'key': 'overallRank',
 				'sort': 1,
 				'sortable': true,
+				'class': 'text-center',
 			},
 		];
 		return assessmentParameter;
