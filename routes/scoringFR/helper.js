@@ -92,22 +92,27 @@ const getBucketWiseTop10UlbsColumns = [
   {
     label: 'S.No',
     key: 'sNo',
+    class: 'p-1 text-center'
   },
   {
     label: '4M+',
     key: 'bucket_1',
+    class: 'p-1 '
   },
   {
     label: '1M to 4M',
     key: 'bucket_2',
+    class: 'p-1 '
   },
   {
     label: '100K to 1M',
     key: 'bucket_3',
+    class: 'p-1 '
   },
   {
     label: '<100K',
     key: 'bucket_4',
+    class: 'p-1 '
   },
 ];
 
