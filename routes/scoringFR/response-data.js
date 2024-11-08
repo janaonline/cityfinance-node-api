@@ -264,7 +264,24 @@ module.exports.rmEpFGHeader = (type, ulb) => {
             'class': 'text-end',
         },
     ];
-    return { columns, 'lastRow': ['', 'Total', Number(ulb[type].score.toFixed(2))] };
+    const lastRow = [
+        {
+            'key': 0,
+            'value': '',
+            'class': ''
+          },
+          {
+            'key': 1,
+            'value': 'Total',
+            'class': 'fw-bold'
+          },
+          {
+            'key': 2,
+            'value':  Number(ulb[type].score.toFixed(2)),
+            'class': 'fw-bold text-end'
+          },
+    ];
+    return { columns, lastRow };
 }
 
 // Participated states & UT.
