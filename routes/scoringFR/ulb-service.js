@@ -238,13 +238,13 @@ async function getTableData(ulb, type) {
 		// TODO: to be removed
 		// const highest = await getMaxMinScore(ulb.populationBucket, indicator.key, -1);
 		// const lowest = await getMaxMinScore(ulb.populationBucket, indicator.key, 1);
-		let ulbPerformance = Number(ulb[indicator.key].score.toFixed(2));
+		let ulbPerformance = Number(ulb[indicator.key]?.score.toFixed(2));
 
 		let ele = {
 			'sNo': indicator.sno,
 			'indicator': indicator.title,
 			'unit': indicator.units,
-			'ulbScore': Number((ulb[indicator.key].percentage).toFixed(2)),
+			'ulbScore': Number((ulb[indicator.key]?.percentage)?.toFixed(2)),
 			'highPerformance': '-',
 			'highPerformanceConfig': {
 				title: '-'
@@ -263,11 +263,11 @@ async function getTableData(ulb, type) {
 			const lowest = await getMaxMinScore(ulb.populationBucket, indicator.key, 1);
 			ele = {
 				...ele,
-				'highPerformance': Number(highest[indicator.key].score.toFixed(2)),
+				'highPerformance': Number(highest[indicator.key]?.score.toFixed(2)),
 				'highPerformanceConfig': {
 					title: highest.name
 				},
-				'lowPerformance': Number(lowest[indicator.key].score.toFixed(2)),
+				'lowPerformance': Number(lowest[indicator.key]?.score.toFixed(2)),
 				'lowPerformanceConfig': {
 					title: lowest.name
 				},
