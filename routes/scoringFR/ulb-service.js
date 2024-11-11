@@ -412,7 +412,7 @@ module.exports.autoSuggestUlbs = async (req, res) => {
 
 			// currentFormStatus: { $in: [11] }
 		};
-		let ulbs = await ScoringFiscalRanking.find(condition, { name: 1, ulb: 1, populationBucket: 1, censusCode: 1, sbCode: 1, _id: 0 })
+		let ulbs = await ScoringFiscalRanking.find(condition, { name: 1, ulb: 1, populationBucket: 1, censusCode: 1, sbCode: 1, _id: 0, currentFormStatus: 1 })
 			.sort({ name: 1 })
 			.limit(limit)
 			.lean();
