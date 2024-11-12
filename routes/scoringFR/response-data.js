@@ -268,7 +268,7 @@ module.exports.rmEpFGHeader = (type, ulb) => {
         {
             'key': 0,
             'value': '',
-            'class': ''
+            'class': '',
           },
           {
             'key': 1,
@@ -277,12 +277,15 @@ module.exports.rmEpFGHeader = (type, ulb) => {
           },
           {
             'key': 2,
-            'value':  Number(ulb[type].score.toFixed(2)),
-            'class': 'fw-bold text-end'
+            'value':  0,
+            'class': 'fw-bold text-end',
+            sum: 'ulbScore'
           },
     ];
     return { columns, lastRow };
 }
+
+const decimalPlace = 2;
 
 // Participated states & UT.
 module.exports.getTableHeaderParticipatedStates = {
@@ -301,7 +304,7 @@ module.exports.getTableHeaderParticipatedStates = {
             'sortable': true,
             'class': '',
             // 'width': '8',
-            'link': 'nameLink'
+            // 'link': 'nameLink'
         },
         // {
         //     'label': 'State Type',
@@ -343,6 +346,7 @@ module.exports.getTableHeaderParticipatedStates = {
             'key': 'rankedtoTotal',
             'sortable': true,
             'class': 'text-end',
+            decimalPlace
             // 'width': '7',
         },
     ],
@@ -360,7 +364,37 @@ module.exports.getTableHeaderParticipatedStates = {
     'name': '',
     'data': [],
     // total,
-    // 'lastRow': ['', '', 'Total', '$sum', '$sum', '$sum', '$sum', '$sum'],
+    'lastRow': [
+        {
+            "key": 0,
+            "value": "",
+            "class": "",
+        },
+        {
+            "key": 1,
+            "value": "Total",
+            "class": "fw-bold",
+        },
+        {
+            "key": 2,
+            "value": 0,
+            "class": "fw-bold text-end",
+            "sum": 'totalULBs'
+        },
+        {
+            "key": 3,
+            "value": 0,
+            "class": "fw-bold text-end",
+            "sum": "rankedUlbs",
+        },
+        {
+            "key": 4,
+            "value": 0,
+            "class": "fw-bold text-end",
+            "avg": 'rankedtoTotal',
+            decimalPlace
+        }
+    ],
 };
 
 // Filter API.

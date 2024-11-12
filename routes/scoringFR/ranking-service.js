@@ -183,7 +183,7 @@ function tableRes(states, query, total) {
 	let i = getPageNo(query);
 	for (const state of states) {
 		const rankedtoTotal = state.fiscalRanking && state.fiscalRanking[0].totalUlbs && state.fiscalRanking[0].rankedUlbs ?
-			parseFloat(((state.fiscalRanking[0].rankedUlbs / state.fiscalRanking[0].totalUlbs) * 100).toFixed(2)) : 0;
+			parseFloat(((state.fiscalRanking[0].rankedUlbs / state.fiscalRanking[0].totalUlbs) * 100)) : 0;
 		const ele = {
 			_id: state._id,
 			sNo: i++,
@@ -193,7 +193,7 @@ function tableRes(states, query, total) {
 			participatedUlbs: state.fiscalRanking ? state.fiscalRanking[0].participatedUlbs : 0,
 			rankedUlbs: state.fiscalRanking ? state.fiscalRanking[0].rankedUlbs : 0,
 			nonRankedUlbs: state.fiscalRanking ? state.fiscalRanking[0].nonRankedUlbs : 0,
-			rankedtoTotal,
+			rankedtoTotal: rankedtoTotal.toFixed(2),
 			nameLink: `/cfr/participated-ulbs/${state._id}`,
 		};
 		// const participatedCount = {
