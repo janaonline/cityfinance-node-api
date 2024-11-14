@@ -822,11 +822,17 @@ let ulbIdArr = ulb;
       let stateData = calData(rawData[0], filterName);
       let ulbIDArr = await Ulb.aggregate([
         {
+          $match: {
+            isActive: true,
+            state: ObjectId(state)
+          }
+        },
+        {
           $group: {
             _id: "$ulbType",
-            ulb: { $addToSet: "$_id" },
-          },
-        },
+            ulb: { $addToSet: "$_id" }
+          }
+        }
       ]);
       let obj = {
         tpData: [],
