@@ -3,6 +3,8 @@
 module.exports.abYears = ['2020-21', '2021-22', '2022-23', '2023-24'];
 module.exports.afsYears = ['2018-19', '2019-20', '2020-21', '2021-22'];
 
+const decimalPlace = 2;
+
 // Assessment parameter table labels/ questions - ULB details.
 module.exports.assesmentParamLabels = [
     {
@@ -279,13 +281,12 @@ module.exports.rmEpFGHeader = (type, ulb) => {
             'key': 2,
             'value':  0,
             'class': 'fw-bold text-end',
-            sum: 'ulbScore'
+            sum: 'ulbScore',
+            decimalPlace
           },
     ];
     return { columns, lastRow };
 }
-
-const decimalPlace = 2;
 
 // Participated states & UT.
 module.exports.getTableHeaderParticipatedStates = {
