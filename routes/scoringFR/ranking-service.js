@@ -583,10 +583,10 @@ async function fetchFiveUlbs(ulbRes, sortBy, state) {
 				},
 				ulb,
 				'ulbNameLink': `/cfr/ulb/${ulb.censusCode ? ulb.censusCode : ulb.sbCode ? ulb.sbCode : ulb.ulb}`,
-				'overallScore': Number(ulb.overAll.score.toFixed(2)),
-				'resourceMobilizationScore': Number(ulb.resourceMobilization.score.toFixed(2)),
-				'expenditurePerformanceScore': Number(ulb.expenditurePerformance.score.toFixed(2)),
-				'fiscalGovernanceScore': Number(ulb.fiscalGovernance.score.toFixed(2)),
+				'overallScore': ulb.overAll.score.toFixed(2),
+				'resourceMobilizationScore': ulb.resourceMobilization.score.toFixed(2),
+				'expenditurePerformanceScore': ulb.expenditurePerformance.score.toFixed(2),
+				'fiscalGovernanceScore': ulb.fiscalGovernance.score.toFixed(2),
 			};
 
 			ulbScore.push(ulbData);
