@@ -35,6 +35,10 @@ module.exports.authDalgo = async (req, res) => {
                 {
                     "type": "dashboard",
                     "id": "6476518a-7dfd-4614-87c2-8a315c9ece25"
+                },
+                {
+                    "type": "dashboard",
+                    "id": "463904ae-53e5-4e86-8f41-314ad84fe11b"
                 }
             ],
             "rls": []
