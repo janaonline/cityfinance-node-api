@@ -2,6 +2,7 @@ require('./dbConnect');
 const BondIssuerItemSchema = new Schema(
   {
     ulb: { type: String, required: true },
+    ulbId:{type : Schema.Types.ObjectId, ref : "Ulb",default:null},
     yearOfBondIssued: { type: String, default: '' },
     // --------------------------- //
     // details of instrument
