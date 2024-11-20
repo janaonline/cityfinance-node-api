@@ -10,7 +10,7 @@ const ScoringFiscalRanking = require('../../models/ScoringFiscalRanking');
 const { registerCustomQueryHandler } = require('puppeteer');
 const { getTableHeaderParticipatedStates, getFilterOptions, overallHeader } = require('./response-data');
 const { getPaginationParams, getPageNo, getPopulationBucket } = require('../../service/common');
-const { getBucketWiseTop10UlbsQuery, getBucketWiseTop10UlbsColumns } = require('./helper.js');
+const { getBucketWiseTop10UlbsQuery, getBucketWiseTop10UlbsColumns, getStateColor } = require('./helper.js');
 
 const mainIndicators = ['resourceMobilization', 'expenditurePerformance', 'fiscalGovernance', 'overAll'];
 const currentFormStatus = { $in: [11] };
@@ -263,22 +263,24 @@ async function getParticipatedStateMap(limit = 40, skip = 0, query = false, sele
 function mapRes(states, query, total) {
 	let mapData = [];
 	for (const state of states) {
-		const rankedtoTotal = {
-		percentage:
-			state.fiscalRanking &&
+		let percentage = 0;
+		percentage = state.fiscalRanking &&
 			state.fiscalRanking[0].totalUlbs &&
 			state.fiscalRanking[0].rankedUlbs
 			? parseFloat(
 				(
 					(state.fiscalRanking[0].rankedUlbs /
-					state.fiscalRanking[0].totalUlbs) *
+						state.fiscalRanking[0].totalUlbs) *
 					100
 				).toFixed(2)
-				)
-			: 0,
-		code: state.code,
-		_id: state.name,
-		stateId: state._id,
+			)
+			: 0
+		const rankedtoTotal = {
+			percentage,
+			color: getStateColor(Number(percentage)),
+			code: state.code,
+			_id: state.name,
+			stateId: state._id,
 		};
 		mapData.push(rankedtoTotal);
 	}

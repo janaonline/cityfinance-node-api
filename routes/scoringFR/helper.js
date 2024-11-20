@@ -169,7 +169,7 @@ async function getBucketWiseTop10UlbsQuery(limit) {
       },
     },
     { $project: { topScores: { $slice: ["$topScores", limit] } } }
-  ];  
+  ];
 }
 
 // Helper: to convert string to number - mongo query.
@@ -184,7 +184,22 @@ function convertToNumber(key, dataType) {
   };
 }
 
+
+// Helper: to mapRes() - get color code for participatedState api.
+colorDetails = [
+  { color: '#06668F', min: 75.51, max: 100 },
+  { color: '#0B8CC3', min: 50.51, max: 75.50 },
+  { color: '#73BFE0', min: 25.51, max: 50.50 },
+  { color: '#BCE2F2', min: 0.1, max: 25.50 },
+  { color: '#E5E5E5', min: 0, max: 0 },
+];
+
+function getStateColor(percentage) {
+  return this.colorDetails?.find(item => percentage >= item.min && percentage <= item.max)?.color || "#F3FAFF";
+}
+
 module.exports.topRankedUlbsDumpQuery = topRankedUlbsDumpQuery;
 module.exports.topRankedUlbsColumns = topRankedUlbsColumns;
 module.exports.getBucketWiseTop10UlbsQuery = getBucketWiseTop10UlbsQuery;
 module.exports.getBucketWiseTop10UlbsColumns = getBucketWiseTop10UlbsColumns;
+module.exports.getStateColor = getStateColor;
