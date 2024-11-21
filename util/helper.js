@@ -89,7 +89,13 @@ function Helper() {
         if(!isBeyondYear(design_year,'2022-23')) return;
         const { yearIndex: designYearIndex  } = getDesiredYear(design_year);
         const { yearIndex } = getDesiredYear(yearObject.year);
-        if(designYearIndex - yearIndex > 1) {
+        if(designYearIndex < 7) {
+           // yearObject.readonly = false;
+            yearObject.required = true;
+            yearObject.placeholder = (yearObject.value == "") ? 'N/A' : "";
+            yearObject.notApplicable = (yearObject.value == "");
+        }
+        else if(designYearIndex - yearIndex > 1) {
             yearObject.readonly = true;
             yearObject.required = false;
             yearObject.placeholder = (yearObject.value == "") ? 'N/A' : "";
