@@ -42,7 +42,7 @@ module.exports.create = async (req, res) => {
         data.referenceCode = `${ulb.code}_${data.financialYear}_${audited ? 'Audited' : 'Unaudited'
             }`;
         data.ulb = user.ulb;
-        let checkData = await UlbFinancialData.count({
+        let checkData = await UlbFinancialData.countDocuments({
             ulb: data.ulb,
             financialYear: data.financialYear,
             audited: true,
@@ -168,7 +168,7 @@ module.exports.get = async (req, res) => {
                     }
                 }
                 if (!skip) {
-                    total = await UlbFinancialData.count(query);
+                    total = await UlbFinancialData.countDocuments(query);
                 }
                 let data = await UlbFinancialData.find(query)
                     .sort(sort ? sort : { modifiedAt: -1 })

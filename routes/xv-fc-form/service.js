@@ -1524,7 +1524,7 @@ value = allData.filter(el => {
         }
 
         if (!skip) {
-          total = await XVFCGrantULBData.count(query);
+          total = await XVFCGrantULBData.countDocuments(query);
         }
 
         let data = await XVFCGrantULBData.find(query)
@@ -4640,7 +4640,7 @@ module.exports.getXVFCStateForm = async (req, res) => {
       return res.xls(filename, xlsData);
     }
 
-    let total = await XVStateForm.count(query).exec();
+    let total = await XVStateForm.countDocuments(query).exec();
     let data = await XVStateForm.find(query)
       .populate([{ path: "state", select: "name" }])
       .skip(skip)

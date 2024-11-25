@@ -471,7 +471,7 @@ module.exports.get = async (req, res) => {
                     query['ulb'] = { $in: ulbs };
                 }
                 if (!skip) {
-                    total = await UlbUpdateRequest.count(query);
+                    total = await UlbUpdateRequest.countDocuments(query);
                 }
                 let data = await UlbUpdateRequest.find(query)
                     .sort(sort ? sort : { modifiedAt: -1 })

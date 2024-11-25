@@ -2140,7 +2140,7 @@ module.exports.formList = async (req, res) => {
     else {
         matchParams = user.role == 'XVIFC' ? filter : user.role == 'XVIFC_STATE' ? { $and: [{ state: ObjectId(stateId) }, filter, { ulbName: { $regex: `${searchText}`, $options: 'im' } }] } : "";
         listOfUlbsFromState = await XviFcForm1DataCollection.find(matchParams).sort(Object.keys(sort).length > 0 ? sort : { formStatus: -1, ulbName: 1 }).skip(skip * limit).limit(limit).lean();
-        totalUlbForm = await XviFcForm1DataCollection.find(matchParams).count().lean();
+        totalUlbForm = await XviFcForm1DataCollection.find(matchParams).countDocuments().lean();
     }
 
     if (listOfUlbsFromState.length > 0) {

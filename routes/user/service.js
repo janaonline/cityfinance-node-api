@@ -55,7 +55,7 @@ module.exports.get = async (req, res) => {
                 }
             }
             if (!skip) {
-                total = await User.count(query);
+                total = await User.countDocuments(query);
             }
             let users = await User.find(query)
                 .sort(sort ? sort : { modifiedAt: -1 })
@@ -480,7 +480,7 @@ module.exports.getAll = async (req, res) => {
 
                         let nQ = Object.assign({}, query);
                         // Object.assign(nQ, newFilter);
-                        total = await User.count(nQ);
+                        total = await User.countDocuments(nQ);
 
 
                     }
