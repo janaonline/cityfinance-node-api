@@ -707,14 +707,14 @@ function compareValues(params) {
                 // console.log("refVal :::: ",refVal)
                 if (currenVal > refVal) {
                     validator.valid = false
+                    validator.message = message + " for year: " + key
                     validator.errors.push(message)
-                    validator.message = message
                 }
             }
             else if (logic === "sum") {
                 if (currenVal != refVal) {
                     validator.valid = false
-                    validator.message = message
+                    validator.message = message + " for year: " + key
                     validator.errors.push(message)
                 }
             }
