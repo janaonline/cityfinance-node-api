@@ -2,12 +2,12 @@ const ObjectId = require('mongoose').Types.ObjectId;
 const moongose = require('mongoose');
 // const Response = require('../../service').response;
 // const { years } = require('../../service/years');
-const Ulb = require('../../models/Ulb');
+// const Ulb = require('../../models/Ulb');
 const State = require('../../models/State');
 const FiscalRanking = require('../../models/FiscalRanking');
 const FiscalRankingMapper = require('../../models/FiscalRankingMapper');
 const ScoringFiscalRanking = require('../../models/ScoringFiscalRanking');
-const { registerCustomQueryHandler } = require('puppeteer');
+// const { registerCustomQueryHandler } = require('puppeteer');
 const { getTableHeaderParticipatedStates, getFilterOptions, overallHeader } = require('./response-data');
 const { getPaginationParams, getPageNo, getPopulationBucket } = require('../../service/common');
 const { getBucketWiseTop10UlbsQuery, getBucketWiseTop10UlbsColumns, getStateColor } = require('./helper.js');
@@ -59,10 +59,10 @@ async function getDocCount(indicator) {
 	};
 	return await FiscalRankingMapper.countDocuments(condition);
 }
-async function getBudgetUlbCount() {
-	const condition = { isActive: true };
-	return await Ulb.countDocuments(condition);
-}
+// async function getBudgetUlbCount() {
+// 	const condition = { isActive: true };
+// 	return await Ulb.countDocuments(condition);
+// }
 async function getTopParticipatedState(limit = 10) {
 	return await State.find({ isActive: true }).select('name')
 		.sort({ 'fiscalRanking.participatedUlbsPercentage': -1 }).limit(limit).lean();
@@ -161,7 +161,7 @@ module.exports.participatedState = async (req, res) => {
 	try {
 		// mongoose.set('debug', true);
 		const query = req.query;
-		const condition = { isActive: true };
+		// const condition = { isActive: true };
 		let { limit, skip } = getPaginationParams(req.query);
 		const data = await getParticipatedState(limit, skip, query, 'name code fiscalRanking stateType');
 
@@ -455,7 +455,6 @@ function getDocYearCount(state, indicator, year) {
 	}
 	return total;
 }
-function getMapData() { }
 
 //<<-- Top Ranked ULBs -->>
 module.exports.topRankedUlbs = async (req, res) => {
@@ -525,9 +524,7 @@ async function getTopUlbs(sortBy, order) {
 		.lean();
 	return ulbRes;
 }
-function countEle() {
 
-}
 //<<-- Top Ranked ULBs -->>
 module.exports.topRankedStates = async (req, res) => {
 	// moongose.set('debug', true);
