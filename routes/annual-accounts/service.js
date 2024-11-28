@@ -1997,9 +1997,7 @@ exports.getAccounts = async (req, res, next) => {
 
     obj = annualAccountData;
 
-    if (design_year !== "606aafc14dff55e6c075d3ec") {
-      const showOptionBox = await helper.showOptionBox(ulbData, currYearData, prevYearData);
-    }
+    const showOptionBox = await helper.showOptionBox(ulbData, currYearData, prevYearData);
     
     ulb = req?.decoded.ulb ?? ulb;
     let filters = {
