@@ -53,37 +53,37 @@ module.exports.changeResponse = async(req,res,next) =>{
     }
     let formStatus = false
     try{
-        let responseData = [
-            {
-              "_id": req?.form?._id ,
-              "formId": req.query.formId,
-              "language":[],
-              "status":MASTER_STATUS_ID[parseInt(req.form.currentFormStatus)] || "Not Started",
-              "canTakeAction":req?.form?.canTakeAction ? req?.form?.canTakeAction :false,
-              "deadLineMsg":"As per 15th FC Operational Guidelines, for receiving grants ULBs should submit their AFS on or before 15th of May",
-              "statusId": req?.form?.currentFormStatus ?  req?.form?.currentFormStatus  :  MASTER_STATUS['Not Started'],
-              "isQuestionDisabled":formStatus
-
-            }
-          ]
-        
-        if (req?.form?.hasOwnProperty("showOptionBox")) responseData[0]["showOptionBox"] = req?.form?.showOptionBox;
-        if (req?.obj?.hasOwnProperty("showOptionBox")) responseData[0]["showOptionBox"] = req?.obj?.showOptionBox;
         
         if(!req.form){
             Object.assign(response,req.obj)
             // return res.status(200).json(req.obj)
         }
-        let yearId = req.query.design_year
+        let responseData = [
+            {
+              "_id": req.form?._id ,
+              "formId": req.query?.formId,
+              "language":[],
+              "status":MASTER_STATUS_ID[parseInt(req.form?.currentFormStatus)] || "Not Started",
+              "canTakeAction":req.form?.canTakeAction ? req.form?.canTakeAction :false,
+              "deadLineMsg":"As per 15th FC Operational Guidelines, for receiving grants ULBs should submit their AFS on or before 15th of May",
+              "statusId": req.form?.currentFormStatus ?  req.form?.currentFormStatus  :  MASTER_STATUS['Not Started'],
+              "isQuestionDisabled":formStatus
+
+            }
+          ]
+        
+        if (req.form?.hasOwnProperty("showOptionBox")) responseData[0]["showOptionBox"] = req.form.showOptionBox;
+        if (req.obj?.hasOwnProperty("showOptionBox")) responseData[0]["showOptionBox"] = req.obj?.showOptionBox;
+        let yearId = req.query?.design_year
         let year = getKeyByValue(years,yearId)
-        if(req.form && req.form.isDraft && req.form.isDraft === ""){
+        if(req.form && req.form.isDraft == ""){
             req.form.isDraft = true
         }
         let form = {...req.form}
         let {name,role} = req.decoded
         let latestYear = !outDatedYears.includes(year)
         if(latestYear){
-            let jsonFormId = req?.query?.formId
+            let jsonFormId = req.query?.formId
             if(!jsonFormId){
                 response.message = "json form id is required"
                 return res.status(400).json(response)
@@ -115,7 +115,7 @@ module.exports.changeResponse = async(req,res,next) =>{
                     mutatedJson[0].isDraft = true
                 }
                 mutatedJson[0].deadLineMsg  = "As per 15th FC Operational Guidelines, for receiving grants ULBs should submit their AFS on or before 15th of May"
-                mutatedJson[0].prevStatus = req.form?.url || ""
+                mutatedJson[0].prevStatus = req.form.url || ""
                 response.data = responseData
                 response.url = req.form.url
                 return res.status(200).json(response)
