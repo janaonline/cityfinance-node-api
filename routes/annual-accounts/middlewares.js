@@ -66,6 +66,10 @@ module.exports.changeResponse = async(req,res,next) =>{
 
             }
           ]
+        
+        if (req?.form?.hasOwnProperty("showOptionBox")) responseData[0]["showOptionBox"] = req?.form?.showOptionBox;
+        if (req?.obj?.hasOwnProperty("showOptionBox")) responseData[0]["showOptionBox"] = req?.obj?.showOptionBox;
+        
         if(!req.form){
             Object.assign(response,req.obj)
             // return res.status(200).json(req.obj)
