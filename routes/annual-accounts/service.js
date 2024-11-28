@@ -1997,8 +1997,10 @@ exports.getAccounts = async (req, res, next) => {
 
     obj = annualAccountData;
 
-
-
+    if (design_year !== "606aafc14dff55e6c075d3ec") {
+      const showOptionBox = await helper.showOptionBox(ulbData, currYearData, prevYearData);
+    }
+    
     ulb = req?.decoded.ulb ?? ulb;
     let filters = {
       ulb: ObjectId(ulb),
@@ -2013,6 +2015,7 @@ exports.getAccounts = async (req, res, next) => {
       design_year
     }).select({ history: 0 });
     if (!annualAccountData) {
+      if (design_year !== "606aafc14dff55e6c075d3ec") obj["showOptionBox"] = showOptionBox;
       req.form = false
       req.obj = obj
       next()
@@ -2091,6 +2094,18 @@ exports.getAccounts = async (req, res, next) => {
 
       clearResponseReason(annualAccountData);
 
+    }
+
+    const showOptionBoxCondition =
+      design_year !== "606aafc14dff55e6c075d3ec" &&
+      [2, 5, 7].includes(Number(annualAccountData["currentFormStatus"]));
+
+    if (showOptionBoxCondition) {
+      annualAccountData["showOptionBox"] = showOptionBox;
+      if (!showOptionBox) {
+        annualAccountData["audited.submit_annual_accounts"] = true;
+        annualAccountData["unAudited.submit_annual_accounts"] = true;
+      }
     }
     req.form = annualAccountData
     next()
