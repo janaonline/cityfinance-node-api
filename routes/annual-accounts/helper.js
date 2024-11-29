@@ -1,4 +1,5 @@
 const AnnualAccountData = require("../../models/AnnualAccounts");
+const Year = require("../../models/Year");
 const ObjectId = require("mongoose").Types.ObjectId;
 const { years } = require("../../service/years");
 
@@ -346,21 +347,29 @@ function getYearKey(year) {
     return "access_" + `${(yearArr[0]).toString().slice(-2)}${(yearArr[1]).toString().slice(-2)}`
 }
 
+// eg: Input: 21, Output: obj of 2021-22, 2022-23, 2023-24... 
+// sameple output [ { _id: 606aaf854dff55e6c075d219, year: '2021-22', isActive: true }...]
+async function getDesiredYears(yr) {
+    return await Year.aggregate(
+        [{
+            $match: {
+                $expr: {
+                    $gt: [{ $toInt: { $arrayElemAt: [{ $split: ["$year", "-"] }, 1] } }, yr]
+                }
+            }
+        }]
+    );
+}
+
 async function checkPrevYrFilledStatus(ulbId) {
+    const yearObj = await getDesiredYears(21);
+    const yearToBeChecked = yearObj.map((ele) => ObjectId(ele._id));
+
     const aaFilledStatusReport = await AnnualAccountData.aggregate([
         {
             $match: {
                 ulb: ObjectId(ulbId),
-                design_year: {
-                    $in: [
-                        // TODO: make the array dynamic.
-                        ObjectId('606aaf854dff55e6c075d219'), // 2021-22
-                        ObjectId('606aafb14dff55e6c075d3ae'), // 2022-23
-                        ObjectId('606aafc14dff55e6c075d3ec'), // 2023-24
-                        ObjectId('606aafcf4dff55e6c075d424'), // 2024-25
-                        ObjectId('606aafda4dff55e6c075d48f'), // 2025-26
-                    ]
-                },
+                design_year: { $in: yearToBeChecked },
                 $or: [
                     //Under Review By State, Under Review By MoHUA, Submission Acknowledged By MoHUA
                     { currentFormStatus: { $in: [3, 4, 6] } },
