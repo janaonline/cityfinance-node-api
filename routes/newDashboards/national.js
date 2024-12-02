@@ -695,6 +695,7 @@ exports.nationalDashExpenditure = async (req, res) => {
     ).select("_id");
     let promiseData = await Promise.all([ulbs, lineItemsExp]);
     ulbs = promiseData[0];
+    lineItemsExp = lineItemsExp.filter((ele) => ele._id.toString() != "5dd10c2585c951b54ec1d75e" && ele._id.toString() != "5dd10c2385c951b54ec1d744");
     lineItemsExp = promiseData[1];
     ulbs = ulbs.map((each) => {
       HashTable.set(each._id.toString(), true);
