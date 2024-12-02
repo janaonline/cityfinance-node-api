@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
-const LOOKUP = require('../_helper/constants');
 const { Schema } = mongoose;
+
 const LedgerLogSchema = mongoose.Schema({
 	state_code: {
 		type: String,
@@ -111,7 +111,24 @@ const LedgerLogSchema = mongoose.Schema({
 	dataFlagComment: {
 		type: String,
 	},
-
+	tracker: [
+		{
+			audit_status: {
+				type: String,
+				enum: { values: ['Audited', 'Unaudited'], message: 'Audit status must be either "Audited" or "Unaudited"' },
+				required: [true, 'Tracker - Audit status is required']
+			},
+			lastModifiedAt: {
+				type: Date,
+				default: Date.now()
+			},
+			isStandardizable: {
+				type: String,
+				enum: { values: ['Yes', 'No'], message: 'Enter "Yes" or "No"' },
+				required: [true, 'Tracker - "Can the file be standardised?" is required']
+			}
+		}
+	]
 });
 
 LedgerLogSchema.index(

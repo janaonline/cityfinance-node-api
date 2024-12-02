@@ -279,6 +279,18 @@ module.exports = function (req, res) {
 
         // Upload overview sheet data.
         async function uploadOverviewDataInDb(du) {
+            // Update tracker.
+            let ledgerLogData = await LedgerLog.findOne(du.query).select('tracker');
+            let ledgerLogTracker = ledgerLogData?.["tracker"] || [];
+
+            ledgerLogTracker.push({
+                audit_status: du.update.audit_status,
+                lastModifiedAt: new Date(),
+                isStandardizable: du.update.isStandardizable,
+            });
+            du.update.tracker = ledgerLogTracker;
+
+            // Push data to collection.
             await LedgerLog.findOneAndUpdate(du.query, du.update, du.options);
         }
 
