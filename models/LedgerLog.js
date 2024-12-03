@@ -125,7 +125,13 @@ const LedgerLogSchema = mongoose.Schema({
 			isStandardizable: {
 				type: String,
 				enum: { values: ['Yes', 'No'], message: 'Enter "Yes" or "No"' },
-				required: [true, 'Tracker - "Can the file be standardised?" is required']
+				required: [true, 'Tracker - "Can the file be standardised?" is required'],
+			},
+			isStandardizableComment: {
+				type: String,
+			},
+			dataFlag: {
+				type: String,
 			}
 		}
 	]

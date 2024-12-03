@@ -287,6 +287,8 @@ module.exports = function (req, res) {
                 audit_status: du.update.audit_status,
                 lastModifiedAt: new Date(),
                 isStandardizable: du.update.isStandardizable,
+                isStandardizableComment: du.update.isStandardizableComment,
+                dataFlag: du.update.dataFlag,
             });
             du.update.tracker = ledgerLogTracker;
 
