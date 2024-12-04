@@ -1,18 +1,17 @@
 const moment = require("moment");
-const RequestLog = require("../../models/RequestLog")
 const downloadFileToDisk = require("../file-upload/service").downloadFileToDisk;
 const xlstojson = require("xls-to-json-lc");
 const xlsxtojson = require("xlsx-to-json-lc");
+const ObjectId = require('mongoose').Types.ObjectId;
+const Redis = require('../../service/redis')
+const xlsx = require('xlsx');
 const CONSTANTS = require('../../_helper/constants');
+const RequestLog = require("../../models/RequestLog")
 const State = require("../../models/State")
 const Ulb = require("../../models/Ulb");
 const LineItem = require("../../models/LineItem");
 const UlbLedger = require("../../models/UlbLedger");
 const LedgerLog = require("../../models/LedgerLog");
-const Redis = require('../../service/redis')
-const ObjectId = require('mongoose').Types.ObjectId;
-const Year = require('../../models/Year');
-const xlsx = require('xlsx');
 
 const overViewSheet = {
     'State Code': 'state_code',
@@ -202,29 +201,33 @@ module.exports = function (req, res) {
                         }
                     }
 
-                    async function uploadOverviewDataInDb() {
-                        await LedgerLog.findOneAndUpdate(du.query, du.update, du.options);
-                    }
-
                     // Check Input sheet only if "isStandardizable === Yes" or if ULB is filling the standardized excel.
                     if (objOfSheet.isStandardizable === "Yes" || user.role === 'ULB') {
 
                         // validate the input sheet data, like validating balance sheet, removing empty line items, removing comma seprations, converting negative values etc.
                         let inputDataArr = await validateData(dataSheet, objOfSheet, balanceSheet, design_year, user); //  return line item data array
-                        let responseArr = [];
+                        let inputDataArrSuccessCounter = 0;
+                        let inputDataBulkWriteArr = [];
                         let aborted = false;
+
                         for (let el of inputDataArr) {
-                            let options = el.options;//Object.assign(el.options,{session:session});
                             try {
                                 if (user.role != 'ULB' && !design_year) {
-                                    let result = await UlbLedger.findOneAndUpdate(el.query, el.update, options);
+                                    // await UlbLedger.findOneAndUpdate(el.query, el.update, options);
+                                    let obj = {};
+                                    obj = {
+                                        "updateOne": {
+                                            "filter": el.query,
+                                            "update": { "$set": el.update },
+                                            "upsert": true
+                                        }
+                                    };
+                                    inputDataBulkWriteArr.push(obj);
 
-                                    // Function call to update overview data only if input data is valid.
-                                    await uploadOverviewDataInDb();
-
-                                    responseArr.push(result);
                                     // Update in the request log collection, the current status of file
-                                    await updateLog(reqId, { message: `Status: (${responseArr.length}/${inputDataArr.length}) processed`, completed: 0 });
+                                    inputDataArrSuccessCounter += 1;
+                                    await updateLog(reqId, { message: `Status: (${inputDataArrSuccessCounter}/${inputDataArr.length}) processed`, completed: 0 });
+
                                 } else {
                                     // console.log('ULB')
                                     await updateLog(reqId, { message: `Status: 1 processed`, completed: 0 });
@@ -243,16 +246,21 @@ module.exports = function (req, res) {
                         if (aborted) {
                             await updateLog(reqId, { completed: 0, status: "FAILED" });
                         } else {
-                            //await session.commitTransaction();
-                            // console.log('updating Log function executed')
+
+                            // Function call to update "overview" & "input sheet" data only if input data is valid.
+                            await uploadOverviewDataInDb(du);
+                            await uploadInputDataInDb(inputDataBulkWriteArr); //bulkWrite.
+
                             await updateLog(reqId, { message: `Completed`, completed: 1, status: "SUCCESS" });
                             Redis.resetDashboard();
                         }
                     } else {
-                        console.log("isStandardizable is 'No'");
-                        // Update overview data in collection.
-                        await uploadOverviewDataInDb();
-                        
+                        console.info("isStandardizable is 'No'");
+
+                        // Update overview data in collection and delete input sheet data (if any).
+                        await uploadOverviewDataInDb(du);
+                        await deleteInputDataFromDB(du);
+
                         await updateLog(reqId, { message: `Completed (isStandardized is No)`, completed: 1, status: "SUCCESS" });
                         Redis.resetDashboard();
                     }
@@ -267,6 +275,45 @@ module.exports = function (req, res) {
                 errors.push("Exception Caught while extracting file");
                 await updateLog(reqId, { message: e.message, completed: 0, status: "FAILED" });
             }
+        }
+
+        // Upload overview sheet data.
+        async function uploadOverviewDataInDb(du) {
+            // Update tracker.
+            let ledgerLogData = await LedgerLog.findOne(du.query).select('tracker');
+            let ledgerLogTracker = ledgerLogData?.["tracker"] || [];
+
+            ledgerLogTracker.push({
+                audit_status: du.update.audit_status,
+                lastModifiedAt: new Date(),
+                isStandardizable: du.update.isStandardizable,
+                isStandardizableComment: du.update.isStandardizableComment,
+                dataFlag: du.update.dataFlag,
+            });
+            du.update.tracker = ledgerLogTracker;
+
+            // Push data to collection.
+            await LedgerLog.findOneAndUpdate(du.query, du.update, du.options);
+        }
+
+        // Delete input sheet data if "isStandardized == No".
+        async function deleteInputDataFromDB(du) {
+            if (du.update.ulb_id && du.update.year) {
+                const totLineItems = await LineItem.countDocuments();
+                const deleteCount = await UlbLedger.countDocuments({ ulb: ObjectId(du.update.ulb_id), financialYear: du.update.year });
+
+                // Delete only if count is less that total no. of lineitems.
+                if (deleteCount <= totLineItems)
+                    await UlbLedger.deleteMany({ ulb: ObjectId(du.update.ulb_id), financialYear: du.update.year });
+                else
+                    throw new Error("Delete count limit reached.");
+
+            } else throw new Error("_id and year is mandatory.");
+        }
+
+        // Bulk write to UlbLedger - input sheet data.
+        async function uploadInputDataInDb(inputDataBulkWriteArr) {
+            await UlbLedger.bulkWrite(inputDataBulkWriteArr);
         }
 
         // Utility function to read excel and return sheet names [].
@@ -404,7 +451,7 @@ module.exports = function (req, res) {
 
                 // Fetch data from collections.
                 const state = await State.findOne({ code: objOfSheet.state_code, isActive: true }, { name: 1, code: 1, _id: 1 }).exec();
-                const ulb = await Ulb.findOne({ code: objOfSheet.ulb_code, state: state._id }, { _id: 1, name: 1, area: 1, code: 1, isActive: 1, population: 1, state: 1, wards: 1 }).exec();
+                const ulb = await Ulb.findOne({ code: objOfSheet.ulb_code, state: state?._id }, { _id: 1, name: 1, area: 1, code: 1, isActive: 1, population: 1, state: 1, wards: 1 }).exec();
 
                 // Validate overview sheet.
                 if (state && ulb) {
