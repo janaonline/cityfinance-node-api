@@ -1,7 +1,7 @@
+const AnnualAccountData = require("../../models/AnnualAccounts");
+const Year = require("../../models/Year");
 const ObjectId = require("mongoose").Types.ObjectId;
 const { years } = require("../../service/years");
-
-
 
 /* Get the list of basic details of ULBs present in "UlbLedger" i.e "Standardised Excel".*/
 module.exports.getStandardizedUlbsList = async (ulbName = null, stateId = null, year = "2021-22", skip = 0, limit = 10) => {
@@ -86,36 +86,6 @@ module.exports.getRawUlbsList19Onwards = async (year = "2021-22", stateId = null
             addUrlCheck(auditedArr, unAuditedArr, 'audited', type);
             addUrlCheck(unAuditedArr, unAuditedArr, 'unAudited', type);
         }
-
-        // if (type === "pdf") {
-        //     auditedArr.push({
-        //         $and: [
-        //             { $ne: ["$aaData.audited.provisional_data.bal_sheet.pdf.url", null] },
-        //             { $ne: ["$aaData.audited.provisional_data.bal_sheet.pdf.url", ""] }
-        //         ]
-        //     });
-        //     unAuditedArr.push({
-        //         $and: [
-        //             { $ne: ["$aaData.unAudited.provisional_data.bal_sheet.pdf.url", null] },
-        //             { $ne: ["$aaData.unAudited.provisional_data.bal_sheet.pdf.url", ""] }
-        //         ]
-        //     });
-        // }
-        // if (type === "excel") {
-        //     auditedArr.push({
-        //         $and: [
-        //             { $ne: ["$aaData.audited.provisional_data.bal_sheet.excel.url", null] },
-        //             { $ne: ["$aaData.audited.provisional_data.bal_sheet.excel.url", ""] }
-        //         ]
-        //     });
-        //     unAuditedArr.push({
-        //         $and: [
-        //             { $ne: ["$aaData.unAudited.provisional_data.bal_sheet.excel.url", null] },
-        //             { $ne: ["$aaData.unAudited.provisional_data.bal_sheet.excel.url", ""] }
-        //         ]
-        //     });
-        // }
-
 
         if (ulbName) ulb_state_match = Object.assign({}, ulb_state_match, { "name": ulbName });
         if (stateId) ulb_state_match = Object.assign({}, ulb_state_match, { "state": ObjectId(stateId) });
@@ -342,4 +312,102 @@ module.exports.getRawUlbsList15To18 = async (year = "2015-16", stateId = null, u
     } catch (error) {
         console.error("Failed to create query: ", error);
     }
+}
+
+/**
+ * @description
+ * let CONDITION = "Do you wish to submit Audited/Provisional Accounts for 20xy-xz?"
+ * Based on the value of "showOptionBox", {{CONDITION}} will be shown or hidden on the frontend for the current year.
+ * 
+ * Logic:
+ * 1. If accessYear == module year (i.e., for new ULBs), set "showOptionBox" to true.
+ * 2. For old ULBs:
+ *    a. - If the response/ answer to {{CONDITION}} is "No", set "showOptionBox" to true
+ *       - For all design year (21-22 onwards, audited/ provisional) {{CONDITION}} must be "NO".
+ *    b. - If {{CONDITION}} is "Yes" for any one design year, set "showOptionBox" to false
+ *       - For any one design year (21-22 onwards, audited/ provisional) if {{CONDITION}} is "Yes".
+ *       - If the "showOptionBox" is false then the {{CONDITION}} must be true, so that the next questions are shown.
+ * 3. This logic applies from design year 24-25 onwards.
+ */
+module.exports.showOptionBox = async (ulbData, currYearObj, prevYearObj) => {
+    let showOptionBox = true;
+
+    // New ULB --> showOptionBox = true
+    const currYearKey = getYearKey(currYearObj.year);
+    const prevYearKey = getYearKey(prevYearObj.year);
+    if (ulbData[currYearKey] && !ulbData[prevYearKey]) return true;
+
+    // Any one {{CONDITION}} is "Yes" for perv years --> showOptionBox = false;
+    return await checkPrevYrFilledStatus(ulbData._id);
+}
+
+// eg: Input: 2024-25, Output: access_2425
+function getYearKey(year) {
+    let yearArr = year.split("-")
+    return "access_" + `${(yearArr[0]).toString().slice(-2)}${(yearArr[1]).toString().slice(-2)}`
+}
+
+// eg: Input: 21, Output: obj of 2021-22, 2022-23, 2023-24... 
+// sameple output [ { _id: 606aaf854dff55e6c075d219, year: '2021-22', isActive: true }...]
+async function getDesiredYears(yr) {
+    return await Year.aggregate(
+        [{
+            $match: {
+                $expr: {
+                    $gt: [{ $toInt: { $arrayElemAt: [{ $split: ["$year", "-"] }, 1] } }, yr]
+                }
+            }
+        }]
+    );
+}
+
+async function checkPrevYrFilledStatus(ulbId) {
+    const yearObj = await getDesiredYears(21);
+    const yearToBeChecked = yearObj.map((ele) => ObjectId(ele._id));
+
+    const aaFilledStatusReport = await AnnualAccountData.aggregate([
+        {
+            $match: {
+                ulb: ObjectId(ulbId),
+                design_year: { $in: yearToBeChecked },
+                $or: [
+                    //Under Review By State, Under Review By MoHUA, Submission Acknowledged By MoHUA
+                    { currentFormStatus: { $in: [3, 4, 6] } },
+                    {
+                        status: { $in: ["PENDING", "APPROVED"] },
+                        isDraft: false
+                    }
+                ]
+            }
+        },
+        {
+            $group: {
+                _id: "$ulb",
+                auditedTrueCount: { $sum: { $cond: [{ $eq: ["$audited.submit_annual_accounts", true] }, 1, 0] } },
+                auditedFalseCount: { $sum: { $cond: [{ $eq: ["$audited.submit_annual_accounts", false] }, 1, 0] } },
+                unAditedTrueCount: { $sum: { $cond: [{ $eq: ["$unAudited.submit_annual_accounts", true] }, 1, 0] } },
+                unAuditedFalseCount: { $sum: { $cond: [{ $eq: ["$unAudited.submit_annual_accounts", false] }, 1, 0] } },
+            }
+        },
+        {
+            $project: {
+                audited: {
+                    true: "$auditedTrueCount",
+                    false: "$auditedFalseCount"
+                },
+                unAudited: {
+                    true: "$unAditedTrueCount",
+                    false: "$unAuditedFalseCount"
+                }
+            }
+        }
+    ]);
+
+    // If ULB is not found --> showOptionBox.
+    if (!aaFilledStatusReport.length) return true;
+
+    // If any one filled status is true return true; else false;
+    if (aaFilledStatusReport[0].audited.true > 0 || aaFilledStatusReport[0].unAudited.true > 0) return false;
+    else return true;
+
 }
