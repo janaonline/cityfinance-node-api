@@ -1,8 +1,6 @@
 const ObjectId = require('mongoose').Types.ObjectId;
-const Ulb = require('../../models/Ulb');
 const State = require('../../models/State');
 const FiscalRanking = require('../../models/FiscalRanking');
-const FiscalRankingMapper = require('../../models/FiscalRankingMapper');
 const ScoringFiscalRanking = require('../../models/ScoringFiscalRanking');
 const { getTableHeaderParticipatedStates, getFilterOptions, overallHeader } = require('./response-data');
 const { getPaginationParams, getPageNo, getPopulationBucket } = require('../../service/common');
@@ -23,46 +21,46 @@ async function getParticipatedStateCount() {
 	const condition = { isActive: true, 'fiscalRanking.participatedUlbs': { $ne: 0 } };
 	return await State.countDocuments(condition);
 }
-async function topCategoryUlb(populationBucket) {
-	const condition = { populationBucket };
-	return await ScoringFiscalRanking.find(condition).select('name').sort({ 'overAll.rank': -1 }).limit(5);
-}
-async function getAuditedUlbCount() {
-	const condition = { isActive: true };
-	return await Ulb.countDocuments(condition);
-}
-async function getDocCount(indicator) {
-	const condition = {
-		$and: [
-			{
-				'type': indicator,
-			},
-			{
-				$or: [
-					{
-						'file.url': {
-							$ne: '',
-						},
-					},
-					{
-						'modelName': {
-							$ne: '',
-						},
-					},
-				],
-			},
-		],
-	};
-	return await FiscalRankingMapper.countDocuments(condition);
-}
-async function getBudgetUlbCount() {
-	const condition = { isActive: true };
-	return await Ulb.countDocuments(condition);
-}
-async function getTopParticipatedState(limit = 10) {
-	return await State.find({ isActive: true }).select('name')
-		.sort({ 'fiscalRanking.participatedUlbsPercentage': -1 }).limit(limit).lean();
-}
+// async function topCategoryUlb(populationBucket) {
+// 	const condition = { populationBucket };
+// 	return await ScoringFiscalRanking.find(condition).select('name').sort({ 'overAll.rank': -1 }).limit(5);
+// }
+// async function getAuditedUlbCount() {
+// 	const condition = { isActive: true };
+// 	return await Ulb.countDocuments(condition);
+// }
+// async function getDocCount(indicator) {
+// 	const condition = {
+// 		$and: [
+// 			{
+// 				'type': indicator,
+// 			},
+// 			{
+// 				$or: [
+// 					{
+// 						'file.url': {
+// 							$ne: '',
+// 						},
+// 					},
+// 					{
+// 						'modelName': {
+// 							$ne: '',
+// 						},
+// 					},
+// 				],
+// 			},
+// 		],
+// 	};
+// 	return await FiscalRankingMapper.countDocuments(condition);
+// }
+// async function getBudgetUlbCount() {
+// 	const condition = { isActive: true };
+// 	return await Ulb.countDocuments(condition);
+// }
+// async function getTopParticipatedState(limit = 10) {
+// 	return await State.find({ isActive: true }).select('name')
+// 		.sort({ 'fiscalRanking.participatedUlbsPercentage': -1 }).limit(limit).lean();
+// }
 async function getBucketWiseTop10Ulbs(limit = 10) {
 	try {
 		const bucketWiseTop10UlbsArr = [];
@@ -159,7 +157,7 @@ module.exports.participatedState = async (req, res) => {
 		const query = req.query;
 		// const condition = { isActive: true };
 		let { limit, skip } = getPaginationParams(req.query);
-		const data = await getParticipatedState(limit, skip, query, 'name code fiscalRanking stateType isUT');
+		const data = await getParticipatedState(limit, skip, query, 'name code fiscalRanking stateType isUT isHilly');
 
 		return res.status(200).json({ ...data });
 	} catch (error) {
@@ -193,6 +191,7 @@ function tableRes(states, query, total) {
 			nonRankedUlbs: state.fiscalRanking ? state.fiscalRanking[0].nonRankedUlbs : 0,
 			rankedtoTotal: rankedtoTotal.toFixed(2),
 			nameLink: `/cfr/participated-ulbs/${state._id}`,
+			bgColor: getStateColor(Number(state.fiscalRanking && state.fiscalRanking[0].participatedUlbsPercentage), state.isHilly, true)
 		};
 		// const participatedCount = {
 		// 	'percentage': state.fiscalRanking ? state.fiscalRanking[0].participatedUlbsPercentage : 0,
@@ -211,9 +210,9 @@ module.exports.participatedStateMap = async (req, res) => {
 	try {
 		// mongoose.set('debug', true);
 		const query = req.query;
-		const condition = { isActive: true };
+		// const condition = { isActive: true };
 		let { limit, skip } = getPaginationParams(req.query);
-		const data = await getParticipatedStateMap(limit, skip, query, 'name code fiscalRanking stateType');
+		const data = await getParticipatedStateMap(limit, skip, query, 'name code fiscalRanking stateType isHilly');
 
 		return res.status(200).json({ ...data });
 	} catch (error) {
@@ -261,8 +260,8 @@ async function getParticipatedStateMap(limit = 40, skip = 0, query = false, sele
 function mapRes(states, query, total) {
 	let mapData = [];
 	for (const state of states) {
-		let percentage = 0;
-		percentage = state.fiscalRanking &&
+		let rankedPercentage = 0;
+		rankedPercentage = state.fiscalRanking &&
 			state.fiscalRanking[0].totalUlbs &&
 			state.fiscalRanking[0].rankedUlbs
 			? parseFloat(
@@ -274,8 +273,9 @@ function mapRes(states, query, total) {
 			)
 			: 0
 		const rankedtoTotal = {
-			percentage,
-			color: getStateColor(Number(percentage)),
+			rankedPercentage,
+			participatedPercentage: state.fiscalRanking && state.fiscalRanking[0].participatedUlbsPercentage,
+			color: getStateColor(Number(state.fiscalRanking && state.fiscalRanking[0].participatedUlbsPercentage), state.isHilly),
 			code: state.code,
 			_id: state.name,
 			stateId: state._id,
@@ -453,7 +453,6 @@ function getDocYearCount(state, indicator, year) {
 	}
 	return total;
 }
-function getMapData() { }
 
 //<<-- Top Ranked ULBs -->>
 module.exports.topRankedUlbs = async (req, res) => {
@@ -526,9 +525,7 @@ async function getTopUlbs(sortBy, order) {
 		.lean();
 	return ulbRes;
 }
-function countEle() {
 
-}
 //<<-- Top Ranked ULBs -->>
 module.exports.topRankedStates = async (req, res) => {
 	// moongose.set('debug', true);

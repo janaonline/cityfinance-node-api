@@ -1,13 +1,8 @@
 const ObjectId = require('mongoose').Types.ObjectId;
-const moongose = require('mongoose');
-const Response = require('../../service').response;
-const { years } = require('../../service/years');
 const Ulb = require('../../models/Ulb');
 const FiscalRanking = require('../../models/FiscalRanking');
 const FiscalRankingMapper = require('../../models/FiscalRankingMapper');
 const ScoringFiscalRanking = require('../../models/ScoringFiscalRanking');
-const { registerCustomQueryHandler } = require('puppeteer');
-const { cubeRootOfNegative } = require('../../service/common');
 const moment = require('moment');
 // const { pow } = require('mathjs');
 
@@ -46,7 +41,7 @@ function getValue(fsMapper, type) {
 
 function getDate(fsMapper, type) {
     const indicator = fsMapper.find((e) => e.type === type);
-    if (!indicator && !indicator.date) {
+    if (!indicator || !indicator.date) {
         return false;
     }
 
@@ -568,9 +563,9 @@ function getPopulationBucket(population) {
 }
 
 // Function to check if the data for ranking was submitted from Provisional A/c; if yes then deduct x% of marks in final_score
-function getProvisionalStatus(censusCode) {
-    return 0;
-}
+// function getProvisionalStatus(censusCode) {
+//     return 0;
+// }
 
 // appAnnualBudget
 // auditedAnnualFySt
@@ -877,14 +872,14 @@ module.exports.calculateFRScore = async (req, res) => {
         // moongose.set('debug', true);
         const limit = req.query.limit ? parseInt(req.query.limit) : 1000;
         const page = req.query.page ? parseInt(req.query.page) : 1;
-        const censusCode = 802989;
+        // const censusCode = 802989;
         const _id = ObjectId('5eb5845176a3b61f40ba08d4');
         // Consider only ULBs with isActive TRUE & population is not empty & not 0.
         // const condition = { isActive: true, population: { $nin: [null, 0] } };
         const condition = {
             isActive: true, population: { $nin: [null, 0] },
-            ...(req.query?.ulb && {
-                _id: ObjectId(req.query?.ulb)
+            ...(req.query.ulb && {
+                _id: ObjectId(req.query.ulb)
             })
         };
         const skip = (page - 1) * limit;

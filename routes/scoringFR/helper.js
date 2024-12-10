@@ -214,18 +214,37 @@ function convertToNumber(key, dataType) {
   };
 }
 
+// Helper for setUlbParticipatedData(): return (high || low ||  hilly).
+function getSateParticipationCategory(participatedUlbsPercentage = 0, isHilly = false) {
+  let type = 'low';
+  if (isHilly) type = 'hilly';
+  else if (participatedUlbsPercentage >= 75) type = 'high';
+
+  return type;
+}
 
 // Helper: to mapRes() - get color code for participatedState api.
-colorDetails = [
-  { color: '#06668F', min: 75.51, max: 100 },
-  { color: '#0B8CC3', min: 50.51, max: 75.50 },
-  { color: '#73BFE0', min: 25.51, max: 50.50 },
-  { color: '#BCE2F2', min: 0.1, max: 25.50 },
-  { color: '#E5E5E5', min: 0, max: 0 },
+// const colorDetails = [
+//   { color: { 'high': '#06668F', 'low': '#40916c', 'hilly': '#b07d62' }, min: 75.51, max: 100 },
+//   { color: { 'high': '#0B8CC3', 'low': '#52b788', 'hilly': '#cd9777' }, min: 50.51, max: 75.50 },
+//   { color: { 'high': '#73BFE0', 'low': '#95d5b2', 'hilly': '#deab90' }, min: 25.51, max: 50.50 },
+//   { color: { 'high': '#BCE2F2', 'low': '#d8f3dc', 'hilly': '#edc4b3' }, min: 0.1, max: 25.50 },
+//   { color: { 'high': '#E5E5E5', 'low': '#E5E5E5', 'hilly': '#E5E5E5' }, min: 0, max: 0 },
+// ];
+const colorDetails = [
+  { color: { 'high': '#0B8CC3', 'low': '#52b788', 'hilly': '#d69f7e' }, min: 75.51, max: 100 },
+  { color: { 'high': '#0B8CC3', 'low': '#52b788', 'hilly': '#d69f7e' }, min: 50.51, max: 75.50 },
+  { color: { 'high': '#0B8CC3', 'low': '#52b788', 'hilly': '#d69f7e' }, min: 25.51, max: 50.50 },
+  { color: { 'high': '#0B8CC3', 'low': '#52b788', 'hilly': '#d69f7e' }, min: 0.1, max: 25.50 },
+  { color: { 'high': '#E5E5E5', 'low': '#E5E5E5', 'hilly': '#E5E5E5' }, min: 0, max: 0 },
 ];
 
-function getStateColor(percentage) {
-  return this.colorDetails?.find(item => percentage >= item.min && percentage <= item.max)?.color || "#F3FAFF";
+const columnColor = { 'high': '#BCE2F2', 'low': '#d8f3dc', 'hilly': '#edc4b3' };
+
+function getStateColor(percentage, isHilly, isColumnColor = false) {
+  const type = getSateParticipationCategory(percentage, isHilly);
+  if (isColumnColor) return columnColor[type];
+  return colorDetails?.find(item => percentage >= item.min && percentage <= item.max)?.color[type] || "#E5E5E5";
 }
 
 module.exports.topRankedUlbsDumpQuery = topRankedUlbsDumpQuery;
@@ -233,3 +252,4 @@ module.exports.topRankedUlbsColumns = topRankedUlbsColumns;
 module.exports.getBucketWiseTop10UlbsQuery = getBucketWiseTop10UlbsQuery;
 module.exports.getBucketWiseTop10UlbsColumns = getBucketWiseTop10UlbsColumns;
 module.exports.getStateColor = getStateColor;
+module.exports.getSateParticipationCategory = getSateParticipationCategory;
