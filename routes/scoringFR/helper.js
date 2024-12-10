@@ -2,6 +2,7 @@
 const topRankedUlbsColumns = [
   { header: 'Rank', key: 'overAllRank', width: 10 },
   { header: 'State Name', key: 'stateName', width: 25 },
+  { header: 'State Sub-Category', key: 'stateCat', width: 25 },
   { header: 'Census Code', key: 'consolidatedCode', width: 12 },
   { header: 'ULB Name', key: 'name', width: 50 },
   { header: 'Population Category', key: 'popCat', width: 18 },
@@ -11,18 +12,33 @@ const topRankedUlbsColumns = [
     style: { numFmt: '0.00' },
     width: 18,
   },
+  // {
+  //   header: 'Resource Mobilization Rank',
+  //   key: 'resourceMobilizationRank',
+  //   width: 18,
+  // },
   {
     header: 'Expenditure Performance Score',
     key: 'expenditurePerformanceScore',
     style: { numFmt: '0.00' },
     width: 18,
   },
+  // {
+  //   header: 'Expenditure Performance Rank',
+  //   key: 'expenditurePerformanceRank',
+  //   width: 18,
+  // },
   {
     header: 'Fiscal Governance Score',
     key: 'fiscalGovernanceScore',
     style: { numFmt: '0.00' },
     width: 18,
   },
+  // {
+  //   header: 'Fiscal Governance Rank',
+  //   key: 'fiscalGovernanceRank',
+  //   width: 18,
+  // },
   {
     header: 'Total Score',
     key: 'overAllScore',
@@ -67,6 +83,16 @@ const topRankedUlbsDumpQuery = [
           default: 'Unknown',
         },
       },
+      stateCat: {
+        $switch: {
+          branches: [
+            { case: { $eq: ['$stateParticipationCategory', 'high'] }, then: 'High Participation' },
+            { case: { $eq: ['$stateParticipationCategory', 'low'] }, then: 'Low Participation' },
+            { case: { $eq: ['$stateParticipationCategory', 'hilly'] }, then: 'Hilly/ North Eastern States' }
+          ],
+          default: 'Unknown',
+        }
+      }
     },
   },
   {
@@ -77,11 +103,15 @@ const topRankedUlbsDumpQuery = [
       consolidatedCode: 1,
       name: 1,
       stateName: { $arrayElemAt: ['$stateData.name', 0] },
+      stateCat: 1,
       overAllRank: '$overAll.rank',
       overAllScore: '$overAll.score',
       resourceMobilizationScore: '$resourceMobilization.score',
       expenditurePerformanceScore: '$expenditurePerformance.score',
       fiscalGovernanceScore: '$fiscalGovernance.score',
+      resourceMobilizationRank: '$resourceMobilization.rank',
+      expenditurePerformanceRank: '$expenditurePerformance.rank',
+      fiscalGovernanceRank: '$fiscalGovernance.rank',
     },
   },
   { $sort: { overAllScore: -1 } },
