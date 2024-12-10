@@ -1,27 +1,19 @@
 const ObjectId = require('mongoose').Types.ObjectId;
-const moongose = require('mongoose');
-const Response = require('../../service').response;
-const { years } = require('../../service/years');
-const Ulb = require('../../models/Ulb');
 const State = require('../../models/State');
-const FiscalRanking = require('../../models/FiscalRanking');
-const FiscalRankingMapper = require('../../models/FiscalRankingMapper');
 const ScoringFiscalRanking = require('../../models/ScoringFiscalRanking');
-const { registerCustomQueryHandler } = require('puppeteer');
 const { getMultipleRandomElements } = require('../../service/common');
 const { getPaginationParams, isValidObjectId, getPageNo, getPopulationBucket } = require('../../service/common');
 const { assesmentParamLabels, abYears, afsYears, getTableHeaderDocs, rmEpFGHeader } = require('./response-data');
-const e = require('express');
 
 // const abYears = ['2020-21', '2021-22', '2022-23', '2023-24'];
 // const afsYears = ['2018-19', '2019-20', '2020-21', '2021-22'];
 
-async function getScoreFR(populationBucket, indicator, order = -1) {
-	const condition = { isActive: true, populationBucket };
-	const ulb = await ScoringFiscalRanking.findOne(condition)
-		.sort({ [`${indicator}.score`]: order })
-		.lean();
-}
+// async function getScoreFR(populationBucket, indicator, order = -1) {
+// 	const condition = { isActive: true, populationBucket };
+// 	const ulb = await ScoringFiscalRanking.findOne(condition)
+// 		.sort({ [`${indicator}.score`]: order })
+// 		.lean();
+// }
 const mainIndicators = ['resourceMobilization', 'expenditurePerformance', 'fiscalGovernance', 'overAll'];
 
 module.exports.getUlbDetails = async (req, res) => {
@@ -48,7 +40,9 @@ module.exports.getUlbDetails = async (req, res) => {
 
 		const design_year2022_23 = '606aafb14dff55e6c075d3ae';
 
-		const condition1 = { isActive: true, populationBucket: ulb.populationBucket };
+		const condition1 = {
+			isActive: true, populationBucket: ulb.populationBucket, currentFormStatus: { $in: [8, 9, 10, 11] }
+		};
 		const populationBucketUlbCount = await ScoringFiscalRanking.countDocuments(condition1).lean();
 
 		const condition2 = { isActive: true, populationBucket: ulb.populationBucket, currentFormStatus: 11, ulb: { $ne: ObjectId(searchId) } };
@@ -59,15 +53,22 @@ module.exports.getUlbDetails = async (req, res) => {
 			design_year: ObjectId(design_year2022_23),
 		};
 
-		let fsData = await FiscalRanking.findOne(conditionFs)
-			.select('waterSupply sanitationService propertyWaterTax propertySanitationTax registerGis accountStwre')
-			.lean();
+		// let fsData = await FiscalRanking.findOne(conditionFs)
+		// 	.select('waterSupply sanitationService propertyWaterTax propertySanitationTax registerGis accountStwre')
+		// 	.lean();
 		const assessmentParameter = {
 			resourceMobilization: await getTableData(ulb, 'resourceMobilization'),
 			expenditurePerformance: await getTableData(ulb, 'expenditurePerformance'),
 			fiscalGovernance: await getTableData(ulb, 'fiscalGovernance'),
 		};
+		let statePartCat = '';
+		switch (ulb.stateParticipationCategory) {
+			case 'high': statePartCat = "High Participation"; break;
+			case 'low': statePartCat = "Low Participation"; break;
+			case 'hilly': statePartCat = "Hilly/North Eastern States"; break;
+		}
 		const ulbData = {
+			statePartCat,
 			name: ulb.name,
 			ulb: ulb.ulb,
 			sbCode: ulb.sbCode,
@@ -85,7 +86,10 @@ module.exports.getUlbDetails = async (req, res) => {
 		};
 		const shuffledTopUlbs = getMultipleRandomElements(topUlbs, 4);
 		const data = {
-			populationBucketUlbCount, ulb: ulbData, fsData, assessmentParameter,
+			populationBucketUlbCount,
+			ulb: ulbData,
+			// fsData,
+			assessmentParameter,
 			topUlbs: shuffledTopUlbs
 		};
 		return res.status(200).json({ data });
@@ -103,19 +107,17 @@ module.exports.getUlbsBySate = async (req, res) => {
 	try {
 		// moongose.set('debug', true);
 		const stateId = ObjectId(req.params.stateId);
-
+		const { order, sortBy, populationBucket, ulbParticipationFilter, ulbRankingStatusFilter } = req.query;
 		let condition = {
 			isActive: true,
 			state: stateId,
-			...(req.query?.ulbName && {
+			...(req.query.ulbName && {
 				name: {
-					$regex: req.query?.ulbName,
+					$regex: req.query.ulbName,
 					$options: 'i'
 				}
 			})
 		};
-
-		const { order, sortBy, populationBucket, ulbParticipationFilter, ulbRankingStatusFilter } = req.query;
 
 		const sortArr = { participated: 'currentFormStatus', ranked: 'overAll.rank', populationBucket: 'populationBucket' }
 		let sort = { name: 1 };
@@ -347,8 +349,8 @@ function getSearchedUlb(ulbs, indicator, selectedUlbPopBucket) {
 	// Loop to get ULBs names in an array.
 	for (const ulb of ulbs) {
 		ulbName.push(ulb.name);
-		
-		if (selectedUlbPopBucket != ulb.populationBucket){
+
+		if (selectedUlbPopBucket != ulb.populationBucket) {
 			backgroundColorArr.push('red');
 		} else {
 			backgroundColorArr.push('rgba(11, 90, 207, 1)');
@@ -402,7 +404,7 @@ module.exports.autoSuggestUlbs = async (req, res) => {
 		// moongose.set('debug', true);
 		const q = req.query.q;
 		const limit = req.query.limit ? parseInt(req.query.limit) : 5;
-		const populationBucket = req.query?.populationBucket;
+		const populationBucket = req.query.populationBucket;
 		const condition = {
 			isActive: true,
 			name: new RegExp(`.*${q}.*`, 'i'),
