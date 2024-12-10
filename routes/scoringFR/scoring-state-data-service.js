@@ -2,6 +2,7 @@ const ObjectId = require('mongoose').Types.ObjectId;
 const Ulb = require('../../models/Ulb');
 const State = require('../../models/State');
 const ScoringFiscalRanking = require('../../models/ScoringFiscalRanking');
+const { getSateParticipationCategory } = require('./helper');
 
 // Get total number of ULBs in a state.
 async function getTotalULB(state_id) {
@@ -38,15 +39,6 @@ async function getParticipatedData(stateEle) {
 	return fiscalRanking;
 }
 
-// Helper for setUlbParticipatedData(): return (high || low ||  hilly).
-async function getSateParticipationCategory(participatedUlbsPercentage = 0, isHilly = false) {
-	let type = 'low';
-	if (isHilly) type = 'hilly';
-	else if (participatedUlbsPercentage >= 75) type = 'high';
-
-	return type;
-}
-
 // 01. Set ULB participation data in State collection.
 module.exports.setUlbParticipatedData = async (req, res) => {
 	try {
@@ -75,7 +67,7 @@ module.exports.setUlbParticipatedData = async (req, res) => {
 			// });
 
 			// Updated "stateParticipationCategory" in Scoring Collection.
-			const stateParticipationCategory = await getSateParticipationCategory(fiscalRanking.participatedUlbsPercentage, stateEle.isHilly);
+			const stateParticipationCategory = getSateParticipationCategory(fiscalRanking.participatedUlbsPercentage, stateEle.isHilly);
 			await ScoringFiscalRanking.updateMany({ state: ObjectId(stateEle._id) }, { $set: { stateParticipationCategory } });
 		});
 		return res.status(200).json({ message: 'done' });
