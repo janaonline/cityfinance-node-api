@@ -1,27 +1,9 @@
-const ObjectId = require('mongoose').Types.ObjectId;
-const moongose = require('mongoose');
-const Response = require('../../service').response;
-const { years } = require('../../service/years');
-const Ulb = require('../../models/Ulb');
-const FiscalRanking = require('../../models/FiscalRanking');
-const FiscalRankingMapper = require('../../models/FiscalRankingMapper');
 const ScoringFiscalRanking = require('../../models/ScoringFiscalRanking');
-const { registerCustomQueryHandler } = require('puppeteer');
-const { initParams } = require('request');
-
-/*
- Not started - 1
- In progress - 2
- Verificaion not started - 8
- Verification in progress - 9
- Returned by PMU - 10
- Submission Acknowledged by PMU - 11
- */
 
 async function setIndicatorRank(ulbArr, indicator) {
 	ulbArr.sort((a, b) => b[indicator].score - a[indicator].score);
 	for (let i = 0; i < ulbArr.length; i++) {
-		let rank = 1;
+		// let rank = 1;
 		if (i === 0) {
 			ulbArr[i][indicator].rank = 1;
 		} else if (ulbArr[i - 1][indicator].score === ulbArr[i][indicator].score) {
@@ -40,9 +22,9 @@ async function setIndicatorRank(ulbArr, indicator) {
 }
 
 
-async function calculateFRRank(populationBucket) {
+async function calculateFRRank(stateParticipationCategory, populationBucket) {
 	// Submission Acknowledged by PMU - 11
-	const condition = { isActive: true, populationBucket, currentFormStatus: { $in: [11] } };
+	const condition = { isActive: true, populationBucket, currentFormStatus: { $in: [11] }, stateParticipationCategory };
 	const ulbArr = await ScoringFiscalRanking.find(condition)
 		.select('resourceMobilization expenditurePerformance fiscalGovernance overAll')
 		.lean();
@@ -54,8 +36,11 @@ async function calculateFRRank(populationBucket) {
 }
 module.exports.calculateFRRank = async (req, res) => {
 	try {
-		for (let i = 1; i <= 4; i++) {
-			await calculateFRRank(i);
+		const stateParticipationCategories = ['high', 'low', 'hilly'];
+		for (const stateParticipationCategory of stateParticipationCategories) {
+			for (let populationBucket = 1; populationBucket <= 4; populationBucket++) {
+				await calculateFRRank(stateParticipationCategory, populationBucket);
+			}
 		}
 		// const data = await calculateFRRank(1);
 		return res.status(200).json({ message: 'Done' });
