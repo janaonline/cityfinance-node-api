@@ -307,6 +307,13 @@ module.exports.getTableHeaderParticipatedStates = {
             // 'width': '8',
             // 'link': 'nameLink'
         },
+        {
+            'label': 'State/ UT',
+            'key': 'isUt',
+            'sortable': false,
+            'class': 'th-common-cls',
+            'width': '6',
+        },
         // {
         //     'label': 'State Type',
         //     'key': 'stateType',
@@ -315,25 +322,25 @@ module.exports.getTableHeaderParticipatedStates = {
         //     'width': '6',
         // },
         {
-            'label': 'Total ULBs',
+            'label': 'Total ULBs (A)',
             'key': 'totalULBs',
             'sortable': false,
             'class': 'text-end',
-            // 'width': '6',
+            'width': '5',
         },
-        // {
-        //     'label': 'Participated ULBs',
-        //     'key': 'participatedUlbs',
-        //     'sortable': true,
-        //     'class': 'th-common-cls',
-        //     'width': '7',
-        // },
         {
-            'label': 'No. of ULBs Ranked',
+            'label': 'No. of ULBs Participated (B)',
+            'key': 'participatedUlbs',
+            'sortable': true,
+            'class': 'text-end',
+            'width': '7',
+        },
+        {
+            'label': 'No. of ULBs Ranked (C)',
             'key': 'rankedUlbs',
             'sortable': true,
             'class': 'text-end',
-            // 'width': '6',
+            'width': '6',
         },
         // {
         //     'label': 'Non Ranked ULBs',
@@ -342,26 +349,23 @@ module.exports.getTableHeaderParticipatedStates = {
         //     'class': 'th-common-cls',
         //     'width': '7',
         // },
+        // {
+        //     'label': '% of Ranked to Total',
+        //     'key': 'rankedtoTotal',
+        //     'sortable': true,
+        //     'class': 'text-end',
+        //     decimalPlace
+        //     // 'width': '7',
+        // },
         {
-            'label': '% of Ranked to Total',
-            'key': 'rankedtoTotal',
+            'label': '% of Participated to Total (D=B/A)',
+            'key': 'participatedUlbsPercentage',
             'sortable': true,
             'class': 'text-end',
-            decimalPlace
-            // 'width': '7',
+            decimalPlace,
+            'width': '7',
         },
     ],
-    // 'subHeaders': [
-    //     // '',
-    //     '',
-    //     '',
-    //     'A',
-    //     'B',
-    //     // 'C',
-    //     // 'D',
-    //     // 'E = C/ A * 100'
-    //     'B/ A * 100'
-    // ],
     'name': '',
     'data': [],
     // total,
@@ -378,21 +382,32 @@ module.exports.getTableHeaderParticipatedStates = {
         },
         {
             "key": 2,
-            "value": 0,
-            "class": "fw-bold text-end",
-            "sum": 'totalULBs'
+            "value": "",
+            "class": "",
         },
         {
             "key": 3,
             "value": 0,
             "class": "fw-bold text-end",
-            "sum": "rankedUlbs",
+            "sum": 'totalULBs'
         },
         {
             "key": 4,
             "value": 0,
             "class": "fw-bold text-end",
-            "avg": 'rankedtoTotal',
+            "sum": "participatedUlbs",
+        },
+        {
+            "key": 5,
+            "value": 0,
+            "class": "fw-bold text-end",
+            "sum": "rankedUlbs",
+        },
+        {
+            "key": 6,
+            "value": 0,
+            "class": "fw-bold text-end",
+            "avg": 'participatedUlbsPercentage',
             decimalPlace
         }
     ],
