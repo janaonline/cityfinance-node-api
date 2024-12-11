@@ -4,7 +4,7 @@ const FiscalRanking = require('../../models/FiscalRanking');
 const ScoringFiscalRanking = require('../../models/ScoringFiscalRanking');
 const { getTableHeaderParticipatedStates, getFilterOptions, overallHeader } = require('./response-data');
 const { getPaginationParams, getPageNo, getPopulationBucket } = require('../../service/common');
-const { getBucketWiseTop10UlbsQuery, getBucketWiseTop10UlbsColumns, getStateColor } = require('./helper.js');
+const helper = require('./helper.js');
 
 const mainIndicators = ['resourceMobilization', 'expenditurePerformance', 'fiscalGovernance', 'overAll'];
 const currentFormStatus = { $in: [11] };
@@ -64,7 +64,7 @@ async function getParticipatedStateCount() {
 async function getBucketWiseTop10Ulbs(limit = 10) {
 	try {
 		const bucketWiseTop10UlbsArr = [];
-		const query = await getBucketWiseTop10UlbsQuery(limit);
+		const query = await helper.getBucketWiseTop10UlbsQuery(limit);
 		const BucketWiseQueryRes = await ScoringFiscalRanking.aggregate(query);
 
 		for (const popBucketData of BucketWiseQueryRes) {
@@ -78,7 +78,7 @@ async function getBucketWiseTop10Ulbs(limit = 10) {
 			}
 		}
 
-		return { columns: getBucketWiseTop10UlbsColumns, bucketWiseTop10UlbsArr };
+		return { columns: helper.getBucketWiseTop10UlbsColumns, bucketWiseTop10UlbsArr };
 	} catch (error) {
 		console.error('BucketWiseTop10Ulbs: ', error);
 		return res.status(400).json({
@@ -121,15 +121,12 @@ module.exports.dashboard = async (req, res) => {
 	}
 };
 async function getParticipatedState(limit, skip = 0, query = false, select = 'name') {
-	let sort = { 'name': 1 };
-	// mongoose.set('debug', true);
+	let sort = { 'fiscalRanking.participatedUlbsPercentage': -1, 'name': 1 };
 	const sortArr = { totalUlbs: 'fiscalRanking.totalUlbs', participatedUlbs: 'fiscalRanking.participatedUlbs', rankedUlbs: 'fiscalRanking.rankedUlbs', nonRankedUlbs: 'fiscalRanking.nonRankedUlbs', stateName: 'name', }
-
 	const { stateType, ulbParticipationFilter, ulbRankingStatusFilter, sortBy, order } = query;
-	// let condition = { isActive: true, 'fiscalRanking.participatedUlbsPercentage': { $ne: 0 } };
 	let condition = { isActive: true };
+
 	if (sortBy) {
-		// console.log('order', order);
 		const by = sortArr[sortBy] || 'name'
 		sort = { [by]: order };
 	}
@@ -144,7 +141,7 @@ async function getParticipatedState(limit, skip = 0, query = false, select = 'na
 		const rankedCond = ulbRankingStatusFilter === 'ranked' ? { '$ne': 0 } : 0;
 		condition = { ...condition, 'fiscalRanking.rankedUlbs': rankedCond };
 	}
-	condition = { ...condition, 'fiscalRanking.rankedUlbs': { $ne: 0 } };
+	condition = { ...condition, 'fiscalRanking.participatedUlbs': { $ne: 0 } };
 
 	const states = await State.find(condition).select(select).sort(sort).limit(limit).skip(skip).lean();
 	const total = await State.countDocuments(condition);
@@ -174,34 +171,46 @@ function tableRes(states, query, total) {
 	// let mapData = [];
 	tableData['total'] = total;
 	tableData['data'] = [];
-	let i = getPageNo(query);
+	const tempObj = { 'high': [], 'low': [], 'hilly': [] };
+
+	// let i = getPageNo(query);
 	for (const state of states) {
-		const rankedtoTotal = state.fiscalRanking && state.fiscalRanking[0].totalUlbs && state.fiscalRanking[0].rankedUlbs ?
+		const rankedtoTotal = state.fiscalRanking[0].totalUlbs && state.fiscalRanking[0].rankedUlbs ?
 			parseFloat(((state.fiscalRanking[0].rankedUlbs / state.fiscalRanking[0].totalUlbs) * 100)) : 0;
+		const participatedPercent = state.fiscalRanking[0].participatedUlbsPercentage;
+		const partType = helper.getSateParticipationCategory(participatedPercent, state.isHilly);
 		const ele = {
 			_id: state._id,
-			sNo: i++,
+			// sNo: i++,
 			name: state.name,
 			stateType: state.stateType,
 			isUt: state.isUT == true ? 'UT' : 'State',
-			totalULBs: state.fiscalRanking ? state.fiscalRanking[0].totalUlbs : 0,
-			participatedUlbs: state.fiscalRanking ? state.fiscalRanking[0].participatedUlbs : 0,
-			participatedUlbsPercentage: state.fiscalRanking ? state.fiscalRanking[0].participatedUlbsPercentage : 0,
-			rankedUlbs: state.fiscalRanking ? state.fiscalRanking[0].rankedUlbs : 0,
-			nonRankedUlbs: state.fiscalRanking ? state.fiscalRanking[0].nonRankedUlbs : 0,
+			totalULBs: state.fiscalRanking[0].totalUlbs ?? 0,
+			participatedUlbs: state.fiscalRanking[0].participatedUlbs ?? 0,
+			participatedUlbsPercentage: state.fiscalRanking[0].participatedUlbsPercentage.toFixed(2) ?? 0,
+			rankedUlbs: state.fiscalRanking[0].rankedUlbs ?? 0,
+			nonRankedUlbs: state.fiscalRanking[0].nonRankedUlbs ?? 0,
 			rankedtoTotal: rankedtoTotal.toFixed(2),
 			nameLink: `/cfr/participated-ulbs/${state._id}`,
-			bgColor: getStateColor(Number(state.fiscalRanking && state.fiscalRanking[0].participatedUlbsPercentage), state.isHilly, true)
+			bgColor: helper.getStateColor(participatedPercent, partType, true)
 		};
+		tempObj[partType].push(ele);
+
 		// const participatedCount = {
 		// 	'percentage': state.fiscalRanking ? state.fiscalRanking[0].participatedUlbsPercentage : 0,
 		// 	'code': state.code,
 		// 	'_id': state.name,
 		// 	'stateId': state._id,
 		// };
-		tableData.data.push(ele);
+
+		// tableData.data.push(ele);
 		// mapData.push(participatedCount);
 	}
+	tableData.data = [...tempObj['high'], ...tempObj['low'], ...tempObj['hilly']].map((ele, i) => {
+		ele.sNo = i + 1;
+		return ele;
+	});
+
 	return { tableData };
 }
 
@@ -261,8 +270,8 @@ function mapRes(states, query, total) {
 	let mapData = [];
 	for (const state of states) {
 		let rankedPercentage = 0;
-		rankedPercentage = state.fiscalRanking &&
-			state.fiscalRanking[0].totalUlbs &&
+		const participatedPercent = state.fiscalRanking[0].participatedUlbsPercentage;
+		rankedPercentage = state.fiscalRanking[0].totalUlbs &&
 			state.fiscalRanking[0].rankedUlbs
 			? parseFloat(
 				(
@@ -272,10 +281,11 @@ function mapRes(states, query, total) {
 				).toFixed(2)
 			)
 			: 0
+		const partType = helper.getSateParticipationCategory(participatedPercent, state.isHilly);
 		const rankedtoTotal = {
 			rankedPercentage,
-			participatedPercentage: state.fiscalRanking && state.fiscalRanking[0].participatedUlbsPercentage,
-			color: getStateColor(Number(state.fiscalRanking && state.fiscalRanking[0].participatedUlbsPercentage), state.isHilly),
+			participatedPercentage: state.fiscalRanking[0].participatedUlbsPercentage,
+			color: helper.getStateColor(participatedPercent, partType),
 			code: state.code,
 			_id: state.name,
 			stateId: state._id,
@@ -620,11 +630,11 @@ function findassessmentParameterScore(ulbRes, key, state, stateRes) {
 	map1Data = [];
 	for (const ulb of ulbRes) {
 		var ulbData = {
-			[`${key}Score`]: Number(ulb[key].score.toFixed(2)),
+			[`${key}Score`]: ulb[key].score.toFixed(2),
 			[`${key}Rank`]: ulb[key].rank,
 			'ulbName': ulb.name,
 			'ulbNameLink': `/cfr/ulb/${ulb.censusCode ? ulb.censusCode : ulb.sbCode ? ulb.sbCode : ulb.ulb}`,
-			'overallScore': Number(ulb.overAll.score.toFixed(2)),
+			'overallScore': ulb.overAll.score.toFixed(2),
 			'overallRank': ulb.overAll.rank,
 		};
 		const ulbLocation = { ...ulb.location, name: ulb.name };
