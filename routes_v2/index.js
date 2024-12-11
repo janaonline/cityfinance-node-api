@@ -1,7 +1,7 @@
 const express = require("express");
 const morgan = require("morgan");
 const { logger } = require("../middlewares/loggermiddleware")
-const { verifyToken } = require("./auth/services/verifyToken");
+const { verifyToken } = require("../routes/auth/services/verifyToken");
 
 const router = express.Router();
 // @Base Url
@@ -25,6 +25,6 @@ router.use(morgan(":request"))
 
 // //calculate fiscal ranking score
 // const scoringFR = require('./scoringFR');
-// router.use('/scoring-fr', scoringFR);
+router.use('/dalgo', require('./dalgo'));
 
 module.exports = router;

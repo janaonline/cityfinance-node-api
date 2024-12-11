@@ -21,8 +21,9 @@ const whitelist = [
   'https://aaina.gov.in',
   'https://api.aaina-mohua.in',
   'http://localhost:4200',
-  'http://localhost:4300',
   'https://democityfinance.dhwaniris.in',
+  'http://localhost:3000',
+  'http://localhost:4300',
   'https://staging.cityfinance.in',
   'https://staging-jana.cityfinance.in',
   'https://uat.cityfinance.in',
@@ -72,8 +73,9 @@ require("./config/passport")(passport);
 require("./service/redis");
 
 const routes = require("./routes");
+const routes_v2 = require("./routes_v2");
 // app.use(Service.response);
-app.use("/api/v1/", routes);
+app.use("/api/v1/", routes, routes_v2);
 
 // app.use('/objects',verifyToken,(req, res, next) => {
 // 	if (!req.decoded) {
