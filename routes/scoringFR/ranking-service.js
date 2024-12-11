@@ -322,7 +322,7 @@ module.exports.states = async (req, res) => {
 		sortBy = sortBy || 'name';
 		const select = req.params.select
 		let selected = select ? `name fiscalRanking ${select}` : 'name';
-		const condition = { isActive: true, isUT: false };
+		const condition = { isActive: true, "fiscalRanking.participatedUlbs": { $gt: 0 } };
 		const { limit, skip } = getPaginationParams(req.query);
 		const states = await State.find(condition)
 			.select(selected)
