@@ -187,7 +187,7 @@ function tableRes(states, query, total) {
 			isUt: state.isUT == true ? 'UT' : 'State',
 			totalULBs: state.fiscalRanking[0].totalUlbs ?? 0,
 			participatedUlbs: state.fiscalRanking[0].participatedUlbs ?? 0,
-			participatedUlbsPercentage: state.fiscalRanking[0].participatedUlbsPercentage ?? 0,
+			participatedUlbsPercentage: state.fiscalRanking[0].participatedUlbsPercentage.toFixed(2) ?? 0,
 			rankedUlbs: state.fiscalRanking[0].rankedUlbs ?? 0,
 			nonRankedUlbs: state.fiscalRanking[0].nonRankedUlbs ?? 0,
 			rankedtoTotal: rankedtoTotal.toFixed(2),
