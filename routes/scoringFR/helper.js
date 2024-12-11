@@ -241,8 +241,7 @@ const colorDetails = [
 
 const columnColor = { 'high': '#BCE2F2', 'low': '#d8f3dc', 'hilly': '#edc4b3' };
 
-function getStateColor(percentage, isHilly, isColumnColor = false) {
-  const type = getSateParticipationCategory(percentage, isHilly);
+function getStateColor(percentage, type, isColumnColor = false) {
   if (isColumnColor) return columnColor[type];
   return colorDetails?.find(item => percentage >= item.min && percentage <= item.max)?.color[type] || "#E5E5E5";
 }
