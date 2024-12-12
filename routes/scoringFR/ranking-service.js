@@ -61,24 +61,40 @@ async function getParticipatedStateCount() {
 // 	return await State.find({ isActive: true }).select('name')
 // 		.sort({ 'fiscalRanking.participatedUlbsPercentage': -1 }).limit(limit).lean();
 // }
-async function getBucketWiseTop10Ulbs(limit = 10) {
-	try {
-		const bucketWiseTop10UlbsArr = [];
-		const query = await helper.getBucketWiseTop10UlbsQuery(limit);
-		const BucketWiseQueryRes = await ScoringFiscalRanking.aggregate(query);
 
-		for (const popBucketData of BucketWiseQueryRes) {
-			for (const [rankedUlb_idx, rankedUlbData] of popBucketData['topScores'].entries()) {
-				if (!bucketWiseTop10UlbsArr[rankedUlb_idx]) {
-					bucketWiseTop10UlbsArr[rankedUlb_idx] = {};
-					bucketWiseTop10UlbsArr[rankedUlb_idx]['sNo'] = rankedUlb_idx + 1;
+async function getBucketWiseTopUlbs(limit = 3) {
+	try {
+		const bucketWiseTopUlbsArr = [];
+		const query = await helper.getBucketWiseTopUlbsQuery(limit);
+		const queryRes = await ScoringFiscalRanking.aggregate(query);
+
+		for (let i = 0; i < queryRes.length; i++) {
+			const startIdxOfBucket = (queryRes[i]._id.popBucket - 1) * limit;
+
+			for (const topUlb of queryRes[i].topScores) {
+				const idx = startIdxOfBucket + topUlb.rank - 1;
+				const partType = queryRes[i]._id.stateParticipationCategory;
+
+				if (!bucketWiseTopUlbsArr[idx]) {
+					bucketWiseTopUlbsArr[idx] = {
+						popCat: getPopulationBucket(queryRes[i]._id.popBucket),
+						cat_high: 'Zero participation of ULBs from high-participation States',
+						cat_low: 'Zero participation of ULBs from low-participation States',
+						cat_hilly: 'Zero participation of ULBs from hilly-participation States',
+					};
 				}
-				bucketWiseTop10UlbsArr[rankedUlb_idx][`bucket_${popBucketData._id}`] = rankedUlbData['ulbName'];
-				// bucketWiseTop10UlbsArr[rankedUlb_idx][`bucket_nameLink_${popBucketData._id}`] = `/cfr/ulb/${rankedUlbData['ulbId']}`;
+
+				bucketWiseTopUlbsArr[idx] = Object.assign(
+					bucketWiseTopUlbsArr[idx],
+					{
+						[`cat_${partType}`]: topUlb.ulbName,
+						// bgColor: helper.getStateColor(0, partType, true)
+					}
+				)
 			}
 		}
 
-		return { columns: helper.getBucketWiseTop10UlbsColumns, bucketWiseTop10UlbsArr };
+		return { columns: helper.getBucketWiseTopUlbsColumns, bucketWiseTopUlbsArr };
 	} catch (error) {
 		console.error('BucketWiseTop10Ulbs: ', error);
 		return res.status(400).json({
@@ -105,7 +121,7 @@ module.exports.dashboard = async (req, res) => {
 			participatedUlbCount: await getParticipatedUlbCount(),
 			rankedUlbCount: await getRankedUlbCount(),
 			participatedStateCount: await getParticipatedStateCount(),
-			bucketWiseTop10Ulbs: await getBucketWiseTop10Ulbs(),
+			bucketWiseTopUlbs: await getBucketWiseTopUlbs(),
 			// top3ParticipatedState,
 			// bucketWiseUlb: { populationBucket1, populationBucket2, populationBucket3, populationBucket4 },
 			// auditedUlbCount,
