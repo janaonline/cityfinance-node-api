@@ -1,4 +1,4 @@
-const ScoringFiscalRanking = require('../../models/ScoringFiscalRanking');
+const ScoringFiscalRanking = require('../../../models/ScoringFiscalRanking');
 
 async function setIndicatorRank(ulbArr, indicator) {
 	try {

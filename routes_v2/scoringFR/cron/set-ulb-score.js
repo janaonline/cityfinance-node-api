@@ -1,11 +1,11 @@
 const ObjectId = require('mongoose').Types.ObjectId;
 const moongose = require('mongoose');
-const Response = require('../../service').response;
-const { years } = require('../../service/years');
-const Ulb = require('../../models/Ulb');
-const FiscalRanking = require('../../models/FiscalRanking');
-const FiscalRankingMapper = require('../../models/FiscalRankingMapper');
-const ScoringFiscalRanking = require('../../models/ScoringFiscalRanking');
+const Response = require('../../../service').response;
+const { years } = require('../../../service/years');
+const Ulb = require('../../../models/Ulb');
+const FiscalRanking = require('../../../models/FiscalRanking');
+const FiscalRankingMapper = require('../../../models/FiscalRankingMapper');
+const ScoringFiscalRanking = require('../../../models/ScoringFiscalRanking');
 
 /*
  Not started - 1
