@@ -118,87 +118,48 @@ const topRankedUlbsDumpQuery = [
 ];
 
 // Columns for top 10 ranked ulbs from each pop bucket - getBucketWiseTop10Ulbs()
-const getBucketWiseTop10UlbsColumns = [
+const getBucketWiseTopUlbsColumns = [
   {
-    label: 'S.No',
-    key: 'sNo',
+    label: 'Population Category',
+    key: 'popCat',
     class: 'p-1 text-center'
   },
   {
-    label: '4M+',
-    key: 'bucket_1',
+    label: `Category 1 States (High Participation)`,
+    key: 'cat_high',
     class: 'p-1 '
   },
   {
-    label: '1M to 4M',
-    key: 'bucket_2',
+    label: `Category 2 States (Low Participation)`,
+    key: 'cat_low',
     class: 'p-1 '
   },
   {
-    label: '100K to 1M',
-    key: 'bucket_3',
+    label: `Category 3 States (Hilly/ North-Eastern States)`,
+    key: 'cat_hilly',
     class: 'p-1 '
-  },
-  {
-    label: '<100K',
-    key: 'bucket_4',
-    class: 'p-1 '
-  },
+  }
 ];
 
 // Query to get top 10 ranked ulbs from each pop bucket - getBucketWiseTop10Ulbs()
-async function getBucketWiseTop10UlbsQuery(limit) {
-  // $sortArray is not supported by current mongo version
-  // return [
-  //   { $match: { 'overAll.score': { $gt: 0 } } },
-  //   {
-  //     $group: {
-  //       _id: '$populationBucket',
-  //       topScores: {
-  //         $push: {
-  //           score: '$overAll.score',
-  //           rank: '$overAll.rank',
-  //           ulbId: '$ulb',
-  //           ulbName: '$name',
-  //         },
-  //       },
-  //     },
-  //   },
-  //   {
-  //     $project: {
-  //       topScores: {
-  //         $slice: [
-  //           { $sortArray: { input: '$topScores', sortBy: { rank: 1 } } },
-  //           limit,
-  //         ],
-  //       },
-  //     },
-  //   },
-  // ];
+async function getBucketWiseTopUlbsQuery(limit) {
   return [
-    { $match: { 'overAll.score': { $gt: 0 } } },
+    { $match: { "overAll.rank": { $gt: 0, $lte: limit } } },
     {
       $group: {
-        _id: '$populationBucket',
+        _id: {
+          stateParticipationCategory: "$stateParticipationCategory",
+          popBucket: "$populationBucket"
+        },
         topScores: {
           $push: {
-            score: '$overAll.score',
-            rank: '$overAll.rank',
-            ulbId: '$ulb',
-            ulbName: '$name',
-          },
-        },
-      },
-    },
-    { $unwind: "$topScores" },
-    { $sort: { "topScores.rank": 1 } },
-    {
-      $group: {
-        _id: "$_id",
-        topScores: { $push: "$topScores" },
-      },
-    },
-    { $project: { topScores: { $slice: ["$topScores", limit] } } }
+            rank: "$overAll.rank",
+            ulbId: "$ulb",
+            ulbName: "$name",
+          }
+        }
+      }
+    }
   ];
 }
 
@@ -248,7 +209,7 @@ function getStateColor(percentage, type, isColumnColor = false) {
 
 module.exports.topRankedUlbsDumpQuery = topRankedUlbsDumpQuery;
 module.exports.topRankedUlbsColumns = topRankedUlbsColumns;
-module.exports.getBucketWiseTop10UlbsQuery = getBucketWiseTop10UlbsQuery;
-module.exports.getBucketWiseTop10UlbsColumns = getBucketWiseTop10UlbsColumns;
+module.exports.getBucketWiseTopUlbsQuery = getBucketWiseTopUlbsQuery;
+module.exports.getBucketWiseTopUlbsColumns = getBucketWiseTopUlbsColumns;
 module.exports.getStateColor = getStateColor;
 module.exports.getSateParticipationCategory = getSateParticipationCategory;
