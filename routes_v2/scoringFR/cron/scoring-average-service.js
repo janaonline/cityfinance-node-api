@@ -1,8 +1,8 @@
 const ObjectId = require('mongoose').Types.ObjectId;
 const moongose = require('mongoose');
-const Response = require('../../service').response;
-const ScoringFiscalRanking = require('../../models/ScoringFiscalRanking');
-const State = require('../../models/State');
+const Response = require('../../../service').response;
+const ScoringFiscalRanking = require('../../../models/ScoringFiscalRanking');
+const State = require('../../../models/State');
 
 /*
  Not started - 1

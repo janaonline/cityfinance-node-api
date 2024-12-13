@@ -1,8 +1,8 @@
 const ObjectId = require('mongoose').Types.ObjectId;
-const Ulb = require('../../models/Ulb');
-const State = require('../../models/State');
-const ScoringFiscalRanking = require('../../models/ScoringFiscalRanking');
-const { getSateParticipationCategory } = require('./helper');
+const Ulb = require('../../../models/Ulb');
+const State = require('../../../models/State');
+const ScoringFiscalRanking = require('../../../models/ScoringFiscalRanking');
+const { getSateParticipationCategory } = require('../helper');
 
 // Get total number of ULBs in a state.
 async function getTotalULB(state_id) {

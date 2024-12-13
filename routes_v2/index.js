@@ -23,8 +23,10 @@ morgan.token('request', function (req, res) {
 router.use(morgan(":request"))
 
 
-// //calculate fiscal ranking score
-// const scoringFR = require('./scoringFR');
+// Calculate fiscal ranking score
+router.use('/scoring-fr', require('./scoringFR'));
+
+// Dalgo
 router.use('/dalgo', require('./dalgo'));
 
 module.exports = router;
