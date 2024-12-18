@@ -696,6 +696,7 @@ exports.nationalDashExpenditure = async (req, res) => {
     let promiseData = await Promise.all([ulbs, lineItemsExp]);
     ulbs = promiseData[0];
     lineItemsExp = promiseData[1];
+    lineItemsExp = lineItemsExp.filter((ele) => ele._id.toString() != "5dd10c2585c951b54ec1d75e" && ele._id.toString() != "5dd10c2385c951b54ec1d744");
     ulbs = ulbs.map((each) => {
       HashTable.set(each._id.toString(), true);
       setPopCatValInHash(HashTable, each);

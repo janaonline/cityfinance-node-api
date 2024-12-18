@@ -3,6 +3,8 @@
 module.exports.abYears = ['2020-21', '2021-22', '2022-23', '2023-24'];
 module.exports.afsYears = ['2018-19', '2019-20', '2020-21', '2021-22'];
 
+const decimalPlace = 2;
+
 // Assessment parameter table labels/ questions - ULB details.
 module.exports.assesmentParamLabels = [
     {
@@ -82,84 +84,103 @@ module.exports.assesmentParamLabels = [
 
 // AFS & Budget document details.
 module.exports.getTableHeaderDocs = {
-    'columns': [
-        {
-            'label': 'S.No',
-            'key': 'sNo',
-            'class': 'th-common-cls',
-            'width': '2',
-        },
-        {
-            'label': 'ULB Name',
-            'key': 'ulbName',
-            'sort': 1,
-            'query': '',
-            'sortable': true,
-            'class': 'th-color-cls',
-        },
-        {
-            'label': 'Population Category',
-            'key': 'populationCategory',
-            'sortable': true,
-            'class': 'th-common-cls',
-        },
-        {
-            'label': 'ULB Participated',
-            'key': 'isUlbParticipated',
-            'sortable': true,
-            'class': 'th-common-cls',
-        },
-        {
-            'label': 'CFR Ranked',
-            'key': 'isUlbRanked',
-            'sortable': true,
-            'class': 'th-common-cls',
-        },
-        {
-            'label': 'Annual Financial Statement Available',
-            'key': 'auditedAccounts2018-19',
-            'colspan': 4,
-            'class': 'th-common-cls',
-        },
-        {
-            'label': '',
-            'key': 'auditedAccounts2019-20',
-            'hidden': true,
-        },
-        {
-            'label': '',
-            'key': 'auditedAccounts2020-21',
-            'hidden': true,
-        },
-        {
-            'label': '',
-            'key': 'auditedAccounts2021-22',
-            'hidden': true,
-        },
-        {
-            'label': 'Annual Budget Available',
-            'key': 'annualBudgets2020-21',
-            'colspan': 4,
-            'class': 'th-common-cls',
-        },
-        {
-            'label': '',
-            'key': 'annualBudgets2021-22',
-            'hidden': true,
-        },
-        {
-            'label': '',
-            'key': 'annualBudgets2022-23',
-            'hidden': true,
-        },
-        {
-            'label': '',
-            'key': 'annualBudgets2023-24',
-            'hidden': true,
-        },
-    ],
-    'subHeaders': ['', '', '', '', '', ...module.exports.abYears, ...module.exports.abYears],
-    'name': '',
+  columns: [
+    {
+      label: 'S.No',
+      key: 'sNo',
+      class: 'text-center',
+      width: '2',
+    },
+    {
+      label: 'ULB Name',
+      key: 'ulbName',
+      sort: 1,
+      query: '',
+      sortable: true,
+      class: '',
+      link: 'ulbNameLink'
+    },
+    {
+      label: 'Population Category',
+      key: 'populationCategory',
+      sortable: true,
+      class: '',
+    },
+    {
+      label: 'ULB Participated',
+      key: 'isUlbParticipated',
+      sortable: true,
+      class: '',
+    },
+    {
+      label: 'CFR Ranked',
+      key: 'isUlbRanked',
+      sortable: true,
+      class: '',
+    },
+    {
+      label: 'Annual Financial Statement Available',
+      key: 'auditedAccounts2018-19',
+      colspan: 4,
+      class: '',
+      pdfLink: true,
+    },
+    {
+      label: '',
+      key: 'auditedAccounts2019-20',
+      hidden: true,
+      pdfLink: true,
+    },
+    {
+      label: '',
+      key: 'auditedAccounts2020-21',
+      hidden: true,
+      pdfLink: true,
+    },
+    {
+      label: '',
+      key: 'auditedAccounts2021-22',
+      hidden: true,
+      pdfLink: true,
+    },
+    {
+      label: 'Annual Budget Available',
+      key: 'annualBudgets2020-21',
+      colspan: 4,
+      class: 'th-common-cls',
+      pdfLink: true,
+    },
+    {
+      label: '',
+      key: 'annualBudgets2021-22',
+      hidden: true,
+      pdfLink: true,
+    },
+    {
+      label: '',
+      key: 'annualBudgets2022-23',
+      hidden: true,
+      pdfLink: true,
+    },
+    {
+      label: '',
+      key: 'annualBudgets2023-24',
+      hidden: true,
+      pdfLink: true,
+    },
+  ],
+  subHeaders: [
+    '',
+    '',
+    '',
+    '',
+    '',
+    ...module.exports.abYears,
+    ...module.exports.abYears,
+  ].map((e, i) => {
+    return { label: e, key: i };
+  }),
+  name: '',
 };
 
 //<----- ranking-service.js ----->//
@@ -170,30 +191,37 @@ module.exports.overallHeader = [
         'key': 'overallRank',
         'sort': 1,
         'sortable': true,
+        'class': 'text-center',
     },
     {
         'label': 'ULB Name',
         'key': 'ulbName',
+        'link': 'ulbNameLink',
+        'class': 'text-start',
     },
     {
         'label': 'Total ULB Score',
         'info': 'Max Score: 1200',
         'key': 'overallScore',
+        'class': 'text-end',
     },
     {
         'label': 'RM Score',
         'info': 'Max Score: 600',
         'key': 'resourceMobilizationScore',
+        'class': 'text-end',
     },
     {
         'label': 'EP Score',
         'info': 'Max Score: 300',
         'key': 'expenditurePerformanceScore',
+        'class': 'text-end',
     },
     {
         'label': 'FG Score',
         'info': 'Max Score: 300',
         'key': 'fiscalGovernanceScore',
+        'class': 'text-end',
     },
 ];
 
@@ -207,36 +235,57 @@ module.exports.rmEpFGHeader = (type, ulb) => {
         {
             'label': 'S. No',
             'key': 'sNo',
+            'class': 'text-center',
         },
         {
             'label': 'Indicator',
             'key': 'indicator',
         },
-        {
-            'label': 'Units',
-            'key': 'unit',
-        },
-        {
-            'label': 'ULB performance',
-            'key': 'ulbPerformance',
-        },
-        {
-            'label': 'Highest performance',
-            'info': 'In population category',
-            'key': 'highPerformance',
-        },
-        {
-            'label': 'Lowest performance',
-            'info': 'In population category',
-            'key': 'lowPerformance',
-        },
+        // {
+        //     'label': 'Units',
+        //     'key': 'unit',
+        // },
+        // {
+        //     'label': 'ULB performance',
+        //     'key': 'ulbPerformance',
+        // },
+        // {
+        //     'label': 'Highest performance',
+        //     'info': 'In population category',
+        //     'key': 'highPerformance',
+        // },
+        // {
+        //     'label': 'Lowest performance',
+        //     'info': 'In population category',
+        //     'key': 'lowPerformance',
+        // },
         {
             'label': 'ULB Score',
             'info': `Out of ${score}`,
             'key': 'ulbScore',
+            'class': 'text-end',
         },
     ];
-    return { columns, 'lastRow': ['', '', '', '', '', 'Total', Number(ulb[type].score.toFixed(2))] };
+    const lastRow = [
+        {
+            'key': 0,
+            'value': '',
+            'class': '',
+          },
+          {
+            'key': 1,
+            'value': 'Total',
+            'class': 'fw-bold'
+          },
+          {
+            'key': 2,
+            'value':  0,
+            'class': 'fw-bold text-end',
+            sum: 'ulbScore',
+            decimalPlace
+          },
+    ];
+    return { columns, lastRow };
 }
 
 // Participated states & UT.
@@ -246,74 +295,122 @@ module.exports.getTableHeaderParticipatedStates = {
             'label': 'S.No',
             'key': 'sNo',
             'sortable': false,
-            'class': 'th-common-cls',
-            'width': '3',
+            'class': 'text-center',
+            // 'width': '3',
         },
         {
             'label': 'State Name',
             'key': 'name',
             'sort': 1,
             'sortable': true,
-            'class': 'th-common-cls',
-            'width': '8',
+            'class': '',
+            // 'width': '8',
+            // 'link': 'nameLink'
         },
         {
-            'label': 'State Type',
-            'key': 'stateType',
+            'label': 'State/ UT',
+            'key': 'isUt',
             'sortable': false,
             'class': 'th-common-cls',
             'width': '6',
         },
+        // {
+        //     'label': 'State Type',
+        //     'key': 'stateType',
+        //     'sortable': false,
+        //     'class': 'th-common-cls',
+        //     'width': '6',
+        // },
         {
-            'label': 'Total ULBs',
+            'label': 'Total ULBs (A)',
             'key': 'totalULBs',
             'sortable': false,
-            'class': 'th-common-cls',
-            'width': '6',
+            'class': 'text-end',
+            'width': '5',
         },
         {
-            'label': 'Participated ULBs',
+            'label': 'No. of ULBs Participated (B)',
             'key': 'participatedUlbs',
             'sortable': true,
-            'class': 'th-common-cls',
+            'class': 'text-end',
             'width': '7',
         },
         {
-            'label': 'Ranked ULBs',
+            'label': 'No. of ULBs Ranked (C)',
             'key': 'rankedUlbs',
             'sortable': true,
-            'class': 'th-common-cls',
+            'class': 'text-end',
             'width': '6',
         },
+        // {
+        //     'label': 'Non Ranked ULBs',
+        //     'key': 'nonRankedUlbs',
+        //     'sortable': true,
+        //     'class': 'th-common-cls',
+        //     'width': '7',
+        // },
+        // {
+        //     'label': '% of Ranked to Total',
+        //     'key': 'rankedtoTotal',
+        //     'sortable': true,
+        //     'class': 'text-end',
+        //     decimalPlace
+        //     // 'width': '7',
+        // },
         {
-            'label': 'Non Ranked ULBs',
-            'key': 'nonRankedUlbs',
+            'label': '% of Participated to Total (D=B/A)',
+            'key': 'participatedUlbsPercentage',
             'sortable': true,
-            'class': 'th-common-cls',
+            'class': 'text-end',
+            decimalPlace,
             'width': '7',
         },
-        {
-            'label': 'Ranked to Total(%)',
-            'key': 'rankedtoTotal',
-            'sortable': true,
-            'class': 'th-color-cls',
-            'width': '7',
-        },
-    ],
-    'subHeaders': [
-        '',
-        '',
-        '',
-        'A',
-        'B',
-        'C',
-        'D',
-        'E = C/ A * 100'
     ],
     'name': '',
     'data': [],
     // total,
-    'lastRow': ['', '', 'Total', '$sum', '$sum', '$sum', '$sum', '$sum'],
+    'lastRow': [
+        {
+            "key": 0,
+            "value": "",
+            "class": "",
+        },
+        {
+            "key": 1,
+            "value": "Total",
+            "class": "fw-bold",
+        },
+        {
+            "key": 2,
+            "value": "",
+            "class": "",
+        },
+        {
+            "key": 3,
+            "value": 0,
+            "class": "fw-bold text-end",
+            "sum": 'totalULBs'
+        },
+        {
+            "key": 4,
+            "value": 0,
+            "class": "fw-bold text-end",
+            "sum": "participatedUlbs",
+        },
+        {
+            "key": 5,
+            "value": 0,
+            "class": "fw-bold text-end",
+            "sum": "rankedUlbs",
+        },
+        {
+            "key": 6,
+            "value": 0,
+            "class": "fw-bold text-end",
+            "avg": 'participatedUlbsPercentage',
+            decimalPlace
+        }
+    ],
 };
 
 // Filter API.

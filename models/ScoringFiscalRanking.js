@@ -42,12 +42,12 @@ const sumScoreFields = {
 	},
 };
 
-const yearFile = {
-	year: { type: String, required: true, index: true },
-	fileName: { type: String },
-	url: { type: String, default: null },
-	modelName: { type: String },
-};
+// const yearFile = {
+// 	year: { type: String, required: true, index: true },
+// 	fileName: { type: String },
+// 	url: { type: String, default: null },
+// 	modelName: { type: String },
+// };
 
 const ScoringFiscalRankingSchema = new Schema(
 	{
@@ -55,6 +55,7 @@ const ScoringFiscalRankingSchema = new Schema(
 		regionalName: { type: String, default: '' },
 		// code: { type: String, required: true, index: { unique: true } },
 		state: { type: Schema.Types.ObjectId, ref: 'State', required: true },
+		stateParticipationCategory: { type: String, enum: ['high', 'low', 'hilly'], default: 'low' },
 		ulb: { type: Schema.Types.ObjectId, ref: 'ulb', required: true },
 		population: { type: Number, default: 0 },
 		populationBucket: { type: Number, default: 0 },
@@ -131,8 +132,8 @@ const ScoringFiscalRankingSchema = new Schema(
 		fiscalGovernance: sumScoreFields,
 		overAll: sumScoreFields,
 
-		auditedAccounts: [yearFile],
-		annualBudgets: [yearFile],
+		// auditedAccounts: [yearFile],
+		// annualBudgets: [yearFile],
 
 		modifiedAt: { type: Date, default: Date.now() },
 		createdAt: { type: Date, default: Date.now() },

@@ -1,27 +1,19 @@
 const ObjectId = require('mongoose').Types.ObjectId;
-const moongose = require('mongoose');
-const Response = require('../../service').response;
-const { years } = require('../../service/years');
-const Ulb = require('../../models/Ulb');
 const State = require('../../models/State');
-const FiscalRanking = require('../../models/FiscalRanking');
-const FiscalRankingMapper = require('../../models/FiscalRankingMapper');
 const ScoringFiscalRanking = require('../../models/ScoringFiscalRanking');
-const { registerCustomQueryHandler } = require('puppeteer');
 const { getMultipleRandomElements } = require('../../service/common');
 const { getPaginationParams, isValidObjectId, getPageNo, getPopulationBucket } = require('../../service/common');
 const { assesmentParamLabels, abYears, afsYears, getTableHeaderDocs, rmEpFGHeader } = require('./response-data');
-const e = require('express');
 
 // const abYears = ['2020-21', '2021-22', '2022-23', '2023-24'];
 // const afsYears = ['2018-19', '2019-20', '2020-21', '2021-22'];
 
-async function getScoreFR(populationBucket, indicator, order = -1) {
-	const condition = { isActive: true, populationBucket };
-	const ulb = await ScoringFiscalRanking.findOne(condition)
-		.sort({ [`${indicator}.score`]: order })
-		.lean();
-}
+// async function getScoreFR(populationBucket, indicator, order = -1) {
+// 	const condition = { isActive: true, populationBucket };
+// 	const ulb = await ScoringFiscalRanking.findOne(condition)
+// 		.sort({ [`${indicator}.score`]: order })
+// 		.lean();
+// }
 const mainIndicators = ['resourceMobilization', 'expenditurePerformance', 'fiscalGovernance', 'overAll'];
 
 module.exports.getUlbDetails = async (req, res) => {
@@ -48,10 +40,12 @@ module.exports.getUlbDetails = async (req, res) => {
 
 		const design_year2022_23 = '606aafb14dff55e6c075d3ae';
 
-		const condition1 = { isActive: true, populationBucket: ulb.populationBucket };
+		const condition1 = {
+			isActive: true, populationBucket: ulb.populationBucket, currentFormStatus: { $in: [8, 9, 10, 11] }
+		};
 		const populationBucketUlbCount = await ScoringFiscalRanking.countDocuments(condition1).lean();
 
-		const condition2 = { isActive: true, populationBucket: ulb.populationBucket, currentFormStatus: 11 };
+		const condition2 = { isActive: true, populationBucket: ulb.populationBucket, currentFormStatus: 11, ulb: { $ne: ObjectId(searchId) } };
 		const topUlbs = await ScoringFiscalRanking.find(condition2, { name: 1, ulb: 1, populationBucket: 1, censusCode: 1, sbCode: 1, _id: 0 }).sort({ 'overAll.rank': 1 }).limit(10).lean();
 
 		const conditionFs = {
@@ -59,15 +53,22 @@ module.exports.getUlbDetails = async (req, res) => {
 			design_year: ObjectId(design_year2022_23),
 		};
 
-		let fsData = await FiscalRanking.findOne(conditionFs)
-			.select('waterSupply sanitationService propertyWaterTax propertySanitationTax registerGis accountStwre')
-			.lean();
+		// let fsData = await FiscalRanking.findOne(conditionFs)
+		// 	.select('waterSupply sanitationService propertyWaterTax propertySanitationTax registerGis accountStwre')
+		// 	.lean();
 		const assessmentParameter = {
 			resourceMobilization: await getTableData(ulb, 'resourceMobilization'),
 			expenditurePerformance: await getTableData(ulb, 'expenditurePerformance'),
 			fiscalGovernance: await getTableData(ulb, 'fiscalGovernance'),
 		};
+		let statePartCat = '';
+		switch (ulb.stateParticipationCategory) {
+			case 'high': statePartCat = "High Participation"; break;
+			case 'low': statePartCat = "Low Participation"; break;
+			case 'hilly': statePartCat = "Hilly/North Eastern States"; break;
+		}
 		const ulbData = {
+			statePartCat,
 			name: ulb.name,
 			ulb: ulb.ulb,
 			sbCode: ulb.sbCode,
@@ -85,7 +86,10 @@ module.exports.getUlbDetails = async (req, res) => {
 		};
 		const shuffledTopUlbs = getMultipleRandomElements(topUlbs, 4);
 		const data = {
-			populationBucketUlbCount, ulb: ulbData, fsData, assessmentParameter,
+			populationBucketUlbCount,
+			ulb: ulbData,
+			// fsData,
+			assessmentParameter,
 			topUlbs: shuffledTopUlbs
 		};
 		return res.status(200).json({ data });
@@ -103,19 +107,17 @@ module.exports.getUlbsBySate = async (req, res) => {
 	try {
 		// moongose.set('debug', true);
 		const stateId = ObjectId(req.params.stateId);
-
+		const { order, sortBy, populationBucket, ulbParticipationFilter, ulbRankingStatusFilter } = req.query;
 		let condition = {
 			isActive: true,
 			state: stateId,
-			...(req.query?.ulbName && {
+			...(req.query.ulbName && {
 				name: {
-					$regex: req.query?.ulbName,
+					$regex: req.query.ulbName,
 					$options: 'i'
 				}
 			})
 		};
-
-		const { order, sortBy, populationBucket, ulbParticipationFilter, ulbRankingStatusFilter } = req.query;
 
 		const sortArr = { participated: 'currentFormStatus', ranked: 'overAll.rank', populationBucket: 'populationBucket' }
 		let sort = { name: 1 };
@@ -182,6 +184,7 @@ function getUlbData(ulbs, query) {
 			'_id': ulb._id,
 			'sNo': j++,
 			'ulbName': ulb.name,
+			'ulbNameLink': `/cfr/ulb/${ulb.censusCode ? ulb.censusCode : ulb.sbCode ? ulb.sbCode : ulb.ulb}`,
 			populationCategory,
 			'isUlbParticipated': [8, 9, 10, 11].includes(ulb.currentFormStatus) ? 'Yes' : 'No',
 			'isUlbRanked': ulb.overAll.rank ? 'Yes' : 'No',
@@ -237,13 +240,13 @@ async function getTableData(ulb, type) {
 		// TODO: to be removed
 		// const highest = await getMaxMinScore(ulb.populationBucket, indicator.key, -1);
 		// const lowest = await getMaxMinScore(ulb.populationBucket, indicator.key, 1);
-		let ulbPerformance = Number(ulb[indicator.key].score.toFixed(2));
+		let ulbPerformance = Number(ulb[indicator.key]?.score.toFixed(2));
 
 		let ele = {
 			'sNo': indicator.sno,
 			'indicator': indicator.title,
 			'unit': indicator.units,
-			'ulbScore': Number((ulb[indicator.key].percentage).toFixed(2)),
+			'ulbScore': (ulb[indicator.key]?.percentage)?.toFixed(2),
 			'highPerformance': '-',
 			'highPerformanceConfig': {
 				title: '-'
@@ -262,11 +265,11 @@ async function getTableData(ulb, type) {
 			const lowest = await getMaxMinScore(ulb.populationBucket, indicator.key, 1);
 			ele = {
 				...ele,
-				'highPerformance': Number(highest[indicator.key].score.toFixed(2)),
+				'highPerformance': Number(highest[indicator.key]?.score.toFixed(2)),
 				'highPerformanceConfig': {
 					title: highest.name
 				},
-				'lowPerformance': Number(lowest[indicator.key].score.toFixed(2)),
+				'lowPerformance': Number(lowest[indicator.key]?.score.toFixed(2)),
 				'lowPerformanceConfig': {
 					title: lowest.name
 				},
@@ -284,17 +287,17 @@ async function getTableData(ulb, type) {
 }
 
 //<<-- ULB details - Filter -->>
-function getSearchedUlb(ulbs, indicator) {
+function getSearchedUlb(ulbs, indicator, selectedUlbPopBucket) {
 	const indicatorData = [];
 	const populationAvgData = [];
 	const nationalAvgData = [];
 	const stateAvgData = [];
 
 	for (const ulb of ulbs) {
-		indicatorData.push(Number(ulb[indicator].score.toFixed(2)));
-		populationAvgData.push(Number(ulb[indicator].populationBucketAvg.toFixed(2)));
-		nationalAvgData.push(Number(ulb[indicator].nationalAvg.toFixed(2)));
-		stateAvgData.push(Number(ulb[indicator].stateAvg.toFixed(2)));
+		indicatorData.push(Number(ulb[indicator].score?.toFixed(2)));
+		populationAvgData.push(Number(ulb[indicator].populationBucketAvg?.toFixed(2)));
+		nationalAvgData.push(Number(ulb[indicator].nationalAvg?.toFixed(2)));
+		stateAvgData.push(Number(ulb[indicator].stateAvg?.toFixed(2)));
 	}
 
 	// function to convert camelCase into proper case.
@@ -304,36 +307,37 @@ function getSearchedUlb(ulbs, indicator) {
 		});
 	}
 	const indicatorName = toProperCase(indicator);
+	const backgroundColorArr = [];
 
 	const graphData = [
-		{
-			'label': 'State Average',
-			'data': stateAvgData,
-			'fill': false,
-			'borderColor': 'orange',
-			'type': 'line',
-			'lineTension': 0,
-		},
-		{
-			'label': 'National Average',
-			'data': nationalAvgData,
-			'fill': false,
-			'borderColor': 'gray',
-			'type': 'line',
-			'lineTension': 0,
-		},
+		// {
+		// 	'label': 'State Average',
+		// 	'data': stateAvgData,
+		// 	'fill': false,
+		// 	'borderColor': 'rgb(229, 125, 21)',
+		// 	'type': 'line',
+		// 	'lineTension': 0.2,
+		// },
+		// {
+		// 	'label': 'National Average',
+		// 	'data': nationalAvgData,
+		// 	'fill': false,
+		// 	'borderColor': 'rgba(155, 155, 155, 1)',
+		// 	'type': 'line',
+		// 	'lineTension': 0.2,
+		// },
 		{
 			'label': 'Population Average',
 			'data': populationAvgData,
 			'fill': false,
-			'borderColor': 'yellow',
+			'borderColor': 'rgba(254, 203, 23, 1)',
 			'type': 'line',
-			'lineTension': 0,
+			'lineTension': 0.2,
 		},
 		{
 			'label': indicatorName,
 			'data': indicatorData,
-			'backgroundColor': '#0B5ACF',
+			'backgroundColor': backgroundColorArr,
 			'borderWidth': 1,
 			'type': 'bar',
 			'barPercentage': 0.5,
@@ -345,6 +349,12 @@ function getSearchedUlb(ulbs, indicator) {
 	// Loop to get ULBs names in an array.
 	for (const ulb of ulbs) {
 		ulbName.push(ulb.name);
+
+		if (selectedUlbPopBucket != ulb.populationBucket) {
+			backgroundColorArr.push('red');
+		} else {
+			backgroundColorArr.push('rgba(11, 90, 207, 1)');
+		}
 	}
 	const data = {
 		'labels': ulbName,
@@ -358,6 +368,7 @@ module.exports.getSearchedUlbDetailsGraph = async (req, res) => {
 	try {
 		// moongose.set('debug', true);
 		const ulbIds = req.query.ulb;
+		const selectedUlbPopBucket = req.query.populationBucket;
 		// const indicator = req.query.indicator;
 
 		const condition = {
@@ -366,13 +377,13 @@ module.exports.getSearchedUlbDetailsGraph = async (req, res) => {
 			// currentFormStatus: { $in: [11] }
 		};
 		let ulbs = await ScoringFiscalRanking.find(condition)
-			.select('name ulb location resourceMobilization expenditurePerformance fiscalGovernance overAll')
+			.select('name ulb location resourceMobilization expenditurePerformance fiscalGovernance overAll populationBucket')
 			.limit(5)
 			.lean();
 
 		const graphData = {};
 		for (const indicator of mainIndicators) {
-			graphData[indicator] = getSearchedUlb(ulbs, indicator);
+			graphData[indicator] = getSearchedUlb(ulbs, indicator, selectedUlbPopBucket);
 		}
 
 		return res.status(200).json({
@@ -393,7 +404,7 @@ module.exports.autoSuggestUlbs = async (req, res) => {
 		// moongose.set('debug', true);
 		const q = req.query.q;
 		const limit = req.query.limit ? parseInt(req.query.limit) : 5;
-		const populationBucket = req.query?.populationBucket;
+		const populationBucket = req.query.populationBucket;
 		const condition = {
 			isActive: true,
 			name: new RegExp(`.*${q}.*`, 'i'),
@@ -403,7 +414,7 @@ module.exports.autoSuggestUlbs = async (req, res) => {
 
 			// currentFormStatus: { $in: [11] }
 		};
-		let ulbs = await ScoringFiscalRanking.find(condition, { name: 1, ulb: 1, populationBucket: 1, censusCode: 1, sbCode: 1, _id: 0 })
+		let ulbs = await ScoringFiscalRanking.find(condition, { name: 1, ulb: 1, populationBucket: 1, censusCode: 1, sbCode: 1, _id: 0, currentFormStatus: 1 })
 			.sort({ name: 1 })
 			.limit(limit)
 			.lean();
