@@ -36,24 +36,24 @@ const overViewSheet = {
 };
 const inputHeader = ["Head of Account", "Code", "Line Item", "Amount in INR"];
 const overviewHeader = ["Basic Details", "Value"];
+const balanceSheet = {
+    liability: 0,
+    assets: 0,
+    liabilityAdd: ['310', '311', '312', '320', '330', '331', '340', '341', '350', '360', '300'],
+    assetsAdd: ['410', '411', '412', '420', '421', '430', '431', '432', '440', '450', '460', '461', '470', '480', '400']
+};
 
 module.exports = function (req, res) {
     try {
-        let user = req.decoded;
-        let data = req.body;
+        const user = req.decoded;
+        const data = req.body;
+        const financialYear = req.body.financialYear;
+
         if (!user) {
             return res.status(400).json({
                 success: false,
                 message: 'User Not Found!'
             })
-        }
-        let financialYear = req.body.financialYear;
-        // maintaining list items which needs to get sum up in liability and assets
-        const balanceSheet = {
-            liability: 0,
-            assets: 0,
-            liabilityAdd: ['310', '311', '312', '320', '330', '331', '340', '341', '350', '360', '300'],
-            assetsAdd: ['410', '411', '412', '420', '421', '430', '431', '432', '440', '450', '460', '461', '470', '480', '400']
         }
 
         if (!financialYear) {
@@ -91,7 +91,7 @@ module.exports = function (req, res) {
                                 }
                             )
                         }
-                        // console.log(query)
+
                         let reqLog = await RequestLog.findOne(query);
                         if (!reqLog) {
                             let requestLog = new RequestLog({
@@ -228,28 +228,28 @@ module.exports = function (req, res) {
                                     inputDataArrSuccessCounter += 1;
                                     await updateLog(reqId, { message: `Status: (${inputDataArrSuccessCounter}/${inputDataArr.length}) processed`, completed: 0 });
 
-                                } else {
-                                    // console.log('ULB')
-                                    await updateLog(reqId, { message: `Status: 1 processed`, completed: 0 });
                                 }
+                                // else {
+                                //     console.log('ULB is correct')
+                                //     await updateLog(reqId, { message: `Status: 1 processed`, completed: 0 });
+                                // }
 
-                                continue;
+                                // continue;
                             } catch (e) {
-
-                                // Update in the request log collection, the current status of file
+                                // Update in the request log collection, the current status of file.
                                 aborted = true;
                                 await updateLog(reqId, { message: e.message, completed: 0, status: "FAILED" });
-                                // console.log("Exception", e);
+                                console.error("Exception", e);
                                 break;
                             }
                         }
-                        if (aborted) {
-                            await updateLog(reqId, { completed: 0, status: "FAILED" });
-                        } else {
 
+                        if (!aborted) {
                             // Function call to update "overview" & "input sheet" data only if input data is valid.
-                            await uploadOverviewDataInDb(du);
-                            await uploadInputDataInDb(inputDataBulkWriteArr); //bulkWrite.
+                            if (user.role !== 'ULB') {
+                                await uploadOverviewDataInDb(du);
+                                await uploadInputDataInDb(inputDataBulkWriteArr); //bulkWrite.
+                            }
 
                             await updateLog(reqId, { message: `Completed`, completed: 1, status: "SUCCESS" });
                             Redis.resetDashboard();
@@ -266,12 +266,12 @@ module.exports = function (req, res) {
                     }
 
                 } catch (e) {
-                    // console.log("processData: Caught Exception", e.message, e);
+                    console.error("processData: Caught Exception", e.message, e);
                     await updateLog(reqId, { message: e.message, completed: 0, status: "FAILED" });
                 }
 
             } catch (e) {
-                // console.log("Exception Caught while extracting file => ", e);
+                console.error("Exception Caught while extracting file => ", e);
                 errors.push("Exception Caught while extracting file");
                 await updateLog(reqId, { message: e.message, completed: 0, status: "FAILED" });
             }
@@ -541,13 +541,11 @@ module.exports = function (req, res) {
                     if (eachRow["code"]) {
                         fieldsWithCode++;
                         if (!eachRow["amount in inr"]) fieldsWithNoAmount++;
-                        // }
 
                         // Replace "-" with "0" | remove commas | remove brackets | remove ₹ from values.
                         let amount = eachRow["amount in inr"] || "";
                         amount = amount === "-" ? "0" : amount.replace(/,/g, '').replace(/₹/g, '').replace(/[()]/g, match => (match === '(' ? '-' : ''));
 
-                        // if (eachRow["code"]) {
                         let code = eachRow["code"].trim();
                         if (amount.includes('.')) {
                             errors.push(`Line item code ${code} cannot be decimal ${amount}`);
@@ -639,12 +637,11 @@ module.exports = function (req, res) {
                 return message;
             }
             // Check if assests == liability
-            if (balanceSheet.liability != balanceSheet.assets) {
+            else if (balanceSheet?.liability != balanceSheet?.assets) {
                 message = "Balance sheet has liability: " + balanceSheet.liability + " while assets :" + balanceSheet.assets;
-                return message;
             }
 
-            return "";
+            return message;
         }
 
     } catch (e) {
