@@ -1,8 +1,9 @@
 const LineItem = require('../../models/LineItem');
 const Ulb = require('../../models/Ulb');
+const { getDate } = require('../../util/helper')
 const ExcelJS = require('exceljs');
 const moment = require('moment');
-const ObjectId = require("mongoose").Types.ObjectId
+const ObjectId = require("mongoose").Types.ObjectId;
 
 const totOwnRevenueArr = [
     '5dd10c2485c951b54ec1d74b',
@@ -98,6 +99,7 @@ async function getLineItemsFromDB() {
         { 'code': null, '_id': 'state', 'isActive': true, 'name': 'State' },
         // { 'code': null, '_id': 'amrut', 'isActive': true, 'name': 'AMRUT'},
         { 'code': null, '_id': 'year', 'isActive': true, 'name': 'Financial Year' },
+        { 'code': null, '_id': 'lastModifiedAt', 'isActive': true, 'name': 'Modified Date' },
         { 'code': null, '_id': 'audit_status', 'isActive': true, 'name': 'Audited/ Provisional' },
         { 'code': null, '_id': 'audit_firm', 'isActive': true, 'name': 'Audit firm name' },
         { 'code': null, '_id': 'partner_name', 'isActive': true, 'name': 'Partner name' },
@@ -137,7 +139,20 @@ async function fetchAllData(yearFromQuery) {
     return Ulb.aggregate(
         [
             { $match: { isActive: true } },
-            { $project: { _id: 1 } },
+            { $project: { _id: 1, state: 1 } },
+            {
+                $lookup: {
+                    from: "states",
+                    let: { stateId: "$state" },
+                    pipeline: [
+                        { $match: { $expr: { $eq: ["$_id", "$$stateId"] } } },
+                        { $project: { isUT: 1, _id: 0 } }
+                    ],
+                    as: "stateData"
+                }
+            },
+            { $addFields: { isUT: { $arrayElemAt: ["$stateData.isUT", 0] } } },
+            { $match: { isUT: false } },
             {
                 $lookup: {
                     from: "ulbledgers",
@@ -189,6 +204,19 @@ async function fetchAllDataOverview(yearFromQuery) {
             },
             {
                 $lookup: {
+                    from: "states",
+                    let: { stateId: "$state" },
+                    pipeline: [
+                        { $match: { $expr: { $eq: ["$_id", "$$stateId"] } } },
+                        { $project: { isUT: 1, _id: 0 } }
+                    ],
+                    as: "stateData"
+                }
+            },
+            { $addFields: { isUT: { $arrayElemAt: ["$stateData.isUT", 0] } } },
+            { $match: { isUT: false } },
+            {
+                $lookup: {
                     from: "ledgerlogs",
                     localField: "_id",
                     foreignField: "ulb_id",
@@ -208,6 +236,7 @@ async function fetchAllDataOverview(yearFromQuery) {
             // },
             {
                 $project: {
+                    "stateData": 0,
                     "ledgerlogs.excel_url": 0,
                     "ledgerlogs.wards": 0,
                     "ledgerlogs.ulb_code": 0,
@@ -215,7 +244,6 @@ async function fetchAllDataOverview(yearFromQuery) {
                     "ledgerlogs.state_code": 0,
                     // "ledgerlogs.state": 0,
                     "ledgerlogs.population": 0,
-                    "ledgerlogs.lastModifiedAt": 0,
                     "ledgerlogs.financialYear": 0,
                     "ledgerlogs.design_year": 0,
                     "ledgerlogs.area": 0
@@ -247,10 +275,10 @@ module.exports.getLedgerDump = async (req, res) => {
         const cursorOverview = await fetchAllDataOverview(yearFromQuery);
         for (let doc = await cursorOverview.next(); doc != null; doc = await cursorOverview.next()) {
             // console.log("doc", JSON.stringify(doc, null, 2))
-            let { _id, population, state, code, name } = doc;
+            let { _id, population, state, code, name, lastModifiedAt } = doc;
             for (let eachYearOverviewData of doc.ledgerlogs) {
                 let key = `${doc._id}_${eachYearOverviewData.year}`;
-                overviewData[key] = Object.assign({}, { _id, population, state, code, name }, eachYearOverviewData);
+                overviewData[key] = Object.assign({}, { _id, population, state, code, name, lastModifiedAt }, eachYearOverviewData);
             }
         }
 
@@ -301,6 +329,7 @@ module.exports.getLedgerDump = async (req, res) => {
                 row["isStandardizableComment"] = ulbOverviewObj.isStandardizableComment;
                 row["dataFlag"] = ulbOverviewObj.dataFlag;
                 row["dataFlagComment"] = ulbOverviewObj.dataFlagComment;
+                row["lastModifiedAt"] = getDate(ulbOverviewObj.lastModifiedAt);
             }
 
             delete overviewData[key];
@@ -323,6 +352,7 @@ module.exports.getLedgerDump = async (req, res) => {
             tempObj["isStandardizableComment"] = row.isStandardizableComment;
             tempObj["dataFlag"] = row.dataFlag;
             tempObj["dataFlagComment"] = row.dataFlagComment;
+            tempObj["lastModifiedAt"] = getDate(row.lastModifiedAt);
 
             worksheet.addRow(tempObj);
         })
