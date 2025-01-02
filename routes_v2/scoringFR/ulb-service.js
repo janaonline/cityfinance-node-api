@@ -45,8 +45,8 @@ module.exports.getUlbDetails = async (req, res) => {
 		};
 		const populationBucketUlbCount = await ScoringFiscalRanking.countDocuments(condition1).lean();
 
-		const condition2 = { isActive: true, populationBucket: ulb.populationBucket, currentFormStatus: 11, ulb: { $ne: ObjectId(searchId) } };
-		const topUlbs = await ScoringFiscalRanking.find(condition2, { name: 1, ulb: 1, populationBucket: 1, censusCode: 1, sbCode: 1, _id: 0 }).sort({ 'overAll.rank': 1 }).limit(10).lean();
+		const condition2 = { isActive: true, populationBucket: ulb.populationBucket, currentFormStatus: 11, ulb: { $ne: ObjectId(searchId) }, stateParticipationCategory: ulb.stateParticipationCategory };
+		const topUlbs = await ScoringFiscalRanking.find(condition2, { name: 1, ulb: 1, populationBucket: 1, censusCode: 1, sbCode: 1, _id: 0, stateParticipationCategory: 1 }).sort({ 'overAll.rank': 1 }).limit(10).lean();
 
 		const conditionFs = {
 			ulb: ObjectId(ulb.ulb),
@@ -75,6 +75,7 @@ module.exports.getUlbDetails = async (req, res) => {
 			censusCode: ulb.censusCode,
 			population: ulb.population,
 			populationBucket: ulb.populationBucket,
+			stateParticipationCategory: ulb.stateParticipationCategory,
 			stateId: ulb.state,
 			stateName: state.name,
 			stateCode: state.code,
@@ -287,7 +288,7 @@ async function getTableData(ulb, type) {
 }
 
 //<<-- ULB details - Filter -->>
-function getSearchedUlb(ulbs, indicator, selectedUlbPopBucket) {
+function getSearchedUlb(ulbs, indicator, selectedUlbPopBucket, stateParticipationCategory) {
 	const indicatorData = [];
 	const populationAvgData = [];
 	const nationalAvgData = [];
@@ -349,8 +350,8 @@ function getSearchedUlb(ulbs, indicator, selectedUlbPopBucket) {
 	// Loop to get ULBs names in an array.
 	for (const ulb of ulbs) {
 		ulbName.push(ulb.name);
-
-		if (selectedUlbPopBucket != ulb.populationBucket) {
+		
+		if (selectedUlbPopBucket != ulb.populationBucket || stateParticipationCategory != ulb.stateParticipationCategory) {
 			backgroundColorArr.push('red');
 		} else {
 			backgroundColorArr.push('rgba(11, 90, 207, 1)');
@@ -369,6 +370,7 @@ module.exports.getSearchedUlbDetailsGraph = async (req, res) => {
 		// moongose.set('debug', true);
 		const ulbIds = req.query.ulb;
 		const selectedUlbPopBucket = req.query.populationBucket;
+		const stateParticipationCategory = req.query.stateParticipationCategory;
 		// const indicator = req.query.indicator;
 
 		const condition = {
@@ -377,13 +379,13 @@ module.exports.getSearchedUlbDetailsGraph = async (req, res) => {
 			// currentFormStatus: { $in: [11] }
 		};
 		let ulbs = await ScoringFiscalRanking.find(condition)
-			.select('name ulb location resourceMobilization expenditurePerformance fiscalGovernance overAll populationBucket')
+			.select('name ulb location resourceMobilization expenditurePerformance fiscalGovernance overAll populationBucket stateParticipationCategory')
 			.limit(5)
 			.lean();
 
 		const graphData = {};
 		for (const indicator of mainIndicators) {
-			graphData[indicator] = getSearchedUlb(ulbs, indicator, selectedUlbPopBucket);
+			graphData[indicator] = getSearchedUlb(ulbs, indicator, selectedUlbPopBucket, stateParticipationCategory);
 		}
 
 		return res.status(200).json({
@@ -414,7 +416,7 @@ module.exports.autoSuggestUlbs = async (req, res) => {
 
 			// currentFormStatus: { $in: [11] }
 		};
-		let ulbs = await ScoringFiscalRanking.find(condition, { name: 1, ulb: 1, populationBucket: 1, censusCode: 1, sbCode: 1, _id: 0, currentFormStatus: 1 })
+		let ulbs = await ScoringFiscalRanking.find(condition, { name: 1, ulb: 1, populationBucket: 1, censusCode: 1, sbCode: 1, _id: 0, currentFormStatus: 1, stateParticipationCategory: 1 })
 			.sort({ name: 1 })
 			.limit(limit)
 			.lean();

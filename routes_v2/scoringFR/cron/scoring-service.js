@@ -1,8 +1,8 @@
 const ObjectId = require('mongoose').Types.ObjectId;
-const Ulb = require('../../models/Ulb');
-const FiscalRanking = require('../../models/FiscalRanking');
-const FiscalRankingMapper = require('../../models/FiscalRankingMapper');
-const ScoringFiscalRanking = require('../../models/ScoringFiscalRanking');
+const Ulb = require('../../../models/Ulb');
+const FiscalRanking = require('../../../models/FiscalRanking');
+const FiscalRankingMapper = require('../../../models/FiscalRankingMapper');
+const ScoringFiscalRanking = require('../../../models/ScoringFiscalRanking');
 const moment = require('moment');
 // const { pow } = require('mathjs');
 
