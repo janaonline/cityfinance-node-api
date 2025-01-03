@@ -1,6 +1,6 @@
 const axios = require('axios');
-const tough = require('tough-cookie');
-const { wrapper } = require('axios-cookiejar-support');
+// const tough = require('tough-cookie');
+// const { wrapper } = require('axios-cookiejar-support');
 
 module.exports.authCookie = async (req, res) => {
 
