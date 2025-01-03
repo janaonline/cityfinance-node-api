@@ -463,81 +463,117 @@ module.exports.getForm = async (req, res, next) => {
       if (ulbData.access_2122) {
         let slbData = await SLB.findOne({
           ulb: ObjectId(data.ulb),
-          // design_year: YEAR_CONSTANTS["21_22"],
-          accessibleForYears: { "$in": [ObjectId(data.design_year)] }
+          design_year: ObjectId(YEAR_CONSTANTS["21_22"]),
+          // accessibleForYears: { "$in": [ObjectId(data.design_year)] }
         }).lean();
         if (slbData) {
           slbDataNotFilled = slbData.blank;
+          // formData["data"].forEach((element) => {
+
+          //   if ([StatusList.Not_Started].includes(slb28FormStatus)) {
+          //     /* Checking if the element is equal to the previous line item. */
+          //     if (
+          //       element["indicatorLineItem"].toString() ===
+          //       PrevLineItem_CONSTANTS[
+          //       "Coverage of water supply connections"
+          //       ]
+          //     ) {
+          //       element.target_1.value =
+          //         slbData.waterManagement.houseHoldCoveredPipedSupply.hasOwnProperty(
+          //           "target"
+          //         )
+          //           ? Number(
+          //             slbData.waterManagement.houseHoldCoveredPipedSupply
+          //               ?.target[targetYearValue]
+          //           )
+          //           : "";
+          //       slbDataNotFilled ? (element.targetDisable = false) : "";
+          //     }
+          //     if (
+          //       element["indicatorLineItem"].toString() ===
+          //       PrevLineItem_CONSTANTS["Per capita supply of water(lpcd)"]
+          //     ) {
+          //       element.target_1.value =
+          //         slbData.waterManagement.waterSuppliedPerDay.hasOwnProperty(
+          //           "target"
+          //         )
+          //           ? Number(
+          //             slbData.waterManagement.waterSuppliedPerDay
+          //               ?.target[targetYearValue]
+          //           )
+          //           : "";
+          //       slbDataNotFilled ? (element.targetDisable = false) : "";
+          //     }
+          //     if (
+          //       element["indicatorLineItem"].toString() ===
+          //       PrevLineItem_CONSTANTS["Extent of non-revenue water (NRW)"]
+          //     ) {
+          //       element.target_1.value =
+          //         slbData.waterManagement.reduction.hasOwnProperty(
+          //           "target"
+          //         )
+          //           ? Number(
+          //             slbData.waterManagement.reduction?.target[targetYearValue]
+          //           )
+          //           : "";
+          //       slbDataNotFilled ? (element.targetDisable = false) : "";
+          //     }
+          //     if (
+          //       element["indicatorLineItem"].toString() ===
+          //       PrevLineItem_CONSTANTS[
+          //       "Coverage of waste water network services"
+          //       ]
+          //     ) {
+          //       element.target_1.value =
+          //         slbData.waterManagement.houseHoldCoveredWithSewerage.hasOwnProperty(
+          //           "target"
+          //         )
+          //           ? Number(
+          //             slbData.waterManagement
+          //               .houseHoldCoveredWithSewerage?.target[targetYearValue]
+          //           )
+          //           : "";
+          //       slbDataNotFilled ? (element.targetDisable = false) : "";
+          //     }
+          //   }
+          // });
+
+          let lineItems = await IndicatorLineItem.find({ year: ObjectId(data.design_year) }).lean();
+          let LINE_ITEMS = {};
+          lineItems.forEach((item) => {
+            if (Object.keys(PrevLineItem_CONSTANTS).includes(item.name))
+              LINE_ITEMS[item.name] = item._id.toString();
+          })
+
           formData["data"].forEach((element) => {
+            // Get indicator line item as a string
+            const indicator = element['indicatorLineItem'].toString();
 
-            if ([StatusList.Not_Started].includes(slb28FormStatus)) {
-              /* Checking if the element is equal to the previous line item. */
-              if (
-                element["indicatorLineItem"].toString() ===
-                PrevLineItem_CONSTANTS[
-                "Coverage of water supply connections"
-                ]
-              ) {
-                element.target_1.value =
-                  slbData.waterManagement.houseHoldCoveredPipedSupply.hasOwnProperty(
-                    "target"
-                  )
-                    ? Number(
-                      slbData.waterManagement.houseHoldCoveredPipedSupply
-                        ?.target[targetYearValue]
-                    )
-                    : "";
-                slbDataNotFilled ? (element.targetDisable = false) : "";
+            // Check if the form status is Not_Started and In_Progress
+            // if ([StatusList.Not_Started].includes(slb28FormStatus)) {
+            if ([StatusList.Not_Started, StatusList.In_Progress].includes(slb28FormStatus)) {
+              switch (indicator) {
+                case LINE_ITEMS['Coverage of water supply connections']:
+                  updateTargetValue(element, slbData.waterManagement.houseHoldCoveredPipedSupply?.target, targetYearValue, slbDataNotFilled);
+                  break;
+
+                case LINE_ITEMS['Per capita supply of water(lpcd)']:
+                  updateTargetValue(element, slbData.waterManagement.waterSuppliedPerDay?.target, targetYearValue, slbDataNotFilled);
+                  break;
+
+                case LINE_ITEMS['Extent of non-revenue water (NRW)']:
+                  updateTargetValue(element, slbData.waterManagement.reduction?.target, targetYearValue, slbDataNotFilled);
+                  break;
+
+                case LINE_ITEMS['Coverage of waste water network services']:
+                  updateTargetValue(element, slbData.waterManagement.houseHoldCoveredWithSewerage?.target, targetYearValue, slbDataNotFilled);
+                  break;
+
+                default:
+                  break;
               }
-              if (
-                element["indicatorLineItem"].toString() ===
-                PrevLineItem_CONSTANTS["Per capita supply of water(lpcd)"]
-              ) {
-                element.target_1.value =
-                  slbData.waterManagement.waterSuppliedPerDay.hasOwnProperty(
-                    "target"
-                  )
-                    ? Number(
-                      slbData.waterManagement.waterSuppliedPerDay
-                        ?.target[targetYearValue]
-                    )
-                    : "";
-                slbDataNotFilled ? (element.targetDisable = false) : "";
-              }
-              if (
-                element["indicatorLineItem"].toString() ===
-                PrevLineItem_CONSTANTS["Extent of non-revenue water (NRW)"]
-              ) {
-                element.target_1.value =
-                  slbData.waterManagement.reduction.hasOwnProperty(
-                    "target"
-                  )
-                    ? Number(
-                      slbData.waterManagement.reduction?.target[targetYearValue]
-                    )
-                    : "";
-                slbDataNotFilled ? (element.targetDisable = false) : "";
-              }
-              if (
-                element["indicatorLineItem"].toString() ===
-                PrevLineItem_CONSTANTS[
-                "Coverage of waste water network services"
-                ]
-              ) {
-                element.target_1.value =
-                  slbData.waterManagement.houseHoldCoveredWithSewerage.hasOwnProperty(
-                    "target"
-                  )
-                    ? Number(
-                      slbData.waterManagement
-                        .houseHoldCoveredWithSewerage?.target[targetYearValue]
-                    )
-                    : "";
-                slbDataNotFilled ? (element.targetDisable = false) : "";
-              }
-            }
+            };
           });
-
         }
       }
       if (isYearWithinRange(formData.design_year.toString())) {
@@ -645,10 +681,12 @@ module.exports.getForm = async (req, res, next) => {
       //   slbDataNotFilled
       // });
     } else {
-      let pipedSupply,
-        waterSuppliedPerDay,
-        reduction,
-        houseHoldCoveredWithSewerage;
+
+      let pipedSupply = "";
+      let waterSuppliedPerDay = "";
+      let reduction = "";
+      let houseHoldCoveredWithSewerage = "";
+
       if (ulbData.access_2122) {
         let slbData = await SLB.findOne({
           ulb: ObjectId(data.ulb),
@@ -656,39 +694,46 @@ module.exports.getForm = async (req, res, next) => {
         }).lean();
         if (slbData) {
           slbDataNotFilled = slbData.blank
-          pipedSupply =
-            slbData.waterManagement.houseHoldCoveredPipedSupply.hasOwnProperty(
-              "target"
-            )
-              ? slbData.waterManagement.houseHoldCoveredPipedSupply?.target[
-              targetYearValue
-              ]
-              : "";
-          waterSuppliedPerDay =
-            slbData.waterManagement.waterSuppliedPerDay.hasOwnProperty(
-              "target"
-            )
-              ? slbData.waterManagement.waterSuppliedPerDay?.target[targetYearValue]
-              : "";
-          reduction = slbData.waterManagement.reduction.hasOwnProperty(
-            "target"
-          )
-            ? slbData.waterManagement.reduction?.target[targetYearValue]
-            : "";
-          houseHoldCoveredWithSewerage =
-            slbData.waterManagement.houseHoldCoveredWithSewerage.hasOwnProperty(
-              "target"
-            )
-              ? slbData.waterManagement.houseHoldCoveredWithSewerage?.target[
-              targetYearValue
-              ]
-              : "";
+          
+          // pipedSupply =
+          //   slbData.waterManagement.houseHoldCoveredPipedSupply.hasOwnProperty(
+          //     "target"
+          //   )
+          //     ? slbData.waterManagement.houseHoldCoveredPipedSupply?.target[
+          //     targetYearValue
+          //     ]
+          //     : "";
+          // waterSuppliedPerDay =
+          //   slbData.waterManagement.waterSuppliedPerDay.hasOwnProperty(
+          //     "target"
+          //   )
+          //     ? slbData.waterManagement.waterSuppliedPerDay?.target[targetYearValue]
+          //     : "";
+          // reduction = slbData.waterManagement.reduction.hasOwnProperty(
+          //   "target"
+          // )
+          //   ? slbData.waterManagement.reduction?.target[targetYearValue]
+          //   : "";
+          // houseHoldCoveredWithSewerage =
+          //   slbData.waterManagement.houseHoldCoveredWithSewerage.hasOwnProperty(
+          //     "target"
+          //   )
+          //     ? slbData.waterManagement.houseHoldCoveredWithSewerage?.target[
+          //     targetYearValue
+          //     ]
+          //     : "";
+
+          pipedSupply = slbData.waterManagement.houseHoldCoveredPipedSupply?.target?.[targetYearValue] || "";
+          waterSuppliedPerDay = slbData.waterManagement.waterSuppliedPerDay?.target?.[targetYearValue] || "";
+          reduction = slbData.waterManagement.reduction?.target?.[targetYearValue] || "";
+          houseHoldCoveredWithSewerage = slbData.waterManagement.houseHoldCoveredWithSewerage?.target?.[targetYearValue] || "";
+
         }
       }
       let lineItems = await IndicatorLineItem.find({year: ObjectId(data.design_year)}).lean();
       lineItems.forEach(item =>{
         if(Object.keys(PrevLineItem_CONSTANTS).includes(item.name))
-          LINE_ITEMS_CONSTANT.push({[item?.name]: item._id.toString()})
+          LINE_ITEMS_CONSTANT.push({[item.name]: item._id.toString()})
         })
       let obj = {
         targetDisable: false,
@@ -710,10 +755,10 @@ module.exports.getForm = async (req, res, next) => {
         if (ulbData.access_2122) {
           switch (el["name"].toString()) {
             case "Coverage of waste water network services":
-              targ = houseHoldCoveredWithSewerage ?? null;
+              targ = houseHoldCoveredWithSewerage;
               break;
             case "Coverage of water supply connections":
-              targ = pipedSupply ?? null;
+              targ = pipedSupply;
               break;
             case "Per capita supply of water(lpcd)":
               targ = waterSuppliedPerDay;
@@ -732,7 +777,7 @@ module.exports.getForm = async (req, res, next) => {
         obj["question"] = el["name"];
         obj["type"] = el["type"];
         obj["actual"]["value"] = "";
-        obj["target_1"]["value"] = targ ?? "";
+        obj["target_1"]["value"] = targ;
         obj["targetDisable"] = targ || userRole != "ULB" ? true : false;
         obj["actualDisable"] = userRole != "ULB" ? true : false;
         dataArr.push(obj);
@@ -789,6 +834,16 @@ module.exports.getForm = async (req, res, next) => {
       show: false,
       message: error.message
     })
+  }
+}
+
+// Function to update the target value
+function updateTargetValue(element, targetPath, targetYear, slbDataNotFilled, defaultValue = "") {
+  const targetValue = targetPath?.[targetYear];
+  element.target_1.value = targetValue !== undefined ? Number(targetValue) : defaultValue;
+
+  if (slbDataNotFilled) {
+    element.targetDisable = false;
   }
 }
 
