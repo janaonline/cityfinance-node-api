@@ -116,7 +116,7 @@ const search = catchAsync(async (req, res) => {
       return Response.BadRequest(res, null, "Provide word to match");
 
     if (type && type == 'state') {
-      let query = { name: { $regex: `^${matchingWord[type]}`, $options: "im" } };
+      let query = { name: { $regex: `${matchingWord}`, $options: 'im' } };
       let statePromise = await State.find(query)
         .limit(10)
         .lean();
