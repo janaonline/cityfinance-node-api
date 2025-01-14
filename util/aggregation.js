@@ -2262,11 +2262,25 @@ exports.nationalDashExpensePipeline = (
                 },
                 {
                   $project: {
-                    "<100K": {
-                      revenue: "$<100K_revenue",
-                      expense: "$<100K_expense",
+                    "4M+": {
+                      revenue: "$4M+_revenue",
+                      expense: "$4M+_expense",
                       deficitOrSurplus: {
-                        $subtract: ["$<100K_revenue", "$<100K_expense"],
+                        $subtract: ["$4M+_revenue", "$4M+_expense"],
+                      },
+                    },
+                    "1M-4M": {
+                      revenue: "$1M-4M_revenue",
+                      expense: "$1M-4M_expense",
+                      deficitOrSurplus: {
+                        $subtract: ["$1M-4M_revenue", "$1M-4M_expense"],
+                      },
+                    },
+                    "500K-1M": {
+                      revenue: "$500K-1M_revenue",
+                      expense: "$500K-1M_expense",
+                      deficitOrSurplus: {
+                        $subtract: ["$500K-1M_revenue", "$500K-1M_expense"],
                       },
                     },
                     "100K-500K": {
@@ -2279,25 +2293,11 @@ exports.nationalDashExpensePipeline = (
                         ],
                       },
                     },
-                    "500K-1M": {
-                      revenue: "$500K-1M_revenue",
-                      expense: "$500K-1M_expense",
+                    "<100K": {
+                      revenue: "$<100K_revenue",
+                      expense: "$<100K_expense",
                       deficitOrSurplus: {
-                        $subtract: ["$500K-1M_revenue", "$500K-1M_expense"],
-                      },
-                    },
-                    "1M-4M": {
-                      revenue: "$1M-4M_revenue",
-                      expense: "$1M-4M_expense",
-                      deficitOrSurplus: {
-                        $subtract: ["$1M-4M_revenue", "$1M-4M_expense"],
-                      },
-                    },
-                    "4M+": {
-                      revenue: "$4M+_revenue",
-                      expense: "$4M+_expense",
-                      deficitOrSurplus: {
-                        $subtract: ["$4M+_revenue", "$4M+_expense"],
+                        $subtract: ["$<100K_revenue", "$<100K_expense"],
                       },
                     },
                   },
