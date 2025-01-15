@@ -93,14 +93,21 @@ module.exports.dataAvailabilityColumnHeader = (key = 'populationCategory') => {
 
 // Create respose structure.
 module.exports.createResponseStructure = (key = 'populationCategory', totalUlbCount, ledgerUlbCount) => {
-    if (!totalUlbCount.length || !ledgerUlbCount.length) throw new Error('Incomplete Data: createResponseStructure()');
+    if (!totalUlbCount.length) throw new Error('Incomplete Data: createResponseStructure()');
 
-    const ulbData = {};
+    const ulbData = { DummyObj: {} };
     let ledgerUlbsCount = 0;
     let totalUlbsCount = 0;
 
+    // ['4M+', '1M-4M', '500K-1M', '100K-500K', '<100K']
+
     totalUlbCount.forEach((ele) => {
-        ulbData[ele._id] = { [key]: ele._id, numberOfULBs: ele.totalUlbs };
+        ulbData[ele._id] = {
+            [key]: ele._id,
+            numberOfULBs: ele.totalUlbs,
+            ulbsWithData: 0,
+            DataAvailPercentage: '0 %',
+        };
         totalUlbsCount += ele.totalUlbs;
     });
 
@@ -122,7 +129,7 @@ module.exports.createResponseStructure = (key = 'populationCategory', totalUlbCo
     return {
         dataAvailabilitySplit: ulbData,
         dataAvailability: ledgerUlbsCount && totalUlbsCount ?
-            ((ledgerUlbsCount / totalUlbsCount) * 100).toFixed(0) + ' %' :
-            '0 %',
+            Number(((ledgerUlbsCount / totalUlbsCount) * 100).toFixed(0)) :
+            0,
     };
 };
