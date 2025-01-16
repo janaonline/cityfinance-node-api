@@ -229,6 +229,7 @@ async function processData(
     // Check Input sheet only if "isStandardizable === Yes" or if ULB is filling the standardized excel.
     if (objOfSheet.isStandardizable === 'Yes' || user.role === 'ULB') {
       // validate the input sheet data, like validating balance sheet, removing empty line items, removing comma seprations, converting negative values etc.
+      console.log(objOfSheet.ulb_code)
       let inputDataArr = await validateData(
         dataSheet,
         objOfSheet,
@@ -323,8 +324,8 @@ async function readXlsxFile(file, design_year, role) {
         let fileInfo = file.path.split('.');
         exceltojson =
           fileInfo &&
-          fileInfo.length > 0 &&
-          fileInfo[fileInfo.length - 1] == 'xlsx'
+            fileInfo.length > 0 &&
+            fileInfo[fileInfo.length - 1] == 'xlsx'
             ? xlsxtojson
             : xlstojson;
 
@@ -409,7 +410,7 @@ async function readXlsxFile(file, design_year, role) {
 }
 
 // Utility function to read excel and return sheet names [].
-const getSheetNames = (filePath) => {
+function getSheetNames(filePath) {
   try {
     const workbook = xlsx.readFile(filePath);
     const sheetNames = workbook.SheetNames;
@@ -420,7 +421,7 @@ const getSheetNames = (filePath) => {
 };
 
 // Utility function to parse an Excel sheet to JSON
-const parseExcelSheet = (exceltojson, filePath, sheetName) => {
+function parseExcelSheet(exceltojson, filePath, sheetName) {
   return new Promise((resolve, reject) => {
     exceltojson(
       {
@@ -449,7 +450,7 @@ const parseExcelSheet = (exceltojson, filePath, sheetName) => {
 
 // << ----- Validate Data ----- >>
 // Validate overview sheet data.
-const validateOverview = async (data, financialYear, fileName) => {
+async function validateOverview(data, financialYear, fileName) {
   try {
     // Check if overview sheet has at least two rows.
     if (data.length < 2) {
@@ -605,14 +606,14 @@ const validateOverview = async (data, financialYear, fileName) => {
 };
 
 // Validate input sheet data.
-const validateData = async (
+async function validateData(
   data,
   objOfSheet,
   balanceSheet,
   design_year,
   user,
   financialYear
-) => {
+) {
   try {
     // Check if input sheet has at least two rows.
     if (data.length < 2) {
@@ -651,9 +652,9 @@ const validateData = async (
           amount === '-'
             ? '0'
             : amount
-                .replace(/,/g, '')
-                .replace(/₹/g, '')
-                .replace(/[()]/g, (match) => (match === '(' ? '-' : ''));
+              .replace(/,/g, '')
+              .replace(/₹/g, '')
+              .replace(/[()]/g, (match) => (match === '(' ? '-' : ''));
 
         let code = eachRow['code'].trim();
         if (amount.includes('.')) {
@@ -673,7 +674,7 @@ const validateData = async (
     }
 
     // Validate balance sheet - check if assets == liability
-    let message = validateBalanceSheet(balanceSheet, inputSheetObj);
+    let message = await validateBalanceSheet(balanceSheet, inputSheetObj);
     if (message) throw new Error(message);
 
     // Validate each line item code
@@ -730,28 +731,33 @@ const validateData = async (
 };
 
 // Validate balance sheet data.
-const validateBalanceSheet = (balanceSheet, inputSheetObj) => {
+async function validateBalanceSheet(balanceSheet, inputSheetObj) {
   let message = '';
+  balanceSheet['liability'] = 0; // reset values.
+  balanceSheet['assets'] = 0; // reset values.
 
   for (let key of Object.keys(inputSheetObj)) {
-    if (balanceSheet.liabilityAdd.includes(key))
-      balanceSheet.liability += inputSheetObj[key];
-    else if (balanceSheet.assetsAdd.includes(key))
-      balanceSheet.assets += inputSheetObj[key];
+    if (balanceSheet['liabilityAdd'].includes(key))
+      balanceSheet['liability'] += inputSheetObj[key];
+
+    else if (balanceSheet['assetsAdd'].includes(key))
+      balanceSheet['assets'] += inputSheetObj[key];
+
   }
+  // console.log(balanceSheet['liability'], balanceSheet['assets'], balanceSheet['liability'] - balanceSheet['assets'])
 
   // Check if liabilities and assets are valid number
-  if (isNaN(balanceSheet?.liability) || isNaN(balanceSheet?.assets)) {
+  if (isNaN(balanceSheet['liability']) || isNaN(balanceSheet['assets'])) {
     message = 'Please enter valid amount in Balance Sheet';
     return message;
   }
   // Check if assests == liability
-  else if (balanceSheet?.liability != balanceSheet?.assets) {
+  else if (balanceSheet['liability'] != balanceSheet['assets']) {
     message =
       'Balance sheet has liability: ' +
-      balanceSheet.liability +
+      balanceSheet['liability'] +
       ' while assets :' +
-      balanceSheet.assets;
+      balanceSheet['assets'];
   }
 
   return message;
