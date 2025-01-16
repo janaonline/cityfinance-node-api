@@ -77,7 +77,8 @@ module.exports.totalUlbsAsPerPopulationCategoryQuery = (stateId = null) => {
                 _id: '$populationCategory',
                 totalUlbs: { $sum: 1 }
             }
-        }
+        },
+        { $sort: { totalUlbs: 1 } } 
     ]
 };
 
