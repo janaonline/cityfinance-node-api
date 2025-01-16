@@ -42,10 +42,12 @@ exports.nationalDashRevenuePipeline = (
       $unwind: "$ulb",
     }
   );
+  const match = stateId ? {
+    "ulb.isActive": true,
+    "ulb.state": ObjectId(stateId)
+  } : {"ulb.isActive": true};
   pipeline.push({
-    "$match": {
-      "ulb.isActive": true
-    }
+    "$match": match
   })
   if (type == "totalRevenue") {
     if (formType == "populationCategory") {
@@ -1345,6 +1347,10 @@ exports.nationalDashExpensePipeline = (
     },
   ];
   // if (stateId) pipeline[0]["$match"]["ulb"] = { $in: ulbs };
+  const match = stateId ? {
+    "ulb.isActive": true,
+    "ulb.state": ObjectId(stateId)
+  } : {"ulb.isActive": true};
   pipeline.push(
     {
       $lookup: {
@@ -1358,9 +1364,7 @@ exports.nationalDashExpensePipeline = (
       $unwind: "$ulb",
     },
     {
-      "$match": {
-        "ulb.isActive": true
-      }
+      "$match": match
     }
   );
   if (type == "totalExpenditure") {
@@ -2333,6 +2337,10 @@ exports.nationalDashOwnRevenuePipeline = (
     },
   ];
   // if (stateId) pipeline[0]["$match"]["ulb"] = { $in: ulbs };
+   const match = stateId ? {
+    "ulb.isActive": true,
+    "ulb.state": ObjectId(stateId)
+  } : {"ulb.isActive": true};
   pipeline.push(
     {
       $lookup: {
@@ -2346,9 +2354,7 @@ exports.nationalDashOwnRevenuePipeline = (
       $unwind: "$ulb",
     },
     {
-      "$match": {
-        "ulb.isActive": true
-      }
+      "$match": match
     }
   );
   if (type == "totalOwnRevenue") {
@@ -3017,6 +3023,10 @@ exports.nationalDashCapexpensePipeline = async (
       commonUlbs.push(val);
     }
   });
+  const match = stateId ? {
+    "ulb.isActive": true,
+    "ulb.state": ObjectId(stateId)
+  } : {"ulb.isActive": true};
   let pipeline = [
     {
       $match: {
@@ -3039,9 +3049,7 @@ exports.nationalDashCapexpensePipeline = async (
       $unwind: "$ulb",
     },
     {
-      "$match": {
-        "ulb.isActive": true
-      }
+      "$match": match
     },
     {
       $group: {

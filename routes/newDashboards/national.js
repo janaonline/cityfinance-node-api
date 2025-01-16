@@ -346,7 +346,7 @@ exports.nationalDashRevenue = async (req, res) => {
     const { nationalDashRevenuePipeline } = require("../../util/aggregation");
     let responsePayload = { data: null };
     const HashTable = new Map();
-    let ulbs = Ulb.find(stateId ? { state: stateId, isActive: true } : { isActive: true }).select({
+    let ulbs = Ulb.find(stateId ? { state: ObjectId(stateId), isActive: true } : { isActive: true }).select({
       _id: 1,
       population: 1,
       ulbType: 1,
@@ -520,7 +520,7 @@ exports.nationalDashRevenue = async (req, res) => {
       rows.push({
         ulb_pop_category: 'All ULBs',
         revenue: sumOfRevenue.toFixed(0),
-        revenuePerCapita: (sumOfRevenue * 1e7 / populationSum).toFixed(0),
+        revenuePerCapita: populationSum == 0 ? 0 : (sumOfRevenue * 1e7 / populationSum).toFixed(0),
         DataAvailPercentage: ((totalSeenUlbs / ulbsCount) * 100).toFixed(0) + " %"
       })
       columns = columns.filter((ele) => ele.key != 'population')
@@ -883,7 +883,7 @@ exports.nationalDashExpenditure = async (req, res) => {
       rows.push({
         ulb_pop_category: 'All ULBs',
         expenditure: sumOfExp.toFixed(0),
-        expenditurePerCapita: (sumOfExp * 1e7 / populationSum).toFixed(0),
+        expenditurePerCapita: populationSum == 0 ? 0 : (sumOfExp * 1e7 / populationSum).toFixed(0),
         DataAvailPercentage: ((totalSeenUlbs / ulbsCount) * 100).toFixed(0) + " %"
       });
       columns = columns.filter((ele) => ele.key != 'population')
@@ -1453,7 +1453,7 @@ exports.nationalDashOwnRevenue = async (req, res) => {
       rows.push({
         ulb_pop_category: 'All ULBs',
         Ownrevenue: sumOfOwnRevenue.toFixed(0),
-        OwnrevenuePerCapita: (sumOfOwnRevenue * 1e7 / populationSum).toFixed(0),
+        OwnrevenuePerCapita: populationSum == 0 ? 0 : (sumOfOwnRevenue * 1e7 / populationSum).toFixed(0),
         DataAvailPercentage: ((totalSeenUlbs / ulbsCount) * 100).toFixed(0) + " %"
       });
       columns = columns.filter((ele) => ele.key != 'population')
@@ -1777,7 +1777,7 @@ exports.nationalDashCapexpense = async (req, res) => {
     })
     rows.push({
       amount: capExSum.toFixed(0),
-      perCapita: (capExSum * 1e7 / populationSum).toFixed(0),
+      perCapita: populationSum == 0 ? 0 : (capExSum * 1e7 / populationSum).toFixed(0),
       percentage: ((totalSeenUlbs / ulbsCount) * 100).toFixed(0) + " %",
       ulb_pop_category: "All ULBs",
       ulbType: "All ULBs",
