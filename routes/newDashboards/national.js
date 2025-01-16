@@ -1119,11 +1119,17 @@ async function createTableData(type, data, ulbsCountInIndia) {
     columns[0].display_name = "ULB Type";
     ulbTypes = await UlbType.find().lean();
 
+    let revenueSum = 0;
+    let expenseSum = 0;
+
     for (const value of data.individual) {
       for (let elem in value) {
-        if (typeof value[elem] != 'string')
-          value[elem] = value[elem].toFixed(0)
+        if (typeof value[elem] != 'string'  && elem in value) {
+          value[elem] = value[elem].toFixed(0);
+        }
       }
+      expenseSum += value['expense'] ? Number(value['expense']) : 0;
+      revenueSum += value['revenue'] ? Number(value['revenue']) : 0;
       let tempData = {
         ulbType: ulbTypes.find((val) => val._id.toString() == value._id).name,
         ...value,
@@ -1132,15 +1138,30 @@ async function createTableData(type, data, ulbsCountInIndia) {
       else tempData.deficitOrSurplus = "Deficit";
       rows.push(tempData);
     }
+
+    rows.push({
+      ulbType: 'All ULBs',
+      revenue: revenueSum.toFixed(0),
+      expense: expenseSum.toFixed(0),
+      deficitOrSurplus: "-"
+    });
+
   } else {
+    revenueSum = 0;
+    expenseSum = 0;
     data = data.individual[0];
+
     columns[0].display_name = "ULB Population Category";
     for (const key in data) {
       if (key == "_id") continue;
       const element = data[key];
       for (let elem in element) {
-        element[elem] = element[elem].toFixed(0)
+        if (elem in element && typeof element[elem] != 'string') {
+          element[elem] = element[elem].toFixed(0);
+       }
       }
+      expenseSum += element['expense'] ? Number(element['expense']) : 0;
+      revenueSum += element['revenue'] ? Number(element['revenue']) : 0;
       let tempData = {
         ulbType: key,
         ...element,
@@ -1149,6 +1170,14 @@ async function createTableData(type, data, ulbsCountInIndia) {
       else tempData.deficitOrSurplus = "Deficit";
       rows.push(tempData);
     }
+
+    rows.push({
+      ulbType: 'All ULBs',
+      revenue: revenueSum.toFixed(0),
+      expense: expenseSum.toFixed(0),
+      deficitOrSurplus: "-"
+    });
+
   }
   return { columns, rows };
 }
