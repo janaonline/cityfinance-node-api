@@ -99,8 +99,6 @@ module.exports.createResponseStructure = (key = 'populationCategory', totalUlbCo
     let ledgerUlbsCount = 0;
     let totalUlbsCount = 0;
 
-    // ['4M+', '1M-4M', '500K-1M', '100K-500K', '<100K']
-
     totalUlbCount.forEach((ele) => {
         ulbData[ele._id] = {
             [key]: ele._id,
@@ -126,10 +124,23 @@ module.exports.createResponseStructure = (key = 'populationCategory', totalUlbCo
 
     });
 
+    // Calculate dataAvailability %
+    const dataAvailablityPerc = ledgerUlbsCount && totalUlbsCount ?
+        Number(((ledgerUlbsCount / totalUlbsCount) * 100).toFixed(0)) :
+        0;
+
+
+    // Set Total (last row)
+    ulbData["total"] = {
+        [key]: "All ULBs",
+        numberOfULBs: totalUlbsCount,
+        ulbsWithData: ledgerUlbsCount,
+        DataAvailPercentage: dataAvailablityPerc + ' %',
+    }
+
+
     return {
         dataAvailabilitySplit: ulbData,
-        dataAvailability: ledgerUlbsCount && totalUlbsCount ?
-            Number(((ledgerUlbsCount / totalUlbsCount) * 100).toFixed(0)) :
-            0,
+        dataAvailability: dataAvailablityPerc
     };
 };
