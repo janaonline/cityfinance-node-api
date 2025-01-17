@@ -37,8 +37,6 @@ const overViewSheet = {
 const inputHeader = ['Head of Account', 'Code', 'Line Item', 'Amount in INR'];
 const overviewHeader = ['Basic Details', 'Value'];
 const balanceSheet = {
-  liability: 0,
-  assets: 0,
   liabilityAdd: [
     '310',
     '311',
@@ -71,7 +69,7 @@ const balanceSheet = {
   ],
 };
 
-module.exports = function (req, res) {
+module.exports = async function (req, res) {
   try {
     const user = req.decoded;
     const data = req.body;
@@ -121,7 +119,6 @@ module.exports = function (req, res) {
                   file,
                   financialYear,
                   data._id,
-                  balanceSheet,
                   design_year,
                   user
                 );
@@ -161,7 +158,6 @@ async function processData(
   reqFile,
   financialYear,
   reqId,
-  balanceSheet,
   design_year,
   user
 ) {
@@ -232,7 +228,6 @@ async function processData(
       let inputDataArr = await validateData(
         dataSheet,
         objOfSheet,
-        balanceSheet,
         design_year,
         user,
         financialYear
@@ -323,8 +318,8 @@ async function readXlsxFile(file, design_year, role) {
         let fileInfo = file.path.split('.');
         exceltojson =
           fileInfo &&
-          fileInfo.length > 0 &&
-          fileInfo[fileInfo.length - 1] == 'xlsx'
+            fileInfo.length > 0 &&
+            fileInfo[fileInfo.length - 1] == 'xlsx'
             ? xlsxtojson
             : xlstojson;
 
@@ -409,7 +404,7 @@ async function readXlsxFile(file, design_year, role) {
 }
 
 // Utility function to read excel and return sheet names [].
-const getSheetNames = (filePath) => {
+function getSheetNames(filePath) {
   try {
     const workbook = xlsx.readFile(filePath);
     const sheetNames = workbook.SheetNames;
@@ -420,7 +415,7 @@ const getSheetNames = (filePath) => {
 };
 
 // Utility function to parse an Excel sheet to JSON
-const parseExcelSheet = (exceltojson, filePath, sheetName) => {
+function parseExcelSheet(exceltojson, filePath, sheetName) {
   return new Promise((resolve, reject) => {
     exceltojson(
       {
@@ -449,7 +444,7 @@ const parseExcelSheet = (exceltojson, filePath, sheetName) => {
 
 // << ----- Validate Data ----- >>
 // Validate overview sheet data.
-const validateOverview = async (data, financialYear, fileName) => {
+async function validateOverview(data, financialYear, fileName) {
   try {
     // Check if overview sheet has at least two rows.
     if (data.length < 2) {
@@ -605,14 +600,13 @@ const validateOverview = async (data, financialYear, fileName) => {
 };
 
 // Validate input sheet data.
-const validateData = async (
+async function validateData(
   data,
   objOfSheet,
-  balanceSheet,
   design_year,
   user,
   financialYear
-) => {
+) {
   try {
     // Check if input sheet has at least two rows.
     if (data.length < 2) {
@@ -651,9 +645,9 @@ const validateData = async (
           amount === '-'
             ? '0'
             : amount
-                .replace(/,/g, '')
-                .replace(/₹/g, '')
-                .replace(/[()]/g, (match) => (match === '(' ? '-' : ''));
+              .replace(/,/g, '')
+              .replace(/₹/g, '')
+              .replace(/[()]/g, (match) => (match === '(' ? '-' : ''));
 
         let code = eachRow['code'].trim();
         if (amount.includes('.')) {
@@ -673,7 +667,7 @@ const validateData = async (
     }
 
     // Validate balance sheet - check if assets == liability
-    let message = validateBalanceSheet(balanceSheet, inputSheetObj);
+    let message = await validateBalanceSheet(inputSheetObj);
     if (message) throw new Error(message);
 
     // Validate each line item code
@@ -730,28 +724,31 @@ const validateData = async (
 };
 
 // Validate balance sheet data.
-const validateBalanceSheet = (balanceSheet, inputSheetObj) => {
+async function validateBalanceSheet(inputSheetObj) {
   let message = '';
+  let liabilitySum = 0;
+  let assetSum = 0;
 
   for (let key of Object.keys(inputSheetObj)) {
-    if (balanceSheet.liabilityAdd.includes(key))
-      balanceSheet.liability += inputSheetObj[key];
-    else if (balanceSheet.assetsAdd.includes(key))
-      balanceSheet.assets += inputSheetObj[key];
+    if (balanceSheet['liabilityAdd'].includes(key))
+      liabilitySum += inputSheetObj[key];
+
+    else if (balanceSheet['assetsAdd'].includes(key))
+      assetSum += inputSheetObj[key];
   }
 
   // Check if liabilities and assets are valid number
-  if (isNaN(balanceSheet?.liability) || isNaN(balanceSheet?.assets)) {
+  if (isNaN(liabilitySum) || isNaN(assetSum)) {
     message = 'Please enter valid amount in Balance Sheet';
     return message;
   }
   // Check if assests == liability
-  else if (balanceSheet?.liability != balanceSheet?.assets) {
+  else if (liabilitySum != assetSum) {
     message =
       'Balance sheet has liability: ' +
-      balanceSheet.liability +
+      liabilitySum +
       ' while assets :' +
-      balanceSheet.assets;
+      assetSum;
   }
 
   return message;
