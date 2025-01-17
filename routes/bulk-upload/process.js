@@ -37,8 +37,6 @@ const overViewSheet = {
 const inputHeader = ['Head of Account', 'Code', 'Line Item', 'Amount in INR'];
 const overviewHeader = ['Basic Details', 'Value'];
 const balanceSheet = {
-  liability: 0,
-  assets: 0,
   liabilityAdd: [
     '310',
     '311',
@@ -71,7 +69,7 @@ const balanceSheet = {
   ],
 };
 
-module.exports = function (req, res) {
+module.exports = async function (req, res) {
   try {
     const user = req.decoded;
     const data = req.body;
@@ -121,7 +119,6 @@ module.exports = function (req, res) {
                   file,
                   financialYear,
                   data._id,
-                  balanceSheet,
                   design_year,
                   user
                 );
@@ -161,7 +158,6 @@ async function processData(
   reqFile,
   financialYear,
   reqId,
-  balanceSheet,
   design_year,
   user
 ) {
@@ -229,11 +225,9 @@ async function processData(
     // Check Input sheet only if "isStandardizable === Yes" or if ULB is filling the standardized excel.
     if (objOfSheet.isStandardizable === 'Yes' || user.role === 'ULB') {
       // validate the input sheet data, like validating balance sheet, removing empty line items, removing comma seprations, converting negative values etc.
-      console.log(objOfSheet.ulb_code)
       let inputDataArr = await validateData(
         dataSheet,
         objOfSheet,
-        balanceSheet,
         design_year,
         user,
         financialYear
@@ -609,7 +603,6 @@ async function validateOverview(data, financialYear, fileName) {
 async function validateData(
   data,
   objOfSheet,
-  balanceSheet,
   design_year,
   user,
   financialYear
@@ -674,7 +667,7 @@ async function validateData(
     }
 
     // Validate balance sheet - check if assets == liability
-    let message = await validateBalanceSheet(balanceSheet, inputSheetObj);
+    let message = await validateBalanceSheet(inputSheetObj);
     if (message) throw new Error(message);
 
     // Validate each line item code
@@ -731,33 +724,31 @@ async function validateData(
 };
 
 // Validate balance sheet data.
-async function validateBalanceSheet(balanceSheet, inputSheetObj) {
+async function validateBalanceSheet(inputSheetObj) {
   let message = '';
-  balanceSheet['liability'] = 0; // reset values.
-  balanceSheet['assets'] = 0; // reset values.
+  let liabilitySum = 0;
+  let assetSum = 0;
 
   for (let key of Object.keys(inputSheetObj)) {
     if (balanceSheet['liabilityAdd'].includes(key))
-      balanceSheet['liability'] += inputSheetObj[key];
+      liabilitySum += inputSheetObj[key];
 
     else if (balanceSheet['assetsAdd'].includes(key))
-      balanceSheet['assets'] += inputSheetObj[key];
-
+      assetSum += inputSheetObj[key];
   }
-  // console.log(balanceSheet['liability'], balanceSheet['assets'], balanceSheet['liability'] - balanceSheet['assets'])
 
   // Check if liabilities and assets are valid number
-  if (isNaN(balanceSheet['liability']) || isNaN(balanceSheet['assets'])) {
+  if (isNaN(liabilitySum) || isNaN(assetSum)) {
     message = 'Please enter valid amount in Balance Sheet';
     return message;
   }
   // Check if assests == liability
-  else if (balanceSheet['liability'] != balanceSheet['assets']) {
+  else if (liabilitySum != assetSum) {
     message =
       'Balance sheet has liability: ' +
-      balanceSheet['liability'] +
+      liabilitySum +
       ' while assets :' +
-      balanceSheet['assets'];
+      assetSum;
   }
 
   return message;
