@@ -139,7 +139,10 @@ const search = catchAsync(async (req, res) => {
         $or: [ {name : { $regex: `${matchingWord}`, $options: 'im' }}, { keywords: { $regex: `${matchingWord}`, $options: 'im' } } ]
       };
       if (matchingWord.hasOwnProperty("contentType")) {  // filter add chnage suresh
-        query = { name: { $regex: `^${matchingWord[type]}`, $options: "i" } };
+        // query = { name: { $regex: `^${matchingWord[type]}`, $options: "i" } };
+        query = {
+          $or: [ {name : { $regex: `${matchingWord[type]}`, $options: 'im' }}, { keywords: { $regex: `${matchingWord[type]}`, $options: 'im' } } ]
+        }
       }
       if (state) {
         if (state && ObjectId.isValid(state)) {
