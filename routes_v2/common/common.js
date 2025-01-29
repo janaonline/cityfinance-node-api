@@ -1,17 +1,22 @@
 const AnnualAccountData = require('../../models/AnnualAccounts')
 const Year = require('../../models/Year');
 
+// Returns latest audited/ unAudited year with data.
 module.exports.getLatestAfsYear = async (req, res) => {
     try {
         const auditType = req.query.auditType;
         const key = `${auditType}.year`;
-        const afsYearList = await AnnualAccountData.distinct(key);
+        const afsDistinctYearKeys = await AnnualAccountData.distinct(key);
         const yearsObj = await getYearsList();
+
+        // reduce() is performing lexicographical comparison (works correctly only if values have the same format and length)
+        const latestAfsYear = afsDistinctYearKeys
+            .map((id) => yearsObj[id])
+            .reduce((max, year) => (year > max ? year : max));
 
         res.status(200).json({
             success: true,
-            afsYearList,
-            yearsObj
+            latestAfsYear,
         });
 
     } catch (error) {
@@ -20,10 +25,9 @@ module.exports.getLatestAfsYear = async (req, res) => {
     }
 };
 
-// eg: {606aadac4dff55e6c075c507: '2020-21', 606aaf854dff55e6c075d219: '2021-22'}
+// eg: {606aadac4dff55e6c075c507: '2020-21', 606aaf854dff55e6c075d219: '2021-22', ...}
 async function getYearsList() {
     try {
-
         const yearsObj = await Year.aggregate([
             {
                 $group: {
@@ -43,10 +47,10 @@ async function getYearsList() {
                 }
             }
         ]);
-        
+
         return yearsObj[0].result || {};
     } catch (error) {
         console.error('Error in getYearsList(): ', error);
-        res.status(500).json({ success: false, message: `Error in getYearsList(): ${error.message}` });
+        return error.message;
     }
 };
