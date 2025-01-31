@@ -178,6 +178,7 @@ function rankedUlbPdf(data) {
     };
 
     const modifiedData = {
+      ulbData: { ulbName: data.ulb.name, censusCode: data.ulb.censusCode, sbCode: data.ulb.sbCode },
       section2: {
         card1: [
           { title: data.ulb.population, subtitle: 'Population (2011 Census)' },
