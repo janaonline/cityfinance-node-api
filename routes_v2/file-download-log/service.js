@@ -31,10 +31,7 @@ module.exports.userInfo = async (req, res) => {
       // If record already exists, update the "fileDownloaded" array else insert new record.
       const updateResult = await FileDownloadLog.updateOne(condition, {
         $push: {
-          fileDownloaded: {
-            fileName: reqBody.fileDownloaded[0].fileName,
-            date: new Date(),
-          },
+          fileDownloaded: reqBody.fileDownloaded
         },
       });
 
