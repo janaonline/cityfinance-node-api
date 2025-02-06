@@ -33,4 +33,7 @@ router.use('/file-download-log', require('./file-download-log'));
 // National Dashboard.
 router.use('/national-performance-dashboard', require('./dashboards/national-dashboard'));
 
+// Get latest provisional year.
+router.use('/common', require('./common'))
+
 module.exports = router;
