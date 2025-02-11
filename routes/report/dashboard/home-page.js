@@ -195,7 +195,7 @@ module.exports = (req, res) => {
             coveredUlbCount: values[3],
             ulbDataCount: values[4]
         };
-        Redis.set(req.redisKey,JSON.stringify(data), 60 * 60 * 24 * 30) // 30 days 
+        // Redis.set(req.redisKey,JSON.stringify(data), 60 * 60 * 24 * 30) // 30 days 
         
         return res.status(200).json({ success: true, message: "Data fetched", data });
 
