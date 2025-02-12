@@ -1,156 +1,86 @@
-const LedgerLog = require('../../../models/LedgerLog');
+const UlbLedger = require('../../../models/UlbLedger');
+const OverallUlb = require('../../../models/OverallUlb');
 const Ulb = require('../../../models/Ulb');
 const BondIssuerItem = require('../../../models/BondIssuerItem');
 const ObjectId = require("mongoose").Types.ObjectId;
 const Redis = require("../../../service/redis");
+const util = require('util')
 module.exports = (req, res) => {
 
-  let query = {};
-
-  if (req.query.state) {
-    query = { "state": ObjectId(req.query.state) }
-  }
-
-  const stateId = req.query.state;
-  let matchCondition = { 'ulbData.isActive': true };
-
-  if (stateId) matchCondition = { ...matchCondition, 'ulbData.state': ObjectId(stateId) }
-
-  let totalULB = new Promise(async (rslv, rjct) => {
+    let query = {};
 
     if (req.query.state) {
-      let state = req.query.state;
-      let query = { "state": ObjectId(state), isActive: true }
-      try {
-        let count = await Ulb.count(query).exec();
-        rslv(count)
-      }
-      catch (err) {
-        rjct(err);
-      }
-    }
-    else {
-      try {
-        let count = await Ulb.count({ "isActive": true }).exec();
-        rslv(count)
-      }
-      catch (err) {
-        rjct(err);
-      }
-
+        query = { "state": ObjectId(req.query.state) }
     }
 
-  })
+    let totalULB = new Promise(async (rslv, rjct) => {
 
-  let munciapalBond = new Promise(async (rslv, rjct) => {
-    try {
-      let count = await BondIssuerItem.count(query).exec();
-      rslv(count)
-    }
-    catch (err) {
-      rjct(err);
-    }
-  })
-
-  let coveredUlbCount = new Promise(async (rslv, rjct) => {
-    try {
-      const distinctUlbCount = await LedgerLog.aggregate([
-        {
-          $group: {
-            _id: "$ulb_id",
-            isStandardizable: { $first: "$isStandardizable" },
-            ulbId: { $first: "$ulb_id" }
-          }
-        },
-        { $match: { isStandardizable: { $ne: "No" } } },
-        {
-          $lookup: {
-            from: "ulbs",
-            let: { ulbId: "$_id" },
-            pipeline: [
-              {
-                $match: {
-                  $expr: { $eq: ["$_id", "$$ulbId"] }
-                }
-              },
-              { $project: { state: 1, isActive: 1 } }
-            ],
-            as: "ulbData"
-          }
-        },
-        { $match: matchCondition },
-        { $count: 'count' }
-      ]);
-
-      distinctUlbCount[0]['count'] > 0 ? rslv(distinctUlbCount[0]['count']) : rslv(0);
-    }
-    catch (err) { rjct(err) }
-  })
-
-  let ulbDataCount = new Promise(async (rslv, rjct) => {
-    try {
-      const yearWiseCount = await LedgerLog.aggregate([
-        {
-          $project: {
-            ulb_id: 1,
-            isStandardizable: 1,
-            year: 1
-          }
-        },
-        { $match: { isStandardizable: { $ne: 'No' } } },
-        {
-          $lookup: {
-            from: 'ulbs',
-            let: { ulbId: '$ulb_id' },
-            pipeline: [
-              { $match: { $expr: { $eq: ['$_id', '$$ulbId'] } } },
-              { $project: { state: 1, isActive: 1 } }
-            ],
-            as: 'ulbData'
-          }
-        },
-        { $match: matchCondition },
-        {
-          $group: {
-            _id: '$year',
-            ulbs: { $sum: 1 }
-          }
-        },
-        { $sort: { _id: -1 } },
-        {
-          $project: {
-            year: '$_id',
-            ulbs: 1,
-            _id: 0
-          }
+        if (req.query.state) {
+            let state = req.query.state;
+            let query = { "state": ObjectId(state),isActive:true }
+            try {
+                let count = await Ulb.count(query).exec();
+                rslv(count)
+            }
+            catch (err) {
+                rjct(err);
+            }
         }
-      ]);
+        else {
+            try {
+                let count = await Ulb.count({ "isActive": true }).exec();
+                rslv(count)
+            }
+            catch (err) {
+                rjct(err);
+            }
 
-      yearWiseCount.length > 0 ? rslv(yearWiseCount) : rslv(0);
-    }
-    catch (err) { rjct(err) }
-  });
+        }
 
-  Promise.all([totalULB, munciapalBond, coveredUlbCount, ulbDataCount]).then((values) => {
-    const financialStatements = values[3].reduce((acc, curr) => acc += curr['ulbs'], 0) || 0;
+    })
 
-    let data = {
-      totalULB: values[0],
-      financialStatements,
-      totalMunicipalBonds: values[1],
-      coveredUlbCount: values[2],
-      ulbDataCount: values[3]
-    };
-    Redis.set(req.redisKey, JSON.stringify(data), 60 * 60 * 24 * 30) // 30 days 
+    let financialStatement = new Promise(async (rslv, rjct) => {
 
-    return res.status(200).json({ success: true, message: "Data fetched", data });
+        let query = [
+            { $group: { "_id": { "financialYear": "$financialYear", "ulb": "$ulb" } } },
+            { $count: "count" }
+        ];
+        if (req.query.state) {
 
-  }, (rejectError) => {
+            query = [
+                { $group: { "_id": { "financialYear": "$financialYear", "ulb": "$ulb" } } },
+                {
+                    "$lookup": {
+                        "from": "ulbs",
+                        "localField": "_id.ulb",
+                        "foreignField": "_id",
+                        "as": "ulb"
+                    }
+                },
+                { $match: { "ulb.state": ObjectId(req.query.state) } },
+                { $count: "count" }
+            ]
 
-    console.log(rejectError);
-    return res.status(400).json({ timestamp: moment().unix(), success: false, message: "Rejected Error", err: rejectError });
+        }
+        try {
+            console.log(util.inspect(query, {showHidden: false, depth: null}))
+            let count = await UlbLedger.aggregate(query).exec();
+            rslv(count)
+        }
+        catch (err) {
+            rjct(err);
+        }
+    })
 
-  }).catch((caughtError) => {
+    let munciapalBond = new Promise(async (rslv, rjct) => {
+        try {
+            let count = await BondIssuerItem.count(query).exec();
+            rslv(count)
+        }
+        catch (err) {
+            rjct(err);
+        }
+    })
 
     let coveredUlbCount = new Promise(async (rslv, rjct) => {
         try {
