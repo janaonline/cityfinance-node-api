@@ -46,6 +46,6 @@ router.get("/revenue-expenditure", redisCheck, dashboard.filterUlbs, dashboard.r
 router.get("/source-financial-revenue-expenditure", redisCheck, dashboard.filterUlbs, dashboard.sourceFinancialRevenueExpenditure);
 router.get("/source-revenue", redisCheck, dashboard.filterUlbs, dashboard.sourceRevenue);
 router.get("/ulb-coverage", redisCheck, dashboard.ulbCoverage);
-router.get("/home-page-data", redisCheck, dashboard.homePageData);
+router.get("/home-page-data", dashboard.homePageData);
 router.get("/ulb-ledgerCount", redisCheck, dashboard.ownRevenueDependency.ulbRevenueCount)
 module.exports = router;
