@@ -115,6 +115,7 @@ module.exports.getStateListWithCoveredUlb = async (req, res) => {
         const redisKey = "stateListWithCoveredUlb-" + JSON.stringify({ ...req.query, ...req.body });
         const expireTime = 60 * 60 * 24 * 30 // 1 month
         Redis.get(redisKey, async (err, value) => {
+            let isCached = false;
             if (!value) {
                 let states = await State.find(cond).lean();
                 const stateResponses = await getData(states, financialYear);
@@ -128,9 +129,10 @@ module.exports.getStateListWithCoveredUlb = async (req, res) => {
                 }
                 Redis.set(redisKey, JSON.stringify(arr), expireTime);
             } else {
+                isCached = true;
                 arr = JSON.parse(value);
             }
-            return res.status(200).json({ message: "State list with ulb covered percentage.", success: true, data: arr })
+            return res.status(200).json({ fromCachce: isCached, message: "State list with ulb covered percentage.", success: true, data: arr })
 
         });
 

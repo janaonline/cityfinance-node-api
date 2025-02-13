@@ -1203,11 +1203,11 @@ module.exports.getUlbsWithAuditStatus = async (req, res) => {
           // ulbs = await Ulb.find(query, "_id name code state ulbType area population location")
           //   .exec();
         } else {
-          isCached = true;
           ulbs = await getOldQueryData(req);
         }
         Redis.set(redisKey, JSON.stringify(ulbs), expireTime);
       } else {
+        isCached = true;
         ulbs = JSON.parse(value);
       }
       
