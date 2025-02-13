@@ -3939,7 +3939,7 @@ const sendEmailToUlb = async (ulbId, status) => {
     }).populate("ulb")
     let emailAddress = [userInf.email];
     if (process.env.ENV !== ENV['prod']) {
-      emailAddress = [TEST_EMAIL['test1'], TEST_EMAIL['test2'], TEST_EMAIL['test3'], TEST_EMAIL['test4']]
+        emailAddress = [TEST_EMAIL['test1'], TEST_EMAIL['test2'], TEST_EMAIL['test3'], TEST_EMAIL['test4']]
     }
     let ulbName = userInf.name;
     let ulbTemplate;
@@ -5505,6 +5505,7 @@ async function fyUlbFyCsv(params) {
             for (let pf of fyData) {
               let status = (pf.status && pf.status.length > 0) ? pf.status : "N/A"
               let value = pf.file ? pf.file : pf.date ? pf.date : ((pf.value != null) && pf.value.toString()) ? pf.value.toString() : ""
+              
               if(typeof value == 'object') {
                 continue;
               }

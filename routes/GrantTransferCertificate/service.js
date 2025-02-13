@@ -878,7 +878,6 @@ async function getPreviousYearData24_25(state,design_year){
     }
     return response
 }
-
 async function addWarnings(previousYearData,design_year){
     try{
         let sfcLink = `<a href="stateform2223/fc-formation" target="_blank"> Click here to fill previous form</a>`
@@ -927,7 +926,7 @@ module.exports.getInstallmentForm = async (req, res, next) => {
             previousYearData = await getPreviousYearData(state,design_year);
         }
         
-        response.errors = await addWarnings(previousYearData)
+        response.errors = await addWarnings(previousYearData, design_year)
         let validator = await checkForUndefinedVaribales({
             "design year": design_year,
             "state": state

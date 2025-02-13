@@ -207,9 +207,73 @@ function getStateColor(percentage, type, isColumnColor = false) {
   return colorDetails?.find(item => percentage >= item.min && percentage <= item.max)?.color[type] || "#E5E5E5";
 }
 
+// Get population category.
+function getPopulationCategory(populationBucket) {
+  let populationCategory = '4M+';
+  
+  switch (Number(populationBucket)) {
+    case 1: populationCategory = '4M+'; break;
+    case 2: populationCategory = '1M-4M'; break;
+    case 3: populationCategory = '100K-1M'; break;
+    case 4: populationCategory = '<100K'; break;
+  }
+
+  return populationCategory;
+}
+
+// Helper: template/ static data for rankedUlbPdf()
+const rankedUlbPdfHelper = {
+  section2: {
+    card1: { title: '', subtitle: '' },
+    remainingCards: {
+      key: '',
+      label: '',
+      scoreNumerator: 0,
+      scoreDenominator: 0,
+      rankNumerator: 0,
+      rankDenominator: 0,
+      avgNumerator: 0,
+      avgDenominator: 0,
+      desc: ''
+    }
+  },
+  section3: {
+    card1: {
+      header: 'Parameter wise Scores',
+      desc: 'This section presents the city’s scores for the 3 pillars of sound financial management: resource mobilisation, expenditure performance, and fiscal governance. A high score in resource mobilisation indicates strong revenue generation, while a high score in expenditure performance reflects efficient use of fund',
+      note: {
+        header: 'Note: Subcategory - % of ULB participation for rankings from each state.',
+        desc: [
+          'High Participation(> 75 % Participation)',
+          'Low Participation(<75% Participated)',
+          'Hilly / North Eastern states',
+        ]
+      }
+    },
+    card2a: {
+      header: 'Overall Score',
+      desc: 'This section shows the city’s overall score (out of 1200) based on its performance across 15 key indicators of financial health. The city’s rank among all participating cities is also provided.'
+    },
+    card2b: {
+      header: 'Parameter wise rank',
+      desc: 'This section presents the city’s rank for each parameter resource mobilisation, expenditure performance, and fiscal governance compared to other cities in its population category. Higher ranks indicate better performance than peer cities in revenue generation, efficient spending, and financial transparency.'
+    },
+    card3a: {
+      header: 'Indicator-wise Score',
+      desc: 'This section provides a detailed breakdown of the city’s performance on the 15indicators used to calculate the overall score. These indicators cover various aspectsof resource mobilisation, expenditure performance, and fiscal governance, providing agranular view of the city’s financial health. Each indicator is scored out of 100.'
+    },
+    card3b: {
+      header: 'About City Finance Rankings',
+      desc: "The CityFinance Rankings, an initiative of the Ministry of Housing and Urban Affairs in collaboration with Janaagraha, evaluates the financial health of India's cities(Urban Local Bodies ULBs) based on their financial performance across various parameters.By promoting fiscal accountability and transparency among ULBs, the rankings ultimately aim to improve the quality of life for residents across India's urban landscape."
+    }
+  }
+};
+
 module.exports.topRankedUlbsDumpQuery = topRankedUlbsDumpQuery;
 module.exports.topRankedUlbsColumns = topRankedUlbsColumns;
 module.exports.getBucketWiseTopUlbsQuery = getBucketWiseTopUlbsQuery;
 module.exports.getBucketWiseTopUlbsColumns = getBucketWiseTopUlbsColumns;
 module.exports.getStateColor = getStateColor;
 module.exports.getSateParticipationCategory = getSateParticipationCategory;
+module.exports.rankedUlbPdfHelper = rankedUlbPdfHelper;
+module.exports.getPopulationCategory = getPopulationCategory;
