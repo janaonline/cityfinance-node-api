@@ -27,7 +27,8 @@ module.exports.YEAR_CONSTANTS = {
     "21_22": "606aaf854dff55e6c075d219",
     "22_23": "606aafb14dff55e6c075d3ae",
     "23_24": "606aafc14dff55e6c075d3ec",
-    "24_25": "606aafcf4dff55e6c075d424"
+    "24_25": "606aafcf4dff55e6c075d424",
+    "25_26": "606aafda4dff55e6c075d48f"
 }
 module.exports.YEAR_CONSTANTS_IDS = {
     "63735a4bd44534713673bfbf": "2017-18",
@@ -37,14 +38,16 @@ module.exports.YEAR_CONSTANTS_IDS = {
     "606aaf854dff55e6c075d219": "2021-22",
     "606aafb14dff55e6c075d3ae": "2022-23",
     "606aafc14dff55e6c075d3ec": "2023-24",
-    "606aafcf4dff55e6c075d424": "2024-25"
+    "606aafcf4dff55e6c075d424": "2024-25",
+    "606aafda4dff55e6c075d48f": "2025-26"
 }
 
 module.exports.ULB_ACCESSIBLE_YEARS = {
     "2021-22": "access_2122",
     "2022-23": "access_2223",
     "2023-24": "access_2324",
-    "2024-25": "access_2425"
+    "2024-25": "access_2425",
+    "2025-26": "access_2426"
 }
 
 module.exports.MASTER_STATUS = {
