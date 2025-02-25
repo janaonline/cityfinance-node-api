@@ -1172,6 +1172,14 @@ module.exports.read2223 = catchAsync(async (req, res, next) => {
             Number(fetchedData?.grantPosition.closingBal).toFixed(2)
           ))
           : "";
+          typeof fetchedData?.grantPosition.receivedDuringYrWithZero === "string"
+          ? (fetchedData.grantPosition.receivedDuringYrWithZero = fetchedData?.grantPosition.receivedDuringYrWithZero
+          )
+          : "";   
+          typeof fetchedData?.grantPosition.receivedDuringYrWithZeroReason === "string"
+          ? (fetchedData.grantPosition.receivedDuringYrWithZeroReason = fetchedData?.grantPosition.receivedDuringYrWithZeroReason
+          )
+          : "";
       }
       fetchedData["ulbName"] = ulbData.name;
       req.form = fetchedData;
