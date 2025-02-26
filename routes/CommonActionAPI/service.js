@@ -154,6 +154,8 @@ var customkeys = {
         "grantPosition.receivedDuringYr": "grantPosition.receivedDuringYr",
         "grantPosition.expDuringYr": "grantPosition.expDuringYr",
         "grantPosition.closingBal": "grantPosition.closingBal",
+        "grantPosition.receivedDuringYrWithZero": "grantPosition.receivedDuringYrWithZero",
+        "grantPosition.receivedDuringYrWithZeroReason": "grantPosition.receivedDuringYrWithZeroReason",
     },
 
     "waterManagement_tableView": {
