@@ -332,12 +332,12 @@ module.exports.createOrUpdate = async (req, res) => {
     }
 }
 
-async function handlePtoSkipLogicDependencies({ 
+async function handlePtoSkipLogicDependencies({
     design_year,
     formId,
     ulbId,
     currentFormStatus
- }) {
+}) {
     if(currentFormStatus != MASTER_FORM_STATUS.UNDER_REVIEW_BY_STATE) return;
     const nextYearPto = await PropertyTaxOp.findOne({
         ulb: ObjectId(ulbId),
@@ -345,14 +345,14 @@ async function handlePtoSkipLogicDependencies({
     });
     if(!nextYearPto) return;
     let mapperForm = await PropertyTaxOpMapper.find({ ptoId: ObjectId(formId) }).populate("child").lean();
-    
+
     const parentSkipLogicRadioQuestions =  mapperForm.filter(({ value, type }) => [...parentRadioQuestionKeys,  ...childRadioAnsKeyPrefillDataCurrYear].includes(type))
     const updatableQuestion = [ ...parentSkipLogicRadioQuestions];
 
     const nextYearMapperUpdateQuery = updatableQuestion.map(question => {
-        const { yearName: currentYearName } = getDesiredYear('' + question.year); 
+        const { yearName: currentYearName } = getDesiredYear('' + question.year);
         const { yearId: nextYearId } = currentYearName  == '2018-19' ? 
-            getDesiredYear('2023-24') : 
+            getDesiredYear('2023-24') :
             getDesiredYear('' + question.year, 1)
         return {
             updateOne: {
@@ -531,7 +531,7 @@ async function handleChildrenData(params) {
 function yearWiseValues(yearData, design_year) {
     const { yearIndex: designYearIndex  } = getDesiredYear(design_year);
     const { yearIndex: yearIndex23_24 } = getDesiredYear('2023-24');
-                
+
     try {
         let sumObj = {}
         for (let yearObj of yearData) {
@@ -628,7 +628,6 @@ function assignChildToMainKeys(data, design_year) {
             let element = { ...seperatedObject[key] }
             if (element.child) {
                 for (let childElement of keysWithChild[key]) {
-                    console.log("childElement :: ",childElement)
                     let filteredChildren = element.child.filter(item => item.key === childElement)
                     let yearData = [...mergeChildObjectsYearData(filteredChildren, design_year)]
                     seperatedObject[childElement] = {
@@ -708,14 +707,14 @@ function compareValues(params) {
                 if (currenVal > refVal) {
                     validator.valid = false
                     validator.message = message + " for year: " + key
-                    validator.errors.push(message)
+                    validator.errors.push(message + " for year: " + key)
                 }
             }
             else if (logic === "sum") {
                 if (currenVal != refVal) {
                     validator.valid = false
                     validator.message = message + " for year: " + key
-                    validator.errors.push(message)
+                    validator.errors.push(message + " for year: " + key)
                 }
             }
         }
@@ -745,7 +744,7 @@ async function handleMultipleValidations(params) {
             let toCheckValidation = await checkIfFieldsAreNotEmpty(validationParams)
             // console.log("toCheckValidation :: ",toCheckValidation)
             if (toCheckValidation.checkForValidations) {
-                console.log("toCheckValidation 44:: ",keysToFind)
+                // console.log("toCheckValidation 44:: ", keysToFind)
                 let sumOfrefVal = await getYearDataSumForValidations(keysToFind, data, design_year)
                 let sumOfCurrentKey = await yearWiseValues(dynamicObj.yearData, design_year)
                 let errorMessage = await createErrorMessage(validationObj, dynamicObj)
@@ -758,9 +757,9 @@ async function handleMultipleValidations(params) {
                     message: errorMessage
                 }
                 let compareValidator = compareValues(valueParams)
-                console.log("sumOfrefVal :: ",sumOfrefVal)
-                console.log("sumOfCurrentKey :: ",sumOfCurrentKey)
-                console.log("compareValidator :::: ",compareValidator)
+                // console.log("sumOfrefVal :: ",sumOfrefVal)
+                // console.log("sumOfCurrentKey :: ",sumOfCurrentKey)
+                // console.log("compareValidator :::: ",compareValidator)
                 if (!compareValidator.valid) {
                     return compareValidator
                 }
@@ -825,10 +824,11 @@ async function handleInternalValidations(params) {
 }
 
 function createErrorMessage(validationObj, dynamicObj) {
-    let message = validationObj.message
+    let message = "" 
+    // let message = validationObj.message
     try {
         if (validationObj.logic === "sum") {
-            message += `\n Sum of ${validationObj.sequence.join(",")} is not equal to ${dynamicObj.position}`
+            message += `\n Sum of ${validationObj.sequence.join(", ")} is not equal to ${dynamicObj.position}`
         }
         else if (validationObj.logic === "ltequal") {
             message += `\n ${dynamicObj.position} should be less than or equal to ${validationObj.sequence[0]}`
@@ -904,10 +904,10 @@ async function handleNonSubmissionValidation(params) {
                 let toCheckValidation = await checkIfFieldsAreNotEmpty(validationParams);
 
                 if (toCheckValidation.checkForValidations) {
-                    console.log("toCheckValidation  33:: ",keysToFind)
+                    // console.log("toCheckValidation  33:: ",keysToFind)
                     let sumOfrefVal = await getYearDataSumForValidations(keysToFind, data, design_year)
                     let sumOfCurrentKey = {};
-                    
+
                     if(dynamicObj.copyChildFrom?.length) {
                         sumOfCurrentKey = await getYearDataSumForValidations([dynamicObj.key], data, design_year);
                     } else {
@@ -947,6 +947,7 @@ async function calculateAndUpdateStatusForMappers(tabs, ulbId, formId, year, upd
                 "status": []
             }
             let seperatedValues = assignChildToMainKeys(obj, year)
+            const failedValidatons = [];
             for (var k in tab.data) {
                 let dynamicObj = obj[k]
                 let yearArr = obj[k].yearData
@@ -959,7 +960,8 @@ async function calculateAndUpdateStatusForMappers(tabs, ulbId, formId, year, upd
                 if (!isDraft) {
                     let validation = await handleNonSubmissionValidation(params)
                     if (!validation.valid) {
-                        throw { message: validation.message }
+                        failedValidatons.push(validation.message);
+                        // throw { message: validation.message }
                     }
                 }
                 let updatedIds = await handleChildrenData({ inputElement: { ...tab.data[k] }, formId, ulbId, updateForm, dynamicObj, year })
@@ -976,7 +978,13 @@ async function calculateAndUpdateStatusForMappers(tabs, ulbId, formId, year, upd
                 }
                 conditionalObj[tab._id.toString()] = (temp)
             }
+
+            if (failedValidatons.length > 0) {
+                // console.log("failedValidatons --->", failedValidatons);
+                throw { message: failedValidatons };
+            }
         }
+
         for (var tabName in conditionalObj) {
             if (conditionalObj[tabName].status.length > 0) {
                 conditionalObj[tabName].status = conditionalObj[tabName].status.every(item => item == true)
@@ -1110,7 +1118,7 @@ async function createFullChildObj(params, design_year) {
                     if(!ptoData) addChildNextYearQuestionObject(childObject);
                     if(hasMultipleYearData(childObject.yearData)) {
                         childObject.yearData?.forEach(year => handleOldYearsDisabled({
-                            yearObject: year, 
+                            yearObject: year,
                             design_year,
                             isForChild: childObject?.required
                         }));
@@ -1118,7 +1126,7 @@ async function createFullChildObj(params, design_year) {
                 }
                 childObject.readonly = true
                 childs.push(childObject)
-            } 
+            }
 
         }
     }
@@ -1132,7 +1140,7 @@ function addChildNextYearQuestionObject(childObject) {
     const lastChildYear = childObject.yearData[childObject.yearData.length - 1];
     const { yearName, yearId } = getDesiredYear(lastChildYear.year, 1);
     const nextYear = JSON.parse(JSON.stringify(lastChildYear));
-    nextYear["year"] = yearId;      
+    nextYear["year"] = yearId;
     nextYear["value"] = "";
     nextYear["placeholder"] = "";
     nextYear['key'] = `FY${yearName}${yearName}`;
@@ -1175,7 +1183,7 @@ async function appendChildValues(params) {
 
                     if(!isLatestOnboarderUlb && index == 0) {
                         element.child = child;
-                    } else {    
+                    } else {
                         if(!isBeyond2023_24(design_year))  continue;
                         element.child.forEach(replica => {
                             const childFromSameReplica = child.find(cl => {
@@ -1183,7 +1191,7 @@ async function appendChildValues(params) {
                             });
                             if(childFromSameReplica) {
                                 childFromSameReplica.pushed = true;
-                                replica.yearData.push(...childFromSameReplica.yearData);                      
+                                replica.yearData.push(...childFromSameReplica.yearData);
                             } else {
                                 addChildNextYearQuestionObject(replica);
                             }
@@ -1196,7 +1204,7 @@ async function appendChildValues(params) {
             element.child.forEach(child => {
                 child.entryDesignYear = getRowDesignYear(child, design_year);
             });
-            
+
         }
     }
     catch (err) {
@@ -1209,7 +1217,7 @@ async function appendChildValues(params) {
 const getRowDesignYear = (child, design_year) => {
     const yearItem = child.yearData.find(yearItem => yearItem.value != "" && yearItem.year);
     if(!yearItem?.year) return design_year;
-    const { yearId } = getDesiredYear(yearItem?.year, 1);   
+    const { yearId } = getDesiredYear(yearItem?.year, 1);
     if(isBeyond2023_24(yearId)) return yearId;
     return getDesiredYear('2023-24').yearId;
 }
@@ -1230,31 +1238,31 @@ exports.getView = async function (req, res, next) {
             const desiredYear = getDesiredYear(design_year, -1);
             let ptoData = await PropertyTaxOp.findOne(
                 {
-                ulb: ObjectId(req.query.ulb),
-                design_year: ObjectId(desiredYear?.yearId),
+                    ulb: ObjectId(req.query.ulb),
+                    design_year: ObjectId(desiredYear?.yearId),
                 },
                 { history: 0 }
             ).lean();
-            
+
             if (!(MASTER_STATUS_ID[+ptoData?.currentFormStatus] == "Under Review By MoHUA")) {
                 const redirectionLink = `/ulb-form/${getDesiredYear(design_year, -1).yearId}/ptax`;
                 return res.status(400).json({
                     success: true,
                     message: `Dear User, Your previous Year's form status is - In Progress .Kindly submit Details of Property Tax and User Charges Form for the previous year at - <a href="${redirectionLink}" target="_blank">Click Here!</a> in order to submit this year's form . `
                 });
-            } 
+            }
         }
 
-        condition = { ulb: ObjectId(req.query.ulb), design_year: ObjectId(design_year) }; 
+        condition = { ulb: ObjectId(req.query.ulb), design_year: ObjectId(design_year) };
 
         let ptoData = await PropertyTaxOp.findOne(condition, { history: 0 }).lean();
         const { yearId: previousYearId } = getDesiredYear(design_year, -1);
-        let ptoLatestYearData = await PropertyTaxOp.findOne({ 
-            ulb: ObjectId(req.query.ulb), 
-            design_year: ObjectId(previousYearId) 
+        let ptoLatestYearData = await PropertyTaxOp.findOne({
+            ulb: ObjectId(req.query.ulb),
+            design_year: ObjectId(previousYearId)
         }, { history: 0 }).lean();
 
-        let ptoMaper = await PropertyTaxOpMapper.find({ 
+        let ptoMaper = await PropertyTaxOpMapper.find({
             ulb: ObjectId(req.query.ulb),
             // ptoId: ObjectId(ptoData._id) 
         }).populate("child").lean();
@@ -1290,7 +1298,7 @@ exports.getView = async function (req, res, next) {
                                             pf.file ? (pf.file = d ? d.file : "") : d.date ? (pf.date = d ? d.date : "") : (pf.value = d ? d.value : "");
                                         }
                                         pf.readonly = isReadOnly({ isDraft, currentFormStatus, role, ptoData })
-                
+
                                         //TO DO...
                                         if (!isSingleYearIndicator(yearData)) {
                                             handleOldYearsDisabled({yearObject: pf, design_year});
@@ -1354,8 +1362,8 @@ exports.getView = async function (req, res, next) {
         );
 
         return res.status(200).json({ status: true, message: "Success fetched data!", data: { 
-            ...fyDynemic, 
-            ...getFormMetaData({ design_year })
+                ...fyDynemic,
+                ...getFormMetaData({ design_year })
         } });
     } catch (error) {
         console.log("err", error);
@@ -1418,7 +1426,7 @@ function handleNewYearChildRows({child, element, currentFormStatus, role}) {
 function getLabelName(type) {
     try {
         let indicators = questionIndicators
-          
+
         let labelName = indicators[type] ? indicators[type].split(",").join("") : ""
         return labelName
     }
@@ -1430,7 +1438,7 @@ function getLabelName(type) {
 
 function getTextValues(result,displayPriority){
     try{
-        
+
         let subHeaders = {
             "2.05-2.08": "Residential Properties",
             "2.09-2.12": "Commercial Properties",
@@ -1600,7 +1608,7 @@ module.exports.decideDisplayPriority = decideDisplayPriority
 
 const canShow = (key, results, updatedDatas,ulb) => {
     try {
-        
+
         if (Object.keys(skippableKeys).includes(key)) {
             let elementToFind = skippableKeys[key]
             let element = {}
@@ -1613,7 +1621,7 @@ const canShow = (key, results, updatedDatas,ulb) => {
             else{
                 element = updatedDatas[keyName]
             }
-            let show = element?.value === "Yes" 
+            let show = element?.value === "Yes"
             if(reverseKeys.includes(key)){
                 show = element?.value === "No"
             }
@@ -1798,7 +1806,7 @@ module.exports.getCsvForPropertyTaxMapper = async (req, res) => {
                         child.displayPriority = number
                         if (child) {
                             writableStr = el.state.name + "," + el.ulb.name + "," + el.ulb.natureOfUlb + "," + el.ulb.code + "," + el.ulb.censusCode + "," + status + "," + getKeyByValue(years, el.design_year.toString()) + ","
-                         censusCode || ""
+                            censusCode || ""
                             child.textValue = child.textValue ? child.textValue : modifiedTextValue
                             writableStr += getStringValue(child,result.displayPriority, true)
                             res.write(writableStr)
@@ -1830,7 +1838,7 @@ const createDataStructureForCsv = (ulbs, results, res) => {
             let sortedResults = filteredResults.sort(sortPosition)
             for (let result of sortedResults) {
                 let status = MASTER_STATUS_ID[result.ptoId.currentFormStatus] || ""
-                let censusCode = result.ptoId.ulb.censusCode != null ? result.ptoId.ulb.censusCode : result.ptoId.ulb.sbCode 
+                let censusCode = result.ptoId.ulb.censusCode != null ? result.ptoId.ulb.censusCode : result.ptoId.ulb.sbCode
                 let writableStr = result.ptoId.ulb.state.name + "," + result.ptoId.ulb.name + "," + result.ptoId.ulb.natureOfUlb + "," + result.ptoId.ulb.code + "," + censusCode + "," + status + "," + getKeyByValue(years, result.ptoId.design_year.toString()) + ","
                 let modifiedTextValue = getTextValues(result,result.displayPriority).replace(",")
                 result.textValue = modifiedTextValue ? modifiedTextValue : " "
@@ -1841,7 +1849,7 @@ const createDataStructureForCsv = (ulbs, results, res) => {
                     for (let child of result.child) {
                         let number = decideDisplayPriority(0,child.type,result.displayPriority,child.replicaNumber,result.type)
                         child.displayPriority = number
-                        let censusCode = result.ptoId.ulb.censusCode != null ? result.ptoId.ulb.censusCode : result.ptoId.ulb.sbCode 
+                        let censusCode = result.ptoId.ulb.censusCode != null ? result.ptoId.ulb.censusCode : result.ptoId.ulb.sbCode
                         writableStr = result.ptoId.ulb.state.name + "," + result.ptoId.ulb.name + "," + result.ptoId.ulb.natureOfUlb + "," + result.ptoId.ulb.code + "," + result.ptoId.ulb.censusCode + "," + status + "," + getKeyByValue(years, result.ptoId.design_year.toString()) + ","
                         censusCode || ""
                         child.textValue = child.textValue ? child.textValue : modifiedTextValue
