@@ -562,6 +562,21 @@ function yearWiseValues(yearData, design_year) {
     }
 }
 
+// function getYearWiseJson(yrsData) {
+//     const res = {};
+//     for (const yrObj of yrsData)
+//      res[yrObj['key'].slice(-7)] = Number(yrObj['originalValue']);
+//     return res;
+// }
+
+function getYearWiseJson(yrsData) {
+    return yrsData.reduce((res, { key, originalValue }) => {
+        res[key.slice(-7)] = +originalValue;
+        return res;
+    }, {});
+}
+
+
 function getSumByYear(params) {
     let { yearData, sumObj, design_year } = params
     const { yearIndex: designYearIndex  } = getDesiredYear(design_year);
@@ -690,38 +705,37 @@ function compareValues(params) {
     let validator = {
         "valid": true,
         "message": "",
-        "errors": []
+        "errorYears": [],
+        "replicaNo": null,
     }
     try {
-        let { sumOfrefVal, sumOfCurrentKey, logic, message } = params
-        // console.log("sumOfrefVal :: ",sumOfrefVal)
-        // console.log("sumOfCurrentKey ::: ",sumOfCurrentKey)
-        // console.log(">>>>>>>>>>>>>>>>>>1")
+        let { sumOfrefVal, sumOfCurrentKey, logic, message, replicaNo, childKey } = params
         for (let key in sumOfrefVal) {
-            // console.log(">>>>>>>>>>>>>>>>>>2")
             let refVal = parseFloat(sumOfrefVal[key].toFixed(2))
             let currenVal = parseFloat(sumOfCurrentKey[key].toFixed(2))
+
             if (logic === "ltequal") {
-                // console.log("currenVal ::: ",currenVal)
-                // console.log("refVal :::: ",refVal)
                 if (currenVal > refVal) {
-                    validator.valid = false
-                    validator.message = message + " for year: " + key
-                    validator.errors.push(message + " for year: " + key)
+                    validator.valid = false;
+                    validator.message = message;
+                    validator.errorYears.push(key);
+                    validator.replicaNo = replicaNo;
+                    validator.childKey = childKey;
                 }
             }
             else if (logic === "sum") {
                 if (currenVal != refVal) {
-                    validator.valid = false
-                    validator.message = message + " for year: " + key
-                    validator.errors.push(message + " for year: " + key)
+                    validator.valid = false;
+                    validator.message = message;
+                    // validator.message = message + " for year: "
+                    validator.errorYears.push(key);
                 }
             }
         }
 
     }
     catch (err) {
-        console.log("error in compareValues :::")
+        console.log("error in compareValues :::", err.message)
     }
     return validator
 }
@@ -773,7 +787,7 @@ async function handleMultipleValidations(params) {
     return valid
 }
 
-
+// TODO: Remove the function after testing.
 async function handleInternalValidations(params) {
     let errors = {
         valid: true,
@@ -786,31 +800,22 @@ async function handleInternalValidations(params) {
         let preparedJsonData = childElements.reduce((result, currentValue) => ({ ...result, [currentValue.key]: currentValue }), {})
         for (let child of childElements) {
             if (Object.keys(getValidationJson(design_year)).includes(child.key)) {
-                let keysToFind = getValidationJson(design_year)[child.key].fields
+                const validations = getValidationJson(design_year)[child.key];
+                let keysToFind = validations.fields
                 let sumOfrefVal = await getYearDataSumForValidations(keysToFind, preparedJsonData, design_year)
                 let sumOfCurrentKey = await yearWiseValues(child.yearData, design_year)
-                // let validationParams = {
-                //     keysToFind:keysToFind,
-                //     dynamicObj:preparedJsonData[child.key],
-                //     data:preparedJsonData
-                // }
-                // let toCheckValidation = await checkIfFieldsAreNotEmpty(validationParams)
                 let errorMessage = await createErrorMessage(getValidationJson(design_year)[child.key], preparedJsonData[child.key])
                 let valueParams = {
                     sumOfrefVal,
                     sumOfCurrentKey,
-                    logic: getValidationJson(design_year)[child.key].logic,
-                    // message:`${validatidynamicObjonJson[dynamicObj.key].displayNumber} - ${getValidationJson(design_year)[dynamicObj.key].message} `
-                    message: errorMessage
+                    logic: validations.logic,
+                    message: errorMessage,
+                    replicaNo: preparedJsonData[child.key]['replicaNumber'],
+                    childKey: validations['fields'][0]
+
                 }
                 let compareValidator = compareValues(valueParams)
-                // if(keysToFind.includes("othersValueWaterChrgDm")){
-                // console.log("othersValueWaterChrgDm :::: ",preparedJsonData)
-                // console.log("sumOfrefVal ::: ",sumOfrefVal ,"keysToFind :: ",keysToFind)   
-                // console.log("sumOfCurrentKey ::: ",sumOfCurrentKey,"keysToFind :: ",keysToFind)     
-                // console.log("compareValidator  11::: ",compareValidator)
 
-                // }
                 if (!compareValidator.valid) {
                     return compareValidator
                 }
@@ -823,15 +828,64 @@ async function handleInternalValidations(params) {
     return errors
 }
 
+function handleAddMoreValidations(params) {
+    try {
+        const { dynamicObj, design_year } = params;
+        const childElements = dynamicObj.child || [];
+        const childElemetnsJson = childElements.reduce((result, currentValue) => {
+            if (!result[currentValue.key]) {
+                result[currentValue.key] = {};
+            }
+            result[currentValue.key][currentValue.replicaNumber] = currentValue;
+            return result;
+        }, {});
+        const validationsJson = getValidationJson(design_year);
+        const failedValidations = { child: true };
+
+        for (const [childKey, value] of Object.entries(childElemetnsJson)) {
+            const childValidations = validationsJson[childKey];
+            if (childValidations) {
+                for (const replicaNo of Object.keys(value)) {
+                    const partialChildData = {
+                        replicaNumber: value[replicaNo]['replicaNumber'],
+                        position: value[replicaNo]['position']
+                    };
+                    const refVal = getYearWiseJson(childElemetnsJson[childValidations['fields'][0]][replicaNo]['yearData']);
+                    const currVal = getYearWiseJson(value[replicaNo]['yearData']);
+                    const message = createErrorMessage(childValidations, partialChildData);
+                    const valueParams = {
+                        sumOfrefVal: refVal,
+                        sumOfCurrentKey: currVal,
+                        logic: childValidations['logic'],
+                        message,
+                        replicaNo,
+                        childKey: childValidations['fields'][0]
+                    };
+                    const compareValidator = compareValues(valueParams);
+
+                    if (!compareValidator.valid) {
+                        const key = `${replicaNo ? '_' + childKey + '_' + replicaNo : ''}`;
+                        failedValidations[key] = compareValidator;
+                    }
+                }
+            }
+        }
+        // console.log("failedValidations = ", failedValidations);
+        return failedValidations;
+    } catch (error) { console.error("Error in handleAddMoreValidations(): ", error.message); }
+
+}
+
 function createErrorMessage(validationObj, dynamicObj) {
-    let message = "" 
+    let message = ""
     // let message = validationObj.message
     try {
         if (validationObj.logic === "sum") {
-            message += `\n Sum of ${validationObj.sequence.join(", ")} is not equal to ${dynamicObj.position}`
+            message += `Sum of ${validationObj.sequence.join(", ")} is not equal to ${dynamicObj.position}`
         }
         else if (validationObj.logic === "ltequal") {
-            message += `\n ${dynamicObj.position} should be less than or equal to ${validationObj.sequence[0]}`
+            const replicaNo = dynamicObj.replicaNumber ? '.' + dynamicObj.replicaNumber : '';
+            message += `${dynamicObj.position}${replicaNo} should be less than or equal to ${validationObj.sequence[0]}${replicaNo}`;
         }
     }
     catch (err) {
@@ -875,11 +929,21 @@ async function handleNonSubmissionValidation(params) {
     try {
         let { dynamicObj, yearArr, data, year : design_year } = params
         let validatorKeys = Object.keys(getValidationJson(design_year))
-        let childrenValid = await handleInternalValidations({ dynamicObj, design_year })
-        if (!childrenValid.valid) {
-            return childrenValid
+
+        // let childrenValid = await handleInternalValidations({ dynamicObj, design_year })
+        // if (dynamicObj?.child?.length) {
+        //     if (!childrenValid?.valid) {
+        //         return childrenValid;
+        //     }
+        // }
+
+        if (dynamicObj?.child?.length) {
+            let childrenValid = handleAddMoreValidations({ dynamicObj, design_year })
+            if (Object.keys(childrenValid).length) {
+                return childrenValid;
+            }
         }
-        if (validatorKeys.includes(dynamicObj.key)) {
+        else if (validatorKeys.includes(dynamicObj.key)) {
             let keysToFind = getValidationJson(design_year)[dynamicObj.key].fields
             let logicType = getValidationJson(design_year)[dynamicObj.key].logic
             if (logicType === "multiple") {
@@ -947,7 +1011,7 @@ async function calculateAndUpdateStatusForMappers(tabs, ulbId, formId, year, upd
                 "status": []
             }
             let seperatedValues = assignChildToMainKeys(obj, year)
-            const failedValidatons = [];
+            let failedValidatons = {};
             for (var k in tab.data) {
                 let dynamicObj = obj[k]
                 let yearArr = obj[k].yearData
@@ -959,9 +1023,22 @@ async function calculateAndUpdateStatusForMappers(tabs, ulbId, formId, year, upd
                 }
                 if (!isDraft) {
                     let validation = await handleNonSubmissionValidation(params)
-                    if (!validation.valid) {
-                        failedValidatons.push(validation.message);
-                        // throw { message: validation.message }
+                    if (validation?.valid === false) {
+                        // const key = `${k}${validation?.replicaNo ? '_' + validation?.childKey + '_' + validation?.replicaNo : ''}`
+                        // failedValidatons[key] = { message: validation?.message, errorYears: validation?.errorYears };
+                        failedValidatons[k] = { message: validation?.message, errorYears: validation?.errorYears };
+                    }
+                    if (validation?.child) {
+                        console.log("validation", validation)
+                        const prefixedValidation = Object.keys(validation).reduce((acc, key) => {
+                            if (key.includes('_')) {
+                                const newKey = k + key;
+                                acc[newKey] = validation[key];
+                            }
+                            return acc;
+                        }, {});
+
+                        failedValidatons = { ...failedValidatons, ...prefixedValidation };
                     }
                 }
                 let updatedIds = await handleChildrenData({ inputElement: { ...tab.data[k] }, formId, ulbId, updateForm, dynamicObj, year })
@@ -979,7 +1056,7 @@ async function calculateAndUpdateStatusForMappers(tabs, ulbId, formId, year, upd
                 conditionalObj[tab._id.toString()] = (temp)
             }
 
-            if (failedValidatons.length > 0) {
+            if (Object.keys(failedValidatons).length > 0) {
                 // console.log("failedValidatons --->", failedValidatons);
                 throw { message: failedValidatons };
             }
