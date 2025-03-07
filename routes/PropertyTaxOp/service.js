@@ -761,7 +761,7 @@ async function handleMultipleValidations(params) {
                 // console.log("toCheckValidation 44:: ", keysToFind)
                 let sumOfrefVal = await getYearDataSumForValidations(keysToFind, data, design_year)
                 let sumOfCurrentKey = await yearWiseValues(dynamicObj.yearData, design_year)
-                let errorMessage = await createErrorMessage(validationObj, dynamicObj)
+                let errorMessage = createErrorMessage(validationObj, dynamicObj)
                 let valueParams = {
                     sumOfrefVal,
                     sumOfCurrentKey,
@@ -788,45 +788,45 @@ async function handleMultipleValidations(params) {
 }
 
 // TODO: Remove the function after testing.
-async function handleInternalValidations(params) {
-    let errors = {
-        valid: true,
-        message: "",
-        errors: []
-    }
-    try {
-        let { dynamicObj, design_year } = params
-        let childElements = dynamicObj.child || []
-        let preparedJsonData = childElements.reduce((result, currentValue) => ({ ...result, [currentValue.key]: currentValue }), {})
-        for (let child of childElements) {
-            if (Object.keys(getValidationJson(design_year)).includes(child.key)) {
-                const validations = getValidationJson(design_year)[child.key];
-                let keysToFind = validations.fields
-                let sumOfrefVal = await getYearDataSumForValidations(keysToFind, preparedJsonData, design_year)
-                let sumOfCurrentKey = await yearWiseValues(child.yearData, design_year)
-                let errorMessage = await createErrorMessage(getValidationJson(design_year)[child.key], preparedJsonData[child.key])
-                let valueParams = {
-                    sumOfrefVal,
-                    sumOfCurrentKey,
-                    logic: validations.logic,
-                    message: errorMessage,
-                    replicaNo: preparedJsonData[child.key]['replicaNumber'],
-                    childKey: validations['fields'][0]
+// async function handleInternalValidations(params) {
+//     let errors = {
+//         valid: true,
+//         message: "",
+//         errors: []
+//     }
+//     try {
+//         let { dynamicObj, design_year } = params
+//         let childElements = dynamicObj.child || []
+//         let preparedJsonData = childElements.reduce((result, currentValue) => ({ ...result, [currentValue.key]: currentValue }), {})
+//         for (let child of childElements) {
+//             if (Object.keys(getValidationJson(design_year)).includes(child.key)) {
+//                 const validations = getValidationJson(design_year)[child.key];
+//                 let keysToFind = validations.fields
+//                 let sumOfrefVal = await getYearDataSumForValidations(keysToFind, preparedJsonData, design_year)
+//                 let sumOfCurrentKey = await yearWiseValues(child.yearData, design_year)
+//                 let errorMessage = createErrorMessage(getValidationJson(design_year)[child.key], preparedJsonData[child.key])
+//                 let valueParams = {
+//                     sumOfrefVal,
+//                     sumOfCurrentKey,
+//                     logic: validations.logic,
+//                     message: errorMessage,
+//                     replicaNo: preparedJsonData[child.key]['replicaNumber'],
+//                     childKey: validations['fields'][0]
 
-                }
-                let compareValidator = compareValues(valueParams)
+//                 }
+//                 let compareValidator = compareValues(valueParams)
 
-                if (!compareValidator.valid) {
-                    return compareValidator
-                }
-            }
-        }
-    }
-    catch (err) {
-        console.log("error in handleInternalValidations :::: ", err.message)
-    }
-    return errors
-}
+//                 if (!compareValidator.valid) {
+//                     return compareValidator
+//                 }
+//             }
+//         }
+//     }
+//     catch (err) {
+//         console.log("error in handleInternalValidations :::: ", err.message)
+//     }
+//     return errors
+// }
 
 function handleAddMoreValidations(params) {
     try {
@@ -977,7 +977,7 @@ async function handleNonSubmissionValidation(params) {
                     } else {
                         sumOfCurrentKey = await yearWiseValues(dynamicObj.yearData, design_year)
                     }
-                    let errorMessage = await createErrorMessage(getValidationJson(design_year)[dynamicObj.key], dynamicObj)
+                    let errorMessage = createErrorMessage(getValidationJson(design_year)[dynamicObj.key], dynamicObj)
                     let valueParams = {
                         sumOfrefVal,
                         sumOfCurrentKey,
@@ -1308,7 +1308,9 @@ exports.getView = async function (req, res, next) {
         }
         const design_year = req.query.design_year;
         const [ulbData] = await Ulb.aggregate(ulbDataWithGsdpGrowthRateQuery(req.query.ulb));
-        const gsdpGrowthRate = ulbData.gsdpGrowthRateData?.find(el => el.year === "2018-23")?.currentPrice;
+        const [startYr, endYr] = getDesiredYear(design_year)['yearName'].split("-");
+        const gsdpYear = `${Number(startYr) - 6}-${Number(endYr) - 2}`; // Eg: designYear = 2024-25 the gsdpYear = 2018-23
+        const gsdpGrowthRate = ulbData.gsdpGrowthRateData?.find(el => el.year === gsdpYear)?.currentPrice;
         const isLatestOnboarderUlb = !ulbData.access_2324;
 
         if (!isLatestOnboarderUlb && isBeyond2023_24(design_year)) {
