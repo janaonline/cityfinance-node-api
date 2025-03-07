@@ -1308,7 +1308,9 @@ exports.getView = async function (req, res, next) {
         }
         const design_year = req.query.design_year;
         const [ulbData] = await Ulb.aggregate(ulbDataWithGsdpGrowthRateQuery(req.query.ulb));
-        const gsdpGrowthRate = ulbData.gsdpGrowthRateData?.find(el => el.year === "2018-23")?.currentPrice;
+        const [startYr, endYr] = getDesiredYear(design_year)['yearName'].split("-");
+        const gsdpYear = `${Number(startYr) - 6}-${Number(endYr) - 2}`; // Eg: designYear = 2024-25 the gsdpYear = 2018-23
+        const gsdpGrowthRate = ulbData.gsdpGrowthRateData?.find(el => el.year === gsdpYear)?.currentPrice;
         const isLatestOnboarderUlb = !ulbData.access_2324;
 
         if (!isLatestOnboarderUlb && isBeyond2023_24(design_year)) {
