@@ -510,7 +510,6 @@ const stateGsdpTemplate = async (req, res, next) => {
 
     if (!designYear) throw new Error('stateGsdpTemplate(): designYear is required.');
     const gsdpYear = getStateGsdpYear(designYear);
-    console.log("gsdpYear =", gsdpYear)
 
     try {
         const relatedIds = Array.isArray(req.query.relatedIds) ? req.query.relatedIds : [req.query.relatedIds];
