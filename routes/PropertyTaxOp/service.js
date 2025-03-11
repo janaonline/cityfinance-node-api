@@ -10,7 +10,7 @@ const { checkUndefinedValidations } = require('../../routes/FiscalRanking/servic
 const { propertyTaxOpFormJson, skipLogicDependencies, parentRadioQuestionKeys, childRadioAnsKeyPrefillDataCurrYear, skippableKeys, getFormMetaData, indicatorsWithNoyears, childKeys, reverseKeys, questionIndicators, sortPosition } = require('./fydynemic')
 const { isEmptyObj, isReadOnly, handleOldYearsDisabled, hasMultipleYearData, isSingleYearIndicator } = require('../../util/helper');
 const PropertyMapperChildData = require("../../models/PropertyTaxMapperChild");
-const { years, getDesiredYear, isBeyond2023_24, getAdditionalYears } = require('../../service/years');
+const { years, getDesiredYear, isBeyond2023_24, getAdditionalYears, getStateGsdpYear } = require('../../service/years');
 const { saveFormHistory } = require("../../util/masterFunctions")
 const { getValidationJson, keysWithChild } = require("./validation");
 const MasterStatus = require('../../models/MasterStatus');
@@ -1343,8 +1343,7 @@ exports.getView = async function (req, res, next) {
         }
         const design_year = req.query.design_year;
         const [ulbData] = await Ulb.aggregate(ulbDataWithGsdpGrowthRateQuery(req.query.ulb));
-        const [startYr, endYr] = getDesiredYear(design_year)['yearName'].split("-");
-        const gsdpYear = `${Number(startYr) - 6}-${Number(endYr) - 2}`; // Eg: designYear = 2024-25 the gsdpYear = 2018-23
+        const gsdpYear = getStateGsdpYear(design_year);
         const gsdpGrowthRate = ulbData.gsdpGrowthRateData?.find(el => el.year === gsdpYear)?.currentPrice;
         const isLatestOnboarderUlb = !ulbData.access_2324;
 
