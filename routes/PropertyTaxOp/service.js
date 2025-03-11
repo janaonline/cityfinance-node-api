@@ -10,13 +10,14 @@ const { checkUndefinedValidations } = require('../../routes/FiscalRanking/servic
 const { propertyTaxOpFormJson, skipLogicDependencies, parentRadioQuestionKeys, childRadioAnsKeyPrefillDataCurrYear, skippableKeys, getFormMetaData, indicatorsWithNoyears, childKeys, reverseKeys, questionIndicators, sortPosition } = require('./fydynemic')
 const { isEmptyObj, isReadOnly, handleOldYearsDisabled, hasMultipleYearData, isSingleYearIndicator } = require('../../util/helper');
 const PropertyMapperChildData = require("../../models/PropertyTaxMapperChild");
-const { years, getDesiredYear, isBeyond2023_24 } = require('../../service/years');
+const { years, getDesiredYear, isBeyond2023_24, getAdditionalYears } = require('../../service/years');
 const { saveFormHistory } = require("../../util/masterFunctions")
 const { getValidationJson, keysWithChild } = require("./validation");
 const MasterStatus = require('../../models/MasterStatus');
 const { saveStatusAndHistory } = require("../CommonFormSubmission/service");
 const { concatenateUrls } = require('../../service/common');
 const Ulb = require('../../models/Ulb');
+// const mongoose = require('mongoose');
 const getKeyByValue = (object, value) => {
     return Object.keys(object).find(key => object[key] === value);
 }
@@ -1151,17 +1152,19 @@ function createChildObjectsYearData(params) {
             let copiedFrom = childCopyFrom.find(item => item.key === child.type)
             let yearJson = copiedFrom?.yearData.find(yearItem => yearItem.year === child.year.toString())
             let json = { ...yearJson }
-            json['key'] = json['key'] + yearName
-            json['label'] = child.label ? child.label : json['label'] + " " + yearName
-            json['value'] = child.value
-            json['year'] = child.year
-            json['type'] = child.type
-            json['file'] = child.file
-            json['displayPriority'] = child.displayPriority
-            json['textValue'] = child.textValue
-            json['readonly'] = isReadOnly({ isDraft, currentFormStatus, role })
-            json['replicaNumber'] = child.replicaNumber ? child.replicaNumber : child.replicaCount
-            yearData.push(json)
+            if (json['key']) {
+                json['key'] = json['key'] + yearName
+                json['label'] = child.label ? child.label : json['label'] + " " + yearName
+                json['value'] = child.value
+                json['year'] = child.year
+                json['type'] = child.type
+                json['file'] = child.file
+                json['displayPriority'] = child.displayPriority
+                json['textValue'] = child.textValue
+                json['readonly'] = isReadOnly({ isDraft, currentFormStatus, role })
+                json['replicaNumber'] = child.replicaNumber ? child.replicaNumber : child.replicaCount
+                yearData.push(json)
+            }
         }
     }
     catch (err) {
@@ -1192,7 +1195,7 @@ async function createFullChildObj(params, design_year) {
                 //TODO Comment 
 
                 if (isBeyond2023_24(design_year)) {
-                    if (!ptoData) addChildNextYearQuestionObject(childObject);
+                    // if (!ptoData) addChildNextYearQuestionObject(childObject, design_year);
                     if (hasMultipleYearData(childObject.yearData)) {
                         childObject.yearData?.forEach(year => handleOldYearsDisabled({
                             yearObject: year,
@@ -1209,11 +1212,11 @@ async function createFullChildObj(params, design_year) {
     }
     catch (err) {
         console.log("error in createFullChildObj ::: ", err.message)
+        // throw err;
     }
     return childs
 }
-
-function addChildNextYearQuestionObject(childObject) {
+function addChildNextYearQuestionObject_bkp(childObject) {
     const lastChildYear = childObject.yearData[childObject.yearData.length - 1];
     const { yearName, yearId } = getDesiredYear(lastChildYear.year, 1);
     const nextYear = JSON.parse(JSON.stringify(lastChildYear));
@@ -1226,6 +1229,29 @@ function addChildNextYearQuestionObject(childObject) {
     nextYear['readonly'] = false;
     childObject.yearData.push(nextYear);
 }
+function addChildNextYearQuestionObject(childObject, design_year) {
+    const lastChildYear = childObject.yearData[childObject.yearData.length - 1];
+
+    // const lastYearId = '606aafb14dff55e6c075d3ae'; // 22-23
+    const lastYearId = lastChildYear.year; // 22-23
+    const additionalYears = getAdditionalYears(lastYearId, design_year);
+
+    // const { yearName, yearId } = getDesiredYear(lastChildYear.year, 1);
+
+    additionalYears.forEach(({ yearName, yearId }) => {
+        const nextYear = { ...lastChildYear };
+        nextYear["year"] = yearId;
+        nextYear["value"] = "";
+        nextYear["placeholder"] = "";
+        nextYear['key'] = `FY${yearName}${yearName}`;
+        nextYear["postion"] = String(+nextYear["postion"] + 1);
+        nextYear['displayPriority'] = nextYear["postion"];
+        nextYear['readonly'] = false;
+        childObject.yearData.push(nextYear);
+    });
+}
+
+
 
 async function appendChildValues(params) {
     let { element, ptoMaper, isDraft, currentFormStatus, role, design_year, ptoData, ulb, isLatestOnboarderUlb } = params;
@@ -1270,7 +1296,9 @@ async function appendChildValues(params) {
                                 childFromSameReplica.pushed = true;
                                 replica.yearData.push(...childFromSameReplica.yearData);
                             } else {
-                                addChildNextYearQuestionObject(replica);
+                                // } else if(!ptoData) {
+                                addChildNextYearQuestionObject(replica, design_year);
+                                // addChildNextYearQuestionObject(replica);
                             }
                         })
                         handleNewYearChildRows({ child, element, currentFormStatus, role });
@@ -1278,6 +1306,12 @@ async function appendChildValues(params) {
                 }
             }
 
+            if (!ptoData && isBeyond2023_24(design_year)) {
+                element.child.forEach(child => {
+                    addChildNextYearQuestionObject(child, design_year);
+                    // addChildNextYearQuestionObject(child);
+                });
+            }
             element.child.forEach(child => {
                 child.entryDesignYear = getRowDesignYear(child, design_year);
             });
@@ -1300,6 +1334,7 @@ const getRowDesignYear = (child, design_year) => {
 }
 
 exports.getView = async function (req, res, next) {
+    // mongoose.set('debug', true);
     try {
         let condition = {};
         let { role } = req.decoded
@@ -1347,11 +1382,13 @@ exports.getView = async function (req, res, next) {
         }).populate("child").lean();
 
         let fyDynemic = { ...await propertyTaxOpFormJson({ role, design_year, ptoMaper, ptoData }) };
+        // return res.status(200).json(fyDynemic);
+
         const { isDraft = false, status = "PENDING", currentFormStatus = MASTER_STATUS['Not Started'] } = ptoData || {};
         for (let sortKey in fyDynemic) {
             if (sortKey !== "tabs" && ptoData) {
                 fyDynemic[sortKey] = ptoData[sortKey];
-            } else {
+            } else if (sortKey === "tabs") {
                 for (const k of ['tabs']) {
                     let { data } = fyDynemic[k][0];
                     for (let el in data) {
