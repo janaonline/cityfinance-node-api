@@ -291,6 +291,8 @@ module.exports.bulkPost = async function (req, res) {
       e['UA'] = null;
       e['sbCode'] = baseSbCode + i + "";
       e['code'] = baseStateCode + (baseCode + (i++))
+      e['state'] = ObjectId(e['state'])
+      e['ulbType'] = ObjectId(e['ulbType'])
     });
     await createData({ data: d });
     return res.status(200).send({

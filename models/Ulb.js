@@ -61,6 +61,7 @@ const UlbSchema = new Schema({
     access_2223: { type: Boolean, default: 1 },
     access_2324: { type: Boolean, default: 1 },
     access_2425: { type: Boolean, default: 1 },
+    access_2526: { type: Boolean, default: 1 },
     state: { type: Schema.Types.ObjectId, ref: 'State', required: true },
     location: {
         type: {
