@@ -403,7 +403,10 @@ async function checkIfFormIdExistsOrNot(ulbId, design_year, isDraft, role, userI
                 validation.valid = true
                 validation.formId = form._id
             } else {
-                let form = await PropertyTaxOp.findOneAndUpdate(condition, { "isDraft": isDraft, currentFormStatus: currentFormStatus })
+                // let form = await PropertyTaxOp.findOneAndUpdate(condition, { "isDraft": isDraft, currentFormStatus: currentFormStatus })
+                let updateObj = { "isDraft": isDraft, currentFormStatus: currentFormStatus };
+                if (!isDraft && currentFormStatus == 3) updateObj = { ...updateObj, ulbSubmit: new Date() };
+                let form = await PropertyTaxOp.findOneAndUpdate(condition, updateObj);
                 if (form) {
                     validation.message = "form exists"
                     validation.valid = true
