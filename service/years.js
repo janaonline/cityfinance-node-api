@@ -10,6 +10,7 @@ let years = {
     "2023-24": "606aafc14dff55e6c075d3ec",
     "2024-25": "606aafcf4dff55e6c075d424",
     "2025-26": "606aafda4dff55e6c075d48f",
+    "2026-27": "67d7d136d3d038946a5239e9",
 }
 // Input: 606aafda4dff55e6c075d48f (2025-26), Output: 2019-24
 const getStateGsdpYear = (designYear) => {

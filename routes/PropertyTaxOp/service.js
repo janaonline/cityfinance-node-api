@@ -1033,7 +1033,7 @@ async function calculateAndUpdateStatusForMappers(tabs, ulbId, formId, year, upd
                         failedValidatons[k] = { message: validation?.message, errorYears: validation?.errorYears };
                     }
                     if (validation?.child) {
-                        console.log("validation", validation)
+                        // console.log("validation", validation)
                         const prefixedValidation = Object.keys(validation).reduce((acc, key) => {
                             if (key.includes('_')) {
                                 const newKey = k + key;
@@ -1188,7 +1188,7 @@ async function createFullChildObj(params, design_year) {
                 let childObject = { ...copiedFrom }
                 childObject.replicaNumber = i
                 let yearData = replicatedYear.filter(item => item.type === key)
-                childObject.value = yearData[0].textValue
+                childObject.value = yearData[0]?.textValue
                 childObject.label = yearData[0]?.label
                 childObject.position = yearData[0]?.displayPriority
                 childObject.key = key
