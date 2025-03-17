@@ -10,6 +10,14 @@ let years = {
     "2023-24": "606aafc14dff55e6c075d3ec",
     "2024-25": "606aafcf4dff55e6c075d424",
     "2025-26": "606aafda4dff55e6c075d48f",
+    "2026-27": "67d7d136d3d038946a5239e9",
+}
+// Input: 606aafda4dff55e6c075d48f (2025-26), Output: 2019-24
+const getStateGsdpYear = (designYear) => {
+    if (!designYear) throw new Error('getStateGsdpYear(): designYear is required.');
+
+    const [startYr, endYr] = getDesiredYear(designYear)['yearName'].split("-");
+    return `${Number(startYr) - 6}-${Number(endYr) - 2}`;
 }
 const getDesiredYear = (yearIdOrName, yearDiffercnce = 0) => {
     const entries = Object.entries(years);
@@ -53,5 +61,6 @@ module.exports = {
     getAdditionalYears,
     isBeyond2023_24,
     isBeyondYear,
-    getAllCurrAndPrevYearsObjectIds
+    getAllCurrAndPrevYearsObjectIds,
+    getStateGsdpYear
 }

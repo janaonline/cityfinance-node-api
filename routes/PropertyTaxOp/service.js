@@ -10,7 +10,7 @@ const { checkUndefinedValidations } = require('../../routes/FiscalRanking/servic
 const { propertyTaxOpFormJson, skipLogicDependencies, parentRadioQuestionKeys, childRadioAnsKeyPrefillDataCurrYear, skippableKeys, getFormMetaData, indicatorsWithNoyears, childKeys, reverseKeys, questionIndicators, sortPosition } = require('./fydynemic')
 const { isEmptyObj, isReadOnly, handleOldYearsDisabled, hasMultipleYearData, isSingleYearIndicator } = require('../../util/helper');
 const PropertyMapperChildData = require("../../models/PropertyTaxMapperChild");
-const { years, getDesiredYear, isBeyond2023_24, getAdditionalYears } = require('../../service/years');
+const { years, getDesiredYear, isBeyond2023_24, getAdditionalYears, getStateGsdpYear } = require('../../service/years');
 const { saveFormHistory } = require("../../util/masterFunctions")
 const { getValidationJson, keysWithChild } = require("./validation");
 const MasterStatus = require('../../models/MasterStatus');
@@ -403,7 +403,10 @@ async function checkIfFormIdExistsOrNot(ulbId, design_year, isDraft, role, userI
                 validation.valid = true
                 validation.formId = form._id
             } else {
-                let form = await PropertyTaxOp.findOneAndUpdate(condition, { "isDraft": isDraft, currentFormStatus: currentFormStatus })
+                // let form = await PropertyTaxOp.findOneAndUpdate(condition, { "isDraft": isDraft, currentFormStatus: currentFormStatus })
+                let updateObj = { "isDraft": isDraft, currentFormStatus: currentFormStatus };
+                if (!isDraft && currentFormStatus == 3) updateObj = { ...updateObj, ulbSubmit: new Date() };
+                let form = await PropertyTaxOp.findOneAndUpdate(condition, updateObj);
                 if (form) {
                     validation.message = "form exists"
                     validation.valid = true
@@ -1030,7 +1033,7 @@ async function calculateAndUpdateStatusForMappers(tabs, ulbId, formId, year, upd
                         failedValidatons[k] = { message: validation?.message, errorYears: validation?.errorYears };
                     }
                     if (validation?.child) {
-                        console.log("validation", validation)
+                        // console.log("validation", validation)
                         const prefixedValidation = Object.keys(validation).reduce((acc, key) => {
                             if (key.includes('_')) {
                                 const newKey = k + key;
@@ -1185,7 +1188,7 @@ async function createFullChildObj(params, design_year) {
                 let childObject = { ...copiedFrom }
                 childObject.replicaNumber = i
                 let yearData = replicatedYear.filter(item => item.type === key)
-                childObject.value = yearData[0].textValue
+                childObject.value = yearData[0]?.textValue
                 childObject.label = yearData[0]?.label
                 childObject.position = yearData[0]?.displayPriority
                 childObject.key = key
@@ -1343,8 +1346,7 @@ exports.getView = async function (req, res, next) {
         }
         const design_year = req.query.design_year;
         const [ulbData] = await Ulb.aggregate(ulbDataWithGsdpGrowthRateQuery(req.query.ulb));
-        const [startYr, endYr] = getDesiredYear(design_year)['yearName'].split("-");
-        const gsdpYear = `${Number(startYr) - 6}-${Number(endYr) - 2}`; // Eg: designYear = 2024-25 the gsdpYear = 2018-23
+        const gsdpYear = getStateGsdpYear(design_year);
         const gsdpGrowthRate = ulbData.gsdpGrowthRateData?.find(el => el.year === gsdpYear)?.currentPrice;
         const isLatestOnboarderUlb = !ulbData.access_2324;
 
