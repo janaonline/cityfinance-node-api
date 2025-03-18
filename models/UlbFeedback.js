@@ -10,16 +10,15 @@ const UlbFeedbackSchema = new Schema(
       required: [true, "ulb is required"],
       index: true
     },
-    design_year: {
+    designYear: {
       type: mongoose.Types.ObjectId,
       ref: "Year",
       required: [true, "design year is required"]
-
     },
     rating: { type: Number, trim: true, required: true, index: true },
-    answerBenifit: { type: String, trim: true, required: true, },
-    answerImprove: { type: String, trim: true, required: true, },
-
+    benifitFromCf: { type: String, trim: true, required: true, },
+    improveCf: { type: String, trim: true, required: true, },
+    currentFormStatus: { type: Number, required: true, default: -1 }
   },
   { timestamps: true }
 );
