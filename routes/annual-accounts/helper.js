@@ -87,12 +87,12 @@ module.exports.getStandardizedUlbsList = async (ulbName = null, ulbId = null, st
 };
 
 /* Get the list of basic details of ULBs whose "Raw files" are available. (2019 onwards) */
-module.exports.getRawUlbsList19Onwards = async (year = "2021-22", stateId = null, ulbName = null, type = "pdf", category, skip = 0, limit = 10) => {
+module.exports.getRawUlbsList19Onwards = async (year = "2021-22", stateId = null, ulbName = null, ulbId = null, type = "pdf", category, skip = 0, limit = 10) => {
     try {
-        let ulb_state_match = {};
-        let year_id = years[year];
-        let auditedArr = [{ $eq: ["$aaData.audited.year", { $toObjectId: year_id }] }];
-        let unAuditedArr = [{ $eq: ["$aaData.unAudited.year", { $toObjectId: year_id }] }];
+        const matchCondition = {};
+        const year_id = years[year];
+        const auditedArr = [{ $eq: ["$aaData.audited.year", { $toObjectId: year_id }] }];
+        const unAuditedArr = [{ $eq: ["$aaData.unAudited.year", { $toObjectId: year_id }] }];
 
         // Add a check - check if balance sheet url is available.
         if (type === "pdf" || type === "excel") {
@@ -100,8 +100,10 @@ module.exports.getRawUlbsList19Onwards = async (year = "2021-22", stateId = null
             addUrlCheck(unAuditedArr, unAuditedArr, 'unAudited', type);
         }
 
-        if (ulbName) ulb_state_match = Object.assign({}, ulb_state_match, { "name": ulbName });
-        if (stateId) ulb_state_match = Object.assign({}, ulb_state_match, { "state": ObjectId(stateId) });
+        if (ulbId) matchCondition['_id'] = ObjectId(ulbId);
+        else if (ulbName) matchCondition['name'] = ulbName;
+
+        if (stateId) matchCondition['state'] = ObjectId(stateId);
 
         // Function to push conditions into the arrays
         function addUrlCheck(auditedArr, unAuditedArr, fileType, type) {
@@ -123,7 +125,7 @@ module.exports.getRawUlbsList19Onwards = async (year = "2021-22", stateId = null
         }
 
         return [
-            { $match: ulb_state_match },
+            { $match: matchCondition },
             {
                 $lookup: {
                     from: "states",
@@ -236,15 +238,18 @@ module.exports.getRawUlbsList19Onwards = async (year = "2021-22", stateId = null
 };
 
 /* Get the list of basic details of ULBs whose "Raw files" are available. (2015 to 2018) */
-module.exports.getRawUlbsList15To18 = async (year = "2015-16", stateId = null, ulbName = null, type = "pdf", category, skip = 0, limit = 10) => {
+module.exports.getRawUlbsList15To18 = async (year = "2015-16", stateId = null, ulbName = null, ulbId = null, type = "pdf", category, skip = 0, limit = 10) => {
 
     try {
-        let ulb_state_match = {};
-        if (ulbName) ulb_state_match = Object.assign({}, ulb_state_match, { "name": ulbName });
-        if (stateId) ulb_state_match = Object.assign({}, ulb_state_match, { "state": ObjectId(stateId) });
+        const matchCondition = {};
+
+        if (ulbId) matchCondition['_id'] = ObjectId(ulbId);
+        else if (ulbName) matchCondition['name'] = ulbName;
+
+        if (stateId) matchCondition['state'] = ObjectId(stateId);
 
         return [
-            { $match: ulb_state_match },
+            { $match: matchCondition },
             {
                 $lookup: {
                     from: "states",

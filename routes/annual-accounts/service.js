@@ -1134,12 +1134,12 @@ exports.dataset = catchAsync(async (req, res) => {
     // Fetch the ULB names - Raw files.
     // 19-20 onwards
     if (Number(year.split("-")[1] > 19)) {
-      let query = await helper.getRawUlbsList19Onwards(year, state, ulb, type, category, skip, limit);
+      const query = await helper.getRawUlbsList19Onwards(year, state, ulb, ulbId, type, category, skip, limit);
       finalData = await Ulb.aggregate(query);
     }
     // 2015-16 to 2018-19
     else {
-      let query = await helper.getRawUlbsList15To18(year, state, ulb, type, category, skip, limit);
+      const query = await helper.getRawUlbsList15To18(year, state, ulb, ulbId, type, category, skip, limit);
       finalData = await Ulb.aggregate(query);
     }
 
