@@ -61,6 +61,8 @@ const UtilizationReportSchema = new Schema(
     grantPosition: {
       unUtilizedPrevYr: { type: Number, default: null },
       receivedDuringYr: { type: Number, default: null },
+      receivedDuringYrWithZero: { type: String, default: null },
+      receivedDuringYrWithZeroReason: { type: String, default: null },
       expDuringYr: {
         type: Number, default: null
       },

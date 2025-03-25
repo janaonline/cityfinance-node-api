@@ -4,6 +4,7 @@ const ObjectId = require("mongoose").Types.ObjectId;
 const ExcelJS = require('exceljs');
 const moment = require('moment');
 const { MASTER_STATUS, YEAR_CONSTANTS_IDS } = require('../../util/FormNames');
+const { getDate } = require('../../util/helper')
 
 const baseUrl_s3 = process.env.ENV === "production" ? process.env.AWS_STORAGE_URL_PROD : process.env.AWS_STORAGE_URL_STG;
 
@@ -203,6 +204,8 @@ async function getColumHeaders(eligibleDataYear, yearObj) {
         { header: "State", key: "state", width: 20 },
         { header: "Design Year", key: "design_year", width: 12 },
         { header: "Form Status", key: "currentFormStatus", width: 25 },
+        { header: "Submission date", key: "ulbSubmit", width: 12 },
+        { header: "Last action taken", key: "modifiedAt", width: 12 },
         { header: "State GSDP (%)", key: "stateGsdp", width: 12 },
         { header: "ULB Growth Rate (%)", key: "ulbGrowthRate", width: 12 },
     ];
@@ -403,7 +406,7 @@ module.exports.pTax = async (req, res) => {
         let stateDataObj = {};
         const stateData = await fetchStateData();
         for (let stateEle of stateData) {
-            stateDataObj[stateEle._id] = stateEle?.stateData;
+            stateDataObj[stateEle?._id] = stateEle?.stateData;
         }
         const stateIdsArr = Object.keys(stateDataObj).map(ObjectId);
 
@@ -426,13 +429,13 @@ module.exports.pTax = async (req, res) => {
 
             // Create data from taxOpMappers - assign values to the keys.
             for (const ulbObj of doc.propertytaxopmapper) {
-                const key = `${ulbObj.type}_${ulbObj.year}`;
+                const key = `${ulbObj?.type}_${ulbObj?.year}`;
 
-                if (ulbObj.value) {
+                if (ulbObj?.value) {
                     mappers[key] = isNaN(ulbObj.value) ? ulbObj.value : (ulbObj.value === '' ? null : Number(ulbObj.value));
                 } else if (ulbObj?.file?.url) {
                     mappers[key] = baseUrl_s3 + ulbObj.file.url;
-                } else if (ulbObj.date) {
+                } else if (ulbObj?.date) {
                     // mappers[key] = moment(ulbObj.date).format('DD-MMM-YYYY');
                     let fullDate = ulbObj.date.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
                     mappers[key] = moment(fullDate, 'D/M/YYYY, h:mm:ss a').format('DD-MMM-YY');;
@@ -445,8 +448,8 @@ module.exports.pTax = async (req, res) => {
                         const childDataIdStr = childDataId.toString();
                         const childObj = childDataObj[childDataIdStr];
 
-                        if (childObj.value) {
-                            if (childObj.textValue) {
+                        if (childObj?.value) {
+                            if (childObj?.textValue) {
                                 mappers[`${childObj.type}_child_${childObj.replicaNumber}`] = childObj.textValue || "Check!";
                             }
                             mappers[`${childObj.type}_${childObj.year}_${childObj.replicaNumber}`] = isNaN(childObj.value) ? childObj.value : (childObj.value === '' ? null : Number(childObj.value));
@@ -468,6 +471,9 @@ module.exports.pTax = async (req, res) => {
             // mappers["state"] = doc.stateCollection[0].name;
             mappers["currentFormStatus"] = await getObjKeyFromObjValue(MASTER_STATUS, Number(latestYearOpsData?.currentFormStatus)) || 'Not Started';
             mappers["design_year"] = YEAR_CONSTANTS_IDS[designYear] || null;
+            mappers["ulbSubmit"] = getDate(latestYearOpsData?.ulbSubmit) || null;
+            mappers["modifiedAt"] = getDate(latestYearOpsData?.modifiedAt) || null;
+
 
             // Fetch data to calculate ulb growth rate and state gsdp.
             let { currYrMinus1ObjId, currYrMinus2ObjId, stateGsdpNo } = await getKeysToCalcGrowthRate(designYearStr, yearObj, state?.data);
