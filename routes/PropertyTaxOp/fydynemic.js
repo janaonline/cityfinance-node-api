@@ -10539,7 +10539,6 @@ const propertyTaxOpFormJson = ({ role, design_year, ptoData, ptoMaper = [] }) =>
               indicatorObj.isReadonlySingleYear = true;
             }
           }
-
           const { yearName, yearId } = getDesiredYear(design_year, -1);
 
           if (["ulbCollectPtax"].includes(indicator.key)) {
@@ -10565,8 +10564,6 @@ const propertyTaxOpFormJson = ({ role, design_year, ptoData, ptoMaper = [] }) =>
       });
     });
   }
-
-  console.log(json.tabs[0].data.ulbCollectPtax)
 
   return json;
 }
