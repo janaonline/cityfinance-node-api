@@ -7,7 +7,8 @@ const parentRadioQuestionKeys = [
   "doesUserChargesDmnd",
   "notificationWaterCharges",
   "doesColSewerageCharges",
-  "notificationPropertyTax"
+  "notificationPropertyTax",
+  "ulbPassedResolPtax",
 ];
 
 const childRadioAnsKeyPrefillDataCurrYear = [
@@ -15,6 +16,7 @@ const childRadioAnsKeyPrefillDataCurrYear = [
   "notificationAdoptionDate",
   "notificationFile",
   "notificationIssuedBy",
+  "resolutionFile",
 ];
 
 const mandatDisplayPrioritiesForCurrYear = [

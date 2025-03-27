@@ -1456,6 +1456,27 @@ exports.getView = async function (req, res, next) {
                                     handleOldYearsDisabled({ yearObject: pf, design_year });
                                 }
                             }
+                            if (isBeyond2023_24(design_year)) {
+                                const indicatorObj = data[el]?.yearData[0];
+                                const { yearName, yearId } = getDesiredYear(design_year, -1);
+
+                                if (indicatorObj.isReadonlySingleYear) {
+                                    indicatorObj.readonly = true;
+                                }
+                                if (!ptoData) {
+                                    indicatorObj.label = `FY ${yearName}`;
+                                    indicatorObj.key = `FY${yearName}`
+                                    indicatorObj.year = yearId;
+                                    if (![...parentRadioQuestionKeys, ...childRadioAnsKeyPrefillDataCurrYear].includes(data[el].key)) {
+                                        indicatorObj.value = "";
+                                        indicatorObj.date = "";
+                                        indicatorObj.file = {
+                                            "url": "",
+                                            "name": ""
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
                 }
