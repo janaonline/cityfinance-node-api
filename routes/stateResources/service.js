@@ -10,9 +10,9 @@ const CategoryFileUpload = require('../../models/CategoryFileUpload');
 const { loadExcelByUrl } = require('../../util/worksheet');
 const { isValidObjectId } = require("mongoose");
 const { isValidDate } = require("../../util/helper");
-const {getStorageBaseUrl} = require('./../../service/getBlobUrl');
+const { getStorageBaseUrl } = require('./../../service/getBlobUrl');
 const StateGsdpData = require("../../models/StateGsdp");
-const { getAllCurrAndPrevYearsObjectIds, getDesiredYear } = require("../../service/years");
+const { getAllCurrAndPrevYearsObjectIds, getDesiredYear, getStateGsdpYear } = require("../../service/years");
 // const { query } = require("express");
 
 const GSDP_OPTIONS = {
@@ -35,7 +35,7 @@ const handleDatabaseUpload = async (req, res, next) => {
     let worksheet;
     const { design_year, templateName, uploadType } = req.body;
 
-    if(!design_year || !isValidObjectId(design_year))  {
+    if (!design_year || !isValidObjectId(design_year)) {
         return res.status(400).json({
             success: false,
             message: "design_year is required.",
@@ -73,14 +73,14 @@ const handleDatabaseUpload = async (req, res, next) => {
                     fgColor: { argb: 'FFFF0000' }
                 };
                 cell.note = {
-                  texts: [{ text: message }],
+                    texts: [{ text: message }],
                 };
             })
             const buffer = await workbook.xlsx.writeBuffer();
             res.setHeader('Content-Disposition', `attachment; filename=${templateName}-errors.xlsx`);
             res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
             return res.send(buffer);
-        } else if(err.invalidSheet) {
+        } else if (err.invalidSheet) {
             return res.status(400).send({ success: false, message: err.invalidSheet || err })
         }
         console.log(err);
@@ -107,7 +107,7 @@ const dulyElectedTemplate = async (req, res, next) => {
             { header: '_id', key: '_id', width: 20, hidden: true },
             { header: 'S no', key: 'sno', },
             { header: 'State Name', key: 'stateName', width: 20 },
-            { header: 'State Code', key: 'stateCode', width: 20},
+            { header: 'State Code', key: 'stateCode', width: 20 },
             { header: 'ULB Name', key: 'name', width: 30, hidden: true },
             { header: 'ULB City Finance Code', key: 'code' },
             { header: 'Census Code', key: 'censusCode' },
@@ -248,11 +248,11 @@ const updateDulyElectedTemplate = async (req, res, next, worksheet, workbook, de
         const tiedGrantAmountColumns = worksheet?.getColumn(columnTiedGrantAmount).values;
         const tiedGrantPercentColumns = worksheet?.getColumn(columnTiedGrantPercent).values;
         const stateName = worksheet?.getColumn(stateColumn).values;
-        const uniqueStateNames = Array.isArray(stateName) ? new Set([...stateName]): []
+        const uniqueStateNames = Array.isArray(stateName) ? new Set([...stateName]) : []
 
         const stateExist = stateExistsInTemplate(req.body?.relatedIds, Array.from(uniqueStateNames), templateName);
-        if(!stateExist) {
-            return Promise.reject({ invalidSheet:  "The data in the sheet does not match the selected state(s)."});
+        if (!stateExist) {
+            return Promise.reject({ invalidSheet: "The data in the sheet does not match the selected state(s)." });
         }
 
         const dulyElectedUpdateQuery = _ids?.map((_id, index) => {
@@ -284,7 +284,7 @@ const updateDulyElectedTemplate = async (req, res, next, worksheet, workbook, de
 
             const updateObj = {
                 [`dulyElected.${yearName}`]: {
-                    "eligible" : isDulyElected,
+                    "eligible": isDulyElected,
                     ...(isDulyElected == true && isValidDate(electedDate) && {
                         electedDate
                     })
@@ -295,7 +295,7 @@ const updateDulyElectedTemplate = async (req, res, next, worksheet, workbook, de
                 updateOne: {
                     filter: { _id: ObjectId(_id) },
                     update: {
-                        $set: {...updateObj}
+                        $set: { ...updateObj }
                     }
                 }
             }
@@ -344,7 +344,7 @@ const updateDulyElectedTemplate = async (req, res, next, worksheet, workbook, de
                 });
             }
 
-            if(checkGrantAllocation2324Data.find(item => item.ulbId.toString() == _id)) {
+            if (checkGrantAllocation2324Data.find(item => item.ulbId.toString() == _id)) {
                 validationErrors.push({
                     r: index,
                     c: stateColumn,
@@ -373,8 +373,8 @@ const updateDulyElectedTemplate = async (req, res, next, worksheet, workbook, de
             return Promise.reject({ validationErrors });
         }
 
-        if(!dulyElectedUpdateQuery || !(dulyElectedUpdateQuery?.length && grantAllocation2324UpdateQuery?.length)) {
-            return Promise.reject({ invalidSheet:  "Please upload the correct excel sheet"});
+        if (!dulyElectedUpdateQuery || !(dulyElectedUpdateQuery?.length && grantAllocation2324UpdateQuery?.length)) {
+            return Promise.reject({ invalidSheet: "Please upload the correct excel sheet" });
         }
 
         const result = await Ulb.bulkWrite(dulyElectedUpdateQuery);
@@ -506,6 +506,11 @@ const gsdpTemplate = async (req, res, next) => {
 }
 const stateGsdpTemplate = async (req, res, next) => {
     const templateName = req.params.templateName;
+    const designYear = req.query.design_year;
+
+    if (!designYear) throw new Error('stateGsdpTemplate(): designYear is required.');
+    const gsdpYear = getStateGsdpYear(designYear);
+
     try {
         const relatedIds = Array.isArray(req.query.relatedIds) ? req.query.relatedIds : [req.query.relatedIds];
         const startingRow = 1;
@@ -516,10 +521,10 @@ const stateGsdpTemplate = async (req, res, next) => {
             { header: '_id', key: '_id', width: 20, hidden: true },
             { header: 'S no', key: 'sno', hidden: true },
             { header: 'State', key: 'stateName', width: 20 },
-            { header: 'Average GSDP growth rate of previous 5 years at Constant prices (2018-19 to 2022-23)', key: 'constantPrice', width: 30 },
-            { header: 'Average GSDP growth rate of previous 5 years at Current prices (2018-19 to 2022-23)', key: 'currentPrice', width: 30 },
+            { header: `Average GSDP growth rate of previous 5 years at Constant prices (${gsdpYear})`, key: 'constantPrice', width: 30 },
+            { header: `Average GSDP growth rate of previous 5 years at Current prices (${gsdpYear})`, key: 'currentPrice', width: 30 },
         ];
-        
+
         worksheet.getRow(startingRow).height = 60;
         worksheet.getRow(startingRow).alignment = { vertical: 'middle', wrapText: true, horizontal: 'center' };
         worksheet.getRow(startingRow).eachCell({ includeEmpty: true }, cell => {
@@ -552,7 +557,7 @@ const stateGsdpTemplate = async (req, res, next) => {
                         $filter: {
                             input: '$gsdp_data.data',
                             as: 'item',
-                            cond: { $eq: ['$$item.year', '2018-23'] }
+                            cond: { $eq: ['$$item.year', gsdpYear] }
                         }
                     }
                 }
@@ -627,7 +632,7 @@ const stateGsdpTemplate = async (req, res, next) => {
                 allowBlank: true,
                 showInputMessage: false
             };
-            if(rowNumber > 1) {
+            if (rowNumber > 1) {
                 cell.font = {
                     color: { argb: 'FF808080' }
                 };
@@ -656,19 +661,19 @@ const updateGsdpTemplate = async (req, res, next, worksheet, workbook, design_ye
         const _ids = worksheet?.getColumn(columnId).values;
         const gdsps = worksheet?.getColumn(columnGdspElected).values;
         const stateName = worksheet?.getColumn(columnState).values;
-        const {yearName} = getDesiredYear(design_year);
+        const { yearName } = getDesiredYear(design_year);
 
-        const uniqueStateNames = Array.isArray(stateName) ? new Set([...stateName]): []
+        const uniqueStateNames = Array.isArray(stateName) ? new Set([...stateName]) : []
 
         const stateExist = stateExistsInTemplate(req.body?.relatedIds, Array.from(uniqueStateNames), templateName);
-        if(!stateExist) {
-            return Promise.reject({ invalidSheet:  "The data in the sheet does not match the selected state(s)."});
+        if (!stateExist) {
+            return Promise.reject({ invalidSheet: "The data in the sheet does not match the selected state(s)." });
         }
 
         let gsdpUploadedData = await Ulb.find({
             _id: { $in: _ids?.filter(_id => _id && isValidObjectId(_id)).map(_id => ObjectId(_id)) },
             [`gsdp.${yearName}.upload`]: true
-        }).lean(); 
+        }).lean();
 
         const gsdpUpdateQuery = _ids?.map((_id, index) => {
             if (!_id || !isValidObjectId(_id)) return;
@@ -693,15 +698,15 @@ const updateGsdpTemplate = async (req, res, next, worksheet, workbook, design_ye
             const isGsdpEligible = typeof gdsps[index] === 'string' ? (gdsps[index]?.toLowerCase() == GSDP_OPTIONS.ELIGIBLE) : null;
             const updateObj = {
                 [`gsdp.${yearName}`]: {
-                    "eligible" : isGsdpEligible,
-                    "upload" : true,
+                    "eligible": isGsdpEligible,
+                    "upload": true,
                 },
             }
             const result = {
                 updateOne: {
                     filter: { _id: ObjectId(_id) },
                     update: {
-                        $set: {...updateObj}
+                        $set: { ...updateObj }
                     }
                 }
             }
@@ -712,8 +717,8 @@ const updateGsdpTemplate = async (req, res, next, worksheet, workbook, design_ye
             return Promise.reject({ validationErrors });
         }
 
-        if(!gsdpUpdateQuery.length) {
-            return Promise.reject({ invalidSheet:  "Please upload the correct excel sheet"});
+        if (!gsdpUpdateQuery.length) {
+            return Promise.reject({ invalidSheet: "Please upload the correct excel sheet" });
         }
 
         await Ulb.bulkWrite(gsdpUpdateQuery);
@@ -726,6 +731,7 @@ const updateGsdpTemplate = async (req, res, next, worksheet, workbook, design_ye
 
 const updatestateGsdpTemplate = async (req, res, next, worksheet, workbook) => {
     try {
+        const gsdpYear = getStateGsdpYear(req.body.design_year);
         const validationErrors = [];
         const columnId = 1;
         const columnConstantPrice = 4;
@@ -739,19 +745,31 @@ const updatestateGsdpTemplate = async (req, res, next, worksheet, workbook) => {
         const filteredStateIds = _ids?.filter(_id => _id && isValidObjectId(_id)).map(_id => _id.toString());
 
         const stateExist = stateExistsInTemplate(req.body?.relatedIds, filteredStateIds);
-        if(!stateExist) {
-            return Promise.reject({ invalidSheet:  "The data in the sheet does not match the selected state(s)."});
+        if (!stateExist) {
+            return Promise.reject({ invalidSheet: "The data in the sheet does not match the selected state(s)." });
         }
 
-        let checkStateGsdpData = await StateGsdpData.find({ stateId: {
-            $in: _ids?.filter(_id => _id && isValidObjectId(_id)).map(_id => ObjectId(_id))
-        } }).lean();    
+        let checkStateGsdpData = await StateGsdpData
+            .find({ stateId: { $in: _ids?.filter(_id => _id && isValidObjectId(_id)).map(_id => ObjectId(_id)) } })
+            .lean();
 
-        const stateData = await State.find({
-            _id: { $in: _ids?.filter((_id) => _id && isValidObjectId(_id)).map((_id) => ObjectId(_id)), },
-        }).lean();
+        const stateGsdpObj = checkStateGsdpData.reduce((acc, curr) => {
+            if (!acc['stateId']) acc[curr['stateId']] = curr;
+            return acc;
+        }, {});
 
-       const results = _ids?.map((_id, index) => {
+        const stateData = await State
+            .find({ _id: { $in: _ids?.filter((_id) => _id && isValidObjectId(_id)).map((_id) => ObjectId(_id)) } })
+            .select({ _id: 1, name: 1, code: 1 })
+            .lean();
+
+        const stateDataObj = stateData.reduce((acc, state) => {
+            const stateId = state['_id'].toString();
+            if (!(stateId in acc)) acc[stateId] = state;
+            return acc;
+        }, {});
+
+        const results = _ids?.map((_id, index) => {
             if (!_id || !isValidObjectId(_id)) return;
 
             if (isNaN(stateGsdpConstantPrices[index]) || [undefined, ""].includes(stateGsdpConstantPrices[index])) {
@@ -770,33 +788,67 @@ const updatestateGsdpTemplate = async (req, res, next, worksheet, workbook) => {
                 });
             }
 
-            const selectedState = stateData.find(item => item._id.toString() == _id);
+            const selectedState = stateDataObj[_id.toString()];
             let stateName = stateNameExcel[index];
 
-            if(selectedState) {
+            if (selectedState) {
                 stateName = selectedState.name;
             }
 
-            if(checkStateGsdpData.find(item => item.stateId.toString() == _id)) {
-                validationErrors.push({
-                    r: index,
-                    c: columnState,
-                    message: `Data for ${stateName} cannot be modified as it was already updated.`
-                });
-            }
-            
-            const result = {
-                "stateId" : ObjectId(_id),
-                "stateName" : stateName,
-                "data" : [
-                    {
-                        "year" : "2018-23",
-                        "constantPrice" : stateGsdpConstantPrices[index],
-                        "currentPrice" : stateGsdpCurrentPrices[index],
-                        "updatedOn": new Date()
+            let result = {};
+            // State is present in collection.
+            if (_id in stateGsdpObj) {
+                // Modifying data is not allowed - gsdpYear available.
+                if (stateGsdpObj[_id]['data'].some(item => item.year == gsdpYear)) {
+                    validationErrors.push({
+                        r: index,
+                        c: columnState,
+                        message: `Data for ${stateName} cannot be modified as it was already updated.`
+                    });
+                }
+                // Update doc with new year data - gsdpYear not available.
+                else {
+                    result = {
+                        updateOne: {
+                            filter: {
+                                "stateId": ObjectId(_id),
+                                "data.year": { $ne: gsdpYear }
+                            },
+                            update: {
+                                $push: {
+                                    data: {
+                                        "year": gsdpYear,
+                                        "constantPrice": stateGsdpConstantPrices[index],
+                                        "currentPrice": stateGsdpCurrentPrices[index],
+                                        "updatedOn": new Date()
+                                    }
+                                }
+                            },
+                            upsert: false
+                        }
                     }
-                ],
+                }
             }
+            // New entry in the collection - State is not in collection.
+            else {
+                result = {
+                    insertOne: {
+                        document: {
+                            "stateId": ObjectId(_id),
+                            "stateName": stateName,
+                            "data": [
+                                {
+                                    "year": gsdpYear,
+                                    "constantPrice": stateGsdpConstantPrices[index],
+                                    "currentPrice": stateGsdpCurrentPrices[index],
+                                    "updatedOn": new Date()
+                                }
+                            ],
+                        }
+                    }
+                }
+            }
+
             return result;
         })?.filter(i => i);
 
@@ -804,11 +856,10 @@ const updatestateGsdpTemplate = async (req, res, next, worksheet, workbook) => {
             return Promise.reject({ validationErrors });
         }
 
-        if(!results || !results.length) {
-            return Promise.reject({ invalidSheet:  "Please upload the correct excel sheet"});
+        if (!results || !results.length) {
+            return Promise.reject({ invalidSheet: "Please upload the correct excel sheet" });
         }
-
-        await StateGsdpData.insertMany(results);
+        await StateGsdpData.bulkWrite(results);
         Promise.resolve("Data updated");
     } catch (err) {
         console.log(err);
