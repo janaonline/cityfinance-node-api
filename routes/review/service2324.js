@@ -1051,7 +1051,7 @@ const computeQuery = async (params) => {
     condition['state'] = ObjectId(state)
   }
 
-  if(csv && userRole == "ULB" && (!state || state == 'null')){
+  if(userRole == "ULB" && (!state || state == 'null')){
     let utList = await State.find({ isUT: true }, { _id: 1 });
     const uTObjIdArr = utList.map((ele) => ObjectId(ele._id));
     condition['state'] = { $nin: uTObjIdArr }
