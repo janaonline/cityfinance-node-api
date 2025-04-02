@@ -1297,7 +1297,16 @@ async function appendChildValues(params) {
                             });
                             if (childFromSameReplica) {
                                 childFromSameReplica.pushed = true;
-                                replica.yearData.push(...childFromSameReplica.yearData);
+                                // replica.yearData.push(...childFromSameReplica.yearData);
+
+                                childFromSameReplica.yearData.forEach(sourceObj => {
+                                    const index = replica.yearData.findIndex(targetObj => targetObj.year.toString() === sourceObj.year.toString());
+                                    if (index !== -1) {
+                                        replica.yearData[index].value = sourceObj.value; // Update value
+                                    } else {
+                                        replica.yearData.push({ ...sourceObj }); // Add new object
+                                    }
+                                });
                             } else {
                                 // } else if(!ptoData) {
                                 addChildNextYearQuestionObject(replica, design_year);
@@ -1550,7 +1559,7 @@ function handleNewYearChildRows({ child, element, currentFormStatus, role }) {
                 const unpushedChildYear = unpushedChild.yearData.find(unpushedChildYear => unpushedChildYear.year == yearItem.year);
                 if (unpushedChildYear) {
                     yearItem.value = unpushedChildYear.value;
-                    yearItem.readonly = isReadOnly({ currentFormStatus, role });
+                    yearItem.readonly = yearItem.readonly || isReadOnly({ currentFormStatus, role });
                 }
                 return yearItem;
             });
