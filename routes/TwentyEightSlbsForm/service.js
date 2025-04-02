@@ -614,7 +614,7 @@ module.exports.getForm = async (req, res, next) => {
         //     formData["canTakeAction"] = false;
         //   }
         // }
-      } else {
+      } else if (masterFormData) {
         const prevYearStatus = calculateStatus(
           masterFormData.status,
           masterFormData.actionTakenByRole,
