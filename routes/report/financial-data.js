@@ -184,7 +184,7 @@ module.exports.chart = async (req, res) => {
 async function StateModifyData(arr) {
 
     for (let el of arr) {
-        let c  = await Ulb.count({state:ObjectId(el._id)});
+        let c  = await Ulb.countDocuments({state:ObjectId(el._id)});
         el['data'] = formatData(el.data);
         el['total'] =  c;//getTotal(el['data']);
     }
@@ -193,7 +193,7 @@ async function StateModifyData(arr) {
 async function modifyData(arr) {
 
     for (let el of arr) {
-        let c  = await Ulb.count({ulbType:ObjectId(el._id)});
+        let c  = await Ulb.countDocuments({ulbType:ObjectId(el._id)});
         el['data'] = formatData(el.data);
         el['total'] =  c;//getTotal(el['data']);
     }
@@ -211,7 +211,7 @@ async function OverAllModifyData(arr){
 async function StateAndUlbmodifyData(arr,state) {
 
     for (let el of arr) {
-        let c  = await Ulb.count({ulbType:ObjectId(el._id),state:ObjectId(state._id)});
+        let c  = await Ulb.countDocuments({ulbType:ObjectId(el._id),state:ObjectId(state._id)});
         el['data'] = formatData(el.data);
         el['total'] =  c;//getTotal(el['data']);
     }

@@ -54,7 +54,7 @@ module.exports.resetPassword = async (req, res) => {
             isPasswordResetInProgress: true,
           },
         };
-        let du = await User.update({ _id: ObjectId(user._id) }, update);
+        let du = await User.updateOne({ _id: ObjectId(user._id) }, update);
         return Response.OK(res, {}, "Password reset");
       } else {
         return Response.BadRequest(res, {}, `user not found.`);

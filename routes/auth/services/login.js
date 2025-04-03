@@ -81,7 +81,7 @@ module.exports.login = async (req, res) => {
       let update = Service.incLoginAttempts(user);
       if (!user.emailFlag) {
         user.email = user.accountantEmail;
-        let up = await User.update({ _id: user._id }, update).exec();
+        let up = await User.updateOne({ _id: user._id }, update).exec();
       }
       let attempt = user;
       return res.status(400).json({

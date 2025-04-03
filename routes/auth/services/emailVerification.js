@@ -35,7 +35,7 @@ module.exports.emailVerification = async (req, res) => {
         if (user.role == 'ULB') {
             user.email = user.accountantEmail;
         }
-        let du = await User.update(query, { $set: ud });
+        let du = await User.updateOne(query, { $set: ud });
         let data = {};
         for (k in user) {
             if (keys.indexOf(k) > -1) {

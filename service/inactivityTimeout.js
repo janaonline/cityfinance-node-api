@@ -26,7 +26,7 @@ module.exports = async function(req, res, next) {
                             return Response.UnAuthorized(res, {},`The client's session has expired and must log in again.`,440);
                         }
                         let inactiveTime = Date.now()+ Helper.INACTIVETIME.TIME; 
-                        let u = LoginHistory.update({"_id":ObjectId(login._id)},{$set:{inactiveSessionTime:inactiveTime}}).exec();                      
+                        let u = LoginHistory.updateOne({"_id":ObjectId(login._id)},{$set:{inactiveSessionTime:inactiveTime}}).exec();                      
                     }
                     else{
                         return Response.UnAuthorized(res, {},`LoginHistory Not found`,400);

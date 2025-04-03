@@ -1351,7 +1351,7 @@ const sendProfileUpdateStatusEmail = (userOldInfo, currentUrl) => {
       let emails = [];
       let userInfo = await User.findOne({ _id: userOldInfo._id }).exec();
       if (userOldInfo.email && userOldInfo.email != userInfo.email) {
-        let up = await User.update(
+        let up = await User.updateOne(
           { _id: userOldInfo._id },
           { $set: { isEmailVerified: true } }
         );

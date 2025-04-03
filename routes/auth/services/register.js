@@ -84,7 +84,7 @@ module.exports.register = async (req, res) => {
                         sbCode: ulbObj.sbCode,
                         censusCode: ulbObj.censusCode,
                     };
-                    let u = await User.update(
+                    let u = await User.updateOne(
                         { _id: ObjectId(user._id) },
                         { $set: d }
                     );

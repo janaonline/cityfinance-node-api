@@ -55,7 +55,7 @@ module.exports.get = async (req, res) => {
                 }
             }
             if (!skip) {
-                total = await User.count(query);
+                total = await User.countDocuments(query);
             }
             let users = await User.find(query)
                 .sort(sort ? sort : { modifiedAt: -1 })
@@ -480,7 +480,7 @@ module.exports.getAll = async (req, res) => {
 
                         let nQ = Object.assign({}, query);
                         // Object.assign(nQ, newFilter);
-                        total = await User.count(nQ);
+                        total = await User.countDocuments(nQ);
 
 
                     }
@@ -889,7 +889,7 @@ module.exports.delete = async (req, res) => {
             }
 
             let newEmail = `${userData.email}.deleted.${moment().unix()}`;
-            let u = await User.update(condition, {
+            let u = await User.updateOne(condition, {
                 $set: { isDeleted: true, email: newEmail }
             });
             Response.OK(res, u, `deleted successfully.`);
@@ -930,7 +930,7 @@ module.exports.ulbSignupAction = async (req, res) => {
                         rejectReason: data.rejectReason
                     };
                     let forgotPassword = userData.role == "ULB" ? true : false;
-                    let u = await User.update(condition, { $set: d });
+                    let u = await User.updateOne(condition, { $set: d });
                     let link = await Service.emailVerificationLink(
                         userData._id,
                         req.currentUrl,

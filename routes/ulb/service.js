@@ -147,7 +147,7 @@ module.exports.put = async function (req, res) {
       let condition = { _id: _id };
       obj["modifiedAt"] = new Date();
       try {
-        let du = await Ulb.update(condition, { $set: obj });
+        let du = await Ulb.updateOne(condition, { $set: obj });
 
         return Response.OK(res, du, `updated successfully.`);
       } catch (err) {
@@ -316,7 +316,7 @@ const createData = (objData) => {
         try {
           let listData = await Ulb.findOne({ "sbCode": pf.sbCode }).lean();
           if (listData) {
-            await Ulb.update({ "sbCode": pf.sbCode }, pf)
+            await Ulb.updateOne({ "sbCode": pf.sbCode }, pf)
           } else {
             await Ulb.create(pf)
           }

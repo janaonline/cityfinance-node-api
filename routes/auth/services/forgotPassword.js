@@ -50,7 +50,7 @@ module.exports.forgotPassword = async (req, res) => {
                 }
                 try {
                     //let du = await User.update({_id:user._id},{$set:{passwordHistory:passwordHistory,password:passwordHash,passwordExpires:passwordExpires}});
-                    let du = await User.update(
+                    let du = await User.updateOne(
                         { _id: user._id },
                         { $set: { isPasswordResetInProgress: false } }
                     );

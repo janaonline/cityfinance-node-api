@@ -46,7 +46,7 @@ module.exports.put = async function (req, res) {
         _id: ObjectId(req.params._id),
     };
     try {
-        let du = await FinancialYear.update(condition, { $set: req.body });
+        let du = await FinancialYear.updateOne(condition, { $set: req.body });
         return Response.OK(res, du, ``);
     } catch (e) {
         return Response.DbError(res, e, e.message);
@@ -76,7 +76,7 @@ module.exports.delete = async function (req, res) {
             modifiedAt: new Date(),
         };
     try {
-        let du = await FinancialYear.update(condition, update);
+        let du = await FinancialYear.updateOne(condition, update);
         return Response.OK(res, du, ``);
     } catch (e) {
         return Response.DbError(res, e, e.message);

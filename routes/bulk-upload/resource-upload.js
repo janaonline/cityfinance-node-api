@@ -36,7 +36,7 @@ module.exports = async function (req, res) {
 
 		if (d) {
 			let update = { $set: { imageUrl: reqBody["imageUrl"], downloadUrl: reqBody["downloadUrl"] } }
-			let ud = await resource.update({ "_id": d._id }, update);
+			let ud = await resource.updateOne({ "_id": d._id }, update);
 			return Response.OK(res, ud, "update successfully");
 		}
 		else {

@@ -174,11 +174,11 @@ module.exports.search = async function (req, res) {
     fromModelData.reportsAndPublication = ResourceLineItem.find({
       header: "reports_&_publications",
       ...query,
-    }).count();
+    }).countDocuments();
     fromModelData.learningCenter = ResourceLineItem.find({
       header: "learning_center",
       ...query,
-    }).count();
+    }).countDocuments();
     let allData = await Promise.all([
       fromModelData.dataSet,
       fromModelData.reportsAndPublication,

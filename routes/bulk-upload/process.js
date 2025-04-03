@@ -759,7 +759,7 @@ async function validateBalanceSheet(inputSheetObj) {
 async function updateLog(reqId, data) {
   return new Promise(async (resolve, reject) => {
     try {
-      let d = await RequestLog.update({ _id: reqId }, { $set: data });
+      let d = await RequestLog.updateOne({ _id: reqId }, { $set: data });
       resolve(d);
     } catch (e) {
       reject({

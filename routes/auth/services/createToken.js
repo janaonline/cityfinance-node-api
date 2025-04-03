@@ -51,7 +51,7 @@ module.exports.createToken = (user, sessionId, body) => {
             if (!user.emailFlag) {
                 user.email = user.accountantEmail;
             }
-            await User.update({ ulb: ObjectId(user.ulb), role: 'ULB' }, updates).exec(); // set
+            await User.updateOne({ ulb: ObjectId(user.ulb), role: 'ULB' }, updates).exec(); // set
             resolve(token)
         } catch (error) {
             reject({ message: error.message })

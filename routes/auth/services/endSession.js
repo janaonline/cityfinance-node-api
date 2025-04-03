@@ -5,7 +5,7 @@ const ObjectId = require('mongoose').Types.ObjectId;
 
 module.exports.endSession = async (req, res) => {
     try {
-        let visitSession = await VisitSession.update(
+        let visitSession = await VisitSession.updateOne(
             { _id: ObjectId(req.params._id) },
             { $set: { isActive: false } }
         );

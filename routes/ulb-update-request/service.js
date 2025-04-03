@@ -60,7 +60,7 @@ module.exports.create = async (req, res) => {
             { actionTakenBy: prevState.actionTakenBy },
             { status: prevState.status }
         );
-        let uur = await UlbUpdateRequest.update(
+        let uur = await UlbUpdateRequest.updateOne(
             { _id: ObjectId(prevState._id) },
             { $set: updateData, $push: { history: oldStateObj } }
         );
@@ -367,11 +367,11 @@ module.exports.create = async (req, res) => {
             pObj['isVerified2223'] = true;
             if (data.hasOwnProperty('isActive')) pObj['isActive'] = data?.isActive
             if (Object.keys(obj).length) {
-                dulb = await Ulb.update({ _id: ObjectId(ulb) }, { $set: obj });
+                dulb = await Ulb.updateOne({ _id: ObjectId(ulb) }, { $set: obj });
             }
             if (Object.keys(pObj).length) {
                 console.log(`pObj\n`, pObj);
-                du = await User.update(
+                du = await User.updateOne(
                     { ulb: ObjectId(ulb), role: 'ULB' },
                     { $set: pObj }
                 );
@@ -471,7 +471,7 @@ module.exports.get = async (req, res) => {
                     query['ulb'] = { $in: ulbs };
                 }
                 if (!skip) {
-                    total = await UlbUpdateRequest.count(query);
+                    total = await UlbUpdateRequest.countDocuments(query);
                 }
                 let data = await UlbUpdateRequest.find(query)
                     .sort(sort ? sort : { modifiedAt: -1 })
@@ -866,7 +866,7 @@ module.exports.action = async (req, res) => {
                             pObj['email'] = pObj['commissionerEmail'];
                             pObj['isEmailVerified'] = true;
                             if (pObj.email != userData.email) {
-                                let du = await User.update(
+                                let du = await User.updateOne(
                                     {
                                         ulb: prevState.ulb,
                                         role: 'ULB',
@@ -916,11 +916,11 @@ module.exports.action = async (req, res) => {
                                 // mailOptions.html=  template.body;
                             }
                         } else {
-                            let dulb = await Ulb.update(
+                            let dulb = await Ulb.updateOne(
                                 { _id: prevState.ulb },
                                 { $set: obj }
                             );
-                            let du = await User.update(
+                            let du = await User.updateOne(
                                 {
                                     ulb: prevState.ulb,
                                     role: 'ULB',
@@ -997,7 +997,7 @@ module.exports.action = async (req, res) => {
                         { actionTakenBy: prevState.actionTakenBy },
                         { status: prevState.status }
                     );
-                    let uur = await UlbUpdateRequest.update(
+                    let uur = await UlbUpdateRequest.updateOne(
                         { _id: _id },
                         { $set: updateData, $push: { history: oldStateObj } }
                     );
