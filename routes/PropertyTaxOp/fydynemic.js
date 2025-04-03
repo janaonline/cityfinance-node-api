@@ -11576,6 +11576,10 @@ let skipLogicDependencies = {
         "value": "No",
         "years": [0]
       },
+      "resolutionFile": {
+        "value": "No",
+        "years": [0]
+      },
       "ulbPassedResolPtax": {
         "value": "No",
         "years": [0]
