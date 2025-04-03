@@ -22,7 +22,7 @@ module.exports = (req, res) => {
       let state = req.query.state;
       let query = { "state": ObjectId(state), isActive: true }
       try {
-        let count = await Ulb.count(query).exec();
+        let count = await Ulb.countDocuments(query).exec();
         rslv(count)
       }
       catch (err) {
@@ -31,7 +31,7 @@ module.exports = (req, res) => {
     }
     else {
       try {
-        let count = await Ulb.count({ "isActive": true }).exec();
+        let count = await Ulb.countDocuments({ "isActive": true }).exec();
         rslv(count)
       }
       catch (err) {
@@ -44,7 +44,7 @@ module.exports = (req, res) => {
 
   let munciapalBond = new Promise(async (rslv, rjct) => {
     try {
-      let count = await BondIssuerItem.count(query).exec();
+      let count = await BondIssuerItem.countDocuments(query).exec();
       rslv(count)
     }
     catch (err) {

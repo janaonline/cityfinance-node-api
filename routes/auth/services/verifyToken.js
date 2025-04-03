@@ -60,7 +60,7 @@ module.exports.verifyToken = (req, res, next) => {
               );
             }
             let inactiveTime = Date.now() + Helper.INACTIVETIME.TIME;
-            let u = LoginHistory.update(
+            let u = LoginHistory.updateOne(
               { _id: ObjectId(login._id) },
               { $set: { inactiveSessionTime: inactiveTime } }
             ).exec();

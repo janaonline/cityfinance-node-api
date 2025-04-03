@@ -109,7 +109,7 @@ module.exports.unzip = async (req, res, next) => {
           zipEntry.entryName;
       }
       dataObj["actionTakenBy"] = ObjectId(user._id);
-      let up = await UlbFinancialData.update(query, dataObj, {
+      let up = await UlbFinancialData.updateOne(query, dataObj, {
         upsert: true,
         new: true,
         setDefaultsOnInsert: true,
@@ -1524,7 +1524,7 @@ value = allData.filter(el => {
         }
 
         if (!skip) {
-          total = await XVFCGrantULBData.count(query);
+          total = await XVFCGrantULBData.countDocuments(query);
         }
 
         let data = await XVFCGrantULBData.find(query)
@@ -2854,7 +2854,7 @@ module.exports.update = async (req, res) => {
           }
         }
 
-        let du = await XVFCGrantULBData.update(
+        let du = await XVFCGrantULBData.updateOne(
           { _id: prevState._id },
           { $set: prevState, $push: { history: history } }
         );
@@ -2965,7 +2965,7 @@ module.exports.action = async (req, res) => {
             data["ulb"] = prevState.ulb;
             data["modifiedAt"] = time();
             data['actionTakenByRole'] = user?.role
-            let du = await XVFCGrantULBData.update(
+            let du = await XVFCGrantULBData.updateOne(
               { _id: ObjectId(prevState._id) },
               { $set: data, $push: { history: history } }
             );
@@ -3195,13 +3195,13 @@ module.exports.action = async (req, res) => {
 
               let historyData = await commonQuery({ _id: _id });
               if (historyData.length > 0) {
-                let du = await XVFCGrantULBData.update(
+                let du = await XVFCGrantULBData.updateOne(
                   { _id: ObjectId(prevState._id) },
                   { $set: data }
                 );
               } else {
                 let newData = resetDataStatus(data);
-                let du = await XVFCGrantULBData.update(
+                let du = await XVFCGrantULBData.updateOne(
                   { _id: ObjectId(prevState._id) },
                   { $set: newData }
                 );
@@ -3451,7 +3451,7 @@ module.exports.multipleApprove = async (req, res) => {
         (!prevState.isCompleted && prevUser.role === "MoHUA")) &&
       user.role == "MoHUA"
     ) {
-      let du = await XVFCGrantULBData.update(
+      let du = await XVFCGrantULBData.updateOne(
         { _id: ObjectId(prevState._id) },
         { $set: data, $push: { history: history } }
       );
@@ -3588,7 +3588,7 @@ module.exports.multipleReject = async (req, res) => {
       (!prevState.isCompleted && prevUser.role === "MoHUA") ||
       (prevState.isCompleted && prevUser.role === "STATE")
     ) {
-      let du = await XVFCGrantULBData.update(
+      let du = await XVFCGrantULBData.updateOne(
         { _id: ObjectId(prevState._id) },
         { $set: data, $push: { history: history } }
       );
@@ -4153,7 +4153,7 @@ module.exports.completeness = async (req, res) => {
           }
         }
 
-        let du = await UlbFinancialData.update(
+        let du = await UlbFinancialData.updateOne(
           { _id: prevState._id },
           { $set: prevState, $push: { history: history } }
         );
@@ -4251,7 +4251,7 @@ module.exports.correctness = async (req, res) => {
         prevState["status"] = prevState["correctness"];
         prevState.modifiedAt = new Date();
         prevState.actionTakenBy = user._id;
-        let du = await UlbFinancialData.update(
+        let du = await UlbFinancialData.updateOne(
           { _id: prevState._id },
           { $set: prevState, $push: { history: history } }
         );
@@ -4434,7 +4434,7 @@ module.exports.sourceFiles = async (req, res) => {
       "overallReport.excelUrl": 1,
     };
     let data = await UlbFinancialData.find({ _id: _id }, select).exec();
-    let lh = await LoginHistory.update(
+    let lh = await LoginHistory.updateOne(
       { _id: lh_id },
       { $push: { reports: _id } }
     );
@@ -4640,7 +4640,7 @@ module.exports.getXVFCStateForm = async (req, res) => {
       return res.xls(filename, xlsData);
     }
 
-    let total = await XVStateForm.count(query).exec();
+    let total = await XVStateForm.countDocuments(query).exec();
     let data = await XVStateForm.find(query)
       .populate([{ path: "state", select: "name" }])
       .skip(skip)

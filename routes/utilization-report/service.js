@@ -1379,7 +1379,7 @@ const utilisationUpdate = (objData) => {
                     )
                   ).toFixed(2),
                 };
-                await UtilizationReport.update({
+                await UtilizationReport.updateOne({
                   "_id": currentUtilReport._id
                 }, { "$set": { "grantPosition": obj } })
               }
@@ -1530,7 +1530,7 @@ const roundGrantPosition = (objData) => {
           //   obj['closingBal'] = closingBal;
           // }
 
-          await UtilizationReport.update({
+          await UtilizationReport.updateOne({
             "_id": prevUtil._id
           }, { "$set": { "grantPosition": obj } })
           rjlv(1)

@@ -80,7 +80,7 @@ module.exports = {
                 let condition = { [key]: ObjectId(req.params[key]) }
                 let data = await dbModels[modelName].findOne(condition).lean();
                 if (data) {
-                    let data = await dbModels[modelName].update(condition, req.body).lean();
+                    let data = await dbModels[modelName].updateOne(condition, req.body).lean();
                     return res.status(200).json({
                         status: true,
                         message: "Successfully saved data!",

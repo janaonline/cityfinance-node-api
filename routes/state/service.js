@@ -449,7 +449,7 @@ module.exports.getAllForms = async function (req, res) {
             if (!skip) {
                 let nQ = Object.assign({}, query);
                 Object.assign(nQ, newFilter);
-                var total = await XVFcForms.count(nQ);
+                var total = await XVFcForms.countDocuments(nQ);
             }
             let forms = await XVFcForms.aggregate(q).exec();
             return res.status(200).json({
@@ -509,7 +509,7 @@ module.exports.getAllUlbForms = async function (req, res) {
             if (!skip) {
                 let nQ = Object.assign({}, query);
                 Object.assign(nQ, newFilter);
-                var total = await XVFcForms.count(nQ);
+                var total = await XVFcForms.countDocuments(nQ);
             }
             let forms = await XVFcForms.aggregate(q).exec();
             return res.status(200).json({

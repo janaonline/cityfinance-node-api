@@ -588,7 +588,7 @@ module.exports.chartDataStatus = async (req, res) => {
             q.push({ $count: 'c' });
             //res.json(q);return;
             let registerd = await User.aggregate(q).exec();
-            let totalData = await Ulb.count(q1).exec();
+            let totalData = await Ulb.countDocuments(q1).exec();
             let remainData =
                 totalData - (registerd.length > 0 ? registerd[0]['c'] : 0);
             rslv({ c: remainData });

@@ -48,7 +48,7 @@ module.exports.getUSer = (reqBody) => {
                     if (user.isLocked) {
                         // just increment login attempts if account is already locked
                         let update = Service.incLoginAttempts(user);
-                        await User.update({ _id: ObjectId(user._id) }, update).exec();
+                        await User.updateOne({ _id: ObjectId(user._id) }, update).exec();
                         let up = await User.findOne({ _id: ObjectId(user._id)}).lean();
                         if (up.isLocked) {
                             reject(`Your account is temporarily locked for 1 hour`)

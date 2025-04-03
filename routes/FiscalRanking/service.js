@@ -198,7 +198,7 @@ exports.CreateorUpdate = async (req, res, next) => {
       await FiscalRankingMapper.deleteMany({
         fiscal_ranking: ObjectId(fsData._id),
       });
-      await FiscalRanking.update(condition, req.body);
+      await FiscalRanking.updateOne(condition, req.body);
     } else {
       let d = await FiscalRanking.create(req.body);
       id = d._id;
@@ -1607,7 +1607,7 @@ exports.getAll = async function (req, res, next) {
     let prmsArr = [];
     if (!skip || true) {
       let totalPrms = new Promise((resolve, reject) => {
-        FiscalRanking.count(condition).exec((err, data) => {
+        FiscalRanking.countDocuments(condition).exec((err, data) => {
           if (err) {
             reject(err);
           } else {
@@ -2373,7 +2373,7 @@ exports.approvedByMohua = async function (req, res, next) {
     let condition = { ulb: ObjectId(ulb), design_year: ObjectId(design_year) };
     let fsData = await FiscalRanking.findOne(condition).lean();
     if (fsData) {
-      let frMCount = await FiscalRankingMapper.count({
+      let frMCount = await FiscalRankingMapper.countDocuments({
         fiscal_ranking: fsData._id,
         status: "PENDING",
       }).lean();
