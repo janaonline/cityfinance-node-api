@@ -735,6 +735,7 @@ module.exports.list = catchAsync(async (req, res) => {
   let data = await Sidemenu.find(condition).select({ name: 1, _id: 1, collectionName: 1, path: 1, url: 1, optional: 1, folderName: 1, formId: 1, isUa: 1 });
 
   data = data.filter((value, index, self) =>
+    value.formId != 19 &&
     index === self.findIndex((t) => (
       t.collectionName === value.collectionName
     ))
