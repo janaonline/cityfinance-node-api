@@ -116,7 +116,10 @@ const search = catchAsync(async (req, res) => {
       return Response.BadRequest(res, null, "Provide word to match");
 
     if (type && type == 'state') {
-      let query = { name: { $regex: `${matchingWord}`, $options: 'im' } };
+      // let query = { name: { $regex: `${matchingWord}`, $options: 'im' } };
+      let query = { 
+        $or: [ {name : { $regex: `${matchingWord}`, $options: 'im' }}, { isPublish: true } ]
+      };
       let statePromise = await State.find(query)
         .limit(10)
         .lean();
@@ -136,12 +139,12 @@ const search = catchAsync(async (req, res) => {
       let stateData
       // let query = { name: { $regex: `^${matchingWord}`, $options: "i" } }
       let query = { 
-        $or: [ {name : { $regex: `${matchingWord}`, $options: 'im' }}, { keywords: { $regex: `${matchingWord}`, $options: 'im' } } ]
+        $or: [ {name : { $regex: `${matchingWord}`, $options: 'im' }}, { keywords: { $regex: `${matchingWord}`, $options: 'im' } },{ isPublish: true } ]
       };
       if (matchingWord.hasOwnProperty("contentType")) {  // filter add chnage suresh
         // query = { name: { $regex: `^${matchingWord[type]}`, $options: "i" } };
         query = {
-          $or: [ {name : { $regex: `${matchingWord[type]}`, $options: 'im' }}, { keywords: { $regex: `${matchingWord[type]}`, $options: 'im' } } ]
+          $or: [ {name : { $regex: `${matchingWord[type]}`, $options: 'im' }}, { keywords: { $regex: `${matchingWord[type]}`, $options: 'im' } },{ isPublish: true } ]
         }
       }
       if (state) {
@@ -170,7 +173,7 @@ const search = catchAsync(async (req, res) => {
     }
     let query = { 
       // name: { $regex: `${matchingWord}`, $options: "im" } 
-      $or: [ {name : { $regex: `${matchingWord}`, $options: 'im' }}, { keywords: { $regex: `${matchingWord}`, $options: 'im' } } ]
+      $or: [ {name : { $regex: `${matchingWord}`, $options: 'im' }}, { keywords: { $regex: `${matchingWord}`, $options: 'im' } },{ isPublish: true } ]
     };
     
     let ulbPromise = Ulb.find(query)

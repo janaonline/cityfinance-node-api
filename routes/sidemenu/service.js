@@ -651,17 +651,16 @@ async function formRedirectionBasedOnCreation(model, ulb, design_year){
     let ulbInfo = await Ulb.findOne(
       { _id: ObjectId(ulb) }
     ).lean();
-     
     let accessYear = ''
     for (let key in ulbInfo) {
       if (key.includes('access_') && ulbInfo[key]) {
         let temp = '20' + key.split('_')[1];
           accessYear = temp.slice(0, 4) + '-' + temp.slice(4);
           break;
+        
       }
     }
-
-    let newUlb = isUlbCreatedInCurrentFinancialYear(design_year, accessYear);
+    let newUlb = isUlbCreatedInCurrentFinancialYear(design_year,accessYear);
     if(newUlb) return output;
     let condition = {
       ulb: ObjectId(ulb)
