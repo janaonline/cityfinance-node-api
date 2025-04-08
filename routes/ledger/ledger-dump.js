@@ -1,5 +1,6 @@
 const LineItem = require('../../models/LineItem');
 const Ulb = require('../../models/Ulb');
+const State = require('../../models/State');
 const { getDate } = require('../../util/helper')
 const ExcelJS = require('exceljs');
 const moment = require('moment');
@@ -81,19 +82,10 @@ const lineItemEliminated = [
 ];
 
 // Get Line Items From DB.
-async function getLineItemsFromDB() {
-
-    // Headers for the input sheet data.
-    const lineItems = await LineItem.find({ "code": { $nin: ["1001", "1002", "1003", "1004", "1005", "1006", "1007"] } }, { _id: 1, isActive: 1, name: 1, code: 1 }).lean();
-    // const lineItems = await LineItem.find({}, { _id: 1, isActive: 1, name: 1, code: 1 }).lean();
-    lineItems.forEach(item => {
-        item.code = Number(item.code);
-    });
-    lineItems.sort((a, b) => a.code - b.code);
-
+async function getLineItemsFromDB(financialData = false) {
     // Headers for the overview data. 
-    const overviewHeaders = [
-        { 'code': null, '_id': 'ulb_code', 'isActive': true, 'name': 'ULB Code' },
+    let overviewHeaders = [
+        { 'code': null, '_id': 'code', 'isActive': true, 'name': 'ULB Code' },
         { 'code': null, '_id': 'ulb', 'isActive': true, 'name': 'ULB Name' },
         { 'code': null, '_id': 'population', 'isActive': true, 'name': 'Population' },
         { 'code': null, '_id': 'state', 'isActive': true, 'name': 'State' },
@@ -102,19 +94,36 @@ async function getLineItemsFromDB() {
         { 'code': null, '_id': 'lastModifiedAt', 'isActive': true, 'name': 'Modified Date' },
         { 'code': null, '_id': 'audit_status', 'isActive': true, 'name': 'Audited/ Provisional' },
         { 'code': null, '_id': 'audit_firm', 'isActive': true, 'name': 'Audit firm name' },
+        { 'code': null, '_id': 'audit_date', 'isActive': true, 'name': 'Audit Date' },
         { 'code': null, '_id': 'partner_name', 'isActive': true, 'name': 'Partner name' },
         // { 'code': null, '_id': 'icai_membership_number', 'isActive': true, 'name': 'ICAI No.'},
+        { 'code': null, '_id': 'doc_source', 'isActive': true, 'name': 'Document Source' },
         { 'code': null, '_id': 'isStandardizable', 'isActive': true, 'name': 'Is Standardizable?' },
         { 'code': null, '_id': 'isStandardizableComment', 'isActive': true, 'name': 'File Comments ' },
         { 'code': null, '_id': 'dataFlagComment', 'isActive': true, 'name': 'Data Comments' },
         { 'code': null, '_id': 'dataFlag', 'isActive': true, 'name': 'No. of Data Flags failed' },
+    ];
+
+    // Add Input sheet headers only if financialData = TRUE - If user wants only overview sheet data.
+    if (!financialData) return overviewHeaders;
+
+    // Line items to be calculated (Not stored in DB).
+    overviewHeaders = overviewHeaders.concat([
         { 'code': null, '_id': 'totOwnRevenue', 'isActive': true, 'name': 'Total Own Revenue' },
         { 'code': null, '_id': 'totRevenue', 'isActive': true, 'name': 'Total Revenue' },
         { 'code': null, '_id': 'revExpenditure', 'isActive': true, 'name': 'Revenue Expenditure' },
         { 'code': null, '_id': 'totExpenditure', 'isActive': true, 'name': 'Total Expenditure' },
         { 'code': null, '_id': 'capex', 'isActive': true, 'name': 'GB + CWIP' },
         { 'code': null, '_id': 'bsSize', 'isActive': true, 'name': 'Total Balance Sheet Size' }
-    ];
+    ])
+
+    // Headers (Line items) for the input sheet data.
+    const lineItems = await LineItem.find({ "code": { $nin: ["1001", "1002", "1003", "1004", "1005", "1006", "1007"] } }, { _id: 1, isActive: 1, name: 1, code: 1 }).lean();
+    // const lineItems = await LineItem.find({}, { _id: 1, isActive: 1, name: 1, code: 1 }).lean();
+    lineItems.forEach(item => {
+        item.code = Number(item.code);
+    });
+    lineItems.sort((a, b) => a.code - b.code);
 
     return overviewHeaders.concat(lineItems);
 }
@@ -130,139 +139,130 @@ function updateTotals(rowObj, key, lineItemIdStr, amount, categoryArr, categoryK
 }
 
 // Fetch data from DB - Input sheet.
-async function fetchAllData(yearFromQuery) {
-    // return ULBLedger.find(findQuery.query, findQuery.projection).cursor();
+async function fetchAllData(ulbCode = null, year = null, stateId = null) {
+    const matchCondition = { isActive: true };
+    if (ulbCode) matchCondition['code'] = ulbCode;
+    if (stateId) matchCondition['state'] = ObjectId(stateId);
 
-    let matchCondition = [{ $not: { $in: ["$$ulbledger.lineItem", lineItemEliminated] } }];
-    // if (yearFromQuery) matchCondition.push({ $eq: ["$$ulbledger.financialYear", yearFromQuery] });
+    const matchCondition2 = [{ $eq: ['$ulb', '$$ulbId'] }];
+    if (year) matchCondition2.push({ $eq: ["$financialYear", year] });
 
-    return Ulb.aggregate(
-        [
-            { $match: { isActive: true } },
-            { $project: { _id: 1, state: 1 } },
-            {
-                $lookup: {
-                    from: "states",
-                    let: { stateId: "$state" },
-                    pipeline: [
-                        { $match: { $expr: { $eq: ["$_id", "$$stateId"] } } },
-                        { $project: { isUT: 1, _id: 0 } }
-                    ],
-                    as: "stateData"
-                }
-            },
-            { $addFields: { isUT: { $arrayElemAt: ["$stateData.isUT", 0] } } },
-            { $match: { isUT: false } },
-            {
-                $lookup: {
-                    from: "ulbledgers",
-                    localField: "_id",
-                    foreignField: "ulb",
-                    as: "ulbledgers"
-                }
-            },
-            {
-                $project: {
-                    ulbledgers: {
-                        $filter: {
-                            input: "$ulbledgers",
-                            as: "ulbledger",
-                            cond: { $and: matchCondition }
-                        }
+    const matchCondition3 = [{ $not: { $in: ["$$ulbledger.lineItem", lineItemEliminated] } }];
+
+    const query = [
+        { $match: matchCondition },
+        { $project: { _id: 1 } },
+        {
+            $lookup: {
+                from: "ulbledgers",
+                let: { ulbId: '$_id' },
+                pipeline: [{ $match: { $expr: { $and: matchCondition2 } } }],
+                as: "ulbledgers"
+            }
+        },
+        {
+            $project: {
+                ulbledgers: {
+                    $filter: {
+                        input: "$ulbledgers",
+                        as: "ulbledger",
+                        cond: { $and: matchCondition3 }
                     }
                 }
-            },
-            {
-                $project: {
-                    "ulbledgers.lineItem": 1,
-                    "ulbledgers.amount": 1,
-                    "ulbledgers.financialYear": 1
-                }
             }
-        ]
+        },
+        {
+            $project: {
+                "ulbledgers.lineItem": 1,
+                "ulbledgers.amount": 1,
+                "ulbledgers.financialYear": 1
+            }
+        }
+    ];
 
-    ).cursor().exec();
+    return Ulb.aggregate(query).cursor().exec();
 }
 // Fetch data from DB - Overview sheet.
-async function fetchAllDataOverview(yearFromQuery) {
-    // return LedgerLog.find({ ulb: ObjectId("5dd24b8f91344e2300876ca9") }).cursor();
+async function fetchAllDataOverview(ulbCode = null, year = null, stateId = null, isStandardizable = null) {
+    const matchCondition = { isActive: true };
+    if (ulbCode) matchCondition['code'] = ulbCode;
+    if (stateId) matchCondition['state'] = ObjectId(stateId);
 
-    // let matchCondition = {};
-    // if (yearFromQuery) matchCondition = { $eq: ["$$ledgerlog.year", yearFromQuery] };
+    const matchCondition2 = [{ $eq: ['$ulb_id', '$$ulbId'] }];
+    if (year) matchCondition2.push({ $eq: ["$year", year] });
+    if (isStandardizable?.toLowerCase() == 'no') matchCondition2.push({ $eq: ['$isStandardizable', 'No'] });
 
-    return Ulb.aggregate(
-        [
-            { $match: { isActive: true } },
-            {
-                $project: {
-                    _id: 1,
-                    code: 1,
-                    name: 1,
-                    state: 1,
-                    population: 1
-                }
-            },
-            {
-                $lookup: {
-                    from: "states",
-                    let: { stateId: "$state" },
-                    pipeline: [
-                        { $match: { $expr: { $eq: ["$_id", "$$stateId"] } } },
-                        { $project: { isUT: 1, _id: 0 } }
-                    ],
-                    as: "stateData"
-                }
-            },
-            { $addFields: { isUT: { $arrayElemAt: ["$stateData.isUT", 0] } } },
-            { $match: { isUT: false } },
-            {
-                $lookup: {
-                    from: "ledgerlogs",
-                    localField: "_id",
-                    foreignField: "ulb_id",
-                    as: "ledgerlogs"
-                }
-            },
-            // {
-            //     $project: {
-            //         ledgerlogs: {
-            //             $filter: {
-            //                 input: "$ledgerlogs",
-            //                 as: "ledgerlog",
-            //                 cond: matchCondition
-            //             }
-            //         }
-            //     }
-            // },
-            {
-                $project: {
-                    "stateData": 0,
-                    "ledgerlogs.excel_url": 0,
-                    "ledgerlogs.wards": 0,
-                    "ledgerlogs.ulb_code": 0,
-                    // "ledgerlogs.ulb": 0,
-                    "ledgerlogs.state_code": 0,
-                    // "ledgerlogs.state": 0,
-                    "ledgerlogs.population": 0,
-                    "ledgerlogs.financialYear": 0,
-                    "ledgerlogs.design_year": 0,
-                    "ledgerlogs.area": 0
-                }
+    const query = [
+        { $match: matchCondition },
+        {
+            $project: {
+                _id: 1,
+                code: 1,
+                name: 1,
+                state: 1,
+                population: 1
             }
-        ]
-    ).cursor().exec();
+        },
+        {
+            $lookup: {
+                from: "ledgerlogs",
+                let: { ulbId: "$_id" },
+                pipeline: [{ $match: { $expr: { $and: matchCondition2 } } }],
+                as: "ledgerlogs"
+            }
+        },
+        { $match: { "ledgerlogs.0": { $exists: true } } },
+        {
+            $project: {
+                "stateData": 0,
+                "ledgerlogs.excel_url": 0,
+                "ledgerlogs.wards": 0,
+                "ledgerlogs.ulb_code": 0,
+                // "ledgerlogs.ulb": 0,
+                "ledgerlogs.state_code": 0,
+                // "ledgerlogs.state": 0,
+                "ledgerlogs.population": 0,
+                "ledgerlogs.financialYear": 0,
+                "ledgerlogs.design_year": 0,
+                "ledgerlogs.area": 0,
+                "ledgerlogs.tracker": 0,
+                "ledgerlogs.verified_by": 0,
+                "ledgerlogs.verified_at": 0,
+                "ledgerlogs.icai_membership_number": 0,
+                "ledgerlogs.dataFlagComment": 0,
+                "ledgerlogs.created_by": 0,
+                "ledgerlogs.created_at": 0,
+            }
+        }
+    ];
+
+    return Ulb.aggregate(query).cursor().exec();
+}
+// Get _id from states collection based on state code.
+// Eg: Input: AP; Output: 5dcf9d7216a06aed41c748dd
+async function getStateId(stateCode = false) {
+    if (!stateCode) return null;
+    const state = await State.findOne({ code: stateCode }, { _id: 1 }).lean();
+    return state?._id || null;
 }
 
 module.exports.getLedgerDump = async (req, res) => {
     try {
-        // Create an array of line items (used to define headers of excel)
-        let lineitems = await getLineItemsFromDB();
+        const { ulbCode, stateCode, financialData, year, isStandardizable } = req.query;
+        if (ulbCode && stateCode && !ulbCode.includes(stateCode))
+            throw new Error(`Mismatch: ULB with '${ulbCode}' is not part of '${stateCode}'.`);
 
-        let yearFromQuery = req.query.financialYear || "";
+        if (isStandardizable?.toLowerCase() == 'no' && financialData)
+            throw new Error('"financialData" cannot be TRUE if "isStandardizable" cannot be "NO"');
+
         const workbook = new ExcelJS.Workbook();
         const worksheet = workbook.addWorksheet('ledgerDump');
+        const stateId = await getStateId(stateCode);
 
-        // Define columns
+        // Create an array of line items (used to define headers of excel)
+        const lineitems = await getLineItemsFromDB(financialData);
+
+        // Define columns - Add the headers to worksheet.
         const columns = lineitems.map((lineitem) => ({
             header: lineitem.code ? `${lineitem.name} (${lineitem.code})` : lineitem.name,
             key: lineitem._id,
@@ -270,11 +270,12 @@ module.exports.getLedgerDump = async (req, res) => {
         }));
         worksheet.columns = columns;
 
-        // Fetch data from DB - Overview sheet.
+        // Fetch data from DB - Overview sheet; Memoize overview collection in overviewData{}
+        // Eg: ulbId_year - 5dd24729437ba31f7eb42e94_2020-21
         const overviewData = {};
-        const cursorOverview = await fetchAllDataOverview(yearFromQuery);
+        const cursorOverview = await fetchAllDataOverview(ulbCode, year, stateId, isStandardizable);
         for (let doc = await cursorOverview.next(); doc != null; doc = await cursorOverview.next()) {
-            // console.log("doc", JSON.stringify(doc, null, 2))
+            // if (doc?.code == 'MH213') console.log("doc", JSON.stringify(doc, null, 2))
             let { _id, population, state, code, name, lastModifiedAt } = doc;
             for (let eachYearOverviewData of doc.ledgerlogs) {
                 let key = `${doc._id}_${eachYearOverviewData.year}`;
@@ -282,80 +283,56 @@ module.exports.getLedgerDump = async (req, res) => {
             }
         }
 
-        // Iterate through each document in the cursor (array received from DB) - Input Sheet.
-        const cursorInputData = await fetchAllData(yearFromQuery);
-        let eachRowObj = {};
-        for (let doc = await cursorInputData.next(); doc != null; doc = await cursorInputData.next()) {
-            for (let eachLineItem of doc.ulbledgers) {
-                const key = `${doc._id}_${eachLineItem.financialYear}`;
-                if (!eachRowObj[key]) {
-                    eachRowObj[key] = {
-                        ulb_id: doc._id,
-                        year: eachLineItem.financialYear,
-                    };
-                }
-                const lineItemIdStr = eachLineItem.lineItem.toString();
+        // If financialData = TRUE - User wants input sheet data.
+        if (financialData) {
+            // Iterate through each document in the cursor (array received from DB) - Input Sheet.
+            const cursorInputData = await fetchAllData(ulbCode, year, stateId);
+            let eachRowObj = {};
+            for (let doc = await cursorInputData.next(); doc != null; doc = await cursorInputData.next()) {
+                for (let eachLineItem of doc.ulbledgers) {
+                    const key = `${doc._id}_${eachLineItem.financialYear}`;
+                    if (!eachRowObj[key]) {
+                        eachRowObj[key] = {
+                            ulb_id: doc._id,
+                            year: eachLineItem.financialYear,
+                            code: doc.ulb_id,
+                        };
+                    }
+                    const lineItemIdStr = eachLineItem.lineItem.toString();
 
-                updateTotals(eachRowObj, key, lineItemIdStr, eachLineItem.amount, totOwnRevenueArr, "totOwnRevenue");
-                updateTotals(eachRowObj, key, lineItemIdStr, eachLineItem.amount, totRevenueArr, "totRevenue");
-                updateTotals(eachRowObj, key, lineItemIdStr, eachLineItem.amount, revExpenditureArr, "revExpenditure");
-                updateTotals(eachRowObj, key, lineItemIdStr, eachLineItem.amount, totExpenditureArr, "totExpenditure");
-                updateTotals(eachRowObj, key, lineItemIdStr, eachLineItem.amount, capexArr, "capex");
-                updateTotals(eachRowObj, key, lineItemIdStr, eachLineItem.amount, bsSizeArr, "bsSize");
+                    // Calculate fields dynamically.
+                    updateTotals(eachRowObj, key, lineItemIdStr, eachLineItem.amount, totOwnRevenueArr, "totOwnRevenue");
+                    updateTotals(eachRowObj, key, lineItemIdStr, eachLineItem.amount, totRevenueArr, "totRevenue");
+                    updateTotals(eachRowObj, key, lineItemIdStr, eachLineItem.amount, revExpenditureArr, "revExpenditure");
+                    updateTotals(eachRowObj, key, lineItemIdStr, eachLineItem.amount, totExpenditureArr, "totExpenditure");
+                    updateTotals(eachRowObj, key, lineItemIdStr, eachLineItem.amount, capexArr, "capex");
+                    updateTotals(eachRowObj, key, lineItemIdStr, eachLineItem.amount, bsSizeArr, "bsSize");
 
-                if (eachLineItem.amount !== null && eachLineItem.amount !== "") {
-                    eachRowObj[key][eachLineItem.lineItem] = eachLineItem.amount;
+                    if (eachLineItem.amount !== null && eachLineItem.amount !== "") {
+                        eachRowObj[key][eachLineItem.lineItem] = eachLineItem.amount;
+                    }
                 }
             }
+
+            // Iterate through each row in eachRowObj (input sheet data), add overview data.
+            Object.values(eachRowObj).forEach((row) => {
+                const key = `${row.ulb_id}_${row.year}`;
+                const ulbOverviewObj = overviewData[key];
+                if (ulbOverviewObj) {
+                    Object.assign(row, ulbOverviewObj)
+                    row['lastModifiedAt'] = getDate(ulbOverviewObj.lastModifiedAt);
+                }
+                if (!row.code) row['code'] = row.ulb_id;
+                delete overviewData[key];
+                worksheet.addRow(row);
+            });
         }
-        // console.log("eachRowObj", JSON.stringify(eachRowObj, null, 2));
 
-        // Iterate through each row in eachRowObj
-        Object.values(eachRowObj).forEach((row) => {
-            const key = `${row.ulb_id}_${row.year}`;
-            const ulbOverviewObj = overviewData[key];
-
-            if (ulbOverviewObj) {
-                // row["year"] = ulbOverviewObj.year;
-                row["ulb_code"] = ulbOverviewObj.code; // from ulbs collection.
-                row["population"] = ulbOverviewObj.population; // from ulbs collection.
-                row["ulb"] = ulbOverviewObj.name; // from ulbs collection.
-                row["state"] = ulbOverviewObj.state;
-                row["audit_status"] = ulbOverviewObj.audit_status;
-                row["audit_firm"] = ulbOverviewObj.audit_firm;
-                row["partner_name"] = ulbOverviewObj.partner_name;
-                row["icai_membership_number"] = ulbOverviewObj.icai_membership_number;
-                row["isStandardizable"] = ulbOverviewObj.isStandardizable;
-                row["isStandardizableComment"] = ulbOverviewObj.isStandardizableComment;
-                row["dataFlag"] = ulbOverviewObj.dataFlag;
-                row["dataFlagComment"] = ulbOverviewObj.dataFlagComment;
-                row["lastModifiedAt"] = getDate(ulbOverviewObj.lastModifiedAt);
-            }
-
-            delete overviewData[key];
+        // Add the remaining data from "Overview" collection - input data unavailable.
+        Object.values(overviewData).forEach((row) => {
+            row.lastModifiedAt = getDate(row.lastModifiedAt);
             worksheet.addRow(row);
         });
-
-        // Add the remaining data from "Overview" collection.
-        Object.values(overviewData).forEach((row) => {
-            let tempObj = {};
-            tempObj["ulb_code"] = row.code; // from ulbs collection.
-            tempObj["population"] = row.population; // from ulbs collection.
-            tempObj["ulb"] = row.name; // from ulbs collection.
-            tempObj["year"] = row.year;
-            tempObj["state"] = row.state;
-            tempObj["audit_status"] = row.audit_status;
-            tempObj["audit_firm"] = row.audit_firm;
-            tempObj["partner_name"] = row.partner_name;
-            tempObj["icai_membership_number"] = row.icai_membership_number;
-            tempObj["isStandardizable"] = row.isStandardizable;
-            tempObj["isStandardizableComment"] = row.isStandardizableComment;
-            tempObj["dataFlag"] = row.dataFlag;
-            tempObj["dataFlagComment"] = row.dataFlagComment;
-            tempObj["lastModifiedAt"] = getDate(row.lastModifiedAt);
-
-            worksheet.addRow(tempObj);
-        })
 
         // Stream the workbook to the response
         let filename = `All_Ledgers_${(moment().format("DD-MMM-YY_HH-mm-ss"))}`;
@@ -367,6 +344,6 @@ module.exports.getLedgerDump = async (req, res) => {
 
     } catch (error) {
         console.error('Error generating ledger dump:', error);
-        res.status(500).send(`Internal Server Error: ${error.message}`);
+        res.status(500).send(`Error: ${error.message}`);
     }
 }
