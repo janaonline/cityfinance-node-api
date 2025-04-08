@@ -21,8 +21,10 @@ const overViewSheet = {
   'Financial Year': 'year',
   'Audit Status': 'audit_status',
   'Audit Firm Name': 'audit_firm',
+  'Audit Date': 'audit_date',
   'Name of the Partner': 'partner_name',
   'ICAI Membership Number': 'icai_membership_number',
+  'Document Source': 'doc_source',
   'Date of Entry': 'created_at',
   'Entered by': 'created_by',
   'Date of verification': 'verified_at',
@@ -517,71 +519,56 @@ async function validateOverview(data, financialYear, fileName) {
           '_' +
           objOfSheet.audit_status.charAt(0);
       } else
-        overviewErrors.push(
-          'Audit status must be either "Audited" or "Unaudited"'
-        );
+        overviewErrors.push('Audit status must be either "Audited" or "Unaudited"');
       if (fileName && correctFileName) {
         // if (!fileName.includes(correctFileName)) overviewErrors.push(`File name: '${correctFileName}' is expected and found '${fileName}..'`);
         if (fileName != correctFileName)
-          overviewErrors.push(
-            `File name: '${correctFileName}' is expected and found '${fileName}'`
-          );
+          overviewErrors.push(`File name: '${correctFileName}' is expected and found '${fileName}'`);
       }
 
       if (state.code != objOfSheet.state_code)
-        overviewErrors.push(
-          `State code: '${state.code}' is expected and found '${objOfSheet.state_code}'`
-        );
+        overviewErrors.push(`State code: '${state.code}' is expected and found '${objOfSheet.state_code}'`);
       if (state.name != objOfSheet.state)
-        overviewErrors.push(
-          `State name: '${state.name}' is expected and found '${objOfSheet.state}'`
-        );
+        overviewErrors.push(`State name: '${state.name}' is expected and found '${objOfSheet.state}'`);
       if (ulb.code != objOfSheet.ulb_code)
-        overviewErrors.push(
-          `ULB code: '${ulb.code}' is expected and found '${objOfSheet.ulb_code}'`
-        );
+        overviewErrors.push(`ULB code: '${ulb.code}' is expected and found '${objOfSheet.ulb_code}'`);
       if (ulb.name != objOfSheet.ulb)
-        overviewErrors.push(
-          `ULB name: '${ulb.name}' is expected and found '${objOfSheet.ulb}'`
-        );
+        overviewErrors.push(`ULB name: '${ulb.name}' is expected and found '${objOfSheet.ulb}'`);
       if (financialYear != objOfSheet.year)
-        overviewErrors.push(
-          `Financial year: '${financialYear}' is expected and found '${objOfSheet.year}'`
-        );
+        overviewErrors.push(`Financial year: '${financialYear}' is expected and found '${objOfSheet.year}'`);
       if (objOfSheet.audit_status === 'Audited') {
         const auditFirm = objOfSheet.audit_firm
           ? objOfSheet.audit_firm.trim()
           : '';
         if (auditFirm.length <= 4)
-          overviewErrors.push(
-            "Audit firm: If 'Audit Status' is 'Audited' - 'Audit firm' is mandatory"
-          );
+          overviewErrors.push("Audit firm: If 'Audit Status' is 'Audited' - 'Audit firm' is mandatory");
+      }
+      if (objOfSheet.audit_status === 'Unaudited') {
+        ['audit_date', 'audit_firm'].forEach((field) => {
+          if (objOfSheet[field]) {
+            overviewErrors.push(`Audit Status: If 'Audit Status' is 'Unaudited' - ${field} must be blank`);
+          }
+        });
       }
       if (objOfSheet.isStandardizable === 'No') {
         const comment = objOfSheet.isStandardizableComment
           ? objOfSheet.isStandardizableComment.trim()
           : '';
         if (comment.length <= 4)
-          overviewErrors.push(
-            "Standardization: If 'Can the raw file be standardised?' is 'No' comment is mandatory"
-          );
+          overviewErrors.push("Standardization: If 'Can the raw file be standardised?' is 'No' comment is mandatory");
       }
       if (Number(objOfSheet.dataFlag) > 0) {
         const comment = objOfSheet.dataFlagComment
           ? objOfSheet.dataFlagComment.trim()
           : '';
         if (comment.length <= 4)
-          overviewErrors.push(
-            "Data flag: If 'Count of Data Flags failed' > '0' comment is mandatory"
-          );
+          overviewErrors.push("Data flag: If 'Count of Data Flags failed' > '0' comment is mandatory");
       }
 
       // Throw all the consolidated erros from  overviewErrors[]
       if (overviewErrors.length > 0) throw new Error(overviewErrors.join(', '));
     } else {
-      throw new Error(
-        `State code '${objOfSheet.state_code}' or ULB code '${objOfSheet.ulb_code}' not found`
-      );
+      throw new Error(`State code '${objOfSheet.state_code}' or ULB code '${objOfSheet.ulb_code}' not found`);
     }
 
     // Merge ULB data into the objOfSheet{} and add additional fields from ulbs collection.
@@ -655,9 +642,7 @@ async function validateData(
         }
         inputSheetObj[code] = amount ? Number(amount) : null;
         if (isNaN(inputSheetObj[code])) {
-          errors.push(
-            `Line item code ${code} value is not applicable ${inputSheetObj[code]}`
-          );
+          errors.push(`Line item code ${code} value is not applicable ${inputSheetObj[code]}`);
         }
       }
     }
@@ -772,21 +757,22 @@ async function updateLog(reqId, data) {
 
 // Upload overview sheet data.
 async function uploadOverviewDataInDb(du) {
-  // Update tracker.
-  let ledgerLogData = await LedgerLog.findOne(du.query).select('tracker');
-  let ledgerLogTracker = ledgerLogData?.['tracker'] || [];
-
-  ledgerLogTracker.push({
-    audit_status: du.update.audit_status,
-    lastModifiedAt: new Date(),
-    isStandardizable: du.update.isStandardizable,
-    isStandardizableComment: du.update.isStandardizableComment,
-    dataFlag: du.update.dataFlag,
-  });
-  du.update.tracker = ledgerLogTracker;
+  const update = {
+    $push: {
+      tracker: {
+        audit_status: du.update.audit_status,
+        lastModifiedAt: new Date(),
+        isStandardizable: du.update.isStandardizable,
+        isStandardizableComment: du.update.isStandardizableComment,
+        dataFlag: du.update.dataFlag,
+        doc_source: du.update.doc_source,
+      }
+    },
+    $set: du.update
+  }
 
   // Push data to collection.
-  await LedgerLog.findOneAndUpdate(du.query, du.update, du.options);
+  await LedgerLog.findOneAndUpdate(du.query, update, du.options);
 }
 
 // Delete input sheet data if "isStandardized == No".
