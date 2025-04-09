@@ -86,7 +86,7 @@ async function getLineItemsFromDB(financialData = null) {
     // Headers for the overview data. 
     let overviewHeaders = [
         { 'code': null, '_id': 'code', 'isActive': true, 'name': 'ULB Code' },
-        { 'code': null, '_id': 'ulb', 'isActive': true, 'name': 'ULB Name' },
+        { 'code': null, '_id': 'name', 'isActive': true, 'name': 'ULB Name' },
         { 'code': null, '_id': 'population', 'isActive': true, 'name': 'Population' },
         { 'code': null, '_id': 'state', 'isActive': true, 'name': 'State' },
         // { 'code': null, '_id': 'amrut', 'isActive': true, 'name': 'AMRUT'},
