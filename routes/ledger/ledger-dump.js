@@ -82,7 +82,7 @@ const lineItemEliminated = [
 ];
 
 // Get Line Items From DB.
-async function getLineItemsFromDB(financialData = false) {
+async function getLineItemsFromDB(financialData = null) {
     // Headers for the overview data. 
     let overviewHeaders = [
         { 'code': null, '_id': 'code', 'isActive': true, 'name': 'ULB Code' },
@@ -105,7 +105,7 @@ async function getLineItemsFromDB(financialData = false) {
     ];
 
     // Add Input sheet headers only if financialData = TRUE - If user wants only overview sheet data.
-    if (!financialData) return overviewHeaders;
+    if (!financialData || financialData?.toLowerCase() == 'false') return overviewHeaders;
 
     // Line items to be calculated (Not stored in DB).
     overviewHeaders = overviewHeaders.concat([
@@ -190,7 +190,7 @@ async function fetchAllDataOverview(ulbCode = null, year = null, stateId = null,
 
     const matchCondition2 = [{ $eq: ['$ulb_id', '$$ulbId'] }];
     if (year) matchCondition2.push({ $eq: ["$year", year] });
-    if (isStandardizable?.toLowerCase() == 'no') matchCondition2.push({ $eq: ['$isStandardizable', 'No'] });
+    if (isStandardizable?.toLowerCase() == 'false') matchCondition2.push({ $eq: ['$isStandardizable', 'No'] });
 
     const query = [
         { $match: matchCondition },
@@ -249,11 +249,12 @@ async function getStateId(stateCode = false) {
 module.exports.getLedgerDump = async (req, res) => {
     try {
         const { ulbCode, stateCode, financialData, year, isStandardizable } = req.query;
+
         if (ulbCode && stateCode && !ulbCode.includes(stateCode))
             throw new Error(`Mismatch: ULB with '${ulbCode}' is not part of '${stateCode}'.`);
 
-        if (isStandardizable?.toLowerCase() == 'no' && financialData)
-            throw new Error('"financialData" cannot be TRUE if "isStandardizable" cannot be "NO"');
+        if (isStandardizable?.toLowerCase() == 'false' && financialData?.toLowerCase() == 'true')
+            throw new Error('"financialData" cannot be "TRUE" if "isStandardizable" is "FALSE"');
 
         const workbook = new ExcelJS.Workbook();
         const worksheet = workbook.addWorksheet('ledgerDump');
@@ -284,7 +285,7 @@ module.exports.getLedgerDump = async (req, res) => {
         }
 
         // If financialData = TRUE - User wants input sheet data.
-        if (financialData) {
+        if (financialData?.toLowerCase() == 'true') {
             // Iterate through each document in the cursor (array received from DB) - Input Sheet.
             const cursorInputData = await fetchAllData(ulbCode, year, stateId);
             let eachRowObj = {};
@@ -343,7 +344,7 @@ module.exports.getLedgerDump = async (req, res) => {
         res.end();
 
     } catch (error) {
-        console.error('Error generating ledger dump:', error);
+        console.error('Error generating ledger dump:', error.message);
         res.status(500).send(`Error: ${error.message}`);
     }
 }
