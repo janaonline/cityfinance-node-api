@@ -4,67 +4,80 @@ const ObjectId = require("mongoose").Types.ObjectId;
 const { years } = require("../../service/years");
 
 /* Get the list of basic details of ULBs present in "UlbLedger" i.e "Standardised Excel".*/
-module.exports.getStandardizedUlbsList = async (ulbName = null, stateId = null, year = "2021-22", skip = 0, limit = 10) => {
+module.exports.getStandardizedUlbsList = async (ulbName = null, ulbId = null, stateId = null, year = "2021-22", skip = 0, limit = 10) => {
     try {
-        let ulb_state_match = {};
+        const matchCondition1 = {
+            isStandardizable: { $ne: 'No' },
+            year: year,
+        };
+        const matchCondition2 = {};
 
-        if (ulbName) ulb_state_match = Object.assign({}, ulb_state_match, { "ulb.name": ulbName });
-        if (stateId) ulb_state_match = Object.assign({}, ulb_state_match, { "ulb.state": ObjectId(stateId) });
+        if (ulbId) matchCondition1['ulb_id'] = ObjectId(ulbId);
+        else if (ulbName) matchCondition2['ulb.name'] = ulbName;
+
+        if (stateId) matchCondition2['ulbData.state'] = ObjectId(stateId);
 
         return [
-            { $match: { financialYear: year } },
+            { $match: matchCondition1 },
             {
-                $group: {
-                    _id: "$ulb",
-                    modifiedAt: { $addToSet: "$modifiedAt" }
+                $project: {
+                    lastModifiedAt: 1,
+                    ulb_id: 1,
+                    year: 1,
                 }
             },
             {
                 $lookup: {
                     from: "ulbs",
-                    localField: "_id",
-                    foreignField: "_id",
-                    as: "ulb"
+                    let: { ulbId: "$ulb_id" },
+                    pipeline: [
+                        { $match: { $expr: { $eq: ["$_id", "$$ulbId"] } } },
+                        { $project: { name: 1, state: 1 } }
+                    ],
+                    as: "ulbData"
                 }
             },
-            { $unwind: "$ulb" },
-            { $match: ulb_state_match },
+            {
+                $unwind: {
+                    path: '$ulbData',
+                    preserveNullAndEmptyArrays: false
+                }
+            },
+            { $match: matchCondition2 },
             {
                 $lookup: {
                     from: "states",
-                    localField: "ulb.state",
-                    foreignField: "_id",
-                    as: "state"
+                    let: { stateId: '$ulbData.state' },
+                    pipeline: [
+                        { $match: { $expr: { $eq: ['$_id', '$$stateId'] } } },
+                        { $project: { name: 1, _id: 0 } }
+                    ],
+                    as: "stateData"
                 }
             },
-            { $unwind: "$state" },
+            { $addFields: { stateName: { $arrayElemAt: ["$stateData.name", 0] } } },
+            { $unset: 'stateData' },
             {
-                $project: {
-                    modifiedAt: 1,
-                    "ulb._id": 1,
-                    "ulb.name": 1,
-                    "ulb.state": 1,
-                    "ulb.code": 1,
-                    "state._id": 1,
-                    "state.name": 1,
-                    "state.code": 1
-                }
-            },
-            {
-                $project: {
-                    type: "excel",
-                    modifiedAt: { $arrayElemAt: ["$modifiedAt", 0] },
-                    state: "$state._id",
-                    ulb: "$ulb.name",
-                    ulbId: "$ulb._id",
-                    section: "standardised",
-                    category: "balance",
-                    year: year,
-                    fileName: {
-                        $concat: ["$state.name", "_", "$ulb.name", "_", "balance", "_", year]
+                "$project": {
+                    "type": "excel",
+                    "modifiedAt": "$lastModifiedAt",
+                    "stateName": 1,
+                    "ulb": "$ulbData.name",
+                    "ulbId": "$ulbData._id",
+                    "section": "standardised",
+                    "category": "balance",
+                    "year": 1,
+                    "fileName": {
+                        "$concat": ["$stateName", "_", "$ulbData.name", "_", "balance", "_", year]
                     }
                 }
             },
+            // {
+            //     $sort: {
+            //         modifiedAt: -1,
+            //         stateName: -1,
+            //     }
+            // },
             { $skip: Number(skip) },
             { $limit: Number(limit) },
         ]
@@ -74,12 +87,12 @@ module.exports.getStandardizedUlbsList = async (ulbName = null, stateId = null, 
 };
 
 /* Get the list of basic details of ULBs whose "Raw files" are available. (2019 onwards) */
-module.exports.getRawUlbsList19Onwards = async (year = "2021-22", stateId = null, ulbName = null, type = "pdf", category, skip = 0, limit = 10) => {
+module.exports.getRawUlbsList19Onwards = async (year = "2021-22", stateId = null, ulbName = null, ulbId = null, type = "pdf", category, skip = 0, limit = 10) => {
     try {
-        let ulb_state_match = {};
-        let year_id = years[year];
-        let auditedArr = [{ $eq: ["$aaData.audited.year", { $toObjectId: year_id }] }];
-        let unAuditedArr = [{ $eq: ["$aaData.unAudited.year", { $toObjectId: year_id }] }];
+        const matchCondition = {};
+        const year_id = years[year];
+        const auditedArr = [{ $eq: ["$aaData.audited.year", { $toObjectId: year_id }] }];
+        const unAuditedArr = [{ $eq: ["$aaData.unAudited.year", { $toObjectId: year_id }] }];
 
         // Add a check - check if balance sheet url is available.
         if (type === "pdf" || type === "excel") {
@@ -87,8 +100,10 @@ module.exports.getRawUlbsList19Onwards = async (year = "2021-22", stateId = null
             addUrlCheck(unAuditedArr, unAuditedArr, 'unAudited', type);
         }
 
-        if (ulbName) ulb_state_match = Object.assign({}, ulb_state_match, { "name": ulbName });
-        if (stateId) ulb_state_match = Object.assign({}, ulb_state_match, { "state": ObjectId(stateId) });
+        if (ulbId) matchCondition['_id'] = ObjectId(ulbId);
+        else if (ulbName) matchCondition['name'] = ulbName;
+
+        if (stateId) matchCondition['state'] = ObjectId(stateId);
 
         // Function to push conditions into the arrays
         function addUrlCheck(auditedArr, unAuditedArr, fileType, type) {
@@ -110,7 +125,7 @@ module.exports.getRawUlbsList19Onwards = async (year = "2021-22", stateId = null
         }
 
         return [
-            { $match: ulb_state_match },
+            { $match: matchCondition },
             {
                 $lookup: {
                     from: "states",
@@ -223,15 +238,18 @@ module.exports.getRawUlbsList19Onwards = async (year = "2021-22", stateId = null
 };
 
 /* Get the list of basic details of ULBs whose "Raw files" are available. (2015 to 2018) */
-module.exports.getRawUlbsList15To18 = async (year = "2015-16", stateId = null, ulbName = null, type = "pdf", category, skip = 0, limit = 10) => {
+module.exports.getRawUlbsList15To18 = async (year = "2015-16", stateId = null, ulbName = null, ulbId = null, type = "pdf", category, skip = 0, limit = 10) => {
 
     try {
-        let ulb_state_match = {};
-        if (ulbName) ulb_state_match = Object.assign({}, ulb_state_match, { "name": ulbName });
-        if (stateId) ulb_state_match = Object.assign({}, ulb_state_match, { "state": ObjectId(stateId) });
+        const matchCondition = {};
+
+        if (ulbId) matchCondition['_id'] = ObjectId(ulbId);
+        else if (ulbName) matchCondition['name'] = ulbName;
+
+        if (stateId) matchCondition['state'] = ObjectId(stateId);
 
         return [
-            { $match: ulb_state_match },
+            { $match: matchCondition },
             {
                 $lookup: {
                     from: "states",

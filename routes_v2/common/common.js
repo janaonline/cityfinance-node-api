@@ -10,13 +10,13 @@ module.exports.getLatestAfsYear = async (req, res) => {
         const yearsObj = await getYearsList();
 
         // reduce() is performing lexicographical comparison (works correctly only if values have the same format and length)
-        const latestAfsYear = afsDistinctYearKeys
+        const afsYears = afsDistinctYearKeys
             .map((id) => yearsObj[id])
-            .reduce((max, year) => (year > max ? year : max));
+            // .reduce((max, year) => (year > max ? year : max));
 
         res.status(200).json({
             success: true,
-            latestAfsYear,
+            afsYears,
         });
 
     } catch (error) {
