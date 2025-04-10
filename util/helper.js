@@ -1,5 +1,7 @@
 const { getDesiredYear, isBeyond2023_24, isBeyondYear } = require("../service/years");
 const userTypes = require("./userTypes")
+const moment = require('moment');
+
 function Helper() {
     this.isKeyValueMatched = function (obj, key, val) {
         let res = false
@@ -89,7 +91,13 @@ function Helper() {
         if(!isBeyondYear(design_year,'2022-23')) return;
         const { yearIndex: designYearIndex  } = getDesiredYear(design_year);
         const { yearIndex } = getDesiredYear(yearObject.year);
-        if(designYearIndex - yearIndex > 1) {
+        if(designYearIndex < 7) {
+           // yearObject.readonly = false;
+            yearObject.required = true;
+            yearObject.placeholder = (yearObject.value == "") ? 'N/A' : "";
+            yearObject.notApplicable = (yearObject.value == "");
+        }
+        else if(designYearIndex - yearIndex > 1) {
             yearObject.readonly = true;
             yearObject.required = false;
             yearObject.placeholder = (yearObject.value == "") ? 'N/A' : "";
@@ -148,6 +156,14 @@ function Helper() {
     };
     this.isValidDate = (d) => {
         return d instanceof Date && !isNaN(d);
+    }
+
+    // UTC to IST date converstion.
+    this.getDate = (dateVar) => {
+        if (dateVar) {
+            const fullDate = dateVar.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
+            return moment(fullDate, 'D/M/YYYY, h:mm:ss a').format('DD-MMM-YY');
+        } return "";
     }
 }
 function padTo2Digits(num) {

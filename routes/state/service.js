@@ -8,8 +8,11 @@ const XVFcForms = require("../../models/XVFinanceComissionReForms");
 const OverallUlb = require("../../models/OverallUlb");
 const State = require("../../models/State");
 const LineItem = require("../../models/LineItem");
-const ObjectId = require("mongoose").Types.ObjectId;
+const mongoose = require("mongoose")
+const ObjectId = mongoose.Types.ObjectId;
 const UA = require('../../models/UA')
+const Redis = require("../../service/redis");
+
 module.exports.get = async function (req, res) {
 
     let query = {};
@@ -97,27 +100,43 @@ module.exports.delete = async function (req, res) {
     });
 }
 module.exports.getStateListWithCoveredUlb = async (req, res) => {
+    // mongoose.set('debug', true);
     try {
         let arr = []
-        let {accessToXVFC} = req.query
+        let { accessToXVFC } = req.query
         let cond = {
             isActive: true
         };
-        if(accessToXVFC){
+        if (accessToXVFC) {
             cond['accessToXVFC'] = Boolean(accessToXVFC)
         }
         let financialYear = req.body.year && req.body.year.length ? req.body.year : null;
-        let states = await State.find(cond).lean();
-        const stateResponses = await getData(states, financialYear); 
-        let index = 0;  
-        for (let el of states) {
-            let data = stateResponses[index];
-            data = data.value
-            await calculateStateData(el, data, arr);
-            index++;
-        }
+
+        const redisKey = "stateListWithCoveredUlb-" + JSON.stringify({ ...req.query, ...req.body });
+        const expireTime = 60 * 60 * 24 * 30 // 1 month
+        Redis.get(redisKey, async (err, value) => {
+            let isCached = false;
+            if (!value) {
+                let states = await State.find(cond).lean();
+                const stateResponses = await getData(states, financialYear);
+
+                let index = 0;
+                for (let el of states) {
+                    let data = stateResponses[index];
+                    data = data.value
+                    await calculateStateData(el, data, arr);
+                    index++;
+                }
+                Redis.set(redisKey, JSON.stringify(arr), expireTime);
+            } else {
+                isCached = true;
+                arr = JSON.parse(value);
+            }
+            return res.status(200).json({ fromCachce: isCached, message: "State list with ulb covered percentage.", success: true, data: arr })
+
+        });
+
         //let coveredUlbs = await UlbLedger.distinct("ulb",cond).exec();
-        return res.status(200).json({ message: "State list with ulb covered percentage.", success: true, data: arr })
     } catch (e) {
         console.log("Exception", e);
         return res.status(400).json({ message: "", errMessage: e.message, success: false });
@@ -214,29 +233,29 @@ module.exports.form = async function (req, res) {
                                 //     subject: template.subject,
                                 //     html: template.body
                                 // };
-                                let mailOptions =     {
+                                let mailOptions = {
                                     Destination: {
-                                      /* required */
-                                      ToAddresses: [user.email]
+                                        /* required */
+                                        ToAddresses: [user.email]
                                     },
                                     Message: {
-                                      /* required */
-                                      Body: {
                                         /* required */
-                                        Html: {
-                                          Charset: "UTF-8",
-                                          Data:  template.body
+                                        Body: {
+                                            /* required */
+                                            Html: {
+                                                Charset: "UTF-8",
+                                                Data: template.body
+                                            },
                                         },
-                                      },
-                                      Subject: {
-                                        Charset: 'UTF-8',
-                                        Data:template.subject
-                                      }
+                                        Subject: {
+                                            Charset: 'UTF-8',
+                                            Data: template.subject
+                                        }
                                     },
                                     Source: process.env.EMAIL,
                                     /* required */
                                     ReplyToAddresses: [process.env.EMAIL],
-                                  }
+                                }
                                 service.sendEmail(mailOptions);
                                 let c = 0;
                                 if (mohua.length > 0) {
@@ -249,29 +268,29 @@ module.exports.form = async function (req, res) {
                                         //     subject: template.subject,
                                         //     html: template.body
                                         // };
-                                        let mailOptions =     {
+                                        let mailOptions = {
                                             Destination: {
-                                              /* required */
-                                              ToAddresses: [mo.email]
+                                                /* required */
+                                                ToAddresses: [mo.email]
                                             },
                                             Message: {
-                                              /* required */
-                                              Body: {
                                                 /* required */
-                                                Html: {
-                                                  Charset: "UTF-8",
-                                                  Data:  template.body
+                                                Body: {
+                                                    /* required */
+                                                    Html: {
+                                                        Charset: "UTF-8",
+                                                        Data: template.body
+                                                    },
                                                 },
-                                              },
-                                              Subject: {
-                                                Charset: 'UTF-8',
-                                                Data:template.subject
-                                              }
+                                                Subject: {
+                                                    Charset: 'UTF-8',
+                                                    Data: template.subject
+                                                }
                                             },
                                             Source: process.env.EMAIL,
                                             /* required */
                                             ReplyToAddresses: [process.env.EMAIL],
-                                          }
+                                        }
                                         service.sendEmail(mailOptions);
                                         c++;
                                         console.log(c)
@@ -539,7 +558,7 @@ module.exports.eligibleStateForms = async function (req, res) {
 }
 module.exports.isMillionState = async (req, res) => {
     let user = req.decoded;
-    let {state_id} = req.query;
+    let { state_id } = req.query;
     let state = user.state ?? state_id;
     let output = false;
     let data = await Ulb.find({ state: ObjectId(state), isMillionPlus: "Yes" })
@@ -640,83 +659,83 @@ async function calculateStateData(el, data, arr) {
  * stateDataPromises.
  */
 async function getData(states, financialYear) {
-   try {
-    let lineItem = await LineItem.findOne({ code: "1001" }).lean();
-    let stateDataPromises = [];
-    for(let el of states){
-        let stateUlbs = await getUlbs(el._id, financialYear);
-        let condition = { ulb: { $in: stateUlbs } };
-        if (financialYear) {
-            condition["financialYear"] = { $in: financialYear };
+    try {
+        let lineItem = await LineItem.findOne({ code: "1001" }).lean();
+        let stateDataPromises = [];
+        for (let el of states) {
+            let stateUlbs = await getUlbs(el._id, financialYear);
+            let condition = { ulb: { $in: stateUlbs } };
+            if (financialYear) {
+                condition["financialYear"] = { $in: financialYear };
+            }
+            let prms = getStateLedgerQuery(condition, lineItem);
+            stateDataPromises.push(prms);
         }
-        let prms = getStateLedgerQuery(condition, lineItem);
-        stateDataPromises.push(prms);
+        const stateResponses = await Promise.allSettled(stateDataPromises);
+        return stateResponses;
+    } catch (error) {
+        throw { message: `getData: ${error.message}` }
     }
-    const stateResponses = await Promise.allSettled(stateDataPromises);
-    return stateResponses;
-   } catch (error) {
-     throw {message: `getData: ${error.message}`}
-   }
 }
 
 async function getStateLedgerQuery(condition, lineItem) {
-  return new Promise((resolve, reject) => {
-    try {
-      const output = UlbLedger.aggregate([
-        { $match: condition },
-        {
-          $group: {
-            _id: {
-              ulb: "$ulb",
-            },
-            lineItem: { $addToSet: { _id: "$lineItem", amount: "$amount" } },
-          },
-        },
-        {
-          $project: {
-            ulb: "$_id.ulb",
-            lineItem: {
-              $filter: {
-                input: "$lineItem",
-                as: "lineItem",
-                cond: {
-                  $and: [{ $eq: ["$$lineItem._id", lineItem._id] }],
+    return new Promise((resolve, reject) => {
+        try {
+            const output = UlbLedger.aggregate([
+                { $match: condition },
+                {
+                    $group: {
+                        _id: {
+                            ulb: "$ulb",
+                        },
+                        lineItem: { $addToSet: { _id: "$lineItem", amount: "$amount" } },
+                    },
                 },
-              },
-            },
-          },
-        },
-        {
-          $project: {
-            ulb: 1,
-            lineItem: { $arrayElemAt: ["$lineItem", 0] },
-          },
-        },
-        {
-          $project: {
-            ulb: 1,
-            amount: "$lineItem.amount",
-          },
-        },
-        {
-          $project: {
-            ulb: 1,
-            auditStatus: {
-              $switch: {
-                branches: [
-                  { case: { $eq: ["$amount", 0] }, then: "unaudited" },
-                  { case: { $gt: ["$amount", 0] }, then: "audited" },
-                ],
-                default: "auditNA",
-              },
-            },
-          },
-        },
-      ]);
-      resolve(output);
-    } catch (error) {
-      reject(error);
-    }
-  });
-} 
+                {
+                    $project: {
+                        ulb: "$_id.ulb",
+                        lineItem: {
+                            $filter: {
+                                input: "$lineItem",
+                                as: "lineItem",
+                                cond: {
+                                    $and: [{ $eq: ["$$lineItem._id", lineItem._id] }],
+                                },
+                            },
+                        },
+                    },
+                },
+                {
+                    $project: {
+                        ulb: 1,
+                        lineItem: { $arrayElemAt: ["$lineItem", 0] },
+                    },
+                },
+                {
+                    $project: {
+                        ulb: 1,
+                        amount: "$lineItem.amount",
+                    },
+                },
+                {
+                    $project: {
+                        ulb: 1,
+                        auditStatus: {
+                            $switch: {
+                                branches: [
+                                    { case: { $eq: ["$amount", 0] }, then: "unaudited" },
+                                    { case: { $gt: ["$amount", 0] }, then: "audited" },
+                                ],
+                                default: "auditNA",
+                            },
+                        },
+                    },
+                },
+            ]);
+            resolve(output);
+        } catch (error) {
+            reject(error);
+        }
+    });
+}
 

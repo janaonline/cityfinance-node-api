@@ -18,12 +18,12 @@ const { query } = require("express");
 
 exports.dataAvailabilityState = async (req, res) => {
   try {
-        const { financialYear, stateId, population, ulbType, csv, value } = req.query;
+    const { financialYear, stateId, population, ulbType, csv, value } = req.query;
     if (!financialYear) throw { message: "financial year is missing." };
     let filterCondition = {},
       ulbLedgers;
     filterCondition['isActive'] = true
-    if (stateId) {filterCondition["state"] = stateId};
+    if (stateId) { filterCondition["state"] = stateId };
 
     let ulbs = Ulb.find(filterCondition)
       .populate("ulbType", "name")
@@ -40,11 +40,11 @@ exports.dataAvailabilityState = async (req, res) => {
     filterCondition = {
       ulb: { $in: ulbs.map((ech) => ObjectId(ech._id)) },
     };
-    if(value == 'slb'){
-      Object.assign(filterCondition, {year: financialYear})
+    if (value == 'slb') {
+      Object.assign(filterCondition, { year: financialYear })
       ulbLedgers = await Indicators.distinct("ulb", filterCondition).lean();
-    }else{
-      Object.assign(filterCondition, {financialYear: financialYear})
+    } else {
+      Object.assign(filterCondition, { financialYear: financialYear })
       ulbLedgers = await UlbLedger.distinct("ulb", filterCondition).lean();
     }
 
@@ -229,7 +229,7 @@ async function createPopulationData(ulbs, totalUlbs, ulbLedgers) {
     },
   };
   const lengthOfUlbs = ulbs.length;
-    let aa = 0;
+  let aa = 0;
   for (let x = 0; x < lengthOfUlbs; ++x) {
     const specific = ulbs[x];
     if (specific.population < 1e5 && specific.population != null) {
@@ -267,7 +267,7 @@ async function createPopulationData(ulbs, totalUlbs, ulbLedgers) {
   for (each of rows) {
     if (each != "Average") {
       const arrr = populationMap[each]["numberOfULBs"];
-      let matched = 0 ;
+      let matched = 0;
       for (elem of arrr) {
         if (ulbLedgers.indexOf(elem._id) > -1) {
           ++matched;
@@ -346,7 +346,7 @@ exports.nationalDashRevenue = async (req, res) => {
     const { nationalDashRevenuePipeline } = require("../../util/aggregation");
     let responsePayload = { data: null };
     const HashTable = new Map();
-    let ulbs = Ulb.find(stateId ? { state: stateId } : {}).select({
+    let ulbs = Ulb.find(stateId ? { state: ObjectId(stateId), isActive: true } : { isActive: true }).select({
       _id: 1,
       population: 1,
       ulbType: 1,
@@ -355,6 +355,7 @@ exports.nationalDashRevenue = async (req, res) => {
     let promiseData = await Promise.all([ulbs, lineItems]);
     ulbs = promiseData[0];
     lineItems = promiseData[1];
+    let ulbsCount = ulbs.length;
     ulbs = ulbs.map((each) => {
       HashTable.set(each._id.toString(), true);
       setPopCatValInHash(HashTable, each);
@@ -383,62 +384,73 @@ exports.nationalDashRevenue = async (req, res) => {
 
     let populationMap = {
       Average: {
+        population: 0,
+        revenue: 0,
+        revenuePerCapita: 0,
+        DataAvailPercentage: 0,
+      },
+      "4 Million+": {
+        population: 0,
+        revenue: 0,
+        revenuePerCapita: 0,
+        DataAvailPercentage: 0,
+      },
+      "1 Million - 4 Million": {
+        population: 0,
+        revenue: 0,
+        revenuePerCapita: 0,
+        DataAvailPercentage: 0,
+      },
+      "500 Thousand - 1 Million": {
+        population: 0,
+        revenue: 0,
+        revenuePerCapita: 0,
+        DataAvailPercentage: 0,
+      },
+      "100 Thousand - 500 Thousand": {
+        population: 0,
         revenue: 0,
         revenuePerCapita: 0,
         DataAvailPercentage: 0,
       },
       "< 100 Thousand": {
+        population: 0,
         revenue: 0,
         revenuePerCapita: 0,
-        dataAvailPercent: 0,
-      },
-      "100 Thousand - 500 Thousand": {
-        revenue: 0,
-        revenuePerCapita: 0,
-        dataAvailPercent: 0,
-      },
-
-      "500 Thousand - 1 Million": {
-        revenue: 0,
-        revenuePerCapita: 0,
-        dataAvailPercent: 0,
-      },
-      "1 Million - 4 Million": {
-        revenue: 0,
-        revenuePerCapita: 0,
-        dataAvailPercent: 0,
-      },
-      "4 Million+": {
-        revenue: 0,
-        revenuePerCapita: 0,
-        dataAvailPercent: 0,
-      },
+        DataAvailPercentage: 0,
+      }
     };
     let ulbTypeMap = {
       Average: {
+        population: 0,
         revenue: 0,
         revenuePerCapita: 0,
         DataAvailPercentage: 0,
       },
       "Municipal Corporation": {
+        population: 0,
         revenue: 0,
         revenuePerCapita: 0,
-        dataAvailPercent: 0,
+        DataAvailPercentage: 0,
       },
       Municipality: {
+        population: 0,
         revenue: 0,
         revenuePerCapita: 0,
-        dataAvailPercent: 0,
+        DataAvailPercentage: 0,
       },
       "Town Panchayat": {
+        population: 0,
         revenue: 0,
         revenuePerCapita: 0,
-        dataAvailPercent: 0,
+        DataAvailPercentage: 0,
       },
     };
     let sumOfRevenue = 0,
       sumOfRevPerCapita = 0,
-      sumOfDataAval = 0;
+      sumOfDataAval = 0,
+      populationSum = 0,
+      totalSeenUlbs = 0;
     if (type == "totalRevenue") {
       if (ulbLeds.length) {
         const keys = Object.keys(ulbLeds[0]);
@@ -452,10 +464,11 @@ exports.nationalDashRevenue = async (req, res) => {
             populationMap[key] = obj;
           }
           for (each of obj["set"]) {
-            if (HashTable.get(each.toString())) ++seenUlbs;
+            if (HashTable.get(each.toString())) { ++seenUlbs; ++totalSeenUlbs; }
           }
           sumOfRevenue += obj["revenue"];
           sumOfRevPerCapita += obj["revenuePerCapita"];
+          sumOfPopulation = obj["population"];
           delete obj["set"];
           obj["DataAvailPercentage"] = (seenUlbs / HashTable[key]) * 100;
           sumOfDataAval += obj["DataAvailPercentage"];
@@ -492,15 +505,26 @@ exports.nationalDashRevenue = async (req, res) => {
         rows = [
           ...Object.keys(responsePayload.data).map((each) => {
             let output = { ulb_pop_category: each };
-            for (x in responsePayload.data[each]) {
+
+            for (let x in responsePayload.data[each]) {
               output[x] = Math.round(responsePayload.data[each][x]);
-              if (x.includes("Percentage")) {
-                output[x] += " %";
-              }
+              if (x.includes("Percentage")) { output[x] += " %"; }
             }
+
+            if (each != 'Average') populationSum += output.population;
+            // delete output.population;
+
             return output;
           }),
         ];
+      rows.push({
+        ulb_pop_category: 'All ULBs',
+        revenue: sumOfRevenue.toFixed(0),
+        revenuePerCapita: populationSum == 0 ? 0 : (sumOfRevenue * 1e7 / populationSum).toFixed(0),
+        DataAvailPercentage: ((totalSeenUlbs / ulbsCount) * 100).toFixed(0) + " %"
+      })
+      columns = columns.filter((ele) => ele.key != 'population')
+
       responsePayload.data = { rows, columns };
     } else if (type == "revenueMix") {
       let f1 = true,
@@ -683,7 +707,7 @@ exports.nationalDashExpenditure = async (req, res) => {
     formType = formType ? formType : "populationCategory";
     const { nationalDashExpensePipeline } = require("../../util/aggregation");
     const HashTable = new Map();
-    let ulbs = Ulb.find(stateId ? { state: stateId } : {}).select({
+    let ulbs = Ulb.find(stateId ? { state: stateId, isActive: true } : { isActive: true }).select({
       _id: 1,
       population: 1,
       ulbType: 1,
@@ -695,7 +719,9 @@ exports.nationalDashExpenditure = async (req, res) => {
     ).select("_id");
     let promiseData = await Promise.all([ulbs, lineItemsExp]);
     ulbs = promiseData[0];
+    let ulbsCount = ulbs.length;
     lineItemsExp = promiseData[1];
+    lineItemsExp = lineItemsExp.filter((ele) => ele._id.toString() != "5dd10c2585c951b54ec1d75e" && ele._id.toString() != "5dd10c2385c951b54ec1d744");
     ulbs = ulbs.map((each) => {
       HashTable.set(each._id.toString(), true);
       setPopCatValInHash(HashTable, each);
@@ -723,62 +749,73 @@ exports.nationalDashExpenditure = async (req, res) => {
     // return res.json(ulbLeds);
     let populationMap = {
       Average: {
+        population: 0,
+        expenditure: 0,
+        expenditurePerCapita: 0,
+        DataAvailPercentage: 0,
+      },
+      "4 Million+": {
+        population: 0,
+        expenditure: 0,
+        expenditurePerCapita: 0,
+        DataAvailPercentage: 0,
+      },
+      "1 Million - 4 Million": {
+        population: 0,
+        expenditure: 0,
+        expenditurePerCapita: 0,
+        DataAvailPercentage: 0,
+      },
+      "500 Thousand - 1 Million": {
+        population: 0,
+        expenditure: 0,
+        expenditurePerCapita: 0,
+        DataAvailPercentage: 0,
+      },
+      "100 Thousand - 500 Thousand": {
+        population: 0,
         expenditure: 0,
         expenditurePerCapita: 0,
         DataAvailPercentage: 0,
       },
       "< 100 Thousand": {
+        population: 0,
         expenditure: 0,
         expenditurePerCapita: 0,
-        dataAvailPercent: 0,
-      },
-      "100 Thousand - 500 Thousand": {
-        expenditure: 0,
-        expenditurePerCapita: 0,
-        dataAvailPercent: 0,
-      },
-
-      "500 Thousand - 1 Million": {
-        expenditure: 0,
-        expenditurePerCapita: 0,
-        dataAvailPercent: 0,
-      },
-      "1 Million - 4 Million": {
-        expenditure: 0,
-        expenditurePerCapita: 0,
-        dataAvailPercent: 0,
-      },
-      "4 Million+": {
-        expenditure: 0,
-        expenditurePerCapita: 0,
-        dataAvailPercent: 0,
+        DataAvailPercentage: 0,
       },
     };
     let ulbTypeMap = {
       Average: {
+        population: 0,
         expenditure: 0,
         expenditurePerCapita: 0,
         DataAvailPercentage: 0,
       },
       "Municipal Corporation": {
+        population: 0,
         expenditure: 0,
         expenditurePerCapita: 0,
-        dataAvailPercent: 0,
+        DataAvailPercentage: 0,
       },
       Municipality: {
+        population: 0,
         expenditure: 0,
         expenditurePerCapita: 0,
-        dataAvailPercent: 0,
+        DataAvailPercentage: 0,
       },
       "Town Panchayat": {
+        population: 0,
         expenditure: 0,
         expenditurePerCapita: 0,
-        dataAvailPercent: 0,
+        DataAvailPercentage: 0,
       },
     };
     let sumOfExp = 0,
       sumOfExpPerCapita = 0,
-      sumOfDataAval = 0;
+      sumOfDataAval = 0,
+      populationSum = 0,
+      totalSeenUlbs = 0;
     if (type == "totalExpenditure") {
       if (ulbLeds.length) {
         const keys = Object.keys(ulbLeds[0]);
@@ -792,7 +829,7 @@ exports.nationalDashExpenditure = async (req, res) => {
             populationMap[key] = obj;
           }
           for (each of obj["set"]) {
-            if (HashTable.get(each.toString())) ++seenUlbs;
+            if (HashTable.get(each.toString())) { ++seenUlbs; ++totalSeenUlbs }
           }
           sumOfExp += obj["expenditure"];
           sumOfExpPerCapita += obj["expenditurePerCapita"];
@@ -839,9 +876,17 @@ exports.nationalDashExpenditure = async (req, res) => {
                 output[x] += " %";
               }
             }
+            if (each != 'Average') populationSum += output.population;
             return output;
           }),
         ];
+      rows.push({
+        ulb_pop_category: 'All ULBs',
+        expenditure: sumOfExp.toFixed(0),
+        expenditurePerCapita: populationSum == 0 ? 0 : (sumOfExp * 1e7 / populationSum).toFixed(0),
+        DataAvailPercentage: ((totalSeenUlbs / ulbsCount) * 100).toFixed(0) + " %"
+      });
+      columns = columns.filter((ele) => ele.key != 'population')
       responsePayload.data = { rows, columns };
     } else if (type == "expenditureMix") {
       let flag = false;
@@ -863,7 +908,7 @@ exports.nationalDashExpenditure = async (req, res) => {
         responsePayload.data = ulbLeds[0];
         let nationalArr = responsePayload.data.national,
           individualArr = responsePayload.data.individual,
-          stateArr = responsePayload.data?.state ;
+          stateArr = responsePayload.data?.state;
         let lineItemMap = new Map(),
           ulbTypeMap = new Map();
         const lineItems = await LineItem.find().lean();
@@ -876,7 +921,7 @@ exports.nationalDashExpenditure = async (req, res) => {
           ulbTypeMap.set(each._id.toString(), each.name);
           return each;
         });
-        let national_Format = {},  state_Format = {},
+        let national_Format = {}, state_Format = {},
           individual_Format = {
             "Municipality": {},
             "Municipal Corporation": {},
@@ -952,9 +997,9 @@ exports.nationalDashExpenditure = async (req, res) => {
           if (!includeInExpenditure.includes(lineName)) {
             lineName = "Other Expenditure";
             otherAmount += each.amount
-            national_Format[lineName] = otherAmount ;
+            national_Format[lineName] = otherAmount;
           }
-          if(lineName != "Other Expenditure" )
+          if (lineName != "Other Expenditure")
             national_Format[lineName] = each.amount;
           return each;
         });
@@ -964,9 +1009,9 @@ exports.nationalDashExpenditure = async (req, res) => {
           if (!includeInExpenditure.includes(lineName)) {
             lineName = "Other Expenditure";
             otherAmount += each.amount
-            state_Format[lineName] = otherAmount ;
+            state_Format[lineName] = otherAmount;
           }
-          if(lineName != "Other Expenditure" )
+          if (lineName != "Other Expenditure")
             state_Format[lineName] = each.amount;
           return each;
         });
@@ -1074,11 +1119,17 @@ async function createTableData(type, data, ulbsCountInIndia) {
     columns[0].display_name = "ULB Type";
     ulbTypes = await UlbType.find().lean();
 
+    let revenueSum = 0;
+    let expenseSum = 0;
+
     for (const value of data.individual) {
-      for(let elem in  value){
-        if(typeof value[elem] != 'string' )
-          value[elem] =  value[elem].toFixed(0)
+      for (let elem in value) {
+        if (typeof value[elem] != 'string'  && elem in value) {
+          value[elem] = value[elem].toFixed(0);
+        }
       }
+      expenseSum += value['expense'] ? Number(value['expense']) : 0;
+      revenueSum += value['revenue'] ? Number(value['revenue']) : 0;
       let tempData = {
         ulbType: ulbTypes.find((val) => val._id.toString() == value._id).name,
         ...value,
@@ -1087,15 +1138,30 @@ async function createTableData(type, data, ulbsCountInIndia) {
       else tempData.deficitOrSurplus = "Deficit";
       rows.push(tempData);
     }
+
+    rows.push({
+      ulbType: 'All ULBs',
+      revenue: revenueSum.toFixed(0),
+      expense: expenseSum.toFixed(0),
+      deficitOrSurplus: "-"
+    });
+
   } else {
+    revenueSum = 0;
+    expenseSum = 0;
     data = data.individual[0];
+
     columns[0].display_name = "ULB Population Category";
     for (const key in data) {
       if (key == "_id") continue;
       const element = data[key];
-      for(let elem in  element){
-        element[elem] =  element[elem].toFixed(0)
+      for (let elem in element) {
+        if (elem in element && typeof element[elem] != 'string') {
+          element[elem] = element[elem].toFixed(0);
+       }
       }
+      expenseSum += element['expense'] ? Number(element['expense']) : 0;
+      revenueSum += element['revenue'] ? Number(element['revenue']) : 0;
       let tempData = {
         ulbType: key,
         ...element,
@@ -1104,6 +1170,14 @@ async function createTableData(type, data, ulbsCountInIndia) {
       else tempData.deficitOrSurplus = "Deficit";
       rows.push(tempData);
     }
+
+    rows.push({
+      ulbType: 'All ULBs',
+      revenue: revenueSum.toFixed(0),
+      expense: expenseSum.toFixed(0),
+      deficitOrSurplus: "-"
+    });
+
   }
   return { columns, rows };
 }
@@ -1176,7 +1250,7 @@ let getExcel = async (req, res, data) => {
       value.sno = i + 1;
       worksheet.addRow(value);
     });
-    worksheet.addRow({sno: `Can't find what you are looking for? Reach out to us at contact@${process.env.PROD_HOST}`});
+    worksheet.addRow({ sno: `Can't find what you are looking for? Reach out to us at contact@${process.env.PROD_HOST}` });
     res.setHeader(
       "Content-Type",
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
@@ -1204,7 +1278,7 @@ exports.nationalDashOwnRevenue = async (req, res) => {
     } = require("../../util/aggregation");
     let responsePayload = { data: null };
     const HashTable = new Map();
-    let ulbs = Ulb.find(stateId ? { state: stateId } : {}).select({
+    let ulbs = Ulb.find(stateId ? { state: stateId, isActive: true } : { isActive: true }).select({
       _id: 1,
       population: 1,
       ulbType: 1,
@@ -1216,6 +1290,7 @@ exports.nationalDashOwnRevenue = async (req, res) => {
     }).select("_id");
     let promiseData = await Promise.all([ulbs, lineItems]);
     ulbs = promiseData[0];
+    let ulbsCount = ulbs.length;
     lineItems = promiseData[1];
     ulbs = ulbs.map((each) => {
       HashTable.set(each._id.toString(), true);
@@ -1243,62 +1318,74 @@ exports.nationalDashOwnRevenue = async (req, res) => {
     }
     let populationMap = {
       Average: {
+        population: 0,
+        Ownrevenue: 0,
+        OwnrevenuePerCapita: 0,
+        DataAvailPercentage: 0,
+      },
+      "4 Million+": {
+        population: 0,
+        Ownrevenue: 0,
+        OwnrevenuePerCapita: 0,
+        DataAvailPercentage: 0,
+      },
+      "1 Million - 4 Million": {
+        population: 0,
+        Ownrevenue: 0,
+        OwnrevenuePerCapita: 0,
+        DataAvailPercentage: 0,
+      },
+      "500 Thousand - 1 Million": {
+        population: 0,
+        Ownrevenue: 0,
+        OwnrevenuePerCapita: 0,
+        DataAvailPercentage: 0,
+      },
+      "100 Thousand - 500 Thousand": {
+        population: 0,
         Ownrevenue: 0,
         OwnrevenuePerCapita: 0,
         DataAvailPercentage: 0,
       },
       "< 100 Thousand": {
+        population: 0,
         Ownrevenue: 0,
         OwnrevenuePerCapita: 0,
-        dataAvailPercent: 0,
-      },
-      "100 Thousand - 500 Thousand": {
-        Ownrevenue: 0,
-        OwnrevenuePerCapita: 0,
-        dataAvailPercent: 0,
+        DataAvailPercentage: 0,
       },
 
-      "500 Thousand - 1 Million": {
-        Ownrevenue: 0,
-        OwnrevenuePerCapita: 0,
-        dataAvailPercent: 0,
-      },
-      "1 Million - 4 Million": {
-        Ownrevenue: 0,
-        OwnrevenuePerCapita: 0,
-        dataAvailPercent: 0,
-      },
-      "4 Million+": {
-        Ownrevenue: 0,
-        OwnrevenuePerCapita: 0,
-        dataAvailPercent: 0,
-      },
     };
     let ulbTypeMap = {
       Average: {
+        population: 0,
         Ownrevenue: 0,
         OwnrevenuePerCapita: 0,
         DataAvailPercentage: 0,
       },
       "Municipal Corporation": {
+        population: 0,
         Ownrevenue: 0,
         OwnrevenuePerCapita: 0,
-        dataAvailPercent: 0,
+        DataAvailPercentage: 0,
       },
       Municipality: {
+        population: 0,
         Ownrevenue: 0,
         OwnrevenuePerCapita: 0,
-        dataAvailPercent: 0,
+        DataAvailPercentage: 0,
       },
       "Town Panchayat": {
+        population: 0,
         Ownrevenue: 0,
         OwnrevenuePerCapita: 0,
-        dataAvailPercent: 0,
+        DataAvailPercentage: 0,
       },
     };
     let sumOfOwnRevenue = 0,
       sumOfOwnRevPerCapita = 0,
-      sumOfDataAval = 0;
+      sumOfDataAval = 0,
+      populationSum = 0,
+      totalSeenUlbs = 0;
     if (type == "totalOwnRevenue") {
       if (ulbLeds.length) {
         const keys = Object.keys(ulbLeds[0]);
@@ -1312,7 +1399,7 @@ exports.nationalDashOwnRevenue = async (req, res) => {
             populationMap[key] = obj;
           }
           for (each of obj["set"]) {
-            if (HashTable.get(each.toString())) ++seenUlbs;
+            if (HashTable.get(each.toString())) { ++seenUlbs; ++totalSeenUlbs; }
           }
           sumOfOwnRevenue += obj["Ownrevenue"];
           sumOfOwnRevPerCapita += obj["OwnrevenuePerCapita"];
@@ -1359,9 +1446,17 @@ exports.nationalDashOwnRevenue = async (req, res) => {
                 output[x] += "%";
               }
             }
+            if (each != 'Average') populationSum += output.population;
             return output;
           }),
         ];
+      rows.push({
+        ulb_pop_category: 'All ULBs',
+        Ownrevenue: sumOfOwnRevenue.toFixed(0),
+        OwnrevenuePerCapita: populationSum == 0 ? 0 : (sumOfOwnRevenue * 1e7 / populationSum).toFixed(0),
+        DataAvailPercentage: ((totalSeenUlbs / ulbsCount) * 100).toFixed(0) + " %"
+      });
+      columns = columns.filter((ele) => ele.key != 'population')
       responsePayload.data = { rows, columns };
     } else if (type == "OwnrevenueMix") {
       let colourArray = ulbLeds[0].national.map((val) => {
@@ -1384,7 +1479,7 @@ exports.nationalDashOwnRevenue = async (req, res) => {
           ulbTypeMap.set(each._id.toString(), each.name);
           return each;
         });
-        let national_Format = {},state_Format = {},
+        let national_Format = {}, state_Format = {},
           individual_Format = {
             Municipality: {},
             "Municipal Corporation": {},
@@ -1481,11 +1576,11 @@ exports.nationalDashCapexpense = async (req, res) => {
     } = require("../../util/aggregation");
     let responsePayload = { data: null };
     const HashTable = new Map();
-    let stateCondition =  {isActive:true}
-    if(stateId){
-      stateCondition['state']=stateId
+    let stateCondition = { isActive: true }
+    if (stateId) {
+      stateCondition['state'] = stateId
     }
-    let ulbs = Ulb.find()
+    let ulbs = Ulb.find({ isActive: true })
       .select({
         _id: 1,
         population: 1,
@@ -1501,6 +1596,8 @@ exports.nationalDashCapexpense = async (req, res) => {
       .lean();
     let promiseData = await Promise.all([ulbs, lineItems]);
     ulbs = promiseData[0];
+    let ulbsCount = ulbs.length;
+    let totalSeenUlbs = 0;
     lineItems = promiseData[1];
     ulbs = ulbs.map((each) => {
       HashTable.set(each._id.toString(), true);
@@ -1561,6 +1658,7 @@ exports.nationalDashCapexpense = async (req, res) => {
         let oldYear = financialYear.split("-");
         oldYear = `${oldYear[0] - 1}-${oldYear[1] - 1}`;
         let newData = {
+          population: 0,
           ulbType: val.ulbType,
           amount: 0,
           perCapita: 0,
@@ -1573,10 +1671,11 @@ exports.nationalDashCapexpense = async (req, res) => {
           (val.amount_410 -
             oldYearValues.amount_410 +
             (val.amount_412 - oldYearValues.amount_412)
-          )/1e7);
-        newData.perCapita = Math.round(newData.amount *1e7 / val.population);
+          ) / 1e7);
+        newData.perCapita = Math.round(newData.amount * 1e7 / val.population);
         newData.percentage =
           Math.round((val.noOfUlbs / HashTable[val.ulbType]) * 100) + "%";
+        newData.population = val.population
         return newData;
       });
 
@@ -1641,11 +1740,13 @@ exports.nationalDashCapexpense = async (req, res) => {
 
             break;
         }
+        totalSeenUlbs += element["noOfUlbs"];
         let newData = {
+          population: element["pop"],
           ulb_pop_category: key,
-          amount: Math.round((element["410"] + element["412"])/1e7),
+          amount: Math.round((element["410"] + element["412"]) / 1e7),
           perCapita: Math.round(
-            (element["410"] + element["412"]) / element["pop"]
+            (element["410"] + element["412"]) / element["pop"] 
           ),
           percentage:
             Math.round((element["noOfUlbs"] / HashTable[key]) * 100) + "%",
@@ -1654,13 +1755,34 @@ exports.nationalDashCapexpense = async (req, res) => {
       }
     }
     rows.unshift({
-      "amount":0,
-      "perCapita":0,
+      "amount": 0,
+      "perCapita": 0,
       "percentage": "0%",
-      "ulb_pop_category": "Average"})
+      "ulb_pop_category": "Average"
+    })
     let temp = rows[2];
     rows[2] = rows[3];
-    rows[3] = temp ;
+    rows[3] = temp;
+
+    let populationSum = 0;
+    let capExSum = 0;
+    rows.forEach((rowItem) => {
+      if (rowItem.ulb_pop_category != 'Average') {
+        capExSum += rowItem.amount;
+        populationSum += rowItem.population;
+      }
+      if(!rowItem.perCapita){
+        rowItem.perCapita = 0;
+      }
+    })
+    rows.push({
+      amount: capExSum.toFixed(0),
+      perCapita: populationSum == 0 ? 0 : (capExSum * 1e7 / populationSum).toFixed(0),
+      percentage: ((totalSeenUlbs / ulbsCount) * 100).toFixed(0) + " %",
+      ulb_pop_category: "All ULBs",
+      ulbType: "All ULBs",
+    })
+
     responsePayload.data = { rows, columns, keys: ["amount", "perCapita"] };
 
     if (csv) {
@@ -1680,8 +1802,8 @@ exports.getStatewiseDataAvail = async (req, res) => {
     let response = { success: true, data: null };
     let ulbsStateWise = Ulb.aggregate([
       {
-        $match:{
-          "isActive":true
+        $match: {
+          "isActive": true
         }
       },
       {

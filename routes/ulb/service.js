@@ -291,6 +291,8 @@ module.exports.bulkPost = async function (req, res) {
       e['UA'] = null;
       e['sbCode'] = baseSbCode + i + "";
       e['code'] = baseStateCode + (baseCode + (i++))
+      e['state'] = ObjectId(e['state'])
+      e['ulbType'] = ObjectId(e['ulbType'])
     });
     await createData({ data: d });
     return res.status(200).send({
@@ -1163,49 +1165,64 @@ module.exports.getUlbsWithAuditStatus = async (req, res) => {
   // mongoose.set('debug', true);
   try {
     let ulbs = [];
-    if (req.body.newQuery1) {
-      let query = { isActive: true };
-      if (req.query.state) {
-        query["state"] = ObjectId(req.query.state);
-      }
-      ulbs = await Ulb.aggregate([{
-        '$match': query
-      }, {
-        '$lookup': {
-          from: 'ulbledgers',
-          as: 'ulbLedger',
-          foreignField: 'ulb',
-          localField: '_id'
-        }
-      }, {
-        $match: {
-          "ulbLedger": {
-            $ne: []
+    const redisKey = "getUlbsWithAuditStatus-" + JSON.stringify({ ...req.query, ...req.body });
+    const expireTime = 60 * 60 * 24 * 30 // 1 month
+    Redis.get(redisKey, async (err, value) => {
+      let isCached = false;
+      if (!value) {
+        if (req.body.newQuery1) {
+          let query = { isActive: true };
+          if (req.query.state) {
+            query["state"] = ObjectId(req.query.state);
           }
+          ulbs = await Ulb.aggregate([{
+            '$match': query
+          }, {
+            '$lookup': {
+              from: 'ulbledgers',
+              as: 'ulbLedger',
+              foreignField: 'ulb',
+              localField: '_id'
+            }
+          }, {
+            $match: {
+              "ulbLedger": {
+                $ne: []
+              }
+            }
+          }, {
+            $project: {
+              _id: 1,
+              name: 1,
+              code: 1,
+              state: 1,
+              ulbType: 1,
+              location: 1,
+              population: 1,
+              area: 1
+            }
+          }]).exec();
+          // ulbs = await Ulb.find(query, "_id name code state ulbType area population location")
+          //   .exec();
+        } else {
+          ulbs = await getOldQueryData(req);
         }
-      }, {
-        $project: {
-          _id: 1,
-          name: 1,
-          code: 1,
-          state: 1,
-          ulbType: 1,
-          location: 1,
-          population: 1,
-          area: 1
-        }
-      }]).exec();
-      // ulbs = await Ulb.find(query, "_id name code state ulbType area population location")
-      //   .exec();
-    } else {
-      ulbs = await getOldQueryData(req);
-    }
-
-    return res.status(200).json({
-      message: "Ulb list with population and coordinates and population.",
-      success: true,
-      data: ulbs,
+        Redis.set(redisKey, JSON.stringify(ulbs), expireTime);
+      } else {
+        isCached = true;
+        ulbs = JSON.parse(value);
+      }
+      
+      return res.status(200).json({
+        message: "Ulb list with population and coordinates and population.",
+        success: true,
+        fromCache: isCached,
+        data: ulbs,
+      });
     });
+
+
+
   } catch (e) {
     console.log("Exception", e);
     return res

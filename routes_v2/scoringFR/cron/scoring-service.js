@@ -1,13 +1,8 @@
 const ObjectId = require('mongoose').Types.ObjectId;
-const moongose = require('mongoose');
-const Response = require('../../service').response;
-const { years } = require('../../service/years');
-const Ulb = require('../../models/Ulb');
-const FiscalRanking = require('../../models/FiscalRanking');
-const FiscalRankingMapper = require('../../models/FiscalRankingMapper');
-const ScoringFiscalRanking = require('../../models/ScoringFiscalRanking');
-const { registerCustomQueryHandler } = require('puppeteer');
-const { cubeRootOfNegative } = require('../../service/common');
+const Ulb = require('../../../models/Ulb');
+const FiscalRanking = require('../../../models/FiscalRanking');
+const FiscalRankingMapper = require('../../../models/FiscalRankingMapper');
+const ScoringFiscalRanking = require('../../../models/ScoringFiscalRanking');
 const moment = require('moment');
 // const { pow } = require('mathjs');
 
@@ -46,7 +41,7 @@ function getValue(fsMapper, type) {
 
 function getDate(fsMapper, type) {
     const indicator = fsMapper.find((e) => e.type === type);
-    if (!indicator && !indicator.date) {
+    if (!indicator || !indicator.date) {
         return false;
     }
 
@@ -316,16 +311,19 @@ function cagrInCapEx(fsData, fsMapper2018_19, fsMapper2021_22) {
         const capEx2018_19 = totalCaptlExp_2018_19 === 0 ? 0 : totalCaptlExp_2018_19 - (totalRcptWaterSupply_2018_19 + totalRcptSanitation_2018_19);
 
         // If numerator or denominator is 0 Score is 0; MaxScore (percentage) = 0
+        // const totalCapEx = (capEx2018_19 === 0 || capEx2021_22 === 0) ? 0 : capEx2021_22 / capEx2018_19;
         const totalCapEx = (capEx2018_19 === 0 || capEx2021_22 === 0) ? 0 : capEx2021_22 / capEx2018_19;
 
         let cagrInCapEx = 0;
         let infinity = false;
         if (totalCapEx === 0) {
-            cagrInCapEx = 0;
+            cagrInCapEx = capEx2021_22 == 0 ? -100 : 0;
             infinity = true;
         } else {
             const pow1 = Math.cbrt(totalCapEx);
+            // const pow1 = Math.pow(totalCapEx, 1 / 3);
             cagrInCapEx = (pow1 - 1) * 100;
+
         }
         return { score: Number(cagrInCapEx), ...(infinity && { infinity }) };
     } catch (e) {
@@ -377,7 +375,11 @@ function omExpTotalRevEx(fsData, fsMapper2019_20, fsMapper2020_21, fsMapper2021_
 // Function to get the months taken to audit.
 function getMonthDifference(startDate, endDate) {
     if (endDate) {
-        return moment(endDate).diff(moment(startDate, "YYYY/MM/DD"), 'months', true)
+        // return moment(endDate).diff(moment(startDate, "YYYY/MM/DD"), 'months', true)
+        // Calculate the fraction of the year between the two dates
+        let yearFraction = moment(endDate).diff(moment(startDate, "YYYY/MM/DD"), 'days', true) / 365.25;
+        return yearFraction * 12; // Convert to months
+
     }
     return 0;
 }
@@ -568,9 +570,9 @@ function getPopulationBucket(population) {
 }
 
 // Function to check if the data for ranking was submitted from Provisional A/c; if yes then deduct x% of marks in final_score
-function getProvisionalStatus(censusCode) {
-    return 0;
-}
+// function getProvisionalStatus(censusCode) {
+//     return 0;
+// }
 
 // appAnnualBudget
 // auditedAnnualFySt
@@ -877,14 +879,14 @@ module.exports.calculateFRScore = async (req, res) => {
         // moongose.set('debug', true);
         const limit = req.query.limit ? parseInt(req.query.limit) : 1000;
         const page = req.query.page ? parseInt(req.query.page) : 1;
-        const censusCode = 802989;
+        // const censusCode = 802989;
         const _id = ObjectId('5eb5845176a3b61f40ba08d4');
         // Consider only ULBs with isActive TRUE & population is not empty & not 0.
         // const condition = { isActive: true, population: { $nin: [null, 0] } };
         const condition = {
             isActive: true, population: { $nin: [null, 0] },
-            ...(req.query?.ulb && {
-                _id: ObjectId(req.query?.ulb)
+            ...(req.query.ulb && {
+                _id: ObjectId(req.query.ulb)
             })
         };
         const skip = (page - 1) * limit;

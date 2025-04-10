@@ -42,10 +42,12 @@ exports.nationalDashRevenuePipeline = (
       $unwind: "$ulb",
     }
   );
+  const match = stateId ? {
+    "ulb.isActive": true,
+    "ulb.state": ObjectId(stateId)
+  } : {"ulb.isActive": true};
   pipeline.push({
-    "$match": {
-      "ulb.isActive": true
-    }
+    "$match": match
   })
   if (type == "totalRevenue") {
     if (formType == "populationCategory") {
@@ -260,6 +262,7 @@ exports.nationalDashRevenuePipeline = (
           $project: {
             _id: 0,
             "< 100 Thousand": {
+              population: "$<100K",
               revenue: {
                 $divide: ["$<100K_amount", 1e7],
               },
@@ -277,6 +280,7 @@ exports.nationalDashRevenuePipeline = (
               },
             },
             "100 Thousand - 500 Thousand": {
+              population: "$100K-500K",
               revenue: {
                 $divide: ["$100K-500K_amount", 1e7],
               },
@@ -294,6 +298,7 @@ exports.nationalDashRevenuePipeline = (
               },
             },
             "500 Thousand - 1 Million": {
+              population: "$500K-1M",
               revenue: { $divide: ["$500K-1M_amount", 1e7] },
               set: "$500K-1M_set",
               revenuePerCapita: {
@@ -309,6 +314,7 @@ exports.nationalDashRevenuePipeline = (
               },
             },
             "1 Million - 4 Million": {
+              population: "$1M-4M",
               revenue: { $divide: ["$1M-4M_amount", 1e7] },
               set: "$1M-4M_set",
               revenuePerCapita: {
@@ -324,6 +330,7 @@ exports.nationalDashRevenuePipeline = (
               },
             },
             "4 Million+": {
+              population: "$4M+",
               revenue: { $divide: ["$4M+_amount", 1e7] },
               set: "$4M+_set",
               revenuePerCapita: {
@@ -461,6 +468,7 @@ exports.nationalDashRevenuePipeline = (
           $project: {
             _id: 0,
             "Municipal Corporation": {
+              population: "$municipalCorp",
               revenue: {
                 $divide: ["$municipalCorp_amount", 1e7],
               },
@@ -478,6 +486,7 @@ exports.nationalDashRevenuePipeline = (
               },
             },
             Municipality: {
+              population: "$municipal",
               revenue: {
                 $divide: ["$municipal_amount", 1e7],
               },
@@ -495,6 +504,7 @@ exports.nationalDashRevenuePipeline = (
               },
             },
             "Town Panchayat": {
+              population: "$townPanchayat",
               revenue: {
                 $divide: ["$townPanchayat_amount", 1e7],
               },
@@ -1337,6 +1347,10 @@ exports.nationalDashExpensePipeline = (
     },
   ];
   // if (stateId) pipeline[0]["$match"]["ulb"] = { $in: ulbs };
+  const match = stateId ? {
+    "ulb.isActive": true,
+    "ulb.state": ObjectId(stateId)
+  } : {"ulb.isActive": true};
   pipeline.push(
     {
       $lookup: {
@@ -1350,9 +1364,7 @@ exports.nationalDashExpensePipeline = (
       $unwind: "$ulb",
     },
     {
-      "$match": {
-        "ulb.isActive": true
-      }
+      "$match": match
     }
   );
   if (type == "totalExpenditure") {
@@ -1568,6 +1580,7 @@ exports.nationalDashExpensePipeline = (
           $project: {
             _id: 0,
             "< 100 Thousand": {
+              population: "$<100K",
               expenditure: {
                 $divide: ["$<100K_amount", 1e7],
               },
@@ -1585,6 +1598,7 @@ exports.nationalDashExpensePipeline = (
               },
             },
             "100 Thousand - 500 Thousand": {
+              population: "$100K-500K",
               expenditure: {
                 $divide: ["$100K-500K_amount", 1e7],
               },
@@ -1602,6 +1616,7 @@ exports.nationalDashExpensePipeline = (
               },
             },
             "500 Thousand - 1 Million": {
+              population: "$500K-1M",
               expenditure: { $divide: ["$500K-1M_amount", 1e7] },
               set: "$500K-1M_set",
               expenditurePerCapita: {
@@ -1617,6 +1632,7 @@ exports.nationalDashExpensePipeline = (
               },
             },
             "1 Million - 4 Million": {
+              population: "$1M-4M",
               expenditure: { $divide: ["$1M-4M_amount", 1e7] },
               set: "$1M-4M_set",
               expenditurePerCapita: {
@@ -1632,6 +1648,7 @@ exports.nationalDashExpensePipeline = (
               },
             },
             "4 Million+": {
+              population: "$4M+",
               expenditure: { $divide: ["$4M+_amount", 1e7] },
               set: "$4M+_set",
               expenditurePerCapita: {
@@ -1769,6 +1786,7 @@ exports.nationalDashExpensePipeline = (
           $project: {
             _id: 0,
             "Municipal Corporation": {
+              population: "$municipalCorp",
               expenditure: {
                 $divide: ["$municipalCorp_amount", 1e7],
               },
@@ -1786,6 +1804,7 @@ exports.nationalDashExpensePipeline = (
               },
             },
             Municipality: {
+              population: "$municipal",
               expenditure: {
                 $divide: ["$municipal_amount", 1e7],
               },
@@ -1803,6 +1822,7 @@ exports.nationalDashExpensePipeline = (
               },
             },
             "Town Panchayat": {
+              population: "$townPanchayat",
               expenditure: {
                 $divide: ["$townPanchayat_amount", 1e7],
               },
@@ -2246,11 +2266,25 @@ exports.nationalDashExpensePipeline = (
                 },
                 {
                   $project: {
-                    "<100K": {
-                      revenue: "$<100K_revenue",
-                      expense: "$<100K_expense",
+                    "4M+": {
+                      revenue: "$4M+_revenue",
+                      expense: "$4M+_expense",
                       deficitOrSurplus: {
-                        $subtract: ["$<100K_revenue", "$<100K_expense"],
+                        $subtract: ["$4M+_revenue", "$4M+_expense"],
+                      },
+                    },
+                    "1M-4M": {
+                      revenue: "$1M-4M_revenue",
+                      expense: "$1M-4M_expense",
+                      deficitOrSurplus: {
+                        $subtract: ["$1M-4M_revenue", "$1M-4M_expense"],
+                      },
+                    },
+                    "500K-1M": {
+                      revenue: "$500K-1M_revenue",
+                      expense: "$500K-1M_expense",
+                      deficitOrSurplus: {
+                        $subtract: ["$500K-1M_revenue", "$500K-1M_expense"],
                       },
                     },
                     "100K-500K": {
@@ -2263,25 +2297,11 @@ exports.nationalDashExpensePipeline = (
                         ],
                       },
                     },
-                    "500K-1M": {
-                      revenue: "$500K-1M_revenue",
-                      expense: "$500K-1M_expense",
+                    "<100K": {
+                      revenue: "$<100K_revenue",
+                      expense: "$<100K_expense",
                       deficitOrSurplus: {
-                        $subtract: ["$500K-1M_revenue", "$500K-1M_expense"],
-                      },
-                    },
-                    "1M-4M": {
-                      revenue: "$1M-4M_revenue",
-                      expense: "$1M-4M_expense",
-                      deficitOrSurplus: {
-                        $subtract: ["$1M-4M_revenue", "$1M-4M_expense"],
-                      },
-                    },
-                    "4M+": {
-                      revenue: "$4M+_revenue",
-                      expense: "$4M+_expense",
-                      deficitOrSurplus: {
-                        $subtract: ["$4M+_revenue", "$4M+_expense"],
+                        $subtract: ["$<100K_revenue", "$<100K_expense"],
                       },
                     },
                   },
@@ -2317,6 +2337,10 @@ exports.nationalDashOwnRevenuePipeline = (
     },
   ];
   // if (stateId) pipeline[0]["$match"]["ulb"] = { $in: ulbs };
+   const match = stateId ? {
+    "ulb.isActive": true,
+    "ulb.state": ObjectId(stateId)
+  } : {"ulb.isActive": true};
   pipeline.push(
     {
       $lookup: {
@@ -2330,9 +2354,7 @@ exports.nationalDashOwnRevenuePipeline = (
       $unwind: "$ulb",
     },
     {
-      "$match": {
-        "ulb.isActive": true
-      }
+      "$match": match
     }
   );
   if (type == "totalOwnRevenue") {
@@ -2548,6 +2570,7 @@ exports.nationalDashOwnRevenuePipeline = (
           $project: {
             _id: 0,
             "< 100 Thousand": {
+              population: "$<100K",
               Ownrevenue: {
                 $divide: ["$<100K_amount", 1e7],
               },
@@ -2565,6 +2588,7 @@ exports.nationalDashOwnRevenuePipeline = (
               },
             },
             "100 Thousand - 500 Thousand": {
+              population: "$100K-500K",
               Ownrevenue: {
                 $divide: ["$100K-500K_amount", 1e7],
               },
@@ -2582,6 +2606,7 @@ exports.nationalDashOwnRevenuePipeline = (
               },
             },
             "500 Thousand - 1 Million": {
+              population: "$500K-1M",
               Ownrevenue: { $divide: ["$500K-1M_amount", 1e7] },
               set: "$500K-1M_set",
               OwnrevenuePerCapita: {
@@ -2597,6 +2622,7 @@ exports.nationalDashOwnRevenuePipeline = (
               },
             },
             "1 Million - 4 Million": {
+              population: "$1M-4M",
               Ownrevenue: { $divide: ["$1M-4M_amount", 1e7] },
               set: "$1M-4M_set",
               OwnrevenuePerCapita: {
@@ -2612,6 +2638,7 @@ exports.nationalDashOwnRevenuePipeline = (
               },
             },
             "4 Million+": {
+              population: "$4M+",
               Ownrevenue: { $divide: ["$4M+_amount", 1e7] },
               set: "$4M+_set",
               OwnrevenuePerCapita: {
@@ -2749,6 +2776,7 @@ exports.nationalDashOwnRevenuePipeline = (
           $project: {
             _id: 0,
             "Municipal Corporation": {
+              population: "$municipalCorp",
               Ownrevenue: {
                 $divide: ["$municipalCorp_amount", 1e7],
               },
@@ -2766,6 +2794,7 @@ exports.nationalDashOwnRevenuePipeline = (
               },
             },
             Municipality: {
+              population: "$municipal",
               Ownrevenue: {
                 $divide: ["$municipal_amount", 1e7],
               },
@@ -2783,6 +2812,7 @@ exports.nationalDashOwnRevenuePipeline = (
               },
             },
             "Town Panchayat": {
+              population: "$townPanchayat",
               Ownrevenue: {
                 $divide: ["$townPanchayat_amount", 1e7],
               },
@@ -2993,6 +3023,10 @@ exports.nationalDashCapexpensePipeline = async (
       commonUlbs.push(val);
     }
   });
+  const match = stateId ? {
+    "ulb.isActive": true,
+    "ulb.state": ObjectId(stateId)
+  } : {"ulb.isActive": true};
   let pipeline = [
     {
       $match: {
@@ -3015,9 +3049,7 @@ exports.nationalDashCapexpensePipeline = async (
       $unwind: "$ulb",
     },
     {
-      "$match": {
-        "ulb.isActive": true
-      }
+      "$match": match
     },
     {
       $group: {
@@ -3096,24 +3128,24 @@ exports.nationalDashCapexpensePipeline = async (
         _id: {
           financialYear: "$_id.financialYear",
         },
-        "<100K_410": {
+        "4M+_410": {
           $sum: {
             $cond: {
               if: {
-                $lt: ["$population", 1e5],
+                $gt: ["$population", 4e6],
               },
               then: "$410",
               else: 0,
             },
           },
         },
-        "100K-500K_410": {
+        "1M-4M_410": {
           $sum: {
             $cond: {
               if: {
                 $and: [
-                  { $gte: ["$population", 1e5] },
-                  { $lte: ["$population", 5e5] },
+                  { $gte: ["$population", 1e6] },
+                  { $lte: ["$population", 4e6] },
                 ],
               },
               then: "$410",
@@ -3135,13 +3167,13 @@ exports.nationalDashCapexpensePipeline = async (
             },
           },
         },
-        "1M-4M_410": {
+        "100K-500K_410": {
           $sum: {
             $cond: {
               if: {
                 $and: [
-                  { $gte: ["$population", 1e6] },
-                  { $lte: ["$population", 4e6] },
+                  { $gte: ["$population", 1e5] },
+                  { $lte: ["$population", 5e5] },
                 ],
               },
               then: "$410",
@@ -3149,11 +3181,11 @@ exports.nationalDashCapexpensePipeline = async (
             },
           },
         },
-        "4M+_410": {
+        "<100K_410": {
           $sum: {
             $cond: {
               if: {
-                $gt: ["$population", 4e6],
+                $lt: ["$population", 1e5],
               },
               then: "$410",
               else: 0,
@@ -3161,24 +3193,25 @@ exports.nationalDashCapexpensePipeline = async (
           },
         },
 
-        "<100K_412": {
+        
+        "4M+_412": {
           $sum: {
             $cond: {
               if: {
-                $lt: ["$population", 1e5],
+                $gt: ["$population", 4e6],
               },
               then: "$412",
               else: 0,
             },
           },
         },
-        "100K-500K_412": {
+        "1M-4M_412": {
           $sum: {
             $cond: {
               if: {
                 $and: [
-                  { $gte: ["$population", 1e5] },
-                  { $lte: ["$population", 5e5] },
+                  { $gte: ["$population", 1e6] },
+                  { $lte: ["$population", 4e6] },
                 ],
               },
               then: "$412",
@@ -3200,13 +3233,13 @@ exports.nationalDashCapexpensePipeline = async (
             },
           },
         },
-        "1M-4M_412": {
+        "100K-500K_412": {
           $sum: {
             $cond: {
               if: {
                 $and: [
-                  { $gte: ["$population", 1e6] },
-                  { $lte: ["$population", 4e6] },
+                  { $gte: ["$population", 1e5] },
+                  { $lte: ["$population", 5e5] },
                 ],
               },
               then: "$412",
@@ -3214,11 +3247,11 @@ exports.nationalDashCapexpensePipeline = async (
             },
           },
         },
-        "4M+_412": {
+        "<100K_412": {
           $sum: {
             $cond: {
               if: {
-                $gt: ["$population", 4e6],
+                $lt: ["$population", 1e5],
               },
               then: "$412",
               else: 0,
@@ -3226,24 +3259,24 @@ exports.nationalDashCapexpensePipeline = async (
           },
         },
 
-        "<100K_pop": {
+        "4M+_pop": {
           $sum: {
             $cond: {
               if: {
-                $lt: ["$population", 1e5],
+                $gt: ["$population", 4e6],
               },
               then: "$population",
               else: 0,
             },
           },
         },
-        "100K-500K_pop": {
+        "1M-4M_pop": {
           $sum: {
             $cond: {
               if: {
                 $and: [
-                  { $gte: ["$population", 1e5] },
-                  { $lte: ["$population", 5e5] },
+                  { $gte: ["$population", 1e6] },
+                  { $lte: ["$population", 4e6] },
                 ],
               },
               then: "$population",
@@ -3265,13 +3298,13 @@ exports.nationalDashCapexpensePipeline = async (
             },
           },
         },
-        "1M-4M_pop": {
+        "100K-500K_pop": {
           $sum: {
             $cond: {
               if: {
                 $and: [
-                  { $gte: ["$population", 1e6] },
-                  { $lte: ["$population", 4e6] },
+                  { $gte: ["$population", 1e5] },
+                  { $lte: ["$population", 5e5] },
                 ],
               },
               then: "$population",
@@ -3279,11 +3312,11 @@ exports.nationalDashCapexpensePipeline = async (
             },
           },
         },
-        "4M+_pop": {
+        "<100K_pop": {
           $sum: {
             $cond: {
               if: {
-                $gt: ["$population", 4e6],
+                $lt: ["$population", 1e5],
               },
               then: "$population",
               else: 0,
@@ -3291,24 +3324,24 @@ exports.nationalDashCapexpensePipeline = async (
           },
         },
 
-        "<100K_noOfUlbs": {
+        "4M+_noOfUlbs": {
           $sum: {
             $cond: {
               if: {
-                $lt: ["$population", 1e5],
+                $gt: ["$population", 4e6],
               },
               then: 1,
               else: 0,
             },
           },
         },
-        "100K-500K_noOfUlbs": {
+        "1M-4M_noOfUlbs": {
           $sum: {
             $cond: {
               if: {
                 $and: [
-                  { $gte: ["$population", 1e5] },
-                  { $lte: ["$population", 5e5] },
+                  { $gte: ["$population", 1e6] },
+                  { $lte: ["$population", 4e6] },
                 ],
               },
               then: 1,
@@ -3330,13 +3363,13 @@ exports.nationalDashCapexpensePipeline = async (
             },
           },
         },
-        "1M-4M_noOfUlbs": {
+        "100K-500K_noOfUlbs": {
           $sum: {
             $cond: {
               if: {
                 $and: [
-                  { $gte: ["$population", 1e6] },
-                  { $lte: ["$population", 4e6] },
+                  { $gte: ["$population", 1e5] },
+                  { $lte: ["$population", 5e5] },
                 ],
               },
               then: 1,
@@ -3344,11 +3377,11 @@ exports.nationalDashCapexpensePipeline = async (
             },
           },
         },
-        "4M+_noOfUlbs": {
+        "<100K_noOfUlbs": {
           $sum: {
             $cond: {
               if: {
-                $gt: ["$population", 4e6],
+                $lt: ["$population", 1e5],
               },
               then: 1,
               else: 0,
@@ -6203,7 +6236,7 @@ const stateWiseHeatMapQuery = ({ state, category }) => {
     {
       "$match": {
         "isActive": true,
-        ...(state && {"state": ObjectId(state)}),
+        ...(state && { "state": ObjectId(state) }),
         ...getCategoryMatchObject(category)
       }
     },
