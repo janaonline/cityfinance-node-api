@@ -191,6 +191,7 @@ async function fetchAllDataOverview(ulbCode = null, year = null, stateId = null,
     const matchCondition2 = [{ $eq: ['$ulb_id', '$$ulbId'] }];
     if (year) matchCondition2.push({ $eq: ["$year", year] });
     if (isStandardizable?.toLowerCase() == 'false') matchCondition2.push({ $eq: ['$isStandardizable', 'No'] });
+    else if (isStandardizable?.toLowerCase() == 'true') matchCondition2.push({ $eq: ['$isStandardizable', 'Yes'] });
 
     const query = [
         { $match: matchCondition },
