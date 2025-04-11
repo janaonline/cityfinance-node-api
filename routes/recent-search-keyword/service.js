@@ -118,7 +118,7 @@ const search = catchAsync(async (req, res) => {
     if (type && type == 'state') {
       // let query = { name: { $regex: `${matchingWord}`, $options: 'im' } };
       let query = { 
-        $or: [ {name : { $regex: `${matchingWord}`, $options: 'im' }}, { isPublish: true } ]
+        $and: [ {name : { $regex: `${matchingWord}`, $options: 'im' }}, { isPublish: true } ]
       };
       let statePromise = await State.find(query)
         .limit(10)
