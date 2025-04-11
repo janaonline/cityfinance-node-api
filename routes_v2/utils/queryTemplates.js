@@ -3,7 +3,7 @@ const ObjectId = require("mongoose").Types.ObjectId;
 // Match conditions from ulbs collections.
 // During aggregation: countDoc = false | During find query/ aggregation on ULBs collection: countDoc = true.
 module.exports.matchCondition = (stateId = null, countDoc = false) => {
-    const conditions = [{ $eq: ['$$ulbId', '$_id'] }, { $eq: ['$isActive', true] },{ $eq: ['$Publish', true] }];
+    const conditions = [{ $eq: ['$$ulbId', '$_id'] }, { $eq: ['$isActive', true] },{ $eq: ['$isPublish', true] }];
 
     if (countDoc) { conditions.shift() }
     if (ObjectId.isValid(stateId)) conditions.push({ $eq: ['$state', ObjectId(stateId)] });
