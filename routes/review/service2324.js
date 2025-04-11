@@ -1045,7 +1045,8 @@ const computeQuery = async (params) => {
     designYearField = "designYear";
   }
   let condition = {
-    isActive: true
+    isActive: true,
+    isPublish:true
   };
   if (state && state !== 'null') {
     condition['state'] = ObjectId(state)
