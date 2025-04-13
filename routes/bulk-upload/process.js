@@ -24,7 +24,7 @@ const overViewSheet = {
   'Audit Date': 'audit_date',
   'Name of the Partner': 'partner_name',
   'ICAI Membership Number': 'icai_membership_number',
-  'Document Source': 'doc_source',
+  'Document source': 'doc_source',
   'Date of Entry': 'created_at',
   'Entered by': 'created_by',
   'Date of verification': 'verified_at',
