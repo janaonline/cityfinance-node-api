@@ -529,7 +529,7 @@ module.exports.get = catchAsync(async (req, res) => {
       }
     }
     //group the data 
-    tempData = groupByKey(data, "category")
+    tempData = groupByKey(data, "category", user.role)
   }
 
 
@@ -854,8 +854,12 @@ const sortByPosition = (data) => {
 
   return data;
 };
-const groupByKey = (list, key) => list.reduce((hash, obj) => ({ ...hash, [obj[key]]: (hash[obj[key]] || []).concat(obj) }), {})
+// const groupByKey = (list, key) => list.reduce((hash, obj) => ({ ...hash, [obj[key]]: (hash[obj[key]] || []).concat(obj) }), {})
+const groupByKey = (list, key, role) => list.reduce((hash, obj) => {
+  if (role != 'ULB' && obj.formId == 19) return hash;
 
+  return { ...hash, [obj[key]]: (hash[obj[key]] || []).concat(obj) }
+}, {})
 
 function getCards(data, cardObj, ignoreCardsList) {
   let cardArr = [];
