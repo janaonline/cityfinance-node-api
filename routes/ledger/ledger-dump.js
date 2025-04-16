@@ -323,6 +323,7 @@ module.exports.getLedgerDump = async (req, res) => {
                 if (ulbOverviewObj) {
                     Object.assign(row, ulbOverviewObj)
                     row['lastModifiedAt'] = getDate(ulbOverviewObj.lastModifiedAt);
+                    row['audit_date'] = getDate(ulbOverviewObj.audit_date);
                 }
                 if (!row.code) row['code'] = row.ulb_id;
                 delete overviewData[key];
@@ -332,7 +333,8 @@ module.exports.getLedgerDump = async (req, res) => {
 
         // Add the remaining data from "Overview" collection - input data unavailable.
         Object.values(overviewData).forEach((row) => {
-            row.lastModifiedAt = getDate(row.lastModifiedAt);
+            row['lastModifiedAt'] = getDate(row.lastModifiedAt);
+            row['audit_date'] = getDate(row.audit_date);
             worksheet.addRow(row);
         });
 

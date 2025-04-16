@@ -62,7 +62,7 @@ const LedgerLogSchema = mongoose.Schema({
 		type: String,
 	},
 	audit_date: {
-		type: String,
+		type: Date,
 	},
 	partner_name: {
 		type: String
