@@ -36,6 +36,7 @@ const { concatenateUrls } = require("../../service/common");
 const { getPreviousYear, isYearWithinCurrentFY } = require("../sidemenu/service");
 
 const helper = require("./helper.js");
+const LedgerLog = require("../../models/LedgerLog");
 
 // function doRequest(url) {
 //   return new Promise(function (resolve, reject) {
@@ -1098,9 +1099,8 @@ let getExcel = async (req, res, data) => {
 };
 
 exports.dataset = catchAsync(async (req, res) => {
-  console.log("inside data set---------------------")
   try {
-    let { year, state, ulb, type, category, nature, getQuery, globalName, getCount, skip, limit } = req.query;
+    let { year, state, ulb, ulbId, type, category, nature, getQuery, globalName, getCount, skip, limit } = req.query;
     let finalData = [];
 
     if (globalName) limit = 5000;
@@ -1116,12 +1116,12 @@ exports.dataset = catchAsync(async (req, res) => {
     else if (type == "Raw Data Excel") type = "excel";
     else if (type == "Standardised Excel") {
       let data = [];
-      const distinctYears = await UlbLedger.distinct("financialYear").lean();
+      const distinctYears = await LedgerLog.distinct("year").lean();
 
       if (distinctYears.includes(year)) {
-        // Fetch the ULB basic details from UlbLedgers - Wrapper. (/datasets will get data or excel)
-        let query = await helper.getStandardizedUlbsList(ulb, state, year, skip, limit);
-        data = await UlbLedger.aggregate(query)
+        // Fetch the ULB basic details from LedgerLog - Wrapper. (endpoint: /datasets will get data or excel)
+        let query = await helper.getStandardizedUlbsList(ulb, ulbId, state, year, skip, limit);
+        data = await LedgerLog.aggregate(query);
       } else data = [];
 
       return res.status(200).json({
@@ -1130,449 +1130,18 @@ exports.dataset = catchAsync(async (req, res) => {
       })
 
     }
-    // console.log("(year)---->", year);
-    // console.log("(state)---->", state);
-    // console.log("(ulb)---->", ulb);
-    // console.log("(type)---->", type);
-    // console.log("(category)---->", category);
-    // console.log("(nature)---->", nature);
-    // console.log("(getQuery)---->", getQuery);
-    // console.log("(globalName)---->", globalName);
-    // console.log("(getCount)---->", getCount);
-    // console.log("(skip)---->", skip);
-    // console.log("(limit)---->", limit);
-    // console.log("test", Number(year.split("-")[1]));
 
     // Fetch the ULB names - Raw files.
     // 19-20 onwards
     if (Number(year.split("-")[1] > 19)) {
-      let query = await helper.getRawUlbsList19Onwards(year, state, ulb, type, category, skip, limit);
+      const query = await helper.getRawUlbsList19Onwards(year, state, ulb, ulbId, type, category, skip, limit);
       finalData = await Ulb.aggregate(query);
-      // console.log(JSON.stringify(query, null, 2));
-      // console.log(finalData);
     }
     // 2015-16 to 2018-19
     else {
-      let query = await helper.getRawUlbsList15To18(year, state, ulb, type, category, skip, limit);
+      const query = await helper.getRawUlbsList15To18(year, state, ulb, ulbId, type, category, skip, limit);
       finalData = await Ulb.aggregate(query);
-      // console.log(JSON.stringify(query, null, 2));
-      // console.log(finalData);
     }
-
-    // audited: ""
-    // fileName: "Karnataka_Hootagalli Town Municipal Council_balance_2023-24_unAudited"
-    // fileUrl: ["/ULB/2024-25/annual_accounts/KA325/Balance_Sheet_7c7f49c2-0b52-4579-8e98-700b86ef14ae.pdf",…]
-    // modifiedAt: "2024-08-30T07:35:46.843Z"
-    // state: "Karnataka"
-    // type: "pdf"
-    // ulbId: "62786ff5d3303e47867588ca"
-    // ulbName: "Hootagalli Town Municipal Council"
-    // year: "2023-24"
-
-    // if (year != "2019-20" && year != "2020-21" && !(Number(year.split("-")[1]) > 20)) {
-    //   let query_dataCollection = [
-    //     {
-    //       $lookup: {
-    //         from: "ulbs",
-    //         localField: "ulb",
-    //         foreignField: "_id",
-    //         as: "ulb",
-    //       },
-    //     },
-    //     {
-    //       $unwind: "$ulb",
-    //     },
-    //     {
-    //       $lookup: {
-    //         from: "states",
-    //         localField: "ulb.state",
-    //         foreignField: "_id",
-    //         as: "state",
-    //       },
-    //     },
-    //     {
-    //       $unwind: "$state",
-    //     },
-    //   ];
-    //   let query_extn = [
-    //     {
-    //       $project: {
-    //         ulbId: "$ulb._id",
-    //         state: "$state.name",
-    //         ulbName: "$ulb.name",
-    //         modifiedAt: "$modifiedAt",
-    //         "2015-16_income_pdf": "$documents.financial_year_2015_16.pdf",
-    //         "2015-16_income_excel": "$documents.financial_year_2015_16.excel",
-    //         "2015-16_balance_pdf": "$documents.financial_year_2015_16.pdf",
-    //         "2015-16_balance_excel": "$documents.financial_year_2015_16.excel",
-    //         "2016-17_income_pdf": "$documents.financial_year_2016_17.pdf",
-    //         "2016-17_income_excel": "$documents.financial_year_2016_17.excel",
-    //         "2016-17_balance_pdf": "$documents.financial_year_2016_17.pdf",
-    //         "2016-17_balance_excel": "$documents.financial_year_2016_17.excel",
-    //         "2017-18_income_pdf": "$documents.financial_year_2017_18.pdf",
-    //         "2017-18_income_excel": "$documents.financial_year_2017_18.excel",
-    //         "2017-18_balance_pdf": "$documents.financial_year_2017_18.pdf",
-    //         "2017-18_balance_excel": "$documents.financial_year_2017_18.excel",
-    //         "2018-19_income_pdf": "$documents.financial_year_2018_19.pdf",
-    //         "2018-19_income_excel": "$documents.financial_year_2018_19.excel",
-    //         "2018-19_balance_pdf": "$documents.financial_year_2018_19.pdf",
-    //         "2018-19_balance_excel": "$documents.financial_year_2018_19.excel",
-    //       },
-    //     },
-
-    //     {
-    //       $project: {
-    //         ulbId: 1,
-    //         ulbName: 1,
-    //         state: 1,
-    //         modifiedAt: 1,
-    //         file: { $arrayElemAt: [`$${year}_${category}_${type}`, 0] },
-    //       },
-    //     },
-    //     {
-    //       $match: {
-    //         "file.url": { $exists: true, $ne: null },
-    //       },
-    //     },
-    //     {
-    //       $sort: {
-    //         modifiedAt: -1,
-    //       },
-    //     },
-    //   ];
-
-    //   if (ulb && ulb != "undefined") {
-    //     query_dataCollection.push({
-    //       $match: {
-    //         "ulb.name": ulb,
-    //       },
-    //     });
-    //   } else if (state && ObjectId.isValid(state)) {
-    //     query_dataCollection.push({
-    //       $match: {
-    //         "state._id": ObjectId(state),
-    //       },
-    //     });
-    //   }
-    //   query_dataCollection.push(...query_extn);
-    //   if (getQuery) return res.status(200).json(query_dataCollection);
-    //   let fileData = await DataCollection.aggregate(query_dataCollection);
-
-    //   fileData.forEach((el) => {
-    //     let data = {
-    //       ulbId: null,
-    //       ulbName: "",
-    //       state: "",
-    //       fileName: "",
-    //       fileUrl: "",
-    //       modifiedAt: "",
-    //       type: type,
-    //       audited: "",
-    //       year: "",
-    //     };
-    //     data.ulbId = el?.ulbId;
-    //     data.state = el?.state;
-    //     data.ulbName = el?.ulbName;
-    //     data.modifiedAt = el?.modifiedAt;
-    //     data.year = year;
-    //     data.fileName = `${el?.state}_${el?.ulbName}_${category}_${year}`;
-    //     data.fileUrl = [el?.file?.url];
-    //     finalData.push(data);
-    //   });
-    // } else {
-    //   let query = [
-    //     {
-    //       $lookup: {
-    //         from: "ulbs",
-    //         localField: "ulb",
-    //         foreignField: "_id",
-    //         as: "ulb",
-    //       },
-    //     },
-    //     {
-    //       $unwind: "$ulb",
-    //     },
-    //     {
-    //       $lookup: {
-    //         from: "states",
-    //         localField: "ulb.state",
-    //         foreignField: "_id",
-    //         as: "state",
-    //       },
-    //     },
-    //     {
-    //       $unwind: "$state",
-    //     },
-    //     {
-    //       $lookup: {
-    //         from: "years",
-    //         localField: "unAudited.year",
-    //         foreignField: "_id",
-    //         as: "unAuditedYear"
-    //       }
-    //     },
-    //     {
-    //       $unwind: "$unAuditedYear"
-    //     },
-    //     {
-    //       $lookup: {
-    //         from: "years",
-    //         localField: "audited.year",
-    //         foreignField: "_id",
-    //         as: "auditedYear"
-    //       }
-    //     },
-    //     {
-    //       $unwind: "$auditedYear"
-    //     },
-    //   ];
-    //   if (ulb && ulb != "undefined") {
-    //     query.push({
-    //       $match: {
-    //         "ulb.name": ulb,
-    //       },
-    //     });
-    //   } else if (state && ObjectId.isValid(state)) {
-    //     query.push({
-    //       $match: {
-    //         "state._id": ObjectId(state),
-    //       },
-    //     });
-    //   }
-    //   //match for audited and unAudited docs with given year
-    //   const queryYear = await Year.findOne({ year }).lean();
-    //   let queryUnaudited = query.slice();
-    //   query.push({
-    //     $match: {
-    //       $expr: {
-    //         $or: [
-    //           // {$eq: [ "$unAuditedYear._id",  queryYear._id ]},
-    //           { $eq: ["$auditedYear._id", ObjectId(queryYear._id)] }
-    //         ]
-    //       },
-    //     }
-    //   })
-    //   queryUnaudited.push({
-    //     $match: {
-    //       $expr: {
-    //         $or: [
-    //           { $eq: ["$unAuditedYear._id", ObjectId(queryYear._id)] },
-    //           // {$eq: ["$auditedYear._id", queryYear._id]}
-    //         ]
-    //       },
-    //     }
-    //   })
-    //   // if (year == "2019-20") {
-    //   let query_extn = [
-    //     {
-    //       $project: {
-    //         ulbId: "$ulb._id",
-    //         ulbName: "$ulb.name",
-    //         state: "$state.name",
-    //         modifiedAt: "$modifiedAt",
-    //         [`${year}_balance_pdf`]: [
-    //           "$audited.provisional_data.bal_sheet.pdf.url",
-    //           "$audited.provisional_data.bal_sheet_schedules.pdf.url",
-    //         ],
-    //         [`${year}_balance_excel`]: [
-    //           "$audited.provisional_data.bal_sheet.excel.url",
-    //           "$audited.provisional_data.bal_sheet_schedules.excel.url",
-    //         ],
-    //         [`${year}_income_pdf`]: [
-    //           "$audited.provisional_data.inc_exp.pdf.url",
-    //           "$audited.provisional_data.inc_exp_schedules.pdf.url",
-    //         ],
-    //         [`${year}_income_excel`]: [
-    //           "$audited.provisional_data.inc_exp.excel.url",
-    //           "$audited.provisional_data.inc_exp_schedules.excel.url",
-    //         ],
-    //       },
-    //     },
-    //     {
-    //       $project: {
-    //         ulbId: 1,
-    //         ulbName: 1,
-    //         state: 1,
-    //         modifiedAt: 1,
-    //         file: `$${year}_${category}_${type}`,
-    //       },
-    //     },
-    //     {
-    //       $match: {
-    //         file: {
-    //           $exists: true,
-    //           $ne: null
-    //         },
-    //       },
-    //     },
-    //     {
-    //       $sort: {
-    //         modifiedAt: -1,
-    //       },
-    //     },
-    //   ];
-    //   let query_extn_unAudited = [
-    //     {
-    //       $project: {
-    //         ulbId: "$ulb._id",
-    //         ulbName: "$ulb.name",
-    //         state: "$state.name",
-    //         modifiedAt: "$modifiedAt",
-    //         [`${year}_balance_pdf`]: [
-    //           "$unAudited.provisional_data.bal_sheet.pdf.url",
-    //           "$unAudited.provisional_data.bal_sheet_schedules.pdf.url",
-    //         ],
-    //         [`${year}_balance_excel`]: [
-    //           "$unAudited.provisional_data.bal_sheet.excel.url",
-    //           "$unAudited.provisional_data.bal_sheet_schedules.excel.url",
-    //         ],
-    //         [`${year}_income_pdf`]: [
-    //           "$unAudited.provisional_data.inc_exp.pdf.url",
-    //           "$unAudited.provisional_data.inc_exp_schedules.pdf.url",
-    //         ],
-    //         [`${year}_income_excel`]: [
-    //           "$unAudited.provisional_data.inc_exp.excel.url",
-    //           "$unAudited.provisional_data.inc_exp_schedules.excel.url",
-    //         ],
-    //       },
-    //     },
-    //     {
-    //       $project: {
-    //         ulbId: 1,
-    //         ulbName: 1,
-    //         state: 1,
-    //         modifiedAt: 1,
-    //         file: `$${year}_${category}_${type}`,
-    //       },
-    //     },
-    //     {
-    //       $match: {
-    //         file: {
-    //           $exists: true,
-    //           $ne: null
-    //         },
-    //       },
-    //     },
-    //     {
-    //       $sort: {
-    //         modifiedAt: -1,
-    //       },
-    //     },
-    //   ]
-    //   query.push(...query_extn);
-    //   queryUnaudited.push(...query_extn_unAudited);
-    //   if (getQuery) return res.status(200).json({ query, queryUnaudited });
-    //   let [fileData, fileDataUnAudited] = await Promise.all([AnnualAccountData.aggregate(query), AnnualAccountData.aggregate(queryUnaudited)]);
-
-    //   [fileData, fileDataUnAudited].forEach((outerEl, idx) => {
-    //     let fileType = ""
-    //     idx === 0 ? fileType = "audited" : fileType = "unAudited"
-    //     outerEl.forEach((el) => {
-    //       let data = {
-    //         ulbId: null,
-    //         ulbName: "",
-    //         state: "",
-    //         fileName: "",
-    //         fileUrl: "",
-    //         modifiedAt: "",
-    //         type: type,
-    //         audited: "",
-    //         year: "",
-    //       };
-    //       data.ulbId = el?.ulbId;
-    //       data.state = el?.state;
-    //       data.ulbName = el?.ulbName;
-    //       data.modifiedAt = el?.modifiedAt;
-    //       data.year = year;
-    //       data.fileName = `${el?.state}_${el?.ulbName}_${category}_${year}_${fileType}`;
-    //       data.fileUrl = el?.file;
-
-    //       let fileLength = 0
-    //       if (data.fileUrl?.length) {
-    //         for (let fileDoc of data.fileUrl) {
-    //           fileDoc ? fileLength++ : ""
-    //         }
-    //       }
-    //       if (fileLength > 0) finalData.push(data);
-    //     })
-    //   }
-
-
-    //   )
-
-
-    //   // } 
-    //   // else if (year == "2020-21") {
-    //   //   let query_extn = [
-    //   //     {
-    //   //       $project: {
-    //   //         ulbId: "$ulb._id",
-    //   //         ulbName: "$ulb.name",
-    //   //         state: "$state.name",
-    //   //         modifiedAt: "$modifiedAt",
-    //   //         "2020-21_balance_pdf":
-    //   //           ["$unAudited.provisional_data.bal_sheet.pdf.url",
-    //   //             "$unAudited.provisional_data.bal_sheet_schedules.pdf.url"],
-    //   //         "2020-21_balance_excel":
-    //   //           ["$unAudited.provisional_data.bal_sheet.excel.url",
-    //   //             "$unAudited.provisional_data.bal_sheet_schedules.excel.url"
-    //   //           ],
-    //   //         "2020-21_income_pdf": ["$unAudited.provisional_data.inc_exp.pdf.url",
-    //   //           "$unAudited.provisional_data.inc_exp_schedules.pdf.url"],
-    //   //         "2020-21_income_excel":
-    //   //           ["$unAudited.provisional_data.inc_exp.excel.url",
-    //   //             "$unAudited.provisional_data.inc_exp_schedules.excel.url"
-    //   //           ],
-    //   //       },
-    //   //     },
-    //   //     {
-    //   //       $project: {
-    //   //         ulbId: 1,
-    //   //         ulbName: 1,
-    //   //         state: 1,
-    //   //         modifiedAt: 1,
-    //   //         file: `$${year}_${category}_${type}`,
-    //   //       },
-    //   //     },
-    //   //     {
-    //   //       $match: {
-    //   //         file: { $exists: true, $ne: null },
-    //   //       },
-    //   //     },
-    //   //     {
-    //   //       $sort: {
-    //   //         modifiedAt: -1,
-    //   //       },
-    //   //     },
-    //   //   ];
-    //   //   query.push(...query_extn);
-    //   //   if (getQuery) return res.status(200).json(query);
-    //   //   let fileData = await AnnualAccountData.aggregate(query);
-
-    //   //   fileData.forEach((el) => {
-    //   //     let data = {
-    //   //       ulbId: null,
-    //   //       ulbName: "",
-    //   //       state: "",
-    //   //       fileName: "",
-    //   //       fileUrl: "",
-    //   //       modifiedAt: "",
-    //   //       type: type,
-    //   //       audited: "",
-    //   //       year: "",
-    //   //     };
-    //   //     data.ulbId = el?.ulbId;
-    //   //     data.state = el?.state;
-    //   //     data.ulbName = el?.ulbName;
-    //   //     data.modifiedAt = el?.modifiedAt;
-    //   //     data.year = year;
-    //   //     data.fileName = `${el?.state}_${el?.ulbName}_${category}_${year}`;
-    //   //     data.fileUrl = el?.file;
-
-    //   //     finalData.push(data);
-    //   //   });
-    //   // }
-    // }
 
     if (globalName) {
       finalData = finalData.filter((val) => {
@@ -1581,7 +1150,6 @@ exports.dataset = catchAsync(async (req, res) => {
     }
     if (getCount) { finalData = finalData.length }
 
-    // console.log("final data", JSON.stringify(finalData, null, 2))
     return res.status(200).json({
       success: true,
       data: finalData
@@ -1998,7 +1566,7 @@ exports.getAccounts = async (req, res, next) => {
     obj = annualAccountData;
 
     const showOptionBox = await helper.showOptionBox(ulbData, currYearData, prevYearData);
-    
+
     ulb = req?.decoded.ulb ?? ulb;
     let filters = {
       ulb: ObjectId(ulb),
