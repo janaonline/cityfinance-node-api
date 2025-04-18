@@ -12,9 +12,12 @@ module.exports = (req, res) => {
   }
 
   const stateId = req.query.state;
-  let matchCondition = { 'ulbData.isActive': true };
+  let matchCondition = {
+    $expr: { $eq: ["$_id", "$$ulbId"] },
+    isActive: true,
+  };
 
-  if (stateId) matchCondition = { ...matchCondition, 'ulbData.state': ObjectId(stateId) }
+  if (stateId) matchCondition = { ...matchCondition, 'state': ObjectId(stateId) }
 
   let totalULB = new Promise(async (rslv, rjct) => {
 
@@ -55,34 +58,24 @@ module.exports = (req, res) => {
   let coveredUlbCount = new Promise(async (rslv, rjct) => {
     try {
       const distinctUlbCount = await LedgerLog.aggregate([
-        {
-          $group: {
-            _id: "$ulb_id",
-            isStandardizable: { $first: "$isStandardizable" },
-            ulbId: { $first: "$ulb_id" }
-          }
-        },
-        { $match: { isStandardizable: { $ne: "No" } } },
+        { $match: { "isStandardizable": { "$ne": "No" }, } },
+        { $group: { "_id": "$ulb_id" } },
         {
           $lookup: {
-            from: "ulbs",
-            let: { ulbId: "$_id" },
-            pipeline: [
-              {
-                $match: {
-                  $expr: { $eq: ["$_id", "$$ulbId"] }
-                }
-              },
-              { $project: { state: 1, isActive: 1 } }
+            "from": "ulbs",
+            "let": { "ulbId": "$_id" },
+            "pipeline": [
+              { $match: matchCondition },
+              { $project: { _id: 1 } }
             ],
-            as: "ulbData"
+            "as": "activeUlbData"
           }
         },
-        { $match: matchCondition },
-        { $count: 'count' }
+        { $match: { "activeUlbData": { $ne: [] } } },
+        { $count: "count" }
       ]);
-
-      distinctUlbCount[0]['count'] > 0 ? rslv(distinctUlbCount[0]['count']) : rslv(0);
+      
+      distinctUlbCount.length && distinctUlbCount[0]['count'] > 0 ? rslv(distinctUlbCount[0]['count']) : rslv(0);
     }
     catch (err) { rjct(err) }
   })
@@ -90,49 +83,48 @@ module.exports = (req, res) => {
   let ulbDataCount = new Promise(async (rslv, rjct) => {
     try {
       const yearWiseCount = await LedgerLog.aggregate([
+        { $match: { isStandardizable: { $ne: "No" } } },
         {
           $project: {
             ulb_id: 1,
-            isStandardizable: 1,
             year: 1
           }
         },
-        { $match: { isStandardizable: { $ne: 'No' } } },
         {
           $lookup: {
-            from: 'ulbs',
-            let: { ulbId: '$ulb_id' },
+            from: "ulbs",
+            let: { ulbId: "$ulb_id" },
             pipeline: [
-              { $match: { $expr: { $eq: ['$_id', '$$ulbId'] } } },
-              { $project: { state: 1, isActive: 1 } }
+              { $match: matchCondition },
+              { $project: { _id: 1 } }
             ],
-            as: 'ulbData'
+            as: "ulbData"
           }
         },
-        { $match: matchCondition },
+        { $match: { ulbData: { $ne: [] } } },
         {
           $group: {
-            _id: '$year',
+            _id: "$year",
             ulbs: { $sum: 1 }
           }
         },
         { $sort: { _id: -1 } },
         {
           $project: {
-            year: '$_id',
+            year: "$_id",
             ulbs: 1,
             _id: 0
           }
         }
       ]);
 
-      yearWiseCount.length > 0 ? rslv(yearWiseCount) : rslv(0);
+      yearWiseCount.length > 0 ? rslv(yearWiseCount) : rslv([]);
     }
     catch (err) { rjct(err) }
   });
 
   Promise.all([totalULB, munciapalBond, coveredUlbCount, ulbDataCount]).then((values) => {
-    const financialStatements = values[3].reduce((acc, curr) => acc += curr['ulbs'], 0) || 0;
+    const financialStatements = values[3]?.reduce((acc, curr) => acc += curr['ulbs'], 0) || 0;
 
     let data = {
       totalULB: values[0],
