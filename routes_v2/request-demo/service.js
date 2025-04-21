@@ -1,8 +1,9 @@
 const FormsJson = require('../../models/FormsJson');
-const FileDownloadLog = require('../../models/FileDownloadLog');
+const RequestDemoUserInfo = require('../../models/RequestDemoUserInfo');
 const formJsonService = require('../../service/formJsonService');
 
-module.exports.userInfo = async (req, res) => {
+// Insert data to DB.
+module.exports.postDemoData = async (req, res) => {
   try {
     const reqBody = req.body;
     if (JSON.stringify(reqBody) === '{}') {
@@ -12,14 +13,8 @@ module.exports.userInfo = async (req, res) => {
         data: [],
       });
     }
-    const condition = {
-      userName: reqBody.userName,
-      email: reqBody.email,
-      module: reqBody.module,
-      organization: reqBody.organization,
-      designation: reqBody.designation,
-    };
-    const formJson = await FormsJson.findOne({ formId: 18 });
+
+    const formJson = await FormsJson.findOne({ formId: 20 });
     const validations = formJsonService.getValidations(formJson.data);
     const failedValidations = formJsonService.getFailedValidations(
       reqBody,
@@ -28,17 +23,10 @@ module.exports.userInfo = async (req, res) => {
 
     // If there are no failed validations, proceed with updating the record.
     if (failedValidations.length === 0) {
-      // If record already exists, update the "fileDownloaded" array else insert new record.
-      const updateResult = await FileDownloadLog.updateOne(condition, {
-        $push: {
-          fileDownloaded: reqBody.fileDownloaded
-        },
-      });
+      const newUser = new RequestDemoUserInfo(req.body);
+      const updateResult = await newUser.save();
 
-      // No documents were updated, proceed with insertOne.
-      if (updateResult.nModified === 0) {
-        await FileDownloadLog.bulkWrite([{ insertOne: { document: reqBody } }]);
-      }
+      if (!updateResult?._id) throw new Error('Failed to save data.');
 
       return res.status(200).json({
         status: true,
@@ -61,9 +49,10 @@ module.exports.userInfo = async (req, res) => {
   }
 };
 
-module.exports.getUserInfo = async (req, res) => {
+// Get formJson.
+module.exports.getDemoForm = async (req, res) => {
   try {
-    const formJson = await FormsJson.findOne({ formId: 18 });
+    const formJson = await FormsJson.findOne({ formId: 20 });
     return res.status(200).json({
       status: true,
       message: 'Successfully fetched data!',
@@ -77,4 +66,9 @@ module.exports.getUserInfo = async (req, res) => {
       data: '',
     });
   }
+};
+
+// Download dump.
+module.exports.getDemoDump = async () => {
+  
 };
