@@ -1,6 +1,7 @@
 const FormsJson = require('../../models/FormsJson');
 const RequestDemoUserInfo = require('../../models/RequestDemoUserInfo');
 const formJsonService = require('../../service/formJsonService');
+const { generateExcel } = require('../utils/downloadService');
 
 // Insert data to DB.
 module.exports.postDemoData = async (req, res) => {
@@ -69,6 +70,25 @@ module.exports.getDemoForm = async (req, res) => {
 };
 
 // Download dump.
-module.exports.getDemoDump = async () => {
-  
+module.exports.getDemoDump = async (req, res) => {
+  const sheetName = 'UserInfo';
+  const headers = [
+    { key: 'firstName', label: 'First Name' },
+    { key: 'lastName', label: 'Last Name' },
+    { key: 'email', label: 'Business Email ID' },
+    { key: 'jobTitle', label: 'Job Title' },
+    { key: 'usingCfFor', label: 'What would you be using City Finance for?' },
+    { key: 'createdAt', lable: 'Created At' },
+  ]
+  const rowsData = await RequestDemoUserInfo.find({}).lean();
+
+  try {
+    const buffer = await generateExcel(headers, rowsData, sheetName);
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename="Request_Demo.xlsx"`);
+    res.status(200).send(buffer);
+  } catch (err) {
+    console.error('Error generating Excel:', err);
+    res.status(500).json({ message: 'Failed to generate Excel file.' });
+  }
 };
