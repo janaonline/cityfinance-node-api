@@ -53,3 +53,32 @@ module.exports.downloadExcel = async (
     const buffer = await workbook.xlsx.writeBuffer();
     return buffer;
 };
+
+module.exports.generateExcel = async (headers, rows, sheetName = 'Sheet1') => {
+    const workbook = new ExcelJS.Workbook();
+    const sheet = workbook.addWorksheet(sheetName);
+
+    // Set headers
+    sheet.columns = headers.map(header => ({
+        header: header.label,
+        key: header.key,
+        width: header.width || 20,
+    }));
+
+    // Add rows
+    sheet.addRows(rows);
+
+    // // Style headers
+    // sheet.getRow(1).eachCell(cell => {
+    //     cell.font = { bold: true };
+    //     cell.fill = {
+    //         type: 'pattern',
+    //         pattern: 'solid',
+    //         fgColor: { argb: 'FFEEEEEE' },
+    //     };
+    // });
+
+    // Send file as response
+    const buffer = await workbook.xlsx.writeBuffer();
+    return buffer;
+}
