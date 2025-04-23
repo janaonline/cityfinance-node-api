@@ -78,7 +78,7 @@ module.exports.getDemoDump = async (req, res) => {
     { key: 'email', label: 'Business Email ID' },
     { key: 'jobTitle', label: 'Job Title' },
     { key: 'usingCfFor', label: 'What would you be using City Finance for?' },
-    { key: 'createdAt', lable: 'Created At' },
+    { key: 'createdAt', label: 'Created At' },
   ]
   const rowsData = await RequestDemoUserInfo.find({}).lean();
 
