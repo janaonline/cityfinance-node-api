@@ -37,7 +37,7 @@ module.exports.verifyToken = (req, res, next) => {
         }
 
         console.error("verify-token jwt.verify : ", err.message);
-        return Response.UnAuthorized(res, {}, `Token expired. Kindly log in again to proceed.`);
+        return Response.UnAuthorized(res, {}, `Session expired. Kindly log in again to proceed.`);
       } else {
         req.decoded = decoded;
         console.log(req.decoded)
