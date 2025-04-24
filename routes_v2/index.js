@@ -30,6 +30,9 @@ router.use('/dalgo', require('./dalgo'));
 // Download logs - User Info.
 router.use('/file-download-log', require('./file-download-log'));
 
+// Request Demo. 
+router.use('/request-demo', require('./request-demo'));
+
 // National Dashboard.
 router.use('/national-performance-dashboard', require('./dashboards/national-dashboard'));
 

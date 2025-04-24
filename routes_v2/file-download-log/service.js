@@ -67,7 +67,7 @@ module.exports.getUserInfo = async (req, res) => {
     return res.status(200).json({
       status: true,
       message: 'Successfully fetched data!',
-      data: formJson.data,
+      data: formJson,
     });
   } catch (error) {
     console.error('Error: ', error);
