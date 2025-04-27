@@ -151,20 +151,23 @@ const LedgerLogSchema = mongoose.Schema({
 			},
 		}
 	],
-	lineItems: [
-		{
-			amount: {
-				type: Number
-			},
-			lineItem: {
-				type: Schema.Types.ObjectId,
-				ref: "LineItem"
-			},
-			code: {
-				type: String
-			},
-		}
-	],
+	lineItems: {
+		type: Map,
+		of: new Schema(
+			{
+				amount: {
+					type: Number
+				},
+				lineItem: {
+					type: Schema.Types.ObjectId,
+					ref: "LineItem"
+				},
+				code: {
+					type: String
+				},
+			}
+		)
+	},
 
 });
 

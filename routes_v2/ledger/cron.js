@@ -41,13 +41,16 @@ module.exports.transferUlbLedgersToLedgerLogs = async (req, res) => {
             const ulbWiseLineItems = {};
 
             for (const lineItem of ulbLedgers) {
-                if (!ulbWiseLineItems[lineItem.ulb.toString()]) ulbWiseLineItems[lineItem.ulb.toString()] = [];
+                const ulbId = lineItem.ulb.toString();
+                const code = lineItemsObj[lineItem.lineItem.toString()];
 
-                ulbWiseLineItems[lineItem.ulb.toString()].push({
+                if (!ulbWiseLineItems[ulbId]) ulbWiseLineItems[ulbId] = new Map();
+
+                ulbWiseLineItems[ulbId].set(code, {
                     amount: lineItem.amount,
                     lineItem: ObjectId(lineItem.lineItem),
-                    code: lineItemsObj[lineItem.lineItem.toString()]
-                })
+                    code,
+                });
             }
 
             const query = [];
@@ -60,10 +63,10 @@ module.exports.transferUlbLedgersToLedgerLogs = async (req, res) => {
                                 year: year,
                                 $or: [
                                     { lineItems: { $exists: false } },
-                                    { lineItems: { $size: 0 } }
+                                    { lineItems: {} }
                                 ]
                             },
-                            'update': { $push: { lineItems: value } }
+                            'update': { $set: { lineItems: value } }
                         }
                     }
                 )
