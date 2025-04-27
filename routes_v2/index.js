@@ -37,6 +37,9 @@ router.use('/request-demo', require('./request-demo'));
 router.use('/national-performance-dashboard', require('./dashboards/national-dashboard'));
 
 // Get latest provisional year.
-router.use('/common', require('./common'))
+router.use('/common', require('./common'));
+
+// Ledgers.
+router.use('/ledger', require('./ledger'));
 
 module.exports = router;

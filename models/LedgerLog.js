@@ -150,7 +150,22 @@ const LedgerLogSchema = mongoose.Schema({
 				required: [true, 'Document source is required']
 			},
 		}
-	]
+	],
+	lineItems: [
+		{
+			amount: {
+				type: Number
+			},
+			lineItem: {
+				type: Schema.Types.ObjectId,
+				ref: "LineItem"
+			},
+			code: {
+				type: String
+			},
+		}
+	],
+
 });
 
 LedgerLogSchema.index(
