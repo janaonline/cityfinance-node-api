@@ -27,6 +27,9 @@ module.exports.transferUlbLedgersToLedgerLogs = async (req, res) => {
     try {
         if (req.decoded?.role !== 'ADMIN') throw new Error('Access denied. Please log in with an Admin account.');
 
+        // Do not update if `ledgerLogs` already has lineItems, unless forceUpdate is set to true.
+        const forceUpdate = req.query.forceUpdate || 'false';
+
         // Parallelizing Async Operations.
         const [lineItemsObj, years] = await Promise.all([
             getLineItemsCode(),
@@ -44,15 +47,16 @@ module.exports.transferUlbLedgersToLedgerLogs = async (req, res) => {
                 const ulbId = lineItem.ulb.toString();
                 const code = lineItemsObj[lineItem.lineItem.toString()];
 
-                if (!ulbWiseLineItems[ulbId]) ulbWiseLineItems[ulbId] = new Map();
-
-                ulbWiseLineItems[ulbId].set(code, {
-                    amount: lineItem.amount,
-                    lineItem: ObjectId(lineItem.lineItem),
-                    code,
-                });
+                if (!ulbWiseLineItems[ulbId]) ulbWiseLineItems[ulbId] = { lineItems: new Map() };
+                ulbWiseLineItems[ulbId]['lineItems'].set(code, lineItem.amount ? +lineItem.amount : null);
             }
 
+            const filterCondition = forceUpdate.toString() == 'false' ? {
+                $or: [
+                    { lineItems: { $exists: false } },
+                    { lineItems: {} }
+                ]
+            } : {};
             const query = [];
             for (const [key, value] of Object.entries(ulbWiseLineItems)) {
                 query.push(
@@ -61,12 +65,9 @@ module.exports.transferUlbLedgersToLedgerLogs = async (req, res) => {
                             'filter': {
                                 ulb_id: ObjectId(key),
                                 year: year,
-                                $or: [
-                                    { lineItems: { $exists: false } },
-                                    { lineItems: {} }
-                                ]
+                                ...filterCondition
                             },
-                            'update': { $set: { lineItems: value } }
+                            'update': { $set: { lineItems: Object.fromEntries(value['lineItems']) } }
                         }
                     }
                 )
@@ -86,7 +87,7 @@ module.exports.transferUlbLedgersToLedgerLogs = async (req, res) => {
             const end = performance.now();
 
             result[year] = {
-                ledgerLogsCount: ulbLedgers.length,
+                ulbLedgersCount: ulbLedgers.length,
                 timeTaken: Math.round((end - start) / 1000) + 's',
                 approxSize: (size / 1000000).toFixed(2) + 'MB',
                 modifiedCount,

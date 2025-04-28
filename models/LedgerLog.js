@@ -153,20 +153,7 @@ const LedgerLogSchema = mongoose.Schema({
 	],
 	lineItems: {
 		type: Map,
-		of: new Schema(
-			{
-				amount: {
-					type: Number
-				},
-				lineItem: {
-					type: Schema.Types.ObjectId,
-					ref: "LineItem"
-				},
-				code: {
-					type: String
-				},
-			}
-		)
+		of: Number,
 	},
 
 });
@@ -174,8 +161,9 @@ const LedgerLogSchema = mongoose.Schema({
 LedgerLogSchema.index(
 	{
 		ulb_id: 1,
-		financialYear: 1,
-		design_year: 1,
+		year: 1,
+		isStandardizable: 1,
+		lineItems: 1,
 		ulb_code_year: 1
 	},
 	{
