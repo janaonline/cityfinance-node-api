@@ -47,6 +47,7 @@ const DULY_ELECTED = new Schema({
 
 const UlbSchema = new Schema({
     code: { type: String, required: true, index: { unique: true } },
+    slug: { type: String, required: true, index: { unique: true } },
     name: { type: String, required: true },
     censusCode: { type: String, default: null },
     sbCode: { type: String, default: null }, /*Swatch Bharat Code*/
