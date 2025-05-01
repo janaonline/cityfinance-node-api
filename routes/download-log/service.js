@@ -1,5 +1,5 @@
 const DownloadLog = require('../../models/DownloadLog');
-const fs = require('fs');
+// const fs = require('fs');
 // const pdf = require('html-pdf');
 const puppeteer = require('puppeteer');
 const axios = require('axios')
@@ -133,57 +133,58 @@ module.exports.post = function (req, res) {
 // }
 
 module.exports.HtmlToPdf = async function (req, res) {
-    try {
-        let { url, html, option } = req.body;
+  try {
+      let { url, html, option } = req.body;
 
-        if (url) {
-            const tempData = await axios.get(url);
-            html = tempData.data;
-        }
+      if (url) {
+          const tempData = await axios.get(url);
+          html = tempData.data;
+      }
 
-        if (!html) {
-            return res.status(400).json({ success: false, message: "html Missing" });
-        }
+      if (!html) {
+          return res.status(400).json({ success: false, message: "html Missing" });
+      }
 
-        const browser = await puppeteer.launch({headless: true});
-        const page = await browser.newPage();
+      const browser = await puppeteer.launch({headless: true});
+      const page = await browser.newPage();
 
-        await page.setContent(html, { waitUntil: 'networkidle0' });
+      await page.setContent(html, { waitUntil: 'networkidle0' });
 
-        // Default options if not provided
-        const pdfOptions = {
-            format: 'A4',
-            printBackground: true,
-            ...option // spread any custom options sent in the request
-        };
+      // // Default options if not provided
+      // const pdfOptions = {
+      //     format: 'A4',
+      //     printBackground: true,
+      //     ...option // spread any custom options sent in the request
+      // };
 
-        // const pdfOptions = {
-        //     // path: pdfOutputPath,
-        //     format: options.format,
-        //     landscape: options.orientation === 'landscape',
-        //     margin: {
-        //         top: options.border.top,
-        //         right: options.border.right,
-        //         bottom: options.border.bottom,
-        //         left: options.border.left
-        //     },
-        //     printBackground: true,
-        //     quality: options.quality
-        // };
+      const pdfOptions = {
+          // path: pdfOutputPath,
+          format: options.format,
+          landscape: options.orientation === 'landscape',
+          margin: {
+              top: options.border.top,
+              right: options.border.right,
+              bottom: options.border.bottom,
+              left: options.border.left
+          },
+        
+          printBackground: true,
+          quality: options.quality
+      };
 
-        const pdfBuffer = await page.pdf(pdfOptions);
-        await browser.close();
+      const pdfBuffer = await page.pdf(pdfOptions);
+      await browser.close();
 
-        res.set({
-            'Content-Type': 'application/pdf',
-            'Content-Disposition': 'inline; filename="document.pdf"',
-            'Content-Length': pdfBuffer.length
-        });
+      res.set({
+          'Content-Type': 'application/pdf',
+          'Content-Disposition': 'inline; filename="document.pdf"',
+          'Content-Length': pdfBuffer.length
+      });
 
-        res.send(pdfBuffer);
+      res.send(pdfBuffer);
 
-    } catch (error) {
-        console.error("PDF generation error:", error);
-        return res.status(400).json({ success: false, message: error.message });
-    }
+  } catch (error) {
+      console.error("PDF generation error:", error);
+      return res.status(400).json({ success: false, message: error.message });
+  }
 };
