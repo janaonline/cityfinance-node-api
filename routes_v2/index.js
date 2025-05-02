@@ -33,8 +33,8 @@ router.use('/file-download-log', require('./file-download-log'));
 // Request Demo. 
 router.use('/request-demo', require('./request-demo'));
 
-// National Dashboard.
-router.use('/national-performance-dashboard', require('./dashboards/national-dashboard'));
+// Public Dashboards.
+router.use('/dashboard', require('./dashboards'));
 
 // Get latest provisional year.
 router.use('/common', require('./common'));
