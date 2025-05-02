@@ -12,6 +12,7 @@ const Ulb = require('../../models/Ulb');
 const LineItem = require('../../models/LineItem');
 const UlbLedger = require('../../models/UlbLedger');
 const LedgerLog = require('../../models/LedgerLog');
+const { clearCacheByType } = require('../../service/cacheService');
 
 const overViewSheet = {
   'State Code': 'state_code',
@@ -282,6 +283,7 @@ async function processData(
           completed: 1,
           status: 'SUCCESS',
         });
+        clearLedgerCache();
         Redis.resetDashboard();
       }
     } else {
@@ -308,6 +310,12 @@ async function processData(
       status: 'FAILED',
     });
   }
+}
+
+// Clear redis cache.
+async function clearLedgerCache() {
+  const cacheType = 'dashboard';
+  await clearCacheByType(cacheType);
 }
 
 // << ----- Operation on Excel ----- >>
