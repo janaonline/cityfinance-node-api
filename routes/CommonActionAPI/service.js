@@ -156,10 +156,7 @@ var customkeys = {
         "grantPosition.closingBal": "grantPosition.closingBal",
         "grantPosition.receivedDuringYrWithZero": "grantPosition.receivedDuringYrWithZero",
         "grantPosition.receivedDuringYrWithZeroReason": "grantPosition.receivedDuringYrWithZeroReason",
-<<<<<<< Updated upstream
-=======
         "grantPosition.fileUploadDuringYrWithZeroReason": "grantPosition.fileUploadDuringYrWithZeroReason",
->>>>>>> Stashed changes
     },
 
     "waterManagement_tableView": {
