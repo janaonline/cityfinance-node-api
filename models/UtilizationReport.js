@@ -63,6 +63,7 @@ const UtilizationReportSchema = new Schema(
       receivedDuringYr: { type: Number, default: null },
       receivedDuringYrWithZero: { type: String, default: null },
       receivedDuringYrWithZeroReason: { type: String, default: null },
+      fileUploadDuringYrWithZeroReason: pdfSchema(),
       expDuringYr: {
         type: Number, default: null
       },
