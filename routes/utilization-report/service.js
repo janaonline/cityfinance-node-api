@@ -1180,6 +1180,10 @@ module.exports.read2223 = catchAsync(async (req, res, next) => {
           ? (fetchedData.grantPosition.receivedDuringYrWithZeroReason = fetchedData?.grantPosition.receivedDuringYrWithZeroReason
           )
           : "";
+          typeof fetchedData?.grantPosition.fileUploadDuringYrWithZeroReason === "object"
+          ? (fetchedData.grantPosition.fileUploadDuringYrWithZeroReason = fetchedData?.grantPosition.fileUploadDuringYrWithZeroReason
+          )
+          : "";
       }
       fetchedData["ulbName"] = ulbData.name;
       req.form = fetchedData;
