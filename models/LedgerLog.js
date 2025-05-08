@@ -61,11 +61,19 @@ const LedgerLogSchema = mongoose.Schema({
 	audit_firm: {
 		type: String,
 	},
+	audit_date: {
+		type: Date,
+	},
 	partner_name: {
 		type: String
 	},
 	icai_membership_number: {
 		type: String
+	},
+	doc_source: {
+		type: String,
+		enum: { values: ['XV FC', 'XVI FC', 'Other'], message: 'Document source must be either "XV FC" or "XVI FC" or "Other"' },
+		required: [true, 'Document source is required']
 	},
 	created_at: {
 		type: String,
@@ -132,7 +140,15 @@ const LedgerLogSchema = mongoose.Schema({
 			},
 			dataFlag: {
 				type: String,
-			}
+			},
+			doc_source: {
+				type: String,
+				enum: {
+					values: ['XV FC', 'XVI FC', 'Other'],
+					message: 'Document source must be either "XV FC" or "XVI FC" or "Other"',
+				},
+				required: [true, 'Document source is required']
+			},
 		}
 	]
 });
