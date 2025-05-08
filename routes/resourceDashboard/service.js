@@ -57,13 +57,20 @@ module.exports.get = async function (req, res) {
 
 module.exports.getYears = async function (req, res) {
   try {
-    let data = await ResourceLineItem.distinct("publishedYear").lean();
-    data.sort((a, b) => {
-      a = Number(a.split("-")[0]);
-      b = Number(b.split("-")[0]);
-      return b - a;
-    });
-    return Response.OK(res, data);
+    // let data = await ResourceLineItem.distinct("publishedYear").lean();
+    // data.sort((a, b) => {
+    //   a = Number(a.split("-")[0]);
+    //   b = Number(b.split("-")[0]);
+    //   return b - a;
+    // });
+    const { header, distinctValue } = req.query;
+    if (!header || !distinctValue) throw new Error('getYears(): header or distinctValue not found.');
+    const data = await ResourceLineItem.aggregate([
+      { $match: { header } },
+      { $group: { _id: `$${decodeURIComponent(distinctValue)}` } },
+    ]);
+    const years = data.map((item) => item._id) || [];
+    return Response.OK(res, years);
   } catch (error) {
     console.log(error);
     return Response.DbError(res, error, error.message);
@@ -123,12 +130,12 @@ module.exports.bulkPost = async function (req, res) {
       if (index == 0) continue;
       let value = ele.values;
       let ulb = value[4]
-          ? (await ULB.findOne({ code: value[4] }).select("_id").lean())["_id"]
-          : null,
+        ? (await ULB.findOne({ code: value[4] }).select("_id").lean())["_id"]
+        : null,
         state = value[3]
           ? (await STATE.findOne({ code: value[3] }).select("_id").lean())[
-              "_id"
-            ]
+          "_id"
+          ]
           : null;
       let temObj = {
         name: value[6],
