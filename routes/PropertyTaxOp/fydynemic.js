@@ -1,4 +1,4 @@
-const { years, getDesiredYear, isBeyond2023_24 } = require("../../service/years")
+const { years, getDesiredYear, isBeyond2023_24, getAdditionalYears } = require("../../service/years")
 const { apiUrls } = require("../CommonActionAPI/service");
 const { isSingleYearIndicator, ensureArray } = require('../../util/helper');
 
@@ -7,7 +7,8 @@ const parentRadioQuestionKeys = [
   "doesUserChargesDmnd",
   "notificationWaterCharges",
   "doesColSewerageCharges",
-  "notificationPropertyTax"
+  "notificationPropertyTax",
+  "ulbPassedResolPtax",
 ];
 
 const childRadioAnsKeyPrefillDataCurrYear = [
@@ -15,15 +16,21 @@ const childRadioAnsKeyPrefillDataCurrYear = [
   "notificationAdoptionDate",
   "notificationFile",
   "notificationIssuedBy",
+  "resolutionFile",
 ];
 
 const mandatDisplayPrioritiesForCurrYear = [
   '1.10', '1.11', '1.18', '1.19', '2.1', '2.2', '5.6', '5.7', '5.9', '5.10', '6.6', '6.7', '6.9', '6.10'
 ];
 
-const propertyTaxOpFormJson = ({role, design_year, ptoData, ptoMaper = []}) => {
+
+const propertyTaxOpFormJson = ({ role, design_year, ptoData, ptoMaper = [] }) => {
+
+  lastYearId = '606aafb14dff55e6c075d3ae'; // 22-23
+  const additionalYears = getAdditionalYears(lastYearId, design_year);
+
   let readOnly = role === "ULB" ? false : true
-  const json =  {
+  const json = {
     "_id": null,
     "ulb": "5fa24660072dab780a6f141e",
     "design_year": design_year || "606aafb14dff55e6c075d3ae",
@@ -10499,28 +10506,28 @@ const propertyTaxOpFormJson = ({role, design_year, ptoData, ptoMaper = []}) => {
         const copyChildFrom = indicator?.copyChildFrom;
 
         if (copyChildFrom) {
-          modifyJsonForChild(copyChildFrom);
+          modifyJsonForChild(copyChildFrom, additionalYears);
         }
         const hasMultipleYears = !yearData.some(
           (yearItem) => Object.keys(yearItem).length == 0
         );
 
         //Make mandatory * icon in the Validation implemented Indicator..
-        if([...mandatDisplayPrioritiesForCurrYear].includes(indicator.displayPriority)) {
+        if ([...mandatDisplayPrioritiesForCurrYear].includes(indicator.displayPriority)) {
           indicator["required"] = true;
         }
 
-        
 
-        if(isSingleYearIndicator(indicator.yearData)) {
-          
+
+        if (isSingleYearIndicator(indicator.yearData)) {
+
           const indicatorObj = indicator.yearData[0];
 
           // const disabledKeys = ['ulbFinancialYear'];
           // if(disabledKeys.includes(indicator?.key)) {
           //   indicatorObj.isReadonlySingleYear = true;
           // }
-          
+
           if (parentRadioQuestionKeys.includes(indicator?.key)) {
             if (compareWithMapper18_19(ptoMaper, indicator.key, "Yes")) {
               indicatorObj.isReadonlySingleYear = true;
@@ -10528,42 +10535,31 @@ const propertyTaxOpFormJson = ({role, design_year, ptoData, ptoMaper = []}) => {
           }
           //Special case for 1.5 indicator if previousYear value is yes than freeze the dependencies.
           if (compareWithMapper18_19(ptoMaper, "notificationPropertyTax", "Yes")) {
-            if([...childRadioAnsKeyPrefillDataCurrYear].includes(indicator.key) && !["ulbFinancialYear"].includes(indicator.key)) {
+            if ([...childRadioAnsKeyPrefillDataCurrYear].includes(indicator.key) && !["ulbFinancialYear"].includes(indicator.key)) {
               indicatorObj.isReadonlySingleYear = true;
             }
           }
           const { yearName, yearId } = getDesiredYear(design_year, -1);
-          
+
           if (["ulbCollectPtax"].includes(indicator.key)) {
             indicator["label"] = `Did the ULB collect property tax in FY ${yearName}?`;
             indicatorObj["label"] = `FY ${yearName}`;
             indicatorObj["key"] = `FY${yearName}`
           }
-          if(['signedPdf', 'propertyTaxValuationDetails'].includes(indicator.key)) {
+          if (['signedPdf', 'propertyTaxValuationDetails'].includes(indicator.key)) {
             indicatorObj.isReadonlySingleYear = false;
             indicatorObj["key"] = `FY${yearName}`;
             indicatorObj["label"] = `FY ${yearName}`;
           }
-          if(ptoData) {
+          if (ptoData) {
             indicatorObj.year = yearId;
           }
         }
-        
-        
 
         if (hasMultipleYears) {
-          const lastYear = yearData[yearData.length - 1];
-          const { yearName, yearId } = getDesiredYear(lastYear.year, 1);
-
-          const nextYear = JSON.parse(JSON.stringify(lastYear));
-          nextYear["key"] = `FY${yearName}`;
-          nextYear["label"] = `FY ${yearName}`;
-          nextYear["year"] = yearId;
-          nextYear["postion"] = String(+nextYear["postion"] + 1);
-          nextYear['required'] = ([...mandatDisplayPrioritiesForCurrYear].includes(indicator.displayPriority)) ? true : lastYear.required;
-          yearData.push(nextYear);
+          addMultipleYearsToIndicator(yearData, indicator, additionalYears);
         } else {
-          yearData.push({});
+          // yearData.push({});
         }
       });
     });
@@ -10572,13 +10568,28 @@ const propertyTaxOpFormJson = ({role, design_year, ptoData, ptoMaper = []}) => {
   return json;
 }
 
-
+function addMultipleYearsToIndicator(yearData, indicator, additionalYears) {
+  const yearDataLength = yearData.length;
+  const lastYear = yearData[yearDataLength - 1];
+  // const { yearName, yearId } = getDesiredYear(lastYear.year, 1);
+  additionalYears.forEach(({ yearName, yearId }) => {
+    const nextYear = { ...lastYear };
+    nextYear["key"] = `FY${yearName}`;
+    nextYear["label"] = `FY ${yearName}`;
+    nextYear["year"] = yearId;
+    nextYear["postion"] = String(+nextYear["postion"] + 1);
+    nextYear['required'] = ([...mandatDisplayPrioritiesForCurrYear].includes(indicator.displayPriority)) ? true : lastYear.required;
+    yearData.push(nextYear);
+  });
+  const itemRemove = yearData.length - 5;
+  let dat = yearData.splice(0, itemRemove); // keep only latest 5 years data  
+}
 
 function compareWithMapper18_19(ptoMaper, type, value) {
   return ptoMaper.find(item => {
-    return item.type == type && 
-    ('' + item.year) == getDesiredYear('2018-19').yearId &&
-    ensureArray(value).includes(item.value);
+    return item.type == type &&
+      ('' + item.year) == getDesiredYear('2018-19').yearId &&
+      ensureArray(value).includes(item.value);
   });
 }
 
@@ -10594,24 +10605,37 @@ function getRadioParentDependencyObject(indicator) {
   return parentValues;
 }
 
-function modifyJsonForChild(copyChildFrom) {
+function modifyJsonForChild(copyChildFrom, additionalYears) {
   copyChildFrom.forEach((copyChild) => {
     const { yearData } = copyChild
     const lastChildYear = yearData[yearData.length - 1]
     const { yearName, yearId } = getDesiredYear(lastChildYear.year, 1)
-    const nextYear = JSON.parse(JSON.stringify(lastChildYear))
     yearData.forEach((yearObj) => {
       yearObj.readonly = true;
       yearObj.placeholder = "N/A";
       yearObj.notApplicable = true;
       yearObj.required = false;
     })
-    nextYear["key"] = `FY${yearName}`
-    nextYear["label"] = `FY ${yearName}`
-    nextYear["year"] = yearId
-    nextYear["postion"] = String(+nextYear["postion"] + 1)
-    yearData.push(nextYear)
-  })
+    additionalYears.forEach(({ yearName, yearId }, index) => {
+      const nextYear = JSON.parse(JSON.stringify(lastChildYear))
+      nextYear["key"] = `FY${yearName}`;
+      nextYear["label"] = `FY ${yearName}`;
+      nextYear["year"] = yearId;
+      nextYear["postion"] = String(+nextYear["postion"] + 1);
+
+      if (additionalYears.length - 1 === index) {
+        nextYear["readonly"] = false;
+        nextYear["placeholder"] = "";
+        nextYear["notApplicable"] = false;
+        nextYear["required"] = true;
+      }
+      yearData.push(nextYear);
+    });
+    const itemRemove = yearData.length - 5;
+    yearData.splice(0, itemRemove);
+
+  });
+
 }
 
 function getInputKeysByType(formType, type, label, dataSource = null, position, required = true, mn = false, info = "") {
@@ -11534,39 +11558,31 @@ let skipLogicDependencies = {
     "skippable": {
       "notificationPropertyTax": {
         "value": "Yes",
-        "years": [
-          0
-        ]
+        "years": [0]
       },
       "notificationAdoptionDate": {
         "value": "Yes",
-        "years": [
-          0
-        ]
+        "years": [0]
       },
       "notificationIssuedBy": {
         "value": "Yes",
-        "years": [
-          0
-        ]
+        "years": [0]
       },
       "notificationFile": {
         "value": "Yes",
-        "years": [
-          0
-        ]
+        "years": [0]
       },
       "ulbFinancialYear": {
         "value": "No",
-        "years": [
-          0
-        ]
+        "years": [0]
+      },
+      "resolutionFile": {
+        "value": "No",
+        "years": [0]
       },
       "ulbPassedResolPtax": {
         "value": "No",
-        "years": [
-          0
-        ]
+        "years": [0]
       }
     }
   },
@@ -11574,21 +11590,211 @@ let skipLogicDependencies = {
     "skippable": {
       "notificationAdoptionDate": {
         "value": "Yes",
-        "years": [
-          0
-        ]
+        "years": [0]
       },
       "notificationIssuedBy": {
         "value": "Yes",
-        "years": [
-          0
-        ]
+        "years": [0]
       },
       "notificationFile": {
         "value": "Yes",
-        "years": [
-          0
-        ]
+        "years": [0]
+      },
+      "dmdIncludingCess": {
+        "value": "Yes",
+        "years": [0, 1, 2, 3, 4]
+      },
+      "cdmdIncludingCess": {
+        "value": "Yes",
+        "years": [0, 1, 2, 3, 4]
+      },
+      "admdIncludingCess": {
+        "value": "Yes",
+        "years": [0, 1, 2, 3, 4]
+      },
+      "dmdexcludingCess": {
+        "value": "Yes",
+        "years": [0, 1, 2, 3, 4]
+      },
+      "taxTypeDemand": {
+        "value": "Yes",
+        "years": [0, 1, 2, 3, 4]
+      },
+      "cessDemand": {
+        "value": "Yes",
+        "years": [0, 1, 2, 3, 4]
+      },
+      "doesUserChargesDmnd": {
+        "value": "Yes",
+        "years": [0, 1, 2, 3, 4]
+      },
+      "userChargesDmndText": {
+        "value": "Yes",
+        "years": [0, 1, 2, 3, 4]
+      },
+      "userChargesDmndAmount": {
+        "value": "Yes",
+        "years": [0, 1, 2, 3, 4]
+      },
+      "collectIncludingCess": {
+        "value": "Yes",
+        "years": [0, 1, 2, 3, 4]
+      },
+      "cuCollectIncludingCess": {
+        "value": "Yes",
+        "years": [0, 1, 2, 3, 4]
+      },
+      "arCollectIncludingCess": {
+        "value": "Yes",
+        "years": [0, 1, 2, 3, 4]
+      },
+      "collectExcludingCess": {
+        "value": "Yes",
+        "years": [0, 1, 2, 3, 4]
+      },
+      "taxTypeCollection": {
+        "value": "Yes",
+        "years": [0, 1, 2, 3, 4]
+      },
+      "cessCollect": {
+        "value": "Yes",
+        "years": [0, 1, 2, 3, 4]
+      },
+      "userChargesCollectionText": {
+        "value": "Yes",
+        "years": [0, 1, 2, 3, 4]
+      },
+      "userChargesCollectionAmount": {
+        "value": "Yes",
+        "years": [0, 1, 2, 3, 4]
+      },
+      "totalMappedPropertiesUlb": {
+        "value": "Yes",
+        "years": [0, 1, 2, 3, 4]
+      },
+      "totalPropertiesTax": {
+        "value": "Yes",
+        "years": [0, 1, 2, 3, 4]
+      },
+      "totalPropertiesTaxDm": {
+        "value": "Yes",
+        "years": [0, 1, 2, 3, 4]
+      },
+      "totalPropertiesTaxDmCollected": {
+        "value": "Yes",
+        "years": [0, 1, 2, 3, 4]
+      },
+      "resValuePropertyTaxDm": {
+        "value": "Yes",
+        "years": [0, 1, 2, 3, 4]
+      },
+      "resNoPropertyTaxDm": {
+        "value": "Yes",
+        "years": [0, 1, 2, 3, 4]
+      },
+      "resValuePropertyTaxCollected": {
+        "value": "Yes",
+        "years": [0, 1, 2, 3, 4]
+      },
+      "resNoPropertyTaxCollected": {
+        "value": "Yes",
+        "years": [0, 1, 2, 3, 4]
+      },
+      "comValuePropertyTaxDm": {
+        "value": "Yes",
+        "years": [0, 1, 2, 3, 4]
+      },
+      "comNoPropertyTaxDm": {
+        "value": "Yes",
+        "years": [0, 1, 2, 3, 4]
+      },
+      "comValuePropertyTaxCollected": {
+        "value": "Yes",
+        "years": [0, 1, 2, 3, 4]
+      },
+      "comNoPropertyTaxCollected": {
+        "value": "Yes",
+        "years": [0, 1, 2, 3, 4]
+      },
+      "indValuePropertyTaxDm": {
+        "value": "Yes",
+        "years": [0, 1, 2, 3, 4]
+      },
+      "indNoPropertyTaxDm": {
+        "value": "Yes",
+        "years": [0, 1, 2, 3, 4]
+      },
+      "indValuePropertyTaxCollected": {
+        "value": "Yes",
+        "years": [0, 1, 2, 3, 4]
+      },
+      "indNoPropertyTaxCollected": {
+        "value": "Yes",
+        "years": [0, 1, 2, 3, 4]
+      },
+      "govValuePropertyTaxDm": {
+        "value": "Yes",
+        "years": [0, 1, 2, 3, 4]
+      },
+      "govNoPropertyTaxDm": {
+        "value": "Yes",
+        "years": [0, 1, 2, 3, 4]
+      },
+      "govValuePropertyTaxCollected": {
+        "value": "Yes",
+        "years": [0, 1, 2, 3, 4]
+      },
+      "govNoPropertyTaxCollected": {
+        "value": "Yes",
+        "years": [0, 1, 2, 3, 4]
+      },
+      "insValuePropertyTaxDm": {
+        "value": "Yes",
+        "years": [0, 1, 2, 3, 4]
+      },
+      "insNoPropertyTaxDm": {
+        "value": "Yes",
+        "years": [0, 1, 2, 3, 4]
+      },
+      "insValuePropertyTaxCollected": {
+        "value": "Yes",
+        "years": [0, 1, 2, 3, 4]
+      },
+      "insNoPropertyTaxCollected": {
+        "value": "Yes",
+        "years": [0, 1, 2, 3, 4]
+      },
+      "otherValuePropertyType": {
+        "value": "Yes",
+        "years": [0, 1, 2, 3, 4]
+      },
+      "otherValuePropertyTaxDm": {
+        "value": "Yes",
+        "years": [0, 1, 2, 3, 4]
+      },
+      "otherNoPropertyTaxDm": {
+        "value": "Yes",
+        "years": [0, 1, 2, 3, 4]
+      },
+      "otherValuePropertyTaxCollected": {
+        "value": "Yes",
+        "years": [0, 1, 2, 3, 4]
+      },
+      "otherNoPropertyTaxCollected": {
+        "value": "Yes",
+        "years": [0, 1, 2, 3, 4]
+      },
+      "noOfPropertiesPaidOnline": {
+        "value": "Yes",
+        "years": [0, 1, 2, 3, 4]
+      },
+      "totalCollectionOnline": {
+        "value": "Yes",
+        "years": [0, 1, 2, 3, 4]
+      },
+      "propertyTaxValuationDetails": {
+        "value": "Yes",
+        "years": [0, 1, 2, 3, 4]
       }
     }
   },
@@ -11596,25 +11802,215 @@ let skipLogicDependencies = {
     "skippable": {
       "resolutionFile": {
         "value": "Yes",
-        "years": [
-          0
-        ]
+        "years": [0]
       },
+      "dmdIncludingCess": {
+        "value": "Yes",
+        "years": [0, 1, 2, 3, 4]
+      },
+      "cdmdIncludingCess": {
+        "value": "Yes",
+        "years": [0, 1, 2, 3, 4]
+      },
+      "admdIncludingCess": {
+        "value": "Yes",
+        "years": [0, 1, 2, 3, 4]
+      },
+      "dmdexcludingCess": {
+        "value": "Yes",
+        "years": [0, 1, 2, 3, 4]
+      },
+      "taxTypeDemand": {
+        "value": "Yes",
+        "years": [0, 1, 2, 3, 4]
+      },
+      "cessDemand": {
+        "value": "Yes",
+        "years": [0, 1, 2, 3, 4]
+      },
+      "doesUserChargesDmnd": {
+        "value": "Yes",
+        "years": [0, 1, 2, 3, 4]
+      },
+      "userChargesDmndText": {
+        "value": "Yes",
+        "years": [0, 1, 2, 3, 4]
+      },
+      "userChargesDmndAmount": {
+        "value": "Yes",
+        "years": [0, 1, 2, 3, 4]
+      },
+      "collectIncludingCess": {
+        "value": "Yes",
+        "years": [0, 1, 2, 3, 4]
+      },
+      "cuCollectIncludingCess": {
+        "value": "Yes",
+        "years": [0, 1, 2, 3, 4]
+      },
+      "arCollectIncludingCess": {
+        "value": "Yes",
+        "years": [0, 1, 2, 3, 4]
+      },
+      "collectExcludingCess": {
+        "value": "Yes",
+        "years": [0, 1, 2, 3, 4]
+      },
+      "taxTypeCollection": {
+        "value": "Yes",
+        "years": [0, 1, 2, 3, 4]
+      },
+      "cessCollect": {
+        "value": "Yes",
+        "years": [0, 1, 2, 3, 4]
+      },
+      "userChargesCollectionText": {
+        "value": "Yes",
+        "years": [0, 1, 2, 3, 4]
+      },
+      "userChargesCollectionAmount": {
+        "value": "Yes",
+        "years": [0, 1, 2, 3, 4]
+      },
+      "totalMappedPropertiesUlb": {
+        "value": "Yes",
+        "years": [0, 1, 2, 3, 4]
+      },
+      "totalPropertiesTax": {
+        "value": "Yes",
+        "years": [0, 1, 2, 3, 4]
+      },
+      "totalPropertiesTaxDm": {
+        "value": "Yes",
+        "years": [0, 1, 2, 3, 4]
+      },
+      "totalPropertiesTaxDmCollected": {
+        "value": "Yes",
+        "years": [0, 1, 2, 3, 4]
+      },
+      "resValuePropertyTaxDm": {
+        "value": "Yes",
+        "years": [0, 1, 2, 3, 4]
+      },
+      "resNoPropertyTaxDm": {
+        "value": "Yes",
+        "years": [0, 1, 2, 3, 4]
+      },
+      "resValuePropertyTaxCollected": {
+        "value": "Yes",
+        "years": [0, 1, 2, 3, 4]
+      },
+      "resNoPropertyTaxCollected": {
+        "value": "Yes",
+        "years": [0, 1, 2, 3, 4]
+      },
+      "comValuePropertyTaxDm": {
+        "value": "Yes",
+        "years": [0, 1, 2, 3, 4]
+      },
+      "comNoPropertyTaxDm": {
+        "value": "Yes",
+        "years": [0, 1, 2, 3, 4]
+      },
+      "comValuePropertyTaxCollected": {
+        "value": "Yes",
+        "years": [0, 1, 2, 3, 4]
+      },
+      "comNoPropertyTaxCollected": {
+        "value": "Yes",
+        "years": [0, 1, 2, 3, 4]
+      },
+      "indValuePropertyTaxDm": {
+        "value": "Yes",
+        "years": [0, 1, 2, 3, 4]
+      },
+      "indNoPropertyTaxDm": {
+        "value": "Yes",
+        "years": [0, 1, 2, 3, 4]
+      },
+      "indValuePropertyTaxCollected": {
+        "value": "Yes",
+        "years": [0, 1, 2, 3, 4]
+      },
+      "indNoPropertyTaxCollected": {
+        "value": "Yes",
+        "years": [0, 1, 2, 3, 4]
+      },
+      "govValuePropertyTaxDm": {
+        "value": "Yes",
+        "years": [0, 1, 2, 3, 4]
+      },
+      "govNoPropertyTaxDm": {
+        "value": "Yes",
+        "years": [0, 1, 2, 3, 4]
+      },
+      "govValuePropertyTaxCollected": {
+        "value": "Yes",
+        "years": [0, 1, 2, 3, 4]
+      },
+      "govNoPropertyTaxCollected": {
+        "value": "Yes",
+        "years": [0, 1, 2, 3, 4]
+      },
+      "insValuePropertyTaxDm": {
+        "value": "Yes",
+        "years": [0, 1, 2, 3, 4]
+      },
+      "insNoPropertyTaxDm": {
+        "value": "Yes",
+        "years": [0, 1, 2, 3, 4]
+      },
+      "insValuePropertyTaxCollected": {
+        "value": "Yes",
+        "years": [0, 1, 2, 3, 4]
+      },
+      "insNoPropertyTaxCollected": {
+        "value": "Yes",
+        "years": [0, 1, 2, 3, 4]
+      },
+      "otherValuePropertyType": {
+        "value": "Yes",
+        "years": [0, 1, 2, 3, 4]
+      },
+      "otherValuePropertyTaxDm": {
+        "value": "Yes",
+        "years": [0, 1, 2, 3, 4]
+      },
+      "otherNoPropertyTaxDm": {
+        "value": "Yes",
+        "years": [0, 1, 2, 3, 4]
+      },
+      "otherValuePropertyTaxCollected": {
+        "value": "Yes",
+        "years": [0, 1, 2, 3, 4]
+      },
+      "otherNoPropertyTaxCollected": {
+        "value": "Yes",
+        "years": [0, 1, 2, 3, 4]
+      },
+      "noOfPropertiesPaidOnline": {
+        "value": "Yes",
+        "years": [0, 1, 2, 3, 4]
+      },
+      "totalCollectionOnline": {
+        "value": "Yes",
+        "years": [0, 1, 2, 3, 4]
+      },
+      "propertyTaxValuationDetails": {
+        "value": "Yes",
+        "years": [0, 1, 2, 3, 4]
+      }
     }
   },
   "data.doesUserChargesDmnd.yearData.0": {
     "skippable": {
       "userChargesDmnd": {
         "value": "Yes",
-        "years": [
-          0
-        ]
+        "years": [0]
       },
       "userChargesCollection": {
         "value": "Yes",
-        "years": [
-          0
-        ]
+        "years": [0]
       }
     }
   },
@@ -11629,275 +12025,119 @@ let skipLogicDependencies = {
     "skippable": {
       "entityWaterCharges": {
         "value": "Yes",
-        "years": [
-          0
-        ]
+        "years": [0]
       },
       "entityNameWaterCharges": {
         "value": "Yes",
-        "years": [
-          0
-        ]
+        "years": [0]
       },
       "notificationWaterChargesFile": {
         "value": "Yes",
-        "years": [
-          0
-        ]
+        "years": [0]
       },
       "waterChrgDm": {
         "value": "Yes",
-        "years": [
-          0,
-          1,
-          2,
-          3,
-          4
-        ]
+        "years": [0, 1, 2, 3, 4]
       },
       "cuWaterChrgDm": {
         "value": "Yes",
-        "years": [
-          0,
-          1,
-          2,
-          3,
-          4
-        ]
+        "years": [0, 1, 2, 3, 4]
       },
       "arWaterChrgDm": {
         "value": "Yes",
-        "years": [
-          0,
-          1,
-          2,
-          3,
-          4
-        ]
+        "years": [0, 1, 2, 3, 4]
       },
       "waterChrgCol": {
         "value": "Yes",
-        "years": [
-          0,
-          1,
-          2,
-          3,
-          4
-        ]
+        "years": [0, 1, 2, 3, 4]
       },
       "cuWaterChrgCol": {
         "value": "Yes",
-        "years": [
-          0,
-          1,
-          2,
-          3,
-          4
-        ]
+        "years": [0, 1, 2, 3, 4]
       },
       "arWaterChrgCol": {
         "value": "Yes",
-        "years": [
-          0,
-          1,
-          2,
-          3,
-          4
-        ]
+        "years": [0, 1, 2, 3, 4]
       },
       "waterChrgConnectionDm": {
         "value": "Yes",
-        "years": [
-          0,
-          1,
-          2,
-          3,
-          4
-        ]
+        "years": [0, 1, 2, 3, 4]
       },
       "waterChrgConnectionCol": {
         "value": "Yes",
-        "years": [
-          0,
-          1,
-          2,
-          3,
-          4
-        ]
+        "years": [0, 1, 2, 3, 4]
       },
       "resValueWaterChrgDm": {
         "value": "Yes",
-        "years": [
-          0,
-          1,
-          2,
-          3,
-          4
-        ]
+        "years": [0, 1, 2, 3, 4]
       },
       "resNoWaterChrgDm": {
         "value": "Yes",
-        "years": [
-          0,
-          1,
-          2,
-          3,
-          4
-        ]
+        "years": [0, 1, 2, 3, 4]
       },
       "resValueWaterChrgCollected": {
         "value": "Yes",
-        "years": [
-          0,
-          1,
-          2,
-          3,
-          4
-        ]
+        "years": [0, 1, 2, 3, 4]
       },
       "resNoWaterChrgCollected": {
         "value": "Yes",
-        "years": [
-          0,
-          1,
-          2,
-          3,
-          4
-        ]
+        "years": [0, 1, 2, 3, 4]
       },
       "comValueWaterChrgDm": {
         "value": "Yes",
-        "years": [
-          0,
-          1,
-          2,
-          3,
-          4
-        ]
+        "years": [0, 1, 2, 3, 4]
       },
       "comNoWaterChrgDm": {
         "value": "Yes",
-        "years": [
-          0,
-          1,
-          2,
-          3,
-          4
-        ]
+        "years": [0, 1, 2, 3, 4]
       },
       "comValueWaterChrgCollected": {
         "value": "Yes",
-        "years": [
-          0,
-          1,
-          2,
-          3,
-          4
-        ]
+        "years": [0, 1, 2, 3, 4]
       },
       "comNoWaterChrgCollected": {
         "value": "Yes",
-        "years": [
-          0,
-          1,
-          2,
-          3,
-          4
-        ]
+        "years": [0, 1, 2, 3, 4]
       },
       "indValueWaterChrgDm": {
         "value": "Yes",
-        "years": [
-          0,
-          1,
-          2,
-          3,
-          4
-        ]
+        "years": [0, 1, 2, 3, 4]
       },
       "indNoWaterChrgDm": {
         "value": "Yes",
-        "years": [
-          0,
-          1,
-          2,
-          3,
-          4
-        ]
+        "years": [0, 1, 2, 3, 4]
       },
       "indValueWaterChrgCollected": {
         "value": "Yes",
-        "years": [
-          0,
-          1,
-          2,
-          3,
-          4
-        ]
+        "years": [0, 1, 2, 3, 4]
       },
       "indNoWaterChrgCollected": {
         "value": "Yes",
-        "years": [
-          0,
-          1,
-          2,
-          3,
-          4
-        ]
+        "years": [0, 1, 2, 3, 4]
       },
       "othersValueWaterType": {
         "value": "Yes",
-        "years": [
-          0,
-          1,
-          2,
-          3,
-          4
-        ]
+        "years": [0, 1, 2, 3, 4]
       },
       "waterChrgTariffDetails": {
         "value": "Yes",
-        "years": [
-          0,
-          1,
-          2,
-          3,
-          4
-        ]
+        "years": [0, 1, 2, 3, 4]
       },
       "omCostDeleveryWater": {
         "value": "Yes",
-        "years": [
-          0,
-          1,
-          2,
-          3,
-          4
-        ]
+        "years": [0, 1, 2, 3, 4]
       },
       "omCostWaterService": {
         "value": "Yes",
-        "years": [
-          0,
-          1,
-          2,
-          3,
-          4
-        ]
+        "years": [0, 1, 2, 3, 4]
       }
     }
   },
   "data.entityWaterCharges.yearData.0": {
     "skippable": {
       "entityNameWaterCharges": {
-        "value": [
-          "State Department",
-          "Parastatal Agency",
-          "Others"
-        ],
-        "years": [
-          0
-        ]
+        "value": ["State Department", "Parastatal Agency", "Others"],
+        "years": [0]
       }
     }
   },
@@ -11912,279 +12152,124 @@ let skipLogicDependencies = {
     "skippable": {
       "entityNaSewerageCharges": {
         "value": "Yes",
-        "years": [
-          0
-        ]
+        "years": [0]
       },
       "entitySewerageCharges": {
         "value": "Yes",
-        "years": [
-          0
-        ]
+        "years": [0]
       },
       "copyGazetteNotificationSewerage": {
         "value": "Yes",
-        "years": [
-          0
-        ]
+        "years": [0]
       },
       "totalSewergeChrgDm": {
         "value": "Yes",
-        "years": [
-          0,
-          1,
-          2,
-          3,
-          4
-        ]
+        "years": [0, 1, 2, 3, 4]
       },
       "curSewergeChrgDm": {
         "value": "Yes",
-        "years": [
-          0,
-          1,
-          2,
-          3,
-          4
-        ]
+        "years": [0, 1, 2, 3, 4]
       },
       "arrSewergeChrgDm": {
         "value": "Yes",
-        "years": [
-          0,
-          1,
-          2,
-          3,
-          4
-        ]
+        "years": [0, 1, 2, 3, 4]
       },
       "totalSewergeChrgCol": {
         "value": "Yes",
-        "years": [
-          0,
-          1,
-          2,
-          3,
-          4
-        ]
+        "years": [0, 1, 2, 3, 4]
       },
       "curSewergeChrgCol": {
         "value": "Yes",
-        "years": [
-          0,
-          1,
-          2,
-          3,
-          4
-        ]
+        "years": [0, 1, 2, 3, 4]
       },
       "arrSewergeChrgCol": {
         "value": "Yes",
-        "years": [
-          0,
-          1,
-          2,
-          3,
-          4
-        ]
+        "years": [0, 1, 2, 3, 4]
       },
       "totalSewergeConnectionDm": {
         "value": "Yes",
-        "years": [
-          0,
-          1,
-          2,
-          3,
-          4
-        ]
+        "years": [0, 1, 2, 3, 4]
       },
       "totalSewergeConnectionCol": {
         "value": "Yes",
-        "years": [
-          0,
-          1,
-          2,
-          3,
-          4
-        ]
+        "years": [0, 1, 2, 3, 4]
       },
       "resValueSewerageTaxDm": {
         "value": "Yes",
-        "years": [
-          0,
-          1,
-          2,
-          3,
-          4
-        ]
+        "years": [0, 1, 2, 3, 4]
       },
       "resNoSewerageTaxDm": {
         "value": "Yes",
-        "years": [
-          0,
-          1,
-          2,
-          3,
-          4
-        ]
+        "years": [0, 1, 2, 3, 4]
       },
       "resValueSewerageTaxCollected": {
         "value": "Yes",
-        "years": [
-          0,
-          1,
-          2,
-          3,
-          4
-        ]
+        "years": [0, 1, 2, 3, 4]
       },
       "resNoSewerageTaxCollected": {
         "value": "Yes",
-        "years": [
-          0,
-          1,
-          2,
-          3,
-          4
-        ]
+        "years": [0, 1, 2, 3, 4]
       },
       "comValueSewerageTaxDm": {
         "value": "Yes",
-        "years": [
-          0,
-          1,
-          2,
-          3,
-          4
-        ]
+        "years": [0, 1, 2, 3, 4]
       },
       "comNoSewerageTaxDm": {
         "value": "Yes",
-        "years": [
-          0,
-          1,
-          2,
-          3,
-          4
-        ]
+        "years": [0, 1, 2, 3, 4]
       },
       "comValueSewerageTaxCollected": {
         "value": "Yes",
-        "years": [
-          0,
-          1,
-          2,
-          3,
-          4
-        ]
+        "years": [0, 1, 2, 3, 4]
       },
       "comNoSewerageTaxCollected": {
         "value": "Yes",
-        "years": [
-          0,
-          1,
-          2,
-          3,
-          4
-        ]
+        "years": [0, 1, 2, 3, 4]
       },
       "indValueSewerageTaxDm": {
         "value": "Yes",
-        "years": [
-          0,
-          1,
-          2,
-          3,
-          4
-        ]
+        "years": [0, 1, 2, 3, 4]
       },
       "indNoSewerageTaxDm": {
         "value": "Yes",
-        "years": [
-          0,
-          1,
-          2,
-          3,
-          4
-        ]
+        "years": [0, 1, 2, 3, 4]
       },
       "indValueSewerageTaxCollected": {
         "value": "Yes",
-        "years": [
-          0,
-          1,
-          2,
-          3,
-          4
-        ]
+        "years": [0, 1, 2, 3, 4]
       },
       "indNoSewerageTaxCollected": {
         "value": "Yes",
-        "years": [
-          0,
-          1,
-          2,
-          3,
-          4
-        ]
+        "years": [0, 1, 2, 3, 4]
       },
       "otherValueSewerageType": {
         "value": "Yes",
-        "years": [
-          0,
-          1,
-          2,
-          3,
-          4
-        ]
+        "years": [0, 1, 2, 3, 4]
       },
       "sewerageChrgTarrifSheet": {
         "value": "Yes",
-        "years": [
-          0,
-          1,
-          2,
-          3,
-          4
-        ]
+        "years": [0, 1, 2, 3, 4]
       },
       "omCostDeleverySewerage": {
         "value": "Yes",
-        "years": [
-          0,
-          1,
-          2,
-          3,
-          4
-        ]
+        "years": [0, 1, 2, 3, 4]
       },
       "omCostSewerageService": {
         "value": "Yes",
-        "years": [
-          0,
-          1,
-          2,
-          3,
-          4
-        ]
+        "years": [0, 1, 2, 3, 4]
       }
     }
   },
   "data.entitySewerageCharges.yearData.0": {
     "skippable": {
       "entityNaSewerageCharges": {
-        "value": [
-          "State Department",
-          "Parastatal Agency",
-          "Others"
-        ],
-        "years": [
-          0
-        ]
+        "value": ["State Department", "Parastatal Agency", "Others"],
+        "years": [0]
       }
     }
   }
 }
+
 
 function sortPosition(itemA, itemB) {
   itemA.displayPriority = itemA.displayPriority.toString()
@@ -12192,7 +12277,7 @@ function sortPosition(itemA, itemB) {
   const [integerA, decimalA] = itemA.displayPriority.split('.').map(i => +i);
   const [integerB, decimalB] = itemB.displayPriority.split('.').map(i => +i);
   if (integerA != integerB) {
-      return integerA > integerB ? 1 : (integerB > integerA ? -1 : 0);;
+    return integerA > integerB ? 1 : (integerB > integerA ? -1 : 0);;
   }
   return decimalA > decimalB ? 1 : (decimalB > decimalA ? -1 : 0);;
 
@@ -12215,7 +12300,7 @@ function fetchIndicatorsOrDp(dynamicJson) {
       keysWithLabelObj[key] = obj.label
       keysWithLabel.push(temp)
       let multipleParameters = obj.yearData.filter(item => item?.type === obj.key)
-      if(multipleParameters.length === 1){
+      if (multipleParameters.length === 1) {
         indicatorsWithNoyears.push(obj.key)
       }
       if (obj.copyChildFrom) {
@@ -12235,12 +12320,12 @@ function fetchIndicatorsOrDp(dynamicJson) {
       }
     }
     let sortedArray = keysWithLabel.sort(sortPosition)
-      return {
-        childKeys:childELements,
-        questionIndicators:keysWithLabelObj,
-        indicatorsWithNoyears:indicatorsWithNoyears
+    return {
+      childKeys: childELements,
+      questionIndicators: keysWithLabelObj,
+      indicatorsWithNoyears: indicatorsWithNoyears
 
-      }
+    }
   }
   catch (err) {
     console.log("error in fetchIndicatorsOrDp ::: ", err.message)
@@ -12259,7 +12344,7 @@ function getSkippableKeys(skipLogics) {
 }
 
 let dynamicJson = propertyTaxOpFormJson({})['tabs'][0]['data']
-let {childKeys, questionIndicators,indicatorsWithNoyears} = fetchIndicatorsOrDp(dynamicJson)
+let { childKeys, questionIndicators, indicatorsWithNoyears } = fetchIndicatorsOrDp(dynamicJson)
 
 
 const getFormMetaData = ({ design_year }) => {
@@ -12271,7 +12356,7 @@ const getFormMetaData = ({ design_year }) => {
 
   if (design_year && isBeyond2023_24(design_year)) {
     const skipLogicDependenciesCopy = JSON.parse(JSON.stringify(skipLogicDependencies));
-   
+
     Object.values(skipLogicDependenciesCopy).forEach(dependency => {
       Object.values(dependency?.skippable).forEach(skippable => {
         const years = skippable?.years;
@@ -12280,18 +12365,22 @@ const getFormMetaData = ({ design_year }) => {
         }
       });
     });
-    
+
     result = {
       financialYearTableHeader: Object.entries(financialYearTableHeader).reduce(
         (acc, [displayPriority, headers]) => {
           const headersCopy = [...headers];
-          const fYHeaderDisplayPriority = ["5.30", "5.31", "5.32", "6.30", "6.32"]
-          const label = fYHeaderDisplayPriority.includes(displayPriority) ? "" : "2023-24";
-          headersCopy.push({
-            label,
-            info: "",
+          const fYHeaderDisplayPriority = ["5.30", "5.31", "5.32", "6.30", "6.32"];
+          const lastYear = headersCopy[headersCopy.length - 1];
+          const additionalYears = getAdditionalYears(lastYear.label, design_year);
+          additionalYears.forEach(year => {
+            const label = fYHeaderDisplayPriority.includes(displayPriority) ? "" : year.yearName;
+            headersCopy.push({
+              label,
+              info: "",
+            });
           });
-
+          headersCopy.splice(2, headersCopy.length - 7);
           return {
             ...acc,
             [displayPriority]: headersCopy,
@@ -12306,9 +12395,9 @@ const getFormMetaData = ({ design_year }) => {
   return result;
 };
 
-module.exports.reverseKeys = ["ulbFinancialYear","ulbPassedResolPtax"];
+module.exports.reverseKeys = ["ulbFinancialYear", "ulbPassedResolPtax"];
 module.exports.skippableKeys = getSkippableKeys(skipLogicDependencies);
-module.exports.childKeys =childKeys;
+module.exports.childKeys = childKeys;
 module.exports.indicatorsWithNoyears = indicatorsWithNoyears;
 module.exports.questionIndicators = questionIndicators;
 module.exports.propertyTaxOpFormJson = propertyTaxOpFormJson;
