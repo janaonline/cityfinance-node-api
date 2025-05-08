@@ -2591,6 +2591,7 @@ const computeQuery = async (formName, userRole, isFormOptional, state, design_ye
           $match: {
             "access_2223": true,
             "isActive": true,
+            "isPublish":true,
           }
         },
         {
@@ -2849,7 +2850,8 @@ const computeQuery = async (formName, userRole, isFormOptional, state, design_ye
         {
           $match: {
             accessToXVFC: true,
-            isUT: false
+            isUT: false,
+            isPublish:true
           },
         }
       ];
