@@ -56,6 +56,7 @@ const UlbSchema = new Schema({
     ulbType: { type: Schema.Types.ObjectId, ref: 'UlbType', required: true },
     natureOfUlb: { type: String, default: null },
     isActive: { type: Boolean, default: 1 },
+    isPublish: { type: Boolean, default: 1 },
     access_2021: { type: Boolean, default: 1 },
     access_2122: { type: Boolean, default: 1 },
     access_2223: { type: Boolean, default: 1 },
@@ -93,4 +94,13 @@ const UlbSchema = new Schema({
     dulyElected: DULY_ELECTED,
 
 }, { timestamps: { createdAt: "createdAt", updatedAt: "modifiedAt" } });
+UlbSchema.index(
+	{
+		isPublsih: 1,
+		isActive: 1,
+	},
+	{
+		unique: true,
+	}
+);
 module.exports = mongoose.model('Ulb', UlbSchema);

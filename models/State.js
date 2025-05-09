@@ -29,6 +29,7 @@ const StateSchema = new Schema(
 		modifiedAt: { type: Date },
 		createdAt: { type: Date },
 		isActive: { type: Boolean, default: 1 },
+		isPublish: { type: Boolean, default: 1 },
 		isUT: { type: Boolean, default: 0 },
 		isHilly: { type: Boolean },
 	},
@@ -38,6 +39,15 @@ const StateSchema = new Schema(
 StateSchema.index(
 	{
 		code: 1,
+		isActive: 1,
+	},
+	{
+		unique: true,
+	}
+);
+StateSchema.index(
+	{
+		isPublsih: 1,
 		isActive: 1,
 	},
 	{
