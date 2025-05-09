@@ -312,7 +312,7 @@ const calData = (data, filterName = "") => {
         colour: "",
       },
       {
-        _id: "Other Receipts",
+        _id: "Income from Investment",
         code: ["170", "100"],
         amount: 0,
         colour: "#00ff80",
