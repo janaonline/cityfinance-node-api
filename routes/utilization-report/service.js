@@ -32,7 +32,8 @@ let DurPageLinks = {
   "2021-22": "",
   "2022-23": "ulbform/ulbform-overview",
   "2023-24": "ulbform2223/utilisation-report",
-  "2024-25": `ulb-form/${YEAR_CONSTANTS["23_24"]}/utilisation-report`
+  "2024-25": `ulb-form/${YEAR_CONSTANTS["23_24"]}/utilisation-report`,
+  "2025-26": `ulb-form/${YEAR_CONSTANTS["24_25"]}/utilisation-report`
 }
 const YEAR2223 = 202223;
 async function getCorrectDataSet() {
