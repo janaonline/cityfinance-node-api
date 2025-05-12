@@ -47,7 +47,7 @@ module.exports.ULB_ACCESSIBLE_YEARS = {
     "2022-23": "access_2223",
     "2023-24": "access_2324",
     "2024-25": "access_2425",
-    "2025-26": "access_2426"
+    "2025-26": "access_2526"
 }
 
 module.exports.MASTER_STATUS = {
