@@ -1045,13 +1045,14 @@ const computeQuery = async (params) => {
     designYearField = "designYear";
   }
   let condition = {
-    isActive: true
+    isActive: true,
+    isPublish:true
   };
   if (state && state !== 'null') {
     condition['state'] = ObjectId(state)
   }
 
-  if(csv && userRole == "ULB" && (!state || state == 'null')){
+  if(userRole == "ULB" && (!state || state == 'null')){
     let utList = await State.find({ isUT: true }, { _id: 1 });
     const uTObjIdArr = utList.map((ele) => ObjectId(ele._id));
     condition['state'] = { $nin: uTObjIdArr }
