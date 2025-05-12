@@ -32,7 +32,8 @@ let DurPageLinks = {
   "2021-22": "",
   "2022-23": "ulbform/ulbform-overview",
   "2023-24": "ulbform2223/utilisation-report",
-  "2024-25": `ulb-form/${YEAR_CONSTANTS["23_24"]}/utilisation-report`
+  "2024-25": `ulb-form/${YEAR_CONSTANTS["23_24"]}/utilisation-report`,
+  "2025-26": `ulb-form/${YEAR_CONSTANTS["24_25"]}/utilisation-report`
 }
 const YEAR2223 = 202223;
 async function getCorrectDataSet() {
@@ -1171,6 +1172,18 @@ module.exports.read2223 = catchAsync(async (req, res, next) => {
           ? (fetchedData.grantPosition.closingBal = Number(
             Number(fetchedData?.grantPosition.closingBal).toFixed(2)
           ))
+          : "";
+          typeof fetchedData?.grantPosition.receivedDuringYrWithZero === "string"
+          ? (fetchedData.grantPosition.receivedDuringYrWithZero = fetchedData?.grantPosition.receivedDuringYrWithZero
+          )
+          : "";   
+          typeof fetchedData?.grantPosition.receivedDuringYrWithZeroReason === "string"
+          ? (fetchedData.grantPosition.receivedDuringYrWithZeroReason = fetchedData?.grantPosition.receivedDuringYrWithZeroReason
+          )
+          : "";
+          typeof fetchedData?.grantPosition.fileUploadDuringYrWithZeroReason === "object"
+          ? (fetchedData.grantPosition.fileUploadDuringYrWithZeroReason = fetchedData?.grantPosition.fileUploadDuringYrWithZeroReason
+          )
           : "";
       }
       fetchedData["ulbName"] = ulbData.name;
