@@ -17,27 +17,27 @@ const options = {
     encoding: 'utf-8'
 };
 
-module.exports.get = function(req, res){
+module.exports.get = function (req, res) {
     let condition = req.query;
-    DownloadLog.find(condition, (err, data)=>{
-        if(err){
-            return res.status(400).json({success:false, message:"Db Error Occurred."})
-        }else {
-            return res.status(200).json({success: true, message: "data fetched", data:data})
+    DownloadLog.find(condition, (err, data) => {
+        if (err) {
+            return res.status(400).json({ success: false, message: "Db Error Occurred." })
+        } else {
+            return res.status(200).json({ success: true, message: "data fetched", data: data })
         }
     });
 }
-module.exports.post = function(req, res){
+module.exports.post = function (req, res) {
     let newDownloadLog = new DownloadLog(req.body);
-    newDownloadLog.save((err, data)=>{
-        if(err){
-            return res.status(400).json({success:false, message:"Db Error Occurred."})
-        }else {
-            return res.status(200).json({success: true, message: "data fetched", data:data})
+    newDownloadLog.save((err, data) => {
+        if (err) {
+            return res.status(400).json({ success: false, message: "Db Error Occurred." })
+        } else {
+            return res.status(200).json({ success: true, message: "data fetched", data: data })
         }
     });
 }
-
+ 
 // module.exports.HtmlToPdf = async function(req, res) {
 //     try {
 //         let { url, html, option } = req.body;
