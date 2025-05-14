@@ -539,7 +539,7 @@ exports.nationalDashRevenue = async (req, res) => {
           } else if (otherReceiptsLineItem.includes(val.lineName)) {
             if (f2) {
               f2 = false;
-              return { colour: "#00ff80", lineitem: "Other Receipts" };
+              return { colour: "#00ff80", lineitem: "Income from Investment" };
             } else {
               return f2;
             }
@@ -576,7 +576,7 @@ exports.nationalDashRevenue = async (req, res) => {
             lineName = "Own Revenue";
           }
           if (otherReceiptsLineItem.includes(lineName)) {
-            lineName = "Other Receipts";
+            lineName = "Income from Investment";
           }
           if (national_Format[lineName] > 1) {
             national_Format[lineName] += each.amount;
@@ -589,7 +589,7 @@ exports.nationalDashRevenue = async (req, res) => {
             lineName = "Own Revenue";
           }
           if (otherReceiptsLineItem.includes(lineName)) {
-            lineName = "Other Receipts";
+            lineName = "Income from Investment";
           }
           if (state_Format[lineName] > 1) {
             state_Format[lineName] += each.amount;
@@ -604,7 +604,7 @@ exports.nationalDashRevenue = async (req, res) => {
               lineName = "Own Revenue";
             }
             if (otherReceiptsLineItem.includes(lineName)) {
-              lineName = "Other Receipts";
+              lineName = "Income from Investment";
             }
             if (individual_Format[ulbTypeName][lineName] > 1)
               individual_Format[ulbTypeName][lineName] += ev.amount;
@@ -636,7 +636,7 @@ exports.nationalDashRevenue = async (req, res) => {
             currLineItem = "Own Revenue";
           }
           if (otherReceiptsLineItem.includes(currLineItem)) {
-            currLineItem = "Other Receipts";
+            currLineItem = "Income from Investment";
           }
           populKeys.map((key) => {
             if (!dataMapper[key][currLineItem])
@@ -652,7 +652,7 @@ exports.nationalDashRevenue = async (req, res) => {
             currLineItem = "Own Revenue";
           }
           if (otherReceiptsLineItem.includes(currLineItem)) {
-            currLineItem = "Other Receipts";
+            currLineItem = "Income from Investment";
           }
           if (national_Format[currLineItem] > 1) {
             national_Format[currLineItem] += each.amount;
@@ -669,7 +669,7 @@ exports.nationalDashRevenue = async (req, res) => {
             currLineItem = "Own Revenue";
           }
           if (otherReceiptsLineItem.includes(currLineItem)) {
-            currLineItem = "Other Receipts";
+            currLineItem = "Income from Investment";
           }
           if (state_Format[currLineItem] > 1) {
             state_Format[currLineItem] += each.amount;

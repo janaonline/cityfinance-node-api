@@ -2580,8 +2580,8 @@ module.exports.progressReport = async (req, res) => {
             { header: 'Under review by State', key: 'UNDER_REVIEW_BY_STATE', width: 12 },
             { header: 'Returned by State', key: 'RETURNED_BY_STATE', width: 12 },
             { header: 'Under review by XVIFC', key: 'UNDER_REVIEW_BY_XVIFC', width: 12 },
-            { header: 'Returned by XVIFC', key: 'RETURNED_REVIEW_BY_XVIFC', width: 12 },
-            { header: 'Approved by XVIFC', key: 'APPROVED_REVIEW_BY_XVIFC', width: 12 },
+            { header: 'Returned by XVIFC', key: 'RETURNED_BY_XVIFC', width: 12 },
+            { header: 'Approved by XVIFC', key: 'APPROVED_BY_XVIFC', width: 12 },
         ];
 
         // Add rows to the worksheet
@@ -2636,8 +2636,8 @@ async function getFormStatusSummary(reviewTableData) {
         formStatusObj["UNDER_REVIEW_BY_STATE"] = reviewTableData.filter((x) => { return x.stateName == state && x.formStatus == 'UNDER_REVIEW_BY_STATE' }).length;
         formStatusObj["RETURNED_BY_STATE"] = reviewTableData.filter((x) => { return x.stateName == state && x.formStatus == 'RETURNED_BY_STATE' }).length;
         formStatusObj["UNDER_REVIEW_BY_XVIFC"] = reviewTableData.filter((x) => { return x.stateName == state && x.formStatus == 'UNDER_REVIEW_BY_XVIFC' }).length;
-        formStatusObj["RETURNED_REVIEW_BY_XVIFC"] = reviewTableData.filter((x) => { return x.stateName == state && x.formStatus == 'RETURNED_REVIEW_BY_XVIFC' }).length;
-        formStatusObj["APPROVED_REVIEW_BY_XVIFC"] = reviewTableData.filter((x) => { return x.stateName == state && x.formStatus == 'APPROVED_REVIEW_BY_XVIFC' }).length;
+        formStatusObj["RETURNED_BY_XVIFC"] = reviewTableData.filter((x) => { return x.stateName == state && x.formStatus == 'RETURNED_BY_XVIFC' }).length;
+        formStatusObj["APPROVED_BY_XVIFC"] = reviewTableData.filter((x) => { return x.stateName == state && x.formStatus == 'APPROVED_BY_XVIFC' }).length;
 
         formStatusRes.push(formStatusObj);
     }

@@ -1,6 +1,7 @@
 const ObjectId = require('mongoose').Types.ObjectId;
 const State = require('../../models/State');
 const ScoringFiscalRanking = require('../../models/ScoringFiscalRanking');
+const { rankedUlbPdf } = require('./data-dump');
 const { getMultipleRandomElements } = require('../../service/common');
 const { getPaginationParams, isValidObjectId, getPageNo, getPopulationBucket } = require('../../service/common');
 const { assesmentParamLabels, abYears, afsYears, getTableHeaderDocs, rmEpFGHeader } = require('./response-data');
@@ -21,6 +22,8 @@ module.exports.getUlbDetails = async (req, res) => {
 		// moongose.set('debug', true);
 		// const censusCode = req.params.censusCode;
 		const searchId = req.params.searchId;
+		const downloadPdf = req.query.downloadPdf;
+
 		let condition = {
 			$and: [{ 'isActive': true }, { $or: [{ 'censusCode': searchId }, { 'sbCode': searchId }] }],
 		};
@@ -93,7 +96,13 @@ module.exports.getUlbDetails = async (req, res) => {
 			assessmentParameter,
 			topUlbs: shuffledTopUlbs
 		};
-		return res.status(200).json({ data });
+
+		// Change response struture if downloadPdf is true.
+		if (downloadPdf == 'true')
+			return res.status(200).json(rankedUlbPdf(data));
+		else
+			return res.status(200).json({ data });
+
 	} catch (error) {
 		console.log('error', error);
 		return res.status(400).json({
@@ -350,7 +359,7 @@ function getSearchedUlb(ulbs, indicator, selectedUlbPopBucket, stateParticipatio
 	// Loop to get ULBs names in an array.
 	for (const ulb of ulbs) {
 		ulbName.push(ulb.name);
-		
+
 		if (selectedUlbPopBucket != ulb.populationBucket || stateParticipationCategory != ulb.stateParticipationCategory) {
 			backgroundColorArr.push('red');
 		} else {
