@@ -104,6 +104,8 @@ module.exports.getRawUlbsList19Onwards = async (year = "2021-22", stateId = null
         else if (ulbName) matchCondition['name'] = ulbName;
 
         if (stateId) matchCondition['state'] = ObjectId(stateId);
+         
+        matchCondition['isPublish'] = true;
 
         // Function to push conditions into the arrays
         function addUrlCheck(auditedArr, unAuditedArr, fileType, type) {
@@ -247,6 +249,9 @@ module.exports.getRawUlbsList15To18 = async (year = "2015-16", stateId = null, u
         else if (ulbName) matchCondition['name'] = ulbName;
 
         if (stateId) matchCondition['state'] = ObjectId(stateId);
+      
+        matchCondition['isPublish'] = true;
+
 
         return [
             { $match: matchCondition },

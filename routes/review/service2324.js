@@ -275,7 +275,7 @@ async function createCSV(params) {
       res.writeHead(200, { "Content-Type": "text/csv;charset=utf-8,%EF%BB%BF" });
       fixedColumns = `State Name, ULB Name, City Finance Code, Census Code, Population Category, UA, UA Name,`;
       // dynamicColumns = createDynamicColumns(collectionName);
-      res.write("\ufeff" + `${fixedColumns.toString()} ${createDynamicColumns(collectionName).toString()} \r\n`);
+      res.write("\ufeff" + `${fixedColumns.toString()} ${createDynamicColumns(collectionName, year).toString()} \r\n`);
       // res.flushHeaders();
       let indiLineList = []
       if (!(collectionName !== CollectionNames.annual && collectionName !== CollectionNames['28SLB'])) {
@@ -1045,13 +1045,14 @@ const computeQuery = async (params) => {
     designYearField = "designYear";
   }
   let condition = {
-    isActive: true
+    isActive: true,
+    isPublish:true
   };
   if (state && state !== 'null') {
     condition['state'] = ObjectId(state)
   }
 
-  if(csv && userRole == "ULB" && (!state || state == 'null')){
+  if(userRole == "ULB" && (!state || state == 'null')){
     let utList = await State.find({ isUT: true }, { _id: 1 });
     const uTObjIdArr = utList.map((ele) => ObjectId(ele._id));
     condition['state'] = { $nin: uTObjIdArr }
@@ -1806,6 +1807,9 @@ function createDynamicElements(collectionName, formType, entity) {
               },${createdAt ?? ""},${ulbSubmit ?? ""},${entity.filled ?? ""
               },${YEAR_CONSTANTS_IDS[financialYear] || ""},${(roundValue(grantPosition?.unUtilizedPrevYr)) ?? ""
               },${(roundValue(grantPosition?.receivedDuringYr)) ?? ""
+              },${grantPosition?.receivedDuringYrWithZero ?? ""
+              },${grantPosition?.receivedDuringYrWithZeroReason ?? ""
+              },${grantPosition?.fileUploadDuringYrWithZeroReason?.url ?? ""
               },${(roundValue(grantPosition?.expDuringYr)) ?? ""
               },${(roundValue(grantPosition?.closingBal)) ?? ""
               },${wmData[0]?.["grantUtilised"] ?? ""
@@ -2745,7 +2749,7 @@ const setCurrentStatusQuestionLevel = (statusList, key = null) => {
   return obj;
 }
 
-function createDynamicColumns(collectionName) {
+function createDynamicColumns(collectionName, designYear='2021-22') {
   let columns = ``;
   switch (collectionName) {
     case CollectionNames.odf:
@@ -2759,7 +2763,7 @@ function createDynamicColumns(collectionName) {
       columns = `Financial Year,Form Status,Created,Submitted On,Filled Status,Type,Audited/Provisional Year,Balance Sheet_PDF_URL,Balance Sheet_Excel_URL,Balance Sheet_State Review Status,Balance Sheet_State_Comments,Balance Sheet_MoHUA Review Status,Balance Sheet_MoHUA_Comments,Balance Sheet_Total Amount of Assets,Balance Sheet_Total Amount of Fixed Assets,Balance Sheet_Total Amount of State Grants received,Balance Sheet_Total Amount of Central Grants received,Balance Sheet Schedule_PDF_URL,Balance Sheet Schedule_Excel_URL,Balance Sheet Schedule_State Review Status,Balance Sheet Schedule_State_Comments,Balance Sheet Schedule_MoHUA Review Status,Balance Sheet Schedule_MoHUA_Comments,Income Expenditure_PDF_URL,Income Expenditure_Excel_URL,Income Expenditure_State Review Status,Income Expenditure_State_Comments,Income Expenditure_MoHUA Review Status,Income Expenditure_MoHUA_Comments,Income Expenditure_Total Amount of Revenue,Income Expenditure_Total Amount of Expenses,Income Expenditure Schedule_PDF_URL,Income Expenditure Schedule_Excel_URL,Income Expenditure Schedule_State Review Status,Income Expenditure Schedule_State_Comments,Income Expenditure Schedule_MoHUA Review Status,Income Expenditure Schedule_MoHUA_Comments,Cash Flow Schedule_PDF_URL,Cash Flow Schedule_Excel_URL,Cash Flow Schedule_State Review Status,Cash Flow Schedule_State_Comments,Cash Flow Schedule_MoHUA Review Status,Cash Flow Schedule_MoHUA_Comments,Auditor Report PDF_URL,Auditor Report State Review Status,Auditor Report State_Comments,Auditor Report MoHUA Review Status,Auditor Report MoHUA_Comments,Financials in Standardized Format_Filled Status,Financials in Standardized Format_Excel URL,State Comments if Accounts for 2022-23 is selected No,MoHUA Comments if Accounts for 2022-23 is selected No,State Review File_URL,MoHUA Review File_URL`;
       break;
     case CollectionNames.dur:
-      columns = `Financial Year,Form Status,Created,Submitted On,Filled Status,Tied grants for year,Unutilised Tied Grants from previous installment (INR in lakhs),15th F.C. Tied grant received during the year (1st & 2nd installment taken together) (INR in lakhs),Expenditure incurred during the year i.e. as on 31st March 2021 from Tied grant (INR in lakhs),Closing balance at the end of year (INR in lakhs),WM Rejuvenation of Water Bodies Total Tied Grant Utilised on WM(INR in lakhs),WM Rejuvenation of Water Bodies Number of Projects Undertaken,WM_Rejuvenation of Water Bodies_Total Project Cost Involved,WM_Drinking Water_Total Tied Grant Utilised on WM(INR in lakhs),WM_Drinking Water_Number of Projects Undertaken,WM_Drinking Water_Total Project Cost Involved,WM_Rainwater Harvesting_Total Tied Grant Utilised on WM(INR in lakhs),WM_Rainwater Harvesting_Number of Projects Undertaken,WM_Rainwater Harvesting_Total Project Cost Involved,WM_Water Recycling_Total Tied Grant Utilised on WM(INR in lakhs),WM_Water Recycling_Number of Projects Undertaken,WM_Water Recycling_Total Project Cost Involved,SWM_Sanitation_Total Tied Grant Utilised on SWM(INR in lakhs),SWM_Sanitation_Number of Projects Undertaken,SWM_Sanitation_Total Project Cost Involved(INR in lakhs),SWM_Solid Waste Management_Total Tied Grant Utilised on SWM(INR in lakhs),SWM_Solid Waste Management_Number of Projects Undertaken,SWM_Solid Waste Management_Total Project Cost Involved(INR in lakhs),Name,Designation,State_Review Status,State_Comments,MoHUA Review Status,MoHUA_Comments,State_File URL,MoHUA_File URL`
+      columns = `Financial Year,Form Status,Created,Submitted On,Filled Status,Tied grants for year,Unutilised Tied Grants from previous installment (INR in lakhs),15th F.C. Tied grant received during the year (1st & 2nd installment taken together) (INR in lakhs),15th F.C. Tied grant recevied for the year is zero,Select reason for tied grants being zero,Upload a supporting documnet,Expenditure incurred during the year i.e. as on 31st March ${designYear.split("-")[0]} from Tied grant (INR in lakhs),Closing balance at the end of year (INR in lakhs),WM Rejuvenation of Water Bodies Total Tied Grant Utilised on WM(INR in lakhs),WM Rejuvenation of Water Bodies Number of Projects Undertaken,WM_Rejuvenation of Water Bodies_Total Project Cost Involved,WM_Drinking Water_Total Tied Grant Utilised on WM(INR in lakhs),WM_Drinking Water_Number of Projects Undertaken,WM_Drinking Water_Total Project Cost Involved,WM_Rainwater Harvesting_Total Tied Grant Utilised on WM(INR in lakhs),WM_Rainwater Harvesting_Number of Projects Undertaken,WM_Rainwater Harvesting_Total Project Cost Involved,WM_Water Recycling_Total Tied Grant Utilised on WM(INR in lakhs),WM_Water Recycling_Number of Projects Undertaken,WM_Water Recycling_Total Project Cost Involved,SWM_Sanitation_Total Tied Grant Utilised on SWM(INR in lakhs),SWM_Sanitation_Number of Projects Undertaken,SWM_Sanitation_Total Project Cost Involved(INR in lakhs),SWM_Solid Waste Management_Total Tied Grant Utilised on SWM(INR in lakhs),SWM_Solid Waste Management_Number of Projects Undertaken,SWM_Solid Waste Management_Total Project Cost Involved(INR in lakhs),Name,Designation,State_Review Status,State_Comments,MoHUA Review Status,MoHUA_Comments,State_File URL,MoHUA_File URL`
       break;
     case CollectionNames['28SLB']:
       columns = `Financial Year,Form Status,Created,Submitted On,Filled Status,Type,Year,Coverage of water supply connections (Water Supply),Per capita supply of water (lpcd) (Water Supply),Extent of metering of water connections (Water Supply),Extent of non-revenue water (NRW) (Water Supply),Continuity of water supply (Water Supply),Efficiency in redressal of customer complaints (Water Supply),Quality of water supplied (Water Supply),Cost recovery in water supply service (Water Supply),Efficiency in collection of water supply-related charges (Water Supply),Coverage of toilets (Sanitation),Coverage of waste water network services (Sanitation),Collection efficiency of waste water network (Sanitation),Adequacy of waste water treatment capacity (Sanitation),Extent of reuse and recycling of waste water (Sanitation),Quality of waste water treatment (Sanitation),Efficiency in redressal of customer complaints (Sanitation),Extent of cost recovery in waste water management (Sanitation),Efficiency in collection of waste water charges (Solid Waste),Household level coverage of solid waste management services (Solid Waste),Efficiency of collection of municipal solid waste (Solid Waste),Extent of segregation of municipal solid waste (Solid Waste),Extent of municipal solid waste recovered (Solid Waste),Extent of scientific disposal of municipal solid waste (Solid Waste),Extent of cost recovery in SWM services (Solid Waste),Efficiency in collection of SWM related user related charges (Solid Waste),Efficiency in redressal of customer complaints (Solid Waste),Coverage of storm water drainage network (Storm Water),Incidence of water logging (Storm Water),State_Review Status,State_Comments,MoHUA Review Status,MoHUA_Comments,State_File URL,MoHUA_File URL,Name,Designation,Upload`
