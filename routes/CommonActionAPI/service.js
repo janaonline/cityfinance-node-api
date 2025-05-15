@@ -2507,9 +2507,9 @@ function handleFileCase(question, obj, flattedForm) {
         }
         let name = mainKey + "." + "name"
         let url = mainKey + "." + "url"
-        if(question.shortKey =='grantPostion.fileUploadDuringYrWithZeroReason'){
-            name = 'grantPostion.fileUploadDuringYrWithZeroReason.name';
-            url = 'grantPostion.fileUploadDuringYrWithZeroReason.url';
+        if(question.shortKey =='grantPosition.fileUploadDuringYrWithZeroReason'){
+            name = 'grantPosition.fileUploadDuringYrWithZeroReason.name';
+            url = 'grantPosition.fileUploadDuringYrWithZeroReason.url';
         }
         obj['label'] = flattedForm[name] || ""
         obj['value'] = flattedForm[url] || ""
