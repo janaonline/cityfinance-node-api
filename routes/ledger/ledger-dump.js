@@ -230,7 +230,6 @@ async function fetchAllDataOverview(ulbCode = null, year = null, stateId = null,
                 "ledgerlogs.verified_by": 0,
                 "ledgerlogs.verified_at": 0,
                 "ledgerlogs.icai_membership_number": 0,
-                "ledgerlogs.dataFlagComment": 0,
                 "ledgerlogs.created_by": 0,
                 "ledgerlogs.created_at": 0,
             }
