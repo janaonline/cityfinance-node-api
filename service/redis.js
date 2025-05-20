@@ -1,19 +1,12 @@
 const Redis = require("redis");
 const request = require("request");
 const CONFIG = require("../config/app_config");
-// if (CONFIG.REDIS && CONFIG.REDIS.hasOwnProperty(process.env.ENV)) {
-//   url = CONFIG["REDIS"][process.env.ENV];
-// } else {
-//   console.log(process.env.ENV, "Env not supported");
-//   process.exit(process.env.ENV + " : Env not supported @redis.js");
-// }
-
-if (!process.env.REDIS_URL) {
+if (CONFIG.REDIS && CONFIG.REDIS.hasOwnProperty(process.env.ENV)) {
+  url = CONFIG["REDIS"][process.env.ENV];
+} else {
   console.log(process.env.ENV, "Env not supported");
   process.exit(process.env.ENV + " : Env not supported @redis.js");
 }
-
-const url = process.env.REDIS_URL;
 let Client = Redis.createClient(url);
 
 Client.on("connect", function () {

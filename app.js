@@ -13,6 +13,7 @@ const json2xls = require("json2xls");
 const expressSanitizer = require("express-sanitizer");
 const verifyToken = require("./routes/auth/services/verifyToken").verifyToken;
 const ExpressError = require("./util/ExpressError");
+const maintenanceMiddleware = require('./middlewares/maintenance.middleware');
 
 
 const whitelist = [
@@ -50,6 +51,8 @@ app.get('/test', (req, res) => {
 
 app.use(cors(corsOptions));
 
+// 🔒 Apply globally to all API routes
+app.use('/api', maintenanceMiddleware);
 
 app.use(json2xls.middleware);
 //Port Number
