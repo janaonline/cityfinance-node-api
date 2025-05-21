@@ -318,6 +318,21 @@ async function validateValues(quesType, ansValue, isPdf = "", fileUrl = "", file
     return validation;
 }
 
+/**
+ * The input `tabs` array contain shared tabs (e.g., 'form1_2') and form-specific tabs (e.g., 'form2').
+ * This function filters tabs based on the provided `formId`, assigns the appropriate `formType`,
+ * and sorts the resulting tabs by their display priority.
+ */
+function normalizeAndSortFormTabs(tabs, formId) {
+    return tabs
+        .filter(tab => tab.formType === formId || tab.formType === "form1_2")
+        .map(tab => ({
+            ...tab,
+            formType: formId
+        }))
+        .sort((a, b) => a.displayPriority - b.displayPriority);
+}
+
 async function getForm1(ulbData, stateData, roleName, submittedData) {
     let ulbId = ulbData._id;
     let role = roleName;
@@ -327,11 +342,7 @@ async function getForm1(ulbData, stateData, roleName, submittedData) {
     let from1AnswerFromDb = submittedData ? submittedData : await XviFcForm1DataCollection.findOne({ ulb: ObjectId(ulbId) });
     let xviFCForm1Tabs = await XviFcForm1Tabs.find().lean();
     let ulbEligibleStatus = ['NOT_STARTED', 'IN_PROGRESS', 'RETURNED_BY_STATE', 'RETURNED_BY_XVIFC'];
-
-    xviFCForm1Tabs = xviFCForm1Tabs.filter((x) => { return x.formType == "form1_2" || x.formType == "form1" });
-    xviFCForm1Tabs.forEach((tab) => {
-        tab.formType = "form1";
-    });
+    xviFCForm1Tabs = normalizeAndSortFormTabs(xviFCForm1Tabs, 'form1');
     let xviFCForm1Table = form1TempDb;
     let currentFormStatus = from1AnswerFromDb && from1AnswerFromDb.formStatus ? from1AnswerFromDb.formStatus : 'NOT_STARTED';
     // Get index of year of constitution from demographic data.
@@ -580,10 +591,7 @@ async function getForm2(ulbData, stateData, roleName, submittedData) {
     let IndexOfYearOfSlb;
     let from2AnswerFromDb = submittedData ? submittedData : await XviFcForm1DataCollection.findOne({ ulb: ObjectId(ulbId) });
     let xviFCForm2Tabs = await XviFcForm1Tabs.find().lean();
-    xviFCForm2Tabs = xviFCForm2Tabs.filter((x) => { return x.formType == "form1_2" || x.formType == "form2" });
-    xviFCForm2Tabs.forEach((tab) => {
-        tab.formType = "form2";
-    });
+    xviFCForm2Tabs = normalizeAndSortFormTabs(xviFCForm2Tabs, 'form2');
     let xviFCForm2Table = form2TempDb;
     let currentFormStatus = from2AnswerFromDb && from2AnswerFromDb.formStatus ? from2AnswerFromDb.formStatus : 'NOT_STARTED';
     let ulbEligibleStatus = ['NOT_STARTED', 'IN_PROGRESS', 'RETURNED_BY_STATE', 'RETURNED_BY_XVIFC'];
