@@ -530,7 +530,7 @@ async function getForm1(ulbData, stateData, roleName, submittedData) {
 
     let indexOfYearOfConstitution = from1QuestionFromDb[0].data.findIndex((x) => { return x.key == 'yearOfConstitution' });
 
-    if (from1QuestionFromDb[0].data[indexOfYearOfConstitution].value == 'After 2022-23') {
+    if (from1QuestionFromDb[0]?.data[indexOfYearOfConstitution]?.value == 'After 2022-23') {
         from1QuestionFromDb[1].message = "We are collecting data till the year 2023-24. Since your ULB was recently constituted, it's not mandatory for you to fill in the financial section data. Please fill in the rest of the form";
         from1QuestionFromDb[2].message = "We are collecting data till the year 2023-24. Since your ULB was recently constituted, it's not mandatory for you to fill in the financial section data. Please fill in the rest of the form";
     } else {
