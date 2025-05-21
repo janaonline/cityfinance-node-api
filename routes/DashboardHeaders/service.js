@@ -30,7 +30,7 @@ exports.readById = async (req, res) => {
     const dashboardHeaders = await DashboardHeaders.find({
       dashboard: ObjectId(id),
       isActive: true
-    });
+    }).sort({ _id: 1 });
     if (!dashboardHeaders) {
       return res.status(400).json({ msg: "No DashboardHeaders Found" });
     }
