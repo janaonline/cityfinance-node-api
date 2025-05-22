@@ -1232,7 +1232,7 @@ function addChildNextYearQuestionObject_bkp(childObject) {
     nextYear['readonly'] = false;
     childObject.yearData.push(nextYear);
 }
-function addChildNextYearQuestionObject(childObject, design_year) {
+function addChildNextYearQuestionObject(childObject, design_year, currentFormStatus, role) {
     const lastChildYear = childObject.yearData[childObject.yearData.length - 1];
 
     // const lastYearId = '606aafb14dff55e6c075d3ae'; // 22-23
@@ -1249,7 +1249,7 @@ function addChildNextYearQuestionObject(childObject, design_year) {
         nextYear['key'] = `FY${yearName}${yearName}`;
         nextYear["postion"] = String(+nextYear["postion"] + 1);
         nextYear['displayPriority'] = nextYear["postion"];
-        nextYear['readonly'] = false;
+        nextYear['readonly'] = isReadOnly({ currentFormStatus, role });
         childObject.yearData.push(nextYear);
     });
 }
@@ -1309,7 +1309,7 @@ async function appendChildValues(params) {
                                 });
                             } else {
                                 // } else if(!ptoData) {
-                                addChildNextYearQuestionObject(replica, design_year);
+                                addChildNextYearQuestionObject(replica, design_year, currentFormStatus, role);
                                 // addChildNextYearQuestionObject(replica);
                             }
                         })
@@ -1320,7 +1320,7 @@ async function appendChildValues(params) {
 
             if (!ptoData && isBeyond2023_24(design_year)) {
                 element.child.forEach(child => {
-                    addChildNextYearQuestionObject(child, design_year);
+                    addChildNextYearQuestionObject(child, design_year, currentFormStatus, role);
                     // addChildNextYearQuestionObject(child);
                 });
             }

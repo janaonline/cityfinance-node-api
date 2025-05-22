@@ -1,6 +1,6 @@
 const { years, getDesiredYear, isBeyond2023_24, getAdditionalYears } = require("../../service/years")
 const { apiUrls } = require("../CommonActionAPI/service");
-const { isSingleYearIndicator, ensureArray } = require('../../util/helper');
+const { isSingleYearIndicator, ensureArray, isReadOnly } = require('../../util/helper');
 
 const parentRadioQuestionKeys = [
   "ulbCollectPtax",
@@ -10506,7 +10506,7 @@ const propertyTaxOpFormJson = ({ role, design_year, ptoData, ptoMaper = [] }) =>
         const copyChildFrom = indicator?.copyChildFrom;
 
         if (copyChildFrom) {
-          modifyJsonForChild(copyChildFrom, additionalYears);
+          modifyJsonForChild(copyChildFrom, additionalYears, role, ptoData['currentFormStatus']);
         }
         const hasMultipleYears = !yearData.some(
           (yearItem) => Object.keys(yearItem).length == 0
@@ -10605,7 +10605,7 @@ function getRadioParentDependencyObject(indicator) {
   return parentValues;
 }
 
-function modifyJsonForChild(copyChildFrom, additionalYears) {
+function modifyJsonForChild(copyChildFrom, additionalYears, role, currentFormStatus) {
   copyChildFrom.forEach((copyChild) => {
     const { yearData } = copyChild
     const lastChildYear = yearData[yearData.length - 1]
@@ -10624,7 +10624,7 @@ function modifyJsonForChild(copyChildFrom, additionalYears) {
       nextYear["postion"] = String(+nextYear["postion"] + 1);
 
       if (additionalYears.length - 1 === index) {
-        nextYear["readonly"] = false;
+        nextYear["readonly"] = isReadOnly({role, currentFormStatus});
         nextYear["placeholder"] = "";
         nextYear["notApplicable"] = false;
         nextYear["required"] = true;
