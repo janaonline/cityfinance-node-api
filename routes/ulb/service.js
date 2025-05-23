@@ -571,6 +571,7 @@ module.exports.getAllUlbs = async function (req, res) {
       // console.log(err, value);
       if (!value) {
         data = await Ulb.aggregate([
+          { $match: { isPublish: true } },
           {
             $lookup: {
               from: "states",
