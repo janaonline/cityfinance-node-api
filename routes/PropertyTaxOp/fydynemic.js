@@ -10506,7 +10506,7 @@ const propertyTaxOpFormJson = ({ role, design_year, ptoData, ptoMaper = [] }) =>
         const copyChildFrom = indicator?.copyChildFrom;
 
         if (copyChildFrom) {
-          modifyJsonForChild(copyChildFrom, additionalYears, role, ptoData['currentFormStatus']);
+          modifyJsonForChild(copyChildFrom, additionalYears, role, ptoData?.['currentFormStatus']);
         }
         const hasMultipleYears = !yearData.some(
           (yearItem) => Object.keys(yearItem).length == 0
@@ -10605,7 +10605,7 @@ function getRadioParentDependencyObject(indicator) {
   return parentValues;
 }
 
-function modifyJsonForChild(copyChildFrom, additionalYears, role, currentFormStatus) {
+function modifyJsonForChild(copyChildFrom, additionalYears, role, currentFormStatus = 1) {
   copyChildFrom.forEach((copyChild) => {
     const { yearData } = copyChild
     const lastChildYear = yearData[yearData.length - 1]
