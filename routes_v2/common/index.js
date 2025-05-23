@@ -12,4 +12,10 @@ router.get('/delete-redis-key', (req, res) => {
     return res.send({ message: `'${req.query.key}' deleted successfully!` });
 });
 
+// check if the server is in maintenance mode
+router.get('/maintenance', (req, res) => {
+    const maintenanceMode = process.env.MAINTENANCE_MODE === 'true';
+    res.status(maintenanceMode ? 503 : 200).json({ maintenance: maintenanceMode });
+});
+
 module.exports = router;
