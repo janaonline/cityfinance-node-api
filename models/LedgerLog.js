@@ -156,9 +156,9 @@ const LedgerLogSchema = mongoose.Schema({
 LedgerLogSchema.index(
 	{
 		ulb_id: 1,
-		financialYear: 1,
-		design_year: 1,
-		ulb_code_year: 1
+		ulb_code_year: 1,
+		year: 1,
+		isStandardizable: 1,
 	},
 	{
 		unique: true
