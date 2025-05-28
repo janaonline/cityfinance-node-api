@@ -3,6 +3,7 @@ const XviFcForm1DataCollection = require("../../models/XviFcFormDataCollection")
 const ExcelJS = require('exceljs');
 // const { xviFcFormData } = require("./temp");
 const { financialYearTableHeader } = require("./form_json");
+const { getDate } = require("../../util/helper");
 
 let baseUrl_s3 = process.env.ENV == "production" ? process.env.AWS_STORAGE_URL_PROD : process.env.AWS_STORAGE_URL_STG;
 let baseUrl = process.env.HOSTNAME + 'resources-dashboard/data-sets/balanceSheet?';
@@ -64,6 +65,7 @@ async function getEachTabData(eachTab, obj) {
                 if (index > -1) {
                     if (!tempArr[index]) tempArr[index] = {};
 
+                    tempArr[index]['latestSubmissionDate'] = obj.latestSubmissionDate;
                     tempArr[index].year = uniqueYear[index];
                     tempArr[index]['nameOfUlb'] = obj.nameOfUlb;
                     tempArr[index]['nameOfState'] = obj.nameOfState;
@@ -90,6 +92,7 @@ async function getEachTabData(eachTab, obj) {
                     uniqueYear.push(eachAns["year"]);
                     let tempObj = {};
 
+                    tempObj['latestSubmissionDate'] = obj.latestSubmissionDate;
                     tempObj["year"] = eachAns["year"];
                     tempObj['nameOfUlb'] = obj.nameOfUlb;
                     tempObj['nameOfState'] = obj.nameOfState;
@@ -121,6 +124,20 @@ async function getEachTabData(eachTab, obj) {
     return tempArr.length > 0 ? tempArr : obj;
 }
 
+// Get the latest submission (UNDER_REVIEW_BY_STATE) timestamp from tracker array.
+function getLastestSubmissionTime(tracker = []) {
+    let date = null;
+
+    for (let i = tracker.length - 1; i >= 0; i--) {
+        if (tracker[i].eventName === 'UNDER_REVIEW_BY_STATE') {
+            date = tracker[i].eventDate;
+            break;
+        }
+    }
+
+    return getDate(date);
+}
+
 module.exports.dataDump = async (req, res) => {
     req.setTimeout(500000);
     let user = req.decoded;
@@ -132,9 +149,10 @@ module.exports.dataDump = async (req, res) => {
     // if (user.role == 'XVIFC') query.push({ 'state': { $nin: utIds } });
 
     // Fetch data from database.
-    let xviFcFormData = await XviFcForm1DataCollection.aggregate(
-        [{ $match: { $and: query } }]
-    )
+    const cursor = await XviFcForm1DataCollection
+        .aggregate([{ $match: { $and: query } }])
+        .cursor()
+        .exec();
 
     let demographicDataAllUlbs = [];
     let financialDataAllUlbs = [];
@@ -142,7 +160,12 @@ module.exports.dataDump = async (req, res) => {
     let uploadDocAllUlbs = [];
     let serviceLevelBenchmarkAllUlbs = [];
     let upload_financial = {}; // TODO: to be removed.
-    for (let ulbForm of xviFcFormData) {
+    for (let ulbForm = await cursor.next(); ulbForm != null; ulbForm = await cursor.next()) {
+        // Get lastest submission timestamp.
+        let latestSubmissionDate = null;
+        if (ulbForm.formStatus === 'UNDER_REVIEW_BY_STATE')
+            latestSubmissionDate = getLastestSubmissionTime(ulbForm?.tracker);
+
         fin_slb_year = {
             financialData_year: "",
             yearOfConstitution: "",
@@ -173,6 +196,7 @@ module.exports.dataDump = async (req, res) => {
         // Loop over each tab for particular ULB.
         for (let eachTab of ulbForm.tab) {
             let obj = {};
+            obj["latestSubmissionDate"] = latestSubmissionDate;
             obj["nameOfState"] = ulbForm.stateName;
             obj["nameOfUlb"] = ulbForm.ulbName;
             obj["censusCode"] = Number(ulbForm.censusCode ? ulbForm.censusCode : ulbForm.sbCode);
@@ -221,6 +245,7 @@ module.exports.dataDump = async (req, res) => {
         { header: 'Census Code', key: 'censusCode', width: 12 },
         { header: 'ULB Category', key: 'formId', width: 12 },
         { header: 'Form Status', key: 'formStatus', width: 20 },
+        { header: 'Latest Submission Date', key: 'latestSubmissionDate', width: 15 },
         { header: 'Population as per Census 2011', key: 'pop2011', width: 15 },
         { header: 'Population as per 01 April 2024', key: 'popApril2024', width: 15 },
         { header: 'Area as on 01 April 2024 (in Sq. Km.)', key: 'areaOfUlb', width: 15 },
@@ -239,6 +264,7 @@ module.exports.dataDump = async (req, res) => {
         { header: 'Census Code', key: 'censusCode', width: 12 },
         { header: 'ULB Category', key: 'formId', width: 12 },
         { header: 'Form Status', key: 'formStatus', width: 20 },
+        { header: 'Latest Submission Date', key: 'latestSubmissionDate', width: 15 },
         { header: 'Year', key: 'year', width: 12 },
 
         { header: "In which year was the ULB constituted?", key: "yearByUser", width: 15 },
@@ -301,6 +327,7 @@ module.exports.dataDump = async (req, res) => {
         { header: 'Census Code', key: 'censusCode', width: 12 },
         { header: 'ULB Category', key: 'formId', width: 12 },
         { header: 'Form Status', key: 'formStatus', width: 20 },
+        { header: 'Latest Submission Date', key: 'latestSubmissionDate', width: 15 },
         // { header: 'Year', key: 'year', width: 12 },
 
         { header: "What is the accounting system being followed by the ULB?", key: "accSystem", width: 15 },
@@ -332,6 +359,7 @@ module.exports.dataDump = async (req, res) => {
         { header: 'Census Code', key: 'censusCode', width: 12 },
         { header: 'ULB Category', key: 'formId', width: 12 },
         { header: 'Form Status', key: 'formStatus', width: 20 },
+        { header: 'Latest Submission Date', key: 'latestSubmissionDate', width: 15 },
         { header: 'Year', key: 'year', width: 12 },
 
         { header: "In which year was the ULB constituted?", key: "yearByUser", width: 15 },
@@ -394,6 +422,7 @@ module.exports.dataDump = async (req, res) => {
         { header: 'Census Code', key: 'censusCode', width: 12 },
         { header: 'ULB Category', key: 'formId', width: 12 },
         { header: 'Form Status', key: 'formStatus', width: 20 },
+        { header: 'Latest Submission Date', key: 'latestSubmissionDate', width: 15 },
         { header: 'Year', key: 'year', width: 12 },
 
         { header: "From which year is Service Level Benchmark data available?", key: "yearByUser", width: 15 },
