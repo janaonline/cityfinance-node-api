@@ -1,5 +1,4 @@
-const Client = require('../util/redisClient');
-// const { Client } = require('../service/redis');
+const { Client } = require('../service/redis');
 
 // Set cache data
 const setCache = async (key, value, ttl = 3600) => {
