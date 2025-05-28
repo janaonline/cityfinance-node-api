@@ -857,6 +857,7 @@ module.exports.masterDump = async function (req, res) {
     { header: 'ULB Type', key: 'ulbTypeIs', width: 21 },
     { header: 'Nature of ULB', key: 'natureOfUlb', width: 21 },
     { header: 'Active Status', key: 'isActive', width: 12 },
+    { header: 'Publish Status', key: 'isPublish', width: 12 },
     { header: 'State Name', key: 'stateName', width: 30 },
     { header: 'State Code', key: 'stateCode', width: 12 },
     { header: 'Is UT', key: 'isUt', width: 12 },
