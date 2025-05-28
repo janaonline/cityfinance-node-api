@@ -2075,6 +2075,7 @@ module.exports.formList = async (req, res) => {
     }
     else {
         const matchParams = {};
+        if (stateId) matchParams['state'] = ObjectId(stateId);
         if (filter.formStatus) matchParams['formStatus'] = filter.formStatus;
         if (filter.stateName) matchParams['stateName'] = filter.stateName;
         if (filter.formId) matchParams['formId'] = +filter.formId;
