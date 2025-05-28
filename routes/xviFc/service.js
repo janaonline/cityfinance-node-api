@@ -2022,7 +2022,6 @@ async function getUpdatedServiceLevelBenchmark_headers(serviceLevelBenchmarkData
 
 // ------ Review Table + Dashboard. ------ //
 module.exports.formList = async (req, res) => {
-    let tabCount = 0;
     let user = req.decoded,
         filter = req.query.filter ? JSON.parse(req.query.filter) : (req.body.filter ? req.body.filter : {}),
         sort = req.query.sort ? JSON.parse(req.query.sort) : (req.body.sort ? req.body.sort : {}),
@@ -2094,49 +2093,34 @@ module.exports.formList = async (req, res) => {
         let reviewTableData = [];
 
         for (let eachUlbForm of listOfUlbsFromState) {
+            // Determine action
+            let action = 'View';
+            if (
+                (eachUlbForm.formStatus === 'UNDER_REVIEW_BY_XVIFC' && user.role === 'XVIFC') ||
+                (eachUlbForm.formStatus === 'UNDER_REVIEW_BY_STATE' && (user.role === 'XVIFC' || user.role === 'XVIFC_STATE')) ||
+                eachUlbForm.formStatus === 'SUBMITTED'
+            ) action = 'Review';
 
-            let obj = {};
-            let allTabDataPercent = [];
-            // let ulbData = await XviFcForm1DataCollection.find({ ulb: ObjectId(eachUlbForm.ulb) }, { tab: 1 }).lean();
-            let ulbData = eachUlbForm.tabs ? eachUlbForm.tabs : eachUlbForm.tab;
+            // Determine statusClass
+            let statusClass = 'status-not-started';
+            if (eachUlbForm.formStatus === 'IN_PROGRESS')
+                statusClass = 'status-in-progress';
+            else if (eachUlbForm.formStatus === 'SUBMITTED' || eachUlbForm.formStatus === 'UNDER_REVIEW_BY_STATE')
+                statusClass = 'status-under-review';
 
-            // Get Data submission %.
-            let dataSubmissionPercent = 0;
-            if (ulbData && ulbData.length > 0) {
-                let demographicDataIndex = ulbData.findIndex((x) => { return x.tabKey == 'demographicData' })
-                let temp = ulbData[0];
-                ulbData[0] = ulbData[demographicDataIndex];
-                ulbData[demographicDataIndex] = temp;
-                for (let eachTab of ulbData) {
-                    if (eachTab.data.length > 0) {
-                        // eachUlbForm.name = eachUlbForm.ulbName ? eachUlbForm.ulbName : eachUlbForm.name;
-                        eachUlbForm.formId = eachUlbForm.formId ? eachUlbForm.formId : eachUlbForm.formType == 'form1' ? 16 : 17;
-                        tabCount = eachUlbForm.formId == 16 ? 4 : 5;
-                        let eachTabPercent = await getSubmissionPercent(eachTab, eachUlbForm.formId);
-                        dataSubmissionPercent += eachTabPercent.submissionPercent;
-                        allTabDataPercent.push(eachTabPercent);
-                    }
-                }
-            }
-            eachUlbForm.formType = eachUlbForm.formId ? eachUlbForm.formId == 16 ? 'form1' : 'form2' : eachUlbForm.formType;
-            obj["stateName"] = eachUlbForm.stateName;
-            obj["stateId"] = eachUlbForm.state;
-            obj["ulbName"] = eachUlbForm.ulbName ? eachUlbForm.ulbName : eachUlbForm.name;
-            obj["ulbId"] = eachUlbForm.ulb ? eachUlbForm.ulb : eachUlbForm._id;
-            obj["censusCode"] = eachUlbForm.censusCode ? eachUlbForm.censusCode : eachUlbForm.sbCode;
-            obj["ulbCategory"] = eachUlbForm.formType == 'form1' ? "Category 1" : eachUlbForm.formType == 'form2' ? "Category 2" : "";
-            obj["formStatus"] = eachUlbForm.formStatus ? eachUlbForm.formStatus : "NOT_STARTED";
-            obj["dataSubmitted"] = ulbData ? Math.round(Number(dataSubmissionPercent / tabCount)) : 0;
-            obj["action"] = ((eachUlbForm.formStatus == 'UNDER_REVIEW_BY_XVIFC' || eachUlbForm.formStatus == 'UNDER_REVIEW_BY_STATE') && user.role == 'XVIFC') || (eachUlbForm.formStatus == 'UNDER_REVIEW_BY_STATE' && user.role == 'XVIFC_STATE') || (eachUlbForm.formStatus == 'SUBMITTED') ? 'Review' : 'View';
-            obj["statusClass"] = eachUlbForm.formStatus == 'IN_PROGRESS' ? 'status-in-progress' : eachUlbForm.formStatus == 'SUBMITTED' || eachUlbForm.formStatus == 'UNDER_REVIEW_BY_STATE' ? 'status-under-review' : 'status-not-started';
-
-            // if (!eachUlbForm.isUT)
-            reviewTableData.push(obj);
-        }
-
-        if (filter.formId) {
-            filter.formId = filter.formId == 16 ? 'Category 1' : 'Category 2';
-            reviewTableData = reviewTableData.filter((x) => { return x.ulbCategory == filter.formId });
+            const { stateName, ulbName, ulbCategory, censusCode, formStatus, dataSubmitted } = getSubmissionData(eachUlbForm);
+            reviewTableData.push({
+                stateName,
+                ulbName,
+                censusCode,
+                ulbCategory,
+                formStatus,
+                dataSubmitted,
+                action,
+                statusClass,
+                ulbId: eachUlbForm.ulb || eachUlbForm._id,
+                stateId: eachUlbForm.state,
+            });
         }
 
         return res.status(200).json({ status: true, message: "", data: reviewTableData, totalForms: totalUlbForm });
@@ -2194,7 +2178,8 @@ function getUlbsDataQuery(matchParams = {}, matchParams2 = {}, matchParams3 = {}
                             tab: 1,
                             formStatus: 1,
                             stateName: 1,
-                            ulbName: 1
+                            ulbName: 1,
+                            ulb: 1,
                         }
                     },
                     { $limit: 1 }
@@ -2214,12 +2199,14 @@ function getUlbsDataQuery(matchParams = {}, matchParams2 = {}, matchParams3 = {}
                 tabs: "$tabs.tab",
                 formStatus: "$tabs.formStatus",
                 // stateName: "$tabs.stateName",
-                ulbName: "$tabs.ulbName"
+                ulbName: "$tabs.ulbName",
+                ulb: "$tabs.ulb"
             }
         },
     ];
 }
 
+// ----- Calculate ULBs data submission % ----- //
 let denominator = {
     demographicData: 8,
     uploadDoc: 0,
@@ -2231,7 +2218,45 @@ let denominator = {
 
 };
 
-async function getSubmissionPercent(eachTabData, formId) {
+// Utility function to extract submission percent from tab data.
+const getPercent = (allTabDataPercent, tabKey) => allTabDataPercent?.[tabKey]?.submissionPercent || 0;
+
+function getSubmissionData(eachUlbForm) {
+    const { stateName, name, ulbName, formType, formId, censusCode, sbCode, formStatus } = eachUlbForm;
+    const allTabDataPercent = {};
+    const ulbData = eachUlbForm.tabs || eachUlbForm.tab || [];
+    const tabCount = formId == 16 ? 4 : 5;
+    let dataSubmissionPercent = 0;
+
+    if (ulbData.length) {
+        // Move demographicData to first position in ulbData array.
+        const demographicDataIndex = ulbData.findIndex((x) => { return x.tabKey == 'demographicData' })
+        if (demographicDataIndex > 0)
+            [ulbData[0], ulbData[demographicDataIndex]] = [ulbData[demographicDataIndex], ulbData[0]];
+
+        // Loop through all the tabs and calulate submission %.
+        for (const eachTab of ulbData) {
+            if (eachTab?.data?.length > 0) {
+                const eachTabPercent = getSubmissionPercent(eachTab, formId);
+                dataSubmissionPercent += eachTabPercent.submissionPercent;
+                allTabDataPercent[eachTab.tabKey] = eachTabPercent;
+            }
+        }
+    }
+
+    const data = {
+        stateName,
+        ulbName: ulbName || name,
+        ulbCategory: formType == 'form2' ? 'Category 2' : 'Category 1',
+        censusCode: censusCode || sbCode,
+        formStatus: formStatus || "NOT_STARTED",
+        dataSubmitted: ulbData ? Math.round(Number(dataSubmissionPercent / tabCount)) : 0,
+    };
+
+    return { ...data, allTabDataPercent };
+}
+
+function getSubmissionPercent(eachTabData, formId) {
 
     let numeratorSaveAsDraft = 0;
     let baseYear = Number(financialYearTableHeader[0].split("-")[1]);
@@ -2447,7 +2472,6 @@ module.exports.progressReport = async (req, res) => {
 
     const user = req.decoded;
     const stateId = user.state;
-    let tabCount = 0;
     const matchParams = {
         isActive: true,
         isPublish: true,
@@ -2460,43 +2484,20 @@ module.exports.progressReport = async (req, res) => {
     const cursor = await Ulb.aggregate(query).cursor().exec();;
 
     for (let eachUlbForm = await cursor.next(); eachUlbForm != null; eachUlbForm = await cursor.next()) {
-        const { stateName, name: ulbName, formType, censusCode, sbCode, formStatus } = eachUlbForm;
-        const allTabDataPercent = {};
-        const ulbData = eachUlbForm.tabs || [];
-        let dataSubmissionPercent = 0;
-        tabCount = eachUlbForm.formId == 16 ? 4 : 5;
-
-        // Utility function to extract submission percent from tab data.
-        const getPercent = (tabKey) => allTabDataPercent?.[tabKey]?.submissionPercent || 0;
-
-        if (ulbData.length) {
-            // Move demographicData to first position in ulbData array.
-            const demographicDataIndex = ulbData.findIndex((x) => { return x.tabKey == 'demographicData' })
-            if (demographicDataIndex > 0)
-                [ulbData[0], ulbData[demographicDataIndex]] = [ulbData[demographicDataIndex], ulbData[0]];
-
-            // Loop through all the tabs and calulate submission %.
-            for (const eachTab of ulbData) {
-                if (eachTab?.data?.length > 0) {
-                    const eachTabPercent = await getSubmissionPercent(eachTab, eachUlbForm.formId);
-                    dataSubmissionPercent += eachTabPercent.submissionPercent;
-                    allTabDataPercent[eachTab.tabKey] = eachTabPercent;
-                }
-            }
-        }
+        const { stateName, ulbName, ulbCategory, censusCode, formStatus, dataSubmitted, allTabDataPercent } = getSubmissionData(eachUlbForm);
 
         reviewTableData.push({
             stateName,
             ulbName,
-            ulbCategory: formType == 'form2' ? 'Category 2' : 'Category 1',
-            censusCode: censusCode || sbCode,
-            formStatus: formStatus || "NOT_STARTED",
-            dataSubmitted: ulbData ? Math.round(Number(dataSubmissionPercent / tabCount)) : 0,
-            demographicData: getPercent('demographicData'),
-            financialData: getPercent('financialData'),
-            uploadDoc: getPercent('uploadDoc'),
-            accountPractice: getPercent('accountPractice'),
-            serviceLevelBenchmark: formType === 'form2' ? getPercent('serviceLevelBenchmark') : 'N/A',
+            ulbCategory,
+            censusCode,
+            formStatus,
+            dataSubmitted,
+            demographicData: getPercent(allTabDataPercent, 'demographicData'),
+            financialData: getPercent(allTabDataPercent, 'financialData'),
+            uploadDoc: getPercent(allTabDataPercent, 'uploadDoc'),
+            accountPractice: getPercent(allTabDataPercent, 'accountPractice'),
+            serviceLevelBenchmark: ulbCategory === 'Category 2' ? getPercent(allTabDataPercent, 'serviceLevelBenchmark') : 'N/A',
         });
     }
 
