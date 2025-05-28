@@ -12,6 +12,7 @@ const Ulb = require('../../models/Ulb');
 const LineItem = require('../../models/LineItem');
 const UlbLedger = require('../../models/UlbLedger');
 const LedgerLog = require('../../models/LedgerLog');
+const { clearCacheByType } = require('../../service/cacheService');
 
 const overViewSheet = {
   'statecode': 'state_code',
@@ -70,6 +71,12 @@ const balanceSheet = {
     '400',
   ],
 };
+
+// Clear redis cache.
+async function clearLedgerCache() {
+  const cacheType = 'dashboard';
+  await clearCacheByType(cacheType);
+}
 
 // Converts a string to lowercase and removes all whitespace characters.
 // Input: "Name of the state", Output: "nameofthestate"
@@ -288,7 +295,8 @@ async function processData(
           completed: 1,
           status: 'SUCCESS',
         });
-        Redis.resetDashboard();
+        clearLedgerCache();
+        // Redis.resetDashboard();
       }
     } else {
       // console.info("isStandardizable is 'No'");
@@ -304,7 +312,8 @@ async function processData(
         completed: 1,
         status: 'SUCCESS',
       });
-      Redis.resetDashboard();
+      clearLedgerCache();
+      // Redis.resetDashboard();
     }
   } catch (e) {
     console.error('processData: Caught Exception', e.message);
