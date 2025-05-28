@@ -2049,7 +2049,7 @@ module.exports.formList = async (req, res) => {
         // Filters - States collection.
         const matchParams2 = {};
         if (filter.stateName)
-            matchParams2['stateData.0.name'] = filter.stateName;
+            matchParams2['stateName'] = filter.stateName;
 
         // Filters - XVIFC collection. 
         const matchParams3 = {};
@@ -2057,7 +2057,19 @@ module.exports.formList = async (req, res) => {
             matchParams3['$or'] = [{ "tabs": { $eq: null } }, { "tabs.formStatus": "NOT_STARTED" }];
 
         // Get data from DB.
-        listOfUlbsFromState = await getUlbsData(matchParams, matchParams2, matchParams3, skip, limit, sort);
+        const query = getUlbsDataQuery(matchParams, matchParams2, matchParams3);
+        query.push({
+            '$facet': {
+                paginatedResults: [
+                    { $skip: skip * limit },
+                    { $limit: limit },
+                    { $sort: Object.keys(sort).length > 0 ? sort : { name: 1 } }
+                ],
+                totalCount: [{ $count: "count" }]
+            }
+        });
+
+        listOfUlbsFromState = await Ulb.aggregate(query);
 
         totalUlbForm = listOfUlbsFromState[0].totalCount.length > 0 ? listOfUlbsFromState[0].totalCount[0].count : 0;
         listOfUlbsFromState = listOfUlbsFromState[0].paginatedResults;
@@ -2136,8 +2148,8 @@ module.exports.formList = async (req, res) => {
 
 // Retrieves all ULB records from the DB without filters.
 // Display complete lists (NOT_STARTED ulbs).
-async function getUlbsData(matchParams = {}, matchParams2 = {}, matchParams3 = {}, skip = 0, limit = 10, sort) {
-    return await Ulb.aggregate([
+function getUlbsDataQuery(matchParams = {}, matchParams2 = {}, matchParams3 = {}) {
+    return [
         {
             $project: {
                 formType: 1,
@@ -2166,9 +2178,10 @@ async function getUlbsData(matchParams = {}, matchParams2 = {}, matchParams3 = {
                     { $match: { $expr: { $eq: ["$_id", "$$stateId"] } } },
                     { $project: { name: 1 } }
                 ],
-                as: "stateData"
+                as: "stateName"
             }
         },
+        { $addFields: { stateName: { $arrayElemAt: ["$stateName.name", 0] } } },
         { $match: matchParams2 },
         {
             $lookup: {
@@ -2200,21 +2213,11 @@ async function getUlbsData(matchParams = {}, matchParams2 = {}, matchParams3 = {
             $set: {
                 tabs: "$tabs.tab",
                 formStatus: "$tabs.formStatus",
-                stateName: "$tabs.stateName",
+                // stateName: "$tabs.stateName",
                 ulbName: "$tabs.ulbName"
             }
         },
-        {
-            $facet: {
-                paginatedResults: [
-                    { $skip: skip * limit },
-                    { $limit: limit },
-                    { $sort: Object.keys(sort).length > 0 ? sort : { name: 1 } }
-                ],
-                totalCount: [{ $count: "count" }]
-            }
-        }
-    ]);
+    ];
 }
 
 let denominator = {
@@ -2442,222 +2445,160 @@ async function rejectedByXvifc(userId, rejectMessage) {
 // ----- Progress report ----- //
 module.exports.progressReport = async (req, res) => {
 
-    let user = req.decoded;
-    let stateId = user.state;
-    let matchParams = user.role == 'XVIFC' ? { isActive: true } : user.role == 'XVIFC_STATE' ? { $and: [{ state: ObjectId(stateId) }] } : "";
-
-    let listOfUlbsFromState = [];
-    let totalUlbForm = 0;
+    const user = req.decoded;
+    const stateId = user.state;
     let tabCount = 0;
-
-    listOfUlbsFromState = await Ulb.aggregate([
-        {
-            $lookup: {
-                from: "xvifcformdatacollections",
-                localField: "_id",
-                foreignField: "ulb",
-                as: "tab",
-            },
-        },
-        {
-            $lookup: {
-                from: "states",
-                localField: "state",
-                foreignField: "_id",
-                as: "stateResult",
-            },
-        },
-        {
-            $match: matchParams
-        },
-        {
-            $unwind: {
-                path: "$tab",
-                preserveNullAndEmptyArrays: true
-            }
-        },
-        {
-            $unwind: {
-                path: "$stateResult",
-                preserveNullAndEmptyArrays: true
-            }
-        },
-        {
-            $group: {
-                _id: "$_id",
-                formType: { $first: "$formType" },
-                censusCode: { $first: "$censusCode" },
-                sbCode: { $first: "$sbCode" },
-                name: { $first: "$name" },
-                ulbName: { $first: "$name" },
-                state: { $first: "$state" },
-                stateName: { $first: "$stateResult.name" },
-                formStatus: { $first: "$tab.formStatus" },
-                tabs: { $first: "$tab.tab" },
-                isActive: { $first: "$isActive" },
-                tab: { $first: "$tab" }
-            }
-        },
-        {
-            $project: {
-                _id: 1,
-                censusCode: 1,
-                sbCode: 1,
-                code: 1,
-                name: 1,
-                ulbName: 1,
-                state: 1,
-                isActive: 1,
-                formType: 1,
-                tabs: 1,
-                stateName: 1,
-                formStatus: 1
-            }
-        },
-        { $sort: { formStatus: -1, stateName: 1, name: 1 } }
-    ]).allowDiskUse(true);
-
-    if (listOfUlbsFromState.length > 0) {
-        let reviewTableData = [];
-
-        for (let eachUlbForm of listOfUlbsFromState) {
-
-            let obj = {};
-            let allTabDataPercent = [];
-            let ulbData = eachUlbForm.tabs ? eachUlbForm.tabs : eachUlbForm.tab;
-
-            // Get Data submission %.
-            let dataSubmissionPercent = 0;
-            if (ulbData && ulbData.length > 0) {
-                let demographicDataIndex = ulbData.findIndex((x) => { return x.tabKey == 'demographicData' })
-                let temp = ulbData[0];
-                ulbData[0] = ulbData[demographicDataIndex];
-                ulbData[demographicDataIndex] = temp;
-                for (let eachTab of ulbData) {
-                    if (eachTab?.data?.length > 0) {
-                        eachUlbForm.formId = eachUlbForm.formId ? eachUlbForm.formId : eachUlbForm.formType == 'form1' ? 16 : 17;
-                        tabCount = eachUlbForm.formId == 16 ? 4 : 5;
-                        let eachTabPercent = await getSubmissionPercent(eachTab, eachUlbForm.formId);
-                        dataSubmissionPercent += eachTabPercent.submissionPercent;
-                        allTabDataPercent.push(eachTabPercent);
-                    }
-                }
-            }
-            eachUlbForm.formType = eachUlbForm.formId ? eachUlbForm.formId == 16 ? 'form1' : 'form2' : eachUlbForm.formType;
-            obj["stateName"] = eachUlbForm.stateName;
-            obj["ulbName"] = eachUlbForm.ulbName ? eachUlbForm.ulbName : eachUlbForm.name;
-            obj["censusCode"] = eachUlbForm.censusCode ? eachUlbForm.censusCode : eachUlbForm.sbCode;
-            obj["ulbCategory"] = eachUlbForm.formType == 'form1' ? "Category 1" : eachUlbForm.formType == 'form2' ? "Category 2" : "";
-            obj["formStatus"] = eachUlbForm.formStatus ? eachUlbForm.formStatus : "NOT_STARTED";
-            obj["dataSubmitted"] = ulbData ? Math.round(Number(dataSubmissionPercent / tabCount)) : 0;
-            obj["demographicData"] = 0;
-            obj["financialData"] = 0;
-            obj["uploadDoc"] = 0;
-            obj["accountPractice"] = 0;
-            obj["serviceLevelBenchmark"] = eachUlbForm.formType == 'form1' ? "N/A" : eachUlbForm.formType == 'form2' ? 0 : "";
-
-            for (let tab of allTabDataPercent) {
-                obj[tab.key] = tab.submissionPercent;
-            }
-
-            // if (!eachUlbForm.isUT)
-            reviewTableData.push(obj);
-        }
-
-        let formStatusData = await getFormStatusSummary(reviewTableData);
-
-        // Create a new workbook and add a worksheet
-        const workbook = new ExcelJS.Workbook();
-        let sheetName = user.role == 'XVIFC' ? 'XVIFC Progress' : 'State Progress';
-        const worksheet_1 = workbook.addWorksheet(sheetName);
-        const worksheet_2 = workbook.addWorksheet('Form Status Summary');
-
-        // Define the columns
-        // Submission % of each tab
-        worksheet_1.columns = [
-            { header: '#', key: 'rowSlNo', width: 7 },
-            { header: 'State', key: 'stateName', width: 15 },
-            { header: 'ULB Name', key: 'ulbName', width: 40 },
-            { header: 'Census Code', key: 'censusCode', width: 12 },
-            { header: 'ULB Category', key: 'ulbCategory', width: 12 },
-            { header: 'Form Status', key: 'formStatus', width: 20 },
-            { header: 'Data Submitted (%)', key: 'dataSubmitted', width: 15, style: { numFmt: '0.00' } },
-            { header: 'Demographic Data Filled (%)', key: 'demographicData', width: 15, style: { numFmt: '0.00' } },
-            { header: 'Financial Data Filled (%)', key: 'financialData', width: 15, style: { numFmt: '0.00' } },
-            { header: 'Document Upload (%)', key: 'uploadDoc', width: 15, style: { numFmt: '0.00' } },
-            { header: 'Accounting Practices Data Filled (%)', key: 'accountPractice', width: 15, style: { numFmt: '0.00' } },
-            { header: 'Service Level Benchmark Data Filled (%)', key: 'serviceLevelBenchmark', width: 15, style: { numFmt: '0.00' } },
-        ];
-        // Form status count.
-        worksheet_2.columns = [
-            { header: '#', key: 'rowSlNo', width: 7 },
-            { header: 'State', key: 'stateName', width: 25 },
-            { header: 'Total ULBs', key: 'totalUlbs', width: 12 },
-            { header: 'Not Started', key: 'NOT_STARTED', width: 12 },
-            { header: 'In Progress', key: 'IN_PROGRESS', width: 12 },
-            { header: 'Under review by State', key: 'UNDER_REVIEW_BY_STATE', width: 12 },
-            { header: 'Returned by State', key: 'RETURNED_BY_STATE', width: 12 },
-            { header: 'Under review by XVIFC', key: 'UNDER_REVIEW_BY_XVIFC', width: 12 },
-            { header: 'Returned by XVIFC', key: 'RETURNED_BY_XVIFC', width: 12 },
-            { header: 'Approved by XVIFC', key: 'APPROVED_BY_XVIFC', width: 12 },
-        ];
-
-        // Add rows to the worksheet
-        let rowSlNo = 1;
-        reviewTableData.forEach(item => {
-            item["rowSlNo"] = rowSlNo++;
-            worksheet_1.addRow(item);
-        });
-
-        rowSlNo = 1;
-        formStatusData.forEach(item => {
-            item["rowSlNo"] = rowSlNo++;
-            worksheet_2.addRow(item);
-        });
-
-        // Create a buffer to store the Excel file
-        const buffer = await workbook.xlsx.writeBuffer();
-
-        // Set file name.
-        const now = new Date();
-        const dateString = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')}`;
-        const timeString = `${now.getHours().toString().padStart(2, '0')}-${now.getMinutes().toString().padStart(2, '0')}-${now.getSeconds().toString().padStart(2, '0')}`;
-        let file = user.role == 'XVIFC' ? 'XVIFC' : user.name + '_XVIFC';
-        const filename = `${file}_FORM_PROGRESS_${dateString}_${timeString}.xlsx`;
-
-        // Set the response headers
-        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        res.setHeader('Content-Disposition', `attachment; filename=${filename}`);
-
-        // Send the buffer as the response
-        return res.send(buffer);
-
-    } else {
-        return res.status(404).json({ status: false, message: "Data download failed." });
+    const matchParams = {
+        isActive: true,
+        isPublish: true,
     }
 
+    if (user.role === 'XVIFC_STATE') matchParams['state'] = ObjectId(stateId);
+    const reviewTableData = [];
+    const query = getUlbsDataQuery(matchParams);
+    // query.push({ $sort: { formStatus: -1, stateName: 1, name: 1 } });
+    const cursor = await Ulb.aggregate(query).cursor().exec();;
+
+    for (let eachUlbForm = await cursor.next(); eachUlbForm != null; eachUlbForm = await cursor.next()) {
+        const { stateName, name: ulbName, formType, censusCode, sbCode, formStatus } = eachUlbForm;
+        const allTabDataPercent = {};
+        const ulbData = eachUlbForm.tabs || [];
+        let dataSubmissionPercent = 0;
+        tabCount = eachUlbForm.formId == 16 ? 4 : 5;
+
+        // Utility function to extract submission percent from tab data.
+        const getPercent = (tabKey) => allTabDataPercent?.[tabKey]?.submissionPercent || 0;
+
+        if (ulbData.length) {
+            // Move demographicData to first position in ulbData array.
+            const demographicDataIndex = ulbData.findIndex((x) => { return x.tabKey == 'demographicData' })
+            if (demographicDataIndex > 0)
+                [ulbData[0], ulbData[demographicDataIndex]] = [ulbData[demographicDataIndex], ulbData[0]];
+
+            // Loop through all the tabs and calulate submission %.
+            for (const eachTab of ulbData) {
+                if (eachTab?.data?.length > 0) {
+                    const eachTabPercent = await getSubmissionPercent(eachTab, eachUlbForm.formId);
+                    dataSubmissionPercent += eachTabPercent.submissionPercent;
+                    allTabDataPercent[eachTab.tabKey] = eachTabPercent;
+                }
+            }
+        }
+
+        reviewTableData.push({
+            stateName,
+            ulbName,
+            ulbCategory: formType == 'form2' ? 'Category 2' : 'Category 1',
+            censusCode: censusCode || sbCode,
+            formStatus: formStatus || "NOT_STARTED",
+            dataSubmitted: ulbData ? Math.round(Number(dataSubmissionPercent / tabCount)) : 0,
+            demographicData: getPercent('demographicData'),
+            financialData: getPercent('financialData'),
+            uploadDoc: getPercent('uploadDoc'),
+            accountPractice: getPercent('accountPractice'),
+            serviceLevelBenchmark: formType === 'form2' ? getPercent('serviceLevelBenchmark') : 'N/A',
+        });
+    }
+
+    let formStatusData = await getFormStatusSummary(reviewTableData);
+
+    // Create a new workbook and add a worksheet
+    const workbook = new ExcelJS.Workbook();
+    let sheetName = user.role == 'XVIFC' ? 'XVIFC Progress' : 'State Progress';
+    const worksheet_1 = workbook.addWorksheet(sheetName);
+    const worksheet_2 = workbook.addWorksheet('Form Status Summary');
+
+    // Define the columns
+    // Submission % of each tab
+    worksheet_1.columns = [
+        { header: '#', key: 'rowSlNo', width: 7 },
+        { header: 'State', key: 'stateName', width: 15 },
+        { header: 'ULB Name', key: 'ulbName', width: 40 },
+        { header: 'Census Code', key: 'censusCode', width: 12 },
+        { header: 'ULB Category', key: 'ulbCategory', width: 12 },
+        { header: 'Form Status', key: 'formStatus', width: 20 },
+        { header: 'Data Submitted (%)', key: 'dataSubmitted', width: 15, style: { numFmt: '0.00' } },
+        { header: 'Demographic Data Filled (%)', key: 'demographicData', width: 15, style: { numFmt: '0.00' } },
+        { header: 'Financial Data Filled (%)', key: 'financialData', width: 15, style: { numFmt: '0.00' } },
+        { header: 'Document Upload (%)', key: 'uploadDoc', width: 15, style: { numFmt: '0.00' } },
+        { header: 'Accounting Practices Data Filled (%)', key: 'accountPractice', width: 15, style: { numFmt: '0.00' } },
+        { header: 'Service Level Benchmark Data Filled (%)', key: 'serviceLevelBenchmark', width: 15, style: { numFmt: '0.00' } },
+    ];
+    // Form status count.
+    worksheet_2.columns = [
+        { header: '#', key: 'rowSlNo', width: 7 },
+        { header: 'State', key: 'stateName', width: 25 },
+        { header: 'Total ULBs', key: 'totalUlbs', width: 12 },
+        { header: 'Not Started', key: 'NOT_STARTED', width: 12 },
+        { header: 'In Progress', key: 'IN_PROGRESS', width: 12 },
+        { header: 'Under review by State', key: 'UNDER_REVIEW_BY_STATE', width: 12 },
+        { header: 'Returned by State', key: 'RETURNED_BY_STATE', width: 12 },
+        { header: 'Under review by XVIFC', key: 'UNDER_REVIEW_BY_XVIFC', width: 12 },
+        { header: 'Returned by XVIFC', key: 'RETURNED_BY_XVIFC', width: 12 },
+        { header: 'Approved by XVIFC', key: 'APPROVED_BY_XVIFC', width: 12 },
+    ];
+
+    // Add rows to the worksheet
+    let rowSlNo = 1;
+    reviewTableData.forEach(item => {
+        item["rowSlNo"] = rowSlNo++;
+        worksheet_1.addRow(item);
+    });
+
+    rowSlNo = 1;
+    formStatusData.forEach(item => {
+        item["rowSlNo"] = rowSlNo++;
+        worksheet_2.addRow(item);
+    });
+
+    // Create a buffer to store the Excel file
+    const buffer = await workbook.xlsx.writeBuffer();
+
+    // Set file name.
+    const now = new Date();
+    const dateString = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')}`;
+    const timeString = `${now.getHours().toString().padStart(2, '0')}-${now.getMinutes().toString().padStart(2, '0')}-${now.getSeconds().toString().padStart(2, '0')}`;
+    let file = user.role == 'XVIFC' ? 'XVIFC' : user.name + '_XVIFC';
+    const filename = `${file}_FORM_PROGRESS_${dateString}_${timeString}.xlsx`;
+
+    // Set the response headers
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename=${filename}`);
+
+    // Send the buffer as the response
+    return res.send(buffer);
 };
 
 async function getFormStatusSummary(reviewTableData) {
+    const formStatusResMap = {};
 
-    const uniqueStates = [...new Set(reviewTableData.map(item => item.stateName))];
+    for (const item of reviewTableData) {
+        const { stateName, formStatus } = item;
 
-    let formStatusRes = [];
-    let formStatusObj = {};
+        if (!formStatusResMap[stateName]) {
+            formStatusResMap[stateName] = {
+                stateName,
+                totalUlbs: 0,
+                NOT_STARTED: 0,
+                IN_PROGRESS: 0,
+                UNDER_REVIEW_BY_STATE: 0,
+                RETURNED_BY_STATE: 0,
+                UNDER_REVIEW_BY_XVIFC: 0,
+                RETURNED_BY_XVIFC: 0,
+                APPROVED_BY_XVIFC: 0,
+            };
+        }
 
-    for (state of uniqueStates) {
-        formStatusObj = {};
-        formStatusObj["stateName"] = state;
-        formStatusObj["totalUlbs"] = reviewTableData.filter((x) => { return x.stateName == state }).length;
-        formStatusObj["NOT_STARTED"] = reviewTableData.filter((x) => { return x.stateName == state && x.formStatus == 'NOT_STARTED' }).length;
-        formStatusObj["IN_PROGRESS"] = reviewTableData.filter((x) => { return x.stateName == state && x.formStatus == 'IN_PROGRESS' }).length;
-        formStatusObj["UNDER_REVIEW_BY_STATE"] = reviewTableData.filter((x) => { return x.stateName == state && x.formStatus == 'UNDER_REVIEW_BY_STATE' }).length;
-        formStatusObj["RETURNED_BY_STATE"] = reviewTableData.filter((x) => { return x.stateName == state && x.formStatus == 'RETURNED_BY_STATE' }).length;
-        formStatusObj["UNDER_REVIEW_BY_XVIFC"] = reviewTableData.filter((x) => { return x.stateName == state && x.formStatus == 'UNDER_REVIEW_BY_XVIFC' }).length;
-        formStatusObj["RETURNED_BY_XVIFC"] = reviewTableData.filter((x) => { return x.stateName == state && x.formStatus == 'RETURNED_BY_XVIFC' }).length;
-        formStatusObj["APPROVED_BY_XVIFC"] = reviewTableData.filter((x) => { return x.stateName == state && x.formStatus == 'APPROVED_BY_XVIFC' }).length;
+        const stateEntry = formStatusResMap[stateName];
+        stateEntry.totalUlbs++;
 
-        formStatusRes.push(formStatusObj);
+        if (formStatus in stateEntry) {
+            stateEntry[formStatus]++;
+        }
     }
+
+    const formStatusRes = Object.values(formStatusResMap);
+    formStatusRes.sort((a, b) => a.stateName.localeCompare(b.stateName));
+    
     return formStatusRes;
 };
