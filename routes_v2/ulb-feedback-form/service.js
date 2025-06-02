@@ -2,6 +2,7 @@ const FormsJson = require('../../models/FormsJson');
 const UlbFeedback = require('../../models/UlbFeedback');
 const formJsonService = require('../../service/formJsonService');
 const ObjectId = require("mongoose").Types.ObjectId;
+const { generateExcel } = require('../utils/downloadService');
 
 module.exports.submitFeedbackForm = async (req, res) => {
   try {
@@ -95,3 +96,72 @@ module.exports.viewFeedbackForm = async (req, res) => {
     });
   }
 };
+
+// Download ULB Feedback Excel
+module.exports.exportUlbFeedbackExcel = async (req, res) => {
+  try {
+    const sheetName = 'ULB_Feedback';
+    const headers = [
+      { key: 'ulbCode', label: 'ULB Code' },
+      { key: 'ulbName', label: 'ULB Name' },
+      { key: 'stateName', label: 'State Name' },
+      { key: 'benifitFromCf', label: 'What is the main benefit you receive from CityFinance?' },
+      { key: 'improveCf', label: 'How can we improve CityFinance for you?' },
+      { key: 'rating', label: 'Rate your experience of City Finance' },
+      { key: 'updatedAt', label: 'Submission Date' },
+    ];
+
+    const rows = await UlbFeedback.aggregate([
+      {
+        $lookup: {
+          from: "ulbs",
+          let: { ulbId: "$ulb" },
+          pipeline: [
+            { $match: { $expr: { $eq: ["$_id", "$$ulbId"] } } },
+            {
+              $project: {
+                _id: 0,
+                code: 1,
+                name: 1,
+                state: 1
+              }
+            }
+          ],
+          as: "ulbData"
+        }
+      },
+      {
+        $lookup: {
+          from: "states",
+          let: { stateId: "$ulbData.state" },
+          pipeline: [
+            { $match: { $expr: { $eq: ["$_id", "$$stateId"] } } },
+            { $project: { _id: 0, name: 1 } }
+          ],
+          as: "stateData"
+        }
+      },
+      {
+        $project: {
+          ulbCode: { $arrayElemAt: ["$ulbData.code", 0] },
+          ulbName: { $arrayElemAt: ["$ulbData.name", 0] },
+          stateName: { $arrayElemAt: ["$stateData.name", 0] },
+          benifitFromCf: 1,
+          improveCf: 1,
+          rating: 1,
+          updatedAt: 1
+        }
+      }
+    ]);
+
+    const buffer = await generateExcel(headers, rows, sheetName);
+
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename="ULB_Feedback.xlsx"`);
+    res.status(200).send(buffer);
+  } catch (err) {
+    console.error('Error generating ULB Feedback Excel:', err);
+    res.status(500).json({ message: 'Failed to generate Excel file.' });
+  }
+};
+
