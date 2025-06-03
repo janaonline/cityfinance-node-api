@@ -54,6 +54,8 @@ const {
   stateDashAvgs,
 } = require("./state");
 
+const cacheMiddleware = require('../../middlewares/cacheMiddleware');
+
 router.post("/state-scatter", scatterMap);
 
 //state dashboard
@@ -62,7 +64,7 @@ router.get("/state-list-of-indics", listOfIndicators);
 router.get("/state-revenue-tabs", stateRevenueTabs);
 router.get("/state-ulbs-grouped-by-population", ulbsByPopulation);
 router.post("/state-slb", serviceLevelBenchmark);
-router.get("/get-FYs-with-specification", getFYsWithSpecification);
+router.get("/get-FYs-with-specification", cacheMiddleware('dashboard'), getFYsWithSpecification);
 router.get("/get-FYs-slb", getFYsSLB);
 router.get("/indicatorCSV", indicatorDump);
 router.post("/state-dashboard-averages", stateDashAvgs);
@@ -73,7 +75,7 @@ router.get("/national-dashboard/revenue", nationalDashRevenue);
 router.get("/national-dashboard/expenditure", nationalDashExpenditure);
 router.get("/national-dashboard/own-revenue", nationalDashOwnRevenue);
 router.get("/national-dashboard/capital-expenditure", nationalDashCapexpense);
-router.get("/get-statewise-data-availability", getStatewiseDataAvail);
+router.get("/get-statewise-data-availability", cacheMiddleware('dashboard'), getStatewiseDataAvail);
 
 //slb-specific-metrics
 const {slbFrontPanel} = require('./slb');
