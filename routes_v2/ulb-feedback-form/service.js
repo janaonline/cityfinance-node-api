@@ -133,7 +133,7 @@ module.exports.exportUlbFeedbackExcel = async (req, res) => {
       {
         $lookup: {
           from: "states",
-          let: { stateId: "$ulbData.state" },
+          let: { stateId: { $arrayElemAt: ["$ulbData.state", 0] } },
           pipeline: [
             { $match: { $expr: { $eq: ["$_id", "$$stateId"] } } },
             { $project: { _id: 0, name: 1 } }
