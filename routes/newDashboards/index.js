@@ -13,7 +13,7 @@ router.post("/indicator", indicator);
 router.post("/indicator/revenue", revenueIndicator);
 router.get("/about-indicator", aboutCalculation);
 router.post("/about-indicator-comp", peerComp);
-
+const cacheMiddleware = require('../../middlewares/cacheMiddleware');
 const {
   dataAvailability,
   chartData,
@@ -34,12 +34,12 @@ const {
 } = require("./national");
 // router.use(verifyToken);
 router.use("/all-dashboard", shared);
-router.post("/data-available", dataAvailability);
-router.post("/yearList", yearlist);
-router.post("/chart-data", chartData2);
-router.post("/cards-data", cardsData);
-router.post("/table-data", tableData);
-router.post("/topPerformance", topPerForming);
+router.post("/data-available", cacheMiddleware('dashboard'),dataAvailability);
+router.post("/yearList", cacheMiddleware('dashboard'),yearlist);
+router.post("/chart-data",cacheMiddleware('dashboard'), chartData2);
+router.post("/cards-data", cacheMiddleware('dashboard'),cardsData);
+router.post("/table-data", cacheMiddleware('dashboard'),tableData);
+router.post("/topPerformance",cacheMiddleware('dashboard'), topPerForming);
 
 const {
   scatterMap,
