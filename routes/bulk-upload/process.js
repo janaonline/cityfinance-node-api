@@ -289,14 +289,13 @@ async function processData(
         if (user.role !== 'ULB') {
           await uploadOverviewDataInDb(du);
           await uploadInputDataInDb(inputDataBulkWriteArr); //bulkWrite.
+          clearLedgerCache();
         }
         await updateLog(reqId, {
           message: `Completed`,
           completed: 1,
           status: 'SUCCESS',
         });
-        clearLedgerCache();
-        // Redis.resetDashboard();
       }
     } else {
       // console.info("isStandardizable is 'No'");
@@ -305,6 +304,7 @@ async function processData(
       if (user.role !== 'ULB') {
         await uploadOverviewDataInDb(du);
         await deleteInputDataFromDB(du);
+        clearLedgerCache();
       }
 
       await updateLog(reqId, {
@@ -312,8 +312,6 @@ async function processData(
         completed: 1,
         status: 'SUCCESS',
       });
-      clearLedgerCache();
-      // Redis.resetDashboard();
     }
   } catch (e) {
     console.error('processData: Caught Exception', e.message);
