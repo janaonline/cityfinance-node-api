@@ -32,14 +32,6 @@ const {
   nationalDashOwnRevenue,
   nationalDashCapexpense,
 } = require("./national");
-// router.use(verifyToken);
-router.use("/all-dashboard", shared);
-router.post("/data-available", cacheMiddleware('dashboard'),dataAvailability);
-router.post("/yearList", cacheMiddleware('dashboard'),yearlist);
-router.post("/chart-data",cacheMiddleware('dashboard'), chartData2);
-router.post("/cards-data", cacheMiddleware('dashboard'),cardsData);
-router.post("/table-data", cacheMiddleware('dashboard'),tableData);
-router.post("/topPerformance",cacheMiddleware('dashboard'), topPerForming);
 
 const {
   scatterMap,
@@ -54,7 +46,13 @@ const {
   stateDashAvgs,
 } = require("./state");
 
-const cacheMiddleware = require('../../middlewares/cacheMiddleware');
+router.use("/all-dashboard", shared);
+router.post("/data-available", cacheMiddleware('dashboard'),dataAvailability);
+router.post("/yearList", cacheMiddleware('dashboard'),yearlist);
+router.post("/chart-data",cacheMiddleware('dashboard'), chartData2);
+router.post("/cards-data", cacheMiddleware('dashboard'),cardsData);
+router.post("/table-data", cacheMiddleware('dashboard'),tableData);
+router.post("/topPerformance",cacheMiddleware('dashboard'), topPerForming);
 
 router.post("/state-scatter", scatterMap);
 
