@@ -83,7 +83,7 @@ module.exports.getUserInfo = async (req, res) => {
 // Download User Download History Excel
 module.exports.exportUserDownloadExcel = async (req, res) => {
   try {
-    const sheetName = 'User_Download_History.csv';
+    const sheetName = 'User_Download_History';
     const headers = [
       { key: 'userName', label: 'User Name' },
       { key: 'email', label: 'Email' },

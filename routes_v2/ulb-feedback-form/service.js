@@ -100,7 +100,7 @@ module.exports.viewFeedbackForm = async (req, res) => {
 // Download ULB Feedback Excel
 module.exports.exportUlbFeedbackExcel = async (req, res) => {
   try {
-    const sheetName = 'ULB_Feedback.csv';
+    const sheetName = 'ULB_Feedback';
     const headers = [
       { key: 'ulbCode', label: 'ULB Code' },
       { key: 'ulbName', label: 'ULB Name' },
