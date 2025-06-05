@@ -9,7 +9,9 @@ const cacheMiddleware = (cacheType, expirationInSeconds = THREE_MONTHS_IN_SECOND
         try {
             const cachedData = await getCache(key);
             if (cachedData) {
-                return res.json(JSON.parse(cachedData));
+                parsedData = JSON.parse(cachedData);
+                parsedData['fromCache'] = true;
+                return res.json(parsedData);
             }
 
             // Intercept res.json and cache the response
