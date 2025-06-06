@@ -755,7 +755,9 @@ const getJson = async (state, design_year, role,previousYearData) => {
             "design_year":design_year
         }).lean()
         let basicEmptyStructure = forms.find(item => item.formId === FORMIDs['GTC_TABLE_STRUCTURE']).data
-        let formJson = forms.find(item => item.formId === FORMIDs['GTC_STATE'])
+        // let formJson = forms.find(item => item.formId === FORMIDs['GTC_STATE'])
+         const formId = (design_year === '606aafc14dff55e6c075d3ec') ? FORMIDs["GTC_STATE"] : FORMIDs["GTC_TABLE_STRUCTURE"];
+        const formJson = forms.find((item) => item.formId === formId);
         if (!stateIsMillion) {
             basicEmptyStructure = basicEmptyStructure.filter(item => item.type != "million")
             fieldsTohide = ["totalMpc", "totalElectedMpc"]
@@ -920,31 +922,31 @@ module.exports.getInstallmentForm = async (req, res, next) => {
         let { design_year, state, formType } = req.query
         let { role } = req.decoded;
         let previousYearData;
-
-        if(design_year === '606aafcf4dff55e6c075d424') {
-            previousYearData = await getPreviousYearData24_25(state,design_year);
-        } else {
-            previousYearData = await getPreviousYearData(state,design_year);
-        }
+previousYearData = await getPreviousYearData(state,design_year);
+        // if(design_year === '606aafcf4dff55e6c075d424') {
+        //     previousYearData = await getPreviousYearData24_25(state,design_year);
+        // } else {
+        //     previousYearData = await getPreviousYearData(state,design_year);
+        // }
         
-        response.errors = await addWarnings(previousYearData)
-        let validator = await checkForUndefinedVaribales({
-            "design year": design_year,
-            "state": state
-        })
-        if (!validator.valid) {
-            response.message = validator.message
-            return res.json(response)
-        }
-        let formValidator = await checkForPreviousForms(design_year, state)
-        if (!formValidator.valid) {
-            response.success = false;
-            response.message = formValidator.message
-            response.errors = [formValidator.message]
-            return res.json(response)
-        }
-        response.success = !response.errors.length 
-        response.message = ""
+        // response.errors = await addWarnings(previousYearData)
+        // let validator = await checkForUndefinedVaribales({
+        //     "design year": design_year,
+        //     "state": state
+        // })
+        // if (!validator.valid) {
+        //     response.message = validator.message
+        //     return res.json(response)
+        // }
+        // let formValidator = await checkForPreviousForms(design_year, state)
+        // if (!formValidator.valid) {
+        //     response.success = false;
+        //     response.message = formValidator.message
+        //     response.errors = [formValidator.message]
+        //     return res.json(response)
+        // }
+        // response.success = !response.errors.length 
+        // response.message = ""
         let { json, stateIsMillion } = await getJson(state, design_year, role,previousYearData[0])
         response.data = json
         response.stateIsMillion = stateIsMillion
