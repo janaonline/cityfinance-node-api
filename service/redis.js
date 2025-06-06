@@ -9,7 +9,7 @@ const CONFIG = require("../config/app_config");
 // }
 
 if (!process.env.REDIS_URL) {
-  console.log(process.env.ENV, "Env not supported");
+  console.log(process.env.ENV, "Redis Env not supported");
   process.exit(process.env.ENV + " : Env not supported @redis.js");
 }
 
