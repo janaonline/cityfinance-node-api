@@ -2473,14 +2473,20 @@ module.exports.progressReport = async (req, res) => {
 
     const user = req.decoded;
     const stateId = user.state;
+    const { stateName } = req.query;
+    const formId = +req.query.formId;
     const matchParams = {
         isActive: true,
         isPublish: true,
     }
+    const matchParams2 = {};
 
     if (user.role === 'XVIFC_STATE') matchParams['state'] = ObjectId(stateId);
+    if ([16, 17].includes(formId)) matchParams['formId'] = formId;
+    if (stateName) matchParams2['stateName'] = stateName;
+
     const reviewTableData = [];
-    const query = getUlbsDataQuery(matchParams);
+    const query = getUlbsDataQuery(matchParams, matchParams2);
     // query.push({ $sort: { formStatus: -1, stateName: 1, name: 1 } });
     const cursor = await Ulb.aggregate(query).cursor().exec();;
 
