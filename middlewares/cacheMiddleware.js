@@ -1,20 +1,23 @@
 const { getCache, setCache } = require('../service/cacheService');
+const THREE_MONTHS_IN_SECONDS = 60 * 60 * 24 * 90; // 3 months
 
 // Generalized cache middleware for different data types (e.g., dashboard)
-const cacheMiddleware = (cacheType) => {
+const cacheMiddleware = (cacheType, expirationInSeconds = THREE_MONTHS_IN_SECONDS) => {
     return async (req, res, next) => {
         const key = `${cacheType}:${req.path}:${JSON.stringify(req.query)}`;
 
         try {
             const cachedData = await getCache(key);
             if (cachedData) {
-                return res.json(JSON.parse(cachedData));
+                parsedData = JSON.parse(cachedData);
+                parsedData['fromCache'] = true;
+                return res.json(parsedData);
             }
 
             // Intercept res.json and cache the response
             const originalJson = res.json.bind(res);
             res.json = async (data) => {
-                await setCache(key, data);
+                await setCache(key, data, expirationInSeconds);
                 return originalJson(data);
             };
 
