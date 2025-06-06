@@ -1,8 +1,8 @@
 const { getCache, setCache } = require('../service/cacheService');
-const THREE_MONTHS_IN_SECONDS = 60 * 60 * 24 * 90; // 3 months
+const EXPIRATION_IN_SEC = 60 * 60 * 24 * 90; // 3 months
 
 // Generalized cache middleware for different data types (e.g., dashboard)
-const cacheMiddleware = (cacheType, expirationInSeconds = THREE_MONTHS_IN_SECONDS) => {
+const cacheMiddleware = (cacheType, expirationInSeconds = EXPIRATION_IN_SEC) => {
     return async (req, res, next) => {
         const key = `${cacheType}:${req.path}:${JSON.stringify(req.query)}`;
 
