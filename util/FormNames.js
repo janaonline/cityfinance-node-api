@@ -234,7 +234,7 @@ module.exports.DULY_ELECTED_OPT= {
 
 module.exports.TEST_EMAIL= {
     test1 : "testingdhwani@gmail.com",
-    test2: "mohamma.zuhaib@janaagraha.org",
+    test2: "abhishek.a@janaagraha.org",
     test3:"hariprasad.v@janaagraha.org",
     test4:"navinder.singh@janaagraha.org",
     // test5: "niyaz.ahmad@dhwaniris.com"

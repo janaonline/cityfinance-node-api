@@ -6,7 +6,7 @@ const { financialYearTableHeader } = require("./form_json");
 const { getDate } = require("../../util/helper");
 
 let baseUrl_s3 = process.env.ENV == "production" ? process.env.AWS_STORAGE_URL_PROD : process.env.AWS_STORAGE_URL_STG;
-let baseUrl = process.env.HOSTNAME + 'resources-dashboard/data-sets/balanceSheet?';
+let baseUrl = process.env.HOSTNAME + '/resources-dashboard/data-sets/balanceSheet?';
 
 let fin_slb_year = {
     financialData_year: "",
@@ -140,13 +140,15 @@ function getLastestSubmissionTime(tracker = []) {
 
 module.exports.dataDump = async (req, res) => {
     req.setTimeout(500000);
-    let user = req.decoded;
-    let formStatuses = ['UNDER_REVIEW_BY_STATE', 'UNDER_REVIEW_BY_XVIFC', 'APPROVED_BY_XVIFC'];
-    let utIds = ['5dcf9d7216a06aed41c748dc', '5dcf9d7316a06aed41c748e4', '5dcf9d7316a06aed41c748e5', '5dcf9d7316a06aed41c748ea', '5dcf9d7316a06aed41c748ee', '5dcf9d7416a06aed41c748f6', '5efd6a2fb5cd039b5c0cfed2', '5fa25a6e0fb1d349c0fdfbc7'];
-
-    let query = [{ "formStatus": { $in: formStatuses } }];
+    const user = req.decoded;
+    const { stateName } = req.query;
+    const formId = +req.query.formId;
+    const formStatuses = ['UNDER_REVIEW_BY_STATE', 'UNDER_REVIEW_BY_XVIFC', 'APPROVED_BY_XVIFC'];
+    const query = [{ "formStatus": { $in: formStatuses } }];
+    
     if (user.role == 'XVIFC_STATE') query.push({ "state": ObjectId(user.state) });
-    // if (user.role == 'XVIFC') query.push({ 'state': { $nin: utIds } });
+    if (stateName) query.push({ stateName });
+    if ([16, 17].includes(formId)) query.push({ formId: formId });
 
     // Fetch data from database.
     const cursor = await XviFcForm1DataCollection
