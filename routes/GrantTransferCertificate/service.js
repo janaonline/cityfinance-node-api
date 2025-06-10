@@ -1075,7 +1075,7 @@ async function handleInstallmentForm(params) {
             validator.errors = installmentValidatior.errors
             return validator
         }
-        // console.log("transferGrantData", transferGrantData)
+        console.log("transferGrantData", transferGrantData)
         let gtcInstallment = await GtcInstallmentForm.findOneAndUpdate({
             installment,
             year,
@@ -1212,7 +1212,7 @@ module.exports.createOrUpdateInstallmentForm = async (req, res) => {
 
         //TODO: Check the conditions
         //ingored for 2024-25
-        if(!['606aafcf4dff55e6c075d424'].includes(design_year)) {
+        if(!['606aafcf4dff55e6c075d424','606aafda4dff55e6c075d48f'].includes(design_year)) {
             let installmentFormValidator = await handleInstallmentForm(req.body)
             // console.log("installmentFormValidator ::: ", installmentFormValidator)
             if (!installmentFormValidator.valid && runValidators) {
