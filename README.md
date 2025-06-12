@@ -32,7 +32,7 @@ A brief description of what this project does and who it's for
 4. Install project dependencies:
 
    ```bash
-   npm install`
+   npm install
    ```
 
 5. Update environment configuration in the `.env` file.
@@ -40,7 +40,7 @@ A brief description of what this project does and who it's for
 6. Start the Node.js application using PM2:
 
    ```bash
-   pm2 start server.js --name <service-name>
+   pm2 start server.js --name citifinance-node-api
    ```
 
 ### Nginx Configuration
