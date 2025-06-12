@@ -710,6 +710,7 @@ module.exports.getGrantDistributionForm = async (req, res, next) => {
     errors: []
   }
   try {
+    console.log("getGrantDistributionForm called")
     let { state, design_year } = req.query
     let { role } = req.decoded
     if (![userTypes.mohua, userTypes.state].includes(role)) {
