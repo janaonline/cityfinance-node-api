@@ -83,3 +83,19 @@ module.exports.getLastModifiedDate = async (req, res) => {
 		res.status(500).json({ error: 'Internal server error' });
 	}
 };
+
+// eg: Input: 750000, Output: '500K-1M'
+module.exports.getPopulationCategory = (population) => {
+	if (population < 100000) return '<100K';
+	else if (population >= 100000 && population < 500000) return '100K-500K';
+	else if (population >= 500000 && population < 1000000) return '500K-1M';
+	else if (population >= 1000000 && population < 4000000) return '1M-4M';
+	else if (population >= 4000000) return '4M+';
+	else return 'NA';
+};
+
+// `Intl.NumberFormat` API to format the number with commas (use: Indian locale "en-IN").
+module.exports.formatNumberWithCommas = (num) => {
+	const formatter = new Intl.NumberFormat('en-IN');
+	return formatter.format(num);
+};
