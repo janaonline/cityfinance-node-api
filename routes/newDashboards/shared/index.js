@@ -9,7 +9,7 @@ const {
   getYearList,
 } = require("./service");
 
-router.get("/people-information", peopleInformation);
+// router.get("/people-information", peopleInformation);
 router.get("/money-information", cacheMiddleware('dashboard'), moneyInformation);
 router.get("/latest-year", getLatestData);
 router.get("/latest-year/list", getYearList);
