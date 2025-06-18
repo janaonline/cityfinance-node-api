@@ -1,6 +1,7 @@
-const ObjectId = require('mongoose').Types.ObjectId;
 const LedgerLog = require('../../../models/LedgerLog');
 const Ulb = require('../../../models/Ulb');
+const ObjectId = require('mongoose').Types.ObjectId;
+const { getLastModifiedDateHelper } = require('../../common/common');
 
 module.exports.getData = async (req, res) => {
 	try {
@@ -27,12 +28,17 @@ module.exports.getData = async (req, res) => {
 		// Card 3 - Total ULB count
 		const ulbCount = getTotalUlbCount(ulbsCondition);
 
+		// Last modified date.
+		const lastModifiedDate = getLastModifiedDateHelper(ledgerCondition);
+
 		// Await all data in parallel
-		const [oneYearCount, fsData, totUlbCount] = await Promise.all([
-			atleastOneYearData,
-			financialStatements,
-			ulbCount,
-		]);
+		const [oneYearCount, fsData, totUlbCount, lastModifiedAt] =
+			await Promise.all([
+				atleastOneYearData,
+				financialStatements,
+				ulbCount,
+				lastModifiedDate,
+			]);
 
 		// Final response
 		const exploreData = createResponseStructure(
@@ -41,7 +47,11 @@ module.exports.getData = async (req, res) => {
 			totUlbCount
 		);
 
-		res.status(200).json({ success: true, data: exploreData });
+		res.status(200).json({
+			success: true,
+			gridDetails: exploreData,
+			lastModifiedAt: lastModifiedAt?.[0]?.lastModifiedAt || null,
+		});
 	} catch (error) {
 		console.error('Failed to get home page data:', error);
 		res.status(500).json({

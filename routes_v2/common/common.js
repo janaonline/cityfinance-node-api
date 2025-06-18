@@ -67,13 +67,7 @@ module.exports.getLastModifiedDate = async (req, res) => {
 		if (ulb_id) findCondition['ulb_id'] = ObjectId(ulb_id);
 		if (year) findCondition['year'] = year;
 
-		const result = await LedgerLog.find(findCondition, {
-			lastModifiedAt: 1,
-			_id: 0,
-		})
-			.sort({ lastModifiedAt: -1 })
-			.limit(1)
-			.lean();
+		const result = await getLastModifiedDateHelper(findCondition);
 
 		res.status(200).json({
 			lastModifiedAt: result?.[0]?.lastModifiedAt || null,
@@ -82,6 +76,16 @@ module.exports.getLastModifiedDate = async (req, res) => {
 		console.error('Error fetching last modified date:', error);
 		res.status(500).json({ error: 'Internal server error' });
 	}
+};
+
+module.exports.getLastModifiedDateHelper = (findCondition) => {
+	return LedgerLog.find(findCondition, {
+		lastModifiedAt: 1,
+		_id: 0,
+	})
+		.sort({ lastModifiedAt: -1 })
+		.limit(1)
+		.lean();
 };
 
 // eg: Input: 750000, Output: '500K-1M'
