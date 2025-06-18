@@ -22,70 +22,24 @@ function response(form, res, successMsg, errMsg) {
     }
 }
 
-const checkAwardPeriod = async (condition) => {
-	condition['design_year'] = '606aafcf4dff55e6c075d424';
-	let isWithinAwardPeriod = false;
-	let isPrevYrSubmitted = false;
-
-	const prevYrData = await SFC.findOne(condition, {
-		data: 1,
-		currentFormStatus: 1,
-	}).lean();
-
-	if (!prevYrData) isPrevYrSubmitted = false;
-	else {
-		const awardPeriod = prevYrData['data']
-			.find((e) => e.key === 'awardPeriod')
-			?.value?.split('-')?.[1];
-
-		// Check award period condition.
-		if (+awardPeriod <= 26 && +awardPeriod >= 15) isWithinAwardPeriod = true;
-		else isWithinAwardPeriod = false;
-
-		// Check previous year form status.
-		if ([4, 6].includes(+prevYrData?.currentFormStatus))
-			isPrevYrSubmitted = true;
-	}
-
-	return { isWithinAwardPeriod, isPrevYrSubmitted };
-};
-
 module.exports.getForm = async (req, res) => {
-	try {
-		const { state, design_year } = req.query;
-		const condition = { state, design_year };
+    try {
+        const reqQuery = req.query;
+        const condition = {
+            state: reqQuery.state,
+            design_year: reqQuery.design_year
+        };
 
-		if (design_year === '606aafda4dff55e6c075d48f') {
-			const { isWithinAwardPeriod, isPrevYrSubmitted } =
-				await checkAwardPeriod(condition);
-
-			if (!isPrevYrSubmitted) {
-				return res.status(200).json({
-					showMessage: true,
-					status: true,
-					message:
-						"The SFC form will be available once the previous year's SFC forms has been submitted.",
-				});
-			} else if (isWithinAwardPeriod) {
-				return res.status(200).json({
-					showMessage: true,
-					status: true,
-					message:
-						'Your award period falls within the 15th Finance Commission period; therefore, you are not required to fill out the form.',
-				});
-			} else condition['design_year'] = '606aafda4dff55e6c075d48f';
-		}
-
-		const form = await SFC.findOne(condition).lean();
-		const resp = await setForm(req, form);
-		return res.status(resp.status ? 200 : 400).json(resp);
-	} catch (error) {
-		return res.status(400).json({
-			status: false,
-			message: error.message,
-		});
-	}
-};
+        const form = await SFC.findOne(condition).lean();
+        const resp = await setForm(req, form);
+        return res.status(resp.status ? 200 : 400).json(resp);
+    } catch (error) {
+        return res.status(400).json({
+            status: false,
+            message: error.message
+        })
+    }
+}
 
 async function getFormJson(design_year) {
     let formsJson = await FormsJson.findOne({
