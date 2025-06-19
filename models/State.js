@@ -18,6 +18,11 @@ const yearCount = {
 const StateSchema = new Schema(
 	{
 		name: { type: String, required: true },
+		slug: {
+			type: String,
+			unique: true,
+			index: true
+		},
 		code: { type: String, required: true },
 		regionalName: { type: String, required: true, default: '' },
 		censusCode: { type: String, default: null },
