@@ -341,8 +341,6 @@ module.exports.getRawUlbsList15To18 = async (year = "2015-16", stateId = null, u
 module.exports.getBudgetPdf19Onwards = async (year = "2021-22", stateId = null, ulbName = null, ulbId = null, type = "pdf", category, skip = 0, limit = 10) => {
     try {
         const matchCondition = { "isPublish": true };
-        const year_id = years[year];
-        const allowedStatuses = [11, 8, 9]; // Submission acknowledged by PMU, Verification in Progress, Verification not started.
 
         if (ulbId) matchCondition['_id'] = ObjectId(ulbId);
         else if (ulbName) matchCondition['name'] = ulbName;
@@ -350,77 +348,68 @@ module.exports.getBudgetPdf19Onwards = async (year = "2021-22", stateId = null, 
         if (stateId) matchCondition['state'] = ObjectId(stateId);
 
         return [
-            { $match: matchCondition },
-            { $project: { _id: 1, name: 1, state: 1 } },
-            {
-                $lookup: {
-                    from: 'fiscalrankings',
-                    let: { ulbId: "$_id" },
-                    pipeline: [
-                        { $match: { $expr: { $eq: ["$ulb", "$$ulbId"] } } },
-                        { $project: { currentFormStatus: 1, modifiedAt: 1 } }
-                    ],
-                    as: 'fiscalrankings'
-                }
+          { $match: matchCondition },
+          {
+            $lookup: {
+              from: "states",
+              localField: "state",
+              foreignField: "_id",
+              as: "state",
             },
-            { $match: { 'fiscalrankings.currentFormStatus': { $in: allowedStatuses } } },
-            {
-                $lookup: {
-                    from: 'states',
-                    let: { stateId: '$state' },
-                    pipeline: [
-                        { $match: { $expr: { $eq: ['$_id', '$$stateId'] } } },
-                        { $project: { name: 1 } }
-                    ],
-                    as: 'state'
-                }
+          },
+          {
+            $unwind: {
+              path: "$state",
+              preserveNullAndEmptyArrays: true,
             },
-            {
-                $addFields: {
-                    state: { $arrayElemAt: ['$state.name', 0] },
-                    modifiedAt: { $arrayElemAt: ['$fiscalrankings.modifiedAt', 0] }
-                }
+          },
+          {
+            $lookup: {
+              from: "budgetdocuments",
+              localField: "_id",
+              foreignField: "ulb",
+              as: "budgetDocs",
             },
-            {
-                $lookup: {
-                    from: 'fiscalrankingmappers',
-                    let: { ulbId: "$_id" },
-                    pipeline: [
-                        {
-                            $match: {
-                                $expr: { $eq: ["$ulb", "$$ulbId"] },
-                                type: 'appAnnualBudget',
-                                year: ObjectId(year_id)
-                            }
-                        },
-                        { $project: { file: 1, status: 1 } }
-                    ],
-                    as: 'budgetData'
-                }
+          },
+          { $match: { budgetDocs: { $ne: [] } } },
+          {
+            $project: {
+              ulbId: "$_id",
+              ulbName: "$name",
+              state: "$state.name",
+              budgetDocs: 1,
             },
-            {
-                $unwind: {
-                    path: '$budgetData',
-                    preserveNullAndEmptyArrays: false
-                }
+          },
+          { $unwind: "$budgetDocs" },
+          { $unwind: "$budgetDocs.yearsData" },
+          { $match: { "budgetDocs.yearsData.designYear": year } },
+          { $unwind: "$budgetDocs.yearsData.files" },
+          {
+            $project: {
+              _id: "$ulbId",
+              ulbId: "$ulbId",
+              ulbName: 1,
+              state: 1,
+              year: "$budgetDocs.yearsData.designYear",
+              fileName: {
+                $concat: [
+                  "$state",
+                  "_",
+                  "$ulbName",
+                  "_",
+                  "$budgetDocs.yearsData.designYear"
+                ],
+              },
+              fileUrl: "$budgetDocs.yearsData.files.url",
+              modifiedAt: "$budgetDocs.yearsData.files.createdAt",
+              type,
+              section: 'budgetPdf',
             },
-            { $match: { 'budgetData.file.url': { $ne: null } } },
-            {
-                $project: {
-                    modifiedAt: 1,
-                    state: 1,
-                    type,
-                    fileName: { $concat: ['$state', '_', '$name', '_', year, '_', 'budget'] },
-                    fileUrl: '$budgetData.file.url',
-                    ulbId: '$_id',
-                    ulbName: '$name',
-                    year: year,
-                    section: 'budgetPdf',
-                }
-            },
-            { $skip: Number(skip) },
-            { $limit: Number(limit) }
-        ]
+          },
+          { $skip: Number(skip) },
+          { $limit: Number(limit) }
+        ];
+
     } catch (error) {
         console.error("Failed to create query: ", error);
     }
