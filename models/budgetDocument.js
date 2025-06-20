@@ -9,6 +9,7 @@ const fileSchema = new Schema(
     url: { type: String, required: true },
     name: { type: String, required: true },
     createdAt: { type: Date, default: Date.now },
+    source: { type: String, required: [true, "Source is required"] },
   },
   { _id: false }
 );
@@ -25,10 +26,6 @@ const budgetDocumentsSchema = new Schema(
     },
     yearsData: [
       {
-        source: {
-          type: String,
-          required: [true, "Source is required"],
-        },
         designYearId: {
           type: mongoose.Types.ObjectId,
           ref: "Year",
