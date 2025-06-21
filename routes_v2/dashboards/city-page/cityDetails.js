@@ -23,6 +23,7 @@ module.exports.cityDetails = async (req, res) => {
 
 		return res.status(200).json({
 			ulbName: ulbData.name,
+			state: ulbData.state,
 			popCat: getPopulationCategory(+ulbData.population),
 			ulbId,
 			gridDetails,
@@ -42,9 +43,10 @@ async function getDataFromDb(ulbId) {
 	const [ulbData, financialYears, lastModifiedAt] = await Promise.all([
 		Ulb.findOne(
 			{ _id: new ObjectId(ulbId) },
-			{ name: 1, population: 1, area: 1, wards: 1, isUA: 1, UA: 1 }
+			{ name: 1, population: 1, area: 1, wards: 1, isUA: 1, UA: 1, state: 1 }
 		)
 			.populate('UA', 'name')
+			.populate('state', 'name code')
 			.lean(),
 
 		LedgerLog.distinct('year', { ulb_id: new ObjectId(ulbId) }),
