@@ -1,3 +1,5 @@
+// Migrated to routes V2
+
 // const LedgerLog = require('../../../models/LedgerLog');
 // const Ulb = require('../../../models/Ulb');
 // const BondIssuerItem = require('../../../models/BondIssuerItem');
