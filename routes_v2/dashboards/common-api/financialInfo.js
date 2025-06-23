@@ -36,6 +36,7 @@ module.exports.getData = async (req, res) => {
 			success: true,
 			result,
 			year,
+			isActive: ledgerLogsData[0]?.isActive,
 			audit_status: ledgerLogsData[0]?.audit_status || null,
 		});
 	} catch (error) {
