@@ -475,23 +475,57 @@ async function validate24_25(data, formData) {
   const keys = Object.keys(data[0]);
   const fields = Object.values(setFields(formData)).map(v => v.toLowerCase());
   const difference = keys.filter(x => !fields.includes(x));
+  const missingFields = fields.filter(f => !keys.includes(f));
+  const extraFields = keys.filter(k => !fields.includes(k));
 
   //Check headers are correct
-  if (difference.length || keys.length !== fields.length) {
-    data.forEach((element) => {
-      element.Errors = "Incorrect Format,";
-    });
+  if (missingFields.length || extraFields.length || difference.length || keys.length !== fields.length) {
+    const errorMessage = [
+    missingFields.length ? `Missing columns: ${missingFields.join(", ")}` : '',
+    extraFields.length ? `Unexpected columns: ${extraFields.join(", ")}` : '',
+    keys.length !== fields.length && !missingFields.length && !extraFields.length ? 'Column count mismatch.' : ''
+  ]
+  .filter(Boolean)  
+  .join(" | ");   
+  data.forEach((element) => {
+    element.Errors = `Incorrect Format – ${errorMessage}`;
+  });  
+    // data.forEach((element) => {
+    //   element.Errors = "Incorrect Format,";
+    // });
     return data;
   }
+for (let index = 0; index < data.length; index++) {
+  const row = data[index];
+  const rowKeys = Object.keys(row).map(k => k.toLowerCase()); // normalize casing
+  const missingFields = fields.filter(f => !rowKeys.includes(f));
+  const extraFields = rowKeys.filter(k => !fields.includes(k));
 
-  for (let index = 0; index < data.length; index++) {
-    const keysLen = Object.keys(data[index]).length;
-    if (keysLen !== fields.length) {
-      data[index].Errors = "Incorrect Format,";
-    }
-    if (data[index][code]) ulbCodes.push(data[index][code]);
-    if (data[index][name]) ulbNames.push(data[index][name]);
+  if (missingFields.length || extraFields.length || rowKeys.length !== fields.length) {
+    const errorParts = [
+      missingFields.length ? `Missing columns: ${missingFields.join(", ")}` : '',
+      extraFields.length ? `Unexpected columns: ${extraFields.join(", ")}` : '',
+      rowKeys.length !== fields.length && !missingFields.length && !extraFields.length ? 'Column count mismatch.' : ''
+    ]
+    .filter(Boolean)
+    .join(" | ");
+
+    row.Errors = `Incorrect Format – ${errorParts}`;
   }
+
+  if (row[code]) ulbCodes.push(row[code]);
+  if (row[name]) ulbNames.push(row[name]);
+}
+
+  // for (let index = 0; index < data.length; index++) {
+    
+  //   const keysLen = Object.keys(data[index]).length;
+  //   if (keysLen !== fields.length) {
+  //     data[index].Errors = "Incorrect Format,";
+  //   }
+  //   if (data[index][code]) ulbCodes.push(data[index][code]);
+  //   if (data[index][name]) ulbNames.push(data[index][name]);
+  // }
   // get ulb data
   const compareData = await getUlbData(ulbCodes, ulbNames);
   let errorFlag = false;
@@ -541,9 +575,9 @@ async function validate24_25(data, formData) {
 }
 
 function checkNotZero(checkField, row) {
-  let errors = row.Errors
+ let errors = row.Errors || "";
   if (!Number(row[checkField]) || row[checkField] === "" || row[checkField] === 0) {
-    errors = appendErrors(errors, checkField + " - Not valid,");
+    errors = appendErrors(errors, checkField + " - must be a valid non-zero number,");
   }
   return errors;
 }
@@ -554,10 +588,10 @@ function checkDulyElectedValues(fields, row) {
   const remarksField = fields[5];
   if (!['yes', 'no', 'others'].includes(row[dulyElectedField].toLowerCase())) {
     errorFlag = true;
-    errors = appendErrors(errors, dulyElectedField + " - Not valid,");
+    errors = appendErrors(errors, dulyElectedField + " - must be one of: Yes, No, Others.,");
   }
   if (['Others'].includes(row[dulyElectedField]) && row[remarksField] === "") {
-    errors = appendErrors(errors, remarksField + " - Not valid,");
+    errors = appendErrors(errors, remarksField + " - is required when Duly Elected is 'Others'.,");
   }
   return errors;
 }
@@ -567,7 +601,7 @@ function checkValues(fields, row) {
   const checkFields = fields.filter((el, i) => i >= 6); // get element from index 6
   for (const field of checkFields) {
     if (isNaN(row[field]) || row[field] === "") {
-      errors = appendErrors(errors, field + " - Not valid,");
+      errors = appendErrors(errors, field + " - must be a valid number.,");
     }
   }
   return errors;
