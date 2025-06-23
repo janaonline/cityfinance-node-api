@@ -90,8 +90,8 @@ const fileUploadRoutes = require("./file-upload");
 router.use(fileUploadRoutes);
 
 // @Downloadlog
-const DownloadLog = require("./download-log");
-router.use(DownloadLog);
+// const DownloadLog = require("./download-log");
+// router.use(DownloadLog);
 
 // @Ledger
 const Ledger = require("./ledger");
