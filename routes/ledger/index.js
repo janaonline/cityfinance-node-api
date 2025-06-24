@@ -7,8 +7,8 @@ const ufdService = require('../ulb-financial-data/service');
 const ledgerDump = require('./ledger-dump');
 
 // Create new ledger download template - 28 July 24.
-// Migrated to routes V2 - ledger-dump.js
-// router.get('/getLedgerDump', ledgerDump.getLedgerDump);
+// TODO: Remove - Migrated to routes V2 - ledger-dump.js
+router.get('/getLedgerDump', ledgerDump.getLedgerDump);
 
 // Route to download all the existing ledgers in the system
 router.get('/getAllLegdersCsv', ledgerService.getAllLedgersCsv);
