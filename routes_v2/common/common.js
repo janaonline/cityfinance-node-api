@@ -49,10 +49,10 @@ module.exports.getLatestStandardizedYear = async (req, res) => {
 };
 
 // Helper: Get distinct standardized years
-const getStandardizedYears = ({ statecode, ulbId, auditStatus }) => {
-	const condition = {};
+const getStandardizedYears = ({ stateCode, ulbId, auditStatus }) => {
+	const condition = { isStandardizable: { $ne: 'No' } };
 
-	if (statecode) condition.state_code = statecode;
+	if (stateCode) condition.state_code = stateCode;
 	if (ulbId && ObjectId.isValid(ulbId))
 		condition.ulb_id = new ObjectId(ulbId);
 	if (auditStatus) condition.audit_status = auditStatus;
