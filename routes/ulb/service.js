@@ -1006,8 +1006,8 @@ module.exports.masterDump = async function (req, res) {
 
 module.exports.getPopulate = async (req, res, next) => {
   try {
-    let data = await Ulb.find({}, "_id name code state ulbType")
-      .populate("state", "_id name")
+    let data = await Ulb.find({ isActive: true, isPublish: true }, "_id name code state ulbType slug location")
+      .populate("state", "_id name slug code")
       .populate("ulbType", "_id name")
       .exec();
     return res.status(200).json({
@@ -1214,7 +1214,7 @@ module.exports.getUlbsWithAuditStatus = async (req, res) => {
         isCached = true;
         ulbs = JSON.parse(value);
       }
-      
+
       return res.status(200).json({
         message: "Ulb list with population and coordinates and population.",
         success: true,

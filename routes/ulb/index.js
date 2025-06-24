@@ -6,6 +6,7 @@ const multer = require("multer");
 const { allowedRoles } = require('../auth/services/roleAuthorize');
 const upload = multer({ dest: "uploads/resource" });
 const verifyToken = require("../auth/services/verifyToken").verifyToken;
+const cacheMiddleware = require('../../middlewares/cacheMiddleware');
 
 router.get("/ulb/filtered", Ulb.getFilteredUlb); // ulb have no questionnaire
 
@@ -26,7 +27,7 @@ router.post(
 );
 router.delete('/Ulb/:_id', verifyToken, Ulb.delete);
 router.delete('/Ulb', Ulb.delete_permanent);
-router.get('/ulblist', Ulb.getPopulate);
+router.get('/ulblist', cacheMiddleware('ulb'), Ulb.getPopulate);
 router.post('/ulb-list', Ulb.getUlbsWithAuditStatus);
 // Get ULBs by state
 router.get('/states/:stateCode/ulbs', Ulb.getByState);
@@ -46,6 +47,6 @@ router.get('/eligibleULBForms', verifyToken, Ulb.eligibleULBForms)
 router.get('/getUlbDatafromGeoUrban', Ulb.getUlbDatafromGeoUrban)
 
 //truncate sbCode
-router.get('/truncateSbCode',Ulb.truncateSbCode);
-router.put('/updateData', verifyToken, allowedRoles(['MoHUA']),Ulb.updateFields)
+router.get('/truncateSbCode', Ulb.truncateSbCode);
+router.put('/updateData', verifyToken, allowedRoles(['MoHUA']), Ulb.updateFields)
 module.exports = router;

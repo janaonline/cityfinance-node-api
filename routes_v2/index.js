@@ -39,7 +39,7 @@ router.use('/budget-documents', require('./budget-documents'));
 // Request Demo.
 router.use('/request-demo', require('./request-demo'));
 
-// National Dashboard.
+// Public Dashboard.
 router.use('/dashboard', require('./dashboards'));
 
 // Get latest provisional year.
@@ -47,5 +47,8 @@ router.use('/common', require('./common'));
 
 // Bond Issuances
 router.use('/bond-issuances', require('./bond-issuances'));
+
+// Ledgers.
+router.use('/ledger', require('./ledger'));
 
 module.exports = router;
