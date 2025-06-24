@@ -9,8 +9,8 @@ const {
   getYearList,
 } = require("./service");
 
-// Migrated to routes V2 - cityDetails()
-// router.get("/people-information", peopleInformation);
+// TODO: Remove - Migrated to routes V2 - cityDetails()
+router.get("/people-information", peopleInformation);
 router.get("/money-information", cacheMiddleware('dashboard'), moneyInformation);
 router.get("/latest-year", getLatestData);
 router.get("/latest-year/list", getYearList);
