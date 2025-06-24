@@ -33,6 +33,9 @@ router.use('/file-download-log', require('./file-download-log'));
 // Ulb feedback form.
 router.use('/ulb-feedback', require('./ulb-feedback-form'));
 
+// Budget Documents.
+router.use('/budget-documents', require('./budget-documents'));
+
 // Request Demo.
 router.use('/request-demo', require('./request-demo'));
 
