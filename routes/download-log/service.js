@@ -134,6 +134,7 @@ module.exports.post = function(req, res){
 
 module.exports.HtmlToPdf = async function (req, res) {
   try {
+   
       let { url, html, option } = req.body;
 
       if (url) {
@@ -145,7 +146,11 @@ module.exports.HtmlToPdf = async function (req, res) {
           return res.status(400).json({ success: false, message: "html Missing" });
       }
 
-      const browser = await puppeteer.launch({headless: true});
+    //   const browser = await puppeteer.launch({headless: true});
+       const browser = await puppeteer.launch({
+         headless: true,
+         args: ["--no-sandbox", "--disable-setuid-sandbox"],
+       });
       const page = await browser.newPage();
 
       await page.setContent(html, { waitUntil: 'networkidle0' });
