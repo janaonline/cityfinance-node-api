@@ -1,42 +1,50 @@
-const DownloadLog = require('../../models/DownloadLog');
-const fs = require('fs');
-const pdf = require('html-pdf');
-// const puppeteer = require('puppeteer');
-const axios = require('axios')
+const DownloadLog = require("../../models/DownloadLog");
+// const fs = require('fs');
+// const pdf = require('html-pdf');
+const puppeteer = require("puppeteer");
+const axios = require("axios");
 
 const options = {
-    format: 'A4',
-    orientation: 'portrait',
-    border: {
-        top: '.1in',
-        right: '.1in',
-        bottom: '.2in',
-        left: '.1in'
-    },
-    quality: '100',
-    encoding: 'utf-8'
+  format: "A4",
+  orientation: "portrait",
+  border: {
+    top: ".1in",
+    right: ".1in",
+    bottom: ".2in",
+    left: ".1in",
+  },
+  quality: "100",
+  encoding: "utf-8",
 };
 
-module.exports.get = function(req, res){
-    let condition = req.query;
-    DownloadLog.find(condition, (err, data)=>{
-        if(err){
-            return res.status(400).json({success:false, message:"Db Error Occurred."})
-        }else {
-            return res.status(200).json({success: true, message: "data fetched", data:data})
-        }
-    });
-}
-module.exports.post = function(req, res){
-    let newDownloadLog = new DownloadLog(req.body);
-    newDownloadLog.save((err, data)=>{
-        if(err){
-            return res.status(400).json({success:false, message:"Db Error Occurred."})
-        }else {
-            return res.status(200).json({success: true, message: "data fetched", data:data})
-        }
-    });
-}
+module.exports.get = function (req, res) {
+  let condition = req.query;
+  DownloadLog.find(condition, (err, data) => {
+    if (err) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Db Error Occurred." });
+    } else {
+      return res
+        .status(200)
+        .json({ success: true, message: "data fetched", data: data });
+    }
+  });
+};
+module.exports.post = function (req, res) {
+  let newDownloadLog = new DownloadLog(req.body);
+  newDownloadLog.save((err, data) => {
+    if (err) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Db Error Occurred." });
+    } else {
+      return res
+        .status(200)
+        .json({ success: true, message: "data fetched", data: data });
+    }
+  });
+};
 
 // module.exports.HtmlToPdf = async function(req, res) {
 //     try {
@@ -106,28 +114,86 @@ module.exports.post = function(req, res){
 //     }
 // }
 
+// module.exports.HtmlToPdf = async function(req, res){
+//   try{
+//     let {url,html,option} = req.body;
+//     if(url){
+//         let tempData = await axios.get(`${url}`);
+//         html = tempData.data
+//     }
 
-module.exports.HtmlToPdf = async function(req, res){
-  try{
-    let {url,html,option} = req.body;
-    if(url){
-        let tempData = await axios.get(`${url}`);
-        html = tempData.data
+//     //if html not present than it will give the error message.
+//     if (!html){
+//         res.status(400).json({success:false, message:"html Missing"});
+//         return;
+//     }
+//     pdf.create(html,options).toStream(function(err, stream) {
+//         if(err){
+//             return res.status(400).json({success:false, message:"Something went wrong"})
+//         }else {
+//             stream.pipe(res);
+//         }
+//     });
+//   }catch(error){
+//       return res.status(400).json({msg:error.message})
+//   }
+// }
+
+module.exports.HtmlToPdf = async function (req, res) {
+  try {
+    let { url, html, option } = req.body;
+
+    if (url) {
+      const tempData = await axios.get(url);
+      html = tempData.data;
     }
 
-    //if html not present than it will give the error message.
-    if (!html){
-        res.status(400).json({success:false, message:"html Missing"});
-        return;
+    if (!html) {
+      return res.status(400).json({ success: false, message: "html Missing" });
     }
-    pdf.create(html,options).toStream(function(err, stream) {
-        if(err){
-            return res.status(400).json({success:false, message:"Something went wrong"})
-        }else {
-            stream.pipe(res);
-        }
+
+    const browser = await puppeteer.launch({
+      headless: true,
+      args: ["--no-sandbox", "--disable-setuid-sandbox"],
     });
-  }catch(error){
-      return res.status(400).json({msg:error.message})
+    const page = await browser.newPage();
+
+    await page.setContent(html, { waitUntil: "networkidle0" });
+
+    // // Default options if not provided
+    // const pdfOptions = {
+    //     format: 'A4',
+    //     printBackground: true,
+    //     ...option // spread any custom options sent in the request
+    // };
+
+    const pdfOptions = {
+      // path: pdfOutputPath,
+      format: options.format,
+      landscape: options.orientation === "landscape",
+      margin: {
+        top: options.border.top,
+        right: options.border.right,
+        bottom: options.border.bottom,
+        left: options.border.left,
+      },
+
+      printBackground: true,
+      quality: options.quality,
+    };
+
+    const pdfBuffer = await page.pdf(pdfOptions);
+    await browser.close();
+
+    res.set({
+      "Content-Type": "application/pdf",
+      "Content-Disposition": 'inline; filename="document.pdf"',
+      "Content-Length": pdfBuffer.length,
+    });
+
+    res.send(pdfBuffer);
+  } catch (error) {
+    console.error("PDF generation error:", error);
+    return res.status(400).json({ success: false, message: error.message });
   }
-}
+};
