@@ -4,11 +4,12 @@ const ObjectId = require("mongoose").Types.ObjectId;
 const { years } = require("../../service/years");
 
 /* Get the list of basic details of ULBs present in "UlbLedger" i.e "Standardised Excel".*/
-module.exports.getStandardizedUlbsList = async (ulbName = null, ulbId = null, stateId = null, year = "2021-22", skip = 0, limit = 10) => {
+module.exports.getStandardizedUlbsList = async (ulbName = null, ulbId = null, stateId = null, year = "2021-22", skip = 0, limit = 10,fileType) => {
     try {
         const matchCondition1 = {
             isStandardizable: { $ne: 'No' },
             year: year,
+            audit_status: fileType
         };
         const matchCondition2 = {};
 
@@ -87,157 +88,254 @@ module.exports.getStandardizedUlbsList = async (ulbName = null, ulbId = null, st
 };
 
 /* Get the list of basic details of ULBs whose "Raw files" are available. (2019 onwards) */
-module.exports.getRawUlbsList19Onwards = async (year = "2021-22", stateId = null, ulbName = null, ulbId = null, type = "pdf", category, skip = 0, limit = 10) => {
-    try {
-        const matchCondition = {};
-        const year_id = years[year];
-        const auditedArr = [{ $eq: ["$aaData.audited.year", { $toObjectId: year_id }] }];
-        const unAuditedArr = [{ $eq: ["$aaData.unAudited.year", { $toObjectId: year_id }] }];
+module.exports.getRawUlbsList19Onwards = async (
+  year = "2021-22",
+  stateId = null,
+  ulbName = null,
+  ulbId = null,
+  type = "pdf",
+  category,
+  skip = 0,
+  limit = 10,
+  fileType
+) => {
+  try {
+    // console.log("fileType", fileType);
+    const matchCondition = {};
+    const year_id = years[year];
+    const filePath = `aaData.${fileType}.provisional_data.bal_sheet.${type}.url`;
+    const matchCondition2 = {
+      [`aaData.${fileType}.year`]: ObjectId(year_id),
+      [filePath]: { $ne: null },
+    };
 
-        // Add a check - check if balance sheet url is available.
-        if (type === "pdf" || type === "excel") {
-            addUrlCheck(auditedArr, unAuditedArr, 'audited', type);
-            addUrlCheck(unAuditedArr, unAuditedArr, 'unAudited', type);
-        }
+    let fileNameConcat = [
+      "$stateData.name", // State name
+      "_",
+      "$name", // ULB name
+      "_",
+      { $toString: `$aaData.${fileType}.year` }, // Convert the dynamic `fileType` field's `year` to string
+      "_",
+      `${fileType}`,
+    ];
+    // // Add a check - check if balance sheet url is available.
+    // if (type === "pdf" || type === "excel") {
+    //   addParmas(type, fileType);
+    // }
 
-        if (ulbId) matchCondition['_id'] = ObjectId(ulbId);
-        else if (ulbName) matchCondition['name'] = ulbName;
+    if (ulbId) matchCondition["_id"] = ObjectId(ulbId);
+    else if (ulbName) matchCondition["name"] = ulbName;
 
-        if (stateId) matchCondition['state'] = ObjectId(stateId);
-         
-        matchCondition['isPublish'] = true;
+    if (stateId) matchCondition["state"] = ObjectId(stateId);
 
-        // Function to push conditions into the arrays
-        function addUrlCheck(auditedArr, unAuditedArr, fileType, type) {
-            const filePath = `$aaData.${fileType}.provisional_data.bal_sheet.${type}.url`;
+    matchCondition["isPublish"] = true;
 
-            auditedArr.push({
-                $and: [
-                    { $ne: [filePath.replace(`${fileType}`, "audited"), null] },
-                    { $ne: [filePath.replace(`${fileType}`, "audited"), ""] }
-                ]
-            });
-
-            unAuditedArr.push({
-                $and: [
-                    { $ne: [filePath.replace(`${fileType}`, "unAudited"), null] },
-                    { $ne: [filePath.replace(`${fileType}`, "unAudited"), ""] }
-                ]
-            });
-        }
-
-        return [
-            { $match: matchCondition },
-            {
-                $lookup: {
-                    from: "states",
-                    localField: "state",
-                    foreignField: "_id",
-                    as: "stateData"
-                }
-            },
-            { $unwind: "$stateData" },
-            // {
-            //     $sort: {
-            //         "stateData.name": 1,
-            //         "name": 1
-            //     }
-            // },
-            {
-                $lookup: {
-                    from: "annualaccountdatas",
-                    localField: "_id",
-                    foreignField: "ulb",
-                    as: "aaData"
-                }
-            },
-            { $unwind: "$aaData" },
-            {
-                $match: {
-                    $or: [
-                        { "aaData.audited.year": ObjectId(year_id) },
-                        { "aaData.unAudited.year": ObjectId(year_id) }
-                    ]
-                }
-            },
-            {
-                $addFields: {
-                    audited: {
-                        $cond: [
-                            { $and: auditedArr }, // condition
-                            { $concat: ["$stateData.name", "_", "$name", "_", year, "_", "audited"] }, // if condition pass.
-                            null // if condition fails.
-                        ]
-                    },
-                    unAudited: {
-                        $cond: [
-                            { $and: unAuditedArr },
-                            { $concat: ["$stateData.name", "_", "$name", "_", year, "_", "unAudited"] },
-                            null
-                        ]
-                    }
-                }
-            },
-            {
-                $project: {
-                    _id: 1,
-                    name: 1,
-                    code: 1,
-                    unAudited: 1,
-                    audited: 1,
-                    "stateData.name": 1,
-                    "stateData.isUT": 1,
-                    "stateData.isActive": 1,
-                    "aaData.modifiedAt": 1
-                }
-            },
-            {
-                $match: {
-                    $or: [
-                        { audited: { $ne: null } },
-                        { unAudited: { $ne: null } }
-                    ]
-                }
-            },
-            {
-                $project: {
-                    auditType: {
-                        $cond: [
-                            { $eq: ["$audited", null] },
-                            "unAudited",
-                            "audited"
-                        ]
-                    },
-                    fileName: {
-                        $cond: [
-                            { $eq: ["$audited", null] },
-                            "$unAudited",
-                            "$audited"
-                        ]
-                    },
-                    fileUrl: null,
-                    modifiedAt: "$aaData.modifiedAt",
-                    state: "$stateData.name",
-                    type: type,
-                    ulbId: "$_id",
-                    ulbName: "$name",
-                    year: year
-                }
-            },
-            // {
-            //   $sort: {
-            // "stateData.name": 1,
-            // name: 1,
-            // "aaData.modifiedAt": -1
-            //   }
-            // },
-            { $skip: Number(skip) },
-            { $limit: Number(limit) }
-        ]
-    } catch (error) {
-        console.error("Failed to create query: ", error);
-    }
+    // Function to push conditions into the arrays
+   
+    const addFieldsStage = {
+      $addFields: {
+        auditType: fileType === "audited" ? "audited" : "unAudited", // Dynamically set the auditType
+        fileUrl: `$aaData.${fileType}.provisional_data.bal_sheet.${type}.url`, // Use the dynamic filePath
+        fileName: {$concat: fileNameConcat},
+        state: "$stateData.name",
+        type: type,
+      },
+    };
+    
+    return [
+      { $match: matchCondition },
+      {
+        $lookup: {
+          from: "states",
+          localField: "state",
+          foreignField: "_id",
+          as: "stateData",
+        },
+      },
+      {
+        $lookup: {
+          from: "annualaccountdatas",
+          localField: "_id",
+          foreignField: "ulb",
+          as: "aaData",
+        },
+      },
+      { $unwind: "$stateData" },
+      { $unwind: "$aaData" },
+      {$match: matchCondition2},
+      addFieldsStage,
+      {
+        $project: {
+          ulbId: "$_id",
+          ulbName: "$name",
+          auditType: 1,
+          type: 1,
+          fileUrl: 1,
+          fileName: 1,
+          state: 1,
+          modifiedAt: "$aaData.modifiedAt",
+        },
+      },
+      {$sort: {modifiedAt: -1}},
+      { $skip: Number(skip) },
+      { $limit: Number(limit) },
+    ];
+  } catch (error) {
+    console.error("Failed to create query: ", error);
+  }
 };
+// module.exports.getRawUlbsList19Onwards = async (year = "2021-22", stateId = null, ulbName = null, ulbId = null, type = "pdf", category, skip = 0, limit = 10) => {
+//     try {
+//         const matchCondition = {};
+//         const year_id = years[year];
+//         const auditedArr = [{ $eq: ["$aaData.audited.year", { $toObjectId: year_id }] }];
+//         const unAuditedArr = [{ $eq: ["$aaData.unAudited.year", { $toObjectId: year_id }] }];
+
+//         // Add a check - check if balance sheet url is available.
+//         if (type === "pdf" || type === "excel") {
+//             addUrlCheck(auditedArr, unAuditedArr, 'audited', type);
+//             addUrlCheck(unAuditedArr, unAuditedArr, 'unAudited', type);
+//         }
+
+//         if (ulbId) matchCondition['_id'] = ObjectId(ulbId);
+//         else if (ulbName) matchCondition['name'] = ulbName;
+
+//         if (stateId) matchCondition['state'] = ObjectId(stateId);
+         
+//         matchCondition['isPublish'] = true;
+
+//         // Function to push conditions into the arrays
+//         function addUrlCheck(auditedArr, unAuditedArr, fileType, type) {
+//             const filePath = `$aaData.${fileType}.provisional_data.bal_sheet.${type}.url`;
+
+//             auditedArr.push({
+//                 $and: [
+//                     { $ne: [filePath.replace(`${fileType}`, "audited"), null] },
+//                     { $ne: [filePath.replace(`${fileType}`, "audited"), ""] }
+//                 ]
+//             });
+
+//             unAuditedArr.push({
+//                 $and: [
+//                     { $ne: [filePath.replace(`${fileType}`, "unAudited"), null] },
+//                     { $ne: [filePath.replace(`${fileType}`, "unAudited"), ""] }
+//                 ]
+//             });
+//         }
+//         //  console.log(JSON.stringify(query, null, 2));
+// // console.log("matchCondition",JSON.stringify(matchCondition, null, 2) , "year_id",year_id, "auditedArr",JSON.stringify(auditedArr, null, 2) , "unAuditedArr",JSON.stringify(unAuditedArr, null, 2) );
+//         return [
+//             { $match: matchCondition },
+//             {
+//                 $lookup: {
+//                     from: "states",
+//                     localField: "state",
+//                     foreignField: "_id",
+//                     as: "stateData"
+//                 }
+//             },
+//             { $unwind: "$stateData" },
+//             // {
+//             //     $sort: {
+//             //         "stateData.name": 1,
+//             //         "name": 1
+//             //     }
+//             // },
+//             {
+//                 $lookup: {
+//                     from: "annualaccountdatas",
+//                     localField: "_id",
+//                     foreignField: "ulb",
+//                     as: "aaData"
+//                 }
+//             },
+//             { $unwind: "$aaData" },
+//             {
+//                 $match: {
+//                     $or: [
+//                         { "aaData.audited.year": ObjectId(year_id) },
+//                         { "aaData.unAudited.year": ObjectId(year_id) }
+//                     ]
+//                 }
+//             },
+//             {
+//                 $addFields: {
+//                     audited: {
+//                         $cond: [
+//                             { $and: auditedArr }, // condition
+//                             { $concat: ["$stateData.name", "_", "$name", "_", year, "_", "audited"] }, // if condition pass.
+//                             null // if condition fails.
+//                         ]
+//                     },
+//                     unAudited: {
+//                         $cond: [
+//                             { $and: unAuditedArr },
+//                             { $concat: ["$stateData.name", "_", "$name", "_", year, "_", "unAudited"] },
+//                             null
+//                         ]
+//                     }
+//                 }
+//             },
+//             {
+//                 $project: {
+//                     _id: 1,
+//                     name: 1,
+//                     code: 1,
+//                     unAudited: 1,
+//                     audited: 1,
+//                     "stateData.name": 1,
+//                     "stateData.isUT": 1,
+//                     "stateData.isActive": 1,
+//                     "aaData.modifiedAt": 1
+//                 }
+//             },
+//             {
+//                 $match: {
+//                     $or: [
+//                         { audited: { $ne: null } },
+//                         { unAudited: { $ne: null } }
+//                     ]
+//                 }
+//             },
+//             {
+//                 $project: {
+//                     auditType: {
+//                         $cond: [
+//                             { $eq: ["$audited", null] },
+//                             "unAudited",
+//                             "audited"
+//                         ]
+//                     },
+//                     fileName: {
+//                         $cond: [
+//                             { $eq: ["$audited", null] },
+//                             "$unAudited",
+//                             "$audited"
+//                         ]
+//                     },
+//                     fileUrl: null,
+//                     modifiedAt: "$aaData.modifiedAt",
+//                     state: "$stateData.name",
+//                     type: type,
+//                     ulbId: "$_id",
+//                     ulbName: "$name",
+//                     year: year
+//                 }
+//             },
+//             // {
+//             //   $sort: {
+//             // "stateData.name": 1,
+//             // name: 1,
+//             // "aaData.modifiedAt": -1
+//             //   }
+//             // },
+//             { $skip: Number(skip) },
+//             { $limit: Number(limit) }
+//         ]
+//     } catch (error) {
+//         console.error("Failed to create query: ", error);
+//     }
+// };
 
 /* Get the list of basic details of ULBs whose "Raw files" are available. (2015 to 2018) */
 module.exports.getRawUlbsList15To18 = async (year = "2015-16", stateId = null, ulbName = null, ulbId = null, type = "pdf", category, skip = 0, limit = 10) => {

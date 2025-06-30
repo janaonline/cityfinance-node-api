@@ -1100,7 +1100,7 @@ let getExcel = async (req, res, data) => {
 
 exports.dataset = catchAsync(async (req, res) => {
   try {
-    let { year, state, ulb, ulbId, type, category, nature, getQuery, globalName, getCount, skip, limit } = req.query;
+    let { year, state, ulb, ulbId, type, category, nature, getQuery, globalName, getCount, skip, limit, fileType} = req.query;
     let finalData = [];
 
     if (globalName) limit = 5000;
@@ -1120,7 +1120,7 @@ exports.dataset = catchAsync(async (req, res) => {
 
       if (distinctYears.includes(year)) {
         // Fetch the ULB basic details from LedgerLog - Wrapper. (endpoint: /datasets will get data or excel)
-        let query = await helper.getStandardizedUlbsList(ulb, ulbId, state, year, skip, limit);
+        let query = await helper.getStandardizedUlbsList(ulb, ulbId, state, year, skip, limit,fileType);
         data = await LedgerLog.aggregate(query);
       } else data = [];
 
@@ -1134,8 +1134,17 @@ exports.dataset = catchAsync(async (req, res) => {
     // Fetch the ULB names - Raw files.
     if (type == 'pdf' || type == 'excel') {
       // 19-20 onwards
+       if (fileType === "Audited") {
+    fileType = "audited"; // Set to 'audited' if fileType is "Audited"
+  }
+    if (fileType === "Unaudited") {
+    fileType = "unAudited"; // Set to 'Unaudited' if fileType is "unAudited"
+  }
       if (Number(year.split("-")[1] > 19)) {
-        const query = await helper.getRawUlbsList19Onwards(year, state, ulb, ulbId, type, category, skip, limit);
+        // console.log("19-20 onwards");
+      
+        const query = await helper.getRawUlbsList19Onwards(year, state, ulb, ulbId, type, category, skip, limit,fileType);
+        // console.log(JSON.stringify(query, null, 2));
         finalData = await Ulb.aggregate(query);
       }
 
