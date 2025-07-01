@@ -367,3 +367,145 @@ getPopulationCategory = (population) => {
   else if (population >= 4000000) return "4M+";
   else return "NA";
 };
+
+module.exports.uploadDataPDF = async (req, res) => {
+  try {
+    const ulbDataArray = req.body;
+
+    if (!Array.isArray(ulbDataArray)) {
+      return res.status(400).json({
+        status: false,
+        message: "'ulb' must be an array.",
+        data: [],
+      });
+    }
+
+    const responseLog = [];
+    for (const ulbItem of ulbDataArray) {
+      const { ulbId, yearsData } = ulbItem;
+      const existingDoc = await BudgetDocument.findOne({ ulb: ulbId });
+
+      if (existingDoc) {
+        // CASE 1: BudgetDocument exists
+        let modified = false;
+
+        for (const newYear of yearsData) {
+          const existingYear = existingDoc.yearsData.find(
+            (y) => y.designYear === newYear.designYear
+          );
+
+          if (existingYear) {
+            const newFiles = newYear.files.map((file) => ({
+              ...file,
+              createdAt: new Date(file.created_at || Date.now()),
+            }));
+
+            existingYear.files.push(...newFiles);
+            modified = true;
+          } else {
+            // 🔁 Add new yearData block
+            existingDoc.yearsData.push({
+              ...newYear,
+              files: newYear.files.map((file) => ({
+                ...file,
+                createdAt: new Date(file.created_at || Date.now()),
+              })),
+            });
+            modified = true;
+          }
+        }
+
+        if (modified) {
+          await existingDoc.save();
+          responseLog.push({ ulbId, status: "updated" });
+        } else {
+          responseLog.push({ ulbId, status: "no change" });
+        }
+      } else {
+        // CASE 2: No BudgetDocument — create a new one
+        const newDoc = new BudgetDocument({
+          ulb: ulbId,
+          yearsData: yearsData.map((yd) => ({
+            ...yd,
+            files: yd.files.map((file) => ({
+              ...file,
+              createdAt: new Date(file.created_at || Date.now()),
+            })),
+          })),
+        });
+
+        await newDoc.save();
+        responseLog.push({ ulbId, status: "created" });
+      }
+    }
+
+    return res.status(200).json({
+      status: true,
+      message: "ULB data processed successfully.",
+      result: responseLog,
+    });
+  } catch (error) {
+    console.error("Error:", error);
+    return res.status(500).json({
+      status: false,
+      message: error.message,
+      data: "",
+    });
+  }
+};
+module.exports.getUlbList = async (req, res) => {
+  try {
+    const codes = Array.isArray(req.query.code)
+      ? req.query.code
+      : [req.query.code];
+    const ulbList = await Ulb.find({ code: { $in: codes } })
+      .select("_id name")
+      .lean();
+    if (!ulbList || ulbList.length === 0) {
+      return res.status(404).json({
+        status: false,
+        message: "No ULBs found.",
+        data: [],
+      });
+    }
+    return res.status(200).json({
+      status: true,
+      message: "ULB list fetched successfully.",
+      data: ulbList,
+    });
+  } catch (error) {
+    console.error("Error:", error);
+    return res.status(500).json({
+      status: false,
+      message: error.message,
+      data: [],
+    });
+  }
+};
+
+module.exports.getYearEmptyData = async (req, res) => {
+  try {
+    const yearsData = req.query.yearsData;
+    const formsJson = await FormsJson.findOne({ formId: 21 }).lean();
+    if (!formsJson) {
+      return res.status(404).json({
+        status: false,
+        message: "No data found for the specified formId",
+        data: "",
+      });
+    }
+    const result = formsJson.yearsData.find(item => item.designYear === yearsData);
+    return res.status(200).json({
+      status: true,
+      message: "Year empty data fetched successfully.",
+      data: result || [],
+    }); 
+  } catch (error) {
+    console.error("Error:", error);
+    return res.status(500).json({
+      status: false,
+      message: error.message,
+      data: "",
+    });
+  }
+};
