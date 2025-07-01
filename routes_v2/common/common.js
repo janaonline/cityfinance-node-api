@@ -2,6 +2,7 @@ const ObjectId = require('mongoose').Types.ObjectId;
 const Year = require('../../models/Year');
 const AnnualAccountData = require('../../models/AnnualAccounts');
 const LedgerLog = require('../../models/LedgerLog');
+const BudgetDocument = require('../../models/budgetDocument');
 
 // Returns latest audited/ unAudited year with data.
 module.exports.getLatestAfsYear = async (req, res) => {
@@ -28,8 +29,66 @@ module.exports.getLatestAfsYear = async (req, res) => {
 	}
 };
 
+// Returns latest standardized/ ledger year with data.
+module.exports.getLatestStandardizedYear = async (req, res) => {
+	try {
+		const years = await getStandardizedYears(req.query);
+		years.sort((a, b) => b.localeCompare(a));
+
+		res.status(200).json({
+			success: true,
+			ledgerYears: years,
+		});
+	} catch (error) {
+		console.error('Error in getLatestStandardizedYear(): ', error);
+		res.status(500).json({
+			success: false,
+			message: `Error in getLatestStandardizedYear(): ${error.message}`,
+		});
+	}
+};
+
+// Helper: Get distinct standardized years
+const getStandardizedYears = ({ stateCode, ulbId, auditStatus }) => {
+	const condition = { isStandardizable: { $ne: 'No' } };
+
+	if (stateCode) condition.state_code = stateCode;
+	if (ulbId && ObjectId.isValid(ulbId))
+		condition.ulb_id = new ObjectId(ulbId);
+	if (auditStatus) condition.audit_status = auditStatus;
+
+	return LedgerLog.distinct('year', condition);
+};
+
+// Returns latest budget year with data.
+module.exports.getLatestBudgetYear = async (req, res) => {
+	try {
+		const years = await getBudgetYears(req.query);
+		years.sort((a, b) => b.localeCompare(a));
+
+		res.status(200).json({
+			success: true,
+			budgetYears: years,
+		});
+	} catch (error) {
+		console.error('Error in getLatestBudgetYear(): ', error);
+		res.status(500).json({
+			success: false,
+			message: `Error in getLatestBudgetYear(): ${error.message}`,
+		});
+	}
+};
+
+// Helper: Get distinct budget years
+const getBudgetYears = ({ ulbId: ulb }) => {
+	const condition = {};
+	if (ulb && ObjectId.isValid(ulb)) condition.ulb = new ObjectId(ulb);
+
+	return BudgetDocument.distinct('yearsData.designYear', condition);
+};
+
 // eg: {606aadac4dff55e6c075c507: '2020-21', 606aaf854dff55e6c075d219: '2021-22', ...}
-async function getYearsList() {
+const getYearsList = async () => {
 	try {
 		const yearsObj = await Year.aggregate([
 			{
@@ -56,7 +115,7 @@ async function getYearsList() {
 		console.error('Error in getYearsList(): ', error);
 		return error.message;
 	}
-}
+};
 
 // Returns last modified date from ledgerLogs.
 module.exports.getLastModifiedDate = async (req, res) => {
@@ -78,6 +137,7 @@ module.exports.getLastModifiedDate = async (req, res) => {
 	}
 };
 
+// Helper: function to find last modified date based on find condition.
 module.exports.getLastModifiedDateHelper = (findCondition) => {
 	return LedgerLog.find(findCondition, {
 		lastModifiedAt: 1,

@@ -38,6 +38,7 @@ module.exports.getData = async (req, res) => {
 			year,
 			isActive: ledgerLogsData[0]?.isActive,
 			audit_status: ledgerLogsData[0]?.audit_status || null,
+			lastModifiedAt: ledgerLogsData[0]?.lastModifiedAt || null,
 		});
 	} catch (error) {
 		console.error('Failed to get home page data:', error);
@@ -63,6 +64,7 @@ function getQuery(ulbCondition, ledgerCondition) {
 							_id: 0,
 							lineItems: 1,
 							audit_status: 1,
+							lastModifiedAt: 1,
 						},
 					},
 					{ $limit: 1 },
@@ -74,6 +76,7 @@ function getQuery(ulbCondition, ledgerCondition) {
 			$addFields: {
 				lineItems: { $arrayElemAt: ['$ledgerLog.lineItems', 0] },
 				audit_status: { $arrayElemAt: ['$ledgerLog.audit_status', 0] },
+				lastModifiedAt: { $arrayElemAt: ['$ledgerLog.lastModifiedAt', 0] },
 			},
 		},
 		{
@@ -82,6 +85,7 @@ function getQuery(ulbCondition, ledgerCondition) {
 				population: 1,
 				// lineItems: 1,
 				audit_status: 1,
+				lastModifiedAt: 1,
 				isActive: 1,
 				totTaxRevenue: '$lineItems.110',
 				totOwnRevenue: { $sum: addNullCheck(totOwnRevenueArr) },

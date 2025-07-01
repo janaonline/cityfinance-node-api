@@ -2,10 +2,21 @@ const express = require('express');
 const router = express.Router();
 const Redis = require('../../service/redis');
 const cacheMiddleware = require('../../middlewares/cacheMiddleware');
-const { getLatestAfsYear, getLastModifiedDate } = require('./common.js');
+const {
+	getLatestAfsYear,
+	getLastModifiedDate,
+	getLatestStandardizedYear,
+	getLatestBudgetYear,
+} = require('./common.js');
 
 // Get the latest AFS year. @params
 router.get('/get-latest-aa-year', getLatestAfsYear);
+
+// Get the latest AFS year. @params
+router.get('/get-latest-standardized-year', getLatestStandardizedYear);
+
+// Get the latest AFS year. @params
+router.get('/get-latest-budget-year', getLatestBudgetYear);
 
 // Get the last modified date - ledgers
 router.get(
