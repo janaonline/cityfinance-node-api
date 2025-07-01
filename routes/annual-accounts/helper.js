@@ -174,6 +174,7 @@ module.exports.getRawUlbsList19Onwards = async (
           fileName: 1,
           state: 1,
           modifiedAt: "$aaData.modifiedAt",
+          year: year
         },
       },
       {$sort: {modifiedAt: -1}},
