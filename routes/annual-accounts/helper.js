@@ -114,7 +114,7 @@ module.exports.getRawUlbsList19Onwards = async (
       "_",
       "$name", // ULB name
       "_",
-      { $toString: `$aaData.${fileType}.year` }, // Convert the dynamic `fileType` field's `year` to string
+      { $toString:year}, // Convert the dynamic `fileType` field's `year` to string
       "_",
       `${fileType}`,
     ];
