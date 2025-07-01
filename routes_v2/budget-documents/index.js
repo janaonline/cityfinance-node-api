@@ -7,4 +7,5 @@ router.get('/getYearsData', service.getYearsData);
 router.post('/updatePdfs', service.updatePdfs);
 router.get('/convertJson', service.convertJson);
 router.get('/getValidations', service.getValidations);
+router.get('/downloadDump', service.downloadDump);
 module.exports = router;

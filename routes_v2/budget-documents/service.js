@@ -3,7 +3,8 @@ const BudgetDocument = require("../../models/budgetDocument");
 const FiscalRanking = require("../../models/FiscalRankingMapper");
 const Ulb = require("../../models/Ulb");
 const ObjectId = require("mongoose").Types.ObjectId;
-
+const ExcelJS = require("exceljs");
+const moment = require("moment");
 module.exports.getYearsData = async (req, res) => {
   try {
     const ulbId = req.query.ulb;
@@ -25,8 +26,8 @@ module.exports.getYearsData = async (req, res) => {
     }
     const budgetDocument = await BudgetDocument.findOne({
       ulb: ObjectId(ulbId),
-    })
-    console.log("Budget Document:", budgetDocument);
+    });
+    // console.log("Budget Document:", budgetDocument);
     const budgetYearsMap = {};
     if (budgetDocument?.yearsData?.length) {
       for (const yearEntry of budgetDocument.yearsData) {
@@ -199,7 +200,7 @@ module.exports.convertJson = async (req, res) => {
 
 module.exports.getValidations = async (req, res) => {
   try {
-    const formjson = await FormsJson.findOne({ formId:21.1 }).lean();
+    const formjson = await FormsJson.findOne({ formId: 21.1 }).lean();
     if (!formjson) {
       return res.status(404).json({
         status: false,
@@ -220,4 +221,149 @@ module.exports.getValidations = async (req, res) => {
       data: "",
     });
   }
-}
+};
+
+module.exports.downloadDump = async (req, res) => {
+  try {
+    // Create Excel workbook
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet("ULB Budget Dump");
+
+    // Define headers
+    worksheet.columns = [
+      { header: "ULB Code", key: "code", width: 15 },
+      { header: "ULB Name", key: "ulbName", width: 30 },
+      { header: "State", key: "state", width: 20 },
+      { header: "Census Code", key: "censusCode", width: 15 },
+      { header: "Population", key: "population", width: 15 },
+      { header: "Population Category", key: "popCat", width: 15 },
+      { header: "Budget Year", key: "budgetYear", width: 15 },
+      { header: "Date of submission", key: "createdAt", width: 25 },
+      { header: "Source", key: "source", width: 10 },
+      { header: "Budget URL", key: "url", width: 50 },
+    ];
+
+    // Get data from DB - cursor().
+    const cursorInputData = await BudgetDocument.aggregate([
+      {
+        $lookup: {
+          from: "ulbs",
+          let: { ulbId: "$ulb" },
+          pipeline: [
+            { $match: { $expr: { $eq: ["$_id", "$$ulbId"] } } },
+            {
+              $lookup: {
+                from: "states",
+                let: { stateId: "$state" },
+                pipeline: [
+                  { $match: { $expr: { $eq: ["$_id", "$$stateId"] } } },
+                  { $project: { _id: 0, name: 1 } },
+                ],
+                as: "stateData",
+              },
+            },
+            {
+              $project: {
+                name: 1,
+                population: 1,
+                censusCode: 1,
+                code: 1,
+                sbCode: 1,
+                state: { $arrayElemAt: ["$stateData.name", 0] }, // avoid $unwind
+              },
+            },
+          ],
+          as: "ulbInfo",
+        },
+      },
+      { $unwind: "$ulbInfo" },
+      {
+        $unwind: {
+          path: "$yearsData",
+          preserveNullAndEmptyArrays: false,
+        },
+      },
+      {
+        $unwind: {
+          path: "$yearsData.files",
+          preserveNullAndEmptyArrays: false,
+        },
+      },
+      {
+        $project: {
+          code: "$ulbInfo.code",
+          ulbName: "$ulbInfo.name",
+          state: "$ulbInfo.state",
+          censusCode: {
+            $ifNull: ["$ulbInfo.censusCode", "$ulbInfo.sbCode"],
+          },
+          population: "$ulbInfo.population",
+          budgetYear: "$yearsData.designYear",
+          budgetSource: "$yearsData.files.source",
+          budgetUrl: "$yearsData.files.url",
+          type: "$yearsData.files.type",
+          createdAt: "$yearsData.files.createdAt",
+        },
+      },
+    ])
+      .cursor()
+      .exec();
+
+    for (
+      let doc = await cursorInputData.next();
+      doc != null;
+      doc = await cursorInputData.next()
+    ) {
+      switch (doc["budgetSource"]) {
+        case "cfr":
+          doc["source"] = "CFR";
+          break;
+        case "dni":
+          doc["source"] = "D&I";
+          break;
+        case "ulb":
+          doc["source"] = "ULB";
+          break;
+      }
+
+      doc["url"] =
+        doc["type"] === "url"
+          ? doc["budgetUrl"]
+          : `${process.env.AWS_STORAGE_URL_PROD}${doc["budgetUrl"]}`;
+
+      doc["popCat"] = getPopulationCategory(doc["population"]);
+
+      worksheet.addRow(doc);
+    }
+
+    const filename = "ULB_Budget_Dump";
+    const buffer = await workbook.xlsx.writeBuffer();
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    );
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename=${filename}.xlsx`
+    );
+    res.send(buffer);
+    res.end();
+  } catch (error) {
+    console.error("Excel export error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to generate Excel dump",
+      error: error.message,
+    });
+  }
+};
+
+// eg: Input: 750000, Output: '500K-1M'
+getPopulationCategory = (population) => {
+  if (population < 100000) return "<100K";
+  else if (population >= 100000 && population < 500000) return "100K-500K";
+  else if (population >= 500000 && population < 1000000) return "500K-1M";
+  else if (population >= 1000000 && population < 4000000) return "1M-4M";
+  else if (population >= 4000000) return "4M+";
+  else return "NA";
+};
