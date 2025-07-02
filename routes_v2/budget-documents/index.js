@@ -10,4 +10,5 @@ router.get('/getValidations', service.getValidations);
 router.post('/uploadDataBulkPdf',service.uploadDataPDF);
 router.get('/getUlbList', service.getUlbList);
 router.get('/getYearEmptyData', service.getYearEmptyData);
+router.get('/downloadDump', service.downloadDump);
 module.exports = router;
