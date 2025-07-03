@@ -7,16 +7,20 @@ const {
 	getLastModifiedDate,
 	getLatestStandardizedYear,
 	getLatestBudgetYear,
+	getLatestSlbYear,
 } = require('./common.js');
 
-// Get the latest AFS year. @params
+// Get the latest AFS years.
 router.get('/get-latest-aa-year', getLatestAfsYear);
 
-// Get the latest AFS year. @params
+// Get the latest Ledger years.
 router.get('/get-latest-standardized-year', getLatestStandardizedYear);
 
-// Get the latest AFS year. @params
+// Get the latest Budget years.
 router.get('/get-latest-budget-year', getLatestBudgetYear);
+
+// Get the latest SLBs years.
+router.get('/get-latest-slbs-year', getLatestSlbYear);
 
 // Get the last modified date - ledgers
 router.get(

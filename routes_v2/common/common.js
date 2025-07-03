@@ -3,6 +3,7 @@ const Year = require('../../models/Year');
 const AnnualAccountData = require('../../models/AnnualAccounts');
 const LedgerLog = require('../../models/LedgerLog');
 const BudgetDocument = require('../../models/budgetDocument');
+const Indicator = require('../../models/indicators');
 
 // Returns latest audited/ unAudited year with data.
 module.exports.getLatestAfsYear = async (req, res) => {
@@ -85,6 +86,33 @@ const getBudgetYears = ({ ulbId: ulb }) => {
 	if (ulb && ObjectId.isValid(ulb)) condition.ulb = new ObjectId(ulb);
 
 	return BudgetDocument.distinct('yearsData.designYear', condition);
+};
+
+// Returns latest slb year with data.
+module.exports.getLatestSlbYear = async (req, res) => {
+	try {
+		const years = await getSlbYears(req.query);
+		years.sort((a, b) => b.localeCompare(a));
+
+		res.status(200).json({
+			success: true,
+			slbYears: years,
+		});
+	} catch (error) {
+		console.error('Error in getLatestBudgetYear(): ', error);
+		res.status(500).json({
+			success: false,
+			message: `Error in getLatestBudgetYear(): ${error.message}`,
+		});
+	}
+};
+
+// Helper: Get distinct slb years
+const getSlbYears = ({ ulb }) => {
+	const condition = {};
+	if (ulb && ObjectId.isValid(ulb)) condition.ulb = new ObjectId(ulb);
+
+	return Indicator.distinct('year', condition);
 };
 
 // eg: {606aadac4dff55e6c075c507: '2020-21', 606aaf854dff55e6c075d219: '2021-22', ...}
