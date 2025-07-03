@@ -401,6 +401,7 @@ module.exports.downloadDump = async (req, res) => {
       { header: "Budget Year", key: "budgetYear", width: 15 },
       { header: "Date of submission", key: "createdAt", width: 25 },
       { header: "Source", key: "source", width: 10 },
+      { header: "File Type", key: "ftype", width: 10 },
       { header: "Budget URL", key: "url", width: 50 },
     ];
 
@@ -491,7 +492,7 @@ module.exports.downloadDump = async (req, res) => {
         doc["type"] === "url"
           ? doc["budgetUrl"]
           : `${process.env.AWS_STORAGE_URL_PROD}${doc["budgetUrl"]}`;
-
+      doc["ftype"] = doc["type"] === "url" ? "URL" : "PDF";
       doc["popCat"] = getPopulationCategory(doc["population"]);
 
       worksheet.addRow(doc);
