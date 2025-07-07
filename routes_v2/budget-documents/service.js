@@ -556,7 +556,7 @@ module.exports.downloadDump = async (req, res) => {
           from: "ulbs",
           let: { ulbId: "$ulb" },
           pipeline: [
-            { $match: { $expr: { $eq: ["$_id", "$$ulbId"] } } },
+            { $match: { $expr: { $eq: ["$_id", "$$ulbId"] } }, isPublish: true },
             {
               $lookup: {
                 from: "states",
