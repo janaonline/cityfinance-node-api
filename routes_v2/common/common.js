@@ -3,6 +3,8 @@ const Year = require('../../models/Year');
 const AnnualAccountData = require('../../models/AnnualAccounts');
 const LedgerLog = require('../../models/LedgerLog');
 const BudgetDocument = require('../../models/budgetDocument');
+const Indicator = require('../../models/indicators');
+const BondIssuerItem = require('../../models/BondIssuerItem');
 
 // Returns latest audited/ unAudited year with data.
 module.exports.getLatestAfsYear = async (req, res) => {
@@ -85,6 +87,61 @@ const getBudgetYears = ({ ulbId: ulb }) => {
 	if (ulb && ObjectId.isValid(ulb)) condition.ulb = new ObjectId(ulb);
 
 	return BudgetDocument.distinct('yearsData.designYear', condition);
+};
+
+// Returns latest slb year with data.
+module.exports.getLatestSlbYear = async (req, res) => {
+	try {
+		const years = await getSlbYears(req.query);
+		years.sort((a, b) => b.localeCompare(a));
+
+		res.status(200).json({
+			success: true,
+			slbYears: years,
+		});
+	} catch (error) {
+		console.error('Error in getLatestSlbYear(): ', error);
+		res.status(500).json({
+			success: false,
+			message: `Error in getLatestSlbYear(): ${error.message}`,
+		});
+	}
+};
+
+// Helper: Get distinct slb years
+const getSlbYears = ({ ulb }) => {
+	const condition = {};
+	if (ulb && ObjectId.isValid(ulb)) condition.ulb = new ObjectId(ulb);
+
+	return Indicator.distinct('year', condition);
+};
+
+// Returns latest bond issuer year with data.
+module.exports.getLatestBorrwoingsYear = async (req, res) => {
+	try {
+		const years = await getBorrowingYears(req.query);
+		years.sort((a, b) => b.localeCompare(a));
+
+		res.status(200).json({
+			success: true,
+			borrowingYears: years,
+		});
+	} catch (error) {
+		console.error('Error in getLatestBorrwoingsYear(): ', error);
+		res.status(500).json({
+			success: false,
+			message: `Error in getLatestBorrwoingsYear(): ${error.message}`,
+		});
+	}
+};
+
+// Helper: Get distinct slb years
+const getBorrowingYears = ({ ulbId, stateId: state }) => {
+	const condition = {};
+	if (ulbId && ObjectId.isValid(ulbId)) condition.ulbId = new ObjectId(ulbId);
+	if (state && ObjectId.isValid(state)) condition.state = new ObjectId(state);
+
+	return BondIssuerItem.distinct('yearOfBondIssued', condition);
 };
 
 // eg: {606aadac4dff55e6c075c507: '2020-21', 606aaf854dff55e6c075d219: '2021-22', ...}

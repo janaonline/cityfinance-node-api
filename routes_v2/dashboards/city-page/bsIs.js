@@ -20,7 +20,7 @@ module.exports.bsIs = async (req, res) => {
 		return res.status(200).json({
 			success: true,
 			data: response,
-			population: Number(ledgerData?.[0].population),
+			population: Number(ledgerData?.[0]?.population),
 		});
 	} catch (err) {
 		console.error('[ULB Fetch Error]', err);
