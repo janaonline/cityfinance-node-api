@@ -32,7 +32,7 @@ router.post('/ulb-list', Ulb.getUlbsWithAuditStatus);
 // Get ULBs by state
 router.get('/states/:stateCode/ulbs', Ulb.getByState);
 // Get All Ulbs
-router.get('/ulbs', Ulb.getAllUlbs);
+router.get('/ulbs', cacheMiddleware('ulbList'),Ulb.getAllUlbs);
 router.get('/ulb/:_id', Ulb.getUlbById);
 
 // Get OverallUlb
