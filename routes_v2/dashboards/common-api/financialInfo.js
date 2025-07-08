@@ -129,7 +129,7 @@ function createResponseStructure(ledgerLogsData) {
 			label: 'Total Tax Revenue',
 			value: `${ledgerLogsDataObj['totTaxRevenue'] || '-'}`,
 			info: '',
-			src: './assets/file.svg',
+			src: './assets/images/money-info/file.svg',
 		},
 		{
 			sequence: '2',
@@ -137,7 +137,7 @@ function createResponseStructure(ledgerLogsData) {
 			label: 'Total Own Revenue',
 			value: `${ledgerLogsDataObj['totOwnRevenue'] || '-'}`,
 			info: '',
-			src: './assets/file.svg',
+			src: './assets/images/money-info/file.svg',
 		},
 		{
 			sequence: '3',
@@ -145,7 +145,7 @@ function createResponseStructure(ledgerLogsData) {
 			label: 'Total Grant',
 			value: `${ledgerLogsDataObj['totGrants'] || '-'}`,
 			info: '',
-			src: './assets/coinCuren.svg',
+			src: './assets/images/money-info/coins.svg',
 		},
 		{
 			sequence: '4',
@@ -153,7 +153,7 @@ function createResponseStructure(ledgerLogsData) {
 			label: 'Total Revenue',
 			value: `${ledgerLogsDataObj['totRevenue'] || '-'}`,
 			info: '',
-			src: './assets/coinCuren.svg',
+			src: './assets/images/money-info/coins.svg',
 		},
 		{
 			sequence: '5',
@@ -161,7 +161,7 @@ function createResponseStructure(ledgerLogsData) {
 			label: 'Total Expenditure',
 			value: `${ledgerLogsDataObj['totExpenditure'] || '-'}`,
 			info: '',
-			src: './assets/coinCuren.svg',
+			src: './assets/images/money-info/coins.svg',
 		},
 		{
 			sequence: '6',
@@ -169,7 +169,7 @@ function createResponseStructure(ledgerLogsData) {
 			label: 'Total Balance Sheet Size',
 			value: `${ledgerLogsDataObj['totBsSize'] || '-'}`,
 			info: '',
-			src: './assets/Group 15967.svg',
+			src: './assets/images/money-info/group.svg',
 		},
 	];
 }
