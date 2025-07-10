@@ -613,6 +613,7 @@ module.exports.getAllUlbs = async function (req, res) {
                   population: "$population",
                   amrut: "$amrut",
                   location: "$location",
+                  slug: '$slug'
                 },
               },
             },
