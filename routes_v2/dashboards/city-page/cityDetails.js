@@ -10,13 +10,20 @@ const {
 module.exports.cityDetails = async (req, res) => {
 	try {
 		// Validated req.query.
-		const { ulbId } = req.query;
-		if (!ulbId || !ObjectId.isValid(ulbId))
-			return res.status(400).json({ error: 'Invalid or missing ulbId' });
+		const { citySlugName } = req.query;
+		if (!citySlugName) return res.status(400).json({ error: 'Invalid or missing slug name' });
+
+		const ulbData = await Ulb.findOne(
+			{ slug: citySlugName },
+			{ name: 1, population: 1, area: 1, wards: 1, isUA: 1, UA: 1, state: 1, slug: 1 },
+		)
+			.populate('UA', 'name')
+			.populate('state', 'name code')
+			.lean();
+		if (!ulbData) return res.status(404).json({ error: 'ULB not found' });
 
 		// Fetch data from DB - Ulb, ledgerLogs collections.
-		const [ulbData, financialYears, lastModifiedAt] = await getDataFromDb(ulbId);
-		if (!ulbData) return res.status(404).json({ error: 'ULB not found' });
+		const [financialYears, lastModifiedAt] = await getDataFromDb(ulbData._id);
 
 		// Prepare structured data for response.
 		const gridDetails = buildUlbMetrics(ulbData, financialYears);
@@ -24,8 +31,8 @@ module.exports.cityDetails = async (req, res) => {
 		return res.status(200).json({
 			ulbName: ulbData.name,
 			state: ulbData.state,
+			ulbId: ulbData._id,
 			popCat: getPopulationCategory(+ulbData.population),
-			ulbId,
 			gridDetails,
 			lastModifiedAt: lastModifiedAt?.[0]?.lastModifiedAt || null,
 		});
@@ -40,21 +47,21 @@ module.exports.cityDetails = async (req, res) => {
 // Fetch data from ulbs, ledgerlogs collection.
 async function getDataFromDb(ulbId) {
 	// Parallel fetch of ULB and financial years
-	const [ulbData, financialYears, lastModifiedAt] = await Promise.all([
-		Ulb.findOne(
-			{ _id: new ObjectId(ulbId) },
-			{ name: 1, population: 1, area: 1, wards: 1, isUA: 1, UA: 1, state: 1 }
-		)
-			.populate('UA', 'name')
-			.populate('state', 'name code')
-			.lean(),
+	const [financialYears, lastModifiedAt] = await Promise.all([
+		// Ulb.findOne(
+		// 	{ _id: new ObjectId(ulbId) },
+		// 	{ name: 1, population: 1, area: 1, wards: 1, isUA: 1, UA: 1, state: 1 }
+		// )
+		// 	.populate('UA', 'name')
+		// 	.populate('state', 'name code')
+		// 	.lean(),
 
 		LedgerLog.distinct('year', { ulb_id: new ObjectId(ulbId) }),
 
 		getLastModifiedDateHelper({ ulb_id: new ObjectId(ulbId) }),
 	]);
 
-	return [ulbData, financialYears, lastModifiedAt];
+	return [financialYears, lastModifiedAt];
 }
 
 // Contruct grid details.
