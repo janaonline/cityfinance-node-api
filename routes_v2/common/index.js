@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Redis = require('../../service/redis');
 const cacheMiddleware = require('../../middlewares/cacheMiddleware');
+const { clearCacheByType } = require('../../service/cacheService.js')
 const {
 	getLatestAfsYear,
 	getLastModifiedDate,
@@ -35,7 +36,11 @@ router.get(
 
 // Delete redis key
 router.get('/delete-redis-key', (req, res) => {
-	Redis.del(req.query.key);
+	// Redis.del(req.query.key);
+	if (!req.query.key) 
+		return res.send({ message: `Key is not provided!` });
+	
+	clearCacheByType(req.query.key);
 	return res.send({ message: `'${req.query.key}' deleted successfully!` });
 });
 
