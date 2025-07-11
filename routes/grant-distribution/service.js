@@ -78,7 +78,7 @@ function getCond(design_year, type, state) {
     isActive: true,
   };
 
-  if (design_year === '606aafcf4dff55e6c075d424') {
+  if (design_year === '606aafcf4dff55e6c075d424' ||design_year === '606aafda4dff55e6c075d48f' ) {
     cond['isMillionPlus'] = type === 'nonmillion_tied_untied' ? 'No' : 'Yes';
   }
   return cond;
@@ -252,7 +252,7 @@ exports.uploadTemplate = async (req, res) => {
         }
       }
       let notValid;
-      if (formData.design_year === '606aafcf4dff55e6c075d424') {
+      if (formData.design_year === '606aafcf4dff55e6c075d424'|| formData.design_year === '606aafda4dff55e6c075d48f') {
         notValid = await validate24_25(XslData, formData);
       } else {
         notValid = await validate(XslData, formData);
