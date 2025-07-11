@@ -25,14 +25,18 @@ const whitelist = [
   'https://democityfinance.dhwaniris.in',
   'http://localhost:3000',
   'http://localhost:4300',
+  'http://localhost:4100',
+  'http://localhost:4000',
   'https://staging.cityfinance.in',
   'https://staging-jana.cityfinance.in',
   'https://uat.cityfinance.in',
   `https://${process.env.DEMO_HOST_FRONTEND}`,
   `https://${process.env.STAGING_HOST}`,
   `https://${process.env.PROD_HOST}`,
-   process.env.HOSTNAME,
-   `https://dev.cityfinance.in`
+  process.env.HOSTNAME,
+  `https://dev.cityfinance.in`,
+  `https://seo.cityfinance.in`,
+
 ];
 
 const corsOptions = {
