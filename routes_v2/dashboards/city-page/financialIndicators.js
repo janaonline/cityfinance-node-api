@@ -41,7 +41,6 @@ module.exports.financialIndicators = async (req, res) => {
         validateReqBody(req.body);
 
         // Get line items.
-        // eg: 
         const lineItemsResult = await LineItem.find({}, { code: 1, name: 1 });
         const lineItemsMap = Object.fromEntries(lineItemsResult.map(doc => [doc.code, doc.name]));
 
@@ -243,6 +242,8 @@ function getMixQuery(lineItemsArr, year, compareId, groupBy) {
 
 // Create response structure.
 function createResStructureMixData(mixData, lineItemsMap) {
+    if (!mixData.ulbLedgerData.length) return { msg: 'Data not available.' }
+
     // Create labels and legend colors - because res structure is same - use 1st element.
     const labels = [];
     const ulbData = mixData.ulbLedgerData[0].mix;
