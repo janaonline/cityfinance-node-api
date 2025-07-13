@@ -5,6 +5,7 @@ const LedgerLog = require('../../../models/LedgerLog');
 const { populationCategoryData } = require('../../utils/queryTemplates')
 const { getPopulationCategory } = require('../../common/common')
 const { totRevenueArr, totOwnRevenueArr, revExpenditureArr, capexArr } = require('../../utils/ledgerFormulas');
+const { pipeline } = require('nodemailer/lib/xoauth2');
 const ALLOWED_COMPARE_TYPES = ['ulb', 'state', 'national', 'popCat', 'ulbType', 'ulbs'];
 const ALLOWED_LINEITEMS = ['revenue', 'ownRevenue', 'revex', 'capex'];
 const ALLOWED_CALC_TYPES = ['total', 'perCapita', 'mix'];
@@ -24,6 +25,8 @@ const LABEL_MAP = {
 const GRAPH_COLORS = ["#62b6cb", "#1b4965", "#bee9e8", "#43B5A0", "#F4A261", "#5885AF", "#F6D743", '#f43f5e', '#B388FF'];
 const LINE_COLOR = '#f43f5e';
 const ROUND_UP = 0;
+
+// TODO: Clean code - DRY
 
 /**
  * 
@@ -66,11 +69,14 @@ module.exports.financialIndicators = async (req, res) => {
         } else if (calcType === 'total') {
             const totalData = await getWeightedAvgData(compareIdMap, lineItem, ulbId, years, compareUlbs, compareType);
             data = createResStructureWeighedAvgData(totalData, lineItemsMap, years);
-        }
+        } else if (calcType === 'perCapita') {
+            const perCapitaData = await getPerCapitaData(compareIdMap, lineItem, ulbId, years, compareUlbs, compareType)
+            data = createResStructurePerCapitaData(perCapitaData, lineItemsMap, years);
+        } else throw new Error("Invalid calcType");
 
         return res.status(200).json({
             success: true,
-            data
+            data,
         });
     } catch (err) {
         console.error('Failed to get financial data', err);
@@ -326,7 +332,7 @@ function createResStructureMixData(mixData, lineItemsMap) {
 }
 
 // -----  TOTAL(s)/ Weighed Avg DATA -----
-// Get mix data.
+// Get Weighed data.
 async function getWeightedAvgData(compareIdMap, lineItem, ulbId, years, compareUlbs, compareType) {
     let compareQueries = [];
 
@@ -525,6 +531,205 @@ function createResStructureWeighedAvgData(totalData, lineItemsMap, years) {
         labels: years,
         legendColors: [],
         axes: { x: 'Years', y: 'Amt in ₹ Cr' },
+        data: chartData,
+    };
+}
+
+
+// ----- Per capita -----
+async function getPerCapitaData(compareIdMap, lineItem, ulbId, years, compareUlbs, compareType) {
+    let compareQueries = [];
+
+    // Always fetch ULB data - for only 1 year.
+    const ulbQuery = buildPerCapitaPipeline(LINE_ITEMS_MAP[lineItem], years, ulbId, 'ulb', compareIdMap);
+
+    if (Array.isArray(compareUlbs) && compareType === 'ulbs') {
+        // Case: Compare with up to 3 ULBs (by ID)
+        compareQueries = compareUlbs.slice(0, 3).map(id =>
+            buildPerCapitaPipeline(LINE_ITEMS_MAP[lineItem], years, id, 'ulb', compareIdMap)
+        );
+    } else {
+        // Case: Compare with one of national/state/popCat/ulbType
+        const compareId = compareIdMap[compareType] || '';
+        compareQueries = [buildPerCapitaPipeline(LINE_ITEMS_MAP[lineItem], years, compareId, compareType, compareIdMap)];
+    }
+
+    // Run all queries in parallel
+    const [ulbLedgerData, ...compareResults] = await Promise.all([
+        LedgerLog.aggregate(ulbQuery),
+        ...compareQueries.map(query => LedgerLog.aggregate(query)),
+    ]);
+
+
+    // Response object
+    return { ulbLedgerData, compareResults };
+}
+
+function buildPerCapitaPipeline(lineItemsArr, yearsArr, compareId, groupBy, compareIdMap) {
+    const ulbTypeId = compareIdMap.ulbType;
+    if (!ulbTypeId) throw new Error("ULB type is required.");
+
+    if (!Array.isArray(lineItemsArr) || lineItemsArr.length === 0) {
+        throw new Error("lineItemsArr must be a non-empty array.");
+    }
+
+    const matchStage = {
+        isStandardizable: { $ne: 'No' },
+        year: { $in: yearsArr.slice(0, 3) }
+    };
+
+    const matchFromUlbs = {
+        'ulbsData.isActive': true,
+        'ulbsData.isPublish': true,
+    };
+
+    if (groupBy !== 'ulb')
+        matchFromUlbs['ulbsData.ulbType'] = new ObjectId(ulbTypeId);
+
+    const groupByFilters = {
+        ulb: () => (matchStage["ulb_id"] = new ObjectId(compareId)),
+        state: () => (matchFromUlbs["ulbsData.state"] = new ObjectId(compareId)),
+        popCat: () => (matchFromUlbs["popCat"] = compareId),
+        national: () => { }
+    };
+
+    if (groupByFilters[groupBy]) groupByFilters[groupBy]();
+
+    const addSelectedTotalStage = {
+        selectedTotal: {
+            $add: lineItemsArr.map(expr => ({ $ifNull: [expr, 0] }))
+        }
+    };
+
+    // Calculate per capita per document
+    const projectStage = {
+        year: 1,
+        perCapitaValue: {
+            $cond: [
+                { $eq: ["$ulbsData.population", 0] },
+                null,
+                { $divide: ["$selectedTotal", "$ulbsData.population"] }
+            ]
+        },
+        ulbName: "$ulbsData.name",
+    };
+
+    // Grouping by year to compute avg of per capita values
+    const groupStage = {
+        _id: "$year",
+        averagePerCapita: { $avg: "$perCapitaValue" },
+        ulbName: { $first: "$ulbName" },
+    };
+
+    const finalProjectStage = {
+        _id: 0,
+        year: "$_id",
+        label: 1,
+        perCapitaCr: {
+            $round: [
+                {
+                    $cond: [
+                        { $eq: ["$averagePerCapita", null] },
+                        null,
+                        // { $divide: ["$averagePerCapita", 10000000] }  // convert to crores
+                        "$averagePerCapita"
+                    ]
+                },
+                ROUND_UP
+            ]
+        }
+    };
+
+    if (LABEL_MAP.hasOwnProperty(groupBy)) {
+        finalProjectStage.label = LABEL_MAP[groupBy];
+    }
+    const pipeline = [
+        { $match: matchStage },
+        {
+            $lookup: {
+                from: "ulbs",
+                localField: "ulb_id",
+                foreignField: "_id",
+                as: "ulbsData"
+            }
+        },
+        { $unwind: "$ulbsData" },
+        { $addFields: { popCat: populationCategoryData('$ulbsData.population') } },
+        { $match: matchFromUlbs },
+        { $addFields: addSelectedTotalStage },
+        { $project: projectStage },
+        { $group: groupStage },
+        { $project: finalProjectStage }
+    ];
+
+    // console.log(JSON.stringify(pipeline, null, 2))
+    return pipeline;
+}
+
+// Create response structure.
+function createResStructurePerCapitaData(totalData, lineItemsMap, years) {
+    // console.log(JSON.stringify(totalData, null, 2))
+
+    // Basic validation
+    if (!totalData || !Array.isArray(totalData.ulbLedgerData) || totalData.ulbLedgerData.length === 0) {
+        return { msg: 'Data not available.' };
+    }
+
+    const yearIndexMap = years.reduce((map, year, index) => {
+        map[year] = index;
+        return map;
+    }, {});
+
+    const chartData = [];
+
+    // Prepare main ULB data
+    const ulbSubData = new Array(years.length).fill(null);
+    for (const entry of totalData.ulbLedgerData) {
+        if (entry && yearIndexMap.hasOwnProperty(entry.year)) {
+            ulbSubData[yearIndexMap[entry.year]] = entry.perCapitaCr;
+        }
+    }
+
+    // chartData.push({
+    //     type: 'line',
+    //     label: 'Y-o-Y Growth',
+    //     data: ulbSubData,
+    //     backgroundColor: [LINE_COLOR],
+    //     borderColor: LINE_COLOR,
+    //     fill: false,
+    // });
+
+    chartData.push({
+        type: 'bar',
+        label: totalData.ulbLedgerData[0]?.label || 'ULB Data',
+        data: [...ulbSubData],
+        backgroundColor: [GRAPH_COLORS[0]],
+    });
+
+    // Handle comparison datasets
+    if (Array.isArray(totalData.compareResults)) {
+        totalData.compareResults.forEach((resultSet, index) => {
+            const comparisonData = new Array(years.length).fill(null);
+            for (const dataPoint of resultSet) {
+                if (dataPoint && yearIndexMap.hasOwnProperty(dataPoint.year)) {
+                    comparisonData[yearIndexMap[dataPoint.year]] = dataPoint.perCapitaCr;
+                }
+            }
+
+            chartData.push({
+                type: 'bar',
+                label: resultSet[0]?.label || `Comparison ${index + 1}`,
+                data: comparisonData,
+                backgroundColor: [GRAPH_COLORS[(index + 1) % GRAPH_COLORS.length]],
+            });
+        });
+    }
+
+    return {
+        chartType: 'barChart',
+        labels: years,
+        legendColors: [],
+        axes: { x: 'Years', y: 'Amt in ₹' },
         data: chartData,
     };
 }
