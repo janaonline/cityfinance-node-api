@@ -21,7 +21,7 @@ const LABEL_MAP = {
     state: 'State Avg',
     national: 'National Avg'
 };
-const GRAPH_COLORS = ["#62b6cb", "#1b4965", "#bee9e8", "#43B5A0", "#F4A261", "#5885AF", "#F6D743"];
+const GRAPH_COLORS = ["#62b6cb", "#1b4965", "#bee9e8", "#43B5A0", "#F4A261", "#5885AF", "#F6D743", '#f43f5e', '#B388FF'];
 const LINE_COLOR = '#f43f5e';
 const ROUND_UP = 0;
 
