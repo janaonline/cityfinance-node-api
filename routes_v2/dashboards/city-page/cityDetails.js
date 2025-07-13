@@ -15,10 +15,11 @@ module.exports.cityDetails = async (req, res) => {
 
 		const ulbData = await Ulb.findOne(
 			{ slug: citySlugName },
-			{ name: 1, population: 1, area: 1, wards: 1, isUA: 1, UA: 1, state: 1, slug: 1 },
+			{ name: 1, population: 1, area: 1, wards: 1, isUA: 1, UA: 1, state: 1, slug: 1, ulbType: 1 },
 		)
 			.populate('UA', 'name')
 			.populate('state', 'name code')
+			.populate('ulbType', 'name')
 			.lean();
 		if (!ulbData) return res.status(404).json({ error: 'ULB not found' });
 
@@ -32,6 +33,7 @@ module.exports.cityDetails = async (req, res) => {
 			ulbName: ulbData.name,
 			state: ulbData.state,
 			ulbId: ulbData._id,
+			ulbType: ulbData.ulbType.name,
 			popCat: getPopulationCategory(+ulbData.population),
 			gridDetails,
 			lastModifiedAt: lastModifiedAt?.[0]?.lastModifiedAt || null,
@@ -74,9 +76,8 @@ function buildUlbMetrics(ulbData, financialYears = []) {
 		area > 0
 			? `${formatNumberWithCommas((population / area).toFixed(2))}/ Sq km`
 			: 'NA';
-	const uaValue = `${ulbData.isUA || 'No'}${
-		ulbData.UA?.name ? ` (${ulbData.UA.name})` : ''
-	}`;
+	const uaValue = `${ulbData.isUA || 'No'}${ulbData.UA?.name ? ` (${ulbData.UA.name})` : ''
+		}`;
 	const areaValue = area ? `${formatNumberWithCommas(area)} Sq km` : 'NA';
 
 	return [
