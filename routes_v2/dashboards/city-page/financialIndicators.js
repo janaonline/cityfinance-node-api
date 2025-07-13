@@ -65,10 +65,7 @@ module.exports.financialIndicators = async (req, res) => {
             data = createResStructureMixData(mixData, lineItemsMap);
         } else if (calcType === 'total') {
             const totalData = await getWeightedAvgData(compareIdMap, lineItem, ulbId, years, compareUlbs, compareType);
-            // return res.status(200).json({
-            //     success: true,
-            //     totalData
-            // });
+            data = createResStructureWeighedAvgData(totalData, lineItemsMap, years);
         }
 
         return res.status(200).json({
@@ -279,11 +276,13 @@ function createResStructureMixData(mixData, lineItemsMap) {
     // Push remaining data - compareUlbs/ national/ state/ popCat/ ulbType.
     for (const compArr of mixData['compareResults']) {
         const compUlbObj = {
-            label: compArr[0].label,
+            label: compArr[0]?.label || 'Data unavailable',
             data: [],
         };
 
-        compUlbObj.data.push(...Object.values(compArr[0].mix));
+        if (compArr[0])
+            compUlbObj.data.push(...Object.values(compArr[0].mix));
+
         data.push(compUlbObj);
     }
 
@@ -462,4 +461,70 @@ function buildWeightedAvgPipeline(lineItemsArr, yearsArr, compareId, groupBy, co
 
     // console.log(JSON.stringify(pipeline, null, 2))
     return pipeline;
+}
+
+// Create response structure.
+function createResStructureWeighedAvgData(totalData, lineItemsMap, years) {
+    // Basic validation
+    if (!totalData || !Array.isArray(totalData.ulbLedgerData) || totalData.ulbLedgerData.length === 0) {
+        return { msg: 'Data not available.' };
+    }
+
+    const yearIndexMap = years.reduce((map, year, index) => {
+        map[year] = index;
+        return map;
+    }, {});
+
+    const chartData = [];
+
+    // Prepare main ULB data
+    const ulbSubData = new Array(years.length).fill(null);
+    for (const entry of totalData.ulbLedgerData) {
+        if (entry && yearIndexMap.hasOwnProperty(entry.year)) {
+            ulbSubData[yearIndexMap[entry.year]] = entry.weightedAverageCr;
+        }
+    }
+
+    chartData.push({
+        type: 'line',
+        label: 'Y-o-Y Growth',
+        data: ulbSubData,
+        backgroundColor: [LINE_COLOR],
+        borderColor: LINE_COLOR,
+        fill: false,
+    });
+
+    chartData.push({
+        type: 'bar',
+        label: totalData.ulbLedgerData[0]?.label || 'ULB Data',
+        data: [...ulbSubData],
+        backgroundColor: [GRAPH_COLORS[0]],
+    });
+
+    // Handle comparison datasets
+    if (Array.isArray(totalData.compareResults)) {
+        totalData.compareResults.forEach((resultSet, index) => {
+            const comparisonData = new Array(years.length).fill(null);
+            for (const dataPoint of resultSet) {
+                if (dataPoint && yearIndexMap.hasOwnProperty(dataPoint.year)) {
+                    comparisonData[yearIndexMap[dataPoint.year]] = dataPoint.weightedAverageCr;
+                }
+            }
+
+            chartData.push({
+                type: 'bar',
+                label: resultSet[0]?.label || `Comparison ${index + 1}`,
+                data: comparisonData,
+                backgroundColor: [GRAPH_COLORS[(index + 1) % GRAPH_COLORS.length]],
+            });
+        });
+    }
+
+    return {
+        chartType: 'barChart',
+        labels: years,
+        legendColors: [],
+        axes: { x: 'Years', y: 'Amt in ₹ Cr' },
+        data: chartData,
+    };
 }
