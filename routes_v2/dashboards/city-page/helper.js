@@ -505,9 +505,10 @@ const BALANCE_SHEET_STRUCTURE = [
 		class: 'fw-bold',
 		lineItem: 'Net Block',
 		reportType: 'detailed',
-		info: 'Calculation: (410 - 411)',
+		info: 'Calculation: (410 + 411)',
 		calculation: true,
-		formula: { sub: ['410', '411'] },
+		// formula: { sub: ['410', '411'] },
+		formula: { add: ['410', '411'] },
 	},
 	{
 		code: 412,
@@ -518,11 +519,12 @@ const BALANCE_SHEET_STRUCTURE = [
 		code: '410-412',
 		reportType: 'summary',
 		lineItem: 'Fixed Assets',
-		info: 'Calculation: (410 - 411 + 412)',
+		info: 'Calculation: (410 + 411 + 412)',
 		calculation: true,
 		formula: {
-			add: ['410', '412'],
-			sub: ['411'],
+			add: ['410', '411', '412'],
+			// add: ['410', '412'],
+			// sub: ['411'],
 		},
 	},
 	{
@@ -530,11 +532,12 @@ const BALANCE_SHEET_STRUCTURE = [
 		class: 'fw-bold',
 		reportType: 'detailed',
 		lineItem: 'Total Fixed Assets (I)',
-		info: 'Calculation: (410 - 411 + 412)',
+		info: 'Calculation: (410 + 411 + 412)',
 		calculation: true,
 		formula: {
-			add: ['410', '412'],
-			sub: ['411'],
+			add: ['410', '411', '412'],
+			// add: ['410', '412'],
+			// sub: ['411'],
 		},
 	},
 	{
@@ -597,11 +600,12 @@ const BALANCE_SHEET_STRUCTURE = [
 		class: 'fw-bold',
 		reportType: 'detailed',
 		lineItem: 'Net amount outstanding (i)',
-		info: 'Calculation: (430 + 431 - 432)',
+		info: 'Calculation: (430 + 431 + 432)',
 		calculation: true,
 		formula: {
-			add: ['430', '431'],
-			sub: ['432'],
+			add: ['430', '431', '432'],
+			// add: ['430', '431'],
+			// sub: ['432'],
 		},
 	},
 	{
@@ -636,14 +640,19 @@ const BALANCE_SHEET_STRUCTURE = [
 		info: 'Calculation: i + ii',
 		calculation: true,
 		formula: {
-			add: ['430', '431', '440', '450', '460', '420', '421'],
-			sub: ['432'],
+			add: ['430', '431', '432', '440', '450', '460',],
+			// add: ['430', '431', '440', '450', '460', '420', '421'],
+			// sub: ['432'],
 		},
 	},
 	{
 		code: '430-461',
 		reportType: 'summary',
 		lineItem: 'Current Assets, Loans and Advances',
+		calculation: true,
+		formula: {
+			add: ['430', '431', '432', '440', '450', '460',]
+		}
 	},
 	{
 		code: null,
@@ -701,8 +710,10 @@ const BALANCE_SHEET_STRUCTURE = [
 				'460',
 				'410',
 				'412',
+				'411',
+				'432'
 			],
-			sub: ['432', '411'],
+			// sub: ['432', '411'],
 		},
 	},
 	{
@@ -725,8 +736,10 @@ const BALANCE_SHEET_STRUCTURE = [
 				'470',
 				'480',
 				'400',
+				'411',
+				'432'
 			],
-			sub: ['411', '432'],
+			// sub: ['411', '432'],
 		},
 	},
 ];
