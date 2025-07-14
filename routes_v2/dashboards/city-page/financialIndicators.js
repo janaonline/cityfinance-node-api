@@ -526,12 +526,23 @@ function createResStructureWeighedAvgData(totalData, lineItemsMap, years) {
         });
     }
 
+    // 3 because: only 3 years data is show
+    const ulbCagr = Math.round(getCagr(chartData[0].data, 4), 0);
+    const ulbName = chartData[1].label;
+    // const comName = chartData[1].label;
+
+    // console.log(years, chartData)
+
     return {
         chartType: 'barChart',
         labels: years,
         legendColors: [],
         axes: { x: 'Years', y: 'Amt in ₹ Cr' },
         data: chartData,
+        info: {
+            text: ulbCagr >= 0 ? 'success' : 'danger',
+            msg: `CAGR of ${ulbCagr}% between FY${years[0]} and FY${years[years.length - 1]} (${ulbName} numbers for FY${years[0]} is Rs.${chartData[0].data[0]} Cr, and for FY${years[years.length - 1]} is Rs.${chartData[0].data[chartData[0].data.length - 1]} Cr.)`,
+        }
     };
 }
 
@@ -725,11 +736,50 @@ function createResStructurePerCapitaData(totalData, lineItemsMap, years) {
         });
     }
 
+    // 3 because: only 3 years data is show
+    const ulbAvg = Math.round(getAvg(chartData[0].data, 3), 0);
+    const comAvg = Math.round(getAvg(chartData[1].data, 3), 0);
+    const diff = ulbAvg - comAvg;
+
+    const ulbName = chartData[0].label;
+    const comName = chartData[1].label;
+
     return {
         chartType: 'barChart',
         labels: years,
         legendColors: [],
         axes: { x: 'Years', y: 'Amt in ₹' },
         data: chartData,
+        info: {
+            text: ulbAvg > comAvg ? 'success' : 'danger',
+            msg: `${ulbName} per capita is Rs.${Math.abs(diff)} ${diff >= 0 ? 'higher' : 'lower'} than ${comName} between FY${years[0]} and FY${years[years.length - 1]} (Avg. of ${ulbName} per Capita is Rs.${ulbAvg.toFixed(2)}, ${comName} per capita is Rs.${comAvg.toFixed(2)})`,
+        }
     };
+}
+
+// Accepts array and len return average.
+function getAvg(arr, len) {
+    if (!Array.isArray(arr)) { throw new TypeError("First argument must be an array.") }
+    if (typeof len !== "number" || len <= 0) { throw new RangeError("Invalid array length specified.") }
+    if (len === 0) return 0;
+
+    const total = arr.reduce((acc, curr) => acc + curr, 0);
+    return total / len;
+}
+
+// Calculate CAGR.
+function getCagr(arr, yrs) {
+    if (!Array.isArray(arr) || arr.length < 2 || yrs <= 0) {
+        throw new Error("Invalid input: need at least 2 values and positive number of years");
+    }
+
+    const startValue = arr[0];
+    const endValue = arr[arr.length - 1];
+
+    // if (startValue <= 0 || endValue <= 0) {
+    //     throw new Error("Values must be positive for CAGR calculation");
+    // }
+
+    const cagr = (Math.pow(endValue / startValue, 1 / yrs) - 1) * 100;
+    return +cagr.toFixed(2);
 }
