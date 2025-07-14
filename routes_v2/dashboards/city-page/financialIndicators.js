@@ -75,7 +75,7 @@ module.exports.financialIndicators = async (req, res) => {
         } else throw new Error("Invalid calcType");
 
         return res.status(200).json({
-            success: true,
+            success: data.success !== false,
             data,
         });
     } catch (err) {
@@ -260,7 +260,7 @@ function buildMixPipeline(lineItemsArr, year, compareId, groupBy) {
 
 // Create response structure.
 function createResStructureMixData(mixData, lineItemsMap) {
-    if (!mixData.ulbLedgerData.length) return { msg: 'Data not available.' }
+    if (!mixData.ulbLedgerData.length) return { msg: 'Data not available.', success: false }
 
     // Create labels and legend colors - because res structure is same - use 1st element.
     const labels = [];
@@ -473,7 +473,7 @@ function buildWeightedAvgPipeline(lineItemsArr, yearsArr, compareId, groupBy, co
 function createResStructureWeighedAvgData(totalData, lineItemsMap, years) {
     // Basic validation
     if (!totalData || !Array.isArray(totalData.ulbLedgerData) || totalData.ulbLedgerData.length === 0) {
-        return { msg: 'Data not available.' };
+        return { msg: 'Data not available.', success: false };
     }
 
     const yearIndexMap = years.reduce((map, year, index) => {
@@ -672,7 +672,7 @@ function createResStructurePerCapitaData(totalData, lineItemsMap, years) {
 
     // Basic validation
     if (!totalData || !Array.isArray(totalData.ulbLedgerData) || totalData.ulbLedgerData.length === 0) {
-        return { msg: 'Data not available.' };
+        return { msg: 'Data not available.', success: false };
     }
 
     const yearIndexMap = years.reduce((map, year, index) => {
