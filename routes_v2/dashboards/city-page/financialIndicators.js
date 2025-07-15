@@ -363,8 +363,8 @@ async function getWeightedAvgData(compareIdMap, lineItem, ulbId, years, compareU
 
 function buildWeightedAvgPipeline(lineItemsArr, yearsArr, compareId, groupBy, compareIdMap) {
     // console.log("----------------------", compareId, groupBy)
-    const ulbTypeId = compareIdMap.ulbType
-    if (!ulbTypeId) throw new Error("ULB type is required.");
+    // const ulbTypeId = compareIdMap.ulbType
+    // if (!ulbTypeId) throw new Error("ULB type is required.");
 
     if (!Array.isArray(lineItemsArr) || lineItemsArr.length === 0) {
         throw new Error("lineItemsArr must be a non-empty array.");
@@ -382,16 +382,15 @@ function buildWeightedAvgPipeline(lineItemsArr, yearsArr, compareId, groupBy, co
         'ulbsData.isPublish': true,
     };
 
-    if (groupBy !== 'ulb')
-        matchFromUlbs['ulbsData.ulbType'] = new ObjectId(ulbTypeId);
+    // if (groupBy !== 'ulb')
+    //     matchFromUlbs['ulbsData.ulbType'] = new ObjectId(ulbTypeId);
 
 
     // Dynamic filters for groupBy
     const groupByFilters = {
         ulb: () => (matchStage["ulb_id"] = new ObjectId(compareId)),
         state: () => (matchFromUlbs["ulbsData.state"] = new ObjectId(compareId)),
-        // Commented ulbType because it is by default required.
-        // ulbType: () => (matchFromUlbs["ulbsData.ulbType"] = new ObjectId(compareId)),
+        ulbType: () => (matchFromUlbs["ulbsData.ulbType"] = new ObjectId(compareId)),
         popCat: () => (matchFromUlbs["popCat"] = compareId),
         national: () => { }
     };
@@ -577,8 +576,8 @@ async function getPerCapitaData(compareIdMap, lineItem, ulbId, years, compareUlb
 }
 
 function buildPerCapitaPipeline(lineItemsArr, yearsArr, compareId, groupBy, compareIdMap) {
-    const ulbTypeId = compareIdMap.ulbType;
-    if (!ulbTypeId) throw new Error("ULB type is required.");
+    // const ulbTypeId = compareIdMap.ulbType;
+    // if (!ulbTypeId) throw new Error("ULB type is required.");
 
     if (!Array.isArray(lineItemsArr) || lineItemsArr.length === 0) {
         throw new Error("lineItemsArr must be a non-empty array.");
@@ -594,8 +593,8 @@ function buildPerCapitaPipeline(lineItemsArr, yearsArr, compareId, groupBy, comp
         'ulbsData.isPublish': true,
     };
 
-    if (groupBy !== 'ulb')
-        matchFromUlbs['ulbsData.ulbType'] = new ObjectId(ulbTypeId);
+    // if (groupBy !== 'ulb')
+    //     matchFromUlbs['ulbsData.ulbType'] = new ObjectId(ulbTypeId);
 
     const groupByFilters = {
         ulb: () => (matchStage["ulb_id"] = new ObjectId(compareId)),
