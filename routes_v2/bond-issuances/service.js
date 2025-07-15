@@ -30,11 +30,13 @@ module.exports.getBondIssuances = async (req, res) => {
 			{
 				$project: {
 					_id: 0,
-					bondIssueAmount: 1,
+					bondIssueAmount: { $round: ["$bondIssueAmount", 0] },
 					totalMunicipalBonds: 1,
 				},
 			},
 		];
+
+		console.log(JSON.stringify(query, null, 2))
 
 		const result = await BondIssuerItem.aggregate(query).exec();
 
