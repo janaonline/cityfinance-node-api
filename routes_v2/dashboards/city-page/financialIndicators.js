@@ -759,7 +759,10 @@ function createResStructurePerCapitaData(totalData, lineItemsMap, years) {
 // Accepts array and len return average.
 function getAvg(arr, len) {
     if (!Array.isArray(arr)) { throw new TypeError("First argument must be an array.") }
-    if (typeof len !== "number" || len <= 0) { throw new RangeError("Invalid array length specified.") }
+    if (typeof len !== "number" || len <= 0) {
+        return 0;
+        // throw new RangeError("Invalid array length specified.")
+    }
     if (len === 0) return 0;
 
     const total = arr.reduce((acc, curr) => acc + curr, 0);
@@ -769,7 +772,8 @@ function getAvg(arr, len) {
 // Calculate CAGR.
 function getCagr(arr, yrs) {
     if (!Array.isArray(arr) || arr.length < 2 || yrs <= 0) {
-        throw new Error("Invalid input: need at least 2 values and positive number of years");
+        return 0;
+        // throw new Error("Invalid input: need at least 2 values and positive number of years");
     }
 
     const startValue = arr[0];
