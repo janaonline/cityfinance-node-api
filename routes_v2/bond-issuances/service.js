@@ -9,35 +9,7 @@ module.exports.getBondIssuances = async (req, res) => {
 		// Validate stateId
 		if (stateId) matchCondition['state'] = ObjectId(stateId);
 
-		const query = [
-			{ $match: matchCondition },
-			{
-				$group: {
-					_id: null,
-					totalMunicipalBonds: { $sum: 1 },
-					bondIssueAmount: {
-						$sum: {
-							$convert: {
-								input: '$issueSizeAmount',
-								to: 'double',
-								onError: 0,
-								onNull: 0,
-							},
-						},
-					},
-				},
-			},
-			{
-				$project: {
-					_id: 0,
-					bondIssueAmount: { $round: ["$bondIssueAmount", 0] },
-					totalMunicipalBonds: 1,
-				},
-			},
-		];
-
-		console.log(JSON.stringify(query, null, 2))
-
+		const query = this.getBondsAmountQuery(matchCondition)
 		const result = await BondIssuerItem.aggregate(query).exec();
 
 		// Return default values if no documents match
@@ -54,3 +26,32 @@ module.exports.getBondIssuances = async (req, res) => {
 		res.status(500).json({ error: 'Internal server error' });
 	}
 };
+
+module.exports.getBondsAmountQuery = (matchCondition) => {
+	return [
+		{ $match: matchCondition },
+		{
+			$group: {
+				_id: null,
+				totalMunicipalBonds: { $sum: 1 },
+				bondIssueAmount: {
+					$sum: {
+						$convert: {
+							input: '$issueSizeAmount',
+							to: 'double',
+							onError: 0,
+							onNull: 0,
+						},
+					},
+				},
+			},
+		},
+		{
+			$project: {
+				_id: 0,
+				bondIssueAmount: { $round: ["$bondIssueAmount", 0] },
+				totalMunicipalBonds: 1,
+			},
+		},
+	];
+}
