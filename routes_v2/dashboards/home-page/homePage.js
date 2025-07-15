@@ -1,7 +1,9 @@
 const LedgerLog = require('../../../models/LedgerLog');
+const BondIssuerItem = require('../../../models/BondIssuerItem');
 const Ulb = require('../../../models/Ulb');
 const ObjectId = require('mongoose').Types.ObjectId;
 const { getLastModifiedDateHelper } = require('../../common/common');
+const { getBondsAmountQuery } = require('../../bond-issuances/service');
 
 module.exports.getData = async (req, res) => {
 	try {
@@ -15,11 +17,16 @@ module.exports.getData = async (req, res) => {
 			'ulbData.isActive': ulbsCondition.isActive,
 			'ulbData.isPublish': ulbsCondition.isPublish,
 		}
+		const bondsCondition = {};
 
-		if (stateCode && stateId) {
+
+		if (stateCode)
 			ledgerCondition['state_code'] = stateCode;
-			ulbsCondition['state'] = ObjectId(stateId);
+
+		if (stateId) {
 			ledgerCondition2['ulbData.state'] = ObjectId(stateId);
+			ulbsCondition['state'] = ObjectId(stateId);
+			bondsCondition['state'] = ObjectId(stateId)
 		}
 
 		// Card 1 - ULBs with at least one year of data
@@ -31,23 +38,28 @@ module.exports.getData = async (req, res) => {
 		// Card 3 - Total ULB count
 		const ulbCount = getTotalUlbCount(ulbsCondition);
 
+		// Card 6 - Bonds data.
+		const bondsData = getBondsData(bondsCondition);
+
 		// Last modified date.
 		const lastModifiedDate = getLastModifiedDateHelper(ledgerCondition);
 
 		// Await all data in parallel
-		const [oneYearCount, fsData, totUlbCount, lastModifiedAt] =
+		const [oneYearCount, fsData, totUlbCount, lastModifiedAt, bondsAmt] =
 			await Promise.all([
 				atleastOneYearData,
 				financialStatements,
 				ulbCount,
 				lastModifiedDate,
+				bondsData
 			]);
 
 		// Final response
 		const exploreData = createResponseStructure(
 			oneYearCount[0].count,
 			fsData,
-			totUlbCount
+			totUlbCount,
+			bondsAmt
 		);
 
 		res.status(200).json({
@@ -128,7 +140,7 @@ const getTotalUlbCount = (ulbsCondition) => {
 };
 
 // Based on data fetched create response structure.
-const createResponseStructure = (oneYearCount, fsData, totUlbCount) => {
+const createResponseStructure = (oneYearCount, fsData, totUlbCount, bondsAmt) => {
 	// Card 4 - Calculate highest availability %
 	const highestFy = fsData.highestFy._id;
 	const highestPerc = ((fsData.highestFy.count / totUlbCount) * 100).toFixed(
@@ -139,6 +151,14 @@ const createResponseStructure = (oneYearCount, fsData, totUlbCount) => {
 	const years = fsData.years.sort();
 	const startYear = years[0];
 	const endYear = years[years.length - 1];
+
+	// Card 6 - Bonds data.
+	const bondsData = { bondIssueAmount: 0, totalMunicipalBonds: 0 };
+	if (bondsAmt.length > 0) {
+		const { bondIssueAmount, totalMunicipalBonds } = bondsAmt[0];
+		bondsData['bondIssueAmount'] = bondIssueAmount;
+		bondsData['totalMunicipalBonds'] = totalMunicipalBonds;
+	}
 
 	return [
 		{
@@ -171,11 +191,18 @@ const createResponseStructure = (oneYearCount, fsData, totUlbCount) => {
 			value: `${highestPerc}%`,
 			info: '',
 		},
-		// {
-		// 	sequenct: 6,
-		// 	label: 'Municipal Bond Issuances Of Rs. 6,833 Cr With Details',
-		// 	value: '',
-		// 	info: '',
-		// },
+		{
+			sequence: 6,
+			label: `Municipal Bond Issuances Of Rs. ${bondsData.bondIssueAmount} Cr With Details`,
+			value: `${bondsData.totalMunicipalBonds}`,
+			info: '',
+			src: '',
+		},
 	];
 };
+
+// Get bonds data.
+const getBondsData = (matchCondition) => {
+	const query = getBondsAmountQuery(matchCondition);
+	return BondIssuerItem.aggregate(query);
+}
