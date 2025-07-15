@@ -6,24 +6,27 @@ const { getLastModifiedDateHelper } = require('../../common/common');
 module.exports.getData = async (req, res) => {
 	try {
 		const { stateCode, stateId } = req.query;
-		const ledgerCondition = {
-			isStandardizable: { $ne: 'No' },
-		};
 		const ulbsCondition = {
 			isActive: true,
 			isPublish: true,
 		};
+		const ledgerCondition = { isStandardizable: { $ne: 'No' } };
+		const ledgerCondition2 = {
+			'ulbData.isActive': ulbsCondition.isActive,
+			'ulbData.isPublish': ulbsCondition.isPublish,
+		}
 
 		if (stateCode && stateId) {
 			ledgerCondition['state_code'] = stateCode;
 			ulbsCondition['state'] = ObjectId(stateId);
+			ledgerCondition2['ulbData.state'] = ObjectId(stateId);
 		}
 
 		// Card 1 - ULBs with at least one year of data
-		const atleastOneYearData = getAtleastOneYearData(ledgerCondition);
+		const atleastOneYearData = getAtleastOneYearData(ledgerCondition, ledgerCondition2);
 
 		// Card 2 - Financial statements and highest availability
-		const financialStatements = getAvaiablityYearWise(ledgerCondition);
+		const financialStatements = getAvaiablityYearWise(ledgerCondition, ledgerCondition2);
 
 		// Card 3 - Total ULB count
 		const ulbCount = getTotalUlbCount(ulbsCondition);
@@ -42,7 +45,7 @@ module.exports.getData = async (req, res) => {
 
 		// Final response
 		const exploreData = createResponseStructure(
-			oneYearCount,
+			oneYearCount[0].count,
 			fsData,
 			totUlbCount
 		);
@@ -62,16 +65,36 @@ module.exports.getData = async (req, res) => {
 };
 
 // Get ULBs count whose have atleast one year data - Card 1.
-const getAtleastOneYearData = (ledgerCondition) => {
-	return LedgerLog.distinct('ulb_id', ledgerCondition).then(
-		(ulbIds) => ulbIds.length
-	);
+const getAtleastOneYearData = (ledgerCondition, ledgerCondition2) => {
+	return LedgerLog.aggregate([
+		{ $match: ledgerCondition },
+		{
+			$lookup: {
+				from: "ulbs",
+				localField: "ulb_id",
+				foreignField: "_id",
+				as: "ulbData"
+			}
+		},
+		{ $match: ledgerCondition2 },
+		{ $group: { _id: "$ulb_id" } },
+		{ $count: "count" }
+	]);
 };
 
 // Get standardized data availability - year wise - Card 2.
-const getAvaiablityYearWise = (ledgerCondition) => {
-	return LedgerLog.aggregate([
+const getAvaiablityYearWise = (ledgerCondition, ledgerCondition2) => {
+	const pipeline = [
 		{ $match: ledgerCondition },
+		{
+			$lookup: {
+				from: "ulbs",
+				localField: "ulb_id",
+				foreignField: "_id",
+				as: "ulbData"
+			}
+		},
+		{ $match: ledgerCondition2 },
 		{
 			$group: {
 				_id: '$year',
@@ -79,7 +102,8 @@ const getAvaiablityYearWise = (ledgerCondition) => {
 			},
 		},
 		{ $sort: { _id: 1 } },
-	]).then((result) => {
+	];
+	return LedgerLog.aggregate(pipeline).then((result) => {
 		const total = result.reduce((acc, curr) => acc + curr.count, 0);
 		const info = result
 			.map((item) => `${item._id}: ${item.count.toLocaleString()}`)

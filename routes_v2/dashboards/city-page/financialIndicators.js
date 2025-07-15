@@ -5,7 +5,6 @@ const LedgerLog = require('../../../models/LedgerLog');
 const { populationCategoryData } = require('../../utils/queryTemplates')
 const { getPopulationCategory } = require('../../common/common')
 const { totRevenueArr, totOwnRevenueArr, revExpenditureArr, capexArr } = require('../../utils/ledgerFormulas');
-const { pipeline } = require('nodemailer/lib/xoauth2');
 const ALLOWED_COMPARE_TYPES = ['ulb', 'state', 'national', 'popCat', 'ulbType', 'ulbs'];
 const ALLOWED_LINEITEMS = ['revenue', 'ownRevenue', 'revex', 'capex'];
 const ALLOWED_CALC_TYPES = ['total', 'perCapita', 'mix'];
@@ -22,6 +21,7 @@ const LABEL_MAP = {
     state: 'State Avg',
     national: 'National Avg'
 };
+const OWN_REV = ['100', ...totOwnRevenueArr.map(e => e.split('.')[1])];
 const GRAPH_COLORS = ["#62b6cb", "#1b4965", "#bee9e8", "#43B5A0", "#F4A261", "#5885AF", "#F6D743", '#f43f5e', '#B388FF'];
 const LINE_COLOR = '#f43f5e';
 const ROUND_UP = 0;
@@ -130,17 +130,17 @@ async function getMixData(compareIdMap, lineItem, ulbId, years, compareUlbs, com
     let compareQueries = [];
 
     // Always fetch ULB data - for only 1 year.
-    const ulbQuery = buildMixPipeline(LINE_ITEMS_MAP[lineItem], years[0], ulbId, 'ulb');
+    const ulbQuery = buildMixPipeline(LINE_ITEMS_MAP[lineItem], years[0], ulbId, 'ulb', lineItem);
 
     if (Array.isArray(compareUlbs) && compareType === 'ulbs') {
         // Case: Compare with up to 3 ULBs (by ID)
         compareQueries = compareUlbs.slice(0, 3).map(id =>
-            buildMixPipeline(LINE_ITEMS_MAP[lineItem], years[0], id, 'ulb')
+            buildMixPipeline(LINE_ITEMS_MAP[lineItem], years[0], id, 'ulb', lineItem)
         );
     } else {
         // Case: Compare with one of national/state/popCat/ulbType
         const compareId = compareIdMap[compareType] || '';
-        compareQueries = [buildMixPipeline(LINE_ITEMS_MAP[lineItem], years[0], compareId, compareType)];
+        compareQueries = [buildMixPipeline(LINE_ITEMS_MAP[lineItem], years[0], compareId, compareType, lineItem)];
     }
 
     // Run all queries in parallel
@@ -155,7 +155,7 @@ async function getMixData(compareIdMap, lineItem, ulbId, years, compareUlbs, com
 }
 
 // Get mix query.
-function buildMixPipeline(lineItemsArr, year, compareId, groupBy) {
+function buildMixPipeline(lineItemsArr, year, compareId, groupBy, lineItem) {
     if (!Array.isArray(lineItemsArr) || lineItemsArr.length === 0) {
         throw new Error("lineItemsArr must be a non-empty array.");
     }
@@ -222,7 +222,8 @@ function buildMixPipeline(lineItemsArr, year, compareId, groupBy) {
     const projectStage = {
         _id: 0,
         year: "$_id.year",
-        // groupBy: groupBy,
+        groupBy: groupBy,
+        lineItem,
         // state: 1,
         // ulbType: 1,
         // popCat: 1,
@@ -260,75 +261,77 @@ function buildMixPipeline(lineItemsArr, year, compareId, groupBy) {
 
 // Create response structure.
 function createResStructureMixData(mixData, lineItemsMap) {
+    // console.log(mixData)
     if (!mixData.ulbLedgerData.length) return { msg: 'Data not available.', success: false }
 
-    // Create labels and legend colors - because res structure is same - use 1st element.
+    const { ulbLedgerData, compareResults } = mixData;
+    const lineItem = ulbLedgerData[0].lineItem;
+    const ulbData = ulbLedgerData[0].mix;
+
+    const lineItemKeys = Object.keys(ulbData);
+    const legendColors = GRAPH_COLORS.slice(0, lineItemKeys.length);
     const labels = [];
-    const ulbData = mixData.ulbLedgerData[0].mix;
-    const lineItemLen = Object.keys(ulbData).length;
-    const legendColors = GRAPH_COLORS.slice(0, lineItemLen);
+
     const data = [];
-    const ulbObj = {
-        label: mixData.ulbLedgerData[0].label,
-        data: [],
+
+    // Reusable function to transform data
+    const buildDataArray = (mix) => {
+        let ownRevenue = 0;
+        const remainingData = [];
+        const labelList = [];
+
+        for (const [code, value] of Object.entries(mix)) {
+            if (OWN_REV.includes(code) && lineItem === 'revenue') {
+                ownRevenue += value;
+            } else {
+                remainingData.push(value);
+                labelList.push(lineItemsMap[code] || code);
+            }
+        }
+
+        return { ownRevenue, remainingData, labelList };
     };
 
-    for (const [lineItemCode, value] of Object.entries(ulbData)) {
-        labels.push(lineItemsMap[lineItemCode]);
-        ulbObj.data.push(value);
-    }
-    data.push(ulbObj);
+    // Primary ULB data
+    const { ownRevenue, remainingData, labelList } = buildDataArray(ulbData);
+    if (lineItem === 'revenue') labels.push('Own revenue', ...labelList);
+    else labels.push(...labelList);
 
-    // Push remaining data - compareUlbs/ national/ state/ popCat/ ulbType.
-    for (const compArr of mixData['compareResults']) {
-        const compUlbObj = {
-            label: compArr[0]?.label || 'Data unavailable',
-            data: [],
-        };
+    data.push({
+        label: ulbLedgerData[0].label,
+        data: [ownRevenue, ...remainingData],
+    });
 
-        if (compArr[0])
-            compUlbObj.data.push(...Object.values(compArr[0].mix));
+    // Comparison data
+    for (const compArr of compareResults) {
+        const firstItem = compArr[0];
+        const compLabel = firstItem?.label || 'Data unavailable';
 
-        data.push(compUlbObj);
+        if (firstItem) {
+            if (lineItem === 'revenue') {
+                const { ownRevenue, remainingData } = buildDataArray(firstItem.mix);
+                data.push({
+                    label: compLabel,
+                    data: [ownRevenue, ...remainingData],
+                });
+            } else {
+                data.push({
+                    label: compLabel,
+                    data: Object.values(firstItem.mix),
+                });
+            }
+        } else {
+            data.push({ label: compLabel, data: [] });
+        }
     }
 
     return {
         chartType: 'gaugeChart',
         labels,
         legendColors,
-        data: data
-    }
+        data
+    };
 
-    // const mixData = {
-    //     "ulbLedgerData": [
-    //         {
-    //             "year": "2021-22",
-    //             "mix": {
-    //                 "110": 37,
-    //                 "130": 1,
-    //                 "140": 54,
-    //                 "150": 0,
-    //                 "180": 8
-    //             },
-    //             "label": "Mysore Municipal Corporation"
-    //         }
-    //     ],
-    //     "compareResults": [
-    //         [
-    //             {
-    //                 "year": "2021-22",
-    //                 "mix": {
-    //                     "110": 65,
-    //                     "130": 3,
-    //                     "140": 30,
-    //                     "150": 0,
-    //                     "180": 2
-    //                 },
-    //                 "label": "State Avg"
-    //             }
-    //         ]
-    //     ]
-    // }
 }
 
 // -----  TOTAL(s)/ Weighed Avg DATA -----
@@ -363,8 +366,8 @@ async function getWeightedAvgData(compareIdMap, lineItem, ulbId, years, compareU
 
 function buildWeightedAvgPipeline(lineItemsArr, yearsArr, compareId, groupBy, compareIdMap) {
     // console.log("----------------------", compareId, groupBy)
-    const ulbTypeId = compareIdMap.ulbType
-    if (!ulbTypeId) throw new Error("ULB type is required.");
+    // const ulbTypeId = compareIdMap.ulbType
+    // if (!ulbTypeId) throw new Error("ULB type is required.");
 
     if (!Array.isArray(lineItemsArr) || lineItemsArr.length === 0) {
         throw new Error("lineItemsArr must be a non-empty array.");
@@ -382,16 +385,15 @@ function buildWeightedAvgPipeline(lineItemsArr, yearsArr, compareId, groupBy, co
         'ulbsData.isPublish': true,
     };
 
-    if (groupBy !== 'ulb')
-        matchFromUlbs['ulbsData.ulbType'] = new ObjectId(ulbTypeId);
+    // if (groupBy !== 'ulb')
+    //     matchFromUlbs['ulbsData.ulbType'] = new ObjectId(ulbTypeId);
 
 
     // Dynamic filters for groupBy
     const groupByFilters = {
         ulb: () => (matchStage["ulb_id"] = new ObjectId(compareId)),
         state: () => (matchFromUlbs["ulbsData.state"] = new ObjectId(compareId)),
-        // Commented ulbType because it is by default required.
-        // ulbType: () => (matchFromUlbs["ulbsData.ulbType"] = new ObjectId(compareId)),
+        ulbType: () => (matchFromUlbs["ulbsData.ulbType"] = new ObjectId(compareId)),
         popCat: () => (matchFromUlbs["popCat"] = compareId),
         national: () => { }
     };
@@ -577,8 +579,8 @@ async function getPerCapitaData(compareIdMap, lineItem, ulbId, years, compareUlb
 }
 
 function buildPerCapitaPipeline(lineItemsArr, yearsArr, compareId, groupBy, compareIdMap) {
-    const ulbTypeId = compareIdMap.ulbType;
-    if (!ulbTypeId) throw new Error("ULB type is required.");
+    // const ulbTypeId = compareIdMap.ulbType;
+    // if (!ulbTypeId) throw new Error("ULB type is required.");
 
     if (!Array.isArray(lineItemsArr) || lineItemsArr.length === 0) {
         throw new Error("lineItemsArr must be a non-empty array.");
@@ -594,8 +596,8 @@ function buildPerCapitaPipeline(lineItemsArr, yearsArr, compareId, groupBy, comp
         'ulbsData.isPublish': true,
     };
 
-    if (groupBy !== 'ulb')
-        matchFromUlbs['ulbsData.ulbType'] = new ObjectId(ulbTypeId);
+    // if (groupBy !== 'ulb')
+    //     matchFromUlbs['ulbsData.ulbType'] = new ObjectId(ulbTypeId);
 
     const groupByFilters = {
         ulb: () => (matchStage["ulb_id"] = new ObjectId(compareId)),
@@ -760,7 +762,10 @@ function createResStructurePerCapitaData(totalData, lineItemsMap, years) {
 // Accepts array and len return average.
 function getAvg(arr, len) {
     if (!Array.isArray(arr)) { throw new TypeError("First argument must be an array.") }
-    if (typeof len !== "number" || len <= 0) { throw new RangeError("Invalid array length specified.") }
+    if (typeof len !== "number" || len <= 0) {
+        return 0;
+        // throw new RangeError("Invalid array length specified.")
+    }
     if (len === 0) return 0;
 
     const total = arr.reduce((acc, curr) => acc + curr, 0);
@@ -770,7 +775,8 @@ function getAvg(arr, len) {
 // Calculate CAGR.
 function getCagr(arr, yrs) {
     if (!Array.isArray(arr) || arr.length < 2 || yrs <= 0) {
-        throw new Error("Invalid input: need at least 2 values and positive number of years");
+        return 0;
+        // throw new Error("Invalid input: need at least 2 values and positive number of years");
     }
 
     const startValue = arr[0];

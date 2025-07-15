@@ -30,3 +30,7 @@ const cacheMiddleware = (cacheType, expirationInSeconds = EXPIRATION_IN_SEC) => 
 };
 
 module.exports = cacheMiddleware;
+
+// Cache key info: 
+// dashboard: LedgerLogs collection (All financial nos. on portal).
+// Municipal_Bonds: BondIssuerItem collection.
