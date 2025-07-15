@@ -5,8 +5,8 @@ const { bsIs } = require('./bsIs');
 const { financialIndicators } = require('./financialIndicators');
 const cacheMiddleware = require('../../../middlewares/cacheMiddleware');
 
-router.get('/city-details', cityDetails);
-router.get('/bs-is', bsIs);
-router.post('/financial-indicators', financialIndicators);
+router.get('/city-details', cacheMiddleware('dashboard'), cityDetails);
+router.get('/bs-is', cacheMiddleware('dashboard'), bsIs);
+router.post('/financial-indicators', cacheMiddleware('dashboard'), financialIndicators);
 
 module.exports = router;
