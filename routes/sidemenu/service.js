@@ -37,8 +37,8 @@ const UA = require('../../models/UA');
 const { FolderName, CollectionNames, UlbFormCollections } = require('../../util/15thFCstatus');
 const Response = require('../../service/response.js');
 const ticks = {
-  "green": "../../../assets/form-icon/checked.svg",
-  "red": "../../../assets/form-icon/cancel.svg"
+  "green": "./assets/form-icon/checked.svg",
+  "red": "./assets/form-icon/cancel.svg"
 }
 
 let FormModelMapping = {

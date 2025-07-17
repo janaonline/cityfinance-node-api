@@ -4,8 +4,11 @@ const router = express.Router();
 const State = require('./service')
 const verifyToken = require('../auth/services/verifyToken').verifyToken;
 const constants = require('../../service/inactivityTimeout');
+const cacheMiddleware = require('../../middlewares/cacheMiddleware');
+
 router.get(
     '/state',
+    cacheMiddleware('state'),
     State.get
 );
 
