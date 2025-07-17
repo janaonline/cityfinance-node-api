@@ -1,13 +1,16 @@
 const express = require('express');
+const multer = require('multer');
 const router = express.Router();
 const cacheMiddleware = require('../../middlewares/cacheMiddleware');
-const { getBondIssuances } = require('./service');
+const { getBondIssuances, uploadBondsData } = require('./service');
+const verifyToken = require('../../routes/auth/services/verifyToken').verifyToken;
 
-// Home page bond issuances data.
-router.get(
-	'/municipal-bonds/:_stateId?',
-	cacheMiddleware('Municipal_Bonds'),
-	getBondIssuances
-);
+// Get bonds amount and count.
+router.get('/municipal-bonds/:_stateId?', cacheMiddleware('Municipal_Bonds'), getBondIssuances);
+
+// Add new records in bonds collection.
+// Multer config - temporarily store file.
+const upload = multer({ dest: 'temp-uploads/' });
+router.post('/upload-bonds', verifyToken, upload.single('file'), uploadBondsData);
 
 module.exports = router;
