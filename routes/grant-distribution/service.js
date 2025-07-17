@@ -130,7 +130,7 @@ exports.getTemplate = async (req, res) => {
       name: "ULB Name",
       amount,
     };
-    if (formData.year === "606aafcf4dff55e6c075d424") {
+    if (formData.year === "606aafcf4dff55e6c075d424" || formData.year === "606aafda4dff55e6c075d48f") {
       field = setFields(formData);
     }
     let xlsData = await Service.dataFormating(data, field);
@@ -269,7 +269,7 @@ exports.uploadTemplate = async (req, res) => {
           ? amount = "grant amount (Lakhs)"
           : "";
         let field = {};
-        if (design_year === '606aafcf4dff55e6c075d424') {
+        if (design_year === '606aafcf4dff55e6c075d424' || design_year === '606aafda4dff55e6c075d48f') {
           Object.values(setFields(formData)).forEach(e => {
             field[e.toLowerCase()] = e;
           });
@@ -710,6 +710,7 @@ module.exports.getGrantDistributionForm = async (req, res, next) => {
     errors: []
   }
   try {
+    console.log("getGrantDistributionForm called")
     let { state, design_year } = req.query
     let { role } = req.decoded
     if (![userTypes.mohua, userTypes.state].includes(role)) {
