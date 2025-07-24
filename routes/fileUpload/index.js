@@ -10,6 +10,7 @@ const { userAuth } = require("../../middlewares/actionUserAuth");
 
 router.post("/fileUpload", upload.single("excel"), fileUpload);
 router.get("/indicators", getIndicatorData);
+// TODO: Remove - Migrated to routes V2 - getLatestSlbYear()
 router.get("/indicatorsYears", indicatorsYears);
 router.delete("/indicators", deleteALlData);
 

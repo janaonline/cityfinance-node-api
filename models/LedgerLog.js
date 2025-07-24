@@ -149,19 +149,24 @@ const LedgerLogSchema = mongoose.Schema({
 				},
 				required: [true, 'Document source is required']
 			},
-		}
-	]
+		},
+	],
+	lineItems: {
+		type: Map,
+		of: Number,
+	},
 });
 
 LedgerLogSchema.index(
 	{
 		ulb_id: 1,
-		ulb_code_year: 1,
 		year: 1,
 		isStandardizable: 1,
+		lineItems: 1,
+		ulb_code_year: 1,
 	},
 	{
-		unique: true
+		unique: true,
 	}
 );
 
