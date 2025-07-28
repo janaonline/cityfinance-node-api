@@ -555,8 +555,6 @@ module.exports.get = catchAsync(async (req, res) => {
   //sorting the data as per sequence no;
   tempData = sortByPosition(tempData);
 
-  console.log(JSON.stringify(tempData, null, 2))
-
   //creating card Data
   if (role == "ULB") {
     const ignoreCardsList = ['overview', 'resources'];
