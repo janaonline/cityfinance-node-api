@@ -1,20 +1,19 @@
-/**
- * Middleware to apply a timeout to specific routes
- * @param ms timeout in milliseconds
- */
 const withTimeout = (ms) => {
     return (req, res, next) => {
-        const timeoutId = setTimeout(() => {
+        const onTimeout = () => {
             if (!res.headersSent) {
                 res.status(503).json({ message: 'Request timed out' });
             }
-        }, ms);
+        };
 
-        res.on('finish', () => clearTimeout(timeoutId));
-        res.on('close', () => clearTimeout(timeoutId));
+        res.setTimeout(ms, onTimeout);
+
+        // Clean up listener when done
+        res.on('finish', () => res.removeListener('timeout', onTimeout));
+        res.on('close', () => res.removeListener('timeout', onTimeout));
 
         next();
     };
-}
+};
 
 module.exports = withTimeout;
