@@ -736,6 +736,7 @@ async function modelMapper({year , role, UA}){
 module.exports.list = catchAsync(async (req, res) => {
   let role = req.query.role;
   let design_year = req.query.design_year;
+  const HIDE_FORMS_REVIEW_DROP_DOWN = [19, 20];
 
   let condition = {
     role: role,
@@ -746,7 +747,7 @@ module.exports.list = catchAsync(async (req, res) => {
   let data = await Sidemenu.find(condition).select({ name: 1, _id: 1, collectionName: 1, path: 1, url: 1, optional: 1, folderName: 1, formId: 1, isUa: 1 });
 
   data = data.filter((value, index, self) =>
-    value.formId != 19 &&
+    !HIDE_FORMS_REVIEW_DROP_DOWN.includes(value.formId) &&
     index === self.findIndex((t) => (
       t.collectionName === value.collectionName
     ))
