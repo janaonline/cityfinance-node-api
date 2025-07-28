@@ -123,6 +123,8 @@ module.exports.updatePdfs = async (req, res) => {
 
 module.exports.convertJson = async (req, res) => {
   try {
+    req.setTimeout(500000);
+
     if (req.decoded?.role !== 'ADMIN') {
       throw new Error('Access denied. Please log in with an Admin account.');
     }
