@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const service = require('./service');
 const { verifyToken } = require('../../routes/auth/services/verifyToken');
-const withTimeout = require('../../middlewares/customTimeOutMiddleware');
+// const withTimeout = require('../../middlewares/customTimeOutMiddleware');
 
 router.get('/getYearsData', service.getYearsData);
 router.post('/updatePdfs', service.updatePdfs);
