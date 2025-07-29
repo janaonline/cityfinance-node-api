@@ -1370,7 +1370,7 @@ exports.getView = async function (req, res, next) {
             ).lean();
 
             if (!(MASTER_STATUS_ID[+ptoData?.currentFormStatus] == "Under Review By MoHUA")) {
-                const redirectionLink = `https://${req.headers.host}/ulb-form/${getDesiredYear(design_year, -1).yearId}/ptax`;
+                const redirectionLink = `${process.env.v1Url}/ulb-form/${getDesiredYear(design_year, -1).yearId}/ptax`;
                 return res.status(400).json({
                     success: true,
                     message: `Dear User, Your previous Year's form status is - In Progress .Kindly submit Details of Property Tax and User Charges Form for the previous year at - <a href="${redirectionLink}" target="_blank">Click Here!</a> in order to submit this year's form . `
