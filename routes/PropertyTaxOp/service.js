@@ -1433,7 +1433,8 @@ exports.getView = async function (req, res, next) {
                                             const indicatorObj = data[el]?.yearData[0];
                                             const { yearName, yearId } = getDesiredYear(design_year, -1);
 
-                                            if (indicatorObj.isReadonlySingleYear) {
+                                            // if (indicatorObj.isReadonlySingleYear) {
+                                            if (indicatorObj.isReadonlySingleYear && indicatorObj.value === 'Yes') {
                                                 indicatorObj.readonly = true;
                                             }
                                             if (!ptoData) {
