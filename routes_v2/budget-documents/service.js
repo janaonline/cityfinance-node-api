@@ -598,11 +598,11 @@ module.exports.downloadDump = async (req, res) => {
           : `${process.env.AWS_STORAGE_URL_PROD}${doc["budgetUrl"]}`;
       doc["ftype"] = doc["type"] === "url" ? "URL" : "PDF";
       doc["popCat"] = getPopulationCategory(doc["population"]);
-
-      const formStatus = 'Submitted';
+      
       // Only for CFR take status from MASTER_STATUS_ID;
+      let formStatus = 'Submitted';
       if (doc['budgetSource'] === 'cfr' && 'currentFormStatus' in doc) {
-        MASTER_STATUS_ID[doc["currentFormStatus"]]
+        formStatus = MASTER_STATUS_ID[doc["currentFormStatus"]];
       }
 
       doc["currentFormStatus"] = formStatus;
