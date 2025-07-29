@@ -599,7 +599,13 @@ module.exports.downloadDump = async (req, res) => {
       doc["ftype"] = doc["type"] === "url" ? "URL" : "PDF";
       doc["popCat"] = getPopulationCategory(doc["population"]);
 
-      doc["currentFormStatus"] = 'currentFormStatus' in doc ? MASTER_STATUS_ID[doc["currentFormStatus"]] : 'Submitted'
+      const formStatus = 'Submitted';
+      // Only for CFR take status from MASTER_STATUS_ID;
+      if (doc['budgetSource'] === 'cfr' && 'currentFormStatus' in doc) {
+        MASTER_STATUS_ID[doc["currentFormStatus"]]
+      }
+
+      doc["currentFormStatus"] = formStatus;
 
       worksheet.addRow(doc);
     }
