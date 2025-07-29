@@ -4,8 +4,8 @@ const EXPIRATION_IN_SEC = 60 * 60 * 24 * 90; // 3 months
 // Generalized cache middleware for different data types (e.g., dashboard)
 const cacheMiddleware = (cacheType, expirationInSeconds = EXPIRATION_IN_SEC) => {
     return async (req, res, next) => {
-        const key = `${cacheType}:${req.path}:${JSON.stringify(req.query)}`;
-
+        const key = `${cacheType}:${req.path}:${JSON.stringify(req.query)}:${JSON.stringify(req.body)}`;
+        
         try {
             const cachedData = await getCache(key);
             if (cachedData) {
@@ -30,3 +30,7 @@ const cacheMiddleware = (cacheType, expirationInSeconds = EXPIRATION_IN_SEC) => 
 };
 
 module.exports = cacheMiddleware;
+
+// Cache key info: 
+// dashboard: LedgerLogs collection (All financial nos. on portal).
+// Municipal_Bonds: BondIssuerItem collection.

@@ -3,15 +3,17 @@ const BondIssuerJson = require('../../models/bondIssuer');
 const service = require('../../service');
 const ObjectId = require("mongoose").Types.ObjectId;
 module.exports.get = async function(req, res) {
-    let query = { isActive: true};
-    if(req.query.state){
-        let state = req.query.state; 
-        query = Object.assign(query,{"state":ObjectId(state)})    
-    }
+    const query = { isActive: true};
+    const { state, ulb, ulbId } = req.query;
 
-    if (req.query.ulb) {
-      query["ulb"] = req.query.ulb;
-    }
+    if (state && ObjectId.isValid(state))
+		query['state'] = ObjectId(state);
+	
+    if (ulbId && ObjectId.isValid(ulbId))
+		query['ulbId'] = ObjectId(ulbId);
+	
+    if (ulb) query['ulb'] = ulb;
+
     // if (req.method == 'GET') {
     //   query['isActive'] = true;
     //   // Get any line item based on code or overall
