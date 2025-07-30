@@ -9,37 +9,43 @@ const {
 	bsSizeArr,
 } = require('../../utils/ledgerFormulas');
 
+
+getFinancialInfo = async (req) => {
+	const { year, stateId, ulbId } = req.query;
+	const ulbCondition = { isPublish: true };
+	const ledgerCondition = {
+		$expr: { $eq: ['$ulb_id', '$$ulbId'] },
+		isStandardizable: { $ne: 'No' },
+	};
+
+	// For state and national page, include only active ULBs.
+	// For the city page, display a denotification message if the ULB is inactive.
+	if (!ulbId) ulbCondition['isActive'] = true;
+
+	if (ulbId) ulbCondition['_id'] = ObjectId(ulbId);
+	if (stateId) ulbCondition['state'] = ObjectId(stateId);
+
+	if (!year) throw new Error('Please provide year!');
+	else ledgerCondition['year'] = year;
+
+	const query = getQuery(ulbCondition, ledgerCondition);
+	const ledgerLogsData = await Ulb.aggregate(query).exec();
+	const result = createResponseStructure(ledgerLogsData);
+
+	return {
+		result,
+		year,
+		isActive: ledgerLogsData[0]?.isActive,
+		audit_status: ledgerLogsData[0]?.audit_status || null,
+		lastModifiedAt: ledgerLogsData[0]?.lastModifiedAt || null,
+	}
+}
+
+module.exports.getFinancialInfo = getFinancialInfo;
+
 module.exports.getData = async (req, res) => {
 	try {
-		const { year, stateId, ulbId } = req.query;
-		const ulbCondition = { isPublish: true };
-		const ledgerCondition = {
-			$expr: { $eq: ['$ulb_id', '$$ulbId'] },
-			isStandardizable: { $ne: 'No' },
-		};
-
-		// For state and national page, include only active ULBs.
-		// For the city page, display a denotification message if the ULB is inactive.
-		if (!ulbId) ulbCondition['isActive'] = true;
-
-		if (ulbId) ulbCondition['_id'] = ObjectId(ulbId);
-		if (stateId) ulbCondition['state'] = ObjectId(stateId);
-
-		if (!year) throw new Error('Please provide year!');
-		else ledgerCondition['year'] = year;
-
-		const query = getQuery(ulbCondition, ledgerCondition);
-		const ledgerLogsData = await Ulb.aggregate(query).exec();
-		const result = createResponseStructure(ledgerLogsData);
-
-		res.status(200).json({
-			success: true,
-			result,
-			year,
-			isActive: ledgerLogsData[0]?.isActive,
-			audit_status: ledgerLogsData[0]?.audit_status || null,
-			lastModifiedAt: ledgerLogsData[0]?.lastModifiedAt || null,
-		});
+		res.status(200).json(await getFinancialInfo(req));
 	} catch (error) {
 		console.error('Failed to get home page data:', error);
 		res.status(500).json({
