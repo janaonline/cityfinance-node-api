@@ -82,7 +82,7 @@ const UlbSchema = new Schema({
     district: { type: String, default: "" },
     censusType: { type: String, default: "" },
     isUA: { type: String, enum: ["YES", "No"], default: "No" },
-    UA: { type: Schema.Types.ObjectId, ref: 'UA' },
+    UA: { type: Schema.Types.ObjectId, ref: 'UA', default: null },
     isMillionPlus: { type: String, enum: ["YES", "No"], default: "No" },
     amrut: { type: String, default: "" },
     lgdCode: { type: String, default: "" },

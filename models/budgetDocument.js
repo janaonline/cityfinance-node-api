@@ -5,6 +5,7 @@ const { Schema } = mongoose;
 // File schema for clarity and reuse
 const fileSchema = new Schema(
   {
+    currentFormStatus: { type: Number, required: true, default: 3 },
     type: { type: String, required: true },
     url: { type: String, required: true },
     name: { type: String, required: true },
@@ -39,11 +40,12 @@ const budgetDocumentsSchema = new Schema(
           type: Number,
           required: true,
         },
-        currentFormStatus: {
-          type: Number,
-          required: true,
-          default: 1,
-        },
+        // Add in files.
+        // currentFormStatus: {
+        //   type: Number,
+        //   required: true,
+        //   default: 1,
+        // },
         files: [fileSchema],
 
         uploadedBy: {
