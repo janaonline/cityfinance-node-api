@@ -21,6 +21,7 @@ const whitelist = [
   'https://api-stage.aaina-mohua.in',
   'https://aaina.gov.in',
   'https://api.aaina-mohua.in',
+  'http://localhost:4100',
   'http://localhost:4200',
   'https://democityfinance.dhwaniris.in',
   'http://localhost:3000',

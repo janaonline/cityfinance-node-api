@@ -62,6 +62,8 @@ const getStandardizedYears = ({ stateCode, ulbId, auditStatus }) => {
 	return LedgerLog.distinct('year', condition);
 };
 
+module.exports.getStandardizedYears = getStandardizedYears;
+
 // Returns latest budget year with data.
 module.exports.getLatestBudgetYear = async (req, res) => {
 	try {
