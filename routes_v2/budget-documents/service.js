@@ -1,10 +1,21 @@
 const FormsJson = require("../../models/FormsJson");
 const BudgetDocument = require("../../models/budgetDocument");
-const FiscalRanking = require("../../models/FiscalRankingMapper");
+const FiscalRanking = require("../../models/FiscalRanking");
 const Ulb = require("../../models/Ulb");
 const ObjectId = require("mongoose").Types.ObjectId;
 const ExcelJS = require("exceljs");
 const moment = require("moment");
+const { getDesiredYear } = require('../../service/years');
+const { MASTER_STATUS_ID } = require('../../util/FormNames');
+const { getPopulationCategory } = require('../common/common');
+const SEQUENCE = {
+  '2020-21': 6,
+  '2021-22': 7,
+  '2022-23': 8,
+  '2023-24': 9,
+  '2024-25': 10,
+  '2025-26': 11,
+}
 
 module.exports.getYearsData = async (req, res) => {
   try {
@@ -112,83 +123,174 @@ module.exports.updatePdfs = async (req, res) => {
 
 module.exports.convertJson = async (req, res) => {
   try {
-    // const data = await FiscalRanking.find({"type":"appAnnualBudget"}).select("ulb","year","file").lean();
-    const data = await FiscalRanking.aggregate([
-      {
-        $match: {
-          currentFormStatus: 11,
-        },
-      },
+    if (req.decoded?.role !== 'ADMIN') {
+      throw new Error('Access denied. Please log in with an Admin account.');
+    }
+
+    // Delete all the CFR records from Budget collection.
+    const cfrFilesRemoved = await BudgetDocument.updateMany(
+      {},
+      { $pull: { yearsData: { "files.source": "cfr" } } }
+    );
+
+    // Fetch Budget URLs from CFR collection.
+    const query = [
+      // {
+      // $match: {
+      // currentFormStatus: 11,
+      //     ulb: ObjectId("5dd24728437ba31f7eb42e79")
+      //   }
+      // },
       {
         $project: {
           ulb: 1,
           design_year: 1,
-        },
+          modifiedAt: 1,
+          currentFormStatus: 1
+        }
       },
       {
         $lookup: {
           from: "fiscalrankingmappers",
           localField: "ulb",
           foreignField: "ulb",
-          as: "result",
-        },
+          as: "result"
+        }
       },
       {
-        $unwind: "$result",
+        $unwind: "$result"
       },
       {
         $match: {
           "result.type": "appAnnualBudget",
-          "result.file.url": { $ne: "" },
-        },
+          "result.file.url": {
+            $ne: ""
+          }
+        }
       },
       {
         $group: {
           _id: "$ulb",
+          modifiedAt: { $first: '$modifiedAt' },
+          currentFormStatus: { $first: '$currentFormStatus' },
           records: {
             $push: {
-              year: "$design_year",
-              file: "$result.file",
-            },
-          },
-        },
+              year: "$result.year",
+              file: "$result.file"
+            }
+          }
+        }
       },
       {
         $project: {
           _id: 0,
           ulb: "$_id",
-          records: 1,
-        },
-      },
-      {
-        $count: "string",
-      },
-    ]);
-    // console.log("Data fetched:", data[0], "records");
-    const transformed = data.map((entry) => ({
-      ulb: ObjectId(entry._id),
-      yearsData: entry.records.map((r) => ({
-        source: "cfr",
-        designYearId: r.year, // assuming year is an ObjectId or string ID
-        designYear: r.year, // same as above; update if different
-        currentFormStatus: 1,
-        uploadedBy: ObjectId("5feeb4866d0d5e3765284b0c"),
-        files: [
-          {
-            type: "pdf",
-            value: r.file.url,
-            name: r.file.name || "Annual Budget",
-            createdAt: r.file.created_at || new Date(),
-          },
-        ],
-      })),
-    }));
-    // console.log("Transformed Data:", transformed[0]);
+          modifiedAt: "$modifiedAt",
+          currentFormStatus: "$currentFormStatus",
+          records: 1
+        }
+      }
+    ];
+    const data = await FiscalRanking.aggregate(query).exec();
+
+    // Transform CFR collection data into the structure required by the Budget collection.    
+    const transformed = {};
+    data.forEach((entry) => {
+      const ulbId = entry.ulb;
+      const ulbObjectId = ObjectId(ulbId);
+
+      if (!transformed[ulbId]) {
+        transformed[ulbId] = { yearsData: {} };
+      }
+
+      entry.records.forEach((r) => {
+        const desiredYear = getDesiredYear(r.year);
+        const designYearId = r.year;
+
+        transformed[ulbId].yearsData[designYearId] = {
+          designYearId,
+          designYear: desiredYear.yearName,
+          sequence: SEQUENCE[desiredYear.yearName],
+          uploadedBy: ObjectId("5feeb4866d0d5e3765284b0c"),
+          files: [
+            {
+              currentFormStatus: entry.currentFormStatus,
+              source: "cfr",
+              type: "pdf",
+              url: r.file.url,
+              name: r.file.name || "Annual Budget",
+              createdAt: new Date(entry.modifiedAt) || new Date(),
+            },
+          ],
+        };
+      });
+    });
+
+    // Loop over transformed data (CFR data) and update in Budget collection.
+    const yearlyStats = {}; // { updateCount, modifiedCount }
+
+    for (const [ulbId, data] of Object.entries(transformed)) {
+      const ulbObjectId = ObjectId(ulbId);
+
+      for (const [yearId, budgetData] of Object.entries(data.yearsData)) {
+        const designYearObjectId = ObjectId(yearId);
+
+        // Initialize stats for the year if not present
+        if (!yearlyStats[yearId]) {
+          yearlyStats[yearId] = {
+            updateCount: 0,
+            modifiedCount: 0,
+          };
+        }
+
+        const searchCondition = {
+          ulb: ulbObjectId,
+          'yearsData.designYearId': designYearObjectId,
+        };
+
+        // Check if this year exists
+        const existing = await BudgetDocument.findOne(searchCondition, { 'yearsData.$': 1 });
+
+        let updateResult;
+
+        if (existing && existing.yearsData?.length > 0) {
+          // Update files in existing year
+          updateResult = await BudgetDocument.updateOne(
+            searchCondition,
+            { $push: { 'yearsData.$.files': { $each: budgetData.files } } }
+          );
+        } else {
+          // Add a new year entry
+          updateResult = await BudgetDocument.updateOne(
+            { ulb: ulbObjectId },
+            {
+              $push: {
+                yearsData: {
+                  ...budgetData,
+                  designYearId: designYearObjectId,
+                },
+              },
+            },
+            { upsert: true }
+          );
+        }
+
+        // Update stats
+        yearlyStats[yearId].updateCount += 1;
+        if (updateResult.modifiedCount > 0) {
+          yearlyStats[yearId].modifiedCount += 1;
+        }
+      }
+    }
+
     return res.status(200).json({
       status: true,
-      message: "ULB list fetched successfully.",
-      data: transformed,
+      message: "Budget data updated successfully.",
+      data: yearlyStats,
+      cfrFilesRemoved: cfrFilesRemoved.n,
     });
+
+
   } catch (error) {
     console.error("Error:", error);
     return res.status(500).json({
@@ -401,6 +503,7 @@ module.exports.downloadDump = async (req, res) => {
       { header: "Budget Year", key: "budgetYear", width: 15 },
       { header: "Date of submission", key: "createdAt", width: 25 },
       { header: "Source", key: "source", width: 10 },
+      { header: "Form Status", key: "currentFormStatus", width: 10 },
       { header: "File Type", key: "ftype", width: 10 },
       { header: "Budget URL", key: "url", width: 50 },
     ];
@@ -412,7 +515,7 @@ module.exports.downloadDump = async (req, res) => {
           from: "ulbs",
           let: { ulbId: "$ulb" },
           pipeline: [
-            { $match: { $expr: { $eq: ["$_id", "$$ulbId"] } , isPublish: true} },
+            { $match: { $expr: { $eq: ["$_id", "$$ulbId"] }, isPublish: true } },
             {
               $lookup: {
                 from: "states",
@@ -463,6 +566,7 @@ module.exports.downloadDump = async (req, res) => {
           budgetYear: "$yearsData.designYear",
           budgetSource: "$yearsData.files.source",
           budgetUrl: "$yearsData.files.url",
+          currentFormStatus: "$yearsData.files.currentFormStatus",
           type: "$yearsData.files.type",
           createdAt: "$yearsData.files.createdAt",
         },
@@ -494,6 +598,14 @@ module.exports.downloadDump = async (req, res) => {
           : `${process.env.AWS_STORAGE_URL_PROD}${doc["budgetUrl"]}`;
       doc["ftype"] = doc["type"] === "url" ? "URL" : "PDF";
       doc["popCat"] = getPopulationCategory(doc["population"]);
+      
+      // Only for CFR take status from MASTER_STATUS_ID;
+      let formStatus = 'Submitted';
+      if (doc['budgetSource'] === 'cfr' && 'currentFormStatus' in doc) {
+        formStatus = MASTER_STATUS_ID[doc["currentFormStatus"]];
+      }
+
+      doc["currentFormStatus"] = formStatus;
 
       worksheet.addRow(doc);
     }
@@ -518,14 +630,4 @@ module.exports.downloadDump = async (req, res) => {
       error: error.message,
     });
   }
-};
-
-// eg: Input: 750000, Output: '500K-1M'
-getPopulationCategory = (population) => {
-  if (population < 100000) return "<100K";
-  else if (population >= 100000 && population < 500000) return "100K-500K";
-  else if (population >= 500000 && population < 1000000) return "500K-1M";
-  else if (population >= 1000000 && population < 4000000) return "1M-4M";
-  else if (population >= 4000000) return "4M+";
-  else return "NA";
 };
