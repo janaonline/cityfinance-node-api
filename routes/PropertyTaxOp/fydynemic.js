@@ -24,7 +24,7 @@ const mandatDisplayPrioritiesForCurrYear = [
 ];
 
 
-const propertyTaxOpFormJson = ({ role, design_year, ptoData, ptoMaper = [] }) => {
+const propertyTaxOpFormJson = ({ role, design_year, ptoData, ptoMaper = [], ptoLatestYearData }) => {
 
   lastYearId = '606aafb14dff55e6c075d3ae'; // 22-23
   const additionalYears = getAdditionalYears(lastYearId, design_year);
@@ -10552,6 +10552,11 @@ const propertyTaxOpFormJson = ({ role, design_year, ptoData, ptoMaper = [] }) =>
             indicatorObj["label"] = `FY ${yearName}`;
           }
           if (ptoData) {
+            indicatorObj.year = yearId;
+          } else if (ptoLatestYearData) {
+            // If previous year is available in db then set prevYear-1.
+            const { yearId } = getDesiredYear(ptoLatestYearData.design_year, -1);
+
             indicatorObj.year = yearId;
           }
         }

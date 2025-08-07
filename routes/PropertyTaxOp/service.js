@@ -1354,10 +1354,15 @@ exports.getView = async function (req, res, next) {
             return res.status(400).json({ status: false, message: "Something went wrong!" });
         }
         const design_year = req.query.design_year;
+        const designYearStr = getDesiredYear(design_year);
         const [ulbData] = await Ulb.aggregate(ulbDataWithGsdpGrowthRateQuery(req.query.ulb));
         const gsdpYear = getStateGsdpYear(design_year);
         const gsdpGrowthRate = ulbData.gsdpGrowthRateData?.find(el => el.year === gsdpYear)?.currentPrice;
-        const isLatestOnboarderUlb = !ulbData.access_2324;
+        // const isLatestOnboarderUlb = !ulbData.access_2324;
+        const yr = designYearStr?.yearName
+        const [start, end] = yr.split('-');
+        const accessYear = `access_${start.slice(2)}${end}`;
+        const isLatestOnboarderUlb = !ulbData[accessYear];
 
         if (!isLatestOnboarderUlb && isBeyond2023_24(design_year)) {
             const desiredYear = getDesiredYear(design_year, -1);
@@ -1392,7 +1397,7 @@ exports.getView = async function (req, res, next) {
             // ptoId: ObjectId(ptoData._id) 
         }).populate("child").lean();
 
-        let fyDynemic = { ...await propertyTaxOpFormJson({ role, design_year, ptoMaper, ptoData }) };
+        let fyDynemic = { ...await propertyTaxOpFormJson({ role, design_year, ptoMaper, ptoData, ptoLatestYearData }) };
         // return res.status(200).json(fyDynemic);
 
         const { isDraft = false, status = "PENDING", currentFormStatus = MASTER_STATUS['Not Started'] } = ptoData || {};
@@ -1434,7 +1439,8 @@ exports.getView = async function (req, res, next) {
                                             const { yearName, yearId } = getDesiredYear(design_year, -1);
 
                                             // if (indicatorObj.isReadonlySingleYear) {
-                                            if (indicatorObj.isReadonlySingleYear && indicatorObj.value === 'Yes') {
+                                                // if (indicatorObj.isReadonlySingleYear && indicatorObj.value === 'Yes') {
+                                            if (indicatorObj.value === 'Yes') {
                                                 indicatorObj.readonly = true;
                                             }
                                             if (!ptoData) {
