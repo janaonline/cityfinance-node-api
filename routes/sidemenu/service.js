@@ -93,6 +93,9 @@ let SUB_CATEGORY_CONSTANTS = {
   "Submit Claims for 15th FC Grants": 3
 }
 
+// Forms to be hidden from state/ mohua
+const HIDE_FORMS = [19, 20];
+
 const previousYearDependentForms = [CollectionName['dur']]
 
 const calculateTick = (tooltip, loggedInUserRole, viewFor) => {
@@ -746,7 +749,7 @@ module.exports.list = catchAsync(async (req, res) => {
   let data = await Sidemenu.find(condition).select({ name: 1, _id: 1, collectionName: 1, path: 1, url: 1, optional: 1, folderName: 1, formId: 1, isUa: 1 });
 
   data = data.filter((value, index, self) =>
-    value.formId != 19 &&
+    !HIDE_FORMS.includes(value.formId) &&
     index === self.findIndex((t) => (
       t.collectionName === value.collectionName
     ))
@@ -867,7 +870,7 @@ const sortByPosition = (data) => {
 };
 // const groupByKey = (list, key) => list.reduce((hash, obj) => ({ ...hash, [obj[key]]: (hash[obj[key]] || []).concat(obj) }), {})
 const groupByKey = (list, key, role) => list.reduce((hash, obj) => {
-  if (role != 'ULB' && obj.formId == 19) return hash;
+  if (role != 'ULB' && HIDE_FORMS.includes(obj.formId)) return hash;
 
   return { ...hash, [obj[key]]: (hash[obj[key]] || []).concat(obj) }
 }, {})
