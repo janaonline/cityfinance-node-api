@@ -337,8 +337,8 @@ module.exports.getRawUlbsList15To18 = async (year = "2015-16", stateId = null, u
     }
 }
 
-/* Get the list of ULBs whose "Budget Pdf" are available - Fiscal ranking. */
-module.exports.getBudgetPdf19Onwards = async (year = "2021-22", stateId = null, ulbName = null, ulbId = null, type = "pdf", category, skip = 0, limit = 10) => {
+/* Get the list of ULBs whose "Budget Pdf" are available. */
+module.exports.getBudgetPdfs = async (year = "2021-22", stateId = null, ulbName = null, ulbId = null, type = "pdf", category, skip = 0, limit = 10) => {
     try {
         const matchCondition = { "isPublish": true };
 
@@ -347,68 +347,109 @@ module.exports.getBudgetPdf19Onwards = async (year = "2021-22", stateId = null, 
 
         if (stateId) matchCondition['state'] = ObjectId(stateId);
 
-        return [
-          { $match: matchCondition },
-          {
-            $lookup: {
-              from: "states",
-              localField: "state",
-              foreignField: "_id",
-              as: "state",
+        const query = [
+            { $match: matchCondition },
+            {
+                $lookup: {
+                    from: "states",
+                    localField: "state",
+                    foreignField: "_id",
+                    as: "state"
+                }
             },
-          },
-          {
-            $unwind: {
-              path: "$state",
-              preserveNullAndEmptyArrays: true,
+            {
+                $unwind: {
+                    path: "$state",
+                    preserveNullAndEmptyArrays: true
+                }
             },
-          },
-          {
-            $lookup: {
-              from: "budgetdocuments",
-              localField: "_id",
-              foreignField: "ulb",
-              as: "budgetDocs",
+            {
+                $lookup: {
+                    from: "budgetdocuments",
+                    localField: "_id",
+                    foreignField: "ulb",
+                    as: "budgetDocs"
+                }
             },
-          },
-          { $match: { budgetDocs: { $ne: [] } } },
-          {
-            $project: {
-              ulbId: "$_id",
-              ulbName: "$name",
-              state: "$state.name",
-              budgetDocs: 1,
+            { $match: { budgetDocs: { $ne: [] } } },
+            {
+                $project: {
+                    ulbId: "$_id",
+                    ulbName: "$name",
+                    state: "$state.name",
+                    budgetDocs: 1
+                }
             },
-          },
-          { $unwind: "$budgetDocs" },
-          { $unwind: "$budgetDocs.yearsData" },
-          { $match: { "budgetDocs.yearsData.designYear": year } },
-          { $unwind: "$budgetDocs.yearsData.files" },
-          {
-            $project: {
-              _id: "$ulbId",
-              ulbId: "$ulbId",
-              ulbName: 1,
-              state: 1,
-              year: "$budgetDocs.yearsData.designYear",
-              fileName: {
-                $concat: [
-                  "$state",
-                  "_",
-                  "$ulbName",
-                  "_",
-                  "$budgetDocs.yearsData.designYear"
-                ],
-              },
-              fileUrl: "$budgetDocs.yearsData.files.url",
-              modifiedAt: "$budgetDocs.yearsData.files.createdAt",
-              type,
-              section: 'budgetPdf',
+            { $unwind: "$budgetDocs" },
+            { $unwind: "$budgetDocs.yearsData" },
+            { $match: { "budgetDocs.yearsData.designYear": year } },
+            {
+                $addFields: {
+                    cfrFiles: {
+                        $filter: {
+                            input: "$budgetDocs.yearsData.files",
+                            as: "file",
+                            cond: { $eq: ["$$file.source", "cfr"] }
+                        }
+                    },
+                    ulbFiles: {
+                        $filter: {
+                            input: "$budgetDocs.yearsData.files",
+                            as: "file",
+                            cond: {
+                                $and: [
+                                    { $eq: ["$$file.type", "pdf"] },
+                                    { $eq: ["$$file.source", "ulb"] }
+                                ]
+                            }
+                        }
+                    },
+                    dnfFiles: {
+                        $filter: {
+                            input: "$budgetDocs.yearsData.files",
+                            as: "file",
+                            cond: { $eq: ["$$file.source", "dni"] }
+                        }
+                    }
+                }
             },
-          },
-          { $skip: Number(skip) },
-          { $limit: Number(limit) }
-        ];
+            {
+                $addFields: {
+                    selectedFiles: {
+                        $cond: [
+                            { $gt: [{ $size: "$cfrFiles" }, 0] },
+                            "$cfrFiles",
+                            {
+                                $cond: [
+                                    { $gt: [{ $size: "$ulbFiles" }, 0] },
+                                    "$ulbFiles",
+                                    "$dnfFiles"
+                                ]
+                            }
+                        ]
+                    }
+                }
+            },
+            {
+                $project: {
+                    _id: "$ulbId",
+                    ulbId: "$ulbId",
+                    ulbName: 1,
+                    state: 1,
+                    year: "$budgetDocs.yearsData.designYear",
+                    fileName: { $concat: ["$state", "_", "$ulbName", "_", "$budgetDocs.yearsData.designYear"] },
+                    fileUrl: { $arrayElemAt: ["$selectedFiles.url", 0] },
+                    modifiedAt: { $arrayElemAt: ["$selectedFiles.createdAt", 0] },
+                    type,
+                    section: "budgetPdf"
+                }
+            },
+            { $skip: Number(skip) },
+            { $limit: Number(limit) }
+        ]
+
+        // console.log(JSON.stringify(query, null, 2));
+        return query;
 
     } catch (error) {
         console.error("Failed to create query: ", error);
