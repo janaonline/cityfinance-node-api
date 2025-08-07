@@ -4,7 +4,7 @@ const { sendOtp } = require("./services/sendOtp");
 const { verifyOtp } = require("./services/verifyOtp");
 const { resendOtp } = require("./services/resendOtp");
 const { register } = require("./services/register");
-const { login } = require("./services/login");
+const { login ,afsLogin } = require("./services/login");
 const { verifyToken } = require("./services/verifyToken");
 const {
   resendAccountVerificationLink,
@@ -24,6 +24,7 @@ router.post("/getHash", gettingHash);
 router.get("/end_session/:_id", endSession);
 router.post("/register" ,register);
 router.post("/login",login);
+router.post("/afs-login", afsLogin);
 router.post("/verifyOtp", verifyOtp);
 router.post("/sendOtp", sendOtp);
 router.post("/resendOtp", sendOtp);

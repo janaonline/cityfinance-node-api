@@ -51,4 +51,7 @@ router.use('/bond-issuances', require('./bond-issuances'));
 // Ledgers.
 router.use('/ledger', require('./ledger'));
 
+// AFS Digitization
+router.use('/afs-digitization', require('./afs-digitization'));
+
 module.exports = router;

@@ -107,3 +107,62 @@ getYears = async () => {
   });
   return newObj;
 };
+
+
+// temporary login for AFS digitization
+module.exports.afsLogin = async (req, res) => {
+  try {
+    const { username, password } = req.body;
+
+    //  Hardcoded users list
+    const users = [
+      {
+        username: 'admin1',
+        password: '1234',
+        name: 'Admin One',
+        email: 'admin1@cityfinance.in',
+        role: 'AFS_USER'
+      },
+      {
+        username: 'admin2',
+        password: '2345',
+        name: 'Admin Two',
+        email: 'admin2@cityfinance.in',
+        role: 'AFS_USER'
+      }
+    ];
+
+    //  Find matching user
+    const user = users.find(u => u.username === username && u.password === password);
+
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid username or password'
+      });
+    }
+
+    // Token (dummy for now)
+    const token = 'demo-token-123456';
+
+    //  Successful response
+    return res.status(200).json({
+      success: true,
+      message: 'AFS Login successful',
+      token,
+      user: {
+        username: user.username,
+        name: user.name,
+        email: user.email,
+        role: user.role
+      }
+    });
+
+  } catch (error) {
+    console.error('AFS login error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Internal server error'
+    });
+  }
+};
