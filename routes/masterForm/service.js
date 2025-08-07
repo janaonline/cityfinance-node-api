@@ -780,7 +780,7 @@ module.exports.getAll = catchAsync(async (req, res) => {
           p3.push(d);
         }
       }
-      console.log(util.inspect(queryNotStarted, { showHidden: false, depth: null }))
+      // console.log(util.inspect(queryNotStarted, { showHidden: false, depth: null }))
       let noMasterFormData = await Ulb.aggregate(queryNotStarted).exec();
       finalOutput.push(
         ...p1,
@@ -800,7 +800,7 @@ module.exports.getAll = catchAsync(async (req, res) => {
           );
         });
       }
-      console.log(finalOutput);
+      // console.log(finalOutput);
       if (finalOutput) {
         return res.status(200).json({
           success: true,
@@ -4288,7 +4288,7 @@ const stateULB = (state) => {
     // console.log(stateULB)
     // let stateULB = await Ulb.find({ state }).countDocuments();
     // console.log(stateULB)
-    res(stateULB[0].count);
+    res(stateULB?.[0]?.count);
   });
 };
 
