@@ -841,7 +841,9 @@ module.exports.getForm = async (req, res, next) => {
 // Function to update the target value
 function updateTargetValue(element, targetPath, targetYear, slbDataNotFilled, defaultValue = "") {
   const targetValue = targetPath?.[targetYear];
-  element.target_1.value = targetValue !== undefined ? Number(targetValue) : defaultValue;
+  
+  if (element.target_1.value == null)
+    element.target_1.value = targetValue !== undefined ? Number(targetValue) : defaultValue;
 
   if (slbDataNotFilled) {
     element.targetDisable = false;
