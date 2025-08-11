@@ -86,8 +86,8 @@ module.exports.changeGetApiForm = async (req, res, next) => {
             let keysToBeDeleted = ["_id", "createdAt", "modifiedAt", "actionTakenByRole", "actionTakenBy", "ulb", "design_year"]
             let closingBalance = round((+form.grantPosition.unUtilizedPrevYr) + (+form.grantPosition.receivedDuringYr), 2) - (+form.grantPosition.expDuringYr);
             flattedForm['grantPosition.closingBal'] = closingBalance ? round(closingBalance, 2) : closingBalance
-            if(form.grantPosition && form.grantPosition.fileUploadDuringYrWithZeroReason)
-                flattedForm['grantPosition.fileUploadDuringYrWithZeroReason'] = form.grantPosition.fileUploadDuringYrWithZeroReason;
+            if(form.grantPosition && form.grantPosition.expDuringYrfileUpload)
+                flattedForm['grantPosition.expDuringYrfileUpload'] = form.grantPosition.expDuringYrfileUpload;
             obj = await mutateResponse(obj, flattedForm, keysToBeDeleted, role)
             obj[0].isDraft = form.isDraft
             responseData[0]['language'] = obj
