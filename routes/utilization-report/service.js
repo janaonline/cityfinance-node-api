@@ -1173,16 +1173,16 @@ module.exports.read2223 = catchAsync(async (req, res, next) => {
             Number(fetchedData?.grantPosition.closingBal).toFixed(2)
           ))
           : "";
-          typeof fetchedData?.grantPosition.receivedDuringYrWithZero === "string"
-          ? (fetchedData.grantPosition.receivedDuringYrWithZero = fetchedData?.grantPosition.receivedDuringYrWithZero
+          typeof fetchedData?.grantPosition.expDuringYrWithZero === "string"
+          ? (fetchedData.grantPosition.expDuringYrWithZero = fetchedData?.grantPosition.expDuringYrWithZero
           )
           : "";   
-          typeof fetchedData?.grantPosition.receivedDuringYrWithZeroReason === "string"
-          ? (fetchedData.grantPosition.receivedDuringYrWithZeroReason = fetchedData?.grantPosition.receivedDuringYrWithZeroReason
+          typeof fetchedData?.grantPosition.expDuringYrWithZeroReason === "string"
+          ? (fetchedData.grantPosition.expDuringYrWithZeroReason = fetchedData?.grantPosition.expDuringYrWithZeroReason
           )
           : "";
-          typeof fetchedData?.grantPosition.fileUploadDuringYrWithZeroReason === "object"
-          ? (fetchedData.grantPosition.fileUploadDuringYrWithZeroReason = fetchedData?.grantPosition.fileUploadDuringYrWithZeroReason
+          typeof fetchedData?.grantPosition.expDuringYrfileUpload === "object"
+          ? (fetchedData.grantPosition.expDuringYrfileUpload = fetchedData?.grantPosition.expDuringYrfileUpload
           )
           : "";
       }
