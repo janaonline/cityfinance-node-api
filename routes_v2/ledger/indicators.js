@@ -313,9 +313,10 @@ module.exports.getCityDasboardIndicators = async (req, res) => {
     const header = {
       name: "Indicators",
       yearData: yearsArray,
-      className: "text-center fw-bold ",
+      className: "fw-bold ",
       isHeader: true,
     };
+    // console.log(header, "this is header");
     var params = indicators.map(({ lineItems, ...rest }) => rest);
     const source = buildSourceStatement(params);
     // console.log(source,'this is source')
@@ -332,19 +333,24 @@ module.exports.getCityDasboardIndicators = async (req, res) => {
               (i) =>
                 indicators?.[i]?.indicators?.totOwnRevenueByTotRevenue ?? "N/A"
             ),
-            info: "Total Expenditure to Total Revenue (%)",
+            yearGrowth: ['', '89', '-90',],
+            info:'What is Own Source Revenue to Total Revenue?This metric indicates the extent to which a ULB’s revenue is generated from its own revenue sources such as property tax, rental income from municipal properties, fees and user charges, etc.A higher ratio reflects greater fiscal self-reliance and lesser dependence on inter-governmental transfers.How is it calculated? Own Source Revenue: Total Revenue',
           },
           {
             name: "Grants to Total Revenue (%)",
             yearData: [0, 1, 2].map(
               (i) => indicators?.[i]?.indicators?.grantsByTotRevenue ?? "N/A"
             ),
-            info: "Grants to Total Revenue (%)",
+            info: "What is Grants to Total Revenue?This metric indicates the extent to which a ULB’s revenue is supplemented by inter-governmental revenue grants.A lower ratio is desirable indicating greater self-reliance and reduced dependence on inter-governmental transfers.How is it calculated?Revenue Grants / Total Revenue Income",
           },
           {
-            name: "Operating Surplus",
+            name: "Operating Surplus(Cr)",
             yearData: [0, 1, 2].map(
-              (i) => indicators?.[i]?.indicators?.operatingSurplus ?? "N/A"
+              // (i) => indicators?.[i]?.indicators?.operatingSurplus ?? "N/A"
+              (i) =>{
+                const value = indicators?.[i]?.indicators?.operatingSurplus ?? "N/A"
+                return formatToCrore(value);
+              }
             ),
             info: "Operating Surplus",
           },
@@ -357,122 +363,176 @@ module.exports.getCityDasboardIndicators = async (req, res) => {
         data: [
           header,
           {
-            name: "Total Revenue",
+            name: "Total Revenue(Cr)",
             yearData: [0, 1, 2].map(
-              (i) => indicators?.[i]?.indicators?.totRevenue ?? "N/A"
+              (i) => {
+                const value = indicators?.[i]?.indicators?.totRevenue ?? "N/A"
+                return formatToCrore(value);
+              }
+              // (i) => indicators?.[i]?.indicators?.totRevenue ?? "N/A"
             ),
-            info: "Total Revenue (%)",
+            info: "What is Total Revenue?This metric Indicates the revenue income a ULB earns or receives from tax and non-tax sources.How is it calculated?Total Revenue = Own Source Revenue + Assigned Revenue +  Grants + Others",
             children: [
               {
-                name: "Own Source Revenue",
+                name: "Own Source Revenue(Cr)",
                 yearData: [0, 1, 2].map(
-                  (i) => indicators?.[i]?.indicators?.totOwnRevenue ?? "N/A"
+                  // (i) => indicators?.[i]?.indicators?.totOwnRevenue ?? "N/A"
+                  (i) => {
+                const value = indicators?.[i]?.indicators?.totOwnRevenue ?? "N/A"
+                return formatToCrore(value);
+              }
                 ),
-                info: "Own Source Revenue",
+                // info: "Own Source Revenue",
                 className: "ps-5 ",
               },
               {
-                name: "Assigned Revenue",
+                name: "Assigned Revenue(Cr)",
                 yearData: [0, 1, 2].map(
-                  (i) => indicators?.[i]?.lineItems?.["120"] ?? "N/A"
+                  (i) => {
+                const value = indicators?.[i]?.lineItems?.["120"] ?? "N/A"
+                return formatToCrore(value);
+              }
+                  // (i) => indicators?.[i]?.lineItems?.["120"] ?? "N/A"
                 ),
-                info: "Assigned Revenue",
+                // info: "Assigned Revenue",
                 className: "ps-5 ",
               },
               {
-                name: "Revenue Grants",
+                name: "Revenue Grants(Cr)",
                 yearData: [0, 1, 2].map(
-                  (i) => indicators?.[i]?.lineItems?.["160"] ?? "N/A"
+                  (i) => {
+                const value = indicators?.[i]?.lineItems?.["160"] ?? "N/A"
+                return formatToCrore(value);
+              }
+                  // (i) => indicators?.[i]?.lineItems?.["160"] ?? "N/A"
                 ),
-                info: "Revenue Grants",
+                // info: "Revenue Grants",
                 className: "ps-5 ",
               },
               {
-                name: "Others",
+                name: "Others(Cr)",
                 yearData: [0, 1, 2].map(
-                  (i) => indicators?.[i]?.lineItems?.["100"] ?? "N/A"
+                  (i) => {
+                const value = indicators?.[i]?.lineItems?.["100"] ?? "N/A"
+                return formatToCrore(value);
+              }
+                  // (i) => indicators?.[i]?.lineItems?.["100"] ?? "N/A"
                 ),
-                info: "Others",
+                // info: "Others",
                 className: "ps-5 ",
               },
             ],
           },
           {
-            name: "Total Own Source Revenue",
+            name: "Total Own Source Revenue(Cr)",
             yearData: [0, 1, 2].map(
-              (i) => indicators?.[i]?.indicators?.totOwnRevenue ?? "N/A"
+              (i) => {
+                const value = indicators?.[i]?.indicators?.totOwnRevenue ?? "N/A"
+                return formatToCrore(value);
+              }
+              // (i) => indicators?.[i]?.indicators?.totOwnRevenue ?? "N/A"
             ),
-            info: "Total Own Source Revenue",
+            info: "What is Total Own Source Revenue?This metric indicates a ULB's recurring expenses incurred on day-to-day functioning and operational needs. How is it calculated?Own Source Revenue = Tax Revenue + Fees and User Charges + Rental Income + Sale and Hire Charges + Income from Investments + Income Earned + Other Income",
             children: [
               {
-                name: "Tax Revenue",
+                name: "Tax Revenue(Cr)",
                 yearData: [0, 1, 2].map(
-                  (i) => indicators?.[i]?.lineItems?.["110"] ?? "N/A"
+                  (i) => {
+                const value = indicators?.[i]?.lineItems?.["110"] ?? "N/A"
+                return formatToCrore(value);
+              }
+                  // (i) => indicators?.[i]?.lineItems?.["110"] ?? "N/A"
                 ),
-                info: "Tax Revenue",
+                // info: "Tax Revenue",
                 className: "ps-5 ",
               },
               {
-                name: "Rental Income",
+                name: "Rental Income(Cr)",
                 yearData: [0, 1, 2].map(
-                  (i) => indicators?.[i]?.lineItems?.["130"] ?? "N/A"
+                  // (i) => indicators?.[i]?.lineItems?.["130"] ?? "N/A"
+                  (i) =>  {
+                const value = indicators?.[i]?.lineItems?.["130"] ?? "N/A"
+                return formatToCrore(value);
+              }
                 ),
-                info: "Rental Income",
+                // info: "Rental Income",
                 className: "ps-5 ",
               },
               {
-                name: "Fee & User Charges",
+                name: "Fee & User Charges(Cr)",
                 yearData: [0, 1, 2].map(
-                  (i) => indicators?.[i]?.lineItems?.["140"] ?? "N/A"
+                  (i) => {
+                const value = indicators?.[i]?.lineItems?.["140"] ?? "N/A"
+                return formatToCrore(value);
+              }
+                  // (i) => indicators?.[i]?.lineItems?.["140"] ?? "N/A"
                 ),
-                info: "Fee & User Charges",
+                // info: "Fee & User Charges",
                 className: "ps-5 ",
               },
               {
-                name: "Sale & Hire Charges",
+                name: "Sale & Hire Charges(Cr)",
                 yearData: [0, 1, 2].map(
-                  (i) => indicators?.[i]?.lineItems?.["150"] ?? "N/A"
+                  // (i) => indicators?.[i]?.lineItems?.["150"] ?? "N/A"
+                  (i) => {
+                const value = indicators?.[i]?.lineItems?.["150"] ?? "N/A"
+                return formatToCrore(value);
+              }
                 ),
-                info: "Sale & Hire Charges",
+                // info: "Sale & Hire Charges",
                 className: "ps-5 ",
               },
               {
-                name: "Other Income",
+                name: "Other Income(Cr)",
                 yearData: [0, 1, 2].map(
-                  (i) => indicators?.[i]?.lineItems?.["180"] ?? "N/A"
+                  (i) => {
+                const value =indicators?.[i]?.lineItems?.["180"] ?? "N/A"
+                return formatToCrore(value);
+              }
+                  // (i) => indicators?.[i]?.lineItems?.["180"] ?? "N/A"
                 ),
-                info: "Other Income",
+                // info: "Other Income",
                 className: "ps-5 ",
               },
               {
-                name: "Income from Investment and Interest Earned",
-                yearData: [0, 1, 2].map((i) => {
-                  const v170 = indicators?.[i]?.lineItems?.["170"];
-                  const v171 = indicators?.[i]?.lineItems?.["171"];
-                  if (v170 == null && v171 == null) {
-                    return "N/A";
-                  }
-                  return (v170 ?? 0) + (v171 ?? 0);
-                }),
-                info: "Income from Investment and Interest Earned",
+                name: "Income from Investment(Cr)",
+                yearData: [0, 1, 2].map(
+                  (i) => {
+                const value =indicators?.[i]?.lineItems?.["170"] ?? "N/A"
+                return formatToCrore(value);
+              }
+                ),
+                // info: "Interest Earned",
                 className: "ps-5 ",
               },
+              {
+                name: "Interest Earned(Cr)",
+                yearData: [0, 1, 2].map(
+                  (i) => {
+                const value =indicators?.[i]?.lineItems?.["171"] ?? "N/A"
+                return formatToCrore(value);
+              }
+                ),
+                // info: "Interest Earned",
+                className: "ps-5 ",
+              },
+               
             ],
           },
-           {
+          {
             name: "Own Source revenue to Total Revenue (%)",
             yearData: [0, 1, 2].map(
               (i) =>
                 indicators?.[i]?.indicators?.totOwnRevenueByTotRevenue ?? "N/A"
             ),
-            info: "Total Expenditure to Total Revenue (%)",
+            info:'What is Own Source Revenue to Total Revenue?This metric indicates the extent to which a ULB’s revenue is generated from its own revenue sources such as property tax, rental income from municipal properties, fees and user charges, etc.A higher ratio reflects greater fiscal self-reliance and lesser dependence on inter-governmental transfers.How is it calculated? Own Source Revenue: Total Revenue',
           },
           {
             name: "Grants to Total Revenue (%)",
             yearData: [0, 1, 2].map(
               (i) => indicators?.[i]?.indicators?.grantsByTotRevenue ?? "N/A"
             ),
-            info: "Grants to Total Revenue (%)",
+            info: "What is Grants to Total Revenue?This metric indicates the extent to which a ULB’s revenue is supplemented by inter-governmental revenue grants.A lower ratio is desirable indicating greater self-reliance and reduced dependence on inter-governmental transfers.How is it calculated?Revenue Grants / Total Revenue Income",
           },
         ],
       };
@@ -483,46 +543,66 @@ module.exports.getCityDasboardIndicators = async (req, res) => {
         data: [
           header,
           {
-            name: "Total Revenue Expenditure",
+            name: "Total Revenue Expenditure(Cr)",
             yearData: [0, 1, 2].map(
-              (i) => indicators?.[i]?.indicators?.totRevenueExpenditure ?? "N/A"
+              (i) =>{
+                const value = indicators?.[i]?.indicators?.totRevenueExpenditure ?? "N/A"
+                return formatToCrore(value);
+              }
+              // (i) => indicators?.[i]?.indicators?.totRevenueExpenditure ?? "N/A"
             ),
-            info: "Total Revenue Expenditure",
+            info: "What is Total Revenue Expenditure?This metric indicates a ULB's recurring expenses incurred on day-to-day functioning and operational needs. How is it calculated?Revenue Expenditure = Establishment Expenses + Administrative Expenses + Operations and Maintenance + Interest and Finance Charges + Others",
             children: [
               {
-                name: "Establishment Expenses",
+                name: "Establishment Expenses(Cr)",
                 yearData: [0, 1, 2].map(
-                  (i) => indicators?.[i]?.lineItems?.["210"] ?? "N/A"
+                  (i) => {
+                const value = indicators?.[i]?.lineItems?.["210"] ?? "N/A"
+                return formatToCrore(value);
+              }
+                  // (i) => indicators?.[i]?.lineItems?.["210"] ?? "N/A"
                 ),
-                info: "Establishment Expenses",
+                // info: "Establishment Expenses",
                 className: "ps-5 ",
               },
               {
-                name: "Administrative Expenses",
+                name: "Administrative Expenses(Cr)",
                 yearData: [0, 1, 2].map(
-                  (i) => indicators?.[i]?.lineItems?.["220"] ?? "N/A"
+                  (i) =>  {
+                const value = indicators?.[i]?.lineItems?.["220"] ?? "N/A"
+                return formatToCrore(value);
+              }
+                  // (i) => indicators?.[i]?.lineItems?.["220"] ?? "N/A"
                 ),
-                info: "Administrative Expenses",
+                // info: "Administrative Expenses",
                 className: "ps-5 ",
               },
               {
-                name: "O&M Expenses",
+                name: "O&M Expenses(Cr)",
                 yearData: [0, 1, 2].map(
-                  (i) => indicators?.[i]?.lineItems?.["230"] ?? "N/A"
+                  (i) =>  {
+                const value = indicators?.[i]?.lineItems?.["230"] ?? "N/A"
+                return formatToCrore(value);
+              }
+                  // (i) => indicators?.[i]?.lineItems?.["230"] ?? "N/A"
                 ),
-                info: "O&M Expenses",
+                // info: "O&M Expenses",
                 className: "ps-5 ",
               },
               {
-                name: "Interest Charges",
+                name: "Interest Charges(Cr)",
                 yearData: [0, 1, 2].map(
-                  (i) => indicators?.[i]?.lineItems?.["240"] ?? "N/A"
+                  (i) =>  {
+                const value = indicators?.[i]?.lineItems?.["240"] ?? "N/A"
+                return formatToCrore(value);
+              }
+                  // (i) => indicators?.[i]?.lineItems?.["240"] ?? "N/A"
                 ),
-                info: "Interest Charges",
+                // info: "Interest Charges",
                 className: "ps-5 ",
               },
               {
-                name: "Others",
+                name: "Others(Cr)",
                 yearData: [0, 1, 2].map((i) => {
                   const keys = [
                     "250",
@@ -540,9 +620,10 @@ module.exports.getCityDasboardIndicators = async (req, res) => {
                   if (values.every((v) => v == null)) {
                     return "N/A";
                   }
-                  return values.reduce((acc, v) => acc + (v ?? 0), 0);
+                  const total =values.reduce((acc, v) => acc + (v ?? 0), 0);
+                  return formatToCrore(total); 
                 }),
-                info: "Other incomes including grants, assignments, and miscellaneous receipts",
+                // info: "Other incomes including grants, assignments, and miscellaneous receipts",
                 className: "ps-5 ",
               },
             ],
@@ -554,7 +635,7 @@ module.exports.getCityDasboardIndicators = async (req, res) => {
                 indicators?.[i]?.indicators
                   ?.totOwnRevenueByTotRevenueExpenditure ?? "N/A"
             ),
-            info: "Own Source Revenue to Revenue Expenditure(%)",
+            info: "What is Own Source Revenue to Revenue Expenditure?This metric indicates the extent to which a ULB’s revenue expenditure is funded through its Own Source Revenue. A higher ratio is desirable indicating greater self-reliance. A lower ratio indicates dependence on inter-governmental transfers to meet revenue expenditure.How is it calculated?Own Source Revenue to Revenue Expenditure = Own Source Revenue/ Revenue Expenditure",
           },
         ],
       };
@@ -565,34 +646,50 @@ module.exports.getCityDasboardIndicators = async (req, res) => {
         data: [
           header,
           {
-            name: "Total Debt",
+            name: "Total Debt(Cr)",
             yearData: [0, 1, 2].map(
-              (i) => indicators?.[i]?.indicators?.totDebt ?? "N/A"
+              (i) => {
+                const value = indicators?.[i]?.indicators?.totDebt ?? "N/A"
+                return formatToCrore(value);
+              }
+              // (i) => indicators?.[i]?.indicators?.totDebt ?? "N/A"
             ),
-            info: "Total Revenue Expenditure",
+            info: "What is Total Debt?This metric indicates the absolute level of financial obligations that the ULB is independently responsible for repaying.A higher value may suggest increased leverage or past investment in infrastructure, while a lower value may reflect either low borrowing capacity or a conservative fiscal approach.How is it calculated?Total Debt = Secured Loans + Unsecured Loans",
             children: [
               {
-                name: "Secured Loans",
+                name: "Secured Loans(Cr)",
                 yearData: [0, 1, 2].map(
-                  (i) => indicators?.[i]?.lineItems?.["330"] ?? "N/A"
+                  (i) => {
+                const value = indicators?.[i]?.lineItems?.["330"] ?? "N/A"
+                return formatToCrore(value);
+              }
+                  // (i) => indicators?.[i]?.lineItems?.["330"] ?? "N/A"
                 ),
-                info: "Secured Loans",
+                // info: "Secured Loans",
                 className: "ps-5 ",
               },
               {
-                name: "Unsecured Loans",
+                name: "Unsecured Loans(Cr)",
                 yearData: [0, 1, 2].map(
-                  (i) => indicators?.[i]?.lineItems?.["331"] ?? "N/A"
+                  (i) =>{
+                const value = indicators?.[i]?.lineItems?.["331"] ?? "N/A"
+                return formatToCrore(value);
+              }
+                  // (i) => indicators?.[i]?.lineItems?.["331"] ?? "N/A"
                 ),
-                info: "Unsecured Loans",
+                // info: "Unsecured Loans",
                 className: "ps-5 ",
               },
             ],
           },
           {
-            name: "Total Assets",
+            name: "Total Assets(Cr)",
             yearData: [0, 1, 2].map(
-              (i) => indicators?.[i]?.indicators?.totAssets ?? "N/A"
+              (i) =>{
+                const value = indicators?.[i]?.indicators?.totAssets ?? "N/A"
+                return formatToCrore(value);
+              }
+              // (i) => indicators?.[i]?.indicators?.totAssets ?? "N/A"
             ),
             info: "Total Assets",
           },
@@ -601,7 +698,7 @@ module.exports.getCityDasboardIndicators = async (req, res) => {
             yearData: [0, 1, 2].map(
               (i) => indicators?.[i]?.indicators?.totDebtByTotAssets ?? "N/A"
             ),
-            info: "Debt to Asset Ratio",
+            info: "What is Debt to Asset Ratio?This metric indicates a city’s extent of debt against its balance sheet size. A higher ratio indicates the ULG being highly leveraged. A lower ratio indicates the ULG's potential to borrow more, subject to its needs.How is it calculated?Debt to Asset Ratio = Total Debt/ Total Assets",
           },
           {
             name: "Debt-to-Own Source Revenue Ratio",
@@ -609,21 +706,21 @@ module.exports.getCityDasboardIndicators = async (req, res) => {
               (i) =>
                 indicators?.[i]?.indicators?.totDebtByTotOwnRevenue ?? "N/A"
             ),
-            info: "Debt-to-Own Source Revenue Ratio",
+            info: "What is Debt to Own-Source-Revenue Ratio?This metric indicates a ULB’s financial leverage relative to its internal revenue-generating capacity.A lower ratio is desirable as they indicate that the debt levels are manageable.How is it calculated?Debt to Own-Source Revenue = Total Debt/Own Source Revenue",
           },
           {
             name: "Interest Service Coverage Ratio (ISCR)",
             yearData: [0, 1, 2].map(
               (i) => indicators?.[i]?.indicators?.iscrRatio ?? "N/A"
             ),
-            info: "Interest Service Coverage Ratio (ISCR)",
+            info: "What is Interest Service Coverage Ratio?This metric indicates a ULG's capacity to make interest payments using its operating surplus. A higher ratio is desirable indicating better liquidity. A lower ratio indicates lower capacity to make interest paymentsHow is it calculated?ISCR = Operating Surplus/ Interest and Finance Charges",
           },
           {
             name: "Quick Asset Ratio",
             yearData: [0, 1, 2].map(
               (i) => indicators?.[i]?.indicators?.qaRatio ?? "N/A"
             ),
-            info: "Quick Asset Ratio",
+            info:"What is Quick Assets Ratio?This metric indicates a ULB’s ability to meet its short-term financial obligations with its available liquid assets. A higher ratio is desirable indicating better liquidity.How is it calculated?Quick Assets Ratio = (Cash and bank balance + all investments)/ Revenue Expenditure prior to depreciation",
           },
         ],
       };
@@ -634,6 +731,15 @@ module.exports.getCityDasboardIndicators = async (req, res) => {
     res.status(500).json({ message: "Internal Server Error" });
   }
 };
+function formatToCrore(value) {
+  if (typeof value === "number" && !isNaN(value)) {
+    if (Number.isInteger(value)) {
+      return (value / 10000000).toFixed(2); // Convert absolute numbers to crores
+    }
+    return value; // Leave decimal numbers as is
+  }
+  return value; // If it's 'N/A' or not a number, return as is
+}
 function filterIndicatorsWithYear(indicatorsData) {
   return indicatorsData.map((data) => {
     //  console.log(data,'tis oasc dv')
@@ -687,7 +793,7 @@ async function getIntro(indicators, keyType, yearsArray) {
       );
       return `In FY ${totRevenueData.year}, ${
         totRevenueData.ulbName
-      } reported a total revenue of ₹${totRevenueData.value.toLocaleString()} and a total expenditure of ₹${totRevenueExpenditure.value.toLocaleString()}, implying that its expenditure accounted for ${(
+      } reported a total revenue of ₹${formatToCrore(totRevenueData.value)} crore and a total expenditure of ₹${formatToCrore(totRevenueExpenditure.value)} crore, implying that its expenditure accounted for ${(
         (totRevenueExpenditure.value / totRevenueData.value) *
         100
       ).toFixed(2)}% of its revenue`;
@@ -707,12 +813,12 @@ async function getIntro(indicators, keyType, yearsArray) {
       );
       return `${totRevenueData.ulbName}’s total revenue for FY ${
         totRevenueData.year
-      } was ₹${totRevenueData.value.toLocaleString()}.Over the three years from FY ${
+      } was ₹${formatToCrore(totRevenueData.value)} crore.Over the three years from FY ${
         revPayload[0].year
-      } to FY ${revPayload[2]?.year??'N/A'} the city’s revenue grew from ₹${
-        revPayload[0].totRevenue
-      } crore to ₹,${
-        revPayload[2]?.totRevenue??'N/A'
+      } to FY ${revPayload[2]?.year ?? "N/A"} the city’s revenue grew from ₹${
+        formatToCrore(revPayload[0].totRevenue)
+      } crore to ₹${
+        formatToCrore(revPayload[2]?.totRevenue ?? "N/A")
       } crore, registering a CAGR of 7%.`;
     }
     case "expenditure": {
@@ -728,17 +834,18 @@ async function getIntro(indicators, keyType, yearsArray) {
         yearsArray
       );
       // In FY 2022–23, Indore reported a total expenditure of ₹1,620 crore, which included ₹XXX crore in revenue expenditure
-      console.log(totRevenueExpenditure, "totalrevexp");
+      // In FY 2022–23, Indore reported a total expenditure of ₹1,620 crore, which included ₹XXX crore in revenue expenditure
+      // console.log(totRevenueExpenditure, "totalrevexp");
       return `In FY ${totRevenueExpenditure.year}, ${
         totExpenditure.ulbName
-      } reported a total expenditure of ₹${totExpenditure.value.toLocaleString()} and total revenue expenditure of ₹${totRevenueExpenditure.value.toLocaleString()}`;
+      } reported a total expenditure of ₹${formatToCrore(totExpenditure.value)}crore which included total revenue expenditure of ₹${formatToCrore(totRevenueExpenditure.value)} crore`;
     }
     case "debt": {
       const debt = getIndicatorValue("totDebt", finalObject, yearsArray);
       const totAssets = getIndicatorValue("totAssets", finalObject, yearsArray);
       return `As of FY ${debt.year}, ${
         debt.ulbName
-      }’s outstanding debt stood at ${debt.value.toLocaleString()} crore, against total assets valued at ₹${totAssets.value.toLocaleString()} crore`;
+      }’s outstanding debt stood at ₹${formatToCrore(debt.value)} crore, against total assets valued at ₹${formatToCrore(totAssets.value)} crore`;
     }
     default:
       console.log("Invalid keyType");
@@ -813,7 +920,7 @@ module.exports.getYearsDynamic = async (req, res) => {
       },
     },
   ]);
-  const years = yearDropdown.map(({ year }) => String(year)).filter(Boolean);
+  const years = yearDropdown.map(({ year }) => String(year)).filter(Boolean).reverse();
   res.status(200).json({ years });
 };
 module.exports.getFaqs = async (req, res) => {
@@ -844,7 +951,7 @@ module.exports.getFaqs = async (req, res) => {
     const responseText1 = `In FY ${year}, ${
       ulbData.length ? ulbData[0].ulb : "a city"
     } recorded a total revenue of ${
-      ulbData.length ? ulbData[0].indicators.totRevenue : "N/A"
+      ulbData.length ? formatToCrore(ulbData[0].indicators.totRevenue) : "N/A"
     } crore. Among cities in ${
       topState ? topState.state : "the selected state"
     }, ${
@@ -852,7 +959,7 @@ module.exports.getFaqs = async (req, res) => {
     } had the highest revenue. Nationally, the top revenue was reported by ${
       topNational ? topNational.ulb : "N/A"
     } at over ${
-      topNational ? topNational.indicators.totRevenue : "N/A"
+      topNational ? formatToCrore(topNational.indicators.totRevenue) : "N/A"
     } crore.`;
 
     const faqs = [
@@ -871,7 +978,7 @@ module.exports.getFaqs = async (req, res) => {
           "’s revenue comprises a mix of own-source revenues, such as property tax, user charges, and rental income, along with assigned revenues (the city's share in state taxes), and grants from the central and state governments. In FY " +
           year +
           ", own-source revenues contributed approximately " +
-          ulbData[0].indicators.totOwnRevenueByTotRevenue +
+          formatToCrore(ulbData[0].indicators.totOwnRevenueByTotRevenue) +
           "% of the city’s total revenue.",
       },
       {
@@ -885,7 +992,7 @@ module.exports.getFaqs = async (req, res) => {
             ", the " +
             ulbData[0].ulb +
             " collected ₹" +
-            ulbData[0]?.lineItems[11001] ?? "N/A" + " crore in property tax.",
+           formatToCrore(ulbData[0]?.lineItems[11001]) ?? "N/A" + " crore in property tax.",
       },
     ];
     return res.json({ faqs: faqs });
