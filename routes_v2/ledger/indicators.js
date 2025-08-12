@@ -289,7 +289,7 @@ module.exports.createIndicators = async (req, res) => {
 module.exports.getCityDasboardIndicators = async (req, res) => {
   try {
     const { ulbId, years, keyType } = req.query;
-      console.log("ulbId:", ulbId, "years:", years);
+    console.log("ulbId:", ulbId, "years:", years);
     const yearsArray = Array.isArray(years) ? years : [years];
     if (!ulbId || !yearsArray || !keyType) {
       return res.status(400).json({ message: "Missing required parameters" });
@@ -333,8 +333,8 @@ module.exports.getCityDasboardIndicators = async (req, res) => {
               (i) =>
                 indicators?.[i]?.indicators?.totOwnRevenueByTotRevenue ?? "N/A"
             ),
-            yearGrowth: ['', '89', '-90',],
-            info:'What is Own Source Revenue to Total Revenue?This metric indicates the extent to which a ULB’s revenue is generated from its own revenue sources such as property tax, rental income from municipal properties, fees and user charges, etc.A higher ratio reflects greater fiscal self-reliance and lesser dependence on inter-governmental transfers.How is it calculated? Own Source Revenue: Total Revenue',
+
+            info: "What is Own Source Revenue to Total Revenue?This metric indicates the extent to which a ULB’s revenue is generated from its own revenue sources such as property tax, rental income from municipal properties, fees and user charges, etc.A higher ratio reflects greater fiscal self-reliance and lesser dependence on inter-governmental transfers.How is it calculated? Own Source Revenue: Total Revenue",
           },
           {
             name: "Grants to Total Revenue (%)",
@@ -347,11 +347,29 @@ module.exports.getCityDasboardIndicators = async (req, res) => {
             name: "Operating Surplus(Cr)",
             yearData: [0, 1, 2].map(
               // (i) => indicators?.[i]?.indicators?.operatingSurplus ?? "N/A"
-              (i) =>{
-                const value = indicators?.[i]?.indicators?.operatingSurplus ?? "N/A"
+              (i) => {
+                const value =
+                  indicators?.[i]?.indicators?.operatingSurplus ?? "N/A";
                 return formatToCrore(value);
               }
             ),
+            yearGrowth: [0, 1, 2].map((i, index, arr) => {
+              if (index === 0) return ""; // No growth for the first year
+              const prevValue =
+                indicators?.[arr[index - 1]]?.indicators?.operatingSurplus ?? 0;
+              const currValue =
+                indicators?.[i]?.indicators?.operatingSurplus ?? 0;
+
+              // Calculate growth percentage between years
+              if (prevValue === 0 || currValue === 0) return ""; // Avoid division by zero
+              const growth = ((currValue - prevValue) / prevValue) * 100;
+
+              // Format the growth with a "+" sign for positive values
+              if (growth > 0) {
+                return `+${growth.toFixed(2)}`; // Add "+" for positive growth
+              }
+              return growth.toFixed(2); // Return as is for negative or zero growth
+            }),
             info: "Operating Surplus",
           },
         ],
@@ -366,11 +384,28 @@ module.exports.getCityDasboardIndicators = async (req, res) => {
             name: "Total Revenue(Cr)",
             yearData: [0, 1, 2].map(
               (i) => {
-                const value = indicators?.[i]?.indicators?.totRevenue ?? "N/A"
+                const value = indicators?.[i]?.indicators?.totRevenue ?? "N/A";
                 return formatToCrore(value);
               }
               // (i) => indicators?.[i]?.indicators?.totRevenue ?? "N/A"
             ),
+            yearGrowth: [0, 1, 2].map((i, index, arr) => {
+              if (index === 0) return ""; // No growth for the first year
+              const prevValue =
+                indicators?.[arr[index - 1]]?.indicators?.totRevenue ?? 0;
+              const currValue =
+                indicators?.[i]?.indicators?.totRevenue ?? 0;
+
+              // Calculate growth percentage between years
+              if (prevValue === 0 || currValue === 0) return ""; // Avoid division by zero
+              const growth = ((currValue - prevValue) / prevValue) * 100;
+
+              // Format the growth with a "+" sign for positive values
+              if (growth > 0) {
+                return `+${growth.toFixed(2)}`; // Add "+" for positive growth
+              }
+              return growth.toFixed(2); // Return as is for negative or zero growth
+            }),
             info: "What is Total Revenue?This metric Indicates the revenue income a ULB earns or receives from tax and non-tax sources.How is it calculated?Total Revenue = Own Source Revenue + Assigned Revenue +  Grants + Others",
             children: [
               {
@@ -378,9 +413,10 @@ module.exports.getCityDasboardIndicators = async (req, res) => {
                 yearData: [0, 1, 2].map(
                   // (i) => indicators?.[i]?.indicators?.totOwnRevenue ?? "N/A"
                   (i) => {
-                const value = indicators?.[i]?.indicators?.totOwnRevenue ?? "N/A"
-                return formatToCrore(value);
-              }
+                    const value =
+                      indicators?.[i]?.indicators?.totOwnRevenue ?? "N/A";
+                    return formatToCrore(value);
+                  }
                 ),
                 // info: "Own Source Revenue",
                 className: "ps-5 ",
@@ -389,9 +425,9 @@ module.exports.getCityDasboardIndicators = async (req, res) => {
                 name: "Assigned Revenue(Cr)",
                 yearData: [0, 1, 2].map(
                   (i) => {
-                const value = indicators?.[i]?.lineItems?.["120"] ?? "N/A"
-                return formatToCrore(value);
-              }
+                    const value = indicators?.[i]?.lineItems?.["120"] ?? "N/A";
+                    return formatToCrore(value);
+                  }
                   // (i) => indicators?.[i]?.lineItems?.["120"] ?? "N/A"
                 ),
                 // info: "Assigned Revenue",
@@ -401,9 +437,9 @@ module.exports.getCityDasboardIndicators = async (req, res) => {
                 name: "Revenue Grants(Cr)",
                 yearData: [0, 1, 2].map(
                   (i) => {
-                const value = indicators?.[i]?.lineItems?.["160"] ?? "N/A"
-                return formatToCrore(value);
-              }
+                    const value = indicators?.[i]?.lineItems?.["160"] ?? "N/A";
+                    return formatToCrore(value);
+                  }
                   // (i) => indicators?.[i]?.lineItems?.["160"] ?? "N/A"
                 ),
                 // info: "Revenue Grants",
@@ -413,9 +449,9 @@ module.exports.getCityDasboardIndicators = async (req, res) => {
                 name: "Others(Cr)",
                 yearData: [0, 1, 2].map(
                   (i) => {
-                const value = indicators?.[i]?.lineItems?.["100"] ?? "N/A"
-                return formatToCrore(value);
-              }
+                    const value = indicators?.[i]?.lineItems?.["100"] ?? "N/A";
+                    return formatToCrore(value);
+                  }
                   // (i) => indicators?.[i]?.lineItems?.["100"] ?? "N/A"
                 ),
                 // info: "Others",
@@ -427,20 +463,38 @@ module.exports.getCityDasboardIndicators = async (req, res) => {
             name: "Total Own Source Revenue(Cr)",
             yearData: [0, 1, 2].map(
               (i) => {
-                const value = indicators?.[i]?.indicators?.totOwnRevenue ?? "N/A"
+                const value =
+                  indicators?.[i]?.indicators?.totOwnRevenue ?? "N/A";
                 return formatToCrore(value);
               }
               // (i) => indicators?.[i]?.indicators?.totOwnRevenue ?? "N/A"
             ),
+             yearGrowth: [0, 1, 2].map((i, index, arr) => {
+              if (index === 0) return ""; // No growth for the first year
+              const prevValue =
+                indicators?.[arr[index - 1]]?.indicators?.totOwnRevenue ?? 0;
+              const currValue =
+                indicators?.[i]?.indicators?.totOwnRevenue ?? 0;
+
+              // Calculate growth percentage between years
+              if (prevValue === 0 || currValue === 0) return ""; // Avoid division by zero
+              const growth = ((currValue - prevValue) / prevValue) * 100;
+
+              // Format the growth with a "+" sign for positive values
+              if (growth > 0) {
+                return `+${growth.toFixed(2)}`; // Add "+" for positive growth
+              }
+              return growth.toFixed(2); // Return as is for negative or zero growth
+            }),
             info: "What is Total Own Source Revenue?This metric indicates a ULB's recurring expenses incurred on day-to-day functioning and operational needs. How is it calculated?Own Source Revenue = Tax Revenue + Fees and User Charges + Rental Income + Sale and Hire Charges + Income from Investments + Income Earned + Other Income",
             children: [
               {
                 name: "Tax Revenue(Cr)",
                 yearData: [0, 1, 2].map(
                   (i) => {
-                const value = indicators?.[i]?.lineItems?.["110"] ?? "N/A"
-                return formatToCrore(value);
-              }
+                    const value = indicators?.[i]?.lineItems?.["110"] ?? "N/A";
+                    return formatToCrore(value);
+                  }
                   // (i) => indicators?.[i]?.lineItems?.["110"] ?? "N/A"
                 ),
                 // info: "Tax Revenue",
@@ -450,10 +504,10 @@ module.exports.getCityDasboardIndicators = async (req, res) => {
                 name: "Rental Income(Cr)",
                 yearData: [0, 1, 2].map(
                   // (i) => indicators?.[i]?.lineItems?.["130"] ?? "N/A"
-                  (i) =>  {
-                const value = indicators?.[i]?.lineItems?.["130"] ?? "N/A"
-                return formatToCrore(value);
-              }
+                  (i) => {
+                    const value = indicators?.[i]?.lineItems?.["130"] ?? "N/A";
+                    return formatToCrore(value);
+                  }
                 ),
                 // info: "Rental Income",
                 className: "ps-5 ",
@@ -462,9 +516,9 @@ module.exports.getCityDasboardIndicators = async (req, res) => {
                 name: "Fee & User Charges(Cr)",
                 yearData: [0, 1, 2].map(
                   (i) => {
-                const value = indicators?.[i]?.lineItems?.["140"] ?? "N/A"
-                return formatToCrore(value);
-              }
+                    const value = indicators?.[i]?.lineItems?.["140"] ?? "N/A";
+                    return formatToCrore(value);
+                  }
                   // (i) => indicators?.[i]?.lineItems?.["140"] ?? "N/A"
                 ),
                 // info: "Fee & User Charges",
@@ -475,9 +529,9 @@ module.exports.getCityDasboardIndicators = async (req, res) => {
                 yearData: [0, 1, 2].map(
                   // (i) => indicators?.[i]?.lineItems?.["150"] ?? "N/A"
                   (i) => {
-                const value = indicators?.[i]?.lineItems?.["150"] ?? "N/A"
-                return formatToCrore(value);
-              }
+                    const value = indicators?.[i]?.lineItems?.["150"] ?? "N/A";
+                    return formatToCrore(value);
+                  }
                 ),
                 // info: "Sale & Hire Charges",
                 className: "ps-5 ",
@@ -486,9 +540,9 @@ module.exports.getCityDasboardIndicators = async (req, res) => {
                 name: "Other Income(Cr)",
                 yearData: [0, 1, 2].map(
                   (i) => {
-                const value =indicators?.[i]?.lineItems?.["180"] ?? "N/A"
-                return formatToCrore(value);
-              }
+                    const value = indicators?.[i]?.lineItems?.["180"] ?? "N/A";
+                    return formatToCrore(value);
+                  }
                   // (i) => indicators?.[i]?.lineItems?.["180"] ?? "N/A"
                 ),
                 // info: "Other Income",
@@ -496,27 +550,22 @@ module.exports.getCityDasboardIndicators = async (req, res) => {
               },
               {
                 name: "Income from Investment(Cr)",
-                yearData: [0, 1, 2].map(
-                  (i) => {
-                const value =indicators?.[i]?.lineItems?.["170"] ?? "N/A"
-                return formatToCrore(value);
-              }
-                ),
+                yearData: [0, 1, 2].map((i) => {
+                  const value = indicators?.[i]?.lineItems?.["170"] ?? "N/A";
+                  return formatToCrore(value);
+                }),
                 // info: "Interest Earned",
                 className: "ps-5 ",
               },
               {
                 name: "Interest Earned(Cr)",
-                yearData: [0, 1, 2].map(
-                  (i) => {
-                const value =indicators?.[i]?.lineItems?.["171"] ?? "N/A"
-                return formatToCrore(value);
-              }
-                ),
+                yearData: [0, 1, 2].map((i) => {
+                  const value = indicators?.[i]?.lineItems?.["171"] ?? "N/A";
+                  return formatToCrore(value);
+                }),
                 // info: "Interest Earned",
                 className: "ps-5 ",
               },
-               
             ],
           },
           {
@@ -525,7 +574,7 @@ module.exports.getCityDasboardIndicators = async (req, res) => {
               (i) =>
                 indicators?.[i]?.indicators?.totOwnRevenueByTotRevenue ?? "N/A"
             ),
-            info:'What is Own Source Revenue to Total Revenue?This metric indicates the extent to which a ULB’s revenue is generated from its own revenue sources such as property tax, rental income from municipal properties, fees and user charges, etc.A higher ratio reflects greater fiscal self-reliance and lesser dependence on inter-governmental transfers.How is it calculated? Own Source Revenue: Total Revenue',
+            info: "What is Own Source Revenue to Total Revenue?This metric indicates the extent to which a ULB’s revenue is generated from its own revenue sources such as property tax, rental income from municipal properties, fees and user charges, etc.A higher ratio reflects greater fiscal self-reliance and lesser dependence on inter-governmental transfers.How is it calculated? Own Source Revenue: Total Revenue",
           },
           {
             name: "Grants to Total Revenue (%)",
@@ -545,21 +594,39 @@ module.exports.getCityDasboardIndicators = async (req, res) => {
           {
             name: "Total Revenue Expenditure(Cr)",
             yearData: [0, 1, 2].map(
-              (i) =>{
-                const value = indicators?.[i]?.indicators?.totRevenueExpenditure ?? "N/A"
+              (i) => {
+                const value =
+                  indicators?.[i]?.indicators?.totRevenueExpenditure ?? "N/A";
                 return formatToCrore(value);
               }
               // (i) => indicators?.[i]?.indicators?.totRevenueExpenditure ?? "N/A"
             ),
+             yearGrowth: [0, 1, 2].map((i, index, arr) => {
+              if (index === 0) return ""; // No growth for the first year
+              const prevValue =
+                indicators?.[arr[index - 1]]?.indicators?.totRevenueExpenditure ?? 0;
+              const currValue =
+                indicators?.[i]?.indicators?.totRevenueExpenditure ?? 0;
+
+              // Calculate growth percentage between years
+              if (prevValue === 0 || currValue === 0) return ""; // Avoid division by zero
+              const growth = ((currValue - prevValue) / prevValue) * 100;
+
+              // Format the growth with a "+" sign for positive values
+              if (growth > 0) {
+                return `+${growth.toFixed(2)}`; // Add "+" for positive growth
+              }
+              return growth.toFixed(2); // Return as is for negative or zero growth
+            }),
             info: "What is Total Revenue Expenditure?This metric indicates a ULB's recurring expenses incurred on day-to-day functioning and operational needs. How is it calculated?Revenue Expenditure = Establishment Expenses + Administrative Expenses + Operations and Maintenance + Interest and Finance Charges + Others",
             children: [
               {
                 name: "Establishment Expenses(Cr)",
                 yearData: [0, 1, 2].map(
                   (i) => {
-                const value = indicators?.[i]?.lineItems?.["210"] ?? "N/A"
-                return formatToCrore(value);
-              }
+                    const value = indicators?.[i]?.lineItems?.["210"] ?? "N/A";
+                    return formatToCrore(value);
+                  }
                   // (i) => indicators?.[i]?.lineItems?.["210"] ?? "N/A"
                 ),
                 // info: "Establishment Expenses",
@@ -568,10 +635,10 @@ module.exports.getCityDasboardIndicators = async (req, res) => {
               {
                 name: "Administrative Expenses(Cr)",
                 yearData: [0, 1, 2].map(
-                  (i) =>  {
-                const value = indicators?.[i]?.lineItems?.["220"] ?? "N/A"
-                return formatToCrore(value);
-              }
+                  (i) => {
+                    const value = indicators?.[i]?.lineItems?.["220"] ?? "N/A";
+                    return formatToCrore(value);
+                  }
                   // (i) => indicators?.[i]?.lineItems?.["220"] ?? "N/A"
                 ),
                 // info: "Administrative Expenses",
@@ -580,10 +647,10 @@ module.exports.getCityDasboardIndicators = async (req, res) => {
               {
                 name: "O&M Expenses(Cr)",
                 yearData: [0, 1, 2].map(
-                  (i) =>  {
-                const value = indicators?.[i]?.lineItems?.["230"] ?? "N/A"
-                return formatToCrore(value);
-              }
+                  (i) => {
+                    const value = indicators?.[i]?.lineItems?.["230"] ?? "N/A";
+                    return formatToCrore(value);
+                  }
                   // (i) => indicators?.[i]?.lineItems?.["230"] ?? "N/A"
                 ),
                 // info: "O&M Expenses",
@@ -592,10 +659,10 @@ module.exports.getCityDasboardIndicators = async (req, res) => {
               {
                 name: "Interest Charges(Cr)",
                 yearData: [0, 1, 2].map(
-                  (i) =>  {
-                const value = indicators?.[i]?.lineItems?.["240"] ?? "N/A"
-                return formatToCrore(value);
-              }
+                  (i) => {
+                    const value = indicators?.[i]?.lineItems?.["240"] ?? "N/A";
+                    return formatToCrore(value);
+                  }
                   // (i) => indicators?.[i]?.lineItems?.["240"] ?? "N/A"
                 ),
                 // info: "Interest Charges",
@@ -620,8 +687,8 @@ module.exports.getCityDasboardIndicators = async (req, res) => {
                   if (values.every((v) => v == null)) {
                     return "N/A";
                   }
-                  const total =values.reduce((acc, v) => acc + (v ?? 0), 0);
-                  return formatToCrore(total); 
+                  const total = values.reduce((acc, v) => acc + (v ?? 0), 0);
+                  return formatToCrore(total);
                 }),
                 // info: "Other incomes including grants, assignments, and miscellaneous receipts",
                 className: "ps-5 ",
@@ -649,20 +716,37 @@ module.exports.getCityDasboardIndicators = async (req, res) => {
             name: "Total Debt(Cr)",
             yearData: [0, 1, 2].map(
               (i) => {
-                const value = indicators?.[i]?.indicators?.totDebt ?? "N/A"
+                const value = indicators?.[i]?.indicators?.totDebt ?? "N/A";
                 return formatToCrore(value);
               }
               // (i) => indicators?.[i]?.indicators?.totDebt ?? "N/A"
             ),
+             yearGrowth: [0, 1, 2].map((i, index, arr) => {
+              if (index === 0) return ""; // No growth for the first year
+              const prevValue =
+                indicators?.[arr[index - 1]]?.indicators?.totDebt ?? 0;
+              const currValue =
+                indicators?.[i]?.indicators?.totDebt ?? 0;
+
+              // Calculate growth percentage between years
+              if (prevValue === 0 || currValue === 0) return ""; // Avoid division by zero
+              const growth = ((currValue - prevValue) / prevValue) * 100;
+
+              // Format the growth with a "+" sign for positive values
+              if (growth > 0) {
+                return `+${growth.toFixed(2)}`; // Add "+" for positive growth
+              }
+              return growth.toFixed(2); // Return as is for negative or zero growth
+            }),
             info: "What is Total Debt?This metric indicates the absolute level of financial obligations that the ULB is independently responsible for repaying.A higher value may suggest increased leverage or past investment in infrastructure, while a lower value may reflect either low borrowing capacity or a conservative fiscal approach.How is it calculated?Total Debt = Secured Loans + Unsecured Loans",
             children: [
               {
                 name: "Secured Loans(Cr)",
                 yearData: [0, 1, 2].map(
                   (i) => {
-                const value = indicators?.[i]?.lineItems?.["330"] ?? "N/A"
-                return formatToCrore(value);
-              }
+                    const value = indicators?.[i]?.lineItems?.["330"] ?? "N/A";
+                    return formatToCrore(value);
+                  }
                   // (i) => indicators?.[i]?.lineItems?.["330"] ?? "N/A"
                 ),
                 // info: "Secured Loans",
@@ -671,10 +755,10 @@ module.exports.getCityDasboardIndicators = async (req, res) => {
               {
                 name: "Unsecured Loans(Cr)",
                 yearData: [0, 1, 2].map(
-                  (i) =>{
-                const value = indicators?.[i]?.lineItems?.["331"] ?? "N/A"
-                return formatToCrore(value);
-              }
+                  (i) => {
+                    const value = indicators?.[i]?.lineItems?.["331"] ?? "N/A";
+                    return formatToCrore(value);
+                  }
                   // (i) => indicators?.[i]?.lineItems?.["331"] ?? "N/A"
                 ),
                 // info: "Unsecured Loans",
@@ -685,12 +769,29 @@ module.exports.getCityDasboardIndicators = async (req, res) => {
           {
             name: "Total Assets(Cr)",
             yearData: [0, 1, 2].map(
-              (i) =>{
-                const value = indicators?.[i]?.indicators?.totAssets ?? "N/A"
+              (i) => {
+                const value = indicators?.[i]?.indicators?.totAssets ?? "N/A";
                 return formatToCrore(value);
               }
               // (i) => indicators?.[i]?.indicators?.totAssets ?? "N/A"
             ),
+            yearGrowth: [0, 1, 2].map((i, index, arr) => {
+              if (index === 0) return ""; // No growth for the first year
+              const prevValue =
+                indicators?.[arr[index - 1]]?.indicators?.totAssets ?? 0;
+              const currValue =
+                indicators?.[i]?.indicators?.totAssets ?? 0;
+
+              // Calculate growth percentage between years
+              if (prevValue === 0 || currValue === 0) return ""; // Avoid division by zero
+              const growth = ((currValue - prevValue) / prevValue) * 100;
+
+              // Format the growth with a "+" sign for positive values
+              if (growth > 0) {
+                return `+${growth.toFixed(2)}`; // Add "+" for positive growth
+              }
+              return growth.toFixed(2); // Return as is for negative or zero growth
+            }),
             info: "Total Assets",
           },
           {
@@ -720,7 +821,7 @@ module.exports.getCityDasboardIndicators = async (req, res) => {
             yearData: [0, 1, 2].map(
               (i) => indicators?.[i]?.indicators?.qaRatio ?? "N/A"
             ),
-            info:"What is Quick Assets Ratio?This metric indicates a ULB’s ability to meet its short-term financial obligations with its available liquid assets. A higher ratio is desirable indicating better liquidity.How is it calculated?Quick Assets Ratio = (Cash and bank balance + all investments)/ Revenue Expenditure prior to depreciation",
+            info: "What is Quick Assets Ratio?This metric indicates a ULB’s ability to meet its short-term financial obligations with its available liquid assets. A higher ratio is desirable indicating better liquidity.How is it calculated?Quick Assets Ratio = (Cash and bank balance + all investments)/ Revenue Expenditure prior to depreciation",
           },
         ],
       };
@@ -793,7 +894,11 @@ async function getIntro(indicators, keyType, yearsArray) {
       );
       return `In FY ${totRevenueData.year}, ${
         totRevenueData.ulbName
-      } reported a total revenue of ₹${formatToCrore(totRevenueData.value)} crore and a total expenditure of ₹${formatToCrore(totRevenueExpenditure.value)} crore, implying that its expenditure accounted for ${(
+      } reported a total revenue of ₹${formatToCrore(
+        totRevenueData.value
+      )} crore and a total expenditure of ₹${formatToCrore(
+        totRevenueExpenditure.value
+      )} crore, implying that its expenditure accounted for ${(
         (totRevenueExpenditure.value / totRevenueData.value) *
         100
       ).toFixed(2)}% of its revenue`;
@@ -813,13 +918,15 @@ async function getIntro(indicators, keyType, yearsArray) {
       );
       return `${totRevenueData.ulbName}’s total revenue for FY ${
         totRevenueData.year
-      } was ₹${formatToCrore(totRevenueData.value)} crore.Over the three years from FY ${
-        revPayload[0].year
-      } to FY ${revPayload[2]?.year ?? "N/A"} the city’s revenue grew from ₹${
-        formatToCrore(revPayload[0].totRevenue)
-      } crore to ₹${
-        formatToCrore(revPayload[2]?.totRevenue ?? "N/A")
-      } crore, registering a CAGR of 7%.`;
+      } was ₹${formatToCrore(
+        totRevenueData.value
+      )} crore.Over the three years from FY ${revPayload[0].year} to FY ${
+        revPayload[2]?.year ?? "N/A"
+      } the city’s revenue grew from ₹${formatToCrore(
+        revPayload[0].totRevenue
+      )} crore to ₹${formatToCrore(
+        revPayload[2]?.totRevenue ?? "N/A"
+      )} crore, registering a CAGR of 7%.`;
     }
     case "expenditure": {
       const totExpenditure = getIndicatorValue(
@@ -838,14 +945,22 @@ async function getIntro(indicators, keyType, yearsArray) {
       // console.log(totRevenueExpenditure, "totalrevexp");
       return `In FY ${totRevenueExpenditure.year}, ${
         totExpenditure.ulbName
-      } reported a total expenditure of ₹${formatToCrore(totExpenditure.value)}crore which included total revenue expenditure of ₹${formatToCrore(totRevenueExpenditure.value)} crore`;
+      } reported a total expenditure of ₹${formatToCrore(
+        totExpenditure.value
+      )}crore which included total revenue expenditure of ₹${formatToCrore(
+        totRevenueExpenditure.value
+      )} crore`;
     }
     case "debt": {
       const debt = getIndicatorValue("totDebt", finalObject, yearsArray);
       const totAssets = getIndicatorValue("totAssets", finalObject, yearsArray);
       return `As of FY ${debt.year}, ${
         debt.ulbName
-      }’s outstanding debt stood at ₹${formatToCrore(debt.value)} crore, against total assets valued at ₹${formatToCrore(totAssets.value)} crore`;
+      }’s outstanding debt stood at ₹${formatToCrore(
+        debt.value
+      )} crore, against total assets valued at ₹${formatToCrore(
+        totAssets.value
+      )} crore`;
     }
     default:
       console.log("Invalid keyType");
@@ -920,7 +1035,10 @@ module.exports.getYearsDynamic = async (req, res) => {
       },
     },
   ]);
-  const years = yearDropdown.map(({ year }) => String(year)).filter(Boolean).reverse();
+  const years = yearDropdown
+    .map(({ year }) => String(year))
+    .filter(Boolean)
+    .reverse();
   res.status(200).json({ years });
 };
 module.exports.getFaqs = async (req, res) => {
@@ -992,7 +1110,8 @@ module.exports.getFaqs = async (req, res) => {
             ", the " +
             ulbData[0].ulb +
             " collected ₹" +
-           formatToCrore(ulbData[0]?.lineItems[11001]) ?? "N/A" + " crore in property tax.",
+            formatToCrore(ulbData[0]?.lineItems[11001]) ??
+          "N/A" + " crore in property tax.",
       },
     ];
     return res.json({ faqs: faqs });
