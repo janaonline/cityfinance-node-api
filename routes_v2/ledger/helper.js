@@ -76,7 +76,7 @@ const totAssets = {
 const OperSurplusTotRevenueExpenditure = {
   name: "Operating Surplus",
   key: "OperSurplusTotRevenueExpenditure",
-  lineItems: ["200", "210", "220", "230", "240"],
+  lineItems: ["200", "210", "220", "230", "250","260","271"],
 };
  
 export default {

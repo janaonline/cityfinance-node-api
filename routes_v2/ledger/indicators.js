@@ -258,6 +258,7 @@ module.exports.createIndicators = async (req, res) => {
     let modifiedCount = 0;
 
     for (const indicator of indicatorsList) {
+      // console.log(indicator,'this is list');
       const result = await IndicatorsModel.updateOne(
         { key: indicator.key },
         { $set: indicator },
@@ -288,7 +289,7 @@ module.exports.createIndicators = async (req, res) => {
 module.exports.getCityDasboardIndicators = async (req, res) => {
   try {
     const { ulbId, years, keyType } = req.query;
-    //  console.log("ulbId:", ulbId, "years:", years);
+      console.log("ulbId:", ulbId, "years:", years);
     const yearsArray = Array.isArray(years) ? years : [years];
     if (!ulbId || !yearsArray || !keyType) {
       return res.status(400).json({ message: "Missing required parameters" });
@@ -308,7 +309,7 @@ module.exports.getCityDasboardIndicators = async (req, res) => {
     if (!indicators || indicators.length === 0) {
       return res.status(404).json({ message: "No indicators found" });
     }
-    
+
     const header = {
       name: "Indicators",
       yearData: yearsArray,
@@ -316,10 +317,10 @@ module.exports.getCityDasboardIndicators = async (req, res) => {
       isHeader: true,
     };
     var params = indicators.map(({ lineItems, ...rest }) => rest);
-    const source = buildSourceStatement(params)
+    const source = buildSourceStatement(params);
     // console.log(source,'this is source')
     var intro = await getIntro(params, keyType, yearsArray);
-     
+
     if (keyType === "overview") {
       var response = {
         intro: intro,
@@ -365,9 +366,7 @@ module.exports.getCityDasboardIndicators = async (req, res) => {
               {
                 name: "Own Source Revenue",
                 yearData: [0, 1, 2].map(
-                  (i) =>
-                    indicators?.[i]?.indicators?.totOwnRevenue ??
-                    "N/A"
+                  (i) => indicators?.[i]?.indicators?.totOwnRevenue ?? "N/A"
                 ),
                 info: "Own Source Revenue",
                 className: "ps-5 ",
@@ -459,6 +458,21 @@ module.exports.getCityDasboardIndicators = async (req, res) => {
                 className: "ps-5 ",
               },
             ],
+          },
+           {
+            name: "Own Source revenue to Total Revenue (%)",
+            yearData: [0, 1, 2].map(
+              (i) =>
+                indicators?.[i]?.indicators?.totOwnRevenueByTotRevenue ?? "N/A"
+            ),
+            info: "Total Expenditure to Total Revenue (%)",
+          },
+          {
+            name: "Grants to Total Revenue (%)",
+            yearData: [0, 1, 2].map(
+              (i) => indicators?.[i]?.indicators?.grantsByTotRevenue ?? "N/A"
+            ),
+            info: "Grants to Total Revenue (%)",
           },
         ],
       };
@@ -614,7 +628,7 @@ module.exports.getCityDasboardIndicators = async (req, res) => {
         ],
       };
     }
-    res.status(200).json({source,response});
+    res.status(200).json({ source, response });
   } catch (error) {
     console.error("Error fetching city dashboard indicators:", error);
     res.status(500).json({ message: "Internal Server Error" });
@@ -622,7 +636,7 @@ module.exports.getCityDasboardIndicators = async (req, res) => {
 };
 function filterIndicatorsWithYear(indicatorsData) {
   return indicatorsData.map((data) => {
-    // console.log(data,'tis oasc dv')
+    //  console.log(data,'tis oasc dv')
     const { year, indicators, ulb } = data;
     // Create a new object where we filter out keys with "N/A" values
     const filteredIndicators = Object.entries(indicators)
@@ -631,7 +645,7 @@ function filterIndicatorsWithYear(indicatorsData) {
         acc[key] = value; // Add valid key-value pair to the accumulator
         return acc;
       }, {});
-    // console.log({ulb, year, indicators: filteredIndicators });
+    // console.log({ulb, year, indicators: filteredIndicators },'this is blah');
     return { ulb, year, indicators: filteredIndicators };
   });
 }
@@ -646,10 +660,6 @@ function getIndicatorValue(indicatorKey, data, yearsArray) {
       const indicatorValue = yearData.indicators[indicatorKey];
       const ulbName = yearData.ulb;
       if (indicatorValue !== "N/A" && indicatorValue !== undefined) {
-        // console.log(
-        //   { value: indicatorValue, year, ulbName },
-        //   "this is finalkey"
-        // );
         return { value: indicatorValue, year, ulbName };
       }
     }
@@ -699,10 +709,10 @@ async function getIntro(indicators, keyType, yearsArray) {
         totRevenueData.year
       } was ₹${totRevenueData.value.toLocaleString()}.Over the three years from FY ${
         revPayload[0].year
-      } to FY ${revPayload[2].year} the city’s revenue grew from ₹${
+      } to FY ${revPayload[2]?.year??'N/A'} the city’s revenue grew from ₹${
         revPayload[0].totRevenue
       } crore to ₹,${
-        revPayload[2].totRevenue
+        revPayload[2]?.totRevenue??'N/A'
       } crore, registering a CAGR of 7%.`;
     }
     case "expenditure": {
@@ -718,7 +728,7 @@ async function getIntro(indicators, keyType, yearsArray) {
         yearsArray
       );
       // In FY 2022–23, Indore reported a total expenditure of ₹1,620 crore, which included ₹XXX crore in revenue expenditure
-       console.log(totRevenueExpenditure,"totalrevexp");
+      console.log(totRevenueExpenditure, "totalrevexp");
       return `In FY ${totRevenueExpenditure.year}, ${
         totExpenditure.ulbName
       } reported a total expenditure of ₹${totExpenditure.value.toLocaleString()} and total revenue expenditure of ₹${totRevenueExpenditure.value.toLocaleString()}`;
@@ -767,7 +777,9 @@ function buildSourceStatement(records = []) {
     parts.push(`Audited statements for ${ulb} — ${joinYears(auditedYears)}`);
   } else if (!auditedYears.length && unauditedYears.length) {
     // Case 3: all unaudited
-    parts.push(`Unaudited statements for ${ulb} — ${joinYears(unauditedYears)}`);
+    parts.push(
+      `Unaudited statements for ${ulb} — ${joinYears(unauditedYears)}`
+    );
   } else {
     // Case 1/2: mixed
     parts.push(`Audited statements for ${joinYears(auditedYears)}`);
@@ -785,27 +797,25 @@ function joinYears(years) {
   return `${years.slice(0, -1).join(", ")} and ${years[years.length - 1]}`;
 }
 
-module.exports.getYearsDynamic = async (req,res)=>{
-   console.log(req.query,'this is params')
-   const ulbId = req.query
-   const yearDropdown = await ledgerLog.aggregate([
-  {
-    $match: {
-      ulb_id:ObjectId('5f5610b3aab0f778b2d2cac0'),
-      lineItems:{$ne:null}
-    }
-  },
-  {
-    $project: {
-      year:1
-    }
-  }
-])
-const years = yearDropdown
-  .map(({ year }) => String(year))
-  .filter(Boolean);
- res.status(200).json({years});
-}
+module.exports.getYearsDynamic = async (req, res) => {
+  console.log(req.query, "this is params");
+  const ulbId = req.query;
+  const yearDropdown = await ledgerLog.aggregate([
+    {
+      $match: {
+        ulb_id: ObjectId("5f5610b3aab0f778b2d2cac0"),
+        lineItems: { $ne: null },
+      },
+    },
+    {
+      $project: {
+        year: 1,
+      },
+    },
+  ]);
+  const years = yearDropdown.map(({ year }) => String(year)).filter(Boolean);
+  res.status(200).json({ years });
+};
 module.exports.getFaqs = async (req, res) => {
   try {
     const { year, ulbId, state } = req.query;
@@ -814,13 +824,13 @@ module.exports.getFaqs = async (req, res) => {
     // National level data
     const national = await getTotRevenueDataFaq(year, null, null);
     const topNational = national[0]; // Assuming sorted in ascending order
-      console.log(topNational,'this is national1');
+    // console.log(topNational,'this is national1');
     // State level data
     let stateData = [];
     let topState = null;
     if (state) {
       stateData = await getTotRevenueDataFaq(year, null, state);
-       console.log(stateData[0],'this is national2');
+      //  console.log(stateData[0],'this is national2');
       topState = stateData[0];
     }
 
@@ -828,7 +838,7 @@ module.exports.getFaqs = async (req, res) => {
     let ulbData = [];
     if (ulbId) {
       ulbData = await getTotRevenueDataFaq(year, ulbId, null);
-       console.log(ulbData[0],'this is national3');
+      //  console.log(ulbData[0],'this is national3');
     }
 
     const responseText1 = `In FY ${year}, ${
@@ -837,24 +847,48 @@ module.exports.getFaqs = async (req, res) => {
       ulbData.length ? ulbData[0].indicators.totRevenue : "N/A"
     } crore. Among cities in ${
       topState ? topState.state : "the selected state"
-    }, ${topState ? topState.ulb : "N/A"} had the highest revenue. Nationally, the top revenue was reported by ${
+    }, ${
+      topState ? topState.ulb : "N/A"
+    } had the highest revenue. Nationally, the top revenue was reported by ${
       topNational ? topNational.ulb : "N/A"
-    } at over ${topNational ? topNational.indicators.totRevenue : "N/A"} crore.`;
-    
-     const faqs=[{
-      question:'How does Indore’s revenue compare to other municipal cities?',
-      answer: responseText1
-    },
-  {
-   question:'What are the major income sources of Indore Municipal Corporation?',
-   answer:"Indore’s revenue comprises a mix of own-source revenues, such as property tax, user charges, and rental income, along with assigned revenues (the city's share in state taxes), and grants from the central and state governments. In FY 2022–23, own-source revenues contributed approximately 40% of the city’s total revenue." 
-  },
-  {
-    question:'What is Indore’s property tax collection in recent years?',
-    answer:'In FY 2022–23, the Indore Municipal Corporation collected ₹XX crore in property tax.'
-  }
-     ]
-    return res.json({ message: responseText });
+    } at over ${
+      topNational ? topNational.indicators.totRevenue : "N/A"
+    } crore.`;
+
+    const faqs = [
+      {
+        question:
+          "How does " +
+          ulbData[0].ulb +
+          "’s revenue compare to other municipal cities?",
+        answer: responseText1,
+      },
+      {
+        question:
+          "What are the major income sources of " + ulbData[0].ulb + "?",
+        answer:
+          ulbData[0].ulb +
+          "’s revenue comprises a mix of own-source revenues, such as property tax, user charges, and rental income, along with assigned revenues (the city's share in state taxes), and grants from the central and state governments. In FY " +
+          year +
+          ", own-source revenues contributed approximately " +
+          ulbData[0].indicators.totOwnRevenueByTotRevenue +
+          "% of the city’s total revenue.",
+      },
+      {
+        question:
+          "What is " +
+          ulbData[0].ulb +
+          "’s property tax collection in recent years?",
+        answer:
+          "In FY " +
+            year +
+            ", the " +
+            ulbData[0].ulb +
+            " collected ₹" +
+            ulbData[0]?.lineItems[11001] ?? "N/A" + " crore in property tax.",
+      },
+    ];
+    return res.json({ faqs: faqs });
   } catch (err) {
     console.error("Error in getFaqs:", err);
     return res.status(500).json({ error: err.message });
@@ -865,33 +899,26 @@ async function getTotRevenueDataFaq(year, ulbId = null, state = null) {
   const match = {
     year: year,
     "indicators.totRevenue": {
-        $exists: true,
-        $nin: [null, "N/A"] 
-      }
+      $exists: true,
+      $nin: [null, "N/A"],
+    },
   };
 
   if (ulbId) match.ulb_id = new ObjectId(ulbId);
   if (state) match.state = state;
-// const pipeline =[
-//   {
-//     $match: {
-//       year: "2021-22",
-      
-//     }
-//   },
-   
-// ]
   const pipeline = [
     { $match: match },
-   {
-    $project: {
-      ulb: 1,
-      "indicators.totRevenue": 1,
-      year: 1,
-      state:1
-    }
-  },
-  { $sort: { "indicators.totRevenue": -1 } }
+    {
+      $project: {
+        ulb: 1,
+        "indicators.totRevenue": 1,
+        "indicators.totOwnRevenueByTotRevenue": 1,
+        "lineItems.11001": 1,
+        year: 1,
+        state: 1,
+      },
+    },
+    { $sort: { "indicators.totRevenue": -1 } },
   ];
 
   return await ledgerLog.aggregate(pipeline);
