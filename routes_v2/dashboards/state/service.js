@@ -3,8 +3,8 @@ const Sate = require("../../../models/State");
 const Response = require("../../../service").response;
 const mongoose = require("mongoose");
 const ObjectId = mongoose.Types.ObjectId;
-const financialInfo = require('../common-api/financialInfo');
-const { getStandardizedYears } = require('../../common/common');
+// const financialInfo = require('../common-api/financialInfo');
+// const { getStandardizedYears } = require('../../common/common');
 
 module.exports.details = async (req, res) => {
     // mongoose.set("debug", true);
@@ -23,13 +23,13 @@ module.exports.details = async (req, res) => {
         if (result.length === 0) {
             return Response.BadRequest(res, null, "No Data Found");
         }
-        const financialData = await financialInfo.getFinancialInfo(req);
-        const yearsList = await getStandardizedYears({ stateCode: stateRes.code });
+        // const financialData = await financialInfo.getFinancialInfo(req);
+        // const yearsList = await getStandardizedYears({ stateCode: stateRes.code });
         const responseData = {
             state: stateRes,
             gridData: formatData(result[0]),
-            financialData: financialData,
-            yearsList: yearsList.sort((a, b) => b.localeCompare(a)),
+            // financialData: financialData,
+            // yearsList: yearsList.sort((a, b) => b.localeCompare(a)),
         }
         return Response.OK(res, responseData, "State details fetched successfully");
     } catch (err) {
