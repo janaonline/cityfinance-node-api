@@ -8,6 +8,13 @@ const {
   grants,
   totAssets,
   OperSurplusTotRevenueExpenditure,
+  formatToCrore,
+  getYearData,
+  getLineItemDataByYear,
+  getFormattedLineItemSumByYear,
+  getFormattedYearData,
+  getFormattedLineItemDataByYear,
+  getYearGrowth,
 } = require("./helper").default;
 const mongoose = require("mongoose");
 
@@ -290,12 +297,11 @@ module.exports.getCityDasboardIndicators = async (req, res) => {
   try {
     const { ulbId, years, keyType } = req.query;
     // console.log("ulbId:", ulbId, "years:", years);
-    const yearsArray = Array.isArray(years) ? years : [years];
-    if (!ulbId || !yearsArray || !keyType) {
+    if (!ulbId || !years || !keyType) {
       return res.status(400).json({ message: "Missing required parameters" });
     }
     const indicators = await ledgerLog
-      .find({ ulb_id: ObjectId(ulbId), year: { $in: yearsArray } })
+      .find({ ulb_id: ObjectId(ulbId), year: { $in: years } })
       .select([
         "ulb_id",
         "audit_status",
@@ -309,10 +315,10 @@ module.exports.getCityDasboardIndicators = async (req, res) => {
     if (!indicators || indicators.length === 0) {
       return res.status(404).json({ message: "No indicators found" });
     }
-
+    // console.log(indicators, "this is indicators");
     const header = {
       name: "Indicators",
-      yearData: yearsArray,
+      yearData: years,
       className: "fw-bold ",
       isHeader: true,
     };
@@ -320,508 +326,409 @@ module.exports.getCityDasboardIndicators = async (req, res) => {
     var params = indicators.map(({ lineItems, ...rest }) => rest);
     const source = buildSourceStatement(params);
     //  console.log(yearsArray,'this is source')
-    var intro = await getIntro(params, keyType, yearsArray);
-
-    if (keyType === "overview") {
-      var response = {
-        intro: intro,
-        data: [
-          header,
-          {
-            name: "Own Source Revenue to Total Revenue (%)",
-            yearData: [0, 1, 2].map(
-              (i) =>
-                indicators?.[i]?.indicators?.totOwnRevenueByTotRevenue ?? "N/A"
-            ),
-
-            info: "What is Own Source Revenue to Total Revenue?This metric indicates the extent to which a ULB’s revenue is generated from its own revenue sources such as property tax, rental income from municipal properties, fees and user charges, etc.A higher ratio reflects greater fiscal self-reliance and lesser dependence on inter-governmental transfers.How is it calculated? Own Source Revenue: Total Revenue",
-          },
-          {
-            name: "Grants to Total Revenue (%)",
-            yearData: [0, 1, 2].map(
-              (i) => indicators?.[i]?.indicators?.grantsByTotRevenue ?? "N/A"
-            ),
-            info: "What is Grants to Total Revenue?This metric indicates the extent to which a ULB’s revenue is supplemented by inter-governmental revenue grants.A lower ratio is desirable indicating greater self-reliance and reduced dependence on inter-governmental transfers.How is it calculated?Revenue Grants / Total Revenue Income",
-          },
-          {
-            name: "Operating Surplus(Cr)",
-            yearData: [0, 1, 2].map(
-              // (i) => indicators?.[i]?.indicators?.operatingSurplus ?? "N/A"
-              (i) => {
-                const value =
-                  indicators?.[i]?.indicators?.operatingSurplus ?? "N/A";
-                return formatToCrore(value);
-              }
-            ),
-            yearGrowth: [0, 1, 2].map((i, index, arr) => {
-              if (index === 0) return ""; // No growth for the first year
-              const prevValue =
-                indicators?.[arr[index - 1]]?.indicators?.operatingSurplus ?? 0;
-              const currValue =
-                indicators?.[i]?.indicators?.operatingSurplus ?? 0;
-
-              // Calculate growth percentage between years
-              if (prevValue === 0 || currValue === 0) return ""; // Avoid division by zero
-              const growth = ((currValue - prevValue) / prevValue) * 100;
-
-              // Format the growth with a "+" sign for positive values
-              if (growth > 0) {
-                return `+${Math.round(growth)}`; // Add "+" for positive growth
-              }
-              return `${Math.round(growth)}`; // Round negative or zero growth
-            }),
-            info: "Operating Surplus",
-          },
-        ],
-      };
-    }
-    if (keyType === "revenue") {
-      var response = {
-        intro: intro,
-        data: [
-          header,
-          {
-            name: "Total Revenue(Cr)",
-            yearData: [0, 1, 2].map(
-              (i) => {
-                const value = indicators?.[i]?.indicators?.totRevenue ?? "N/A";
-                return formatToCrore(value);
-              }
-              // (i) => indicators?.[i]?.indicators?.totRevenue ?? "N/A"
-            ),
-            yearGrowth: [0, 1, 2].map((i, index, arr) => {
-              if (index === 0) return ""; // No growth for the first year
-              const prevValue =
-                indicators?.[arr[index - 1]]?.indicators?.totRevenue ?? 0;
-              const currValue = indicators?.[i]?.indicators?.totRevenue ?? 0;
-
-              // Calculate growth percentage between years
-              if (prevValue === 0 || currValue === 0) return ""; // Avoid division by zero
-              const growth = ((currValue - prevValue) / prevValue) * 100;
-
-              // Format the growth with a "+" sign for positive values
-              if (growth > 0) {
-                return `+${Math.round(growth)}`; // Add "+" for positive growth
-              }
-              return `${Math.round(growth)}`; // Round negative or zero growth
-            }),
-            info: "What is Total Revenue?This metric Indicates the revenue income a ULB earns or receives from tax and non-tax sources.How is it calculated?Total Revenue = Own Source Revenue + Assigned Revenue +  Grants + Others",
-            children: [
-              {
-                name: "Own Source Revenue(Cr)",
-                yearData: [0, 1, 2].map(
-                  // (i) => indicators?.[i]?.indicators?.totOwnRevenue ?? "N/A"
-                  (i) => {
-                    const value =
-                      indicators?.[i]?.indicators?.totOwnRevenue ?? "N/A";
-                    return formatToCrore(value);
-                  }
-                ),
-                // info: "Own Source Revenue",
-                className: "ps-5 ",
-              },
-              {
-                name: "Assigned Revenue(Cr)",
-                yearData: [0, 1, 2].map(
-                  (i) => {
-                    const value = indicators?.[i]?.lineItems?.["120"] ?? "N/A";
-                    return formatToCrore(value);
-                  }
-                  // (i) => indicators?.[i]?.lineItems?.["120"] ?? "N/A"
-                ),
-                // info: "Assigned Revenue",
-                className: "ps-5 ",
-              },
-              {
-                name: "Revenue Grants(Cr)",
-                yearData: [0, 1, 2].map(
-                  (i) => {
-                    const value = indicators?.[i]?.lineItems?.["160"] ?? "N/A";
-                    return formatToCrore(value);
-                  }
-                  // (i) => indicators?.[i]?.lineItems?.["160"] ?? "N/A"
-                ),
-                // info: "Revenue Grants",
-                className: "ps-5 ",
-              },
-              {
-                name: "Others(Cr)",
-                yearData: [0, 1, 2].map(
-                  (i) => {
-                    const value = indicators?.[i]?.lineItems?.["100"] ?? "N/A";
-                    return formatToCrore(value);
-                  }
-                  // (i) => indicators?.[i]?.lineItems?.["100"] ?? "N/A"
-                ),
-                // info: "Others",
-                className: "ps-5 ",
-              },
-            ],
-          },
-          {
-            name: "Total Own Source Revenue(Cr)",
-            yearData: [0, 1, 2].map(
-              (i) => {
-                const value =
-                  indicators?.[i]?.indicators?.totOwnRevenue ?? "N/A";
-                return formatToCrore(value);
-              }
-              // (i) => indicators?.[i]?.indicators?.totOwnRevenue ?? "N/A"
-            ),
-            yearGrowth: [0, 1, 2].map((i, index, arr) => {
-              if (index === 0) return ""; // No growth for the first year
-              const prevValue =
-                indicators?.[arr[index - 1]]?.indicators?.totOwnRevenue ?? 0;
-              const currValue = indicators?.[i]?.indicators?.totOwnRevenue ?? 0;
-
-              // Calculate growth percentage between years
-              if (prevValue === 0 || currValue === 0) return ""; // Avoid division by zero
-              const growth = ((currValue - prevValue) / prevValue) * 100;
-
-              // Format the growth with a "+" sign for positive values
-              if (growth > 0) {
-                return `+${Math.round(growth)}`; // Add "+" for positive growth
-              }
-              return `${Math.round(growth)}`; // Round negative or zero growth
-            }),
-            info: "What is Total Own Source Revenue?This metric indicates a ULB's recurring expenses incurred on day-to-day functioning and operational needs. How is it calculated?Own Source Revenue = Tax Revenue + Fees and User Charges + Rental Income + Sale and Hire Charges + Income from Investments + Income Earned + Other Income",
-            children: [
-              {
-                name: "Tax Revenue(Cr)",
-                yearData: [0, 1, 2].map(
-                  (i) => {
-                    const value = indicators?.[i]?.lineItems?.["110"] ?? "N/A";
-                    return formatToCrore(value);
-                  }
-                  // (i) => indicators?.[i]?.lineItems?.["110"] ?? "N/A"
-                ),
-                // info: "Tax Revenue",
-                className: "ps-5 ",
-              },
-              {
-                name: "Rental Income(Cr)",
-                yearData: [0, 1, 2].map(
-                  // (i) => indicators?.[i]?.lineItems?.["130"] ?? "N/A"
-                  (i) => {
-                    const value = indicators?.[i]?.lineItems?.["130"] ?? "N/A";
-                    return formatToCrore(value);
-                  }
-                ),
-                // info: "Rental Income",
-                className: "ps-5 ",
-              },
-              {
-                name: "Fee & User Charges(Cr)",
-                yearData: [0, 1, 2].map(
-                  (i) => {
-                    const value = indicators?.[i]?.lineItems?.["140"] ?? "N/A";
-                    return formatToCrore(value);
-                  }
-                  // (i) => indicators?.[i]?.lineItems?.["140"] ?? "N/A"
-                ),
-                // info: "Fee & User Charges",
-                className: "ps-5 ",
-              },
-              {
-                name: "Sale & Hire Charges(Cr)",
-                yearData: [0, 1, 2].map(
-                  // (i) => indicators?.[i]?.lineItems?.["150"] ?? "N/A"
-                  (i) => {
-                    const value = indicators?.[i]?.lineItems?.["150"] ?? "N/A";
-                    return formatToCrore(value);
-                  }
-                ),
-                // info: "Sale & Hire Charges",
-                className: "ps-5 ",
-              },
-              {
-                name: "Other Income(Cr)",
-                yearData: [0, 1, 2].map(
-                  (i) => {
-                    const value = indicators?.[i]?.lineItems?.["180"] ?? "N/A";
-                    return formatToCrore(value);
-                  }
-                  // (i) => indicators?.[i]?.lineItems?.["180"] ?? "N/A"
-                ),
-                // info: "Other Income",
-                className: "ps-5 ",
-              },
-              {
-                name: "Income from Investment(Cr)",
-                yearData: [0, 1, 2].map((i) => {
-                  const value = indicators?.[i]?.lineItems?.["170"] ?? "N/A";
-                  return formatToCrore(value);
-                }),
-                // info: "Interest Earned",
-                className: "ps-5 ",
-              },
-              {
-                name: "Interest Earned(Cr)",
-                yearData: [0, 1, 2].map((i) => {
-                  const value = indicators?.[i]?.lineItems?.["171"] ?? "N/A";
-                  return formatToCrore(value);
-                }),
-                // info: "Interest Earned",
-                className: "ps-5 ",
-              },
-            ],
-          },
-          {
-            name: "Own Source revenue to Total Revenue (%)",
-            yearData: [0, 1, 2].map(
-              (i) =>
-                indicators?.[i]?.indicators?.totOwnRevenueByTotRevenue ?? "N/A"
-            ),
-            info: "What is Own Source Revenue to Total Revenue?This metric indicates the extent to which a ULB’s revenue is generated from its own revenue sources such as property tax, rental income from municipal properties, fees and user charges, etc.A higher ratio reflects greater fiscal self-reliance and lesser dependence on inter-governmental transfers.How is it calculated? Own Source Revenue: Total Revenue",
-          },
-          {
-            name: "Grants to Total Revenue (%)",
-            yearData: [0, 1, 2].map(
-              (i) => indicators?.[i]?.indicators?.grantsByTotRevenue ?? "N/A"
-            ),
-            info: "What is Grants to Total Revenue?This metric indicates the extent to which a ULB’s revenue is supplemented by inter-governmental revenue grants.A lower ratio is desirable indicating greater self-reliance and reduced dependence on inter-governmental transfers.How is it calculated?Revenue Grants / Total Revenue Income",
-          },
-        ],
-      };
-    }
-    if (keyType === "expenditure") {
-      var response = {
-        intro: intro,
-        data: [
-          header,
-          {
-            name: "Total Revenue Expenditure(Cr)",
-            yearData: [0, 1, 2].map(
-              (i) => {
-                const value =
-                  indicators?.[i]?.indicators?.totRevenueExpenditure ?? "N/A";
-                return formatToCrore(value);
-              }
-              // (i) => indicators?.[i]?.indicators?.totRevenueExpenditure ?? "N/A"
-            ),
-            yearGrowth: [0, 1, 2].map((i, index, arr) => {
-              if (index === 0) return ""; // No growth for the first year
-              const prevValue =
-                indicators?.[arr[index - 1]]?.indicators
-                  ?.totRevenueExpenditure ?? 0;
-              const currValue =
-                indicators?.[i]?.indicators?.totRevenueExpenditure ?? 0;
-
-              // Calculate growth percentage between years
-              if (prevValue === 0 || currValue === 0) return ""; // Avoid division by zero
-              const growth = ((currValue - prevValue) / prevValue) * 100;
-
-              // Format the growth with a "+" sign for positive values
-              if (growth > 0) {
-                return `+${Math.round(growth)}`; // Add "+" for positive growth
-              }
-              return `${Math.round(growth)}`; // Round negative or zero growth
-            }),
-            info: "What is Total Revenue Expenditure?This metric indicates a ULB's recurring expenses incurred on day-to-day functioning and operational needs. How is it calculated?Revenue Expenditure = Establishment Expenses + Administrative Expenses + Operations and Maintenance + Interest and Finance Charges + Others",
-            children: [
-              {
-                name: "Establishment Expenses(Cr)",
-                yearData: [0, 1, 2].map(
-                  (i) => {
-                    const value = indicators?.[i]?.lineItems?.["210"] ?? "N/A";
-                    return formatToCrore(value);
-                  }
-                  // (i) => indicators?.[i]?.lineItems?.["210"] ?? "N/A"
-                ),
-                // info: "Establishment Expenses",
-                className: "ps-5 ",
-              },
-              {
-                name: "Administrative Expenses(Cr)",
-                yearData: [0, 1, 2].map(
-                  (i) => {
-                    const value = indicators?.[i]?.lineItems?.["220"] ?? "N/A";
-                    return formatToCrore(value);
-                  }
-                  // (i) => indicators?.[i]?.lineItems?.["220"] ?? "N/A"
-                ),
-                // info: "Administrative Expenses",
-                className: "ps-5 ",
-              },
-              {
-                name: "O&M Expenses(Cr)",
-                yearData: [0, 1, 2].map(
-                  (i) => {
-                    const value = indicators?.[i]?.lineItems?.["230"] ?? "N/A";
-                    return formatToCrore(value);
-                  }
-                  // (i) => indicators?.[i]?.lineItems?.["230"] ?? "N/A"
-                ),
-                // info: "O&M Expenses",
-                className: "ps-5 ",
-              },
-              {
-                name: "Interest Charges(Cr)",
-                yearData: [0, 1, 2].map(
-                  (i) => {
-                    const value = indicators?.[i]?.lineItems?.["240"] ?? "N/A";
-                    return formatToCrore(value);
-                  }
-                  // (i) => indicators?.[i]?.lineItems?.["240"] ?? "N/A"
-                ),
-                // info: "Interest Charges",
-                className: "ps-5 ",
-              },
-              {
-                name: "Others(Cr)",
-                yearData: [0, 1, 2].map((i) => {
-                  const keys = [
-                    "250",
-                    "260",
-                    "270",
-                    "271",
-                    "272",
-                    "280",
-                    "290",
-                    "200",
-                  ];
-                  const values = keys.map(
-                    (k) => indicators?.[i]?.lineItems?.[k]
-                  );
-                  if (values.every((v) => v == null)) {
-                    return "N/A";
-                  }
-                  const total = values.reduce((acc, v) => acc + (v ?? 0), 0);
-                  return formatToCrore(total);
-                }),
-                // info: "Other incomes including grants, assignments, and miscellaneous receipts",
-                className: "ps-5 ",
-              },
-            ],
-          },
-          {
-            name: "Own Source Revenue to Revenue Expenditure(%)",
-            yearData: [0, 1, 2].map(
-              (i) =>
-                indicators?.[i]?.indicators
-                  ?.totOwnRevenueByTotRevenueExpenditure ?? "N/A"
-            ),
-            info: "What is Own Source Revenue to Revenue Expenditure?This metric indicates the extent to which a ULB’s revenue expenditure is funded through its Own Source Revenue. A higher ratio is desirable indicating greater self-reliance. A lower ratio indicates dependence on inter-governmental transfers to meet revenue expenditure.How is it calculated?Own Source Revenue to Revenue Expenditure = Own Source Revenue/ Revenue Expenditure",
-          },
-        ],
-      };
-    }
-    if (keyType === "debt") {
-      var response = {
-        intro: intro,
-        data: [
-          header,
-          {
-            name: "Total Debt(Cr)",
-            yearData: [0, 1, 2].map(
-              (i) => {
-                const value = indicators?.[i]?.indicators?.totDebt ?? "N/A";
-                return formatToCrore(value);
-              }
-              // (i) => indicators?.[i]?.indicators?.totDebt ?? "N/A"
-            ),
-            yearGrowth: [0, 1, 2].map((i, index, arr) => {
-              if (index === 0) return ""; // No growth for the first year
-              const prevValue =
-                indicators?.[arr[index - 1]]?.indicators?.totDebt ?? 0;
-              const currValue = indicators?.[i]?.indicators?.totDebt ?? 0;
-
-              // Calculate growth percentage between years
-              if (prevValue === 0 || currValue === 0) return ""; // Avoid division by zero
-              const growth = ((currValue - prevValue) / prevValue) * 100;
-
-              // Format the growth with a "+" sign for positive values
-              if (growth > 0) {
-                return `+${Math.round(growth)}`; // Add "+" for positive growth
-              }
-              return `${Math.round(growth)}`; // Round negative or zero growth
-            }),
-            info: "What is Total Debt?This metric indicates the absolute level of financial obligations that the ULB is independently responsible for repaying.A higher value may suggest increased leverage or past investment in infrastructure, while a lower value may reflect either low borrowing capacity or a conservative fiscal approach.How is it calculated?Total Debt = Secured Loans + Unsecured Loans",
-            children: [
-              {
-                name: "Secured Loans(Cr)",
-                yearData: [0, 1, 2].map(
-                  (i) => {
-                    const value = indicators?.[i]?.lineItems?.["330"] ?? "N/A";
-                    return formatToCrore(value);
-                  }
-                  // (i) => indicators?.[i]?.lineItems?.["330"] ?? "N/A"
-                ),
-                // info: "Secured Loans",
-                className: "ps-5 ",
-              },
-              {
-                name: "Unsecured Loans(Cr)",
-                yearData: [0, 1, 2].map(
-                  (i) => {
-                    const value = indicators?.[i]?.lineItems?.["331"] ?? "N/A";
-                    return formatToCrore(value);
-                  }
-                  // (i) => indicators?.[i]?.lineItems?.["331"] ?? "N/A"
-                ),
-                // info: "Unsecured Loans",
-                className: "ps-5 ",
-              },
-            ],
-          },
-          {
-            name: "Total Assets(Cr)",
-            yearData: [0, 1, 2].map(
-              (i) => {
-                const value = indicators?.[i]?.indicators?.totAssets ?? "N/A";
-                return formatToCrore(value);
-              }
-              // (i) => indicators?.[i]?.indicators?.totAssets ?? "N/A"
-            ),
-            yearGrowth: [0, 1, 2].map((i, index, arr) => {
-              if (index === 0) return ""; // No growth for the first year
-              const prevValue =
-                indicators?.[arr[index - 1]]?.indicators?.totAssets ?? 0;
-              const currValue = indicators?.[i]?.indicators?.totAssets ?? 0;
-
-              // Calculate growth percentage between years
-              if (prevValue === 0 || currValue === 0) return ""; // Avoid division by zero
-              const growth = ((currValue - prevValue) / prevValue) * 100;
-
-              // Format the growth with a "+" sign for positive values
-              if (growth > 0) {
-                return `+${Math.round(growth)}`; // Add "+" for positive growth
-              }
-              return `${Math.round(growth)}`; // Round negative or zero growth
-            }),
-            info: "Total Assets",
-          },
-          {
-            name: "Debt to Asset Ratio",
-            yearData: [0, 1, 2].map(
-              (i) => indicators?.[i]?.indicators?.totDebtByTotAssets ?? "N/A"
-            ),
-            info: "What is Debt to Asset Ratio?This metric indicates a city’s extent of debt against its balance sheet size. A higher ratio indicates the ULG being highly leveraged. A lower ratio indicates the ULG's potential to borrow more, subject to its needs.How is it calculated?Debt to Asset Ratio = Total Debt/ Total Assets",
-          },
-          {
-            name: "Debt-to-Own Source Revenue Ratio",
-            yearData: [0, 1, 2].map(
-              (i) =>
-                indicators?.[i]?.indicators?.totDebtByTotOwnRevenue ?? "N/A"
-            ),
-            info: "What is Debt to Own-Source-Revenue Ratio?This metric indicates a ULB’s financial leverage relative to its internal revenue-generating capacity.A lower ratio is desirable as they indicate that the debt levels are manageable.How is it calculated?Debt to Own-Source Revenue = Total Debt/Own Source Revenue",
-          },
-          {
-            name: "Interest Service Coverage Ratio (ISCR)",
-            yearData: [0, 1, 2].map(
-              (i) => indicators?.[i]?.indicators?.iscrRatio ?? "N/A"
-            ),
-            info: "What is Interest Service Coverage Ratio?This metric indicates a ULG's capacity to make interest payments using its operating surplus. A higher ratio is desirable indicating better liquidity. A lower ratio indicates lower capacity to make interest paymentsHow is it calculated?ISCR = Operating Surplus/ Interest and Finance Charges",
-          },
-          {
-            name: "Quick Asset Ratio",
-            yearData: [0, 1, 2].map(
-              (i) => indicators?.[i]?.indicators?.qaRatio ?? "N/A"
-            ),
-            info: "What is Quick Assets Ratio?This metric indicates a ULB’s ability to meet its short-term financial obligations with its available liquid assets. A higher ratio is desirable indicating better liquidity.How is it calculated?Quick Assets Ratio = (Cash and bank balance + all investments)/ Revenue Expenditure prior to depreciation",
-          },
-        ],
-      };
+    var intro = await getIntro(params, keyType, years);
+    switch (keyType) {
+      case "overview": {
+        var response = {
+          intro: intro,
+          data: [
+            header,
+            {
+              name: "Own Source Revenue to Total Revenue (%)",
+              graphKey: "percentage",
+              yearData: getYearData(
+                indicators,
+                years,
+                "totOwnRevenueByTotRevenue"
+              ),
+              info: "What is Own Source Revenue to Total Revenue?This metric indicates the extent to which a ULB’s revenue is generated from its own revenue sources such as property tax, rental income from municipal properties, fees and user charges, etc.A higher ratio reflects greater fiscal self-reliance and lesser dependence on inter-governmental transfers.How is it calculated? Own Source Revenue: Total Revenue",
+            },
+            {
+              name: "Grants to Total Revenue (%)",
+              graphKey: "percentage",
+              yearData: getYearData(indicators, years, "grantsByTotRevenue"),
+              info: "What is Grants to Total Revenue?This metric indicates the extent to which a ULB’s revenue is supplemented by inter-governmental revenue grants.A lower ratio is desirable indicating greater self-reliance and reduced dependence on inter-governmental transfers.How is it calculated?Revenue Grants / Total Revenue Income",
+            },
+            {
+              name: "Operating Surplus (Cr)",
+              graphKey: "amount",
+              yearData: getFormattedYearData(
+                indicators,
+                years,
+                "operatingSurplus",
+                formatToCrore
+              ),
+              yearGrowth: getYearGrowth(indicators, years, "operatingSurplus"),
+              info: "Operating Surplus",
+            },
+          ],
+        };
+        break;
+      }
+      case "revenue": {
+        var response = {
+          intro: intro,
+          data: [
+            header,
+            {
+              name: "Total Revenue (Cr)",
+              graphKey: "amount",
+              yearData: getFormattedYearData(
+                indicators,
+                years,
+                "totRevenue",
+                formatToCrore
+              ),
+              yearGrowth: getYearGrowth(indicators, years, "totRevenue"),
+              info: "What is Total Revenue?This metric Indicates the revenue income a ULB earns or receives from tax and non-tax sources.How is it calculated?Total Revenue = Own Source Revenue + Assigned Revenue +  Grants + Others",
+              children: [
+                {
+                  name: "Own Source Revenue (Cr)",
+                  graphKey: "amount",
+                  yearData: getFormattedYearData(
+                    indicators,
+                    years,
+                    "totOwnRevenue",
+                    formatToCrore
+                  ),
+                  className: "ps-5 ",
+                },
+                {
+                  name: "Assigned Revenue (Cr)",
+                  graphKey: "amount",
+                  yearData: getFormattedLineItemDataByYear(
+                    indicators,
+                    years,
+                    "120",
+                    formatToCrore
+                  ),
+                  className: "ps-5 ",
+                },
+                {
+                  name: "Revenue Grants (Cr)",
+                  graphKey: "amount",
+                  yearData: getFormattedLineItemDataByYear(
+                    indicators,
+                    years,
+                    "160",
+                    formatToCrore
+                  ),
+                  className: "ps-5 ",
+                },
+                {
+                  name: "Others (Cr)",
+                  graphKey: "amount",
+                  yearData: getFormattedLineItemDataByYear(
+                    indicators,
+                    years,
+                    "100",
+                    formatToCrore
+                  ),
+                  className: "ps-5 ",
+                },
+              ],
+            },
+            {
+              name: "Total Own Source Revenue (Cr)",
+              graphKey: "amount",
+              yearData: getFormattedYearData(
+                indicators,
+                years,
+                "totOwnRevenue",
+                formatToCrore
+              ),
+              yearGrowth: getYearGrowth(indicators, years, "totRevenue"),
+              info: "What is Total Own Source Revenue?This metric indicates a ULB's recurring expenses incurred on day-to-day functioning and operational needs. How is it calculated?Own Source Revenue = Tax Revenue + Fees and User Charges + Rental Income + Sale and Hire Charges + Income from Investments + Income Earned + Other Income",
+              children: [
+                {
+                  name: "Tax Revenue(Cr)",
+                  graphKey: "amount",
+                  yearData: getFormattedLineItemDataByYear(
+                    indicators,
+                    years,
+                    "110",
+                    formatToCrore
+                  ),
+                  className: "ps-5 ",
+                },
+                {
+                  name: "Rental Income(Cr)",
+                  graphKey: "amount",
+                  yearData: getFormattedLineItemDataByYear(
+                    indicators,
+                    years,
+                    "130",
+                    formatToCrore
+                  ),
+                  className: "ps-5 ",
+                },
+                {
+                  name: "Fee & User Charges(Cr)",
+                  graphKey: "amount",
+                  yearData: getFormattedLineItemDataByYear(
+                    indicators,
+                    years,
+                    "140",
+                    formatToCrore
+                  ),
+                  className: "ps-5 ",
+                },
+                {
+                  name: "Sale & Hire Charges(Cr)",
+                  graphKey: "amount",
+                  yearData: getFormattedLineItemDataByYear(
+                    indicators,
+                    years,
+                    "150",
+                    formatToCrore
+                  ),
+                  className: "ps-5 ",
+                },
+                {
+                  name: "Other Income(Cr)",
+                  graphKey: "amount",
+                  yearData: getFormattedLineItemDataByYear(
+                    indicators,
+                    years,
+                    "180",
+                    formatToCrore
+                  ),
+                  className: "ps-5 ",
+                },
+                {
+                  name: "Income from Investment(Cr)",
+                  graphKey: "amount",
+                  yearData: getFormattedLineItemDataByYear(
+                    indicators,
+                    years,
+                    "170",
+                    formatToCrore
+                  ),
+                  className: "ps-5 ",
+                },
+                {
+                  name: "Interest Earned(Cr)",
+                  graphKey: "amount",
+                  yearData: getFormattedLineItemDataByYear(
+                    indicators,
+                    years,
+                    "171",
+                    formatToCrore
+                  ),
+                  className: "ps-5 ",
+                },
+              ],
+            },
+            {
+              name: "Own Source Revenue to Total Revenue (%)",
+              graphKey: "percentage",
+              yearData: getYearData(
+                indicators,
+                years,
+                "totOwnRevenueByTotRevenue"
+              ),
+              info: "What is Own Source Revenue to Total Revenue?This metric indicates the extent to which a ULB’s revenue is generated from its own revenue sources such as property tax, rental income from municipal properties, fees and user charges, etc.A higher ratio reflects greater fiscal self-reliance and lesser dependence on inter-governmental transfers.How is it calculated? Own Source Revenue: Total Revenue",
+            },
+            {
+              name: "Grants to Total Revenue (%)",
+              graphKey: "percentage",
+              yearData: getYearData(indicators, years, "grantsByTotRevenue"),
+              info: "What is Grants to Total Revenue?This metric indicates the extent to which a ULB’s revenue is supplemented by inter-governmental revenue grants.A lower ratio is desirable indicating greater self-reliance and reduced dependence on inter-governmental transfers.How is it calculated?Revenue Grants / Total Revenue Income",
+            },
+          ],
+        };
+        break;
+      }
+      case "expenditure": {
+        const keysToSum = [
+          "250",
+          "260",
+          "270",
+          "271",
+          "272",
+          "280",
+          "290",
+          "200",
+        ];
+        var response = {
+          intro: intro,
+          data: [
+            header,
+            {
+              name: "Total Revenue Expenditure(Cr)",
+              graphKey: "amount",
+              yearData: getFormattedYearData(
+                indicators,
+                years,
+                "totRevenueExpenditure",
+                formatToCrore
+              ),
+              yearGrowth: getYearGrowth(
+                indicators,
+                years,
+                "totRevenueExpenditure"
+              ),
+              info: "What is Total Revenue Expenditure?This metric indicates a ULB's recurring expenses incurred on day-to-day functioning and operational needs. How is it calculated?Revenue Expenditure = Establishment Expenses + Administrative Expenses + Operations and Maintenance + Interest and Finance Charges + Others",
+              children: [
+                {
+                  name: "Establishment Expenses(Cr)",
+                  graphKey: "amount",
+                  yearData: getFormattedLineItemDataByYear(
+                    indicators,
+                    years,
+                    "210",
+                    formatToCrore
+                  ),
+                  className: "ps-5 ",
+                },
+                {
+                  name: "Administrative Expenses(Cr)",
+                  graphKey: "amount",
+                  yearData: getFormattedLineItemDataByYear(
+                    indicators,
+                    years,
+                    "220",
+                    formatToCrore
+                  ),
+                  className: "ps-5 ",
+                },
+                {
+                  name: "O&M Expenses(Cr)",
+                  graphKey: "amount",
+                  yearData: getFormattedLineItemDataByYear(
+                    indicators,
+                    years,
+                    "230",
+                    formatToCrore
+                  ),
+                  className: "ps-5 ",
+                },
+                {
+                  name: "Interest Charges(Cr)",
+                  graphKey: "amount",
+                  yearData: getFormattedLineItemDataByYear(
+                    indicators,
+                    years,
+                    "240",
+                    formatToCrore
+                  ),
+                  className: "ps-5 ",
+                },
+                {
+                  name: "Others(Cr)",
+                  graphKey: "amount",
+                  yearData: getFormattedLineItemSumByYear(
+                    indicators,
+                    years,
+                    keysToSum,
+                    formatToCrore
+                  ),
+                  className: "ps-5 ",
+                },
+              ],
+            },
+            {
+              name: "Own Source Revenue to Revenue Expenditure(%)",
+              graphKey: "percentage",
+              yearData: getYearData(
+                indicators,
+                years,
+                "totOwnRevenueByTotRevenueExpenditure"
+              ),
+              info: "What is Own Source Revenue to Revenue Expenditure?This metric indicates the extent to which a ULB’s revenue expenditure is funded through its Own Source Revenue. A higher ratio is desirable indicating greater self-reliance. A lower ratio indicates dependence on inter-governmental transfers to meet revenue expenditure.How is it calculated?Own Source Revenue to Revenue Expenditure = Own Source Revenue/ Revenue Expenditure",
+            },
+          ],
+        };
+        break;
+      }
+      case "debt": {
+        var response = {
+          intro: intro,
+          data: [
+            header,
+            {
+              name: "Total Debt(Cr)",
+              graphKey: "amount",
+              yearData: getFormattedYearData(
+                indicators,
+                years,
+                "totDebt",
+                formatToCrore
+              ),
+              yearGrowth: getYearGrowth(indicators, years, "totDebt"),
+              info: "What is Total Debt?This metric indicates the absolute level of financial obligations that the ULB is independently responsible for repaying.A higher value may suggest increased leverage or past investment in infrastructure, while a lower value may reflect either low borrowing capacity or a conservative fiscal approach.How is it calculated?Total Debt = Secured Loans + Unsecured Loans",
+              children: [
+                {
+                  name: "Secured Loans(Cr)",
+                  graphKey: "amount",
+                  yearData: getFormattedLineItemDataByYear(
+                    indicators,
+                    years,
+                    "330",
+                    formatToCrore
+                  ),
+                  className: "ps-5 ",
+                },
+                {
+                  name: "Unsecured Loans(Cr)",
+                  graphKey: "amount",
+                  yearData: getFormattedLineItemDataByYear(
+                    indicators,
+                    years,
+                    "331",
+                    formatToCrore
+                  ),
+                  className: "ps-5 ",
+                },
+              ],
+            },
+            {
+              name: "Total Assets(Cr)",
+              graphKey: "amount",
+              yearData: getFormattedYearData(
+                indicators,
+                years,
+                "totAssets",
+                formatToCrore
+              ),
+              yearGrowth: getYearGrowth(indicators, years, "totAssets"),
+              info: "Total Assets",
+            },
+            {
+              name: "Debt to Asset Ratio",
+              graphKey: "percentage",
+              yearData: getYearData(indicators, years, "totDebtByTotAssets"),
+              info: "What is Debt to Asset Ratio?This metric indicates a city’s extent of debt against its balance sheet size. A higher ratio indicates the ULG being highly leveraged. A lower ratio indicates the ULG's potential to borrow more, subject to its needs.How is it calculated?Debt to Asset Ratio = Total Debt/ Total Assets",
+            },
+            {
+              name: "Debt-to-Own Source Revenue Ratio",
+              graphKey: "percentage",
+              yearData: getYearData(
+                indicators,
+                years,
+                "totDebtByTotOwnRevenue"
+              ),
+              info: "What is Debt to Own-Source-Revenue Ratio?This metric indicates a ULB’s financial leverage relative to its internal revenue-generating capacity.A lower ratio is desirable as they indicate that the debt levels are manageable.How is it calculated?Debt to Own-Source Revenue = Total Debt/Own Source Revenue",
+            },
+            {
+              name: "Interest Service Coverage Ratio (ISCR)",
+              graphKey: "percentage",
+              yearData: getYearData(indicators, years, "iscrRatio"),
+              info: "What is Interest Service Coverage Ratio?This metric indicates a ULG's capacity to make interest payments using its operating surplus. A higher ratio is desirable indicating better liquidity. A lower ratio indicates lower capacity to make interest paymentsHow is it calculated?ISCR = Operating Surplus/ Interest and Finance Charges",
+            },
+            {
+              name: "Quick Asset Ratio",
+              graphKey: "percentage",
+              yearData: getYearData(indicators, years, "qaRatio"),
+              info: "What is Quick Assets Ratio?This metric indicates a ULB’s ability to meet its short-term financial obligations with its available liquid assets. A higher ratio is desirable indicating better liquidity.How is it calculated?Quick Assets Ratio = (Cash and bank balance + all investments)/ Revenue Expenditure prior to depreciation",
+            },
+          ],
+        };
+        break;
+      }
+      default: {
+        return "invalid key type";
+      }
     }
     res.status(200).json({ source, response });
   } catch (error) {
@@ -829,15 +736,6 @@ module.exports.getCityDasboardIndicators = async (req, res) => {
     res.status(500).json({ message: "Internal Server Error" });
   }
 };
-function formatToCrore(value) {
-  if (typeof value === "number" && !isNaN(value)) {
-    if (Number.isInteger(value)) {
-      return (value / 10000000).toFixed(2); // Convert absolute numbers to crores
-    }
-    return value; // Leave decimal numbers as is
-  }
-  return value; // If it's 'N/A' or not a number, return as is
-}
 function filterIndicatorsWithYear(indicatorsData) {
   return indicatorsData.map((data) => {
     // console.log(data,'before')
@@ -856,9 +754,9 @@ function filterIndicatorsWithYear(indicatorsData) {
 
 function getIndicatorValue(indicatorKey, data, yearsArray) {
   const years = [...yearsArray]; // Create a shallow copy of the array
-  console.log(years, "this is years1"); // Original years array
+  // console.log(years, "this is years1"); // Original years array
   const reversedYears = years.reverse(); // Reverse the copied array
-  console.log(reversedYears, "this is years2"); // Reversed years array
+  // console.log(reversedYears, "this is years2"); // Reversed years array
   //  console.log(data,'this is data')
   for (const year of reversedYears) {
     const yearData = data.find((item) => item.year === year);
@@ -877,7 +775,7 @@ async function getIntro(indicators, keyType, yearsArray) {
   if (!["overview", "revenue", "expenditure", "debt"].includes(keyType)) {
     return "Invalid keyType.";
   }
-  console.log(yearsArray, "this is key");
+  // console.log(yearsArray, "this is key");
   const finalObject = filterIndicatorsWithYear(indicators);
   switch (keyType) {
     case "overview": {
@@ -1179,7 +1077,7 @@ module.exports.getFaqs = async (req, res) => {
           "Does " + ulbData[0]?.ulb + " publish service level benchmark data?",
         answer: `${
           topState && statesWithYes.includes(topState.state) ? "Yes" : "No"
-        }, ${ulbData[0]?.ulb} reports its Service Level Benchmark (SLB) data.`,
+        }, ${ulbData[0]?.ulb} ${topState && statesWithYes.includes(topState.state) ? "reports" :"does not report"} its Service Level Benchmark (SLB) data.`,
       },
     ];
     return res.json({ faqs: faqs });
