@@ -78,6 +78,7 @@ function getQuery(ulbCondition, ledgerCondition) {
 				as: 'ledgerLog',
 			},
 		},
+		{ $match: { ledgerLog: { $ne: [] } } },
 		{
 			$addFields: {
 				lineItems: { $arrayElemAt: ['$ledgerLog.lineItems', 0] },
@@ -104,6 +105,7 @@ function getQuery(ulbCondition, ledgerCondition) {
 		{
 			$group: {
 				_id: null,
+				lastModifiedAt: { $first: '$lastModifiedAt' },
 				totTaxRevenue: { $sum: '$totTaxRevenue' },
 				totOwnRevenue: { $sum: '$totOwnRevenue' },
 				totGrants: { $sum: '$totGrants' },
@@ -127,6 +129,7 @@ function addNullCheck(arr) {
 
 // Create response structure.
 function createResponseStructure(ledgerLogsData) {
+	if (!ledgerLogsData.length) return [];
 	const ledgerLogsDataObj = ledgerLogsData[0];
 	return [
 		{
