@@ -1021,7 +1021,7 @@ module.exports.getFaqs = async (req, res) => {
 
     const responseText1 = `In FY ${year}, ${
       ulbData.length ? ulbData[0].ulb : "a city"
-    } recorded a total revenue of ${
+    } recorded a total revenue of ₹${
       ulbData.length ? formatToCrore(ulbData[0].indicators.totRevenue) : "N/A"
     } crore. Among cities in ${
       topState ? topState.state : "the selected state"
