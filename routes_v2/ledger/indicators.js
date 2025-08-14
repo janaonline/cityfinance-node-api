@@ -1029,7 +1029,7 @@ module.exports.getFaqs = async (req, res) => {
       topState ? topState.ulb : "N/A"
     } had the highest revenue. Nationally, the top revenue was reported by ${
       topNational ? topNational.ulb : "N/A"
-    } at over ${
+    } at over  ₹${
       topNational ? formatToCrore(topNational.indicators.totRevenue) : "N/A"
     } crore.`;
     const statesWithYes = [
