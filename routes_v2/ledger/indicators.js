@@ -1055,7 +1055,7 @@ module.exports.getFaqs = async (req, res) => {
           "’s revenue comprises a mix of own-source revenues, such as property tax, user charges, and rental income, along with assigned revenues (the city's share in state taxes), and grants from the central and state governments. In FY " +
           year +
           ", own-source revenues contributed approximately " +
-          formatToCrore(ulbData[0]?.indicators.totOwnRevenueByTotRevenue) +
+          ulbData[0]?.indicators.totOwnRevenueByTotRevenue +
           "% of the city’s total revenue.",
       },
       {
