@@ -31,51 +31,69 @@ module.exports.bsIs = async (req, res) => {
 };
 
 // Based on key selected update the numbers from db to the response.
-function createResponseStructure(yearWiseLedgerData, btnKey) {
+function createResponseStructure(ledgerData, btnKey) {
+	// Segregate ULB data in an object.
+	const ulbWiseData = ledgerData.reduce((acc, curr) => {
+		const ulbId = curr._id;
+		const year = curr.ledgerLogData.year.replace('-', '');
+		const key = `${year}_${ulbId}`;
+
+		if (!(key in acc)) acc[key] = {};
+
+		acc[key] = curr;
+		return acc
+	}, {})
+
+	// Array of ulbIds.
+	const ulbIds = [...new Set(ledgerData.map(e => e._id.toString()))];
+
+	// Selected ULB data.
+	const selectedUlbData = ledgerData.filter(e => e._id == '5eb5844f76a3b61f40ba069a');
+
 	const STRUCTURE = getStructure(btnKey);
 
 	// Deep clone BS or IS STRUCTURE to avoid mutating shared reference
 	const responseStructure = JSON.parse(JSON.stringify(STRUCTURE));
 
-	for (const yearEntry of yearWiseLedgerData) {
+	for (const yearEntry of selectedUlbData) {
 		const ledgerLog = yearEntry.ledgerLogData;
-		const ulbId = yearEntry._id;
-
 		if (!ledgerLog || !ledgerLog.year || !ledgerLog.lineItems) continue;
 
-		let yearKey = ledgerLog.year.replace('-', '');
-		yearKey = `${yearKey}_${ulbId}`;
+		const year = ledgerLog.year.replace('-', '');
 
 		for (const item of responseStructure) {
-			const lineItemCode = item.code;
+			for (const ulbId of ulbIds) {
+				const key = `${year}_${ulbId}`;
+				const lineItemCode = item.code;
+				const lineItemsObj = ulbWiseData[key]?.ledgerLogData?.lineItems;
 
-			// If calculation is true, it represents a group of line items.
-			if (item.calculation) {
-				let result = 0;
+				// If calculation is true, it represents a group of line items.
+				if (item.calculation) {
+					let result = 0;
 
-				for (const [operation, lineItems] of Object.entries(
-					item.formula
-				)) {
-					for (const lineItem of lineItems) {
-						const value =
-							Number(ledgerLog.lineItems[lineItem]) || 0;
+					for (const [operation, lineItems] of Object.entries(item.formula)) {
+						for (const lineItem of lineItems) {
+							const value =
+								lineItemsObj ? Number(lineItemsObj[lineItem]) : 0;
 
-						if (operation === 'add') result += value;
-						else if (operation === 'sub') result -= value;
+							if (operation === 'add') result += value;
+							else if (operation === 'sub') result -= value;
+						}
 					}
-				}
 
-				item[yearKey] = result;
-			} else if (
-				lineItemCode &&
-				ledgerLog.lineItems[lineItemCode] !== null
-			) {
-				item[yearKey] = ledgerLog.lineItems[lineItemCode];
+					item[key] = result;
+				} else if (
+					lineItemCode &&
+					lineItemsObj &&
+					lineItemCode in lineItemsObj &&
+					lineItemsObj[lineItemCode] !== null
+				) {
+					item[key] = lineItemsObj[lineItemCode];
+				}
 			}
 		}
 	}
 
-	console.log(JSON.stringify(responseStructure, null, 2))
-
+	// console.log(JSON.stringify(responseStructure, null, 2))
 	return responseStructure;
 }

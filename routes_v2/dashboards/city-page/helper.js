@@ -829,8 +829,13 @@ module.exports.getStructure = (btnKey = 'balanceSheet') => {
 };
 
 module.exports.getQuery = (ulbId) => {
-	return [
-		{ $match: { _id: ObjectId(ulbId) } },
+	const query = [
+		// { $match: { _id: ObjectId(ulbId) } },
+		{
+			$match: {
+				_id: { $in: [ObjectId("5eb5844f76a3b61f40ba069a"), ObjectId('5dd006d4ffbcc50cfd92c87c')] }
+			}
+		},
 		{
 			$lookup: {
 				from: 'ledgerlogs',
@@ -870,4 +875,8 @@ module.exports.getQuery = (ulbId) => {
 			},
 		},
 	];
+
+	// console.log(JSON.stringify(query, null, 2));
+
+	return query;
 };
