@@ -25,6 +25,7 @@ const whitelist = [
   'https://democityfinance.dhwaniris.in',
   'http://localhost:3000',
   'http://localhost:4300',
+  'http://localhost:4100',
   'https://staging.cityfinance.in',
   'https://staging-jana.cityfinance.in',
   'https://uat.cityfinance.in',

@@ -39,9 +39,12 @@ function createResponseStructure(yearWiseLedgerData, btnKey) {
 
 	for (const yearEntry of yearWiseLedgerData) {
 		const ledgerLog = yearEntry.ledgerLogData;
+		const ulbId = yearEntry._id;
+
 		if (!ledgerLog || !ledgerLog.year || !ledgerLog.lineItems) continue;
 
-		const yearKey = ledgerLog.year.replace('-', '');
+		let yearKey = ledgerLog.year.replace('-', '');
+		yearKey = `${yearKey}_${ulbId}`;
 
 		for (const item of responseStructure) {
 			const lineItemCode = item.code;
@@ -71,6 +74,8 @@ function createResponseStructure(yearWiseLedgerData, btnKey) {
 			}
 		}
 	}
+
+	console.log(JSON.stringify(responseStructure, null, 2))
 
 	return responseStructure;
 }
