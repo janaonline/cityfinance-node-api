@@ -11,6 +11,13 @@ const ObjectId = require('mongoose').Types.ObjectId;
 const INCOME_STATEMENT_STRUCTURE = [
 	{
 		code: null,
+		isHeader: false,
+		lineItem: null,
+		class: 'fw-bold text-center ',
+		isState: true,
+	},
+	{
+		code: null,
 		isHeader: true,
 		lineItem: 'A.Income',
 		class: 'fw-bold',
@@ -317,6 +324,13 @@ const INCOME_STATEMENT_STRUCTURE = [
 ];
 
 const BALANCE_SHEET_STRUCTURE = [
+	{
+		code: null,
+		isHeader: false,
+		lineItem: null,
+		class: 'fw-bold text-center ',
+		isState: true,
+	},
 	{
 		code: null,
 		isHeader: true,
@@ -828,14 +842,10 @@ module.exports.getStructure = (btnKey = 'balanceSheet') => {
 	return STRUCTURE;
 };
 
-module.exports.getQuery = (ulbId) => {
+module.exports.getQuery = (ulbIds, years) => {
 	const query = [
 		// { $match: { _id: ObjectId(ulbId) } },
-		{
-			$match: {
-				_id: { $in: [ObjectId("5eb5844f76a3b61f40ba069a"), ObjectId('5dd006d4ffbcc50cfd92c87c')] }
-			}
-		},
+		{ $match: { _id: { $in: ulbIds.map(e => ObjectId(e)) } } },
 		{
 			$lookup: {
 				from: 'ledgerlogs',
@@ -868,12 +878,23 @@ module.exports.getQuery = (ulbId) => {
 				preserveNullAndEmptyArrays: false,
 			},
 		},
+		{ $match: { 'ledgerLogData.year': { $in: years } } },
+		{
+			$lookup: {
+				from: 'states',
+				localField: 'state',
+				foreignField: '_id',
+				as: 'states'
+			}
+		},
 		{
 			$project: {
 				population: 1,
-				ledgerLogData: 1,
-			},
-		},
+				name: 1,
+				stateName: { $arrayElemAt: ['$states.name', 0] },
+				ledgerLogData: 1
+			}
+		}
 	];
 
 	// console.log(JSON.stringify(query, null, 2));
