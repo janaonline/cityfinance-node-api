@@ -58,7 +58,7 @@ async function getDataFromDb(ulbId) {
 		// 	.populate('state', 'name code')
 		// 	.lean(),
 
-		LedgerLog.distinct('year', { ulb_id: new ObjectId(ulbId) }),
+		LedgerLog.distinct('year', { ulb_id: new ObjectId(ulbId), isStandardizable: { $ne: 'No' } }),
 
 		getLastModifiedDateHelper({ ulb_id: new ObjectId(ulbId) }),
 	]);
