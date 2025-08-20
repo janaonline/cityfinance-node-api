@@ -58,7 +58,7 @@ function createResponseStructure(ledgerData, btnKey, selectedUlbId) {
 		ulbWiseData[key] = curr;
 
 		// Store pop, stateName, name in diff obj.
-		if (!(ulbId in ulbsData)) {
+		if (!(ulbId in ulbsData) && curr.name) {
 			ulbsData[ulbId] = {
 				_id: ulbId,
 				name: curr.name,
@@ -93,8 +93,8 @@ function createResponseStructure(ledgerData, btnKey, selectedUlbId) {
 				const lineItemsObj = ulbWiseData[key]?.ledgerLogData?.lineItems;
 
 				// Add state name only while ULB compare.
-				if (item.isState && ulbIds.length > 1) {
-					item[key] = ulbWiseData[key]?.name;
+				if (item.isState && ulbIds.length > 0) {
+					item[key] = ulbsData?.[ulbId].name;
 				}
 				// If calculation is true, it represents a group of line items.
 				else if (item.calculation) {
