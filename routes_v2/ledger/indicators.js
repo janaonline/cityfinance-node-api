@@ -1,6 +1,10 @@
 const ledgerLog = require("../../models/LedgerLog");
 const IndicatorsModel = require("../../models/ledgerIndicators");
 const {
+  safeDivide,
+  normalize,
+  safePercent,
+  safeRatio,
   totRevenue,
   totRevenueExpenditure,
   totOwnRevenue,
@@ -157,11 +161,24 @@ async function getCommonIndicatorsData({ ulbId, financialYear, allLineItems }) {
 // };
 
 async function marketDashboardIndicators(ulbId, financialYear, totals) {
+  // ---- Guards & input validation ----
+  if (!ulbId || (typeof ulbId !== "string" && !(ulbId instanceof ObjectId))) {
+    throw new Error("Invalid ulbId");
+  }
+  if (!financialYear || typeof financialYear !== "string") {
+    throw new Error("Invalid financialYear");
+  }
+  if (
+    !Array.isArray(totals) ||
+    totals.length === 0 ||
+    typeof totals[0] !== "object"
+  ) {
+    throw new Error("Totals array is empty or invalid");
+  }
+
+  const marketDasInd = {};
+
   try {
-    if (!totals || totals.length === 0) {
-      throw new Error("Totals array is empty");
-    }
-    const marketDasInd = {};
     const {
       totRevenue,
       totRevenueExpenditure,
@@ -174,60 +191,30 @@ async function marketDashboardIndicators(ulbId, financialYear, totals) {
       qaRatioNum,
       depreciation,
     } = totals[0] || {};
-    // console.log("totals[0]:", totals[0]);
-    // Utility: Normalize values (converts "N/A" and null/undefined to null)
-    const normalize = (val) => {
-      if (val === "N/A" || val == null) return null;
-      const num = parseFloat(val);
-      return isNaN(num) ? null : num;
-    };
 
-    // Utility: Safe division
-    const safeDivide = (numerator, denominator) => {
-      const num = normalize(numerator);
-      const den = normalize(denominator);
+    // ---------- Fetch capex (already returns a number or "N/A") ----------
+    const capexRaw = await getCapexValue(ulbId, financialYear);
+    marketDasInd.capex = capexRaw; // keep original shape (number or "N/A")
 
-      if (num === null || den === null || den === 0) return null;
-      return num / den;
-    };
-
-    // Utility: Percentage formatter
-    const safePercent = (numerator, denominator, decimals = 2) => {
-      const ratio = safeDivide(numerator, denominator);
-      return ratio === null
-        ? "N/A"
-        : parseFloat((ratio * 100).toFixed(decimals));
-    };
-
-    // Utility: Ratio (no *100)
-    const safeRatio = (numerator, denominator, decimals = 2) => {
-      const ratio = safeDivide(numerator, denominator);
-      return ratio === null ? "N/A" : parseFloat(ratio.toFixed(decimals));
-    };
-     marketDasInd.capex = await getCapexValue(ulbId, financialYear);
-    //  console.log("Capex Value:", marketDasInd.capex);
-    // Assign computed values
-    marketDasInd.totOwnRevenueByTotRevenue = safePercent(
-      totOwnRevenue,
-      totRevenue
-    );
-    marketDasInd.grantsByTotRevenue = safePercent(grants, totRevenue);
-    marketDasInd.totOwnRevenueByTotRevenueExpenditure = safePercent(
-      totOwnRevenue,
-      totRevenueExpenditure
-    );
-    marketDasInd.totDebtByTotAssets = safeRatio(totDebt, totAssets);
-    marketDasInd.totDebtByTotOwnRevenue = safeRatio(totDebt, totOwnRevenue);
-
-    // Operating Surplus (special case: subtraction)
+    // ---------- Normalized numbers for downstream math ----------
     const rev = normalize(totRevenue);
     const operExp = normalize(OperSurplusTotRevenueExpenditure);
     const intFinChaVal = normalize(intFinCha);
     const qaRatioNumVal = normalize(qaRatioNum);
     const totRevExp = normalize(totRevenueExpenditure);
     const depreciationVal = normalize(depreciation);
+    const capexVal = normalize(marketDasInd.capex);
+    const ownRevVal = normalize(totOwnRevenue);
+    const totAssetsVal = normalize(totAssets);
+    const totDebtVal = normalize(totDebt);
+    const grantsVal = normalize(grants);
+
+    // ---------- Core metrics ----------
+    // operatingSurplus = totRevenue - OperSurplusTotRevenueExpenditure (your existing logic)
     marketDasInd.operatingSurplus =
       rev !== null && operExp !== null ? rev - operExp : "N/A";
+
+    // iscrRatio = (totRevenue - OperSurplusTotRevenueExpenditure) / intFinCha
     marketDasInd.iscrRatio =
       rev !== null &&
       operExp !== null &&
@@ -235,6 +222,8 @@ async function marketDashboardIndicators(ulbId, financialYear, totals) {
       intFinChaVal !== 0
         ? parseFloat(((rev - operExp) / intFinChaVal).toFixed(2))
         : "N/A";
+
+    // qaRatio = qaRatioNum / (totRevenueExpenditure - depreciation)
     marketDasInd.qaRatio =
       qaRatioNumVal !== null &&
       totRevExp !== null &&
@@ -242,12 +231,53 @@ async function marketDashboardIndicators(ulbId, financialYear, totals) {
       totRevExp - depreciationVal !== 0
         ? parseFloat((qaRatioNumVal / (totRevExp - depreciationVal)).toFixed(2))
         : "N/A";
+
+    // totExpenditure = totRevenueExpenditure + capex  (only if both valid)
+    marketDasInd.totExpenditure =
+      totRevExp !== null && capexVal !== null ? totRevExp + capexVal : "N/A";
+
+    // ---------- Ratios already in your code ----------
+    marketDasInd.totOwnRevenueByTotRevenue = safePercent(
+      totOwnRevenue,
+      totRevenue
+    );
+    marketDasInd.grantsByTotRevenue = safePercent(grantsVal, totRevenue);
+    marketDasInd.totOwnRevenueByTotRevenueExpenditure = safePercent(
+      totOwnRevenue,
+      totRevenueExpenditure
+    );
+
+    marketDasInd.totDebtByTotAssets = safeRatio(totDebtVal, totAssetsVal);
+    marketDasInd.totDebtByTotOwnRevenue = safeRatio(totDebtVal, ownRevVal);
+
+    // ---------- New ratios using safeDivide (return "N/A" if invalid) ----------
+    marketDasInd.totExpenditureByTotRevenue =
+      marketDasInd.totExpenditure !== "N/A" && rev !== null && rev !== 0
+        ? parseFloat((marketDasInd.totExpenditure / rev) * 100).toFixed(2)
+        : "N/A";
+
+    marketDasInd.totExpenditureByTotOwnRevenue =
+      marketDasInd.totExpenditure !== "N/A" &&
+      ownRevVal !== null &&
+      ownRevVal !== 0
+        ? parseFloat((marketDasInd.totExpenditure / ownRevVal) * 100).toFixed(2)
+        : "N/A";
+
+    marketDasInd.capitalExpenditureByTotExpenditure =
+      capexVal !== null &&
+      marketDasInd.totExpenditure !== "N/A" &&
+      marketDasInd.totExpenditure !== 0
+        ? parseFloat((capexVal / marketDasInd.totExpenditure) * 100).toFixed(2)
+        : "N/A";
+    console.log(marketDasInd, "marketDasInd");
     return marketDasInd;
   } catch (error) {
+    // Centralised error reporting (re-throw so caller can handle HTTP/status, etc.)
     console.error("Error in marketDashboardIndicators:", error);
     throw error;
   }
 }
+
 const getCapexValue = async (ulbId, financialYear) => {
   if (!ulbId || ulbId.length === 0) return "N/A";
 
@@ -356,6 +386,17 @@ module.exports.getCityDasboardIndicators = async (req, res) => {
           data: [
             header,
             {
+              name: "Total Expenditure to Total Revenue (%)",
+              graphKey: "percentage",
+              isParent: "true",
+              yearData: getYearData(
+                indicators,
+                years,
+                "totExpenditureByTotRevenue"
+              ),
+              info: "What is Own Source Revenue to Total Revenue?This metric indicates the extent to which a ULB’s revenue is generated from its own revenue sources such as property tax, rental income from municipal properties, fees and user charges, etc.A higher ratio reflects greater fiscal self-reliance and lesser dependence on inter-governmental transfers.How is it calculated? Own Source Revenue: Total Revenue",
+            },
+            {
               name: "Own Source Revenue to Total Revenue (%)",
               graphKey: "percentage",
               isParent: "true",
@@ -371,6 +412,28 @@ module.exports.getCityDasboardIndicators = async (req, res) => {
               graphKey: "percentage",
               isParent: "true",
               yearData: getYearData(indicators, years, "grantsByTotRevenue"),
+              info: "What is Grants to Total Revenue?This metric indicates the extent to which a ULB’s revenue is supplemented by inter-governmental revenue grants.A lower ratio is desirable indicating greater self-reliance and reduced dependence on inter-governmental transfers.How is it calculated?Revenue Grants / Total Revenue Income",
+            },
+            {
+              name: "Own Source Revenue to Total Expenditure (%)",
+              graphKey: "percentage",
+              isParent: "true",
+              yearData: getYearData(
+                indicators,
+                years,
+                "totExpenditureByTotOwnRevenue"
+              ),
+              info: "What is Grants to Total Revenue?This metric indicates the extent to which a ULB’s revenue is supplemented by inter-governmental revenue grants.A lower ratio is desirable indicating greater self-reliance and reduced dependence on inter-governmental transfers.How is it calculated?Revenue Grants / Total Revenue Income",
+            },
+            {
+              name: "Capital Expenditure to Total Expenditure (%)",
+              graphKey: "percentage",
+              isParent: "true",
+              yearData: getYearData(
+                indicators,
+                years,
+                "capitalExpenditureByTotExpenditure"
+              ),
               info: "What is Grants to Total Revenue?This metric indicates the extent to which a ULB’s revenue is supplemented by inter-governmental revenue grants.A lower ratio is desirable indicating greater self-reliance and reduced dependence on inter-governmental transfers.How is it calculated?Revenue Grants / Total Revenue Income",
             },
             {
@@ -584,7 +647,45 @@ module.exports.getCityDasboardIndicators = async (req, res) => {
           data: [
             header,
             {
-              name: "Total Revenue Expenditure(Cr)",
+              name: "Total Expenditure (Cr)",
+              graphKey: "amount",
+              isParent: "true",
+              yearData: getFormattedYearData(
+                indicators,
+                years,
+                "totExpenditure",
+                formatToCrore
+              ),
+              yearGrowth: getYearGrowth(indicators, years, "totExpenditure"),
+              info: "What is Total Revenue Expenditure?This metric indicates a ULB's recurring expenses incurred on day-to-day functioning and operational needs. How is it calculated?Revenue Expenditure = Establishment Expenses + Administrative Expenses + Operations and Maintenance + Interest and Finance Charges + Others",
+              children: [
+                {
+                  name: "Total Revenue Expenditure (Cr)",
+                  graphKey: "amount",
+                  yearData: getFormattedYearData(
+                    indicators,
+                    years,
+                    "totRevenueExpenditure",
+                    formatToCrore
+                  ),
+                  className: "ps-5 ",
+                },
+                {
+                  name: "Total Capital Expenditure (Cr)",
+                  graphKey: "amount",
+                  yearData: getFormattedYearData(
+                    indicators,
+                    years,
+                    "capex",
+                    formatToCrore
+                  ),
+                  className: "ps-5 ",
+                },
+                
+              ],
+            },
+            {
+              name: "Total Revenue Expenditure (Cr)",
               graphKey: "amount",
               isParent: "true",
               yearData: getFormattedYearData(
@@ -601,7 +702,7 @@ module.exports.getCityDasboardIndicators = async (req, res) => {
               info: "What is Total Revenue Expenditure?This metric indicates a ULB's recurring expenses incurred on day-to-day functioning and operational needs. How is it calculated?Revenue Expenditure = Establishment Expenses + Administrative Expenses + Operations and Maintenance + Interest and Finance Charges + Others",
               children: [
                 {
-                  name: "Establishment Expenses(Cr)",
+                  name: "Establishment Expenses (Cr)",
                   graphKey: "amount",
                   yearData: getFormattedLineItemDataByYear(
                     indicators,
@@ -612,7 +713,7 @@ module.exports.getCityDasboardIndicators = async (req, res) => {
                   className: "ps-5 ",
                 },
                 {
-                  name: "Administrative Expenses(Cr)",
+                  name: "Administrative Expenses (Cr)",
                   graphKey: "amount",
                   yearData: getFormattedLineItemDataByYear(
                     indicators,
@@ -623,7 +724,7 @@ module.exports.getCityDasboardIndicators = async (req, res) => {
                   className: "ps-5 ",
                 },
                 {
-                  name: "O&M Expenses(Cr)",
+                  name: "O&M Expenses (Cr)",
                   graphKey: "amount",
                   yearData: getFormattedLineItemDataByYear(
                     indicators,
@@ -634,7 +735,7 @@ module.exports.getCityDasboardIndicators = async (req, res) => {
                   className: "ps-5 ",
                 },
                 {
-                  name: "Interest Charges(Cr)",
+                  name: "Interest Charges (Cr)",
                   graphKey: "amount",
                   yearData: getFormattedLineItemDataByYear(
                     indicators,
@@ -645,7 +746,7 @@ module.exports.getCityDasboardIndicators = async (req, res) => {
                   className: "ps-5 ",
                 },
                 {
-                  name: "Others(Cr)",
+                  name: "Others (Cr)",
                   graphKey: "amount",
                   yearData: getFormattedLineItemSumByYear(
                     indicators,
@@ -658,7 +759,7 @@ module.exports.getCityDasboardIndicators = async (req, res) => {
               ],
             },
             {
-              name: "Own Source Revenue to Revenue Expenditure(%)",
+              name: "Own Source Revenue to Revenue Expenditure (%)",
               graphKey: "percentage",
               isParent: "true",
               yearData: getYearData(
@@ -678,7 +779,7 @@ module.exports.getCityDasboardIndicators = async (req, res) => {
           data: [
             header,
             {
-              name: "Total Debt(Cr)",
+              name: "Total Debt (Cr)",
               graphKey: "amount",
               isParent: "true",
               yearData: getFormattedYearData(
@@ -691,7 +792,7 @@ module.exports.getCityDasboardIndicators = async (req, res) => {
               info: "What is Total Debt?This metric indicates the absolute level of financial obligations that the ULB is independently responsible for repaying.A higher value may suggest increased leverage or past investment in infrastructure, while a lower value may reflect either low borrowing capacity or a conservative fiscal approach.How is it calculated?Total Debt = Secured Loans + Unsecured Loans",
               children: [
                 {
-                  name: "Secured Loans(Cr)",
+                  name: "Secured Loans (Cr)",
                   graphKey: "amount",
                   yearData: getFormattedLineItemDataByYear(
                     indicators,
@@ -702,7 +803,7 @@ module.exports.getCityDasboardIndicators = async (req, res) => {
                   className: "ps-5 ",
                 },
                 {
-                  name: "Unsecured Loans(Cr)",
+                  name: "Unsecured Loans (Cr)",
                   graphKey: "amount",
                   yearData: getFormattedLineItemDataByYear(
                     indicators,
@@ -715,7 +816,7 @@ module.exports.getCityDasboardIndicators = async (req, res) => {
               ],
             },
             {
-              name: "Total Assets(Cr)",
+              name: "Total Assets (Cr)",
               graphKey: "amount",
               isParent: "true",
               yearData: getFormattedYearData(
