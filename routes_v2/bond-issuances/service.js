@@ -1,11 +1,66 @@
 const BondIssuerItem = require('../../models/BondIssuerItem');
+const UlbType = require('../../models/UlbType');
 const ObjectId = require('mongoose').Types.ObjectId;
 const ExcelJS = require('exceljs');
 const fs = require('fs');
+const { getBondDataHeaders } = require('./helper');
+
 const DATE_KEYS = ['dateOfIssue', 'repayment'];
 const OBJECT_ID_KEYS = ['state', 'ulbId'];
 const BOOLEAN_KEYS = ['isActive'];
 
+// ----- Bonds data - State dashboard -----
+module.exports.getBondData = async (req, res) => {
+	try {
+		const stateId = req.params._stateId;
+		const matchCondition = { isActive: true };
+
+		// Validate stateId
+		if (stateId) matchCondition['state'] = ObjectId(stateId);
+
+		// Project only required fields for efficiency
+		const projection = {
+			issueSizeAmount: 1,
+			couponRate: 1,
+			yearOfBondIssued: 1,
+			ulb: 1,
+			state: 1,
+			ulbId: 1,
+			CRISIL: 1,
+		};
+
+		// Fetch docs.
+		const docs = await BondIssuerItem
+			.find(matchCondition, projection)
+			.populate('ulbId', 'ulbType')
+			.lean()
+			.exec();
+
+		// Fetch ULB Types.
+		const ulbTypesArr = await UlbType.find({ isActive: true }, { _id: 1, name: 1 }).lean();
+		const ulbTypesObj = ulbTypesArr.reduce((acc, curr) => {
+			acc[curr._id] = curr.name;
+			return acc;
+		}, {});
+
+		// Map ulb type.
+		docs.forEach(doc => {
+			if (doc.ulbId)
+				doc['ulbType'] = ulbTypesObj[doc.ulbId.ulbType];
+		})
+
+		return res.status(200).json({
+			headers: getBondDataHeaders,
+			data: docs || []
+		});
+
+	} catch (error) {
+		console.error('Error fetching bond issuances:', error);
+		res.status(500).json({ error: 'Internal server error' });
+	}
+};
+
+// ----- Get bond amound and ulb count - Home page -----
 module.exports.getBondIssuances = async (req, res) => {
 	try {
 		const stateId = req.params._stateId;
@@ -32,7 +87,7 @@ module.exports.getBondIssuances = async (req, res) => {
 	}
 };
 
-// Helper method to create query - Get bonds amount and count.
+// Helper method to create query - Get bonds amount and count getBondIssuances().
 module.exports.getBondsAmountQuery = (matchCondition) => {
 	return [
 		{ $match: matchCondition },
@@ -62,7 +117,7 @@ module.exports.getBondsAmountQuery = (matchCondition) => {
 	];
 }
 
-// Add bonds data to collection.
+// ----- Add bonds data to collection -----
 module.exports.uploadBondsData = async (req, res) => {
 	try {
 		if (req.decoded.role !== 'ADMIN')
@@ -83,7 +138,7 @@ module.exports.uploadBondsData = async (req, res) => {
 	}
 }
 
-// Helper: To upload file.
+// Helper: To upload file uploadBondsData().
 async function processExcelAndUpdateDB(filePath) {
 	const workbook = new ExcelJS.Workbook();
 	await workbook.xlsx.readFile(filePath);
@@ -95,11 +150,9 @@ async function processExcelAndUpdateDB(filePath) {
 	worksheet.eachRow((row, rowNumber) => {
 		// Remove first empty index
 		const values = row.values.slice(1);
-		// console.log(`------------------------------------------------------------`)
 
 		if (rowNumber === 1) {
 			// Store headers
-			// console.log(values)
 			values.forEach((header) => headers.push(header?.toString().trim()));
 		} else {
 			const rowObject = {};
@@ -117,7 +170,6 @@ async function processExcelAndUpdateDB(filePath) {
 				else
 					rowObject[key] = cellValue?.toString().trim();
 
-				// console.log(`${key} --->${rowObject[key]} ---> ${typeof rowObject[key]}`)
 			});
 			rowsData.push(rowObject);
 		}
@@ -129,6 +181,7 @@ async function processExcelAndUpdateDB(filePath) {
 	return rowsData;
 }
 
+// Helper: format date to DDMMYYY format
 function formatDateToDDMMYYYY(dateInput) {
 	if (!dateInput) return undefined;
 	const date = new Date(dateInput);
