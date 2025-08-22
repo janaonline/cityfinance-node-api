@@ -1,11 +1,15 @@
 const BondIssuerItem = require('../../models/BondIssuerItem');
+const UlbType = require('../../models/UlbType');
 const ObjectId = require('mongoose').Types.ObjectId;
 const ExcelJS = require('exceljs');
 const fs = require('fs');
+const { getBondDataHeaders } = require('./helper');
+
 const DATE_KEYS = ['dateOfIssue', 'repayment'];
 const OBJECT_ID_KEYS = ['state', 'ulbId'];
 const BOOLEAN_KEYS = ['isActive'];
 
+// ----- Bonds data - State dashboard -----
 module.exports.getBondData = async (req, res) => {
 	try {
 		const stateId = req.params._stateId;
@@ -13,99 +17,49 @@ module.exports.getBondData = async (req, res) => {
 
 		// Validate stateId
 		if (stateId) matchCondition['state'] = ObjectId(stateId);
-           // Project only required fields for efficiency
-    const projection = {
-      issueSizeAmount: 1,
-      couponRate: 1,
-      yearOfBondIssued: 1,
-      ulb: 1,
-    };
 
-    // First fetch the docs (lean for speed)
-    const docs = await BondIssuerItem.find(matchCondition, projection).lean().exec();
+		// Project only required fields for efficiency
+		const projection = {
+			issueSizeAmount: 1,
+			couponRate: 1,
+			yearOfBondIssued: 1,
+			ulb: 1,
+			state: 1,
+			ulbId: 1,
+		};
 
-    if (!docs || docs.length === 0) {
-      return res.json([]);
-    }
+		// Fetch docs.
+		const docs = await BondIssuerItem
+			.find(matchCondition, projection)
+			.populate('ulbId', 'ulbType')
+			.lean()
+			.exec();
 
-    // Separate docs where ulb is an ObjectId vs string
-    const ulbObjectIdDocs = [];
-    const ulbStringDocs = [];
+		// Fetch ULB Types.
+		const ulbTypesArr = await UlbType.find({ isActive: true }, { _id: 1, name: 1 }).lean();
+		const ulbTypesObj = ulbTypesArr.reduce((acc, curr) => {
+			acc[curr._id] = curr.name;
+			return acc;
+		}, {});
 
-    for (const d of docs) {
-      if (d.ulb && typeof d.ulb === 'object' && ObjectId.isValid(String(d.ulb))) {
-        ulbObjectIdDocs.push(d);
-      } else {
-        ulbStringDocs.push(d);
-      }
-    }
+		// Map ulb type.
+		docs.forEach(doc => {
+			if (doc.ulbId)
+				doc['ulbType'] = ulbTypesObj[doc.ulbId.ulbType];
+		})
 
-    // If ulb is ObjectId, refetch only those with populate in a second call.
-    // We cannot mix populate with already-leaned docs, so we re-query by _id list.
-    let populatedById = new Map();
-    if (ulbObjectIdDocs.length > 0) {
-      const ids = ulbObjectIdDocs.map(d => d._id);
-      const populated = await BondIssuerItem.find(
-        { _id: { $in: ids } },
-        projection
-      )
-        .populate({
-          path: 'ulb',
-          select: 'name ulbType rating', // adjust to your ULB schema
-        })
-        .lean()
-        .exec();
-
-      // Map _id -> populated doc for quick merge
-      populatedById = new Map(populated.map(p => [String(p._id), p]));
-    }
-
-    // Build the response
-    const response = docs.map(d => {
-      // Prefer populated doc if available
-      const pd = populatedById.get(String(d._id)) || d;
-
-      // Derive fields conditionally
-      const ulbIsPopulated = pd.ulb && typeof pd.ulb === 'object' && pd.ulb.name !== undefined;
-
-      const municipality = ulbIsPopulated
-        ? (pd.ulb.name || 'N/A')
-        : (typeof pd.ulb === 'string' ? pd.ulb : 'N/A');
-
-      const ulbType = ulbIsPopulated
-        ? (pd.ulb.ulbType || 'N/A')
-        : 'N/A';
-
-      const rating = ulbIsPopulated && typeof pd.ulb.rating !== 'undefined'
-        ? pd.ulb.rating
-        : 'To-Do';
-
-      return {
-        year: pd.yearOfBondIssued ? String(pd.yearOfBondIssued) : 'N/A',
-        municipality,
-        ulbType,
-        rating,
-        amount: typeof pd.issueSizeAmount === 'string' ? pd.issueSizeAmount : 'N/A',
-        couponRate: (pd.couponRate || pd.couponRate === 0)
-          ? `${pd.couponRate}`
-          : 'N/A',
-      };
-    });
-
-    return res.json({headers: [
-          { key: 'municipality', value: 'Municipality ' },
-          { key: 'ulbType', value: 'ULB Type' },
-          { key: 'year', value: 'Year' },
-          { key: 'rating', value: 'Rating' },
-          { key: 'amount', value: 'Amount (in Cr.)' },
-          { key: 'couponRate', value: 'Coupon Rate' },
-        ], dataSource:response});
+		return res.status(200).json({
+			headers: getBondDataHeaders,
+			data: docs || []
+		});
 
 	} catch (error) {
 		console.error('Error fetching bond issuances:', error);
 		res.status(500).json({ error: 'Internal server error' });
 	}
 };
+
+// ----- Get bond amound and ulb count - Home page -----
 module.exports.getBondIssuances = async (req, res) => {
 	try {
 		const stateId = req.params._stateId;
@@ -132,7 +86,7 @@ module.exports.getBondIssuances = async (req, res) => {
 	}
 };
 
-// Helper method to create query - Get bonds amount and count.
+// Helper method to create query - Get bonds amount and count getBondIssuances().
 module.exports.getBondsAmountQuery = (matchCondition) => {
 	return [
 		{ $match: matchCondition },
@@ -162,7 +116,7 @@ module.exports.getBondsAmountQuery = (matchCondition) => {
 	];
 }
 
-// Add bonds data to collection.
+// ----- Add bonds data to collection -----
 module.exports.uploadBondsData = async (req, res) => {
 	try {
 		if (req.decoded.role !== 'ADMIN')
@@ -183,7 +137,7 @@ module.exports.uploadBondsData = async (req, res) => {
 	}
 }
 
-// Helper: To upload file.
+// Helper: To upload file uploadBondsData().
 async function processExcelAndUpdateDB(filePath) {
 	const workbook = new ExcelJS.Workbook();
 	await workbook.xlsx.readFile(filePath);
@@ -195,11 +149,9 @@ async function processExcelAndUpdateDB(filePath) {
 	worksheet.eachRow((row, rowNumber) => {
 		// Remove first empty index
 		const values = row.values.slice(1);
-		// console.log(`------------------------------------------------------------`)
 
 		if (rowNumber === 1) {
 			// Store headers
-			// console.log(values)
 			values.forEach((header) => headers.push(header?.toString().trim()));
 		} else {
 			const rowObject = {};
@@ -217,7 +169,6 @@ async function processExcelAndUpdateDB(filePath) {
 				else
 					rowObject[key] = cellValue?.toString().trim();
 
-				// console.log(`${key} --->${rowObject[key]} ---> ${typeof rowObject[key]}`)
 			});
 			rowsData.push(rowObject);
 		}
@@ -229,6 +180,7 @@ async function processExcelAndUpdateDB(filePath) {
 	return rowsData;
 }
 
+// Helper: format date to DDMMYYY format
 function formatDateToDDMMYYYY(dateInput) {
 	if (!dateInput) return undefined;
 	const date = new Date(dateInput);

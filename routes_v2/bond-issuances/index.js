@@ -8,7 +8,8 @@ const verifyToken = require('../../routes/auth/services/verifyToken').verifyToke
 
 // Get bonds amount and count.
 router.get('/municipal-bonds/:_stateId?', cacheMiddleware('Municipal_Bonds'), getBondIssuances);
-// Get bonds amount and count.
+
+// Get bonds data - State dashboard.
 router.get('/get-bonds/:_stateId?', getBondData);
     
 // Add new records in bonds collection.
