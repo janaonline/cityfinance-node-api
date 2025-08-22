@@ -6,14 +6,17 @@ const {
   totOwnRevenue,
   totDebt,
   grants,
+  getYearArray,
   totAssets,
   OperSurplusTotRevenueExpenditure,
+  convertLedgerData,
   formatToCrore,
   getYearData,
   getLineItemDataByYear,
   getFormattedLineItemSumByYear,
   getFormattedYearData,
   getFormattedLineItemDataByYear,
+  computeDeltaCapex,
   getYearGrowth,
 } = require("./helper").default;
 const mongoose = require("mongoose");
@@ -54,7 +57,11 @@ async function accumulateIndicators(ulbId, financialYear, allLineItems) {
       allLineItems,
     });
     // console.log("totals", totals);
-    const marketDashboardInd = await marketDashboardIndicators(totals);
+    const marketDashboardInd = await marketDashboardIndicators(
+      ulbId,
+      financialYear,
+      totals
+    );
     const { intFinCha, qaRatioNum, depreciation, ...filteredTotals } =
       totals[0] || {};
     const mergedResult = {
@@ -76,15 +83,7 @@ async function accumulateIndicators(ulbId, financialYear, allLineItems) {
     throw error;
   }
 }
-const convertLedgerData = (data) => {
-  return data.map((item) => {
-    const convertedItem = {};
-    for (let key in item) {
-      convertedItem[key] = item[key] === 0 ? "N/A" : item[key]; // If value is 0, replace with 'N/A'
-    }
-    return convertedItem;
-  });
-};
+
 async function getCommonIndicatorsData({ ulbId, financialYear, allLineItems }) {
   try {
     const addFields = [];
@@ -157,7 +156,7 @@ async function getCommonIndicatorsData({ ulbId, financialYear, allLineItems }) {
 //   return numerator / denominator;
 // };
 
-async function marketDashboardIndicators(totals) {
+async function marketDashboardIndicators(ulbId, financialYear, totals) {
   try {
     if (!totals || totals.length === 0) {
       throw new Error("Totals array is empty");
@@ -175,6 +174,7 @@ async function marketDashboardIndicators(totals) {
       qaRatioNum,
       depreciation,
     } = totals[0] || {};
+    // console.log("totals[0]:", totals[0]);
     // Utility: Normalize values (converts "N/A" and null/undefined to null)
     const normalize = (val) => {
       if (val === "N/A" || val == null) return null;
@@ -204,7 +204,8 @@ async function marketDashboardIndicators(totals) {
       const ratio = safeDivide(numerator, denominator);
       return ratio === null ? "N/A" : parseFloat(ratio.toFixed(decimals));
     };
-
+     marketDasInd.capex = await getCapexValue(ulbId, financialYear);
+    //  console.log("Capex Value:", marketDasInd.capex);
     // Assign computed values
     marketDasInd.totOwnRevenueByTotRevenue = safePercent(
       totOwnRevenue,
@@ -247,7 +248,27 @@ async function marketDashboardIndicators(totals) {
     throw error;
   }
 }
+const getCapexValue = async (ulbId, financialYear) => {
+  if (!ulbId || ulbId.length === 0) return "N/A";
 
+  const yearsArray = await getYearArray(financialYear); // e.g., ["2022-23","2021-22"]
+  if (!Array.isArray(yearsArray) || yearsArray.length < 2) return "N/A";
+
+  try {
+    const ledgerData = await ledgerLog
+      .find({ ulb_id: new ObjectId(ulbId), year: { $in: yearsArray } })
+      .select("year lineItems.410 lineItems.411 lineItems.412")
+      .lean();
+
+    // Empty or single-year → N/A
+    if (!Array.isArray(ledgerData) || ledgerData.length < 2) return "N/A";
+
+    return computeDeltaCapex(ledgerData);
+  } catch (err) {
+    console.error("Error fetching ledgerData:", err);
+    return "N/A";
+  }
+};
 module.exports.createIndicators = async (req, res) => {
   try {
     // List of indicators you want to ensure are present
@@ -255,6 +276,7 @@ module.exports.createIndicators = async (req, res) => {
       totRevenue,
       totRevenueExpenditure,
       totOwnRevenue,
+      capexpenditure,
       totDebt,
       grants,
       totAssets,
@@ -336,6 +358,7 @@ module.exports.getCityDasboardIndicators = async (req, res) => {
             {
               name: "Own Source Revenue to Total Revenue (%)",
               graphKey: "percentage",
+              isParent: "true",
               yearData: getYearData(
                 indicators,
                 years,
@@ -346,12 +369,14 @@ module.exports.getCityDasboardIndicators = async (req, res) => {
             {
               name: "Grants to Total Revenue (%)",
               graphKey: "percentage",
+              isParent: "true",
               yearData: getYearData(indicators, years, "grantsByTotRevenue"),
               info: "What is Grants to Total Revenue?This metric indicates the extent to which a ULB’s revenue is supplemented by inter-governmental revenue grants.A lower ratio is desirable indicating greater self-reliance and reduced dependence on inter-governmental transfers.How is it calculated?Revenue Grants / Total Revenue Income",
             },
             {
               name: "Operating Surplus (Cr)",
               graphKey: "amount",
+              isParent: "true",
               yearData: getFormattedYearData(
                 indicators,
                 years,
@@ -373,6 +398,7 @@ module.exports.getCityDasboardIndicators = async (req, res) => {
             {
               name: "Total Revenue (Cr)",
               graphKey: "amount",
+              isParent: "true",
               yearData: getFormattedYearData(
                 indicators,
                 years,
@@ -431,6 +457,7 @@ module.exports.getCityDasboardIndicators = async (req, res) => {
             {
               name: "Total Own Source Revenue (Cr)",
               graphKey: "amount",
+              isParent: "true",
               yearData: getFormattedYearData(
                 indicators,
                 years,
@@ -522,6 +549,7 @@ module.exports.getCityDasboardIndicators = async (req, res) => {
             {
               name: "Own Source Revenue to Total Revenue (%)",
               graphKey: "percentage",
+              isParent: "true",
               yearData: getYearData(
                 indicators,
                 years,
@@ -532,6 +560,7 @@ module.exports.getCityDasboardIndicators = async (req, res) => {
             {
               name: "Grants to Total Revenue (%)",
               graphKey: "percentage",
+              isParent: "true",
               yearData: getYearData(indicators, years, "grantsByTotRevenue"),
               info: "What is Grants to Total Revenue?This metric indicates the extent to which a ULB’s revenue is supplemented by inter-governmental revenue grants.A lower ratio is desirable indicating greater self-reliance and reduced dependence on inter-governmental transfers.How is it calculated?Revenue Grants / Total Revenue Income",
             },
@@ -557,6 +586,7 @@ module.exports.getCityDasboardIndicators = async (req, res) => {
             {
               name: "Total Revenue Expenditure(Cr)",
               graphKey: "amount",
+              isParent: "true",
               yearData: getFormattedYearData(
                 indicators,
                 years,
@@ -630,6 +660,7 @@ module.exports.getCityDasboardIndicators = async (req, res) => {
             {
               name: "Own Source Revenue to Revenue Expenditure(%)",
               graphKey: "percentage",
+              isParent: "true",
               yearData: getYearData(
                 indicators,
                 years,
@@ -649,6 +680,7 @@ module.exports.getCityDasboardIndicators = async (req, res) => {
             {
               name: "Total Debt(Cr)",
               graphKey: "amount",
+              isParent: "true",
               yearData: getFormattedYearData(
                 indicators,
                 years,
@@ -685,6 +717,7 @@ module.exports.getCityDasboardIndicators = async (req, res) => {
             {
               name: "Total Assets(Cr)",
               graphKey: "amount",
+              isParent: "true",
               yearData: getFormattedYearData(
                 indicators,
                 years,
@@ -697,12 +730,14 @@ module.exports.getCityDasboardIndicators = async (req, res) => {
             {
               name: "Debt to Asset Ratio",
               graphKey: "percentage",
+              isParent: "true",
               yearData: getYearData(indicators, years, "totDebtByTotAssets"),
               info: "What is Debt to Asset Ratio?This metric indicates a city’s extent of debt against its balance sheet size. A higher ratio indicates the ULG being highly leveraged. A lower ratio indicates the ULG's potential to borrow more, subject to its needs.How is it calculated?Debt to Asset Ratio = Total Debt/ Total Assets",
             },
             {
               name: "Debt-to-Own Source Revenue Ratio",
               graphKey: "percentage",
+              isParent: "true",
               yearData: getYearData(
                 indicators,
                 years,
@@ -713,12 +748,14 @@ module.exports.getCityDasboardIndicators = async (req, res) => {
             {
               name: "Interest Service Coverage Ratio (ISCR)",
               graphKey: "percentage",
+              isParent: "true",
               yearData: getYearData(indicators, years, "iscrRatio"),
               info: "What is Interest Service Coverage Ratio?This metric indicates a ULG's capacity to make interest payments using its operating surplus. A higher ratio is desirable indicating better liquidity. A lower ratio indicates lower capacity to make interest paymentsHow is it calculated?ISCR = Operating Surplus/ Interest and Finance Charges",
             },
             {
               name: "Quick Asset Ratio",
               graphKey: "percentage",
+              isParent: "true",
               yearData: getYearData(indicators, years, "qaRatio"),
               info: "What is Quick Assets Ratio?This metric indicates a ULB’s ability to meet its short-term financial obligations with its available liquid assets. A higher ratio is desirable indicating better liquidity.How is it calculated?Quick Assets Ratio = (Cash and bank balance + all investments)/ Revenue Expenditure prior to depreciation",
             },
@@ -815,18 +852,11 @@ async function getIntro(indicators, keyType, yearsArray) {
         yearsArray
       );
       // console.log(finalObject,yearsArray,'this is cagr')
-      const cagr = getCAGRValue(finalObject, yearsArray);
+      const cagr = getCAGRValue(revPayload);
+      console.log(cagr, "this is cagr");
       return `${totRevenueData.ulbName}’s total revenue for FY ${
         totRevenueData.year
-      } was ₹${formatToCrore(
-        totRevenueData.value
-      )} crore.Over the three years from FY ${revPayload[0].year} to FY ${
-        revPayload[2]?.year ?? "N/A"
-      } the city’s revenue grew from ₹${formatToCrore(
-        revPayload[0].totRevenue
-      )} crore to ₹${formatToCrore(
-        revPayload[2]?.totRevenue ?? "N/A"
-      )} crore, registering a CAGR of ${cagr.cagr}%.`;
+      } was ₹${formatToCrore(totRevenueData.value)} crore.${cagr}`;
     }
     case "expenditure": {
       const totExpenditure = getIndicatorValue(
@@ -840,9 +870,6 @@ async function getIntro(indicators, keyType, yearsArray) {
         finalObject,
         yearsArray
       );
-      // In FY 2022–23, Indore reported a total expenditure of ₹1,620 crore, which included ₹XXX crore in revenue expenditure
-      // In FY 2022–23, Indore reported a total expenditure of ₹1,620 crore, which included ₹XXX crore in revenue expenditure
-      // console.log(totRevenueExpenditure, "totalrevexp");
       return `In FY ${totRevenueExpenditure.year}, ${
         totRevenueExpenditure.ulbName
       } reported a total expenditure of ₹${formatToCrore(
@@ -866,59 +893,53 @@ async function getIntro(indicators, keyType, yearsArray) {
       console.log("Invalid keyType");
   }
 }
-function getCAGRValue(finalObject, yearsArray) {
-  // Sort the years in ascending order
-  yearsArray.sort((a, b) => {
-    const aYear = parseInt(a.split("-")[0]);
-    const bYear = parseInt(b.split("-")[0]);
-    return aYear - bYear;
-  });
+function getCAGRValue(revArray) {
+  console.log(revArray, "this is revArray");
+  if (!Array.isArray(revArray) || revArray.length < 2) {
+    return "No CAGR available.";
+  }
+  // Sort by start year (based on first part of 'YYYY-YY')
+  const sorted = revArray
+    .slice()
+    .sort(
+      (a, b) => parseInt(a.year.split("-")[0]) - parseInt(b.year.split("-")[0])
+    );
 
-  // Filter valid years with valid totRevenue
-  const validYears = yearsArray.filter((year) => {
-    const data = finalObject.find((item) => item.year === year);
-    return data && data.indicators.totRevenue !== undefined;
-  });
+  // Filter valid entries with positive revenue
+  const validEntries = sorted.filter(
+    (entry) => typeof entry.totRevenue === "number" && entry.totRevenue > 0
+  );
 
-  // If we don't have at least two valid years, return "Not available"
-  if (validYears.length < 2) {
-    return "Not available";
+  if (validEntries.length < 2) {
+    return "Insufficient data to calculate CAGR.";
   }
 
-  // Array to hold the results
-  let cagrResults = [];
+  const start = validEntries[0];
+  const end = validEntries[validEntries.length - 1];
 
-  // Loop through the valid years and calculate CAGR between each pair of consecutive years
-  for (let i = 0; i < validYears.length - 1; i++) {
-    const initialYear = validYears[i];
-    const finalYear = validYears[i + 1];
+  const startYear = start.year;
+  const endYear = end.year;
 
-    // Get the data for the initial and final years
-    const initialData = finalObject.find((item) => item.year === initialYear);
-    const finalData = finalObject.find((item) => item.year === finalYear);
+  const startValue = start.totRevenue;
+  const endValue = end.totRevenue;
 
-    const initialValue = initialData.indicators.totRevenue;
-    const finalValue = finalData.indicators.totRevenue;
+  const yearDiff =
+    parseInt(endYear.split("-")[0]) - parseInt(startYear.split("-")[0]);
 
-    // Calculate the number of years between initial and final
-    const initialYearNum = parseInt(initialYear.split("-")[0]);
-    const finalYearNum = parseInt(finalYear.split("-")[0]);
-    const numYears = finalYearNum - initialYearNum;
-
-    // Calculate CAGR
-    const cagr = (Math.pow(finalValue / initialValue, 1 / numYears) - 1) * 100;
-
-    // Store the result
-    cagrResults.push({
-      initialYear,
-      finalYear,
-      cagr: cagr.toFixed(2), // Return as a percentage with 2 decimal places
-    });
+  if (yearDiff <= 0) {
+    return "Invalid year range for CAGR calculation.";
   }
-  // console.log(cagrResults,'cagr')
-  // Return the results
-  return cagrResults;
+
+  const cagr = (Math.pow(endValue / startValue, 1 / yearDiff) - 1) * 100;
+
+  // Convert values to crores
+  const startCr = (startValue / 1e7).toFixed(2);
+  const endCr = (endValue / 1e7).toFixed(2);
+  const cagrStr = cagr.toFixed(2);
+
+  return `Over the years from FY ${startYear} to FY ${endYear}, the city’s revenue grew from ₹${startCr} crore to ₹${endCr} crore, registering a CAGR of ${cagrStr}%.`;
 }
+
 function getTotRevenue(yearData) {
   if (
     yearData &&
@@ -1077,7 +1098,11 @@ module.exports.getFaqs = async (req, res) => {
           "Does " + ulbData[0]?.ulb + " publish service level benchmark data?",
         answer: `${
           topState && statesWithYes.includes(topState.state) ? "Yes" : "No"
-        }, ${ulbData[0]?.ulb} ${topState && statesWithYes.includes(topState.state) ? "reports" :"does not report"} its Service Level Benchmark (SLB) data.`,
+        }, ${ulbData[0]?.ulb} ${
+          topState && statesWithYes.includes(topState.state)
+            ? "reports"
+            : "does not report"
+        } its Service Level Benchmark (SLB) data.`,
       },
     ];
     return res.json({ faqs: faqs });

@@ -76,9 +76,40 @@ const totAssets = {
 const OperSurplusTotRevenueExpenditure = {
   name: "Operating Surplus",
   key: "OperSurplusTotRevenueExpenditure",
-  lineItems: ["200", "210", "220", "230", "250","260","271"],
+  lineItems: ["200", "210", "220", "230", "250", "260", "271"],
 };
- 
+
+// const capexpenditure = {
+//   name: "Capital Expenditure",
+//   key: "capex",
+//   lineItems: ["410","411","412"]
+// };
+
+const getYearArray = (yearStr) => {
+  // split input e.g. "2022-23" → ["2022", "23"]
+  const [startStr, endStr] = yearStr.split("-");
+
+  const startYear = parseInt(startStr); // 2022
+  const endYear = parseInt("20" + endStr); // handle "23" → 2023
+
+  // previous year
+  const prevStart = startYear - 1;
+  const prevEnd = endYear - 1;
+
+  const prevYearStr = `${prevStart}-${String(prevEnd).slice(-2)}`;
+
+  return [yearStr, prevYearStr];
+};
+const convertLedgerData = (data) => {
+  return data.map((item) => {
+    const convertedItem = {};
+    for (let key in item) {
+      convertedItem[key] = item[key] === 0 ? "N/A" : item[key]; // If value is 0, replace with 'N/A'
+    }
+    return convertedItem;
+  });
+};
+
 const formatToCrore = (value) => {
   if (typeof value !== "number") return "N/A";
   return (value / 1e7).toFixed(2); // Example: Convert to crore
@@ -94,7 +125,6 @@ const getLineItemDataByYear = (indicators, years, key, formatter) => {
   return years.map((year) => {
     const entry = indicators.find((ind) => ind.year === year);
     return entry?.lineItems?.[key] ?? "N/A";
-     
   });
 };
 const getFormattedYearData = (indicators, years, key, formatter) => {
@@ -141,6 +171,57 @@ const getFormattedLineItemSumByYear = (indicators, years, keys, formatter) => {
     return formatter(total);
   });
 };
+const sumLineItemsCapex = (lineItems = {}) => {
+  if (!lineItems) return null; // no line items at all → invalid
+
+  const KEYS = ["410", "411", "412"];
+  let total = 0;
+  let hasAny = false;
+
+  for (const k of KEYS) {
+    const n = Number(lineItems[k]);
+    if (Number.isFinite(n)) {
+      total += n;
+      hasAny = true; // at least one valid number present
+    }
+  }
+  return hasAny ? total : null; // if none present → invalid
+};
+
+const startYearFromFY = (fy) => {
+  const m = /^(\d{4})-/.exec(fy || "");
+  return m ? parseInt(m[1], 10) : -Infinity;
+};
+const computeDeltaCapex = (rows) => {
+  // console.log("computeDeltaCapex:", rows);
+  if (!Array.isArray(rows) || rows.length < 2) return "N/A";
+
+  const normalized = rows
+    .map((r) => {
+      const total = sumLineItemsCapex(r.lineItems);
+      return {
+        year: r.year,
+        startYear: startYearFromFY(r.year),
+        total, // can be number or null
+      };
+    })
+    // keep only rows that have a valid year AND a valid total
+    .filter((x) => Number.isFinite(x.startYear) && Number.isFinite(x.total));
+
+  // console.log("Normalized Data:", normalized);
+  // Need two valid years to compute delta
+  if (normalized.length < 2) return "N/A";
+
+  // Sort by start year, pick oldest as previous and newest as current
+  normalized.sort((a, b) => a.startYear - b.startYear);
+  const previous = normalized[0];
+  const current = normalized[normalized.length - 1];
+
+  if (current.startYear === previous.startYear) return "N/A";
+
+  return current.total - previous.total;
+};
+
 export default {
   totRevenue,
   totRevenueExpenditure,
@@ -148,13 +229,17 @@ export default {
   totDebt,
   grants,
   totAssets,
+  getYearArray,
+  sumLineItemsCapex,
+  startYearFromFY,
+  computeDeltaCapex,
   OperSurplusTotRevenueExpenditure,
+  convertLedgerData,
   formatToCrore,
   getYearData,
   getLineItemDataByYear,
   getFormattedYearData,
   getFormattedLineItemDataByYear,
   getYearGrowth,
-  getFormattedLineItemSumByYear
-
+  getFormattedLineItemSumByYear,
 };
