@@ -26,6 +26,7 @@ module.exports.getBondData = async (req, res) => {
 			ulb: 1,
 			state: 1,
 			ulbId: 1,
+			CRISIL: 1,
 		};
 
 		// Fetch docs.
