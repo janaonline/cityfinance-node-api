@@ -84,7 +84,32 @@ const OperSurplusTotRevenueExpenditure = {
 //   key: "capex",
 //   lineItems: ["410","411","412"]
 // };
+// Normalize values: "N/A", null/undefined, non-numeric -> null, else Number
+const normalize = (val) => {
+  if (val === "N/A" || val == null) return null;
+  const num = parseFloat(val);
+  return Number.isFinite(num) ? num : null;
+};
 
+// Safe division: returns a Number or null (if invalid or divide-by-zero)
+const safeDivide = (numerator, denominator) => {
+  const num = normalize(numerator);
+  const den = normalize(denominator);
+  if (num === null || den === null || den === 0) return null;
+  return num / den;
+};
+
+// Percentage helper: returns Number (xx.xx) or "N/A"
+const safePercent = (numerator, denominator, decimals = 2) => {
+  const ratio = safeDivide(numerator, denominator);
+  return ratio === null ? "N/A" : parseFloat((ratio * 100).toFixed(decimals));
+};
+
+// Ratio helper (no *100): returns Number or "N/A"
+const safeRatio = (numerator, denominator, decimals = 2) => {
+  const ratio = safeDivide(numerator, denominator);
+  return ratio === null ? "N/A" : parseFloat(ratio.toFixed(decimals));
+};
 const getYearArray = (yearStr) => {
   // split input e.g. "2022-23" → ["2022", "23"]
   const [startStr, endStr] = yearStr.split("-");
@@ -223,6 +248,10 @@ const computeDeltaCapex = (rows) => {
 };
 
 export default {
+  normalize,
+  safeDivide,
+  safePercent,
+  safeRatio,
   totRevenue,
   totRevenueExpenditure,
   totOwnRevenue,
