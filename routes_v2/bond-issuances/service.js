@@ -6,6 +6,106 @@ const DATE_KEYS = ['dateOfIssue', 'repayment'];
 const OBJECT_ID_KEYS = ['state', 'ulbId'];
 const BOOLEAN_KEYS = ['isActive'];
 
+module.exports.getBondData = async (req, res) => {
+	try {
+		const stateId = req.params._stateId;
+		const matchCondition = { isActive: true };
+
+		// Validate stateId
+		if (stateId) matchCondition['state'] = ObjectId(stateId);
+           // Project only required fields for efficiency
+    const projection = {
+      issueSizeAmount: 1,
+      couponRate: 1,
+      yearOfBondIssued: 1,
+      ulb: 1,
+    };
+
+    // First fetch the docs (lean for speed)
+    const docs = await BondIssuerItem.find(matchCondition, projection).lean().exec();
+
+    if (!docs || docs.length === 0) {
+      return res.json([]);
+    }
+
+    // Separate docs where ulb is an ObjectId vs string
+    const ulbObjectIdDocs = [];
+    const ulbStringDocs = [];
+
+    for (const d of docs) {
+      if (d.ulb && typeof d.ulb === 'object' && ObjectId.isValid(String(d.ulb))) {
+        ulbObjectIdDocs.push(d);
+      } else {
+        ulbStringDocs.push(d);
+      }
+    }
+
+    // If ulb is ObjectId, refetch only those with populate in a second call.
+    // We cannot mix populate with already-leaned docs, so we re-query by _id list.
+    let populatedById = new Map();
+    if (ulbObjectIdDocs.length > 0) {
+      const ids = ulbObjectIdDocs.map(d => d._id);
+      const populated = await BondIssuerItem.find(
+        { _id: { $in: ids } },
+        projection
+      )
+        .populate({
+          path: 'ulb',
+          select: 'name ulbType rating', // adjust to your ULB schema
+        })
+        .lean()
+        .exec();
+
+      // Map _id -> populated doc for quick merge
+      populatedById = new Map(populated.map(p => [String(p._id), p]));
+    }
+
+    // Build the response
+    const response = docs.map(d => {
+      // Prefer populated doc if available
+      const pd = populatedById.get(String(d._id)) || d;
+
+      // Derive fields conditionally
+      const ulbIsPopulated = pd.ulb && typeof pd.ulb === 'object' && pd.ulb.name !== undefined;
+
+      const municipality = ulbIsPopulated
+        ? (pd.ulb.name || 'N/A')
+        : (typeof pd.ulb === 'string' ? pd.ulb : 'N/A');
+
+      const ulbType = ulbIsPopulated
+        ? (pd.ulb.ulbType || 'N/A')
+        : 'N/A';
+
+      const rating = ulbIsPopulated && typeof pd.ulb.rating !== 'undefined'
+        ? pd.ulb.rating
+        : 'To-Do';
+
+      return {
+        year: pd.yearOfBondIssued ? String(pd.yearOfBondIssued) : 'N/A',
+        municipality,
+        ulbType,
+        rating,
+        amount: typeof pd.issueSizeAmount === 'string' ? pd.issueSizeAmount : 'N/A',
+        couponRate: (pd.couponRate || pd.couponRate === 0)
+          ? `${pd.couponRate}`
+          : 'N/A',
+      };
+    });
+
+    return res.json({headers: [
+          { key: 'municipality', value: 'Municipality ' },
+          { key: 'ulbType', value: 'ULB Type' },
+          { key: 'year', value: 'Year' },
+          { key: 'rating', value: 'Rating' },
+          { key: 'amount', value: 'Amount (in Cr.)' },
+          { key: 'couponRate', value: 'Coupon Rate' },
+        ], dataSource:response});
+
+	} catch (error) {
+		console.error('Error fetching bond issuances:', error);
+		res.status(500).json({ error: 'Internal server error' });
+	}
+};
 module.exports.getBondIssuances = async (req, res) => {
 	try {
 		const stateId = req.params._stateId;
