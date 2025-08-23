@@ -47,12 +47,12 @@ const {
 } = require("./state");
 
 router.use("/all-dashboard", shared);
-router.post("/data-available", cacheMiddleware('dashboard'),dataAvailability);
-router.post("/yearList", cacheMiddleware('dashboard'),yearlist);
-router.post("/chart-data",cacheMiddleware('dashboard'), chartData2);
-router.post("/cards-data", cacheMiddleware('dashboard'),cardsData);
-router.post("/table-data", cacheMiddleware('dashboard'),tableData);
-router.post("/topPerformance",cacheMiddleware('dashboard'), topPerForming);
+router.post("/data-available", cacheMiddleware('dashboard'), dataAvailability);
+router.post("/yearList", cacheMiddleware('dashboard'), yearlist);
+router.post("/chart-data", cacheMiddleware('dashboard'), chartData2);
+router.post("/cards-data", cacheMiddleware('dashboard'), cardsData);
+router.post("/table-data", cacheMiddleware('dashboard'), tableData);
+router.post("/topPerformance", cacheMiddleware('dashboard'), topPerForming);
 
 router.post("/state-scatter", scatterMap);
 
@@ -65,7 +65,7 @@ router.post("/state-slb", serviceLevelBenchmark);
 router.get("/get-FYs-with-specification", cacheMiddleware('dashboard'), getFYsWithSpecification);
 router.get("/get-FYs-slb", getFYsSLB);
 router.get("/indicatorCSV", indicatorDump);
-router.post("/state-dashboard-averages", stateDashAvgs);
+router.post("/state-dashboard-averages", cacheMiddleware('dashboard'), stateDashAvgs);
 
 // national dashboard
 router.get("/national-dashboard/data-availability", dataAvailabilityState);
@@ -76,7 +76,7 @@ router.get("/national-dashboard/capital-expenditure", nationalDashCapexpense);
 router.get("/get-statewise-data-availability", cacheMiddleware('dashboard'), getStatewiseDataAvail);
 
 //slb-specific-metrics
-const {slbFrontPanel} = require('./slb');
-router.get("/slb-specific-metrics",slbFrontPanel);
+const { slbFrontPanel } = require('./slb');
+router.get("/slb-specific-metrics", slbFrontPanel);
 
 module.exports = router;
