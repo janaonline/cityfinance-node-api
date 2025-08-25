@@ -681,7 +681,6 @@ module.exports.getCityDasboardIndicators = async (req, res) => {
                   ),
                   className: "ps-5 ",
                 },
-                
               ],
             },
             {
@@ -1086,14 +1085,12 @@ function buildSourceStatement(records = []) {
 
   return `${parts[0]}`;
 }
-
 function joinYears(years) {
   if (years.length === 0) return "";
   if (years.length === 1) return years[0];
   if (years.length === 2) return `${years[0]} and ${years[1]}`;
   return `${years.slice(0, -1).join(", ")} and ${years[years.length - 1]}`;
 }
-
 module.exports.getYearsDynamic = async (req, res) => {
   // console.log(req.query, "this is params");
   const { ulbId } = req.query;
@@ -1118,128 +1115,235 @@ module.exports.getYearsDynamic = async (req, res) => {
 };
 module.exports.getFaqs = async (req, res) => {
   try {
-    const { year, ulbId, state } = req.query;
-
+    const { year, ulbId, state, populationType } = req.query;
     if (!year) return res.status(400).json({ error: "year is required" });
-    // National level data
-    const national = await getTotRevenueDataFaq(year, null, null);
-    const topNational = national[0]; // Assuming sorted in ascending order
-    // console.log(topNational,'this is national1');
-    // State level data
-    let stateData = [];
-    let topState = null;
-    if (state) {
-      stateData = await getTotRevenueDataFaq(year, null, state);
-      //  console.log(stateData[0],'this is national2');
-      topState = stateData[0];
+    // console.log(year, ulbId, state, "this is query params");
+    const faqPipeline = await buildFaqPipeline({ year, ulbId, state });
+    const result = await ledgerLog.aggregate(faqPipeline);
+    const faqData = Array.isArray(result) ? result[0] : result;
+    let faqs = [];
+    if (populationType === "cat1") {
+      const statesWithYes = new Set([
+        "Chhattisgarh",
+        "Gujarat",
+        "Jharkhand",
+        "Maharashtra",
+        "Telangana",
+      ]);
+
+      const cityName =
+        faqData?.ulbTop?.ulb ?? faqData?.ulbMeta?.ulb ?? "N/A";
+      const stateName = faqData?.stateTop?.state ?? null;
+
+      const ulbTotRevText =
+        faqData?.ulbTop?.indicators?.totRevenue != null
+          ? formatToCrore(faqData.ulbTop.indicators.totRevenue)
+          : "N/A";
+
+      const nationalTotRevText =
+        faqData?.national?.indicators?.totRevenue != null
+          ? formatToCrore(faqData.national.indicators.totRevenue)
+          : "N/A";
+
+      const ownShareText =
+        faqData?.ulbTop?.indicators?.totOwnRevenueByTotRevenue != null
+          ? faqData.ulbTop.indicators.totOwnRevenueByTotRevenue
+          : "N/A";
+
+      const propTaxVal = faqData?.ulbTop?.lineItems?.["11001"];
+      const propTaxText =
+        propTaxVal != null ? formatToCrore(propTaxVal) : "N/A";
+
+      const publishesSLB = stateName ? statesWithYes.has(stateName) : false;
+
+      faqs = [
+        {
+          question: `How does ${cityName}’s revenue compare to other municipal cities?`,
+          answer: `In FY ${year}, ${cityName} recorded a total revenue of ₹${ulbTotRevText} crore. Among cities in ${
+            faqData?.stateTop?.state ?? "N/A"
+          }, ${
+            faqData?.stateTop?.ulb ?? "N/A"
+          } had the highest revenue. Nationally, the top revenue was reported by ${
+            faqData?.national?.ulb ?? "N/A"
+          } at over ₹${nationalTotRevText} crore.`,
+        },
+        {
+          question: `What are the major income sources of ${cityName}?`,
+          answer: `${cityName}’s revenue comprises a mix of own-source revenues, such as property tax, user charges, and rental income, along with assigned revenues (the city's share in state taxes), and grants from the central and state governments. In FY ${year}, own-source revenues contributed approximately ${ownShareText}% of the city’s total revenue.`,
+        },
+        {
+          question: `What is ${cityName}’s property tax collection in recent years?`,
+          answer: `In FY ${year}, ${cityName} collected ₹${propTaxText} crore in property tax.`,
+        },
+        {
+          question: `Does ${cityName} publish service level benchmark data?`,
+          answer: `${publishesSLB ? "Yes" : "No"}, ${cityName} ${
+            publishesSLB ? "reports" : "does not report"
+          } its Service Level Benchmark (SLB) data.`,
+        },
+      ];
+    }
+    if (populationType === "cat2") {
+      const cityName =
+        faqData?.ulbTop?.ulb ?? faqData?.ulbMeta?.ulb ?? "N/A";
+
+      const grantsPctText =
+        faqData?.ulbTop?.indicators?.grantsByTotRevenue != null
+          ? faqData.ulbTop.indicators.grantsByTotRevenue
+          : "N/A";
+
+      const grantsAmtVal = faqData?.ulbTop?.lineItems?.["160"];
+      const grantsAmtText =
+        grantsAmtVal != null ? formatToCrore(grantsAmtVal) : "N/A";
+
+      const adminVal = faqData?.ulbTop?.lineItems?.["210"];
+      const estabVal = faqData?.ulbTop?.lineItems?.["220"];
+      const adminEstabTotalNum =
+        (Number.isFinite(adminVal) ? adminVal : 0) +
+        (Number.isFinite(estabVal) ? estabVal : 0);
+      const adminEstabTotalText =
+        adminEstabTotalNum > 0 ? formatToCrore(adminEstabTotalNum) : "N/A";
+
+      const revExpDen =
+        Number.isFinite(faqData?.ulbTop?.indicators?.totRevenueExpenditure)
+          ? faqData.ulbTop.indicators.totRevenueExpenditure
+          : null;
+
+      const adminEstabPct =
+        Number.isFinite(adminEstabTotalNum) &&
+        Number.isFinite(revExpDen) &&
+        revExpDen > 0
+          ? (adminEstabTotalNum / revExpDen) *100
+          : null;
+      const adminEstabPctText =
+        adminEstabPct != null ? adminEstabPct.toFixed(2) : "N/A";
+
+      const opSurplusVal =
+        Number.isFinite(faqData?.ulbTop?.indicators?.operatingSurplus)
+          ? faqData.ulbTop.indicators.operatingSurplus
+          : null;
+      const opState =
+        opSurplusVal == null
+          ? "balance"
+          : opSurplusVal >= 0
+          ? "surplus"
+          : "deficit";
+      const opAbsText =
+        opSurplusVal == null ? "N/A" : formatToCrore(Math.abs(opSurplusVal));
+
+      faqs = [
+        {
+          question: `How much of ${cityName}’s revenue came from grants?`,
+          answer: `In FY ${year}, grants contributed ${grantsPctText}% of ${cityName}’s total revenue, amounting to ₹${grantsAmtText} crore.`,
+        },
+        {
+          question: `How much money does ${cityName} spend towards administrative and establishment expenditure?`,
+          answer: `In FY ${year}, ${cityName} spent ₹${adminEstabTotalText} crore (${adminEstabPctText}%) of its revenue expenditure towards administrative and establishment expenses.`,
+        },
+        {
+          question: `Does ${cityName} earn enough revenue to cover its day-to-day expenses?`,
+          answer: `This is measured as operating surplus or deficit. In FY ${year}, ${cityName} recorded an operating ${opState} of ₹${opAbsText} crore. Such a ${opState} may ${
+            opState === "surplus" ? "enhance" : "constrain"
+          } the ULG's ability to effectively deliver public services.`,
+        },
+      ];
     }
 
-    // ULB level data
-    let ulbData = [];
-    if (ulbId) {
-      ulbData = await getTotRevenueDataFaq(year, ulbId, null);
-      //  console.log(ulbData[0],'this is national3');
-    }
-
-    const responseText1 = `In FY ${year}, ${
-      ulbData.length ? ulbData[0].ulb : "a city"
-    } recorded a total revenue of ₹${
-      ulbData.length ? formatToCrore(ulbData[0].indicators.totRevenue) : "N/A"
-    } crore. Among cities in ${
-      topState ? topState.state : "the selected state"
-    }, ${
-      topState ? topState.ulb : "N/A"
-    } had the highest revenue. Nationally, the top revenue was reported by ${
-      topNational ? topNational.ulb : "N/A"
-    } at over  ₹${
-      topNational ? formatToCrore(topNational.indicators.totRevenue) : "N/A"
-    } crore.`;
-    const statesWithYes = [
-      "Chhattisgarh",
-      "Gujarat",
-      "Jharkhand",
-      "Maharashtra",
-      "Telangana",
-    ];
-    const faqs = [
-      {
-        question:
-          "How does " +
-          ulbData[0]?.ulb +
-          "’s revenue compare to other municipal cities?",
-        answer: responseText1,
-      },
-      {
-        question:
-          "What are the major income sources of " + ulbData[0]?.ulb + "?",
-        answer:
-          ulbData[0]?.ulb +
-          "’s revenue comprises a mix of own-source revenues, such as property tax, user charges, and rental income, along with assigned revenues (the city's share in state taxes), and grants from the central and state governments. In FY " +
-          year +
-          ", own-source revenues contributed approximately " +
-          ulbData[0]?.indicators.totOwnRevenueByTotRevenue +
-          "% of the city’s total revenue.",
-      },
-      {
-        question:
-          "What is " +
-          ulbData[0]?.ulb +
-          "’s property tax collection in recent years?",
-        answer:
-          "In FY " +
-          year +
-          ", the " +
-          ulbData[0]?.ulb +
-          " collected ₹" +
-          (formatToCrore(ulbData[0]?.lineItems[11001]) ?? "N/A") +
-          " crore in property tax",
-      },
-      {
-        question:
-          "Does " + ulbData[0]?.ulb + " publish service level benchmark data?",
-        answer: `${
-          topState && statesWithYes.includes(topState.state) ? "Yes" : "No"
-        }, ${ulbData[0]?.ulb} ${
-          topState && statesWithYes.includes(topState.state)
-            ? "reports"
-            : "does not report"
-        } its Service Level Benchmark (SLB) data.`,
-      },
-    ];
-    return res.json({ faqs: faqs });
+    return res.json({ faqs });
   } catch (err) {
     console.error("Error in getFaqs:", err);
     return res.status(500).json({ error: err.message });
   }
 };
+async function buildFaqPipeline({ year, ulbId,state }) {
+  const ulbObjectId =
+    ulbId && ObjectId.isValid(ulbId) ? new ObjectId(ulbId) : null;
 
-async function getTotRevenueDataFaq(year, ulbId = null, state = null) {
-  const match = {
-    year: year,
-    "indicators.totRevenue": {
-      $exists: true,
-      $nin: [null, "N/A"],
-    },
+  const commonProject = {
+    ulb: 1,
+    state: 1,
+    year: 1,
+    "indicators.totRevenue": 1,
+    "indicators.totOwnRevenueByTotRevenue": 1,
+    "indicators.grantsByTotRevenue": 1,
+    "indicators.operatingSurplus": 1,
+    "indicators.totRevenueExpenditure": 1,
+    "lineItems.11001": 1,
+    "lineItems.160": 1,
+    "lineItems.210": 1,
+    "lineItems.220": 1,
   };
-
-  if (ulbId) match.ulb_id = new ObjectId(ulbId);
-  if (state) match.state = state;
-  const pipeline = [
-    { $match: match },
+  // console.log(year, state, ulbId, "this is params");
+  return [
     {
-      $project: {
-        ulb: 1,
-        "indicators.totRevenue": 1,
-        "indicators.totOwnRevenueByTotRevenue": 1,
-        "lineItems.11001": 1,
-        year: 1,
-        state: 1,
+      $facet: {
+        national: [
+          {
+            $match: {
+              year,
+              "indicators.totRevenue": { $exists: true, $nin: [null, "N/A"] },
+            },
+          },
+          { $sort: { "indicators.totRevenue": -1 } },
+          { $project: commonProject },
+          { $limit: 1 },
+        ],
+        stateTop: [
+          ...(state
+            ? [
+                {
+                  $match: {
+                    year,
+                    state,
+                    "indicators.totRevenue": {
+                      $exists: true,
+                      $nin: [null, "N/A"],
+                    },
+                  },
+                },
+              ]
+            : []),
+          { $sort: { "indicators.totRevenue": -1 } },
+          { $project: commonProject },
+          { $limit: 1 },
+        ],
+        ulbTop: [
+          ...(ulbObjectId ? [{ $match: { year, ulb_id: ulbObjectId } }] : []),
+          { $project: commonProject },
+          { $limit: 1 },
+        ],
+        ulbMeta: [
+          ...(ulbObjectId ? [{ $match: { ulb_id: ulbObjectId } }] : []),
+          {
+            $group: {
+              _id: "$ulb_id",
+              ulb: { $first: "$ulb" },
+              state: { $first: "$state" },
+            },
+          },
+          { $project: { _id: 0, ulb: 1, state: 1 } },
+          { $limit: 1 },
+        ],
       },
     },
-    { $sort: { "indicators.totRevenue": -1 } },
+    {
+      $project: {
+        national: { $arrayElemAt: ["$national", 0] },
+        stateTop: { $arrayElemAt: ["$stateTop", 0] },
+        ulbTop: { $arrayElemAt: ["$ulbTop", 0] },
+        ulbMeta: { $arrayElemAt: ["$ulbMeta", 0] },
+      },
+    },
+    // {
+    //   $addFields: {
+    //     ulbResolved: {
+    //       ulb: { $ifNull: ["$ulbTop.ulb", "$ulbMeta.ulb"] },
+    //       state: { $ifNull: ["$ulbTop.state", "$ulbMeta.state"] },
+    //       requestedYear: year
+    //     }
+    //   }
+    // }
   ];
-
-  return await ledgerLog.aggregate(pipeline);
 }
 
 module.exports.accumulateIndicators = accumulateIndicators;
