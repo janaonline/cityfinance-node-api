@@ -22,6 +22,7 @@ const {
   getFormattedLineItemDataByYear,
   computeDeltaCapex,
   getYearGrowth,
+  getInfoHTML
 } = require("./helper").default;
 const mongoose = require("mongoose");
 
@@ -394,7 +395,8 @@ module.exports.getCityDasboardIndicators = async (req, res) => {
                 years,
                 "totExpenditureByTotRevenue"
               ),
-              info: "What is Own Source Revenue to Total Revenue?This metric indicates the extent to which a ULB’s revenue is generated from its own revenue sources such as property tax, rental income from municipal properties, fees and user charges, etc.A higher ratio reflects greater fiscal self-reliance and lesser dependence on inter-governmental transfers.How is it calculated? Own Source Revenue: Total Revenue",
+              info:getInfoHTML("totExpenditureByTotRevenue"),
+              // info: "What is Own Source Revenue to Total Revenue?This metric indicates the extent to which a ULB’s revenue is generated from its own revenue sources such as property tax, rental income from municipal properties, fees and user charges, etc.A higher ratio reflects greater fiscal self-reliance and lesser dependence on inter-governmental transfers.How is it calculated? Own Source Revenue: Total Revenue",
             },
             {
               name: "Own Source Revenue to Total Revenue (%)",
@@ -405,14 +407,16 @@ module.exports.getCityDasboardIndicators = async (req, res) => {
                 years,
                 "totOwnRevenueByTotRevenue"
               ),
-              info: "What is Own Source Revenue to Total Revenue?This metric indicates the extent to which a ULB’s revenue is generated from its own revenue sources such as property tax, rental income from municipal properties, fees and user charges, etc.A higher ratio reflects greater fiscal self-reliance and lesser dependence on inter-governmental transfers.How is it calculated? Own Source Revenue: Total Revenue",
+              info:getInfoHTML("totOwnRevenueByTotRevenue"),
+              // info: "What is Own Source Revenue to Total Revenue?This metric indicates the extent to which a ULB’s revenue is generated from its own revenue sources such as property tax, rental income from municipal properties, fees and user charges, etc.A higher ratio reflects greater fiscal self-reliance and lesser dependence on inter-governmental transfers.How is it calculated? Own Source Revenue: Total Revenue",
             },
             {
               name: "Grants to Total Revenue (%)",
               graphKey: "percentage",
               isParent: "true",
               yearData: getYearData(indicators, years, "grantsByTotRevenue"),
-              info: "What is Grants to Total Revenue?This metric indicates the extent to which a ULB’s revenue is supplemented by inter-governmental revenue grants.A lower ratio is desirable indicating greater self-reliance and reduced dependence on inter-governmental transfers.How is it calculated?Revenue Grants / Total Revenue Income",
+              info:getInfoHTML("grantsByTotRevenue"),
+              // info: "What is Grants to Total Revenue?This metric indicates the extent to which a ULB’s revenue is supplemented by inter-governmental revenue grants.A lower ratio is desirable indicating greater self-reliance and reduced dependence on inter-governmental transfers.How is it calculated?Revenue Grants / Total Revenue Income",
             },
             {
               name: "Own Source Revenue to Total Expenditure (%)",
@@ -890,11 +894,8 @@ function filterIndicatorsWithYear(indicatorsData) {
 }
 
 function getIndicatorValue(indicatorKey, data, yearsArray) {
-  const years = [...yearsArray]; // Create a shallow copy of the array
-  // console.log(years, "this is years1"); // Original years array
-  const reversedYears = years.reverse(); // Reverse the copied array
-  // console.log(reversedYears, "this is years2"); // Reversed years array
-  //  console.log(data,'this is data')
+  const years = [...yearsArray]; 
+  const reversedYears = years.reverse(); 
   for (const year of reversedYears) {
     const yearData = data.find((item) => item.year === year);
     if (yearData && yearData.indicators) {

@@ -78,12 +78,6 @@ const OperSurplusTotRevenueExpenditure = {
   key: "OperSurplusTotRevenueExpenditure",
   lineItems: ["200", "210", "220", "230", "250", "260", "271"],
 };
-
-// const capexpenditure = {
-//   name: "Capital Expenditure",
-//   key: "capex",
-//   lineItems: ["410","411","412"]
-// };
 // Normalize values: "N/A", null/undefined, non-numeric -> null, else Number
 const normalize = (val) => {
   if (val === "N/A" || val == null) return null;
@@ -136,10 +130,15 @@ const convertLedgerData = (data) => {
 };
 
 const formatToCrore = (value) => {
-  if (typeof value !== "number") return "N/A";
-  return (value / 1e7).toFixed(2); // Example: Convert to crore
+  if (typeof value !== "number" || !Number.isFinite(value)) return "N/A";
+  // Convert to crore
+  const croreVal = value / 1e7;
+  // Format with 2 decimals + commas (Indian numbering system)
+  return croreVal.toLocaleString("en-IN", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
 };
-
 const getYearData = (indicators, years, key) => {
   return years.map((year) => {
     const entry = indicators.find((ind) => ind.year === year);
@@ -247,6 +246,97 @@ const computeDeltaCapex = (rows) => {
   return current.total - previous.total;
 };
 
+const getInfoHTML = (indicator) => {
+  const content = {
+    totExpenditureByTotRevenue: `
+      <h1>What is Total Expenditure to Total Revenue?</h1>
+      <p>It indicates the extent of a ULG's spending against its total receipts.</p>
+      <p>A higher ratio (&gt;100%) indicates the ULG is spending more than it earns. A lower ratio (&lt;100%) reflects a surplus.</p>
+
+      <h2>How is it calculated?</h2>
+      <p><strong>Total Expenditure over Total Receipts</strong></p>
+      
+      <h3>Total Expenditure</h3>
+      <p>Total Expenditure is the sum of Capital Expenditure and Revenue Expenditure.</p>
+
+      <h4>Revenue Expenditure</h4>
+      <p>Revenue expenditure is the sum of the following:</p>
+      <ul>
+          <li>Establishment Expenditure</li>
+          <li>Administrative Expenditure</li>
+          <li>O&M Expenditure</li>
+          <li>Interest and Finance Charges</li>
+          <li>Other 8 line items</li>
+      </ul>
+
+      <h4>Capital Expenditure</h4>
+      <p>Capital Expenditure is the sum of the following:</p>
+      <ul>
+          <li>Net Block (Gross Block + Accumulated Depreciation (negative figures))</li>
+          <li>Capital Work in Progress</li>
+      </ul>
+
+      <h3>Total Receipts</h3>
+      <p>Total Receipts is the sum of:</p>
+      <ul>
+          <li>Own Source Revenue</li>
+          <li>Assigned Revenue</li>
+          <li>Revenue Grants</li>
+          <li>Others</li>
+      </ul>
+
+      <h3>Capital Receipts</h3>
+      <p>Capital Receipts is the sum of:</p>
+      <ul>
+          <li>Debt Income (Secured and Unsecured Loans)</li>
+          <li>Non-Debt Income (Capital Grants and Sale of fixed assets)</li>
+      </ul>
+    `,
+    totOwnRevenueByTotRevenue: `<h1>What is Own Source Revenue to Total Revenue?</h1>
+<p>It indicates the extent to which a ULG's revenue is generated from its own source revenues (such as property tax, rental income from municipal properties, fees and user charges, etc.) against total revenue receipts.</p>
+
+<p>A higher ratio (above 50%) is desirable indicating greater self-reliance and reduced dependence on revenue grants and assigned revenues.</p>
+
+<h2>How is it calculated?</h2>
+<p><strong>Own Source Revenue over Total Revenue Receipts</strong></p>
+
+<h3>Own Source Revenue</h3>
+<p>Own Source Revenue is the sum of:</p>
+<ul>
+  <li>Tax Revenue</li>
+  <li>Rental Income</li>
+  <li>Fee & User Charges</li>
+  <li>Sale & Hire Charges</li>
+  <li>Interest Earned</li>
+  <li>Income from Investment</li>
+  <li>Other Income</li>
+</ul>
+
+<h3>Total Revenue Receipts</h3>
+<p>Total Revenue Receipts is the sum of:</p>
+<ul>
+  <li>Own Source Revenue</li>
+  <li>Assigned Revenue</li>
+  <li>Revenue Grants</li>
+  <li>Others</li>
+</ul>
+`,
+    grantsByTotRevenue: `<h1>Revenue Grants over Total Revenue Receipts</h1>
+
+<h2>Total Revenue Receipts</h2>
+<p>Total Revenue Receipts is the sum of:</p>
+<ul>
+  <li>Own Source Revenue</li>
+  <li>Assigned Revenue</li>
+  <li>Revenue Grants</li>
+  <li>Others</li>
+</ul>
+`,
+  };
+
+  return content[indicator] || ""; // Return empty string if not found
+};
+
 export default {
   normalize,
   safeDivide,
@@ -271,4 +361,5 @@ export default {
   getFormattedLineItemDataByYear,
   getYearGrowth,
   getFormattedLineItemSumByYear,
+  getInfoHTML,
 };
