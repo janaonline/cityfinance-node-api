@@ -1714,7 +1714,7 @@ const serviceLevelBenchmark = catchAsync(async (req, res) => {
         benchMarkValue: "$benchMarkValue",
         unitType: "$unitType",
         ulbType: "$ulbType.name",
-
+        population: "$ulb.population"
       },
     },
   ];
