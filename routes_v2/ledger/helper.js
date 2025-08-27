@@ -247,91 +247,366 @@ const computeDeltaCapex = (rows) => {
 };
 
 const getInfoHTML = (indicator) => {
+  const mainDivClass = `class="text-dark"`;
+  const questionClass = `class="text-start fw-bold mb-1"`;
+  const answerClassOne = `class="text-start ps-4 mb-1"`;
+  const listClass = `class="text-start ps-5"`;
+  const childListClass = `class="text-start ps-5 custom-font-size-6"`;
+
   const content = {
     totExpenditureByTotRevenue: `
-      <h1>What is Total Expenditure to Total Revenue?</h1>
-      <p>It indicates the extent of a ULG's spending against its total receipts.</p>
-      <p>A higher ratio (&gt;100%) indicates the ULG is spending more than it earns. A lower ratio (&lt;100%) reflects a surplus.</p>
+<div ${mainDivClass}>
+    <p ${questionClass}>1. What is Total Expenditure to Total Revenue?</p>
+    <ul ${listClass}>
+        <li>It indicates the extent of a ULG's spending against its total receipts.</li>
+        <li>A higher ratio (&gt;100%) indicates the ULG is spending more than it earns. A lower ratio (&lt;100%) reflects a surplus.</li>
+    </ul>
 
-      <h2>How is it calculated?</h2>
-      <p><strong>Total Expenditure over Total Receipts</strong></p>
-      
-      <h3>Total Expenditure</h3>
-      <p>Total Expenditure is the sum of Capital Expenditure and Revenue Expenditure.</p>
+    <p ${questionClass}>2. How is it calculated?</p>
+    <p ${answerClassOne}><strong>Total Expenditure over Total Receipt</strong></p>
+    <p ${answerClassOne}><u>Total Expenditure</u> is the sum of Capital Expenditure and Revenue Expenditure.</p>
+    <ul ${listClass}>
+        <li>Capital Expenditure is the sum of the following:
+            <ol ${childListClass}>
+                <li>Net Block (Gross Block + Accumulated Depreciation (negative figures))</li>
+                <li>Capital Work in Progress</li>
+            </ol>
+        </li>
 
-      <h4>Revenue Expenditure</h4>
-      <p>Revenue expenditure is the sum of the following:</p>
-      <ul>
-          <li>Establishment Expenditure</li>
-          <li>Administrative Expenditure</li>
-          <li>O&M Expenditure</li>
-          <li>Interest and Finance Charges</li>
-          <li>Other 8 line items</li>
-      </ul>
+        <li> Revenue expenditure is the sum of the following:
+            <ol ${childListClass}>
+                <li>Establishment Expenditure</li>
+                <li>Administrative Expenditure</li>
+                <li>O&M Expenditure</li>
+                <li>Interest and Finance Charges</li>
+                <li>Other 8 line items</li>
+            </ol>
+        </li>
+    </ul>
 
-      <h4>Capital Expenditure</h4>
-      <p>Capital Expenditure is the sum of the following:</p>
-      <ul>
-          <li>Net Block (Gross Block + Accumulated Depreciation (negative figures))</li>
-          <li>Capital Work in Progress</li>
-      </ul>
-
-      <h3>Total Receipts</h3>
-      <p>Total Receipts is the sum of:</p>
-      <ul>
-          <li>Own Source Revenue</li>
-          <li>Assigned Revenue</li>
-          <li>Revenue Grants</li>
-          <li>Others</li>
-      </ul>
-
-      <h3>Capital Receipts</h3>
-      <p>Capital Receipts is the sum of:</p>
-      <ul>
-          <li>Debt Income (Secured and Unsecured Loans)</li>
-          <li>Non-Debt Income (Capital Grants and Sale of fixed assets)</li>
-      </ul>
-    `,
-    totOwnRevenueByTotRevenue: `<h1>What is Own Source Revenue to Total Revenue?</h1>
-<p>It indicates the extent to which a ULG's revenue is generated from its own source revenues (such as property tax, rental income from municipal properties, fees and user charges, etc.) against total revenue receipts.</p>
-
-<p>A higher ratio (above 50%) is desirable indicating greater self-reliance and reduced dependence on revenue grants and assigned revenues.</p>
-
-<h2>How is it calculated?</h2>
-<p><strong>Own Source Revenue over Total Revenue Receipts</strong></p>
-
-<h3>Own Source Revenue</h3>
-<p>Own Source Revenue is the sum of:</p>
-<ul>
-  <li>Tax Revenue</li>
-  <li>Rental Income</li>
-  <li>Fee & User Charges</li>
-  <li>Sale & Hire Charges</li>
-  <li>Interest Earned</li>
-  <li>Income from Investment</li>
-  <li>Other Income</li>
-</ul>
-
-<h3>Total Revenue Receipts</h3>
-<p>Total Revenue Receipts is the sum of:</p>
-<ul>
-  <li>Own Source Revenue</li>
-  <li>Assigned Revenue</li>
-  <li>Revenue Grants</li>
-  <li>Others</li>
-</ul>
+    <p ${answerClassOne}><u>Total Receipts</u> is the sum of Capital Receipts and Revenue Receipts.</p>
+    <ul ${listClass}>
+        <li>Capital Receipts is the sum of:
+            <ol ${childListClass}>
+                <li>Debt Income (Secured and Unsecured Loans)</li>
+                <li>Non-Debt Income (Capital Grants and Sale of fixed assets)</li>
+            </ol>
+        </li>
+        <li>Revenue Receipts is the sum of:
+            <ol ${childListClass}>
+                <li>Own Source Revenue</li>
+                <li>Assigned Revenue</li>
+                <li>Revenue Grants</li>
+                <li>Others</li>
+            </ol>
+        </li>
+    </ul>
+</div>
 `,
-    grantsByTotRevenue: `<h1>Revenue Grants over Total Revenue Receipts</h1>
+    totOwnRevenueByTotRevenue: `
+<div ${mainDivClass}>
+    <p ${questionClass}>1. What is Own Source Revenue to Total Revenue?</p>
+    <ul ${listClass}>
+        <li>It indicates the extent to which a ULG's revenue is generated from its own source revenues (such as property tax, rental income from municipal properties, fees and user charges, etc.) against total revenue receipts.
+        </li>
+        <li>A higher ratio (above 50%) is desirable indicating greater self-reliance and reduced dependence on revenue grants and assigned revenues.</li>
+    </ul>
 
-<h2>Total Revenue Receipts</h2>
-<p>Total Revenue Receipts is the sum of:</p>
-<ul>
-  <li>Own Source Revenue</li>
-  <li>Assigned Revenue</li>
-  <li>Revenue Grants</li>
-  <li>Others</li>
-</ul>
+    <p ${questionClass}>2. How is it calculated?</p>
+    <p ${answerClassOne}><strong>Own Source Revenue over Total Revenue Receipts</strong></p>
+
+    <p ${answerClassOne}><u>Own Source Revenue</u> is the sum of the following:</p>
+    <ol ${childListClass}>
+        <li>Tax Revenue</li>
+        <li>Rental Income</li>
+        <li>Fee &amp; User Charges</li>
+        <li>Sale &amp; Hire Charges</li>
+        <li>Interest Earned</li>
+        <li>Income from Investment</li>
+        <li>Other Income</li>
+    </ol>
+
+    <p ${answerClassOne}><u>Total Revenue Receipts</u> is the sum of the following:</p>
+    <ol ${childListClass}>
+        <li>Own Source Revenue</li>
+        <li>Assigned Revenue</li>
+        <li>Revenue Grants</li>
+        <li>Others</li>
+    </ol>
+</div>
 `,
+    grantsByTotRevenue: `
+<div ${mainDivClass}>
+    <p ${questionClass}>1. What is Grants to Total Revenue?</p>
+    <ul ${listClass}>
+        <li>It indicates the extent to which a ULG's revenue is supplemented by revenue grants against total revenue receipts.</li>
+        <li>A lower ratio is desirable indicating greater self-reliance and reduced dependence on revenue grants and assigned revenues.</li>
+    </ul>
+
+    <p ${questionClass}>2. How is it calculated?</p>
+    <p ${answerClassOne}><strong>Revenue Grants over Total Revenue Receipts</strong></p>
+
+    <p ${answerClassOne}><u>Total Revenue Receipts</u> is the sum of the following:</p>
+    <ol ${childListClass}>
+        <li>Own Source Revenue</li>
+        <li>Assigned Revenue</li>
+        <li>Revenue Grants</li>
+        <li>Others</li>
+    </ol>
+</div>
+`,
+    totExpenditureByTotOwnRevenue: `
+<div ${mainDivClass}>
+    <p ${questionClass}>1. What is Own Source Revenue to Total Expenditure?</p>
+    <ul ${listClass}>
+        <li>It indicates the extent to which a ULG's total expenditure is covered by its own source revenues.</li>
+        <li>A higher ratio is desirable indicating greater self-reliance with a higher share of expenditure being met from the ULG's own source revenue.</li>
+    </ul>
+
+    <p ${questionClass}>2. How is it calculated?</p>
+    <p ${answerClassOne}><strong>Own Source Revenue over Total Expenditure</strong></p>
+
+    <p ${answerClassOne}><u>Own Source Revenue</u> is the sum of:</p>
+    <ol ${childListClass}>
+        <li>Tax Revenue</li>
+        <li>Rental Income</li>
+        <li>Fee &amp; User Charges</li>
+        <li>Sale &amp; Hire Charges</li>
+        <li>Interest Earned</li>
+        <li>Income from Investment</li>
+        <li>Other Income</li>
+    </ol>
+
+    <p ${answerClassOne}><u>Total Expenditure</u> is the sum of Capital Expenditure and Revenue Expenditure.</p>
+    <ul ${listClass}>
+        <li>Revenue Expenditure is the sum of:
+            <ol ${childListClass}>
+                <li>Establishment Expenditure</li>
+                <li>Administrative Expenditure</li>
+                <li>O&M Expenditure</li>
+                <li>Interest and Finance Charges</li>
+                <li>Other line items (program expenses, depreciation, etc.)</li>
+            </ol>
+        </li>
+        <li>Capital Expenditure is the sum of:
+            <ol ${childListClass}>
+                <li>Net Block (Gross Block + Accumulated Depreciation (negative figures))</li>
+                <li>Capital Work in Progress</li>
+            </ol>
+        </li>
+    </ul>
+</div>
+`,
+    capitalExpenditureByTotExpenditure: `
+<div ${mainDivClass}>
+    <p ${questionClass}>1. What is Capital Expenditure to Total Expenditure?</p>
+    <ul ${listClass}>
+        <li>It indicates the extent to which ULG's expenditure is directed toward creating or upgrading long-term assets against the total expenditure.</li>
+        <li>A higher ratio (above 50%) indicates higher focus on infrastructure creation and asset-building. A lower ratio indicates a stronger focus on recurring expenses.</li>
+    </ul>
+
+    <p ${questionClass}>2. How is it calculated?</p>
+    <p ${answerClassOne}><strong>Capital Expenditure over Total Expenditure</strong></p>
+
+    <p ${answerClassOne}><u>Total Expenditure</u> is the sum of Capital Expenditure and Revenue Expenditure.</p>
+    <ul ${listClass}>
+        <li>Revenue expenditure is the sum of:
+            <ol ${childListClass}>
+                <li>Establishment Expenditure</li>
+                <li>Administrative Expenditure</li>
+                <li>O&M Expenditure</li>
+                <li>Interest and Finance Charges</li>
+                <li>Other line items (program expenses, depreciation, etc.)</li>
+            </ol>
+        </li>
+        <li>Capital Expenditure is the sum of:
+            <ol ${childListClass}>
+                <li>Net Block (Gross Block + Accumulated Depreciation (negative figures))</li>
+                <li>Capital Work in Progress</li>
+            </ol>
+        </li>
+    </ul>
+</div>
+`,
+    operatingSurplus: `
+<div ${mainDivClass}>
+    <p ${questionClass}>1. What is the Operating Revenue Surplus?</p>
+    <ul ${listClass}>
+        <li>It indicates the available surplus/deficit generated from recurring revenue receipts and expenses.</li>
+        <li>A higher surplus is desirable indicating greater available cashflows to service debt and invest in infrastructure development.</li>
+    </ul>
+
+    <p ${questionClass}>2. How is it calculated?</p>
+    <p ${answerClassOne}><strong>Operating Revenue Surplus = Revenue Receipts - Revenue Expenditure (without interest and depreciation)</strong></p>
+</div>
+`,
+    totRevenue: `
+<div ${mainDivClass}>
+    <p ${questionClass}>1. What is Total Revenue Receipts?</p>
+    <ul ${listClass}>
+        <li>It indicates the revenue receipts a ULG earns or receives from tax and non-tax sources including revenue grants and assigned revenues.</li>
+    </ul>
+
+    <p ${questionClass}>2. How is it calculated?</p>
+    <p ${answerClassOne}><strong>Total Revenue Receipts is the sum of:</strong></p>
+    <ol ${childListClass}>
+        <li>Own Source Revenue</li>
+        <li>Assigned Revenue</li>
+        <li>Revenue Grants</li>
+        <li>Others</li>
+    </ol>
+</div>
+`,
+    totOwnRevenue: `
+<div ${mainDivClass}>
+    <p ${questionClass}>1. What is Total Own Source Revenue?</p>
+    <ul ${listClass}>
+        <li>It indicates ULG's recurring receipts generated by its own sources.</li>
+    </ul>
+
+    <p ${questionClass}>2. How is it calculated?</p>
+    <p ${answerClassOne}><u>Own Source Revenue</u> is the sum of:</p>
+    <ol ${childListClass}>
+        <li>Tax Revenue</li>
+        <li>Rental Income</li>
+        <li>Fee &amp; User Charges</li>
+        <li>Sale &amp; Hire Charges</li>
+        <li>Interest Earned</li>
+        <li>Income from Investment</li>
+        <li>Other Income</li>
+    </ol>
+</div>
+`,
+    totExpenditure: `
+<div ${mainDivClass}>
+    <p ${questionClass}>1. What is Total Expenditure?</p>
+    <ul ${listClass}>
+        <li>It indicates a ULG's total spending on capital expenditure and revenue expenditure.</li>
+    </ul>
+
+    <p ${questionClass}>2. How is it calculated?</p>
+    <p ${answerClassOne}><strong>Total Expenditure = Capital Expenditure + Revenue Expenditure</strong></p>
+
+    <ul ${listClass}>
+        <li>Revenue expenditure is the sum of:
+            <ol ${childListClass}>
+                <li>Establishment Expenditure</li>
+                <li>Administrative Expenditure</li>
+                <li>O&M Expenditure</li>
+                <li>Interest and Finance Charges</li>
+                <li>Other line items (program expenses, depreciation, etc.)</li>
+            </ol>
+        </li>
+        <li>Capital Expenditure is the sum of:
+            <ol ${childListClass}>
+                <li>Net Block (Gross Block + Accumulated Depreciation (negative figures))</li>
+                <li>Capital Work in Progress</li>
+            </ol>
+        </li>
+    </ul>
+</div>
+`,
+    totRevenueExpenditure: `
+<div ${mainDivClass}>
+    <p ${questionClass}>1. What is Total Revenue Expenditure?</p>
+    <ul ${listClass}>
+        <li>It indicates a ULG's recurring expenses incurred on day-to-day functioning and operational needs.</li>
+    </ul>
+
+    <p ${questionClass}>2. How is it calculated?</p>
+    <p ${answerClassOne}><u>Revenue Expenditure</u> is the sum of:</p>
+    <ol ${childListClass}>
+        <li>Establishment Expenditure</li>
+        <li>Administrative Expenditure</li>
+        <li>O&M Expenditure</li>
+        <li>Interest and Finance Charges</li>
+        <li>Other line items (program expenses, depreciation, etc.)</li>
+    </ol>
+</div>
+`,
+    totOwnRevenueByTotRevenueExpenditure: `
+<div ${mainDivClass}>
+    <p ${questionClass}>1. What is Own Source Revenue to Revenue Expenditure?</p>
+    <ul ${listClass}>
+        <li>It indicates the extent to which a ULG’s revenue expenditure is funded through its Own Source Revenue.</li>
+        <li>A higher ratio is desirable indicating greater self-reliance. A lower ratio indicates dependence on revenue grants and assigned revenues to meet revenue expenditure.</li>
+    </ul>
+
+    <p ${questionClass}>2. How is it calculated?</p>
+    <p ${answerClassOne}><strong>Own Source Revenue over Revenue Expenditure</strong></p>
+</div>
+`,
+    totDebt: `
+<div ${mainDivClass}>
+    <p ${questionClass}>1. What is Total Debt?</p>
+    <ul ${listClass}>
+        <li>It indicates a ULG's standalone debt obligations.</li>
+    </ul>
+
+    <p ${questionClass}>2. How is it calculated?</p>
+    <p ${answerClassOne}><strong>Total Debt = Secured Loans + Unsecured Loans</strong></p>
+</div>
+`,
+    totAssets: `
+<div ${mainDivClass}>
+    <p ${questionClass}>1. What is Debt to Asset Ratio?</p>
+    <ul ${listClass}>
+        <li>It indicates a ULG's extent of debt against its balance sheet size.</li>
+        <li>A higher ratio indicates the ULG being highly leveraged. A lower ratio indicates the ULG's potential to borrow more, subject to its needs.</li>
+    </ul>
+
+    <p ${questionClass}>2. How is it calculated?</p>
+    <p ${answerClassOne}><strong>Total Debt over Total Assets</strong></p>
+</div>
+`,
+    totDebtByTotAssets: `
+<div ${mainDivClass}>
+    <p ${questionClass}>1. What is Debt to Asset Ratio?</p>
+    <ul ${listClass}>
+        <li>It indicates a ULG's extent of debt against its balance sheet size.</li>
+        <li>A higher ratio indicates the ULG being highly leveraged. A lower ratio indicates the ULG's potential to borrow more, subject to its needs.</li>
+    </ul>
+
+    <p ${questionClass}>2. How is it calculated?</p>
+    <p ${answerClassOne}><strong>Total Debt / Total Assets</strong></p>
+</div>
+`,
+    totDebtByTotOwnRevenue: `
+<div ${mainDivClass}>
+    <p ${questionClass}>1. What is Debt-to-Own Source Revenue Ratio?</p>
+    <ul ${listClass}>
+        <li>It indicates a ULG's financial leverage relative to its internal revenue-generating capacity.</li>
+        <li>A lower ratio is desirable indicating debt levels are manageable.</li>
+    </ul>
+
+    <p ${questionClass}>2. How is it calculated?</p>
+    <p ${answerClassOne}><strong>Total Debt over Own Source Revenue</strong></p>
+</div>
+`,
+    iscrRatio: `
+<div ${mainDivClass}>
+    <p ${questionClass}>1. What is Interest Service Coverage Ratio?</p>
+    <ul ${listClass}>
+        <li>It indicates a ULG's capacity to make interest payments using its operating surplus.</li>
+        <li>A higher ratio is desirable indicating better liquidity. A lower ratio indicates lower capacity to make interest payments.</li>
+    </ul>
+
+    <p ${questionClass}>2. How is it calculated?</p>
+    <p ${answerClassOne}><strong>Operating Revenue Surplus over Interest and Finance Charges</strong></p>
+</div>
+`,
+    qaRatio: `
+<div ${mainDivClass}>
+    <p ${questionClass}>1. What is Quick Assets Ratio?</p>
+    <ul ${listClass}>
+        <li>It indicates a ULG's ability to meet its short-term recurring expenses with its available liquid assets.</li>
+        <li>A higher ratio is desirable indicating better liquidity.</li>
+    </ul>
+
+    <p ${questionClass}>2. How is it calculated?</p>
+    <p ${answerClassOne}><strong>Cash and Bank Balance and investments (general and other funds) over Revenue Expenditure prior to depreciation</strong></p>
+</div>
+`
   };
 
   return content[indicator] || ""; // Return empty string if not found

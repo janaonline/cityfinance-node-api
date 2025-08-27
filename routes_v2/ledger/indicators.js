@@ -395,8 +395,7 @@ module.exports.getCityDasboardIndicators = async (req, res) => {
                 years,
                 "totExpenditureByTotRevenue"
               ),
-              info:getInfoHTML("totExpenditureByTotRevenue"),
-              // info: "What is Own Source Revenue to Total Revenue?This metric indicates the extent to which a ULB’s revenue is generated from its own revenue sources such as property tax, rental income from municipal properties, fees and user charges, etc.A higher ratio reflects greater fiscal self-reliance and lesser dependence on inter-governmental transfers.How is it calculated? Own Source Revenue: Total Revenue",
+              info: getInfoHTML("totExpenditureByTotRevenue"),
             },
             {
               name: "Own Source Revenue to Total Revenue (%)",
@@ -407,16 +406,14 @@ module.exports.getCityDasboardIndicators = async (req, res) => {
                 years,
                 "totOwnRevenueByTotRevenue"
               ),
-              info:getInfoHTML("totOwnRevenueByTotRevenue"),
-              // info: "What is Own Source Revenue to Total Revenue?This metric indicates the extent to which a ULB’s revenue is generated from its own revenue sources such as property tax, rental income from municipal properties, fees and user charges, etc.A higher ratio reflects greater fiscal self-reliance and lesser dependence on inter-governmental transfers.How is it calculated? Own Source Revenue: Total Revenue",
+              info: getInfoHTML("totOwnRevenueByTotRevenue"),
             },
             {
               name: "Grants to Total Revenue (%)",
               graphKey: "percentage",
               isParent: "true",
               yearData: getYearData(indicators, years, "grantsByTotRevenue"),
-              info:getInfoHTML("grantsByTotRevenue"),
-              // info: "What is Grants to Total Revenue?This metric indicates the extent to which a ULB’s revenue is supplemented by inter-governmental revenue grants.A lower ratio is desirable indicating greater self-reliance and reduced dependence on inter-governmental transfers.How is it calculated?Revenue Grants / Total Revenue Income",
+              info: getInfoHTML("grantsByTotRevenue"),
             },
             {
               name: "Own Source Revenue to Total Expenditure (%)",
@@ -427,7 +424,7 @@ module.exports.getCityDasboardIndicators = async (req, res) => {
                 years,
                 "totExpenditureByTotOwnRevenue"
               ),
-              info: "What is Grants to Total Revenue?This metric indicates the extent to which a ULB’s revenue is supplemented by inter-governmental revenue grants.A lower ratio is desirable indicating greater self-reliance and reduced dependence on inter-governmental transfers.How is it calculated?Revenue Grants / Total Revenue Income",
+              info: getInfoHTML("totExpenditureByTotOwnRevenue"),
             },
             {
               name: "Capital Expenditure to Total Expenditure (%)",
@@ -438,7 +435,7 @@ module.exports.getCityDasboardIndicators = async (req, res) => {
                 years,
                 "capitalExpenditureByTotExpenditure"
               ),
-              info: "What is Grants to Total Revenue?This metric indicates the extent to which a ULB’s revenue is supplemented by inter-governmental revenue grants.A lower ratio is desirable indicating greater self-reliance and reduced dependence on inter-governmental transfers.How is it calculated?Revenue Grants / Total Revenue Income",
+              info: getInfoHTML("capitalExpenditureByTotExpenditure"),
             },
             {
               name: "Operating Surplus (Cr)",
@@ -451,7 +448,7 @@ module.exports.getCityDasboardIndicators = async (req, res) => {
                 formatToCrore
               ),
               yearGrowth: getYearGrowth(indicators, years, "operatingSurplus"),
-              info: "Operating Surplus",
+              info: getInfoHTML("operatingSurplus"),
             },
           ],
         };
@@ -473,7 +470,7 @@ module.exports.getCityDasboardIndicators = async (req, res) => {
                 formatToCrore
               ),
               yearGrowth: getYearGrowth(indicators, years, "totRevenue"),
-              info: "What is Total Revenue?This metric Indicates the revenue income a ULB earns or receives from tax and non-tax sources.How is it calculated?Total Revenue = Own Source Revenue + Assigned Revenue +  Grants + Others",
+              info: getInfoHTML("totRevenue"),
               children: [
                 {
                   name: "Own Source Revenue (Cr)",
@@ -532,7 +529,7 @@ module.exports.getCityDasboardIndicators = async (req, res) => {
                 formatToCrore
               ),
               yearGrowth: getYearGrowth(indicators, years, "totRevenue"),
-              info: "What is Total Own Source Revenue?This metric indicates a ULB's recurring expenses incurred on day-to-day functioning and operational needs. How is it calculated?Own Source Revenue = Tax Revenue + Fees and User Charges + Rental Income + Sale and Hire Charges + Income from Investments + Income Earned + Other Income",
+              info: getInfoHTML("totOwnRevenue"),
               children: [
                 {
                   name: "Tax Revenue(Cr)",
@@ -622,14 +619,14 @@ module.exports.getCityDasboardIndicators = async (req, res) => {
                 years,
                 "totOwnRevenueByTotRevenue"
               ),
-              info: "What is Own Source Revenue to Total Revenue?This metric indicates the extent to which a ULB’s revenue is generated from its own revenue sources such as property tax, rental income from municipal properties, fees and user charges, etc.A higher ratio reflects greater fiscal self-reliance and lesser dependence on inter-governmental transfers.How is it calculated? Own Source Revenue: Total Revenue",
+              info: getInfoHTML("totOwnRevenueByTotRevenue"),
             },
             {
               name: "Grants to Total Revenue (%)",
               graphKey: "percentage",
               isParent: "true",
               yearData: getYearData(indicators, years, "grantsByTotRevenue"),
-              info: "What is Grants to Total Revenue?This metric indicates the extent to which a ULB’s revenue is supplemented by inter-governmental revenue grants.A lower ratio is desirable indicating greater self-reliance and reduced dependence on inter-governmental transfers.How is it calculated?Revenue Grants / Total Revenue Income",
+              info: getInfoHTML("grantsByTotRevenue"),
             },
           ],
         };
@@ -661,7 +658,7 @@ module.exports.getCityDasboardIndicators = async (req, res) => {
                 formatToCrore
               ),
               yearGrowth: getYearGrowth(indicators, years, "totExpenditure"),
-              info: "What is Total Revenue Expenditure?This metric indicates a ULB's recurring expenses incurred on day-to-day functioning and operational needs. How is it calculated?Revenue Expenditure = Establishment Expenses + Administrative Expenses + Operations and Maintenance + Interest and Finance Charges + Others",
+              info: getInfoHTML("totExpenditure"),
               children: [
                 {
                   name: "Total Revenue Expenditure (Cr)",
@@ -702,7 +699,7 @@ module.exports.getCityDasboardIndicators = async (req, res) => {
                 years,
                 "totRevenueExpenditure"
               ),
-              info: "What is Total Revenue Expenditure?This metric indicates a ULB's recurring expenses incurred on day-to-day functioning and operational needs. How is it calculated?Revenue Expenditure = Establishment Expenses + Administrative Expenses + Operations and Maintenance + Interest and Finance Charges + Others",
+              info: getInfoHTML("totRevenueExpenditure"),
               children: [
                 {
                   name: "Establishment Expenses (Cr)",
@@ -770,7 +767,7 @@ module.exports.getCityDasboardIndicators = async (req, res) => {
                 years,
                 "totOwnRevenueByTotRevenueExpenditure"
               ),
-              info: "What is Own Source Revenue to Revenue Expenditure?This metric indicates the extent to which a ULB’s revenue expenditure is funded through its Own Source Revenue. A higher ratio is desirable indicating greater self-reliance. A lower ratio indicates dependence on inter-governmental transfers to meet revenue expenditure.How is it calculated?Own Source Revenue to Revenue Expenditure = Own Source Revenue/ Revenue Expenditure",
+              info: getInfoHTML("totOwnRevenueByTotRevenueExpenditure"),
             },
           ],
         };
@@ -792,7 +789,7 @@ module.exports.getCityDasboardIndicators = async (req, res) => {
                 formatToCrore
               ),
               yearGrowth: getYearGrowth(indicators, years, "totDebt"),
-              info: "What is Total Debt?This metric indicates the absolute level of financial obligations that the ULB is independently responsible for repaying.A higher value may suggest increased leverage or past investment in infrastructure, while a lower value may reflect either low borrowing capacity or a conservative fiscal approach.How is it calculated?Total Debt = Secured Loans + Unsecured Loans",
+              info: getInfoHTML("totDebt"),
               children: [
                 {
                   name: "Secured Loans (Cr)",
@@ -829,14 +826,14 @@ module.exports.getCityDasboardIndicators = async (req, res) => {
                 formatToCrore
               ),
               yearGrowth: getYearGrowth(indicators, years, "totAssets"),
-              info: "Total Assets",
+              info: getInfoHTML("totAssets"),
             },
             {
               name: "Debt to Asset Ratio",
               graphKey: "percentage",
               isParent: "true",
               yearData: getYearData(indicators, years, "totDebtByTotAssets"),
-              info: "What is Debt to Asset Ratio?This metric indicates a city’s extent of debt against its balance sheet size. A higher ratio indicates the ULG being highly leveraged. A lower ratio indicates the ULG's potential to borrow more, subject to its needs.How is it calculated?Debt to Asset Ratio = Total Debt/ Total Assets",
+              info: getInfoHTML("totDebtByTotAssets"),
             },
             {
               name: "Debt-to-Own Source Revenue Ratio",
@@ -847,21 +844,21 @@ module.exports.getCityDasboardIndicators = async (req, res) => {
                 years,
                 "totDebtByTotOwnRevenue"
               ),
-              info: "What is Debt to Own-Source-Revenue Ratio?This metric indicates a ULB’s financial leverage relative to its internal revenue-generating capacity.A lower ratio is desirable as they indicate that the debt levels are manageable.How is it calculated?Debt to Own-Source Revenue = Total Debt/Own Source Revenue",
+              info: getInfoHTML("totDebtByTotOwnRevenue"),
             },
             {
               name: "Interest Service Coverage Ratio (ISCR)",
               graphKey: "percentage",
               isParent: "true",
               yearData: getYearData(indicators, years, "iscrRatio"),
-              info: "What is Interest Service Coverage Ratio?This metric indicates a ULG's capacity to make interest payments using its operating surplus. A higher ratio is desirable indicating better liquidity. A lower ratio indicates lower capacity to make interest paymentsHow is it calculated?ISCR = Operating Surplus/ Interest and Finance Charges",
+              info: getInfoHTML("iscrRatio"),
             },
             {
               name: "Quick Asset Ratio",
               graphKey: "percentage",
               isParent: "true",
               yearData: getYearData(indicators, years, "qaRatio"),
-              info: "What is Quick Assets Ratio?This metric indicates a ULB’s ability to meet its short-term financial obligations with its available liquid assets. A higher ratio is desirable indicating better liquidity.How is it calculated?Quick Assets Ratio = (Cash and bank balance + all investments)/ Revenue Expenditure prior to depreciation",
+              info: getInfoHTML("qaRatio"),
             },
           ],
         };
