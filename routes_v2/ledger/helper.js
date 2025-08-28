@@ -534,6 +534,25 @@ const getInfoHTML = (indicator) => {
 
     <p ${questionClass}>2. How is it calculated?</p>
     <p ${answerClassOne}><strong>Own Source Revenue over Revenue Expenditure</strong></p>
+    <p ${answerClassOne}><u>Own Source Revenue</u> is the sum of:</p>
+    <ol ${childListClass}>
+        <li>Tax Revenue</li>
+        <li>Rental Income</li>
+        <li>Fee & User Charges</li>
+        <li>Sale & Hire Charges</li>
+        <li>Interest Earned</li>
+        <li>Income from Investment</li>
+        <li>Other Income</li>
+    </ol>
+
+    <p ${answerClassOne}><u>Revenue expenditure</u> is the sum of:</p>
+    <ol ${childListClass}>
+        <li>Establishment Expenditure</li>
+        <li>Administrative Expenditure</li>
+        <li>O&M Expenditure</li>
+        <li>Interest and Finance Charges</li>
+        <li>Other line items, including program expenses, depreciation, etc.</li>
+    </ol>
 </div>
 `,
     totDebt: `
@@ -548,16 +567,6 @@ const getInfoHTML = (indicator) => {
 </div>
 `,
     totAssets: `
-<div ${mainDivClass}>
-    <p ${questionClass}>1. What is Debt to Asset Ratio?</p>
-    <ul ${listClass}>
-        <li>It indicates a ULG's extent of debt against its balance sheet size.</li>
-        <li>A higher ratio indicates the ULG being highly leveraged. A lower ratio indicates the ULG's potential to borrow more, subject to its needs.</li>
-    </ul>
-
-    <p ${questionClass}>2. How is it calculated?</p>
-    <p ${answerClassOne}><strong>Total Debt over Total Assets</strong></p>
-</div>
 `,
     totDebtByTotAssets: `
 <div ${mainDivClass}>
@@ -568,7 +577,46 @@ const getInfoHTML = (indicator) => {
     </ul>
 
     <p ${questionClass}>2. How is it calculated?</p>
-    <p ${answerClassOne}><strong>Total Debt / Total Assets</strong></p>
+    <p ${answerClassOne}><strong>Total Debt over Total Assets</strong></p>
+
+    <p ${answerClassOne}><u>Total Debt</u> is the sum of:</p>
+    <ol ${childListClass}>
+        <li>Secured Loans</li>
+        <li>Unsecured Loans</li>
+    </ol>
+
+    <p ${answerClassOne}><u>Total Assets</u> is the sum of:</p>
+    <ol ${childListClass}>
+        <li>
+         Fixed Assets
+          <ol><u>Fixed Assets</u> is sum of:
+            <li>Gross Block</li>
+            <li>Accumulated Depreciation</li>
+            <li>Capital WIP</li>
+          </ol>
+        </li>
+        <li>
+         Other Assets
+          <ol><u>Other Assets</u> is sum of:
+            <li>Investment - General Fund</li>
+            <li>Investment - Other Funds</li>
+            <li>Accumulated Provisions against Bad & Doubtful Receivables</li>
+            <li>Other Assets</li>
+            <li>Miscellanous Expenditure</li>
+            <li>Others</li>
+          </ol>
+        </li>
+        <li>
+         Current Assets
+          <ol><u>Current Assets</u> is sum of:
+            <li>Stock in Hand</li>
+            <li>Sundry Debtors</li>
+            <li>Prepaid Expenses</li>
+            <li>Cash & Bank Balance</li>
+            <li>Loans, Advances & Deposits</li>
+          </ol>
+        </li>
+    </ol>
 </div>
 `,
     totDebtByTotOwnRevenue: `
@@ -581,6 +629,23 @@ const getInfoHTML = (indicator) => {
 
     <p ${questionClass}>2. How is it calculated?</p>
     <p ${answerClassOne}><strong>Total Debt over Own Source Revenue</strong></p>
+
+    <p ${answerClassOne}><u>Total Debt</u> is the sum of:</p>
+    <ol ${childListClass}>
+        <li>Secured Loans</li>
+        <li>Unsecured Loans</li>
+    </ol>
+
+    <p ${answerClassOne}><u>Own Source Revenue</u> is the sum of:</p>
+    <ol ${childListClass}>
+        <li>Tax Revenue</li>
+        <li>Rental Income</li>
+        <li>Fee & User Charges</li>
+        <li>Sale & Hire Charges</li>
+        <li>Interest Earned</li>
+        <li>Income from Investment</li>
+        <li>Other Income</li>
+    </ol>
 </div>
 `,
     iscrRatio: `
@@ -593,6 +658,8 @@ const getInfoHTML = (indicator) => {
 
     <p ${questionClass}>2. How is it calculated?</p>
     <p ${answerClassOne}><strong>Operating Revenue Surplus over Interest and Finance Charges</strong></p>
+
+    <p ${answerClassOne}><u>Operating Revenue Surplus</u> is calculated as: Revenue Receipts - Revenue Expenditure (excluding interest and finance charges, and depreciation)</p>
 </div>
 `,
     qaRatio: `
