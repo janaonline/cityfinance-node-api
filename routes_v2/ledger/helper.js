@@ -247,11 +247,11 @@ const computeDeltaCapex = (rows) => {
 };
 
 const getInfoHTML = (indicator) => {
-  const mainDivClass = `class="text-dark"`;
+  const mainDivClass = `class="text-dark custom-font-size-6"`;
   const questionClass = `class="text-start fw-bold mb-1"`;
   const answerClassOne = `class="text-start ps-4 mb-1"`;
   const listClass = `class="text-start ps-5"`;
-  const childListClass = `class="text-start ps-5 custom-font-size-6"`;
+  const childListClass = `class="text-start ps-5"`;
 
   const content = {
     totExpenditureByTotRevenue: `
