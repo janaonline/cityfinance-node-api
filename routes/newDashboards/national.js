@@ -566,8 +566,8 @@ exports.nationalDashRevenue = async (req, res) => {
         });
         let national_Format = {}, state_Format = {}
         individual_Format = {
-          Municipality: {},
           "Municipal Corporation": {},
+          Municipality: {},
           "Town Panchayat": {},
         };
         nationalArr.map((each) => {
@@ -923,8 +923,8 @@ exports.nationalDashExpenditure = async (req, res) => {
         });
         let national_Format = {}, state_Format = {},
           individual_Format = {
-            "Municipality": {},
             "Municipal Corporation": {},
+            "Municipality": {},
             "Town Panchayat": {},
           };
         nationalArr.map((each) => {
@@ -1481,8 +1481,8 @@ exports.nationalDashOwnRevenue = async (req, res) => {
         });
         let national_Format = {}, state_Format = {},
           individual_Format = {
-            Municipality: {},
             "Municipal Corporation": {},
+            Municipality: {},
             "Town Panchayat": {},
           };
         nationalArr.map((each) => {

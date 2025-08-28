@@ -68,11 +68,11 @@ router.get("/indicatorCSV", indicatorDump);
 router.post("/state-dashboard-averages", cacheMiddleware('dashboard'), stateDashAvgs);
 
 // national dashboard
-router.get("/national-dashboard/data-availability", dataAvailabilityState);
-router.get("/national-dashboard/revenue", nationalDashRevenue);
-router.get("/national-dashboard/expenditure", nationalDashExpenditure);
-router.get("/national-dashboard/own-revenue", nationalDashOwnRevenue);
-router.get("/national-dashboard/capital-expenditure", nationalDashCapexpense);
+router.get("/national-dashboard/data-availability", cacheMiddleware('dashboard'), dataAvailabilityState);
+router.get("/national-dashboard/revenue", cacheMiddleware('dashboard'), nationalDashRevenue);
+router.get("/national-dashboard/expenditure", cacheMiddleware('dashboard'), nationalDashExpenditure);
+router.get("/national-dashboard/own-revenue", cacheMiddleware('dashboard'), nationalDashOwnRevenue);
+router.get("/national-dashboard/capital-expenditure", cacheMiddleware('dashboard'), nationalDashCapexpense);
 router.get("/get-statewise-data-availability", cacheMiddleware('dashboard'), getStatewiseDataAvail);
 
 //slb-specific-metrics
