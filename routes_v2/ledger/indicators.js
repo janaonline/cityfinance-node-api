@@ -1,6 +1,7 @@
 const ledgerLog = require("../../models/LedgerLog");
 const IndicatorsModel = require("../../models/ledgerIndicators");
 const {
+  formatToCroreSummary,
   safeDivide,
   normalize,
   safePercent,
@@ -270,7 +271,7 @@ async function marketDashboardIndicators(ulbId, financialYear, totals) {
       marketDasInd.totExpenditure !== 0
         ? parseFloat((capexVal / marketDasInd.totExpenditure) * 100).toFixed(2)
         : "N/A";
-    console.log(marketDasInd, "marketDasInd");
+    // console.log(marketDasInd, "marketDasInd");
     return marketDasInd;
   } catch (error) {
     // Centralised error reporting (re-throw so caller can handle HTTP/status, etc.)
@@ -902,8 +903,9 @@ function getIndicatorValue(indicatorKey, data, yearsArray) {
         return { value: indicatorValue, year, ulbName };
       }
     }
+    // console.log(data[0]?.ulb, "this is data")
+    return { value: "N/A", year: year, ulb: data[0]?.ulb };
   }
-  return { value: "N/A", year: "N/A", ulb: "N/A" };
 }
 
 async function getIntro(indicators, keyType, yearsArray) {
@@ -927,9 +929,9 @@ async function getIntro(indicators, keyType, yearsArray) {
       // console.log(totRevenueData,totRevenueExpenditure,'this is data object')
       return `In FY ${totRevenueData.year}, ${
         totRevenueData.ulbName
-      } reported a total revenue of ₹${formatToCrore(
+      } reported a total revenue of ₹${formatToCroreSummary(
         totRevenueData.value
-      )} crore and a total expenditure of ₹${formatToCrore(
+      )} crore and a total expenditure of ₹${formatToCroreSummary(
         totRevenueExpenditure.value
       )} crore, implying that its expenditure accounted for ${(
         (totRevenueExpenditure.value / totRevenueData.value) *
@@ -951,10 +953,10 @@ async function getIntro(indicators, keyType, yearsArray) {
       );
       // console.log(finalObject,yearsArray,'this is cagr')
       const cagr = getCAGRValue(revPayload);
-      console.log(cagr, "this is cagr");
+      // console.log(cagr, "this is cagr");
       return `${totRevenueData.ulbName}’s total revenue for FY ${
         totRevenueData.year
-      } was ₹${formatToCrore(totRevenueData.value)} crore.${cagr}`;
+      } was ₹${formatToCroreSummary(totRevenueData.value)} crore.${cagr}`;
     }
     case "expenditure": {
       const totExpenditure = getIndicatorValue(
@@ -962,6 +964,7 @@ async function getIntro(indicators, keyType, yearsArray) {
         finalObject,
         yearsArray
       );
+      const capex = getIndicatorValue("capex", finalObject, yearsArray);
       // console.log(totExpenditure,"totalexp");
       const totRevenueExpenditure = getIndicatorValue(
         "totRevenueExpenditure",
@@ -970,20 +973,22 @@ async function getIntro(indicators, keyType, yearsArray) {
       );
       return `In FY ${totRevenueExpenditure.year}, ${
         totRevenueExpenditure.ulbName
-      } reported a total expenditure of ₹${formatToCrore(
+      } reported a total expenditure of ₹${formatToCroreSummary(
+        totExpenditure.value
+      )} crore which included ₹${formatToCroreSummary(capex.value)} crore in capital expenditure and ₹${formatToCroreSummary(
         totRevenueExpenditure.value
-      )} crore which included total revenue expenditure of ₹${formatToCrore(
-        totRevenueExpenditure.value
-      )} crore`;
+      )} crore in revenue expenditure.`;
     }
     case "debt": {
       const debt = getIndicatorValue("totDebt", finalObject, yearsArray);
+      // console.log(debt, "this is debt");
       const totAssets = getIndicatorValue("totAssets", finalObject, yearsArray);
+      // console.log(totAssets, "this is assets");
       return `As of FY ${debt.year}, ${
-        debt.ulbName
-      }’s outstanding debt stood at ₹${formatToCrore(
+        debt?.ulb??totAssets?.ulbName
+      }’s outstanding debt stood at ₹${formatToCroreSummary(
         debt.value
-      )} crore, against total assets valued at ₹${formatToCrore(
+      )} crore, against total assets valued at ₹${formatToCroreSummary(
         totAssets.value
       )} crore`;
     }
@@ -992,7 +997,7 @@ async function getIntro(indicators, keyType, yearsArray) {
   }
 }
 function getCAGRValue(revArray) {
-  console.log(revArray, "this is revArray");
+  // console.log(revArray, "this is revArray");
   if (!Array.isArray(revArray) || revArray.length < 2) {
     return "No CAGR available.";
   }
@@ -1031,8 +1036,10 @@ function getCAGRValue(revArray) {
   const cagr = (Math.pow(endValue / startValue, 1 / yearDiff) - 1) * 100;
 
   // Convert values to crores
-  const startCr = (startValue / 1e7).toFixed(2);
-  const endCr = (endValue / 1e7).toFixed(2);
+  const startCr = formatToCroreSummary(startValue);
+  // const startCr = (startValue / 1e7).toFixed(2);
+  const endCr =formatToCroreSummary(endValue);
+  // const endCr = (endValue / 1e7).toFixed(2);
   const cagrStr = cagr.toFixed(2);
 
   return `Over the years from FY ${startYear} to FY ${endYear}, the city’s revenue grew from ₹${startCr} crore to ₹${endCr} crore, registering a CAGR of ${cagrStr}%.`;

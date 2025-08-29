@@ -132,6 +132,17 @@ const convertLedgerData = (data) => {
 const formatToCrore = (value) => {
   if (typeof value !== "number" || !Number.isFinite(value)) return "N/A";
   // Convert to crore
+  const croreVal = (value / 1e7).toFixed(2);
+  // Format with 2 decimals + commas (Indian numbering system)
+  // return croreVal.toLocaleString("en-IN", {
+  //   minimumFractionDigits: 2,
+  //   maximumFractionDigits: 2,
+  // });
+  return croreVal
+};
+const formatToCroreSummary = (value) => {
+  if (typeof value !== "number" || !Number.isFinite(value)) return "N/A";
+  // Convert to crore
   const croreVal = value / 1e7;
   // Format with 2 decimals + commas (Indian numbering system)
   return croreVal.toLocaleString("en-IN", {
@@ -681,6 +692,7 @@ const getInfoHTML = (indicator) => {
 
 export default {
   normalize,
+  formatToCroreSummary,
   safeDivide,
   safePercent,
   safeRatio,
