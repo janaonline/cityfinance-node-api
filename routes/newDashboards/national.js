@@ -567,8 +567,8 @@ exports.nationalDashRevenue = async (req, res) => {
         });
         let national_Format = {}, state_Format = {}
         individual_Format = {
-          Municipality: {},
           "Municipal Corporation": {},
+          Municipality: {},
           "Town Panchayat": {},
         };
         nationalArr.map((each) => {
@@ -924,8 +924,8 @@ exports.nationalDashExpenditure = async (req, res) => {
         });
         let national_Format = {}, state_Format = {},
           individual_Format = {
-            "Municipality": {},
             "Municipal Corporation": {},
+            "Municipality": {},
             "Town Panchayat": {},
           };
         nationalArr.map((each) => {
@@ -1236,7 +1236,7 @@ let getExcel = async (req, res, data) => {
       br: { col: 8, row: 2 }
     });
     // worksheet.addImage(imageId2, "A1:F3");
-    data.columns.push({ display_name: "S.no", key: "sno" });
+    data.columns.unshift({ display_name: "S.no", key: "sno" });
     worksheet.columns = data.columns.map((value) => {
       let temp = {
         header: value.display_name,
@@ -1482,8 +1482,8 @@ exports.nationalDashOwnRevenue = async (req, res) => {
         });
         let national_Format = {}, state_Format = {},
           individual_Format = {
-            Municipality: {},
             "Municipal Corporation": {},
+            Municipality: {},
             "Town Panchayat": {},
           };
         nationalArr.map((each) => {

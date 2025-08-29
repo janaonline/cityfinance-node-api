@@ -21,6 +21,7 @@ const whitelist = [
   'https://api-stage.aaina-mohua.in',
   'https://aaina.gov.in',
   'https://api.aaina-mohua.in',
+  'http://localhost:4100',
   'http://localhost:4200',
   'https://democityfinance.dhwaniris.in',
   'http://localhost:3000',
@@ -31,8 +32,8 @@ const whitelist = [
   `https://${process.env.DEMO_HOST_FRONTEND}`,
   `https://${process.env.STAGING_HOST}`,
   `https://${process.env.PROD_HOST}`,
-   process.env.HOSTNAME,
-   `https://dev.cityfinance.in`
+  process.env.HOSTNAME,
+  `https://dev.cityfinance.in`
 ];
 
 const corsOptions = {
