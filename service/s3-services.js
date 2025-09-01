@@ -456,7 +456,81 @@ function removePrefix(url) {
     } catch (error) {
       throw {message: `removePrefix: ${error.message}`}
     }
-  }
+  } 
+
+
+  /**
+ * Upload AFS file to S3 (with overwrite if exists).
+ */
+async function uploadAFSFileToS3({ ulbId, financialYear, auditType, docType, file }) {
+  return new Promise((resolve, reject) => {
+    try {
+      const s3Key = `afs/${ulbId}_${financialYear}_${auditType}_${docType}.pdf`;
+
+      s3.putObject(
+        {
+          Bucket: BUCKETNAME,
+          Key: s3Key,
+          Body: file.buffer,
+          ContentType: file.mimetype,
+          ACL: "public-read",
+        },
+        function (err) {
+          if (err) return reject(err);
+
+          const fileUrl = `${SECRET.AWS_STORAGE_URL_STG}/${s3Key}`;
+          resolve({ s3Key, fileUrl });
+        }
+      );
+    } catch (error) {
+      reject(error);
+    }
+  });
+}
+
+/**
+ * Get AFS file stream from S3.
+ */
+function getAFSFileStream({ ulbId, financialYear, auditType ,docType}) {
+  const s3Key = `afs/${ulbId}_${financialYear}_${auditType}_${docType}.pdf`;
+  return s3.getObject({ Bucket: BUCKETNAME, Key: s3Key }).createReadStream();
+}
+
+async function uploadAFSEXCELFileToS3({ ulbId, financialYear, auditType, docType, file }) {
+  return new Promise((resolve, reject) => {
+    try {
+      // Get original extension
+      const ext = path.extname(file.originalname) || ".xlsx"; // default to .xlsx
+      
+      // Add UUID so files don't overwrite each other
+      const uniqueId = uuid.v4();
+      const s3Key = `afs/${ulbId}_${financialYear}_${auditType}_${docType}_${uniqueId}${ext}`;
+
+      s3.putObject(
+        {
+          Bucket: BUCKETNAME,
+          Key: s3Key,
+          Body: file.buffer,
+          ContentType: file.mimetype,
+          ACL: "public-read",
+        },
+        function (err) {
+          if (err) return reject(err);
+
+          const fileUrl = `${SECRET.AWS_STORAGE_URL_STG}/${s3Key}`;
+          resolve({ s3Key, fileUrl });
+        }
+      );
+    } catch (error) {
+      reject(error);
+    }
+  });
+}
+
+module.exports.uploadAFSFileToS3 = uploadAFSFileToS3;
+module.exports.getAFSFileStream = getAFSFileStream;
+module.exports.uploadAFSEXCELFileToS3 = uploadAFSEXCELFileToS3;
+
 module.exports.getheadObject = getheadObject;
 module.exports.getObjectStream = getObjectStream;
 module.exports.initBucket = initBucket;
