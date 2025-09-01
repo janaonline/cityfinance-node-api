@@ -5,6 +5,7 @@ const FileSchema = new mongoose.Schema({
   s3Key: { type: String, required: true },
   fileUrl: { type: String, required: true },
   uploadedAt: { type: Date, default: Date.now },
+  uploadedBy: { type: String, enum: ["ULB", "AFS"], required: true },
 });
 
 const AFSExcelFileSchema = new mongoose.Schema({

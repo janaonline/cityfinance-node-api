@@ -10,6 +10,6 @@ const afsFileSchema = new mongoose.Schema({
   uploadedAt: { type: Date, default: Date.now },
 });
 
-afsFileSchema.index({ ulbId: 1, financialYear: 1, auditType: 1 }, { unique: true });
+afsFileSchema.index({ ulbId: 1, financialYear: 1, auditType: 1 ,docType: 1}, { unique: true });
 
 module.exports = mongoose.model("AFSFile", afsFileSchema);

@@ -14,9 +14,9 @@ module.exports.uploadAFSExcelFiles = async (req, res) => {
       return res.status(400).json({ success: false, message: "No file uploaded" });
     }
 
-    // Find or create the parent doc (per ulbId, financialYear, auditType, docType)
+    // docType handling
     const docType = Array.isArray(req.body.docTypes)
-      ? null // handled per-file below
+      ? null
       : req.body.docType;
 
     let parentDoc;
@@ -26,6 +26,9 @@ module.exports.uploadAFSExcelFiles = async (req, res) => {
         parentDoc = new AFSExcelFile({ ulbId, financialYear, auditType, docType, files: [] });
       }
     }
+
+    //  Reset files array each time (replace old with new)
+    parentDoc.files = [];
 
     // Upload each file
     for (const [index, file] of req.files.entries()) {
@@ -43,6 +46,7 @@ module.exports.uploadAFSExcelFiles = async (req, res) => {
         if (!parentDoc) {
           parentDoc = new AFSExcelFile({ ulbId, financialYear, auditType, docType: currentDocType, files: [] });
         }
+        parentDoc.files = []; // reset for safety
       }
 
       // Upload to S3
@@ -54,10 +58,21 @@ module.exports.uploadAFSExcelFiles = async (req, res) => {
         file,
       });
 
-      // Push file metadata
-      parentDoc.files.push({ s3Key, fileUrl, uploadedAt: new Date() });
-      await parentDoc.save();
+      // uploadedBy logic
+      let uploadedBy = "ULB";
+      if (req.files.length === 2 && index === 1) {
+        uploadedBy = "AFS";
+      }
+
+      parentDoc.files.push({
+        s3Key,
+        fileUrl,
+        uploadedAt: new Date(),
+        uploadedBy,
+      });
     }
+
+    await parentDoc.save();
 
     return res.json({ success: true, fileGroup: parentDoc });
   } catch (err) {
@@ -65,6 +80,7 @@ module.exports.uploadAFSExcelFiles = async (req, res) => {
     return res.status(500).json({ success: false, message: "Server error" });
   }
 };
+
 
 // Fetch Excel file metadata (all files by docType)
 module.exports.getAFSExcelFile = async (req, res) => {
