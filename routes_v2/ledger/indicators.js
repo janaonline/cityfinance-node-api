@@ -929,9 +929,9 @@ async function getIntro(indicators, keyType, yearsArray) {
       // console.log(totRevenueData,totRevenueExpenditure,'this is data object')
       return `In FY ${totRevenueData.year}, ${
         totRevenueData.ulbName
-      } reported a total revenue of ₹${formatToCroreSummary(
+      } reported a total revenue of Rs ${formatToCroreSummary(
         totRevenueData.value
-      )} crore and a total expenditure of ₹${formatToCroreSummary(
+      )} crore and a total expenditure of Rs ${formatToCroreSummary(
         totRevenueExpenditure.value
       )} crore, implying that its expenditure accounted for ${(
         (totRevenueExpenditure.value / totRevenueData.value) *
@@ -956,7 +956,7 @@ async function getIntro(indicators, keyType, yearsArray) {
       // console.log(cagr, "this is cagr");
       return `${totRevenueData.ulbName}’s total revenue for FY ${
         totRevenueData.year
-      } was ₹${formatToCroreSummary(totRevenueData.value)} crore.${cagr}`;
+      } was Rs ${formatToCroreSummary(totRevenueData.value)} crore.${cagr}`;
     }
     case "expenditure": {
       const totExpenditure = getIndicatorValue(
@@ -973,9 +973,9 @@ async function getIntro(indicators, keyType, yearsArray) {
       );
       return `In FY ${totRevenueExpenditure.year}, ${
         totRevenueExpenditure.ulbName
-      } reported a total expenditure of ₹${formatToCroreSummary(
+      } reported a total expenditure of Rs ${formatToCroreSummary(
         totExpenditure.value
-      )} crore which included ₹${formatToCroreSummary(capex.value)} crore in capital expenditure and ₹${formatToCroreSummary(
+      )} crore which included Rs ${formatToCroreSummary(capex.value)} crore in capital expenditure and Rs ${formatToCroreSummary(
         totRevenueExpenditure.value
       )} crore in revenue expenditure.`;
     }
@@ -986,9 +986,9 @@ async function getIntro(indicators, keyType, yearsArray) {
       // console.log(totAssets, "this is assets");
       return `As of FY ${debt.year}, ${
         debt?.ulb??totAssets?.ulbName
-      }’s outstanding debt stood at ₹${formatToCroreSummary(
+      }’s outstanding debt stood at Rs ${formatToCroreSummary(
         debt.value
-      )} crore, against total assets valued at ₹${formatToCroreSummary(
+      )} crore, against total assets valued at Rs ${formatToCroreSummary(
         totAssets.value
       )} crore`;
     }
@@ -1042,7 +1042,7 @@ function getCAGRValue(revArray) {
   // const endCr = (endValue / 1e7).toFixed(2);
   const cagrStr = cagr.toFixed(2);
 
-  return `Over the years from FY ${startYear} to FY ${endYear}, the city’s revenue grew from ₹${startCr} crore to ₹${endCr} crore, registering a CAGR of ${cagrStr}%.`;
+  return `Over the years from FY ${startYear} to FY ${endYear}, the city’s revenue grew from Rs ${startCr} crore to Rs ${endCr} crore, registering a CAGR of ${cagrStr}%.`;
 }
 
 function getTotRevenue(yearData) {
@@ -1164,13 +1164,13 @@ module.exports.getFaqs = async (req, res) => {
       faqs = [
         {
           question: `How does ${cityName}’s revenue compare to other municipal cities?`,
-          answer: `In FY ${year}, ${cityName} recorded a total revenue of ₹${ulbTotRevText} crore. Among cities in ${
+          answer: `In FY ${year}, ${cityName} recorded a total revenue of Rs ${ulbTotRevText} crore. Among cities in ${
             faqData?.stateTop?.state ?? "N/A"
           }, ${
             faqData?.stateTop?.ulb ?? "N/A"
           } had the highest revenue. Nationally, the top revenue was reported by ${
             faqData?.national?.ulb ?? "N/A"
-          } at over ₹${nationalTotRevText} crore.`,
+          } at over Rs ${nationalTotRevText} crore.`,
         },
         {
           question: `What are the major income sources of ${cityName}?`,
@@ -1178,7 +1178,7 @@ module.exports.getFaqs = async (req, res) => {
         },
         {
           question: `What is ${cityName}’s property tax collection in recent years?`,
-          answer: `In FY ${year}, ${cityName} collected ₹${propTaxText} crore in property tax.`,
+          answer: `In FY ${year}, ${cityName} collected Rs ${propTaxText} crore in property tax.`,
         },
         {
           question: `Does ${cityName} publish service level benchmark data?`,
@@ -1239,15 +1239,15 @@ module.exports.getFaqs = async (req, res) => {
       faqs = [
         {
           question: `How much of ${cityName}’s revenue came from grants?`,
-          answer: `In FY ${year}, grants contributed ${grantsPctText}% of ${cityName}’s total revenue, amounting to ₹${grantsAmtText} crore.`,
+          answer: `In FY ${year}, grants contributed ${grantsPctText}% of ${cityName}’s total revenue, amounting to Rs ${grantsAmtText} crore.`,
         },
         {
           question: `How much money does ${cityName} spend towards administrative and establishment expenditure?`,
-          answer: `In FY ${year}, ${cityName} spent ₹${adminEstabTotalText} crore (${adminEstabPctText}%) of its revenue expenditure towards administrative and establishment expenses.`,
+          answer: `In FY ${year}, ${cityName} spent Rs ${adminEstabTotalText} crore (${adminEstabPctText}%) of its revenue expenditure towards administrative and establishment expenses.`,
         },
         {
           question: `Does ${cityName} earn enough revenue to cover its day-to-day expenses?`,
-          answer: `This is measured as operating surplus or deficit. In FY ${year}, ${cityName} recorded an operating ${opState} of ₹${opAbsText} crore. Such a ${opState} may ${
+          answer: `This is measured as operating surplus or deficit. In FY ${year}, ${cityName} recorded an operating ${opState} of Rs ${opAbsText} crore. Such a ${opState} may ${
             opState === "surplus" ? "enhance" : "constrain"
           } the ULG's ability to effectively deliver public services.`,
         },
