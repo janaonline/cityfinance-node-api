@@ -8,7 +8,6 @@ const EventsSchema = new Schema(
       type: String,
       required: true,
       trim: true,
-      unique: true,
       index: true,
     },
     userName: {
@@ -35,7 +34,6 @@ const EventsSchema = new Schema(
     },
     preSubmitQuestion: {
       type: String,
-      required: true,
       trim: true,
     }
   },

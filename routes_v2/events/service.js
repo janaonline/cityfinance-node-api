@@ -5,21 +5,21 @@ const { generateExcel } = require('../utils/downloadService');
 
 // Fetch json.
 module.exports.getForm = async (req, res) => {
-    try {
-        const formJson = await FormsJson.findOne({ formId: 22 });
-        return res.status(200).json({
-            status: true,
-            message: 'Successfully fetched data!',
-            data: formJson,
-        });
-    } catch (error) {
-        console.error('Error: ', error);
-        return res.status(400).json({
-            status: false,
-            message: error.message,
-            data: '',
-        });
-    }
+  try {
+    const formJson = await FormsJson.findOne({ formId: 22 });
+    return res.status(200).json({
+      status: true,
+      message: 'Successfully fetched data!',
+      data: formJson,
+    });
+  } catch (error) {
+    console.error('Error: ', error);
+    return res.status(400).json({
+      status: false,
+      message: error.message,
+      data: '',
+    });
+  }
 }
 
 // Insert data to DB.
@@ -48,6 +48,9 @@ module.exports.postData = async (req, res) => {
 
       if (!updateResult?._id) throw new Error('Failed to save data.');
 
+      // send email to user.
+      sendEmail(req.body.email);
+
       return res.status(200).json({
         status: true,
         message: 'Successfully updated data!',
@@ -68,6 +71,15 @@ module.exports.postData = async (req, res) => {
     });
   }
 };
+
+const sendEmail = (email) => {
+  const pattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+  const result = pattern.test(email);
+  if (!result) return;
+
+
+};
+
 
 // Download dump.
 module.exports.getDump = async (req, res) => {
