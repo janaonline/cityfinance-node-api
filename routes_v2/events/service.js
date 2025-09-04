@@ -2,6 +2,7 @@ const FormsJson = require("../../models/FormsJson");
 const Events = require("../../models/Event");
 const formJsonService = require('../../service/formJsonService');
 const { generateExcel } = require('../utils/downloadService');
+const { sendEmail } = require('../../service');
 
 // Fetch json.
 module.exports.getForm = async (req, res) => {
@@ -49,7 +50,7 @@ module.exports.postData = async (req, res) => {
       if (!updateResult?._id) throw new Error('Failed to save data.');
 
       // send email to user.
-      sendEmail(req.body.email);
+      sendEmailFn(req.body.email);
 
       return res.status(200).json({
         status: true,
@@ -72,12 +73,63 @@ module.exports.postData = async (req, res) => {
   }
 };
 
-const sendEmail = (email) => {
+const sendEmailFn = (emailId) => {
   const pattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-  const result = pattern.test(email);
+  const result = pattern.test(emailId);
   if (!result) return;
 
+  const email = getEmailContent();
+  const mailOptions = {
+    Destination: { ToAddresses: emailId },
+    Message: {
+      Body: {
+        Html: {
+          Charset: "UTF-8",
+          Data: email.body,
+        },
+      },
+      Subject: {
+        Charset: "UTF-8",
+        Data: email.subject,
+      },
+    },
+    Source: process.env.EMAIL,
+    ReplyToAddresses: [process.env.EMAIL],
+  };
 
+  sendEmail(mailOptions);
+};
+
+const getEmailContent = () => {
+  return {
+    subject: `Success! You're registered for Understanding Revenue Data`,
+    body:
+      `
+      <div style="background-color: '#f4fbf7'; padding: 2rem 3rem">
+        <p style="text-align: center;">
+            <span style="color: '#0dcaf0'; font-weight: 'bold'; font-size: 1.75rem;">city</span>
+            <span style="color: '#183367'; font-weight: 'bold'; font-size: 1.75rem;">finance.in</span>
+        </p>
+
+        <div style="margin-top: 1rem; background-color: '#ffffff'; padding: 2rem 3rem; border-radius: 5px">
+
+            <p style="font-size: 1.5rem;">You're now registered for:</p>
+            <p style="font-size: 1.5rem;font-weight: bold;">Understanding Revenue Data</p>
+            <p style="margin: 0; padding: 0">When: Thursday, SEP 11, 11:00 AM - 12:00 PM</p>
+            <p style="margin: 0; padding: 0">Where: Google Meet
+                <a href="https://meet.google.com/wax-hfgv-cwf">https://meet.google.com/wax-hfgv-cwf</a>
+            </p>
+
+            <hr />
+            <p>You'll receive a reminder 24 hours and 15 minutes before the session.</p>
+
+            <br>Regards,<br>
+            <p>City Finance Team</p>
+
+        </div>
+      </div>
+    `,
+  };
 };
 
 
