@@ -51,4 +51,7 @@ router.use('/bond-issuances', require('./bond-issuances'));
 // Ledgers.
 router.use('/ledger', require('./ledger'));
 
+// Events.
+router.use('/events', require('./events'));
+
 module.exports = router;
