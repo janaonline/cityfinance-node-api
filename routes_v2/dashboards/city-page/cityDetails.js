@@ -18,7 +18,7 @@ module.exports.cityDetails = async (req, res) => {
 			{ name: 1, population: 1, area: 1, wards: 1, isUA: 1, UA: 1, state: 1, slug: 1, ulbType: 1 },
 		)
 			.populate('UA', 'name')
-			.populate('state', 'name code')
+			.populate('state', 'name code slug')
 			.populate('ulbType', 'name')
 			.lean();
 		if (!ulbData) return res.status(404).json({ error: 'ULB not found' });
@@ -58,7 +58,7 @@ async function getDataFromDb(ulbId) {
 		// 	.populate('state', 'name code')
 		// 	.lean(),
 
-		LedgerLog.distinct('year', { ulb_id: new ObjectId(ulbId) }),
+		LedgerLog.distinct('year', { ulb_id: new ObjectId(ulbId), isStandardizable: { $ne: 'No' } }),
 
 		getLastModifiedDateHelper({ ulb_id: new ObjectId(ulbId) }),
 	]);
