@@ -23,7 +23,7 @@ const {
   getFormattedLineItemDataByYear,
   computeDeltaCapex,
   getYearGrowth,
-  getInfoHTML
+  getInfoHTML,
 } = require("./helper").default;
 const mongoose = require("mongoose");
 
@@ -262,7 +262,7 @@ async function marketDashboardIndicators(ulbId, financialYear, totals) {
       marketDasInd.totExpenditure !== "N/A" &&
       ownRevVal !== null &&
       ownRevVal !== 0
-        ? parseFloat((marketDasInd.totExpenditure / ownRevVal) * 100).toFixed(2)
+        ? parseFloat((ownRevVal / marketDasInd.totExpenditure) * 100).toFixed(2)
         : "N/A";
 
     marketDasInd.capitalExpenditureByTotExpenditure =
@@ -308,7 +308,7 @@ module.exports.createIndicators = async (req, res) => {
       totRevenue,
       totRevenueExpenditure,
       totOwnRevenue,
-      capexpenditure,
+      // capexpenditure,
       totDebt,
       grants,
       totAssets,
@@ -388,7 +388,140 @@ module.exports.getCityDasboardIndicators = async (req, res) => {
           data: [
             header,
             {
-              name: "Total Expenditure to Total Revenue (%)",
+              name: "Total Revenue Receipts (Cr)",
+              graphKey: "amount",
+              isParent: "true",
+              yearData: getFormattedYearData(
+                indicators,
+                years,
+                "totRevenue",
+                formatToCrore
+              ),
+              yearGrowth: getYearGrowth(indicators, years, "totRevenue"),
+              info: getInfoHTML("totRevenue"),
+              children: [
+                {
+                  name: "Own Source Revenue (Cr)",
+                  graphKey: "amount",
+                  yearData: getFormattedYearData(
+                    indicators,
+                    years,
+                    "totOwnRevenue",
+                    formatToCrore
+                  ),
+                  className: "ps-5 ",
+                },
+                {
+                  name: "Assigned Revenue (Cr)",
+                  graphKey: "amount",
+                  yearData: getFormattedLineItemDataByYear(
+                    indicators,
+                    years,
+                    "120",
+                    formatToCrore
+                  ),
+                  className: "ps-5 ",
+                },
+                {
+                  name: "Revenue Grants (Cr)",
+                  graphKey: "amount",
+                  yearData: getFormattedLineItemDataByYear(
+                    indicators,
+                    years,
+                    "160",
+                    formatToCrore
+                  ),
+                  className: "ps-5 ",
+                },
+                {
+                  name: "Others (Cr)",
+                  graphKey: "amount",
+                  yearData: getFormattedLineItemDataByYear(
+                    indicators,
+                    years,
+                    "100",
+                    formatToCrore
+                  ),
+                  className: "ps-5 ",
+                },
+              ],
+            },
+            {
+              name: "Total Expenditure (Cr)",
+              graphKey: "amount",
+              isParent: "true",
+              yearData: getFormattedYearData(
+                indicators,
+                years,
+                "totExpenditure",
+                formatToCrore
+              ),
+              yearGrowth: getYearGrowth(indicators, years, "totExpenditure"),
+              info: getInfoHTML("totExpenditure"),
+              children: [
+                {
+                  name: "Total Revenue Expenditure (Cr)",
+                  graphKey: "amount",
+                  yearData: getFormattedYearData(
+                    indicators,
+                    years,
+                    "totRevenueExpenditure",
+                    formatToCrore
+                  ),
+                  className: "ps-5 ",
+                },
+                {
+                  name: "Total Capital Expenditure (Cr)",
+                  graphKey: "amount",
+                  yearData: getFormattedYearData(
+                    indicators,
+                    years,
+                    "capex",
+                    formatToCrore
+                  ),
+                  className: "ps-5 ",
+                },
+              ],
+            },
+            {
+              name: "Total Debt (Cr)",
+              graphKey: "amount",
+              isParent: "true",
+              yearData: getFormattedYearData(
+                indicators,
+                years,
+                "totDebt",
+                formatToCrore
+              ),
+              yearGrowth: getYearGrowth(indicators, years, "totDebt"),
+              info: getInfoHTML("totDebt"),
+              children: [
+                {
+                  name: "Secured Loans (Cr)",
+                  graphKey: "amount",
+                  yearData: getFormattedLineItemDataByYear(
+                    indicators,
+                    years,
+                    "330",
+                    formatToCrore
+                  ),
+                  className: "ps-5 ",
+                },
+                {
+                  name: "Unsecured Loans (Cr)",
+                  graphKey: "amount",
+                  yearData: getFormattedLineItemDataByYear(
+                    indicators,
+                    years,
+                    "331",
+                    formatToCrore
+                  ),
+                  className: "ps-5 ",
+                },
+              ],
+            },
+            {
+              name: "Total Expenditure to Total Revenue Receipts (%)",
               graphKey: "percentage",
               isParent: "true",
               yearData: getYearData(
@@ -399,7 +532,7 @@ module.exports.getCityDasboardIndicators = async (req, res) => {
               info: getInfoHTML("totExpenditureByTotRevenue"),
             },
             {
-              name: "Own Source Revenue to Total Revenue (%)",
+              name: "Own Source Revenue to Total Revenue Receipts (%)",
               graphKey: "percentage",
               isParent: "true",
               yearData: getYearData(
@@ -410,7 +543,7 @@ module.exports.getCityDasboardIndicators = async (req, res) => {
               info: getInfoHTML("totOwnRevenueByTotRevenue"),
             },
             {
-              name: "Grants to Total Revenue (%)",
+              name: "Grants to Total Revenue Receipts (%)",
               graphKey: "percentage",
               isParent: "true",
               yearData: getYearData(indicators, years, "grantsByTotRevenue"),
@@ -439,7 +572,7 @@ module.exports.getCityDasboardIndicators = async (req, res) => {
               info: getInfoHTML("capitalExpenditureByTotExpenditure"),
             },
             {
-              name: "Operating Surplus (Cr)",
+              name: "Operating Revenue Surplus (Cr)",
               graphKey: "amount",
               isParent: "true",
               yearData: getFormattedYearData(
@@ -461,7 +594,7 @@ module.exports.getCityDasboardIndicators = async (req, res) => {
           data: [
             header,
             {
-              name: "Total Revenue (Cr)",
+              name: "Total Revenue Receipts (Cr)",
               graphKey: "amount",
               isParent: "true",
               yearData: getFormattedYearData(
@@ -612,7 +745,7 @@ module.exports.getCityDasboardIndicators = async (req, res) => {
               ],
             },
             {
-              name: "Own Source Revenue to Total Revenue (%)",
+              name: "Own Source Revenue to Total Revenue Receipts (%)",
               graphKey: "percentage",
               isParent: "true",
               yearData: getYearData(
@@ -623,7 +756,7 @@ module.exports.getCityDasboardIndicators = async (req, res) => {
               info: getInfoHTML("totOwnRevenueByTotRevenue"),
             },
             {
-              name: "Grants to Total Revenue (%)",
+              name: "Grants to Total Revenue Receipts (%)",
               graphKey: "percentage",
               isParent: "true",
               yearData: getYearData(indicators, years, "grantsByTotRevenue"),
@@ -760,6 +893,17 @@ module.exports.getCityDasboardIndicators = async (req, res) => {
               ],
             },
             {
+              name: "Total Expenditure to Total Revenue Receipts (%)",
+              graphKey: "percentage",
+              isParent: "true",
+              yearData: getYearData(
+                indicators,
+                years,
+                "totExpenditureByTotRevenue"
+              ),
+              info: getInfoHTML("totExpenditureByTotRevenue"),
+            },
+            {
               name: "Own Source Revenue to Revenue Expenditure (%)",
               graphKey: "percentage",
               isParent: "true",
@@ -769,6 +913,17 @@ module.exports.getCityDasboardIndicators = async (req, res) => {
                 "totOwnRevenueByTotRevenueExpenditure"
               ),
               info: getInfoHTML("totOwnRevenueByTotRevenueExpenditure"),
+            },
+            {
+              name: "Capital Expenditure to Total Expenditure (%)",
+              graphKey: "percentage",
+              isParent: "true",
+              yearData: getYearData(
+                indicators,
+                years,
+                "capitalExpenditureByTotExpenditure"
+              ),
+              info: getInfoHTML("capitalExpenditureByTotExpenditure"),
             },
           ],
         };
@@ -892,8 +1047,8 @@ function filterIndicatorsWithYear(indicatorsData) {
 }
 
 function getIndicatorValue(indicatorKey, data, yearsArray) {
-  const years = [...yearsArray]; 
-  const reversedYears = years.reverse(); 
+  const years = [...yearsArray];
+  const reversedYears = years.reverse();
   for (const year of reversedYears) {
     const yearData = data.find((item) => item.year === year);
     if (yearData && yearData.indicators) {
@@ -933,10 +1088,10 @@ async function getIntro(indicators, keyType, yearsArray) {
         totRevenueData.value
       )} crore and a total expenditure of Rs ${formatToCroreSummary(
         totRevenueExpenditure.value
-      )} crore, implying that its expenditure accounted for ${(
+      )} crore, implying that its expenditure accounted for ${Math.round(
         (totRevenueExpenditure.value / totRevenueData.value) *
         100
-      ).toFixed(2)}% of its revenue`;
+      )}% of its revenue`;
     }
     case "revenue": {
       const revPayload = finalObject.map((yearData) => {
@@ -975,7 +1130,9 @@ async function getIntro(indicators, keyType, yearsArray) {
         totRevenueExpenditure.ulbName
       } reported a total expenditure of Rs ${formatToCroreSummary(
         totExpenditure.value
-      )} crore which included Rs ${formatToCroreSummary(capex.value)} crore in capital expenditure and Rs ${formatToCroreSummary(
+      )} crore which included Rs ${formatToCroreSummary(
+        capex.value
+      )} crore in capital expenditure and Rs ${formatToCroreSummary(
         totRevenueExpenditure.value
       )} crore in revenue expenditure.`;
     }
@@ -984,8 +1141,18 @@ async function getIntro(indicators, keyType, yearsArray) {
       // console.log(debt, "this is debt");
       const totAssets = getIndicatorValue("totAssets", finalObject, yearsArray);
       // console.log(totAssets, "this is assets");
+      if (!debt || debt.value == null || debt.value === "N/A") {
+        return `The debt information is not available for the FY ${
+          debt.year
+        },but the ${
+          debt?.ulb ?? totAssets?.ulbName
+        }’s total assets valued at Rs ${formatToCroreSummary(
+          totAssets.value
+        )} crore`;
+      }
+
       return `As of FY ${debt.year}, ${
-        debt?.ulb??totAssets?.ulbName
+        debt?.ulb ?? totAssets?.ulbName
       }’s outstanding debt stood at Rs ${formatToCroreSummary(
         debt.value
       )} crore, against total assets valued at Rs ${formatToCroreSummary(
@@ -1038,9 +1205,9 @@ function getCAGRValue(revArray) {
   // Convert values to crores
   const startCr = formatToCroreSummary(startValue);
   // const startCr = (startValue / 1e7).toFixed(2);
-  const endCr =formatToCroreSummary(endValue);
+  const endCr = formatToCroreSummary(endValue);
   // const endCr = (endValue / 1e7).toFixed(2);
-  const cagrStr = cagr.toFixed(2);
+  const cagrStr = Math.round(cagr);
 
   return `Over the years from FY ${startYear} to FY ${endYear}, the city’s revenue grew from Rs ${startCr} crore to Rs ${endCr} crore, registering a CAGR of ${cagrStr}%.`;
 }
@@ -1136,8 +1303,7 @@ module.exports.getFaqs = async (req, res) => {
         "Telangana",
       ]);
 
-      const cityName =
-        faqData?.ulbTop?.ulb ?? faqData?.ulbMeta?.ulb ?? "N/A";
+      const cityName = faqData?.ulbTop?.ulb ?? faqData?.ulbMeta?.ulb ?? "N/A";
       const stateName = faqData?.stateTop?.state ?? null;
 
       const ulbTotRevText =
@@ -1189,8 +1355,7 @@ module.exports.getFaqs = async (req, res) => {
       ];
     }
     if (populationType === "cat2") {
-      const cityName =
-        faqData?.ulbTop?.ulb ?? faqData?.ulbMeta?.ulb ?? "N/A";
+      const cityName = faqData?.ulbTop?.ulb ?? faqData?.ulbMeta?.ulb ?? "N/A";
 
       const grantsPctText =
         faqData?.ulbTop?.indicators?.grantsByTotRevenue != null
@@ -1209,24 +1374,26 @@ module.exports.getFaqs = async (req, res) => {
       const adminEstabTotalText =
         adminEstabTotalNum > 0 ? formatToCrore(adminEstabTotalNum) : "N/A";
 
-      const revExpDen =
-        Number.isFinite(faqData?.ulbTop?.indicators?.totRevenueExpenditure)
-          ? faqData.ulbTop.indicators.totRevenueExpenditure
-          : null;
+      const revExpDen = Number.isFinite(
+        faqData?.ulbTop?.indicators?.totRevenueExpenditure
+      )
+        ? faqData.ulbTop.indicators.totRevenueExpenditure
+        : null;
 
       const adminEstabPct =
         Number.isFinite(adminEstabTotalNum) &&
         Number.isFinite(revExpDen) &&
         revExpDen > 0
-          ? (adminEstabTotalNum / revExpDen) *100
+          ? (adminEstabTotalNum / revExpDen) * 100
           : null;
       const adminEstabPctText =
         adminEstabPct != null ? adminEstabPct.toFixed(2) : "N/A";
 
-      const opSurplusVal =
-        Number.isFinite(faqData?.ulbTop?.indicators?.operatingSurplus)
-          ? faqData.ulbTop.indicators.operatingSurplus
-          : null;
+      const opSurplusVal = Number.isFinite(
+        faqData?.ulbTop?.indicators?.operatingSurplus
+      )
+        ? faqData.ulbTop.indicators.operatingSurplus
+        : null;
       const opState =
         opSurplusVal == null
           ? "balance"
@@ -1260,7 +1427,7 @@ module.exports.getFaqs = async (req, res) => {
     return res.status(500).json({ error: err.message });
   }
 };
-async function buildFaqPipeline({ year, ulbId,state }) {
+async function buildFaqPipeline({ year, ulbId, state }) {
   const ulbObjectId =
     ulbId && ObjectId.isValid(ulbId) ? new ObjectId(ulbId) : null;
 

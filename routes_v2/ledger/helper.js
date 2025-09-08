@@ -76,7 +76,7 @@ const totAssets = {
 const OperSurplusTotRevenueExpenditure = {
   name: "Operating Surplus",
   key: "OperSurplusTotRevenueExpenditure",
-  lineItems: ["200", "210", "220", "230", "250", "260", "271"],
+  lineItems: ["200", "210", "220", "230", "250", "260","270","271","280","290"],
 };
 // Normalize values: "N/A", null/undefined, non-numeric -> null, else Number
 const normalize = (val) => {
