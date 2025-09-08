@@ -1519,3 +1519,22 @@ async function buildFaqPipeline({ year, ulbId, state }) {
 }
 
 module.exports.accumulateIndicators = accumulateIndicators;
+module.exports.getCompareByIndicators = async (req, res) => {
+  try {
+    const { ulbIds, years, keyType } = req.query;
+
+    if (
+      !Array.isArray(ulbIds) ||
+      !Array.isArray(years) ||
+      !Array.isArray(keyType)
+    ) {
+      return res
+        .status(400)
+        .json({ message: "ulbIds, years, and keyType must be arrays" });
+    }
+    console.log(ulbIds, years, keyType, "this is params");
+  } catch (error) {
+    console.error("Error fetching compare by indicators:", error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
