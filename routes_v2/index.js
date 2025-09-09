@@ -6,18 +6,18 @@ const { logger } = require('../middlewares/loggermiddleware');
 const router = express.Router();
 // @Base Url
 router.use((req, res, next) => {
-  req['currentUrl'] = `${req.protocol + '://' + req.headers.host}`;
-  next();
+	req['currentUrl'] = `${req.protocol + '://' + req.headers.host}`;
+	next();
 });
 
 // @Morgan logger
 router.use(logger.setResponseBody);
 morgan.token('request', function (req, res) {
-  try {
-    logger.createLog(req, res);
-  } catch (err) {
-    console.log('token not created ::', err.message);
-  }
+	try {
+		logger.createLog(req, res);
+	} catch (err) {
+		console.log('token not created ::', err.message);
+	}
 });
 router.use(morgan(':request'));
 
@@ -32,13 +32,23 @@ router.use('/file-download-log', require('./file-download-log'));
 
 // Ulb feedback form.
 router.use('/ulb-feedback', require('./ulb-feedback-form'));
-// Request Demo. 
+
+// Budget Documents.
+router.use('/budget-documents', require('./budget-documents'));
+
+// Request Demo.
 router.use('/request-demo', require('./request-demo'));
 
-// National Dashboard.
-router.use('/national-performance-dashboard', require('./dashboards/national-dashboard'));
+// Public Dashboard.
+router.use('/dashboard', require('./dashboards'));
 
 // Get latest provisional year.
-router.use('/common', require('./common'))
+router.use('/common', require('./common'));
+
+// Bond Issuances
+router.use('/bond-issuances', require('./bond-issuances'));
+
+// Ledgers.
+router.use('/ledger', require('./ledger'));
 
 module.exports = router;

@@ -154,9 +154,9 @@ var customkeys = {
         "grantPosition.receivedDuringYr": "grantPosition.receivedDuringYr",
         "grantPosition.expDuringYr": "grantPosition.expDuringYr",
         "grantPosition.closingBal": "grantPosition.closingBal",
-        "grantPosition.receivedDuringYrWithZero": "grantPosition.receivedDuringYrWithZero",
-        "grantPosition.receivedDuringYrWithZeroReason": "grantPosition.receivedDuringYrWithZeroReason",
-        "grantPosition.fileUploadDuringYrWithZeroReason": "grantPosition.fileUploadDuringYrWithZeroReason",
+        "grantPosition.expDuringYrWithZero": "grantPosition.expDuringYrWithZero",
+        "grantPosition.expDuringYrWithZeroReason": "grantPosition.expDuringYrWithZeroReason",
+        "grantPosition.expDuringYrfileUpload": "grantPosition.expDuringYrfileUpload",
     },
 
     "waterManagement_tableView": {
@@ -2507,9 +2507,10 @@ function handleFileCase(question, obj, flattedForm) {
         }
         let name = mainKey + "." + "name"
         let url = mainKey + "." + "url"
-        if(question.shortKey =='grant.fileUploadDuringYrWithZeroReason'){
-            name = 'grant.fileUploadDuringYrWithZeroReason.name';
-            url = 'grant.fileUploadDuringYrWithZeroReason.url';
+        if(question.shortKey =='grantPosition.expDuringYrfileUpload'){
+            // console.log(flattedForm)
+            name = 'grantPosition.expDuringYrfileUpload.name';
+            url = 'grantPosition.expDuringYrfileUpload.url';
         }
         obj['label'] = flattedForm[name] || ""
         obj['value'] = flattedForm[url] || ""

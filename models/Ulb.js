@@ -48,6 +48,11 @@ const DULY_ELECTED = new Schema({
 const UlbSchema = new Schema({
     code: { type: String, required: true, index: { unique: true } },
     name: { type: String, required: true },
+    slug: {
+        type: String,
+        unique: true,
+        index: true
+    },
     censusCode: { type: String, default: null },
     sbCode: { type: String, default: null }, /*Swatch Bharat Code*/
     population: { type: Number, default: 0 },
@@ -77,7 +82,7 @@ const UlbSchema = new Schema({
     district: { type: String, default: "" },
     censusType: { type: String, default: "" },
     isUA: { type: String, enum: ["YES", "No"], default: "No" },
-    UA: { type: Schema.Types.ObjectId, ref: 'UA' },
+    UA: { type: Schema.Types.ObjectId, ref: 'UA', default: null },
     isMillionPlus: { type: String, enum: ["YES", "No"], default: "No" },
     amrut: { type: String, default: "" },
     lgdCode: { type: String, default: "" },
@@ -95,12 +100,12 @@ const UlbSchema = new Schema({
 
 }, { timestamps: { createdAt: "createdAt", updatedAt: "modifiedAt" } });
 UlbSchema.index(
-	{
-		isPublsih: 1,
-		isActive: 1,
-	},
-	{
-		unique: true,
-	}
+    {
+        isPublsih: 1,
+        isActive: 1,
+    },
+    {
+        unique: true,
+    }
 );
 module.exports = mongoose.model('Ulb', UlbSchema);

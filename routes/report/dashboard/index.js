@@ -33,6 +33,7 @@ const redisCheck = (req, res, next) => {
         }
     });
 }
+const cacheMiddleware = require('../../../middlewares/cacheMiddleware');
 
 // Redis.resetDashboard();
 const express = require('express');
@@ -46,6 +47,7 @@ router.get("/revenue-expenditure", redisCheck, dashboard.filterUlbs, dashboard.r
 router.get("/source-financial-revenue-expenditure", redisCheck, dashboard.filterUlbs, dashboard.sourceFinancialRevenueExpenditure);
 router.get("/source-revenue", redisCheck, dashboard.filterUlbs, dashboard.sourceRevenue);
 router.get("/ulb-coverage", redisCheck, dashboard.ulbCoverage);
-router.get("/home-page-data", dashboard.homePageData);
+//  TODO: Remove - Migrated to routes V2 - homePage.js
+router.get("/home-page-data", cacheMiddleware('dashboard'), dashboard.homePageData);
 router.get("/ulb-ledgerCount", redisCheck, dashboard.ownRevenueDependency.ulbRevenueCount)
 module.exports = router;

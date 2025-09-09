@@ -1,6 +1,6 @@
 const { years, getDesiredYear, isBeyond2023_24, getAdditionalYears } = require("../../service/years")
 const { apiUrls } = require("../CommonActionAPI/service");
-const { isSingleYearIndicator, ensureArray } = require('../../util/helper');
+const { isSingleYearIndicator, ensureArray, isReadOnly } = require('../../util/helper');
 
 const parentRadioQuestionKeys = [
   "ulbCollectPtax",
@@ -24,7 +24,7 @@ const mandatDisplayPrioritiesForCurrYear = [
 ];
 
 
-const propertyTaxOpFormJson = ({ role, design_year, ptoData, ptoMaper = [] }) => {
+const propertyTaxOpFormJson = ({ role, design_year, ptoData, ptoMaper = [], ptoLatestYearData }) => {
 
   lastYearId = '606aafb14dff55e6c075d3ae'; // 22-23
   const additionalYears = getAdditionalYears(lastYearId, design_year);
@@ -10506,7 +10506,7 @@ const propertyTaxOpFormJson = ({ role, design_year, ptoData, ptoMaper = [] }) =>
         const copyChildFrom = indicator?.copyChildFrom;
 
         if (copyChildFrom) {
-          modifyJsonForChild(copyChildFrom, additionalYears);
+          modifyJsonForChild(copyChildFrom, additionalYears, role, ptoData?.['currentFormStatus']);
         }
         const hasMultipleYears = !yearData.some(
           (yearItem) => Object.keys(yearItem).length == 0
@@ -10552,6 +10552,11 @@ const propertyTaxOpFormJson = ({ role, design_year, ptoData, ptoMaper = [] }) =>
             indicatorObj["label"] = `FY ${yearName}`;
           }
           if (ptoData) {
+            indicatorObj.year = yearId;
+          } else if (ptoLatestYearData) {
+            // If previous year is available in db then set prevYear-1.
+            const { yearId } = getDesiredYear(ptoLatestYearData.design_year, -1);
+
             indicatorObj.year = yearId;
           }
         }
@@ -10605,7 +10610,7 @@ function getRadioParentDependencyObject(indicator) {
   return parentValues;
 }
 
-function modifyJsonForChild(copyChildFrom, additionalYears) {
+function modifyJsonForChild(copyChildFrom, additionalYears, role, currentFormStatus = 1) {
   copyChildFrom.forEach((copyChild) => {
     const { yearData } = copyChild
     const lastChildYear = yearData[yearData.length - 1]
@@ -10624,7 +10629,7 @@ function modifyJsonForChild(copyChildFrom, additionalYears) {
       nextYear["postion"] = String(+nextYear["postion"] + 1);
 
       if (additionalYears.length - 1 === index) {
-        nextYear["readonly"] = false;
+        nextYear["readonly"] = isReadOnly({role, currentFormStatus});
         nextYear["placeholder"] = "";
         nextYear["notApplicable"] = false;
         nextYear["required"] = true;
@@ -11586,422 +11591,422 @@ let skipLogicDependencies = {
       }
     }
   },
-  "data.notificationPropertyTax.yearData.0": {
-    "skippable": {
-      "notificationAdoptionDate": {
-        "value": "Yes",
-        "years": [0]
-      },
-      "notificationIssuedBy": {
-        "value": "Yes",
-        "years": [0]
-      },
-      "notificationFile": {
-        "value": "Yes",
-        "years": [0]
-      },
-      "dmdIncludingCess": {
-        "value": "Yes",
-        "years": [0, 1, 2, 3, 4]
-      },
-      "cdmdIncludingCess": {
-        "value": "Yes",
-        "years": [0, 1, 2, 3, 4]
-      },
-      "admdIncludingCess": {
-        "value": "Yes",
-        "years": [0, 1, 2, 3, 4]
-      },
-      "dmdexcludingCess": {
-        "value": "Yes",
-        "years": [0, 1, 2, 3, 4]
-      },
-      "taxTypeDemand": {
-        "value": "Yes",
-        "years": [0, 1, 2, 3, 4]
-      },
-      "cessDemand": {
-        "value": "Yes",
-        "years": [0, 1, 2, 3, 4]
-      },
-      "doesUserChargesDmnd": {
-        "value": "Yes",
-        "years": [0, 1, 2, 3, 4]
-      },
-      "userChargesDmndText": {
-        "value": "Yes",
-        "years": [0, 1, 2, 3, 4]
-      },
-      "userChargesDmndAmount": {
-        "value": "Yes",
-        "years": [0, 1, 2, 3, 4]
-      },
-      "collectIncludingCess": {
-        "value": "Yes",
-        "years": [0, 1, 2, 3, 4]
-      },
-      "cuCollectIncludingCess": {
-        "value": "Yes",
-        "years": [0, 1, 2, 3, 4]
-      },
-      "arCollectIncludingCess": {
-        "value": "Yes",
-        "years": [0, 1, 2, 3, 4]
-      },
-      "collectExcludingCess": {
-        "value": "Yes",
-        "years": [0, 1, 2, 3, 4]
-      },
-      "taxTypeCollection": {
-        "value": "Yes",
-        "years": [0, 1, 2, 3, 4]
-      },
-      "cessCollect": {
-        "value": "Yes",
-        "years": [0, 1, 2, 3, 4]
-      },
-      "userChargesCollectionText": {
-        "value": "Yes",
-        "years": [0, 1, 2, 3, 4]
-      },
-      "userChargesCollectionAmount": {
-        "value": "Yes",
-        "years": [0, 1, 2, 3, 4]
-      },
-      "totalMappedPropertiesUlb": {
-        "value": "Yes",
-        "years": [0, 1, 2, 3, 4]
-      },
-      "totalPropertiesTax": {
-        "value": "Yes",
-        "years": [0, 1, 2, 3, 4]
-      },
-      "totalPropertiesTaxDm": {
-        "value": "Yes",
-        "years": [0, 1, 2, 3, 4]
-      },
-      "totalPropertiesTaxDmCollected": {
-        "value": "Yes",
-        "years": [0, 1, 2, 3, 4]
-      },
-      "resValuePropertyTaxDm": {
-        "value": "Yes",
-        "years": [0, 1, 2, 3, 4]
-      },
-      "resNoPropertyTaxDm": {
-        "value": "Yes",
-        "years": [0, 1, 2, 3, 4]
-      },
-      "resValuePropertyTaxCollected": {
-        "value": "Yes",
-        "years": [0, 1, 2, 3, 4]
-      },
-      "resNoPropertyTaxCollected": {
-        "value": "Yes",
-        "years": [0, 1, 2, 3, 4]
-      },
-      "comValuePropertyTaxDm": {
-        "value": "Yes",
-        "years": [0, 1, 2, 3, 4]
-      },
-      "comNoPropertyTaxDm": {
-        "value": "Yes",
-        "years": [0, 1, 2, 3, 4]
-      },
-      "comValuePropertyTaxCollected": {
-        "value": "Yes",
-        "years": [0, 1, 2, 3, 4]
-      },
-      "comNoPropertyTaxCollected": {
-        "value": "Yes",
-        "years": [0, 1, 2, 3, 4]
-      },
-      "indValuePropertyTaxDm": {
-        "value": "Yes",
-        "years": [0, 1, 2, 3, 4]
-      },
-      "indNoPropertyTaxDm": {
-        "value": "Yes",
-        "years": [0, 1, 2, 3, 4]
-      },
-      "indValuePropertyTaxCollected": {
-        "value": "Yes",
-        "years": [0, 1, 2, 3, 4]
-      },
-      "indNoPropertyTaxCollected": {
-        "value": "Yes",
-        "years": [0, 1, 2, 3, 4]
-      },
-      "govValuePropertyTaxDm": {
-        "value": "Yes",
-        "years": [0, 1, 2, 3, 4]
-      },
-      "govNoPropertyTaxDm": {
-        "value": "Yes",
-        "years": [0, 1, 2, 3, 4]
-      },
-      "govValuePropertyTaxCollected": {
-        "value": "Yes",
-        "years": [0, 1, 2, 3, 4]
-      },
-      "govNoPropertyTaxCollected": {
-        "value": "Yes",
-        "years": [0, 1, 2, 3, 4]
-      },
-      "insValuePropertyTaxDm": {
-        "value": "Yes",
-        "years": [0, 1, 2, 3, 4]
-      },
-      "insNoPropertyTaxDm": {
-        "value": "Yes",
-        "years": [0, 1, 2, 3, 4]
-      },
-      "insValuePropertyTaxCollected": {
-        "value": "Yes",
-        "years": [0, 1, 2, 3, 4]
-      },
-      "insNoPropertyTaxCollected": {
-        "value": "Yes",
-        "years": [0, 1, 2, 3, 4]
-      },
-      "otherValuePropertyType": {
-        "value": "Yes",
-        "years": [0, 1, 2, 3, 4]
-      },
-      "otherValuePropertyTaxDm": {
-        "value": "Yes",
-        "years": [0, 1, 2, 3, 4]
-      },
-      "otherNoPropertyTaxDm": {
-        "value": "Yes",
-        "years": [0, 1, 2, 3, 4]
-      },
-      "otherValuePropertyTaxCollected": {
-        "value": "Yes",
-        "years": [0, 1, 2, 3, 4]
-      },
-      "otherNoPropertyTaxCollected": {
-        "value": "Yes",
-        "years": [0, 1, 2, 3, 4]
-      },
-      "noOfPropertiesPaidOnline": {
-        "value": "Yes",
-        "years": [0, 1, 2, 3, 4]
-      },
-      "totalCollectionOnline": {
-        "value": "Yes",
-        "years": [0, 1, 2, 3, 4]
-      },
-      "propertyTaxValuationDetails": {
-        "value": "Yes",
-        "years": [0, 1, 2, 3, 4]
-      }
-    }
-  },
-  "data.ulbPassedResolPtax.yearData.0": {
-    "skippable": {
-      "resolutionFile": {
-        "value": "Yes",
-        "years": [0]
-      },
-      "dmdIncludingCess": {
-        "value": "Yes",
-        "years": [0, 1, 2, 3, 4]
-      },
-      "cdmdIncludingCess": {
-        "value": "Yes",
-        "years": [0, 1, 2, 3, 4]
-      },
-      "admdIncludingCess": {
-        "value": "Yes",
-        "years": [0, 1, 2, 3, 4]
-      },
-      "dmdexcludingCess": {
-        "value": "Yes",
-        "years": [0, 1, 2, 3, 4]
-      },
-      "taxTypeDemand": {
-        "value": "Yes",
-        "years": [0, 1, 2, 3, 4]
-      },
-      "cessDemand": {
-        "value": "Yes",
-        "years": [0, 1, 2, 3, 4]
-      },
-      "doesUserChargesDmnd": {
-        "value": "Yes",
-        "years": [0, 1, 2, 3, 4]
-      },
-      "userChargesDmndText": {
-        "value": "Yes",
-        "years": [0, 1, 2, 3, 4]
-      },
-      "userChargesDmndAmount": {
-        "value": "Yes",
-        "years": [0, 1, 2, 3, 4]
-      },
-      "collectIncludingCess": {
-        "value": "Yes",
-        "years": [0, 1, 2, 3, 4]
-      },
-      "cuCollectIncludingCess": {
-        "value": "Yes",
-        "years": [0, 1, 2, 3, 4]
-      },
-      "arCollectIncludingCess": {
-        "value": "Yes",
-        "years": [0, 1, 2, 3, 4]
-      },
-      "collectExcludingCess": {
-        "value": "Yes",
-        "years": [0, 1, 2, 3, 4]
-      },
-      "taxTypeCollection": {
-        "value": "Yes",
-        "years": [0, 1, 2, 3, 4]
-      },
-      "cessCollect": {
-        "value": "Yes",
-        "years": [0, 1, 2, 3, 4]
-      },
-      "userChargesCollectionText": {
-        "value": "Yes",
-        "years": [0, 1, 2, 3, 4]
-      },
-      "userChargesCollectionAmount": {
-        "value": "Yes",
-        "years": [0, 1, 2, 3, 4]
-      },
-      "totalMappedPropertiesUlb": {
-        "value": "Yes",
-        "years": [0, 1, 2, 3, 4]
-      },
-      "totalPropertiesTax": {
-        "value": "Yes",
-        "years": [0, 1, 2, 3, 4]
-      },
-      "totalPropertiesTaxDm": {
-        "value": "Yes",
-        "years": [0, 1, 2, 3, 4]
-      },
-      "totalPropertiesTaxDmCollected": {
-        "value": "Yes",
-        "years": [0, 1, 2, 3, 4]
-      },
-      "resValuePropertyTaxDm": {
-        "value": "Yes",
-        "years": [0, 1, 2, 3, 4]
-      },
-      "resNoPropertyTaxDm": {
-        "value": "Yes",
-        "years": [0, 1, 2, 3, 4]
-      },
-      "resValuePropertyTaxCollected": {
-        "value": "Yes",
-        "years": [0, 1, 2, 3, 4]
-      },
-      "resNoPropertyTaxCollected": {
-        "value": "Yes",
-        "years": [0, 1, 2, 3, 4]
-      },
-      "comValuePropertyTaxDm": {
-        "value": "Yes",
-        "years": [0, 1, 2, 3, 4]
-      },
-      "comNoPropertyTaxDm": {
-        "value": "Yes",
-        "years": [0, 1, 2, 3, 4]
-      },
-      "comValuePropertyTaxCollected": {
-        "value": "Yes",
-        "years": [0, 1, 2, 3, 4]
-      },
-      "comNoPropertyTaxCollected": {
-        "value": "Yes",
-        "years": [0, 1, 2, 3, 4]
-      },
-      "indValuePropertyTaxDm": {
-        "value": "Yes",
-        "years": [0, 1, 2, 3, 4]
-      },
-      "indNoPropertyTaxDm": {
-        "value": "Yes",
-        "years": [0, 1, 2, 3, 4]
-      },
-      "indValuePropertyTaxCollected": {
-        "value": "Yes",
-        "years": [0, 1, 2, 3, 4]
-      },
-      "indNoPropertyTaxCollected": {
-        "value": "Yes",
-        "years": [0, 1, 2, 3, 4]
-      },
-      "govValuePropertyTaxDm": {
-        "value": "Yes",
-        "years": [0, 1, 2, 3, 4]
-      },
-      "govNoPropertyTaxDm": {
-        "value": "Yes",
-        "years": [0, 1, 2, 3, 4]
-      },
-      "govValuePropertyTaxCollected": {
-        "value": "Yes",
-        "years": [0, 1, 2, 3, 4]
-      },
-      "govNoPropertyTaxCollected": {
-        "value": "Yes",
-        "years": [0, 1, 2, 3, 4]
-      },
-      "insValuePropertyTaxDm": {
-        "value": "Yes",
-        "years": [0, 1, 2, 3, 4]
-      },
-      "insNoPropertyTaxDm": {
-        "value": "Yes",
-        "years": [0, 1, 2, 3, 4]
-      },
-      "insValuePropertyTaxCollected": {
-        "value": "Yes",
-        "years": [0, 1, 2, 3, 4]
-      },
-      "insNoPropertyTaxCollected": {
-        "value": "Yes",
-        "years": [0, 1, 2, 3, 4]
-      },
-      "otherValuePropertyType": {
-        "value": "Yes",
-        "years": [0, 1, 2, 3, 4]
-      },
-      "otherValuePropertyTaxDm": {
-        "value": "Yes",
-        "years": [0, 1, 2, 3, 4]
-      },
-      "otherNoPropertyTaxDm": {
-        "value": "Yes",
-        "years": [0, 1, 2, 3, 4]
-      },
-      "otherValuePropertyTaxCollected": {
-        "value": "Yes",
-        "years": [0, 1, 2, 3, 4]
-      },
-      "otherNoPropertyTaxCollected": {
-        "value": "Yes",
-        "years": [0, 1, 2, 3, 4]
-      },
-      "noOfPropertiesPaidOnline": {
-        "value": "Yes",
-        "years": [0, 1, 2, 3, 4]
-      },
-      "totalCollectionOnline": {
-        "value": "Yes",
-        "years": [0, 1, 2, 3, 4]
-      },
-      "propertyTaxValuationDetails": {
-        "value": "Yes",
-        "years": [0, 1, 2, 3, 4]
-      }
-    }
-  },
+  // "data.notificationPropertyTax.yearData.0": {
+  //   "skippable": {
+  //     "notificationAdoptionDate": {
+  //       "value": "Yes",
+  //       "years": [0]
+  //     },
+  //     "notificationIssuedBy": {
+  //       "value": "Yes",
+  //       "years": [0]
+  //     },
+  //     "notificationFile": {
+  //       "value": "Yes",
+  //       "years": [0]
+  //     },
+  //     "dmdIncludingCess": {
+  //       "value": "Yes",
+  //       "years": [0, 1, 2, 3, 4]
+  //     },
+  //     "cdmdIncludingCess": {
+  //       "value": "Yes",
+  //       "years": [0, 1, 2, 3, 4]
+  //     },
+  //     "admdIncludingCess": {
+  //       "value": "Yes",
+  //       "years": [0, 1, 2, 3, 4]
+  //     },
+  //     "dmdexcludingCess": {
+  //       "value": "Yes",
+  //       "years": [0, 1, 2, 3, 4]
+  //     },
+  //     "taxTypeDemand": {
+  //       "value": "Yes",
+  //       "years": [0, 1, 2, 3, 4]
+  //     },
+  //     "cessDemand": {
+  //       "value": "Yes",
+  //       "years": [0, 1, 2, 3, 4]
+  //     },
+  //     "doesUserChargesDmnd": {
+  //       "value": "Yes",
+  //       "years": [0, 1, 2, 3, 4]
+  //     },
+  //     "userChargesDmndText": {
+  //       "value": "Yes",
+  //       "years": [0, 1, 2, 3, 4]
+  //     },
+  //     "userChargesDmndAmount": {
+  //       "value": "Yes",
+  //       "years": [0, 1, 2, 3, 4]
+  //     },
+  //     "collectIncludingCess": {
+  //       "value": "Yes",
+  //       "years": [0, 1, 2, 3, 4]
+  //     },
+  //     "cuCollectIncludingCess": {
+  //       "value": "Yes",
+  //       "years": [0, 1, 2, 3, 4]
+  //     },
+  //     "arCollectIncludingCess": {
+  //       "value": "Yes",
+  //       "years": [0, 1, 2, 3, 4]
+  //     },
+  //     "collectExcludingCess": {
+  //       "value": "Yes",
+  //       "years": [0, 1, 2, 3, 4]
+  //     },
+  //     "taxTypeCollection": {
+  //       "value": "Yes",
+  //       "years": [0, 1, 2, 3, 4]
+  //     },
+  //     "cessCollect": {
+  //       "value": "Yes",
+  //       "years": [0, 1, 2, 3, 4]
+  //     },
+  //     "userChargesCollectionText": {
+  //       "value": "Yes",
+  //       "years": [0, 1, 2, 3, 4]
+  //     },
+  //     "userChargesCollectionAmount": {
+  //       "value": "Yes",
+  //       "years": [0, 1, 2, 3, 4]
+  //     },
+  //     "totalMappedPropertiesUlb": {
+  //       "value": "Yes",
+  //       "years": [0, 1, 2, 3, 4]
+  //     },
+  //     "totalPropertiesTax": {
+  //       "value": "Yes",
+  //       "years": [0, 1, 2, 3, 4]
+  //     },
+  //     "totalPropertiesTaxDm": {
+  //       "value": "Yes",
+  //       "years": [0, 1, 2, 3, 4]
+  //     },
+  //     "totalPropertiesTaxDmCollected": {
+  //       "value": "Yes",
+  //       "years": [0, 1, 2, 3, 4]
+  //     },
+  //     "resValuePropertyTaxDm": {
+  //       "value": "Yes",
+  //       "years": [0, 1, 2, 3, 4]
+  //     },
+  //     "resNoPropertyTaxDm": {
+  //       "value": "Yes",
+  //       "years": [0, 1, 2, 3, 4]
+  //     },
+  //     "resValuePropertyTaxCollected": {
+  //       "value": "Yes",
+  //       "years": [0, 1, 2, 3, 4]
+  //     },
+  //     "resNoPropertyTaxCollected": {
+  //       "value": "Yes",
+  //       "years": [0, 1, 2, 3, 4]
+  //     },
+  //     "comValuePropertyTaxDm": {
+  //       "value": "Yes",
+  //       "years": [0, 1, 2, 3, 4]
+  //     },
+  //     "comNoPropertyTaxDm": {
+  //       "value": "Yes",
+  //       "years": [0, 1, 2, 3, 4]
+  //     },
+  //     "comValuePropertyTaxCollected": {
+  //       "value": "Yes",
+  //       "years": [0, 1, 2, 3, 4]
+  //     },
+  //     "comNoPropertyTaxCollected": {
+  //       "value": "Yes",
+  //       "years": [0, 1, 2, 3, 4]
+  //     },
+  //     "indValuePropertyTaxDm": {
+  //       "value": "Yes",
+  //       "years": [0, 1, 2, 3, 4]
+  //     },
+  //     "indNoPropertyTaxDm": {
+  //       "value": "Yes",
+  //       "years": [0, 1, 2, 3, 4]
+  //     },
+  //     "indValuePropertyTaxCollected": {
+  //       "value": "Yes",
+  //       "years": [0, 1, 2, 3, 4]
+  //     },
+  //     "indNoPropertyTaxCollected": {
+  //       "value": "Yes",
+  //       "years": [0, 1, 2, 3, 4]
+  //     },
+  //     "govValuePropertyTaxDm": {
+  //       "value": "Yes",
+  //       "years": [0, 1, 2, 3, 4]
+  //     },
+  //     "govNoPropertyTaxDm": {
+  //       "value": "Yes",
+  //       "years": [0, 1, 2, 3, 4]
+  //     },
+  //     "govValuePropertyTaxCollected": {
+  //       "value": "Yes",
+  //       "years": [0, 1, 2, 3, 4]
+  //     },
+  //     "govNoPropertyTaxCollected": {
+  //       "value": "Yes",
+  //       "years": [0, 1, 2, 3, 4]
+  //     },
+  //     "insValuePropertyTaxDm": {
+  //       "value": "Yes",
+  //       "years": [0, 1, 2, 3, 4]
+  //     },
+  //     "insNoPropertyTaxDm": {
+  //       "value": "Yes",
+  //       "years": [0, 1, 2, 3, 4]
+  //     },
+  //     "insValuePropertyTaxCollected": {
+  //       "value": "Yes",
+  //       "years": [0, 1, 2, 3, 4]
+  //     },
+  //     "insNoPropertyTaxCollected": {
+  //       "value": "Yes",
+  //       "years": [0, 1, 2, 3, 4]
+  //     },
+  //     "otherValuePropertyType": {
+  //       "value": "Yes",
+  //       "years": [0, 1, 2, 3, 4]
+  //     },
+  //     "otherValuePropertyTaxDm": {
+  //       "value": "Yes",
+  //       "years": [0, 1, 2, 3, 4]
+  //     },
+  //     "otherNoPropertyTaxDm": {
+  //       "value": "Yes",
+  //       "years": [0, 1, 2, 3, 4]
+  //     },
+  //     "otherValuePropertyTaxCollected": {
+  //       "value": "Yes",
+  //       "years": [0, 1, 2, 3, 4]
+  //     },
+  //     "otherNoPropertyTaxCollected": {
+  //       "value": "Yes",
+  //       "years": [0, 1, 2, 3, 4]
+  //     },
+  //     "noOfPropertiesPaidOnline": {
+  //       "value": "Yes",
+  //       "years": [0, 1, 2, 3, 4]
+  //     },
+  //     "totalCollectionOnline": {
+  //       "value": "Yes",
+  //       "years": [0, 1, 2, 3, 4]
+  //     },
+  //     "propertyTaxValuationDetails": {
+  //       "value": "Yes",
+  //       "years": [0, 1, 2, 3, 4]
+  //     }
+  //   }
+  // },
+  // "data.ulbPassedResolPtax.yearData.0": {
+  //   "skippable": {
+  //     "resolutionFile": {
+  //       "value": "Yes",
+  //       "years": [0]
+  //     },
+  //     "dmdIncludingCess": {
+  //       "value": "Yes",
+  //       "years": [0, 1, 2, 3, 4]
+  //     },
+  //     "cdmdIncludingCess": {
+  //       "value": "Yes",
+  //       "years": [0, 1, 2, 3, 4]
+  //     },
+  //     "admdIncludingCess": {
+  //       "value": "Yes",
+  //       "years": [0, 1, 2, 3, 4]
+  //     },
+  //     "dmdexcludingCess": {
+  //       "value": "Yes",
+  //       "years": [0, 1, 2, 3, 4]
+  //     },
+  //     "taxTypeDemand": {
+  //       "value": "Yes",
+  //       "years": [0, 1, 2, 3, 4]
+  //     },
+  //     "cessDemand": {
+  //       "value": "Yes",
+  //       "years": [0, 1, 2, 3, 4]
+  //     },
+  //     "doesUserChargesDmnd": {
+  //       "value": "Yes",
+  //       "years": [0, 1, 2, 3, 4]
+  //     },
+  //     "userChargesDmndText": {
+  //       "value": "Yes",
+  //       "years": [0, 1, 2, 3, 4]
+  //     },
+  //     "userChargesDmndAmount": {
+  //       "value": "Yes",
+  //       "years": [0, 1, 2, 3, 4]
+  //     },
+  //     "collectIncludingCess": {
+  //       "value": "Yes",
+  //       "years": [0, 1, 2, 3, 4]
+  //     },
+  //     "cuCollectIncludingCess": {
+  //       "value": "Yes",
+  //       "years": [0, 1, 2, 3, 4]
+  //     },
+  //     "arCollectIncludingCess": {
+  //       "value": "Yes",
+  //       "years": [0, 1, 2, 3, 4]
+  //     },
+  //     "collectExcludingCess": {
+  //       "value": "Yes",
+  //       "years": [0, 1, 2, 3, 4]
+  //     },
+  //     "taxTypeCollection": {
+  //       "value": "Yes",
+  //       "years": [0, 1, 2, 3, 4]
+  //     },
+  //     "cessCollect": {
+  //       "value": "Yes",
+  //       "years": [0, 1, 2, 3, 4]
+  //     },
+  //     "userChargesCollectionText": {
+  //       "value": "Yes",
+  //       "years": [0, 1, 2, 3, 4]
+  //     },
+  //     "userChargesCollectionAmount": {
+  //       "value": "Yes",
+  //       "years": [0, 1, 2, 3, 4]
+  //     },
+  //     "totalMappedPropertiesUlb": {
+  //       "value": "Yes",
+  //       "years": [0, 1, 2, 3, 4]
+  //     },
+  //     "totalPropertiesTax": {
+  //       "value": "Yes",
+  //       "years": [0, 1, 2, 3, 4]
+  //     },
+  //     "totalPropertiesTaxDm": {
+  //       "value": "Yes",
+  //       "years": [0, 1, 2, 3, 4]
+  //     },
+  //     "totalPropertiesTaxDmCollected": {
+  //       "value": "Yes",
+  //       "years": [0, 1, 2, 3, 4]
+  //     },
+  //     "resValuePropertyTaxDm": {
+  //       "value": "Yes",
+  //       "years": [0, 1, 2, 3, 4]
+  //     },
+  //     "resNoPropertyTaxDm": {
+  //       "value": "Yes",
+  //       "years": [0, 1, 2, 3, 4]
+  //     },
+  //     "resValuePropertyTaxCollected": {
+  //       "value": "Yes",
+  //       "years": [0, 1, 2, 3, 4]
+  //     },
+  //     "resNoPropertyTaxCollected": {
+  //       "value": "Yes",
+  //       "years": [0, 1, 2, 3, 4]
+  //     },
+  //     "comValuePropertyTaxDm": {
+  //       "value": "Yes",
+  //       "years": [0, 1, 2, 3, 4]
+  //     },
+  //     "comNoPropertyTaxDm": {
+  //       "value": "Yes",
+  //       "years": [0, 1, 2, 3, 4]
+  //     },
+  //     "comValuePropertyTaxCollected": {
+  //       "value": "Yes",
+  //       "years": [0, 1, 2, 3, 4]
+  //     },
+  //     "comNoPropertyTaxCollected": {
+  //       "value": "Yes",
+  //       "years": [0, 1, 2, 3, 4]
+  //     },
+  //     "indValuePropertyTaxDm": {
+  //       "value": "Yes",
+  //       "years": [0, 1, 2, 3, 4]
+  //     },
+  //     "indNoPropertyTaxDm": {
+  //       "value": "Yes",
+  //       "years": [0, 1, 2, 3, 4]
+  //     },
+  //     "indValuePropertyTaxCollected": {
+  //       "value": "Yes",
+  //       "years": [0, 1, 2, 3, 4]
+  //     },
+  //     "indNoPropertyTaxCollected": {
+  //       "value": "Yes",
+  //       "years": [0, 1, 2, 3, 4]
+  //     },
+  //     "govValuePropertyTaxDm": {
+  //       "value": "Yes",
+  //       "years": [0, 1, 2, 3, 4]
+  //     },
+  //     "govNoPropertyTaxDm": {
+  //       "value": "Yes",
+  //       "years": [0, 1, 2, 3, 4]
+  //     },
+  //     "govValuePropertyTaxCollected": {
+  //       "value": "Yes",
+  //       "years": [0, 1, 2, 3, 4]
+  //     },
+  //     "govNoPropertyTaxCollected": {
+  //       "value": "Yes",
+  //       "years": [0, 1, 2, 3, 4]
+  //     },
+  //     "insValuePropertyTaxDm": {
+  //       "value": "Yes",
+  //       "years": [0, 1, 2, 3, 4]
+  //     },
+  //     "insNoPropertyTaxDm": {
+  //       "value": "Yes",
+  //       "years": [0, 1, 2, 3, 4]
+  //     },
+  //     "insValuePropertyTaxCollected": {
+  //       "value": "Yes",
+  //       "years": [0, 1, 2, 3, 4]
+  //     },
+  //     "insNoPropertyTaxCollected": {
+  //       "value": "Yes",
+  //       "years": [0, 1, 2, 3, 4]
+  //     },
+  //     "otherValuePropertyType": {
+  //       "value": "Yes",
+  //       "years": [0, 1, 2, 3, 4]
+  //     },
+  //     "otherValuePropertyTaxDm": {
+  //       "value": "Yes",
+  //       "years": [0, 1, 2, 3, 4]
+  //     },
+  //     "otherNoPropertyTaxDm": {
+  //       "value": "Yes",
+  //       "years": [0, 1, 2, 3, 4]
+  //     },
+  //     "otherValuePropertyTaxCollected": {
+  //       "value": "Yes",
+  //       "years": [0, 1, 2, 3, 4]
+  //     },
+  //     "otherNoPropertyTaxCollected": {
+  //       "value": "Yes",
+  //       "years": [0, 1, 2, 3, 4]
+  //     },
+  //     "noOfPropertiesPaidOnline": {
+  //       "value": "Yes",
+  //       "years": [0, 1, 2, 3, 4]
+  //     },
+  //     "totalCollectionOnline": {
+  //       "value": "Yes",
+  //       "years": [0, 1, 2, 3, 4]
+  //     },
+  //     "propertyTaxValuationDetails": {
+  //       "value": "Yes",
+  //       "years": [0, 1, 2, 3, 4]
+  //     }
+  //   }
+  // },
   "data.doesUserChargesDmnd.yearData.0": {
     "skippable": {
       "userChargesDmnd": {

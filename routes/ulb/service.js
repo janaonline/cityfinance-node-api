@@ -565,12 +565,17 @@ module.exports.getUlbByCode = async function (req, res) {
 
 module.exports.getAllUlbs = async function (req, res) {
   try {
+    const stateMatch = {};
+    const stateCode = req.query.stateCode;
+    if (stateCode) stateMatch["state.code"] = stateCode;
+
     // Get all ulbs list in older format, so that everything works fine
     let data;
-    Redis.get("ulbList", async (err, value) => {
-      // console.log(err, value);
-      if (!value) {
+    // Redis.get("ulbList", async (err, value) => {
+    //   // console.log(err, value);
+    //   if (!value) {
         data = await Ulb.aggregate([
+          { $match: { isPublish: true } },
           {
             $lookup: {
               from: "states",
@@ -580,6 +585,7 @@ module.exports.getAllUlbs = async function (req, res) {
             },
           },
           { $unwind: "$state" },
+          { $match: stateMatch },
           {
             $lookup: {
               from: "ulbtypes",
@@ -607,6 +613,7 @@ module.exports.getAllUlbs = async function (req, res) {
                   population: "$population",
                   amrut: "$amrut",
                   location: "$location",
+                  slug: '$slug'
                 },
               },
             },
@@ -621,10 +628,10 @@ module.exports.getAllUlbs = async function (req, res) {
             },
           },
         ]).exec();
-        Redis.set("ulbList", JSON.stringify(data));
-      } else {
-        data = JSON.parse(value);
-      }
+      //   Redis.set("ulbList", JSON.stringify(data));
+      // } else {
+      //   data = JSON.parse(value);
+      // }
       if (data.length) {
         let obj = {};
         for (let el of data) {
@@ -642,7 +649,7 @@ module.exports.getAllUlbs = async function (req, res) {
           .status(200)
           .send({ success: true, data: {}, msg: "No ULBS Found" });
       }
-    });
+    // });
   } catch (e) {
     console.log("Erro", e);
     return {};
@@ -856,6 +863,7 @@ module.exports.masterDump = async function (req, res) {
     { header: 'ULB Type', key: 'ulbTypeIs', width: 21 },
     { header: 'Nature of ULB', key: 'natureOfUlb', width: 21 },
     { header: 'Active Status', key: 'isActive', width: 12 },
+    { header: 'Publish Status', key: 'isPublish', width: 12 },
     { header: 'State Name', key: 'stateName', width: 30 },
     { header: 'State Code', key: 'stateCode', width: 12 },
     { header: 'Is UT', key: 'isUt', width: 12 },
@@ -1004,8 +1012,8 @@ module.exports.masterDump = async function (req, res) {
 
 module.exports.getPopulate = async (req, res, next) => {
   try {
-    let data = await Ulb.find({}, "_id name code state ulbType")
-      .populate("state", "_id name")
+    let data = await Ulb.find({ isActive: true, isPublish: true }, "_id name code state ulbType slug location")
+      .populate("state", "_id name slug code")
       .populate("ulbType", "_id name")
       .exec();
     return res.status(200).json({
@@ -1212,7 +1220,7 @@ module.exports.getUlbsWithAuditStatus = async (req, res) => {
         isCached = true;
         ulbs = JSON.parse(value);
       }
-      
+
       return res.status(200).json({
         message: "Ulb list with population and coordinates and population.",
         success: true,

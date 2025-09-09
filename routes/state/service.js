@@ -60,6 +60,10 @@ module.exports.get = async function (req, res) {
             }
         }
     ])
+
+    // sort based on state name.
+    stateList.sort((a, b) => a.name.localeCompare(b.name));
+    
     let responseObj = {
         timestamp: moment().unix(),
         success: true,

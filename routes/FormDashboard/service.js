@@ -1536,37 +1536,37 @@ function buildStateInfo(input) {
         {
           key: "totalUlbs",
           label: "Total ULBs",
-          icon: "../../../../assets/dashboard-state/16-location.svg",
+          icon: "./assets/dashboard-state/16-location.svg",
         },
         {
           key: "TotalofNMPCs",
           label: "Total no. of NMPCs",
-          icon: "../../../../assets/dashboard-state/XMLID_1248_.svg",
+          icon: "./assets/dashboard-state/XMLID_1248_.svg",
         },
         {
           key: "TotalofMPCs",
           label: "Total No. of MPCs ",
-          icon: "../../../../assets/dashboard-state/sustainable.svg",
+          icon: "./assets/dashboard-state/sustainable.svg",
         },
         {
           label: "Total ULBs in UAs ",
           key: "TotalULBsUAs",
-          icon: "../../../../assets/dashboard-state/16-location.svg",
+          icon: "./assets/dashboard-state/16-location.svg",
         },
         {
           key: "totalDulyElectedNMPCs",
           label: "Total Duly Elected NMPCs ",
-          icon: "../../../../assets/dashboard-state/XMLID_1248_.svg",
+          icon: "./assets/dashboard-state/XMLID_1248_.svg",
         },
         {
           key: "totalDulyElectedULBsInUA",
           label: "Total Duly Elected ULBs in UAs",
-          icon: "../../../../assets/dashboard-state/sustainable.svg",
+          icon: "./assets/dashboard-state/sustainable.svg",
         },
         {
           key: "totalEligibleULBsOnPTaxGSDP",
           label: "Total Eligible ULBs based on Property Tax GSDP",
-          icon: "../../../../assets/dashboard-state/16-location.svg",
+          icon: "./assets/dashboard-state/16-location.svg",
         },
       ],
     };

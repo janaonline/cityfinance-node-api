@@ -1232,7 +1232,7 @@ function addChildNextYearQuestionObject_bkp(childObject) {
     nextYear['readonly'] = false;
     childObject.yearData.push(nextYear);
 }
-function addChildNextYearQuestionObject(childObject, design_year) {
+function addChildNextYearQuestionObject(childObject, design_year, currentFormStatus, role) {
     const lastChildYear = childObject.yearData[childObject.yearData.length - 1];
 
     // const lastYearId = '606aafb14dff55e6c075d3ae'; // 22-23
@@ -1249,7 +1249,7 @@ function addChildNextYearQuestionObject(childObject, design_year) {
         nextYear['key'] = `FY${yearName}${yearName}`;
         nextYear["postion"] = String(+nextYear["postion"] + 1);
         nextYear['displayPriority'] = nextYear["postion"];
-        nextYear['readonly'] = false;
+        nextYear['readonly'] = isReadOnly({ currentFormStatus, role });
         childObject.yearData.push(nextYear);
     });
 }
@@ -1309,7 +1309,7 @@ async function appendChildValues(params) {
                                 });
                             } else {
                                 // } else if(!ptoData) {
-                                addChildNextYearQuestionObject(replica, design_year);
+                                addChildNextYearQuestionObject(replica, design_year, currentFormStatus, role);
                                 // addChildNextYearQuestionObject(replica);
                             }
                         })
@@ -1320,7 +1320,7 @@ async function appendChildValues(params) {
 
             if (!ptoData && isBeyond2023_24(design_year)) {
                 element.child.forEach(child => {
-                    addChildNextYearQuestionObject(child, design_year);
+                    addChildNextYearQuestionObject(child, design_year, currentFormStatus, role);
                     // addChildNextYearQuestionObject(child);
                 });
             }
@@ -1354,10 +1354,15 @@ exports.getView = async function (req, res, next) {
             return res.status(400).json({ status: false, message: "Something went wrong!" });
         }
         const design_year = req.query.design_year;
+        const designYearStr = getDesiredYear(design_year);
         const [ulbData] = await Ulb.aggregate(ulbDataWithGsdpGrowthRateQuery(req.query.ulb));
         const gsdpYear = getStateGsdpYear(design_year);
         const gsdpGrowthRate = ulbData.gsdpGrowthRateData?.find(el => el.year === gsdpYear)?.currentPrice;
-        const isLatestOnboarderUlb = !ulbData.access_2324;
+        // const isLatestOnboarderUlb = !ulbData.access_2324;
+        const yr = designYearStr?.yearName
+        const [start, end] = yr.split('-');
+        const accessYear = `access_${start.slice(2)}${end}`;
+        const isLatestOnboarderUlb = !ulbData[accessYear];
 
         if (!isLatestOnboarderUlb && isBeyond2023_24(design_year)) {
             const desiredYear = getDesiredYear(design_year, -1);
@@ -1370,7 +1375,7 @@ exports.getView = async function (req, res, next) {
             ).lean();
 
             if (!(MASTER_STATUS_ID[+ptoData?.currentFormStatus] == "Under Review By MoHUA")) {
-                const redirectionLink = `/ulb-form/${getDesiredYear(design_year, -1).yearId}/ptax`;
+                const redirectionLink = `${process.env.v1Url}/ulb-form/${getDesiredYear(design_year, -1).yearId}/ptax`;
                 return res.status(400).json({
                     success: true,
                     message: `Dear User, Your previous Year's form status is - In Progress .Kindly submit Details of Property Tax and User Charges Form for the previous year at - <a href="${redirectionLink}" target="_blank">Click Here!</a> in order to submit this year's form . `
@@ -1392,7 +1397,7 @@ exports.getView = async function (req, res, next) {
             // ptoId: ObjectId(ptoData._id) 
         }).populate("child").lean();
 
-        let fyDynemic = { ...await propertyTaxOpFormJson({ role, design_year, ptoMaper, ptoData }) };
+        let fyDynemic = { ...await propertyTaxOpFormJson({ role, design_year, ptoMaper, ptoData, ptoLatestYearData }) };
         // return res.status(200).json(fyDynemic);
 
         const { isDraft = false, status = "PENDING", currentFormStatus = MASTER_STATUS['Not Started'] } = ptoData || {};
@@ -1433,7 +1438,9 @@ exports.getView = async function (req, res, next) {
                                             const indicatorObj = data[el]?.yearData[0];
                                             const { yearName, yearId } = getDesiredYear(design_year, -1);
 
-                                            if (indicatorObj.isReadonlySingleYear) {
+                                            // if (indicatorObj.isReadonlySingleYear) {
+                                                // if (indicatorObj.isReadonlySingleYear && indicatorObj.value === 'Yes') {
+                                            if (indicatorObj.value === 'Yes') {
                                                 indicatorObj.readonly = true;
                                             }
                                             if (!ptoData) {

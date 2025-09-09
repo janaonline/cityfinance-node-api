@@ -12,29 +12,30 @@ const Ulb = require('../../models/Ulb');
 const LineItem = require('../../models/LineItem');
 const UlbLedger = require('../../models/UlbLedger');
 const LedgerLog = require('../../models/LedgerLog');
+const { clearCacheByType } = require('../../service/cacheService');
 
 const overViewSheet = {
-  'State Code': 'state_code',
-  'Name of the state': 'state',
-  'ULB Code': 'ulb_code',
-  'Name of the ULB': 'ulb',
-  'Financial Year': 'year',
-  'Audit Status': 'audit_status',
-  'Audit Firm Name': 'audit_firm',
-  'Audit Date': 'audit_date',
-  'Name of the Partner': 'partner_name',
-  'ICAI Membership Number': 'icai_membership_number',
-  'Document source': 'doc_source',
-  'Date of Entry': 'created_at',
-  'Entered by': 'created_by',
-  'Date of verification': 'verified_at',
-  'Verified by': 'verified_by',
-  'Date of Re-verification': 'reverified_at',
-  'Re-verified by': 'reverified_by',
-  'Can the raw file be standardised?': 'isStandardizable',
-  'Comments on File Completeness': 'isStandardizableComment',
-  'Count of Data Flags failed': 'dataFlag',
-  'General comment': 'dataFlagComment',
+  'statecode': 'state_code',
+  'nameofthestate': 'state',
+  'ulbcode': 'ulb_code',
+  'nameoftheulb': 'ulb',
+  'financialyear': 'year',
+  'auditstatus': 'audit_status',
+  'auditfirmname': 'audit_firm',
+  'auditdate': 'audit_date',
+  'nameofthepartner': 'partner_name',
+  'icaimembershipnumber': 'icai_membership_number',
+  'documentsource': 'doc_source',
+  'dateofentry': 'created_at',
+  'enteredby': 'created_by',
+  'dateofverification': 'verified_at',
+  'verifiedby': 'verified_by',
+  'dateofre-verification': 'reverified_at',
+  're-verifiedby': 'reverified_by',
+  'cantherawfilebestandardised?': 'isStandardizable',
+  'commentsonfilecompleteness': 'isStandardizableComment',
+  'countofdataflagsfailed': 'dataFlag',
+  'generalcomment': 'dataFlagComment',
 };
 const inputHeader = ['Head of Account', 'Code', 'Line Item', 'Amount in INR'];
 const overviewHeader = ['Basic Details', 'Value'];
@@ -70,6 +71,18 @@ const balanceSheet = {
     '400',
   ],
 };
+
+// Clear redis cache.
+async function clearLedgerCache() {
+  const cacheType = 'dashboard';
+  await clearCacheByType(cacheType);
+}
+
+// Converts a string to lowercase and removes all whitespace characters.
+// Input: "Name of the state", Output: "nameofthestate"
+const normalizeString = (str) => {
+  return str.toLowerCase().replace(/\s+/g, '');
+}
 
 module.exports = async function (req, res) {
   try {
@@ -276,13 +289,13 @@ async function processData(
         if (user.role !== 'ULB') {
           await uploadOverviewDataInDb(du);
           await uploadInputDataInDb(inputDataBulkWriteArr); //bulkWrite.
+          clearLedgerCache();
         }
         await updateLog(reqId, {
           message: `Completed`,
           completed: 1,
           status: 'SUCCESS',
         });
-        Redis.resetDashboard();
       }
     } else {
       // console.info("isStandardizable is 'No'");
@@ -291,6 +304,7 @@ async function processData(
       if (user.role !== 'ULB') {
         await uploadOverviewDataInDb(du);
         await deleteInputDataFromDB(du);
+        clearLedgerCache();
       }
 
       await updateLog(reqId, {
@@ -298,7 +312,6 @@ async function processData(
         completed: 1,
         status: 'SUCCESS',
       });
-      Redis.resetDashboard();
     }
   } catch (e) {
     console.error('processData: Caught Exception', e.message);
@@ -478,7 +491,8 @@ async function validateOverview(data, financialYear, fileName) {
 
     // Object keys to the expected format (header: value)
     for (const key of Object.keys(objOfSheet)) {
-      objOfSheet[overViewSheet[key]] = objOfSheet[key];
+      const headerToKey = normalizeString(key);
+      objOfSheet[overViewSheet[headerToKey]] = objOfSheet[key];
       delete objOfSheet[key];
     }
 

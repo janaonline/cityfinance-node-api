@@ -13,6 +13,7 @@ const json2xls = require("json2xls");
 const expressSanitizer = require("express-sanitizer");
 const verifyToken = require("./routes/auth/services/verifyToken").verifyToken;
 const ExpressError = require("./util/ExpressError");
+const maintenanceMiddleware = require('./middlewares/maintenance.middleware');
 
 
 const whitelist = [
@@ -20,6 +21,7 @@ const whitelist = [
   'https://api-stage.aaina-mohua.in',
   'https://aaina.gov.in',
   'https://api.aaina-mohua.in',
+  'http://localhost:4100',
   'http://localhost:4200',
   'https://democityfinance.dhwaniris.in',
   'http://localhost:3000',
@@ -30,8 +32,8 @@ const whitelist = [
   `https://${process.env.DEMO_HOST_FRONTEND}`,
   `https://${process.env.STAGING_HOST}`,
   `https://${process.env.PROD_HOST}`,
-   process.env.HOSTNAME,
-   `https://dev.cityfinance.in`
+  process.env.HOSTNAME,
+  `https://dev.cityfinance.in`
 ];
 
 const corsOptions = {
@@ -46,6 +48,8 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 
+// 🔒 Apply globally to all API routes
+app.use('/api', maintenanceMiddleware);
 
 app.use(json2xls.middleware);
 //Port Number

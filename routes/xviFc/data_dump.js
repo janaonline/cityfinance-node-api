@@ -3,9 +3,10 @@ const XviFcForm1DataCollection = require("../../models/XviFcFormDataCollection")
 const ExcelJS = require('exceljs');
 // const { xviFcFormData } = require("./temp");
 const { financialYearTableHeader } = require("./form_json");
+const { getDate } = require("../../util/helper");
 
 let baseUrl_s3 = process.env.ENV == "production" ? process.env.AWS_STORAGE_URL_PROD : process.env.AWS_STORAGE_URL_STG;
-let baseUrl = process.env.HOSTNAME + 'resources-dashboard/data-sets/balanceSheet?';
+let baseUrl = process.env.HOSTNAME + '/resources-dashboard/data-sets/balanceSheet?';
 
 let fin_slb_year = {
     financialData_year: "",
@@ -64,6 +65,7 @@ async function getEachTabData(eachTab, obj) {
                 if (index > -1) {
                     if (!tempArr[index]) tempArr[index] = {};
 
+                    tempArr[index]['latestSubmissionDate'] = obj.latestSubmissionDate;
                     tempArr[index].year = uniqueYear[index];
                     tempArr[index]['nameOfUlb'] = obj.nameOfUlb;
                     tempArr[index]['nameOfState'] = obj.nameOfState;
@@ -90,6 +92,7 @@ async function getEachTabData(eachTab, obj) {
                     uniqueYear.push(eachAns["year"]);
                     let tempObj = {};
 
+                    tempObj['latestSubmissionDate'] = obj.latestSubmissionDate;
                     tempObj["year"] = eachAns["year"];
                     tempObj['nameOfUlb'] = obj.nameOfUlb;
                     tempObj['nameOfState'] = obj.nameOfState;
@@ -121,20 +124,37 @@ async function getEachTabData(eachTab, obj) {
     return tempArr.length > 0 ? tempArr : obj;
 }
 
+// Get the latest submission (UNDER_REVIEW_BY_STATE) timestamp from tracker array.
+function getLastestSubmissionTime(tracker = []) {
+    let date = null;
+
+    for (let i = tracker.length - 1; i >= 0; i--) {
+        if (tracker[i].eventName === 'UNDER_REVIEW_BY_STATE') {
+            date = tracker[i].eventDate;
+            break;
+        }
+    }
+
+    return getDate(date);
+}
+
 module.exports.dataDump = async (req, res) => {
     req.setTimeout(500000);
-    let user = req.decoded;
-    let formStatuses = ['UNDER_REVIEW_BY_STATE', 'UNDER_REVIEW_BY_XVIFC', 'APPROVED_BY_XVIFC'];
-    let utIds = ['5dcf9d7216a06aed41c748dc', '5dcf9d7316a06aed41c748e4', '5dcf9d7316a06aed41c748e5', '5dcf9d7316a06aed41c748ea', '5dcf9d7316a06aed41c748ee', '5dcf9d7416a06aed41c748f6', '5efd6a2fb5cd039b5c0cfed2', '5fa25a6e0fb1d349c0fdfbc7'];
-
-    let query = [{ "formStatus": { $in: formStatuses } }];
+    const user = req.decoded;
+    const { stateName } = req.query;
+    const formId = +req.query.formId;
+    const formStatuses = ['UNDER_REVIEW_BY_STATE', 'UNDER_REVIEW_BY_XVIFC', 'APPROVED_BY_XVIFC'];
+    const query = [{ "formStatus": { $in: formStatuses } }];
+    
     if (user.role == 'XVIFC_STATE') query.push({ "state": ObjectId(user.state) });
-    // if (user.role == 'XVIFC') query.push({ 'state': { $nin: utIds } });
+    if (stateName) query.push({ stateName });
+    if ([16, 17].includes(formId)) query.push({ formId: formId });
 
     // Fetch data from database.
-    let xviFcFormData = await XviFcForm1DataCollection.aggregate(
-        [{ $match: { $and: query } }]
-    )
+    const cursor = await XviFcForm1DataCollection
+        .aggregate([{ $match: { $and: query } }])
+        .cursor()
+        .exec();
 
     let demographicDataAllUlbs = [];
     let financialDataAllUlbs = [];
@@ -142,7 +162,12 @@ module.exports.dataDump = async (req, res) => {
     let uploadDocAllUlbs = [];
     let serviceLevelBenchmarkAllUlbs = [];
     let upload_financial = {}; // TODO: to be removed.
-    for (let ulbForm of xviFcFormData) {
+    for (let ulbForm = await cursor.next(); ulbForm != null; ulbForm = await cursor.next()) {
+        // Get lastest submission timestamp.
+        let latestSubmissionDate = null;
+        if (ulbForm.formStatus === 'UNDER_REVIEW_BY_STATE')
+            latestSubmissionDate = getLastestSubmissionTime(ulbForm?.tracker);
+
         fin_slb_year = {
             financialData_year: "",
             yearOfConstitution: "",
@@ -173,6 +198,7 @@ module.exports.dataDump = async (req, res) => {
         // Loop over each tab for particular ULB.
         for (let eachTab of ulbForm.tab) {
             let obj = {};
+            obj["latestSubmissionDate"] = latestSubmissionDate;
             obj["nameOfState"] = ulbForm.stateName;
             obj["nameOfUlb"] = ulbForm.ulbName;
             obj["censusCode"] = Number(ulbForm.censusCode ? ulbForm.censusCode : ulbForm.sbCode);
@@ -221,6 +247,7 @@ module.exports.dataDump = async (req, res) => {
         { header: 'Census Code', key: 'censusCode', width: 12 },
         { header: 'ULB Category', key: 'formId', width: 12 },
         { header: 'Form Status', key: 'formStatus', width: 20 },
+        { header: 'Latest Submission Date', key: 'latestSubmissionDate', width: 15 },
         { header: 'Population as per Census 2011', key: 'pop2011', width: 15 },
         { header: 'Population as per 01 April 2024', key: 'popApril2024', width: 15 },
         { header: 'Area as on 01 April 2024 (in Sq. Km.)', key: 'areaOfUlb', width: 15 },
@@ -239,29 +266,52 @@ module.exports.dataDump = async (req, res) => {
         { header: 'Census Code', key: 'censusCode', width: 12 },
         { header: 'ULB Category', key: 'formId', width: 12 },
         { header: 'Form Status', key: 'formStatus', width: 20 },
+        { header: 'Latest Submission Date', key: 'latestSubmissionDate', width: 15 },
         { header: 'Year', key: 'year', width: 12 },
 
         { header: "In which year was the ULB constituted?", key: "yearByUser", width: 15 },
         { header: "Please select the source of Financial Data", key: "sourceOfFd", width: 15 },
+        { header: "Property Tax", key: "pTax", width: 15 },
+        { header: "Number of registered properties", key: "noOfRegiProperty", width: 15 },
+        { header: "Other Tax", key: "otherTax", width: 15 },
         { header: "Tax Revenue", key: "taxRevenue", width: 15 },
         { header: "Fee and User Charges", key: "feeAndUserCharges", width: 15 },
         { header: "Interest Income", key: "interestIncome", width: 15 },
         { header: "Other Income", key: "otherIncome", width: 15 },
+        { header: "Rental Income from Municipal Properties", key: "rentalIncome", width: 15 },
         { header: "Total Own Revenue", key: "totOwnRevenue", width: 15 },
+        { header: "Centrally Sponsored Schemes (Total Centre and State Share)", key: "centralSponsoredScheme", width: 15 },
+        { header: "Union Finance Commission Grants", key: "unionFinanceGrants", width: 15 },
         { header: "Grants for Centre's Initiatives ", key: "centralGrants", width: 15 },
+        { header: "State Finance Commission Devolution and Grants", key: "sfcGrants", width: 15 },
+        { header: "Grants from State (other than SFC)", key: "grantsOtherThanSfc", width: 15 },
+        { header: "Other grants", key: "grantsWithoutState", width: 15 },
         { header: "Other Grants (including State's grants)", key: "otherGrants", width: 15 },
         { header: "Total Grants", key: "totalGrants", width: 15 },
         { header: "Assigned Revenue and Compensation", key: "assignedRevAndCom", width: 15 },
         { header: "Other Revenue", key: "otherRevenue", width: 15 },
         { header: "Total Revenues", key: "totalRevenue", width: 15 },
+        { header: "Salaries, Bonus and Wages", key: "salaries", width: 15 },
+        { header: "Pension", key: "pension", width: 15 },
+        { header: "Others", key: "otherExp", width: 15 },
         { header: "Establishment Expenses", key: "establishmentExp", width: 15 },
         { header: "Operation and Maintenance Expenditure", key: "oAndmExp", width: 15 },
         { header: "Interest and Finance Charges", key: "interestAndfinacialChar", width: 15 },
         { header: "Other Revenue Expenditure", key: "otherRevenueExp", width: 15 },
+        { header: "Administrative Expenses", key: "adExp", width: 15 },
         { header: "Total Revenue Expenditure", key: "totalRevenueExp", width: 15 },
         { header: "Capital Expenditure", key: "capExp", width: 15 },
         { header: "Total Expenditure", key: "totalExp", width: 15 },
+        { header: "Central and State Government", key: "centralStateBorrow", width: 15 },
+        { header: "Bonds", key: "bonds", width: 15 },
+        { header: "Banks and Financial Institutions", key: "bankAndFinancial", width: 15 },
+        { header: "Others", key: "otherBorrowing", width: 15 },
         { header: "Gross Borrowings", key: "grossBorrowing", width: 15 },
+        { header: "Receivables for Property Tax", key: "receivablePTax", width: 15 },
+        { header: "Receivables for Fee and User Charges", key: "receivableFee", width: 15 },
+        { header: "Other Receivables", key: "otherReceivable", width: 15 },
+        { header: "Total Receivables", key: "totalReceivable", width: 15 },
+        { header: "Total Cash and Bank Balance", key: "totalCashAndBankBal", width: 15 },
 
         { header: "Copy of Audited Annual Financial Statements URL", key: "auditedAnnualFySt", width: 15 },
         { header: "Is PDF Available on CityFinance", key: "isPdfAvailable", width: 15 },
@@ -279,6 +329,7 @@ module.exports.dataDump = async (req, res) => {
         { header: 'Census Code', key: 'censusCode', width: 12 },
         { header: 'ULB Category', key: 'formId', width: 12 },
         { header: 'Form Status', key: 'formStatus', width: 20 },
+        { header: 'Latest Submission Date', key: 'latestSubmissionDate', width: 15 },
         // { header: 'Year', key: 'year', width: 12 },
 
         { header: "What is the accounting system being followed by the ULB?", key: "accSystem", width: 15 },
@@ -310,6 +361,7 @@ module.exports.dataDump = async (req, res) => {
         { header: 'Census Code', key: 'censusCode', width: 12 },
         { header: 'ULB Category', key: 'formId', width: 12 },
         { header: 'Form Status', key: 'formStatus', width: 20 },
+        { header: 'Latest Submission Date', key: 'latestSubmissionDate', width: 15 },
         { header: 'Year', key: 'year', width: 12 },
 
         { header: "In which year was the ULB constituted?", key: "yearByUser", width: 15 },
@@ -372,6 +424,7 @@ module.exports.dataDump = async (req, res) => {
         { header: 'Census Code', key: 'censusCode', width: 12 },
         { header: 'ULB Category', key: 'formId', width: 12 },
         { header: 'Form Status', key: 'formStatus', width: 20 },
+        { header: 'Latest Submission Date', key: 'latestSubmissionDate', width: 15 },
         { header: 'Year', key: 'year', width: 12 },
 
         { header: "From which year is Service Level Benchmark data available?", key: "yearByUser", width: 15 },
