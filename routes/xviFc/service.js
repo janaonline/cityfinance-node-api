@@ -350,8 +350,8 @@ async function getForm1(ulbData, stateData, roleName, submittedData) {
         demographicTabIndex = from1AnswerFromDb.tab.findIndex((x) => { return x.tabKey == "demographicData" });
         if (demographicTabIndex > -1) {
             IndexOfYearOfConstitution = from1AnswerFromDb.tab[demographicTabIndex].data.findIndex((x) => { return x.key == "yearOfConstitution" });
-            if(IndexOfYearOfConstitution>-1){
-             frontendYear_Fd = from1AnswerFromDb.tab[demographicTabIndex].data[IndexOfYearOfConstitution].saveAsDraftValue;
+            if (IndexOfYearOfConstitution > -1) {
+                frontendYear_Fd = from1AnswerFromDb.tab[demographicTabIndex].data[IndexOfYearOfConstitution].saveAsDraftValue;
             }
         }
     }
@@ -602,8 +602,8 @@ async function getForm2(ulbData, stateData, roleName, submittedData) {
         demographicTabIndex = from2AnswerFromDb.tab.findIndex((x) => { return x.tabKey == "demographicData" });
         if (demographicTabIndex > -1) {
             IndexOfYearOfConstitution = from2AnswerFromDb.tab[demographicTabIndex].data.findIndex((x) => { return x.key == "yearOfConstitution" });
-            if(IndexOfYearOfConstitution){
-              frontendYear_Fd = from2AnswerFromDb.tab[demographicTabIndex].data[IndexOfYearOfConstitution].saveAsDraftValue;
+            if (IndexOfYearOfConstitution) {
+                frontendYear_Fd = from2AnswerFromDb.tab[demographicTabIndex].data[IndexOfYearOfConstitution].saveAsDraftValue;
             }
             // Get index of year of slb.
             IndexOfYearOfSlb = from2AnswerFromDb.tab[demographicTabIndex].data.findIndex((x) => { return x.key == "yearOfSlb" });
@@ -2607,6 +2607,6 @@ async function getFormStatusSummary(reviewTableData) {
 
     const formStatusRes = Object.values(formStatusResMap);
     formStatusRes.sort((a, b) => a.stateName.localeCompare(b.stateName));
-    
+
     return formStatusRes;
 };

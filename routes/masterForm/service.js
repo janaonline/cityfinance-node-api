@@ -4286,7 +4286,7 @@ const stateULB = (state) => {
     // console.log(util.inspect(query, { showHidden: false, depth: null }))
     let stateULB = await Ulb.aggregate(query);
     // console.log(stateULB)
-    // let stateULB = await Ulb.find({ state }).count();
+    // let stateULB = await Ulb.find({ state }).countDocuments();
     // console.log(stateULB)
     res(stateULB?.[0]?.count);
   });
