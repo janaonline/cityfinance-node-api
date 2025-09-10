@@ -820,7 +820,8 @@ const updatestateGsdpTemplate = async (req, res, next, worksheet, workbook) => {
                                         "year": gsdpYear,
                                         "constantPrice": stateGsdpConstantPrices[index],
                                         "currentPrice": stateGsdpCurrentPrices[index],
-                                        "updatedOn": new Date()
+                                        "updatedOn": new Date(),
+                                        "designYear": ObjectId(req.body.design_year),
                                     }
                                 }
                             },
@@ -841,7 +842,8 @@ const updatestateGsdpTemplate = async (req, res, next, worksheet, workbook) => {
                                     "year": gsdpYear,
                                     "constantPrice": stateGsdpConstantPrices[index],
                                     "currentPrice": stateGsdpCurrentPrices[index],
-                                    "updatedOn": new Date()
+                                    "updatedOn": new Date(),
+                                    "designYear": ObjectId(req.body.design_year),
                                 }
                             ],
                         }
