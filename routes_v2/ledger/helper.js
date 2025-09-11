@@ -76,7 +76,18 @@ const totAssets = {
 const OperSurplusTotRevenueExpenditure = {
   name: "Operating Surplus",
   key: "OperSurplusTotRevenueExpenditure",
-  lineItems: ["200", "210", "220", "230", "250", "260","270","271","280","290"],
+  lineItems: [
+    "200",
+    "210",
+    "220",
+    "230",
+    "250",
+    "260",
+    "270",
+    "271",
+    "280",
+    "290",
+  ],
 };
 // Normalize values: "N/A", null/undefined, non-numeric -> null, else Number
 const normalize = (val) => {
@@ -138,7 +149,7 @@ const formatToCrore = (value) => {
   //   minimumFractionDigits: 2,
   //   maximumFractionDigits: 2,
   // });
-  return croreVal
+  return croreVal;
 };
 const formatToCroreSummary = (value) => {
   if (typeof value !== "number" || !Number.isFinite(value)) return "N/A";
@@ -684,11 +695,156 @@ const getInfoHTML = (indicator) => {
     <p ${questionClass}>2. How is it calculated?</p>
     <p ${answerClassOne}><strong>Cash and Bank Balance and investments (general and other funds) over Revenue Expenditure prior to depreciation</strong></p>
 </div>
-`
+`,
   };
 
   return content[indicator] || ""; // Return empty string if not found
 };
+
+//comapreby page function
+// Key numbers and ratios
+// Receipts
+// Tax Revenue
+// Expenditure
+// Assets
+// Liabilities
+// Debt
+const CompareBygroupIndicators =[
+  {
+    "label": "Key Numbers & Ratios",
+    "key": "keyNumbers",
+    "indicators": [
+      { "name": "Total Revenue Receipts", "key": "totRevenue" },
+      { "name": "Total Own Source Revenue", "key": "totOwnRevenue" },
+      { "name": "Total Expenditure", "key": "totExpenditure" },
+      { "name": "Total Revenue Expenditure", "key": "totRevenueExpenditure" },
+      { "name": "Total Expenditure to Total Revenue Receipts", "key": "totExpenditureByTotRevenue" },
+      { "name": "Own Source Revenue to Total Revenue Receipts", "key": "totOwnRevenueByTotRevenue" },
+      { "name": "Revenue Grants to Total Revenue Receipts", "key": "grantsByTotRevenue" },
+      { "name": "Total Expenditure to Own Source Revenue", "key": "totExpenditureByTotOwnRevenue" },
+      { "name": "Capital Expenditure to Total Expenditure", "key": "capitalExpenditureByTotExpenditure" },
+      { "name": "Own Source Revenue to Revenue Expenditure (%)", "key": "totOwnRevenueByTotRevenueExpenditure" },
+      { "name": "Total Debt", "key": "totDebt" },
+      { "name": "Total Assets", "key": "totAssets" },
+      { "name": "Debt to Assets Ratio", "key": "totDebtByTotAssets" },
+      { "name": "Interest Service Coverage Ratio", "key": "iscrRatio" },
+      { "name": "Quick Assets Ratio", "key": "qaRatio" }
+    ]
+  },
+  {
+    "label": "Receipts",
+    "key": "receipts",
+    "indicators": [
+      { "name": "Tax Revenue", "key": "110" },
+      { "name": "Assigned Revenue", "key": "120" },
+      { "name": "Rental Income from Municipal properties", "key": "130" },
+      { "name": "Fees, User Charges & Other Charges", "key": "140" },
+      { "name": "Sale and Hire charges", "key": "150" },
+      { "name": "Revenue Grants, Contributions and Subsidies", "key": "160" },
+      { "name": "Income from Investments", "key": "170" },
+      { "name": "Interest Earned", "key": "171" },
+      { "name": "Other Income", "key": "180" },
+      { "name": "Others", "key": "100" }
+    ]
+  },
+  {
+    "label": "Tax Revenue",
+    "key": "taxRevenue",
+    "indicators": [
+      { "name": "Establishment Expenses", "key": "210" },
+      { "name": "Administrative Expenses", "key": "220" },
+      { "name": "Operation & Maintenance Expenses", "key": "230" },
+      { "name": "Interest and Finance Charges", "key": "240" },
+      { "name": "Program Expenses", "key": "250" },
+      { "name": "Revenue Grants, Contributions & Subsidies (Exp)", "key": "260" },
+      { "name": "Provisions & Write offs", "key": "270" },
+      { "name": "Miscellaneous Expenses", "key": "271" },
+      { "name": "Depreciation", "key": "272" },
+      { "name": "Prior Period Income", "key": "280" },
+      { "name": "Transfer to Reserve Funds", "key": "290" },
+      { "name": "Others", "key": "200" }
+    ]
+  },
+  {
+    "label": "Expenditure",
+    "key": "expenditure",
+    "indicators": [
+      { "name": "Municipal (General) Fund", "key": "310" },
+      { "name": "Earmarked Funds", "key": "311" },
+      { "name": "Reserves", "key": "312" },
+      { "name": "Grants and Contributions for specific purposes", "key": "320" },
+      { "name": "Secured Loans", "key": "330" },
+      { "name": "Unsecured Loans", "key": "331" },
+      { "name": "Deposits Received", "key": "340" },
+      { "name": "Deposit Works", "key": "341" },
+      { "name": "Other Liabilities (Sundry Creditors)", "key": "350" },
+      { "name": "Provisions", "key": "360" },
+      { "name": "Others", "key": "300" }
+    ]
+  },
+  {
+    "label": "Assets",
+    "key": "assets",
+    "indicators": [
+      { "name": "Gross Block", "key": "410" },
+      { "name": "Accumulated Depreciation", "key": "411" },
+      { "name": "Capital Work in Progress", "key": "412" },
+      { "name": "Investment - General Funds", "key": "420" },
+      { "name": "Investment - Other Funds", "key": "421" },
+      { "name": "Stock in Hand (Inventories)", "key": "430" },
+      { "name": "Sundry Debtors", "key": "431" },
+      { "name": "Accumulated Provisions against Bad and Doubtful Receivables", "key": "432" },
+      { "name": "Prepaid Expenses", "key": "440" },
+      { "name": "Cash and Bank Balance", "key": "450" },
+      { "name": "Loans, Advances and Deposits", "key": "460" },
+      { "name": "Other Assets", "key": "470" },
+      { "name": "Miscellaneous Expenditure to be written off", "key": "480" },
+      { "name": "Others", "key": "400" }
+    ]
+  },
+  {
+    "label": "Liabilities",
+    "key": "liabilities",
+    "indicators": [
+      { "name": "Property Tax", "key": "11001" },
+      { "name": "Water Supply and Drainage Tax", "key": "11002" },
+      { "name": "Sewerage Tax", "key": "11003" },
+      { "name": "Conservancy Tax", "key": "11004" },
+      { "name": "Lighting Tax", "key": "11005" },
+      { "name": "Education Tax", "key": "11006" },
+      { "name": "Vehicle Tax", "key": "11007" },
+      { "name": "Tax on Animals", "key": "11008" },
+      { "name": "Electricity Tax", "key": "11009" },
+      { "name": "Professional Tax", "key": "11010" },
+      { "name": "Entertainment Tax", "key": "11011" },
+      { "name": "Advertisement Tax", "key": "11012" },
+      { "name": "Pilgrimage Tax", "key": "11013" },
+      { "name": "Octroi & Toll", "key": "11014" },
+      { "name": "Cess", "key": "11015" },
+      { "name": "Tax on Carts", "key": "11016" },
+      { "name": "Tax Remission & Refund", "key": "11017" },
+      { "name": "Others", "key": "11018" }
+    ]
+  },
+  {
+    "label": "Debt",
+    "key": "debt",
+    "indicators": [
+      { "name": "Loans from Central Government", "key": "33001" },
+      { "name": "Loans from State Government", "key": "33002" },
+      { "name": "Loans from Financial Institutions including Banks", "key": "33003" },
+      { "name": "Bonds and Other Debt Instruments", "key": "33004" },
+      { "name": "Others", "key": "33000" },
+      { "name": "Loans from Central Government", "key": "33101" },
+      { "name": "Loans from State Government", "key": "33102" },
+      { "name": "Loans from Financial Institutions including Banks", "key": "33103" },
+      { "name": "Bonds and Other Debt Instruments", "key": "33104" },
+      { "name": "Others", "key": "33100" }
+    ]
+  }
+]
+
+
 
 export default {
   normalize,
@@ -716,4 +872,5 @@ export default {
   getYearGrowth,
   getFormattedLineItemSumByYear,
   getInfoHTML,
+  CompareBygroupIndicators
 };

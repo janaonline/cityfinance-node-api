@@ -1,4 +1,5 @@
 const ledgerLog = require("../../models/LedgerLog");
+const ulb= require("../../models/Ulb");
 const IndicatorsModel = require("../../models/ledgerIndicators");
 const {
   formatToCroreSummary,
@@ -24,6 +25,7 @@ const {
   computeDeltaCapex,
   getYearGrowth,
   getInfoHTML,
+  CompareBygroupIndicators,
 } = require("./helper").default;
 const mongoose = require("mongoose");
 
@@ -1089,8 +1091,7 @@ async function getIntro(indicators, keyType, yearsArray) {
       )} crore and a total expenditure of Rs ${formatToCroreSummary(
         totRevenueExpenditure.value
       )} crore, implying that its expenditure accounted for ${Math.round(
-        (totRevenueExpenditure.value / totRevenueData.value) *
-        100
+        (totRevenueExpenditure.value / totRevenueData.value) * 100
       )}% of its revenue`;
     }
     case "revenue": {
@@ -1519,22 +1520,154 @@ async function buildFaqPipeline({ year, ulbId, state }) {
 }
 
 module.exports.accumulateIndicators = accumulateIndicators;
+
+//compare by apis
+function toArray(v) {
+  if (Array.isArray(v)) return v;
+  if (v == null) return [];
+  return [v];
+}
 module.exports.getCompareByIndicators = async (req, res) => {
   try {
-    const { ulbIds, years, keyType } = req.query;
-
-    if (
-      !Array.isArray(ulbIds) ||
-      !Array.isArray(years) ||
-      !Array.isArray(keyType)
-    ) {
+    const ulbIds = toArray(req.query.ulbIds);
+    const years = toArray(req.query.years);
+    const keyType = toArray(req.query.keyType);
+    // console.log(req.query, "this is query");
+    if (!ulbIds.length || !years.length || !keyType.length) {
+      return res.status(400).json({
+        message:
+          "ulbIds, years, and keyType must be arrays with at least one value",
+      });
+    }
+    const ulbIdArr = ulbIds.map((id) => {
+      if (ObjectId.isValid(id)) return ObjectId(id);
+      else return null;
+    });
+    const pipeLine = [
+      {
+        $match: {
+          ulb_id: {
+            $in: ulbIdArr,
+          },
+          year: {
+            $in: years,
+          },
+        },
+      },
+      {
+        $project: {
+          ulb: 1,
+          ulb_id: 1,
+          year: 1,
+          lineItems: 1,
+          indicators: 1,
+        },
+      },
+    ];
+    //  console.log(JSON.stringify(pipeLine, null, 2),'this is pipeline');
+    const records = await ledgerLog.aggregate(pipeLine);
+    const toUnderscoreYear = (y) => String(y).trim().replaceAll("-", "_"); // "2020-21" -> "2020_21"
+    const toHyphenYear = (y) => String(y).trim().replaceAll("_", "-"); // "2020_21" -> "2020-21"
+    const yearsHyphen = years.map(toHyphenYear); // db usually stores "2020-21"
+    const yearsUnder = years.map(toUnderscoreYear); // for column keys "2020_21"
+    const keyTypeIn = keyType[0];
+    const group = CompareBygroupIndicators.find((g) => g.key === keyTypeIn);
+    if (!group) {
       return res
         .status(400)
-        .json({ message: "ulbIds, years, and keyType must be arrays" });
+        .json({ message: `Unknown keyType '${keyTypeIn}'.` });
     }
-    console.log(ulbIds, years, keyType, "this is params");
+    const recordMap = new Map();
+    for (const r of records) {
+      const key = `${String(r.ulb_id)}_${toUnderscoreYear(r.year)}`;
+      recordMap.set(key, r);
+    }
+    const baseHeaders = [
+      { key: "indicator", label: "Indicator" },
+      ...ulbIds.flatMap((ulbId) =>
+        yearsUnder.map((yUnderscore, idx) => ({
+          key: `${ulbId}_${yUnderscore}`,
+          label: yearsHyphen[idx],
+        }))
+      ),
+    ];
+    const results = keyType.map((kt) => {
+      const group = CompareBygroupIndicators.find((g) => g.key === kt);
+      if (!group) return { keyType: kt, error: "Unknown keyType" };
+
+      const data = group.indicators.map((def) => {
+        const row = { indicator: def.name };
+
+        for (let i = 0; i < ulbIds.length; i++) {
+          const ulbId = ulbIds[i];
+          for (let j = 0; j < yearsUnder.length; j++) {
+            const colKey = `${ulbId}_${yearsUnder[j]}`;
+            const rec = recordMap.get(colKey);
+            const source =
+              group.key === "keyNumbers" ? rec?.indicators : rec?.lineItems;
+
+            const raw =
+              source && Object.prototype.hasOwnProperty.call(source, def.key)
+                ? source[def.key]
+                : null;
+
+            row[colKey] = raw === null || raw === undefined ? "N/A" : raw;
+          }
+        }
+        return row;
+      });
+
+      return { keyType: kt, headers: baseHeaders, data };
+    });
+
+    return res.status(200).json(results);
   } catch (error) {
     console.error("Error fetching compare by indicators:", error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+module.exports.getIndicatorsNameCompareByPage = async (req, res) => {
+  try {
+    const data = CompareBygroupIndicators.map((group) => ({
+      label: String(group?.label ?? ""),
+      key: String(group?.key ?? ""),
+      isActive: false,
+      children: Array.isArray(group?.indicators)
+        ? group.indicators.map((ind) => ({
+            key: String(ind?.key ?? ""),
+            label: String(ind?.name ?? ""),
+            isActive: false,
+          }))
+        : [],
+    }));
+
+    return res.status(200).json({ data });
+  } catch (error) {
+    console.error("Error fetching indicators comparison:", error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+module.exports.getUlbDetailsById = async (req, res) => {
+  try {
+    const { ulbId } = req.query;  // expect ?ulbId=66e1748d3b.... style string
+
+    if (!ulbId) {
+      return res.status(400).json({ message: "ulbId is required" });
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(ulbId)) {
+      return res.status(400).json({ message: "Invalid ulbId" });
+    }
+
+    const ulbDetails = await ulb.findById(ulbId).exec();
+
+    if (!ulbDetails) {
+      return res.status(404).json({ message: "ULB not found" });
+    }
+
+    return res.status(200).json({ulbDetails });
+  } catch (error) {
+    console.error("Error fetching ULB details by ID:", error);
     res.status(500).json({ message: "Internal Server Error" });
   }
 };
