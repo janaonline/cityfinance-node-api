@@ -2,14 +2,21 @@ require('./dbConnect');
 const mongoose = require('mongoose');
 const { Schema } = mongoose;
 
-const EventsSchema = new Schema(
+const EventRegistrationssSchema = new Schema(
   {
-    eventId: {
+    eventCode: {
       type: String,
       required: true,
       trim: true,
       index: true,
     },
+    // TODO: uncomment once events collection is added.
+    // eventId: {
+    //   type: Schema.Types.ObjectId,
+    //   ref: 'EventForm',
+    //   required: true,
+    //   index: true,
+    // },
     userName: {
       type: String,
       required: true,
@@ -35,9 +42,13 @@ const EventsSchema = new Schema(
     preSubmitQuestion: {
       type: String,
       trim: true,
+    },
+    hasAttended: {
+      type: Boolean,
+      index: true,
     }
   },
   { timestamps: true }
 );
 
-module.exports = mongoose.model('Event', EventsSchema);
+module.exports = mongoose.model('EventRegistration', EventRegistrationssSchema);

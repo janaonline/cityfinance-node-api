@@ -1,5 +1,5 @@
 const FormsJson = require("../../models/FormsJson");
-const Events = require("../../models/Event");
+const EventRegistration = require("../../models/EventRegistration");
 const formJsonService = require('../../service/formJsonService');
 const { generateExcel } = require('../utils/downloadService');
 const { sendEmail } = require('../../service');
@@ -44,13 +44,13 @@ module.exports.postData = async (req, res) => {
 
     // If there are no failed validations, proceed with updating the record.
     if (failedValidations.length === 0) {
-      const newUser = new Events(req.body);
+      const newUser = new EventRegistration(req.body);
       const updateResult = await newUser.save();
 
       if (!updateResult?._id) throw new Error('Failed to save data.');
 
       // send email to user.
-      sendEmailFn(req.body.email);
+      sendEmailFn([req.body.email], updateResult?._id);
 
       return res.status(200).json({
         status: true,
@@ -73,9 +73,10 @@ module.exports.postData = async (req, res) => {
   }
 };
 
-const sendEmailFn = (emailId) => {
+const sendEmailFn = (emailId, documentId) => {
   const pattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
   const result = pattern.test(emailId);
+  // TODO ADD in db
   if (!result) return;
 
   const email = getEmailContent();
@@ -97,7 +98,9 @@ const sendEmailFn = (emailId) => {
     ReplyToAddresses: [process.env.EMAIL],
   };
 
-  sendEmail(mailOptions);
+  // returns SES.Types.SendEmailResponse || AWSError
+  const response = sendEmail(mailOptions);
+  // TODO stringify and add in DB??
 };
 
 const getEmailContent = () => {
@@ -145,7 +148,7 @@ module.exports.getDump = async (req, res) => {
     { key: 'preSubmitQuestion', label: 'Pre-submit a question for the event (optional)' },
     { key: 'createdAt', label: 'Created At' },
   ]
-  const rowsData = await Events.find({}).lean();
+  const rowsData = await EventRegistration.find({}).lean();
 
   try {
     const buffer = await generateExcel(headers, rowsData, sheetName);

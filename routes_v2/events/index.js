@@ -3,8 +3,8 @@ const router = express.Router();
 const { verifyToken } = require("../../routes/auth/services/verifyToken");
 const service = require("./service");
 
-router.get('/getForm', verifyToken, service.getForm);
-router.post('/postData', verifyToken, service.postData);
-router.get('/getDataDump', service.getDump);
+router.get('/getRegistrationForm', verifyToken, service.getForm);
+router.post('/postRegistrationData', verifyToken, service.postData);
+router.get('/getRegistrationDataDump', service.getDump);
 
 module.exports = router;
