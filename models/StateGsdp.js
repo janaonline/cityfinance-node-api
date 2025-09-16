@@ -17,7 +17,11 @@ const dataSchema = new Schema({
         type: Date,
         default: Date.now()
     },
-
+    designYear: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Year',
+        required: true,
+    },
 });
 
 const stateDataSchema = new mongoose.Schema({
