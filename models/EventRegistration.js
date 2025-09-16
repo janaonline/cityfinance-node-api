@@ -17,6 +17,11 @@ const EventRegistrationssSchema = new Schema(
     //   required: true,
     //   index: true,
     // },
+    userId: {
+      type: Schema.Types.ObjectId,
+      ref: 'User',
+      index: true,
+    },
     userName: {
       type: String,
       required: true,
@@ -46,6 +51,7 @@ const EventRegistrationssSchema = new Schema(
     hasAttended: {
       type: Boolean,
       index: true,
+      default: false,
     }
   },
   { timestamps: true }
