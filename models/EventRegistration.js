@@ -55,7 +55,12 @@ const EventRegistrationssSchema = new Schema(
       type: Boolean,
       index: true,
       default: false,
-    }
+    },
+    waslastEmailSuccess: {
+      type: Boolean,
+      index: true,
+      default: false,
+    },
   },
   { timestamps: true }
 );

@@ -52,13 +52,9 @@ module.exports.postData = async (req, res) => {
       if (!updateResult?._id) throw new Error('Failed to save data.');
 
       // send email to user.
-      sendEmailFn([req.body.email], updateResult?._id);
+      const response = await sendEmailFn([req.body.email], updateResult?._id);
 
-      return res.status(200).json({
-        status: true,
-        message: 'Successfully updated data!',
-        data: failedValidations,
-      });
+      return res.status(response.success ? 200 : 400).json(response);
     } else
       return res.status(400).json({
         status: false,
@@ -124,8 +120,21 @@ module.exports.readExcelAndSendMail = async (req, res) => {
       // ExcelJS rows are 1-indexed
       // Order in excel file matters.
       const [eventCode, userName, designation, email, phoneNumber, preSubmitQuestion] = row.values.slice(1);
-      registrations.push({ eventCode, userName, designation, email, phoneNumber, preSubmitQuestion });
-      
+
+      // Send email.
+      const response = await sendEmailFn([email]);
+
+      // Add to registrations arr - push to Db.
+      registrations.push({
+        eventCode,
+        userName,
+        designation,
+        email,
+        phoneNumber,
+        preSubmitQuestion,
+        waslastEmailSuccess: response.success,
+      });
+
     });
 
     const dbRes = await EventRegistration.insertMany(registrations, { ordered: false });

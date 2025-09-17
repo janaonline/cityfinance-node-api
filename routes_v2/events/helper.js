@@ -1,17 +1,18 @@
+const dns = require('dns').promises;
 const { sendEmail } = require('../../service/email-v2');
+const EMAIL_PATTERN = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 
 // Takes recipientEmails[], sender Id: update@... 
 const sendEmailFn = async (recipientEmails) => {
-    const emailPattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-
     // Validate email list
-    const invalidEmails = recipientEmails.filter(email => !emailPattern.test(email));
-    if (invalidEmails.length > 0) {
-        console.error("Invalid email addresses found:", invalidEmails);
+    // Check valid domain/ email.
+    const validateEmailsRes = await validateEmails(recipientEmails);
+    if (!validateEmailsRes.success) {
         return {
             success: false,
-            message: "One or more recipient email addresses are invalid.",
-            invalidEmails,
+            message: "Some emails are invalid.",
+            invalidFormatEmails: validateEmailsRes.invalidFormatEmails,
+            invalidDomainEmails: validateEmailsRes.invalidDomainEmails,
         };
     }
 
@@ -71,6 +72,45 @@ const sendEmailFn = async (recipientEmails) => {
         };
     }
 };
+
+// Takes recipientEmails[], validate each email.
+async function validateEmails(recipientEmails) {
+    const invalidFormatEmails = [];
+    const invalidDomainEmails = [];
+
+    for (const email of recipientEmails) {
+        if (!EMAIL_PATTERN.test(email)) {
+            invalidFormatEmails.push(email);
+            continue;
+        }
+
+        const domain = email.split('@')[1];
+
+        try {
+            const mxRecords = await dns.resolveMx(domain);
+            if (!mxRecords || mxRecords.length === 0) {
+                invalidDomainEmails.push(email);
+            }
+        } catch (err) {
+            // Domain doesn't exist or DNS error
+            invalidDomainEmails.push(email);
+        }
+    }
+
+    if (invalidFormatEmails.length > 0 || invalidDomainEmails.length > 0) {
+        return {
+            success: false,
+            message: "Some emails are invalid.",
+            invalidFormatEmails,
+            invalidDomainEmails,
+        };
+    }
+
+    return {
+        success: true,
+        message: "All emails are valid.",
+    };
+}
 
 // Helper: Create email conent.
 // TODO: Fetch this from DB.
