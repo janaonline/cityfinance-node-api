@@ -8,6 +8,7 @@
     "start": "node server"
   },
   "dependencies": {
+    "@aws-sdk/client-ses": "^3.890.0",
     "@azure/storage-blob": "^12.17.0",
     "adm-zip": "^0.5.1",
     "aws-sdk": "^2.1250.0",

@@ -6,5 +6,6 @@ const service = require("./service");
 router.get('/getRegistrationForm', verifyToken, service.getForm);
 router.post('/postRegistrationData', verifyToken, service.postData);
 router.get('/getRegistrationDataDump', service.getDump);
+router.post('/importRegistrations', service.readExcelAndSendMail);
 
 module.exports = router;

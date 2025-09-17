@@ -10,13 +10,11 @@ const EventRegistrationssSchema = new Schema(
       trim: true,
       index: true,
     },
-    // TODO: uncomment once events collection is added.
-    // eventId: {
-    //   type: Schema.Types.ObjectId,
-    //   ref: 'EventForm',
-    //   required: true,
-    //   index: true,
-    // },
+    eventId: {
+      type: Schema.Types.ObjectId,
+      ref: 'EventForm',
+      index: true,
+    },
     userId: {
       type: Schema.Types.ObjectId,
       ref: 'User',
@@ -49,6 +47,11 @@ const EventRegistrationssSchema = new Schema(
       trim: true,
     },
     hasAttended: {
+      type: Boolean,
+      index: true,
+      default: false,
+    },
+    hasUnsubscribed: {
       type: Boolean,
       index: true,
       default: false,
