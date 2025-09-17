@@ -214,6 +214,28 @@ const validate = (data, role, _id) => {
                         message: "Department contact number already taken."
                     }
                 ],
+                AFS_ADMIN: [
+                    {
+                        key: "mobile",
+                        type: "mobile",
+                        message: "Mobile number already taken."
+                    },
+                    {
+                        key: "email",
+                        type: "email",
+                        message: "Email already taken."
+                    },
+                    {
+                        key: "departmentEmail",
+                        type: "email",
+                        message: "Department email already taken."
+                    },
+                    {
+                        key: "departmentContactNumber",
+                        type: "mobile",
+                        message: "Department contact number already taken."
+                    }
+                ],
                 STATE_DASHBOARD: [
                     {
                         key: "mobile",
