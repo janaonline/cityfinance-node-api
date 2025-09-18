@@ -116,13 +116,13 @@ module.exports.getAll = async (req, res) => {
         actionAllowed = ['ADMIN', 'MoHUA', 'PARTNER', 'STATE'];
         if (filter["sbCode"]) {
             let code = filter["sbCode"];
-            const dataWithCensusCodeQuery =  Ulb.findOne(
+            const dataWithCensusCodeQuery = Ulb.findOne(
                 {
-                    censusCode: {$regex: `^${code}`, $options: 'i' }
-                },{censusCode:1}).lean();
+                    censusCode: { $regex: `^${code}`, $options: 'i' }
+                }, { censusCode: 1 }).lean();
             // let dataWithSbCodeQuery = User.findOne({sbCode: code},{sbCode:1}).lean();
             const [dataWithCensusCode] = await Promise.all([dataWithCensusCodeQuery]);
-            if(dataWithCensusCode){
+            if (dataWithCensusCode) {
                 filter['censusCode'] = code
                 delete filter["sbCode"];
             }
@@ -131,7 +131,7 @@ module.exports.getAll = async (req, res) => {
             //   delete filter["sbCode"];
             //   filter["censusCode"] = code;
             // }
-          }
+        }
         let access = Constants.USER.LEVEL_ACCESS;
 
         if (!role) {
@@ -263,7 +263,7 @@ module.exports.getAll = async (req, res) => {
                             isDeleted: "$user.isDeleted"
                         }
                     },
-  
+
                 ];
                 let q2 = [
                     { $match: query },
@@ -349,7 +349,7 @@ module.exports.getAll = async (req, res) => {
                             departmentContactNumber: 1,
                             departmentEmail: 1,
                             address: 1,
-                            isActive:1,
+                            isActive: 1,
                             state: {
                                 $cond: [
                                     { $eq: ['$state._id', ''] },
@@ -392,7 +392,7 @@ module.exports.getAll = async (req, res) => {
                             accountantEmail: 1,
                             accountantName: 1,
                             mobile: 1,
-                            isDeleted:1
+                            isDeleted: 1
                         }
                     },
 
@@ -416,15 +416,15 @@ module.exports.getAll = async (req, res) => {
                 }
                 if (csv) {
                     let arr;
-                    if(role ===  "ULB"){
-                     arr = await Ulb.aggregate(q).exec();
+                    if (role === "ULB") {
+                        arr = await Ulb.aggregate(q).exec();
                     } else {
                         arr = await User.aggregate(q2).exec();
                     }
                     let field = {};
-                    if(role === "ULB"){
+                    if (role === "ULB") {
                         Object.assign(field, {
-                          ulbName: "ULB Name"
+                            ulbName: "ULB Name"
                         });
                     }
                     if (['STATE'].indexOf(role) > -1) {
@@ -525,7 +525,7 @@ module.exports.getAll = async (req, res) => {
                         message: 'User list',
                         data: users,
                         count: users.length,
-                        total: totalUsers.length > 0  ? totalUsers[0]['total'] : null 
+                        total: totalUsers.length > 0 ? totalUsers[0]['total'] : null
                     });
                 }
             } catch (e) {
@@ -651,18 +651,18 @@ module.exports.profileUpdate = async (req, res) => {
                         { _id: userInfo._id },
                         { $set: obj }
                     );
-                    if(body.hasOwnProperty('isActive') && out && userInfo.role == 'ULB'){
+                    if (body.hasOwnProperty('isActive') && out && userInfo.role == 'ULB') {
                         const model = MODEL_CONSTANT[userInfo.role];
                         const userId = userInfo[USER_ROLE[userInfo.role]]
                         //setitng isActive true or false based on body provided
                         const updatedUser = await model.findOneAndUpdate({
                             _id: userId
                         },
-                        {
-                            $set:{
-                                isActive: body.isActive
-                            }
-                        }).lean()
+                            {
+                                $set: {
+                                    isActive: body.isActive
+                                }
+                            }).lean()
                         // console.log("updatedUser",updatedUser)
                     }
                     let mail = await Service.emailTemplate.sendProfileUpdateStatusEmail(
@@ -757,7 +757,13 @@ module.exports.create = async (req, res) => {
                 : '';
             newUser.createdBy = user._id;
             newUser.isEmailVerified = true;
-            let u = await User.findOne({ email: data['email'], role: { $in: ['MoHUA', 'USER', 'PARTNER', 'STATE','XVIFC_STATE', 'XVIFC'] } }).exec()
+            let u = await User.findOne(
+                {
+                    email: data['email'],
+                    // role: {
+                    //     $in: ['MoHUA', 'USER', 'PARTNER', 'STATE', 'XVIFC_STATE', '', 'XVIFC']
+                    // }
+                }).exec()
             if (u) {
                 return Response.BadRequest(
                     res,
@@ -792,29 +798,29 @@ module.exports.create = async (req, res) => {
                     //     subject: template.subject,
                     //     html: template.body
                     // };
-                    let    mailOptions =     {
+                    let mailOptions = {
                         Destination: {
-                          /* required */
-                          ToAddresses: [user.email]
+                            /* required */
+                            ToAddresses: [user.email]
                         },
                         Message: {
-                          /* required */
-                          Body: {
                             /* required */
-                            Html: {
-                              Charset: "UTF-8",
-                              Data:  template.body
+                            Body: {
+                                /* required */
+                                Html: {
+                                    Charset: "UTF-8",
+                                    Data: template.body
+                                },
                             },
-                          },
-                          Subject: {
-                            Charset: 'UTF-8',
-                            Data:template.subject
-                          }
+                            Subject: {
+                                Charset: 'UTF-8',
+                                Data: template.subject
+                            }
                         },
                         Source: process.env.EMAIL,
                         /* required */
                         ReplyToAddresses: [process.env.EMAIL],
-                      }
+                    }
                     Service.sendEmail(mailOptions);
                     return Response.OK(res, user, 'User registered');
                 }
@@ -960,13 +966,13 @@ module.exports.ulbSignupAction = async (req, res) => {
     }
 };
 
-module.exports.userVerification2223 = async(req,res)=> {
+module.exports.userVerification2223 = async (req, res) => {
     let user = req.body.user;
-    await User.findOneAndUpdate({_id: ObjectId(user)}, {isVerified2223: true})
-return res.json({
-    success: true,
-    message:"User Verified"
-})
+    await User.findOneAndUpdate({ _id: ObjectId(user) }, { isVerified2223: true })
+    return res.json({
+        success: true,
+        message: "User Verified"
+    })
 }
 
 module.exports.getNodalOfficers = async (req, res) => {
