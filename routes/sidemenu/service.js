@@ -830,8 +830,8 @@ module.exports.post = catchAsync(async (req, res) => {
     position: data.position,
     year: ObjectId(data.year),
     code: code,
-    icon: data.icon ?? ""
-
+    icon: data.icon ?? "",
+    cardLabel: data.cardLabel || data.name,
   }
   let menuData = new Sidemenu(obj);
 
