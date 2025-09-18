@@ -10,11 +10,18 @@ const {
 module.exports.cityDetails = async (req, res) => {
 	try {
 		// Validated req.query.
-		const { citySlugName } = req.query;
-		if (!citySlugName) return res.status(400).json({ error: 'Invalid or missing slug name' });
+		const { citySlugName, cityId } = req.query;
+
+		if (!citySlugName && !cityId) {
+			return res.status(400).json({ error: 'Invalid or missing slug name or ulbId' });
+		}
+
+		const findQuery = {};
+		if (citySlugName) findQuery['slug'] = citySlugName;
+		else if (cityId) findQuery['_id'] = ObjectId(cityId);
 
 		const ulbData = await Ulb.findOne(
-			{ slug: citySlugName },
+			findQuery,
 			{ name: 1, population: 1, area: 1, wards: 1, isUA: 1, UA: 1, state: 1, slug: 1, ulbType: 1 },
 		)
 			.populate('UA', 'name')
