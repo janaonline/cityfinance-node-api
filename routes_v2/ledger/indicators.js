@@ -1,5 +1,5 @@
 const ledgerLog = require("../../models/LedgerLog");
-const ulb= require("../../models/Ulb");
+const ulb = require("../../models/Ulb");
 const IndicatorsModel = require("../../models/ledgerIndicators");
 const {
   formatToCroreSummary,
@@ -1319,7 +1319,7 @@ module.exports.getFaqs = async (req, res) => {
 
       const ownShareText =
         faqData?.ulbTop?.indicators?.totOwnRevenueByTotRevenue != null
-          ? faqData.ulbTop.indicators.totOwnRevenueByTotRevenue
+          ? Math.round(faqData.ulbTop.indicators.totOwnRevenueByTotRevenue)
           : "N/A";
 
       const propTaxVal = faqData?.ulbTop?.lineItems?.["11001"];
@@ -1649,7 +1649,7 @@ module.exports.getIndicatorsNameCompareByPage = async (req, res) => {
 };
 module.exports.getUlbDetailsById = async (req, res) => {
   try {
-    const { slug } = req.query;  // expect ?ulbId=66e1748d3b.... style string
+    const { slug } = req.query; // expect ?ulbId=66e1748d3b.... style string
 
     if (!slug) {
       return res.status(400).json({ message: "ulbId is required" });
@@ -1665,7 +1665,7 @@ module.exports.getUlbDetailsById = async (req, res) => {
       return res.status(404).json({ message: "ULB not found" });
     }
 
-    return res.status(200).json({ulbDetails });
+    return res.status(200).json({ ulbDetails });
   } catch (error) {
     console.error("Error fetching ULB details by ID:", error);
     res.status(500).json({ message: "Internal Server Error" });
