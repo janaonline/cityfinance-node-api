@@ -1649,17 +1649,17 @@ module.exports.getIndicatorsNameCompareByPage = async (req, res) => {
 };
 module.exports.getUlbDetailsById = async (req, res) => {
   try {
-    const { ulbId } = req.query;  // expect ?ulbId=66e1748d3b.... style string
+    const { slug } = req.query;  // expect ?ulbId=66e1748d3b.... style string
 
-    if (!ulbId) {
+    if (!slug) {
       return res.status(400).json({ message: "ulbId is required" });
     }
 
-    if (!mongoose.Types.ObjectId.isValid(ulbId)) {
-      return res.status(400).json({ message: "Invalid ulbId" });
-    }
+    // if (!mongoose.Types.ObjectId.isValid(ulbId)) {
+    //   return res.status(400).json({ message: "Invalid ulbId" });
+    // }
 
-    const ulbDetails = await ulb.findById(ulbId).exec();
+    const ulbDetails = await ulb.find({ slug: slug }).exec();
 
     if (!ulbDetails) {
       return res.status(404).json({ message: "ULB not found" });
