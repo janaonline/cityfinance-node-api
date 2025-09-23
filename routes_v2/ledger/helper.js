@@ -748,8 +748,8 @@ const CompareBygroupIndicators =[
     ]
   },
   {
-    "label": "Tax Revenue",
-    "key": "taxRevenue",
+    "label": "Expenditure",
+    "key": "expenditure",
     "indicators": [
       { "name": "Establishment Expenses", "key": "210" },
       { "name": "Administrative Expenses", "key": "220" },
@@ -766,8 +766,8 @@ const CompareBygroupIndicators =[
     ]
   },
   {
-    "label": "Expenditure",
-    "key": "expenditure",
+    "label": "Liabilities",
+    "key": "liabilities",
     "indicators": [
       { "name": "Municipal (General) Fund", "key": "310" },
       { "name": "Earmarked Funds", "key": "311" },
@@ -803,8 +803,8 @@ const CompareBygroupIndicators =[
     ]
   },
   {
-    "label": "Liabilities",
-    "key": "liabilities",
+    "label": "Tax Revenue",
+    "key": "taxRevenue",
     "indicators": [
       { "name": "Property Tax", "key": "11001" },
       { "name": "Water Supply and Drainage Tax", "key": "11002" },

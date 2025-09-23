@@ -1,148 +1,148 @@
 const User = require('../models/User');
-const mobile = async (mobile,checkDepartment=true, _id="", role)=>{
-    if(role === "STATE"){
-        return new Promise(async (resolve, reject)=>{
-            try{
+const mobile = async (mobile, checkDepartment = true, _id = "", role) => {
+    if (role === "STATE") {
+        return new Promise(async (resolve, reject) => {
+            try {
                 let query = {
-                    isActive:true,
-                    isDeleted:false,
-                    $or:[
-                        {mobile:mobile},
-                        {commissionerConatactNumber:mobile},
-                        {accountantConatactNumber:mobile}
+                    isActive: true,
+                    isDeleted: false,
+                    $or: [
+                        { mobile: mobile },
+                        { commissionerConatactNumber: mobile },
+                        { accountantConatactNumber: mobile }
                     ],
                     role: "STATE"
                 };
-                if(checkDepartment){
-                    query["$or"].push({departmentContactNumber:mobile})
+                if (checkDepartment) {
+                    query["$or"].push({ departmentContactNumber: mobile })
                 }
-                let user = await User.find(query,{_id:1,role:1}).lean();
-                if(user && user.length === 1){
-                    if(_id && user[0]._id.toString() == _id.toString()){
+                let user = await User.find(query, { _id: 1, role: 1 }).lean();
+                if (user && user.length === 1) {
+                    if (_id && user[0]._id.toString() == _id.toString()) {
                         user = null;
                     }
-                }else if (user.length === 0){
+                } else if (user.length === 0) {
                     user = null
                 }
                 resolve(user);
-            }catch (e) {
+            } catch (e) {
                 reject(e)
             }
         });
-    }else {
-        return new Promise(async (resolve, reject)=>{
-            try{
+    } else {
+        return new Promise(async (resolve, reject) => {
+            try {
                 let query = {
-                    isActive:true,
-                    isDeleted:false,
-                    $or:[
-                        {mobile:mobile},
-                        {commissionerConatactNumber:mobile},
-                        {accountantConatactNumber:mobile}
+                    isActive: true,
+                    isDeleted: false,
+                    $or: [
+                        { mobile: mobile },
+                        { commissionerConatactNumber: mobile },
+                        { accountantConatactNumber: mobile }
                     ]
                 };
-                if(checkDepartment){
-                    query["$or"].push({departmentContactNumber:mobile})
+                if (checkDepartment) {
+                    query["$or"].push({ departmentContactNumber: mobile })
                 }
-                let user = await User.findOne(query,{_id:1,role:1});
-                if(user){
-                    if(_id && user._id.toString() == _id.toString()){
+                let user = await User.findOne(query, { _id: 1, role: 1 });
+                if (user) {
+                    if (_id && user._id.toString() == _id.toString()) {
                         user = null;
                     }
                 }
                 resolve(user);
-            }catch (e) {
+            } catch (e) {
                 reject(e)
             }
         });
     }
 };
-const email = async (email, checkDepartment=true, _id, role)=>{
-    if(role === "STATE"){
-        return new Promise(async (resolve, reject)=>{
-            try{
+const email = async (email, checkDepartment = true, _id, role) => {
+    if (role === "STATE") {
+        return new Promise(async (resolve, reject) => {
+            try {
                 let query = {
-                    isActive:true,
-                    isDeleted:false,
-                    $or:[
-                        {email:email},
-                        {commissionerEmail:email},
-                        {accountantEmail:email}
+                    isActive: true,
+                    isDeleted: false,
+                    $or: [
+                        { email: email },
+                        { commissionerEmail: email },
+                        { accountantEmail: email }
                     ],
                     role: "STATE"
                 };
-                if(checkDepartment){
-                    query["$or"].push({departmentEmail:email})
+                if (checkDepartment) {
+                    query["$or"].push({ departmentEmail: email })
                 }
-                let user = await User.find(query,{_id:1,role:1}).lean();
-                if(user && user.length === 1){
-                    if(_id && user[0]._id.toString() == _id.toString()){
+                let user = await User.find(query, { _id: 1, role: 1 }).lean();
+                if (user && user.length === 1) {
+                    if (_id && user[0]._id.toString() == _id.toString()) {
                         user = null;
                     }
-                }else if(user.length === 0){
+                } else if (user.length === 0) {
                     user = null
                 }
                 resolve(user);
-            }catch (e) {
+            } catch (e) {
                 reject(e)
             }
         });
-    } else{
-        return new Promise(async (resolve, reject)=>{
-            try{
+    } else {
+        return new Promise(async (resolve, reject) => {
+            try {
                 let query = {
-                    isActive:true,
-                    isDeleted:false,
-                    $or:[
-                        {email:email},
-                        {commissionerEmail:email},
-                        {accountantEmail:email}
+                    isActive: true,
+                    isDeleted: false,
+                    $or: [
+                        { email: email },
+                        { commissionerEmail: email },
+                        { accountantEmail: email }
                     ]
                 };
-                if(checkDepartment){
-                    query["$or"].push({departmentEmail:email})
+                if (checkDepartment) {
+                    query["$or"].push({ departmentEmail: email })
                 }
-                let user = await User.findOne(query,{_id:1,role:1});
-                if(user){
-                    if(_id && user._id.toString() == _id.toString()){
+                let user = await User.findOne(query, { _id: 1, role: 1 });
+                if (user) {
+                    if (_id && user._id.toString() == _id.toString()) {
                         user = null;
                     }
                 }
                 resolve(user);
-            }catch (e) {
+            } catch (e) {
                 reject(e)
             }
         });
     }
 
 };
-const validate = (data, role,_id)=>{
-    return new Promise(async (resolve, reject)=>{
-        try{
+const validate = (data, role, _id) => {
+    return new Promise(async (resolve, reject) => {
+        try {
             let validation = {
-                USER:[
+                USER: [
                     {
-                        key:"mobile",
-                        type:"mobile",
-                        message:"Mobile number already taken."
+                        key: "mobile",
+                        type: "mobile",
+                        message: "Mobile number already taken."
                     },
                     {
-                        key:"email",
-                        type:"email",
-                        message:"Email already taken."
+                        key: "email",
+                        type: "email",
+                        message: "Email already taken."
                     },
                     {
-                        key:"commissionerConatactNumber",
-                        type:"mobile",
-                        message:"Commissioner contact number already taken."
+                        key: "commissionerConatactNumber",
+                        type: "mobile",
+                        message: "Commissioner contact number already taken."
                     },
                     {
-                        key:"commissionerEmail",
-                        type:"email",
-                        message:"Commissioner email already taken."
+                        key: "commissionerEmail",
+                        type: "email",
+                        message: "Commissioner email already taken."
                     }
                 ],
-                ULB:[
+                ULB: [
                     /*{
                         key:"commissionerEmail",
                         type:"email",
@@ -169,120 +169,164 @@ const validate = (data, role,_id)=>{
                         message:"Accountant contact number already taken."
                     }*/
                 ],
-                
-                STATE:[
+
+                STATE: [
                     {
-                        key:"mobile",
-                        type:"mobile",
-                        message:"Mobile number already taken."
+                        key: "mobile",
+                        type: "mobile",
+                        message: "Mobile number already taken."
                     },
                     {
-                        key:"email",
-                        type:"email",
-                        message:"Email already taken."
+                        key: "email",
+                        type: "email",
+                        message: "Email already taken."
                     },
                     {
-                        key:"departmentEmail",
-                        type:"email",
-                        message:"Department email already taken."
+                        key: "departmentEmail",
+                        type: "email",
+                        message: "Department email already taken."
                     },
                     {
-                        key:"departmentContactNumber",
-                        type:"mobile",
-                        message:"Department contact number already taken."
+                        key: "departmentContactNumber",
+                        type: "mobile",
+                        message: "Department contact number already taken."
                     }
                 ],
-                XVIFC_STATE:[
+                XVIFC_STATE: [
                     {
-                        key:"mobile",
-                        type:"mobile",
-                        message:"Mobile number already taken."
+                        key: "mobile",
+                        type: "mobile",
+                        message: "Mobile number already taken."
                     },
                     {
-                        key:"email",
-                        type:"email",
-                        message:"Email already taken."
+                        key: "email",
+                        type: "email",
+                        message: "Email already taken."
                     },
                     {
-                        key:"departmentEmail",
-                        type:"email",
-                        message:"Department email already taken."
+                        key: "departmentEmail",
+                        type: "email",
+                        message: "Department email already taken."
                     },
                     {
-                        key:"departmentContactNumber",
-                        type:"mobile",
-                        message:"Department contact number already taken."
+                        key: "departmentContactNumber",
+                        type: "mobile",
+                        message: "Department contact number already taken."
                     }
                 ],
-                PARTNER:[
+                AFS_ADMIN: [
                     {
-                        key:"mobile",
-                        type:"mobile",
-                        message:"Mobile number already taken.",
-                        ignoreDepartment:true
+                        key: "mobile",
+                        type: "mobile",
+                        message: "Mobile number already taken."
                     },
                     {
-                        key:"email",
-                        type:"email",
-                        message:"Email already taken.",
-                        ignoreDepartment:true
+                        key: "email",
+                        type: "email",
+                        message: "Email already taken."
+                    },
+                    {
+                        key: "departmentEmail",
+                        type: "email",
+                        message: "Department email already taken."
+                    },
+                    {
+                        key: "departmentContactNumber",
+                        type: "mobile",
+                        message: "Department contact number already taken."
                     }
                 ],
-                MoHUA:[
+                STATE_DASHBOARD: [
                     {
-                        key:"mobile",
-                        type:"mobile",
-                        message:"Mobile number already taken.",
-                        ignoreDepartment:true
+                        key: "mobile",
+                        type: "mobile",
+                        message: "Mobile number already taken."
                     },
                     {
-                        key:"email",
-                        type:"email",
-                        message:"Email already taken.",
-                        ignoreDepartment:true
+                        key: "email",
+                        type: "email",
+                        message: "Email already taken."
+                    },
+                    // {
+                    //     key: "departmentEmail",
+                    //     type: "email",
+                    //     message: "Department email already taken."
+                    // },
+                    // {
+                    //     key: "departmentContactNumber",
+                    //     type: "mobile",
+                    //     message: "Department contact number already taken."
+                    // }
+                ],
+                PARTNER: [
+                    {
+                        key: "mobile",
+                        type: "mobile",
+                        message: "Mobile number already taken.",
+                        ignoreDepartment: true
+                    },
+                    {
+                        key: "email",
+                        type: "email",
+                        message: "Email already taken.",
+                        ignoreDepartment: true
+                    }
+                ],
+                MoHUA: [
+                    {
+                        key: "mobile",
+                        type: "mobile",
+                        message: "Mobile number already taken.",
+                        ignoreDepartment: true
+                    },
+                    {
+                        key: "email",
+                        type: "email",
+                        message: "Email already taken.",
+                        ignoreDepartment: true
                     }
                 ],
                 XVIFC: [
                     {
-                        key:"mobile",
-                        type:"mobile",
-                        message:"Mobile number already taken.",
-                        ignoreDepartment:true
+                        key: "mobile",
+                        type: "mobile",
+                        message: "Mobile number already taken.",
+                        ignoreDepartment: true
                     },
                     {
-                        key:"email",
-                        type:"email",
-                        message:"Email already taken.",
-                        ignoreDepartment:true
+                        key: "email",
+                        type: "email",
+                        message: "Email already taken.",
+                        ignoreDepartment: true
                     }
                 ]
             };
             let errors = [];
-            if(validation[role]){
-                for(val of validation[role]){
-                    if(data[val.key]){
+            if (validation[role]) {
+                for (val of validation[role]) {
+                    if (data[val.key]) {
                         let d; let departmentCheck = val.ignoreDepartment ? false : true
-                        if(val.type == "email"){
-                            d = await email(data[val.key], departmentCheck,_id, role);
-                        }else {
-                            d = await mobile(data[val.key], departmentCheck,_id, role);
+                        if (val.type == "email") {
+                            d = await email(data[val.key], departmentCheck, _id, role);
+                        } else {
+                            d = await mobile(data[val.key], departmentCheck, _id, role);
                         }
-                        if(d){
+                        if (d) {
                             errors.push(val.message);
                         }
                     }
                 }
-                resolve(errors.length ? errors:null);
-            }else {
+                resolve(errors.length ? errors : null);
+            } else {
                 reject(`${role}: Role not supported.`)
             }
-        }catch (e) {
+        } catch (e) {
             reject(e);
         }
     });
 }
 module.exports = {
-    email:email,
-    mobile:mobile,
-    validate:validate
+    email: email,
+    mobile: mobile,
+    validate: validate
 }
