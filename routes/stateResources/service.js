@@ -820,7 +820,8 @@ const updatestateGsdpTemplate = async (req, res, next, worksheet, workbook) => {
                                         "year": gsdpYear,
                                         "constantPrice": stateGsdpConstantPrices[index],
                                         "currentPrice": stateGsdpCurrentPrices[index],
-                                        "updatedOn": new Date()
+                                        "updatedOn": new Date(),
+                                        "designYear": ObjectId(req.body.design_year),
                                     }
                                 }
                             },
@@ -841,7 +842,8 @@ const updatestateGsdpTemplate = async (req, res, next, worksheet, workbook) => {
                                     "year": gsdpYear,
                                     "constantPrice": stateGsdpConstantPrices[index],
                                     "currentPrice": stateGsdpCurrentPrices[index],
-                                    "updatedOn": new Date()
+                                    "updatedOn": new Date(),
+                                    "designYear": ObjectId(req.body.design_year),
                                 }
                             ],
                         }
@@ -1112,7 +1114,7 @@ const getResourceList = async (req, res, next) => {
         const [categoryResult] = await CategoryFileUpload.aggregate(query);
         const documents = categoryResult.documents || {};
         const totalDocuments = categoryResult?.totalCount?.[0]?.count || 0;
-        const states = await State.find({ isUT: false }).select('name _id');
+        const states = await State.find({ isUT: false }).select('name _id').sort({name: 1});
         const categories = await MainCategory.aggregate([
             {
                 $match: { typeOfCategory: "state_resource", isActive: true }
