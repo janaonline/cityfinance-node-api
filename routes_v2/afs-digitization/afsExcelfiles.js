@@ -6,61 +6,126 @@ const { uploadAFSEXCELFileToS3 } = require("../../service/s3-services");
 const upload = multer(); // memory storage
 
 // Upload one or multiple Excel files
+// module.exports.uploadAFSExcelFiles = async (req, res) => {
+//   try {
+//     const { ulbId, financialYear, auditType } = req.body;
+
+//     if (!req.files || req.files.length === 0) {
+//       return res.status(400).json({ success: false, message: "No file uploaded" });
+//     }
+
+//     // docType handling
+//     const docType = Array.isArray(req.body.docTypes)
+//       ? null
+//       : req.body.docType;
+
+//     let parentDoc;
+//     if (docType) {
+//       parentDoc = await AFSExcelFile.findOne({ ulbId, financialYear, auditType, docType });
+//       if (!parentDoc) {
+//         parentDoc = new AFSExcelFile({ ulbId, financialYear, auditType, docType, files: [] });
+//       }
+//     }
+
+//     //  Reset files array each time (replace old with new)
+//     parentDoc.files = [];
+
+//     // Upload each file
+//     for (const [index, file] of req.files.entries()) {
+//       const currentDocType = Array.isArray(req.body.docTypes)
+//         ? req.body.docTypes[index]
+//         : docType;
+
+//       if (!currentDocType) {
+//         return res.status(400).json({ success: false, message: "Missing docType for one file" });
+//       }
+
+//       // Ensure parentDoc exists for this docType
+//       if (!parentDoc || parentDoc.docType !== currentDocType) {
+//         parentDoc = await AFSExcelFile.findOne({ ulbId, financialYear, auditType, docType: currentDocType });
+//         if (!parentDoc) {
+//           parentDoc = new AFSExcelFile({ ulbId, financialYear, auditType, docType: currentDocType, files: [] });
+//         }
+//         parentDoc.files = []; // reset for safety
+//       }
+
+//       // Upload to S3
+//       const { s3Key, fileUrl } = await uploadAFSEXCELFileToS3({
+//         ulbId,
+//         financialYear,
+//         auditType,
+//         docType: currentDocType,
+//         file,
+//       });
+
+//       // uploadedBy logic
+//       let uploadedBy = "ULB";
+//       if (req.files.length === 2 && index === 1) {
+//         uploadedBy = "AFS";
+//       }
+
+//       parentDoc.files.push({
+//         s3Key,
+//         fileUrl,
+//         uploadedAt: new Date(),
+//         uploadedBy,
+//       });
+//     }
+
+//     await parentDoc.save();
+
+//     return res.json({ success: true, fileGroup: parentDoc });
+//   } catch (err) {
+//     console.error("Excel Upload error:", err);
+//     return res.status(500).json({ success: false, message: "Server error" });
+//   }
+// };
 module.exports.uploadAFSExcelFiles = async (req, res) => {
   try {
-    const { ulbId, financialYear, auditType } = req.body;
+    const { ulbId, financialYear, auditType, docType, excelLinks } = req.body;
 
-    if (!req.files || req.files.length === 0) {
-      return res.status(400).json({ success: false, message: "No file uploaded" });
+    if (!excelLinks || excelLinks.length === 0) {
+      return res.status(400).json({ success: false, message: "No Excel links provided" });
     }
 
-    // docType handling
-    const docType = Array.isArray(req.body.docTypes)
-      ? null
-      : req.body.docType;
+    // Normalize: ensure array
+    const links = Array.isArray(excelLinks) ? excelLinks : [excelLinks];
 
-    let parentDoc;
-    if (docType) {
-      parentDoc = await AFSExcelFile.findOne({ ulbId, financialYear, auditType, docType });
-      if (!parentDoc) {
-        parentDoc = new AFSExcelFile({ ulbId, financialYear, auditType, docType, files: [] });
-      }
+    // find or create parentDoc
+    let parentDoc = await AFSExcelFile.findOne({ ulbId, financialYear, auditType, docType });
+    if (!parentDoc) {
+      parentDoc = new AFSExcelFile({ ulbId, financialYear, auditType, docType, files: [] });
     }
+    parentDoc.files = []; // reset each upload
 
-    //  Reset files array each time (replace old with new)
-    parentDoc.files = [];
+    // loop through Excel links
+    for (let i = 0; i < links.length; i++) {
+      const url = links[i];
 
-    // Upload each file
-    for (const [index, file] of req.files.entries()) {
-      const currentDocType = Array.isArray(req.body.docTypes)
-        ? req.body.docTypes[index]
-        : docType;
-
-      if (!currentDocType) {
-        return res.status(400).json({ success: false, message: "Missing docType for one file" });
+      // download Excel file from S3 link
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch Excel from ${url}, status: ${response.status}`);
       }
+      const buffer = Buffer.from(await response.arrayBuffer());
 
-      // Ensure parentDoc exists for this docType
-      if (!parentDoc || parentDoc.docType !== currentDocType) {
-        parentDoc = await AFSExcelFile.findOne({ ulbId, financialYear, auditType, docType: currentDocType });
-        if (!parentDoc) {
-          parentDoc = new AFSExcelFile({ ulbId, financialYear, auditType, docType: currentDocType, files: [] });
-        }
-        parentDoc.files = []; // reset for safety
-      }
+      // fake a "file" object for your S3 util
+      const file = {
+        originalname: `digitized_${i}.xlsx`,
+        buffer,
+      };
 
-      // Upload to S3
+      // Upload to S3 (your existing util)
       const { s3Key, fileUrl } = await uploadAFSEXCELFileToS3({
         ulbId,
         financialYear,
         auditType,
-        docType: currentDocType,
+        docType,
         file,
       });
 
-      // uploadedBy logic
       let uploadedBy = "ULB";
-      if (req.files.length === 2 && index === 1) {
+      if (links.length === 2 && i === 1) {
         uploadedBy = "AFS";
       }
 
@@ -77,9 +142,10 @@ module.exports.uploadAFSExcelFiles = async (req, res) => {
     return res.json({ success: true, fileGroup: parentDoc });
   } catch (err) {
     console.error("Excel Upload error:", err);
-    return res.status(500).json({ success: false, message: "Server error" });
+    return res.status(500).json({ success: false, message: "Server error", error: err.message });
   }
 };
+
 
 
 // Fetch Excel file metadata (all files by docType)

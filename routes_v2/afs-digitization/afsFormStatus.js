@@ -1,20 +1,6 @@
 const mongoose = require("mongoose");
 const AnnualAccountData = require("../../models/AnnualAccounts");
-
-const MASTER_STATUS = {
-  "No Status": -1,
-  "Not Started": 1,
-  "In Progress": 2,
-  "Under Review By State": 3,
-  "Under Review By MoHUA": 4,
-  "Returned By State": 5,
-  "Submission Acknowledged By MoHUA": 6,
-  "Returned By MoHUA": 7,
-  "Verification Not Started": 8,
-  "Verification In Progress": 9,
-  "Returned by PMU": 10,
-  "Submission Acknowledged by PMU": 11,
-};
+const { MASTER_STATUS } = require("../../util/FormNames");
 
 const years = {
   "2017-18": "63735a4bd44534713673bfbf",
@@ -82,6 +68,7 @@ module.exports.getAFSFormStatusByULB = async (req, res) => {
       actionTakenByRole: 1,
       createdAt: 1,
       modifiedAt: 1,
+      ulbSubmit :1,
     }).lean();
 
     if (!record) {
@@ -131,6 +118,7 @@ module.exports.getAFSFormStatusByULB = async (req, res) => {
         actionTakenByRole: record.actionTakenByRole || null,
         createdAt: record.createdAt || null,
         modifiedAt: record.modifiedAt || null,
+        ulbSubmit: record.ulbSubmit || null,
       },
     });
   } catch (error) {
