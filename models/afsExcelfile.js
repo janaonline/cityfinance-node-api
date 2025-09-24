@@ -4,8 +4,19 @@ const mongoose = require("mongoose");
 const FileSchema = new mongoose.Schema({
   s3Key: { type: String, required: true },
   fileUrl: { type: String, required: true },
+  requestId: { type: String },
   uploadedAt: { type: Date, default: Date.now },
   uploadedBy: { type: String, enum: ["ULB", "AFS"], required: true },
+   data: [
+    {
+      row: [
+        {
+          title: String,
+          value: mongoose.Schema.Types.Mixed,
+        },
+      ],
+    },
+  ],
 });
 
 const AFSExcelFileSchema = new mongoose.Schema({

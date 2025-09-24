@@ -4,7 +4,7 @@ const { getAFSFilterData } = require('../afs-digitization/afsFilters');
 const { getAFSMetrics } = require("../afs-digitization/afsMetrics");
 const { uploadAFSFile, getAFSFile, uploadMiddleware } = require("./afsFiles");
 const { uploadAFSExcelFiles, getAFSExcelFile, uploadExcelMiddleware } = require("./afsExcelfiles");
-
+const { fetchRequestLogs } = require("./afsRequestlogs");
 
 
 //Afs-filters
@@ -29,4 +29,9 @@ router.get("/afs-file", getAFSFile);
 router.post("/afs-excel-file", uploadExcelMiddleware, uploadAFSExcelFiles);
 router.get("/afs-excel-file", getAFSExcelFile);
  
+
+// afs-request-logs
+router.get("/fetchRequestLogs", fetchRequestLogs);
+
+
 module.exports = router;

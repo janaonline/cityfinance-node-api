@@ -2,10 +2,128 @@
 const multer = require("multer");
 const AFSExcelFile = require("../../models/afsExcelfile");
 const { uploadAFSEXCELFileToS3 } = require("../../service/s3-services");
-
+const xlsx = require("xlsx");
 const upload = multer(); // memory storage
 
-// Upload one or multiple Excel files
+
+
+module.exports.uploadAFSExcelFiles = async (req, res) => {
+  try {
+    const { ulbId, financialYear, auditType, docType, excelLinks } = req.body;
+
+    if (!excelLinks || excelLinks.length === 0) {
+      return res.status(400).json({ success: false, message: "No Excel links provided" });
+    }
+
+    const links = Array.isArray(excelLinks) ? excelLinks : [excelLinks];
+
+    let parentDoc = await AFSExcelFile.findOne({ ulbId, financialYear, auditType, docType });
+    if (!parentDoc) {
+      parentDoc = new AFSExcelFile({ ulbId, financialYear, auditType, docType, files: [] });
+    }
+    parentDoc.files = [];
+
+    // keywords to detect header rows
+    const headerKeywords = ["Row ID", "Source", "Confidence Score", "Accuracy"];
+
+    for (let i = 0; i < links.length; i++) {
+      //  parse link object
+      let linkObj;
+      try {
+        linkObj = JSON.parse(links[i]);
+      } catch {
+        linkObj = { url: links[i], requestId: null }; // fallback if plain string
+      }
+
+      const url = linkObj.url;
+      const requestId = linkObj.requestId;
+
+      const response = await fetch(url);
+      if (!response.ok) throw new Error(`Failed to fetch Excel from ${url}`);
+      const buffer = Buffer.from(await response.arrayBuffer());
+
+      const file = {
+        originalname: `digitized_${i}.xlsx`,
+        buffer,
+      };
+
+      const { s3Key, fileUrl } = await uploadAFSEXCELFileToS3({
+        ulbId,
+        financialYear,
+        auditType,
+        docType,
+        file,
+      });
+
+      let uploadedBy = "ULB";
+      if (links.length === 2 && i === 1) uploadedBy = "AFS";
+
+      // 👇 Excel → JSON (structured rows)
+      const workbook = xlsx.read(buffer, { type: "buffer" });
+      const sheetName = workbook.SheetNames[0];
+      const sheetData = xlsx.utils.sheet_to_json(workbook.Sheets[sheetName], { header: 1 });
+
+      if (!sheetData || sheetData.length === 0) {
+        return res.status(400).json({ message: "Excel file is empty or invalid." });
+      }
+
+      const maxColLength = Math.max(...sheetData.map(row => row.length));
+      const normalizedData = sheetData.map(row => {
+        while (row.length < maxColLength) row.push("");
+        return row;
+      });
+
+      // 🔍 find header row
+      let headerRowIndex = -1;
+      for (let r = 0; r < normalizedData.length; r++) {
+        const rowStr = normalizedData[r].join(" ");
+        if (headerKeywords.some(k => rowStr.includes(k))) {
+          headerRowIndex = r;
+          break;
+        }
+      }
+
+      if (headerRowIndex === -1) {
+        return res.status(400).json({ message: "No valid header row found in Excel." });
+      }
+
+      // pick headers
+      const headers = normalizedData[headerRowIndex].map((h, idx) =>
+        h && h.toString().trim() !== "" ? h.toString().trim() : `Column${idx + 1}`
+      );
+
+      // build formatted data after header
+      const formattedData = normalizedData.slice(headerRowIndex + 1).map(row => {
+        const rowItems = headers.map((header, idx) => ({
+          title: header,
+          value: row[idx] !== "" ? row[idx] : null,
+        }));
+
+        // add classification + page_number
+        rowItems.push({ title: "classification", value: "other" });
+        rowItems.push({ title: "page_number", value: 0 });
+
+        return { row: rowItems };
+      });
+
+      parentDoc.files.push({
+        s3Key,
+        fileUrl,
+        requestId,
+        uploadedAt: new Date(),
+        uploadedBy,
+        data: formattedData,
+      });
+    }
+
+    await parentDoc.save();
+    return res.json({ success: true, fileGroup: parentDoc });
+  } catch (err) {
+    console.error("Excel Upload error:", err);
+    return res.status(500).json({ success: false, message: "Server error", error: err.message });
+  }
+};
+// Upload one or multiple Excel files old one-1
 // module.exports.uploadAFSExcelFiles = async (req, res) => {
 //   try {
 //     const { ulbId, financialYear, auditType } = req.body;
@@ -80,71 +198,6 @@ const upload = multer(); // memory storage
 //     return res.status(500).json({ success: false, message: "Server error" });
 //   }
 // };
-module.exports.uploadAFSExcelFiles = async (req, res) => {
-  try {
-    const { ulbId, financialYear, auditType, docType, excelLinks } = req.body;
-
-    if (!excelLinks || excelLinks.length === 0) {
-      return res.status(400).json({ success: false, message: "No Excel links provided" });
-    }
-
-    // Normalize: ensure array
-    const links = Array.isArray(excelLinks) ? excelLinks : [excelLinks];
-
-    // find or create parentDoc
-    let parentDoc = await AFSExcelFile.findOne({ ulbId, financialYear, auditType, docType });
-    if (!parentDoc) {
-      parentDoc = new AFSExcelFile({ ulbId, financialYear, auditType, docType, files: [] });
-    }
-    parentDoc.files = []; // reset each upload
-
-    // loop through Excel links
-    for (let i = 0; i < links.length; i++) {
-      const url = links[i];
-
-      // download Excel file from S3 link
-      const response = await fetch(url);
-      if (!response.ok) {
-        throw new Error(`Failed to fetch Excel from ${url}, status: ${response.status}`);
-      }
-      const buffer = Buffer.from(await response.arrayBuffer());
-
-      // fake a "file" object for your S3 util
-      const file = {
-        originalname: `digitized_${i}.xlsx`,
-        buffer,
-      };
-
-      // Upload to S3 (your existing util)
-      const { s3Key, fileUrl } = await uploadAFSEXCELFileToS3({
-        ulbId,
-        financialYear,
-        auditType,
-        docType,
-        file,
-      });
-
-      let uploadedBy = "ULB";
-      if (links.length === 2 && i === 1) {
-        uploadedBy = "AFS";
-      }
-
-      parentDoc.files.push({
-        s3Key,
-        fileUrl,
-        uploadedAt: new Date(),
-        uploadedBy,
-      });
-    }
-
-    await parentDoc.save();
-
-    return res.json({ success: true, fileGroup: parentDoc });
-  } catch (err) {
-    console.error("Excel Upload error:", err);
-    return res.status(500).json({ success: false, message: "Server error", error: err.message });
-  }
-};
 
 
 
