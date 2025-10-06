@@ -201,6 +201,41 @@ module.exports.uploadAFSExcelFiles = async (req, res) => {
 
 
 
+module.exports.saveRequestOnly = async (req, res) => {
+  try {
+    const { ulbId, financialYear, auditType, docType, requestIds } = req.body;
+
+    if (!requestIds || requestIds.length === 0) {
+      return res.status(400).json({ success: false, message: "No requestIds provided" });
+    }
+
+    let parentDoc = await AFSExcelFile.findOne({ ulbId, financialYear, auditType, docType });
+    if (!parentDoc) {
+      parentDoc = new AFSExcelFile({ ulbId, financialYear, auditType, docType, files: [] });
+    }
+
+    requestIds.forEach((reqId) => {
+      parentDoc.files.push({
+        requestId: reqId,
+        uploadedAt: new Date(),
+        uploadedBy: "System",
+        fileUrl: null,
+        s3Key: null,
+        data: [],
+      });
+    });
+
+    await parentDoc.save();
+
+    return res.json({ success: true, message: "Request IDs saved successfully", fileGroup: parentDoc });
+  } catch (err) {
+    console.error("Save Request Only error:", err);
+    return res.status(500).json({ success: false, message: "Server error", error: err.message });
+  }
+};
+
+
+
 // Fetch Excel file metadata (all files by docType)
 module.exports.getAFSExcelFile = async (req, res) => {
   try {

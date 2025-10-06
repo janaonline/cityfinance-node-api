@@ -3,7 +3,7 @@ const router = express.Router();
 const { getAFSFilterData } = require('../afs-digitization/afsFilters');
 const { getAFSMetrics } = require("../afs-digitization/afsMetrics");
 const { uploadAFSFile, getAFSFile, uploadMiddleware } = require("./afsFiles");
-const { uploadAFSExcelFiles, getAFSExcelFile, uploadExcelMiddleware } = require("./afsExcelfiles");
+const { uploadAFSExcelFiles, getAFSExcelFile, uploadExcelMiddleware, saveRequestOnly} = require("./afsExcelfiles");
 const { fetchRequestLogs } = require("./afsRequestlogs");
 
 
@@ -29,6 +29,8 @@ router.get("/afs-file", getAFSFile);
 router.post("/afs-excel-file", uploadExcelMiddleware, uploadAFSExcelFiles);
 router.get("/afs-excel-file", getAFSExcelFile);
  
+router.post("/save-request-only", saveRequestOnly);
+
 
 // afs-request-logs
 router.get("/fetchRequestLogs", fetchRequestLogs);
