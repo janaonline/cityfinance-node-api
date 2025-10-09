@@ -226,12 +226,12 @@ async function marketDashboardIndicators(ulbId, financialYear, totals) {
       intFinChaVal !== 0
         ? parseFloat(((rev - operExp) / intFinChaVal).toFixed(2))
         : "N/A";
-
+    // console.log(qaRatioNumVal, totRevExp, depreciationVal, "qar");
     // qaRatio = qaRatioNum / (totRevenueExpenditure - depreciation)
     marketDasInd.qaRatio =
       qaRatioNumVal !== null &&
       totRevExp !== null &&
-      depreciationVal !== null &&
+      // depreciationVal !== null && // removed this check to allow null depreciation
       totRevExp - depreciationVal !== 0
         ? parseFloat((qaRatioNumVal / (totRevExp - depreciationVal)).toFixed(2))
         : "N/A";
@@ -1120,8 +1120,18 @@ async function getIntro(indicators, keyType, yearsArray) {
         finalObject,
         yearsArray
       );
+      // console.log(totExpenditureDisplay, "totalexp");
       const capex = getIndicatorValue("capex", finalObject, yearsArray);
-      // console.log(totExpenditure,"totalexp");
+      const raw = capex?.value;
+      const num =
+        typeof raw === "number"
+          ? raw
+          : typeof raw === "string" && raw.trim() !== ""
+          ? Number(raw.replace(/,/g, ""))
+          : NaN;
+
+      // Show "N/A" if negative or not a valid number; otherwise show the value
+      const capexDisplay = Number.isFinite(num) && num >= 0 ? num : "N/A";
       const totRevenueExpenditure = getIndicatorValue(
         "totRevenueExpenditure",
         finalObject,
@@ -1130,9 +1140,9 @@ async function getIntro(indicators, keyType, yearsArray) {
       return `In FY ${totRevenueExpenditure.year}, ${
         totRevenueExpenditure.ulbName
       } reported a total expenditure of INR ${formatToCroreSummary(
-        totExpenditure.value
+        totExpenditure?.value ?? "N/A"
       )} crore which included INR ${formatToCroreSummary(
-        capex.value
+        capexDisplay
       )} crore in capital expenditure and INR ${formatToCroreSummary(
         totRevenueExpenditure.value
       )} crore in revenue expenditure.`;
