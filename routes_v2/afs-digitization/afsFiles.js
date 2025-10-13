@@ -5,27 +5,49 @@ const { uploadAFSFileToS3, getAFSFileStream } = require("../../service/s3-servic
 const upload = multer(); // memory storage
 
 // Upload or overwrite file
+// Upload or overwrite file
 module.exports.uploadAFSFile = async (req, res) => {
   try {
-    const { ulbId, financialYear, auditType , docType } = req.body;
-    if (!req.file) return res.status(400).json({ success: false, message: "No file uploaded" });
+    const { ulbId, financialYear, auditType, docType } = req.body;
+    if (!req.file)
+      return res.status(400).json({ success: false, message: "No file uploaded" });
 
     // Upload to S3
-    const { s3Key, fileUrl } = await uploadAFSFileToS3({ ulbId, financialYear, auditType, docType, file: req.file });
+    const { s3Key, fileUrl } = await uploadAFSFileToS3({
+      ulbId,
+      financialYear,
+      auditType,
+      docType,
+      file: req.file
+    });
 
     // Save metadata (overwrite if exists)
     const doc = await AFSFile.findOneAndUpdate(
-      { ulbId, financialYear, auditType ,docType},
-      { s3Key, fileUrl, uploadedAt: new Date() },
+      { ulbId, financialYear, auditType, docType },
+      { s3Key, fileUrl, uploadedAt: new Date(), docType },
       { new: true, upsert: true }
     );
 
-    return res.json({ success: true, file: doc });
+    return res.json({
+      success: true,
+      file: {
+        _id: doc._id,
+        ulbId: doc.ulbId,
+        financialYear: doc.financialYear,
+        auditType: doc.auditType,
+        docType: doc.docType,
+        fileUrl: doc.fileUrl,
+        uploadedAt: doc.uploadedAt
+      }
+    });
   } catch (err) {
     console.error("Upload error:", err);
-    return res.status(500).json({ success: false, message: "Server error" });
+    return res
+      .status(500)
+      .json({ success: false, message: "Server error" });
   }
 };
+
 
 
 module.exports.getAFSFile = async (req, res) => {

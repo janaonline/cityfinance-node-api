@@ -21,7 +21,9 @@ module.exports.uploadAFSExcelFiles = async (req, res) => {
     if (!parentDoc) {
       parentDoc = new AFSExcelFile({ ulbId, financialYear, auditType, docType, files: [] });
     }
-    parentDoc.files = [];
+    // parentDoc.files = [];
+    if (!Array.isArray(parentDoc.files)) parentDoc.files = [];
+
 
     // keywords to detect header rows
     const headerKeywords = ["Row ID", "Source", "Confidence Score", "Accuracy"];
@@ -46,6 +48,9 @@ module.exports.uploadAFSExcelFiles = async (req, res) => {
         originalname: `digitized_${i}.xlsx`,
         buffer,
       };
+   
+      // Upload to S3
+     
 
       const { s3Key, fileUrl } = await uploadAFSEXCELFileToS3({
         ulbId,
@@ -56,7 +61,8 @@ module.exports.uploadAFSExcelFiles = async (req, res) => {
       });
 
       let uploadedBy = "ULB";
-      if (links.length === 2 && i === 1) uploadedBy = "AFS";
+      // if (links.length === 2 && i === 1) uploadedBy = "AFS";
+      if (linkObj.source === "AFS") uploadedBy = "AFS";
 
       // 👇 Excel → JSON (structured rows)
       const workbook = xlsx.read(buffer, { type: "buffer" });
@@ -105,7 +111,9 @@ module.exports.uploadAFSExcelFiles = async (req, res) => {
 
         return { row: rowItems };
       });
-
+      // Remove old entry for same uploader (ULB/AFS)
+      
+      parentDoc.files = parentDoc.files.filter(f => f.uploadedBy !== uploadedBy);
       parentDoc.files.push({
         s3Key,
         fileUrl,
@@ -115,7 +123,13 @@ module.exports.uploadAFSExcelFiles = async (req, res) => {
         data: formattedData,
       });
     }
-
+    parentDoc.files.sort((a, b) => {
+      const order = { ULB: 0, AFS: 1 };
+      const aVal = order[a.uploadedBy?.toUpperCase()] ?? 99;
+      const bVal = order[b.uploadedBy?.toUpperCase()] ?? 99;
+      return aVal - bVal;
+    });
+   
     await parentDoc.save();
     return res.json({ success: true, fileGroup: parentDoc });
   } catch (err) {
@@ -201,39 +215,6 @@ module.exports.uploadAFSExcelFiles = async (req, res) => {
 
 
 
-module.exports.saveRequestOnly = async (req, res) => {
-  try {
-    const { ulbId, financialYear, auditType, docType, requestIds } = req.body;
-
-    if (!requestIds || requestIds.length === 0) {
-      return res.status(400).json({ success: false, message: "No requestIds provided" });
-    }
-
-    let parentDoc = await AFSExcelFile.findOne({ ulbId, financialYear, auditType, docType });
-    if (!parentDoc) {
-      parentDoc = new AFSExcelFile({ ulbId, financialYear, auditType, docType, files: [] });
-    }
-
-    requestIds.forEach((reqId) => {
-      parentDoc.files.push({
-        requestId: reqId,
-        uploadedAt: new Date(),
-        uploadedBy: "System",
-        fileUrl: null,
-        s3Key: null,
-        data: [],
-      });
-    });
-
-    await parentDoc.save();
-
-    return res.json({ success: true, message: "Request IDs saved successfully", fileGroup: parentDoc });
-  } catch (err) {
-    console.error("Save Request Only error:", err);
-    return res.status(500).json({ success: false, message: "Server error", error: err.message });
-  }
-};
-
 
 
 // Fetch Excel file metadata (all files by docType)
@@ -259,3 +240,66 @@ module.exports.getAFSExcelFile = async (req, res) => {
 
 // Multer middleware for multiple uploads
 module.exports.uploadExcelMiddleware = upload.array("files", 10);
+
+
+module.exports.saveRequestOnly = async (req, res) => {
+  try {
+    const { ulbId, financialYear, auditType, docType, requestIds, failedSource } = req.body;
+
+    if (!requestIds || requestIds.length === 0) {
+      return res.status(400).json({ success: false, message: "No requestIds provided" });
+    }
+
+    // Determine who uploaded based on failedSource or fallback to ULB
+    const uploader = failedSource?.toUpperCase() === "AFS" ? "AFS" : "ULB";
+
+    // Build new file entries
+    const newFiles = requestIds.map((reqId) => ({
+      requestId: reqId,
+      uploadedAt: new Date(),
+      uploadedBy: uploader,
+      fileUrl: "https://placeholder-link.com/none",
+      s3Key: "placeholder-key",
+      data: [],
+    }));
+
+    // Find or create the parent document
+    let parentDoc = await AFSExcelFile.findOne({ ulbId, financialYear, auditType, docType });
+
+    if (!parentDoc) {
+      parentDoc = new AFSExcelFile({
+        ulbId,
+        financialYear,
+        auditType,
+        docType,
+        files: newFiles,
+      });
+    } else {
+      // Prevent duplicates based on requestId
+      const existingReqIds = parentDoc.files.map((f) => f.requestId);
+      const uniqueNewFiles = newFiles.filter((f) => !existingReqIds.includes(f.requestId));
+      parentDoc.files.push(...uniqueNewFiles);
+    }
+    parentDoc.files.sort((a, b) => {
+      const order = { ULB: 0, AFS: 1 };
+      const aVal = order[a.uploadedBy?.toUpperCase()] ?? 99;
+      const bVal = order[b.uploadedBy?.toUpperCase()] ?? 99;
+      return aVal - bVal;
+    });
+    await parentDoc.save();
+
+    return res.json({
+      success: true,
+      message: "Request IDs saved successfully",
+      fileGroup: parentDoc,
+    });
+  } catch (err) {
+    console.error("Save Request Only error:", err);
+    return res.status(500).json({
+      success: false,
+      message: "Server error",
+      error: err.message,
+    });
+  }
+};
+
