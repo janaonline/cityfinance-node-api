@@ -276,9 +276,9 @@ module.exports.saveRequestOnly = async (req, res) => {
       });
     } else {
       // Prevent duplicates based on requestId
-      const existingReqIds = parentDoc.files.map((f) => f.requestId);
-      const uniqueNewFiles = newFiles.filter((f) => !existingReqIds.includes(f.requestId));
-      parentDoc.files.push(...uniqueNewFiles);
+      parentDoc.files = parentDoc.files.filter(f => f.uploadedBy !== uploader);
+      parentDoc.files.push(...newFiles);
+      
     }
     parentDoc.files.sort((a, b) => {
       const order = { ULB: 0, AFS: 1 };

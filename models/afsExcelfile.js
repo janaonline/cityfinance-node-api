@@ -1,5 +1,17 @@
 // models/afsExcelfile.js
 const mongoose = require("mongoose");
+const RowItemSchema = new mongoose.Schema(
+  {
+    title: String,
+    value: mongoose.Schema.Types.Mixed,
+  },
+  { _id: false } // ❌ remove _id inside each row item
+);
+
+// 👇 Each data entry keeps its own _id (default behavior)
+const DataRowSchema = new mongoose.Schema({
+  row: [RowItemSchema],
+});
 
 const FileSchema = new mongoose.Schema({
   s3Key: { type: String, required: true },
@@ -7,16 +19,7 @@ const FileSchema = new mongoose.Schema({
   requestId: { type: String },
   uploadedAt: { type: Date, default: Date.now },
   uploadedBy: { type: String, enum: ["ULB", "AFS"], required: true },
-   data: [
-    {
-      row: [
-        {
-          title: String,
-          value: mongoose.Schema.Types.Mixed,
-        },
-      ],
-    },
-  ],
+   data: [DataRowSchema],
 });
 
 const AFSExcelFileSchema = new mongoose.Schema({
