@@ -56,7 +56,7 @@ module.exports.getData = async (req, res) => {
 
 		// Final response
 		const exploreData = createResponseStructure(
-			oneYearCount[0].count,
+			oneYearCount[0]?.count || 0,
 			fsData,
 			totUlbCount,
 			bondsAmt
@@ -143,9 +143,9 @@ const getTotalUlbCount = (ulbsCondition) => {
 const createResponseStructure = (oneYearCount, fsData, totUlbCount, bondsAmt) => {
 	// Card 4 - Calculate highest availability %
 	const highestFy = fsData.highestFy._id;
-	const highestPerc = ((fsData.highestFy.count / totUlbCount) * 100).toFixed(
-		0
-	);
+	const highestPerc = !fsData.highestFy.count || !totUlbCount ?
+		0 :
+		((fsData.highestFy.count / totUlbCount) * 100).toFixed(0);
 
 	// Card 5 - Determine range of years (FYs)
 	const years = fsData.years.sort();

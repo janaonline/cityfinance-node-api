@@ -61,12 +61,13 @@ const UtilizationReportSchema = new Schema(
     grantPosition: {
       unUtilizedPrevYr: { type: Number, default: null },
       receivedDuringYr: { type: Number, default: null },
-      receivedDuringYrWithZero: { type: String, default: null },
-      receivedDuringYrWithZeroReason: { type: String, default: null },
-      fileUploadDuringYrWithZeroReason: pdfSchema(),
-      expDuringYr: {
-        type: Number, default: null
-      },
+      // receivedDuringYrWithZero: { type: String, default: null },
+      // receivedDuringYrWithZeroReason: { type: String, default: null },
+      // fileUploadDuringYrWithZeroReason: pdfSchema(),
+      expDuringYr: { type: Number, default: null },
+      expDuringYrWithZero: { type: String, default: null },
+      expDuringYrWithZeroReason: { type: String, default: null },
+      expDuringYrfileUpload: pdfSchema(),
       closingBal: { type: Number, default:0 },
     },
     projects: { type: [UtilizationReportProjectSchema] },

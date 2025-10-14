@@ -11,36 +11,49 @@ const ObjectId = require('mongoose').Types.ObjectId;
 const INCOME_STATEMENT_STRUCTURE = [
 	{
 		code: null,
+		isHeader: false,
+		lineItem: null,
+		class: 'fw-bold text-center ',
+		isState: true,
+	},
+	{
+		code: null,
 		isHeader: true,
 		lineItem: 'A.Income',
 		class: 'fw-bold',
 	},
 	{
 		code: 110,
+		isNumber: true,
 		lineItem: 'Tax Revenue',
 	},
 	{
 		code: 120,
+		isNumber: true,
 		reportType: 'detailed',
 		lineItem: 'Assigned Revenues & Compensation',
 	},
 	{
 		code: 130,
+		isNumber: true,
 		reportType: 'detailed',
 		lineItem: 'Rental Income from Municipal Properties',
 	},
 	{
 		code: 140,
+		isNumber: true,
 		reportType: 'detailed',
 		lineItem: 'Fee & User Charges',
 	},
 	{
 		code: 150,
+		isNumber: true,
 		reportType: 'detailed',
 		lineItem: 'Sale & Hire charges',
 	},
 	{
 		code: '120-150',
+		isNumber: true,
 		reportType: 'summary',
 		calculation: true,
 		formula: { add: [120, 130, 140, 150] },
@@ -48,25 +61,30 @@ const INCOME_STATEMENT_STRUCTURE = [
 	},
 	{
 		code: 160,
+		isNumber: true,
 		lineItem: 'Revenue Grants, Contributions & Subsidies',
 	},
 	{
 		code: 170,
+		isNumber: true,
 		reportType: 'detailed',
 		lineItem: 'Income from Investment',
 	},
 	{
 		code: 171,
+		isNumber: true,
 		reportType: 'detailed',
 		lineItem: 'Interest earned',
 	},
 	{
 		code: 180,
+		isNumber: true,
 		reportType: 'detailed',
 		lineItem: 'Other Income',
 	},
 	{
 		code: '170-180',
+		isNumber: true,
 		reportType: 'summary',
 		calculation: true,
 		formula: { add: [170, 171, 180] },
@@ -74,10 +92,12 @@ const INCOME_STATEMENT_STRUCTURE = [
 	},
 	{
 		code: 100,
+		isNumber: true,
 		lineItem: 'Others',
 	},
 	{
 		code: null,
+		isNumber: true,
 		key: 'totalIncome',
 		lineItem: 'Total Income (A)',
 		calculation: true,
@@ -106,45 +126,55 @@ const INCOME_STATEMENT_STRUCTURE = [
 	},
 	{
 		code: 210,
+		isNumber: true,
 		lineItem: 'Establishment Expenses',
 	},
 	{
 		code: 220,
+		isNumber: true,
 		lineItem: 'Administrative Expenses',
 	},
 	{
 		code: 230,
+		isNumber: true,
 		lineItem: 'Operation & Maintenance',
 	},
 	{
 		code: 240,
+		isNumber: true,
 		lineItem: 'Interest & Finance Charges',
 	},
 	{
 		code: 250,
+		isNumber: true,
 		reportType: 'detailed',
 		lineItem: 'Programme Expenses',
 	},
 	{
 		code: 260,
+		isNumber: true,
 		lineItem: 'Revenue Grants, Contributions & Subsidies (Exp)',
 	},
 	{
 		code: 270,
+		isNumber: true,
 		reportType: 'detailed',
 		lineItem: 'Provisions and Write Off',
 	},
 	{
 		code: 271,
+		isNumber: true,
 		lineItem: 'Miscellaneous Expenses',
 	},
 	{
 		code: 272,
+		isNumber: true,
 		reportType: 'detailed',
 		lineItem: 'Depreciation on Fixed Assets',
 	},
 	{
 		code: '250, 270-272',
+		isNumber: true,
 		reportType: 'summary',
 		calculation: true,
 		formula: { add: ['250', '270', '271', '272'] },
@@ -152,10 +182,12 @@ const INCOME_STATEMENT_STRUCTURE = [
 	},
 	{
 		code: 200,
+		isNumber: true,
 		lineItem: 'Others',
 	},
 	{
 		code: null,
+		isNumber: true,
 		lineItem: 'Total Expenditure(B)',
 		calculation: true,
 		formula: {
@@ -177,6 +209,7 @@ const INCOME_STATEMENT_STRUCTURE = [
 	},
 	{
 		code: null,
+		isNumber: true,
 		calculation: true,
 		formula: {
 			add: [
@@ -210,10 +243,12 @@ const INCOME_STATEMENT_STRUCTURE = [
 	},
 	{
 		code: 280,
+		isNumber: true,
 		lineItem: 'Prior Period items',
 	},
 	{
 		code: null,
+		isNumber: true,
 		calculation: true,
 		formula: {
 			add: [
@@ -248,10 +283,12 @@ const INCOME_STATEMENT_STRUCTURE = [
 	},
 	{
 		code: 290,
+		isNumber: true,
 		lineItem: 'Transfer to Reserve Funds',
 	},
 	{
 		code: null,
+		isNumber: true,
 		calculation: true,
 		formula: {
 			add: [
@@ -289,6 +326,13 @@ const INCOME_STATEMENT_STRUCTURE = [
 const BALANCE_SHEET_STRUCTURE = [
 	{
 		code: null,
+		isHeader: false,
+		lineItem: null,
+		class: 'fw-bold text-center ',
+		isState: true,
+	},
+	{
+		code: null,
 		isHeader: true,
 		lineItem: 'A. Liabilities',
 		class: 'fw-bold',
@@ -302,21 +346,25 @@ const BALANCE_SHEET_STRUCTURE = [
 	},
 	{
 		code: 310,
+		isNumber: true,
 		lineItem: 'Municipal (General) Fund',
 		reportType: 'detailed',
 	},
 	{
 		code: 311,
+		isNumber: true,
 		lineItem: 'Earmarked Funds',
 		reportType: 'detailed',
 	},
 	{
 		code: 312,
+		isNumber: true,
 		lineItem: 'Reserves',
 		reportType: 'detailed',
 	},
 	{
 		code: '310-312',
+		isNumber: true,
 		lineItem: 'Reserves & Surplus',
 		reportType: 'summary',
 		calculation: true,
@@ -324,6 +372,7 @@ const BALANCE_SHEET_STRUCTURE = [
 	},
 	{
 		code: null,
+		isNumber: true,
 		class: 'fw-bold',
 		reportType: 'detailed',
 		lineItem: 'Total Reserves & Surplus (I)',
@@ -340,10 +389,12 @@ const BALANCE_SHEET_STRUCTURE = [
 	},
 	{
 		code: 320,
+		isNumber: true,
 		lineItem: 'Grants, Contribution for Specific purposes',
 	},
 	{
 		code: null,
+		isNumber: true,
 		class: 'fw-bold',
 		lineItem: 'Total Grants , Contribution for specific purposes (II)',
 		reportType: 'detailed',
@@ -360,16 +411,19 @@ const BALANCE_SHEET_STRUCTURE = [
 	},
 	{
 		code: 330,
+		isNumber: true,
 		reportType: 'detailed',
 		lineItem: 'Secured Loans',
 	},
 	{
 		code: 331,
+		isNumber: true,
 		reportType: 'detailed',
 		lineItem: 'Unsecured Loans',
 	},
 	{
 		code: null,
+		isNumber: true,
 		class: 'fw-bold',
 		reportType: 'detailed',
 		lineItem: 'Total Loans (III)',
@@ -379,6 +433,7 @@ const BALANCE_SHEET_STRUCTURE = [
 	},
 	{
 		code: '330-331',
+		isNumber: true,
 		reportType: 'summary',
 		lineItem: 'Loans',
 		calculation: true,
@@ -393,26 +448,31 @@ const BALANCE_SHEET_STRUCTURE = [
 	},
 	{
 		code: 340,
+		isNumber: true,
 		reportType: 'detailed',
 		lineItem: 'Deposits received',
 	},
 	{
 		code: 341,
+		isNumber: true,
 		reportType: 'detailed',
 		lineItem: 'Deposit Works',
 	},
 	{
 		code: 350,
+		isNumber: true,
 		reportType: 'detailed',
 		lineItem: 'Other Liabilities (Sundry Creditors)',
 	},
 	{
 		code: 360,
+		isNumber: true,
 		reportType: 'detailed',
 		lineItem: 'Provisions',
 	},
 	{
 		code: '340-360',
+		isNumber: true,
 		reportType: 'summary',
 		lineItem: 'Current Liabilities and Provisions',
 		calculation: true,
@@ -420,10 +480,12 @@ const BALANCE_SHEET_STRUCTURE = [
 	},
 	{
 		code: 300,
+		isNumber: true,
 		lineItem: 'Others',
 	},
 	{
 		code: null,
+		isNumber: true,
 		class: 'fw-bold',
 		reportType: 'detailed',
 		lineItem: 'Total Current Liabilities and Provisions (IV)',
@@ -433,6 +495,7 @@ const BALANCE_SHEET_STRUCTURE = [
 	},
 	{
 		code: null,
+		isNumber: true,
 		class: 'fw-bold',
 		reportType: 'detailed',
 		lineItem: 'Total Liabilities',
@@ -456,6 +519,7 @@ const BALANCE_SHEET_STRUCTURE = [
 	},
 	{
 		code: null,
+		isNumber: true,
 		reportType: 'summary',
 		lineItem: 'Total Liabilities (A)',
 		info: 'Calculation: (310 + 311 + 312 + 320 + 330 + 331 + 340 + 341 + 350 + 360 + 300)',
@@ -492,16 +556,19 @@ const BALANCE_SHEET_STRUCTURE = [
 	},
 	{
 		code: 410,
+		isNumber: true,
 		reportType: 'detailed',
 		lineItem: 'Gross Block',
 	},
 	{
 		code: 411,
+		isNumber: true,
 		reportType: 'detailed',
 		lineItem: 'Accumulated Depreciation',
 	},
 	{
 		code: null,
+		isNumber: true,
 		class: 'fw-bold',
 		lineItem: 'Net Block',
 		reportType: 'detailed',
@@ -512,11 +579,13 @@ const BALANCE_SHEET_STRUCTURE = [
 	},
 	{
 		code: 412,
+		isNumber: true,
 		reportType: 'detailed',
 		lineItem: 'Capital Work-in-progress',
 	},
 	{
 		code: '410-412',
+		isNumber: true,
 		reportType: 'summary',
 		lineItem: 'Fixed Assets',
 		info: 'Calculation: (410 + 411 + 412)',
@@ -529,6 +598,7 @@ const BALANCE_SHEET_STRUCTURE = [
 	},
 	{
 		code: null,
+		isNumber: true,
 		class: 'fw-bold',
 		reportType: 'detailed',
 		lineItem: 'Total Fixed Assets (I)',
@@ -549,16 +619,19 @@ const BALANCE_SHEET_STRUCTURE = [
 	},
 	{
 		code: 420,
+		isNumber: true,
 		reportType: 'detailed',
 		lineItem: 'Investment - General Fund',
 	},
 	{
 		code: 421,
+		isNumber: true,
 		reportType: 'detailed',
 		lineItem: 'Investment - Other Funds',
 	},
 	{
 		code: '420-421',
+		isNumber: true,
 		reportType: 'summary',
 		lineItem: 'Investments',
 		calculation: true,
@@ -566,6 +639,7 @@ const BALANCE_SHEET_STRUCTURE = [
 	},
 	{
 		code: null,
+		isNumber: true,
 		class: 'fw-bold',
 		reportType: 'detailed',
 		lineItem: 'Total Investments (II)',
@@ -582,21 +656,25 @@ const BALANCE_SHEET_STRUCTURE = [
 	},
 	{
 		code: 430,
+		isNumber: true,
 		reportType: 'detailed',
 		lineItem: 'Stock in Hand (Inventories)',
 	},
 	{
 		code: 431,
+		isNumber: true,
 		reportType: 'detailed',
 		lineItem: 'Sundry Debtors (Receivables)',
 	},
 	{
 		code: 432,
+		isNumber: true,
 		reportType: 'detailed',
 		lineItem: 'Accumulated Provisions against Bad and Doubtful Receivables',
 	},
 	{
 		code: null,
+		isNumber: true,
 		class: 'fw-bold',
 		reportType: 'detailed',
 		lineItem: 'Net amount outstanding (i)',
@@ -610,21 +688,25 @@ const BALANCE_SHEET_STRUCTURE = [
 	},
 	{
 		code: 440,
+		isNumber: true,
 		reportType: 'detailed',
 		lineItem: 'Prepaid Expenses',
 	},
 	{
 		code: 450,
+		isNumber: true,
 		reportType: 'detailed',
 		lineItem: 'Cash and Bank Balance',
 	},
 	{
 		code: 460,
+		isNumber: true,
 		reportType: 'detailed',
 		lineItem: 'Loans, Advances and Deposits',
 	},
 	{
 		code: null,
+		isNumber: true,
 		class: 'fw-bold',
 		reportType: 'detailed',
 		lineItem: 'Net amount outstanding (ii)',
@@ -634,6 +716,7 @@ const BALANCE_SHEET_STRUCTURE = [
 	},
 	{
 		code: null,
+		isNumber: true,
 		class: 'fw-bold',
 		reportType: 'detailed',
 		lineItem: 'Total Current Assets, Loans and Advances (III)',
@@ -647,6 +730,7 @@ const BALANCE_SHEET_STRUCTURE = [
 	},
 	{
 		code: '430-461',
+		isNumber: true,
 		reportType: 'summary',
 		lineItem: 'Current Assets, Loans and Advances',
 		calculation: true,
@@ -663,16 +747,19 @@ const BALANCE_SHEET_STRUCTURE = [
 	},
 	{
 		code: 470,
+		isNumber: true,
 		reportType: 'detailed',
 		lineItem: 'Other Assets',
 	},
 	{
 		code: 480,
+		isNumber: true,
 		reportType: 'detailed',
 		lineItem: 'Miscellaneous Expenditure (to the extent not written off)',
 	},
 	{
 		code: '470-480',
+		isNumber: true,
 		reportType: 'summary',
 		lineItem: 'Other Assets',
 		calculation: true,
@@ -680,10 +767,12 @@ const BALANCE_SHEET_STRUCTURE = [
 	},
 	{
 		code: 400,
+		isNumber: true,
 		lineItem: 'Others',
 	},
 	{
 		code: null,
+		isNumber: true,
 		class: 'fw-bold',
 		reportType: 'detailed',
 		lineItem: 'Total Other Assets (IV)',
@@ -693,6 +782,7 @@ const BALANCE_SHEET_STRUCTURE = [
 	},
 	{
 		code: null,
+		isNumber: true,
 		class: 'fw-bold',
 		reportType: 'detailed',
 		lineItem: 'Total Assets',
@@ -718,6 +808,7 @@ const BALANCE_SHEET_STRUCTURE = [
 	},
 	{
 		code: null,
+		isNumber: true,
 		reportType: 'summary',
 		lineItem: 'Total Assets (B)',
 		class: 'fw-bold',
@@ -751,9 +842,10 @@ module.exports.getStructure = (btnKey = 'balanceSheet') => {
 	return STRUCTURE;
 };
 
-module.exports.getQuery = (ulbId) => {
-	return [
-		{ $match: { _id: ObjectId(ulbId) } },
+module.exports.getQuery = (ulbIds, years) => {
+	const query = [
+		// { $match: { _id: ObjectId(ulbId) } },
+		{ $match: { _id: { $in: ulbIds.map(e => ObjectId(e)) } } },
 		{
 			$lookup: {
 				from: 'ledgerlogs',
@@ -786,11 +878,26 @@ module.exports.getQuery = (ulbId) => {
 				preserveNullAndEmptyArrays: false,
 			},
 		},
+		{ $match: { 'ledgerLogData.year': { $in: years } } },
+		{
+			$lookup: {
+				from: 'states',
+				localField: 'state',
+				foreignField: '_id',
+				as: 'states'
+			}
+		},
 		{
 			$project: {
 				population: 1,
-				ledgerLogData: 1,
-			},
-		},
+				name: 1,
+				stateName: { $arrayElemAt: ['$states.name', 0] },
+				ledgerLogData: 1
+			}
+		}
 	];
+
+	// console.log(JSON.stringify(query, null, 2));
+
+	return query;
 };

@@ -31,6 +31,18 @@ module.exports.login = async (req, res) => {
         message: `${user.role} user not allowed login from 15th Fc, Please login with Ranking 2022.`
       })
     }
+    if ((user.role !== 'STATE_DASHBOARD') && req.body.type === "state-dashboard") {
+      return res.status(403).json({
+        success: false,
+        message: `${user.role} user not allowed login State Dashboard, Please login with State Dashboard user id.`
+      })
+    }
+    if (!['XVIFC_STATE', 'XVIFC', 'ULB'].includes(user.role) && req.body.type === "XVIFC") {
+      return res.status(403).json({
+        success: false,
+        message: `${user.role} user not allowed XVIFC login, Please login with XVIFC user id.`
+      })
+    }
     if ((user.role === "XVIFC_STATE") && (req.body.type === "15thFC" || req.body.type === "fiscalRankings")) {
       return res.status(403).json({
         success: false,

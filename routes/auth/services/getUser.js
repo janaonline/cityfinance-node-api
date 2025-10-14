@@ -25,7 +25,7 @@ module.exports.getUSer = (reqBody) => {
         }
 
         User.findOne(cond, async (err, user) => {
-         if (err) {
+            if (err) {
                 reject(`Db Error`);
             } else if (!user) {
                 reject(`User not found`);
@@ -39,20 +39,16 @@ module.exports.getUSer = (reqBody) => {
                 let url = `${process.env.HOSTNAME}/account-reactivate`;
                 reject(`Email not verified yet. Please <a href='${url}'>click here</a> to send the activation link on your registered email`);
             }
-            else if ((user.role != 'ADMIN' && user.role != 'USER' && user.role != 'STATE' && user.role != 'XVIFC_STATE' && user.role != 'PARTNER' && user.role != 'MoHUA' && user?.role != "PMU" && user?.role != "AAINA" && user?.role != "XVIFC" && user?.role != "AFS_ADMIN") && emailFlag){
-                if (user.role == 'ULB' && emailFlag) {
-                    reject(`Please use ULB Code/Census Code for login`)
-                }
-                else{
-                    reject("user role is not defined")
-                }
+            // else if ((user.role != 'ADMIN' && user.role != 'USER' && user.role != 'STATE' && user.role != 'XVIFC_STATE' && user.role != 'PARTNER' && user.role != 'MoHUA' && user?.role != "PMU" && user?.role != "AAINA" && user?.role != "XVIFC") && emailFlag) {
+            else if (user.role == 'ULB' && emailFlag) {
+                reject(`Please use ULB Code/Census Code for login`)
             } else {
                 try {
                     if (user.isLocked) {
                         // just increment login attempts if account is already locked
                         let update = Service.incLoginAttempts(user);
                         await User.update({ _id: ObjectId(user._id) }, update).exec();
-                        let up = await User.findOne({ _id: ObjectId(user._id)}).lean();
+                        let up = await User.findOne({ _id: ObjectId(user._id) }).lean();
                         if (up.isLocked) {
                             reject(`Your account is temporarily locked for 1 hour`)
                         }
