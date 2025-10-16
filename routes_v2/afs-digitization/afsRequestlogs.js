@@ -2,10 +2,9 @@ const mongoose = require("mongoose");
 
 // Direct Secondary DB Connection
 
-const MONGODB_CONNECTION_STRING =
-  "mongodb+srv://cf-synaptyx-user:terW7qHc19FjptU8@cfproductioncluster0.doi0e.mongodb.net/cf-digitization";
-const MONGODB_DATABASE_NAME = "cf-digitization";
-const MONGODB_COLLECTION_NAME = "new-coll";
+const MONGODB_CONNECTION_STRING = process.env.CONNECTION_STRING_2;
+const MONGODB_DATABASE_NAME = process.env.DATABASE_NAME;
+const MONGODB_COLLECTION_NAME = process.env.COLLECTION_NAME;
 
 // Create second DB connection explicitly
 const secondDB = mongoose.createConnection(MONGODB_CONNECTION_STRING, {
