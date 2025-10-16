@@ -517,9 +517,10 @@ async function uploadAFSEXCELFileToS3({ ulbId, financialYear, auditType, docType
         function (err) {
           if (err) return reject(err);
 
-          const fileUrl = `${SECRET.AWS_STORAGE_URL_STG}/${s3Key}`;
+          const fileUrl = `/${s3Key}`;
           resolve({ s3Key, fileUrl });
-        }
+        } 
+        
       );
     } catch (error) {
       reject(error);
