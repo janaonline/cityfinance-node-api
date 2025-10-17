@@ -4,7 +4,7 @@ const { sendOtp } = require("./services/sendOtp");
 const { verifyOtp } = require("./services/verifyOtp");
 const { resendOtp } = require("./services/resendOtp");
 const { register } = require("./services/register");
-const { login } = require("./services/login");
+const { login ,afsLogin } = require("./services/login");
 const { verifyToken } = require("./services/verifyToken");
 const {
   resendAccountVerificationLink,
