@@ -23,7 +23,7 @@ const documentTypes = [
        { key: 'inc_exp', name: 'Income And Expenditure' },
        { key: 'inc_exp_schedules', name: 'Schedules To Income And Expenditure' },
        { key: 'cash_flow', name: 'Cash Flow Statement' },
-       { key: '16th_fc', name: '16th FC (*always audited*)' }
+      // { key: '16th_fc', name: '16th FC (*always audited*)' }
     ]
   }
 ];
