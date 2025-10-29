@@ -20,7 +20,7 @@ const FileSchema = new mongoose.Schema({
   uploadedAt: { type: Date, default: Date.now },
   uploadedBy: { type: String, enum: ["ULB", "AFS"], required: true },
   data: [DataRowSchema],
-  confidenceScore: { type: Number, required: true, default: null }
+  overallConfidenceScore: { type: Number, required: true, default: null },
 });
 
 const AFSExcelFileSchema = new mongoose.Schema({
