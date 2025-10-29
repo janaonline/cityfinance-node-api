@@ -39,6 +39,7 @@ module.exports.uploadAFSExcelFiles = async (req, res) => {
 
       const url = linkObj.url;
       const requestId = linkObj.requestId;
+      const confidenceScore = linkObj.confidenceScore || null;
 
       const response = await fetch(url);
       if (!response.ok) throw new Error(`Failed to fetch Excel from ${url}`);
@@ -121,6 +122,7 @@ module.exports.uploadAFSExcelFiles = async (req, res) => {
         uploadedAt: new Date(),
         uploadedBy,
         data: formattedData,
+        confidenceScore,
       });
     }
     parentDoc.files.sort((a, b) => {
