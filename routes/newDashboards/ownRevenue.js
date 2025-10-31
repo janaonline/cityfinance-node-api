@@ -1890,7 +1890,8 @@ const topPerForming = async (req, res) => {
             },
             { $limit: 10 },
           ];
-        } else if (param == "Own Revenue to Revenue Expenditure") {
+        } else if (["Own Revenue to Revenue Expenditure", "Property Tax to Revenue Expenditure"].includes(param)) {
+          const lineItems = param == "Own Revenue to Revenue Expenditure" ? OwnRevenueList : ObjectIdPropertyTax;
           query = [
             {
               $match: {
@@ -1901,7 +1902,7 @@ const topPerForming = async (req, res) => {
                 },
                 lineItem: {
                   $in: [
-                    ...OwnRevenueList.map((value) => ObjectId(value)),
+                    ...lineItems.map((value) => ObjectId(value)),
                     ...expenseCode.map((value) => ObjectId(value)),
                   ],
                 },
@@ -1956,8 +1957,8 @@ const topPerForming = async (req, res) => {
                     $cond: [
                       {
                         $in: [
-                          "$lineItem.code",
-                          ["130", "140", "150", "180", "110"],
+                          "$lineItem._id",
+                          lineItems.map((value) => ObjectId(value)),
                         ],
                       },
                       "$amount",
@@ -1986,7 +1987,7 @@ const topPerForming = async (req, res) => {
                   $toInt: {
                     $multiply: [
                       { $divide: ["$totalRevenue", "$totalExpense"] },
-                      100,
+                      100 * 1_00_00_000, // Convert to cr - re-converted in frontend
                     ],
                   },
                 },
@@ -2108,7 +2109,8 @@ const topPerForming = async (req, res) => {
             },
             { $limit: 10 },
           ];
-        } else if (param == "Own Revenue to Revenue Expenditure") {
+        } else if (["Own Revenue to Revenue Expenditure", "Property Tax to Revenue Expenditure"].includes(param)) {
+          const lineItems = param == "Own Revenue to Revenue Expenditure" ? OwnRevenueList : ObjectIdPropertyTax;
           query = [
             {
               $match: {
@@ -2119,7 +2121,7 @@ const topPerForming = async (req, res) => {
                 },
                 lineItem: {
                   $in: [
-                    ...OwnRevenueList.map((value) => ObjectId(value)),
+                    ...lineItems.map((value) => ObjectId(value)),
                     ...expenseCode.map((value) => ObjectId(value)),
                   ],
                 },
@@ -2161,8 +2163,8 @@ const topPerForming = async (req, res) => {
                     $cond: [
                       {
                         $in: [
-                          "$lineItem.code",
-                          ["130", "140", "150", "180", "110"],
+                          "$lineItem._id",
+                          lineItems.map((value) => ObjectId(value)),
                         ],
                       },
                       "$amount",
@@ -2191,7 +2193,7 @@ const topPerForming = async (req, res) => {
                   $toInt: {
                     $multiply: [
                       { $divide: ["$totalRevenue", "$totalExpense"] },
-                      100,
+                      100 * 1_00_00_000, // Convert to cr - re-converted in frontend
                     ],
                   },
                 },
