@@ -1756,7 +1756,7 @@ const topPerForming = async (req, res) => {
       if (!type) return res.status(400).json({ msg: "type is required" });
       if (type == "state") {
         let query;
-        if (param == "Own Revenue") {
+        if (["Own Revenue", "Property Tax"].includes(param)) {
           query = [
             {
               $match: {
@@ -1816,7 +1816,7 @@ const topPerForming = async (req, res) => {
             },
             { $limit: 10 },
           ];
-        } else if (param == "Own Revenue per Capita") {
+        } else if (["Own Revenue per Capita", "Property Tax per Capita"].includes(param)) {
           query = [
             {
               $match: {
@@ -2004,7 +2004,7 @@ const topPerForming = async (req, res) => {
         data = await UlbLedger.aggregate(query);
       } else if (type == "ulb") {
         let query;
-        if (param == "Own Revenue") {
+        if (["Own Revenue", "Property Tax"].includes(param)) {
           query = [
             {
               $match: {
@@ -2049,7 +2049,7 @@ const topPerForming = async (req, res) => {
             },
             { $limit: 10 },
           ];
-        } else if (param == "Own Revenue per Capita") {
+        } else if (["Own Revenue per Capita", "Property Tax per Capita"].includes(param)) {
           query = [
             {
               $match: {
