@@ -550,12 +550,18 @@ function createResStructureWeighedAvgData(totalData, lineItem, years) {
         });
     }
 
-    // 3 because: only 3 years data is show
+    // 4 because: only 3 years data has to be shown.
     const ulbCagr = Math.round(getCagr(chartData[0].data, 4), 0);
     const ulbName = chartData[1].label;
-    // const comName = chartData[1].label;
-
-    // console.log(years, chartData)
+    const yr1 = `FY${years[0]}`;
+    const yr2 = `FY${years[years.length - 1]}`;
+    const amt1Msg = formatAmount(chartData[0].data[0]);
+    const amt2Msg = formatAmount(chartData[0].data[chartData[0].data.length - 1]);
+    const cagrMsg =
+        typeof ulbCagr === 'number' && !isNaN(ulbCagr) && Math.abs(ulbCagr) !== Infinity
+            ? `CAGR of ${ulbCagr}% between ${yr1} and ${yr2}`
+            : 'CAGR cannot be computed';
+    const msg = `${cagrMsg} (${ulbName} numbers for ${yr1} is ${amt1Msg}, and for ${yr2} is ${amt2Msg}.)`
 
     return {
         chartType: 'barChart',
@@ -565,7 +571,7 @@ function createResStructureWeighedAvgData(totalData, lineItem, years) {
         data: chartData,
         info: {
             text: ulbCagr >= 0 ? 'success' : 'danger',
-            msg: `CAGR of ${ulbCagr}% between FY${years[0]} and FY${years[years.length - 1]} (${ulbName} numbers for FY${years[0]} is Rs.${chartData[0].data[0]} Cr, and for FY${years[years.length - 1]} is Rs.${chartData[0].data[chartData[0].data.length - 1]} Cr.)`,
+            msg,
         }
     };
 }
@@ -826,7 +832,7 @@ function removeFirstYear(years, lineItem) {
     return years;
 }
 
-// Get capex stage
+// Get capex stage - aggregation pipeline
 function getCapexStage(year) {
     return [
         {
@@ -857,4 +863,15 @@ function getCapexStage(year) {
         },
         { $match: { year: { $ne: year } } }
     ];
+}
+
+/**
+ * Formats a numeric amount into a string with Indian currency notation and 'Cr' suffix.
+ * @param {number} amt - The amount to format.
+ * @returns {string} The formatted amount string or 'N/A' (if invalid).
+ */
+function formatAmount(amt) {
+    return typeof amt === 'number' && !isNaN(amt) ?
+        `Rs.${amt.toLocaleString('en-IN')} Cr` :
+        'N/A';
 }
