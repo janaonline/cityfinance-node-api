@@ -2,11 +2,12 @@ const ObjectId = require('mongoose').Types.ObjectId;
 const Ulb = require('../../../models/Ulb');
 const LineItem = require('../../../models/LineItem');
 const LedgerLog = require('../../../models/LedgerLog');
-const { populationCategoryData } = require('../../utils/queryTemplates')
-const { getPopulationCategory } = require('../../common/common')
+const { populationCategoryData } = require('../../utils/queryTemplates');
+const { getPopulationCategory } = require('../../common/common');
 const { totRevenueArr, totOwnRevenueArr, revExpenditureArr, capexArr } = require('../../utils/ledgerFormulas');
 const ALLOWED_COMPARE_TYPES = ['ulb', 'state', 'national', 'popCat', 'ulbType', 'ulbs'];
 const ALLOWED_LINEITEMS = ['revenue', 'ownRevenue', 'revex', 'capex'];
+const CAPEX = ['capex'];
 const ALLOWED_CALC_TYPES = ['total', 'perCapita', 'mix'];
 const LINE_ITEMS_MAP = {
     'revenue': totRevenueArr,
@@ -44,6 +45,13 @@ module.exports.financialIndicators = async (req, res) => {
         // Validate req.body.
         validateReqBody(req.body);
 
+        // Add Year-1 (For calculating CAGR one extra year is required.)
+        years.sort((a, b) => a.localeCompare(b));
+        if (CAPEX.includes(lineItem)) {
+            const year = years[0].split('-').map((y) => Number(y - 1)).join('-');
+            years.unshift(year);
+        }
+
         // Get line items.
         const lineItemsResult = await LineItem.find({}, { code: 1, name: 1 });
         const lineItemsMap = Object.fromEntries(lineItemsResult.map(doc => [doc.code, doc.name]));
@@ -68,10 +76,10 @@ module.exports.financialIndicators = async (req, res) => {
             data = createResStructureMixData(mixData, lineItemsMap);
         } else if (calcType === 'total') {
             const totalData = await getWeightedAvgData(compareIdMap, lineItem, ulbId, years, compareUlbs, compareType);
-            data = createResStructureWeighedAvgData(totalData, lineItemsMap, years);
+            data = createResStructureWeighedAvgData(totalData, lineItem, years);
         } else if (calcType === 'perCapita') {
             const perCapitaData = await getPerCapitaData(compareIdMap, lineItem, ulbId, years, compareUlbs, compareType)
-            data = createResStructurePerCapitaData(perCapitaData, lineItemsMap, years);
+            data = createResStructurePerCapitaData(perCapitaData, lineItem, years);
         } else throw new Error("Invalid calcType");
 
         return res.status(200).json({
@@ -90,6 +98,12 @@ module.exports.financialIndicators = async (req, res) => {
 const validateReqBody = ({ years, compareType, ulbId, lineItem, calcType, compareUlbs }) => {
     if (!Array.isArray(years) || years.length === 0) {
         throw new Error("Parameter 'years' is required and must be a non-empty array.");
+    } else {
+        // Year must be between 2015-16 and 2026-27 (inclusive)
+        const regex = /^(201[5-9]|202[0-6])-(?:1[6-9]|2[0-7])$/
+        const bool = years.every((year) => regex.test(year));
+        if (!bool)
+            throw new Error("'years' has invalid year.");
     }
 
     if (!compareType.length || !ALLOWED_COMPARE_TYPES.includes(compareType)) {
@@ -340,17 +354,17 @@ async function getWeightedAvgData(compareIdMap, lineItem, ulbId, years, compareU
     let compareQueries = [];
 
     // Always fetch ULB data - for only 1 year.
-    const ulbQuery = buildWeightedAvgPipeline(LINE_ITEMS_MAP[lineItem], years, ulbId, 'ulb', compareIdMap);
+    const ulbQuery = buildWeightedAvgPipeline(lineItem, LINE_ITEMS_MAP[lineItem], years, ulbId, 'ulb', compareIdMap);
 
     if (Array.isArray(compareUlbs) && compareType === 'ulbs') {
         // Case: Compare with up to 3 ULBs (by ID)
         compareQueries = compareUlbs.slice(0, 3).map(id =>
-            buildWeightedAvgPipeline(LINE_ITEMS_MAP[lineItem], years, id, 'ulb', compareIdMap)
+            buildWeightedAvgPipeline(lineItem, LINE_ITEMS_MAP[lineItem], years, id, 'ulb', compareIdMap)
         );
     } else {
         // Case: Compare with one of national/state/popCat/ulbType
         const compareId = compareIdMap[compareType] || '';
-        compareQueries = [buildWeightedAvgPipeline(LINE_ITEMS_MAP[lineItem], years, compareId, compareType, compareIdMap)];
+        compareQueries = [buildWeightedAvgPipeline(lineItem, LINE_ITEMS_MAP[lineItem], years, compareId, compareType, compareIdMap)];
     }
 
     // Run all queries in parallel
@@ -364,7 +378,7 @@ async function getWeightedAvgData(compareIdMap, lineItem, ulbId, years, compareU
     return { ulbLedgerData, compareResults };
 }
 
-function buildWeightedAvgPipeline(lineItemsArr, yearsArr, compareId, groupBy, compareIdMap) {
+function buildWeightedAvgPipeline(lineItem, lineItemsArr, yearsArr, compareId, groupBy, compareIdMap) {
     // console.log("----------------------", compareId, groupBy)
     // const ulbTypeId = compareIdMap.ulbType
     // if (!ulbTypeId) throw new Error("ULB type is required.");
@@ -376,7 +390,7 @@ function buildWeightedAvgPipeline(lineItemsArr, yearsArr, compareId, groupBy, co
     // Match input data
     const matchStage = {
         isStandardizable: { $ne: 'No' },
-        year: { $in: yearsArr.slice(0, 3) }
+        year: { $in: yearsArr }
     };
 
     // Lookup ULB data
@@ -406,6 +420,10 @@ function buildWeightedAvgPipeline(lineItemsArr, yearsArr, compareId, groupBy, co
             $add: lineItemsArr.map(expr => ({ $ifNull: [expr, 0] }))
         }
     };
+
+    // To calculate capex add previous years value and subtract from current year.
+    let capex = [];
+    if (CAPEX.includes(lineItem)) capex = getCapexStage(yearsArr[0]);
 
     // Project weighted value
     const projectStage = {
@@ -462,6 +480,7 @@ function buildWeightedAvgPipeline(lineItemsArr, yearsArr, compareId, groupBy, co
         { $addFields: { popCat: populationCategoryData('$ulbsData.population') } },
         { $match: matchFromUlbs },
         { $addFields: addSelectedTotalStage },
+        ...capex,
         { $project: projectStage },
         { $group: groupStage },
         { $project: finalProjectStage }
@@ -472,7 +491,10 @@ function buildWeightedAvgPipeline(lineItemsArr, yearsArr, compareId, groupBy, co
 }
 
 // Create response structure.
-function createResStructureWeighedAvgData(totalData, lineItemsMap, years) {
+function createResStructureWeighedAvgData(totalData, lineItem, years) {
+    // Remove Year-1 (Added at the beginning.)
+    years = removeFirstYear(years, lineItem);
+
     // Basic validation
     if (!totalData || !Array.isArray(totalData.ulbLedgerData) || totalData.ulbLedgerData.length === 0) {
         return { msg: 'Data not available.', success: false };
@@ -528,12 +550,18 @@ function createResStructureWeighedAvgData(totalData, lineItemsMap, years) {
         });
     }
 
-    // 3 because: only 3 years data is show
+    // 4 because: only 3 years data has to be shown.
     const ulbCagr = Math.round(getCagr(chartData[0].data, 4), 0);
     const ulbName = chartData[1].label;
-    // const comName = chartData[1].label;
-
-    // console.log(years, chartData)
+    const yr1 = `FY${years[0]}`;
+    const yr2 = `FY${years[years.length - 1]}`;
+    const amt1Msg = formatAmount(chartData[0].data[0]);
+    const amt2Msg = formatAmount(chartData[0].data[chartData[0].data.length - 1]);
+    const cagrMsg =
+        typeof ulbCagr === 'number' && !isNaN(ulbCagr) && Math.abs(ulbCagr) !== Infinity
+            ? `CAGR of ${ulbCagr}% between ${yr1} and ${yr2}`
+            : 'CAGR cannot be computed';
+    const msg = `${cagrMsg} (${ulbName} numbers for ${yr1} is ${amt1Msg}, and for ${yr2} is ${amt2Msg}.)`
 
     return {
         chartType: 'barChart',
@@ -543,7 +571,7 @@ function createResStructureWeighedAvgData(totalData, lineItemsMap, years) {
         data: chartData,
         info: {
             text: ulbCagr >= 0 ? 'success' : 'danger',
-            msg: `CAGR of ${ulbCagr}% between FY${years[0]} and FY${years[years.length - 1]} (${ulbName} numbers for FY${years[0]} is Rs.${chartData[0].data[0]} Cr, and for FY${years[years.length - 1]} is Rs.${chartData[0].data[chartData[0].data.length - 1]} Cr.)`,
+            msg,
         }
     };
 }
@@ -554,17 +582,17 @@ async function getPerCapitaData(compareIdMap, lineItem, ulbId, years, compareUlb
     let compareQueries = [];
 
     // Always fetch ULB data - for only 1 year.
-    const ulbQuery = buildPerCapitaPipeline(LINE_ITEMS_MAP[lineItem], years, ulbId, 'ulb', compareIdMap);
+    const ulbQuery = buildPerCapitaPipeline(lineItem, LINE_ITEMS_MAP[lineItem], years, ulbId, 'ulb', compareIdMap);
 
     if (Array.isArray(compareUlbs) && compareType === 'ulbs') {
         // Case: Compare with up to 3 ULBs (by ID)
         compareQueries = compareUlbs.slice(0, 3).map(id =>
-            buildPerCapitaPipeline(LINE_ITEMS_MAP[lineItem], years, id, 'ulb', compareIdMap)
+            buildPerCapitaPipeline(lineItem, LINE_ITEMS_MAP[lineItem], years, id, 'ulb', compareIdMap)
         );
     } else {
         // Case: Compare with one of national/state/popCat/ulbType
         const compareId = compareIdMap[compareType] || '';
-        compareQueries = [buildPerCapitaPipeline(LINE_ITEMS_MAP[lineItem], years, compareId, compareType, compareIdMap)];
+        compareQueries = [buildPerCapitaPipeline(lineItem, LINE_ITEMS_MAP[lineItem], years, compareId, compareType, compareIdMap)];
     }
 
     // Run all queries in parallel
@@ -578,7 +606,7 @@ async function getPerCapitaData(compareIdMap, lineItem, ulbId, years, compareUlb
     return { ulbLedgerData, compareResults };
 }
 
-function buildPerCapitaPipeline(lineItemsArr, yearsArr, compareId, groupBy, compareIdMap) {
+function buildPerCapitaPipeline(lineItem, lineItemsArr, yearsArr, compareId, groupBy, compareIdMap) {
     // const ulbTypeId = compareIdMap.ulbType;
     // if (!ulbTypeId) throw new Error("ULB type is required.");
 
@@ -588,7 +616,7 @@ function buildPerCapitaPipeline(lineItemsArr, yearsArr, compareId, groupBy, comp
 
     const matchStage = {
         isStandardizable: { $ne: 'No' },
-        year: { $in: yearsArr.slice(0, 3) }
+        year: { $in: yearsArr }
     };
 
     const matchFromUlbs = {
@@ -613,6 +641,10 @@ function buildPerCapitaPipeline(lineItemsArr, yearsArr, compareId, groupBy, comp
             $add: lineItemsArr.map(expr => ({ $ifNull: [expr, 0] }))
         }
     };
+
+    // To calculate capex add previous years value and subtract from current year.
+    let capex = [];
+    if (CAPEX.includes(lineItem)) capex = getCapexStage(yearsArr[0]);
 
     // Calculate per capita per document
     const projectStage = {
@@ -670,6 +702,7 @@ function buildPerCapitaPipeline(lineItemsArr, yearsArr, compareId, groupBy, comp
         { $addFields: { popCat: populationCategoryData('$ulbsData.population') } },
         { $match: matchFromUlbs },
         { $addFields: addSelectedTotalStage },
+        ...capex,
         { $project: projectStage },
         { $group: groupStage },
         { $project: finalProjectStage }
@@ -680,8 +713,9 @@ function buildPerCapitaPipeline(lineItemsArr, yearsArr, compareId, groupBy, comp
 }
 
 // Create response structure.
-function createResStructurePerCapitaData(totalData, lineItemsMap, years) {
-    // console.log(JSON.stringify(totalData, null, 2))
+function createResStructurePerCapitaData(totalData, lineItem, years) {
+    // Remove Year-1 (Added at the beginning.)
+    years = removeFirstYear(years, lineItem);
 
     // Basic validation
     if (!totalData || !Array.isArray(totalData.ulbLedgerData) || totalData.ulbLedgerData.length === 0) {
@@ -788,4 +822,56 @@ function getCagr(arr, yrs) {
 
     const cagr = (Math.pow(endValue / startValue, 1 / yrs) - 1) * 100;
     return +cagr.toFixed(2);
+}
+
+// Remove first year - If added at the begining of financialIndicators().
+function removeFirstYear(years, lineItem) {
+    if (CAPEX.includes(lineItem)) {
+        years = years.slice(1);
+    }
+    return years;
+}
+
+// Get capex stage - aggregation pipeline
+function getCapexStage(year) {
+    return [
+        {
+            $setWindowFields: {
+                partitionBy: "$ulb_id", // group by ulb_id
+                sortBy: { year: 1 }, // sort by year ascending
+                output: {
+                    prevYrAmt: {
+                        $shift: {
+                            output: "$selectedTotal",
+                            by: -1, // get next doc’s amt (since years increase)
+                            default: null
+                        }
+                    }
+                }
+            }
+        },
+        {
+            $addFields: {
+                selectedTotal: {
+                    $cond: [
+                        { $ifNull: ["$prevYrAmt", false] },
+                        { $subtract: ["$selectedTotal", "$prevYrAmt"] },
+                        null
+                    ]
+                }
+            }
+        },
+        { $match: { year: { $ne: year } } }
+    ];
+}
+
+/**
+ * Formats a numeric amount into a string with Indian currency notation and 'Cr' suffix.
+ * @param {number} amt - The amount to format.
+ * @returns {string} The formatted amount string or 'N/A' (if invalid).
+ */
+function formatAmount(amt) {
+    return typeof amt === 'number' && !isNaN(amt) ?
+        `Rs.${amt.toLocaleString('en-IN')} Cr` :
+        'N/A';
 }
