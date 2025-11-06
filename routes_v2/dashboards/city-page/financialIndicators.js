@@ -437,7 +437,16 @@ function buildWeightedAvgPipeline(lineItem, lineItemsArr, yearsArr, compareId, g
     const groupStage = {
         _id: "$year",
         totalWeightedValue: { $sum: "$weightedValue" },
-        totalPopulation: { $sum: "$population" },
+        // totalPopulation: { $sum: "$population" },
+        totalPopulation: {
+            $sum: {
+                $cond: [
+                    { $ne: ["$weightedValue", null] },
+                    "$population",
+                    0
+                ]
+            }
+        },
         ulbName: { $first: "$ulbName" },
     };
 
@@ -649,9 +658,21 @@ function buildPerCapitaPipeline(lineItem, lineItemsArr, yearsArr, compareId, gro
     // Calculate per capita per document
     const projectStage = {
         year: 1,
+        // perCapitaValue: {
+        //     $cond: [
+        //         { $eq: ["$ulbsData.population", 0] },
+        //         null,
+        //         { $divide: ["$selectedTotal", "$ulbsData.population"] }
+        //     ]
+        // },
         perCapitaValue: {
             $cond: [
-                { $eq: ["$ulbsData.population", 0] },
+                {
+                    $or: [
+                        { $eq: ["$selectedTotal", null] },
+                        { $eq: ["$ulbsData.population", 0] }
+                    ]
+                },
                 null,
                 { $divide: ["$selectedTotal", "$ulbsData.population"] }
             ]
@@ -840,6 +861,13 @@ function getCapexStage(year) {
                 partitionBy: "$ulb_id", // group by ulb_id
                 sortBy: { year: 1 }, // sort by year ascending
                 output: {
+                    prevYr: {
+                        $shift: {
+                            output: "$year",
+                            by: -1,
+                            default: null
+                        }
+                    },
                     prevYrAmt: {
                         $shift: {
                             output: "$selectedTotal",
@@ -852,9 +880,41 @@ function getCapexStage(year) {
         },
         {
             $addFields: {
+                // Compute correct previous year string, e.g. from "2021-22" -> "2020-21"
+                // "prevYr" could be any year less than "year".
+                expectedPrevYr: {
+                    $let: {
+                        vars: {
+                            startYear: { $toInt: { $substr: ["$year", 0, 4] } },
+                            endYear: { $toInt: { $substr: ["$year", 5, 2] } }
+                        },
+                        in: {
+                            $concat: [
+                                { $toString: { $subtract: ["$$startYear", 1] } },
+                                "-",
+                                { $toString: { $subtract: ["$$endYear", 1] } },
+                            ]
+                        }
+                    }
+                },
+            },
+        },
+        {
+            $addFields: {
+                prevYrAmt: {
+                    $cond: [
+                        { $eq: ["$prevYr", "$expectedPrevYr"] },
+                        "$prevYrAmt",
+                        null
+                    ]
+                },
+            }
+        },
+        {
+            $addFields: {
                 selectedTotal: {
                     $cond: [
-                        { $ifNull: ["$prevYrAmt", false] },
+                        { $ifNull: [{ $or: ["$selectedTotal", "$prevYrAmt"] }, false] },
                         { $subtract: ["$selectedTotal", "$prevYrAmt"] },
                         null
                     ]
