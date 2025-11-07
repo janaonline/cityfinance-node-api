@@ -47,10 +47,10 @@ module.exports.financialIndicators = async (req, res) => {
 
         // Add Year-1 (For calculating CAGR one extra year is required.)
         years.sort((a, b) => a.localeCompare(b));
-        if (CAPEX.includes(lineItem)) {
-            const year = years[0].split('-').map((y) => Number(y - 1)).join('-');
-            years.unshift(year);
-        }
+        // if (CAPEX.includes(lineItem)) {
+        const year = years[0].split('-').map((y) => Number(y - 1)).join('-');
+        years.unshift(year);
+        // }
 
         // Get line items.
         const lineItemsResult = await LineItem.find({}, { code: 1, name: 1 });
@@ -76,7 +76,7 @@ module.exports.financialIndicators = async (req, res) => {
             data = createResStructureMixData(mixData, lineItemsMap);
         } else if (calcType === 'total') {
             const totalData = await getWeightedAvgData(compareIdMap, lineItem, ulbId, years, compareUlbs, compareType);
-            data = createResStructureWeighedAvgData(totalData, lineItem, years);
+            data = createResStructureWeighedAvgData(totalData, years);
         } else if (calcType === 'perCapita') {
             const perCapitaData = await getPerCapitaData(compareIdMap, lineItem, ulbId, years, compareUlbs, compareType)
             data = createResStructurePerCapitaData(perCapitaData, lineItem, years);
@@ -500,10 +500,7 @@ function buildWeightedAvgPipeline(lineItem, lineItemsArr, yearsArr, compareId, g
 }
 
 // Create response structure.
-function createResStructureWeighedAvgData(totalData, lineItem, years) {
-    // Remove Year-1 (Added at the beginning.)
-    years = removeFirstYear(years, lineItem);
-
+function createResStructureWeighedAvgData(totalData, years) {
     // Basic validation
     if (!totalData || !Array.isArray(totalData.ulbLedgerData) || totalData.ulbLedgerData.length === 0) {
         return { msg: 'Data not available.', success: false };
@@ -517,17 +514,31 @@ function createResStructureWeighedAvgData(totalData, lineItem, years) {
     const chartData = [];
 
     // Prepare main ULB data
-    const ulbSubData = new Array(years.length).fill(null);
+    let ulbSubData = new Array(years.length).fill(null);
     for (const entry of totalData.ulbLedgerData) {
         if (entry && yearIndexMap.hasOwnProperty(entry.year)) {
             ulbSubData[yearIndexMap[entry.year]] = entry.weightedAverageCr;
         }
     }
 
+    const customHoverLabels = [];
+    for (let i = 0; i < years.length - 1; i++) {
+        const prevYr = ulbSubData[i];
+        const currYr = ulbSubData[i + 1];
+        const growth = prevYr && currYr ?
+            `${(((currYr - prevYr) / prevYr) * 100).toFixed(2)}%` :
+            'NA';
+        customHoverLabels.push(growth);
+    }
+    // console.log({ ulbSubData, yearIndexMap, customHoverLabels });
+    ulbSubData = keep3ItemsInArr(ulbSubData);
+    years = keep3ItemsInArr(years);
+
     chartData.push({
         type: 'line',
         label: 'Y-o-Y Growth',
         data: ulbSubData,
+        customHoverLabels,
         backgroundColor: [LINE_COLOR],
         borderColor: LINE_COLOR,
         fill: false,
@@ -736,7 +747,7 @@ function buildPerCapitaPipeline(lineItem, lineItemsArr, yearsArr, compareId, gro
 // Create response structure.
 function createResStructurePerCapitaData(totalData, lineItem, years) {
     // Remove Year-1 (Added at the beginning.)
-    years = removeFirstYear(years, lineItem);
+    years = keep3ItemsInArr(years, lineItem);
 
     // Basic validation
     if (!totalData || !Array.isArray(totalData.ulbLedgerData) || totalData.ulbLedgerData.length === 0) {
@@ -846,11 +857,12 @@ function getCagr(arr, yrs) {
 }
 
 // Remove first year - If added at the begining of financialIndicators().
-function removeFirstYear(years, lineItem) {
-    if (CAPEX.includes(lineItem)) {
-        years = years.slice(1);
+function keep3ItemsInArr(arr, lineItem) {
+    // if (CAPEX.includes(lineItem)) {
+    if (arr.length > 3) {
+        arr = arr.slice(-3);
     }
-    return years;
+    return arr;
 }
 
 // Get capex stage - aggregation pipeline
