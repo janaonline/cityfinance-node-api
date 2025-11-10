@@ -36,4 +36,9 @@ router.post("/save-request-only", saveRequestOnly);
 router.get("/fetchRequestLogs", fetchRequestLogs);
 
 
+const { generateFilteredExcel } = require("./afsExcelfiles");
+
+router.get("/afs-generate-filtered-excel", generateFilteredExcel);
+
+
 module.exports = router;
