@@ -4,7 +4,10 @@ const AFSExcelFile = require("../../models/afsExcelfile");
 const { uploadAFSEXCELFileToS3 } = require("../../service/s3-services");
 const xlsx = require("xlsx");
 const upload = multer(); // memory storage
-
+const fs = require("fs");
+const path = require("path");
+const Ulb = require("../../models/Ulb");
+const State = require("../../models/State");
 
 
 module.exports.uploadAFSExcelFiles = async (req, res) => {
@@ -49,9 +52,9 @@ module.exports.uploadAFSExcelFiles = async (req, res) => {
         originalname: `digitized_${i}.xlsx`,
         buffer,
       };
-   
+
       // Upload to S3
-     
+
 
       const { s3Key, fileUrl } = await uploadAFSEXCELFileToS3({
         ulbId,
@@ -113,7 +116,7 @@ module.exports.uploadAFSExcelFiles = async (req, res) => {
         return { row: rowItems };
       });
       // Remove old entry for same uploader (ULB/AFS)
-      
+
       parentDoc.files = parentDoc.files.filter(f => f.uploadedBy !== uploadedBy);
       parentDoc.files.push({
         s3Key,
@@ -131,7 +134,7 @@ module.exports.uploadAFSExcelFiles = async (req, res) => {
       const bVal = order[b.uploadedBy?.toUpperCase()] ?? 99;
       return aVal - bVal;
     });
-   
+
     await parentDoc.save();
     return res.json({ success: true, fileGroup: parentDoc });
   } catch (err) {
@@ -280,7 +283,7 @@ module.exports.saveRequestOnly = async (req, res) => {
       // Prevent duplicates based on requestId
       parentDoc.files = parentDoc.files.filter(f => f.uploadedBy !== uploader);
       parentDoc.files.push(...newFiles);
-      
+
     }
     parentDoc.files.sort((a, b) => {
       const order = { ULB: 0, AFS: 1 };
@@ -305,3 +308,331 @@ module.exports.saveRequestOnly = async (req, res) => {
   }
 };
 
+
+module.exports.generateFilteredExcel = async (req, res) => {
+  try {
+    const { ulbId, financialYear, auditType, docType } = req.query;
+
+    if (!ulbId || !financialYear || !auditType || !docType) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Missing query parameters" });
+    }
+
+    // 1) Fetch AFSExcelFile document
+    const parentDoc = await AFSExcelFile.findOne({
+      ulbId,
+      financialYear,
+      auditType,
+      docType,
+    });
+
+    if (!parentDoc || !parentDoc.files?.length) {
+      return res
+        .status(404)
+        .json({ success: false, message: "No Excel data found" });
+    }
+
+    // 2) Fetch ULB & State info
+    const ulb = await Ulb.findById(ulbId).populate("state", "name");
+    const ulbName = ulb?.name || "Unknown ULB";
+    const stateName = ulb?.state?.name || "Unknown State";
+    const ulbCode = ulb?.code || "N/A"; 
+
+    // 3) Input JSON data (array of { row: [ {title, value}, ... ] })
+    const jsonData = parentDoc.files[0].data;
+
+    // 4) Filter rows based on “Particulars” containing fee/charge-like keywords
+    const keywords = ["charge", "fee", "permit", "fine", "penalt", "contribution", "user"];
+
+    const filteredRows = jsonData.filter((item) => {
+      const particularsField = item.row.find(
+        (r) => (r.title || "").toLowerCase() === "particulars"
+      );
+      const value = (particularsField?.value ?? "").toString().toLowerCase();
+      return keywords.some((k) => value.includes(k));
+    });
+
+    if (filteredRows.length === 0) {
+      return res.status(200).json({ success: true, message: "No matching rows found" });
+    }
+
+    // --- Helpers -----
+
+    const toTokens = (s) =>
+      (s || "")
+        .toString()
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, " ")
+        .trim()
+        .split(/\s+/)
+        .filter(Boolean);
+
+    const overlapScore = (title, candidate) => {
+      const t = new Set(toTokens(title));
+      const c = toTokens(candidate);
+      if (c.length === 0) return 0;
+      let common = 0;
+      for (const w of c) if (t.has(w)) common++;
+      return common / c.length;
+    };
+
+    const extractYearFromTitle = (s) => {
+      if (!s) return null;
+      const m4 = String(s).match(/(?:\b|on\s*)(\d{1,2})[./-](\d{1,2})[./-](\d{4})\b/i);
+      if (m4) return parseInt(m4[3], 10);
+      const y = String(s).match(/\b(20\d{2}|19\d{2})\b/);
+      return y ? parseInt(y[1], 10) : null;
+    };
+
+    const getFyEndYear = (fy) => {
+      if (!fy) return null;
+      const str = String(fy);
+      const m = str.match(/(20\d{2})\s*[-/–]\s*(\d{2}|\d{4})/);
+      if (m) {
+        const start = parseInt(m[1], 10);
+        const tail = m[2].length === 2 ? 2000 + parseInt(m[2], 10) : parseInt(m[2], 10);
+        return Math.max(start, tail);
+      }
+      const lone = str.match(/\b(20\d{2}|19\d{2})\b/);
+      return lone ? parseInt(lone[1], 10) : null;
+    };
+
+    const getValueByYear = (item, year) => {
+      if (!year) return "";
+      for (const cell of item.row) {
+        const y = extractYearFromTitle(cell.title);
+        if (y === year) return cell.value ?? "";
+      }
+      return "";
+    };
+
+    const inferCurrentPrevByExtremes = (item) => {
+      const years = [];
+      for (const cell of item.row) {
+        const y = extractYearFromTitle(cell.title);
+        if (y) years.push(y);
+      }
+      const uniq = Array.from(new Set(years)).sort((a, b) => a - b);
+      if (uniq.length >= 2) {
+        const minY = uniq[0];
+        const maxY = uniq[uniq.length - 1];
+        const currentYearValue = getValueByYear(item, maxY);
+        const previousYearValue = getValueByYear(item, minY);
+        return { currentYearValue, previousYearValue };
+      }
+      return { currentYearValue: "", previousYearValue: "" };
+    };
+
+    const getByCandidates = (item, candidates, minScore = 0.5, opts = {}) => {
+      let best = { score: 0, value: "" };
+
+      for (const cell of item.row) {
+        for (const cand of candidates) {
+          const score = overlapScore(cell.title || "", cand);
+          if (score > best.score) best = { score, value: cell.value ?? "" };
+        }
+      }
+
+      if (best.score >= minScore) return best.value ?? "";
+
+      const fyEnd = getFyEndYear(opts.financialYear);
+
+      if (candidates === CANDIDATES.currentYear) {
+        const byFy = getValueByYear(item, fyEnd);
+        if (byFy !== "") return byFy;
+        const inferred = inferCurrentPrevByExtremes(item);
+        if (inferred.currentYearValue !== "") return inferred.currentYearValue;
+      }
+
+      if (candidates === CANDIDATES.previousYear) {
+        const byFyMinus1 = getValueByYear(item, fyEnd ? fyEnd - 1 : null);
+        if (byFyMinus1 !== "") return byFyMinus1;
+        const inferred = inferCurrentPrevByExtremes(item);
+        if (inferred.previousYearValue !== "") return inferred.previousYearValue;
+      }
+
+      if (candidates === CANDIDATES.currentYear) {
+        const hit = item.row.find((r) => {
+          const t = toTokens(r.title);
+          return t.includes("current") && (t.includes("year") || t.includes("yr"));
+        });
+        if (hit) return hit.value ?? "";
+      }
+
+      if (candidates === CANDIDATES.previousYear) {
+        const hit = item.row.find((r) => {
+          const t = toTokens(r.title);
+          return (
+            (t.includes("previous") || t.includes("prior") || t.includes("prev")) &&
+            (t.includes("year") || t.includes("yr"))
+          );
+        });
+        if (hit) return hit.value ?? "";
+      }
+
+      return "";
+    };
+
+    const CANDIDATES = {
+      account: [
+        "account code/ schedule no/ sch no/code/code no",
+        "account code",
+        "schedule no",
+        "sch no",
+        "code",
+        "code no",
+      ],
+      particulars: ["particulars", "description", "details", "item particulars"],
+      currentYear: [
+        "current year",
+        "amount current year",
+        "amount & date (current year)",
+        "amount (current year)",
+        "current year amount",
+        "cy amount",
+        "amount cy",
+        "cur year amount",
+        "current yr amount",
+        "curr year",
+        "curr yr",
+      ],
+      previousYear: [
+        "previous year",
+        "amount previous year",
+        "amount & date (previous year)",
+        "amount (previous year)",
+        "previous year amount",
+        "py amount",
+        "amount py",
+        "prev year amount",
+        "prior year amount",
+        "prev yr",
+        "prior yr",
+      ],
+    };
+
+    // Build Sheet 
+
+    const TITLE = "Fees & User Charges - Income - Head Wise - 140";
+    const TEMPLATE_HEADERS = [
+      "ULB Code",
+      "ULB Name",
+      "State Name",
+      "Audited Year",
+      "Account code/ Schedule No/ Sch No/Code/Code No",
+      "Particulars",
+      "Current Year",
+      "Previous Year",
+    ];
+
+    const sheetData = [];
+    // Row 1: put TITLES — main title over Particulars (E1), and "Amount in rupees" over F1, G1
+    sheetData.push(["", "", "", "", "", TITLE, "Amount in rupees", "Amount in rupees"]); // A1..G1
+
+    // Row 2: headers
+    sheetData.push(TEMPLATE_HEADERS);
+
+    // Data rows
+    filteredRows.forEach((item) => {
+      const row = [
+        ulbCode,
+        ulbName,
+        stateName,
+        financialYear,
+        getByCandidates(item, CANDIDATES.account, 0.5, { financialYear }),
+        getByCandidates(item, CANDIDATES.particulars, 0.5, { financialYear }),
+        getByCandidates(item, CANDIDATES.currentYear, 0.5, { financialYear }),
+        getByCandidates(item, CANDIDATES.previousYear, 0.5, { financialYear }),
+      ];
+      sheetData.push(row);
+    });
+
+    // Create worksheet
+    const ws = xlsx.utils.aoa_to_sheet(sheetData);
+
+    // Freeze panes so row 1-2 stay visible (titles + headers)
+    ws["!freeze"] = { xSplit: 0, ySplit: 2 };
+
+    // Column widths
+    ws["!cols"] = [
+      { wch: 12 }, // ULB Code
+      { wch: 25 }, // ULB Name
+      { wch: 20 }, // State Name
+      { wch: 14 }, // Audited Year
+      { wch: 38 }, // Account code/...
+      { wch: 35 }, // Particulars (title sits above this)
+      { wch: 18 }, // Current Year
+      { wch: 18 }, // Previous Year
+    ];
+
+    // Styling
+    // Many community builds ignore styles; safe to set anyway.
+    const dataFontSize = 10;            // base size for data
+    const headerFontSize = dataFontSize + 2;
+
+    const range = xlsx.utils.decode_range(ws["!ref"]);
+
+    // Bold + larger font for header row (Row 2 = index 1)
+    for (let c = range.s.c; c <= range.e.c; c++) {
+      const cellRef = xlsx.utils.encode_cell({ r: 1, c });
+      if (!ws[cellRef]) continue;
+      ws[cellRef].s = ws[cellRef].s || {};
+      ws[cellRef].s.font = { bold: true, sz: headerFontSize };
+      ws[cellRef].s.alignment = { vertical: "center", horizontal: "center", wrapText: true };
+    }
+
+    // Title row (Row 1 = index 0): bold; keep same font size as headers or a bit larger if you prefer
+    const titleCells = ["E1", "F1", "G1"];
+    for (const ref of titleCells) {
+      if (!ws[ref]) continue;
+      ws[ref].s = ws[ref].s || {};
+      ws[ref].s.font = { bold: true, sz: headerFontSize };
+      ws[ref].s.alignment = { vertical: "center", horizontal: "center", wrapText: true };
+    }
+
+    // Data rows: ensure a consistent (smaller) font and left/right alignment as appropriate
+    for (let r = 2; r <= range.e.r; r++) {
+      for (let c = range.s.c; c <= range.e.c; c++) {
+        const ref = xlsx.utils.encode_cell({ r, c });
+        if (!ws[ref]) continue;
+        ws[ref].s = ws[ref].s || {};
+        ws[ref].s.font = { sz: dataFontSize };
+        // Right align numeric columns (F,G) — basic heuristic
+        const isAmountCol = c === 5 || c === 6;
+        ws[ref].s.alignment = {
+          vertical: "center",
+          horizontal: isAmountCol ? "right" : "left",
+          wrapText: true,
+        };
+      }
+    }
+
+    const wb = xlsx.utils.book_new();
+    xlsx.utils.book_append_sheet(wb, ws, "Filtered Data");
+
+    // Write & send
+    const outputDir = path.join(__dirname, "../../../tmp");
+    if (!fs.existsSync(outputDir)) fs.mkdirSync(outputDir, { recursive: true });
+
+    const filePath = path.join(outputDir, `filtered_${ulbId}_${Date.now()}.xlsx`);
+    xlsx.writeFile(wb, filePath);
+
+    res.download(filePath, (err) => {
+      if (err) {
+        console.error("Download error:", err);
+        return res.status(500).json({ success: false, message: "Failed to download file" });
+      }
+      setTimeout(() => {
+        try { fs.unlinkSync(filePath); } catch {}
+      }, 10000);
+    });
+  } catch (err) {
+    console.error("Generate Excel Error:", err);
+    return res.status(500).json({
+      success: false,
+      message: "Server error",
+      error: err.message,
+    });
+  }
+};
