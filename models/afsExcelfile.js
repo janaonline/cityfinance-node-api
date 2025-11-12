@@ -20,7 +20,7 @@ const FileSchema = new mongoose.Schema({
   uploadedAt: { type: Date, default: Date.now },
   uploadedBy: { type: String, enum: ["ULB", "AFS"], required: true },
   data: [DataRowSchema],
-  overallConfidenceScore: { type: Number, required: true, default: null },
+  overallConfidenceScore: { type: Number, required: true, default: -1 }, //default value -1 means digitization is failed and no overall confidence score is generated
 });
 
 const AFSExcelFileSchema = new mongoose.Schema({
