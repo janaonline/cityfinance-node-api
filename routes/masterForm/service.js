@@ -19,7 +19,12 @@ const Category = require("../../models/Category");
 const statusTypes = require("../../util/statusTypes");
 const { getKeyByValue } = require('../../util/masterFunctions');
 const { years } = require('../../service/years');
-
+const FORMS = {
+  utilReport: 'DUR',
+  slbForWaterSupplyAndSanitation: 'SLBs',
+  annualAccounts: 'Annual Accounts',
+}
+const defaultObj = { percentage: 0 , percentMessage: '' };
 
 const { dateFormatter}  = require('../../util/dateformatter')
 module.exports.get = catchAsync(async (req, res) => {
@@ -91,7 +96,7 @@ module.exports.get = catchAsync(async (req, res) => {
       },
     ];
 
-    let masterFormData = await MasterFormData.aggregate(query);
+    let masterFormData = await MasterFormData.aggregate(query).exec();
 
     if (!masterFormData || masterFormData.length === 0) {
       return res.status(500).json({
@@ -100,7 +105,7 @@ module.exports.get = catchAsync(async (req, res) => {
       });
     } else {
       masterFormData = JSON.parse(JSON.stringify(masterFormData[0]));
-      let percentage = calculatePercentage(masterFormData, user.role);
+      let { percentage, percentMessage } = calculatePercentage(masterFormData, user.role) || defaultObj;
       if (masterFormData.actionTakenByRole != user.role) {
         if (masterFormData.history.length != 0)
           masterFormData =
@@ -132,12 +137,13 @@ module.exports.get = catchAsync(async (req, res) => {
         message: "Data Found Successfully!",
         response: masterFormData,
         percentage: percentage,
+        percentMessage
       });
     }
   }
   console.log("before percentage function");
-  let masterFormData = await MasterFormData.findOne(query);
-  let percentage = calculatePercentage(masterFormData, user.role);
+  let masterFormData = await MasterFormData.findOne(query).lean();
+  let { percentage, percentMessage } = calculatePercentage(masterFormData, user.role) || defaultObj;
   if (masterFormData["actionTakenByRole"] != user.role) {
     masterFormData = masterFormData.history[masterFormData.history.length - 1];
     masterFormData["stateName"] = masterFormData.stateName;
@@ -155,6 +161,7 @@ module.exports.get = catchAsync(async (req, res) => {
       message: "Data Found Successfully!",
       response: masterFormData,
       percentage: percentage,
+      percentMessage,
     });
   }
 });
@@ -780,7 +787,7 @@ module.exports.getAll = catchAsync(async (req, res) => {
           p3.push(d);
         }
       }
-      console.log(util.inspect(queryNotStarted, { showHidden: false, depth: null }))
+      // console.log(util.inspect(queryNotStarted, { showHidden: false, depth: null }))
       let noMasterFormData = await Ulb.aggregate(queryNotStarted).exec();
       finalOutput.push(
         ...p1,
@@ -800,7 +807,7 @@ module.exports.getAll = catchAsync(async (req, res) => {
           );
         });
       }
-      console.log(finalOutput);
+      // console.log(finalOutput);
       if (finalOutput) {
         return res.status(200).json({
           success: true,
@@ -4288,7 +4295,7 @@ const stateULB = (state) => {
     // console.log(stateULB)
     // let stateULB = await Ulb.find({ state }).count();
     // console.log(stateULB)
-    res(stateULB[0].count);
+    res(stateULB?.[0]?.count);
   });
 };
 
@@ -4334,41 +4341,57 @@ const stateAgg = (design_year, state) => {
 let calculatePercentage = (masterformData, loggedInUserRole) => {
   // console.log(masterformData)
   if (masterformData == null) {
-    return 0;
+    // return 0;
+    return { percentage: 0, percentMessage: '' };
   }
   if (loggedInUserRole == "ULB") {
     if (masterformData?.history.length == 0) {
       console.log("1");
       let count = 0;
+      const incompleteForms = [];
       for (let key in masterformData?.steps) {
         if (masterformData?.steps[key]["isSubmit"]) {
           count++;
+        } else if (key in FORMS) {
+          incompleteForms.push(FORMS[key]);
         }
       }
-      if (count == 3) return 100;
-      return count * 33;
+      // console.log("1: ", incompleteForms)
+      // if (count == 3) return 100;
+      // return count * 33;
+      return count == 3 ?
+        { percentage: 100, percentMessage: '' } :
+        { percentage: count * 33, percentMessage: `${incompleteForms.join(', ')} has to be edited and submitted` };
     } else if (masterformData?.history.length >= 0) {
       console.log("2");
       if (masterformData?.actionTakenByRole == "ULB") {
         console.log("3");
         let count = 0;
+        const incompleteForms = [];
         for (let key in masterformData?.steps) {
           if (masterformData?.steps[key]["isSubmit"]) {
             count = count + 1;
+          } else if (key in FORMS) {
+            incompleteForms.push(FORMS[key]);
           }
         }
-        if (count == 3) return 100;
-        return count * 33;
+        // if (count == 3) return 100;
+        // return count * 33;
+        return count == 3 ?
+          { percentage: 100, percentMessage: '' } :
+          { percentage: count * 33, percentMessage: `${incompleteForms.join(', ')} has to be edited and submitted` };
       } else {
         if (
           masterformData?.status == "PENDING" ||
           masterformData?.status == "APPROVED"
         ) {
           console.log("4");
-          return 100;
+          // return 100;
+          return { percentage: 100, percentMessage: '' };
         } else {
           console.log("5");
           let count = 0;
+          const incompleteForms = []
           if (masterformData?.status == "REJECTED") {
             for (let key in masterformData?.steps) {
               if (
@@ -4376,10 +4399,17 @@ let calculatePercentage = (masterformData, loggedInUserRole) => {
                 masterformData?.steps[key]["status"] == "N/A"
               ) {
                 count = count + 1;
+              } else if (key in FORMS) {
+                incompleteForms.push(FORMS[key])
               }
             }
-            if (count == 3) return 100;
-            return count * 33;
+            // console.log("2: ", incompleteForms)
+
+            // if (count == 3) return 100;
+            // return count * 33;
+            return count == 3 ?
+              { percentage: 100, percentMessage: '' } :
+              { percentage: count * 33, percentMessage: `${incompleteForms.join(', ')} has to be edited and submitted.` };
           }
         }
       }
@@ -4389,27 +4419,40 @@ let calculatePercentage = (masterformData, loggedInUserRole) => {
     if (masterformData?.history.length == 0) {
       console.log("7");
       let count = 0;
+      const incompleteForms = [];
       for (let key in masterformData?.steps) {
         if (masterformData?.steps[key]["isSubmit"]) {
           count++;
+        } else if (key in FORMS) {
+          incompleteForms.push(FORMS[key]);
         }
       }
-      if (count == 3) return 100;
+      // if (count == 3) return 100;
+      return count == 3 ?
+        { percentage: 100, percentMessage: '' } :
+        { percentage: count * 33, percentMessage: `${incompleteForms.join(', ')} is In Progress.` };
     } else if (masterformData?.history.length >= 0) {
       console.log("8");
       if (masterformData?.actionTakenByRole == "ULB") {
         console.log("9");
         let count = 0;
+        const incompleteForms = [];
         for (let key in masterformData?.steps) {
           if (masterformData?.steps[key]["isSubmit"]) {
             count = count + 1;
+          } else if (key in FORMS) {
+            incompleteForms.push(FORMS[key]);
           }
         }
-        if (count == 3) return 100;
-        return count * 33;
+        // if (count == 3) return 100;
+        // return count * 33;
+        return count == 3 ?
+          { percentage: 100, percentMessage: '' } :
+          { percentage: count * 33, percentMessage: `${incompleteForms.join(', ')} is In Progress.` };
       } else {
         console.log("10");
-        return 100;
+        // return 100;
+        return { percentage: 100, percentMessage: '' };
       }
     }
   }
