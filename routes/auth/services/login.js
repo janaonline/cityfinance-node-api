@@ -31,7 +31,7 @@ module.exports.login = async (req, res) => {
         message: `${user.role} user not allowed login from 15th Fc, Please login with Ranking 2022.`
       })
     }
-    if ((user.role !== 'STATE_DASHBOARD') && req.body.type === "state-dashboard") {
+    if (!['STATE', 'STATE_DASHBOARD'].includes(user.role) && req.body.type === "state-dashboard") {
       return res.status(403).json({
         success: false,
         message: `${user.role} user not allowed login State Dashboard, Please login with State Dashboard user id.`
