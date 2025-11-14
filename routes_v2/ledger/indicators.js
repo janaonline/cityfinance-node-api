@@ -1,6 +1,50 @@
 const ledgerLog = require("../../models/LedgerLog");
 const ulb = require("../../models/Ulb");
 const IndicatorsModel = require("../../models/ledgerIndicators");
+const { getPopulationCategory } = require("../common/common");
+const ALLOWED_COMPARE_TYPES = [
+  "ulb",
+  "state",
+  "national",
+  "popCat",
+  "ulbType",
+  "ulbs",
+];
+const {
+  totRevenueArr,
+  totOwnRevenueArr,
+  revExpenditureArr,
+  capexArr,
+} = require("../utils/ledgerFormulas");
+const ALLOWED_LINEITEMS = ["revenue", "ownRevenue", "revex", "capex"];
+const ALLOWED_CALC_TYPES = ["total", "perCapita", "mix"];
+const LINE_ITEMS_MAP = {
+  revenue: totRevenueArr,
+  ownRevenue: totOwnRevenueArr,
+  revex: revExpenditureArr,
+  capex: capexArr,
+};
+const LABEL_MAP = {
+  ulb: "$ulbName",
+  popCat: "Population category Avg",
+  ulbType: "ULB Type Avg",
+  state: "State Avg",
+  national: "National Avg",
+};
+const OWN_REV = ["100", ...totOwnRevenueArr.map((e) => e.split(".")[1])];
+const GRAPH_COLORS = [
+  "#62b6cb",
+  "#1b4965",
+  "#bee9e8",
+  "#43B5A0",
+  "#F4A261",
+  "#5885AF",
+  "#F6D743",
+  "#f43f5e",
+  "#B388FF",
+];
+const LINE_COLOR = "#f43f5e";
+const ROUND_UP = 0;
 const {
   formatToCroreSummary,
   safeDivide,
@@ -198,7 +242,9 @@ async function marketDashboardIndicators(ulbId, financialYear, totals) {
 
     // ---------- Fetch capex (already returns a number or "N/A") ----------
     const capexRaw = await getCapexValue(ulbId, financialYear);
-    marketDasInd.capex = capexRaw; // keep original shape (number or "N/A")
+    const isNegative = typeof capexRaw === "number" && capexRaw < 0;
+    marketDasInd.capex = capexRaw;
+    marketDasInd.capexAdjusted = isNegative ? "N/A" : null;
 
     // ---------- Normalized numbers for downstream math ----------
     const rev = normalize(totRevenue);
@@ -208,6 +254,9 @@ async function marketDashboardIndicators(ulbId, financialYear, totals) {
     const totRevExp = normalize(totRevenueExpenditure);
     const depreciationVal = normalize(depreciation);
     const capexVal = normalize(marketDasInd.capex);
+    const capexisNeg = typeof capexVal === "number" && capexVal < 0;
+    const capexFinal = capexisNeg ? null : capexVal;
+    // console.log(capexVal, capexisNeg, capexFinal, "capex values");
     const ownRevVal = normalize(totOwnRevenue);
     const totAssetsVal = normalize(totAssets);
     const totDebtVal = normalize(totDebt);
@@ -238,7 +287,7 @@ async function marketDashboardIndicators(ulbId, financialYear, totals) {
 
     // totExpenditure = totRevenueExpenditure + capex  (only if both valid)
     marketDasInd.totExpenditure =
-      totRevExp !== null && capexVal !== null ? totRevExp + capexVal : "N/A";
+      totRevExp !== null ? totRevExp + capexFinal : "N/A";
 
     // ---------- Ratios already in your code ----------
     marketDasInd.totOwnRevenueByTotRevenue = safePercent(
@@ -268,10 +317,12 @@ async function marketDashboardIndicators(ulbId, financialYear, totals) {
         : "N/A";
 
     marketDasInd.capitalExpenditureByTotExpenditure =
-      capexVal !== null &&
       marketDasInd.totExpenditure !== "N/A" &&
-      marketDasInd.totExpenditure !== 0
-        ? parseFloat((capexVal / marketDasInd.totExpenditure) * 100).toFixed(2)
+      marketDasInd.totExpenditure !== 0 &&
+      capexFinal !== null
+        ? parseFloat((capexFinal / marketDasInd.totExpenditure) * 100).toFixed(
+            2
+          )
         : "N/A";
     // console.log(marketDasInd, "marketDasInd");
     return marketDasInd;
@@ -779,6 +830,79 @@ module.exports.getCityDasboardIndicators = async (req, res) => {
           "290",
           "200",
         ];
+        const getCapex = getFormattedYearData(
+          indicators,
+          years,
+          "capex",
+          formatToCrore
+        );
+        const finalCapex = getCapex.map((value) => {
+          // Case 1: value is N/A, empty, or null
+          if (value === "N/A" || value === "" || value === null) {
+            return "N/A";
+          }
+
+          // Convert to number safely
+          const num = Number(value);
+
+          // Case 2: not a number OR negative
+          if (isNaN(num) || num < 0) {
+            return "N/A";
+          }
+
+          // Otherwise keep original value
+          return value;
+        });
+        // console.log(getCapex, "this is capex");
+        const getRevExpenditure = getFormattedYearData(
+          indicators,
+          years,
+          "totRevenueExpenditure",
+          formatToCrore
+        );
+        // console.log(getRevExpenditure, "this is revexpenditure");
+        const gettotlExpenditure = getFormattedYearData(
+          indicators,
+          years,
+          "totExpenditure",
+          formatToCrore
+        );
+        // console.log(gettotlExpenditure, "this is total expenditure");
+        const getTotExpenditureByTotRevenue = getYearData(
+          indicators,
+          years,
+          "totExpenditureByTotRevenue"
+        );
+
+        // console.log(getTotExpenditureByTotRevenue, "this is total expenditure");
+        const finalGetTotExpenditureByTotRevenue = finalCapex.map(
+          (capexVal, i) => {
+            if (capexVal === "N/A") {
+              return "N/A";
+            }
+            return getTotExpenditureByTotRevenue[i]; // Use rev expenditure value
+          }
+        );
+
+        const getcapitalExpenditureByTotExpenditure = getYearData(
+          indicators,
+          years,
+          "totExpenditureByTotRevenue"
+        );
+
+        // console.log(
+        //   getcapitalExpenditureByTotExpenditure,
+        //   "this is total expenditure"
+        // );
+        const finalgetcapitalExpenditureByTotExpenditure = finalCapex.map(
+          (capexVal, i) => {
+            if (capexVal === "N/A") {
+              return "N/A";
+            }
+            return getcapitalExpenditureByTotExpenditure[i]; // Use rev expenditure value
+          }
+        );
+
         var response = {
           intro: intro,
           data: [
@@ -787,12 +911,7 @@ module.exports.getCityDasboardIndicators = async (req, res) => {
               name: "Total Expenditure (Cr)",
               graphKey: "amount",
               isParent: "true",
-              yearData: getFormattedYearData(
-                indicators,
-                years,
-                "totExpenditure",
-                formatToCrore
-              ),
+              yearData: calculateTotalExpenditure(getCapex, getRevExpenditure),
               yearGrowth: getYearGrowth(indicators, years, "totExpenditure"),
               info: getInfoHTML("totExpenditure"),
               children: [
@@ -810,12 +929,7 @@ module.exports.getCityDasboardIndicators = async (req, res) => {
                 {
                   name: "Total Capital Expenditure (Cr)",
                   graphKey: "amount",
-                  yearData: getFormattedYearData(
-                    indicators,
-                    years,
-                    "capex",
-                    formatToCrore
-                  ),
+                  yearData: finalCapex,
                   className: "ps-5 ",
                 },
               ],
@@ -898,11 +1012,7 @@ module.exports.getCityDasboardIndicators = async (req, res) => {
               name: "Total Expenditure to Total Revenue Receipts (%)",
               graphKey: "percentage",
               isParent: "true",
-              yearData: getYearData(
-                indicators,
-                years,
-                "totExpenditureByTotRevenue"
-              ),
+              yearData: finalGetTotExpenditureByTotRevenue,
               info: getInfoHTML("totExpenditureByTotRevenue"),
             },
             {
@@ -920,11 +1030,7 @@ module.exports.getCityDasboardIndicators = async (req, res) => {
               name: "Capital Expenditure to Total Expenditure (%)",
               graphKey: "percentage",
               isParent: "true",
-              yearData: getYearData(
-                indicators,
-                years,
-                "capitalExpenditureByTotExpenditure"
-              ),
+              yearData: finalgetcapitalExpenditureByTotExpenditure,
               info: getInfoHTML("capitalExpenditureByTotExpenditure"),
             },
           ],
@@ -1032,6 +1138,40 @@ module.exports.getCityDasboardIndicators = async (req, res) => {
     res.status(500).json({ message: "Internal Server Error" });
   }
 };
+function calculateTotalExpenditure(capex, revexpenditure) {
+  const totalExpenditure = [];
+
+  for (let i = 0; i < capex.length; i++) {
+    const capexVal = capex[i];
+    const revexVal = revexpenditure[i];
+
+    // Convert rev exp properly
+    const rev =
+      revexVal === "N/A" || revexVal === "" || revexVal == null
+        ? 0
+        : Number(revexVal);
+
+    // Case 1: capex is N/A
+    if (capexVal === "N/A" || capexVal === "" || capexVal == null) {
+      totalExpenditure.push(rev);
+      continue;
+    }
+
+    const cap = Number(capexVal);
+
+    // Case 2: capex is a negative number
+    if (isNaN(cap) || cap < 0) {
+      totalExpenditure.push(rev);
+      continue;
+    }
+
+    // Case 3: normal addition
+    totalExpenditure.push(cap + rev);
+  }
+
+  return totalExpenditure;
+}
+
 function filterIndicatorsWithYear(indicatorsData) {
   return indicatorsData.map((data) => {
     // console.log(data,'before')
@@ -1679,5 +1819,446 @@ module.exports.getUlbDetailsById = async (req, res) => {
   } catch (error) {
     console.error("Error fetching ULB details by ID:", error);
     res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+//
+
+// helpers you need to have in scope:
+// const mongoose = require('mongoose');
+// const UlbModel = require('../models/ulb');       // your ULB model
+// const LedgerLogModel = require('../models/ledgerLog'); // your ledger log model
+// function getPopulationCategory(population) { ... } // you mentioned earlier
+// ROUND_UP constant or rounding helper
+// 🧠 Utility: population category computation inline for convenience
+function populationCategoryData(pop) {
+  return {
+    $switch: {
+      branches: [
+        { case: { $lt: [pop, 100000] }, then: "<100K" },
+        {
+          case: { $and: [{ $gte: [pop, 100000] }, { $lt: [pop, 500000] }] },
+          then: "100K-500K",
+        },
+        {
+          case: { $and: [{ $gte: [pop, 500000] }, { $lt: [pop, 1000000] }] },
+          then: "500K-1M",
+        },
+        {
+          case: { $and: [{ $gte: [pop, 1000000] }, { $lt: [pop, 4000000] }] },
+          then: "1M-4M",
+        },
+        { case: { $gte: [pop, 4000000] }, then: "4M+" },
+      ],
+      default: "NA",
+    },
+  };
+}
+
+// const LABEL_MAP = {
+//   ulb: "ULB",
+//   state: "State Average",
+//   popCat: "Population Category Average",
+//   national: "National Average",
+//   ulbType: "ULB Type Average",
+// };
+
+// 🧩 Core Weighted Average Builder
+async function getWeightedAvgData(
+  compareIdMap,
+  lineItem,
+  ulbId,
+  years,
+  compareType,
+  compareUlbs
+) {
+  let compareQueries = [];
+  // console.log(
+  //   "Getting weighted avg data...",
+  //   compareIdMap,
+  //   lineItem,
+  //   ulbId,
+  //   years,
+  //   compareType,
+  //   compareUlbs
+  // );
+  // Always fetch ULB data - for only 1 year.
+  const ulbQuery = buildWeightedAvgPipeline(
+    lineItem,
+    years,
+    ulbId,
+    "ulb",
+    compareIdMap
+  );
+  // console.log("ULB Query:", JSON.stringify(ulbQuery, null, 2));
+  const compareId = compareIdMap[compareType] || "";
+  compareQueries = [
+    buildWeightedAvgPipeline(
+      lineItem,
+      years,
+      compareId,
+      compareType,
+      compareIdMap
+    ),
+  ];
+  // Run all queries in parallel
+  const [ulbLedgerData, ...compareResults] = await Promise.all([
+    ledgerLog.aggregate(ulbQuery),
+    ...compareQueries.map((query) => ledgerLog.aggregate(query)),
+  ]);
+
+  // Response object
+  return { ulbLedgerData, compareResults };
+}
+function getCagr(arr, yrs) {
+  if (!Array.isArray(arr) || arr.length < 2 || yrs <= 0) {
+    return 0;
+    // throw new Error("Invalid input: need at least 2 values and positive number of years");
+  }
+
+  const startValue = arr[0];
+  const endValue = arr[arr.length - 1];
+
+  // if (startValue <= 0 || endValue <= 0) {
+  //     throw new Error("Values must be positive for CAGR calculation");
+  // }
+
+  const cagr = (Math.pow(endValue / startValue, 1 / yrs) - 1) * 100;
+  return +cagr.toFixed(2);
+}
+
+function buildWeightedAvgPipeline(
+  lineItem,
+  yearsArr,
+  compareId,
+  groupBy,
+  compareIdMap
+) {
+  // console.log("----------------------", compareId, groupBy)
+  // const ulbTypeId = compareIdMap.ulbType
+  // if (!ulbTypeId) throw new Error("ULB type is required.");
+  // console.log("Building weighted avg pipeline for:", {
+  //   lineItem,
+  //   yearsArr,
+  //   compareId,
+  //   groupBy,
+  //   compareIdMap,
+  // });
+  // if (!Array.isArray(lineItemsArr) || lineItemsArr.length === 0) {
+  //   throw new Error("lineItemsArr must be a non-empty array.");
+  // }
+
+  // Match input data
+  const matchStage = {
+    isStandardizable: { $ne: "No" },
+    year: { $in: yearsArr.slice(0, 3) },
+  };
+
+  // Lookup ULB data
+  const matchFromUlbs = {
+    "ulbsData.isActive": true,
+    "ulbsData.isPublish": true,
+  };
+
+  // if (groupBy !== 'ulb')
+  //     matchFromUlbs['ulbsData.ulbType'] = new ObjectId(ulbTypeId);
+
+  // Dynamic filters for groupBy
+  const groupByFilters = {
+    ulb: () => (matchStage["ulb_id"] = new ObjectId(compareId)),
+    state: () => (matchFromUlbs["ulbsData.state"] = new ObjectId(compareId)),
+    ulbType: () =>
+      (matchFromUlbs["ulbsData.ulbType"] = new ObjectId(compareId)),
+    popCat: () => (matchFromUlbs["popCat"] = compareId),
+    national: () => {},
+  };
+  // console.log("Group by filters:", JSON.stringify(groupByFilters, null, 2));
+  if (groupByFilters[groupBy]) groupByFilters[groupBy]();
+
+  // Add selectedTotal field
+  const addSelectedTotalStage = {
+    selectedTotal: {
+      $convert: {
+        input: {
+          $switch: {
+            branches: [
+              // Null or empty
+              {
+                case: {
+                  $or: [
+                    { $eq: [`$indicators.${lineItem}`, null] },
+                    { $eq: [`$indicators.${lineItem}`, ""] },
+                  ],
+                },
+                then: 0,
+              },
+              // N/A variations
+              {
+                case: {
+                  $or: [
+                    { $eq: [`$indicators.${lineItem}`, "N/A"] },
+                    { $eq: [`$indicators.${lineItem}`, "NA"] },
+                    { $eq: [`$indicators.${lineItem}`, "n/a"] },
+                  ],
+                },
+                then: 0,
+              },
+            ],
+            // If none of the above matched → try to convert actual value
+            default: `$indicators.${lineItem}`,
+          },
+        },
+        to: "double",
+        onError: 0, // prevents crash on bad values
+        onNull: 0,
+      },
+    },
+  };
+
+  // console.log(
+  //   "Add selected total stage:",
+  //   JSON.stringify(addSelectedTotalStage, null, 2)
+  // );
+  // Project weighted value
+  const projectStage = {
+    year: 1,
+    weightedValue: { $multiply: ["$selectedTotal", "$ulbsData.population"] },
+    population: "$ulbsData.population",
+    ulbName: "$ulbsData.name",
+  };
+  // console.log("Project stage:", JSON.stringify(projectStage, null, 2));
+  // Group by year
+  const groupStage = {
+    _id: "$year",
+    totalWeightedValue: { $sum: "$weightedValue" },
+    totalPopulation: { $sum: "$population" },
+    ulbName: { $first: "$ulbName" },
+  };
+  // console.log("Group stage:", JSON.stringify(groupStage, null, 2));
+  //  Final projection - convert to crores
+  const finalProjectStage = {
+    _id: 0,
+    year: "$_id",
+    label: 1,
+    weightedAverageCr: {
+      $round: [
+        {
+          $cond: [
+            { $eq: ["$totalPopulation", 0] },
+            null,
+            {
+              $divide: [
+                { $divide: ["$totalWeightedValue", "$totalPopulation"] },
+                10000000,
+              ],
+            },
+          ],
+        },
+        ROUND_UP,
+      ],
+    },
+  };
+
+  // Will be used as label for the chart.
+  if (LABEL_MAP.hasOwnProperty(groupBy)) {
+    finalProjectStage.label = LABEL_MAP[groupBy];
+  }
+
+  // Final aggregation pipeline
+  const pipeline = [
+    { $match: matchStage },
+    {
+      $lookup: {
+        from: "ulbs",
+        localField: "ulb_id",
+        foreignField: "_id",
+        as: "ulbsData",
+      },
+    },
+    { $unwind: "$ulbsData" },
+    { $addFields: { popCat: populationCategoryData("$ulbsData.population") } },
+    { $match: matchFromUlbs },
+    { $addFields: addSelectedTotalStage },
+    { $project: projectStage },
+    { $group: groupStage },
+    { $project: finalProjectStage },
+  ];
+
+  // console.log(JSON.stringify(pipeline, null, 2));
+  return pipeline;
+}
+function keep3ItemsInArr(arr, lineItem) {
+  // if (CAPEX.includes(lineItem)) {
+  if (arr.length > 3) {
+    arr = arr.slice(-3);
+  }
+  return arr;
+}
+function formatAmount(amt) {
+  return typeof amt === "number" && !isNaN(amt)
+    ? `Rs.${amt.toLocaleString("en-IN")} Cr`
+    : "N/A";
+}
+function createResStructureWeighedAvgData(totalData, lineItem, years) {
+  // Basic validation
+  if (
+    !totalData ||
+    !Array.isArray(totalData.ulbLedgerData) ||
+    totalData.ulbLedgerData.length === 0
+  ) {
+    return { msg: "Data not available.", success: false };
+  }
+
+  const yearIndexMap = years.reduce((map, year, index) => {
+    map[year] = index;
+    return map;
+  }, {});
+
+  const chartData = [];
+
+  // Prepare main ULB data
+  let ulbSubData = new Array(years.length).fill(null);
+  for (const entry of totalData.ulbLedgerData) {
+    if (entry && yearIndexMap.hasOwnProperty(entry.year)) {
+      ulbSubData[yearIndexMap[entry.year]] = entry.weightedAverageCr;
+    }
+  }
+
+  const customHoverLabels = [];
+  for (let i = 0; i < years.length - 1; i++) {
+    const prevYr = ulbSubData[i];
+    const currYr = ulbSubData[i + 1];
+    const growth =
+      prevYr && currYr
+        ? `${(((currYr - prevYr) / prevYr) * 100).toFixed(2)}%`
+        : "NA";
+    customHoverLabels.push(growth);
+  }
+  // console.log({ ulbSubData, yearIndexMap, customHoverLabels });
+  ulbSubData = keep3ItemsInArr(ulbSubData);
+  years = keep3ItemsInArr(years);
+
+  chartData.push({
+    type: "line",
+    label: "Y-o-Y Growth",
+    data: ulbSubData,
+    customHoverLabels,
+    backgroundColor: [LINE_COLOR],
+    borderColor: LINE_COLOR,
+    fill: false,
+  });
+
+  chartData.push({
+    type: "bar",
+    label: totalData.ulbLedgerData[0]?.label || "ULB Data",
+    data: [...ulbSubData],
+    backgroundColor: [GRAPH_COLORS[0]],
+  });
+
+  // Handle comparison datasets
+  if (Array.isArray(totalData.compareResults)) {
+    totalData.compareResults.forEach((resultSet, index) => {
+      const comparisonData = new Array(years.length).fill(null);
+      for (const dataPoint of resultSet) {
+        if (dataPoint && yearIndexMap.hasOwnProperty(dataPoint.year)) {
+          comparisonData[yearIndexMap[dataPoint.year]] =
+            dataPoint.weightedAverageCr;
+        }
+      }
+
+      chartData.push({
+        type: "bar",
+        label: resultSet[0]?.label || `Comparison ${index + 1}`,
+        data: comparisonData,
+        backgroundColor: [GRAPH_COLORS[(index + 1) % GRAPH_COLORS.length]],
+      });
+    });
+  }
+
+  // 4 because: only 3 years data has to be shown.
+  const ulbCagr = Math.round(getCagr(chartData[0].data, 4), 0);
+  const ulbName = chartData[1].label;
+  const yr1 = `FY${years[0]}`;
+  const yr2 = `FY${years[years.length - 1]}`;
+  const amt1Msg = formatAmount(chartData[0].data[0]);
+  const amt2Msg = formatAmount(chartData[0].data[chartData[0].data.length - 1]);
+  const cagrMsg =
+    typeof ulbCagr === "number" &&
+    !isNaN(ulbCagr) &&
+    Math.abs(ulbCagr) !== Infinity
+      ? `CAGR of ${ulbCagr}% between ${yr1} and ${yr2}`
+      : "CAGR cannot be computed";
+  const msg = `${cagrMsg} (${ulbName} numbers for ${yr1} is ${amt1Msg}, and for ${yr2} is ${amt2Msg}.)`;
+
+  return {
+    chartType: "barChart",
+    labels: years,
+    legendColors: [],
+    axes: { x: "Years", y: "Amt in ₹ Cr" },
+    data: chartData,
+    info: {
+      text: ulbCagr >= 0 ? "success" : "danger",
+      msg,
+    },
+  };
+}
+
+// 🚀 Main API
+module.exports.getaverageCompareByIndicators = async (req, res) => {
+  try {
+    const { years, compareType, ulbId, lineItem } = req.body;
+
+    if (!Array.isArray(years) || years.length === 0)
+      return res.status(400).json({ message: "years is required" });
+
+    if (!ulbId || !lineItem)
+      return res
+        .status(400)
+        .json({ message: "ulbId and lineItem are required" });
+
+    const ulbData = await ulb.findById(ulbId).lean();
+    if (!ulbData) return res.status(404).json({ message: "ULB not found" });
+
+    const populationCategory = getPopulationCategory(ulbData.population);
+
+    const compareIdMap = {
+      ulb: ulbId,
+      state: ulbData.state?.toString(),
+      ulbType: ulbData.ulbType,
+      popCat: populationCategory,
+      national: "", // no filter
+    };
+    // console.log(
+    //   "Compare ID Map:",
+    //   compareIdMap,
+    //   "for ULB:",
+    //   ulbData.name,
+    //   years,
+    //   compareType,
+    //   ulbId,
+    //   lineItem
+    // );
+    // Weighted averages for ULB and comparison
+    const totalData = await getWeightedAvgData(
+      compareIdMap,
+      lineItem,
+      ulbId,
+      years,
+      compareType
+    );
+    // console.log("Total data fetched.", totalData, lineItem, years);
+    data = createResStructureWeighedAvgData(totalData, lineItem, years);
+
+    return res.status(200).json({
+      success: data.success !== false,
+      data,
+    });
+  } catch (err) {
+    console.error("Error fetching weighted averages:", err);
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+      error: err.message,
+    });
   }
 };
