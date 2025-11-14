@@ -851,16 +851,16 @@ const CompareBygroupIndicators = [
     label: "Debt",
     key: "debt",
     indicators: [
-      { name: "Loans from Central Government", key: "33001" },
-      { name: "Loans from State Government", key: "33002" },
+      { name: "Secured Loans from Central Government", key: "33001" },
+      { name: "Secured Loans from State Government", key: "33002" },
       {
         name: "Loans from Financial Institutions including Banks",
         key: "33003",
       },
       { name: "Bonds and Other Debt Instruments", key: "33004" },
       { name: "Others", key: "33000" },
-      { name: "Loans from Central Government", key: "33101" },
-      { name: "Loans from State Government", key: "33102" },
+      { name: "Un Secured Loans from Central Government", key: "33101" },
+      { name: "Un Secured Loans from State Government", key: "33102" },
       {
         name: "Loans from Financial Institutions including Banks",
         key: "33103",
