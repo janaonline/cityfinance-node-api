@@ -263,7 +263,7 @@ async function processData(
         // Prepare lineItems mapping and bulk write objects in one loop
         // const lineItems = {};
 
-        console.log('inputDataArr', inputDataArr);
+        // console.log('inputDataArr', inputDataArr);
 
         for (const el of inputDataArr) {
           try {
