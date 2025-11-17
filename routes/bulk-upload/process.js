@@ -13,6 +13,8 @@ const LineItem = require('../../models/LineItem');
 const UlbLedger = require('../../models/UlbLedger');
 const LedgerLog = require('../../models/LedgerLog');
 const { clearCacheByType } = require('../../service/cacheService');
+// const mongoose = require('mongoose');
+// const { ulbLedgersData } = require('../FiscalRanking/service');
 
 const overViewSheet = {
   'statecode': 'state_code',
@@ -196,12 +198,8 @@ async function processData(
     // Validate overview sheet
     let objOfSheet = {};
     if (overviewSheet != null) {
-      objOfSheet = await validateOverview(
-        overviewSheet,
-        financialYear,
-        fileName
-      );
-    } else if (overviewSheet == null) {
+      objOfSheet = await validateOverview(overviewSheet, financialYear, fileName);
+    } else {
       objOfSheet = {
         ulb_id: ObjectId(user.ulb),
         financialYear: financialYear,
@@ -240,29 +238,51 @@ async function processData(
     // Check Input sheet only if "isStandardizable === Yes" or if ULB is filling the standardized excel.
     if (objOfSheet.isStandardizable === 'Yes' || user.role === 'ULB') {
       // validate the input sheet data, like validating balance sheet, removing empty line items, removing comma seprations, converting negative values etc.
-      let inputDataArr = await validateData(
-        dataSheet,
-        objOfSheet,
-        design_year,
-        user,
-        financialYear
-      ); //  return line item data array
+      let inputDataArr = await validateData(dataSheet, objOfSheet, design_year, user, financialYear);
       let inputDataArrSuccessCounter = 0;
       let inputDataBulkWriteArr = [];
       let aborted = false;
 
-      for (let el of inputDataArr) {
-        try {
-          if (user.role != 'ULB' && !design_year) {
-            let obj = {};
-            obj = {
-              updateOne: {
-                filter: el.query,
-                update: { $set: el.update },
-                upsert: true,
-              },
-            };
-            inputDataBulkWriteArr.push(obj);
+      // Import LineItem model - adjust as needed
+      // const LineItem = mongoose.model('LineItem');
+
+      if (user.role != 'ULB' && !design_year) {
+        // Fetch lineItems documents once
+        // const lineItemIds = inputDataArr.map(el => el.query.lineItem);
+        // const lineItemsDocs = await LineItem.find(
+        //   { _id: { $in: lineItemIds } },
+        //   { _id: 1, code: 1 }
+        // ).lean();
+
+        // Build map for quick code lookup
+        // const lineItemIdToCodeMap = {};
+        // lineItemsDocs.forEach(doc => {
+        //   lineItemIdToCodeMap[doc._id.toString()] = doc.code;
+        // });
+
+        // Prepare lineItems mapping and bulk write objects in one loop
+        // const lineItems = {};
+
+        console.log('inputDataArr', inputDataArr);
+
+        for (const el of inputDataArr) {
+          try {
+            // const lineItemIdStr = el.query.lineItem.toString();
+            // const code = lineItemIdToCodeMap[lineItemIdStr];
+            // if (code !== undefined) {
+            //   lineItems[code] = el.update.amount;
+            // }
+
+            if (user.role != 'ULB' && !design_year) {
+              const obj = {
+                updateOne: {
+                  filter: el.query,
+                  update: { $set: el.update },
+                  upsert: true,
+                },
+              };
+              inputDataBulkWriteArr.push(obj);
+            }
 
             // Update in the request log collection, the current status of file
             inputDataArrSuccessCounter += 1;
@@ -270,25 +290,50 @@ async function processData(
               message: `Status: (${inputDataArrSuccessCounter}/${inputDataArr.length}) processed`,
               completed: 0,
             });
-          }
-        } catch (e) {
+
+          } catch (e) {
           // Update in the request log collection, the current status of file.
-          aborted = true;
-          await updateLog(reqId, {
-            message: e.message,
-            completed: 0,
-            status: 'FAILED',
-          });
-          console.error('Exception', e);
-          break;
+            aborted = true;
+            await updateLog(reqId, {
+              message: e.message,
+              completed: 0,
+              status: 'FAILED',
+            });
+            console.error('Exception', e);
+            break;
+          }
+        }
+
+        // Prepare du only if not aborted
+        if (!aborted) {
+          delete objOfSheet['state'];
+          objOfSheet['state'] = objOfSheet.state_name;
+          query = { ulb_code_year: objOfSheet.ulb_code_year };
+
+          du = {
+            query,
+            update: Object.assign({ lastModifiedAt: new Date() }, objOfSheet),
+            options: {
+              upsert: true,
+              setDefaultsOnInsert: true,
+              new: true,
+              runValidators: true,
+            },
+          };
+          delete du.update._id;
+          delete du.update.__v;
+
+          du.update.lineItems = objOfSheet.lineItems;
         }
       }
+
+      // console.log('du with lineItems', du);
 
       if (!aborted) {
         // Function call to update "overview" & "input sheet" data only if input data is valid.
         if (user.role !== 'ULB') {
           await uploadOverviewDataInDb(du);
-          await uploadInputDataInDb(inputDataBulkWriteArr); //bulkWrite.
+          await uploadInputDataInDb(inputDataBulkWriteArr);
           clearLedgerCache();
         }
         await updateLog(reqId, {
@@ -630,6 +675,7 @@ async function validateData(
     }
 
     let inputSheetObj = {};
+    let lineItemCodeObject = {};
     let errors = [];
     let fieldsWithCode = 0;
     let fieldsWithNoAmount = 0;
@@ -682,6 +728,7 @@ async function validateData(
       } else {
         let item = validLineItems.find((item) => item.code === code);
         inputSheetObj[item._id] = inputSheetObj[code];
+        lineItemCodeObject[item.code] = inputSheetObj[code];
         delete inputSheetObj[code];
       }
     }
@@ -693,12 +740,14 @@ async function validateData(
     // Assign ledger to objOfSheet
     Object.assign(objOfSheet, {
       ledger: JSON.parse(JSON.stringify(inputSheetObj)),
+      lineItems: JSON.parse(JSON.stringify(lineItemCodeObject))
     });
-
+    
     // Prepare data for bulk update
     let dataArr = Object.keys(objOfSheet.ledger).map((el) => ({
       query: {
         ulb: objOfSheet._id,
+        // lineItems: objOfSheet.lineItems,
         lineItem: el,
         financialYear: financialYear,
         ...(design_year &&
@@ -771,6 +820,9 @@ async function updateLog(reqId, data) {
 
 // Upload overview sheet data.
 async function uploadOverviewDataInDb(du) {
+  // When isStandardizable is No remove existing lineItems.
+  if (du.update.isStandardizable === 'No') du.update.lineItems = null;
+
   const update = {
     $push: {
       tracker: {
