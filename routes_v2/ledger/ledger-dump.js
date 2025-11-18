@@ -11,18 +11,20 @@ const {
     capexArr,
     bsSizeArr,
 } = require('../utils/ledgerFormulas');
+const RMV_COL_BULK_DOWNLOAD = ['lastModifiedAt', 'audit_firm', 'audit_date', 'partner_name', 'doc_source', 'isStandardizable', 'isStandardizableComment', 'dataFlagComment', 'dataFlag'];
+const BULK_DOWNLOAD = 'bulkDownload';
 
-// Get Line Items From DB.
-async function getLineItemsFromDB(financialData = null) {
-    // Headers for the overview data.
-    let overviewHeaders = [
+// Headers for the overview data.
+const getOverviewHeaders = (module) => {
+    const headers = [
         { code: 'code', isActive: true, name: 'ULB Code' },
+        { code: 'consolidatedCode', isActive: true, name: 'Code' },
         { code: 'name', isActive: true, name: 'ULB Name' },
-        { code: 'population', isActive: true, name: 'Population' },
+        { code: 'population', isActive: true, name: 'Population (Census 2011)' },
         { code: 'state', isActive: true, name: 'State' },
         { code: 'year', isActive: true, name: 'Financial Year' },
         { code: 'lastModifiedAt', isActive: true, name: 'Modified Date' },
-        { code: 'audit_status', isActive: true, name: 'Audited/ Provisional' },
+        { code: 'audit_status', isActive: true, name: 'Audited/ Unaudited' },
         { code: 'audit_firm', isActive: true, name: 'Audit firm name' },
         { code: 'audit_date', isActive: true, name: 'Audit Date' },
         { code: 'partner_name', isActive: true, name: 'Partner name' },
@@ -32,6 +34,14 @@ async function getLineItemsFromDB(financialData = null) {
         { code: 'dataFlagComment', isActive: true, name: 'Data Comments' },
         { code: 'dataFlag', isActive: true, name: 'No. of Data Flags failed' },
     ];
+    return module === BULK_DOWNLOAD ?
+        headers.filter((item) => !(RMV_COL_BULK_DOWNLOAD.includes(item.code))) :
+        headers;
+}
+
+// Get Line Items From DB.
+async function getLineItemsFromDB(financialData = null, module = 'dump') {
+    let overviewHeaders = getOverviewHeaders(module);
 
     // Add Input sheet headers only if financialData = TRUE - If user wants only overview sheet data.
     if (!financialData || financialData?.toLowerCase() == 'false')
@@ -66,7 +76,7 @@ async function getLineItemsFromDB(financialData = null) {
 async function fetchLedgerLogs(ulbCode = null, year = null, stateCode = null, isStandardizable = null, financialData = 'false') {
     // Filter conditions on `ledgerLogs` collection.
     const matchCondition = {};
-    if (isStandardizable?.toLowerCase() == 'false')
+    if (isStandardizable?.toLowerCase() == 'true')
         matchCondition['isStandardizable'] = { $ne: 'No' };
     if (ulbCode) matchCondition['ulb_code'] = ulbCode;
     if (stateCode) matchCondition['state_code'] = stateCode;
@@ -128,6 +138,8 @@ async function fetchLedgerLogs(ulbCode = null, year = null, stateCode = null, is
                             name: 1,
                             code: 1,
                             population: 1,
+                            censusCode: 1,
+                            sbCode: 1,
                         },
                     },
                 ],
@@ -140,14 +152,37 @@ async function fetchLedgerLogs(ulbCode = null, year = null, stateCode = null, is
                 preserveNullAndEmptyArrays: false,
             },
         },
+        {
+            $addFields: {
+                consolidatedCode: {
+                    $cond: [
+                        { $ne: ["$ulbData.censusCode", null] },
+                        convertToNumber("ulbData.censusCode", "int"),
+                        convertToNumber("ulbData.sbCode", "int")
+                    ]
+                }
+            },
+        }
     ];
 
     return ledgerLog.aggregate(query).cursor().exec();
 }
 
+// Helper: to convert string to number.
+function convertToNumber(key, dataType) {
+    return {
+        $convert: {
+            input: `$${key}`,
+            to: dataType,
+            onError: null,
+            onNull: null
+        }
+    }
+}
+
 module.exports.getLedgerDump = async (req, res) => {
     try {
-        const { ulbCode, stateCode, financialData, year, isStandardizable } = req.query;
+        const { ulbCode, stateCode, financialData, year, isStandardizable, module } = req.query;
 
         if (ulbCode && stateCode && !ulbCode.includes(stateCode))
             throw new Error(`Mismatch: ULB with '${ulbCode}' is not part of '${stateCode}'.`);
@@ -156,7 +191,7 @@ module.exports.getLedgerDump = async (req, res) => {
             throw new Error('"financialData" cannot be "TRUE" if "isStandardizable" is "FALSE"');
 
         // Create an array of line items (used to define headers of excel)
-        const lineitems = await getLineItemsFromDB(financialData);
+        const lineitems = await getLineItemsFromDB(financialData, module);
 
         // Create workbook.
         const workbook = new ExcelJS.stream.xlsx.WorkbookWriter({ stream: res });
