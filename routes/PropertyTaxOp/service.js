@@ -1345,6 +1345,11 @@ const getRowDesignYear = (child, design_year) => {
     return getDesiredYear('2023-24').yearId;
 }
 
+const getAccessYr = (yr) => {
+    const [start, end] = yr.split('-');
+    return `access_${start.slice(2)}${end}`;
+}
+
 exports.getView = async function (req, res, next) {
     // mongoose.set('debug', true);
     try {
@@ -1354,15 +1359,19 @@ exports.getView = async function (req, res, next) {
             return res.status(400).json({ status: false, message: "Something went wrong!" });
         }
         const design_year = req.query.design_year;
+
         const designYearStr = getDesiredYear(design_year);
-        const [ulbData] = await Ulb.aggregate(ulbDataWithGsdpGrowthRateQuery(req.query.ulb));
+        const accessYear = getAccessYr(designYearStr?.yearName);
+
+        const prevDesignYearStr = getDesiredYear(design_year, -1);
+        const prevAccessYear = getAccessYr(prevDesignYearStr?.yearName);
+
+        const [ulbData] = await Ulb.aggregate(ulbDataWithGsdpGrowthRateQuery(req.query.ulb, accessYear, prevAccessYear));
         const gsdpYear = getStateGsdpYear(design_year);
         const gsdpGrowthRate = ulbData.gsdpGrowthRateData?.find(el => el.year === gsdpYear)?.currentPrice;
+
         // const isLatestOnboarderUlb = !ulbData.access_2324;
-        const yr = designYearStr?.yearName
-        const [start, end] = yr.split('-');
-        const accessYear = `access_${start.slice(2)}${end}`;
-        const isLatestOnboarderUlb = !ulbData[accessYear];
+        const isLatestOnboarderUlb = ulbData[accessYear] && !ulbData[prevAccessYear];
 
         if (!isLatestOnboarderUlb && isBeyond2023_24(design_year)) {
             const desiredYear = getDesiredYear(design_year, -1);
@@ -1529,7 +1538,7 @@ exports.getView = async function (req, res, next) {
 }
 
 
-function ulbDataWithGsdpGrowthRateQuery(ulb) {
+function ulbDataWithGsdpGrowthRateQuery(ulb, accessYear, prevAccessYear) {
     return [
         {
             $match: {
@@ -1547,7 +1556,8 @@ function ulbDataWithGsdpGrowthRateQuery(ulb) {
         { $unwind: { "path": "$stateData", "preserveNullAndEmptyArrays": true } },
         {
             $project: {
-                access_2324: 1,
+                [accessYear]: 1,
+                [prevAccessYear]: 1,
                 gsdpGrowthRateData: "$stateData.data"
             }
         }
