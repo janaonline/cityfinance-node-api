@@ -1,6 +1,12 @@
 const ObjectId = require("mongoose").Types.ObjectId;
 const TwentyEightSlbsForm = require('../../../models/TwentyEightSlbsForm');
 const { years } = require('../../../service/years');
+const UNIT_TYPE = {
+    'lpcd': 'litres per capita per day (lpcd)',
+    '%': 'Percent',
+    'Hours/day': 'Hours per day',
+    'Nos./Year': 'Nos. per year',
+};
 
 module.exports.slbIndicators = async (req, res) => {
     try {
@@ -36,15 +42,11 @@ module.exports.slbIndicators = async (req, res) => {
         const ulbData = results[1];
         const compUlbData = results[2];
 
-        const data = {
-            nationalAvg,
-            ulbData,
-            compUlbData,
-        }
+        const data = createResStruct(nationalAvg, ulbData, compUlbData);
 
         return res.status(200).json({
             success: true,
-            data,
+            data
         });
 
     } catch (error) {
@@ -123,8 +125,65 @@ const getUlbDataQuery = (ulbId, actualYr, targetYr, type) => {
                 actual: { $max: '$actual' },
                 benchmark: { $max: '$target' },
                 ulb: { $first: '$ulb' },
-                unit: { $first: '$data.unit' }
+                unit: { $first: '$data.unit' },
             }
-        }
+        },
+        {
+            $lookup: {
+                from: 'ulbs',
+                localField: 'ulb',
+                foreignField: '_id',
+                as: 'ulbData'
+            }
+        },
+        { $addFields: { ulbName: { $arrayElemAt: ['$ulbData.name', 0] } } },
+        { $project: { ulbData: 0 } }
     ]
+}
+
+const createResStruct = (nationalAvg = [], ulbData = [], compUlbData = []) => {
+    if (!Array.isArray(nationalAvg) || !Array.isArray(ulbData) || !Array.isArray(compUlbData)) {
+        throw new TypeError("All arguments must be arrays");
+    }
+
+    const result = {};
+    for (const item of nationalAvg) {
+        if (!item || typeof item._id !== "string") continue;
+
+        result[item._id] = {
+            ...(result[item._id] || {}),
+            nationalValue: item.actual ?? null,
+            name: item._id
+        };
+    }
+
+    for (const item of ulbData) {
+        if (!item || typeof item._id !== "string") continue;
+
+        if (!result[item._id]) {
+            result[item._id] = {
+                nationalValue: null,
+                name: item._id
+            };
+        }
+
+        result[item._id].value = item.actual ?? null;
+        result[item._id].benchMarkValue = item.benchmark ?? null;
+        result[item._id].unitType = UNIT_TYPE[item.unit] ?? null;
+        result[item._id].ulbName = item.ulbName || "ULB";
+    }
+
+    for (const item of compUlbData) {
+        if (!item || typeof item._id !== "string") continue;
+        if (!result[item._id]) {
+            result[item._id] = {
+                nationalValue: null,
+                name: item._id
+            };
+        }
+
+        result[item._id].compPercentage = item.actual ?? null;
+    }
+
+    return Object.values(result);
 }
