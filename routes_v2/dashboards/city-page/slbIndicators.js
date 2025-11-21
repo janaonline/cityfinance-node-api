@@ -8,6 +8,11 @@ const UNIT_TYPE = {
     'Nos./Year': 'Nos. per year',
 };
 
+/**
+ * Fetch data from TwentyEightSlbsForm collection.
+ * If T is designYear then actuals is in design year: T + 1, targets is in design year: T.
+ * User requests "actual" (year) in req.query.
+ */
 module.exports.slbIndicators = async (req, res) => {
     try {
         let { type, compUlb, ulb, year } = req.query;
@@ -15,14 +20,13 @@ module.exports.slbIndicators = async (req, res) => {
         if (!(type)) throw new Error("Invalid indicator type.");
         type = type.toLowerCase();
 
-        const actualYr = years[year];
-        const targetYr = years[year.split('-').map(y => Number(y) + 1).join('-')];
+        const targetYr = years[year];
+        const actualYr = years[year.split('-').map(y => Number(y) + 1).join('-')];
         [actualYr, targetYr, ulb].forEach(objId => {
             if (!ObjectId.isValid(objId)) {
                 throw new Error(`Invalid ObjectId: ${objId}`);
             }
         });
-
 
         const nationalAvgQuery = getNationalAvgQuery(actualYr, type);
         const ulbDataQuery = getUlbDataQuery(ulb, actualYr, targetYr, type);
@@ -38,11 +42,11 @@ module.exports.slbIndicators = async (req, res) => {
         }
 
         const results = await Promise.all(promises);
-        const nationalAvg = results[0];
-        const ulbData = results[1];
-        const compUlbData = results[2];
+        const nationalAvg = results[0] || [];
+        const ulbData = results[1] || [];
+        const compUlbData = results[2] || [];
 
-        const data = createResStruct(nationalAvg, ulbData, compUlbData);
+        const data = createResStruct(nationalAvg, ulbData, compUlbData)?.sort((a, b) => a.name.localeCompare(b.name));
 
         return res.status(200).json({
             success: true,
@@ -51,7 +55,14 @@ module.exports.slbIndicators = async (req, res) => {
 
     } catch (error) {
         console.error("SLB Metrics Fetch Error:", error.message);
-        return res.status(200).json({
+        // 400: client errors, 500: unexpected server errors
+        const statusCode = error.message && (
+            error.message.includes("Invalid year.") ||
+            error.message.includes("Invalid indicator type.") ||
+            error.message.includes("Invalid ObjectId")
+        ) ? 400 : 500;
+
+        return res.status(statusCode).json({
             success: false,
             data: [],
             msg: 'Failed to fetch SLB metrics. ',
@@ -141,14 +152,20 @@ const getUlbDataQuery = (ulbId, actualYr, targetYr, type) => {
     ]
 }
 
+// Create response structure.
+// eg: [{
+//     "value": 98.67,
+//     "ulbName": "Ahmedabad Municipal Corporation",
+//     "unitType": "Percent",
+//     "benchMarkValue": 100,
+//     "name": "Coverage of water supply connections",
+//     "compPercentage": 100, // if compUlbData.length is > 0
+//     "nationalValue": 68.39818181818183
+// },...]
 const createResStruct = (nationalAvg = [], ulbData = [], compUlbData = []) => {
-    if (!Array.isArray(nationalAvg) || !Array.isArray(ulbData) || !Array.isArray(compUlbData)) {
-        throw new TypeError("All arguments must be arrays");
-    }
-
     const result = {};
     for (const item of nationalAvg) {
-        if (!item || typeof item._id !== "string") continue;
+        if (!item) continue;
 
         result[item._id] = {
             ...(result[item._id] || {}),
@@ -169,7 +186,7 @@ const createResStruct = (nationalAvg = [], ulbData = [], compUlbData = []) => {
 
         result[item._id].value = item.actual ?? null;
         result[item._id].benchMarkValue = item.benchmark ?? null;
-        result[item._id].unitType = UNIT_TYPE[item.unit] ?? null;
+        result[item._id].unitType = UNIT_TYPE[item.unit] ?? UNIT_TYPE['%'];
         result[item._id].ulbName = item.ulbName || "ULB";
     }
 
