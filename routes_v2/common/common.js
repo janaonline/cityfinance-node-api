@@ -5,6 +5,8 @@ const LedgerLog = require('../../models/LedgerLog');
 const BudgetDocument = require('../../models/budgetDocument');
 const Indicator = require('../../models/indicators');
 const BondIssuerItem = require('../../models/BondIssuerItem');
+const TwentyEightSlbForm = require('../../models/TwentyEightSlbsForm');
+const { YEAR_CONSTANTS_IDS } = require('../../util/FormNames');
 
 // Returns latest audited/ unAudited year with data.
 module.exports.getLatestAfsYear = async (req, res) => {
@@ -111,11 +113,24 @@ module.exports.getLatestSlbYear = async (req, res) => {
 };
 
 // Helper: Get distinct slb years
-const getSlbYears = ({ ulb }) => {
+const getSlbYears = async ({ ulb }) => {
 	const condition = {};
 	if (ulb && ObjectId.isValid(ulb)) condition.ulb = new ObjectId(ulb);
 
-	return Indicator.distinct('year', condition);
+	let [before_2021_22, after_2021_22] = await Promise.all([
+		Indicator.distinct('year', condition),
+		TwentyEightSlbForm.distinct('data.actual.year', condition)
+	]);
+
+	// TwentyEightSlbForm return ObjectId. 2021-22 is removed because target is unavailable.
+	const EXCLUDED_YEAR = "2021-22";
+	after_2021_22 = !Array.isArray(after_2021_22) ?
+		[] :
+		after_2021_22
+			.map((yearId) => YEAR_CONSTANTS_IDS[yearId])
+			.filter((year) => typeof year === "string" && year !== EXCLUDED_YEAR);
+
+	return [...before_2021_22, ...after_2021_22];
 };
 
 // Returns latest bond issuer year with data.
