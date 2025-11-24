@@ -14,6 +14,7 @@ const {
   getIndicatorsNameCompareByPage,
   getUlbDetailsById,
   getaverageCompareByIndicators,
+  downloadMarketDashboardExcel,
 } = require("./indicators");
 
 router.post(
@@ -31,4 +32,5 @@ router.get("/getCompareByIndicators", getCompareByIndicators);
 router.get("/getIndicatorsNameCompareByPage", getIndicatorsNameCompareByPage);
 router.get("/getUlbDetailsById", getUlbDetailsById);
 router.post("/getaverageCompareByIndicators", getaverageCompareByIndicators);
+router.get("/downloadMarketDashboardExcel", downloadMarketDashboardExcel);
 module.exports = router;

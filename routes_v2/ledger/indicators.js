@@ -1,5 +1,6 @@
 const ledgerLog = require("../../models/LedgerLog");
 const ulb = require("../../models/Ulb");
+const LineItem = require("../../models/LineItem");
 const IndicatorsModel = require("../../models/ledgerIndicators");
 const { getPopulationCategory } = require("../common/common");
 const ALLOWED_COMPARE_TYPES = [
@@ -72,7 +73,9 @@ const {
   CompareBygroupIndicators,
 } = require("./helper").default;
 const mongoose = require("mongoose");
-
+const fs = require("fs");
+const path = require("path");
+const ExcelJS = require("exceljs");
 // Using ObjectId from mongoose
 const { ObjectId } = mongoose.Types;
 
@@ -1821,6 +1824,194 @@ module.exports.getUlbDetailsById = async (req, res) => {
     res.status(500).json({ message: "Internal Server Error" });
   }
 };
+// Helper: build last 3 years array from "2021-22"
+function lastThreeYears(selectedYearStr) {
+  // expected format "2021-22"
+  const parts = selectedYearStr.split("-");
+  if (parts.length !== 2)
+    throw new Error("Invalid year format. Expected 'YYYY-YY' like '2021-22'");
+  const startYear = parseInt(parts[0], 10);
+  if (Number.isNaN(startYear)) throw new Error("Invalid year start part");
+  const years = [];
+  for (let i = 2; i >= 0; i--) {
+    const from = startYear - i;
+    const to = String(from + 1).slice(-2);
+    years.push(`${from}-${to}`);
+  }
+  return years;
+}
+
+// Helper: format ledger value robustly
+function formatLedgerValue(val) {
+  if (val === null || val === undefined) return "N/A";
+  if (typeof val === "string") {
+    const trimmed = val.trim();
+    if (trimmed === "" || trimmed.toUpperCase() === "N/A") return "N/A";
+    const num = Number(trimmed.replace(/,/g, "")); // allow comma thousands
+    if (Number.isNaN(num)) return trimmed; // keep original string if non-numeric
+    // round to 2 decimals
+    return Math.round((num + Number.EPSILON) * 100) / 100;
+  }
+  if (typeof val === "number") {
+    return Number.isFinite(val)
+      ? Math.round((val + Number.EPSILON) * 100) / 100
+      : val;
+  }
+  return String(val);
+}
+
+// Controller: download Excel for Market Dashboard
+exports.downloadMarketDashboardExcel = async (req, res) => {
+  try {
+    const { year, ulbId } = req.query;
+    if (!year || !ulbId) {
+      return res.status(400).json({ message: "year & ulbId are required" });
+    }
+
+    // Build last 3 fiscal years (e.g. ["2019-20","2020-21","2021-22"])
+    const years = lastThreeYears(year);
+
+    // 1) Fetch active line items EXCEPT excluded codes
+    const excludeCodes = [
+      "1001",
+      "1002",
+      "1003",
+      "1004",
+      "1005",
+      "1006",
+      "1007",
+    ];
+
+    const lineItems = await LineItem.find({
+      isActive: true,
+      code: { $nin: excludeCodes },
+    })
+      .sort({ headOfAccount: 1 })
+      .lean();
+
+    // 2) Fetch ledger logs for the requested ULB and years
+    const ledgerLogs = await ledgerLog
+      .find({
+        ulb_id: mongoose.Types.ObjectId(ulbId),
+        year: { $in: years },
+      })
+      .lean();
+
+    const ulbName = ledgerLogs[0]?.ulb || "ULB";
+
+    // Build ledger map
+    const ledgerMap = {};
+    for (const y of years) ledgerMap[y] = {};
+
+    for (const log of ledgerLogs) {
+      const items = log.lineItems || {};
+      ledgerMap[log.year] = items;
+    }
+
+    // ---------------------------------------
+    // ✅ 3) UPDATED HEADERS INCLUDING NEW COLUMNS
+    // ---------------------------------------
+    const columns = [
+      { header: "Department", key: "department", width: 25 },
+      { header: "Code", key: "code", width: 15 },
+      { header: "Indicators", key: "indicator", width: 40 },
+      ...years.map((y) => ({ header: y, key: y, width: 20 })),
+    ];
+
+    // ---------------------------------------
+    // ✅ 4) UPDATED ROWS INCLUDING department + code
+    // ---------------------------------------
+    const rows = lineItems.map((li) => {
+      const rowArr = [];
+
+      // NEW FIELDS
+      rowArr.push(li.headOfAccount || "N/A"); // department
+      rowArr.push(li.code || "N/A"); // code
+
+      rowArr.push(li.name); // indicator
+
+      // yearly values
+      for (const y of years) {
+        const rawVal = ledgerMap[y]?.[li.code];
+        rowArr.push(formatLedgerValue(rawVal));
+      }
+
+      return rowArr;
+    });
+
+    // 5) Create workbook
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet("Market Dashboard", {
+      views: [{ state: "visible" }],
+    });
+
+    // 6) Logo
+    const logoPath = path.join(
+      process.cwd(),
+      "uploads",
+      "logos",
+      "Group 1.jpeg"
+    );
+    if (fs.existsSync(logoPath)) {
+      const imageId = workbook.addImage({
+        buffer: fs.readFileSync(logoPath),
+        extension: "jpeg",
+      });
+      worksheet.addImage(imageId, {
+        tl: { col: 0, row: 0 },
+        br: { col: 4, row: 2 },
+      });
+    }
+
+    // 7) Reserve rows 1–3 for logo
+    const headerRowIndex = 4;
+    worksheet.getRow(headerRowIndex).values = columns.map((c) => c.header);
+
+    // Column widths
+    for (let i = 0; i < columns.length; i++) {
+      const col = worksheet.getColumn(i + 1);
+      col.width = columns[i].width;
+      col.alignment = {
+        vertical: "middle",
+        horizontal: i <= 1 ? "center" : "left",
+      };
+    }
+
+    // Header style
+    const headerRow = worksheet.getRow(headerRowIndex);
+    headerRow.font = { bold: true };
+    headerRow.alignment = { vertical: "middle", horizontal: "center" };
+    headerRow.height = 20;
+
+    // 8) Insert data rows
+    rows.forEach((r) => worksheet.addRow(r));
+
+    // 9) Footer row
+    worksheet.addRow([
+      `Can't find what you are looking for? Contact us at contact@${
+        process.env.PROD_HOST || "example.com"
+      }`,
+    ]);
+
+    // 10) Send file
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    );
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename=MarketDashboard_${ulbName}_${year}.xlsx`
+    );
+
+    await workbook.xlsx.write(res);
+    return res.end();
+  } catch (err) {
+    console.error("EXCEL ERROR:", err);
+    return res
+      .status(500)
+      .json({ message: "Something went wrong", error: err.message });
+  }
+};
 
 //
 
@@ -1854,15 +2045,6 @@ function populationCategoryData(pop) {
     },
   };
 }
-
-// const LABEL_MAP = {
-//   ulb: "ULB",
-//   state: "State Average",
-//   popCat: "Population Category Average",
-//   national: "National Average",
-//   ulbType: "ULB Type Average",
-// };
-
 // 🧩 Core Weighted Average Builder
 async function getWeightedAvgData(
   compareIdMap,
