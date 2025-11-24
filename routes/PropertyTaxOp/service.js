@@ -1387,7 +1387,8 @@ exports.getView = async function (req, res, next) {
                 const redirectionLink = `${process.env.v1Url}/ulb-form/${getDesiredYear(design_year, -1).yearId}/ptax`;
                 return res.status(400).json({
                     success: true,
-                    message: `Dear User, Your previous Year's form status is - In Progress .Kindly submit Details of Property Tax and User Charges Form for the previous year at - <a href="${redirectionLink}" target="_blank">Click Here!</a> in order to submit this year's form . `
+                    message: `Dear User, your previous year's form status is: ${MASTER_STATUS_ID[+ptoData?.currentFormStatus]}. Once the ‘Property Tax and User Charges Form’ from the previous year is approved by the State, you’ll be able to submit this year’s form.
+                    <a href="${redirectionLink}" target="_blank">Click here</a> to view your previous year's form.`
                 });
             }
         }
