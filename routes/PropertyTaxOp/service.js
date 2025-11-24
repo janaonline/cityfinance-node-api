@@ -1387,7 +1387,7 @@ exports.getView = async function (req, res, next) {
                 const redirectionLink = `${process.env.v1Url}/ulb-form/${getDesiredYear(design_year, -1).yearId}/ptax`;
                 return res.status(400).json({
                     success: true,
-                    message: `Dear User, your previous year's form status is: ${MASTER_STATUS_ID[+ptoData?.currentFormStatus]}. Once the ‘Property Tax and User Charges Form’ from the previous year is approved by the State, you’ll be able to submit this year’s form.
+                    message: `Dear User, your previous year's form status is: ${MASTER_STATUS_ID[+ptoData?.currentFormStatus] || 'Not Started'}. Once the ‘Property Tax and User Charges Form’ from the previous year is approved by the State, you’ll be able to submit this year’s form.
                     <a href="${redirectionLink}" target="_blank">Click here</a> to view your previous year's form.`
                 });
             }
@@ -1449,7 +1449,7 @@ exports.getView = async function (req, res, next) {
                                             const { yearName, yearId } = getDesiredYear(design_year, -1);
 
                                             // if (indicatorObj.isReadonlySingleYear) {
-                                                // if (indicatorObj.isReadonlySingleYear && indicatorObj.value === 'Yes') {
+                                            // if (indicatorObj.isReadonlySingleYear && indicatorObj.value === 'Yes') {
                                             if (indicatorObj.value === 'Yes') {
                                                 indicatorObj.readonly = true;
                                             }
