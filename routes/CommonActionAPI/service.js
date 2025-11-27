@@ -3854,6 +3854,21 @@ const IGNORE_YEARS = {
         ObjectId(YEAR_CONSTANTS["22_23"]),
         ObjectId(YEAR_CONSTANTS["23_24"]),
     ],
+    [YEAR_CONSTANTS["24_25"]]: [
+        ObjectId(YEAR_CONSTANTS["20_21"]),
+        ObjectId(YEAR_CONSTANTS["21_22"]),
+        ObjectId(YEAR_CONSTANTS["22_23"]),
+        ObjectId(YEAR_CONSTANTS["23_24"]),
+        ObjectId(YEAR_CONSTANTS["24_25"]),
+    ],
+    [YEAR_CONSTANTS["25_26"]]: [
+        ObjectId(YEAR_CONSTANTS["20_21"]),
+        ObjectId(YEAR_CONSTANTS["21_22"]),
+        ObjectId(YEAR_CONSTANTS["22_23"]),
+        ObjectId(YEAR_CONSTANTS["23_24"]),
+        ObjectId(YEAR_CONSTANTS["24_25"]),
+        ObjectId(YEAR_CONSTANTS["25_26"]),
+    ],
 };
 async function sequentialReview(req, res) {
     try {
