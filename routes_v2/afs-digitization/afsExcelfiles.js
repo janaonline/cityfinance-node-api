@@ -337,21 +337,172 @@ module.exports.generateFilteredExcel = async (req, res) => {
     const ulb = await Ulb.findById(ulbId).populate("state", "name");
     const ulbName = ulb?.name || "Unknown ULB";
     const stateName = ulb?.state?.name || "Unknown State";
-    const ulbCode = ulb?.code || "N/A"; 
+    const ulbCode = ulb?.code || "N/A";
 
     // 3) Input JSON data (array of { row: [ {title, value}, ... ] })
     const jsonData = parentDoc.files[0].data;
 
     // 4) Filter rows based on “Particulars” containing fee/charge-like keywords
-    const keywords = ["charge", "fee", "permit", "fine", "penalt", "contribution", "user"];
+    // const keywords = ["charge", "fee", "permit", "fine", "penalt", "contribution", "user", "tax", "Tax"];
+    const keywords = ["Fees for Certificates and extracts",
+      "charge", "fee", "permit", "fine", "penalt", "contribution", "user","Tax",
+      
+"Regulation/Licencing fees",
+"Development charges",
+"Penalties, fines, regularisation fees and others",
+"User charges",
+"Miscellaneous charges",
+"Empanelment & Registration Charges",
+"Licensing Fees",
+"Fees for Grant of Permit",
+"Fees for Certificate or Extract",
+"Regularisation Fees",
+"Penalties and Fines",
+"Other Fees",
+"Entry Fees",
+"Service / Administrative Charges",
+"Other charges",
+"Less Fee Remissions and Refund",
+"Empanelment & Registralion Charges",
+"Notice Fee",
+"Warrant Fee",
+"Water Connection/Disconnection Fee",
+"Water Connection charge (24*7)",
+"Property Tax Name Transfer Fee",
+"Building Material-Disposal Fee",
+"Encroachment Charges",
+"Tenament Transfer Fee",
+"Road Reinstatement Charges",
+"Charges-Fire Service(Outside SMC Area)",
+"Administrative Charge",
+"Drainage Connection Fee",
+"Cheque Return Charge",
+"Tower Installation Charge",
+"Drains and Wells Cleaning Fee",
+"Road Reinstatement Charges (RCM)",
+"Administrative Charge ( Labour Cess)",
+"Chrgs for reg.of illegal conn.Nal se Jal",
+"Health Service Charges and Fee",
+"Analysis Fee (P.H.Laboratory)",
+"Inspection Fee",
+"Solid-Waste Dumping Charges",
+"Birth/Death Registn. Fees (Inc.Late Fee)",
+"Animal-Slaughtering/Market Fee",
+"Charges-Corpse Carrying Fleet/Ambulance",
+"Carcass Disposal Fee",
+"Fees Right to information Act-2005",
+"\"Appeal\" Fees Right to inform. Act-2005",
+"Licence/Permit Fee",
+"Registration/Copying Fees",
+"Licence Fee Mobile Tower (RCM)",
+"Other Charges And Fees",
+"Chargs-Fire Services (OutSMCarea)GST Appl",
+"Licence/Permit Fee (GST Applicable)",
+"Pandal Fee (GST Applicable)",
+"Other Charges/Fees Etc. (GST Applicable)",
+"LicenceFee(HordFeeonPvt.Property)GST APP",
+"Student's Fees",
+"Visitor's Fee",
+"Hostel Fees & Charges",
+"Income Of Wind Power",
+"Effluent Collection Charges",
+"Income of Solar Power",
+"Add. Infrastructure Charges (Paid F.S.I.)",
+"Nur.Home/Hos/Lab/Diag.Cen Dup.C FormCer.",
+"Nur.Home/Hos/Lab/Diag.CenReg./RenewalFee",
+"Nur.Home/Hos/Lab/Diag.Cen Reg. Late Fee",
+"Adv.LicFee(Hord/Adv.on Pvt.Property-RCM)",
+"Parking Fees",
+"Parking Penalty",
+"Income From Public Places Entry Fess",
+"Kids City Entry Fees",
+"Zoo Entry Income",
+"Municipal Corporation Right Income",
+"Gift Income",
+"Local Fund & Irrigation Cess/Grant",
+"Water Connection Fees/Charges/Supply Charges",
+"Name Transfer Fees",
+"Agnishamak Vehicle Charge",
+"Ambulence Charge",
+"Medical Service Charge & Fees",
+"Licence Fees",
+"Permit Fees",
+"Building & Plant Scrutiny Fees",
+"Slaughter House Fees",
+"Sample Testing Fees",
+"School & College Fee",
+"Birth & Death Registration Fees",
+"Other Registration Fees",
+"Stand Fees",
+"Rasta Kapat Fees",
+"Drainage Charges & Connection Fees",
+"Copy & Comparing Fees",
+"Betterment Charges",
+"Extra F.S.I. Fees",
+"F.S.I Fees under CBD",
+"Withdrawl of Garbage Fees",
+"Impact Fees Otherthan Parking",
+"Fire Safety Charge & N.O.C. Limit",
+"Tree Plantation Fees",
+"Zonal Administrative Charges",
+"Building Debris Rewnel Charges & Non T.P.& Betterment Charges",
+"Impact Fees Parking",
+"B.U. card fee and water meter fee charges",
+"Admin Charges",
+"BRTS Corridor FSI Charges",
+"Training Fees",
+"Licence/Lease Charges",
+"Door to Door Waste Collection Charges",
+"Other Charges & Fees",
+"Shop Establishment & Renewal Charges",
+"Fees & Fines",
+"Fess and Arrear Amount under licence",
+"Car Parking Fees",
+"Water Supply - Fees from House Connection",
+"Recovery Charges for discharge of effluent",
+"House Drainage plan fees",
+"Regularization Fees",
+"Service/ Administrative Charges",
+ "Certificates", "Licencing", "Development", "Penalties", "fines", "charges", "User", "Miscellaneous", 
+  "Empanelment", "Licensing", "Grant", "Permit", "Regularisation", "Other", "Entry", "Administrative", 
+  "Remissions", "Refund", "Notice", "Warrant", "Water Connection", "Property Tax", "Building Material", 
+  "Encroachment", "Tenament", "Reinstatement", "Fire Service", "Administrative", "Drainage", "Cheque", 
+  "Tower Installation", "Drains", "Health Service", "Analysis", "Inspection", "Solid-Waste", "Birth", 
+  "Death", "Slaughtering", "Market", "Corpse", "Carcass", "Right to Information", "Appeal", "Licence", 
+  "Registration", "Mobile Tower", "Other Fees", "Fire Services", "Pandal", "GST", "Student", "Visitor", 
+  "Hostel", "Wind Power", "Effluent", "Solar Power", "Infrastructure", "Parking", "Kids City", "Zoo", 
+  "Municipal", "Gift", "Irrigation", "Name Transfer", "Agnishamak", "Ambulance", "Medical Service", "Permit", 
+  "Scrutiny", "Slaughter House", "Testing", "School", "College", "Registration", "Stand", "Rasta Kapat", 
+  "Drainage Charges", "Betterment", "F.S.I.", "Garbage", "Impact Fees", "Safety", "Tree Plantation", 
+  "Zonal", "Building Debris", "B.U. card", "BRTS", "Training", "Waste Collection", "Shop Establishment", 
+  "Fines", "Arrear", "Car Parking", "House Connection", "Recovery", "Drainage Plan", "Regularization",
+];
 
-    const filteredRows = jsonData.filter((item) => {
-      const particularsField = item.row.find(
-        (r) => (r.title || "").toLowerCase() === "particulars"
-      );
-      const value = (particularsField?.value ?? "").toString().toLowerCase();
-      return keywords.some((k) => value.includes(k));
-    });
+const textHeaders = [
+  "particulars",
+  "description",
+  "details",
+  "item particulars",
+  "account head",
+  "account",
+  "head",
+  "Administrative",
+  "Support Departments",
+  "Administrative & Support Departments",
+  
+
+];
+const filteredRows = jsonData.filter((item) => {
+  // find the actual column used by this city
+  const textField = item.row.find((r) => {
+    const title = (r.title || "").toLowerCase();
+    return textHeaders.some(h => title.includes(h.toLowerCase()));
+  });
+
+  const value = (textField?.value ?? "").toString().toLowerCase();
+
+  return keywords.some((k) => value.includes(k.toLowerCase()));
+});
 
     if (filteredRows.length === 0) {
       return res.status(200).json({ success: true, message: "No matching rows found" });
@@ -482,8 +633,11 @@ module.exports.generateFilteredExcel = async (req, res) => {
         "sch no",
         "code",
         "code no",
+
       ],
-      particulars: ["particulars", "description", "details", "item particulars"],
+      particulars: ["particulars", "description", "details", "item particulars",
+       "ACCOUNT HEAD",
+       "account","head"],
       currentYear: [
         "current year",
         "amount current year",
@@ -624,7 +778,7 @@ module.exports.generateFilteredExcel = async (req, res) => {
         return res.status(500).json({ success: false, message: "Failed to download file" });
       }
       setTimeout(() => {
-        try { fs.unlinkSync(filePath); } catch {}
+        try { fs.unlinkSync(filePath); } catch { }
       }, 10000);
     });
   } catch (err) {
