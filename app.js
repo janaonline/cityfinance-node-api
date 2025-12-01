@@ -29,23 +29,15 @@ const corsOptions = {
           .filter(Boolean)
       );
 
-      // Load regex from .env
-      let allowedOriginRegex = null;
-      if (process.env.WHITELISTED_DOMAINS_REGEX) {
-        try {
-          allowedOriginRegex = new RegExp(process.env.WHITELISTED_DOMAINS_REGEX);
-        } catch (err) {
-          console.error("Invalid ALLOWED_ORIGIN_REGEX in .env:", err.message);
-          return callback(new Error("Invalid CORS regex"));
-        }
-      }
+      // Allowed regex
+      let allowedOriginRegex = /^https:\/\/([a-zA-Z0-9-]+\.)*cityfinance\.in$/;
 
       // Allow requests with no Origin (curl, Postman, server-to-server)
       if (!origin) return callback(null, true);
 
       // Main CORS access logic
       const isWhitelisted = whitelist.has(origin);
-      const matchesRegex = allowedOriginRegex?.test(origin);
+      const matchesRegex = allowedOriginRegex.test(origin);
       if (isWhitelisted || matchesRegex) return callback(null, true);
 
       //  Block everything else (fail closed)
