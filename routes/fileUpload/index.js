@@ -7,9 +7,10 @@ const multer = require("multer");
 const upload = multer({ dest: "uploads/resource" });
 
 const { userAuth } = require("../../middlewares/actionUserAuth");
+const cacheMiddleware = require('../../middlewares/cacheMiddleware');
 
 router.post("/fileUpload", upload.single("excel"), fileUpload);
-router.get("/indicators", getIndicatorData);
+router.get("/indicators", cacheMiddleware("slbs"), getIndicatorData);
 // TODO: Remove - Migrated to routes V2 - getLatestSlbYear()
 router.get("/indicatorsYears", indicatorsYears);
 router.delete("/indicators", deleteALlData);

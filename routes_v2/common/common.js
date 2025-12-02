@@ -94,7 +94,13 @@ const getBudgetYears = ({ ulbId: ulb }) => {
 	return BudgetDocument.distinct('yearsData.designYear', condition);
 };
 
-// Returns latest slb year with data.
+/**
+ * SLBs data is available in "indicators" and "twentyeightslbforms" collection.
+ * "indicators": data uploaded to DB - CEPT data.
+ * "twentyeightslbforms": data uploaded by ULBs (design year 2021-22 onwards).
+ * if "fetchCeptYears" from req.query is true then only return distinct years from "indicators" collection.
+ * else return combination of both "indicators" & "twentyeightslbforms".
+ */
 module.exports.getLatestSlbYear = async (req, res) => {
 	try {
 		const years = await getSlbYears(req.query);
@@ -114,9 +120,14 @@ module.exports.getLatestSlbYear = async (req, res) => {
 };
 
 // Helper: Get distinct slb years
-const getSlbYears = async ({ ulb }) => {
+const getSlbYears = async ({ ulb, fetchCeptYears }) => {
 	const condition = {};
 	if (ulb && ObjectId.isValid(ulb)) condition.ulb = new ObjectId(ulb);
+
+	// Return years from only "indicators" collection.
+	if (fetchCeptYears === 'true') {
+		return Indicator.distinct('year', condition);
+	}
 
 	const condition2 = {
 		...condition,
