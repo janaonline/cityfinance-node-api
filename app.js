@@ -16,35 +16,39 @@ const ExpressError = require("./util/ExpressError");
 const maintenanceMiddleware = require('./middlewares/maintenance.middleware');
 
 
-const whitelist = [
-  'https://stage.aaina-mohua.in',
-  'https://api-stage.aaina-mohua.in',
-  'https://aaina.gov.in',
-  'https://api.aaina-mohua.in',
-  'http://localhost:4100',
-  'http://localhost:4200',
-  'https://democityfinance.dhwaniris.in',
-  'http://localhost:3000',
-  'http://localhost:4300',
-  'https://staging.cityfinance.in',
-  'https://staging-jana.cityfinance.in',
-  'https://uat.cityfinance.in',
-  `https://${process.env.DEMO_HOST_FRONTEND}`,
-  `https://${process.env.STAGING_HOST}`,
-  `https://${process.env.PROD_HOST}`,
-  process.env.HOSTNAME,
-  `https://dev.cityfinance.in`
-];
 
 const corsOptions = {
   origin: function (origin, callback) {
-    if (whitelist.indexOf(origin) !== -1 || !origin) {
-      callback(null, true)
-    } else {
-      callback(new Error('Not allowed by CORS'))
+    try {
+      // Load and parse domains from .env
+      const rawDomains = process.env.WHITELISTED_DOMAINS || "";
+      const whitelist = new Set(
+        rawDomains
+          .split(",")
+          .map(s => s.trim())
+          .filter(Boolean)
+      );
+
+      // Allowed regex
+      let allowedOriginRegex = /^https:\/\/([a-zA-Z0-9-]+\.)*cityfinance\.in$/;
+
+      // Allow requests with no Origin (curl, Postman, server-to-server)
+      if (!origin) return callback(null, true);
+
+      // Main CORS access logic
+      const isWhitelisted = whitelist.has(origin);
+      const matchesRegex = allowedOriginRegex.test(origin);
+      if (isWhitelisted || matchesRegex) return callback(null, true);
+
+      //  Block everything else (fail closed)
+      return callback(new Error("Not allowed by CORS"));
+
+    } catch (err) {
+      console.error("Unexpected CORS error:", err);
+      return callback(new Error("CORS processing error"));
     }
-  }
-}
+  },
+};
 
 app.get('/test', (req, res) => {
   return res.json({ working: "fine!! - autopull" });
