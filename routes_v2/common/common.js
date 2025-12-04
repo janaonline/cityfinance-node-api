@@ -5,6 +5,9 @@ const LedgerLog = require('../../models/LedgerLog');
 const BudgetDocument = require('../../models/budgetDocument');
 const Indicator = require('../../models/indicators');
 const BondIssuerItem = require('../../models/BondIssuerItem');
+const TwentyEightSlbForm = require('../../models/TwentyEightSlbsForm');
+const { YEAR_CONSTANTS_IDS } = require('../../util/FormNames');
+const ALLOWED_STATUS = [3, 4, 6];
 
 // Returns latest audited/ unAudited year with data.
 module.exports.getLatestAfsYear = async (req, res) => {
@@ -91,7 +94,13 @@ const getBudgetYears = ({ ulbId: ulb }) => {
 	return BudgetDocument.distinct('yearsData.designYear', condition);
 };
 
-// Returns latest slb year with data.
+/**
+ * SLBs data is available in "indicators" and "twentyeightslbforms" collection.
+ * "indicators": data uploaded to DB - CEPT data.
+ * "twentyeightslbforms": data uploaded by ULBs (design year 2021-22 onwards).
+ * if "fetchCeptYears" from req.query is true then only return distinct years from "indicators" collection.
+ * else return combination of both "indicators" & "twentyeightslbforms".
+ */
 module.exports.getLatestSlbYear = async (req, res) => {
 	try {
 		const years = await getSlbYears(req.query);
@@ -111,11 +120,49 @@ module.exports.getLatestSlbYear = async (req, res) => {
 };
 
 // Helper: Get distinct slb years
-const getSlbYears = ({ ulb }) => {
+const getSlbYears = async ({ ulb, fetchCeptYears }) => {
 	const condition = {};
 	if (ulb && ObjectId.isValid(ulb)) condition.ulb = new ObjectId(ulb);
 
-	return Indicator.distinct('year', condition);
+	// Return years from only "indicators" collection.
+	if (fetchCeptYears === 'true') {
+		return Indicator.distinct('year', condition);
+	}
+
+	const condition2 = {
+		...condition,
+		$or: [
+			{ status: "APPROVED" },
+			{
+				status: "PENDING",
+				actionTakenByRole: "MoHUA"
+			},
+			{
+				status: "PENDING",
+				actionTakenByRole: "STATE"
+			},
+			{
+				actionTakenByRole: "ULB",
+				isDraft: false
+			},
+			{ currentFormStatus: { $in: ALLOWED_STATUS } }
+		]
+	}
+
+	let [before_2021_22, after_2021_22] = await Promise.all([
+		Indicator.distinct('year', condition),
+		TwentyEightSlbForm.distinct('data.actual.year', condition2)
+	]);
+
+	// TwentyEightSlbForm return ObjectId. 2021-22 is removed because target is unavailable.
+	const EXCLUDED_YEAR = "2021-22";
+	after_2021_22 = !Array.isArray(after_2021_22) ?
+		[] :
+		after_2021_22
+			.map((yearId) => YEAR_CONSTANTS_IDS[yearId])
+			.filter((year) => typeof year === "string" && year !== EXCLUDED_YEAR);
+
+	return [...before_2021_22, ...after_2021_22];
 };
 
 // Returns latest bond issuer year with data.
