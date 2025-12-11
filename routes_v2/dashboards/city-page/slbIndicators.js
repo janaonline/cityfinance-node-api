@@ -1,13 +1,13 @@
 const ObjectId = require("mongoose").Types.ObjectId;
 const TwentyEightSlbsForm = require('../../../models/TwentyEightSlbsForm');
 const { years } = require('../../../service/years');
+const { ALLOWED_SLB_STATUS } = require('../../common/common');
 const UNIT_TYPE = {
     'lpcd': 'litres per capita per day (lpcd)',
     '%': 'Percent',
     'Hours/day': 'Hours per day',
     'Nos./Year': 'Nos. per year',
 };
-
 /**
  * Fetch data from TwentyEightSlbsForm collection.
  * If T is designYear then actuals is in design year: T + 1, targets is in design year: T.
@@ -20,16 +20,16 @@ module.exports.slbIndicators = async (req, res) => {
         if (!(type)) throw new Error("Invalid indicator type.");
         type = type.toLowerCase();
 
-        const targetYr = years[year];
-        const actualYr = years[year.split('-').map(y => Number(y) + 1).join('-')];
-        [actualYr, targetYr, ulb].forEach(objId => {
+        // designYear = acutals_year + 1
+        const designYear = years[year.split('-').map(y => Number(y) + 1).join('-')];
+        [designYear, ulb].forEach(objId => {
             if (!ObjectId.isValid(objId)) {
                 throw new Error(`Invalid ObjectId: ${objId}`);
             }
         });
 
-        const nationalAvgQuery = getNationalAvgQuery(actualYr, type);
-        const ulbDataQuery = getUlbDataQuery(ulb, actualYr, targetYr, type);
+        const nationalAvgQuery = getNationalAvgQuery(designYear, type);
+        const ulbDataQuery = getUlbDataQuery(ulb, designYear, type);
 
         const promises = [
             TwentyEightSlbsForm.aggregate(nationalAvgQuery),
@@ -37,7 +37,7 @@ module.exports.slbIndicators = async (req, res) => {
         ]
 
         if (compUlb && ObjectId.isValid(compUlb)) {
-            const compUlbDataQuery = getUlbDataQuery(compUlb, actualYr, targetYr, type);
+            const compUlbDataQuery = getUlbDataQuery(compUlb, designYear, type);
             promises.push(TwentyEightSlbsForm.aggregate(compUlbDataQuery));
         }
 
@@ -70,9 +70,14 @@ module.exports.slbIndicators = async (req, res) => {
     }
 }
 
-const getNationalAvgQuery = (actualYr, type) => {
+const getNationalAvgQuery = (designYear, type) => {
     return [
-        { $match: { design_year: { $in: [ObjectId(actualYr)] } } },
+        {
+            $match: {
+                design_year: { $in: [ObjectId(designYear)] },
+                $or: ALLOWED_SLB_STATUS
+            }
+        },
         {
             $unwind: {
                 path: '$data',
@@ -89,12 +94,13 @@ const getNationalAvgQuery = (actualYr, type) => {
     ]
 }
 
-const getUlbDataQuery = (ulbId, actualYr, targetYr, type) => {
+const getUlbDataQuery = (ulbId, designYear, type) => {
     return [
         {
             $match: {
                 ulb: ObjectId(ulbId),
-                design_year: { $in: [ObjectId(actualYr), ObjectId(targetYr)] }
+                design_year: ObjectId(designYear),
+                $or: ALLOWED_SLB_STATUS,
             }
         },
         {
@@ -112,34 +118,6 @@ const getUlbDataQuery = (ulbId, actualYr, targetYr, type) => {
         },
         { $match: { 'data.type': type } },
         {
-            $addFields: {
-                actual: {
-                    $cond: [
-                        { $eq: ['$design_year', ObjectId(actualYr)] },
-                        "$data.actual.value",
-                        null
-                    ]
-                },
-                target: {
-                    $cond: [
-                        { $eq: ['$design_year', ObjectId(targetYr)] },
-                        "$data.target_1.value",
-                        null
-                    ]
-                },
-                indicator: '$data.question'
-            }
-        },
-        {
-            $group: {
-                _id: '$indicator',
-                actual: { $max: '$actual' },
-                benchmark: { $max: '$target' },
-                ulb: { $first: '$ulb' },
-                unit: { $first: '$data.unit' },
-            }
-        },
-        {
             $lookup: {
                 from: 'ulbs',
                 localField: 'ulb',
@@ -147,8 +125,36 @@ const getUlbDataQuery = (ulbId, actualYr, targetYr, type) => {
                 as: 'ulbData'
             }
         },
-        { $addFields: { ulbName: { $arrayElemAt: ['$ulbData.name', 0] } } },
-        { $project: { ulbData: 0 } }
+        {
+            $addFields: {
+                ulbName: { $arrayElemAt: ['$ulbData.name', 0] },
+                ulbSlug: { $arrayElemAt: ['$ulbData.slug', 0] },
+                benchmark: {
+                    $let: {
+                        vars: { yearSplit: { $split: [{ $ifNull: ['$data.range', ''] }, '-'] } },
+                        in: {
+                            $convert: {
+                                input: { $arrayElemAt: ["$$yearSplit", 1] },
+                                to: "int",
+                                onError: null,
+                                onNull: null,
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        {
+            $project: {
+                _id: '$data.question',
+                ulb: 1,
+                unit: '$data.unit',
+                benchmark: 1,
+                actual: '$data.actual.value',
+                ulbName: 1,
+                ulbSlug: 1,
+            }
+        }
     ]
 }
 
@@ -188,6 +194,7 @@ const createResStruct = (nationalAvg = [], ulbData = [], compUlbData = []) => {
         result[item._id].benchMarkValue = item.benchmark ?? null;
         result[item._id].unitType = UNIT_TYPE[item.unit] ?? UNIT_TYPE['%'];
         result[item._id].ulbName = item.ulbName || "ULB";
+        result[item._id].ulbSlug = item.ulbSlug || "slug";
     }
 
     for (const item of compUlbData) {
