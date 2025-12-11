@@ -7,7 +7,22 @@ const Indicator = require('../../models/indicators');
 const BondIssuerItem = require('../../models/BondIssuerItem');
 const TwentyEightSlbForm = require('../../models/TwentyEightSlbsForm');
 const { YEAR_CONSTANTS_IDS } = require('../../util/FormNames');
-const ALLOWED_STATUS = [3, 4, 6];
+module.exports.ALLOWED_SLB_STATUS = [
+	{ status: "APPROVED" },
+	{
+		status: "PENDING",
+		actionTakenByRole: "MoHUA"
+	},
+	{
+		status: "PENDING",
+		actionTakenByRole: "STATE"
+	},
+	{
+		actionTakenByRole: "ULB",
+		isDraft: false
+	},
+	{ currentFormStatus: { $in: [3, 4, 6] } }
+];
 
 // Returns latest audited/ unAudited year with data.
 module.exports.getLatestAfsYear = async (req, res) => {
@@ -131,22 +146,7 @@ const getSlbYears = async ({ ulb, fetchCeptYears }) => {
 
 	const condition2 = {
 		...condition,
-		$or: [
-			{ status: "APPROVED" },
-			{
-				status: "PENDING",
-				actionTakenByRole: "MoHUA"
-			},
-			{
-				status: "PENDING",
-				actionTakenByRole: "STATE"
-			},
-			{
-				actionTakenByRole: "ULB",
-				isDraft: false
-			},
-			{ currentFormStatus: { $in: ALLOWED_STATUS } }
-		]
+		$or: this.ALLOWED_SLB_STATUS
 	}
 
 	let [before_2021_22, after_2021_22] = await Promise.all([
@@ -154,13 +154,9 @@ const getSlbYears = async ({ ulb, fetchCeptYears }) => {
 		TwentyEightSlbForm.distinct('data.actual.year', condition2)
 	]);
 
-	// TwentyEightSlbForm return ObjectId. 2021-22 is removed because target is unavailable.
-	const EXCLUDED_YEAR = "2021-22";
 	after_2021_22 = !Array.isArray(after_2021_22) ?
 		[] :
-		after_2021_22
-			.map((yearId) => YEAR_CONSTANTS_IDS[yearId])
-			.filter((year) => typeof year === "string" && year !== EXCLUDED_YEAR);
+		after_2021_22.map((yearId) => YEAR_CONSTANTS_IDS[yearId]);
 
 	return [...before_2021_22, ...after_2021_22];
 };
