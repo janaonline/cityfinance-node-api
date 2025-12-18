@@ -85,6 +85,13 @@ module.exports.getIndicators = async (req, res) => {
     if (!ulbId || !financialYear) {
       return res.status(400).json({ message: "Missing required parameters" });
     }
+    var ulbPopulation = await ulb
+      .findOne({ _id: ObjectId(ulbId) })
+      .select("population");
+    // console.log("ulbPopulation:", ulbPopulation);
+    if (!ulbPopulation) {
+      return res.status(404).json({ message: "ULB not found" });
+    }
     const allLineItems = await IndicatorsModel.find({})
       .select(["lineItems", "name", "key"])
       .lean();
@@ -94,7 +101,8 @@ module.exports.getIndicators = async (req, res) => {
     const IndicatorTotals = await accumulateIndicators(
       ulbId,
       financialYear,
-      allLineItems
+      allLineItems,
+      ulbPopulation.population
     );
 
     res.status(200).json(IndicatorTotals);
@@ -104,7 +112,12 @@ module.exports.getIndicators = async (req, res) => {
   }
 };
 
-async function accumulateIndicators(ulbId, financialYear, allLineItems) {
+async function accumulateIndicators(
+  ulbId,
+  financialYear,
+  allLineItems,
+  ulbPopulation
+) {
   try {
     const totals = await getCommonIndicatorsData({
       ulbId,
@@ -115,7 +128,8 @@ async function accumulateIndicators(ulbId, financialYear, allLineItems) {
     const marketDashboardInd = await marketDashboardIndicators(
       ulbId,
       financialYear,
-      totals
+      totals,
+      ulbPopulation
     );
     const { intFinCha, qaRatioNum, depreciation, ...filteredTotals } =
       totals[0] || {};
@@ -211,7 +225,13 @@ async function getCommonIndicatorsData({ ulbId, financialYear, allLineItems }) {
 //   return numerator / denominator;
 // };
 
-async function marketDashboardIndicators(ulbId, financialYear, totals) {
+async function marketDashboardIndicators(
+  ulbId,
+  financialYear,
+  totals,
+  ulbPopulation
+) {
+  console.log("ulbPopulation in marketDashboardIndicators:", ulbPopulation);
   // ---- Guards & input validation ----
   if (!ulbId || (typeof ulbId !== "string" && !(ulbId instanceof ObjectId))) {
     throw new Error("Invalid ulbId");
@@ -327,7 +347,30 @@ async function marketDashboardIndicators(ulbId, financialYear, totals) {
             2
           )
         : "N/A";
-    // console.log(marketDasInd, "marketDasInd");
+    // ---------- Return the computed indicators for per capita ----------
+    marketDasInd.totRevenuePerCapita = safePerCapita(rev, ulbPopulation);
+    marketDasInd.totRevenueExpenditurePerCapita = safePerCapita(
+      totRevExp,
+      ulbPopulation
+    );
+    marketDasInd.totOwnRevenuePerCapita = safePerCapita(
+      ownRevVal,
+      ulbPopulation
+    );
+    marketDasInd.totDebtPerCapita = safePerCapita(totDebtVal, ulbPopulation);
+    marketDasInd.grantsPerCapita = safePerCapita(grantsVal, ulbPopulation);
+    marketDasInd.totAssetsVal = safePerCapita(totAssetsVal, ulbPopulation);
+    marketDasInd.operatingSurplusPerCapita = safePerCapita(
+      marketDasInd.operatingSurplus,
+      ulbPopulation
+    );
+    marketDasInd.totExpenditureCapita = safePerCapita(
+      marketDasInd.totExpenditure,
+      ulbPopulation
+    );
+    marketDasInd.capexPerCapita = safePerCapita(capexFinal, ulbPopulation);
+
+    console.log(marketDasInd, "marketDasInd");
     return marketDasInd;
   } catch (error) {
     // Centralised error reporting (re-throw so caller can handle HTTP/status, etc.)
@@ -335,7 +378,37 @@ async function marketDashboardIndicators(ulbId, financialYear, totals) {
     throw error;
   }
 }
+function safePerCapita(value, population, decimals = 2) {
+  const num = toNumber(value);
+  const pop = toNumber(population);
 
+  if (pop <= 0) return 0;
+
+  const result = num / pop;
+  return Number(result.toFixed(decimals));
+}
+function toNumber(value) {
+  if (value === null || value === undefined) return 0;
+
+  if (typeof value === "string") {
+    const cleaned = value.trim().toLowerCase();
+
+    // Strings that mean "no data"
+    if (["n/a", "na", "-", "--", ""].includes(cleaned)) {
+      return 0;
+    }
+
+    // Remove commas (e.g., "12,345")
+    const parsed = Number(cleaned.replace(/,/g, ""));
+    return isNaN(parsed) ? 0 : parsed;
+  }
+
+  if (typeof value === "number") {
+    return isNaN(value) ? 0 : value;
+  }
+
+  return 0;
+}
 const getCapexValue = async (ulbId, financialYear) => {
   if (!ulbId || ulbId.length === 0) return "N/A";
 

@@ -1,5 +1,6 @@
 const express = require("express");
 const router = express.Router();
+const marketReadinessDataByUlb = require("./marketReadiness");
 const verifyToken =
   require("../../routes/auth/services/verifyToken").verifyToken;
 const { transferUlbLedgersToLedgerLogs } = require("./cron");
@@ -33,4 +34,7 @@ router.get("/getIndicatorsNameCompareByPage", getIndicatorsNameCompareByPage);
 router.get("/getUlbDetailsById", getUlbDetailsById);
 router.post("/getaverageCompareByIndicators", getaverageCompareByIndicators);
 router.get("/downloadMarketDashboardExcel", downloadMarketDashboardExcel);
+
+// Market Readiness Route
+router.get("/market-readiness-data-by-ulb", marketReadinessDataByUlb);
 module.exports = router;
