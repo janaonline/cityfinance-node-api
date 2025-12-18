@@ -5,7 +5,7 @@ const SearchKeyword = require("../../models/searchKeywords");
 const Response = require("../../service").response;
 const ObjectId = require("mongoose").Types.ObjectId;
 const Redis = require("../../service/redis");
-const catchAsync = require('../../util/catchAsync')
+const catchAsync = require("../../util/catchAsync");
 /**
  * Dynamic Financial Years are  those years which are contain any Financial Data.
  * The list changes based upon the datas present in collection UlbFinancialData.
@@ -110,49 +110,66 @@ async function getAllKeyword(req, res) {
 const search = catchAsync(async (req, res) => {
   try {
     const { matchingWord, onlyUlb } = req.body;
-    const { type, state } = req.query
+    const { type, state } = req.query;
 
     if (!matchingWord)
       return Response.BadRequest(res, null, "Provide word to match");
 
-    if (type && type == 'state') {
+    if (type && type == "state") {
       // let query = { name: { $regex: `${matchingWord}`, $options: 'im' } };
-      let query = { 
-        $and: [ {name : { $regex: `${matchingWord}`, $options: 'im' }}, { isPublish: true } ]
+      let query = {
+        $and: [
+          { name: { $regex: `${matchingWord}`, $options: "im" } },
+          { isPublish: true },
+        ],
       };
-      let statePromise = await State.find(query)
-        .limit(10)
-        .lean();
-      let data = []
+      let statePromise = await State.find(query).limit(10).lean();
+      let data = [];
       if (statePromise.length > 0) {
-        data =
-          statePromise.map((value) => {
-            value.type = "state";
-            return value;
-          })
+        data = statePromise.map((value) => {
+          value.type = "state";
+          return value;
+        });
       }
 
-
-
       return Response.OK(res, data);
-    } else if (type && type == 'ulb') {
-      let stateData
+    } else if (type && type == "ulb") {
+      let stateData;
       // let query = { name: { $regex: `^${matchingWord}`, $options: "i" } }
-      let query = { 
-        $and: [ {$or:[{name : { $regex: `${matchingWord}`, $options: 'im' }}, { keywords: { $regex: `${matchingWord}`, $options: 'im' } }]},{ isPublish: true } ]
+      let query = {
+        $and: [
+          {
+            $or: [
+              { name: { $regex: `${matchingWord}`, $options: "im" } },
+              { keywords: { $regex: `${matchingWord}`, $options: "im" } },
+            ],
+          },
+          { isPublish: true },
+        ],
       };
-      if (matchingWord.hasOwnProperty("contentType")) {  // filter add chnage suresh
+      if (matchingWord.hasOwnProperty("contentType")) {
+        // filter add chnage suresh
         // query = { name: { $regex: `^${matchingWord[type]}`, $options: "i" } };
         query = {
-          $and: [ {$or:[{name : { $regex: `${matchingWord[type]}`, $options: 'im' }}, { keywords: { $regex: `${matchingWord[type]}`, $options: 'im' } }]},{ isPublish: true } ]
-        }
+          $and: [
+            {
+              $or: [
+                { name: { $regex: `${matchingWord[type]}`, $options: "im" } },
+                {
+                  keywords: { $regex: `${matchingWord[type]}`, $options: "im" },
+                },
+              ],
+            },
+            { isPublish: true },
+          ],
+        };
       }
       if (state) {
         if (state && ObjectId.isValid(state)) {
-          Object.assign(query, { state: ObjectId(state) })
+          Object.assign(query, { state: ObjectId(state) });
         } else {
-          stateData = await State.findOne({ code: state }).lean()
-          Object.assign(query, { state: ObjectId(stateData._id) })
+          stateData = await State.findOne({ code: state }).lean();
+          Object.assign(query, { state: ObjectId(stateData._id) });
         }
       }
       Object.assign(query,{isActive:true});
@@ -162,21 +179,27 @@ const search = catchAsync(async (req, res) => {
         .limit(10)
         .sort({ name: 1 })
         .lean();
-      let data =
-        ulbPromise.map((value) => {
-          value.name = toTitleCase(value.name)
-          value.type = "ulb";
-          return value;
-        })
-
+      let data = ulbPromise.map((value) => {
+        value.name = toTitleCase(value.name);
+        value.type = "ulb";
+        return value;
+      });
 
       return Response.OK(res, data);
     }
-    let query = { 
-      // name: { $regex: `${matchingWord}`, $options: "im" } 
-      $and: [ {$or:[{name : { $regex: `${matchingWord}`, $options: 'im' }}, { keywords: { $regex: `${matchingWord}`, $options: 'im' } }]},{ isPublish: true } ]
+    let query = {
+      // name: { $regex: `${matchingWord}`, $options: "im" }
+      $and: [
+        {
+          $or: [
+            { name: { $regex: `${matchingWord}`, $options: "im" } },
+            { keywords: { $regex: `${matchingWord}`, $options: "im" } },
+          ],
+        },
+        { isPublish: true },
+      ],
     };
-    
+
     let ulbPromise = Ulb.find(query)
       .populate("state")
       .populate("ulbType")
@@ -202,7 +225,7 @@ const search = catchAsync(async (req, res) => {
     if (onlyUlb) {
       data = [
         ...data[0].map((value) => {
-          value.name = toTitleCase(value.name)
+          value.name = toTitleCase(value.name);
           value.type = "ulb";
           return value;
         }),
@@ -210,7 +233,7 @@ const search = catchAsync(async (req, res) => {
     } else {
       data = [
         ...data[0].map((value) => {
-          value.name = toTitleCase(value.name)
+          value.name = toTitleCase(value.name);
           value.type = "ulb";
           return value;
         }),
@@ -229,19 +252,164 @@ const search = catchAsync(async (req, res) => {
   } catch (error) {
     return Response.InternalError(res, error);
   }
-})
+});
+const searchMarketDashboard = catchAsync(async (req, res) => {
+  try {
+    const { matchingWord, onlyUlb } = req.body;
+    const { type, state } = req.query;
+
+    if (!matchingWord)
+      return Response.BadRequest(res, null, "Provide word to match");
+
+    if (type && type == "state") {
+      // let query = { name: { $regex: `${matchingWord}`, $options: 'im' } };
+      let query = {
+        $and: [
+          { name: { $regex: `${matchingWord}`, $options: "im" } },
+          { isPublish: true },
+        ],
+      };
+      let statePromise = await State.find(query).limit(10).lean();
+      let data = [];
+      if (statePromise.length > 0) {
+        data = statePromise.map((value) => {
+          value.type = "state";
+          return value;
+        });
+      }
+
+      return Response.OK(res, data);
+    } else if (type && type == "ulb") {
+      let stateData;
+      // let query = { name: { $regex: `^${matchingWord}`, $options: "i" } }
+      let query = {
+        $and: [
+          {
+            $or: [
+              { name: { $regex: `${matchingWord}`, $options: "im" } },
+              { keywords: { $regex: `${matchingWord}`, $options: "im" } },
+            ],
+          },
+          { isPublish: true },
+          { population: { $gte: 100000 } },
+        ],
+      };
+      if (matchingWord.hasOwnProperty("contentType")) {
+        // filter add chnage suresh
+        // query = { name: { $regex: `^${matchingWord[type]}`, $options: "i" } };
+        query = {
+          $and: [
+            {
+              $or: [
+                { name: { $regex: `${matchingWord[type]}`, $options: "im" } },
+                {
+                  keywords: { $regex: `${matchingWord[type]}`, $options: "im" },
+                },
+              ],
+            },
+            { isPublish: true },
+            { population: { $gte: 100000 } },
+          ],
+        };
+      }
+      if (state) {
+        if (state && ObjectId.isValid(state)) {
+          Object.assign(query, { state: ObjectId(state) });
+        } else {
+          stateData = await State.findOne({ code: state }).lean();
+          Object.assign(query, { state: ObjectId(stateData._id) });
+        }
+      }
+      let ulbPromise = await Ulb.find(query)
+        .populate("state")
+        .populate("ulbType")
+        .limit(10)
+        .sort({ name: 1 })
+        .lean();
+      let data = ulbPromise.map((value) => {
+        value.name = toTitleCase(value.name);
+        value.type = "ulb";
+        return value;
+      });
+
+      return Response.OK(res, data);
+    }
+    let query = {
+      // name: { $regex: `${matchingWord}`, $options: "im" }
+      $and: [
+        {
+          $or: [
+            { name: { $regex: `${matchingWord}`, $options: "im" } },
+            { keywords: { $regex: `${matchingWord}`, $options: "im" } },
+          ],
+        },
+        { isPublish: true },
+      ],
+    };
+
+    let ulbPromise = Ulb.find(query)
+      .populate("state")
+      .populate("ulbType")
+      .limit(8)
+      .sort({ name: 1 })
+      .lean();
+
+    let statePromise = State.find(query)
+      // .select({ name: 1, _id: 1 })
+      .limit(5)
+      .sort({ name: 1 })
+      .lean();
+    let searchKeywordPromise = SearchKeyword.find(query)
+      // .select({ name: 1, _id: 1 })
+      .limit(5)
+      .sort({ name: 1 })
+      .lean();
+    let data = await Promise.all([
+      ulbPromise,
+      statePromise,
+      searchKeywordPromise,
+    ]);
+    if (onlyUlb) {
+      data = [
+        ...data[0].map((value) => {
+          value.name = toTitleCase(value.name);
+          value.type = "ulb";
+          return value;
+        }),
+      ];
+    } else {
+      data = [
+        ...data[0].map((value) => {
+          value.name = toTitleCase(value.name);
+          value.type = "ulb";
+          return value;
+        }),
+        ...data[1].map((value) => {
+          value.type = "state";
+          return value;
+        }),
+        ...data[2].map((value) => {
+          value.type = "keyWord";
+          return value;
+        }),
+      ];
+    }
+    // if (data.length == 0) return Response.BadRequest(res, null, "No ULB Found");
+    return Response.OK(res, data);
+  } catch (error) {
+    return Response.InternalError(res, error);
+  }
+});
 
 function toTitleCase(str) {
-  return str.replace(
-    /\w\S*/g,
-    function (txt) {
-      return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
-    }
-  );
+  return str.replace(/\w\S*/g, function (txt) {
+    return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
+  });
 }
 
 module.exports = {
   addKeyword,
   getAllKeyword,
   search,
+  searchMarketDashboard,
 };

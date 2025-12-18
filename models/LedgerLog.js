@@ -155,6 +155,10 @@ const LedgerLogSchema = mongoose.Schema({
 		type: Map,
 		of: Number,
 	},
+	indicators: {
+    type: Map,
+    of: Schema.Types.Mixed, // Allows any type of value
+  },
 });
 
 LedgerLogSchema.index(
