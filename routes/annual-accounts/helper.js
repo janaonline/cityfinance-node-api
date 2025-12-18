@@ -93,6 +93,21 @@ module.exports.getRawUlbsList19Onwards = async (year = "2021-22", stateId = null
         const year_id = years[year];
         const auditedArr = [{ $eq: ["$aaData.audited.year", { $toObjectId: year_id }] }];
         const unAuditedArr = [{ $eq: ["$aaData.unAudited.year", { $toObjectId: year_id }] }];
+        const ALLOWED_STATUS = [
+            {
+                "aaData.status": "APPROVED",
+                "aaData.actionTakenByRole": "STATE"
+            },
+            {
+                "aaData.status": "APPROVED",
+                "aaData.actionTakenByRole": "MoHUA"
+            },
+            {
+                "aaData.status": "PENDING",
+                "aaData.actionTakenByRole": "MoHUA"
+            },
+            { "aaData.currentFormStatus": { $in: [4, 6] } }
+        ];
 
         // Add a check - check if balance sheet url is available.
         if (type === "pdf" || type === "excel") {
@@ -160,6 +175,7 @@ module.exports.getRawUlbsList19Onwards = async (year = "2021-22", stateId = null
                     ]
                 }
             },
+            { $match: { $or: ALLOWED_STATUS } },
             {
                 $addFields: {
                     audited: {
