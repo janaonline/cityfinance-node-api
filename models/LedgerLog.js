@@ -18,6 +18,13 @@ const MarketReadinessScoreSchema = new mongoose.Schema(
         maxScore: Number,
       },
     ],
+    // sections: [
+    //   {
+    //     section: String,
+    //     description: String,
+    //     rows: [],
+    //   },
+    // ],
     overallScore: {
       type: Number,
     },

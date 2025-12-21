@@ -53,6 +53,7 @@ function percentageOf(numerator, denominator, decimals = 2) {
 /* ====================== PROPERTY TAX ====================== */
 
 function mapPTaxData(data = []) {
+  //   console.log("Data received for mapping:", data);
   const map = {};
 
   for (const d of data) {
@@ -65,85 +66,96 @@ function mapPTaxData(data = []) {
 
   return map;
 }
+// function mapPTaxData(data = []) {
+//   const map = {};
+
+//   data.forEach((d) => {
+//     const key = d.displayPriority;
+//     const yearId = String(d.year); // 🔑 normalize ObjectId
+
+//     if (!map[key]) {
+//       map[key] = {};
+//     }
+
+//     map[key][yearId] = Number(d.value) || 0;
+//   });
+
+//   return map;
+// }
 
 /* ====================== SCORING RULES ====================== */
 
-function getIndicatorScore(indicatorKey, value) {
-  if (value === null || value === undefined || isNaN(value)) return 0;
+function getIndicatorScore(indicatorKey, value, label) {
+  const result = {
+    score: 0,
+    outOfRange: null,
+  };
+
+  // ❌ invalid / negative / impossible values
+  if (!Number.isFinite(value) || value < 0 || value > 100) {
+    result.score = 0;
+    result.outOfRange = `Ratio ${label} exceeds the defined upper limit and is treated as out of range for scoring. Consequently, a score of 0 has been assigned for Ratio ${label}.`;
+    return result;
+  }
 
   switch (indicatorKey) {
     case "OSR_TO_REVENUE":
-      if (value > 50) return 4;
-      if (value > 30) return 3;
-      if (value > 20) return 2;
-      return 1;
+      result.score = value > 50 ? 4 : value > 30 ? 3 : value > 20 ? 2 : 1;
+      break;
 
     case "OSR_GROWTH":
     case "TR_GROWTH":
-      if (value > 15) return 4;
-      if (value > 10) return 3;
-      if (value > 5) return 2;
-      return 1;
+      result.score = value > 15 ? 4 : value > 10 ? 3 : value > 5 ? 2 : 1;
+      break;
 
     case "GRANTS_TO_REVENUE":
-      if (value < 30) return 4;
-      if (value <= 50) return 3;
-      if (value <= 70) return 2;
-      return 1;
+      result.score = value < 30 ? 4 : value <= 50 ? 3 : value <= 70 ? 2 : 1;
+      break;
+
     case "TR_Net":
-      if (value > 70) return 8;
-      if (value > 50) return 6;
-      if (value > 30) return 4;
-      return 2;
+      result.score = value > 70 ? 8 : value > 50 ? 6 : value > 30 ? 4 : 2;
+      break;
+
     case "PTAX_DEMAND_GROWTH":
     case "PTAX_COLLECTION_GROWTH":
-      if (value > 15) return 4;
-      if (value > 10) return 3;
-      if (value > 5) return 2;
-      return 1;
+      result.score = value > 15 ? 4 : value > 10 ? 3 : value > 5 ? 2 : 1;
+      break;
+
     case "PTAX_CURRENT_COLLECTION_EFFICIENCY":
     case "PTAX_ARREARS_COLLECTION_EFFICIENCY":
-      if (value > 60) return 4;
-      if (value >= 40) return 3;
-      if (value >= 20) return 2;
-      return 1;
+      result.score = value > 60 ? 4 : value >= 40 ? 3 : value >= 20 ? 2 : 1;
+      break;
+
     case "FIX_CHARGES":
-      if (value < 50) return 8;
-      if (value <= 60) return 6;
-      if (value <= 70) return 4;
-      return 2;
+      result.score = value < 50 ? 8 : value <= 60 ? 6 : value <= 70 ? 4 : 2;
+      break;
 
     case "O&M_EXP":
-      if (value < 30) return 4;
-      if (value <= 40) return 3;
-      if (value <= 50) return 2;
-      return 1;
+      result.score = value < 30 ? 4 : value <= 40 ? 3 : value <= 50 ? 2 : 1;
+      break;
+
     case "OPERATING_SURPLUS":
-      if (value > 30) return 10;
-      if (value <= 30) return 7.5;
-      if (value <= 20) return 5;
-      return 2.5;
+      result.score = value > 30 ? 10 : value > 20 ? 7.5 : value > 10 ? 5 : 2.5;
+      break;
+
     case "QA_RATIO":
-      if (value > 1) return 10;
-      if (value >= 0.5) return 7.5;
-      if (value >= 0.2) return 5;
-      return 2.5;
+      result.score =
+        value > 1 ? 10 : value >= 0.5 ? 7.5 : value >= 0.2 ? 5 : 2.5;
+      break;
 
     case "TOT_DEBT_OWN_REV":
-      if (value < 10) return 8;
-      if (value <= 20) return 6;
-      if (value <= 30) return 4;
-      return 2;
+      if (value == null) {
+        return { score: "N/A", outOfRange: null };
+      }
+      result.score = value < 10 ? 8 : value <= 20 ? 6 : value <= 30 ? 4 : 2;
+      break;
 
     case "ISCR_RATIO":
-      if (value > 2) return 4;
-      if (value >= 1.5) return 3;
-      if (value >= 1) return 2;
-      return 1;
-
-    default:
-      return 0;
+      result.score = value > 2 ? 4 : value >= 1.5 ? 3 : value >= 1 ? 2 : 1;
+      break;
   }
+
+  return result;
 }
 
 /* ====================== BAND LOGIC ====================== */
