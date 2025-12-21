@@ -9,9 +9,9 @@ const excludedStates = [
   "TEST STATE",
   "Andaman and Nicobar Islands",
   "Chandigarh",
-  "Dadra and Nagar Haveli",
+  "Dadra and Nagar Haveli and Daman & Diu",
   "Jammu and Kashmir",
-  "NCT Delhi",
+  "The Government of NCT of Delhi",
   "Puducherry",
 ];
 /* ====================== MAIN CONTROLLER ====================== */
@@ -79,7 +79,7 @@ async function marketReadinessDataByUlb(req, res) {
         lineItems: 1,
       })
       .lean();
-    console.log("Ledger Logs:", ledgerLogs);
+    // console.log("Ledger Logs:", ledgerLogs);
     if (!ledgerLogs.length) {
       return res.status(404).json({
         message: "Ledger logs not found for the specified ULB and years",
@@ -146,11 +146,11 @@ async function marketReadinessDataByUlb(req, res) {
         _id: 0,
       })
       .lean();
-    console.log("Property Tax Data:", propertyTaxData);
+    // console.log("Property Tax Data:", propertyTaxData);
     const currYearKey = String(currentYearId);
     const prevYearKey = String(prevYearId);
     const pTaxMap = mapPTaxData(propertyTaxData);
-    console.log("PTax Map:", pTaxMap);
+    // console.log("PTax Map:", pTaxMap);
     // 1️⃣ PTax Total Demand YoY (1.9)
     const pTaxDemandGrowth = calculateYoY(
       pTaxMap["1.9"]?.[currYearKey],
@@ -160,7 +160,7 @@ async function marketReadinessDataByUlb(req, res) {
     // 2️⃣ PTax Total Collection YoY (1.17)
     const pTaxCollectionGrowth = calculateYoY(
       pTaxMap["1.17"]?.[currYearKey],
-      pTaxMap["1.17"]?.[prevYear]
+      pTaxMap["1.17"]?.[prevYearKey]
     );
 
     // 3️⃣ Current Collection Efficiency (1.18 / 1.10)
@@ -174,12 +174,12 @@ async function marketReadinessDataByUlb(req, res) {
       pTaxMap["1.19"]?.[currYearKey],
       pTaxMap["1.11"]?.[currYearKey]
     );
-    console.log("PTax Metrics:", {
-      pTaxDemandGrowth,
-      pTaxCollectionGrowth,
-      pTaxCurrentCollectionEfficiency,
-      pTaxArrearsCollectionEfficiency,
-    });
+    // console.log("PTax Metrics:", {
+    //   pTaxDemandGrowth,
+    //   pTaxCollectionGrowth,
+    //   pTaxCurrentCollectionEfficiency,
+    //   pTaxArrearsCollectionEfficiency,
+    // });
     const totalRevenue = Number(currentIndicators?.totRevenue);
     const operSurplusRevExp = Number(
       currentIndicators?.OperSurplusTotRevenueExpenditure
@@ -197,9 +197,282 @@ async function marketReadinessDataByUlb(req, res) {
 
       operatingSurplusPercent = Number(operatingSurplusPercent.toFixed(2));
     }
-    console.log("Operating Surplus %:", operatingSurplusPercent);
+    // console.log("Operating Surplus %:", operatingSurplusPercent);
     /* ---------------- SECTIONS ---------------- */
+    const rawDebtScore = getIndicatorScore(
+      "TOT_DEBT_OWN_REV",
+      currentIndicators?.totDebtByTotOwnRevenue,
+      "Debt / Own Source Revenue"
+    );
 
+    const isDebtScoreMissing = !Number.isFinite(
+      currentIndicators?.totDebtByTotOwnRevenue
+    );
+    /* ================= REVENUE GENERATION ================= */
+
+    const osr = getIndicatorScore(
+      "OSR_TO_REVENUE",
+      currentIndicators?.totOwnRevenueByTotRevenue,
+      "Own Source Revenue to Total Revenue Receipts"
+    );
+
+    const osrGrowth = getIndicatorScore(
+      "OSR_GROWTH",
+      growthOSR,
+      "Y-o-Y Growth in Own Source Revenue"
+    );
+
+    const grantsRatio = getIndicatorScore(
+      "GRANTS_TO_REVENUE",
+      currentIndicators?.grantsByTotRevenue,
+      "Revenue Grants to Total Revenue Receipts"
+    );
+
+    const trGrowth = getIndicatorScore(
+      "TR_GROWTH",
+      growthTotalRevenue,
+      "Y-o-Y Growth in Total Revenue receipts"
+    );
+
+    const trNet = getIndicatorScore(
+      "TR_Net",
+      adjustedTRPercent,
+      "Adjustments to TR (TR-Net Receivables) as % of TR"
+    );
+
+    const pTaxDemand = getIndicatorScore(
+      "PTAX_DEMAND_GROWTH",
+      pTaxDemandGrowth,
+      "Y-o-Y Growth in Property tax total demand"
+    );
+
+    const pTaxCollection = getIndicatorScore(
+      "PTAX_COLLECTION_GROWTH",
+      pTaxCollectionGrowth,
+      "Y-o-Y Growth in Property tax total collections"
+    );
+
+    const pTaxCurrentEff = getIndicatorScore(
+      "PTAX_CURRENT_COLLECTION_EFFICIENCY",
+      pTaxCurrentCollectionEfficiency,
+      "Property tax current collection efficiency"
+    );
+
+    const pTaxArrearEff = getIndicatorScore(
+      "PTAX_ARREARS_COLLECTION_EFFICIENCY",
+      pTaxArrearsCollectionEfficiency,
+      "Property tax average arrear collection efficiency"
+    );
+
+    /* ================= EXPENDITURE ================= */
+
+    const fixedCharge = getIndicatorScore(
+      "FIX_CHARGES",
+      fixedChargesByRevExp,
+      "Fixed Charges to Revenue Expenditure"
+    );
+
+    const omExp = getIndicatorScore(
+      "O&M_EXP",
+      omByRevExpPercent,
+      "O&M Expenditure to Revenue Expenditure"
+    );
+
+    /* ================= CASH POSITION ================= */
+
+    const operatingSurplus = getIndicatorScore(
+      "OPERATING_SURPLUS",
+      operatingSurplusPercent,
+      "Operating Surplus"
+    );
+
+    const quickRatio = getIndicatorScore(
+      "QA_RATIO",
+      currentIndicators?.qaRatio,
+      "Quick Ratio"
+    );
+
+    /* ================= DEBT ================= */
+
+    const iscr = getIndicatorScore(
+      "ISCR_RATIO",
+      currentIndicators?.iscrRatio,
+      "Interest Service Coverage Ratio (ISCR)"
+    );
+
+    // const sections = [
+    //   {
+    //     section: "REVENUE GENERATION (40%)",
+    //     description:
+    //       "Measures the growth, composition and efficiency of revenue income sources",
+    //     rows: [
+    //       {
+    //         name: "Own Source Revenue to Total Revenue Receipts",
+    //         maxScore: 4,
+    //         score: getIndicatorScore(
+    //           "OSR_TO_REVENUE",
+    //           currentIndicators?.totOwnRevenueByTotRevenue,
+    //           "Own Source Revenue to Total Revenue Receipts"
+    //         ),
+    //       },
+    //       {
+    //         name: "Y-o-Y Growth in Own Source Revenue",
+    //         maxScore: 4,
+    //         score: getIndicatorScore(
+    //           "OSR_GROWTH",
+    //           growthOSR,
+    //           "Y-o-Y Growth in Own Source Revenue"
+    //         ),
+    //       },
+    //       {
+    //         name: "Revenue Grants to Total Revenue Receipts",
+    //         maxScore: 4,
+    //         score: getIndicatorScore(
+    //           "GRANTS_TO_REVENUE",
+    //           currentIndicators?.grantsByTotRevenue,
+    //           "Revenue Grants to Total Revenue Receipts"
+    //         ),
+    //       },
+    //       {
+    //         name: "Y-o-Y Growth in Total Revenue receipts",
+    //         maxScore: 4,
+    //         score: getIndicatorScore(
+    //           "TR_GROWTH",
+    //           growthTotalRevenue,
+    //           "Y-o-Y Growth in Total Revenue receipts"
+    //         ),
+    //       },
+    //       {
+    //         name: "Adjustments to TR (TR-Net Receivables) as % of TR",
+    //         maxScore: 8,
+    //         score: getIndicatorScore(
+    //           "TR_Net",
+    //           adjustedTRPercent,
+    //           "Adjustments to TR (TR-Net Receivables) as % of TR"
+    //         ),
+    //       },
+    //       {
+    //         name: "Y-o-Y Growth in Property tax total demand",
+    //         maxScore: 4,
+    //         score: getIndicatorScore(
+    //           "PTAX_DEMAND_GROWTH",
+    //           pTaxDemandGrowth,
+    //           "Y-o-Y Growth in Property tax total demand"
+    //         ),
+    //       },
+    //       {
+    //         name: "Y-o-Y Growth in Property tax total collections",
+    //         maxScore: 4,
+    //         score: getIndicatorScore(
+    //           "PTAX_COLLECTION_GROWTH",
+    //           pTaxCollectionGrowth,
+    //           "Y-o-Y Growth in Property tax total collections"
+    //         ),
+    //       },
+    //       {
+    //         name: "Property tax current collection efficiency",
+    //         maxScore: 4,
+    //         score: getIndicatorScore(
+    //           "PTAX_CURRENT_COLLECTION_EFFICIENCY",
+    //           pTaxCurrentCollectionEfficiency,
+    //           "Property tax current collection efficiency"
+    //         ),
+    //       },
+    //       {
+    //         name: "Property tax average arrear collection efficiency",
+    //         maxScore: 4,
+    //         score: getIndicatorScore(
+    //           "PTAX_ARREARS_COLLECTION_EFFICIENCY",
+    //           pTaxArrearsCollectionEfficiency,
+    //           "Property tax average arrear collection efficiency"
+    //         ),
+    //       },
+    //     ],
+    //   },
+    //   {
+    //     section: "EXPENDITURE MANAGEMENT (20%)",
+    //     description:
+    //       "Measures revenue and capital expenditure components including overspending/underspending",
+    //     rows: [
+    //       {
+    //         name: "Fixed Charges to Revenue Expenditure",
+    //         maxScore: 8,
+    //         score: getIndicatorScore(
+    //           "FIX_CHARGES",
+    //           fixedChargesByRevExp,
+    //           "Fixed Charges to Revenue Expenditure"
+    //         ),
+    //       },
+    //       {
+    //         name: "O&M Expenditure to Revenue Expenditure",
+    //         maxScore: 4,
+    //         score: getIndicatorScore(
+    //           "O&M_EXP",
+    //           omByRevExpPercent,
+    //           "O&M Expenditure to Revenue Expenditure"
+    //         ),
+    //       },
+    //       {
+    //         name: "Capital Utilization Ratio (Capital Expenditure / Capital Receipts)**",
+    //         maxScore: 8,
+    //         score: "N/A",
+    //         excludeFromScore: true,
+    //       },
+    //     ],
+    //   },
+    //   {
+    //     section: "CASH POSITION (20%)",
+    //     description:
+    //       "Measures capacity to borrow based on revenue surplus and liquidity position",
+    //     rows: [
+    //       {
+    //         name: "Operating Surplus",
+    //         maxScore: 10,
+    //         score: getIndicatorScore(
+    //           "OPERATING_SURPLUS",
+    //           operatingSurplusPercent,
+    //           "Operating Surplus"
+    //         ),
+    //       },
+    //       {
+    //         name: "Quick Ratio",
+    //         maxScore: 10,
+    //         score: getIndicatorScore(
+    //           "QA_RATIO",
+    //           currentIndicators?.qaRatio,
+    //           "Quick Ratio"
+    //         ),
+    //       },
+    //     ],
+    //   },
+    //   {
+    //     section: "DEBT MANAGEMENT (20%)",
+    //     description:
+    //       "Measures debt levels against the operating receipts generated",
+    //     rows: [
+    //       {
+    //         name: "Debt / Own Source Revenue",
+    //         maxScore: 8,
+    //         score: isDebtScoreMissing ? "N/A" : rawDebtScore,
+    //         derived: isDebtScoreMissing,
+    //       },
+    //       {
+    //         name: "Debt Service Coverage Ratio (DSCR)**",
+    //         maxScore: 8,
+    //         score: "N/A",
+    //       },
+    //       {
+    //         name: "Interest Service Coverage Ratio (ISCR)",
+    //         maxScore: 4,
+    //         score: getIndicatorScore(
+    //           "ISCR_RATIO",
+    //           currentIndicators?.iscrRatio,
+    //           "Interest Service Coverage Ratio (ISCR)"
+    //         ),
+    //       },
+    //     ],
+    //   },
+    // ];
     const sections = [
       {
         section: "REVENUE GENERATION (40%)",
@@ -207,64 +480,58 @@ async function marketReadinessDataByUlb(req, res) {
           "Measures the growth, composition and efficiency of revenue income sources",
         rows: [
           {
-            name: "Own Source Revenue to Total Revenue Receipts",
+            name: osr.label ?? "Own Source Revenue to Total Revenue Receipts",
             maxScore: 4,
-            score: getIndicatorScore(
-              "OSR_TO_REVENUE",
-              currentIndicators?.totOwnRevenueByTotRevenue
-            ),
+            score: osr.score,
+            outOfRange: osr.outOfRange,
           },
           {
             name: "Y-o-Y Growth in Own Source Revenue",
             maxScore: 4,
-            score: getIndicatorScore("OSR_GROWTH", growthOSR),
+            score: osrGrowth.score,
+            outOfRange: osrGrowth.outOfRange,
           },
           {
             name: "Revenue Grants to Total Revenue Receipts",
             maxScore: 4,
-            score: getIndicatorScore(
-              "GRANTS_TO_REVENUE",
-              currentIndicators?.grantsByTotRevenue
-            ),
+            score: grantsRatio.score,
+            outOfRange: grantsRatio.outOfRange,
           },
           {
             name: "Y-o-Y Growth in Total Revenue receipts",
             maxScore: 4,
-            score: getIndicatorScore("TR_GROWTH", growthTotalRevenue),
+            score: trGrowth.score,
+            outOfRange: trGrowth.outOfRange,
           },
           {
             name: "Adjustments to TR (TR-Net Receivables) as % of TR",
             maxScore: 8,
-            score: getIndicatorScore("TR_Net", adjustedTRPercent),
+            score: trNet.score,
+            outOfRange: trNet.outOfRange,
           },
           {
             name: "Y-o-Y Growth in Property tax total demand",
             maxScore: 4,
-            score: getIndicatorScore("PTAX_DEMAND_GROWTH", pTaxDemandGrowth),
+            score: pTaxDemand.score,
+            outOfRange: pTaxDemand.outOfRange,
           },
           {
             name: "Y-o-Y Growth in Property tax total collections",
             maxScore: 4,
-            score: getIndicatorScore(
-              "PTAX_COLLECTION_GROWTH",
-              pTaxCollectionGrowth
-            ),
+            score: pTaxCollection.score,
+            outOfRange: pTaxCollection.outOfRange,
           },
           {
             name: "Property tax current collection efficiency",
             maxScore: 4,
-            score: getIndicatorScore(
-              "PTAX_CURRENT_COLLECTION_EFFICIENCY",
-              pTaxCurrentCollectionEfficiency
-            ),
+            score: pTaxCurrentEff.score,
+            outOfRange: pTaxCurrentEff.outOfRange,
           },
           {
             name: "Property tax average arrear collection efficiency",
             maxScore: 4,
-            score: getIndicatorScore(
-              "PTAX_ARREARS_COLLECTION_EFFICIENCY",
-              pTaxArrearsCollectionEfficiency
-            ),
+            score: pTaxArrearEff.score,
+            outOfRange: pTaxArrearEff.outOfRange,
           },
         ],
       },
@@ -276,12 +543,14 @@ async function marketReadinessDataByUlb(req, res) {
           {
             name: "Fixed Charges to Revenue Expenditure",
             maxScore: 8,
-            score: getIndicatorScore("FIX_CHARGES", fixedChargesByRevExp),
+            score: fixedCharge.score,
+            outOfRange: fixedCharge.outOfRange,
           },
           {
             name: "O&M Expenditure to Revenue Expenditure",
             maxScore: 4,
-            score: getIndicatorScore("O&M_EXP", omByRevExpPercent),
+            score: omExp.score,
+            outOfRange: omExp.outOfRange,
           },
           {
             name: "Capital Utilization Ratio (Capital Expenditure / Capital Receipts)**",
@@ -299,15 +568,14 @@ async function marketReadinessDataByUlb(req, res) {
           {
             name: "Operating Surplus",
             maxScore: 10,
-            score: getIndicatorScore(
-              "OPERATING_SURPLUS",
-              operatingSurplusPercent
-            ),
+            score: operatingSurplus.score,
+            outOfRange: operatingSurplus.outOfRange,
           },
           {
             name: "Quick Ratio",
             maxScore: 10,
-            score: getIndicatorScore("QA_RATIO", currentIndicators?.qaRatio),
+            score: quickRatio.score,
+            outOfRange: quickRatio.outOfRange,
           },
         ],
       },
@@ -319,10 +587,8 @@ async function marketReadinessDataByUlb(req, res) {
           {
             name: "Debt / Own Source Revenue",
             maxScore: 8,
-            score: getIndicatorScore(
-              "TOT_DEBT_OWN_REV",
-              currentIndicators?.totDebtByTotOwnRevenue
-            ),
+            score: isDebtScoreMissing ? "N/A" : rawDebtScore,
+            derived: isDebtScoreMissing,
           },
           {
             name: "Debt Service Coverage Ratio (DSCR)**",
@@ -332,24 +598,21 @@ async function marketReadinessDataByUlb(req, res) {
           {
             name: "Interest Service Coverage Ratio (ISCR)",
             maxScore: 4,
-            score: getIndicatorScore(
-              "ISCR_RATIO",
-              currentIndicators?.iscrRatio
-            ),
+            score: iscr.score,
+            outOfRange: iscr.outOfRange,
           },
         ],
       },
     ];
-
     /* ---------------- SECTION & OVERALL SCORES ---------------- */
 
-    const sectionScores = sections.map((sec) => {
-      const score = sec.rows.reduce(
+    var sectionScores = sections.map((sec) => {
+      var score = sec.rows.reduce(
         (sum, row) => sum + (Number(row.score) || 0),
         0
       );
 
-      const maxScore = sec.rows.reduce(
+      var maxScore = sec.rows.reduce(
         (sum, row) => sum + (Number(row.maxScore) || 0),
         0
       );
@@ -361,13 +624,66 @@ async function marketReadinessDataByUlb(req, res) {
       };
     });
 
-    const overallScore = sectionScores.reduce((sum, s) => sum + s.score, 0);
+    var overallScore = sectionScores.reduce((sum, s) => sum + s.score, 0);
 
-    const overallMaxScore = sectionScores.reduce(
-      (sum, s) => sum + s.maxScore,
-      0
-    );
+    var overallMaxScore = sectionScores.reduce((sum, s) => sum + s.maxScore, 0);
+    if (isDebtScoreMissing) {
+      const adjustedOverallScore = Number(
+        (overallScore * (84 / 72)).toFixed(2)
+      );
+
+      const derivedDebtScore = Number(
+        (adjustedOverallScore - overallScore).toFixed(2)
+      );
+
+      // Inject derived score
+      sections.forEach((sec) => {
+        if (sec.section.startsWith("DEBT MANAGEMENT")) {
+          sec.rows.forEach((row) => {
+            if (row.derived) {
+              row.score = derivedDebtScore;
+            }
+          });
+        }
+      });
+
+      // Recalculate section scores
+      sectionScores = sections.map((sec) => {
+        score = sec.rows.reduce(
+          (sum, row) =>
+            sum + (Number.isFinite(row.score) ? Number(row.score) : 0),
+          0
+        );
+
+        maxScore = sec.rows.reduce(
+          (sum, row) => sum + (Number(row.maxScore) || 0),
+          0
+        );
+
+        return {
+          section: sec.section,
+          score,
+          maxScore,
+        };
+      });
+
+      overallScore = adjustedOverallScore;
+      var footNote = `City ${ulbData.name} did not report debt for FY ${year}. For scoring comparability, the debt component has been derived through extrapolation. Please refer to the audited financial statements for detailed debt disclosures.`;
+    }
+
     const marketReadinessBand = getMarketReadinessBand(overallScore);
+    const outOfRange = [];
+
+    sections.forEach((sec) => {
+      sec.rows.forEach((row) => {
+        if (row.outOfRange) {
+          outOfRange.push({
+            indicator: row.name,
+            message: row.outOfRange,
+          });
+        }
+      });
+    });
 
     /* ---------------- FINAL RESPONSE ---------------- */
 
@@ -380,6 +696,8 @@ async function marketReadinessDataByUlb(req, res) {
       overallScore, // overall doughnut
       overallMaxScore, // 👈 IMPORTANT for frontend
       marketReadinessBand,
+      outOfRange,
+      footNote: footNote ? footNote : "",
     });
   } catch (error) {
     console.error("Market Readiness API Error:", error);
@@ -660,83 +978,79 @@ function calculateYoYGrowth(currentValue, previousValue) {
 
 /* ====================== SCORING RULES ====================== */
 
-function getIndicatorScore(indicatorKey, value) {
-  if (value === null || value === undefined || isNaN(value)) return 0;
+function getIndicatorScore(indicatorKey, value, label) {
+  const result = {
+    score: 0,
+    outOfRange: null,
+  };
+
+  // ❌ invalid / negative / impossible values
+  if (!Number.isFinite(value) || value < 0 || value > 100) {
+    result.score = 0;
+    result.outOfRange = `Ratio ${label} exceeds the defined upper limit and is treated as out of range for scoring. Consequently, a score of 0 has been assigned for Ratio ${label}.`;
+    return result;
+  }
 
   switch (indicatorKey) {
     case "OSR_TO_REVENUE":
-      if (value > 50) return 4;
-      if (value > 30) return 3;
-      if (value > 20) return 2;
-      return 1;
+      result.score = value > 50 ? 4 : value > 30 ? 3 : value > 20 ? 2 : 1;
+      break;
 
     case "OSR_GROWTH":
     case "TR_GROWTH":
-      if (value > 15) return 4;
-      if (value > 10) return 3;
-      if (value > 5) return 2;
-      return 1;
+      result.score = value > 15 ? 4 : value > 10 ? 3 : value > 5 ? 2 : 1;
+      break;
 
     case "GRANTS_TO_REVENUE":
-      if (value < 30) return 4;
-      if (value <= 50) return 3;
-      if (value <= 70) return 2;
-      return 1;
+      result.score = value < 30 ? 4 : value <= 50 ? 3 : value <= 70 ? 2 : 1;
+      break;
+
     case "TR_Net":
-      if (value > 70) return 8;
-      if (value > 50) return 6;
-      if (value > 30) return 4;
-      return 2;
+      result.score = value > 70 ? 8 : value > 50 ? 6 : value > 30 ? 4 : 2;
+      break;
+
     case "PTAX_DEMAND_GROWTH":
     case "PTAX_COLLECTION_GROWTH":
-      if (value > 15) return 4;
-      if (value > 10) return 3;
-      if (value > 5) return 2;
-      return 1;
+      result.score = value > 15 ? 4 : value > 10 ? 3 : value > 5 ? 2 : 1;
+      break;
+
     case "PTAX_CURRENT_COLLECTION_EFFICIENCY":
     case "PTAX_ARREARS_COLLECTION_EFFICIENCY":
-      if (value > 60) return 4;
-      if (value >= 40) return 3;
-      if (value >= 20) return 2;
-      return 1;
+      result.score = value > 60 ? 4 : value >= 40 ? 3 : value >= 20 ? 2 : 1;
+      break;
+
     case "FIX_CHARGES":
-      if (value < 50) return 8;
-      if (value <= 60) return 6;
-      if (value <= 70) return 4;
-      return 2;
+      result.score = value < 50 ? 8 : value <= 60 ? 6 : value <= 70 ? 4 : 2;
+      break;
 
     case "O&M_EXP":
-      if (value < 30) return 4;
-      if (value <= 40) return 3;
-      if (value <= 50) return 2;
-      return 1;
+      result.score = value < 30 ? 4 : value <= 40 ? 3 : value <= 50 ? 2 : 1;
+      break;
+
     case "OPERATING_SURPLUS":
-      if (value > 30) return 10;
-      if (value <= 30) return 7.5;
-      if (value <= 20) return 5;
-      return 2.5;
+      result.score = value > 30 ? 10 : value > 20 ? 7.5 : value > 10 ? 5 : 2.5;
+      break;
+
     case "QA_RATIO":
-      if (value > 1) return 10;
-      if (value >= 0.5) return 7.5;
-      if (value >= 0.2) return 5;
-      return 2.5;
+      result.score =
+        value > 1 ? 10 : value >= 0.5 ? 7.5 : value >= 0.2 ? 5 : 2.5;
+      break;
 
     case "TOT_DEBT_OWN_REV":
-      if (value < 10) return 8;
-      if (value <= 20) return 6;
-      if (value <= 30) return 4;
-      return 2;
+      if (value == null) {
+        return { score: "N/A", outOfRange: null };
+      }
+      result.score = value < 10 ? 8 : value <= 20 ? 6 : value <= 30 ? 4 : 2;
+      break;
 
     case "ISCR_RATIO":
-      if (value > 2) return 4;
-      if (value >= 1.5) return 3;
-      if (value >= 1) return 2;
-      return 1;
-
-    default:
-      return 0;
+      result.score = value > 2 ? 4 : value >= 1.5 ? 3 : value >= 1 ? 2 : 1;
+      break;
   }
+
+  return result;
 }
+
 module.exports = {
   getAllStates,
   marketReadinessDataByUlb,
