@@ -846,6 +846,95 @@ async function getAllUlbsMarketReadiness(req, res) {
         },
       },
       {
+        $addFields: {
+          nextMilestone: {
+            $switch: {
+              branches: [
+                {
+                  case: { $lt: ["$score", 40] },
+                  then: {
+                    $concat: [
+                      {
+                        $toString: {
+                          $round: [{ $subtract: [40, "$score"] }, 2],
+                        },
+                      },
+                      " points to C (Needs Intervention)",
+                    ],
+                  },
+                },
+                {
+                  case: { $lt: ["$score", 47] },
+                  then: {
+                    $concat: [
+                      {
+                        $toString: {
+                          $round: [{ $subtract: [47, "$score"] }, 2],
+                        },
+                      },
+                      " points to B (Aspirational)",
+                    ],
+                  },
+                },
+                {
+                  case: { $lt: ["$score", 52] },
+                  then: {
+                    $concat: [
+                      {
+                        $toString: {
+                          $round: [{ $subtract: [52, "$score"] }, 2],
+                        },
+                      },
+                      " points to A3 (Moderately Prepared)",
+                    ],
+                  },
+                },
+                {
+                  case: { $lt: ["$score", 56] },
+                  then: {
+                    $concat: [
+                      {
+                        $toString: {
+                          $round: [{ $subtract: [56, "$score"] }, 2],
+                        },
+                      },
+                      " points to A2 (Well Prepared)",
+                    ],
+                  },
+                },
+                {
+                  case: { $lt: ["$score", 65] },
+                  then: {
+                    $concat: [
+                      {
+                        $toString: {
+                          $round: [{ $subtract: [65, "$score"] }, 2],
+                        },
+                      },
+                      " points to A1 (Highly Prepared)",
+                    ],
+                  },
+                },
+                {
+                  case: { $lt: ["$score", 84] },
+                  then: {
+                    $concat: [
+                      {
+                        $toString: {
+                          $round: [{ $subtract: [84, "$score"] }, 2],
+                        },
+                      },
+                      " points to TOP SCORE",
+                    ],
+                  },
+                },
+              ],
+              default: "Top Band Reached",
+            },
+          },
+        },
+      },
+      {
         $match: {
           bandCurrYear: { $nin: [null, "", "N/A"] },
           bandPrevYear: { $nin: [null, "", "N/A"] },
@@ -861,6 +950,7 @@ async function getAllUlbsMarketReadiness(req, res) {
           bandCurrYear: 1,
           score: 1,
           delta: 1,
+          nextMilestone: 1,
         },
       },
 
