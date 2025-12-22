@@ -64,13 +64,51 @@ async function computeMarketReadinessScoreFast(
 
   const current = ledgerIndex[`${ulbId}_${year}`];
   const previous = ledgerIndex[`${ulbId}_${prevYear}`];
+  // console.log(ulbId, year, yearIdMap, ledgerIndex, "ulbis,,,,,,,");
+  if (!current) {
+    return {
+      version: "v1",
+      computedAt: new Date(),
+      status: "NO_CURRENT_DATA",
+      sections: [],
+      sectionScores: [],
+      overallScore: 0,
+      overallMaxScore: 100,
+      marketReadinessBand: "N/A",
+    };
+  }
 
-  if (!current || !previous) return null;
+  if (!previous) {
+    return {
+      version: "v1",
+      computedAt: new Date(),
+      status: "NO_PREVIOUS_YEAR",
+      sections: [],
+      sectionScores: [],
+      overallScore: 0,
+      overallMaxScore: 100,
+      marketReadinessBand: "N/A",
+    };
+  }
 
   const ci = current.indicators || {};
   const pi = previous.indicators || {};
   const li = current.lineItems || {};
+  // const hasCurrentData = hasValidIndicators(current);
+  // const hasPreviousData = hasValidIndicators(previous);
 
+  // if (!hasCurrentData && !hasPreviousData) {
+  //   return {
+  //     version: "v1",
+  //     computedAt: new Date(),
+  //     status: "NO_PREVIOUS_YEAR",
+  //     sections: [],
+  //     sectionScores: [],
+  //     overallScore: 0,
+  //     overallMaxScore: 100,
+  //     marketReadinessBand: "N/A",
+  //   };
+  // }
   /* ---------- Derived Metrics ---------- */
   const growthOSR = calculateYoYGrowth(ci.totOwnRevenue, pi.totOwnRevenue);
   const growthTR = calculateYoYGrowth(ci.totRevenue, pi.totRevenue);
@@ -372,7 +410,7 @@ async function computeMarketReadinessScoreFast(
         {
           name: "Debt / Own Source Revenue",
           maxScore: 8,
-          score: isDebtScoreMissing ? "N/A" : rawDebtScore,
+          score: isDebtScoreMissing ? "N/A" : rawDebtScore.score,
           derived: isDebtScoreMissing,
         },
         {
@@ -390,7 +428,7 @@ async function computeMarketReadinessScoreFast(
     },
   ];
   /* ---------------- SECTION & OVERALL SCORES ---------------- */
-
+  // console.log(sections);
   var sectionScores = sections.map((sec) => {
     var score = sec.rows.reduce(
       (sum, row) => sum + (Number(row.score) || 0),
@@ -486,6 +524,12 @@ async function computeMarketReadinessScoreFast(
 }
 
 /* ====================== RUNNER ====================== */
+function hasValidIndicators(ledger) {
+  if (!ledger?.indicators) return false;
+  return Object.values(ledger.indicators).some(
+    (v) => v !== "N/A" && v !== null && v !== undefined
+  );
+}
 async function runBatch() {
   const { yearIdMap, ledgerIndex, ledgerDocs } = await preloadData();
   // console.log("🧪 RUNNING IN SINGLE-RECORD DEBUG MODE");
@@ -496,7 +540,7 @@ async function runBatch() {
 
   for (const doc of ledgerDocs) {
     // const score = await computeMarketReadinessScoreFast(
-    //   "5e0b2190f0d3fc6ffa3d94a8",
+    //   "5fa2465e072dab780a6f11bd",
     //   "2021-22",
     //   yearIdMap,
     //   ledgerIndex
@@ -508,7 +552,9 @@ async function runBatch() {
       ledgerIndex
     );
 
-    if (!score) continue;
+    if (!score) {
+      console.warn(`⚠️ Empty score for ${doc.ulb_id} ${doc.year}`);
+    }
 
     bulkOps.push({
       updateOne: {
@@ -531,6 +577,48 @@ async function runBatch() {
   }
 
   console.log(`🎉 DONE — Total updated: ${updated}`);
+  process.exit(0);
+}
+async function runSingleUlb() {
+  const ULB_ID = "5fa2465e072dab780a6f11bd";
+  const YEAR = "2021-22";
+
+  const { yearIdMap, ledgerIndex } = await preloadData();
+
+  console.log("🧪 RUNNING SINGLE-ULB MODE");
+  console.log("ULB:", ULB_ID, "YEAR:", YEAR);
+
+  const key = `${ULB_ID}_${YEAR}`;
+  console.log("🔑 Ledger key:", key);
+  console.log("Ledger exists:", !!ledgerIndex[key]);
+
+  const score = await computeMarketReadinessScoreFast(
+    ULB_ID,
+    YEAR,
+    yearIdMap,
+    ledgerIndex
+  );
+
+  if (!score) {
+    console.error("❌ No score computed (missing data?)");
+    process.exit(1);
+  }
+
+  console.log("✅ Computed Market Readiness Score:");
+  console.dir(score, { depth: null });
+
+  const result = await ledgerLog.updateMany(
+    {
+      ulb_id: new mongoose.Types.ObjectId(ULB_ID),
+      year: YEAR,
+    },
+    {
+      $set: { marketReadinessScore: score },
+    }
+  );
+
+  console.log(`✅ Updated ${result.modifiedCount} ledger document(s)`);
+
   process.exit(0);
 }
 
