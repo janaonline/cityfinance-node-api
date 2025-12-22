@@ -13,6 +13,8 @@ const excludedStates = [
   "Jammu and Kashmir",
   "The Government of NCT of Delhi",
   "Puducherry",
+  "Lakshadweep",
+  "Ladakh",
 ];
 /* ====================== MAIN CONTROLLER ====================== */
 async function getAllStates(req, res) {
@@ -54,8 +56,8 @@ async function marketReadinessDataByUlb(req, res) {
       .lean();
     // console.log("Year IDs:", yearIds);
     if (yearIds.length < 2) {
-      return res.status(404).json({
-        message: "Financial year data not found for the specified years",
+      return res.status(200).json({
+        message: "Data not found for the specified ULB and years 1111",
       });
     }
     const yearIdMap = {};
@@ -79,13 +81,23 @@ async function marketReadinessDataByUlb(req, res) {
         lineItems: 1,
       })
       .lean();
+
     // console.log("Ledger Logs:", ledgerLogs);
-    if (!ledgerLogs.length) {
-      return res.status(404).json({
-        message: "Ledger logs not found for the specified ULB and years",
+    if (ledgerLogs.length != 2) {
+      return res.status(200).json({
+        message: "Data not found for the specified ULB and years222",
       });
     }
+    // console.log(ledgerLogs, "this is data");
+    // const hasAnyValidData = ledgerLogs.some((log) =>
+    //   hasValidIndicators(log.indicators)
+    // );
 
+    // if (!hasAnyValidData) {
+    //   return res.status(404).json({
+    //     message: "Data not found for the specified ULB and years3333",
+    //   });
+    // }
     const ledgerByYear = {};
     ledgerLogs.forEach((log) => {
       ledgerByYear[log.year] = log;
@@ -93,7 +105,15 @@ async function marketReadinessDataByUlb(req, res) {
 
     const currentYearData = ledgerByYear[year] || {};
     const previousYearData = ledgerByYear[prevYear] || {};
+    // 🚨 DATA QUALITY CHECK
+    // const hasCurrentData = hasValidIndicators(currentYearData);
+    // const hasPreviousData = hasValidIndicators(previousYearData);
 
+    // if (!hasCurrentData && !hasPreviousData) {
+    //   return res.status(404).json({
+    //     message: "Data not found for the specified ULB and years",
+    //   });
+    // }
     const currentIndicators = currentYearData.indicators || {};
     const previousIndicators = previousYearData.indicators || {};
     const lineItems = currentYearData.lineItems || {};
@@ -204,6 +224,7 @@ async function marketReadinessDataByUlb(req, res) {
       currentIndicators?.totDebtByTotOwnRevenue,
       "Debt / Own Source Revenue"
     );
+    // console.log(rawDebtScore, "this is debt scre");
 
     const isDebtScoreMissing = !Number.isFinite(
       currentIndicators?.totDebtByTotOwnRevenue
@@ -587,7 +608,7 @@ async function marketReadinessDataByUlb(req, res) {
           {
             name: "Debt / Own Source Revenue",
             maxScore: 8,
-            score: isDebtScoreMissing ? "N/A" : rawDebtScore,
+            score: isDebtScoreMissing ? "N/A" : rawDebtScore.score,
             derived: isDebtScoreMissing,
           },
           {
@@ -668,10 +689,12 @@ async function marketReadinessDataByUlb(req, res) {
       });
 
       overallScore = adjustedOverallScore;
-      var footNote = `City ${ulbData.name} did not report debt for FY ${year}. For scoring comparability, the debt component has been derived through extrapolation. Please refer to the audited financial statements for detailed debt disclosures.`;
+      var footNote = `${ulbData.name} did not report debt for FY ${year}. For scoring comparability, the debt component has been derived through extrapolation. Please refer to the audited financial statements for detailed debt disclosures.`;
     }
 
     const marketReadinessBand = getMarketReadinessBand(overallScore);
+    const nextMilestone = getNextMilestoneMessage(overallScore);
+
     const outOfRange = [];
 
     sections.forEach((sec) => {
@@ -696,6 +719,7 @@ async function marketReadinessDataByUlb(req, res) {
       overallScore, // overall doughnut
       overallMaxScore, // 👈 IMPORTANT for frontend
       marketReadinessBand,
+      nextMilestone,
       outOfRange,
       footNote: footNote ? footNote : "",
     });
@@ -721,7 +745,7 @@ async function getAllUlbsMarketReadiness(req, res) {
     if (!year) {
       return res.status(400).json({ message: "year is required" });
     }
-
+    // console.log(band, "this is band");
     const skip = (page - 1) * limit;
     const prevYear = getPreviousFinancialYear(year);
 
@@ -821,7 +845,101 @@ async function getAllUlbsMarketReadiness(req, res) {
           },
         },
       },
-
+      {
+        $addFields: {
+          nextMilestone: {
+            $switch: {
+              branches: [
+                {
+                  case: { $lt: ["$score", 40] },
+                  then: {
+                    $concat: [
+                      {
+                        $toString: {
+                          $round: [{ $subtract: [40, "$score"] }, 2],
+                        },
+                      },
+                      " points to C (Needs Intervention)",
+                    ],
+                  },
+                },
+                {
+                  case: { $lt: ["$score", 47] },
+                  then: {
+                    $concat: [
+                      {
+                        $toString: {
+                          $round: [{ $subtract: [47, "$score"] }, 2],
+                        },
+                      },
+                      " points to B (Aspirational)",
+                    ],
+                  },
+                },
+                {
+                  case: { $lt: ["$score", 52] },
+                  then: {
+                    $concat: [
+                      {
+                        $toString: {
+                          $round: [{ $subtract: [52, "$score"] }, 2],
+                        },
+                      },
+                      " points to A3 (Moderately Prepared)",
+                    ],
+                  },
+                },
+                {
+                  case: { $lt: ["$score", 56] },
+                  then: {
+                    $concat: [
+                      {
+                        $toString: {
+                          $round: [{ $subtract: [56, "$score"] }, 2],
+                        },
+                      },
+                      " points to A2 (Well Prepared)",
+                    ],
+                  },
+                },
+                {
+                  case: { $lt: ["$score", 65] },
+                  then: {
+                    $concat: [
+                      {
+                        $toString: {
+                          $round: [{ $subtract: [65, "$score"] }, 2],
+                        },
+                      },
+                      " points to A1 (Highly Prepared)",
+                    ],
+                  },
+                },
+                {
+                  case: { $lt: ["$score", 84] },
+                  then: {
+                    $concat: [
+                      {
+                        $toString: {
+                          $round: [{ $subtract: [84, "$score"] }, 2],
+                        },
+                      },
+                      " points to TOP SCORE",
+                    ],
+                  },
+                },
+              ],
+              default: "Top Band Reached",
+            },
+          },
+        },
+      },
+      {
+        $match: {
+          bandCurrYear: { $nin: [null, "", "N/A"] },
+          bandPrevYear: { $nin: [null, "", "N/A"] },
+        },
+      },
       {
         $project: {
           _id: 0,
@@ -832,6 +950,7 @@ async function getAllUlbsMarketReadiness(req, res) {
           bandCurrYear: 1,
           score: 1,
           delta: 1,
+          nextMilestone: 1,
         },
       },
 
@@ -910,6 +1029,13 @@ function getPopulationRange(category) {
   }
 }
 /* ====================== HELPERS ====================== */
+function hasValidIndicators(ledger) {
+  if (!ledger?.indicators) return false;
+  return Object.values(ledger.indicators).some(
+    (v) => v !== "N/A" && v !== null && v !== undefined
+  );
+}
+
 function getMarketReadinessBand(overallScore) {
   if (!Number.isFinite(overallScore)) return null;
 
@@ -920,7 +1046,44 @@ function getMarketReadinessBand(overallScore) {
   if (overallScore >= 40) return "C (Needs Intervention)";
   return "D (Low)";
 }
+function getNextMilestoneMessage(overallScore) {
+  if (!Number.isFinite(overallScore)) return "";
 
+  // The 'limit' is the score required to ENTER that specific band
+  const milestones = [
+    { limit: 40, label: "C (Needs Intervention)" },
+    { limit: 47, label: "B (Aspirational)" },
+    { limit: 52, label: "A3 (Moderately Prepared)" },
+    { limit: 56, label: "A2 (Well Prepared)" },
+    { limit: 65, label: "A1 (Highly Prepared)" },
+    { limit: 84, label: "TOP SCORE" },
+  ];
+
+  // Find the closest higher threshold
+  const nextTarget = milestones.find((m) => overallScore < m.limit);
+
+  if (nextTarget) {
+    const pointsNeeded = (nextTarget.limit - overallScore).toFixed(2);
+
+    // Clean up .00 decimals for whole numbers
+    const displayPoints = pointsNeeded.endsWith(".00")
+      ? Math.round(pointsNeeded)
+      : pointsNeeded;
+
+    return `${displayPoints} points to ${nextTarget.label}`;
+  }
+
+  return "Top Band Reached";
+}
+
+// Example:
+// overallScore = 35.50
+// Result: "4.5 points to C (Needs Intervention)"
+
+// Example usage:
+// If score is 12.83 (Band D):
+// nextTarget will be { limit: 40, label: "C-BAND" }
+// Result: "27.17 points to C-BAND"
 function calculateYoY(curr, prev, decimals = 2) {
   const c = Number(curr);
   const p = Number(prev);
@@ -992,7 +1155,7 @@ function getIndicatorScore(indicatorKey, value, label) {
   // ❌ invalid / negative / impossible values
   if (!Number.isFinite(value) || value < 0 || value > 100) {
     result.score = 0;
-    result.outOfRange = `Ratio ${label} exceeds the defined upper limit and is treated as out of range for scoring. Consequently, a score of 0 has been assigned for Ratio ${label}.`;
+    result.outOfRange = `${label} exceeds the defined upper limit and is treated as out of range for scoring. Consequently, a score of 0 has been assigned for Ratio ${label}.`;
     return result;
   }
 
