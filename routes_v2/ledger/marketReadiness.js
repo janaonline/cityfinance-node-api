@@ -790,7 +790,12 @@ async function getAllUlbsMarketReadiness(req, res) {
           delta: {
             $cond: [
               { $and: ["$currScore", "$prevScore"] },
-              { $subtract: ["$currScore", "$prevScore"] },
+              {
+                $round: [
+                  { $subtract: ["$currScore", "$prevScore"] },
+                  2, // The number of decimal places
+                ],
+              },
               0,
             ],
           },
