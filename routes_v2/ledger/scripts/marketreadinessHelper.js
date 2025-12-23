@@ -164,10 +164,11 @@ function getMarketReadinessBand(overallScore) {
   if (!Number.isFinite(overallScore)) return null;
 
   if (overallScore >= 65) return "A1 (Highly Prepared)";
-  if (overallScore >= 50) return "A2 (Prepared)";
-  if (overallScore >= 35) return "B (Moderately Prepared)";
-  if (overallScore >= 20) return "C (Low Preparedness)";
-  return "D (Very Low Preparedness)";
+  if (overallScore >= 56) return "A2 (Well Prepared)";
+  if (overallScore >= 52) return "A3 (Moderately Prepared)";
+  if (overallScore >= 47) return "B (Aspirational)";
+  if (overallScore >= 40) return "C (Needs Intervention)";
+  return "D (Low)";
 }
 
 /* ====================== EXPORTS ====================== */
