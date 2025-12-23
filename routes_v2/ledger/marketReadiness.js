@@ -150,24 +150,24 @@ async function marketReadinessDataByUlb(req, res) {
       Number(lineItems[230]) || 0,
       currentIndicators?.totRevenueExpenditure
     );
-    console.log(
-      "growth osr",
-      growthOSR,
-      "grs",
-      growthTotalRevenue,
-      "net",
-      netReceivables,
+    // console.log(
+    //   "growth osr",
+    //   growthOSR,
+    //   "grs",
+    //   growthTotalRevenue,
+    //   "net",
+    //   netReceivables,
 
-      "adj",
-      adjustedTRPercent,
-      "fixch",
-      fixedCharges,
-      "fixcharexp",
-      fixedChargesByRevExp,
-      "om",
-      omByRevExpPercent
-    );
-    console.log(currentIndicators);
+    //   "adj",
+    //   adjustedTRPercent,
+    //   "fixch",
+    //   fixedCharges,
+    //   "fixcharexp",
+    //   fixedChargesByRevExp,
+    //   "om",
+    //   omByRevExpPercent
+    // );
+    // console.log(currentIndicators);
     const propertyTaxData = await propertyTax
       .find({
         ulb: new Types.ObjectId(ulbId),
@@ -187,7 +187,7 @@ async function marketReadinessDataByUlb(req, res) {
     const currYearKey = String(currentYearId);
     const prevYearKey = String(prevYearId);
     const pTaxMap = mapPTaxData(propertyTaxData);
-    console.log("PTax Map:", pTaxMap);
+    // console.log("PTax Map:", pTaxMap);
     // 1️⃣ PTax Total Demand YoY (1.9)
     const pTaxDemandGrowth = calculateYoY(
       pTaxMap["1.9"]?.[currYearKey],
@@ -211,12 +211,12 @@ async function marketReadinessDataByUlb(req, res) {
       pTaxMap["1.19"]?.[currYearKey],
       pTaxMap["1.11"]?.[currYearKey]
     );
-    console.log("PTax Metrics:", {
-      pTaxDemandGrowth,
-      pTaxCollectionGrowth,
-      pTaxCurrentCollectionEfficiency,
-      pTaxArrearsCollectionEfficiency,
-    });
+    // console.log("PTax Metrics:", {
+    //   pTaxDemandGrowth,
+    //   pTaxCollectionGrowth,
+    //   pTaxCurrentCollectionEfficiency,
+    //   pTaxArrearsCollectionEfficiency,
+    // });
     const totalRevenue = Number(currentIndicators?.totRevenue);
     const operSurplusRevExp = Number(
       currentIndicators?.OperSurplusTotRevenueExpenditure
