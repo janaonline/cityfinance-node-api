@@ -150,7 +150,24 @@ async function marketReadinessDataByUlb(req, res) {
       Number(lineItems[230]) || 0,
       currentIndicators?.totRevenueExpenditure
     );
+    // console.log(
+    //   "growth osr",
+    //   growthOSR,
+    //   "grs",
+    //   growthTotalRevenue,
+    //   "net",
+    //   netReceivables,
 
+    //   "adj",
+    //   adjustedTRPercent,
+    //   "fixch",
+    //   fixedCharges,
+    //   "fixcharexp",
+    //   fixedChargesByRevExp,
+    //   "om",
+    //   omByRevExpPercent
+    // );
+    // console.log(currentIndicators);
     const propertyTaxData = await propertyTax
       .find({
         ulb: new Types.ObjectId(ulbId),
@@ -757,12 +774,14 @@ async function getAllUlbsMarketReadiness(req, res) {
 
     if (state) match.state = state;
     if (city) match.ulb = { $regex: city, $options: "i" };
-    if (band) match["marketReadinessScore.marketReadinessBand"] = band;
+    // if (band) {
+    //   match["marketReadinessScore.marketReadinessBand"] = band;
+    // }
 
     if (populationCategory) {
       match.population = getPopulationRange(populationCategory);
     }
-
+    console.log(match);
     /* ---------------- AGGREGATION ---------------- */
     const pipeline = [
       { $match: match },
@@ -807,7 +826,7 @@ async function getAllUlbsMarketReadiness(req, res) {
           },
         },
       },
-
+      ...(band ? [{ $match: { bandCurrYear: band } }] : []),
       {
         $addFields: {
           score: { $ifNull: ["$currScore", 0] },
@@ -962,7 +981,7 @@ async function getAllUlbsMarketReadiness(req, res) {
       { $skip: skip },
       { $limit: Number(limit) },
     ];
-
+    console.log(JSON.stringify(pipeline, null, 2));
     const data = await ledgerLog.aggregate(pipeline);
 
     const totalRecords = await ledgerLog
