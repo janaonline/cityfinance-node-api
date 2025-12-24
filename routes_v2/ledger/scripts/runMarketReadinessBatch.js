@@ -421,7 +421,7 @@ async function computeMarketReadinessScoreFast(
         {
           name: "Interest Service Coverage Ratio (ISCR)",
           maxScore: 4,
-          score: iscr.score,
+          score: isDebtScoreMissing ? 0 : iscr.score,
           outOfRange: iscr.outOfRange,
         },
       ],
@@ -448,12 +448,16 @@ async function computeMarketReadinessScoreFast(
   });
 
   var overallScore = sectionScores.reduce((sum, s) => sum + s.score, 0);
-
+  var topThreeScore = sectionScores
+    .slice(0, 3)
+    .reduce((acc, item) => acc + item.score, 0);
   var overallMaxScore = sectionScores.reduce((sum, s) => sum + s.maxScore, 0);
   if (isDebtScoreMissing) {
     // console.log("inside");
-    const adjustedOverallScore = Number((overallScore * (84 / 72)).toFixed(2));
-    // console.log(adjustedOverallScore, "adjust score");
+    const adjustedOverallScore = Number(
+      // (topThreeScore * (84 / 72) - (iscr?.score ?? 0)).toFixed(2)
+      (topThreeScore * (84 / 72)).toFixed(2)
+    ); // console.log(adjustedOverallScore, "adjust score");
     const derivedDebtScore = Number(
       (adjustedOverallScore - overallScore).toFixed(2)
     );
