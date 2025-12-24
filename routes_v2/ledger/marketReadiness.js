@@ -636,7 +636,7 @@ async function marketReadinessDataByUlb(req, res) {
           {
             name: "Interest Service Coverage Ratio (ISCR)",
             maxScore: 4,
-            score: iscr.score,
+            score: isDebtScoreMissing ? 0 : iscr.score,
             outOfRange: iscr.outOfRange,
           },
         ],
@@ -661,13 +661,20 @@ async function marketReadinessDataByUlb(req, res) {
         maxScore,
       };
     });
+    // console.log(sectionScores, "this is section scores");
 
     var overallScore = sectionScores.reduce((sum, s) => sum + s.score, 0);
-
+    // console.log(overallScore, "this is section scores");
+    // 2. Find total of only first 3 scores
+    var topThreeScore = sectionScores
+      .slice(0, 3)
+      .reduce((acc, item) => acc + item.score, 0);
+    // console.log(topThreeScore, "this is section scores");
     var overallMaxScore = sectionScores.reduce((sum, s) => sum + s.maxScore, 0);
     if (isDebtScoreMissing) {
       const adjustedOverallScore = Number(
-        (overallScore * (84 / 72)).toFixed(2)
+        // (topThreeScore * (84 / 72) - (iscr?.score ?? 0)).toFixed(2)
+        (topThreeScore * (84 / 72)).toFixed(2)
       );
 
       const derivedDebtScore = Number(
@@ -755,18 +762,18 @@ async function getAllUlbsMarketReadiness(req, res) {
       state,
       band,
       populationCategory,
-      sortBy = "score",
-      sortOrder = "desc",
+      sortBy = "populationCategory",
+      sortOrder = "asc",
     } = req.query;
 
     if (!year) {
       return res.status(400).json({ message: "year is required" });
     }
-    // console.log(band, "this is band");
-    const skip = (page - 1) * limit;
+
+    const skip = (Number(page) - 1) * Number(limit);
     const prevYear = getPreviousFinancialYear(year);
 
-    /* ---------------- MATCH FILTERS ---------------- */
+    /* ---------------- BASE MATCH ---------------- */
     const match = {
       year: { $in: [year, prevYear] },
       marketReadinessScore: { $exists: true },
@@ -774,16 +781,12 @@ async function getAllUlbsMarketReadiness(req, res) {
 
     if (state) match.state = state;
     if (city) match.ulb = { $regex: city, $options: "i" };
-    // if (band) {
-    //   match["marketReadinessScore.marketReadinessBand"] = band;
-    // }
-
     if (populationCategory) {
       match.population = getPopulationRange(populationCategory);
     }
-    console.log(match);
-    /* ---------------- AGGREGATION ---------------- */
-    const pipeline = [
+
+    /* ---------------- BASE PIPELINE (REUSED) ---------------- */
+    const basePipeline = [
       { $match: match },
 
       {
@@ -826,44 +829,64 @@ async function getAllUlbsMarketReadiness(req, res) {
           },
         },
       },
+
+      // ✅ Apply band filter ONLY on current year
       ...(band ? [{ $match: { bandCurrYear: band } }] : []),
+
       {
         $addFields: {
           score: { $ifNull: ["$currScore", 0] },
           delta: {
             $cond: [
               { $and: ["$currScore", "$prevScore"] },
-              {
-                $round: [
-                  { $subtract: ["$currScore", "$prevScore"] },
-                  2, // The number of decimal places
-                ],
-              },
+              { $round: [{ $subtract: ["$currScore", "$prevScore"] }, 2] },
               0,
             ],
           },
+
           populationCategory: {
             $switch: {
               branches: [
                 { case: { $gte: ["$population", 4000000] }, then: "4M+" },
-                {
-                  case: { $gte: ["$population", 1000000] },
-                  then: "1M–4M",
-                },
-                {
-                  case: { $gte: ["$population", 500000] },
-                  then: "500K–1M",
-                },
-                {
-                  case: { $gte: ["$population", 100000] },
-                  then: "100K–500K",
-                },
+                { case: { $gte: ["$population", 1000000] }, then: "1M–4M" },
+                { case: { $gte: ["$population", 500000] }, then: "500K–1M" },
+                { case: { $gte: ["$population", 100000] }, then: "100K–500K" },
               ],
               default: "<100K",
             },
           },
         },
       },
+
+      // ✅ Explicit sort order for populationCategory
+      {
+        $addFields: {
+          populationSortOrder: {
+            $switch: {
+              branches: [
+                { case: { $eq: ["$populationCategory", "4M+"] }, then: 1 },
+                { case: { $eq: ["$populationCategory", "1M–4M"] }, then: 2 },
+                { case: { $eq: ["$populationCategory", "500K–1M"] }, then: 3 },
+                {
+                  case: { $eq: ["$populationCategory", "100K–500K"] },
+                  then: 4,
+                },
+                { case: { $eq: ["$populationCategory", "<100K"] }, then: 5 },
+              ],
+              default: 6,
+            },
+          },
+        },
+      },
+
+      // ✅ Exclude invalid band records
+      {
+        $match: {
+          bandCurrYear: { $nin: [null, "", "N/A"] },
+          bandPrevYear: { $nin: [null, "", "N/A"] },
+        },
+      },
+
       {
         $addFields: {
           nextMilestone: {
@@ -953,12 +976,29 @@ async function getAllUlbsMarketReadiness(req, res) {
           },
         },
       },
+    ];
+
+    /* ---------------- TOTAL RECORDS (CORRECT) ---------------- */
+    const totalAgg = await ledgerLog.aggregate([
+      ...basePipeline,
+      { $count: "total" },
+    ]);
+
+    const totalRecords = totalAgg[0]?.total || 0;
+
+    /* ---------------- FINAL DATA ---------------- */
+    const data = await ledgerLog.aggregate([
+      ...basePipeline,
       {
-        $match: {
-          bandCurrYear: { $nin: [null, "", "N/A"] },
-          bandPrevYear: { $nin: [null, "", "N/A"] },
-        },
+        $sort:
+          sortBy === "populationCategory"
+            ? { populationSortOrder: sortOrder === "asc" ? 1 : -1 }
+            : sortBy === "city"
+            ? { city: sortOrder === "asc" ? 1 : -1 }
+            : { score: sortOrder === "asc" ? 1 : -1 },
       },
+      { $skip: skip },
+      { $limit: Number(limit) },
       {
         $project: {
           _id: 0,
@@ -972,21 +1012,7 @@ async function getAllUlbsMarketReadiness(req, res) {
           nextMilestone: 1,
         },
       },
-
-      {
-        $sort: {
-          [sortBy === "city" ? "city" : "score"]: sortOrder === "asc" ? 1 : -1,
-        },
-      },
-      { $skip: skip },
-      { $limit: Number(limit) },
-    ];
-    console.log(JSON.stringify(pipeline, null, 2));
-    const data = await ledgerLog.aggregate(pipeline);
-
-    const totalRecords = await ledgerLog
-      .distinct("ulb", match)
-      .then((r) => r.length);
+    ]);
 
     return res.status(200).json({
       page: Number(page),
