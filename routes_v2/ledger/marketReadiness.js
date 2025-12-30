@@ -704,12 +704,16 @@ async function marketReadinessDataByUlb(req, res) {
           (sum, row) => sum + (Number(row.maxScore) || 0),
           0
         );
-
-        return {
+        const sectionResult = {
           section: sec.section,
           score,
           maxScore,
         };
+        if (sec.section.startsWith("DEBT MANAGEMENT")) {
+          sectionResult.derived = true;
+        }
+
+        return sectionResult;
       });
 
       overallScore = adjustedOverallScore;
