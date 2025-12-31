@@ -235,6 +235,179 @@ module.exports.renameUlb = async function (req, res) {
     success: true,
   });
 };
+
+/**
+ * Bulk create or update ULBs.
+ *
+ * Behavior:
+ * 1. If any censusCode/ sbCode already exists in DB:
+ *    - Update existing records only if forceUpdate = true
+ *    - Insert new records otherwise
+ * 2. If no codes exist:
+ *    - Insert all records
+ */
+module.exports.bulkPost = async function bulkPost(req, res) {
+	try {
+		const { ulbs = [], forceUpdate = false, updateKeys = [] } = req.body;
+
+		if (!Array.isArray(ulbs) || ulbs.length === 0) {
+			return res.status(400).send({
+				success: false,
+				message: 'ulbs must be a non-empty array',
+			});
+		}
+
+		const { censusCodes, sbCodes, ulbsWithoutCode } = extractCodes(ulbs);
+
+		// Check if codes exist in DB.
+		const existingUlbs = await Ulb.find({
+			$or: [{ censusCode: { $in: censusCodes } }, { sbCode: { $in: sbCodes } }],
+		}).lean();
+
+		let bulkResult = null;
+		let insertedUlbs = [];
+
+		if (existingUlbs.length > 0) {
+			const bulkOps = buildBulkWriteOperations(existingUlbs, ulbs, forceUpdate, updateKeys);
+
+			if (bulkOps.length > 0) {
+				bulkResult = await Ulb.bulkWrite(bulkOps, {
+					ordered: false,
+					strict: true,
+				});
+			}
+		} else {
+			// Filter out ULBs that have neither censusCode nor sbCode
+			const validUlbs = ulbs.filter(
+				(ulb) => !['', null, undefined].includes(ulb.censusCode) || !['', null, undefined].includes(ulb.sbCode),
+			);
+
+			if (validUlbs.length > 0) {
+				insertedUlbs = await Ulb.insertMany(validUlbs, { ordered: false, strict: true });
+			}
+		}
+
+		return res.status(200).send({
+			success: true,
+			forceUpdate,
+			ulbsAlreadyExist: existingUlbs.map((ulb) => ulb.code),
+			ulbsWithoutCode,
+			// bulkSummary: { Modified: bulkResult?.nModified, Inserted: bulkResult?.nInserted },
+			bulkSummary: bulkResult,
+			insertedCount: insertedUlbs.length,
+		});
+	} catch (error) {
+		console.error('[ULB_BULK_POST_ERROR]', error);
+
+		return res.status(500).send({
+			success: false,
+			message: 'Failed to create or update ULB records',
+			error: error.message,
+		});
+	}
+};
+
+/**
+ * Extracts census codes, sb codes, and ULB obj without any code.
+ */
+function extractCodes(ulbs) {
+	const censusCodes = [];
+	const sbCodes = [];
+	const ulbsWithoutCode = [];
+
+	for (const ulb of ulbs) {
+		const censusCode = ulb?.censusCode?.trim();
+		const sbCode = ulb?.sbCode?.trim();
+
+		if (censusCode) censusCodes.push(censusCode);
+		if (sbCode) sbCodes.push(sbCode);
+		if (!censusCode && !sbCode) ulbsWithoutCode.push(ulb);
+	}
+
+	return { censusCodes, sbCodes, ulbsWithoutCode };
+}
+
+/**
+ * Builds MongoDB bulkWrite operations for ULBs.
+ *
+ * Rules:
+ * - If ULB exists and forceUpdate = true -> then create updateOne
+ * - If ULB exists and forceUpdate = false -> skip
+ * - If ULB does not exist -> then create insertOne
+ *
+ * @param ulbsInDb
+ * @param ulbsRequested
+ * @param forceUpdate
+ * @returns bulkWrite operations
+ */
+function buildBulkWriteOperations(ulbsInDb, ulbsRequested, forceUpdate, updateKeys) {
+	const existingCodes = new Set();
+  const operations = [];
+
+	for (const ulb of ulbsInDb) {
+		if (ulb.censusCode) existingCodes.add(ulb.censusCode);
+		if (ulb.sbCode) existingCodes.add(ulb.sbCode);
+	}
+
+	for (const ulb of ulbsRequested) {
+		const censusCode = ulb?.censusCode?.trim();
+		const sbCode = ulb?.sbCode?.trim();
+
+		// Skip invalid ULBs.
+		if (!censusCode && !sbCode) continue;
+
+		const exists = existingCodes.has(censusCode) || existingCodes.has(sbCode);
+
+		if (exists) {
+			if (forceUpdate) {
+				operations.push(createUpdateOperation(ulb, updateKeys));
+			}
+		} else {
+			operations.push(createInsertOperation(ulb));
+		}
+	}
+
+	return operations;
+}
+
+/**
+ * Creates a updateOne operation for BulkWrite.
+ * If payload has keys to update only update those.
+ * else update only non-empty fields are updated.
+ */
+function createUpdateOperation(ulb, updateKeys) {
+	const identifierKey = ulb.censusCode ? 'censusCode' : 'sbCode';
+	const identifierValue = ulb[identifierKey];
+
+	const updateData = {};
+
+	if (updateKeys.length > 0) {
+		for (const key of updateKeys) {
+			updateData[key] = ulb[key];
+		}
+	} else {
+		for (const [key, value] of Object.entries(ulb)) {
+			if (value !== undefined && value !== null && value !== '') {
+				updateData[key] = value;
+			}
+		}
+	}
+
+	return {
+		updateOne: {
+			filter: { [identifierKey]: identifierValue },
+			update: { $set: updateData },
+		},
+	};
+}
+
+/**
+ * Creates a insertOne operation for BulkWrite.
+ */
+function createInsertOperation(ulb) {
+	return { insertOne: { document: ulb } };
+}
+
 module.exports.post = async function (req, res) {
   let obj = req.body;
   // state and ulb type is compulsory
@@ -280,64 +453,64 @@ module.exports.post = async function (req, res) {
     });
   }
 };
-module.exports.bulkPost = async function (req, res) {
-  // state and ulb type is compulsory
-  try {
-    let { d, baseCode, baseSbCode, baseStateCode } = req.body
-    let i = 1;
-    d.map(e => {
-      e['area'] = Number(e['area']);
-      e['population'] = Number(e['population'])
-      e['UA'] = null;
-      e['sbCode'] = baseSbCode + i + "";
-      e['code'] = baseStateCode + (baseCode + (i++))
-      e['state'] = ObjectId(e['state'])
-      e['ulbType'] = ObjectId(e['ulbType'])
-    });
-    await createData({ data: d });
-    return res.status(200).send({
-      message: "Success",
-      err: {},
-    });
-  } catch (err) {
-    console.log("Error caught", err);
-    return res.status(500).send({
-      message: "Error Caught",
-      err: err,
-    });
-  }
-};
-const createData = (objData) => {
-  const { data } = objData;
-  return new Promise((resolve, reject) => {
-    let prmsArr = [];
-    for (const pf of data) {
-      let pmr = new Promise(async (rjlv, rjct) => {
-        try {
-          let listData = await Ulb.findOne({ "sbCode": pf.sbCode }).lean();
-          if (listData) {
-            await Ulb.update({ "sbCode": pf.sbCode }, pf)
-          } else {
-            await Ulb.create(pf)
-          }
-          rjlv(1)
-        } catch (error) {
-          rjct(error);
-        }
-      })
-      prmsArr.push(pmr);
-    }
-    Promise.all(prmsArr).then((values) => {
-      resolve(values);
-    }, (rejectErr) => {
-      console.log("rejectErr", rejectErr);
-      reject(rejectErr)
-    }).catch((caughtErr) => {
-      console.log("caughtErr", caughtErr)
-      reject(caughtErr)
-    })
-  })
-}
+// module.exports.bulkPost = async function (req, res) {
+//   // state and ulb type is compulsory
+//   try {
+//     let { d, baseCode, baseSbCode, baseStateCode } = req.body
+//     let i = 1;
+//     d.map(e => {
+//       e['area'] = Number(e['area']);
+//       e['population'] = Number(e['population'])
+//       e['UA'] = null;
+//       e['sbCode'] = baseSbCode + i + "";
+//       e['code'] = baseStateCode + (baseCode + (i++))
+//       e['state'] = ObjectId(e['state'])
+//       e['ulbType'] = ObjectId(e['ulbType'])
+//     });
+//     await createData({ data: d });
+//     return res.status(200).send({
+//       message: "Success",
+//       err: {},
+//     });
+//   } catch (err) {
+//     console.log("Error caught", err);
+//     return res.status(500).send({
+//       message: "Error Caught",
+//       err: err,
+//     });
+//   }
+// };
+// const createData = (objData) => {
+//   const { data } = objData;
+//   return new Promise((resolve, reject) => {
+//     let prmsArr = [];
+//     for (const pf of data) {
+//       let pmr = new Promise(async (rjlv, rjct) => {
+//         try {
+//           let listData = await Ulb.findOne({ "sbCode": pf.sbCode }).lean();
+//           if (listData) {
+//             await Ulb.update({ "sbCode": pf.sbCode }, pf)
+//           } else {
+//             await Ulb.create(pf)
+//           }
+//           rjlv(1)
+//         } catch (error) {
+//           rjct(error);
+//         }
+//       })
+//       prmsArr.push(pmr);
+//     }
+//     Promise.all(prmsArr).then((values) => {
+//       resolve(values);
+//     }, (rejectErr) => {
+//       console.log("rejectErr", rejectErr);
+//       reject(rejectErr)
+//     }).catch((caughtErr) => {
+//       console.log("caughtErr", caughtErr)
+//       reject(caughtErr)
+//     })
+//   })
+// }
 
 module.exports.multiUlbPost = async function (req, res) {
   try {
