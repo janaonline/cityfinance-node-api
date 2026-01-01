@@ -245,6 +245,8 @@ module.exports.renameUlb = async function (req, res) {
  *    - Insert new records otherwise
  * 2. If no codes exist:
  *    - Insert all records
+ * 
+ * Note: The update is performed by matching censusCode/ sbCode, so these codes must be correct; all other fields will be updated accordingly.
  */
 module.exports.bulkPost = async function bulkPost(req, res) {
 	try {
@@ -374,9 +376,13 @@ function buildBulkWriteOperations(ulbsInDb, ulbsRequested, forceUpdate, updateKe
  * Creates a updateOne operation for BulkWrite.
  * If payload has keys to update only update those.
  * else update only non-empty fields are updated.
+ * 
+ * Note: identifierKey must be either censusCode or sbCode and must be accurate. 
+ * If updateKeys contains censusCode or sbCode, they must not be used as identifierKey.
  */
 function createUpdateOperation(ulb, updateKeys) {
-	const identifierKey = ulb.censusCode ? 'censusCode' : 'sbCode';
+  const isCensusCodeInUpdateKey = updateKeys.includes('censusCode');
+	const identifierKey = ulb.censusCode && !isCensusCodeInUpdateKey ? 'censusCode' : 'sbCode';
 	const identifierValue = ulb[identifierKey];
 
 	const updateData = {};
