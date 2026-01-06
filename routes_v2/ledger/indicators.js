@@ -1067,7 +1067,7 @@ module.exports.getCityDasboardIndicators = async (req, res) => {
         const getcapitalExpenditureByTotExpenditure = getYearData(
           indicators,
           years,
-          "totExpenditureByTotRevenue"
+          "capitalExpenditureByTotExpenditure"
         );
 
         // console.log(
