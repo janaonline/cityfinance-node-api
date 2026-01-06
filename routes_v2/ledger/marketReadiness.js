@@ -57,7 +57,7 @@ async function marketReadinessDataByUlb(req, res) {
     // console.log("Year IDs:", yearIds);
     if (yearIds.length < 2) {
       return res.status(200).json({
-        message: "Data not found for the specified ULB and years 1111",
+        message: "Data not found for the specified ULB and years ",
       });
     }
     const yearIdMap = {};
@@ -85,7 +85,7 @@ async function marketReadinessDataByUlb(req, res) {
     // console.log("Ledger Logs:", ledgerLogs);
     if (ledgerLogs.length != 2) {
       return res.status(200).json({
-        message: "Data not found for the specified ULB and years222",
+        message: "Data not found for the specified ULB and years",
       });
     }
     // console.log(ledgerLogs, "this is data");
@@ -735,9 +735,9 @@ async function marketReadinessDataByUlb(req, res) {
         }
       });
     });
-
+    // console.log(sectionScores, "thi is s");
     /* ---------------- FINAL RESPONSE ---------------- */
-
+    var sectionNote = getFootnoteMessage(sectionScores, ulbData.name, year);
     return res.status(200).json({
       ulbId,
       ulbName: ulbData.name,
@@ -749,13 +749,34 @@ async function marketReadinessDataByUlb(req, res) {
       marketReadinessBand,
       nextMilestone,
       outOfRange,
-      footNote: footNote ? footNote : "",
+      footNote: sectionNote !== "" ? sectionNote : footNote,
     });
   } catch (error) {
     console.error("Market Readiness API Error:", error);
     return res.status(500).json({ message: "Internal server error" });
   }
 }
+const getFootnoteMessage = (sectionScores, cityName, year) => {
+  // 1. Identify the specific sections we want to check
+  const expenditureSection = sectionScores.find((s) =>
+    s.section.startsWith("EXPENDITURE MANAGEMENT")
+  );
+  const cashSection = sectionScores.find((s) =>
+    s.section.startsWith("CASH POSITION")
+  );
+
+  // 2. Check if both scores are exactly 0
+  const isDataMissing =
+    expenditureSection?.score === 0 && cashSection?.score === 0;
+
+  // 3. Set the footnote based on the condition
+  let footNote = "";
+  if (isDataMissing) {
+    footNote = `Scores are based on audited financial statements and property tax data. The audited financial data is not available for ${cityName} for ${year}. Where available, property tax indicators have been calculated and shown below.`;
+  }
+
+  return footNote;
+};
 async function getAllUlbsMarketReadiness(req, res) {
   try {
     const {
