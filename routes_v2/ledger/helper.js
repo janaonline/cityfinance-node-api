@@ -259,7 +259,7 @@ const getFormattedLineItemSumByYear = (indicators, years, keys, formatter) => {
 const sumLineItemsCapex = (lineItems = {}) => {
   if (!lineItems) return null; // no line items at all → invalid
 
-  const KEYS = ["410", "411", "412"];
+  const KEYS = ["410", "412"];
   let total = 0;
   let hasAny = false;
 
@@ -301,10 +301,16 @@ const computeDeltaCapex = (rows) => {
   normalized.sort((a, b) => a.startYear - b.startYear);
   const previous = normalized[0];
   const current = normalized[normalized.length - 1];
-
+  if (previous.total > current.total) {
+    return {
+      value: "N/A",
+      flag: "NEGATIVE_GROWTH",
+    };
+  }
+  // console.log(previous, current, "this is pre cur");
   if (current.startYear === previous.startYear) return "N/A";
 
-  return current.total - previous.total;
+  return { value: current.total - previous.total, flag: "SUCCESS" };
 };
 
 const getInfoHTML = (indicator) => {

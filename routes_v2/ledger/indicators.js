@@ -231,7 +231,7 @@ async function marketDashboardIndicators(
   totals,
   ulbPopulation
 ) {
-  console.log("ulbPopulation in marketDashboardIndicators:", ulbPopulation);
+  // console.log("ulbPopulation in marketDashboardIndicators:", ulbPopulation);
   // ---- Guards & input validation ----
   if (!ulbId || (typeof ulbId !== "string" && !(ulbId instanceof ObjectId))) {
     throw new Error("Invalid ulbId");
@@ -264,7 +264,11 @@ async function marketDashboardIndicators(
     } = totals[0] || {};
 
     // ---------- Fetch capex (already returns a number or "N/A") ----------
-    const capexRaw = await getCapexValue(ulbId, financialYear);
+    const initialCapexRaw = await getCapexValue(ulbId, financialYear);
+    console.log(initialCapexRaw, "hh");
+    const capexRaw = initialCapexRaw.value ?? "N/A";
+    console.log(capexRaw, "yy");
+    marketDasInd.capexFlag = initialCapexRaw.flag ?? null;
     const isNegative = typeof capexRaw === "number" && capexRaw < 0;
     marketDasInd.capex = capexRaw;
     marketDasInd.capexAdjusted = isNegative ? "N/A" : null;
@@ -370,7 +374,7 @@ async function marketDashboardIndicators(
     );
     marketDasInd.capexPerCapita = safePerCapita(capexFinal, ulbPopulation);
 
-    console.log(marketDasInd, "marketDasInd");
+    // console.log(marketDasInd, "marketDasInd");
     return marketDasInd;
   } catch (error) {
     // Centralised error reporting (re-throw so caller can handle HTTP/status, etc.)
@@ -410,24 +414,43 @@ function toNumber(value) {
   return 0;
 }
 const getCapexValue = async (ulbId, financialYear) => {
-  if (!ulbId || ulbId.length === 0) return "N/A";
+  if (!ulbId || ulbId.length === 0) return { value: "N/A", flag: "MISSING_ID" };
 
-  const yearsArray = await getYearArray(financialYear); // e.g., ["2022-23","2021-22"]
-  if (!Array.isArray(yearsArray) || yearsArray.length < 2) return "N/A";
+  const yearsArray = await getYearArray(financialYear);
+  if (!Array.isArray(yearsArray) || yearsArray.length < 2)
+    return { value: "N/A", flag: "YEAR_RANGE_ERROR" };
 
   try {
     const ledgerData = await ledgerLog
       .find({ ulb_id: new ObjectId(ulbId), year: { $in: yearsArray } })
-      .select("year lineItems.410 lineItems.411 lineItems.412")
+      .select("year lineItems.410 lineItems.412")
       .lean();
 
-    // Empty or single-year → N/A
-    if (!Array.isArray(ledgerData) || ledgerData.length < 2) return "N/A";
+    if (!ledgerData || ledgerData.length < 2)
+      return { value: "N/A", flag: "DATA_NOT_FOUND" };
 
+    for (const entry of ledgerData) {
+      const v410 = entry.lineItems?.["410"];
+      const v412 = entry.lineItems?.["412"];
+
+      // Validation 1: Individual check (Zero/Null/Undefined)
+      const isInvalid = (v) =>
+        v === undefined || v === null || v === 0 || v === "0";
+      if (isInvalid(v410) || isInvalid(v412)) {
+        return { value: "N/A", flag: "INCOMPLETE_LINE_ITEMS" };
+      }
+
+      // Validation 2: Sum check
+      if (Number(v410) + Number(v412) === 0) {
+        return { value: "N/A", flag: "ZERO_TOTAL_CAPEX" };
+      }
+    }
+
+    // If validations pass, proceed to calculation
     return computeDeltaCapex(ledgerData);
   } catch (err) {
-    console.error("Error fetching ledgerData:", err);
-    return "N/A";
+    console.error("Error:", err);
+    return { value: "N/A", flag: "SERVER_ERROR" };
   }
 };
 module.exports.createIndicators = async (req, res) => {
@@ -475,7 +498,29 @@ module.exports.createIndicators = async (req, res) => {
     res.status(500).json({ message: "Internal Server Error" });
   }
 };
+const getLatestCapexInfo = (dataArray) => {
+  // 1. Get the length of the array
+  const arrayLength = Array.isArray(dataArray) ? dataArray.length : 0;
 
+  // 2. Validation: If array is empty
+  if (arrayLength === 0) {
+    return {
+      length: 0,
+      flag: "NO_DATA_AVAILABLE",
+      year: null,
+    };
+  }
+
+  // 3. Always target the last object
+  const lastEntry = dataArray[arrayLength - 1];
+
+  // 4. Extract data safely using Optional Chaining
+  return {
+    length: arrayLength,
+    flag: lastEntry.indicators?.capexFlag || "FLAG_MISSING",
+    year: lastEntry.year || "YEAR_MISSING",
+  };
+};
 module.exports.getCityDasboardIndicators = async (req, res) => {
   try {
     const { ulbId, years, keyType } = req.query;
@@ -512,6 +557,78 @@ module.exports.getCityDasboardIndicators = async (req, res) => {
     var intro = await getIntro(params, keyType, years);
     switch (keyType) {
       case "overview": {
+        const getCapex = getFormattedYearData(
+          indicators,
+          years,
+          "capex",
+          formatToCrore
+        );
+        const finalCapex = getCapex.map((value) => {
+          // Case 1: value is N/A, empty, or null
+          if (value === "N/A" || value === "" || value === null) {
+            return "N/A";
+          }
+
+          // Convert to number safely
+          const num = Number(value);
+
+          // Case 2: not a number OR negative
+          if (isNaN(num) || num < 0) {
+            return "N/A";
+          }
+
+          // Otherwise keep original value
+          return value;
+        });
+        // console.log(getCapex, "this is capex");
+        const getRevExpenditure = getFormattedYearData(
+          indicators,
+          years,
+          "totRevenueExpenditure",
+          formatToCrore
+        );
+        // console.log(getRevExpenditure, "this is revexpenditure");
+        // const gettotlExpenditure = getFormattedYearData(
+        //   indicators,
+        //   years,
+        //   "totExpenditure",
+        //   formatToCrore
+        // );
+        // console.log(gettotlExpenditure, "this is total expenditure");
+        const getTotExpenditureByTotRevenue = getYearData(
+          indicators,
+          years,
+          "totExpenditureByTotRevenue"
+        );
+
+        // console.log(getTotExpenditureByTotRevenue, "this is total expenditure");
+        const finalGetTotExpenditureByTotRevenue = finalCapex.map(
+          (capexVal, i) => {
+            if (capexVal === "N/A") {
+              return "N/A";
+            }
+            return getTotExpenditureByTotRevenue[i]; // Use rev expenditure value
+          }
+        );
+
+        const getcapitalExpenditureByTotExpenditure = getYearData(
+          indicators,
+          years,
+          "totExpenditureByTotRevenue"
+        );
+
+        // console.log(
+        //   getcapitalExpenditureByTotExpenditure,
+        //   "this is total expenditure"
+        // );
+        // const finalgetcapitalExpenditureByTotExpenditure = finalCapex.map(
+        //   (capexVal, i) => {
+        //     if (capexVal === "N/A") {
+        //       return "N/A";
+        //     }
+        //     return getcapitalExpenditureByTotExpenditure[i]; // Use rev expenditure value
+        //   }
+        // );
         var response = {
           intro: intro,
           data: [
@@ -579,12 +696,7 @@ module.exports.getCityDasboardIndicators = async (req, res) => {
               name: "Total Expenditure (Cr)",
               graphKey: "amount",
               isParent: "true",
-              yearData: getFormattedYearData(
-                indicators,
-                years,
-                "totExpenditure",
-                formatToCrore
-              ),
+              yearData: calculateTotalExpenditure(getCapex, getRevExpenditure),
               yearGrowth: getYearGrowth(indicators, years, "totExpenditure"),
               info: getInfoHTML("totExpenditure"),
               children: [
@@ -602,12 +714,7 @@ module.exports.getCityDasboardIndicators = async (req, res) => {
                 {
                   name: "Total Capital Expenditure (Cr)",
                   graphKey: "amount",
-                  yearData: getFormattedYearData(
-                    indicators,
-                    years,
-                    "capex",
-                    formatToCrore
-                  ),
+                  yearData: finalCapex,
                   className: "ps-5 ",
                 },
               ],
@@ -653,11 +760,7 @@ module.exports.getCityDasboardIndicators = async (req, res) => {
               name: "Total Expenditure to Total Revenue Receipts (%)",
               graphKey: "percentage",
               isParent: "true",
-              yearData: getYearData(
-                indicators,
-                years,
-                "totExpenditureByTotRevenue"
-              ),
+              yearData: finalGetTotExpenditureByTotRevenue,
               info: getInfoHTML("totExpenditureByTotRevenue"),
             },
             {
@@ -912,6 +1015,7 @@ module.exports.getCityDasboardIndicators = async (req, res) => {
           "capex",
           formatToCrore
         );
+
         const finalCapex = getCapex.map((value) => {
           // Case 1: value is N/A, empty, or null
           if (value === "N/A" || value === "" || value === null) {
@@ -978,8 +1082,11 @@ module.exports.getCityDasboardIndicators = async (req, res) => {
             return getcapitalExpenditureByTotExpenditure[i]; // Use rev expenditure value
           }
         );
-
+        // console.log(indicators, "this is s");
+        const capexFlags = getLatestCapexInfo(indicators);
+        // console.log(capexFlags, "this is flag");
         var response = {
+          CapexflagStatus: capexFlags,
           intro: intro,
           data: [
             header,
@@ -1204,6 +1311,7 @@ module.exports.getCityDasboardIndicators = async (req, res) => {
         };
         break;
       }
+
       default: {
         return "invalid key type";
       }
