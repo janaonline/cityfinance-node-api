@@ -366,6 +366,8 @@ module.exports.create = async (req, res) => {
             pObj['isRegistered'] = true;
             pObj['isVerified2223'] = true;
             if (data.hasOwnProperty('isActive')) pObj['isActive'] = data?.isActive
+            normalizeCodes(obj);
+            normalizeCodes(pObj);
             if (Object.keys(obj).length) {
                 dulb = await Ulb.update({ _id: ObjectId(ulb) }, { $set: obj });
             }
@@ -1155,3 +1157,14 @@ async function UlbQuery(ulb) {
         .exec();
     return user;
 }
+
+/**
+ * Normalizes census/ sb code by converting empty strings to null.
+ */
+const normalizeCodes = (obj = {}, keys = ['censusCode', 'sbCode']) => {
+  keys.forEach((key) => {
+    if (Object.prototype.hasOwnProperty.call(obj, key) && obj[key] === '') {
+      obj[key] = null;
+    }
+  });
+};
