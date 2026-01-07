@@ -22,7 +22,15 @@ const {
   getaverageCompareByIndicators,
   downloadMarketDashboardExcel,
 } = require("./indicators");
-
+const {
+  runIndicatorsBatch,
+  getBatchStatus,
+} = require("./scripts/runIndicators");
+const {
+  runBatch,
+  getStatus,
+  runSingleUlb,
+} = require("./scripts/runMarketReadinessBatch");
 router.post(
   "/transfer-ulbLedgers",
   verifyToken,
@@ -45,4 +53,12 @@ router.get("/market-readiness-data-by-ulb", marketReadinessDataByUlb);
 router.get("/get-all-states", getAllStates);
 router.get("/get-all-ulbs-market-readiness", getAllUlbsMarketReadiness);
 router.get("/get-ulb-slug-by-name", getUlbSlugByName);
+
+//scripts
+router.post("/run-indicators-batch", runIndicatorsBatch);
+router.get("/batch-status", getBatchStatus);
+
+router.post("/run-market-readiness", runBatch);
+router.post("/runSingleUlb", runSingleUlb);
+router.get("/market-readiness-status", getStatus);
 module.exports = router;

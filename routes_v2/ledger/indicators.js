@@ -265,9 +265,9 @@ async function marketDashboardIndicators(
 
     // ---------- Fetch capex (already returns a number or "N/A") ----------
     const initialCapexRaw = await getCapexValue(ulbId, financialYear);
-    console.log(initialCapexRaw, "hh");
+    // console.log(initialCapexRaw, "hh");
     const capexRaw = initialCapexRaw.value ?? "N/A";
-    console.log(capexRaw, "yy");
+    // console.log(capexRaw, "yy");
     marketDasInd.capexFlag = initialCapexRaw.flag ?? null;
     const isNegative = typeof capexRaw === "number" && capexRaw < 0;
     marketDasInd.capex = capexRaw;
