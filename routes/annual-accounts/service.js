@@ -1148,7 +1148,7 @@ exports.dataset = catchAsync(async (req, res) => {
       // Fetch Budget Pdf
       type = "pdf";
       const query = await helper.getBudgetPdfs(year, state, ulb, ulbId, type, category, skip, limit);
-      finalData = await Ulb.aggregate(query);
+      const finalData = (await Ulb.aggregate(query)).filter(item => item.fileUrl) || [];
     }
 
     if (globalName) {
