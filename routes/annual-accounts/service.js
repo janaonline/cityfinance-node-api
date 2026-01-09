@@ -1278,18 +1278,8 @@ exports.dataset = catchAsync(async (req, res) => {
     } else if (type == "Budget PDF") {
       // Fetch Budget Pdf
       type = "pdf";
-      const query = await helper.getBudgetPdfs(
-        year,
-        state,
-        ulb,
-        ulbId,
-        type,
-        category,
-        skip,
-        limit
-      );
-      finalData =
-        (await Ulb.aggregate(query)).filter((item) => item.fileUrl) || [];
+      const query = await helper.getBudgetPdfs(year, state, ulb, ulbId, type, category, skip, limit);
+      finalData = (await Ulb.aggregate(query)).filter(item => item.fileUrl) || [];
     }
 
     if (globalName) {
@@ -1813,17 +1803,15 @@ exports.getAccounts = async (req, res, next) => {
         ] = `Your previous Year's form status is - ${status}`;
       } else {
         annualAccountData["action"] = "redirect";
-        annualAccountData["url"] = `Your previous Year's form status is - ${
-          status ? status : "Not Submitted"
-        } .Kindly submit Annual Accounts for the previous year at - <a href=https://${host}/upload-annual-accounts target="_blank">Click Here!</a> . `;
+        annualAccountData["url"] = `Your previous Year's form status is - ${status ? status : "Not Submitted"
+          } .Kindly submit Annual Accounts for the previous year at - <a href=https://${host}/upload-annual-accounts target="_blank">Click Here!</a> . `;
         if (isYearWithinRange(design_year)) {
           let previousYearId = getPreviousYear(design_year, 1);
           let formRedirectionUrl = isYearWithinCurrentFY(design_year)
             ? `ulb-form/${previousYearId}/annual_acc`
             : "ulbform2223/annual_acc";
-          annualAccountData["url"] = `Your previous Year's form status is - ${
-            status ? status : "Not Submitted"
-          } .Kindly submit Annual Accounts for the previous year at - <a href=https://${host}/${formRedirectionUrl} target="_blank">Click Here!</a> . `;
+          annualAccountData["url"] = `Your previous Year's form status is - ${status ? status : "Not Submitted"
+            } .Kindly submit Annual Accounts for the previous year at - <a href=https://${host}/${formRedirectionUrl} target="_blank">Click Here!</a> . `;
         }
       }
     }
@@ -2507,38 +2495,38 @@ exports.getCSVAudited = catchAsync(async (req, res) => {
         el = concatenateUrls(el, urlParams);
         res.write(
           el.year +
-            "," +
-            el.dataYear +
-            "," +
-            el.ulbName +
-            "," +
-            el.censusCode +
-            "," +
-            el.sbCode +
-            "," +
-            el.ulbCode +
-            "," +
-            el.state +
-            "," +
-            el.submittedOn +
-            "," +
-            el.bal_sheet +
-            "," +
-            el.bal_sheet_schedules +
-            "," +
-            el.inc_exp +
-            "," +
-            el.inc_exp_schedules +
-            "," +
-            el.cash_flow +
-            "," +
-            el.auditor_report +
-            "," +
-            el.standardized_excel +
-            "," +
-            el.formStatus +
-            "," +
-            "\r\n"
+          "," +
+          el.dataYear +
+          "," +
+          el.ulbName +
+          "," +
+          el.censusCode +
+          "," +
+          el.sbCode +
+          "," +
+          el.ulbCode +
+          "," +
+          el.state +
+          "," +
+          el.submittedOn +
+          "," +
+          el.bal_sheet +
+          "," +
+          el.bal_sheet_schedules +
+          "," +
+          el.inc_exp +
+          "," +
+          el.inc_exp_schedules +
+          "," +
+          el.cash_flow +
+          "," +
+          el.auditor_report +
+          "," +
+          el.standardized_excel +
+          "," +
+          el.formStatus +
+          "," +
+          "\r\n"
         );
       }
       res.end();
@@ -2723,36 +2711,36 @@ exports.getCSVUnaudited = catchAsync(async (req, res) => {
         el = concatenateUrls(el, urlParams);
         res.write(
           el.year +
-            "," +
-            el.dataYear +
-            "," +
-            el.ulbName +
-            "," +
-            el.censusCode +
-            "," +
-            el.sbCode +
-            "," +
-            el.ulbCode +
-            "," +
-            el.state +
-            "," +
-            el.submittedOn +
-            "," +
-            el.bal_sheet +
-            "," +
-            el.bal_sheet_schedules +
-            "," +
-            el.inc_exp +
-            "," +
-            el.inc_exp_schedules +
-            "," +
-            el.cash_flow +
-            "," +
-            el.standardized_excel +
-            "," +
-            el.formStatus +
-            "," +
-            "\r\n"
+          "," +
+          el.dataYear +
+          "," +
+          el.ulbName +
+          "," +
+          el.censusCode +
+          "," +
+          el.sbCode +
+          "," +
+          el.ulbCode +
+          "," +
+          el.state +
+          "," +
+          el.submittedOn +
+          "," +
+          el.bal_sheet +
+          "," +
+          el.bal_sheet_schedules +
+          "," +
+          el.inc_exp +
+          "," +
+          el.inc_exp_schedules +
+          "," +
+          el.cash_flow +
+          "," +
+          el.standardized_excel +
+          "," +
+          el.formStatus +
+          "," +
+          "\r\n"
         );
       }
       res.end();
