@@ -339,6 +339,7 @@ exports.getIndicatorData = async (req, res) => {
       Object.assign(value, { nationalValue });
       return value;
     });
+    data.sort((a, b) => a.name.localeCompare(b.name));
     return Response.OK(res, data, "Success");
   } catch (error) {
     return Response.DbError(res, error.message);
