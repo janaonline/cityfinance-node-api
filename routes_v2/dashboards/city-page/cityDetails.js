@@ -1,11 +1,13 @@
 const Ulb = require('../../../models/Ulb');
 const LedgerLog = require('../../../models/LedgerLog');
+const AfsAuditorsReport = require('../../../models/AfsAuditorReport');
 const ObjectId = require('mongoose').Types.ObjectId;
 const {
 	getPopulationCategory,
 	formatNumberWithCommas,
 	getLastModifiedDateHelper,
 } = require('../../common/common');
+const { years: YEARS } = require('../../../service/years');
 
 module.exports.cityDetails = async (req, res) => {
 	try {
@@ -33,8 +35,15 @@ module.exports.cityDetails = async (req, res) => {
 		// Fetch data from DB - Ulb, ledgerLogs collections.
 		const [financialYears, lastModifiedAt] = await getDataFromDb(ulbData._id);
 
+		// Get auditor details.
+		let auditorDetails = [];
+		if (financialYears.length > 0) {
+			const pipeline = getAuditorReportPipeline(ulbData._id, financialYears[0]);
+			auditorDetails = await AfsAuditorsReport.aggregate(pipeline).exec();
+		}
+
 		// Prepare structured data for response.
-		const gridDetails = buildUlbMetrics(ulbData, financialYears);
+		const gridDetails = buildUlbMetrics(ulbData, financialYears, auditorDetails);
 
 		return res.status(200).json({
 			ulbName: ulbData.name,
@@ -73,8 +82,60 @@ async function getDataFromDb(ulbId) {
 	return [financialYears, lastModifiedAt];
 }
 
+// Helper: get auditor details
+function getAuditorReportPipeline(ulbId, year) {
+	const yearId = YEARS[year];
+	return [
+		{
+			$match: {
+				ulb: new ObjectId(ulbId),
+				year: new ObjectId(yearId),
+				docType: 'auditor_report',
+				auditType: 'audited',
+			},
+		},
+		{
+			$addFields: {
+				file: {
+					$switch: {
+						branches: [
+							{
+								case: { $eq: ['$afsFile.digitizationStatus', 'digitized'] },
+								then: '$afsFile',
+							},
+							{
+								case: { $eq: ['$ulbFile.digitizationStatus', 'digitized'] },
+								then: '$ulbFile',
+							},
+						],
+						default: null,
+					},
+				},
+				fileType: {
+					$switch: {
+						branches: [
+							{
+								case: { $eq: ['$afsFile.digitizationStatus', 'digitized'] },
+								then: 'afsFile',
+							},
+							{
+								case: { $eq: ['$ulbFile.digitizationStatus', 'digitized'] },
+								then: 'ulbFile',
+							},
+						],
+						default: null,
+					},
+				},
+			},
+		},
+		{ $match: { 'file.data.audit.decision': 'approved' } },
+		// { $project: { file: { url: '$file.digitizedFileUrl' } } },
+		{ $project: { auditorDetails: '$file.data.audit.extraction' } },
+	];
+}
+
 // Contruct grid details.
-function buildUlbMetrics(ulbData, financialYears = []) {
+function buildUlbMetrics(ulbData, financialYears = [], auditorDetails = []) {
 	const population = Number(ulbData.population) || 0;
 	const area = Number(ulbData.area) || 0;
 	const wards = ulbData.wards || 'NA';
@@ -86,6 +147,14 @@ function buildUlbMetrics(ulbData, financialYears = []) {
 	const uaValue = `${ulbData.isUA || 'No'}${ulbData.UA?.name ? ` (${ulbData.UA.name})` : ''
 		}`;
 	const areaValue = area ? `${formatNumberWithCommas(area)} Sq km` : 'NA';
+	const auditor = auditorDetails?.[0]?.auditorDetails;
+	const auditorName =
+		auditor?.auditor_name && auditor?.audit_firm
+			? `${auditor.auditor_name.trim()} (${auditor.audit_firm.trim()})`
+			: null;
+	const sequence6 = auditorName
+		? { sequence: 6, value: auditorName, label: 'Audited by', info: '' }
+		: { sequence: 6, value: uaValue, label: 'Part of UA', info: '' };
 
 	return [
 		{
@@ -108,6 +177,6 @@ function buildUlbMetrics(ulbData, financialYears = []) {
 			label: 'Years of financial data',
 			info: '',
 		},
-		{ sequence: 6, value: uaValue, label: 'Part of UA', info: '' },
+		sequence6,
 	];
 }
