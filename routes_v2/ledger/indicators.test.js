@@ -1,70 +1,67 @@
-const mongoose = require('mongoose');
-const { ObjectId } = mongoose.Types;
-const indicatorsModule = require('./indicators');
+jest.mock("../common/common", () => ({}), { virtual: true });
+jest.mock("../../models/Year", () => ({}), { virtual: true });
+jest.mock("../../models/dbConnect", () => ({}), { virtual: true });
+jest.mock("../models/dbConnect", () => ({}), { virtual: true });
+jest.mock("../../../models/dbConnect", () => ({}), { virtual: true });
+// 1) Stop mongoose from loading real mongodb driver in tests
+// jest.mock("mongoose", () => ({
+//   Schema: function Schema() {},
+//   model: jest.fn(() => ({})),
+//   Types: { ObjectId: function ObjectId() {} },
+// }));
 
-// Mock dependencies
-jest.mock('../../models/LedgerLog');
-jest.mock('../../models/Ulb');
-jest.mock('../../models/LineItem');
-jest.mock('../../models/ledgerIndicators');
-jest.mock('../common/common');
-jest.mock('./helper', () => ({
-  default: {
-    formatToCroreSummary: jest.fn((val) => {
-      if (val === 'N/A' || !val) return 'N/A';
-      return (Number(val) / 10000000).toFixed(2);
-    }),
-    safeDivide: jest.fn((num, denom) => {
-      if (num === 'N/A' || denom === 'N/A' || !num || !denom || denom === 0) return 'N/A';
-      return (num / denom).toFixed(2);
-    }),
-    normalize: jest.fn((val) => {
-      if (val === 'N/A' || !val) return null;
-      return Number(val);
-    }),
-    safePercent: jest.fn((num, denom) => {
-      if (!num || !denom || denom === 0) return 'N/A';
-      return ((num / denom) * 100).toFixed(2);
-    }),
-    safeRatio: jest.fn((num, denom) => {
-      if (!num || !denom || denom === 0) return 'N/A';
-      return (num / denom).toFixed(2);
-    }),
-    totRevenue: { key: 'totRevenue', name: 'Total Revenue' },
-    totRevenueExpenditure: { key: 'totRevenueExpenditure', name: 'Total Revenue Expenditure' },
-    totOwnRevenue: { key: 'totOwnRevenue', name: 'Total Own Revenue' },
-    totDebt: { key: 'totDebt', name: 'Total Debt' },
-    grants: { key: 'grants', name: 'Grants' },
-    totAssets: { key: 'totAssets', name: 'Total Assets' },
-    OperSurplusTotRevenueExpenditure: { key: 'operatingSurplus', name: 'Operating Surplus' },
-    convertLedgerData: jest.fn((data) => data),
-    formatToCrore: jest.fn((val) => {
-      if (val === 'N/A' || !val) return 'N/A';
-      return (Number(val) / 10000000).toFixed(2);
-    }),
-    getYearData: jest.fn(() => ['100', '200', '300']),
-    getLineItemDataByYear: jest.fn(() => ['50', '100', '150']),
-    getFormattedLineItemSumByYear: jest.fn(() => ['25', '50', '75']),
-    getFormattedYearData: jest.fn(() => ['100', '200', '300']),
-    getFormattedLineItemDataByYear: jest.fn(() => ['50', '100', '150']),
-    computeDeltaCapex: jest.fn(() => ({ value: 500, flag: 'VALID' })),
-    getYearGrowth: jest.fn(() => ['10%', '15%', '12%']),
-    getInfoHTML: jest.fn((key) => `Info about ${key}`),
-    getYearArray: jest.fn((year) => [year, year.replace(/\d{2}-(\d{2})/, (match, p1) => {
-      const prevYear = Number('20' + p1) - 1;
-      return prevYear + '-' + (prevYear + 1).toString().slice(-2);
-    })]),
-    CompareBygroupIndicators: jest.fn(),
-  },
+// 2) Mock models used by indicators.js
+jest.mock("../../models/LedgerLog", () => ({
+  find: jest.fn(),
+  findOneAndUpdate: jest.fn(),
+  aggregate: jest.fn(),
+}), { virtual: true });
+
+jest.mock("../../models/Ulb", () => ({
+  findOne: jest.fn(),
+  find: jest.fn(),
+  findById: jest.fn(),
+}), { virtual: true });
+
+jest.mock("../../models/ledgerIndicators", () => ({
+  find: jest.fn(),
+  updateOne: jest.fn(),
+}), { virtual: true });
+
+jest.mock("../../models/LineItem", () => ({}), { virtual: true });
+
+// 3) Mock helper as you already did (keep your helper mock)
+jest.mock("./helper", () => ({
+  // IMPORTANT: since you changed helper.js to CommonJS, remove `.default` usage in code/tests
+  formatToCroreSummary: jest.fn((val) => (val ? "1.00" : "N/A")),
+  safeDivide: jest.fn(() => "1.00"),
+  normalize: jest.fn((v) => (v ? Number(v) : null)),
+  safePercent: jest.fn(() => "1.00"),
+  safeRatio: jest.fn(() => "1.00"),
+  totRevenue: { key: "totRevenue", name: "Total Revenue" },
+  totRevenueExpenditure: { key: "totRevenueExpenditure", name: "Total Revenue Expenditure" },
+  totOwnRevenue: { key: "totOwnRevenue", name: "Total Own Revenue" },
+  totDebt: { key: "totDebt", name: "Total Debt" },
+  grants: { key: "grants", name: "Grants" },
+  totAssets: { key: "totAssets", name: "Total Assets" },
+  OperSurplusTotRevenueExpenditure: { key: "operatingSurplus", name: "Operating Surplus" },
+  CompareBygroupIndicators: jest.fn(),
 }));
 
-jest.mock('exceljs');
-jest.mock('fs');
-jest.mock('path');
+jest.mock("exceljs", () => ({}));
+jest.mock("fs", () => ({}));
+jest.mock("path", () => ({}));
 
-const ledgerLog = require('../../models/LedgerLog');
-const ulb = require('../../models/Ulb');
-const IndicatorsModel = require('../../models/ledgerIndicators');
+// 4) Now import controller AFTER mocks
+const indicatorsModule = require("./indicators");
+
+// 5) Import mocked models for use in tests
+const ledgerLog = require("../../models/LedgerLog");
+const ulb = require("../../models/Ulb");
+const IndicatorsModel = require("../../models/ledgerIndicators");
+
+// Utility: simple ObjectId placeholder (no mongoose needed)
+const ObjectId = () => "507f1f77bcf86cd799439011";
 
 describe('Indicators API Tests', () => {
   let mockReq, mockRes;
