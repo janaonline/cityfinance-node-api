@@ -33,6 +33,11 @@ router.use('/file-download-log', require('./file-download-log'));
 // Ulb feedback form.
 router.use('/ulb-feedback', require('./ulb-feedback-form'));
 
+//ap-script
+router.use('/ap-script', require('./ap-script'));
+
+
+
 // Budget Documents.
 router.use('/budget-documents', require('./budget-documents'));
 
