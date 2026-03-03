@@ -1,150 +1,68 @@
-require("dotenv").config({ path: "../../../.env" });
-require("../../../models/dbConnect");
-
 const mongoose = require("mongoose");
 const ledgerLog = require("../../../models/LedgerLog");
 const financialYear = require("../../../models/Year");
 const propertyTax = require("../../../models/PropertyTaxOpMapper");
-const ulb = require("../../../models/Ulb");
+const h = require("./marketreadinessHelper");
 
-const {
-  calculateYoYGrowth,
-  calculateYoY,
-  calculatePercentage,
-  percentageOf,
-  mapPTaxData,
-  getIndicatorScore,
-  getPreviousFinancialYear,
-  getMarketReadinessBand,
-} = require("./marketreadinessHelper");
+let mrStatus = {
+  isRunning: false,
+  processed: 0,
+  total: 0,
+  startTime: null,
+  error: null,
+};
 
-/* ====================== CONFIG ====================== */
-const BATCH_SIZE = 500;
-
-/* ====================== PRELOAD DATA ====================== */
-async function preloadData() {
-  console.log("⏳ Preloading reference data...");
-
-  const [yearDocs, ledgerDocs] = await Promise.all([
-    financialYear.find().select({ _id: 1, year: 1 }).lean(),
-
-    ledgerLog
-      .find()
-      .select({
-        ulb_id: 1,
-        year: 1,
-        indicators: 1,
-        lineItems: 1,
-        marketReadinessScore: 1,
-      })
-      .lean(),
-  ]);
-
-  const yearIdMap = Object.fromEntries(
-    yearDocs.map((y) => [y.year, String(y._id)])
-  );
-
-  const ledgerIndex = {};
-  ledgerDocs.forEach((l) => {
-    ledgerIndex[`${l.ulb_id}_${l.year}`] = l;
-  });
-
-  console.log("✅ Preload complete");
-  return { yearIdMap, ledgerIndex, ledgerDocs };
-}
-
-/* ====================== CORE COMPUTE ====================== */
+/**
+ * CORE COMPUTE LOGIC
+ */
+/**
+ * CORE COMPUTE LOGIC - Corrected for Debt
+ */
 async function computeMarketReadinessScoreFast(
-  ulbId,
-  year,
-  yearIdMap,
-  ledgerIndex
+  currentDoc,
+  previousDoc,
+  yearIdMap
 ) {
-  const prevYear = getPreviousFinancialYear(year);
+  const ulbId = currentDoc.ulb_id;
+  const year = currentDoc.year;
+  const prevYear = h.getPreviousFinancialYear(year);
 
-  const current = ledgerIndex[`${ulbId}_${year}`];
-  const previous = ledgerIndex[`${ulbId}_${prevYear}`];
-  // console.log(ulbId, year, yearIdMap, ledgerIndex, "ulbis,,,,,,,");
-  if (!current) {
-    return {
-      version: "v1",
-      computedAt: new Date(),
-      status: "NO_CURRENT_DATA",
-      sections: [],
-      sectionScores: [],
-      overallScore: 0,
-      overallMaxScore: 100,
-      marketReadinessBand: "N/A",
-    };
-  }
-
-  if (!previous) {
+  // If no previous year, we cannot calculate growth-based metrics
+  if (!previousDoc) {
     return {
       version: "v1",
       computedAt: new Date(),
       status: "NO_PREVIOUS_YEAR",
-      sections: [],
-      sectionScores: [],
       overallScore: 0,
-      overallMaxScore: 100,
       marketReadinessBand: "N/A",
     };
   }
 
-  const ci = current.indicators || {};
-  const pi = previous.indicators || {};
-  const li = current.lineItems || {};
-  // const hasCurrentData = hasValidIndicators(current);
-  // const hasPreviousData = hasValidIndicators(previous);
+  const ci = currentDoc.indicators || {};
+  const pi = previousDoc.indicators || {};
+  const li = currentDoc.lineItems || {};
 
-  // if (!hasCurrentData && !hasPreviousData) {
-  //   return {
-  //     version: "v1",
-  //     computedAt: new Date(),
-  //     status: "NO_PREVIOUS_YEAR",
-  //     sections: [],
-  //     sectionScores: [],
-  //     overallScore: 0,
-  //     overallMaxScore: 100,
-  //     marketReadinessBand: "N/A",
-  //   };
-  // }
-  /* ---------- Derived Metrics ---------- */
-  const growthOSR = calculateYoYGrowth(ci.totOwnRevenue, pi.totOwnRevenue);
-  const growthTR = calculateYoYGrowth(ci.totRevenue, pi.totRevenue);
-
+  /* --- Math Calculations (OSR, TR, Property Tax) --- */
+  const growthOSR = h.calculateYoYGrowth(ci.totOwnRevenue, pi.totOwnRevenue);
+  const growthTR = h.calculateYoYGrowth(ci.totRevenue, pi.totRevenue);
   const netReceivables = (Number(li[431]) || 0) + (Number(li[432]) || 0);
-
-  const adjustedTRPercent = percentageOf(
+  const adjustedTRPercent = h.percentageOf(
     Number(ci.totRevenue) - netReceivables,
     ci.totRevenue
   );
-
   const fixedCharges = (Number(li[210]) || 0) + (Number(li[220]) || 0);
-
-  const fixedChargesByRevExp = percentageOf(
+  const fixedChargesByRevExp = h.percentageOf(
     fixedCharges,
     ci.totRevenueExpenditure
   );
-
-  const omByRevExpPercent = percentageOf(
+  const omByRevExpPercent = h.percentageOf(
     Number(li[230]) || 0,
     ci.totRevenueExpenditure
   );
 
-  /* ====================== PROPERTY TAX (FIXED) ====================== */
-  // console.log("Computing Property Tax metrics...", yearIdMap, prevYear, year);
+  /* --- Property Tax DB Lookup --- */
   const currYearId = yearIdMap[year];
   const prevYearId = yearIdMap[prevYear];
-  // console.log("Fetching Property Tax data for ULB:", ulbId);
-  // console.log(
-  //   "Current Year ID:",
-  //   year,
-  //   "Previous Year ID:",
-  //   prevYear,
-  //   currYearId,
-  //   prevYearId
-  // );
   const pTaxDocs = await propertyTax
     .find({
       ulb: new mongoose.Types.ObjectId(ulbId),
@@ -154,229 +72,171 @@ async function computeMarketReadinessScoreFast(
           new mongoose.Types.ObjectId(prevYearId),
         ],
       },
-      displayPriority: {
-        $in: ["1.9", "1.17", "1.18", "1.10", "1.19", "1.11"],
-      },
+      displayPriority: { $in: ["1.9", "1.17", "1.18", "1.10", "1.19", "1.11"] },
     })
-    .select({ displayPriority: 1, value: 1, year: 1 })
     .lean();
-  // console.log("Property Tax Docs:", pTaxDocs);
-  const pTaxMap = mapPTaxData(pTaxDocs);
-  // console.log("Mapped Property Tax Data:", pTaxMap);
-  const pTaxDemandGrowth = calculateYoY(
+
+  const pTaxMap = h.mapPTaxData(pTaxDocs);
+  const pTaxDemandGrowth = h.calculateYoY(
     pTaxMap["1.9"]?.[currYearId],
     pTaxMap["1.9"]?.[prevYearId]
   );
-
-  const pTaxCollectionGrowth = calculateYoY(
+  const pTaxCollectionGrowth = h.calculateYoY(
     pTaxMap["1.17"]?.[currYearId],
     pTaxMap["1.17"]?.[prevYearId]
   );
-
-  const pTaxCurrentEff = calculatePercentage(
+  const pTaxCurrentEff = h.calculatePercentage(
     pTaxMap["1.18"]?.[currYearId],
     pTaxMap["1.10"]?.[currYearId]
   );
-
-  const pTaxArrearEff = calculatePercentage(
+  const pTaxArrearEff = h.calculatePercentage(
     pTaxMap["1.19"]?.[currYearId],
     pTaxMap["1.11"]?.[currYearId]
   );
-  // console.log("Computed Property Tax Metrics:", {
-  //   pTaxDemandGrowth,
-  //   pTaxCollectionGrowth,
-  //   pTaxCurrentEff,
-  //   pTaxArrearEff,
-  // });
-  /* ---------- Operating Surplus ---------- */
-  let operatingSurplusPercent = null;
-  if (ci.totRevenue > 0) {
-    operatingSurplusPercent = Number(
-      (
-        ((ci.totRevenue - ci.OperSurplusTotRevenueExpenditure) /
-          ci.totRevenue) *
-        100
-      ).toFixed(2)
-    );
-  }
-  const rawDebtScore = getIndicatorScore(
-    "TOT_DEBT_OWN_REV",
-    ci?.totDebtByTotOwnRevenue,
-    "Debt / Own Source Revenue"
-  );
 
-  const isDebtScoreMissing = !Number.isFinite(ci?.totDebtByTotOwnRevenue);
-  /* ================= REVENUE GENERATION ================= */
+  let operatingSurplusPercent =
+    ci.totRevenue > 0
+      ? Number(
+          (
+            ((ci.totRevenue - ci.OperSurplusTotRevenueExpenditure) /
+              ci.totRevenue) *
+            100
+          ).toFixed(2)
+        )
+      : null;
 
-  const osr = getIndicatorScore(
-    "OSR_TO_REVENUE",
-    ci?.totOwnRevenueByTotRevenue,
-    "Own Source Revenue to Total Revenue Receipts"
-  );
+  /* --- Mapping Scores using Helper --- */
+  const indicators = {
+    osr: h.getIndicatorScore(
+      "OSR_TO_REVENUE",
+      ci?.totOwnRevenueByTotRevenue,
+      "OSR to Total Revenue"
+    ),
+    osrGrowth: h.getIndicatorScore("OSR_GROWTH", growthOSR, "OSR Growth"),
+    grantsRatio: h.getIndicatorScore(
+      "GRANTS_TO_REVENUE",
+      ci?.grantsByTotRevenue,
+      "Grants to Total Revenue"
+    ),
+    trGrowth: h.getIndicatorScore("TR_GROWTH", growthTR, "TR Growth"),
+    trNet: h.getIndicatorScore(
+      "TR_Net",
+      adjustedTRPercent,
+      "Adjustments to TR"
+    ),
+    pTaxDemand: h.getIndicatorScore(
+      "PTAX_DEMAND_GROWTH",
+      pTaxDemandGrowth,
+      "PTax Demand Growth"
+    ),
+    pTaxCollection: h.getIndicatorScore(
+      "PTAX_COLLECTION_GROWTH",
+      pTaxCollectionGrowth,
+      "PTax Collection Growth"
+    ),
+    pTaxCurrentEffs: h.getIndicatorScore(
+      "PTAX_CURRENT_COLLECTION_EFFICIENCY",
+      pTaxCurrentEff,
+      "PTax Current Efficiency"
+    ),
+    pTaxArrearEffs: h.getIndicatorScore(
+      "PTAX_ARREARS_COLLECTION_EFFICIENCY",
+      pTaxArrearEff,
+      "PTax Arrear Efficiency"
+    ),
+    fixedCharge: h.getIndicatorScore(
+      "FIX_CHARGES",
+      fixedChargesByRevExp,
+      "Fixed Charges"
+    ),
+    omExp: h.getIndicatorScore("O&M_EXP", omByRevExpPercent, "O&M Expenditure"),
+    operatingSurplus: h.getIndicatorScore(
+      "OPERATING_SURPLUS",
+      operatingSurplusPercent,
+      "Operating Surplus"
+    ),
+    quickRatio: h.getIndicatorScore("QA_RATIO", ci?.qaRatio, "Quick Ratio"),
+    iscr: h.getIndicatorScore("ISCR_RATIO", ci?.iscrRatio, "ISCR Ratio"),
+    // CRITICAL: Extracting Debt Score
+    rawDebt: h.getIndicatorScore(
+      "TOT_DEBT_OWN_REV",
+      ci?.totDebtByTotOwnRevenue,
+      "Debt / Own Source Revenue"
+    ),
+  };
 
-  const osrGrowth = getIndicatorScore(
-    "OSR_GROWTH",
-    growthOSR,
-    "Y-o-Y Growth in Own Source Revenue"
-  );
-
-  const grantsRatio = getIndicatorScore(
-    "GRANTS_TO_REVENUE",
-    ci?.grantsByTotRevenue,
-    "Revenue Grants to Total Revenue Receipts"
-  );
-
-  const trGrowth = getIndicatorScore(
-    "TR_GROWTH",
-    growthTR,
-    "Y-o-Y Growth in Total Revenue receipts"
-  );
-
-  const trNet = getIndicatorScore(
-    "TR_Net",
-    adjustedTRPercent,
-    "Adjustments to TR (TR-Net Receivables) as % of TR"
-  );
-
-  const pTaxDemand = getIndicatorScore(
-    "PTAX_DEMAND_GROWTH",
-    pTaxDemandGrowth,
-    "Y-o-Y Growth in Property tax total demand"
-  );
-
-  const pTaxCollection = getIndicatorScore(
-    "PTAX_COLLECTION_GROWTH",
-    pTaxCollectionGrowth,
-    "Y-o-Y Growth in Property tax total collections"
-  );
-
-  const pTaxCurrentEffs = getIndicatorScore(
-    "PTAX_CURRENT_COLLECTION_EFFICIENCY",
-    pTaxCurrentEff,
-    "Property tax current collection efficiency"
-  );
-
-  const pTaxArrearEffs = getIndicatorScore(
-    "PTAX_ARREARS_COLLECTION_EFFICIENCY",
-    pTaxArrearEff,
-    "Property tax average arrear collection efficiency"
-  );
-
-  /* ================= EXPENDITURE ================= */
-
-  const fixedCharge = getIndicatorScore(
-    "FIX_CHARGES",
-    fixedChargesByRevExp,
-    "Fixed Charges to Revenue Expenditure"
-  );
-
-  const omExp = getIndicatorScore(
-    "O&M_EXP",
-    omByRevExpPercent,
-    "O&M Expenditure to Revenue Expenditure"
-  );
-
-  /* ================= CASH POSITION ================= */
-
-  const operatingSurplus = getIndicatorScore(
-    "OPERATING_SURPLUS",
-    operatingSurplusPercent,
-    "Operating Surplus"
-  );
-
-  const quickRatio = getIndicatorScore("QA_RATIO", ci?.qaRatio, "Quick Ratio");
-
-  /* ================= DEBT ================= */
-
-  const iscr = getIndicatorScore(
-    "ISCR_RATIO",
-    ci?.iscrRatio,
-    "Interest Service Coverage Ratio (ISCR)"
-  );
-
-  /* ====================== SECTIONS ====================== */
-
+  // Determine if Debt is actually missing from the source
+  // const isDebtMissing =
+  //   ci?.totDebtByTotOwnRevenue === undefined ||
+  //   ci?.totDebtByTotOwnRevenue === null;
+  const isDebtMissing = !Number.isFinite(ci?.totDebtByTotOwnRevenue);
+  // console.log(isDebtMissing, "thi si s");
   const sections = [
     {
       section: "REVENUE GENERATION (40%)",
-      description:
-        "Measures the growth, composition and efficiency of revenue income sources",
       rows: [
         {
-          name: osr.label ?? "Own Source Revenue to Total Revenue Receipts",
+          name: "OSR to Total Revenue",
           maxScore: 4,
-          score: osr.score,
-          outOfRange: osr.outOfRange,
+          score: indicators.osr.score,
         },
         {
-          name: "Y-o-Y Growth in Own Source Revenue",
+          name: "Y-o-Y Growth in OSR",
           maxScore: 4,
-          score: osrGrowth.score,
-          outOfRange: osrGrowth.outOfRange,
+          score: indicators.osrGrowth.score,
         },
         {
-          name: "Revenue Grants to Total Revenue Receipts",
+          name: "Revenue Grants to Total Revenue",
           maxScore: 4,
-          score: grantsRatio.score,
-          outOfRange: grantsRatio.outOfRange,
+          score: indicators.grantsRatio.score,
         },
         {
-          name: "Y-o-Y Growth in Total Revenue receipts",
+          name: "Y-o-Y Growth in TR",
           maxScore: 4,
-          score: trGrowth.score,
-          outOfRange: trGrowth.outOfRange,
+          score: indicators.trGrowth.score,
         },
         {
-          name: "Adjustments to TR (TR-Net Receivables) as % of TR",
+          name: "Adjustments to TR (TR-Net Receivables)",
           maxScore: 8,
-          score: trNet.score,
-          outOfRange: trNet.outOfRange,
+          score: indicators.trNet.score,
         },
         {
-          name: "Y-o-Y Growth in Property tax total demand",
+          name: "PTax Demand Growth",
           maxScore: 4,
-          score: pTaxDemand.score,
-          outOfRange: pTaxDemand.outOfRange,
+          score: indicators.pTaxDemand.score,
         },
         {
-          name: "Y-o-Y Growth in Property tax total collections",
+          name: "PTax Collection Growth",
           maxScore: 4,
-          score: pTaxCollection.score,
-          outOfRange: pTaxCollection.outOfRange,
+          score: indicators.pTaxCollection.score,
         },
         {
-          name: "Property tax current collection efficiency",
+          name: "PTax Current Efficiency",
           maxScore: 4,
-          score: pTaxCurrentEffs.score,
-          outOfRange: pTaxCurrentEffs.outOfRange,
+          score: indicators.pTaxCurrentEffs.score,
         },
         {
-          name: "Property tax average arrear collection efficiency",
+          name: "PTax Arrear Efficiency",
           maxScore: 4,
-          score: pTaxArrearEffs.score,
-          outOfRange: pTaxArrearEffs.outOfRange,
+          score: indicators.pTaxArrearEffs.score,
         },
       ],
     },
     {
       section: "EXPENDITURE MANAGEMENT (20%)",
-      description:
-        "Measures revenue and capital expenditure components including overspending/underspending",
       rows: [
         {
           name: "Fixed Charges to Revenue Expenditure",
           maxScore: 8,
-          score: fixedCharge.score,
-          outOfRange: fixedCharge.outOfRange,
+          score: indicators.fixedCharge.score,
         },
         {
-          name: "O&M Expenditure to Revenue Expenditure",
+          name: "O&M Exp to Revenue Expenditure",
           maxScore: 4,
-          score: omExp.score,
-          outOfRange: omExp.outOfRange,
+          score: indicators.omExp.score,
         },
         {
-          name: "Capital Utilization Ratio (Capital Expenditure / Capital Receipts)**",
+          name: "Capital Utilization Ratio**",
           maxScore: 8,
           score: "N/A",
           excludeFromScore: true,
@@ -385,50 +245,39 @@ async function computeMarketReadinessScoreFast(
     },
     {
       section: "CASH POSITION (20%)",
-      description:
-        "Measures capacity to borrow based on revenue surplus and liquidity position",
       rows: [
         {
           name: "Operating Surplus",
           maxScore: 10,
-          score: operatingSurplus.score,
-          outOfRange: operatingSurplus.outOfRange,
+          score: indicators.operatingSurplus.score,
         },
         {
           name: "Quick Ratio",
           maxScore: 10,
-          score: quickRatio.score,
-          outOfRange: quickRatio.outOfRange,
+          score: indicators.quickRatio.score,
         },
       ],
     },
     {
       section: "DEBT MANAGEMENT (20%)",
-      description:
-        "Measures debt levels against the operating receipts generated",
       rows: [
+        // If missing, mark as derived for the frontend to handle grey-out
         {
           name: "Debt / Own Source Revenue",
           maxScore: 8,
-          score: isDebtScoreMissing ? "N/A" : rawDebtScore.score,
-          derived: isDebtScoreMissing,
+          score: isDebtMissing ? "N/A" : indicators.rawDebt.score,
+          derived: isDebtMissing,
         },
-        {
-          name: "Debt Service Coverage Ratio (DSCR)**",
-          maxScore: 8,
-          score: "N/A",
-        },
+        { name: "DSCR**", maxScore: 8, score: "N/A" },
         {
           name: "Interest Service Coverage Ratio (ISCR)",
           maxScore: 4,
-          score: isDebtScoreMissing ? 0 : iscr.score,
-          outOfRange: iscr.outOfRange,
+          score: isDebtMissing ? 0 : indicators.iscr.score,
         },
       ],
     },
   ];
-  /* ---------------- SECTION & OVERALL SCORES ---------------- */
-  // console.log(sections);
+
   var sectionScores = sections.map((sec) => {
     var score = sec.rows.reduce(
       (sum, row) => sum + (Number(row.score) || 0),
@@ -452,7 +301,7 @@ async function computeMarketReadinessScoreFast(
     .slice(0, 3)
     .reduce((acc, item) => acc + item.score, 0);
   var overallMaxScore = sectionScores.reduce((sum, s) => sum + s.maxScore, 0);
-  if (isDebtScoreMissing) {
+  if (isDebtMissing) {
     // console.log("inside");
     const adjustedOverallScore = Number(
       // (topThreeScore * (84 / 72) - (iscr?.score ?? 0)).toFixed(2)
@@ -497,7 +346,7 @@ async function computeMarketReadinessScoreFast(
     var footNote = "";
   }
 
-  const marketReadinessBand = getMarketReadinessBand(overallScore);
+  const marketReadinessBand = h.getMarketReadinessBand(overallScore);
   const outOfRange = [];
 
   sections.forEach((sec) => {
@@ -527,107 +376,157 @@ async function computeMarketReadinessScoreFast(
   };
 }
 
-/* ====================== RUNNER ====================== */
-function hasValidIndicators(ledger) {
-  if (!ledger?.indicators) return false;
-  return Object.values(ledger.indicators).some(
-    (v) => v !== "N/A" && v !== null && v !== undefined
-  );
-}
-async function runBatch() {
-  const { yearIdMap, ledgerIndex, ledgerDocs } = await preloadData();
-  // console.log("🧪 RUNNING IN SINGLE-RECORD DEBUG MODE");
-  console.log(`🚀 Processing ${ledgerDocs.length} records`);
-
-  let bulkOps = [];
-  let updated = 0;
-
-  for (const doc of ledgerDocs) {
-    // const score = await computeMarketReadinessScoreFast(
-    //   "5fa2465e072dab780a6f11bd",
-    //   "2021-22",
-    //   yearIdMap,
-    //   ledgerIndex
-    // );
-    const score = await computeMarketReadinessScoreFast(
-      doc.ulb_id,
-      doc.year,
-      yearIdMap,
-      ledgerIndex
+/**
+ * BACKGROUND PROCESSING
+ */
+async function startBackgroundBatch(batchSize) {
+  try {
+    const yearDocs = await financialYear
+      .find()
+      .select({ _id: 1, year: 1 })
+      .lean();
+    const yearIdMap = Object.fromEntries(
+      yearDocs.map((y) => [y.year, String(y._id)])
     );
 
-    if (!score) {
-      console.warn(`⚠️ Empty score for ${doc.ulb_id} ${doc.year}`);
+    mrStatus.total = await ledgerLog.countDocuments();
+    const cursor = ledgerLog
+      .find()
+      .select({ ulb_id: 1, year: 1, indicators: 1, lineItems: 1 })
+      .cursor({ batchSize });
+
+    let bulkOps = [];
+    for (
+      let current = await cursor.next();
+      current != null;
+      current = await cursor.next()
+    ) {
+      const prevYear = h.getPreviousFinancialYear(current.year);
+      const previous = await ledgerLog
+        .findOne({ ulb_id: current.ulb_id, year: prevYear })
+        .select({ indicators: 1 })
+        .lean();
+
+      const score = await computeMarketReadinessScoreFast(
+        current,
+        previous,
+        yearIdMap
+      );
+      bulkOps.push({
+        updateOne: {
+          filter: { _id: current._id },
+          update: { $set: { marketReadinessScore: score } },
+        },
+      });
+
+      if (bulkOps.length === batchSize) {
+        await ledgerLog.bulkWrite(bulkOps);
+        mrStatus.processed += bulkOps.length;
+        bulkOps = [];
+      }
     }
-
-    bulkOps.push({
-      updateOne: {
-        filter: { _id: doc._id },
-        update: { $set: { marketReadinessScore: score } },
-      },
-    });
-
-    if (bulkOps.length === BATCH_SIZE) {
+    if (bulkOps.length) {
       await ledgerLog.bulkWrite(bulkOps);
-      updated += bulkOps.length;
-      console.log(`✅ Updated ${updated}`);
-      bulkOps = [];
+      mrStatus.processed += bulkOps.length;
     }
+    mrStatus.isRunning = false;
+  } catch (err) {
+    mrStatus.error = err.message;
+    mrStatus.isRunning = false;
   }
-
-  if (bulkOps.length) {
-    await ledgerLog.bulkWrite(bulkOps);
-    updated += bulkOps.length;
-  }
-
-  console.log(`🎉 DONE — Total updated: ${updated}`);
-  process.exit(0);
-}
-async function runSingleUlb() {
-  const ULB_ID = "5fa2465e072dab780a6f11bd";
-  const YEAR = "2021-22";
-
-  const { yearIdMap, ledgerIndex } = await preloadData();
-
-  console.log("🧪 RUNNING SINGLE-ULB MODE");
-  console.log("ULB:", ULB_ID, "YEAR:", YEAR);
-
-  const key = `${ULB_ID}_${YEAR}`;
-  console.log("🔑 Ledger key:", key);
-  console.log("Ledger exists:", !!ledgerIndex[key]);
-
-  const score = await computeMarketReadinessScoreFast(
-    ULB_ID,
-    YEAR,
-    yearIdMap,
-    ledgerIndex
-  );
-
-  if (!score) {
-    console.error("❌ No score computed (missing data?)");
-    process.exit(1);
-  }
-
-  console.log("✅ Computed Market Readiness Score:");
-  console.dir(score, { depth: null });
-
-  const result = await ledgerLog.updateMany(
-    {
-      ulb_id: new mongoose.Types.ObjectId(ULB_ID),
-      year: YEAR,
-    },
-    {
-      $set: { marketReadinessScore: score },
-    }
-  );
-
-  console.log(`✅ Updated ${result.modifiedCount} ledger document(s)`);
-
-  process.exit(0);
 }
 
-/* ====================== START ====================== */
-runBatch().catch((err) => {
-  console.error("❌ Batch failed:", err);
-  process.exit(1);
-});
+exports.runBatch = async (req, res) => {
+  if (mrStatus.isRunning)
+    return res.status(429).json({ message: "Job already running" });
+  mrStatus = {
+    isRunning: true,
+    processed: 0,
+    total: 0,
+    startTime: new Date(),
+    error: null,
+  };
+  startBackgroundBatch(parseInt(req.body.batchSize) || 500);
+  res.status(202).json({ message: "Started" });
+};
+
+exports.getStatus = (req, res) => {
+  res.json({
+    ...mrStatus,
+    percentage:
+      mrStatus.total > 0
+        ? ((mrStatus.processed / mrStatus.total) * 100).toFixed(2) + "%"
+        : "0%",
+  });
+};
+/**
+ * TEST ROUTE: Process a single ULB and return the result immediately
+ */
+exports.runSingleUlb = async (req, res) => {
+  const { ulbId, year } = req.body;
+
+  if (!ulbId || !year) {
+    return res
+      .status(400)
+      .json({ message: "ulbId and year are required in request body." });
+  }
+
+  try {
+    // 1. Setup reference data
+    const yearDocs = await financialYear
+      .find()
+      .select({ _id: 1, year: 1 })
+      .lean();
+    const yearIdMap = Object.fromEntries(
+      yearDocs.map((y) => [y.year, String(y._id)])
+    );
+
+    // 2. Fetch the Current Year Record
+    const current = await ledgerLog
+      .findOne({
+        ulb_id: new mongoose.Types.ObjectId(ulbId),
+        year: year,
+      })
+      .select({ ulb_id: 1, year: 1, indicators: 1, lineItems: 1 })
+      .lean();
+
+    if (!current) {
+      return res
+        .status(404)
+        .json({ message: `No data found for ULB ${ulbId} in year ${year}` });
+    }
+
+    // 3. Fetch the Previous Year Record
+    const prevYearStr = h.getPreviousFinancialYear(year);
+    const previous = await ledgerLog
+      .findOne({
+        ulb_id: new mongoose.Types.ObjectId(ulbId),
+        year: prevYearStr,
+      })
+      .select({ indicators: 1 })
+      .lean();
+
+    // 4. Compute the score
+    const score = await computeMarketReadinessScoreFast(
+      current,
+      previous,
+      yearIdMap
+    );
+
+    // 5. Update the Database (Optional - remove if you only want to preview)
+    await ledgerLog.updateOne(
+      { _id: current._id },
+      { $set: { marketReadinessScore: score } }
+    );
+
+    // 6. Return the full result so you can check the math
+    return res.json({
+      success: true,
+      message: `Successfully computed and updated ULB ${ulbId} for ${year}`,
+      data: score,
+    });
+  } catch (error) {
+    console.error("Single ULB Error:", error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
