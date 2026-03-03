@@ -71,7 +71,7 @@ const {
   getYearGrowth,
   getInfoHTML,
   CompareBygroupIndicators,
-} = require("./helper").default;
+} = require("./helper");
 const mongoose = require("mongoose");
 const fs = require("fs");
 const path = require("path");

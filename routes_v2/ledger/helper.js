@@ -916,7 +916,7 @@ const CompareBygroupIndicators = [
   },
 ];
 
-export default {
+module.exports = {
   normalize,
   formatToCroreSummary,
   safeDivide,
