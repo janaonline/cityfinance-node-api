@@ -236,16 +236,31 @@ async function marketReadinessDataByUlb(req, res) {
     }
     // console.log("Operating Surplus %:", operatingSurplusPercent);
     /* ---------------- SECTIONS ---------------- */
+    const debtCondition = !Number.isFinite(currentIndicators?.totDebt);
+    // console.log("Debt Condition:", debtCondition, "Value:", currentIndicators?.totDebt);
     const rawDebtScore = getIndicatorScore(
       "TOT_DEBT_OWN_REV",
       currentIndicators?.totDebtByTotOwnRevenue,
       "Debt / Own Source Revenue"
     );
-    // console.log(rawDebtScore, "this is debt scre");
+    //  console.log(rawDebtScore, "this is debt scre");
 
-    const isDebtScoreMissing = !Number.isFinite(
-      currentIndicators?.totDebtByTotOwnRevenue
-    );
+    // const isDebtScoreMissing = !Number.isFinite(
+    //   currentIndicators?.totDebtByTotOwnRevenue
+    // );
+    // console.log("Is Debt Score Missing?", isDebtScoreMissing);
+    const debtValue = currentIndicators?.totDebtByTotOwnRevenue;
+    // const numericDebt = Number(debtValue);
+    // const isDebtScoreMissing =
+    //    debtValue === "N/A" ||
+    //    debtValue === "" ||
+    //    debtValue === null ||
+    //    debtValue === undefined;
+
+    // const isDebtZero = numericDebt === 0;
+
+    // const hasDebt = Number.isFinite(numericDebt) && numericDebt > 0;
+    // console.log("Debt Value:", debtValue, "Numeric Debt:", numericDebt, "Is Debt Missing?", isDebtScoreMissing, "Is Debt Zero?", isDebtZero, "Has Debt?", hasDebt);
     /* ================= REVENUE GENERATION ================= */
 
     const osr = getIndicatorScore(
@@ -338,179 +353,6 @@ async function marketReadinessDataByUlb(req, res) {
       "Interest Service Coverage Ratio (ISCR)"
     );
 
-    // const sections = [
-    //   {
-    //     section: "REVENUE GENERATION (40%)",
-    //     description:
-    //       "Measures the growth, composition and efficiency of revenue income sources",
-    //     rows: [
-    //       {
-    //         name: "Own Source Revenue to Total Revenue Receipts",
-    //         maxScore: 4,
-    //         score: getIndicatorScore(
-    //           "OSR_TO_REVENUE",
-    //           currentIndicators?.totOwnRevenueByTotRevenue,
-    //           "Own Source Revenue to Total Revenue Receipts"
-    //         ),
-    //       },
-    //       {
-    //         name: "Y-o-Y Growth in Own Source Revenue",
-    //         maxScore: 4,
-    //         score: getIndicatorScore(
-    //           "OSR_GROWTH",
-    //           growthOSR,
-    //           "Y-o-Y Growth in Own Source Revenue"
-    //         ),
-    //       },
-    //       {
-    //         name: "Revenue Grants to Total Revenue Receipts",
-    //         maxScore: 4,
-    //         score: getIndicatorScore(
-    //           "GRANTS_TO_REVENUE",
-    //           currentIndicators?.grantsByTotRevenue,
-    //           "Revenue Grants to Total Revenue Receipts"
-    //         ),
-    //       },
-    //       {
-    //         name: "Y-o-Y Growth in Total Revenue receipts",
-    //         maxScore: 4,
-    //         score: getIndicatorScore(
-    //           "TR_GROWTH",
-    //           growthTotalRevenue,
-    //           "Y-o-Y Growth in Total Revenue receipts"
-    //         ),
-    //       },
-    //       {
-    //         name: "Adjustments to TR (TR-Net Receivables) as % of TR",
-    //         maxScore: 8,
-    //         score: getIndicatorScore(
-    //           "TR_Net",
-    //           adjustedTRPercent,
-    //           "Adjustments to TR (TR-Net Receivables) as % of TR"
-    //         ),
-    //       },
-    //       {
-    //         name: "Y-o-Y Growth in Property tax total demand",
-    //         maxScore: 4,
-    //         score: getIndicatorScore(
-    //           "PTAX_DEMAND_GROWTH",
-    //           pTaxDemandGrowth,
-    //           "Y-o-Y Growth in Property tax total demand"
-    //         ),
-    //       },
-    //       {
-    //         name: "Y-o-Y Growth in Property tax total collections",
-    //         maxScore: 4,
-    //         score: getIndicatorScore(
-    //           "PTAX_COLLECTION_GROWTH",
-    //           pTaxCollectionGrowth,
-    //           "Y-o-Y Growth in Property tax total collections"
-    //         ),
-    //       },
-    //       {
-    //         name: "Property tax current collection efficiency",
-    //         maxScore: 4,
-    //         score: getIndicatorScore(
-    //           "PTAX_CURRENT_COLLECTION_EFFICIENCY",
-    //           pTaxCurrentCollectionEfficiency,
-    //           "Property tax current collection efficiency"
-    //         ),
-    //       },
-    //       {
-    //         name: "Property tax average arrear collection efficiency",
-    //         maxScore: 4,
-    //         score: getIndicatorScore(
-    //           "PTAX_ARREARS_COLLECTION_EFFICIENCY",
-    //           pTaxArrearsCollectionEfficiency,
-    //           "Property tax average arrear collection efficiency"
-    //         ),
-    //       },
-    //     ],
-    //   },
-    //   {
-    //     section: "EXPENDITURE MANAGEMENT (20%)",
-    //     description:
-    //       "Measures revenue and capital expenditure components including overspending/underspending",
-    //     rows: [
-    //       {
-    //         name: "Fixed Charges to Revenue Expenditure",
-    //         maxScore: 8,
-    //         score: getIndicatorScore(
-    //           "FIX_CHARGES",
-    //           fixedChargesByRevExp,
-    //           "Fixed Charges to Revenue Expenditure"
-    //         ),
-    //       },
-    //       {
-    //         name: "O&M Expenditure to Revenue Expenditure",
-    //         maxScore: 4,
-    //         score: getIndicatorScore(
-    //           "O&M_EXP",
-    //           omByRevExpPercent,
-    //           "O&M Expenditure to Revenue Expenditure"
-    //         ),
-    //       },
-    //       {
-    //         name: "Capital Utilization Ratio (Capital Expenditure / Capital Receipts)**",
-    //         maxScore: 8,
-    //         score: "N/A",
-    //         excludeFromScore: true,
-    //       },
-    //     ],
-    //   },
-    //   {
-    //     section: "CASH POSITION (20%)",
-    //     description:
-    //       "Measures capacity to borrow based on revenue surplus and liquidity position",
-    //     rows: [
-    //       {
-    //         name: "Operating Surplus",
-    //         maxScore: 10,
-    //         score: getIndicatorScore(
-    //           "OPERATING_SURPLUS",
-    //           operatingSurplusPercent,
-    //           "Operating Surplus"
-    //         ),
-    //       },
-    //       {
-    //         name: "Quick Ratio",
-    //         maxScore: 10,
-    //         score: getIndicatorScore(
-    //           "QA_RATIO",
-    //           currentIndicators?.qaRatio,
-    //           "Quick Ratio"
-    //         ),
-    //       },
-    //     ],
-    //   },
-    //   {
-    //     section: "DEBT MANAGEMENT (20%)",
-    //     description:
-    //       "Measures debt levels against the operating receipts generated",
-    //     rows: [
-    //       {
-    //         name: "Debt / Own Source Revenue",
-    //         maxScore: 8,
-    //         score: isDebtScoreMissing ? "N/A" : rawDebtScore,
-    //         derived: isDebtScoreMissing,
-    //       },
-    //       {
-    //         name: "Debt Service Coverage Ratio (DSCR)**",
-    //         maxScore: 8,
-    //         score: "N/A",
-    //       },
-    //       {
-    //         name: "Interest Service Coverage Ratio (ISCR)",
-    //         maxScore: 4,
-    //         score: getIndicatorScore(
-    //           "ISCR_RATIO",
-    //           currentIndicators?.iscrRatio,
-    //           "Interest Service Coverage Ratio (ISCR)"
-    //         ),
-    //       },
-    //     ],
-    //   },
-    // ];
     const sections = [
       {
         section: "REVENUE GENERATION (40%)",
@@ -625,8 +467,8 @@ async function marketReadinessDataByUlb(req, res) {
           {
             name: "Debt / Own Source Revenue",
             maxScore: 8,
-            score: isDebtScoreMissing ? "N/A" : rawDebtScore.score,
-            derived: isDebtScoreMissing,
+            score: debtCondition ? "N/A" : rawDebtScore.score,
+            derived: debtCondition,
           },
           {
             name: "Debt Service Coverage Ratio (DSCR)**",
@@ -636,7 +478,7 @@ async function marketReadinessDataByUlb(req, res) {
           {
             name: "Interest Service Coverage Ratio (ISCR)",
             maxScore: 4,
-            score: isDebtScoreMissing ? 0 : iscr.score,
+            score: debtCondition ? 0 : iscr.score,
             outOfRange: iscr.outOfRange,
           },
         ],
@@ -661,7 +503,7 @@ async function marketReadinessDataByUlb(req, res) {
         maxScore,
       };
     });
-    // console.log(sectionScores, "this is section scores");
+    //  console.log(sectionScores, "this is section scores");
 
     var overallScore = sectionScores.reduce((sum, s) => sum + s.score, 0);
     // console.log(overallScore, "this is section scores");
@@ -671,16 +513,21 @@ async function marketReadinessDataByUlb(req, res) {
       .reduce((acc, item) => acc + item.score, 0);
     // console.log(topThreeScore, "this is section scores");
     var overallMaxScore = sectionScores.reduce((sum, s) => sum + s.maxScore, 0);
-    if (isDebtScoreMissing) {
+    if (debtCondition) {
       const adjustedOverallScore = Number(
         // (topThreeScore * (84 / 72) - (iscr?.score ?? 0)).toFixed(2)
-        (topThreeScore * (84 / 72)).toFixed(2)
+        (topThreeScore)
       );
 
-      const derivedDebtScore = Number(
-        (adjustedOverallScore - overallScore).toFixed(2)
-      );
-
+      // const derivedDebtScore = Number(
+      //   (adjustedOverallScore - overallScore).toFixed(2)
+      // );
+      
+      if(debtValue=== "N/A") {
+        var derivedDebtScore = 0;
+      }else if(debtValue=== 0){
+        var derivedDebtScore = 8;
+      }
       // Inject derived score
       sections.forEach((sec) => {
         if (sec.section.startsWith("DEBT MANAGEMENT")) {
@@ -717,8 +564,10 @@ async function marketReadinessDataByUlb(req, res) {
       });
 
       overallScore = adjustedOverallScore;
-      var footNote = `${ulbData.name} did not report debt for FY ${year}. For scoring comparability, the debt component has been derived through extrapolation. Please refer to the audited financial statements for detailed debt disclosures.`;
+
+      var footNote = `${ulbData.name} did not report debt for FY ${year}. As a result, debt-related indicators could not be calculated and the Debt Management component has not been scored.`;
     }
+
 
     const marketReadinessBand = getMarketReadinessBand(overallScore);
     const nextMilestone = getNextMilestoneMessage(overallScore);
@@ -785,6 +634,7 @@ async function getAllUlbsMarketReadiness(req, res) {
       year,
       city,
       state,
+      debtKey,
       band,
       populationCategory,
       sortBy = "populationCategory",
@@ -803,13 +653,21 @@ async function getAllUlbsMarketReadiness(req, res) {
       year: { $in: [year, prevYear] },
       marketReadinessScore: { $exists: true },
     };
+if (debtKey && (debtKey === "Cities with Debt" || debtKey === "Cities without Debt")) {
 
+  const debtFilter =
+    debtKey === "Cities with Debt"
+      ? { $nin: [0, null, "", "N/A"] }   // cities that have debt
+      : { $in: [0, null, "", "N/A"] };   // cities without debt
+
+  match["indicators.totDebt"] = debtFilter;
+}
     if (state) match.state = state;
     if (city) match.ulb = { $regex: city, $options: "i" };
     if (populationCategory) {
       match.population = getPopulationRange(populationCategory);
     }
-
+    // console.log("Match Object:", match);
     /* ---------------- BASE PIPELINE (REUSED) ---------------- */
     const basePipeline = [
       { $match: match },
@@ -821,7 +679,7 @@ async function getAllUlbsMarketReadiness(req, res) {
           population: 1,
           year: 1,
           score: "$marketReadinessScore.overallScore",
-          band: "$marketReadinessScore.marketReadinessBand",
+          // band: "$marketReadinessScore.marketReadinessBand",
         },
       },
 
@@ -842,21 +700,21 @@ async function getAllUlbsMarketReadiness(req, res) {
               $cond: [{ $eq: ["$year", prevYear] }, "$score", null],
             },
           },
-          bandCurrYear: {
-            $max: {
-              $cond: [{ $eq: ["$year", year] }, "$band", null],
-            },
-          },
-          bandPrevYear: {
-            $max: {
-              $cond: [{ $eq: ["$year", prevYear] }, "$band", null],
-            },
-          },
+          // bandCurrYear: {
+          //   $max: {
+          //     $cond: [{ $eq: ["$year", year] }, "$band", null],
+          //   },
+          // },
+          // bandPrevYear: {
+          //   $max: {
+          //     $cond: [{ $eq: ["$year", prevYear] }, "$band", null],
+          //   },
+          // },
         },
       },
 
       // ✅ Apply band filter ONLY on current year
-      ...(band ? [{ $match: { bandCurrYear: band } }] : []),
+      // ...(band ? [{ $match: { bandCurrYear: band } }] : []),
 
       {
         $addFields: {
@@ -907,110 +765,110 @@ async function getAllUlbsMarketReadiness(req, res) {
       // ✅ Exclude invalid band records
       {
         $match: {
-          bandCurrYear: { $nin: [null, "", "N/A"] },
-          bandPrevYear: { $nin: [null, "", "N/A"] },
+          currScore: { $nin: [null, "", "N/A"] },
+          prevScore: { $nin: [null, "", "N/A"] },
         },
       },
 
-      {
-        $addFields: {
-          nextMilestone: {
-            $switch: {
-              branches: [
-                {
-                  case: { $lt: ["$score", 40] },
-                  then: {
-                    $concat: [
-                      {
-                        $toString: {
-                          $round: [{ $subtract: [40, "$score"] }, 2],
-                        },
-                      },
-                      " points to C (Needs Intervention)",
-                    ],
-                  },
-                },
-                {
-                  case: { $lt: ["$score", 47] },
-                  then: {
-                    $concat: [
-                      {
-                        $toString: {
-                          $round: [{ $subtract: [47, "$score"] }, 2],
-                        },
-                      },
-                      " points to B (Aspirational)",
-                    ],
-                  },
-                },
-                {
-                  case: { $lt: ["$score", 52] },
-                  then: {
-                    $concat: [
-                      {
-                        $toString: {
-                          $round: [{ $subtract: [52, "$score"] }, 2],
-                        },
-                      },
-                      " points to A3 (Moderately Prepared)",
-                    ],
-                  },
-                },
-                {
-                  case: { $lt: ["$score", 56] },
-                  then: {
-                    $concat: [
-                      {
-                        $toString: {
-                          $round: [{ $subtract: [56, "$score"] }, 2],
-                        },
-                      },
-                      " points to A2 (Well Prepared)",
-                    ],
-                  },
-                },
-                {
-                  case: { $lt: ["$score", 65] },
-                  then: {
-                    $concat: [
-                      {
-                        $toString: {
-                          $round: [{ $subtract: [65, "$score"] }, 2],
-                        },
-                      },
-                      " points to A1 (Highly Prepared)",
-                    ],
-                  },
-                },
-                {
-                  case: { $lt: ["$score", 84] },
-                  then: {
-                    $concat: [
-                      {
-                        $toString: {
-                          $round: [{ $subtract: [84, "$score"] }, 2],
-                        },
-                      },
-                      " points to TOP SCORE",
-                    ],
-                  },
-                },
-              ],
-              default: "Top Band Reached",
-            },
-          },
-        },
-      },
+      // {
+      //   $addFields: {
+      //     nextMilestone: {
+      //       $switch: {
+      //         branches: [
+      //           {
+      //             case: { $lt: ["$score", 40] },
+      //             then: {
+      //               $concat: [
+      //                 {
+      //                   $toString: {
+      //                     $round: [{ $subtract: [40, "$score"] }, 2],
+      //                   },
+      //                 },
+      //                 " points to C (Needs Intervention)",
+      //               ],
+      //             },
+      //           },
+      //           {
+      //             case: { $lt: ["$score", 47] },
+      //             then: {
+      //               $concat: [
+      //                 {
+      //                   $toString: {
+      //                     $round: [{ $subtract: [47, "$score"] }, 2],
+      //                   },
+      //                 },
+      //                 " points to B (Aspirational)",
+      //               ],
+      //             },
+      //           },
+      //           {
+      //             case: { $lt: ["$score", 52] },
+      //             then: {
+      //               $concat: [
+      //                 {
+      //                   $toString: {
+      //                     $round: [{ $subtract: [52, "$score"] }, 2],
+      //                   },
+      //                 },
+      //                 " points to A3 (Moderately Prepared)",
+      //               ],
+      //             },
+      //           },
+      //           {
+      //             case: { $lt: ["$score", 56] },
+      //             then: {
+      //               $concat: [
+      //                 {
+      //                   $toString: {
+      //                     $round: [{ $subtract: [56, "$score"] }, 2],
+      //                   },
+      //                 },
+      //                 " points to A2 (Well Prepared)",
+      //               ],
+      //             },
+      //           },
+      //           {
+      //             case: { $lt: ["$score", 65] },
+      //             then: {
+      //               $concat: [
+      //                 {
+      //                   $toString: {
+      //                     $round: [{ $subtract: [65, "$score"] }, 2],
+      //                   },
+      //                 },
+      //                 " points to A1 (Highly Prepared)",
+      //               ],
+      //             },
+      //           },
+      //           {
+      //             case: { $lt: ["$score", 84] },
+      //             then: {
+      //               $concat: [
+      //                 {
+      //                   $toString: {
+      //                     $round: [{ $subtract: [84, "$score"] }, 2],
+      //                   },
+      //                 },
+      //                 " points to TOP SCORE",
+      //               ],
+      //             },
+      //           },
+      //         ],
+      //         default: "Top Band Reached",
+      //       },
+      //     },
+      //   },
+      // },
     ];
-
+    // console.log("Base Pipeline:", JSON.stringify(basePipeline, null, 2));
     /* ---------------- TOTAL RECORDS (CORRECT) ---------------- */
     const totalAgg = await ledgerLog.aggregate([
       ...basePipeline,
       { $count: "total" },
     ]);
-
+    // console.log("basePipeline for count:", JSON.stringify(basePipeline, null, 2));
     const totalRecords = totalAgg[0]?.total || 0;
-
+  
     /* ---------------- FINAL DATA ---------------- */
     const data = await ledgerLog.aggregate([
       ...basePipeline,
@@ -1030,11 +888,13 @@ async function getAllUlbsMarketReadiness(req, res) {
           city: 1,
           state: 1,
           populationCategory: 1,
-          bandPrevYear: 1,
-          bandCurrYear: 1,
+          currScore:1,
+          prevScore:1,
+          // bandPrevYear: 1,
+          // bandCurrYear: 1,
           score: 1,
           delta: 1,
-          nextMilestone: 1,
+          // nextMilestone: 1,
         },
       },
     ]);
@@ -1221,7 +1081,17 @@ function getIndicatorScore(indicatorKey, value, label) {
     score: 0,
     outOfRange: null,
   };
-
+  // console.log(`Scoring Indicator ${indicatorKey} with value:`, value);
+  if(value === "N/A") {
+    result.score = "N/A";
+    result.outOfRange = `${label} is not available for this ULB and is marked as "N/A". This indicator has been excluded from the scoring calculation for this ULB. Please refer to the detailed financial statements for more information.`;
+    return result;
+  }
+  if(value===0) {
+    result.score = 8;
+    result.outOfRange = null;
+    return result;
+  }
   // ❌ invalid / negative / impossible values
   if (!Number.isFinite(value) || value < 0 || value > 100) {
     result.score = 0;
@@ -1275,7 +1145,7 @@ function getIndicatorScore(indicatorKey, value, label) {
       break;
 
     case "TOT_DEBT_OWN_REV":
-      if (value == null) {
+      if (value == null || value === "N/A") {
         return { score: "N/A", outOfRange: null };
       }
       result.score = value < 10 ? 8 : value <= 20 ? 6 : value <= 30 ? 4 : 2;
