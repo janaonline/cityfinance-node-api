@@ -1383,7 +1383,9 @@ exports.getView = async function (req, res, next) {
                 { history: 0 }
             ).lean();
 
-            if (!(MASTER_STATUS_ID[+ptoData?.currentFormStatus] == "Under Review By MoHUA")) {
+            const currStatus = MASTER_STATUS_ID[+ptoData?.currentFormStatus];
+            const ALLOWED_STATUS = [MASTER_STATUS_ID[6], MASTER_STATUS_ID[4]];
+            if (!ALLOWED_STATUS.includes(currStatus)) {
                 const redirectionLink = `${process.env.v1Url}/ulb-form/${getDesiredYear(design_year, -1).yearId}/ptax`;
                 return res.status(400).json({
                     success: true,
