@@ -1262,7 +1262,7 @@ async function appendChildValues(params) {
         if (element.child && ptoMaper) {
             let childElements = ptoMaper.filter(item => item.type === element.key);
             for (let [index, childElement] of childElements.entries()) {
-                if (!isBeyond2023_24(design_year) && index > 0) break;
+                if (!isBeyond2023_24(design_year) && index > 0 && !isLatestOnboarderUlb) break;
                 if (childElement && childElement.child) {
                     let yearData = []
 
@@ -1290,7 +1290,7 @@ async function appendChildValues(params) {
                     if (!isLatestOnboarderUlb && index == 0) {
                         element.child = child;
                     } else {
-                        if (!isBeyond2023_24(design_year)) continue;
+                        if (!isBeyond2023_24(design_year) && !isLatestOnboarderUlb) continue;
                         element.child.forEach(replica => {
                             const childFromSameReplica = child.find(cl => {
                                 return cl.replicaNumber == replica.replicaNumber && cl.key == replica.key
