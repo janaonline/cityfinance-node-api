@@ -1262,7 +1262,7 @@ async function appendChildValues(params) {
         if (element.child && ptoMaper) {
             let childElements = ptoMaper.filter(item => item.type === element.key);
             for (let [index, childElement] of childElements.entries()) {
-                if (!isBeyond2023_24(design_year) && index > 0) break;
+                if (!isBeyond2023_24(design_year) && index > 0 && !isLatestOnboarderUlb) break;
                 if (childElement && childElement.child) {
                     let yearData = []
 
@@ -1290,7 +1290,7 @@ async function appendChildValues(params) {
                     if (!isLatestOnboarderUlb && index == 0) {
                         element.child = child;
                     } else {
-                        if (!isBeyond2023_24(design_year)) continue;
+                        if (!isBeyond2023_24(design_year) && !isLatestOnboarderUlb) continue;
                         element.child.forEach(replica => {
                             const childFromSameReplica = child.find(cl => {
                                 return cl.replicaNumber == replica.replicaNumber && cl.key == replica.key
@@ -1383,7 +1383,9 @@ exports.getView = async function (req, res, next) {
                 { history: 0 }
             ).lean();
 
-            if (!(MASTER_STATUS_ID[+ptoData?.currentFormStatus] == "Under Review By MoHUA")) {
+            const currStatus = MASTER_STATUS_ID[+ptoData?.currentFormStatus];
+            const ALLOWED_STATUS = [MASTER_STATUS_ID[6], MASTER_STATUS_ID[4]];
+            if (!ALLOWED_STATUS.includes(currStatus)) {
                 const redirectionLink = `${process.env.v1Url}/ulb-form/${getDesiredYear(design_year, -1).yearId}/ptax`;
                 return res.status(400).json({
                     success: true,
