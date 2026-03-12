@@ -954,6 +954,8 @@ function getPopulationRange(category) {
       return { $gte: 500000, $lt: 1000000 };
     case "100K–500K":
       return { $gte: 100000, $lt: 500000 };
+    case "<100K":
+      return { $lt: 100000 };
     default:
       return {};
   }
