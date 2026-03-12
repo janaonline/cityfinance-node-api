@@ -1148,7 +1148,7 @@ function getIndicatorScore(indicatorKey, value, label) {
       if (value == null || value === "N/A") {
         return { score: "N/A", outOfRange: null };
       }
-      result.score = value < 10 ? 8 : value <= 20 ? 6 : value <= 30 ? 4 : 2;
+      result.score = value < 0.1 ? 8 : value <= 0.2 ? 6 : value <= 0.3 ? 4 : 0;
       break;
 
     case "ISCR_RATIO":

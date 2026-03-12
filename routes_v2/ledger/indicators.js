@@ -455,7 +455,6 @@ const getCapexValue = async (ulbId, financialYear) => {
 };
 module.exports.createIndicators = async (req, res) => {
   try {
-    // List of indicators you want to ensure are present
     const indicatorsList = [
       totRevenue,
       totRevenueExpenditure,
@@ -467,35 +466,79 @@ module.exports.createIndicators = async (req, res) => {
       OperSurplusTotRevenueExpenditure,
     ];
 
-    const results = [];
-    let modifiedCount = 0;
+    const details = [];
+    let insertedCount = 0;
+    let updatedCount = 0;
+    let unchangedCount = 0;
 
     for (const indicator of indicatorsList) {
-      // console.log(indicator,'this is list');
+      if (!indicator || !indicator.key) {
+        details.push({
+          key: indicator?.key || null,
+          status: "skipped",
+          message: "Indicator data is missing or key is not defined",
+        });
+        continue;
+      }
+
       const result = await IndicatorsModel.updateOne(
         { key: indicator.key },
         { $set: indicator },
-        { upsert: true }
+        {
+          upsert: true,
+          runValidators: true,
+          setDefaultsOnInsert: true,
+        }
       );
 
-      results.push({ key: indicator.key, result });
+      let status = "unchanged";
+      let message = "Indicator already exists with the same data";
 
-      if (result.modifiedCount > 0 || result.upsertedCount > 0) {
-        modifiedCount++;
+      if (result.upsertedCount > 0) {
+        insertedCount++;
+        status = "inserted";
+        message = "Indicator created successfully";
+      } else if (result.modifiedCount > 0) {
+        updatedCount++;
+        status = "updated";
+        message = "Indicator updated successfully";
+      } else {
+        unchangedCount++;
       }
+
+      details.push({
+        key: indicator.key,
+        status,
+        message,
+        matchedCount: result.matchedCount || 0,
+        modifiedCount: result.modifiedCount || 0,
+        upsertedCount: result.upsertedCount || 0,
+        upsertedId: result.upsertedId || null,
+      });
     }
 
-    if (modifiedCount === 0) {
-      return res.status(200).json({ message: "No changes occurred" });
-    }
-
-    res.status(200).json({
-      message: `${modifiedCount} indicators inserted/updated successfully`,
-      details: results,
+    return res.status(200).json({
+      success: true,
+      message:
+        insertedCount === 0 && updatedCount === 0
+          ? "No indicators were changed. All records are already up to date."
+          : "Indicators processed successfully.",
+      summary: {
+        total: indicatorsList.length,
+        inserted: insertedCount,
+        updated: updatedCount,
+        unchanged: unchangedCount,
+      },
+      // details,
     });
   } catch (error) {
     console.error("Error upserting indicators:", error);
-    res.status(500).json({ message: "Internal Server Error" });
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to create or update indicators.",
+      error: error.message,
+    });
   }
 };
 const getLatestCapexInfo = (dataArray) => {
