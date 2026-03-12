@@ -169,7 +169,10 @@ async function computeMarketReadinessScoreFast(
   // const isDebtMissing =
   //   ci?.totDebtByTotOwnRevenue === undefined ||
   //   ci?.totDebtByTotOwnRevenue === null;
-  const isDebtMissing = !Number.isFinite(ci?.totDebtByTotOwnRevenue);
+  const debtCondition = !Number.isFinite(ci?.totDebt);
+  const debtValue = ci?.totDebtByTotOwnRevenue;
+
+  // const isDebtMissing = !Number.isFinite(ci?.totDebtByTotOwnRevenue);
   // console.log(isDebtMissing, "thi si s");
   const sections = [
     {
@@ -265,14 +268,14 @@ async function computeMarketReadinessScoreFast(
         {
           name: "Debt / Own Source Revenue",
           maxScore: 8,
-          score: isDebtMissing ? "N/A" : indicators.rawDebt.score,
-          derived: isDebtMissing,
+          score: debtCondition ? "N/A" : indicators.rawDebt.score,
+          derived: debtCondition,
         },
         { name: "DSCR**", maxScore: 8, score: "N/A" },
         {
           name: "Interest Service Coverage Ratio (ISCR)",
           maxScore: 4,
-          score: isDebtMissing ? 0 : indicators.iscr.score,
+          score: debtCondition ? 0 : indicators.iscr.score,
         },
       ],
     },
@@ -301,15 +304,21 @@ async function computeMarketReadinessScoreFast(
     .slice(0, 3)
     .reduce((acc, item) => acc + item.score, 0);
   var overallMaxScore = sectionScores.reduce((sum, s) => sum + s.maxScore, 0);
-  if (isDebtMissing) {
+  if (debtCondition) {
     // console.log("inside");
     const adjustedOverallScore = Number(
       // (topThreeScore * (84 / 72) - (iscr?.score ?? 0)).toFixed(2)
-      (topThreeScore * (84 / 72)).toFixed(2)
+      (topThreeScore)
+      
     ); // console.log(adjustedOverallScore, "adjust score");
-    const derivedDebtScore = Number(
-      (adjustedOverallScore - overallScore).toFixed(2)
-    );
+    if(debtValue=== "N/A") {
+        var derivedDebtScore = 0;
+      }else if(debtValue=== 0){
+        var derivedDebtScore = 8;
+      }
+    // const derivedDebtScore = Number(
+    //   (adjustedOverallScore - overallScore).toFixed(2)
+    // );
     // console.log(derivedDebtScore, overallScore, "tjos osas");
     // Inject derived score
     sections.forEach((sec) => {
@@ -379,59 +388,99 @@ async function computeMarketReadinessScoreFast(
 /**
  * BACKGROUND PROCESSING
  */
-async function startBackgroundBatch(batchSize) {
+async function startBackgroundBatch(batchSize = 500) {
+  let cursor;
+
   try {
     const yearDocs = await financialYear
       .find()
       .select({ _id: 1, year: 1 })
       .lean();
+
     const yearIdMap = Object.fromEntries(
       yearDocs.map((y) => [y.year, String(y._id)])
     );
 
-    mrStatus.total = await ledgerLog.countDocuments();
-    const cursor = ledgerLog
-      .find()
-      .select({ ulb_id: 1, year: 1, indicators: 1, lineItems: 1 })
+    const baseFilter = {
+      ulb_id: { $exists: true, $ne: null },
+      year: { $exists: true, $ne: null }
+    };
+
+    mrStatus.total = await ledgerLog.countDocuments(baseFilter);
+
+    cursor = ledgerLog
+      .find(baseFilter)
+      .select({
+        _id: 1,
+        ulb_id: 1,
+        year: 1,
+        indicators: 1,
+        lineItems: 1
+      })
+      .lean()
       .cursor({ batchSize });
 
     let bulkOps = [];
+
     for (
       let current = await cursor.next();
       current != null;
       current = await cursor.next()
     ) {
-      const prevYear = h.getPreviousFinancialYear(current.year);
-      const previous = await ledgerLog
-        .findOne({ ulb_id: current.ulb_id, year: prevYear })
-        .select({ indicators: 1 })
-        .lean();
+      try {
+        const prevYear = h.getPreviousFinancialYear(current.year);
 
-      const score = await computeMarketReadinessScoreFast(
-        current,
-        previous,
-        yearIdMap
-      );
-      bulkOps.push({
-        updateOne: {
-          filter: { _id: current._id },
-          update: { $set: { marketReadinessScore: score } },
-        },
-      });
+        const previous = await ledgerLog
+          .findOne({
+            ulb_id: current.ulb_id,
+            year: prevYear
+          })
+          .select({
+            _id: 1,
+            ulb_id: 1,
+            year: 1,
+            indicators: 1,
+            lineItems: 1
+          })
+          .lean();
 
-      if (bulkOps.length === batchSize) {
-        await ledgerLog.bulkWrite(bulkOps);
-        mrStatus.processed += bulkOps.length;
-        bulkOps = [];
+        const score = await computeMarketReadinessScoreFast(
+          current,
+          previous,
+          yearIdMap
+        );
+
+        bulkOps.push({
+          updateOne: {
+            filter: { _id: current._id },
+            update: { $set: { marketReadinessScore: score } }
+          }
+        });
+
+        if (bulkOps.length >= batchSize) {
+          await ledgerLog.bulkWrite(bulkOps, { ordered: false });
+          mrStatus.processed += bulkOps.length;
+          bulkOps = [];
+        }
+      } catch (docErr) {
+        console.error(
+          `Batch error for doc=${current?._id} ulb=${current?.ulb_id} year=${current?.year}:`,
+          docErr
+        );
       }
     }
-    if (bulkOps.length) {
-      await ledgerLog.bulkWrite(bulkOps);
+
+    if (bulkOps.length > 0) {
+      await ledgerLog.bulkWrite(bulkOps, { ordered: false });
       mrStatus.processed += bulkOps.length;
     }
-    mrStatus.isRunning = false;
   } catch (err) {
     mrStatus.error = err.message;
+    console.error("startBackgroundBatch failed:", err);
+  } finally {
+    if (cursor) {
+      await cursor.close().catch(() => {});
+    }
     mrStatus.isRunning = false;
   }
 }
