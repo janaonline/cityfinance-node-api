@@ -33,24 +33,18 @@ async function fetchIncomeExpenditure(payload) {
 }
 
 function buildDocumentsFromReports({ ulbId, yearIdPrev, yearIdCurr, reports }) {
-  const now = new Date();
-
   const documents = [
     {
       // _id: new mongoose.Types.ObjectId(),
       ulbId,
       yearId: yearIdPrev,
       lineItems: {},
-      createdAt: now,
-      updatedAt: now,
     },
     {
       // _id: new mongoose.Types.ObjectId(),
       ulbId,
       yearId: yearIdCurr,
       lineItems: {},
-      createdAt: now,
-      updatedAt: now,
     },
   ];
 
@@ -93,10 +87,49 @@ async function asyncPool(limit, items, iteratorFn) {
   return Promise.allSettled(ret);
 }
 
+function addReportsToLegendMap(legendMap, reports = []) {
+  for (const item of reports) {
+    const majorCode = item?.majorCode ? Number(item.majorCode) : null;
+    const subCode = item?.glCode ? Number(item.glCode) : null;
+    const name = item?.name?.trim();
 
+    if (!majorCode || !name) continue;
+
+    // Skip summary rows like "Total TAX REVENUE"
+    const isTotalRow = /^total\b/i.test(name);
+    if (isTotalRow) continue;
+
+    // Flat uniqueness:
+    // parent row => majorCode + null
+    // child row  => majorCode + subCode
+    const legendKey = `${majorCode}_${subCode ?? "null"}`;
+
+    if (!legendMap.has(legendKey)) {
+      legendMap.set(legendKey, {
+        majorCode,
+        subCode,
+        name,
+      });
+      continue;
+    }
+
+    // If same code already exists, update name only if existing name is empty
+    const existing = legendMap.get(legendKey);
+    if (!existing.name && name) {
+      existing.name = name;
+      legendMap.set(legendKey, existing);
+    }
+  }
+}
+
+function buildLegendArrayFromMap(legendMap) {
+  return Array.from(legendMap.values());
+}
 module.exports = {
   buildPayload,
   fetchIncomeExpenditure,
   buildDocumentsFromReports,
   asyncPool,
+  addReportsToLegendMap,
+  buildLegendArrayFromMap,
 };

@@ -1,108 +1,192 @@
-// const lineItems = require('../../models/LineItem');
+const dataCollection = require('../../models/dataCollections');
+const lineItmeLegends = require('../../models/lineitemlegends');
+// const lineItems
 const {
   buildPayload,
   fetchIncomeExpenditure,
   buildDocumentsFromReports,
-  asyncPool
+  asyncPool,
+  addReportsToLegendMap,
+  buildLegendArrayFromMap
+
+
 } = require("./helper");
 
+
 module.exports.getApScriptData = async (req, res) => {
-   try {
+  try {
     const ulbs = Array.isArray(req.body?.ulbs) ? req.body.ulbs : [];
 
-    if (ulbs.length === 0) {
+    if (!ulbs.length) {
       return res.status(400).json({
         success: false,
-        message: "ulbs[] is required. Example: [{ ulbId, ulbCode }...]",
+        message: "ulbs[] is required",
       });
     }
 
-    // You asked for 5 ULBs (can allow more, but limit for safety)
-    if (ulbs.length > 10) {
+    if (ulbs.length > 130) {
       return res.status(400).json({
         success: false,
-        message: "Max 10 ULBs per request.",
+        message: "Max 130 ULBs allowed per request",
       });
     }
 
     const yearIdPrev = "606aafc14dff55e6c075d3ec"; // 2023-24
     const yearIdCurr = "606aafcf4dff55e6c075d424"; // 2024-25
 
-    // payload base (keep your majorCodes here)
     const basePayload = {
       majorCodes: [
         "110", "120", "130", "140", "150", "160",
         "170", "171", "180", "210", "220", "230",
-        "240", "250", "260", "271","270", "272", "280",
+        "240", "250", "260", "271", "272", "280",
       ],
-         "startDate": "2024-04-01",
-         "endDate": "2025-03-31",
-         "prevStartDate": "2023-04-01",
-         "prevEndDate": "2024-03-31"
+      "startDate": "2024-04-01",
+    "endDate": "2025-03-31",
+    "prevStartDate": "2023-04-01",
+    "prevEndDate": "2024-03-31"
     };
 
-    // Concurrency limit (important for production)
-    const CONCURRENCY = Number(process.env.INCOME_EXP_CONCURRENCY || 3);
-
-    const results = await asyncPool(CONCURRENCY, ulbs, async (u) => {
-      if (!u?.ulbId || !u?.ulbCode) {
-        throw new Error("Missing ulbId or ulbCode");
+    const CONCURRENCY = Number(process.env.INCOME_EXP_CONCURRENCY || 5);
+    const legendMap = new Map();
+    const settled = await asyncPool(CONCURRENCY, ulbs, async (ulb) => {
+      if (!ulb?.ulbId || !ulb?.ulbCode) {
+        throw new Error("Each ulb must contain ulbId and ulbCode");
       }
 
-      const payload = { ...basePayload, ulbCode: String(u.ulbCode) };
+      const payload = {
+        ...basePayload,
+        ulbCode: String(ulb.ulbCode),
+      };
+
       const apiData = await fetchIncomeExpenditure(payload);
 
       if (apiData?.status !== "SUCCESS") {
-        throw new Error(`External API status not SUCCESS (ulbCode=${u.ulbCode})`);
+        throw new Error(`External API status not SUCCESS for ulbCode=${ulb.ulbCode}`);
       }
+      addReportsToLegendMap(legendMap, apiData.reports);
 
-      const docs = buildDocumentsFromReports({
-        ulbId: u.ulbId,
+      return buildDocumentsFromReports({
+        ulbId: ulb.ulbId,
         yearIdPrev,
         yearIdCurr,
         reports: apiData.reports,
       });
-
-      // return per ULB result
-      return {
-        ulbId: u.ulbId,
-        ulbCode: u.ulbCode,
-        documents: docs, // 2 docs
-      };
     });
 
-    // Split successes/failures + flatten docs
-    const perUlb = [];
-    const documentsToInsert = [];
+    const transformedDocuments = [];
+    const failures = [];
 
-    for (let i = 0; i < results.length; i++) {
-      const r = results[i];
-      const input = ulbs[i];
+    for (let i = 0; i < settled.length; i++) {
+      const result = settled[i];
+      const ulb = ulbs[i];
 
-      if (r.status === "fulfilled") {
-        perUlb.push({ ...r.value, ok: true });
-        documentsToInsert.push(...r.value.documents); // ✅ ONE VARIABLE ready for DB
+      if (result.status === "fulfilled") {
+        transformedDocuments.push(...result.value);
       } else {
-        perUlb.push({
-          ulbId: input?.ulbId,
-          ulbCode: input?.ulbCode,
-          ok: false,
-          error: r.reason?.message || String(r.reason),
+        failures.push({
+          ulbId: ulb?.ulbId,
+          ulbCode: ulb?.ulbCode,
+          error: result.reason?.message || String(result.reason),
         });
       }
     }
 
-    // ✅ this is what you wanted: array of objects ready to store
-    // documentsToInsert = [{_id, ulbId, yearId, lineItems, createdAt, updatedAt}, ...]
+    if (!transformedDocuments.length) {
+      return res.status(500).json({
+        success: false,
+        message: "No documents were transformed successfully",
+        failures,
+      });
+    }
+  const legendDocuments = buildLegendArrayFromMap(legendMap);
+  console.log(`Unique GL/Major codes in legend: ${legendDocuments.length}`);  
+    const bulkOps = transformedDocuments.map((doc) => ({
+      updateOne: {
+        filter: {
+          ulbId: doc.ulbId,
+          yearId: doc.yearId,
+        },
+        update: {
+          $set: {
+            lineItems: doc.lineItems,
+            updatedAt: new Date(),
+          },
+          $setOnInsert: {
+            ulbId: doc.ulbId,
+            yearId: doc.yearId,
+            createdAt: new Date(),
+          },
+        },
+        upsert: true,
+      },
+    }));
+
+     // Bulk upsert legends as flat records
+    const legendBulkOps = legendDocuments.map((legend) => ({
+      updateOne: {
+        filter: {
+          majorCode: legend.majorCode,
+          subCode: legend.subCode,
+        },
+        update: {
+          $set: {
+            name: legend.name,
+            updatedAt: new Date(),
+          },
+          $setOnInsert: {
+            majorCode: legend.majorCode,
+            subCode: legend.subCode,
+            createdAt: new Date(),
+          },
+        },
+        upsert: true,
+      },
+    }));
+     
+     const [bulkResult, legendBulkResult] = await Promise.all([
+      dataCollection.bulkWrite(bulkOps, { ordered: false }),
+      legendBulkOps.length
+        ? lineItmeLegends.bulkWrite(legendBulkOps, { ordered: false })
+        : Promise.resolve({
+            matchedCount: 0,
+            modifiedCount: 0,
+            upsertedCount: 0,
+          }),
+    ]);
+    // const bulkResult = await dataCollection.bulkWrite(bulkOps, {
+    //   ordered: false,
+    // });
+
 
     return res.status(200).json({
-      success: true,
-      count: documentsToInsert.length,
-      documentsToInsert,
-      perUlb, // helpful debug/monitoring
+      success: failures.length === 0,
+      totalRequestedUlbs: ulbs.length,
+      totalSucceededUlbs: ulbs.length - failures.length,
+      totalFailedUlbs: failures.length,
+
+      transformedDocumentsCount: transformedDocuments.length,
+      legendDocumentsCount: legendDocuments.length,
+
+      dataUpsertSummary: {
+        matchedCount: bulkResult.matchedCount || 0,
+        modifiedCount: bulkResult.modifiedCount || 0,
+        upsertedCount: bulkResult.upsertedCount || 0,
+      },
+       legendUpsertSummary: {
+        matchedCount: legendBulkResult.matchedCount || 0,
+        modifiedCount: legendBulkResult.modifiedCount || 0,
+        upsertedCount: legendBulkResult.upsertedCount || 0,
+      },
+
+      failures,
     });
   } catch (error) {
     console.log("Error in getApScriptData:", error?.response?.data || error);
-    return res.status(500).json({ success: false, message: "Internal Server Error" });
+
+    return res.status(500).json({
+      success: false,
+      message: "Internal Server Error",
+      error: error.message,
+    });
   }
 };
