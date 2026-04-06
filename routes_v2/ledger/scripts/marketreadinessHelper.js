@@ -102,7 +102,7 @@ function getIndicatorScore(indicatorKey, value, label) {
       break;
     case "TOT_DEBT_OWN_REV":
       if (value == null) return { score: "N/A", outOfRange: null };
-      result.score = value < 0.1 ? 8 : value <= 0.2 ? 6 : value <= 0.3 ? 4 : value <= 0.5 ? 0 : 2;
+      result.score = value < 0.1 ? 8 : value <= 0.2 ? 6 : value <= 0.3 ? 4 : value >=0.5 ? 0 : 2;
       break;
     case "ISCR_RATIO":
       result.score = value > 2 ? 4 : value >= 1.5 ? 3 : value >= 1 ? 2 : 1;
