@@ -1150,7 +1150,7 @@ function getIndicatorScore(indicatorKey, value, label) {
       if (value == null || value === "N/A") {
         return { score: "N/A", outOfRange: null };
       }
-      console.log("Scoring TOT_DEBT_OWN_REV with value:", value);
+      // console.log("Scoring TOT_DEBT_OWN_REV with value:", value);
       result.score = value < 0.1 ? 8 : value <= 0.2 ? 6 : value <= 0.3 ? 4 : value <= 0.5 ? 0 : 2;
       break;
 
