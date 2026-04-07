@@ -1445,20 +1445,20 @@ async function getIntro(indicators, keyType, yearsArray) {
         finalObject,
         yearsArray
       );
-      const totRevenueExpenditure = getIndicatorValue(
-        "totRevenueExpenditure",
+      const totExpenditure = getIndicatorValue(
+        "totExpenditure",
         finalObject,
         yearsArray
       );
-      // console.log(totRevenueData,totRevenueExpenditure,'this is data object')
+      console.log(totRevenueData,totExpenditure,'this is data object')
       return `In FY ${totRevenueData.year}, ${
         totRevenueData.ulbName
       } reported a total revenue of INR ${formatToCroreSummary(
         totRevenueData.value
       )} crore and a total expenditure of INR ${formatToCroreSummary(
-        totRevenueExpenditure.value
+        totExpenditure.value
       )} crore, implying that its expenditure accounted for ${Math.round(
-        (totRevenueExpenditure.value / totRevenueData.value) * 100
+        (totExpenditure.value / totRevenueData.value) * 100
       )}% of its revenue`;
     }
     case "revenue": {
