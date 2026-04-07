@@ -1,5 +1,4 @@
 const OTP = require('../../../models/Otp')
-const User = require("../../../models/User");
 const catchAsync = require('../../../util/catchAsync')
 const OtpMethods = require('../../../util/otp_generator')
 const { getUSer } = require('./getUser')
@@ -7,18 +6,28 @@ const { createToken } = require('./createToken')
 const ObjectId = require('mongoose').Types.ObjectId;
 const State = require("../../../models/State");
 const Ulb = require("../../../models/Ulb");
+const Years = require("../../../models/Year");
+const {
+    checkVerifyRateLimit,
+    clearVerifyState,
+    DEFAULT_FAILED_VERIFY_MAX_ATTEMPTS,
+    formatDuration,
+    getLockStatus,
+    getUserIdentifier,
+    recordFailedVerifyAttempt,
+} = require("./otpRateLimit");
 
 module.exports.verifyOtp = catchAsync(async (req, res, next) => {
     let { otp, requestId } = req.body;
     if (!otp) {
-        res.status(400).json({
+        return res.status(400).json({
             success: false,
             message: 'Please Enter OTP'
         })
 
     }
     if (!OtpMethods.validateUserOtp(otp)) {
-        res.status(400).json({
+        return res.status(400).json({
             success: false,
             message: 'OTP must be 4 digit number'
         })
@@ -50,24 +59,24 @@ module.exports.verifyOtp = catchAsync(async (req, res, next) => {
         }
 
         let user = await getUSer({ email });
+        const userIdentifier = getUserIdentifier(user);
 
-        if (process.env.ENV == "staging") {
-            const otpBlockedUntil = user.otpBlockedUntil ? new Date(
-                user.otpBlockedUntil + 24 * 60 * 60 * 1000
-            ) : 0;
-
-            if (otpBlockedUntil >= new Date(Date.now()) || verification.verificationAttempts >= 3) {
-                return res.status(400).json({
-                    success: false,
-                    message: "Maximum OTP attempt limit exhausted. Please try after 24 hours",
-                });
-            }
+        const lockStatus = await getLockStatus(userIdentifier);
+        if (lockStatus.isLocked) {
+            return res.status(429).json({
+                success: false,
+                message: `Maximum OTP attempt limit exhausted. Please try after ${formatDuration(lockStatus.ttl)}`,
+            });
         }
-        //reset otp attempt
-        await User.updateOne(
-            { _id: ObjectId(user._id) },
-            { $unset: { otpAttempts: "", otpBlockedUntil: "" } }
-        ).exec();
+
+        const verifyRateLimit = await checkVerifyRateLimit(userIdentifier);
+        if (verifyRateLimit.limited) {
+            return res.status(429).json({
+                success: false,
+                message: `Too many OTP verification attempts. Please try after ${formatDuration(verifyRateLimit.ttl)}`,
+            });
+        }
+
         let state;
         if (user?.state) state = await State.findOne({ _id: ObjectId(user.state) });
         if (state && state['accessToXVFC'] == false) {
@@ -77,6 +86,7 @@ module.exports.verifyOtp = catchAsync(async (req, res, next) => {
             })
         }
         let role = ''
+        let ulb;
         if (user.role === "ULB") {
             ulb = await Ulb.findOne({ _id: ObjectId(user.ulb) });
             role = user.role;
@@ -86,6 +96,7 @@ module.exports.verifyOtp = catchAsync(async (req, res, next) => {
         if (currentTime < expirytime) {
             if (otp == verification.otp) {
                 await OTP.findByIdAndUpdate(verification._id, { $set: { isVerified: true } });
+                await clearVerifyState(userIdentifier);
                 let sessionId = req.headers.sessionid;
                 let token = await createToken(user, sessionId, req.body);
                 const allYears = await getYears()
@@ -108,25 +119,24 @@ module.exports.verifyOtp = catchAsync(async (req, res, next) => {
                     allYears
                 })
             } else {
-                if (process.env.ENV == "staging") {
-                    await OTP.updateOne(
-                        { _id: ObjectId(verification._id) },
-                        {
-                            $inc: { verificationAttempts: 1 },
-                        }
-                    ).exec();
-                    if (verification.verificationAttempts >= 2) {
-                        await User.updateOne(
-                            { _id: ObjectId(user._id) },
-                            {
-                                $set: { otpBlockedUntil: new Date(Date.now() + 24 * 60 * 60 * 1000), },
-                            }
-                        ).exec();
+                await OTP.updateOne(
+                    { _id: ObjectId(verification._id) },
+                    {
+                        $inc: { verificationAttempts: 1 },
                     }
+                ).exec();
+
+                const failedAttempt = await recordFailedVerifyAttempt(userIdentifier);
+                if (failedAttempt.locked) {
+                    return res.status(429).json({
+                        success: false,
+                        message: `Maximum OTP attempt limit exhausted. Please try after ${formatDuration(failedAttempt.ttl)}`,
+                    });
                 }
+
                 return res.status(400).json({
                     success: false,
-                    message: 'OTP NOT VERIFIED'
+                    message: `OTP NOT VERIFIED. ${Math.max(0, DEFAULT_FAILED_VERIFY_MAX_ATTEMPTS - failedAttempt.count)} attempt(s) remaining before lock`
                 })
             }
         } else {
@@ -140,7 +150,7 @@ module.exports.verifyOtp = catchAsync(async (req, res, next) => {
 
 getYears = async () => {
     let allYears = await Years.find({ isActive: true }).select({ isActive: 0 })
-    newObj = {}
+    let newObj = {}
     allYears.forEach(element => {
         newObj[element.year] = element._id
     });

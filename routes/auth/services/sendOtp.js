@@ -7,19 +7,24 @@ const sendEmail = Service.sendEmail;
 let countryCode = "91", Subject = "Authentication Mail";
 let expireTimeMS = 15 * 60000;
 const { getUSer } = require('./getUser');
-const User = require('../../../models/User');
 const State = require('../../../models/State')
 const Ulb = require('../../../models/Ulb')
-const { isValidObjectId } = require('mongoose');
 const ObjectId = require('mongoose').Types.ObjectId;
 const axios = require('axios')
 const { ENV } = require("../../../util/FormNames");
+const {
+    checkSendRateLimit,
+    formatDuration,
+    getLockStatus,
+    getUserIdentifier,
+} = require("./otpRateLimit");
 
 module.exports.sendOtp = catchAsync(async (req, res, next) => {
     try {
         // check otp enabled only for prod env
         const isOtpEnabled = process.env.ENV === ENV['prod'];
         let user = await getUSer(req.body);
+        const userIdentifier = getUserIdentifier(user);
         let entity, state;
         if (user.role === 'STATE') {
             entity = await State.findOne({ _id: ObjectId(user.state) })
@@ -52,52 +57,20 @@ module.exports.sendOtp = catchAsync(async (req, res, next) => {
             })
         }
 
-        // limit OTP
-        if (process.env.ENV == "staging") {
-            const otpBlockedUntil = user.otpBlockedUntil ? new Date(
-                user.otpBlockedUntil + 24 * 60 * 60 * 1000
-            ) : 0;
+        const lockStatus = await getLockStatus(userIdentifier);
+        if (lockStatus.isLocked) {
+            return res.status(429).json({
+                success: false,
+                message: `User is locked due to multiple failed OTP attempts. Please try after ${formatDuration(lockStatus.ttl)}`
+            });
+        }
 
-            const otpSent = await OTP
-                .find({ emailId: user.email, "createdAt": { $gt: new Date(Date.now() - 24 * 60 * 60 * 1000) } })
-                .limit(3).sort({ "createdAt": -1 })
-                .lean();
-
-            const otpSentCount = otpSent.filter(e => e.isVerified === false).length;
-            // check if the blocked date is less than current date
-            if (otpBlockedUntil > new Date(Date.now())) {
-                const timeLeft = Math.abs(Date.now() - otpBlockedUntil);
-                const hoursLeft = Math.floor(timeLeft / 36e5);
-                const minutes = Math.floor((timeLeft / 1000 / 60) % 60);
-                return res.status(400).json({
-                    success: false,
-                    message: `Maximum OTP limit exhausted. Please try after ${hoursLeft} hours ${minutes} minutes`,
-                });
-            }
-            if (otpSentCount >= 3) {
-                let setData = {
-                    otpAttempts: 0,
-                    otpBlockedUntil: new Date(Date.now() + 24 * 60 * 60 * 1000),
-                };
-                await User.updateOne(
-                    { _id: ObjectId(user._id) },
-                    {
-                        $set: setData,
-                    }
-                ).exec();
-                return res.status(400).json({
-                    success: false,
-                    message: "Maximum OTP limit exhausted. Please try after 24 hours",
-                });
-            }
-
-            // increment otp attempt
-            await User.updateOne(
-                { _id: ObjectId(user._id) },
-                {
-                    $inc: { otpAttempts: 1 },
-                }
-            ).exec();
+        const sendRateLimit = await checkSendRateLimit(userIdentifier);
+        if (sendRateLimit.limited) {
+            return res.status(429).json({
+                success: false,
+                message: `Maximum OTP request limit exhausted. Please try after ${formatDuration(sendRateLimit.ttl)}`
+            });
         }
         let otp = 1234;
         if (isOtpEnabled) {
