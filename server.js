@@ -1,13 +1,15 @@
 /**
  * Module dependencies.
  */
- const cluster = require('cluster');
- const path = require("path");
- require("dotenv").config({ path: path.join(__dirname, ".env") });
- var app = require('./app');
- const numCPUs = process.env.ENV == "development" ? 1 : require('os').cpus().length;  
-  
- if (cluster.isMaster) {
+const cluster = require('cluster');
+const path = require("path");
+require("dotenv").config({ path: path.join(__dirname, ".env") });
+var app = require('./app');
+const numCPUs = process.env.ENV == "development" ? 1 : require('os').cpus().length;  
+
+const shouldUseCluster = !["development", "local"].includes(process.env.ENV) && process.env.DISABLE_CLUSTER !== "true";
+
+if (shouldUseCluster && cluster.isMaster) {
    console.log(`Master ${process.pid} is running`);
    require('./cronjob/cron')
    // Fork workers.
@@ -108,7 +110,7 @@
        : 'port ' + addr.port;
      debug('Listening on ' + bind);
    }
-   console.log(`Worker ${process.pid} started`);
+   console.log(`${shouldUseCluster ? "Worker" : "Server"} ${process.pid} started`);
  }
 
 
