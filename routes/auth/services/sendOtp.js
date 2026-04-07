@@ -19,6 +19,26 @@ const {
     getUserIdentifier,
 } = require("./otpRateLimit");
 
+const maskMobile = (mobile = "") => {
+    const digits = String(mobile);
+    if (digits.length <= 4) {
+        return digits.replace(/\d/g, "*");
+    }
+    return `${digits.slice(0, 2)}${"*".repeat(Math.max(0, digits.length - 4))}${digits.slice(-2)}`;
+};
+
+const maskEmail = (email = "") => {
+    const value = String(email);
+    const [localPart = "", domain = ""] = value.split("@");
+    if (!domain) {
+        return value;
+    }
+
+    const visibleLocal = localPart.slice(0, 2);
+    const maskedLocal = `${visibleLocal}${"*".repeat(Math.max(0, localPart.length - visibleLocal.length))}`;
+    return `${maskedLocal}@${domain}`;
+};
+
 module.exports.sendOtp = catchAsync(async (req, res, next) => {
     try {
         // check otp enabled only for prod env
@@ -149,18 +169,18 @@ module.exports.sendOtp = catchAsync(async (req, res, next) => {
             return res.status(200).json({
                 success: true,
                 message: "OTP SENT SUCCESSFULLY",
-                mobile: mobile,
-                email: user.email,
-                name: user.name,
+                mobile: maskMobile(mobile),
+                email: maskEmail(user.email),
+                // name: user.name,
                 requestId: Otp._id,
-                state: state.name
+                // state: state.name
             })
         } else {
             res.status(400).json({
                 success: false,
                 message: 'Invalid Contact Details',
-                mobile: mobile,
-                email: user.email
+                mobile: maskMobile(mobile),
+                email: maskEmail(user.email)
             })
         }
     } catch (error) {
