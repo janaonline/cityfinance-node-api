@@ -24,6 +24,30 @@ const USER_ROLE = {
     ULB: 'ulb',
     STATE: 'state'
 }
+
+function sanitizeUserResponse(payload) {
+    if (Array.isArray(payload)) {
+        return payload.map((item) => sanitizeUserResponse(item));
+    }
+    if (!payload || typeof payload !== 'object') {
+        return payload;
+    }
+
+    const plainPayload =
+        typeof payload.toObject === 'function' ? payload.toObject() : { ...payload };
+
+    const fieldsToRemove = ['password', 'passwordHistory', 'isPasswordResetInProgress', 'passwordExpires', 'lockUntil', 'isDeleted'];
+    fieldsToRemove.forEach((field) => {
+        if (plainPayload.hasOwnProperty(field)) {
+            delete plainPayload[field];
+        }
+    });
+    delete plainPayload.password;
+    delete plainPayload.passwordHistory;
+
+    return plainPayload;
+}
+
 module.exports.get = async (req, res) => {
     let user = req.decoded;
     (role = req.body.role), (filter = req.body.filter), (sort = req.body.sort);
@@ -84,7 +108,7 @@ module.exports.get = async (req, res) => {
                 timestamp: moment().unix(),
                 success: true,
                 message: 'User list',
-                data: users,
+                data: sanitizeUserResponse(users),
                 total: total
             });
         } catch (e) {
@@ -523,7 +547,7 @@ module.exports.getAll = async (req, res) => {
                         timestamp: moment().unix(),
                         success: true,
                         message: 'User list',
-                        data: users,
+                        data: sanitizeUserResponse(users),
                         count: users.length,
                         total: totalUsers.length > 0 ? totalUsers[0]['total'] : null
                     });
@@ -733,7 +757,7 @@ module.exports.profileGet = async (req, res) => {
         if (err) {
             return Response.DbError(res, err, `Something went wrong.`);
         } else {
-            return Response.OK(res, out, `Success updated.`);
+            return Response.OK(res, sanitizeUserResponse(out), `Success updated.`);
         }
     });
 };
@@ -822,7 +846,7 @@ module.exports.create = async (req, res) => {
                         ReplyToAddresses: [process.env.EMAIL],
                     }
                     Service.sendEmail(mailOptions);
-                    return Response.OK(res, user, 'User registered');
+                    return Response.OK(res, sanitizeUserResponse(user), 'User registered');
                 }
             });
         } catch (e) {
