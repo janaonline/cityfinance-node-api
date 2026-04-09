@@ -6,7 +6,7 @@ module.exports.captcha = (req, res) => {
     const secretKey = Config.CAPTCHA.SECRETKEY;
     let token = req.body.recaptcha;
     if (token === null || token === undefined) {
-        res.status(201).send({
+        res.status(400).send({
             success: false,
             message: 'Token is empty or invalid',
         });
@@ -23,10 +23,10 @@ module.exports.captcha = (req, res) => {
         body = JSON.parse(body);
         //check if the validation failed
         if (body.success !== undefined && !body.success) {
-            res.send({ success: false, message: 'recaptcha failed' });
+            res.status(400).send({ success: false, message: 'recaptcha failed' });
             return console.error('failed');
         }
         //if passed response success message to client
-        res.send({ success: true, message: 'recaptcha passed' });
+        res.status(200).send({ success: true, message: 'recaptcha passed' });
     });
 };
