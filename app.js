@@ -14,6 +14,7 @@ const expressSanitizer = require("express-sanitizer");
 const verifyToken = require("./routes/auth/services/verifyToken").verifyToken;
 const ExpressError = require("./util/ExpressError");
 const maintenanceMiddleware = require('./middlewares/maintenance.middleware');
+const mongoInputSanitizer = require("./middlewares/mongoInputSanitizer.middleware");
 
 
 
@@ -73,6 +74,7 @@ app.use(express.static(path.join(__dirname, "uploads")));
 //Body Parser Middleware
 app.use(express.json({ limit: "20mb" }));
 app.use(express.urlencoded({ limit: "20mb", extended: false }));
+app.use(mongoInputSanitizer);
 
 //Passport Middleware
 app.use(passport.initialize());

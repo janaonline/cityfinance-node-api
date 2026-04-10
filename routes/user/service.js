@@ -50,7 +50,9 @@ function sanitizeUserResponse(payload) {
 
 module.exports.get = async (req, res) => {
     let user = req.decoded;
-    (role = req.body.role), (filter = req.body.filter), (sort = req.body.sort);
+    let role = req.body.role;
+    let filter = req.body.filter;
+    let sort = req.body.sort;
     let skip = req.query.skip ? parseInt(req.query.skip) : 0;
     let limit = req.query.limit ? parseInt(req.query.limit) : 50;
     let actionAllowed = ['ADMIN', 'MoHUA', 'PARTNER', 'STATE'];
@@ -125,43 +127,19 @@ function safeParseJSON(value, fallback = {}) {
     }
 }
 
-function sanitizeMongoInput(input) {
-    if (Array.isArray(input)) {
-        return input.map(item => sanitizeMongoInput(item))
-    }
-
-    if (input && typeof input === 'object') {
-        const clean = {};
-
-        for (const key of Object.keys(input)) {
-            // Block Mongo operators and dotted keys
-            if (key.startsWith('$') || key.includes('.')) continue;
-            clean[key] = sanitizeMongoInput(input[key]);
-        }
-
-        return clean;
-    }
-
-    return input;
-}
-
 module.exports.getAll = async (req, res) => {
     try {
         let user = req.decoded,
-			filter = sanitizeMongoInput(
-				req.query.filter
-					? safeParseJSON(req.query.filter, {})
-					: req.body.filter
-						? sanitizeMongoInput(req.body.filter)
-						: {},
-			),
-			sort = sanitizeMongoInput(
-				req.query.sort
-					? safeParseJSON(req.query.sort, {})
-					: req.body.sort
-						? sanitizeMongoInput(req.body.sort)
-						: {},
-			),
+			filter = req.query.filter
+				? safeParseJSON(req.query.filter, {})
+				: req.body.filter
+					? req.body.filter
+					: {},
+			sort = req.query.sort
+				? safeParseJSON(req.query.sort, {})
+				: req.body.sort
+					? req.body.sort
+					: {},
 			skip = req.query.skip ? parseInt(req.query.skip, 10) : 0,
 			limit = req.query.limit ? parseInt(req.query.limit, 10) : 50,
 			csv = req.query.csv == 'true',
