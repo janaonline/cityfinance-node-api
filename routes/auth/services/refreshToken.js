@@ -144,7 +144,7 @@ module.exports.refreshToken = async (req, res) => {
     return Response.UnAuthorized(
       res,
       {},
-      "Invalid or expired refresh token."
+      "Your session has expired. Please log in again."
     );
   }
 };
