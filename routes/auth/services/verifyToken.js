@@ -39,18 +39,37 @@ module.exports.verifyToken = (req, res, next) => {
         console.error("verify-token jwt.verify : ", err.message);
         return Response.UnAuthorized(res, {}, `Session expired. Kindly log in again to proceed.`);
       } else {
+        if (decoded.purpose === "REFRESH") {
+          return Response.UnAuthorized(
+            res,
+            {},
+            `Invalid token type. Please use an access token.`
+          );
+        }
         req.decoded = decoded;
         // console.log(req.decoded)
-        if (req.decoded.sessionId) {
-          userId = ObjectId(req.decoded._id);
+        if (req.decoded.sessionId || req.decoded.lh_id) {
+          const userId = ObjectId(req.decoded._id);
           let query = {
             user: ObjectId(userId),
-            visitSession: ObjectId(req.decoded.sessionId),
           };
+          if (req.decoded.lh_id && ObjectId.isValid(req.decoded.lh_id)) {
+            query._id = ObjectId(req.decoded.lh_id);
+          }
+          if (req.decoded.sessionId && ObjectId.isValid(req.decoded.sessionId)) {
+            query.visitSession = ObjectId(req.decoded.sessionId);
+          }
           let login = await LoginHistory.findOne(query)
             .sort({ _id: -1 })
             .exec();
           if (login) {
+            if (login.isActive === false || login.loggedOutAt) {
+              return Response.UnAuthorized(
+                res,
+                {},
+                `Session expired. Kindly log in again to proceed.`
+              );
+            }
             if (Date.now() >= login.inactiveSessionTime) {
               return Response.UnAuthorized(
                 res,

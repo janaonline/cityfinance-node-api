@@ -2,6 +2,8 @@ const express = require("express");
 const path = require("path");
 const bodyParser = require("body-parser");
 const cors = require("cors");
+const cookieParser = require("cookie-parser");
+const helmet = require("helmet");
 const passport = require("passport");
 require("dotenv").config({ path: path.join(__dirname, ".env") });
 const config = require("./config/app_config");
@@ -14,6 +16,7 @@ const expressSanitizer = require("express-sanitizer");
 const verifyToken = require("./routes/auth/services/verifyToken").verifyToken;
 const ExpressError = require("./util/ExpressError");
 const maintenanceMiddleware = require('./middlewares/maintenance.middleware');
+const noSqlSanitize = require("./middlewares/nosqlSanitize");
 
 
 
@@ -48,9 +51,17 @@ const corsOptions = {
       return callback(new Error("CORS processing error"));
     }
   },
+  credentials: true,
 };
 
 app.use(cors(corsOptions));
+app.use(
+  helmet({
+    contentSecurityPolicy: false,
+    crossOriginResourcePolicy: { policy: "cross-origin" },
+  })
+);
+app.disable("x-powered-by");
 
 // 🔒 Apply globally to all API routes
 app.use('/api', maintenanceMiddleware);
@@ -60,9 +71,6 @@ app.use(json2xls.middleware);
 const port = config.APP.PORT;
 
 app.use(logger("dev"));
-app.use(expressSanitizer());
-
-
 
 app.use(express.static(path.join(__dirname, "public")));
 app.use(express.static(path.join(__dirname, "uploads")));
@@ -73,6 +81,9 @@ app.use(express.static(path.join(__dirname, "uploads")));
 //Body Parser Middleware
 app.use(express.json({ limit: "20mb" }));
 app.use(express.urlencoded({ limit: "20mb", extended: false }));
+app.use(cookieParser(process.env.COOKIE_SECRET || process.env.SECRET));
+app.use(noSqlSanitize);
+app.use(expressSanitizer());
 
 //Passport Middleware
 app.use(passport.initialize());
