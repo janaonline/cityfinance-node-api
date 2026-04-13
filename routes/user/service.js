@@ -50,7 +50,9 @@ function sanitizeUserResponse(payload) {
 
 module.exports.get = async (req, res) => {
     let user = req.decoded;
-    (role = req.body.role), (filter = req.body.filter), (sort = req.body.sort);
+    let role = req.body.role;
+    let filter = req.body.filter;
+    let sort = req.body.sort;
     let skip = req.query.skip ? parseInt(req.query.skip) : 0;
     let limit = req.query.limit ? parseInt(req.query.limit) : 50;
     let actionAllowed = ['ADMIN', 'MoHUA', 'PARTNER', 'STATE'];
@@ -116,27 +118,32 @@ module.exports.get = async (req, res) => {
         }
     }
 };
+
+function safeParseJSON(value, fallback = {}) {
+    try {
+        return value ? JSON.parse(value) : fallback;
+    } catch {
+        return fallback;
+    }
+}
+
 module.exports.getAll = async (req, res) => {
     try {
         let user = req.decoded,
-            filter = req.query.filter
-                ? JSON.parse(req.query.filter)
-                : req.body.filter
-                    ? req.body.filter
-                    : {},
-            sort = req.query.sort
-                ? JSON.parse(req.query.sort)
-                : req.body.sort
-                    ? req.body.sort
-                    : {},
-            skip = req.query.skip ? parseInt(req.query.skip) : 0,
-            limit = req.query.limit ? parseInt(req.query.limit) : 50,
-            csv = req.query.csv == 'true',
-            role = req.query.role
-                ? req.query.role
-                : req.body.role
-                    ? req.body.role
-                    : 'USER';
+			filter = req.query.filter
+				? safeParseJSON(req.query.filter, {})
+				: req.body.filter
+					? req.body.filter
+					: {},
+			sort = req.query.sort
+				? safeParseJSON(req.query.sort, {})
+				: req.body.sort
+					? req.body.sort
+					: {},
+			skip = req.query.skip ? parseInt(req.query.skip, 10) : 0,
+			limit = req.query.limit ? parseInt(req.query.limit, 10) : 50,
+			csv = req.query.csv == 'true',
+			role = req.query.role ? req.query.role : req.body.role ? req.body.role : 'USER';
         actionAllowed = ['ADMIN', 'MoHUA', 'PARTNER', 'STATE'];
         if (filter["sbCode"]) {
             let code = filter["sbCode"];
