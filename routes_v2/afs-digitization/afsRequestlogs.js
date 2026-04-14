@@ -1,28 +1,48 @@
 const mongoose = require("mongoose");
 
-// Direct Secondary DB Connection
-
 const MONGODB_CONNECTION_STRING = process.env.CONNECTION_STRING_2;
 const MONGODB_DATABASE_NAME = process.env.DATABASE_NAME;
 const MONGODB_COLLECTION_NAME = process.env.COLLECTION_NAME;
 
-// Create second DB connection explicitly
-const secondDB = mongoose.createConnection(MONGODB_CONNECTION_STRING, {
-  dbName: MONGODB_DATABASE_NAME,
-});
+let secondDB;
+let RequestLog;
 
-// Flexible schema (accept all fields)
-const RequestLogSchema = new mongoose.Schema({}, { strict: false });
+function getRequestLogModel() {
+  if (!MONGODB_CONNECTION_STRING || !MONGODB_DATABASE_NAME || !MONGODB_COLLECTION_NAME) {
+    return null;
+  }
 
-// Model for request logs in second DB
-const RequestLog = secondDB.model(
-  MONGODB_COLLECTION_NAME, // model name
-  RequestLogSchema,
-  MONGODB_COLLECTION_NAME // collection name
-);
+  if (RequestLog) {
+    return RequestLog;
+  }
+
+  secondDB = mongoose.createConnection(MONGODB_CONNECTION_STRING, {
+    dbName: MONGODB_DATABASE_NAME,
+  });
+
+  const RequestLogSchema = new mongoose.Schema({}, { strict: false });
+
+  RequestLog = secondDB.model(
+    MONGODB_COLLECTION_NAME,
+    RequestLogSchema,
+    MONGODB_COLLECTION_NAME
+  );
+
+  return RequestLog;
+}
 
 module.exports.fetchRequestLogs = async (req, res) => {
   try {
+    const requestLogModel = getRequestLogModel();
+
+    if (!requestLogModel) {
+      return res.status(500).json({
+        success: false,
+        message:
+          "AFS request log database is not configured. Set CONNECTION_STRING_2, DATABASE_NAME, and COLLECTION_NAME.",
+      });
+    }
+
     // Support requestId from body (POST) or params (GET)
     // const requestId = req.body.requestId || req.params.requestId;
     const requestId = req.body.requestId || req.params.requestId || req.query.requestId;
@@ -35,7 +55,7 @@ module.exports.fetchRequestLogs = async (req, res) => {
     }
 
     // Fetch logs by RequestId
-    const logs = await RequestLog.find({ RequestId: requestId }).lean();
+    const logs = await requestLogModel.find({ RequestId: requestId }).lean();
 
     if (!logs || logs.length === 0) {
       return res.status(404).json({

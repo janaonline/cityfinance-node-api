@@ -1,11 +1,12 @@
 const User = require("../../../models/User");
 const Service = require("../../../service");
-const { createToken } = require("./createToken");
+const { createAuthTokens } = require("./createToken");
 const { getUSer } = require("./getUser");
 const Years = require("../../../models/Year");
 const Ulb = require("../../../models/Ulb");
 const ObjectId = require("mongoose").Types.ObjectId;
 const State = require("../../../models/State");
+const { attachRefreshTokenCookie } = require("./authCookie");
 
 module.exports.login = async (req, res) => {
   /**Conditional Query For CensusCode/ULB Code **/
@@ -65,12 +66,13 @@ module.exports.login = async (req, res) => {
     }
 
     if (isMatch) {
-      let token = await createToken(user, sessionId, req.body);
+      const authTokens = await createAuthTokens(user, sessionId, req.body);
+      attachRefreshTokenCookie(res, authTokens.refreshToken);
       const allYears = await getYears();
       return res.status(200).json({
         success: true,
         message: ``,
-        token: token,
+        token: authTokens.token,
         user: {
           _id: user._id,
           name: user.name,
