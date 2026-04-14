@@ -2,11 +2,12 @@ const OTP = require('../../../models/Otp')
 const catchAsync = require('../../../util/catchAsync')
 const OtpMethods = require('../../../util/otp_generator')
 const { getUSer } = require('./getUser')
-const { createToken } = require('./createToken')
+const { createAuthTokens } = require('./createToken')
 const ObjectId = require('mongoose').Types.ObjectId;
 const State = require("../../../models/State");
 const Ulb = require("../../../models/Ulb");
 const Years = require("../../../models/Year");
+const { attachRefreshTokenCookie } = require("./authCookie");
 const {
     checkVerifyRateLimit,
     clearVerifyState,
@@ -98,10 +99,11 @@ module.exports.verifyOtp = catchAsync(async (req, res, next) => {
                 await OTP.findByIdAndUpdate(verification._id, { $set: { isVerified: true } });
                 await clearVerifyState(userIdentifier);
                 let sessionId = req.headers.sessionid;
-                let token = await createToken(user, sessionId, req.body);
+                const authTokens = await createAuthTokens(user, sessionId, req.body);
+                attachRefreshTokenCookie(res, authTokens.refreshToken);
                 const allYears = await getYears()
                 return res.status(200).json({
-                    token: token,
+                    token: authTokens.token,
                     success: true,
                     message: 'OTP VERIFIED',
                     user: {
