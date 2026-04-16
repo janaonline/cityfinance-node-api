@@ -7,7 +7,7 @@ const tempDir = os.tmpdir();
 const uuid = require("uuid");
 const multer = require("multer");
 const multerS3 = require("multer-s3");
-const {ENV} = require('./../util/FormNames')
+const { ENV } = require('./../util/FormNames')
 const CONFIG = require("../config/s3-config.json").S3BUCKET;
 const sanitize = require("sanitize-filename");
 const { getStorageBaseUrl } = require("./getBlobUrl");
@@ -134,7 +134,7 @@ function initBackupBucket() {
 async function generateSignedUrl(data, _cb) {
     return new Promise((resolve, reject) => {
         var file_name = data.file_name;
-        let { custom,strictName } = data;
+        let { custom, strictName } = data;
         strictName = strictName === "true"
         let fileNameWithoutExt = file_name.substring(0, file_name.lastIndexOf("."));
         var file_extension = file_name.substring(file_name.lastIndexOf("."));
@@ -426,13 +426,13 @@ function getObjectStream(params) {
 
 async function getheadObject(params) {
     return new Promise((resolve, reject) => {
-    s3.headObject(params, function(err, data) {
-        if (err) {
-            if (err.code === 'NotFound') {
-                reject(new Error(`Object not found: ${params.Key}`));
-            } else {
-                reject(err);
-            }
+        s3.headObject(params, function (err, data) {
+            if (err) {
+                if (err.code === 'NotFound') {
+                    reject(new Error(`Object not found: ${params.Key}`));
+                } else {
+                    reject(err);
+                }
             } else {
                 const creationDate = data.LastModified;
                 resolve(creationDate);
@@ -448,89 +448,59 @@ async function getheadObject(params) {
  */
 function removePrefix(url) {
     try {
-      const prefixToRemove = getStorageBaseUrl();
-      if (url.startsWith(prefixToRemove)) {
-        return url.substring(prefixToRemove.length);
-      }
-      return url;
-    } catch (error) {
-      throw {message: `removePrefix: ${error.message}`}
-    }
-  } 
-
-
-  /**
- * Upload AFS file to S3 (with overwrite if exists).
- */
-async function uploadAFSFileToS3({ ulbId, financialYear, auditType, docType, file }) {
-  return new Promise((resolve, reject) => {
-    try {
-      const s3Key = `afs/${ulbId}_${financialYear}_${auditType}_${docType}.pdf`;
-
-      s3.putObject(
-        {
-          Bucket: BUCKETNAME,
-          Key: s3Key,
-          Body: file.buffer,
-          ContentType: file.mimetype,
-          ACL: "public-read",
-        },
-        function (err) {
-          if (err) return reject(err);
-
-          const fileUrl = `${SECRET.AWS_STORAGE_URL_STG}/${s3Key}`;
-          resolve({ s3Key, fileUrl });
+        const prefixToRemove = getStorageBaseUrl();
+        if (url.startsWith(prefixToRemove)) {
+            return url.substring(prefixToRemove.length);
         }
-      );
+        return url;
     } catch (error) {
-      reject(error);
+        throw { message: `removePrefix: ${error.message}` }
     }
-  });
 }
 
-/**
- * Get AFS file stream from S3.
- */
-function getAFSFileStream({ ulbId, financialYear, auditType ,docType}) {
-  const s3Key = `afs/${ulbId}_${financialYear}_${auditType}_${docType}.pdf`;
-  return s3.getObject({ Bucket: BUCKETNAME, Key: s3Key }).createReadStream();
-}
+function normalizeS3ObjectKey(fileUrl) {
+    if (!fileUrl || typeof fileUrl !== "string") return null;
 
-async function uploadAFSEXCELFileToS3({ ulbId, financialYear, auditType, docType, file }) {
-  return new Promise((resolve, reject) => {
     try {
-      // Get original extension
-      const ext = path.extname(file.originalname) || ".xlsx"; // default to .xlsx
-      
-      // Add UUID so files don't overwrite each other
-      const uniqueId = uuid.v4();
-      const s3Key = `afs/${ulbId}_${financialYear}_${auditType}_${docType}_${uniqueId}${ext}`;
+        if (fileUrl.startsWith("/")) {
+            return fileUrl.replace(/^\/+/, "");
+        }
 
-      s3.putObject(
-        {
-          Bucket: BUCKETNAME,
-          Key: s3Key,
-          Body: file.buffer,
-          ContentType: file.mimetype,
-          ACL: "public-read",
-        },
-        function (err) {
-          if (err) return reject(err);
+        if (/^https?:\/\//i.test(fileUrl)) {
+            const parsedUrl = new URL(fileUrl);
+            return parsedUrl.pathname.replace(/^\/+/, "");
+        }
 
-          const fileUrl = `/${s3Key}`;
-          resolve({ s3Key, fileUrl });
-        } 
-        
-      );
+        return fileUrl.replace(/^\/+/, "");
     } catch (error) {
-      reject(error);
+        throw { message: `normalizeS3ObjectKey: ${error.message}` };
     }
-  });
 }
 
-module.exports.uploadAFSFileToS3 = uploadAFSFileToS3;
-module.exports.getAFSFileStream = getAFSFileStream;
-module.exports.uploadAFSEXCELFileToS3 = uploadAFSEXCELFileToS3;
+async function generateGetSignedUrl(fileUrl, expiresIn = 60 * 60) {
+    const key = normalizeS3ObjectKey(fileUrl);
+
+    if (!key) return fileUrl;
+
+    return new Promise((resolve, reject) => {
+        s3.getSignedUrl(
+            "getObject",
+            {
+                Bucket: BUCKETNAME,
+                Key: key,
+                Expires: expiresIn,
+            },
+            (err, signedUrl) => {
+                if (err) {
+                    reject(err);
+                } else {
+                    console.log("Generated signed URL:", signedUrl);
+                    resolve(signedUrl);
+                }
+            }
+        );
+    });
+}
 
 module.exports.getheadObject = getheadObject;
 module.exports.getObjectStream = getObjectStream;
@@ -538,6 +508,8 @@ module.exports.initBucket = initBucket;
 module.exports.initBackupBucket = initBackupBucket;
 
 module.exports.generateSignedUrl = generateSignedUrl;
+module.exports.generateGetSignedUrl = generateGetSignedUrl;
+module.exports.normalizeS3ObjectKey = normalizeS3ObjectKey;
 
 module.exports.downloadFileToDisk = downloadFileToDisk;
 

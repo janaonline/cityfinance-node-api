@@ -10,6 +10,7 @@ const moment = require('moment');
 const AnnualAccountData = require('../../models/AnnualAccounts')
 const Year = require('../../models/Year')
 const { years } = require("../../service/years");
+const { generateGetSignedUrl } = require("../../service/s3-services");
 
 
 module.exports.create = async (req, res) => {
@@ -1286,7 +1287,7 @@ module.exports.sourceFiles = async (req, res) => {
             data = await UlbFinancialData.find(condition, select).exec();
 
             for (const objectData of data) {
-                const { pdf, excel } = getSourceFiles(objectData, year);
+                const { pdf, excel } = await getSourceFiles(objectData, year);
                 if (pdf.length || excel.length) {
                     result.push({ pdf, excel });
                 }
@@ -1327,7 +1328,18 @@ async function getAnnualAccounts(ulbId, year, auditType) {
     return getNewSourceFiles(doc, type);
 }
 
-function getNewSourceFiles(data, type) {
+async function getSignedFileUrl(url) {
+    if (!url) return url;
+
+    try {
+        return await generateGetSignedUrl(url);
+    } catch (error) {
+        console.log("Failed to generate signed file url:", error.message || error);
+        return 'N/A';
+    }
+}
+
+async function getNewSourceFiles(data, type) {
     let o = {
         pdf: [],
         excel: [],
@@ -1346,53 +1358,62 @@ function getNewSourceFiles(data, type) {
     for (let file of formats) {
         if (data && data[file.key]) {
             if (data[file.key].pdf?.url) {
-                o.pdf.push({ name: file.name, url: data[file.key].pdf?.url })
+                o.pdf.push({
+                    name: file.name,
+                    url: await getSignedFileUrl(data[file.key].pdf.url),
+                })
             }
             if (data[file.key].excel?.url) {
-                o.excel.push({ name: file.name, url: data[file.key].excel?.url })
+                o.excel.push({
+                    name: file.name,
+                    url: await getSignedFileUrl(data[file.key].excel.url),
+                })
             }
         }
     }
     return o;
 }
-function getSourceFiles(obj, year) {
+async function getSourceFiles(obj, year) {
     let o = {
         pdf: [],
         excel: [],
     };
     obj.balanceSheet && obj.balanceSheet.pdfUrl
-        ? o.pdf.push({ name: 'Balance Sheet', url: obj.balanceSheet.pdfUrl })
+        ? o.pdf.push({
+            name: 'Balance Sheet',
+            url: await getSignedFileUrl(obj.balanceSheet.pdfUrl),
+        })
         : '';
     obj.balanceSheet && obj.balanceSheet.excelUrl
         ? o.excel.push({
             name: 'Balance Sheet',
-            url: obj.balanceSheet.excelUrl,
+            url: await getSignedFileUrl(obj.balanceSheet.excelUrl),
         })
         : '';
 
     obj.schedulesToBalanceSheet && obj.schedulesToBalanceSheet.pdfUrl
         ? o.pdf.push({
             name: 'Schedules To Balance Sheet',
-            url: obj.schedulesToBalanceSheet.pdfUrl,
+            url: await getSignedFileUrl(obj.schedulesToBalanceSheet.pdfUrl),
         })
         : '';
     obj.schedulesToBalanceSheet && obj.schedulesToBalanceSheet.excelUrl
         ? o.excel.push({
             name: 'Schedules To Balance Sheet',
-            url: obj.schedulesToBalanceSheet.excelUrl,
+            url: await getSignedFileUrl(obj.schedulesToBalanceSheet.excelUrl),
         })
         : '';
 
     obj.incomeAndExpenditure && obj.incomeAndExpenditure.pdfUrl
         ? o.pdf.push({
             name: 'Income And Expenditure',
-            url: obj.incomeAndExpenditure.pdfUrl,
+            url: await getSignedFileUrl(obj.incomeAndExpenditure.pdfUrl),
         })
         : '';
     obj.incomeAndExpenditure && obj.incomeAndExpenditure.excelUrl
         ? o.excel.push({
             name: 'Income And Expenditure',
-            url: obj.incomeAndExpenditure.excelUrl,
+            url: await getSignedFileUrl(obj.incomeAndExpenditure.excelUrl),
         })
         : '';
 
@@ -1400,41 +1421,53 @@ function getSourceFiles(obj, year) {
         obj.schedulesToIncomeAndExpenditure.pdfUrl
         ? o.pdf.push({
             name: 'Schedules To Income And Expenditure',
-            url: obj.schedulesToIncomeAndExpenditure.pdfUrl,
+            url: await getSignedFileUrl(obj.schedulesToIncomeAndExpenditure.pdfUrl),
         })
         : '';
     obj.schedulesToIncomeAndExpenditure &&
         obj.schedulesToIncomeAndExpenditure.excelUrl
         ? o.excel.push({
             name: 'Schedules To Income And Expenditure',
-            url: obj.schedulesToIncomeAndExpenditure.excelUrl,
+            url: await getSignedFileUrl(obj.schedulesToIncomeAndExpenditure.excelUrl),
         })
         : '';
 
     obj.trialBalance && obj.trialBalance.pdfUrl
-        ? o.pdf.push({ name: 'Trial Balance', url: obj.trialBalance.pdfUrl })
+        ? o.pdf.push({
+            name: 'Trial Balance',
+            url: await getSignedFileUrl(obj.trialBalance.pdfUrl),
+        })
         : '';
     obj.trialBalance && obj.trialBalance.excelUrl
         ? o.excel.push({
             name: 'Trial Balance',
-            url: obj.trialBalance.excelUrl,
+            url: await getSignedFileUrl(obj.trialBalance.excelUrl),
         })
         : '';
 
     obj.auditReport && obj.auditReport.pdfUrl
-        ? o.pdf.push({ name: 'Audit Report', url: obj.auditReport.pdfUrl })
+        ? o.pdf.push({
+            name: 'Audit Report',
+            url: await getSignedFileUrl(obj.auditReport.pdfUrl),
+        })
         : '';
     obj.auditReport && obj.auditReport.excelUrl
-        ? o.excel.push({ name: 'Audit Report', url: obj.auditReport.excelUrl })
+        ? o.excel.push({
+            name: 'Audit Report',
+            url: await getSignedFileUrl(obj.auditReport.excelUrl),
+        })
         : '';
 
     obj.overallReport && obj.overallReport.pdfUrl
-        ? o.pdf.push({ name: 'Overall Report', url: obj.overallReport.pdfUrl })
+        ? o.pdf.push({
+            name: 'Overall Report',
+            url: await getSignedFileUrl(obj.overallReport.pdfUrl),
+        })
         : '';
     obj.overallReport && obj.overallReport.excelUrl
         ? o.excel.push({
             name: 'Overall Report',
-            url: obj.overallReport.excelUrl,
+            url: await getSignedFileUrl(obj.overallReport.excelUrl),
         })
         : '';
 

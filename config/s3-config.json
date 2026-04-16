@@ -9,8 +9,8 @@
         "IMAGE": {
             "production": "jana-cityfinance-live",
             "staging": "jana-cityfinance-stg",
-            "demo": "democityfinance",
-            "development": "democityfinance"
+            "demo": "jana-cityfinance-stg",
+            "development": "jana-cityfinance-stg"
         }
     }
 }
