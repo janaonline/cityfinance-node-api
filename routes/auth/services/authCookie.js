@@ -7,8 +7,8 @@ function getRefreshCookieOptions() {
   return {
     httpOnly: true,
     secure,
-    sameSite,
-    path: "/api/v1",
+    // sameSite,
+    path: "/",
     maxAge: 30 * 24 * 60 * 60 * 1000,
   };
 }
