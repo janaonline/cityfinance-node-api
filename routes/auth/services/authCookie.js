@@ -2,12 +2,11 @@ const REFRESH_COOKIE_NAME = "refreshToken";
 
 function getRefreshCookieOptions() {
   const secure = process.env.AUTH_COOKIE_SECURE === "false" ? false : true;
-  const sameSite = "none";
 
   return {
     httpOnly: true,
-    secure: false,
-    sameSite,
+    secure,
+    // sameSite,
     path: "/",
     maxAge: 30 * 24 * 60 * 60 * 1000,
   };
