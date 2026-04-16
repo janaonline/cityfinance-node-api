@@ -2,13 +2,13 @@ const REFRESH_COOKIE_NAME = "refreshToken";
 
 function getRefreshCookieOptions() {
   const secure = process.env.AUTH_COOKIE_SECURE === "false" ? false : true;
-  const sameSite = secure ? "none" : "lax";
+  const sameSite = process.env.AUTH_COOKIE_SAME_SITE || "lax";
 
   return {
     httpOnly: true,
     secure,
-    // sameSite,
-    path: "/",
+    sameSite,
+    path: "/api/v1",
     maxAge: 30 * 24 * 60 * 60 * 1000,
   };
 }
