@@ -12,13 +12,13 @@ function buildTokenPayload(user) {
         user && typeof user.toObject === 'function' ? user.toObject() : user || {};
     const keys = [
         '_id',
-        'email',
-        'role',
-        'name',
-        'ulb',
-        'state',
-        'isActive',
-        'isRegistered',
+        // 'email',
+        // 'role',
+        // 'name',
+        // 'ulb',
+        // 'state',
+        // 'isActive',
+        // 'isRegistered',
     ];
     const data = {};
 
