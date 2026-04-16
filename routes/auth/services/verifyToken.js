@@ -47,7 +47,18 @@ module.exports.verifyToken = (req, res, next) => {
           );
         }
         req.decoded = decoded;
-        // console.log(req.decoded)
+
+        // Fetch user details and attach to request
+        try {
+          const user = await User.findOne({ _id: decoded._id }, { role: 1, ulb: 1, state: 1, isActive: 1, isDeleted: 1 });
+          if (!user) {
+            return Response.UnAuthorized(res, {}, `User not found.`);
+          }
+          req.user = user;
+          req.decoded = { ...decoded, ...user.toObject() };
+        } catch (error) {
+          console.error("Error fetching user details:", error);
+        }
         if (req.decoded.sessionId || req.decoded.lh_id) {
           const userId = ObjectId(req.decoded._id);
           let query = {
@@ -101,6 +112,6 @@ module.exports.verifyToken = (req, res, next) => {
   } else {
     // if there is no token
     // return an error
-    return Response.UnAuthorized(res, {sessionExpired: true},`Session Expired!`);
+    return Response.UnAuthorized(res, { sessionExpired: true }, `Session Expired!`);
   }
 };
