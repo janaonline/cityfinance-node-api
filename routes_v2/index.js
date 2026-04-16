@@ -53,7 +53,9 @@ router.use('/ledger', require('./ledger'));
 
 // Get signed url
 const { generateGetSignedUrl } = require('../service/s3-services');
-router.post('/get-signed-url', async (req, res) => {
+const { verifyToken } = require('../routes/auth/services/verifyToken');
+
+router.post('/get-signed-url', verifyToken, async (req, res) => {
   try {
     const { fileUrl } = req.body;
 
