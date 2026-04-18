@@ -14,6 +14,11 @@ const LoginHistorySchema = new Schema({
     },
     reports: { type: Array, default: [] },
     isActive: { type: Boolean, default: 1 },
-    inactiveSessionTime: { type: Number }
+    inactiveSessionTime: { type: Number },
+    refreshTokenHash: { type: String, default: null },
+    currentRefreshTokenId: { type: String, default: null },
+    refreshTokenIssuedAt: { type: Date, default: null },
+    refreshTokenLastUsedAt: { type: Date, default: null },
+    refreshTokenRotatedAt: { type: Date, default: null }
 });
 module.exports = mongoose.model('LoginHistory', LoginHistorySchema);
