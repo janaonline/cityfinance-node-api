@@ -1,32 +1,71 @@
 
-const Config = require('../../../config/app_config');
-const request = require('request');
+const request = require("request");
+const Config = require("../../../config/app_config");
 
-module.exports.captcha = (req, res) => {
-    const secretKey = Config.CAPTCHA.SECRETKEY;
-    let token = req.body.recaptcha;
-    if (token === null || token === undefined) {
-        res.status(400).send({
-            success: false,
-            message: 'Token is empty or invalid',
-        });
-        return console.error('token empty');
-    }
-    const url =
-        'https://www.google.com/recaptcha/api/siteverify?secret=' +
-        secretKey +
-        '&response=' +
-        token +
-        '&remoteip=' +
-        req.connection.remoteAddress;
-    request(url, function (err, response, body) {
-        body = JSON.parse(body);
-        //check if the validation failed
-        if (body.success !== undefined && !body.success) {
-            res.status(400).send({ success: false, message: 'recaptcha failed' });
-            return console.error('failed');
+
+function verifyRecaptchaToken(token, remoteIp) {
+    // console.log("CAPTCHA Verification Started", token, remoteIp);
+    return new Promise((resolve, reject) => {
+        if (!Config.CAPTCHA.ENABLED) {
+            return resolve({
+                success: true,
+                skipped: true,
+                message: "recaptcha validation disabled"
+            });
         }
-        //if passed response success message to client
-        res.status(200).send({ success: true, message: 'recaptcha passed' });
+
+        if (!token) {
+            return reject(new Error("Token is empty or invalid"));
+        }
+
+        const secretKey = Config.CAPTCHA.SECRETKEY;
+        const url =
+            "https://www.google.com/recaptcha/api/siteverify?secret=" +
+            secretKey +
+            "&response=" +
+            token +
+            "&remoteip=" +
+            remoteIp;
+
+        request(url, function (err, response, body) {
+            if (err) {
+                return reject(err);
+            }
+
+            try {
+                const parsedBody = JSON.parse(body);
+                console.log("CAPTCHA Verification Result", parsedBody);
+                if (parsedBody.success !== undefined && !parsedBody.success) {
+                    return reject(new Error("recaptcha failed"));
+                }
+
+                resolve(parsedBody);
+            } catch (parseError) {
+                reject(parseError);
+            }
+        });
     });
+}
+
+module.exports = { verifyRecaptchaToken };
+
+module.exports.captcha = async (req, res, next) => {
+    try {
+        await verifyRecaptchaToken(
+            req.body.recaptcha || req.body.captcha,
+            req.connection.remoteAddress
+        );
+
+        if (typeof next === "function") {
+            return next();
+        }
+
+        return res.status(200).send({ success: true, message: 'recaptcha passed' });
+    } catch (error) {
+        return res.status(400).send({
+            success: false,
+            message: error.message || 'recaptcha failed'
+        });
+    }
 };
+
