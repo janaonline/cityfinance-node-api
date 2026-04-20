@@ -1343,7 +1343,7 @@ async function getSignedFileUrl(req, params = {}) {
             file_type: params.fileType,
         });
 
-        return `${app_config.BASEURL}/ledger/ulb-financial-data/files/download?${query.toString()}`;
+        return `${app_config.APP.BASEURL}/ledger/ulb-financial-data/files/download?${query.toString()}`;
     } catch (error) {
         console.log("Failed to generate download file url:", error.message || error);
         return 'N/A';
