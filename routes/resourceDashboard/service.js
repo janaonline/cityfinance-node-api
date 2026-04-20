@@ -15,6 +15,7 @@ const {
   getObjectStream,
   normalizeS3ObjectKey,
 } = require("../../service/s3-services");
+const app_config = require("../../config/app_config");
 
 module.exports.get = async function (req, res) {
   try {
@@ -47,24 +48,24 @@ module.exports.get = async function (req, res) {
       Object.assign(query, { publishedYear: year });
     }
     if (globalName) {
-      Object.assign(query, {$or : [{ name: { $regex: globalName, $options: "si" } },{ tags: { $regex: globalName, $options: "si" } }]} );
+      Object.assign(query, { $or: [{ name: { $regex: globalName, $options: "si" } }, { tags: { $regex: globalName, $options: "si" } }] });
     }
     if (toolKitVisible) {
       toolKitVisible = formateName(toolKitVisible);
       query = { toolKitVisible };
     }
     if (getQuery) return res.status(200).json(query);
-    let data = await ResourceLineItem.find(query).sort({modifiedAt:-1});
+    let data = await ResourceLineItem.find(query).sort({ modifiedAt: -1 });
     if (data.length < 1) throw Error("No Resource Found");
     data = data.map((item) => {
       item = item.toObject ? item.toObject() : item;
       return {
         ...item,
         downloadUrl: item.downloadUrl
-          ? `${req.currentUrl}/api/v1/resourceDashboard/download/${item._id}`
+          ? `${app_config.BASEURL}/resourceDashboard/download/${item._id}`
           : item.downloadUrl,
         imageUrl: item.imageUrl
-          ? `${req.currentUrl}/api/v1/resourceDashboard/image/${item._id}`
+          ? `${app_config.BASEURL}/resourceDashboard/image/${item._id}`
           : item.imageUrl,
       };
     });
@@ -104,7 +105,7 @@ module.exports.post = async function (req, res) {
       return Response.BadRequest(res, null, "name and downloadUrl is required");
     let data = new ResourceLineItem(req.body);
     await data.save();
-    return Response.OK(res,data);
+    return Response.OK(res, data);
   } catch (error) {
     console.log(error);
     return Response.DbError(res, error, error.message);
@@ -195,7 +196,7 @@ module.exports.search = async function (req, res) {
       dataSet: 0,
       reportsAndPublication: 0,
     };
-    let query = { $or: [{name: new RegExp(searchGlobal, "i")},{tags: new RegExp(searchGlobal, "i")}] };
+    let query = { $or: [{ name: new RegExp(searchGlobal, "i") }, { tags: new RegExp(searchGlobal, "i") }] };
 
     fromModelData.dataSet = getDataSetCount(searchGlobal);
     fromModelData.reportsAndPublication = ResourceLineItem.find({
