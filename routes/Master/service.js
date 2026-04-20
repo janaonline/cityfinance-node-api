@@ -107,7 +107,7 @@ module.exports.categoryFileUploadList = async (req, res, next) => {
             file: item.file?.url
                 ? {
                     ...item.file,
-                    url: `${app_config.BASEURL}/municipalBondRepository/download/${item._id}`,
+                    url: `${app_config.APP.BASEURL}/municipalBondRepository/download/${item._id}`,
                 }
                 : item.file,
         }));

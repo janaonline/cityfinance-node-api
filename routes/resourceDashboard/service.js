@@ -62,10 +62,10 @@ module.exports.get = async function (req, res) {
       return {
         ...item,
         downloadUrl: item.downloadUrl
-          ? `${app_config.BASEURL}/resourceDashboard/download/${item._id}`
+          ? `${app_config.APP.BASEURL}/resourceDashboard/download/${item._id}`
           : item.downloadUrl,
         imageUrl: item.imageUrl
-          ? `${app_config.BASEURL}/resourceDashboard/image/${item._id}`
+          ? `${app_config.APP.BASEURL}/resourceDashboard/image/${item._id}`
           : item.imageUrl,
       };
     });
