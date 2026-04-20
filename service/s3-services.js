@@ -424,6 +424,18 @@ function getObjectStream(params) {
     return s3.getObject(params).createReadStream();
 }
 
+async function getObjectHead(params) {
+    return new Promise((resolve, reject) => {
+        s3.headObject(params, function (err, data) {
+            if (err) {
+                reject(err);
+            } else {
+                resolve(data);
+            }
+        });
+    });
+}
+
 async function getheadObject(params) {
     return new Promise((resolve, reject) => {
         s3.headObject(params, function (err, data) {
@@ -504,6 +516,7 @@ async function generateGetSignedUrl(fileUrl, expiresIn = 60 * 60) {
 
 module.exports.getheadObject = getheadObject;
 module.exports.getObjectStream = getObjectStream;
+module.exports.getObjectHead = getObjectHead;
 module.exports.initBucket = initBucket;
 module.exports.initBackupBucket = initBackupBucket;
 
@@ -519,5 +532,6 @@ module.exports.uploadPptFileFromDisk = uploadPptFileFromDisk;
 module.exports.uploadMulter = uploadMulter;
 
 module.exports.s3 = s3;
+module.exports.BUCKETNAME = BUCKETNAME;
 module.exports.uploadFileFromDiskDBBackup = uploadFileFromDiskDBBackup;
 module.exports.uploadFileFromDiskDeployment = uploadFileFromDiskDeployment;
