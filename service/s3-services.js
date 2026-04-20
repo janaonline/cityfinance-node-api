@@ -474,16 +474,26 @@ function normalizeS3ObjectKey(fileUrl) {
     if (!fileUrl || typeof fileUrl !== "string") return null;
 
     try {
+        const decodeKey = (key) => {
+            const normalizedKey = key.replace(/^\/+/, "");
+
+            try {
+                return decodeURIComponent(normalizedKey);
+            } catch (error) {
+                return normalizedKey;
+            }
+        };
+
         if (fileUrl.startsWith("/")) {
-            return fileUrl.replace(/^\/+/, "");
+            return decodeKey(fileUrl);
         }
 
         if (/^https?:\/\//i.test(fileUrl)) {
             const parsedUrl = new URL(fileUrl);
-            return parsedUrl.pathname.replace(/^\/+/, "");
+            return decodeKey(parsedUrl.pathname);
         }
 
-        return fileUrl.replace(/^\/+/, "");
+        return decodeKey(fileUrl);
     } catch (error) {
         throw { message: `normalizeS3ObjectKey: ${error.message}` };
     }
