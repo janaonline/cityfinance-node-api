@@ -10,7 +10,7 @@ const moment = require('moment');
 const AnnualAccountData = require('../../models/AnnualAccounts')
 const Year = require('../../models/Year')
 const { years } = require("../../service/years");
-
+const app_config = require("../../config/app_config");
 
 module.exports.create = async (req, res) => {
     let user = req.decoded;
@@ -1343,7 +1343,7 @@ async function getSignedFileUrl(req, params = {}) {
             file_type: params.fileType,
         });
 
-        return `${req.currentUrl}/api/v1/ledger/ulb-financial-data/files/download?${query.toString()}`;
+        return `${app_config.BASEURL}/ledger/ulb-financial-data/files/download?${query.toString()}`;
     } catch (error) {
         console.log("Failed to generate download file url:", error.message || error);
         return 'N/A';

@@ -1,6 +1,7 @@
 module.exports = {
 	APP: {
-		PORT: process.env.PORT
+		PORT: process.env.PORT,
+		BASEURL: process.env.BASEURL
 	},
 	DATABASE: {
 		CONNECTION_STRING: process.env.CONNECTION_STRING

@@ -11,6 +11,7 @@ const {
     getObjectStream,
     normalizeS3ObjectKey,
 } = require("../../service/s3-services");
+const app_config = require("../../config/app_config");
 let appUrl = "http://localhost:8080/"
 
 
@@ -106,7 +107,7 @@ module.exports.categoryFileUploadList = async (req, res, next) => {
             file: item.file?.url
                 ? {
                     ...item.file,
-                    url: `${req.currentUrl}/api/v1/municipalBondRepository/download/${item._id}`,
+                    url: `${app_config.BASEURL}/municipalBondRepository/download/${item._id}`,
                 }
                 : item.file,
         }));
