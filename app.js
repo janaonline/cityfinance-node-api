@@ -17,8 +17,15 @@ const verifyToken = require("./routes/auth/services/verifyToken").verifyToken;
 const ExpressError = require("./util/ExpressError");
 const maintenanceMiddleware = require('./middlewares/maintenance.middleware');
 const noSqlSanitize = require("./middlewares/nosqlSanitize");
+const rateLimit = require("express-rate-limit");
 
-
+const limiter = rateLimit({
+  windowMs: 1 * 60 * 1000, // one minute
+  max: 40,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, message: "Too many requests, please try again later." },
+});
 
 const corsOptions = {
   origin: function (origin, callback) {
@@ -55,6 +62,7 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
+app.use(limiter);
 app.use(
   helmet({
     contentSecurityPolicy: false,
