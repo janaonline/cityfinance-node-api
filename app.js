@@ -59,6 +59,7 @@ const corsOptions = {
     }
   },
   credentials: true,
+  exposedHeaders: ['Content-Disposition', 'Content-Type'],
 };
 
 app.use(cors(corsOptions));

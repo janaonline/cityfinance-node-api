@@ -524,9 +524,14 @@ async function generateGetSignedUrl(fileUrl, expiresIn = 60 * 60) {
     });
 }
 
+function getFileStream(key) {
+    return getObjectStream({ Bucket: BUCKETNAME, Key: key });
+}
+
 module.exports.getheadObject = getheadObject;
 module.exports.getObjectStream = getObjectStream;
 module.exports.getObjectHead = getObjectHead;
+module.exports.getFileStream = getFileStream;
 module.exports.initBucket = initBucket;
 module.exports.initBackupBucket = initBackupBucket;
 
