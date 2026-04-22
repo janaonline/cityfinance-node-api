@@ -63,7 +63,7 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
-app.use(limiter);
+// app.use(limiter);
 app.use(
   helmet({
     contentSecurityPolicy: false,
