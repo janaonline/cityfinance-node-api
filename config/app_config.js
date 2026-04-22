@@ -19,5 +19,10 @@ module.exports = {
 	CAPTCHA: {
 		SECRETKEY: process.env.CAPTCHA_SECRET_KEY,
 		ENABLED: process.env.CAPTCHA_VALIDATION_ENABLED !== 'false'
-	}
+	},
+	FILE_DOWNLOAD: {
+		TOKEN_SECRET: process.env.FILE_TOKEN_SECRET,
+		LINK_TTL_MS: parseInt(process.env.FILE_DOWNLOAD_LINK_TTL_MS, 10) || 24 * 60 * 60 * 1000,
+		APP_BASE_URL: (process.env.BASEURL || 'http://localhost:8080').replace(/\/$/, ''),
+	},
 }
