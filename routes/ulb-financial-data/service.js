@@ -10,8 +10,7 @@ const moment = require('moment');
 const AnnualAccountData = require('../../models/AnnualAccounts')
 const Year = require('../../models/Year')
 const { years } = require("../../service/years");
-const { generateGetSignedUrl } = require("../../service/s3-services");
-
+const app_config = require("../../config/app_config");
 
 module.exports.create = async (req, res) => {
     let user = req.decoded;
@@ -1263,6 +1262,8 @@ module.exports.sourceFiles = async (req, res) => {
         if (req.query.auditType) auditType = req.query.auditType;
 
         let select = {
+            ulb: 1,
+            audited: 1,
             'balanceSheet.pdfUrl': 1,
             'balanceSheet.excelUrl': 1,
             'schedulesToBalanceSheet.pdfUrl': 1,
@@ -1287,13 +1288,13 @@ module.exports.sourceFiles = async (req, res) => {
             data = await UlbFinancialData.find(condition, select).exec();
 
             for (const objectData of data) {
-                const { pdf, excel } = await getSourceFiles(objectData, year);
+                const { pdf, excel } = await getSourceFiles(req, objectData, year);
                 if (pdf.length || excel.length) {
                     result.push({ pdf, excel });
                 }
             }
         } else {
-            result = await getAnnualAccounts(ulbId, year, auditType);
+            result = await getAnnualAccounts(req, ulbId, year, auditType);
         }
 
         return Response.OK(res, result);
@@ -1311,10 +1312,11 @@ function getCond(ulbId, yearId, type) {
     return cond;
 }
 
-async function getAnnualAccounts(ulbId, year, auditType) {
+async function getAnnualAccounts(req, ulbId, year, auditType) {
     const yearId = years[year];
     let doc;
     let type = auditType || 'audited';
+    const targetUlbId = Array.isArray(ulbId) && ulbId.length ? ulbId[0] : ulbId;
     // console.log("type --->", type)
     if (type === 'audited') {
         let res = await AnnualAccountData.findOne(getCond(ulbId, yearId, 'audited'), { audited: 1 }).lean().exec();
@@ -1325,21 +1327,30 @@ async function getAnnualAccounts(ulbId, year, auditType) {
         let resUnAudited = await AnnualAccountData.findOne(getCond(ulbId, yearId, 'unAudited'), { unAudited: 1 }).lean().exec();
         doc = resUnAudited ? resUnAudited.unAudited?.provisional_data : null;
     }
-    return getNewSourceFiles(doc, type);
+    return getNewSourceFiles(req, targetUlbId, year, doc, type);
 }
 
-async function getSignedFileUrl(url) {
-    if (!url) return url;
+async function getSignedFileUrl(req, params = {}) {
+    if (!params.url) return params.url;
 
     try {
-        return await generateGetSignedUrl(url);
+        const auditType = params.auditType === 'unAudited' ? 'unaudited' : params.auditType;
+        const query = new URLSearchParams({
+            ulb: `${params.ulb}`,
+            financial_year: params.financialYear,
+            audit_type: auditType,
+            document_type: params.documentType,
+            file_type: params.fileType,
+        });
+
+        return `${app_config.APP.BASEURL}/ledger/ulb-financial-data/files/download?${query.toString()}`;
     } catch (error) {
-        console.log("Failed to generate signed file url:", error.message || error);
+        console.log("Failed to generate download file url:", error.message || error);
         return 'N/A';
     }
 }
 
-async function getNewSourceFiles(data, type) {
+async function getNewSourceFiles(req, ulbId, financialYear, data, type) {
     let o = {
         pdf: [],
         excel: [],
@@ -1347,12 +1358,12 @@ async function getNewSourceFiles(data, type) {
     };
     // data = (year == '2019-20') ? doc.audited.provisional_data : doc.unAudited.provisional_data;
     const formats = [
-        { key: 'bal_sheet', name: 'Balance Sheet' },
-        { key: 'bal_sheet_schedules', name: 'Schedules To Balance Sheet' },
-        { key: 'inc_exp', name: 'Income And Expenditure' },
-        { key: 'inc_exp_schedules', name: 'Schedules To Income And Expenditure' },
-        { key: 'cash_flow', name: 'Cash Flow Statement' },
-        { key: 'auditor_report', name: 'Auditor Report' },
+        { key: 'bal_sheet', name: 'Balance Sheet', documentType: 'BALANCE_SHEET' },
+        { key: 'bal_sheet_schedules', name: 'Schedules To Balance Sheet', documentType: 'SCHEDULES_TO_BALANCE_SHEET' },
+        { key: 'inc_exp', name: 'Income And Expenditure', documentType: 'INCOME_AND_EXPENDITURE' },
+        { key: 'inc_exp_schedules', name: 'Schedules To Income And Expenditure', documentType: 'SCHEDULES_TO_INCOME_AND_EXPENDITURE' },
+        { key: 'cash_flow', name: 'Cash Flow Statement', documentType: 'CASH_FLOW_STATEMENT' },
+        { key: 'auditor_report', name: 'Auditor Report', documentType: 'AUDIT_REPORT' },
     ];
 
     for (let file of formats) {
@@ -1360,20 +1371,34 @@ async function getNewSourceFiles(data, type) {
             if (data[file.key].pdf?.url) {
                 o.pdf.push({
                     name: file.name,
-                    url: await getSignedFileUrl(data[file.key].pdf.url),
+                    url: await getSignedFileUrl(req, {
+                        ulb: ulbId,
+                        financialYear,
+                        auditType: type,
+                        documentType: file.documentType,
+                        fileType: 'pdf',
+                        url: data[file.key].pdf.url,
+                    }),
                 })
             }
             if (data[file.key].excel?.url) {
                 o.excel.push({
                     name: file.name,
-                    url: await getSignedFileUrl(data[file.key].excel.url),
+                    url: await getSignedFileUrl(req, {
+                        ulb: ulbId,
+                        financialYear,
+                        auditType: type,
+                        documentType: file.documentType,
+                        fileType: 'excel',
+                        url: data[file.key].excel.url,
+                    }),
                 })
             }
         }
     }
     return o;
 }
-async function getSourceFiles(obj, year) {
+async function getSourceFiles(req, obj, year) {
     let o = {
         pdf: [],
         excel: [],
@@ -1381,39 +1406,81 @@ async function getSourceFiles(obj, year) {
     obj.balanceSheet && obj.balanceSheet.pdfUrl
         ? o.pdf.push({
             name: 'Balance Sheet',
-            url: await getSignedFileUrl(obj.balanceSheet.pdfUrl),
+            url: await getSignedFileUrl(req, {
+                ulb: obj.ulb,
+                financialYear: year,
+                auditType: obj.audited ? 'audited' : 'unaudited',
+                documentType: 'BALANCE_SHEET',
+                fileType: 'pdf',
+                url: obj.balanceSheet.pdfUrl,
+            }),
         })
         : '';
     obj.balanceSheet && obj.balanceSheet.excelUrl
         ? o.excel.push({
             name: 'Balance Sheet',
-            url: await getSignedFileUrl(obj.balanceSheet.excelUrl),
+            url: await getSignedFileUrl(req, {
+                ulb: obj.ulb,
+                financialYear: year,
+                auditType: obj.audited ? 'audited' : 'unaudited',
+                documentType: 'BALANCE_SHEET',
+                fileType: 'excel',
+                url: obj.balanceSheet.excelUrl,
+            }),
         })
         : '';
 
     obj.schedulesToBalanceSheet && obj.schedulesToBalanceSheet.pdfUrl
         ? o.pdf.push({
             name: 'Schedules To Balance Sheet',
-            url: await getSignedFileUrl(obj.schedulesToBalanceSheet.pdfUrl),
+            url: await getSignedFileUrl(req, {
+                ulb: obj.ulb,
+                financialYear: year,
+                auditType: obj.audited ? 'audited' : 'unaudited',
+                documentType: 'SCHEDULES_TO_BALANCE_SHEET',
+                fileType: 'pdf',
+                url: obj.schedulesToBalanceSheet.pdfUrl,
+            }),
         })
         : '';
     obj.schedulesToBalanceSheet && obj.schedulesToBalanceSheet.excelUrl
         ? o.excel.push({
             name: 'Schedules To Balance Sheet',
-            url: await getSignedFileUrl(obj.schedulesToBalanceSheet.excelUrl),
+            url: await getSignedFileUrl(req, {
+                ulb: obj.ulb,
+                financialYear: year,
+                auditType: obj.audited ? 'audited' : 'unaudited',
+                documentType: 'SCHEDULES_TO_BALANCE_SHEET',
+                fileType: 'excel',
+                url: obj.schedulesToBalanceSheet.excelUrl,
+            }),
         })
         : '';
 
     obj.incomeAndExpenditure && obj.incomeAndExpenditure.pdfUrl
         ? o.pdf.push({
             name: 'Income And Expenditure',
-            url: await getSignedFileUrl(obj.incomeAndExpenditure.pdfUrl),
+            url: await getSignedFileUrl(req, {
+                ulb: obj.ulb,
+                financialYear: year,
+                auditType: obj.audited ? 'audited' : 'unaudited',
+                documentType: 'INCOME_AND_EXPENDITURE',
+                fileType: 'pdf',
+                url: obj.incomeAndExpenditure.pdfUrl,
+            }),
         })
         : '';
     obj.incomeAndExpenditure && obj.incomeAndExpenditure.excelUrl
         ? o.excel.push({
             name: 'Income And Expenditure',
-            url: await getSignedFileUrl(obj.incomeAndExpenditure.excelUrl),
+            url: await getSignedFileUrl(req, {
+                ulb: obj.ulb,
+                financialYear: year,
+                auditType: obj.audited ? 'audited' : 'unaudited',
+                documentType: 'INCOME_AND_EXPENDITURE',
+                fileType: 'excel',
+                url: obj.incomeAndExpenditure.excelUrl,
+            }),
         })
         : '';
 
@@ -1421,53 +1488,109 @@ async function getSourceFiles(obj, year) {
         obj.schedulesToIncomeAndExpenditure.pdfUrl
         ? o.pdf.push({
             name: 'Schedules To Income And Expenditure',
-            url: await getSignedFileUrl(obj.schedulesToIncomeAndExpenditure.pdfUrl),
+            url: await getSignedFileUrl(req, {
+                ulb: obj.ulb,
+                financialYear: year,
+                auditType: obj.audited ? 'audited' : 'unaudited',
+                documentType: 'SCHEDULES_TO_INCOME_AND_EXPENDITURE',
+                fileType: 'pdf',
+                url: obj.schedulesToIncomeAndExpenditure.pdfUrl,
+            }),
         })
         : '';
     obj.schedulesToIncomeAndExpenditure &&
         obj.schedulesToIncomeAndExpenditure.excelUrl
         ? o.excel.push({
             name: 'Schedules To Income And Expenditure',
-            url: await getSignedFileUrl(obj.schedulesToIncomeAndExpenditure.excelUrl),
+            url: await getSignedFileUrl(req, {
+                ulb: obj.ulb,
+                financialYear: year,
+                auditType: obj.audited ? 'audited' : 'unaudited',
+                documentType: 'SCHEDULES_TO_INCOME_AND_EXPENDITURE',
+                fileType: 'excel',
+                url: obj.schedulesToIncomeAndExpenditure.excelUrl,
+            }),
         })
         : '';
 
     obj.trialBalance && obj.trialBalance.pdfUrl
         ? o.pdf.push({
             name: 'Trial Balance',
-            url: await getSignedFileUrl(obj.trialBalance.pdfUrl),
+            url: await getSignedFileUrl(req, {
+                ulb: obj.ulb,
+                financialYear: year,
+                auditType: obj.audited ? 'audited' : 'unaudited',
+                documentType: 'TRIAL_BALANCE',
+                fileType: 'pdf',
+                url: obj.trialBalance.pdfUrl,
+            }),
         })
         : '';
     obj.trialBalance && obj.trialBalance.excelUrl
         ? o.excel.push({
             name: 'Trial Balance',
-            url: await getSignedFileUrl(obj.trialBalance.excelUrl),
+            url: await getSignedFileUrl(req, {
+                ulb: obj.ulb,
+                financialYear: year,
+                auditType: obj.audited ? 'audited' : 'unaudited',
+                documentType: 'TRIAL_BALANCE',
+                fileType: 'excel',
+                url: obj.trialBalance.excelUrl,
+            }),
         })
         : '';
 
     obj.auditReport && obj.auditReport.pdfUrl
         ? o.pdf.push({
             name: 'Audit Report',
-            url: await getSignedFileUrl(obj.auditReport.pdfUrl),
+            url: await getSignedFileUrl(req, {
+                ulb: obj.ulb,
+                financialYear: year,
+                auditType: obj.audited ? 'audited' : 'unaudited',
+                documentType: 'AUDIT_REPORT',
+                fileType: 'pdf',
+                url: obj.auditReport.pdfUrl,
+            }),
         })
         : '';
     obj.auditReport && obj.auditReport.excelUrl
         ? o.excel.push({
             name: 'Audit Report',
-            url: await getSignedFileUrl(obj.auditReport.excelUrl),
+            url: await getSignedFileUrl(req, {
+                ulb: obj.ulb,
+                financialYear: year,
+                auditType: obj.audited ? 'audited' : 'unaudited',
+                documentType: 'AUDIT_REPORT',
+                fileType: 'excel',
+                url: obj.auditReport.excelUrl,
+            }),
         })
         : '';
 
     obj.overallReport && obj.overallReport.pdfUrl
         ? o.pdf.push({
             name: 'Overall Report',
-            url: await getSignedFileUrl(obj.overallReport.pdfUrl),
+            url: await getSignedFileUrl(req, {
+                ulb: obj.ulb,
+                financialYear: year,
+                auditType: obj.audited ? 'audited' : 'unaudited',
+                documentType: 'OVERALL_REPORT',
+                fileType: 'pdf',
+                url: obj.overallReport.pdfUrl,
+            }),
         })
         : '';
     obj.overallReport && obj.overallReport.excelUrl
         ? o.excel.push({
             name: 'Overall Report',
-            url: await getSignedFileUrl(obj.overallReport.excelUrl),
+            url: await getSignedFileUrl(req, {
+                ulb: obj.ulb,
+                financialYear: year,
+                auditType: obj.audited ? 'audited' : 'unaudited',
+                documentType: 'OVERALL_REPORT',
+                fileType: 'excel',
+                url: obj.overallReport.excelUrl,
+            }),
         })
         : '';
 

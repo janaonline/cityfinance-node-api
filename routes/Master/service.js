@@ -3,6 +3,15 @@ const axios = require('axios');
 var path = require('path');
 var fs = require('fs');
 const CategoryFileUpload = require("../../models/CategoryFileUpload");
+const sanitizeFilename = require('sanitize-filename');
+const mime = require('mime');
+const {
+    BUCKETNAME,
+    getObjectHead,
+    getObjectStream,
+    normalizeS3ObjectKey,
+} = require("../../service/s3-services");
+const app_config = require("../../config/app_config");
 let appUrl = "http://localhost:8080/"
 
 
@@ -87,12 +96,21 @@ module.exports.subCategoryList = async (req, res, next) => {
     }
 }
 module.exports.categoryFileUploadList = async (req, res, next) => {
-    let condition = { 
+    let condition = {
         module: 'municipal_bond_repository',
-        ...req.query 
+        ...req.query
     };
     try {
         let data = await dbModels['CategoryFileUpload'].find(condition).sort({ "createdAt": 1 }).populate("categoryId", "name _id").populate("subCategoryId", 'name _id').lean();
+        data = data.map((item) => ({
+            ...item,
+            file: item.file?.url
+                ? {
+                    ...item.file,
+                    url: `${app_config.APP.BASEURL}/municipalBondRepository/download/${item._id}`,
+                }
+                : item.file,
+        }));
         return res.status(200).json({
             status: true,
             message: "Successfully saved data!",
@@ -105,6 +123,103 @@ module.exports.categoryFileUploadList = async (req, res, next) => {
             err: error.message,
         });
     }
+}
+
+module.exports.downloadMunicipalBondRepositoryFile = async (req, res, next) => {
+    try {
+        const record = await dbModels['CategoryFileUpload']
+            .findOne({
+                _id: req.params._id,
+                module: 'municipal_bond_repository',
+                isActive: true,
+            })
+            .lean()
+            .exec();
+
+        if (!record) {
+            return res.status(404).json({
+                status: false,
+                message: "File not found!",
+                err: {},
+            });
+        }
+
+        if (!record.file?.url) {
+            return res.status(404).json({
+                status: false,
+                message: "Requested file is not available!",
+                err: {},
+            });
+        }
+
+        const objectKey = normalizeS3ObjectKey(record.file.url);
+        if (!objectKey) {
+            return res.status(404).json({
+                status: false,
+                message: "Requested file path is invalid!",
+                err: {},
+            });
+        }
+        const head = await getObjectHead({ Bucket: BUCKETNAME, Key: objectKey });
+        const downloadFileName =
+            sanitizeFilename(record.file.name || record.title || 'municipal_bond_repository_file').trim() ||
+            'municipal_bond_repository_file';
+        const contentType =
+            head.ContentType || mime.getType(downloadFileName) || 'application/octet-stream';
+
+        res.status(200);
+        res.setHeader('Content-Type', contentType);
+        res.setHeader(
+            'Content-Disposition',
+            buildContentDisposition(downloadFileName)
+        );
+
+        if (head.ContentLength != null) {
+            res.setHeader('Content-Length', head.ContentLength);
+        }
+
+        const fileStream = getObjectStream({ Bucket: BUCKETNAME, Key: objectKey });
+        fileStream.on('error', (error) => {
+            console.log('downloadMunicipalBondRepositoryFile stream error:', error);
+            if (!res.headersSent) {
+                const statusCode =
+                    error.code === 'NoSuchKey' || error.code === 'NotFound' ? 404 : 500;
+                return res.status(statusCode).json({
+                    status: false,
+                    message:
+                        statusCode === 404
+                            ? "Requested file not found!"
+                            : "Failed to download file!",
+                    err: error.message || error,
+                });
+            }
+
+            res.destroy(error);
+        });
+
+        fileStream.pipe(res);
+    } catch (error) {
+        console.log('downloadMunicipalBondRepositoryFile error:', error);
+        const statusCode =
+            error.code === 'NoSuchKey' || error.code === 'NotFound' ? 404 : 500;
+        return res.status(statusCode).json({
+            status: false,
+            message:
+                statusCode === 404
+                    ? "Requested file not found!"
+                    : "Failed to download file!",
+            err: error.message || error,
+        });
+    }
+}
+
+function buildContentDisposition(fileName) {
+    const safeFileName =
+        sanitizeFilename(fileName || 'municipal_bond_repository_file').trim() ||
+        'municipal_bond_repository_file';
+    const encodedFileName = encodeURIComponent(safeFileName);
+
+    return `attachment; filename="${safeFileName}"; filename*=UTF-8''${encodedFileName}`;
 }
 
 

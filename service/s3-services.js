@@ -424,6 +424,18 @@ function getObjectStream(params) {
     return s3.getObject(params).createReadStream();
 }
 
+async function getObjectHead(params) {
+    return new Promise((resolve, reject) => {
+        s3.headObject(params, function (err, data) {
+            if (err) {
+                reject(err);
+            } else {
+                resolve(data);
+            }
+        });
+    });
+}
+
 async function getheadObject(params) {
     return new Promise((resolve, reject) => {
         s3.headObject(params, function (err, data) {
@@ -462,16 +474,26 @@ function normalizeS3ObjectKey(fileUrl) {
     if (!fileUrl || typeof fileUrl !== "string") return null;
 
     try {
+        const decodeKey = (key) => {
+            const normalizedKey = key.replace(/^\/+/, "");
+
+            try {
+                return decodeURIComponent(normalizedKey);
+            } catch (error) {
+                return normalizedKey;
+            }
+        };
+
         if (fileUrl.startsWith("/")) {
-            return fileUrl.replace(/^\/+/, "");
+            return decodeKey(fileUrl);
         }
 
         if (/^https?:\/\//i.test(fileUrl)) {
             const parsedUrl = new URL(fileUrl);
-            return parsedUrl.pathname.replace(/^\/+/, "");
+            return decodeKey(parsedUrl.pathname);
         }
 
-        return fileUrl.replace(/^\/+/, "");
+        return decodeKey(fileUrl);
     } catch (error) {
         throw { message: `normalizeS3ObjectKey: ${error.message}` };
     }
@@ -502,8 +524,14 @@ async function generateGetSignedUrl(fileUrl, expiresIn = 60 * 60) {
     });
 }
 
+function getFileStream(key) {
+    return getObjectStream({ Bucket: BUCKETNAME, Key: key });
+}
+
 module.exports.getheadObject = getheadObject;
 module.exports.getObjectStream = getObjectStream;
+module.exports.getObjectHead = getObjectHead;
+module.exports.getFileStream = getFileStream;
 module.exports.initBucket = initBucket;
 module.exports.initBackupBucket = initBackupBucket;
 
@@ -519,5 +547,6 @@ module.exports.uploadPptFileFromDisk = uploadPptFileFromDisk;
 module.exports.uploadMulter = uploadMulter;
 
 module.exports.s3 = s3;
+module.exports.BUCKETNAME = BUCKETNAME;
 module.exports.uploadFileFromDiskDBBackup = uploadFileFromDiskDBBackup;
 module.exports.uploadFileFromDiskDeployment = uploadFileFromDiskDeployment;

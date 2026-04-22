@@ -7,6 +7,15 @@ const resource = require("../../models/Resources");
 const ExcelJS = require("exceljs");
 const DataCollection = require("../../models/DataCollectionForm");
 const AnnualAccountData = require("../../models/AnnualAccounts");
+const sanitizeFilename = require("sanitize-filename");
+const mime = require("mime");
+const {
+  BUCKETNAME,
+  getObjectHead,
+  getObjectStream,
+  normalizeS3ObjectKey,
+} = require("../../service/s3-services");
+const app_config = require("../../config/app_config");
 
 module.exports.get = async function (req, res) {
   try {
@@ -39,15 +48,27 @@ module.exports.get = async function (req, res) {
       Object.assign(query, { publishedYear: year });
     }
     if (globalName) {
-      Object.assign(query, {$or : [{ name: { $regex: globalName, $options: "si" } },{ tags: { $regex: globalName, $options: "si" } }]} );
+      Object.assign(query, { $or: [{ name: { $regex: globalName, $options: "si" } }, { tags: { $regex: globalName, $options: "si" } }] });
     }
     if (toolKitVisible) {
       toolKitVisible = formateName(toolKitVisible);
       query = { toolKitVisible };
     }
     if (getQuery) return res.status(200).json(query);
-    let data = await ResourceLineItem.find(query).sort({modifiedAt:-1});
+    let data = await ResourceLineItem.find(query).sort({ modifiedAt: -1 });
     if (data.length < 1) throw Error("No Resource Found");
+    data = data.map((item) => {
+      item = item.toObject ? item.toObject() : item;
+      return {
+        ...item,
+        downloadUrl: item.downloadUrl
+          ? `${app_config.APP.BASEURL}/resourceDashboard/download/${item._id}`
+          : item.downloadUrl,
+        imageUrl: item.imageUrl
+          ? `${app_config.APP.BASEURL}/resourceDashboard/image/${item._id}`
+          : item.imageUrl,
+      };
+    });
     return Response.OK(res, data);
   } catch (error) {
     console.log(error);
@@ -84,7 +105,7 @@ module.exports.post = async function (req, res) {
       return Response.BadRequest(res, null, "name and downloadUrl is required");
     let data = new ResourceLineItem(req.body);
     await data.save();
-    return Response.OK(res,data);
+    return Response.OK(res, data);
   } catch (error) {
     console.log(error);
     return Response.DbError(res, error, error.message);
@@ -175,7 +196,7 @@ module.exports.search = async function (req, res) {
       dataSet: 0,
       reportsAndPublication: 0,
     };
-    let query = { $or: [{name: new RegExp(searchGlobal, "i")},{tags: new RegExp(searchGlobal, "i")}] };
+    let query = { $or: [{ name: new RegExp(searchGlobal, "i") }, { tags: new RegExp(searchGlobal, "i") }] };
 
     fromModelData.dataSet = getDataSetCount(searchGlobal);
     fromModelData.reportsAndPublication = ResourceLineItem.find({
@@ -200,9 +221,111 @@ module.exports.search = async function (req, res) {
   }
 };
 
+module.exports.download = async function (req, res) {
+  return streamResourceFile(req, res, {
+    fieldName: "downloadUrl",
+    dispositionType: "attachment",
+    defaultFileName: "resource_dashboard_file",
+  });
+};
+
+module.exports.image = async function (req, res) {
+  return streamResourceFile(req, res, {
+    fieldName: "imageUrl",
+    dispositionType: "inline",
+    defaultFileName: "resource_dashboard_image",
+  });
+};
+
+async function streamResourceFile(req, res, options) {
+  try {
+    const resourceLineItem = await ResourceLineItem.findOne({
+      _id: req.params._id,
+      isActive: true,
+    }).lean();
+
+    if (!resourceLineItem) {
+      return Response.BadRequest(res, {}, "Resource not found.", 404);
+    }
+
+    if (!resourceLineItem[options.fieldName]) {
+      return Response.BadRequest(res, {}, "Requested file is not available.", 404);
+    }
+
+    const objectKey = normalizeS3ObjectKey(resourceLineItem[options.fieldName]);
+    if (!objectKey) {
+      return Response.BadRequest(res, {}, "Requested file path is invalid.", 404);
+    }
+
+    const head = await getObjectHead({ Bucket: BUCKETNAME, Key: objectKey });
+    const downloadFileName = buildDownloadFileName(resourceLineItem, options);
+    const contentType =
+      head.ContentType || mime.getType(downloadFileName) || "application/octet-stream";
+
+    res.status(200);
+    res.setHeader("Content-Type", contentType);
+    res.setHeader(
+      "Content-Disposition",
+      buildContentDisposition(downloadFileName, options.dispositionType)
+    );
+
+    if (head.ContentLength != null) {
+      res.setHeader("Content-Length", head.ContentLength);
+    }
+
+    const fileStream = getObjectStream({ Bucket: BUCKETNAME, Key: objectKey });
+    fileStream.on("error", (error) => {
+      console.log(`resourceDashboard ${options.fieldName} stream error:`, error);
+      if (!res.headersSent) {
+        const statusCode =
+          error.code === "NoSuchKey" || error.code === "NotFound" ? 404 : 500;
+        return Response.BadRequest(
+          res,
+          error,
+          statusCode === 404 ? "Requested file not found." : "Failed to download requested file.",
+          statusCode
+        );
+      }
+
+      res.destroy(error);
+    });
+
+    fileStream.pipe(res);
+  } catch (error) {
+    console.log(`resourceDashboard ${options.fieldName} error:`, error);
+    const statusCode =
+      error.code === "NoSuchKey" || error.code === "NotFound" ? 404 : 500;
+    return Response.BadRequest(
+      res,
+      error,
+      statusCode === 404 ? "Requested file not found." : "Failed to download requested file.",
+      statusCode
+    );
+  }
+}
+
 function formateName(name) {
   let newName = name.toLowerCase().split(" ").join("_");
   return newName;
+}
+
+function buildDownloadFileName(resourceLineItem, options) {
+  const rawFileName =
+    resourceLineItem[options.fieldName]?.split("/").pop() ||
+    resourceLineItem.name ||
+    options.defaultFileName;
+  const sanitizedName = sanitizeFilename(rawFileName).trim();
+
+  return sanitizedName || options.defaultFileName;
+}
+
+function buildContentDisposition(fileName, dispositionType = "attachment") {
+  const safeFileName =
+    sanitizeFilename(fileName || "resource_dashboard_file").trim() ||
+    "resource_dashboard_file";
+  const encodedFileName = encodeURIComponent(safeFileName);
+
+  return `${dispositionType}; filename="${safeFileName}"; filename*=UTF-8''${encodedFileName}`;
 }
 
 async function getDataSetCount(globalName) {
