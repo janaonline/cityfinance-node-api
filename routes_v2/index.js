@@ -51,6 +51,9 @@ router.use('/bond-issuances', require('./bond-issuances'));
 // Ledgers.
 router.use('/ledger', require('./ledger'));
 
+// Token-based private file download (no raw S3 path or signed URL exposed).
+router.use('/file', require('./file'));
+
 // Get signed url
 const { generateGetSignedUrl } = require('../service/s3-services');
 const { verifyToken } = require('../routes/auth/services/verifyToken');
