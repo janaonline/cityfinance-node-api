@@ -47,10 +47,11 @@ module.exports.verifyToken = (req, res, next) => {
           );
         }
         req.decoded = decoded;
+        const userId = decoded.sub || decoded._id
 
         // Fetch user details and attach to request
         try {
-          const user = await User.findOne({ _id: decoded._id }, { role: 1, ulb: 1, state: 1, isActive: 1, isDeleted: 1 });
+          const user = await User.findOne({ _id: userId }, { role: 1, ulb: 1, state: 1, isActive: 1, isDeleted: 1 });
           if (!user) {
             return Response.UnAuthorized(res, {}, `User not found.`);
           }
@@ -60,7 +61,6 @@ module.exports.verifyToken = (req, res, next) => {
           console.error("Error fetching user details:", error);
         }
         if (req.decoded.sessionId || req.decoded.lh_id) {
-          const userId = ObjectId(req.decoded._id);
           let query = {
             user: ObjectId(userId),
           };
