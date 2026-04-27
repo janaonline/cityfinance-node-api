@@ -1,5 +1,4 @@
 const jwt = require('jsonwebtoken');
-const crypto = require('crypto');
 const User = require('../../../models/User');
 const LoginHistory = require('../../../models/LoginHistory');
 const Config = require('../../../config/app_config');
@@ -46,39 +45,17 @@ function issueAccessToken(data) {
     );
 }
 
-function issueRefreshToken(data) {
+function issueRefreshToken(userId) {
     return jwt.sign(
-        {
-            ...data,
-            purpose: 'REFRESH',
-        },
-        Config.JWT.SECRET,
-        {
-            expiresIn: Config.JWT.REFRESH_TOKEN_EXPIRY,
-        }
+        { sub: userId.toString() },
+        Config.JWT.REFRESH_SECRET,
+        { expiresIn: Config.JWT.REFRESH_TOKEN_EXPIRY }
     );
 }
 
-function generateRefreshTokenId() {
-    return crypto.randomBytes(32).toString('hex');
-}
-
-async function persistRefreshToken(loginHistoryId, refreshToken, refreshTokenId) {
-    const refreshTokenHash = await Service.getHash(refreshToken);
-    const now = new Date();
-
-    await LoginHistory.updateOne(
-        { _id: ObjectId(loginHistoryId) },
-        {
-            $set: {
-                refreshTokenHash,
-                currentRefreshTokenId: refreshTokenId,
-                refreshTokenIssuedAt: now,
-                refreshTokenLastUsedAt: now,
-                refreshTokenRotatedAt: now,
-            },
-        }
-    ).exec();
+async function saveRefreshToken(userId, refreshToken) {
+    const hash = await Service.getHash(refreshToken);
+    await User.findByIdAndUpdate(userId, { refreshTokenHash: hash }).exec();
 }
 
 async function createAuthTokens(user, sessionId, body) {
@@ -101,13 +78,9 @@ async function createAuthTokens(user, sessionId, body) {
         sessionId: ObjectId.isValid(sessionId) ? sessionId : null,
     };
 
-    const refreshTokenId = generateRefreshTokenId();
     const token = issueAccessToken(tokenPayload);
-    const refreshToken = issueRefreshToken({
-        ...tokenPayload,
-        jti: refreshTokenId,
-    });
-    await persistRefreshToken(lh._id, refreshToken, refreshTokenId);
+    const refreshToken = issueRefreshToken(user._id);
+    await saveRefreshToken(user._id, refreshToken);
 
     const updates = {
         $set: { loginAttempts: 0 },
@@ -122,21 +95,16 @@ async function createAuthTokens(user, sessionId, body) {
     return { token, refreshToken };
 }
 
-async function rotateRefreshToken(user, loginHistory, sessionId) {
+async function rotateRefreshToken(user, loginHistory) {
     const tokenPayload = {
         ...buildTokenPayload(user),
         lh_id: loginHistory._id,
-        sessionId: ObjectId.isValid(sessionId) ? sessionId : null,
+        sessionId: loginHistory.visitSession || null,
     };
 
-    const refreshTokenId = generateRefreshTokenId();
     const token = issueAccessToken(tokenPayload);
-    const refreshToken = issueRefreshToken({
-        ...tokenPayload,
-        jti: refreshTokenId,
-    });
-
-    await persistRefreshToken(loginHistory._id, refreshToken, refreshTokenId);
+    const refreshToken = issueRefreshToken(user._id);
+    await saveRefreshToken(user._id, refreshToken);
 
     return { token, refreshToken };
 }
@@ -144,8 +112,7 @@ async function rotateRefreshToken(user, loginHistory, sessionId) {
 module.exports.buildTokenPayload = buildTokenPayload;
 module.exports.issueAccessToken = issueAccessToken;
 module.exports.issueRefreshToken = issueRefreshToken;
-module.exports.generateRefreshTokenId = generateRefreshTokenId;
-module.exports.persistRefreshToken = persistRefreshToken;
+module.exports.saveRefreshToken = saveRefreshToken;
 module.exports.rotateRefreshToken = rotateRefreshToken;
 module.exports.createAuthTokens = createAuthTokens;
 module.exports.createToken = async (user, sessionId, body) => {
