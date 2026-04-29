@@ -1,4 +1,5 @@
 const jwt = require('jsonwebtoken');
+const { randomUUID } = require('crypto');
 const User = require('../../../models/User');
 const LoginHistory = require('../../../models/LoginHistory');
 const Config = require('../../../config/app_config');
@@ -37,6 +38,7 @@ function issueAccessToken(data) {
         {
             ...data,
             purpose: 'WEB',
+            jti: randomUUID(),
         },
         Config.JWT.SECRET,
         {

@@ -8,12 +8,31 @@ const {
   REFRESH_COOKIE_NAME,
   clearRefreshTokenCookie,
 } = require("./authCookie");
+const redis = require("../../../service/redis");
 
 module.exports.logout = async (req, res) => {
   const refreshToken =
     req.cookies?.[REFRESH_COOKIE_NAME] ||
     req.body.refreshToken ||
     req.headers["x-refresh-token"];
+
+  // Blacklist the access token JTI so it cannot be reused after logout
+  const rawAccessToken =
+    (req.headers["authorization"] || "").replace(/^Bearer\s+/i, "") ||
+    req.headers["x-access-token"];
+  if (rawAccessToken) {
+    try {
+      const decoded = jwt.verify(rawAccessToken, Config.JWT.SECRET);
+      if (decoded.jti && decoded.exp) {
+        const ttl = decoded.exp - Math.floor(Date.now() / 1000);
+        if (ttl > 0) {
+          redis.set(`bl:${decoded.jti}`, "1", ttl);
+        }
+      }
+    } catch (_) {
+      // expired or invalid access token — nothing to blacklist
+    }
+  }
 
   clearRefreshTokenCookie(res);
 

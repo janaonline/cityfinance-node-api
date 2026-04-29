@@ -5,6 +5,7 @@ const Config = require("../../../config/app_config");
 const Helper = require("../../../_helper/constants");
 const Response = require("../../../service").response;
 const ObjectId = require("mongoose").Types.ObjectId;
+const redis = require("../../../service/redis");
 
 module.exports.verifyToken = (req, res, next) => {
   let token =
@@ -46,6 +47,15 @@ module.exports.verifyToken = (req, res, next) => {
             `Invalid token type. Please use an access token.`
           );
         }
+
+        // Reject tokens that were explicitly invalidated on logout
+        if (decoded.jti) {
+          const blacklisted = await redis.getDataPromise(`bl:${decoded.jti}`);
+          if (blacklisted) {
+            return Response.UnAuthorized(res, {}, `Token has been revoked. Kindly log in again.`);
+          }
+        }
+
         req.decoded = decoded;
         const userId = decoded.sub || decoded._id
 
