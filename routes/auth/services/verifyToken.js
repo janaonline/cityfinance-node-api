@@ -52,7 +52,7 @@ module.exports.verifyToken = (req, res, next) => {
         if (decoded.jti) {
           const blacklisted = await redis.getDataPromise(`bl:${decoded.jti}`);
           if (blacklisted) {
-            return Response.UnAuthorized(res, {}, `Token has been revoked. Kindly log in again.`);
+            return Response.UnAuthorized(res, {}, `Session expired. Kindly log in again to proceed.`);
           }
         }
 
