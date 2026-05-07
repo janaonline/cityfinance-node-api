@@ -51,4 +51,38 @@ router.use('/bond-issuances', require('./bond-issuances'));
 // Ledgers.
 router.use('/ledger', require('./ledger'));
 
+// Token-based private file download (no raw S3 path or signed URL exposed).
+router.use('/file', require('./file'));
+
+// Get signed url
+const { generateGetSignedUrl } = require('../service/s3-services');
+const { verifyToken } = require('../routes/auth/services/verifyToken');
+
+router.post('/get-signed-url', verifyToken, async (req, res) => {
+  try {
+    const { fileUrl } = req.body;
+
+    if (!fileUrl) {
+      return res.status(400).json({
+        success: false,
+        message: 'fileUrl is required',
+      });
+    }
+
+    const signedUrl = await generateGetSignedUrl(fileUrl);
+
+    return res.status(200).json({
+      success: true,
+      message: 'Signed URL generated successfully',
+      data: { signedUrl },
+    });
+  } catch (error) {
+    console.error('Error generating signed URL:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to generate signed URL',
+    });
+  }
+});
+
 module.exports = router;

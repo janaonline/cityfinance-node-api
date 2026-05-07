@@ -7,7 +7,7 @@ const tempDir = os.tmpdir();
 const uuid = require("uuid");
 const multer = require("multer");
 const multerS3 = require("multer-s3");
-const {ENV} = require('./../util/FormNames')
+const { ENV } = require('./../util/FormNames')
 const CONFIG = require("../config/s3-config.json").S3BUCKET;
 const sanitize = require("sanitize-filename");
 const { getStorageBaseUrl } = require("./getBlobUrl");
@@ -134,7 +134,7 @@ function initBackupBucket() {
 async function generateSignedUrl(data, _cb) {
     return new Promise((resolve, reject) => {
         var file_name = data.file_name;
-        let { custom,strictName } = data;
+        let { custom, strictName } = data;
         strictName = strictName === "true"
         let fileNameWithoutExt = file_name.substring(0, file_name.lastIndexOf("."));
         var file_extension = file_name.substring(file_name.lastIndexOf("."));
@@ -424,15 +424,27 @@ function getObjectStream(params) {
     return s3.getObject(params).createReadStream();
 }
 
+async function getObjectHead(params) {
+    return new Promise((resolve, reject) => {
+        s3.headObject(params, function (err, data) {
+            if (err) {
+                reject(err);
+            } else {
+                resolve(data);
+            }
+        });
+    });
+}
+
 async function getheadObject(params) {
     return new Promise((resolve, reject) => {
-    s3.headObject(params, function(err, data) {
-        if (err) {
-            if (err.code === 'NotFound') {
-                reject(new Error(`Object not found: ${params.Key}`));
-            } else {
-                reject(err);
-            }
+        s3.headObject(params, function (err, data) {
+            if (err) {
+                if (err.code === 'NotFound') {
+                    reject(new Error(`Object not found: ${params.Key}`));
+                } else {
+                    reject(err);
+                }
             } else {
                 const creationDate = data.LastModified;
                 resolve(creationDate);
@@ -448,21 +460,84 @@ async function getheadObject(params) {
  */
 function removePrefix(url) {
     try {
-      const prefixToRemove = getStorageBaseUrl();
-      if (url.startsWith(prefixToRemove)) {
-        return url.substring(prefixToRemove.length);
-      }
-      return url;
+        const prefixToRemove = getStorageBaseUrl();
+        if (url.startsWith(prefixToRemove)) {
+            return url.substring(prefixToRemove.length);
+        }
+        return url;
     } catch (error) {
-      throw {message: `removePrefix: ${error.message}`}
+        throw { message: `removePrefix: ${error.message}` }
     }
-  }
+}
+
+function normalizeS3ObjectKey(fileUrl) {
+    if (!fileUrl || typeof fileUrl !== "string") return null;
+
+    try {
+        const decodeKey = (key) => {
+            const normalizedKey = key.replace(/^\/+/, "");
+
+            try {
+                return decodeURIComponent(normalizedKey);
+            } catch (error) {
+                return normalizedKey;
+            }
+        };
+
+        if (fileUrl.startsWith("/")) {
+            return decodeKey(fileUrl);
+        }
+
+        if (/^https?:\/\//i.test(fileUrl)) {
+            const parsedUrl = new URL(fileUrl);
+            return decodeKey(parsedUrl.pathname);
+        }
+
+        return decodeKey(fileUrl);
+    } catch (error) {
+        throw { message: `normalizeS3ObjectKey: ${error.message}` };
+    }
+}
+
+async function generateGetSignedUrl(fileUrl, expiresIn = 60 * 60) {
+    const key = normalizeS3ObjectKey(fileUrl);
+
+    if (!key) return fileUrl;
+
+    return new Promise((resolve, reject) => {
+        s3.getSignedUrl(
+            "getObject",
+            {
+                Bucket: BUCKETNAME,
+                Key: key,
+                Expires: expiresIn,
+            },
+            (err, signedUrl) => {
+                if (err) {
+                    reject(err);
+                } else {
+                    console.log("Generated signed URL:", signedUrl);
+                    resolve(signedUrl);
+                }
+            }
+        );
+    });
+}
+
+function getFileStream(key) {
+    return getObjectStream({ Bucket: BUCKETNAME, Key: key });
+}
+
 module.exports.getheadObject = getheadObject;
 module.exports.getObjectStream = getObjectStream;
+module.exports.getObjectHead = getObjectHead;
+module.exports.getFileStream = getFileStream;
 module.exports.initBucket = initBucket;
 module.exports.initBackupBucket = initBackupBucket;
 
 module.exports.generateSignedUrl = generateSignedUrl;
+module.exports.generateGetSignedUrl = generateGetSignedUrl;
+module.exports.normalizeS3ObjectKey = normalizeS3ObjectKey;
 
 module.exports.downloadFileToDisk = downloadFileToDisk;
 
@@ -472,5 +547,6 @@ module.exports.uploadPptFileFromDisk = uploadPptFileFromDisk;
 module.exports.uploadMulter = uploadMulter;
 
 module.exports.s3 = s3;
+module.exports.BUCKETNAME = BUCKETNAME;
 module.exports.uploadFileFromDiskDBBackup = uploadFileFromDiskDBBackup;
 module.exports.uploadFileFromDiskDeployment = uploadFileFromDiskDeployment;
