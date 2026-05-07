@@ -1,4 +1,5 @@
-const { getStorageBaseUrl } = require('./getBlobUrl');
+const { createFileDownloadToken } = require('../util/file-token');
+const { FILE_DOWNLOAD } = require('../config/app_config');
 
 const ObjectId = require('mongoose').Types.ObjectId;
 module.exports.camelize = (dashString = '') => {
@@ -80,13 +81,6 @@ module.exports.getPopulationBucket = (populationBucket) => {
     }
     return cat;
 }
-/**
- * The function `concatenateUrls` takes an object and an array of keys, and concatenates the values of
- * the specified keys with a predefined URL.
- * @param obj - The `obj` parameter is an object that contains key-value pairs. Each key represents a
- * property name, and each value represents the corresponding value for that property.
- * @param keys - The `keys` parameter is an object whose value we want to cancatenate.
- */
 const KEYS = {
     url: 'url',
     link: 'link',
@@ -95,14 +89,37 @@ const KEYS = {
     pdfUrl: 'pdfUrl',
     excelUrl: 'excelUrl'
 }
-const concatenateUrls = (obj, params = KEYS, flag = false) => {
+
+const _appBaseUrl = FILE_DOWNLOAD.APP_BASE_URL;
+const _ttlMs = FILE_DOWNLOAD.LINK_TTL_MS;
+const INVALID_PLACEHOLDERS = ['not submitted'];
+
+/**
+ * Recursively replaces relative S3 paths in known URL fields with
+ * encrypted, time-limited app download tokens.
+ * Expiry is computed once on the top-level call and shared across all
+ * recursive calls so every token in one export has the same TTL window.
+ *
+ * @param {object}  obj
+ * @param {object}  params   - key whitelist (defaults to KEYS)
+ * @param {boolean} flag     - when true, merges params with KEYS (existing behaviour)
+ * @param {number}  [_exp]   - shared expiry ms (set internally on recursion)
+ */
+const concatenateUrls = (obj, params = KEYS, flag = false, _exp) => {
     try {
+        const exp = _exp || Date.now() + _ttlMs;
         if (flag) { params = Object.assign(params, KEYS); }
         for (var key in obj) {
             if (typeof obj[key] === 'object' && obj[key] !== null) {
-                obj[key] = concatenateUrls(obj[key], params);
+                obj[key] = concatenateUrls(obj[key], params, false, exp);
             } else if (typeof obj[key] === 'string' && obj[params[key]]) {
-                if (obj[params[key]] !== "Already Uploaded on Cityfinance") obj[key] = getStorageBaseUrl() + obj[key]
+                if (
+                    obj[params[key]] !== "Already Uploaded on Cityfinance" &&
+                    !INVALID_PLACEHOLDERS.includes(obj[key].trim().toLowerCase())
+                ) {
+                    const token = createFileDownloadToken({ path: obj[key], exp, disposition: 'attachment' });
+                    obj[key] = `${_appBaseUrl}/file/download?token=${token}`;
+                }
             }
         }
         return obj;
@@ -111,4 +128,4 @@ const concatenateUrls = (obj, params = KEYS, flag = false) => {
     }
 }
 
-module.exports.concatenateUrls = concatenateUrls
+module.exports.concatenateUrls = concatenateUrls;

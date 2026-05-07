@@ -2,46 +2,58 @@ const jwt = require('jsonwebtoken');
 const Config = require('../config/app_config');
 const Response = require('./response');
 const LoginHistory = require('../models/LoginHistory');
+const User = require('../models/User');
 const Helper = require('../_helper/constants');
 const ObjectId = require("mongoose").Types.ObjectId;
 
-module.exports = async function(req, res, next) {
+module.exports = async function (req, res, next) {
 
     var token = req.body.token || req.query.token || req.params.token || req.headers['x-access-token'];
     if (token) {
         // verifies secret and checks exp
-        jwt.verify(token, Config.JWT.SECRET, async function(err, decoded) {
+        jwt.verify(token, Config.JWT.SECRET, async function (err, decoded) {
             if (err) {
-                return Response.UnAuthorized(res, {},`Failed to authenticate token.`);
+                return Response.UnAuthorized(res, {}, `Failed to authenticate token.`);
             } else {
                 req.decoded = decoded;
-                if(req.decoded.sessionId)
-                {   
-                    userId = ObjectId(req.decoded._id);
-                    let query = {user:ObjectId(userId),visitSession:ObjectId(req.decoded.sessionId)}
-                    let login = await LoginHistory.findOne(query).sort({_id:-1}).exec();
-                    if(login){
+                const userId = ObjectId(decoded.sub || decoded._id);
 
-                        if(Date.now() >= login.inactiveSessionTime){
-                            return Response.UnAuthorized(res, {},`The client's session has expired and must log in again.`,440);
-                        }
-                        let inactiveTime = Date.now()+ Helper.INACTIVETIME.TIME; 
-                        let u = LoginHistory.updateOne({"_id":ObjectId(login._id)},{$set:{inactiveSessionTime:inactiveTime}}).exec();                      
+                // Fetch user details and attach to request
+                try {
+                    const user = await User.findOne({ _id: userId }, { role: 1, ulb: 1, state: 1, isActive: 1, isDeleted: 1 });
+                    if (!user) {
+                        return Response.UnAuthorized(res, {}, `User not found.`);
                     }
-                    else{
-                        return Response.UnAuthorized(res, {},`LoginHistory Not found`,400);
+                    req.user = user;
+                    req.decoded = { ...decoded, ...user.toObject() };
+                } catch (error) {
+                    console.error("Error fetching user details:", error);
+                }
+                if (req.decoded.sessionId) {
+                    let query = { user: ObjectId(userId), visitSession: ObjectId(req.decoded.sessionId) }
+                    let login = await LoginHistory.findOne(query).sort({ _id: -1 }).exec();
+                    if (login) {
+
+                        if (Date.now() >= login.inactiveSessionTime) {
+                            return Response.UnAuthorized(res, {}, `The client's session has expired and must log in again.`, 440);
+                        }
+                        let inactiveTime = Date.now() + Helper.INACTIVETIME.TIME;
+                        let u = LoginHistory.update({ "_id": ObjectId(login._id) }, { $set: { inactiveSessionTime: inactiveTime } }).exec();
+                    }
+                    else {
+                        return Response.UnAuthorized(res, {}, `LoginHistory Not found`, 400);
                     }
                 }
-                else{
-                    return Response.UnAuthorized(res, {},`No sessionId provided`);
-                }  
-                
+                else {
+                    return Response.UnAuthorized(res, {}, `No sessionId provided`);
+                }
+
                 next();
             }
         });
     } else {
-       
-        return Response.UnAuthorized(res, {sessionExpired: true},`Session Expired!`);
+
+        return Response.UnAuthorized(res, { sessionExpired: true }, `Session Expired!`);
 
     }
 };

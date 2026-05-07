@@ -187,23 +187,62 @@ const getFormattedLineItemDataByYear = (indicators, years, key, formatter) => {
     return formatter(value);
   });
 };
+/**
+ * Safely computes year-over-year percentage growth for a given indicator key.
+ *
+ * @param {Array} indicators - Array of objects like:
+ *     [{ year: "2020-21", indicators: { revenue: 120 } }, ...]
+ * @param {Array} years - Ordered year strings: ["2019-20", "2020-21", "2021-22"]
+ * @param {String} key - Indicator key inside `indicators[].indicators`
+ * @returns {Array} Growth values array matching years length. Example:
+ *     ["", "+10", "-3", ""]
+ */
 const getYearGrowth = (indicators, years, key) => {
-  return years.map((year, index) => {
-    if (index === 0) return "";
+  try {
+    // Validate inputs
+    if (!Array.isArray(indicators) || !Array.isArray(years) || !key) {
+      return years.map(() => "");
+    }
 
-    const prevYear = years[index - 1];
-    const prevEntry = indicators.find((ind) => ind.year === prevYear);
-    const currEntry = indicators.find((ind) => ind.year === year);
+    // Pre-index to avoid repeated .find()
+    const yearMap = {};
+    for (const item of indicators) {
+      if (item && item.year) yearMap[item.year] = item.indicators || {};
+    }
 
-    const prevValue = prevEntry?.indicators?.[key] ?? 0;
-    const currValue = currEntry?.indicators?.[key] ?? 0;
+    // Build growth array
+    return years.map((year, index) => {
+      if (index === 0) return ""; // No growth for first year
 
-    if (!prevValue || !currValue) return "";
+      const prevYear = years[index - 1];
 
-    const growth = ((currValue - prevValue) / prevValue) * 100;
-    return growth > 0 ? `+${Math.round(growth)}` : `${Math.round(growth)}`;
-  });
+      const prevValueRaw = yearMap[prevYear]?.[key];
+      const currValueRaw = yearMap[year]?.[key];
+
+      // Convert values safely → numbers or null
+      const prevValue = Number(prevValueRaw);
+      const currValue = Number(currValueRaw);
+
+      // Invalid or zero previous year → no growth
+      if (!isFinite(prevValue) || !isFinite(currValue) || prevValue === 0) {
+        return "";
+      }
+
+      // Calculate % growth
+      const growth = ((currValue - prevValue) / prevValue) * 100;
+
+      // Round to whole number (change if needed)
+      const rounded = Math.round(growth);
+
+      // Prefix positive growth with "+"
+      return rounded > 0 ? `+${rounded}` : `${rounded}`;
+    });
+  } catch (err) {
+    console.error("getYearGrowth() failed:", err);
+    return years.map(() => "");
+  }
 };
+
 const getFormattedLineItemSumByYear = (indicators, years, keys, formatter) => {
   return years.map((year) => {
     const entry = indicators.find((ind) => ind.year === year);
@@ -220,7 +259,7 @@ const getFormattedLineItemSumByYear = (indicators, years, keys, formatter) => {
 const sumLineItemsCapex = (lineItems = {}) => {
   if (!lineItems) return null; // no line items at all → invalid
 
-  const KEYS = ["410", "411", "412"];
+  const KEYS = ["410", "412"];
   let total = 0;
   let hasAny = false;
 
@@ -262,10 +301,16 @@ const computeDeltaCapex = (rows) => {
   normalized.sort((a, b) => a.startYear - b.startYear);
   const previous = normalized[0];
   const current = normalized[normalized.length - 1];
-
+  if (previous.total > current.total) {
+    return {
+      value: "N/A",
+      flag: "NEGATIVE_GROWTH",
+    };
+  }
+  // console.log(previous, current, "this is pre cur");
   if (current.startYear === previous.startYear) return "N/A";
 
-  return current.total - previous.total;
+  return { value: current.total - previous.total, flag: "SUCCESS" };
 };
 
 const getInfoHTML = (indicator) => {
@@ -871,7 +916,7 @@ const CompareBygroupIndicators = [
   },
 ];
 
-export default {
+module.exports = {
   normalize,
   formatToCroreSummary,
   safeDivide,

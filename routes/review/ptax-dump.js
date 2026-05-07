@@ -372,6 +372,7 @@ async function fetchStateData() {
 
 module.exports.pTax = async (req, res) => {
     try {
+        req.setTimeout(5 * 60 * 1000); // 5 mins
 
         const user = req.decoded || null;
         let stateId = null;

@@ -1,5 +1,6 @@
 const ledgerLog = require("../../models/LedgerLog");
 const ulb = require("../../models/Ulb");
+const LineItem = require("../../models/LineItem");
 const IndicatorsModel = require("../../models/ledgerIndicators");
 const { getPopulationCategory } = require("../common/common");
 const ALLOWED_COMPARE_TYPES = [
@@ -70,9 +71,11 @@ const {
   getYearGrowth,
   getInfoHTML,
   CompareBygroupIndicators,
-} = require("./helper").default;
+} = require("./helper");
 const mongoose = require("mongoose");
-
+const fs = require("fs");
+const path = require("path");
+const ExcelJS = require("exceljs");
 // Using ObjectId from mongoose
 const { ObjectId } = mongoose.Types;
 
@@ -81,6 +84,13 @@ module.exports.getIndicators = async (req, res) => {
     const { ulbId, financialYear } = req.query;
     if (!ulbId || !financialYear) {
       return res.status(400).json({ message: "Missing required parameters" });
+    }
+    var ulbPopulation = await ulb
+      .findOne({ _id: ObjectId(ulbId) })
+      .select("population");
+    // console.log("ulbPopulation:", ulbPopulation);
+    if (!ulbPopulation) {
+      return res.status(404).json({ message: "ULB not found" });
     }
     const allLineItems = await IndicatorsModel.find({})
       .select(["lineItems", "name", "key"])
@@ -91,7 +101,8 @@ module.exports.getIndicators = async (req, res) => {
     const IndicatorTotals = await accumulateIndicators(
       ulbId,
       financialYear,
-      allLineItems
+      allLineItems,
+      ulbPopulation.population
     );
 
     res.status(200).json(IndicatorTotals);
@@ -101,7 +112,12 @@ module.exports.getIndicators = async (req, res) => {
   }
 };
 
-async function accumulateIndicators(ulbId, financialYear, allLineItems) {
+async function accumulateIndicators(
+  ulbId,
+  financialYear,
+  allLineItems,
+  ulbPopulation
+) {
   try {
     const totals = await getCommonIndicatorsData({
       ulbId,
@@ -112,7 +128,8 @@ async function accumulateIndicators(ulbId, financialYear, allLineItems) {
     const marketDashboardInd = await marketDashboardIndicators(
       ulbId,
       financialYear,
-      totals
+      totals,
+      ulbPopulation
     );
     const { intFinCha, qaRatioNum, depreciation, ...filteredTotals } =
       totals[0] || {};
@@ -208,7 +225,13 @@ async function getCommonIndicatorsData({ ulbId, financialYear, allLineItems }) {
 //   return numerator / denominator;
 // };
 
-async function marketDashboardIndicators(ulbId, financialYear, totals) {
+async function marketDashboardIndicators(
+  ulbId,
+  financialYear,
+  totals,
+  ulbPopulation
+) {
+  // console.log("ulbPopulation in marketDashboardIndicators:", ulbPopulation);
   // ---- Guards & input validation ----
   if (!ulbId || (typeof ulbId !== "string" && !(ulbId instanceof ObjectId))) {
     throw new Error("Invalid ulbId");
@@ -241,7 +264,11 @@ async function marketDashboardIndicators(ulbId, financialYear, totals) {
     } = totals[0] || {};
 
     // ---------- Fetch capex (already returns a number or "N/A") ----------
-    const capexRaw = await getCapexValue(ulbId, financialYear);
+    const initialCapexRaw = await getCapexValue(ulbId, financialYear);
+    // console.log(initialCapexRaw, "hh");
+    const capexRaw = initialCapexRaw.value ?? "N/A";
+    // console.log(capexRaw, "yy");
+    marketDasInd.capexFlag = initialCapexRaw.flag ?? null;
     const isNegative = typeof capexRaw === "number" && capexRaw < 0;
     marketDasInd.capex = capexRaw;
     marketDasInd.capexAdjusted = isNegative ? "N/A" : null;
@@ -324,6 +351,29 @@ async function marketDashboardIndicators(ulbId, financialYear, totals) {
             2
           )
         : "N/A";
+    // ---------- Return the computed indicators for per capita ----------
+    marketDasInd.totRevenuePerCapita = safePerCapita(rev, ulbPopulation);
+    marketDasInd.totRevenueExpenditurePerCapita = safePerCapita(
+      totRevExp,
+      ulbPopulation
+    );
+    marketDasInd.totOwnRevenuePerCapita = safePerCapita(
+      ownRevVal,
+      ulbPopulation
+    );
+    marketDasInd.totDebtPerCapita = safePerCapita(totDebtVal, ulbPopulation);
+    marketDasInd.grantsPerCapita = safePerCapita(grantsVal, ulbPopulation);
+    marketDasInd.totAssetsVal = safePerCapita(totAssetsVal, ulbPopulation);
+    marketDasInd.operatingSurplusPerCapita = safePerCapita(
+      marketDasInd.operatingSurplus,
+      ulbPopulation
+    );
+    marketDasInd.totExpenditureCapita = safePerCapita(
+      marketDasInd.totExpenditure,
+      ulbPopulation
+    );
+    marketDasInd.capexPerCapita = safePerCapita(capexFinal, ulbPopulation);
+
     // console.log(marketDasInd, "marketDasInd");
     return marketDasInd;
   } catch (error) {
@@ -332,31 +382,79 @@ async function marketDashboardIndicators(ulbId, financialYear, totals) {
     throw error;
   }
 }
+function safePerCapita(value, population, decimals = 2) {
+  const num = toNumber(value);
+  const pop = toNumber(population);
 
+  if (pop <= 0) return 0;
+
+  const result = num / pop;
+  return Number(result.toFixed(decimals));
+}
+function toNumber(value) {
+  if (value === null || value === undefined) return 0;
+
+  if (typeof value === "string") {
+    const cleaned = value.trim().toLowerCase();
+
+    // Strings that mean "no data"
+    if (["n/a", "na", "-", "--", ""].includes(cleaned)) {
+      return 0;
+    }
+
+    // Remove commas (e.g., "12,345")
+    const parsed = Number(cleaned.replace(/,/g, ""));
+    return isNaN(parsed) ? 0 : parsed;
+  }
+
+  if (typeof value === "number") {
+    return isNaN(value) ? 0 : value;
+  }
+
+  return 0;
+}
 const getCapexValue = async (ulbId, financialYear) => {
-  if (!ulbId || ulbId.length === 0) return "N/A";
+  if (!ulbId || ulbId.length === 0) return { value: "N/A", flag: "MISSING_ID" };
 
-  const yearsArray = await getYearArray(financialYear); // e.g., ["2022-23","2021-22"]
-  if (!Array.isArray(yearsArray) || yearsArray.length < 2) return "N/A";
+  const yearsArray = await getYearArray(financialYear);
+  if (!Array.isArray(yearsArray) || yearsArray.length < 2)
+    return { value: "N/A", flag: "YEAR_RANGE_ERROR" };
 
   try {
     const ledgerData = await ledgerLog
       .find({ ulb_id: new ObjectId(ulbId), year: { $in: yearsArray } })
-      .select("year lineItems.410 lineItems.411 lineItems.412")
+      .select("year lineItems.410 lineItems.412")
       .lean();
 
-    // Empty or single-year → N/A
-    if (!Array.isArray(ledgerData) || ledgerData.length < 2) return "N/A";
+    if (!ledgerData || ledgerData.length < 2)
+      return { value: "N/A", flag: "DATA_NOT_FOUND" };
 
+    for (const entry of ledgerData) {
+      const v410 = entry.lineItems?.["410"];
+      const v412 = entry.lineItems?.["412"];
+
+      // Validation 1: Individual check (Zero/Null/Undefined)
+      const isInvalid = (v) =>
+        v === undefined || v === null || v === 0 || v === "0";
+      if (isInvalid(v410) || isInvalid(v412)) {
+        return { value: "N/A", flag: "INCOMPLETE_LINE_ITEMS" };
+      }
+
+      // Validation 2: Sum check
+      if (Number(v410) + Number(v412) === 0) {
+        return { value: "N/A", flag: "ZERO_TOTAL_CAPEX" };
+      }
+    }
+
+    // If validations pass, proceed to calculation
     return computeDeltaCapex(ledgerData);
   } catch (err) {
-    console.error("Error fetching ledgerData:", err);
-    return "N/A";
+    console.error("Error:", err);
+    return { value: "N/A", flag: "SERVER_ERROR" };
   }
 };
 module.exports.createIndicators = async (req, res) => {
   try {
-    // List of indicators you want to ensure are present
     const indicatorsList = [
       totRevenue,
       totRevenueExpenditure,
@@ -368,38 +466,104 @@ module.exports.createIndicators = async (req, res) => {
       OperSurplusTotRevenueExpenditure,
     ];
 
-    const results = [];
-    let modifiedCount = 0;
+    const details = [];
+    let insertedCount = 0;
+    let updatedCount = 0;
+    let unchangedCount = 0;
 
     for (const indicator of indicatorsList) {
-      // console.log(indicator,'this is list');
+      if (!indicator || !indicator.key) {
+        details.push({
+          key: indicator?.key || null,
+          status: "skipped",
+          message: "Indicator data is missing or key is not defined",
+        });
+        continue;
+      }
+
       const result = await IndicatorsModel.updateOne(
         { key: indicator.key },
         { $set: indicator },
-        { upsert: true }
+        {
+          upsert: true,
+          runValidators: true,
+          setDefaultsOnInsert: true,
+        }
       );
 
-      results.push({ key: indicator.key, result });
+      let status = "unchanged";
+      let message = "Indicator already exists with the same data";
 
-      if (result.modifiedCount > 0 || result.upsertedCount > 0) {
-        modifiedCount++;
+      if (result.upsertedCount > 0) {
+        insertedCount++;
+        status = "inserted";
+        message = "Indicator created successfully";
+      } else if (result.modifiedCount > 0) {
+        updatedCount++;
+        status = "updated";
+        message = "Indicator updated successfully";
+      } else {
+        unchangedCount++;
       }
+
+      details.push({
+        key: indicator.key,
+        status,
+        message,
+        matchedCount: result.matchedCount || 0,
+        modifiedCount: result.modifiedCount || 0,
+        upsertedCount: result.upsertedCount || 0,
+        upsertedId: result.upsertedId || null,
+      });
     }
 
-    if (modifiedCount === 0) {
-      return res.status(200).json({ message: "No changes occurred" });
-    }
-
-    res.status(200).json({
-      message: `${modifiedCount} indicators inserted/updated successfully`,
-      details: results,
+    return res.status(200).json({
+      success: true,
+      message:
+        insertedCount === 0 && updatedCount === 0
+          ? "No indicators were changed. All records are already up to date."
+          : "Indicators processed successfully.",
+      summary: {
+        total: indicatorsList.length,
+        inserted: insertedCount,
+        updated: updatedCount,
+        unchanged: unchangedCount,
+      },
+      // details,
     });
   } catch (error) {
     console.error("Error upserting indicators:", error);
-    res.status(500).json({ message: "Internal Server Error" });
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to create or update indicators.",
+      error: error.message,
+    });
   }
 };
+const getLatestCapexInfo = (dataArray) => {
+  // 1. Get the length of the array
+  const arrayLength = Array.isArray(dataArray) ? dataArray.length : 0;
 
+  // 2. Validation: If array is empty
+  if (arrayLength === 0) {
+    return {
+      length: 0,
+      flag: "NO_DATA_AVAILABLE",
+      year: null,
+    };
+  }
+
+  // 3. Always target the last object
+  const lastEntry = dataArray[arrayLength - 1];
+
+  // 4. Extract data safely using Optional Chaining
+  return {
+    length: arrayLength,
+    flag: lastEntry.indicators?.capexFlag || "FLAG_MISSING",
+    year: lastEntry.year || "YEAR_MISSING",
+  };
+};
 module.exports.getCityDasboardIndicators = async (req, res) => {
   try {
     const { ulbId, years, keyType } = req.query;
@@ -436,6 +600,78 @@ module.exports.getCityDasboardIndicators = async (req, res) => {
     var intro = await getIntro(params, keyType, years);
     switch (keyType) {
       case "overview": {
+        const getCapex = getFormattedYearData(
+          indicators,
+          years,
+          "capex",
+          formatToCrore
+        );
+        const finalCapex = getCapex.map((value) => {
+          // Case 1: value is N/A, empty, or null
+          if (value === "N/A" || value === "" || value === null) {
+            return "N/A";
+          }
+
+          // Convert to number safely
+          const num = Number(value);
+
+          // Case 2: not a number OR negative
+          if (isNaN(num) || num < 0) {
+            return "N/A";
+          }
+
+          // Otherwise keep original value
+          return value;
+        });
+        // console.log(getCapex, "this is capex");
+        const getRevExpenditure = getFormattedYearData(
+          indicators,
+          years,
+          "totRevenueExpenditure",
+          formatToCrore
+        );
+        // console.log(getRevExpenditure, "this is revexpenditure");
+        // const gettotlExpenditure = getFormattedYearData(
+        //   indicators,
+        //   years,
+        //   "totExpenditure",
+        //   formatToCrore
+        // );
+        // console.log(gettotlExpenditure, "this is total expenditure");
+        const getTotExpenditureByTotRevenue = getYearData(
+          indicators,
+          years,
+          "totExpenditureByTotRevenue"
+        );
+
+        // console.log(getTotExpenditureByTotRevenue, "this is total expenditure");
+        const finalGetTotExpenditureByTotRevenue = finalCapex.map(
+          (capexVal, i) => {
+            if (capexVal === "N/A") {
+              return "N/A";
+            }
+            return getTotExpenditureByTotRevenue[i]; // Use rev expenditure value
+          }
+        );
+
+        const getcapitalExpenditureByTotExpenditure = getYearData(
+          indicators,
+          years,
+          "totExpenditureByTotRevenue"
+        );
+
+        // console.log(
+        //   getcapitalExpenditureByTotExpenditure,
+        //   "this is total expenditure"
+        // );
+        // const finalgetcapitalExpenditureByTotExpenditure = finalCapex.map(
+        //   (capexVal, i) => {
+        //     if (capexVal === "N/A") {
+        //       return "N/A";
+        //     }
+        //     return getcapitalExpenditureByTotExpenditure[i]; // Use rev expenditure value
+        //   }
+        // );
         var response = {
           intro: intro,
           data: [
@@ -503,12 +739,7 @@ module.exports.getCityDasboardIndicators = async (req, res) => {
               name: "Total Expenditure (Cr)",
               graphKey: "amount",
               isParent: "true",
-              yearData: getFormattedYearData(
-                indicators,
-                years,
-                "totExpenditure",
-                formatToCrore
-              ),
+              yearData: calculateTotalExpenditure(getCapex, getRevExpenditure),
               yearGrowth: getYearGrowth(indicators, years, "totExpenditure"),
               info: getInfoHTML("totExpenditure"),
               children: [
@@ -526,12 +757,7 @@ module.exports.getCityDasboardIndicators = async (req, res) => {
                 {
                   name: "Total Capital Expenditure (Cr)",
                   graphKey: "amount",
-                  yearData: getFormattedYearData(
-                    indicators,
-                    years,
-                    "capex",
-                    formatToCrore
-                  ),
+                  yearData: finalCapex,
                   className: "ps-5 ",
                 },
               ],
@@ -577,11 +803,7 @@ module.exports.getCityDasboardIndicators = async (req, res) => {
               name: "Total Expenditure to Total Revenue Receipts (%)",
               graphKey: "percentage",
               isParent: "true",
-              yearData: getYearData(
-                indicators,
-                years,
-                "totExpenditureByTotRevenue"
-              ),
+              yearData: finalGetTotExpenditureByTotRevenue,
               info: getInfoHTML("totExpenditureByTotRevenue"),
             },
             {
@@ -836,6 +1058,7 @@ module.exports.getCityDasboardIndicators = async (req, res) => {
           "capex",
           formatToCrore
         );
+
         const finalCapex = getCapex.map((value) => {
           // Case 1: value is N/A, empty, or null
           if (value === "N/A" || value === "" || value === null) {
@@ -887,7 +1110,7 @@ module.exports.getCityDasboardIndicators = async (req, res) => {
         const getcapitalExpenditureByTotExpenditure = getYearData(
           indicators,
           years,
-          "totExpenditureByTotRevenue"
+          "capitalExpenditureByTotExpenditure"
         );
 
         // console.log(
@@ -902,8 +1125,11 @@ module.exports.getCityDasboardIndicators = async (req, res) => {
             return getcapitalExpenditureByTotExpenditure[i]; // Use rev expenditure value
           }
         );
-
+        // console.log(indicators, "this is s");
+        const capexFlags = getLatestCapexInfo(indicators);
+        // console.log(capexFlags, "this is flag");
         var response = {
+          CapexflagStatus: capexFlags,
           intro: intro,
           data: [
             header,
@@ -1128,6 +1354,7 @@ module.exports.getCityDasboardIndicators = async (req, res) => {
         };
         break;
       }
+
       default: {
         return "invalid key type";
       }
@@ -1218,20 +1445,20 @@ async function getIntro(indicators, keyType, yearsArray) {
         finalObject,
         yearsArray
       );
-      const totRevenueExpenditure = getIndicatorValue(
-        "totRevenueExpenditure",
+      const totExpenditure = getIndicatorValue(
+        "totExpenditure",
         finalObject,
         yearsArray
       );
-      // console.log(totRevenueData,totRevenueExpenditure,'this is data object')
+      console.log(totRevenueData,totExpenditure,'this is data object')
       return `In FY ${totRevenueData.year}, ${
         totRevenueData.ulbName
       } reported a total revenue of INR ${formatToCroreSummary(
         totRevenueData.value
       )} crore and a total expenditure of INR ${formatToCroreSummary(
-        totRevenueExpenditure.value
+        totExpenditure.value
       )} crore, implying that its expenditure accounted for ${Math.round(
-        (totRevenueExpenditure.value / totRevenueData.value) * 100
+        (totExpenditure.value / totRevenueData.value) * 100
       )}% of its revenue`;
     }
     case "revenue": {
@@ -1821,6 +2048,194 @@ module.exports.getUlbDetailsById = async (req, res) => {
     res.status(500).json({ message: "Internal Server Error" });
   }
 };
+// Helper: build last 3 years array from "2021-22"
+function lastThreeYears(selectedYearStr) {
+  // expected format "2021-22"
+  const parts = selectedYearStr.split("-");
+  if (parts.length !== 2)
+    throw new Error("Invalid year format. Expected 'YYYY-YY' like '2021-22'");
+  const startYear = parseInt(parts[0], 10);
+  if (Number.isNaN(startYear)) throw new Error("Invalid year start part");
+  const years = [];
+  for (let i = 2; i >= 0; i--) {
+    const from = startYear - i;
+    const to = String(from + 1).slice(-2);
+    years.push(`${from}-${to}`);
+  }
+  return years;
+}
+
+// Helper: format ledger value robustly
+function formatLedgerValue(val) {
+  if (val === null || val === undefined) return "N/A";
+  if (typeof val === "string") {
+    const trimmed = val.trim();
+    if (trimmed === "" || trimmed.toUpperCase() === "N/A") return "N/A";
+    const num = Number(trimmed.replace(/,/g, "")); // allow comma thousands
+    if (Number.isNaN(num)) return trimmed; // keep original string if non-numeric
+    // round to 2 decimals
+    return Math.round((num + Number.EPSILON) * 100) / 100;
+  }
+  if (typeof val === "number") {
+    return Number.isFinite(val)
+      ? Math.round((val + Number.EPSILON) * 100) / 100
+      : val;
+  }
+  return String(val);
+}
+
+// Controller: download Excel for Market Dashboard
+exports.downloadMarketDashboardExcel = async (req, res) => {
+  try {
+    const { year, ulbId } = req.query;
+    if (!year || !ulbId) {
+      return res.status(400).json({ message: "year & ulbId are required" });
+    }
+
+    // Build last 3 fiscal years (e.g. ["2019-20","2020-21","2021-22"])
+    const years = lastThreeYears(year);
+
+    // 1) Fetch active line items EXCEPT excluded codes
+    const excludeCodes = [
+      "1001",
+      "1002",
+      "1003",
+      "1004",
+      "1005",
+      "1006",
+      "1007",
+    ];
+
+    const lineItems = await LineItem.find({
+      isActive: true,
+      code: { $nin: excludeCodes },
+    })
+      .sort({ headOfAccount: 1 })
+      .lean();
+
+    // 2) Fetch ledger logs for the requested ULB and years
+    const ledgerLogs = await ledgerLog
+      .find({
+        ulb_id: mongoose.Types.ObjectId(ulbId),
+        year: { $in: years },
+      })
+      .lean();
+
+    const ulbName = ledgerLogs[0]?.ulb || "ULB";
+
+    // Build ledger map
+    const ledgerMap = {};
+    for (const y of years) ledgerMap[y] = {};
+
+    for (const log of ledgerLogs) {
+      const items = log.lineItems || {};
+      ledgerMap[log.year] = items;
+    }
+
+    // ---------------------------------------
+    // ✅ 3) UPDATED HEADERS INCLUDING NEW COLUMNS
+    // ---------------------------------------
+    const columns = [
+      { header: "Department", key: "department", width: 25 },
+      { header: "Code", key: "code", width: 15 },
+      { header: "Indicators", key: "indicator", width: 40 },
+      ...years.map((y) => ({ header: y, key: y, width: 20 })),
+    ];
+
+    // ---------------------------------------
+    // ✅ 4) UPDATED ROWS INCLUDING department + code
+    // ---------------------------------------
+    const rows = lineItems.map((li) => {
+      const rowArr = [];
+
+      // NEW FIELDS
+      rowArr.push(li.headOfAccount || "N/A"); // department
+      rowArr.push(li.code || "N/A"); // code
+
+      rowArr.push(li.name); // indicator
+
+      // yearly values
+      for (const y of years) {
+        const rawVal = ledgerMap[y]?.[li.code];
+        rowArr.push(formatLedgerValue(rawVal));
+      }
+
+      return rowArr;
+    });
+
+    // 5) Create workbook
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet("Market Dashboard", {
+      views: [{ state: "visible" }],
+    });
+
+    // 6) Logo
+    const logoPath = path.join(
+      process.cwd(),
+      "uploads",
+      "logos",
+      "Group 1.jpeg"
+    );
+    if (fs.existsSync(logoPath)) {
+      const imageId = workbook.addImage({
+        buffer: fs.readFileSync(logoPath),
+        extension: "jpeg",
+      });
+      worksheet.addImage(imageId, {
+        tl: { col: 0, row: 0 },
+        br: { col: 4, row: 2 },
+      });
+    }
+
+    // 7) Reserve rows 1–3 for logo
+    const headerRowIndex = 4;
+    worksheet.getRow(headerRowIndex).values = columns.map((c) => c.header);
+
+    // Column widths
+    for (let i = 0; i < columns.length; i++) {
+      const col = worksheet.getColumn(i + 1);
+      col.width = columns[i].width;
+      col.alignment = {
+        vertical: "middle",
+        horizontal: i <= 1 ? "center" : "left",
+      };
+    }
+
+    // Header style
+    const headerRow = worksheet.getRow(headerRowIndex);
+    headerRow.font = { bold: true };
+    headerRow.alignment = { vertical: "middle", horizontal: "center" };
+    headerRow.height = 20;
+
+    // 8) Insert data rows
+    rows.forEach((r) => worksheet.addRow(r));
+
+    // 9) Footer row
+    worksheet.addRow([
+      `Can't find what you are looking for? Contact us at contact@${
+        process.env.PROD_HOST || "example.com"
+      }`,
+    ]);
+
+    // 10) Send file
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    );
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename=MarketDashboard_${ulbName}_${year}.xlsx`
+    );
+
+    await workbook.xlsx.write(res);
+    return res.end();
+  } catch (err) {
+    console.error("EXCEL ERROR:", err);
+    return res
+      .status(500)
+      .json({ message: "Something went wrong", error: err.message });
+  }
+};
 
 //
 
@@ -1854,15 +2269,6 @@ function populationCategoryData(pop) {
     },
   };
 }
-
-// const LABEL_MAP = {
-//   ulb: "ULB",
-//   state: "State Average",
-//   popCat: "Population Category Average",
-//   national: "National Average",
-//   ulbType: "ULB Type Average",
-// };
-
 // 🧩 Core Weighted Average Builder
 async function getWeightedAvgData(
   compareIdMap,

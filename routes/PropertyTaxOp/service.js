@@ -1262,7 +1262,7 @@ async function appendChildValues(params) {
         if (element.child && ptoMaper) {
             let childElements = ptoMaper.filter(item => item.type === element.key);
             for (let [index, childElement] of childElements.entries()) {
-                if (!isBeyond2023_24(design_year) && index > 0) break;
+                if (!isBeyond2023_24(design_year) && index > 0 && !isLatestOnboarderUlb) break;
                 if (childElement && childElement.child) {
                     let yearData = []
 
@@ -1290,7 +1290,7 @@ async function appendChildValues(params) {
                     if (!isLatestOnboarderUlb && index == 0) {
                         element.child = child;
                     } else {
-                        if (!isBeyond2023_24(design_year)) continue;
+                        if (!isBeyond2023_24(design_year) && !isLatestOnboarderUlb) continue;
                         element.child.forEach(replica => {
                             const childFromSameReplica = child.find(cl => {
                                 return cl.replicaNumber == replica.replicaNumber && cl.key == replica.key
@@ -1345,6 +1345,11 @@ const getRowDesignYear = (child, design_year) => {
     return getDesiredYear('2023-24').yearId;
 }
 
+const getAccessYr = (yr) => {
+    const [start, end] = yr.split('-');
+    return `access_${start.slice(2)}${end}`;
+}
+
 exports.getView = async function (req, res, next) {
     // mongoose.set('debug', true);
     try {
@@ -1354,15 +1359,19 @@ exports.getView = async function (req, res, next) {
             return res.status(400).json({ status: false, message: "Something went wrong!" });
         }
         const design_year = req.query.design_year;
+
         const designYearStr = getDesiredYear(design_year);
-        const [ulbData] = await Ulb.aggregate(ulbDataWithGsdpGrowthRateQuery(req.query.ulb));
+        const accessYear = getAccessYr(designYearStr?.yearName);
+
+        const prevDesignYearStr = getDesiredYear(design_year, -1);
+        const prevAccessYear = getAccessYr(prevDesignYearStr?.yearName);
+
+        const [ulbData] = await Ulb.aggregate(ulbDataWithGsdpGrowthRateQuery(req.query.ulb, accessYear, prevAccessYear));
         const gsdpYear = getStateGsdpYear(design_year);
         const gsdpGrowthRate = ulbData.gsdpGrowthRateData?.find(el => el.year === gsdpYear)?.currentPrice;
+
         // const isLatestOnboarderUlb = !ulbData.access_2324;
-        const yr = designYearStr?.yearName
-        const [start, end] = yr.split('-');
-        const accessYear = `access_${start.slice(2)}${end}`;
-        const isLatestOnboarderUlb = !ulbData[accessYear];
+        const isLatestOnboarderUlb = ulbData[accessYear] && !ulbData[prevAccessYear];
 
         if (!isLatestOnboarderUlb && isBeyond2023_24(design_year)) {
             const desiredYear = getDesiredYear(design_year, -1);
@@ -1374,11 +1383,14 @@ exports.getView = async function (req, res, next) {
                 { history: 0 }
             ).lean();
 
-            if (!(MASTER_STATUS_ID[+ptoData?.currentFormStatus] == "Under Review By MoHUA")) {
+            const currStatus = MASTER_STATUS_ID[+ptoData?.currentFormStatus];
+            const ALLOWED_STATUS = [MASTER_STATUS_ID[6], MASTER_STATUS_ID[4]];
+            if (!ALLOWED_STATUS.includes(currStatus)) {
                 const redirectionLink = `${process.env.v1Url}/ulb-form/${getDesiredYear(design_year, -1).yearId}/ptax`;
                 return res.status(400).json({
                     success: true,
-                    message: `Dear User, Your previous Year's form status is - In Progress .Kindly submit Details of Property Tax and User Charges Form for the previous year at - <a href="${redirectionLink}" target="_blank">Click Here!</a> in order to submit this year's form . `
+                    message: `Dear User, your previous year's form status is: ${MASTER_STATUS_ID[+ptoData?.currentFormStatus] || 'Not Started'}. Once the ‘Property Tax and User Charges Form’ from the previous year is approved by the State, you’ll be able to submit this year’s form.
+                    <a href="${redirectionLink}" target="_blank">Click here</a> to view your previous year's form.`
                 });
             }
         }
@@ -1439,7 +1451,7 @@ exports.getView = async function (req, res, next) {
                                             const { yearName, yearId } = getDesiredYear(design_year, -1);
 
                                             // if (indicatorObj.isReadonlySingleYear) {
-                                                // if (indicatorObj.isReadonlySingleYear && indicatorObj.value === 'Yes') {
+                                            // if (indicatorObj.isReadonlySingleYear && indicatorObj.value === 'Yes') {
                                             if (indicatorObj.value === 'Yes') {
                                                 indicatorObj.readonly = true;
                                             }
@@ -1529,7 +1541,7 @@ exports.getView = async function (req, res, next) {
 }
 
 
-function ulbDataWithGsdpGrowthRateQuery(ulb) {
+function ulbDataWithGsdpGrowthRateQuery(ulb, accessYear, prevAccessYear) {
     return [
         {
             $match: {
@@ -1547,7 +1559,8 @@ function ulbDataWithGsdpGrowthRateQuery(ulb) {
         { $unwind: { "path": "$stateData", "preserveNullAndEmptyArrays": true } },
         {
             $project: {
-                access_2324: 1,
+                [accessYear]: 1,
+                [prevAccessYear]: 1,
                 gsdpGrowthRateData: "$stateData.data"
             }
         }

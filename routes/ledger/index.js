@@ -4,11 +4,12 @@ const passport = require('passport');
 const ledgerService = require('./service');
 const verifyToken = require('../auth/services/verifyToken').verifyToken;
 const ufdService = require('../ulb-financial-data/service');
+const ufdDownloadService = require('../ulb-financial-data/download-service');
 const ledgerDump = require('./ledger-dump');
 
 // Create new ledger download template - 28 July 24.
 // TODO: Remove - Migrated to routes V2 - ledger-dump.js
-router.get('/getLedgerDump', ledgerDump.getLedgerDump);
+// router.get('/getLedgerDump', ledgerDump.getLedgerDump);
 
 // Route to download all the existing ledgers in the system
 router.get('/getAllLegdersCsv', ledgerService.getAllLedgersCsv);
@@ -45,5 +46,6 @@ router.post('/log/addLogByToken', verifyToken, (req, res, next) => {
 router.post('/log/getAll', ledgerService.getAllLogs);
 
 // Download Documents
-router.get('/ulb-financial-data/files/:_id',ufdService.sourceFiles);
+router.get('/ulb-financial-data/files/download', ufdDownloadService.downloadFinancialFile);
+router.get('/ulb-financial-data/files/:_id', ufdService.sourceFiles);
 module.exports = router;

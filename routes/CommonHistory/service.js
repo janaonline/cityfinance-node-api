@@ -63,6 +63,7 @@ module.exports.getHistory = catchAsync(async (req, res) => {
         // if (!getData) throw new Error(`${user.role} + " Not Authorized to Access this Data"`)
         if(getData) outputArr = await getHistoryNew({ getData, formTabData });
       }
+      outputArr.sort((a, b) => a.time - b.time);
       return res.status(200).json({ success: true, message: "Data Fetched Successfully!", data: outputArr });
     } else {
       return res.status(400).json({ success: false, message: "No Data Found" });

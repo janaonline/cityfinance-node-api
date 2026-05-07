@@ -17,7 +17,10 @@ if(process.env.CONNECTION_STRING){
           }
         }
     });
-}else{
-    console.log(process.env.ENV,"Env not supported"); process.exit(0);
+} else {
+  if (process.env.NODE_ENV !== "test") {
+    console.log(process.env.ENV, "Env not supported");
+    process.exit(0);
+  }
 }
 exports = Schema = mongoose.Schema;

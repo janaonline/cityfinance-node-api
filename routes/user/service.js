@@ -24,9 +24,35 @@ const USER_ROLE = {
     ULB: 'ulb',
     STATE: 'state'
 }
+
+function sanitizeUserResponse(payload) {
+    if (Array.isArray(payload)) {
+        return payload.map((item) => sanitizeUserResponse(item));
+    }
+    if (!payload || typeof payload !== 'object') {
+        return payload;
+    }
+
+    const plainPayload =
+        typeof payload.toObject === 'function' ? payload.toObject() : { ...payload };
+
+    const fieldsToRemove = ['password', 'passwordHistory', 'isPasswordResetInProgress', 'passwordExpires', 'lockUntil', 'isDeleted'];
+    fieldsToRemove.forEach((field) => {
+        if (plainPayload.hasOwnProperty(field)) {
+            delete plainPayload[field];
+        }
+    });
+    delete plainPayload.password;
+    delete plainPayload.passwordHistory;
+
+    return plainPayload;
+}
+
 module.exports.get = async (req, res) => {
     let user = req.decoded;
-    (role = req.body.role), (filter = req.body.filter), (sort = req.body.sort);
+    let role = req.body.role;
+    let filter = req.body.filter;
+    let sort = req.body.sort;
     let skip = req.query.skip ? parseInt(req.query.skip) : 0;
     let limit = req.query.limit ? parseInt(req.query.limit) : 50;
     let actionAllowed = ['ADMIN', 'MoHUA', 'PARTNER', 'STATE'];
@@ -84,7 +110,7 @@ module.exports.get = async (req, res) => {
                 timestamp: moment().unix(),
                 success: true,
                 message: 'User list',
-                data: users,
+                data: sanitizeUserResponse(users),
                 total: total
             });
         } catch (e) {
@@ -92,27 +118,32 @@ module.exports.get = async (req, res) => {
         }
     }
 };
+
+function safeParseJSON(value, fallback = {}) {
+    try {
+        return value ? JSON.parse(value) : fallback;
+    } catch {
+        return fallback;
+    }
+}
+
 module.exports.getAll = async (req, res) => {
     try {
         let user = req.decoded,
-            filter = req.query.filter
-                ? JSON.parse(req.query.filter)
-                : req.body.filter
-                    ? req.body.filter
-                    : {},
-            sort = req.query.sort
-                ? JSON.parse(req.query.sort)
-                : req.body.sort
-                    ? req.body.sort
-                    : {},
-            skip = req.query.skip ? parseInt(req.query.skip) : 0,
-            limit = req.query.limit ? parseInt(req.query.limit) : 50,
-            csv = req.query.csv == 'true',
-            role = req.query.role
-                ? req.query.role
-                : req.body.role
-                    ? req.body.role
-                    : 'USER';
+			filter = req.query.filter
+				? safeParseJSON(req.query.filter, {})
+				: req.body.filter
+					? req.body.filter
+					: {},
+			sort = req.query.sort
+				? safeParseJSON(req.query.sort, {})
+				: req.body.sort
+					? req.body.sort
+					: {},
+			skip = req.query.skip ? parseInt(req.query.skip, 10) : 0,
+			limit = req.query.limit ? parseInt(req.query.limit, 10) : 50,
+			csv = req.query.csv == 'true',
+			role = req.query.role ? req.query.role : req.body.role ? req.body.role : 'USER';
         actionAllowed = ['ADMIN', 'MoHUA', 'PARTNER', 'STATE'];
         if (filter["sbCode"]) {
             let code = filter["sbCode"];
@@ -523,7 +554,7 @@ module.exports.getAll = async (req, res) => {
                         timestamp: moment().unix(),
                         success: true,
                         message: 'User list',
-                        data: users,
+                        data: sanitizeUserResponse(users),
                         count: users.length,
                         total: totalUsers.length > 0 ? totalUsers[0]['total'] : null
                     });
@@ -733,7 +764,7 @@ module.exports.profileGet = async (req, res) => {
         if (err) {
             return Response.DbError(res, err, `Something went wrong.`);
         } else {
-            return Response.OK(res, out, `Success updated.`);
+            return Response.OK(res, sanitizeUserResponse(out), `Success updated.`);
         }
     });
 };
@@ -822,7 +853,7 @@ module.exports.create = async (req, res) => {
                         ReplyToAddresses: [process.env.EMAIL],
                     }
                     Service.sendEmail(mailOptions);
-                    return Response.OK(res, user, 'User registered');
+                    return Response.OK(res, sanitizeUserResponse(user), 'User registered');
                 }
             });
         } catch (e) {
