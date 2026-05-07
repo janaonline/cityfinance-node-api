@@ -5,17 +5,31 @@ const loggerModel = require("../models/RequestLogger")
  * @param {Object} res 
  */
 const createLog = async (req, res) => {
+
     const apiUrl = req.originalUrl
     const diff = (new Date() - new Date(req._startTime)) / 1000
     try {
         const ignoredUrls = ['/recentSearchKeyword/search', '/ulb-list', '/states-with-ulb-count'];
-        if (['PUT', 'POST'].includes(req.method) && !req.url.split("/").includes("login") && !ignoredUrls.includes(req.route.path)) {
+          const allowedGetApis = [
+            '/getCompareByIndicators'
+        ];
+
+        const routePath = req.route?.path || req.path;
+
+        const shouldLog =
+            ['PUT', 'POST'].includes(req.method) ||
+            (
+                req.method === 'GET' &&
+                allowedGetApis.includes(routePath)
+            );
+
+        if (shouldLog && !req.url.split("/").includes("login") && !ignoredUrls.includes(req.route.path)) {
             const dataObj = {
                 "url": apiUrl,
                 "userRole": req?.decoded?.role || null,
                 "reqMethod": req.method,
                 "currentUrl": req.currentUrl,
-                "token": req.headers['x-access-token'],
+                "token": req.headers['x-access-token'] || null,
                 "reqBody": {
                     "body": req.body,
                     "params": req.params || null,
@@ -29,12 +43,20 @@ const createLog = async (req, res) => {
                 "respTime": diff
             }
             try {
-                //saving logs in the database
-                const logs = new loggerModel(dataObj)
-                await logs.save()
-            }
-            catch (err) {
-                console.log("error while saving logs::", err.message)
+              //saving logs in the database
+              const responseMessage = res.__custombody__?.message;
+
+              // Skip invalid request logs
+              if (
+                responseMessage ===
+                "ulbIds, years, and keyType must be arrays with at least one value"
+              ) {
+                return;
+              }
+              const logs = new loggerModel(dataObj);
+              await logs.save();
+            } catch (err) {
+              console.log("error while saving logs::", err.message);
             }
 
         }

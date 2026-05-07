@@ -380,6 +380,36 @@ describe('Market Readiness API Tests', () => {
       expect(callArgs).toHaveProperty('data');
     });
 
+    it('should exclude ULBs with zero current or previous score from count and data pipelines', async () => {
+      mockReq.query = {
+        year: '2021-22',
+        page: 1,
+        limit: 10,
+      };
+
+      ledgerLog.aggregate
+        .mockResolvedValueOnce([{ total: 0 }])
+        .mockResolvedValueOnce([]);
+
+      await marketReadinessModule.getAllUlbsMarketReadiness(mockReq, mockRes);
+
+      const countPipeline = ledgerLog.aggregate.mock.calls[0][0];
+      const dataPipeline = ledgerLog.aggregate.mock.calls[1][0];
+
+      const countScoreFilter = countPipeline.find(
+        (stage) => stage.$match?.currScore
+      );
+      const dataScoreFilter = dataPipeline.find(
+        (stage) => stage.$match?.currScore
+      );
+
+      expect(countScoreFilter.$match).toEqual({
+        currScore: { $nin: [null, '', 'N/A', 0, '0'] },
+        prevScore: { $nin: [null, '', 'N/A', 0, '0'] },
+      });
+      expect(dataScoreFilter.$match).toEqual(countScoreFilter.$match);
+    });
+
     it('should filter by state', async () => {
       mockReq.query = {
         year: '2021-22',
