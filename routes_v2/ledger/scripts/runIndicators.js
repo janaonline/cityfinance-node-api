@@ -11,9 +11,6 @@ let batchStatus = {
   error: null,
 };
 
-/**
- * Internal helper to process a single batch
- */
 async function processBatch(batch, allLineItems) {
   const promises = batch.map((pair) =>
     accumulateIndicators(pair.ulb_id, pair.year, allLineItems).catch((err) => {
@@ -23,9 +20,6 @@ async function processBatch(batch, allLineItems) {
   await Promise.all(promises);
 }
 
-/**
- * BACKGROUND WORKER: This runs without blocking the API response
- */
 async function startBackgroundProcessing(batchSize, allLineItems) {
   try {
     const cursor = ledgerLog
@@ -37,11 +31,7 @@ async function startBackgroundProcessing(batchSize, allLineItems) {
       .exec();
 
     let batch = [];
-    for (
-      let doc = await cursor.next();
-      doc != null;
-      doc = await cursor.next()
-    ) {
+    for (let doc = await cursor.next(); doc != null; doc = await cursor.next()) {
       batch.push(doc);
 
       if (batch.length === batchSize) {
@@ -65,68 +55,75 @@ async function startBackgroundProcessing(batchSize, allLineItems) {
   }
 }
 
-/**
- * TRIGGER ROUTE: Starts the batch
- */
-const runIndicatorsBatch = async (req, res) => {
+async function triggerIndicatorsBatch(batchSize = 200) {
   if (batchStatus.isRunning) {
-    return res.status(400).json({ message: "A batch is already running." });
+    throw new Error("A batch is already running.");
   }
 
-  try {
-    const allLineItems = await IndicatorsModel.find({})
-      .select(["lineItems", "name", "key"])
-      .lean();
+  const allLineItems = await IndicatorsModel.find({})
+    .select(["lineItems", "name", "key"])
+    .lean();
 
-    // Get total count for progress tracking
-    const totalRecords = await ledgerLog.aggregate([
-      { $group: { _id: { ulb_id: "$ulb_id", year: "$year" } } },
-      { $count: "count" },
-    ]);
+  const totalRecords = await ledgerLog.aggregate([
+    { $group: { _id: { ulb_id: "$ulb_id", year: "$year" } } },
+    { $count: "count" },
+  ]);
 
-    // Reset Status
-    batchStatus = {
-      isRunning: true,
-      total: totalRecords[0]?.count || 0,
-      processed: 0,
-      startTime: new Date(),
-      error: null,
-    };
+  batchStatus = {
+    isRunning: true,
+    total: totalRecords[0]?.count || 0,
+    processed: 0,
+    startTime: new Date(),
+    error: null,
+  };
 
-    // START PROCESSING IN BACKGROUND (No 'await' here)
-    const batchSize = req.body.batchSize || 200;
-    startBackgroundProcessing(batchSize, allLineItems);
+  startBackgroundProcessing(batchSize, allLineItems);
 
-    // Return immediate response
-    res.status(202).json({
-      success: true,
-      message: "Batch processing started in the background.",
-      totalToProcess: batchStatus.total,
-    });
-  } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
-  }
-};
+  return {
+    success: true,
+    message: "Batch processing started in the background.",
+    totalToProcess: batchStatus.total,
+  };
+}
 
-/**
- * STATUS ROUTE: Check progress
- */
-const getBatchStatus = (req, res) => {
+function getIndicatorsBatchStatus() {
   const percentage =
     batchStatus.total > 0
       ? ((batchStatus.processed / batchStatus.total) * 100).toFixed(2)
       : 0;
 
-  res.json({
+  return {
     isRunning: batchStatus.isRunning,
     progress: `${batchStatus.processed} / ${batchStatus.total}`,
     percentage: `${percentage}%`,
     startTime: batchStatus.startTime,
     error: batchStatus.error,
-  });
+  };
+}
+
+const runIndicatorsBatch = async (req, res) => {
+  try {
+    const batchSize = req.body.batchSize || 200;
+    const result = await triggerIndicatorsBatch(batchSize);
+    return res.status(202).json(result);
+  } catch (error) {
+    const statusCode =
+      error.message === "A batch is already running." ? 400 : 500;
+
+    return res.status(statusCode).json({
+      success: false,
+      error: error.message,
+    });
+  }
+};
+
+const getBatchStatus = (req, res) => {
+  return res.json(getIndicatorsBatchStatus());
 };
 
 module.exports = {
   runIndicatorsBatch,
   getBatchStatus,
+  triggerIndicatorsBatch,
+  getIndicatorsBatchStatus,
 };

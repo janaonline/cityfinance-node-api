@@ -31,8 +31,12 @@ module.exports.getApScriptData = async (req, res) => {
       });
     }
 
-    const yearIdPrev = "606aafc14dff55e6c075d3ec"; // 2023-24
-    const yearIdCurr = "606aafcf4dff55e6c075d424"; // 2024-25
+    const yearIdPrev = "606aafcf4dff55e6c075d424"; // 2023-24
+    const yearIdCurr = "606aafda4dff55e6c075d48f"; // 2024-25
+    // 606aadac4dff55e6c075c507 // 2020-21
+    // 606aaf854dff55e6c075d219 // 2021-22
+    // 606aafb14dff55e6c075d3aec // 2022-23
+    // 606aafda4dff55e6c075d48f // 2025-26
 
     const basePayload = {
       majorCodes: [
@@ -40,10 +44,10 @@ module.exports.getApScriptData = async (req, res) => {
         "170", "171", "180", "210", "220", "230",
         "240", "250", "260", "271", "272", "280",
       ],
-      "startDate": "2024-04-01",
-    "endDate": "2025-03-31",
-    "prevStartDate": "2023-04-01",
-    "prevEndDate": "2024-03-31"
+    "startDate": "2025-04-01",
+    "endDate": "2026-03-31",
+    "prevStartDate": "2024-04-01",
+    "prevEndDate": "2025-03-31"
     };
 
     const CONCURRENCY = Number(process.env.INCOME_EXP_CONCURRENCY || 5);

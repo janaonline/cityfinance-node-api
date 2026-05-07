@@ -13,6 +13,9 @@ const LineItem = require('../../models/LineItem');
 const UlbLedger = require('../../models/UlbLedger');
 const LedgerLog = require('../../models/LedgerLog');
 const { clearCacheByType } = require('../../service/cacheService');
+const { triggerIndicatorsBatch,getIndicatorsBatchStatus } = require('../../routes_v2/ledger/scripts/runIndicators');
+const { triggerRunBatchMarketReadiness } = require('../../routes_v2/ledger/scripts/runMarketReadinessBatch');
+const { timeout } = require('cron');
 // const mongoose = require('mongoose');
 // const { ulbLedgersData } = require('../FiscalRanking/service');
 
@@ -334,7 +337,12 @@ async function processData(
         if (user.role !== 'ULB') {
           await uploadOverviewDataInDb(du);
           await uploadInputDataInDb(inputDataBulkWriteArr);
+          await triggerIndicatorsBatch(200);
+          await waitForIndicatorsBatchCompletion();
+          await triggerRunBatchMarketReadiness(500);
+          // console.log("Batch started:", result);
           clearLedgerCache();
+
         }
         await updateLog(reqId, {
           message: `Completed`,
@@ -349,6 +357,10 @@ async function processData(
       if (user.role !== 'ULB') {
         await uploadOverviewDataInDb(du);
         await deleteInputDataFromDB(du);
+        await triggerIndicatorsBatch(200);
+        await waitForIndicatorsBatchCompletion();
+        await triggerRunBatchMarketReadiness(500);
+        // console.log("Batch started:", result);
         clearLedgerCache();
       }
 
@@ -367,7 +379,24 @@ async function processData(
     });
   }
 }
+// setting timeout for batch completion market dashboard and market readiness batch to 10 mins 
+async function waitForIndicatorsBatchCompletion(timeoutMs = 10 * 60 * 1000) {
+  const start = Date.now();
 
+  while (true) {
+    const status = getIndicatorsBatchStatus();
+
+    if (!status.isRunning) {
+     return;
+    }
+
+    if (Date.now() - start > timeoutMs) {
+      throw new Error("Timeout waiting for indicators batch");
+    }
+
+    await new Promise((r) => setTimeout(r, 2000));
+  }
+}
 // << ----- Operation on Excel ----- >>
 // Read the excel file and return overview and input sheet data.
 async function readXlsxFile(file, design_year, role) {

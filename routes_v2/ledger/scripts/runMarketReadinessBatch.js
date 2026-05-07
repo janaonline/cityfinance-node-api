@@ -484,10 +484,11 @@ async function startBackgroundBatch(batchSize = 500) {
     mrStatus.isRunning = false;
   }
 }
+async function triggerRunBatchMarketReadiness(batchSize = 500) {
+  if (mrStatus.isRunning) {
+    throw new Error("Job already running");
+  }
 
-exports.runBatch = async (req, res) => {
-  if (mrStatus.isRunning)
-    return res.status(429).json({ message: "Job already running" });
   mrStatus = {
     isRunning: true,
     processed: 0,
@@ -495,8 +496,19 @@ exports.runBatch = async (req, res) => {
     startTime: new Date(),
     error: null,
   };
-  startBackgroundBatch(parseInt(req.body.batchSize) || 500);
-  res.status(202).json({ message: "Started" });
+
+  startBackgroundBatch(batchSize);
+
+  return { message: "Started" };
+}
+exports.runBatch = async (req, res) => {
+  try {
+    const result = await triggerRunBatchMarketReadiness(parseInt(req.body.batchSize) || 500);
+    return res.status(202).json(result);
+  } catch (error) {
+    const statusCode = error.message === "Job already running" ? 429 : 500;
+    return res.status(statusCode).json({ message: error.message });
+  }
 };
 
 exports.getStatus = (req, res) => {
@@ -579,3 +591,4 @@ exports.runSingleUlb = async (req, res) => {
     res.status(500).json({ success: false, error: error.message });
   }
 };
+exports.triggerRunBatchMarketReadiness = triggerRunBatchMarketReadiness;
