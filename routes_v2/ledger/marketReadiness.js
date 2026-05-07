@@ -392,25 +392,25 @@ async function marketReadinessDataByUlb(req, res) {
           {
             name: "Y-o-Y Growth in Property tax total demand",
             maxScore: 4,
-            score: pTaxDemand.score,
+            score: trNet.score===0 ? 0 : pTaxDemand.score ,
             outOfRange: pTaxDemand.outOfRange,
           },
           {
             name: "Y-o-Y Growth in Property tax total collections",
             maxScore: 4,
-            score: pTaxCollection.score,
+            score: trNet.score===0 ? 0 : pTaxCollection.score,
             outOfRange: pTaxCollection.outOfRange,
           },
           {
             name: "Property tax current collection efficiency",
             maxScore: 4,
-            score: pTaxCurrentEff.score,
+            score: trNet.score===0 ? 0 : pTaxCurrentEff.score,
             outOfRange: pTaxCurrentEff.outOfRange,
           },
           {
             name: "Property tax average arrear collection efficiency",
             maxScore: 4,
-            score: pTaxArrearEff.score,
+            score: trNet.score===0 ? 0 : pTaxArrearEff.score,
             outOfRange: pTaxArrearEff.outOfRange,
           },
         ],
@@ -621,7 +621,7 @@ const getFootnoteMessage = (sectionScores, cityName, year) => {
   // 3. Set the footnote based on the condition
   let footNote = "";
   if (isDataMissing) {
-    footNote = `Scores are based on audited financial statements and property tax data. The audited financial data is not available for ${cityName} for ${year}. Where available, property tax indicators have been calculated and shown below.`;
+    footNote = `The scoring and assessment framework is based on audited financial statements and property tax data. As the audited financial statements for ${cityName} for FY ${year} are currently unavailable, the overall score and assessment for the city have not been calculated`;
   }
 
   return footNote;
@@ -721,8 +721,15 @@ if (debtKey && (debtKey === "Cities with Debt" || debtKey === "Cities without De
           score: { $ifNull: ["$currScore", 0] },
           delta: {
             $cond: [
-              { $and: ["$currScore", "$prevScore"] },
-              { $round: [{ $subtract: ["$currScore", "$prevScore"] }, 2] },
+              {
+                $and: [
+                  { $ne: ["$currScore", null] },
+                  { $ne: ["$prevScore", null] },
+                ],
+              },
+              {
+                $round: [{ $subtract: ["$currScore", "$prevScore"] }, 2],
+              },
               0,
             ],
           },
@@ -765,8 +772,8 @@ if (debtKey && (debtKey === "Cities with Debt" || debtKey === "Cities without De
       // ✅ Exclude invalid band records
       {
         $match: {
-          currScore: { $nin: [null, "", "N/A"] },
-          prevScore: { $nin: [null, "", "N/A"] },
+          currScore: { $nin: [null, "", "N/A", 0, "0"] },
+          prevScore: { $nin: [null, "", "N/A", 0, "0"] },
         },
       },
 
@@ -1150,7 +1157,8 @@ function getIndicatorScore(indicatorKey, value, label) {
       if (value == null || value === "N/A") {
         return { score: "N/A", outOfRange: null };
       }
-      result.score = value < 0.1 ? 8 : value <= 0.2 ? 6 : value <= 0.3 ? 4 : 0;
+      // console.log("Scoring TOT_DEBT_OWN_REV with value:", value);
+      result.score = value < 0.1 ? 8 : value <= 0.2 ? 6 : value <= 0.3 ? 4 : value >= 0.5 ? 0 : 2;
       break;
 
     case "ISCR_RATIO":
