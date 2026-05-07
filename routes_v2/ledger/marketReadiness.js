@@ -621,7 +621,7 @@ const getFootnoteMessage = (sectionScores, cityName, year) => {
   // 3. Set the footnote based on the condition
   let footNote = "";
   if (isDataMissing) {
-    footNote = `Scores are based on audited financial statements and property tax data. The audited financial data is not available for ${cityName} for ${year}.`;
+    footNote = `The scoring and assessment framework is based on audited financial statements and property tax data. As the audited financial statements for ${cityName} for FY ${year} are currently unavailable, the overall score and assessment for the city have not been calculated`;
   }
 
   return footNote;
