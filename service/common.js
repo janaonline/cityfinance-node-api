@@ -114,7 +114,7 @@ const concatenateUrls = (obj, params = KEYS, flag = false, _exp) => {
             } else if (typeof obj[key] === 'string' && obj[params[key]]) {
                 if (obj[params[key]] !== "Already Uploaded on Cityfinance") {
                     const token = createFileDownloadToken({ path: obj[key], exp, disposition: 'attachment' });
-                    obj[key] = `${_appBaseUrl}/file/download?token=${token}`;
+                    obj[key] = `${_appBaseUrl}/file/download?signature=${token}`;
                 }
             }
         }
