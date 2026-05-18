@@ -7,26 +7,26 @@ const { parseFileDownloadToken } = require('../../util/file-token');
 const { getFileStream, normalizeS3ObjectKey } = require('../../service/s3-services');
 
 /**
- * GET /api/v1/file/download?token=<token>
+ * GET /api/v1/file/download?signature=<signature>
  *
- * Validates the encrypted token, fetches the private S3 object,
+ * Validates the encrypted signature, fetches the private S3 object,
  * and streams it to the client. Never exposes raw S3 paths or signed URLs.
  */
 module.exports.download = (req, res) => {
-	const { token } = req.query;
+	const { signature } = req.query;
 
-	if (!token) {
-		return res.status(400).json({ success: false, message: 'token is required' });
+	if (!signature) {
+		return res.status(400).json({ success: false, message: 'signature is required' });
 	}
 
 	let payload;
 	try {
-		payload = parseFileDownloadToken(token);
+		payload = parseFileDownloadToken(signature);
 	} catch (err) {
 		if (err.type === 'expired') {
 			return res.status(410).json({ success: false, message: 'Download link has expired' });
 		}
-		return res.status(400).json({ success: false, message: 'Invalid download token' });
+		return res.status(400).json({ success: false, message: 'Invalid download signature' });
 	}
 	const s3Key = normalizeS3ObjectKey(payload.path);
 	if (!s3Key) {
