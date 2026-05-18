@@ -118,7 +118,7 @@ const concatenateUrls = (obj, params = KEYS, flag = false, _exp) => {
                     !INVALID_PLACEHOLDERS.includes(obj[key].trim().toLowerCase())
                 ) {
                     const token = createFileDownloadToken({ path: obj[key], exp, disposition: 'attachment' });
-                    obj[key] = `${_appBaseUrl}/file/download?token=${token}`;
+                    obj[key] = `${_appBaseUrl}/file/download?signature=${token}`;
                 }
             }
         }

@@ -158,7 +158,7 @@ async function generateSignedUrl(data, _cb) {
             Key: data?.folder ? data?.folder + '/' + file_alias : file_alias,
             Expires: 60 * 60 * 60,
             ContentType: data.mime_type,
-            ACL: "public-read",
+            // ACL: "public-read",
             Metadata: {
                 name: file_name,
                 alias: file_alias,
