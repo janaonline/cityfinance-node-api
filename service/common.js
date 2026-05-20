@@ -90,7 +90,8 @@ const KEYS = {
     excelUrl: 'excelUrl'
 }
 
-const _appBaseUrl = FILE_DOWNLOAD.APP_BASE_URL;
+// const _appBaseUrl = FILE_DOWNLOAD.APP_BASE_URL;
+const _appBaseUrl = FILE_DOWNLOAD.APP_BASE_URL2;
 const _ttlMs = FILE_DOWNLOAD.LINK_TTL_MS;
 const INVALID_PLACEHOLDERS = ['not submitted'];
 
@@ -117,7 +118,7 @@ const concatenateUrls = (obj, params = KEYS, flag = false, _exp) => {
                     obj[params[key]] !== "Already Uploaded on Cityfinance" &&
                     !INVALID_PLACEHOLDERS.includes(obj[key].trim().toLowerCase())
                 ) {
-                    const token = createFileDownloadToken({ path: obj[key], exp, disposition: 'attachment' });
+                    const token = createFileDownloadToken({ path: obj[key], exp });
                     obj[key] = `${_appBaseUrl}/file/download?signature=${token}`;
                 }
             }
