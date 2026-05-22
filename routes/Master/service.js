@@ -5,6 +5,7 @@ var fs = require('fs');
 const CategoryFileUpload = require("../../models/CategoryFileUpload");
 const sanitizeFilename = require('sanitize-filename');
 const mime = require('mime');
+const { getDisposition } = require("../../routes_v2/file/service");
 const {
     BUCKETNAME,
     getObjectHead,
@@ -171,7 +172,7 @@ module.exports.downloadMunicipalBondRepositoryFile = async (req, res, next) => {
         res.setHeader('Content-Type', contentType);
         res.setHeader(
             'Content-Disposition',
-            buildContentDisposition(downloadFileName)
+            getDisposition(contentType, downloadFileName, "inline")
         );
 
         if (head.ContentLength != null) {
@@ -212,17 +213,6 @@ module.exports.downloadMunicipalBondRepositoryFile = async (req, res, next) => {
         });
     }
 }
-
-function buildContentDisposition(fileName) {
-    const safeFileName =
-        sanitizeFilename(fileName || 'municipal_bond_repository_file').trim() ||
-        'municipal_bond_repository_file';
-    const encodedFileName = encodeURIComponent(safeFileName);
-
-    return `attachment; filename="${safeFileName}"; filename*=UTF-8''${encodedFileName}`;
-}
-
-
 
 async function dataStructMaker(folderName, fromFolder, fileType) {
     let filePath = path.join(process.cwd(), fromFolder)
