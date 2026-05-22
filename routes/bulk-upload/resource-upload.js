@@ -1,6 +1,7 @@
 const resource = require("../../models/Resources");
 const service = require("../../service");
 const Response = require("../../service").response;
+const { concatenateUrls } = require("../../service/common");
 
 module.exports = async function (req, res) {
 
@@ -51,7 +52,7 @@ module.exports = async function (req, res) {
 module.exports.getResource = function (req, res) {
 
 	service.find({ isActive: true }, resource, function (response, value) {
-
+		value.data = value.data.map(item => concatenateUrls(item));
 		return Response.OK(res, value, `success`);
-	})
+	}, true) // Pass true for lean option
 }
