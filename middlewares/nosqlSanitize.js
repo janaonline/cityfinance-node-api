@@ -1,34 +1,51 @@
-function sanitizeValue(value) {
+const Response = require('../service/response');
+const MAX_ERRORS = 20;
+
+function findUnsafeKeys(value, basePath, errors) {
+  if (errors.length >= MAX_ERRORS) return;
+
   if (Array.isArray(value)) {
-    return value.map(sanitizeValue);
+    for (let i = 0; i < value.length && errors.length < MAX_ERRORS; i++) {
+      findUnsafeKeys(value[i], `${basePath}[${i}]`, errors);
+    }
+    return;
   }
 
-  if (value && typeof value === "object") {
-    return Object.keys(value).reduce((acc, key) => {
-      // Strip MongoDB query/operator keys to reduce NoSQL injection risk.
-      if (key.startsWith("$") || key.includes(".")) {
-        return acc;
+  if (value !== null && typeof value === 'object') {
+    for (const key of Object.keys(value)) {
+      if (errors.length >= MAX_ERRORS) break;
+      const fieldPath = `${basePath}.${key}`;
+      if (key.startsWith('$') || key.includes('.')) {
+        errors.push({
+          field: fieldPath,
+          message: "Keys starting with '$' or containing '.' are not allowed",
+        });
+      } else {
+        findUnsafeKeys(value[key], fieldPath, errors);
       }
-
-      acc[key] = sanitizeValue(value[key]);
-      return acc;
-    }, {});
+    }
   }
-
-  return value;
 }
 
 module.exports = function noSqlSanitize(req, res, next) {
-  if (req.body) {
-    req.body = sanitizeValue(req.body);
+  const errors = [];
+
+  findUnsafeKeys(req.body || {}, 'body', errors);
+  if (errors.length < MAX_ERRORS) {
+    findUnsafeKeys(req.query || {}, 'query', errors);
+  }
+  if (errors.length < MAX_ERRORS) {
+    findUnsafeKeys(req.params || {}, 'params', errors);
   }
 
-  if (req.query) {
-    req.query = sanitizeValue(req.query);
-  }
-
-  if (req.params) {
-    req.params = sanitizeValue(req.params);
+  if (errors.length > 0) {
+    console.warn('[noSqlSanitize] Unsafe keys detected', {
+      method: req.method,
+      path: req.path,
+      count: errors.length,
+      firstField: errors[0].field,
+    });
+    return Response.BadRequest(res, errors, 'Invalid request payload');
   }
 
   next();

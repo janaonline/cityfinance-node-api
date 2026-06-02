@@ -15,6 +15,7 @@ const { getFileStream, normalizeS3ObjectKey } = require('../../service/s3-servic
 // TODO: Retire this v1 endpoint - Use v2 (NEST)
 module.exports.download = (req, res) => {
 	const { signature } = req.query;
+	const noExpire = 'no-expire' in req.query;
 
 	if (!signature) {
 		return res.status(400).json({ success: false, message: 'signature is required' });
@@ -22,7 +23,7 @@ module.exports.download = (req, res) => {
 
 	let payload;
 	try {
-		payload = parseFileDownloadToken(signature);
+		payload = parseFileDownloadToken(signature, { ignoreExpiry: noExpire });
 	} catch (err) {
 		if (err.type === 'expired') {
 			return res.status(410).json({ success: false, message: 'Download link has expired' });

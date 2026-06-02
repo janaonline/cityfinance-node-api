@@ -34,10 +34,11 @@ function createFileDownloadToken(payload) {
 /**
  * Decrypts and validates a file download token.
  * @param {string} token
+ * @param {{ ignoreExpiry?: boolean }} [options]
  * @returns {{ path: string, exp: number, disposition?: string }}
  * @throws {{ type: 'invalid' | 'expired' | 'tampered' }}
  */
-function parseFileDownloadToken(token) {
+function parseFileDownloadToken(token, { ignoreExpiry = false } = {}) {
 	if (!token || typeof token !== 'string') throw { type: 'invalid' };
 
 	let buf;
@@ -70,7 +71,7 @@ function parseFileDownloadToken(token) {
 	}
 
 	if (!payload.path || typeof payload.exp !== 'number') throw { type: 'invalid' };
-	if (Date.now() > payload.exp) throw { type: 'expired' };
+	if (!ignoreExpiry && Date.now() > payload.exp) throw { type: 'expired' };
 
 	return payload;
 }
