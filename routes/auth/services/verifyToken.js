@@ -5,6 +5,7 @@ const Config = require("../../../config/app_config");
 const Helper = require("../../../_helper/constants");
 const Response = require("../../../service").response;
 const ObjectId = require("mongoose").Types.ObjectId;
+const redis = require("../../../service/redis");
 
 module.exports.verifyToken = (req, res, next) => {
   let token =
@@ -46,11 +47,21 @@ module.exports.verifyToken = (req, res, next) => {
             `Invalid token type. Please use an access token.`
           );
         }
+
+        // Reject tokens that were explicitly invalidated on logout
+        if (decoded.jti) {
+          const blacklisted = await redis.getDataPromise(`bl:${decoded.jti}`);
+          if (blacklisted) {
+            return Response.UnAuthorized(res, {}, `Session expired. Kindly log in again to proceed.`);
+          }
+        }
+
         req.decoded = decoded;
+        const userId = decoded.sub || decoded._id
 
         // Fetch user details and attach to request
         try {
-          const user = await User.findOne({ _id: decoded._id }, { role: 1, ulb: 1, state: 1, isActive: 1, isDeleted: 1 });
+          const user = await User.findOne({ _id: userId }, { role: 1, ulb: 1, state: 1, isActive: 1, isDeleted: 1 });
           if (!user) {
             return Response.UnAuthorized(res, {}, `User not found.`);
           }
@@ -60,7 +71,6 @@ module.exports.verifyToken = (req, res, next) => {
           console.error("Error fetching user details:", error);
         }
         if (req.decoded.sessionId || req.decoded.lh_id) {
-          const userId = ObjectId(req.decoded._id);
           let query = {
             user: ObjectId(userId),
           };
