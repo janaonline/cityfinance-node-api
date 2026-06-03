@@ -120,7 +120,7 @@ async function marketReadinessDataByUlb(req, res) {
     }
 
     /* ---------------- SCORING ---------------- */
-    const debtCondition = !Number.isFinite(Number(currentIndicators?.totDebt));
+    const debtCondition = !Number.isFinite(currentIndicators?.totDebt);
     const debtValue = currentIndicators?.totDebtByTotOwnRevenue;
     const rawDebtScore = getIndicatorScore("TOT_DEBT_OWN_REV", debtValue, "Debt / Own Source Revenue");
 
@@ -747,12 +747,6 @@ function getIndicatorScore(indicatorKey, value, label) {
     result.outOfRange = `${label} is not available for this ULB and is marked as "N/A". This indicator has been excluded from the scoring calculation for this ULB. Please refer to the detailed financial statements for more information.`;
     return result;
   }
-  if(value===0) {
-    result.score = 8;
-    result.outOfRange = null;
-    return result;
-  }
-  // ❌ invalid / negative / impossible values
   if (!Number.isFinite(value) || value < 0 || value > 100) {
     result.score = 0;
     result.outOfRange = `${label} exceeds the defined upper limit and is treated as out of range for scoring. Consequently, a score of 0 has been assigned for Ratio ${label}.`;
