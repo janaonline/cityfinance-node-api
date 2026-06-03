@@ -274,7 +274,7 @@ const getFootnoteMessage = (sectionScores, cityName, year, totRevenue) => {
   if (isSectionsMissing || isTotRevenueMissing) {
     footNote = `The scoring and assessment framework is based on audited financial statements and property tax data. As the audited financial statements for ${cityName} for FY ${year} are currently unavailable, the overall score and assessment for the city have not been calculated`;
   }
-
+//  console.log
   return {footNote,isTotRevenueMissing: isTotRevenueMissing, sectionsMissing: isSectionsMissing };
 };
 async function getAllUlbsMarketReadiness(req, res) {
