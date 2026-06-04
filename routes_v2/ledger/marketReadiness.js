@@ -304,6 +304,7 @@ async function getAllUlbsMarketReadiness(req, res) {
       year: { $in: [year, prevYear] },
       marketReadinessScore: { $exists: true },
     };
+    match["indicators.totRevenue"] = { $nin: [0, null, "", "N/A", "0"] };
 if (debtKey && (debtKey === "Cities with Debt" || debtKey === "Cities without Debt")) {
 
   const debtFilter =
