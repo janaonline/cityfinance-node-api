@@ -1445,20 +1445,20 @@ async function getIntro(indicators, keyType, yearsArray) {
         finalObject,
         yearsArray
       );
-      const totRevenueExpenditure = getIndicatorValue(
-        "totRevenueExpenditure",
+      const totExpenditure = getIndicatorValue(
+        "totExpenditure",
         finalObject,
         yearsArray
       );
-      // console.log(totRevenueData,totRevenueExpenditure,'this is data object')
+      // console.log(totRevenueData,totExpenditure,'this is data object')
       return `In FY ${totRevenueData.year}, ${
         totRevenueData.ulbName
       } reported a total revenue of INR ${formatToCroreSummary(
         totRevenueData.value
       )} crore and a total expenditure of INR ${formatToCroreSummary(
-        totRevenueExpenditure.value
+        totExpenditure.value
       )} crore, implying that its expenditure accounted for ${Math.round(
-        (totRevenueExpenditure.value / totRevenueData.value) * 100
+        (totExpenditure.value / totRevenueData.value) * 100
       )}% of its revenue`;
     }
     case "revenue": {
@@ -1704,17 +1704,22 @@ module.exports.getFaqs = async (req, res) => {
         propTaxVal != null ? formatToCroreSummary(propTaxVal) : "N/A";
 
       const publishesSLB = stateName ? statesWithYes.has(stateName) : false;
-
       faqs = [
         {
           question: `How does ${cityName}’s revenue compare to other municipal cities?`,
+
           answer: `In FY ${year}, ${cityName} recorded a total revenue of INR ${ulbTotRevText} crore. Among cities in ${
             faqData?.stateTop?.state ?? "N/A"
           }, ${
             faqData?.stateTop?.ulb ?? "N/A"
           } had the highest revenue. Nationally, the top revenue was reported by ${
             faqData?.national?.ulb ?? "N/A"
-          } at over INR ${nationalTotRevText} crore.`,
+          } at over INR ${nationalTotRevText} crore.
+  
+          ${year === "2023-24"
+              ? `Note: As of now, FY 2023–24 data has been digitized and published for 72 cities. These insights are based on this partial dataset and may change as more cities are added.`
+            : ""
+           }`,
         },
         {
           question: `What are the major income sources of ${cityName}?`,
@@ -1730,6 +1735,11 @@ module.exports.getFaqs = async (req, res) => {
             publishesSLB ? "reports" : "does not report"
           } its Service Level Benchmark (SLB) data.`,
         },
+        {
+          question: `Where can I find budget data for cities?`,
+          answer: `City budget documents are available for download in the Resources section. These are available as raw PDFs.`,
+        },
+        
       ];
     }
     if (populationType === "cat2") {
@@ -1796,6 +1806,11 @@ module.exports.getFaqs = async (req, res) => {
             opState === "surplus" ? "enhance" : "constrain"
           } the ULG's ability to effectively deliver public services.`,
         },
+         {
+          question: `Where can I find budget data for cities?`,
+          answer: `City budget documents are available for download in the Resources section. These are available as raw PDFs.`,
+        },
+        
       ];
     }
 

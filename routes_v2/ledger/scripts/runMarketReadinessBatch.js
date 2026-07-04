@@ -211,17 +211,17 @@ async function computeMarketReadinessScoreFast(
         {
           name: "PTax Collection Growth",
           maxScore: 4,
-          score: indicators.pTaxCollection.score,
+          score:  indicators.pTaxCollection.score,
         },
         {
           name: "PTax Current Efficiency",
           maxScore: 4,
-          score: indicators.pTaxCurrentEffs.score,
+          score:  indicators.pTaxCurrentEffs.score,
         },
         {
           name: "PTax Arrear Efficiency",
           maxScore: 4,
-          score: indicators.pTaxArrearEffs.score,
+          score:  indicators.pTaxArrearEffs.score,
         },
       ],
     },

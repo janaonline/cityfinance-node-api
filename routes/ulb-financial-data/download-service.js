@@ -11,6 +11,7 @@ const {
     getObjectStream,
     normalizeS3ObjectKey,
 } = require('../../service/s3-services');
+const { getDisposition } = require('../../routes_v2/file/service');
 
 const ObjectId = mongoose.Types.ObjectId;
 
@@ -393,12 +394,15 @@ async function streamS3Download(res, { objectKey, downloadFileName, fileType }) 
             head.ContentType ||
             mime.getType(downloadFileName) ||
             DOWNLOAD_FILE_TYPES[fileType].contentType;
+        const fileName = sanitizeFilename(downloadFileName || 'financial_document').trim() ||
+            'financial_document';
+        const disposition = getDisposition(contentType, fileName);
 
         res.status(200);
         res.setHeader('Content-Type', contentType);
         res.setHeader(
             'Content-Disposition',
-            buildContentDisposition(downloadFileName)
+            disposition
         );
 
         if (head.ContentLength != null) {
@@ -445,15 +449,6 @@ async function streamS3Download(res, { objectKey, downloadFileName, fileType }) 
 
         throw error;
     }
-}
-
-function buildContentDisposition(fileName) {
-    const safeFileName =
-        sanitizeFilename(fileName || 'financial_document').trim() ||
-        'financial_document';
-    const encodedFileName = encodeURIComponent(safeFileName);
-
-    return `attachment; filename="${safeFileName}"; filename*=UTF-8''${encodedFileName}`;
 }
 
 function createHttpError(statusCode, message, errors = {}) {

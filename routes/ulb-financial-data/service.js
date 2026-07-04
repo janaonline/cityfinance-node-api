@@ -11,6 +11,7 @@ const AnnualAccountData = require('../../models/AnnualAccounts')
 const Year = require('../../models/Year')
 const { years } = require("../../service/years");
 const app_config = require("../../config/app_config");
+const { createFileDownloadToken } = require('../../util/file-token');
 
 module.exports.create = async (req, res) => {
     let user = req.decoded;
@@ -1334,16 +1335,9 @@ async function getSignedFileUrl(req, params = {}) {
     if (!params.url) return params.url;
 
     try {
-        const auditType = params.auditType === 'unAudited' ? 'unaudited' : params.auditType;
-        const query = new URLSearchParams({
-            ulb: `${params.ulb}`,
-            financial_year: params.financialYear,
-            audit_type: auditType,
-            document_type: params.documentType,
-            file_type: params.fileType,
-        });
-
-        return `${app_config.APP.BASEURL}/ledger/ulb-financial-data/files/download?${query.toString()}`;
+        const exp = Date.now() + 24 * 60 * 60 * 1000; // 24h TTL
+        const token = createFileDownloadToken({ path: params.url, exp });
+        return `${app_config.APP.BASEURL}/file/download?signature=${token}`;
     } catch (error) {
         console.log("Failed to generate download file url:", error.message || error);
         return 'N/A';

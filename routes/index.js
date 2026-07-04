@@ -273,7 +273,7 @@ router.use(review);
 
 // @getS3Url
 const getS3Url = require("../service/getS3Url");
-router.post("/getS3Url", getS3Url);
+router.post("/getS3Url", verifyToken, getS3Url);
 
 // @getBlobUrl
 const getBlobUrl = require("../service/getBlobUrl");

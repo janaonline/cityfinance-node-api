@@ -90,8 +90,10 @@ const KEYS = {
     excelUrl: 'excelUrl'
 }
 
-const _appBaseUrl = FILE_DOWNLOAD.APP_BASE_URL;
+// const _appBaseUrl = FILE_DOWNLOAD.APP_BASE_URL;
+const _appBaseUrl = FILE_DOWNLOAD.APP_BASE_URL2;
 const _ttlMs = FILE_DOWNLOAD.LINK_TTL_MS;
+const INVALID_PLACEHOLDERS = ['not submitted'];
 
 /**
  * Recursively replaces relative S3 paths in known URL fields with
@@ -112,9 +114,12 @@ const concatenateUrls = (obj, params = KEYS, flag = false, _exp) => {
             if (typeof obj[key] === 'object' && obj[key] !== null) {
                 obj[key] = concatenateUrls(obj[key], params, false, exp);
             } else if (typeof obj[key] === 'string' && obj[params[key]]) {
-                if (obj[params[key]] !== "Already Uploaded on Cityfinance") {
-                    const token = createFileDownloadToken({ path: obj[key], exp, disposition: 'attachment' });
-                    obj[key] = `${_appBaseUrl}/file/download?token=${token}`;
+                if (
+                    obj[params[key]] !== "Already Uploaded on Cityfinance" &&
+                    !INVALID_PLACEHOLDERS.includes(obj[key].trim().toLowerCase())
+                ) {
+                    const token = createFileDownloadToken({ path: obj[key], exp });
+                    obj[key] = `${_appBaseUrl}/file/download?signature=${token}`;
                 }
             }
         }

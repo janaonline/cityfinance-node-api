@@ -2,9 +2,13 @@ const moment = require('moment');
 const email = require('./email');
 
 const bcrypt = require('bcryptjs');
-const find = function (condition = {}, schema, callback) {
+const find = function (condition = {}, schema, callback, lean = false) {
   // PUT Function where find condition and schema name would be received and accordingly response will be returned
-  schema.find(condition).exec((err, data) => {
+  let query = schema.find(condition);
+  if (lean) {
+    query = query.lean();
+  }
+  query.exec((err, data) => {
     if (err) {
       console.log('error occurred in get', schema, err);
       let obj = {

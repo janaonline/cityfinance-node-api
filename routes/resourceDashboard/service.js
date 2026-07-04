@@ -9,6 +9,7 @@ const DataCollection = require("../../models/DataCollectionForm");
 const AnnualAccountData = require("../../models/AnnualAccounts");
 const sanitizeFilename = require("sanitize-filename");
 const mime = require("mime");
+const { getDisposition } = require("../../routes_v2/file/service");
 const {
   BUCKETNAME,
   getObjectHead,
@@ -224,7 +225,7 @@ module.exports.search = async function (req, res) {
 module.exports.download = async function (req, res) {
   return streamResourceFile(req, res, {
     fieldName: "downloadUrl",
-    dispositionType: "attachment",
+    dispositionType: "inline",
     defaultFileName: "resource_dashboard_file",
   });
 };
@@ -266,7 +267,7 @@ async function streamResourceFile(req, res, options) {
     res.setHeader("Content-Type", contentType);
     res.setHeader(
       "Content-Disposition",
-      buildContentDisposition(downloadFileName, options.dispositionType)
+      getDisposition(contentType, downloadFileName, options.dispositionType)
     );
 
     if (head.ContentLength != null) {
@@ -317,15 +318,6 @@ function buildDownloadFileName(resourceLineItem, options) {
   const sanitizedName = sanitizeFilename(rawFileName).trim();
 
   return sanitizedName || options.defaultFileName;
-}
-
-function buildContentDisposition(fileName, dispositionType = "attachment") {
-  const safeFileName =
-    sanitizeFilename(fileName || "resource_dashboard_file").trim() ||
-    "resource_dashboard_file";
-  const encodedFileName = encodeURIComponent(safeFileName);
-
-  return `${dispositionType}; filename="${safeFileName}"; filename*=UTF-8''${encodedFileName}`;
 }
 
 async function getDataSetCount(globalName) {

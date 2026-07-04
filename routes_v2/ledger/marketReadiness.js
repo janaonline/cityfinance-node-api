@@ -37,9 +37,7 @@ async function marketReadinessDataByUlb(req, res) {
     const { ulbId, year } = req.query;
 
     if (!ulbId || !year) {
-      return res
-        .status(400)
-        .json({ message: "ulbId and year are required parameters." });
+      return res.status(400).json({ message: "ulbId and year are required parameters." });
     }
 
     const ulbData = await ulb.findById(ulbId).lean();
@@ -54,547 +52,197 @@ async function marketReadinessDataByUlb(req, res) {
       .find({ year: { $in: [year, prevYear] } })
       .select({ _id: 1, year: 1 })
       .lean();
-    // console.log("Year IDs:", yearIds);
+
     if (yearIds.length < 2) {
-      return res.status(200).json({
-        message: "Data not found for the specified ULB and years ",
-      });
+      return res.status(200).json({ message: "Data not found for the specified ULB and years" });
     }
+
     const yearIdMap = {};
-    yearIds.forEach((y) => {
-      yearIdMap[y.year] = y._id;
-    });
+    yearIds.forEach((y) => { yearIdMap[y.year] = y._id; });
 
     const currentYearId = yearIdMap[year];
     const prevYearId = yearIdMap[prevYear];
+
     const ledgerLogs = await ledgerLog
-      .find({
-        ulb_id: ulbId,
-        year: { $in: [year, prevYear] },
-      })
-      .select({
-        indicators: 1,
-        ulb_id: 1,
-        year: 1,
-        ulb: 1,
-        _id: 0,
-        lineItems: 1,
-      })
+      .find({ ulb_id: ulbId, year: { $in: [year, prevYear] } })
+      .select({ indicators: 1, ulb_id: 1, year: 1, ulb: 1, _id: 0, lineItems: 1 })
       .lean();
 
-    // console.log("Ledger Logs:", ledgerLogs);
-    if (ledgerLogs.length != 2) {
-      return res.status(200).json({
-        message: "Data not found for the specified ULB and years",
-      });
+    if (ledgerLogs.length !== 2) {
+      return res.status(200).json({ message: "Data not found for the specified ULB and years" });
     }
-    // console.log(ledgerLogs, "this is data");
-    // const hasAnyValidData = ledgerLogs.some((log) =>
-    //   hasValidIndicators(log.indicators)
-    // );
 
-    // if (!hasAnyValidData) {
-    //   return res.status(404).json({
-    //     message: "Data not found for the specified ULB and years3333",
-    //   });
-    // }
     const ledgerByYear = {};
-    ledgerLogs.forEach((log) => {
-      ledgerByYear[log.year] = log;
-    });
+    ledgerLogs.forEach((log) => { ledgerByYear[log.year] = log; });
 
     const currentYearData = ledgerByYear[year] || {};
     const previousYearData = ledgerByYear[prevYear] || {};
-    // 🚨 DATA QUALITY CHECK
-    // const hasCurrentData = hasValidIndicators(currentYearData);
-    // const hasPreviousData = hasValidIndicators(previousYearData);
 
-    // if (!hasCurrentData && !hasPreviousData) {
-    //   return res.status(404).json({
-    //     message: "Data not found for the specified ULB and years",
-    //   });
-    // }
     const currentIndicators = currentYearData.indicators || {};
     const previousIndicators = previousYearData.indicators || {};
     const lineItems = currentYearData.lineItems || {};
 
     /* ---------------- DERIVED METRICS ---------------- */
+    const growthOSR = calculateYoYGrowth(currentIndicators?.totOwnRevenue, previousIndicators?.totOwnRevenue);
+    const growthTotalRevenue = calculateYoYGrowth(currentIndicators?.totRevenue, previousIndicators?.totRevenue);
 
-    const growthOSR = calculateYoYGrowth(
-      currentIndicators?.totOwnRevenue,
-      previousIndicators?.totOwnRevenue
-    );
+    const netReceivables = (Number(lineItems[431]) || 0) + (Number(lineItems[432]) || 0);
+    const adjustedTRPercent = percentageOf(Number(currentIndicators?.totRevenue) - netReceivables, currentIndicators?.totRevenue);
 
-    const growthTotalRevenue = calculateYoYGrowth(
-      currentIndicators?.totRevenue,
-      previousIndicators?.totRevenue
-    );
+    const fixedCharges = (Number(lineItems[210]) || 0) + (Number(lineItems[220]) || 0);
+    const fixedChargesByRevExp = percentageOf(fixedCharges, currentIndicators?.totRevenueExpenditure);
+    const omByRevExpPercent = percentageOf(Number(lineItems[230]) || 0, currentIndicators?.totRevenueExpenditure);
 
-    const netReceivables =
-      (Number(lineItems[431]) || 0) + (Number(lineItems[432]) || 0);
-
-    const adjustedTRPercent = percentageOf(
-      Number(currentIndicators?.totRevenue) - netReceivables,
-      currentIndicators?.totRevenue
-    );
-
-    const fixedCharges =
-      (Number(lineItems[210]) || 0) + (Number(lineItems[220]) || 0);
-
-    const fixedChargesByRevExp = percentageOf(
-      fixedCharges,
-      currentIndicators?.totRevenueExpenditure
-    );
-
-    const omByRevExpPercent = percentageOf(
-      Number(lineItems[230]) || 0,
-      currentIndicators?.totRevenueExpenditure
-    );
-    // console.log(
-    //   "growth osr",
-    //   growthOSR,
-    //   "grs",
-    //   growthTotalRevenue,
-    //   "net",
-    //   netReceivables,
-
-    //   "adj",
-    //   adjustedTRPercent,
-    //   "fixch",
-    //   fixedCharges,
-    //   "fixcharexp",
-    //   fixedChargesByRevExp,
-    //   "om",
-    //   omByRevExpPercent
-    // );
-    // console.log(currentIndicators);
     const propertyTaxData = await propertyTax
       .find({
         ulb: new Types.ObjectId(ulbId),
-        displayPriority: {
-          $in: ["1.9", "1.17", "1.18", "1.10", "1.19", "1.11"],
-        },
+        displayPriority: { $in: ["1.9", "1.17", "1.18", "1.10", "1.19", "1.11"] },
         year: { $in: [currentYearId, prevYearId] },
       })
-      .select({
-        displayPriority: 1,
-        value: 1,
-        year: 1,
-        _id: 0,
-      })
+      .select({ displayPriority: 1, value: 1, year: 1, _id: 0 })
       .lean();
-    // console.log("Property Tax Data:", propertyTaxData);
+
     const currYearKey = String(currentYearId);
     const prevYearKey = String(prevYearId);
     const pTaxMap = mapPTaxData(propertyTaxData);
-    // console.log("PTax Map:", pTaxMap);
-    // 1️⃣ PTax Total Demand YoY (1.9)
-    const pTaxDemandGrowth = calculateYoY(
-      pTaxMap["1.9"]?.[currYearKey],
-      pTaxMap["1.9"]?.[prevYearKey]
-    );
 
-    // 2️⃣ PTax Total Collection YoY (1.17)
-    const pTaxCollectionGrowth = calculateYoY(
-      pTaxMap["1.17"]?.[currYearKey],
-      pTaxMap["1.17"]?.[prevYearKey]
-    );
+    const pTaxDemandGrowth = calculateYoY(pTaxMap["1.9"]?.[currYearKey], pTaxMap["1.9"]?.[prevYearKey]);
+    const pTaxCollectionGrowth = calculateYoY(pTaxMap["1.17"]?.[currYearKey], pTaxMap["1.17"]?.[prevYearKey]);
+    const pTaxCurrentCollectionEfficiency = calculatePercentage(pTaxMap["1.18"]?.[currYearKey], pTaxMap["1.10"]?.[currYearKey]);
+    const pTaxArrearsCollectionEfficiency = calculatePercentage(pTaxMap["1.19"]?.[currYearKey], pTaxMap["1.11"]?.[currYearKey]);
 
-    // 3️⃣ Current Collection Efficiency (1.18 / 1.10)
-    const pTaxCurrentCollectionEfficiency = calculatePercentage(
-      pTaxMap["1.18"]?.[currYearKey],
-      pTaxMap["1.10"]?.[currYearKey]
-    );
-
-    // 4️⃣ Arrears Collection Efficiency (1.19 / 1.11)
-    const pTaxArrearsCollectionEfficiency = calculatePercentage(
-      pTaxMap["1.19"]?.[currYearKey],
-      pTaxMap["1.11"]?.[currYearKey]
-    );
-    // console.log("PTax Metrics:", {
-    //   pTaxDemandGrowth,
-    //   pTaxCollectionGrowth,
-    //   pTaxCurrentCollectionEfficiency,
-    //   pTaxArrearsCollectionEfficiency,
-    // });
     const totalRevenue = Number(currentIndicators?.totRevenue);
-    const operSurplusRevExp = Number(
-      currentIndicators?.OperSurplusTotRevenueExpenditure
-    );
+    const operSurplusRevExp = Number(currentIndicators?.OperSurplusTotRevenueExpenditure);
 
     let operatingSurplusPercent = null;
-
-    if (
-      Number.isFinite(totalRevenue) &&
-      Number.isFinite(operSurplusRevExp) &&
-      totalRevenue > 0
-    ) {
-      operatingSurplusPercent =
-        ((totalRevenue - operSurplusRevExp) / totalRevenue) * 100;
-
-      operatingSurplusPercent = Number(operatingSurplusPercent.toFixed(2));
+    if (Number.isFinite(totalRevenue) && Number.isFinite(operSurplusRevExp) && totalRevenue > 0) {
+      operatingSurplusPercent = Number(((totalRevenue - operSurplusRevExp) / totalRevenue * 100).toFixed(2));
     }
-    // console.log("Operating Surplus %:", operatingSurplusPercent);
-    /* ---------------- SECTIONS ---------------- */
+
+    /* ---------------- SCORING ---------------- */
     const debtCondition = !Number.isFinite(currentIndicators?.totDebt);
-    // console.log("Debt Condition:", debtCondition, "Value:", currentIndicators?.totDebt);
-    const rawDebtScore = getIndicatorScore(
-      "TOT_DEBT_OWN_REV",
-      currentIndicators?.totDebtByTotOwnRevenue,
-      "Debt / Own Source Revenue"
-    );
-    //  console.log(rawDebtScore, "this is debt scre");
-
-    // const isDebtScoreMissing = !Number.isFinite(
-    //   currentIndicators?.totDebtByTotOwnRevenue
-    // );
-    // console.log("Is Debt Score Missing?", isDebtScoreMissing);
     const debtValue = currentIndicators?.totDebtByTotOwnRevenue;
-    // const numericDebt = Number(debtValue);
-    // const isDebtScoreMissing =
-    //    debtValue === "N/A" ||
-    //    debtValue === "" ||
-    //    debtValue === null ||
-    //    debtValue === undefined;
+    const rawDebtScore = getIndicatorScore("TOT_DEBT_OWN_REV", debtValue, "Debt / Own Source Revenue");
 
-    // const isDebtZero = numericDebt === 0;
+    const osr = getIndicatorScore("OSR_TO_REVENUE", currentIndicators?.totOwnRevenueByTotRevenue, "Own Source Revenue to Total Revenue Receipts");
+    const osrGrowth = getIndicatorScore("OSR_GROWTH", growthOSR, "Y-o-Y Growth in Own Source Revenue");
+    const grantsRatio = getIndicatorScore("GRANTS_TO_REVENUE", currentIndicators?.grantsByTotRevenue, "Revenue Grants to Total Revenue Receipts");
+    const trGrowth = getIndicatorScore("TR_GROWTH", growthTotalRevenue, "Y-o-Y Growth in Total Revenue receipts");
+    const trNet = getIndicatorScore("TR_Net", adjustedTRPercent, "Adjustments to TR (TR-Net Receivables) as % of TR");
+    const pTaxDemand = getIndicatorScore("PTAX_DEMAND_GROWTH", pTaxDemandGrowth, "Y-o-Y Growth in Property tax total demand");
+    const pTaxCollection = getIndicatorScore("PTAX_COLLECTION_GROWTH", pTaxCollectionGrowth, "Y-o-Y Growth in Property tax total collections");
+    const pTaxCurrentEff = getIndicatorScore("PTAX_CURRENT_COLLECTION_EFFICIENCY", pTaxCurrentCollectionEfficiency, "Property tax current collection efficiency");
+    const pTaxArrearEff = getIndicatorScore("PTAX_ARREARS_COLLECTION_EFFICIENCY", pTaxArrearsCollectionEfficiency, "Property tax average arrear collection efficiency");
+    const fixedCharge = getIndicatorScore("FIX_CHARGES", fixedChargesByRevExp, "Fixed Charges to Revenue Expenditure");
+    const omExp = getIndicatorScore("O&M_EXP", omByRevExpPercent, "O&M Expenditure to Revenue Expenditure");
+    const operatingSurplus = getIndicatorScore("OPERATING_SURPLUS", operatingSurplusPercent, "Operating Surplus");
+    const quickRatio = getIndicatorScore("QA_RATIO", currentIndicators?.qaRatio, "Quick Ratio");
+    const iscr = getIndicatorScore("ISCR_RATIO", currentIndicators?.iscrRatio, "Interest Service Coverage Ratio (ISCR)");
 
-    // const hasDebt = Number.isFinite(numericDebt) && numericDebt > 0;
-    // console.log("Debt Value:", debtValue, "Numeric Debt:", numericDebt, "Is Debt Missing?", isDebtScoreMissing, "Is Debt Zero?", isDebtZero, "Has Debt?", hasDebt);
-    /* ================= REVENUE GENERATION ================= */
-
-    const osr = getIndicatorScore(
-      "OSR_TO_REVENUE",
-      currentIndicators?.totOwnRevenueByTotRevenue,
-      "Own Source Revenue to Total Revenue Receipts"
-    );
-
-    const osrGrowth = getIndicatorScore(
-      "OSR_GROWTH",
-      growthOSR,
-      "Y-o-Y Growth in Own Source Revenue"
-    );
-
-    const grantsRatio = getIndicatorScore(
-      "GRANTS_TO_REVENUE",
-      currentIndicators?.grantsByTotRevenue,
-      "Revenue Grants to Total Revenue Receipts"
-    );
-
-    const trGrowth = getIndicatorScore(
-      "TR_GROWTH",
-      growthTotalRevenue,
-      "Y-o-Y Growth in Total Revenue receipts"
-    );
-
-    const trNet = getIndicatorScore(
-      "TR_Net",
-      adjustedTRPercent,
-      "Adjustments to TR (TR-Net Receivables) as % of TR"
-    );
-
-    const pTaxDemand = getIndicatorScore(
-      "PTAX_DEMAND_GROWTH",
-      pTaxDemandGrowth,
-      "Y-o-Y Growth in Property tax total demand"
-    );
-
-    const pTaxCollection = getIndicatorScore(
-      "PTAX_COLLECTION_GROWTH",
-      pTaxCollectionGrowth,
-      "Y-o-Y Growth in Property tax total collections"
-    );
-
-    const pTaxCurrentEff = getIndicatorScore(
-      "PTAX_CURRENT_COLLECTION_EFFICIENCY",
-      pTaxCurrentCollectionEfficiency,
-      "Property tax current collection efficiency"
-    );
-
-    const pTaxArrearEff = getIndicatorScore(
-      "PTAX_ARREARS_COLLECTION_EFFICIENCY",
-      pTaxArrearsCollectionEfficiency,
-      "Property tax average arrear collection efficiency"
-    );
-
-    /* ================= EXPENDITURE ================= */
-
-    const fixedCharge = getIndicatorScore(
-      "FIX_CHARGES",
-      fixedChargesByRevExp,
-      "Fixed Charges to Revenue Expenditure"
-    );
-
-    const omExp = getIndicatorScore(
-      "O&M_EXP",
-      omByRevExpPercent,
-      "O&M Expenditure to Revenue Expenditure"
-    );
-
-    /* ================= CASH POSITION ================= */
-
-    const operatingSurplus = getIndicatorScore(
-      "OPERATING_SURPLUS",
-      operatingSurplusPercent,
-      "Operating Surplus"
-    );
-
-    const quickRatio = getIndicatorScore(
-      "QA_RATIO",
-      currentIndicators?.qaRatio,
-      "Quick Ratio"
-    );
-
-    /* ================= DEBT ================= */
-
-    const iscr = getIndicatorScore(
-      "ISCR_RATIO",
-      currentIndicators?.iscrRatio,
-      "Interest Service Coverage Ratio (ISCR)"
-    );
-
+    /* ---------------- SECTIONS ---------------- */
     const sections = [
       {
         section: "REVENUE GENERATION (40%)",
-        description:
-          "Measures the growth, composition and efficiency of revenue income sources",
+        description: "Measures the growth, composition and efficiency of revenue income sources",
         rows: [
-          {
-            name: osr.label ?? "Own Source Revenue to Total Revenue Receipts",
-            maxScore: 4,
-            score: osr.score,
-            outOfRange: osr.outOfRange,
-          },
-          {
-            name: "Y-o-Y Growth in Own Source Revenue",
-            maxScore: 4,
-            score: osrGrowth.score,
-            outOfRange: osrGrowth.outOfRange,
-          },
-          {
-            name: "Revenue Grants to Total Revenue Receipts",
-            maxScore: 4,
-            score: grantsRatio.score,
-            outOfRange: grantsRatio.outOfRange,
-          },
-          {
-            name: "Y-o-Y Growth in Total Revenue receipts",
-            maxScore: 4,
-            score: trGrowth.score,
-            outOfRange: trGrowth.outOfRange,
-          },
-          {
-            name: "Adjustments to TR (TR-Net Receivables) as % of TR",
-            maxScore: 8,
-            score: trNet.score,
-            outOfRange: trNet.outOfRange,
-          },
-          {
-            name: "Y-o-Y Growth in Property tax total demand",
-            maxScore: 4,
-            score: pTaxDemand.score,
-            outOfRange: pTaxDemand.outOfRange,
-          },
-          {
-            name: "Y-o-Y Growth in Property tax total collections",
-            maxScore: 4,
-            score: pTaxCollection.score,
-            outOfRange: pTaxCollection.outOfRange,
-          },
-          {
-            name: "Property tax current collection efficiency",
-            maxScore: 4,
-            score: pTaxCurrentEff.score,
-            outOfRange: pTaxCurrentEff.outOfRange,
-          },
-          {
-            name: "Property tax average arrear collection efficiency",
-            maxScore: 4,
-            score: pTaxArrearEff.score,
-            outOfRange: pTaxArrearEff.outOfRange,
-          },
+          { name: osr.label ?? "Own Source Revenue to Total Revenue Receipts", maxScore: 4, score: osr.score, outOfRange: osr.outOfRange },
+          { name: "Y-o-Y Growth in Own Source Revenue", maxScore: 4, score: osrGrowth.score, outOfRange: osrGrowth.outOfRange },
+          { name: "Revenue Grants to Total Revenue Receipts", maxScore: 4, score: grantsRatio.score, outOfRange: grantsRatio.outOfRange },
+          { name: "Y-o-Y Growth in Total Revenue receipts", maxScore: 4, score: trGrowth.score, outOfRange: trGrowth.outOfRange },
+          { name: "Adjustments to TR (TR-Net Receivables) as % of TR", maxScore: 8, score: trNet.score, outOfRange: trNet.outOfRange },
+          { name: "Y-o-Y Growth in Property tax total demand", maxScore: 4, score: pTaxDemand.score, outOfRange: pTaxDemand.outOfRange },
+          { name: "Y-o-Y Growth in Property tax total collections", maxScore: 4, score: pTaxCollection.score, outOfRange: pTaxCollection.outOfRange },
+          { name: "Property tax current collection efficiency", maxScore: 4, score: pTaxCurrentEff.score, outOfRange: pTaxCurrentEff.outOfRange },
+          { name: "Property tax average arrear collection efficiency", maxScore: 4, score: pTaxArrearEff.score, outOfRange: pTaxArrearEff.outOfRange },
         ],
       },
       {
         section: "EXPENDITURE MANAGEMENT (20%)",
-        description:
-          "Measures revenue and capital expenditure components including overspending/underspending",
+        description: "Measures revenue and capital expenditure components including overspending/underspending",
         rows: [
-          {
-            name: "Fixed Charges to Revenue Expenditure",
-            maxScore: 8,
-            score: fixedCharge.score,
-            outOfRange: fixedCharge.outOfRange,
-          },
-          {
-            name: "O&M Expenditure to Revenue Expenditure",
-            maxScore: 4,
-            score: omExp.score,
-            outOfRange: omExp.outOfRange,
-          },
-          {
-            name: "Capital Utilization Ratio (Capital Expenditure / Capital Receipts)**",
-            maxScore: 8,
-            score: "N/A",
-            excludeFromScore: true,
-          },
+          { name: "Fixed Charges to Revenue Expenditure", maxScore: 8, score: fixedCharge.score, outOfRange: fixedCharge.outOfRange },
+          { name: "O&M Expenditure to Revenue Expenditure", maxScore: 4, score: omExp.score, outOfRange: omExp.outOfRange },
+          { name: "Capital Utilization Ratio (Capital Expenditure / Capital Receipts)**", maxScore: 8, score: "N/A", excludeFromScore: true },
         ],
       },
       {
         section: "CASH POSITION (20%)",
-        description:
-          "Measures capacity to borrow based on revenue surplus and liquidity position",
+        description: "Measures capacity to borrow based on revenue surplus and liquidity position",
         rows: [
-          {
-            name: "Operating Surplus",
-            maxScore: 10,
-            score: operatingSurplus.score,
-            outOfRange: operatingSurplus.outOfRange,
-          },
-          {
-            name: "Quick Ratio",
-            maxScore: 10,
-            score: quickRatio.score,
-            outOfRange: quickRatio.outOfRange,
-          },
+          { name: "Operating Surplus", maxScore: 10, score: operatingSurplus.score, outOfRange: operatingSurplus.outOfRange },
+          { name: "Quick Ratio", maxScore: 10, score: quickRatio.score, outOfRange: quickRatio.outOfRange },
         ],
       },
       {
         section: "DEBT MANAGEMENT (20%)",
-        description:
-          "Measures debt levels against the operating receipts generated",
+        description: "Measures debt levels against the operating receipts generated",
         rows: [
-          {
-            name: "Debt / Own Source Revenue",
-            maxScore: 8,
-            score: debtCondition ? "N/A" : rawDebtScore.score,
-            derived: debtCondition,
-          },
-          {
-            name: "Debt Service Coverage Ratio (DSCR)**",
-            maxScore: 8,
-            score: "N/A",
-          },
-          {
-            name: "Interest Service Coverage Ratio (ISCR)",
-            maxScore: 4,
-            score: debtCondition ? 0 : iscr.score,
-            outOfRange: iscr.outOfRange,
-          },
+          { name: "Debt / Own Source Revenue", maxScore: 8, score: debtCondition ? "N/A" : rawDebtScore.score, derived: debtCondition },
+          { name: "Debt Service Coverage Ratio (DSCR)**", maxScore: 8, score: "N/A" },
+          { name: "Interest Service Coverage Ratio (ISCR)", maxScore: 4, score: debtCondition ? 0 : iscr.score, outOfRange: iscr.outOfRange },
         ],
       },
     ];
+
     /* ---------------- SECTION & OVERALL SCORES ---------------- */
+    let sectionScores = sections.map((sec) => ({
+      section: sec.section,
+      score: sec.rows.reduce((sum, row) => sum + (Number(row.score) || 0), 0),
+      maxScore: sec.rows.reduce((sum, row) => sum + (Number(row.maxScore) || 0), 0),
+    }));
 
-    var sectionScores = sections.map((sec) => {
-      var score = sec.rows.reduce(
-        (sum, row) => sum + (Number(row.score) || 0),
-        0
-      );
+    const topThreeScore = sectionScores.slice(0, 3).reduce((acc, item) => acc + item.score, 0);
+    let overallScore = sectionScores.reduce((sum, s) => sum + s.score, 0);
+    const overallMaxScore = sectionScores.reduce((sum, s) => sum + s.maxScore, 0);
 
-      var maxScore = sec.rows.reduce(
-        (sum, row) => sum + (Number(row.maxScore) || 0),
-        0
-      );
+    let footNote = "";
 
-      return {
-        section: sec.section,
-        score,
-        maxScore,
-      };
-    });
-    //  console.log(sectionScores, "this is section scores");
-
-    var overallScore = sectionScores.reduce((sum, s) => sum + s.score, 0);
-    // console.log(overallScore, "this is section scores");
-    // 2. Find total of only first 3 scores
-    var topThreeScore = sectionScores
-      .slice(0, 3)
-      .reduce((acc, item) => acc + item.score, 0);
-    // console.log(topThreeScore, "this is section scores");
-    var overallMaxScore = sectionScores.reduce((sum, s) => sum + s.maxScore, 0);
     if (debtCondition) {
-      const adjustedOverallScore = Number(
-        // (topThreeScore * (84 / 72) - (iscr?.score ?? 0)).toFixed(2)
-        (topThreeScore)
-      );
-
-      // const derivedDebtScore = Number(
-      //   (adjustedOverallScore - overallScore).toFixed(2)
-      // );
-      
-      if(debtValue=== "N/A") {
-        var derivedDebtScore = 0;
-      }else if(debtValue=== 0){
-        var derivedDebtScore = 8;
+      let derivedDebtScore = 0;
+      if (debtValue === 0) {
+        derivedDebtScore = 8;
       }
-      // Inject derived score
+
       sections.forEach((sec) => {
         if (sec.section.startsWith("DEBT MANAGEMENT")) {
           sec.rows.forEach((row) => {
-            if (row.derived) {
-              row.score = derivedDebtScore;
-            }
+            if (row.derived) row.score = derivedDebtScore;
           });
         }
       });
 
-      // Recalculate section scores
       sectionScores = sections.map((sec) => {
-        score = sec.rows.reduce(
-          (sum, row) =>
-            sum + (Number.isFinite(row.score) ? Number(row.score) : 0),
-          0
-        );
-
-        maxScore = sec.rows.reduce(
-          (sum, row) => sum + (Number(row.maxScore) || 0),
-          0
-        );
-        const sectionResult = {
-          section: sec.section,
-          score,
-          maxScore,
-        };
-        if (sec.section.startsWith("DEBT MANAGEMENT")) {
-          sectionResult.derived = true;
-        }
-
-        return sectionResult;
+        const score = sec.rows.reduce((sum, row) => sum + (Number.isFinite(row.score) ? Number(row.score) : 0), 0);
+        const maxScore = sec.rows.reduce((sum, row) => sum + (Number(row.maxScore) || 0), 0);
+        const result = { section: sec.section, score, maxScore };
+        if (sec.section.startsWith("DEBT MANAGEMENT")) result.derived = true;
+        return result;
       });
 
-      overallScore = adjustedOverallScore;
-
-      var footNote = `${ulbData.name} did not report debt for FY ${year}. As a result, debt-related indicators could not be calculated and the Debt Management component has not been scored.`;
+      overallScore = topThreeScore;
+      footNote = `${ulbData.name} did not report debt for FY ${year}. As a result, debt-related indicators could not be calculated and the Debt Management component has not been scored.`;
     }
-
 
     const marketReadinessBand = getMarketReadinessBand(overallScore);
     const nextMilestone = getNextMilestoneMessage(overallScore);
 
     const outOfRange = [];
-
     sections.forEach((sec) => {
       sec.rows.forEach((row) => {
-        if (row.outOfRange) {
-          outOfRange.push({
-            indicator: row.name,
-            message: row.outOfRange,
-          });
-        }
+        if (row.outOfRange) outOfRange.push({ indicator: row.name, message: row.outOfRange });
       });
     });
-    // console.log(sectionScores, "thi is s");
-    /* ---------------- FINAL RESPONSE ---------------- */
-    var sectionNote = getFootnoteMessage(sectionScores, ulbData.name, year);
+
+    const sectionNote = getFootnoteMessage(sectionScores, ulbData.name, year, currentIndicators?.totRevenue);
+
     return res.status(200).json({
       ulbId,
       ulbName: ulbData.name,
       year,
-      sections, // table
-      sectionScores, // doughnut charts
-      overallScore, // overall doughnut
-      overallMaxScore, // 👈 IMPORTANT for frontend
+      sections,
+      sectionScores,
+      overallScore,
+      overallMaxScore,
       marketReadinessBand,
       nextMilestone,
       outOfRange,
@@ -605,8 +253,7 @@ async function marketReadinessDataByUlb(req, res) {
     return res.status(500).json({ message: "Internal server error" });
   }
 }
-const getFootnoteMessage = (sectionScores, cityName, year) => {
-  // 1. Identify the specific sections we want to check
+const getFootnoteMessage = (sectionScores, cityName, year, totRevenue) => {
   const expenditureSection = sectionScores.find((s) =>
     s.section.startsWith("EXPENDITURE MANAGEMENT")
   );
@@ -614,17 +261,21 @@ const getFootnoteMessage = (sectionScores, cityName, year) => {
     s.section.startsWith("CASH POSITION")
   );
 
-  // 2. Check if both scores are exactly 0
-  const isDataMissing =
+  const isSectionsMissing =
     expenditureSection?.score === 0 && cashSection?.score === 0;
 
-  // 3. Set the footnote based on the condition
+  const isTotRevenueMissing =
+    totRevenue === null ||
+    totRevenue === undefined ||
+    totRevenue === "N/A" ||
+    !Number.isFinite(Number(totRevenue));
+
   let footNote = "";
-  if (isDataMissing) {
-    footNote = `Scores are based on audited financial statements and property tax data. The audited financial data is not available for ${cityName} for ${year}. Where available, property tax indicators have been calculated and shown below.`;
+  if (isSectionsMissing || isTotRevenueMissing) {
+    footNote = `The scoring and assessment framework is based on audited financial statements and property tax data. As the audited financial statements for ${cityName} for FY ${year} are currently unavailable, the overall score and assessment for the city have not been calculated`;
   }
 
-  return footNote;
+  return {footNote,isTotRevenueMissing: isTotRevenueMissing, sectionsMissing: isSectionsMissing };
 };
 async function getAllUlbsMarketReadiness(req, res) {
   try {
@@ -653,6 +304,7 @@ async function getAllUlbsMarketReadiness(req, res) {
       year: { $in: [year, prevYear] },
       marketReadinessScore: { $exists: true },
     };
+    match["indicators.totRevenue"] = { $nin: [0, null, "", "N/A", "0"] };
 if (debtKey && (debtKey === "Cities with Debt" || debtKey === "Cities without Debt")) {
 
   const debtFilter =
@@ -721,8 +373,15 @@ if (debtKey && (debtKey === "Cities with Debt" || debtKey === "Cities without De
           score: { $ifNull: ["$currScore", 0] },
           delta: {
             $cond: [
-              { $and: ["$currScore", "$prevScore"] },
-              { $round: [{ $subtract: ["$currScore", "$prevScore"] }, 2] },
+              {
+                $and: [
+                  { $ne: ["$currScore", null] },
+                  { $ne: ["$prevScore", null] },
+                ],
+              },
+              {
+                $round: [{ $subtract: ["$currScore", "$prevScore"] }, 2],
+              },
               0,
             ],
           },
@@ -765,8 +424,8 @@ if (debtKey && (debtKey === "Cities with Debt" || debtKey === "Cities without De
       // ✅ Exclude invalid band records
       {
         $match: {
-          currScore: { $nin: [null, "", "N/A"] },
-          prevScore: { $nin: [null, "", "N/A"] },
+          currScore: { $nin: [null, "", "N/A", 0, "0"] },
+          prevScore: { $nin: [null, "", "N/A", 0, "0"] },
         },
       },
 
@@ -1089,12 +748,6 @@ function getIndicatorScore(indicatorKey, value, label) {
     result.outOfRange = `${label} is not available for this ULB and is marked as "N/A". This indicator has been excluded from the scoring calculation for this ULB. Please refer to the detailed financial statements for more information.`;
     return result;
   }
-  if(value===0) {
-    result.score = 8;
-    result.outOfRange = null;
-    return result;
-  }
-  // ❌ invalid / negative / impossible values
   if (!Number.isFinite(value) || value < 0 || value > 100) {
     result.score = 0;
     result.outOfRange = `${label} exceeds the defined upper limit and is treated as out of range for scoring. Consequently, a score of 0 has been assigned for Ratio ${label}.`;
@@ -1150,7 +803,8 @@ function getIndicatorScore(indicatorKey, value, label) {
       if (value == null || value === "N/A") {
         return { score: "N/A", outOfRange: null };
       }
-      result.score = value < 0.1 ? 8 : value <= 0.2 ? 6 : value <= 0.3 ? 4 : 0;
+      // console.log("Scoring TOT_DEBT_OWN_REV with value:", value);
+      result.score = value < 0.1 ? 8 : value <= 0.2 ? 6 : value <= 0.3 ? 4 : value >= 0.5 ? 0 : 2;
       break;
 
     case "ISCR_RATIO":

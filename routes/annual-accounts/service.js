@@ -1158,6 +1158,10 @@ exports.dataset = catchAsync(async (req, res) => {
     }
     if (getCount) { finalData = finalData.length }
 
+    if (Array.isArray(finalData)) {
+      finalData = finalData.map(item => concatenateUrls(item, { fileUrl: 'fileUrl' }));
+    }
+
     return res.status(200).json({
       success: true,
       data: finalData
