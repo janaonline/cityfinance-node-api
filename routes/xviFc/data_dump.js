@@ -6,7 +6,7 @@ const { financialYearTableHeader } = require("./form_json");
 const { getDate } = require("../../util/helper");
 const { concatenateUrls } = require("../../service/common");
 
-let baseUrl = process.env.HOSTNAME + '/resources-dashboard/data-sets/balanceSheet?';
+let baseUrl = `${process.env.HOSTNAME}${process.env.v1Url}/resources-dashboard/data-sets/balanceSheet?`
 
 let fin_slb_year = {
     financialData_year: "",
