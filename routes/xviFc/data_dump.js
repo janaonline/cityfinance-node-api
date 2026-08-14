@@ -4,8 +4,8 @@ const ExcelJS = require('exceljs');
 // const { xviFcFormData } = require("./temp");
 const { financialYearTableHeader } = require("./form_json");
 const { getDate } = require("../../util/helper");
+const { concatenateUrls } = require("../../service/common");
 
-let baseUrl_s3 = process.env.ENV == "production" ? process.env.AWS_STORAGE_URL_PROD : process.env.AWS_STORAGE_URL_STG;
 let baseUrl = process.env.HOSTNAME + '/resources-dashboard/data-sets/balanceSheet?';
 
 let fin_slb_year = {
@@ -22,7 +22,7 @@ async function getEachTabData(eachTab, obj) {
     if (eachTab.tabKey == 'demographicData' || eachTab.tabKey == 'accountPractice') {
         for (let eachAns of eachTab.data) {
             if (eachAns["key"] == 'gazetteUpload' || eachAns["key"] == 'pop2024Upload') {
-                obj[eachAns["key"]] = eachAns["file"]["url"] ? baseUrl_s3 + eachAns["file"]["url"] : "N/A";
+                obj[eachAns["key"]] = eachAns["file"]["url"] ? concatenateUrls(eachAns["file"])?.url : "N/A";
             } else {
                 obj[eachAns["key"]] = isNaN(Number(eachAns["value"])) ? eachAns["value"] : Number(eachAns["value"]);
                 if (eachTab.tabKey == 'accountPractice' && eachAns["reason"]) {
@@ -85,7 +85,7 @@ async function getEachTabData(eachTab, obj) {
                                     "N/A";
                         tempArr[index]["rejectReason"] = eachAns["rejectReason"] && eachAns["verifyStatus"] == 3 ? eachAns["rejectReason"] : "N/A";
                         tempArr[index]["isPdfAvailable"] = eachAns["verifyStatus"] == 2 || eachAns["verifyStatus"] == 3 ? "TRUE" : "FALSE";
-                        tempArr[index][`${key}`] = eachAns["verifyStatus"] == 2 ? `${baseUrl}ulbName=${obj.nameOfUlb}` : eachAns["file"]["url"] ? baseUrl_s3 + eachAns["file"]["url"] : "N/A";
+                        tempArr[index][`${key}`] = eachAns["verifyStatus"] == 2 ? `${baseUrl}ulbName=${obj.nameOfUlb}` : eachAns["file"]["url"] ? concatenateUrls(eachAns["file"])?.url : "N/A";
                         tempArr[index]["rejectOption"] = eachAns["rejectOption"] && eachAns["verifyStatus"] == 3 ? eachAns["rejectOption"].join(", ") : "N/A";
                     }
                 } else {
@@ -112,7 +112,7 @@ async function getEachTabData(eachTab, obj) {
                                     "Already on CF";
                         tempObj["rejectReason"] = eachAns["rejectReason"] && eachAns["verifyStatus"] == 3 ? eachAns["rejectReason"] : "N/A";
                         tempObj["isPdfAvailable"] = eachAns["verifyStatus"] == 2 || eachAns["verifyStatus"] == 3 ? "TRUE" : "FALSE";
-                        tempObj[`${key}`] = eachAns["verifyStatus"] == 2 ? `${baseUrl}ulbName=${obj.nameOfUlb}` : eachAns["file"]["url"] ? baseUrl_s3 + eachAns["file"]["url"] : "N/A";
+                        tempObj[`${key}`] = eachAns["verifyStatus"] == 2 ? `${baseUrl}ulbName=${obj.nameOfUlb}` : eachAns["file"]["url"] ? concatenateUrls(eachAns["file"])?.url : "N/A";
                         tempObj["rejectOption"] = eachAns["rejectOption"] && eachAns["verifyStatus"] == 3 ? eachAns["rejectOption"].join(", ") : "N/A";
                     }
 
