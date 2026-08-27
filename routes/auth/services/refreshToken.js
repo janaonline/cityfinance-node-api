@@ -22,94 +22,72 @@ module.exports.refreshToken = async (req, res) => {
 
   if (!refreshToken) {
     clearRefreshTokenCookie(res);
-    return Response.BadRequest(res, {}, "Refresh token cookie is required.");
+    return Response.BadRequest(res, {}, "Refresh token is required.");
   }
 
   try {
-    const decoded = jwt.verify(refreshToken, Config.JWT.SECRET);
+    const decoded = jwt.verify(refreshToken, Config.JWT.REFRESH_SECRET);
+    const userId = decoded.sub;
 
-    if (decoded.purpose !== "REFRESH" || !decoded.lh_id) {
+    if (!userId) {
       clearRefreshTokenCookie(res);
       return Response.UnAuthorized(res, {}, "Invalid refresh token.");
     }
 
     const user = await User.findOne({
-      _id: ObjectId(decoded._id),
+      _id: ObjectId(userId),
       isDeleted: false,
       isActive: true,
-    }).lean();
+    }).select("+refreshTokenHash");
 
     if (!user) {
       clearRefreshTokenCookie(res);
       return Response.UnAuthorized(res, {}, "User not found or inactive.");
     }
 
-    const loginQuery = {
-      _id: ObjectId(decoded.lh_id),
-      user: ObjectId(decoded._id),
-    };
-
-    if (decoded.sessionId && ObjectId.isValid(decoded.sessionId)) {
-      loginQuery.visitSession = ObjectId(decoded.sessionId);
+    if (!user.refreshTokenHash) {
+      clearRefreshTokenCookie(res);
+      return Response.UnAuthorized(res, {}, "Session expired.");
     }
 
-    const login = await LoginHistory.findOne(loginQuery).exec();
-
-    if (!login || login.isActive === false || login.loggedOutAt) {
+    const tokenMatches = await Service.compareHash(refreshToken, user.refreshTokenHash);
+    if (!tokenMatches) {
+      // Null out hash immediately on reuse detection (NestJS security pattern)
+      await User.findByIdAndUpdate(userId, { refreshTokenHash: null }).exec();
       clearRefreshTokenCookie(res);
-      return Response.UnAuthorized(res, {}, "Session is no longer active.");
-    }
-
-    if (
-      login.inactiveSessionTime &&
-      Date.now() >= login.inactiveSessionTime
-    ) {
-      clearRefreshTokenCookie(res);
-      await LoginHistory.updateOne(
-        { _id: ObjectId(login._id) },
-        {
-          $set: {
-            isActive: false,
-            loggedOutAt: new Date(),
-            refreshTokenHash: null,
-            currentRefreshTokenId: null,
-          },
-        }
-      ).exec();
-
-      return Response.UnAuthorized(
-        res,
-        {},
-        "Session expired. Kindly log in again to proceed."
-      );
-    }
-
-    const tokenMatches =
-      login.refreshTokenHash &&
-      (await Service.compareHash(refreshToken, login.refreshTokenHash));
-    const isCurrentTokenId =
-      !!decoded.jti &&
-      !!login.currentRefreshTokenId &&
-      decoded.jti === login.currentRefreshTokenId;
-
-    if (!tokenMatches || !isCurrentTokenId) {
-      clearRefreshTokenCookie(res);
-      await LoginHistory.updateOne(
-        { _id: ObjectId(login._id) },
-        {
-          $set: {
-            isActive: false,
-            loggedOutAt: new Date(),
-            refreshTokenHash: null,
-            currentRefreshTokenId: null,
-          },
-        }
-      ).exec();
-
       return Response.UnAuthorized(
         res,
         {},
         "Refresh token reuse detected. Please log in again."
+      );
+    }
+
+    const login = await LoginHistory.findOne({
+      user: ObjectId(userId),
+      isActive: { $ne: false },
+      loggedOutAt: null,
+    })
+      .sort({ _id: -1 })
+      .exec();
+
+    if (!login || login.isActive === false || login.loggedOutAt) {
+      clearRefreshTokenCookie(res);
+      await User.findByIdAndUpdate(userId, { refreshTokenHash: null }).exec();
+      return Response.UnAuthorized(res, {}, "Session is no longer active.");
+    }
+
+    if (login.inactiveSessionTime && Date.now() >= login.inactiveSessionTime) {
+      clearRefreshTokenCookie(res);
+      await LoginHistory.updateOne(
+        { _id: ObjectId(login._id) },
+        { $set: { isActive: false, loggedOutAt: new Date() } }
+      ).exec();
+      await User.findByIdAndUpdate(userId, { refreshTokenHash: null }).exec();
+      return Response.UnAuthorized(
+        res,
+        {},
+        "Session expired. Kindly log in again to proceed.",
+        440
       );
     }
 
@@ -124,19 +102,12 @@ module.exports.refreshToken = async (req, res) => {
       }
     ).exec();
 
-    const authTokens = await rotateRefreshToken(
-      user,
-      login,
-      decoded.sessionId || null
-    );
-
+    const authTokens = await rotateRefreshToken(user, login);
     attachRefreshTokenCookie(res, authTokens.refreshToken);
 
     return Response.OK(
       res,
-      {
-        token: authTokens.token,
-      },
+      { token: authTokens.token },
       "Token refreshed successfully."
     );
   } catch (error) {
