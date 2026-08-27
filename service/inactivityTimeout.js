@@ -16,9 +16,11 @@ module.exports = async function (req, res, next) {
                 return Response.UnAuthorized(res, {}, `Failed to authenticate token.`);
             } else {
                 req.decoded = decoded;
+                const userId = ObjectId(decoded.sub || decoded._id);
+
                 // Fetch user details and attach to request
                 try {
-                    const user = await User.findOne({ _id: decoded._id }, { role: 1, ulb: 1, state: 1, isActive: 1, isDeleted: 1 });
+                    const user = await User.findOne({ _id: userId }, { role: 1, ulb: 1, state: 1, isActive: 1, isDeleted: 1 });
                     if (!user) {
                         return Response.UnAuthorized(res, {}, `User not found.`);
                     }
@@ -28,7 +30,6 @@ module.exports = async function (req, res, next) {
                     console.error("Error fetching user details:", error);
                 }
                 if (req.decoded.sessionId) {
-                    userId = ObjectId(req.decoded._id);
                     let query = { user: ObjectId(userId), visitSession: ObjectId(req.decoded.sessionId) }
                     let login = await LoginHistory.findOne(query).sort({ _id: -1 }).exec();
                     if (login) {
