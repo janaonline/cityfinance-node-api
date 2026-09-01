@@ -12,6 +12,7 @@ const ulbTye = {
     'Town Panchayat': 0,
     Municipality: 0,
     'Municipal Corporation': 0,
+    'Cantonment Board': 0,
 };
 module.exports = (req, res) => {
     let user = req.decoded;
