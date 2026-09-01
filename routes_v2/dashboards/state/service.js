@@ -98,6 +98,12 @@ formatData = (data) => {
             label: "Town Panchayats",
             value: data.townPanchayat.toLocaleString(),
             sequence: 8
+        },
+        {
+            key: "cantonmentBoard",
+            label: "Cantonment Boards",
+            value: data.cantonmentBoard != null ? data.cantonmentBoard.toLocaleString() : '0',
+            sequence: 9
         }
     ]
     return json;
@@ -107,7 +113,8 @@ getquery = (condition) => {
     const ulbType = {
         "townPanchayat": ObjectId("5dcfa66b43263a0e75c71696"),
         "municipality": ObjectId("5dcfa64e43263a0e75c71695"),
-        "municipalCorporation": ObjectId("5dcfa67543263a0e75c71697")
+        "municipalCorporation": ObjectId("5dcfa67543263a0e75c71697"),
+        "cantonmentBoard": ObjectId(require("../../../util/ulbTypeConstants").ULB_TYPE_IDS.CANTONMENT_BOARD)
     };
     return [
         { $match: condition },
@@ -120,7 +127,8 @@ getquery = (condition) => {
                 uas: { $sum: { $cond: [{ $eq: ["$isUA", "Yes"] }, 1, 0] } },
                 municipalCorporation: { $sum: { $cond: [{ $eq: ["$ulbType", ulbType['municipalCorporation']] }, 1, 0] } },
                 municipality: { $sum: { $cond: [{ $eq: ["$ulbType", ulbType['municipality']] }, 1, 0] } },
-                townPanchayat: { $sum: { $cond: [{ $eq: ["$ulbType", ulbType['townPanchayat']] }, 1, 0] } }
+                townPanchayat: { $sum: { $cond: [{ $eq: ["$ulbType", ulbType['townPanchayat']] }, 1, 0] } },
+                cantonmentBoard: { $sum: { $cond: [{ $eq: ["$ulbType", ulbType['cantonmentBoard']] }, 1, 0] } }
             }
         },
         {
@@ -132,6 +140,7 @@ getquery = (condition) => {
                 municipalCorporation: 1,
                 municipality: 1,
                 townPanchayat: 1,
+                cantonmentBoard: 1,
             }
         }
     ]
