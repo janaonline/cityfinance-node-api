@@ -5,6 +5,8 @@ var ResourceLineItemSchema = new Schema(
     code: { type: String },
     downloadUrl: { type: String },
     imageUrl: { type: String, default: "" },
+    // When true, downloadUrl/imageUrl are HOSTNAME-relative keys (e.g. "/assets/docs/x.pdf")
+    renderedFromUI: { type: Boolean, default: false },
     header: {
       type: String,
       enum: ["learning_center", "datasets", "reports_&_publications"],
