@@ -2,6 +2,7 @@ const resource = require("../../models/Resources");
 const service = require("../../service");
 const Response = require("../../service").response;
 const { concatenateUrls } = require("../../service/common");
+const app_config = require("../../config/app_config");
 
 module.exports = async function (req, res) {
 
@@ -52,7 +53,18 @@ module.exports = async function (req, res) {
 module.exports.getResource = function (req, res) {
 
 	service.find({ isActive: true }, resource, function (response, value) {
-		value.data = value.data.map(item => concatenateUrls(item));
+		value.data = value.data.map(item => {
+			if (item.renderedFromUI) {
+				// downloadUrl/imageUrl are HOSTNAME-relative keys (e.g. "/assets/docs/x.pdf"), not S3/local
+				// file paths — resolve them against the website origin instead of signing a download token.
+				return {
+					...item,
+					downloadUrl: item.downloadUrl ? `${app_config.APP.HOSTNAME}${item.downloadUrl}` : item.downloadUrl,
+					imageUrl: item.imageUrl ? `${app_config.APP.HOSTNAME}${item.imageUrl}` : item.imageUrl,
+				};
+			}
+			return concatenateUrls(item);
+		});
 		return Response.OK(res, value, `success`);
 	}, true) // Pass true for lean option
 }
