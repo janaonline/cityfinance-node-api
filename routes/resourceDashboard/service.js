@@ -60,6 +60,14 @@ module.exports.get = async function (req, res) {
     if (data.length < 1) throw Error("No Resource Found");
     data = data.map((item) => {
       item = item.toObject ? item.toObject() : item;
+      if (item.renderedFromUI) {
+        // downloadUrl/imageUrl are HOSTNAME-relative (e.g. "/assets/docs/x.pdf"), not S3 keys
+        return {
+          ...item,
+          downloadUrl: item.downloadUrl ? `${app_config.APP.HOSTNAME}${item.downloadUrl}` : item.downloadUrl,
+          imageUrl: item.imageUrl ? `${app_config.APP.HOSTNAME}${item.imageUrl}` : item.imageUrl,
+        };
+      }
       return {
         ...item,
         downloadUrl: item.downloadUrl
