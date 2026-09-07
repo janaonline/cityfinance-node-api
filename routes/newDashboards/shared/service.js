@@ -11,7 +11,7 @@ ObjectId("5dd10c2485c951b54ec1d74a"),
 ObjectId("5dd10c2885c951b54ec1d77e"),
 ObjectId("5dd10c2385c951b54ec1d748"),
 ]
-let filterType = ["Town Panchayat", "Municipality", "Municipal Corporation"];
+let filterType = ["Town Panchayat", "Municipality", "Municipal Corporation", "Cantonment Board"];
 
 const peopleInformation = async (req, res) => {
   try {
@@ -112,6 +112,15 @@ const peopleInformation = async (req, res) => {
                 $sum: {
                   $cond: {
                     if: { $eq: ["$ulbType.name", filterType[2]] },
+                    then: 1,
+                    else: 0,
+                  },
+                },
+              },
+              Cantonment_Board: {
+                $sum: {
+                  $cond: {
+                    if: { $eq: ["$ulbType.name", filterType[3]] },
                     then: 1,
                     else: 0,
                   },

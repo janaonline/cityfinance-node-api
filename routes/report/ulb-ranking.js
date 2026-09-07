@@ -77,7 +77,7 @@ module.exports = async(req, res)=>{
                 }
             },
             {$unwind:"$ulbType"},
-            {$match:{ "ulbType.name":{$in : ["Municipality","Town Panchayat","Municipal Corporation"]}}},
+            {$match:{ "ulbType.name":{$in : ["Municipality","Town Panchayat","Municipal Corporation","Cantonment Board"]}}},
             {
                 $lookup:{
                     from:"ulbledgers",

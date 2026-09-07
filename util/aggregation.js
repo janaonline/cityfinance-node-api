@@ -3,6 +3,7 @@ const Ulb = require("../models/Ulb");
 const LineItem = require("../models/LineItem");
 const UlbLedger = require('../models/UlbLedger')
 const { ObjectId } = mongoose.Types;
+const { ULB_TYPE_IDS } = require("./ulbTypeConstants");
 
 const Capital_Expenditure = [
   "5dd10c2785c951b54ec1d779",
@@ -396,6 +397,17 @@ exports.nationalDashRevenuePipeline = (
                 },
               },
             },
+            cantonmentBoard_set: {
+              $addToSet: {
+                $cond: {
+                  if: {
+                    $eq: ["$ulbType", ObjectId(ULB_TYPE_IDS.CANTONMENT_BOARD)],
+                  },
+                  then: "$_id",
+                  else: "",
+                },
+              },
+            },
             municipalCorp: {
               $sum: {
                 $cond: {
@@ -462,6 +474,28 @@ exports.nationalDashRevenuePipeline = (
                 },
               },
             },
+            cantonmentBoard: {
+              $sum: {
+                $cond: {
+                  if: {
+                    $eq: ["$ulbType", ObjectId(ULB_TYPE_IDS.CANTONMENT_BOARD)],
+                  },
+                  then: "$population",
+                  else: 0,
+                },
+              },
+            },
+            cantonmentBoard_amount: {
+              $sum: {
+                $cond: {
+                  if: {
+                    $eq: ["$ulbType", ObjectId(ULB_TYPE_IDS.CANTONMENT_BOARD)],
+                  },
+                  then: "$amount",
+                  else: 0,
+                },
+              },
+            },
           },
         },
         {
@@ -517,6 +551,24 @@ exports.nationalDashRevenuePipeline = (
                   then: 0,
                   else: {
                     $divide: ["$townPanchayat_amount", "$townPanchayat"],
+                  },
+                },
+              },
+            },
+            "Cantonment Board": {
+              population: "$cantonmentBoard",
+              revenue: {
+                $divide: ["$cantonmentBoard_amount", 1e7],
+              },
+              set: "$cantonmentBoard_set",
+              revenuePerCapita: {
+                $cond: {
+                  if: {
+                    $eq: ["$cantonmentBoard", 0],
+                  },
+                  then: 0,
+                  else: {
+                    $divide: ["$cantonmentBoard_amount", "$cantonmentBoard"],
                   },
                 },
               },
@@ -1714,6 +1766,17 @@ exports.nationalDashExpensePipeline = (
                 },
               },
             },
+            cantonmentBoard_set: {
+              $addToSet: {
+                $cond: {
+                  if: {
+                    $eq: ["$ulbType", ObjectId(ULB_TYPE_IDS.CANTONMENT_BOARD)],
+                  },
+                  then: "$_id",
+                  else: "",
+                },
+              },
+            },
             municipalCorp: {
               $sum: {
                 $cond: {
@@ -1780,6 +1843,28 @@ exports.nationalDashExpensePipeline = (
                 },
               },
             },
+            cantonmentBoard: {
+              $sum: {
+                $cond: {
+                  if: {
+                    $eq: ["$ulbType", ObjectId(ULB_TYPE_IDS.CANTONMENT_BOARD)],
+                  },
+                  then: "$population",
+                  else: 0,
+                },
+              },
+            },
+            cantonmentBoard_amount: {
+              $sum: {
+                $cond: {
+                  if: {
+                    $eq: ["$ulbType", ObjectId(ULB_TYPE_IDS.CANTONMENT_BOARD)],
+                  },
+                  then: "$amount",
+                  else: 0,
+                },
+              },
+            },
           },
         },
         {
@@ -1835,6 +1920,24 @@ exports.nationalDashExpensePipeline = (
                   then: 0,
                   else: {
                     $divide: ["$townPanchayat_amount", "$townPanchayat"],
+                  },
+                },
+              },
+            },
+            "Cantonment Board": {
+              population: "$cantonmentBoard",
+              expenditure: {
+                $divide: ["$cantonmentBoard_amount", 1e7],
+              },
+              set: "$cantonmentBoard_set",
+              expenditurePerCapita: {
+                $cond: {
+                  if: {
+                    $eq: ["$cantonmentBoard", 0],
+                  },
+                  then: 0,
+                  else: {
+                    $divide: ["$cantonmentBoard_amount", "$cantonmentBoard"],
                   },
                 },
               },
@@ -2704,6 +2807,17 @@ exports.nationalDashOwnRevenuePipeline = (
                 },
               },
             },
+            cantonmentBoard_set: {
+              $addToSet: {
+                $cond: {
+                  if: {
+                    $eq: ["$ulbType", ObjectId(ULB_TYPE_IDS.CANTONMENT_BOARD)],
+                  },
+                  then: "$_id",
+                  else: "",
+                },
+              },
+            },
             municipalCorp: {
               $sum: {
                 $cond: {
@@ -2770,6 +2884,28 @@ exports.nationalDashOwnRevenuePipeline = (
                 },
               },
             },
+            cantonmentBoard: {
+              $sum: {
+                $cond: {
+                  if: {
+                    $eq: ["$ulbType", ObjectId(ULB_TYPE_IDS.CANTONMENT_BOARD)],
+                  },
+                  then: "$population",
+                  else: 0,
+                },
+              },
+            },
+            cantonmentBoard_amount: {
+              $sum: {
+                $cond: {
+                  if: {
+                    $eq: ["$ulbType", ObjectId(ULB_TYPE_IDS.CANTONMENT_BOARD)],
+                  },
+                  then: "$amount",
+                  else: 0,
+                },
+              },
+            },
           },
         },
         {
@@ -2825,6 +2961,24 @@ exports.nationalDashOwnRevenuePipeline = (
                   then: 0,
                   else: {
                     $divide: ["$townPanchayat_amount", "$townPanchayat"],
+                  },
+                },
+              },
+            },
+            "Cantonment Board": {
+              population: "$cantonmentBoard",
+              Ownrevenue: {
+                $divide: ["$cantonmentBoard_amount", 1e7],
+              },
+              set: "$cantonmentBoard_set",
+              OwnrevenuePerCapita: {
+                $cond: {
+                  if: {
+                    $eq: ["$cantonmentBoard", 0],
+                  },
+                  then: 0,
+                  else: {
+                    $divide: ["$cantonmentBoard_amount", "$cantonmentBoard"],
                   },
                 },
               },
@@ -4003,6 +4157,39 @@ exports.stateDashAvgsPipeline = async (
                 },
               },
             },
+            cantonmentBoardAmt: {
+              $sum: {
+                $cond: {
+                  if: {
+                    $eq: ["$ulbType", ObjectId(ULB_TYPE_IDS.CANTONMENT_BOARD)],
+                  },
+                  then: "$amount",
+                  else: 0,
+                },
+              },
+            },
+            cantonmentBoardUlbs: {
+              $sum: {
+                $cond: {
+                  if: {
+                    $eq: ["$ulbType", ObjectId(ULB_TYPE_IDS.CANTONMENT_BOARD)],
+                  },
+                  then: 1,
+                  else: 0,
+                },
+              },
+            },
+            cantonmentBoardPopulation: {
+              $sum: {
+                $cond: {
+                  if: {
+                    $eq: ["$ulbType", ObjectId(ULB_TYPE_IDS.CANTONMENT_BOARD)],
+                  },
+                  then: "$population",
+                  else: 0,
+                },
+              },
+            },
           },
         },
         {
@@ -4041,9 +4228,21 @@ exports.stateDashAvgsPipeline = async (
                 },
               },
             },
+            "Cantonment Board": {
+              $cond: {
+                if: {
+                  $lt: ["$cantonmentBoardAmt", 1],
+                },
+                then: 0,
+                else: {
+                  $divide: ["$cantonmentBoardAmt", "$cantonmentBoardPopulation"],
+                },
+              },
+            },
             townPanUlbs: 1,
             municipalCorUlbs: 1,
             municipalUlbs: 1,
+            cantonmentBoardUlbs: 1,
           },
         },
         {
@@ -4079,6 +4278,17 @@ exports.stateDashAvgsPipeline = async (
                 then: 0,
                 else: {
                   $divide: ["$Town Panchayat", "$townPanUlbs"],
+                },
+              },
+            },
+            "Cantonment Board": {
+              $cond: {
+                if: {
+                  $lt: ["$Cantonment Board", 1],
+                },
+                then: 0,
+                else: {
+                  $divide: ["$Cantonment Board", "$cantonmentBoardUlbs"],
                 },
               },
             },
@@ -4242,6 +4452,39 @@ exports.stateDashAvgsPipeline = async (
                 },
               },
             },
+            cantonmentBoardAmt: {
+              $sum: {
+                $cond: {
+                  if: {
+                    $eq: ["$ulbType", ObjectId(ULB_TYPE_IDS.CANTONMENT_BOARD)],
+                  },
+                  then: { $multiply: ["$amount", "$population"] },
+                  else: 0,
+                },
+              },
+            },
+            cantonmentBoardUlbs: {
+              $sum: {
+                $cond: {
+                  if: {
+                    $eq: ["$ulbType", ObjectId(ULB_TYPE_IDS.CANTONMENT_BOARD)],
+                  },
+                  then: 1,
+                  else: 0,
+                },
+              },
+            },
+            cantonmentBoardPopulation: {
+              $sum: {
+                $cond: {
+                  if: {
+                    $eq: ["$ulbType", ObjectId(ULB_TYPE_IDS.CANTONMENT_BOARD)],
+                  },
+                  then: "$population",
+                  else: 0,
+                },
+              },
+            },
           },
         },
         {
@@ -4277,6 +4520,17 @@ exports.stateDashAvgsPipeline = async (
                 then: 0,
                 else: {
                   $divide: ["$townPanAmt", "$townPanPopulation"],
+                },
+              },
+            },
+            "Cantonment Board": {
+              $cond: {
+                if: {
+                  $eq: ["$cantonmentBoardPopulation", 0],
+                },
+                then: 0,
+                else: {
+                  $divide: ["$cantonmentBoardAmt", "$cantonmentBoardPopulation"],
                 },
               },
             },
@@ -4553,6 +4807,30 @@ exports.stateDashAvgsPipeline = async (
                 },
               },
             },
+            cantonmentBoardAmt: {
+              $sum: {
+                $cond: {
+                  if: {
+                    $eq: ["$ulbType", ObjectId(ULB_TYPE_IDS.CANTONMENT_BOARD)],
+                  },
+                  then: {
+                    $multiply: ["$amount", isPerCapita ? 1 : "$population"],
+                  },
+                  else: 0,
+                },
+              },
+            },
+            cantonmentBoardUlbs: {
+              $sum: {
+                $cond: {
+                  if: {
+                    $eq: ["$ulbType", ObjectId(ULB_TYPE_IDS.CANTONMENT_BOARD)],
+                  },
+                  then: "$population",
+                  else: 0,
+                },
+              },
+            },
           },
         },
         {
@@ -4588,6 +4866,17 @@ exports.stateDashAvgsPipeline = async (
                 then: 0,
                 else: {
                   $divide: ["$townPanAmt", "$townPanUlbs"],
+                },
+              },
+            },
+            "Cantonment Board": {
+              $cond: {
+                if: {
+                  $lt: ["$cantonmentBoardAmt", 1],
+                },
+                then: 0,
+                else: {
+                  $divide: ["$cantonmentBoardAmt", "$cantonmentBoardUlbs"],
                 },
               },
             },
@@ -4680,6 +4969,28 @@ exports.stateDashAvgsPipeline = async (
                 },
               },
             },
+            cantonmentBoardAmt: {
+              $sum: {
+                $cond: {
+                  if: {
+                    $eq: ["$ulbType", ObjectId(ULB_TYPE_IDS.CANTONMENT_BOARD)],
+                  },
+                  then: { $multiply: ["$amount", "$population"] },
+                  else: 0,
+                },
+              },
+            },
+            cantonmentBoardUlbs: {
+              $sum: {
+                $cond: {
+                  if: {
+                    $eq: ["$ulbType", ObjectId(ULB_TYPE_IDS.CANTONMENT_BOARD)],
+                  },
+                  then: "$population",
+                  else: 0,
+                },
+              },
+            },
           },
         },
         {
@@ -4715,6 +5026,17 @@ exports.stateDashAvgsPipeline = async (
                 then: 0,
                 else: {
                   $divide: ["$townPanAmt", "$townPanUlbs"],
+                },
+              },
+            },
+            "Cantonment Board": {
+              $cond: {
+                if: {
+                  $lt: ["$cantonmentBoardAmt", 1],
+                },
+                then: 0,
+                else: {
+                  $divide: ["$cantonmentBoardAmt", "$cantonmentBoardUlbs"],
                 },
               },
             },

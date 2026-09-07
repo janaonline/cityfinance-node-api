@@ -25,6 +25,7 @@ module.exports.ulbType = {
     'tP': 'Town Panchayat',
     'mCorp': 'Municipal Corporation',
     'mC': 'Municipality',
+    'cB': 'Cantonment Board',
 }
 
 module.exports.populationType = {

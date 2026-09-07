@@ -9,6 +9,7 @@ const util = require("util");
 const axios = require("axios").default;
 const ExcelJS = require("exceljs");
 const fs = require("fs");
+const { ULB_TYPE_IDS } = require("../../util/ulbTypeConstants");
 // own revenue
 //  ObjectId("5dd10c2485c951b54ec1d74b"),
 // ObjectId("5dd10c2685c951b54ec1d762"),
@@ -838,6 +839,7 @@ let ulbIdArr = ulb;
         tpData: [],
         mcData: [],
         mData: [],
+        cbData: [],
       };
       let finalArr = [];
       for (let el of ulbIDArr) {
@@ -867,6 +869,9 @@ let ulbIdArr = ulb;
         } else if (el._id.valueOf() == "5dcfa64e43263a0e75c71695") {
           // Municipality
           obj.mData.push(data);
+        } else if (el._id.valueOf() == ULB_TYPE_IDS.CANTONMENT_BOARD) {
+          // Cantonment Board
+          obj.cbData.push(data);
         }
 
         finalArr.push(obj);

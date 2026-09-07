@@ -3,6 +3,7 @@ module.exports = {
 		PORT: process.env.PORT,
 		BASEURL: process.env.BASEURL,
 		BASEURL2: process.env.BASEURL2,
+		HOSTNAME: process.env.HOSTNAME,
 	},
 	DATABASE: {
 		CONNECTION_STRING: process.env.CONNECTION_STRING,

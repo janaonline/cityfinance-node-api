@@ -1,0 +1,12 @@
+module.exports.ULB_TYPE_IDS = {
+  MUNICIPAL_CORPORATION: '5dcfa67543263a0e75c71697',
+  MUNICIPALITY: '5dcfa64e43263a0e75c71695',
+  TOWN_PANCHAYAT: '5dcfa66b43263a0e75c71696',
+  CANTONMENT_BOARD: '6a954c01a09244b8befbae48',
+};
+module.exports.ULB_TYPE_NAMES = {
+  MUNICIPAL_CORPORATION: 'Municipal Corporation',
+  MUNICIPALITY: 'Municipality',
+  TOWN_PANCHAYAT: 'Town Panchayat',
+  CANTONMENT_BOARD: 'Cantonment Board',
+};

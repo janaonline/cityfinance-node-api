@@ -15,6 +15,7 @@ const { relativeTimeRounding } = require("moment");
 const fs = require("fs");
 const Redis = require("../../service/redis");
 const { query } = require("express");
+const { ULB_TYPE_IDS } = require("../../util/ulbTypeConstants");
 
 exports.dataAvailabilityState = async (req, res) => {
   try {
@@ -1853,6 +1854,11 @@ function setPopCatValInHash(HashTable, each) {
       HashTable["Municipal Corporation"] += 1;
     else {
       HashTable["Municipal Corporation"] = 1;
+    }
+  } else if (each.ulbType.toString() == ULB_TYPE_IDS.CANTONMENT_BOARD) {
+    if (HashTable["Cantonment Board"]) HashTable["Cantonment Board"] += 1;
+    else {
+      HashTable["Cantonment Board"] = 1;
     }
   }
 
