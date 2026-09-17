@@ -1733,6 +1733,7 @@ const serviceLevelBenchmark = catchAsync(async (req, res) => {
   let tp_data = [],
     m_data = [],
     mc_data = [],
+    cb_data = [],
     tenData = [];
   if (getQuery) return res.status(200).json(query);
   let data = Indicator.aggregate(query);
@@ -1821,6 +1822,12 @@ const serviceLevelBenchmark = catchAsync(async (req, res) => {
           return el;
         }
       });
+      cb_data = data.filter((el) => {
+        if (el.ulbType == ULB_TYPE_NAMES.CANTONMENT_BOARD) {
+          el.value = el.value;
+          return el;
+        }
+      });
     }
   }
   const obj = {
@@ -1829,6 +1836,7 @@ const serviceLevelBenchmark = catchAsync(async (req, res) => {
       tp_data: tp_data,
       m_data: m_data,
       mc_data: mc_data,
+      cb_data: cb_data,
       stateAvg: stateAvg,
       tenData: tenData,
       unitType: unit
