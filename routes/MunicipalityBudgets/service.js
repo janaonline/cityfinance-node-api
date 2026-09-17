@@ -3,6 +3,7 @@
 const ObjectId = require("mongoose").Types.ObjectId;
 const Ulb = require('../../models/Ulb');
 const Response = require('../../service/response')
+const { ULB_TYPE_IDS } = require("../../util/ulbTypeConstants");
 
 module.exports.getDocuments = async (req, res) => {
     try {
@@ -211,6 +212,27 @@ const fakeInsights = [
         fy2021_22: 89,
         fy2022_23: 93,
         fy2023_24: 83,
+    },
+    //---------------------------Cantonment Board----------
+    {
+        state: '5dcf9d7316a06aed41c748eb',
+        type: ULB_TYPE_IDS.CANTONMENT_BOARD,
+        ulbCount: 3,
+        atLeastOneYearCount: 3,
+        fy2020_21: 100,
+        fy2021_22: 100,
+        fy2022_23: 100,
+        fy2023_24: 100,
+    },
+    {
+        state: '5dcf9d7516a06aed41c748fa',
+        type: ULB_TYPE_IDS.CANTONMENT_BOARD,
+        ulbCount: 6,
+        atLeastOneYearCount: 5,
+        fy2020_21: 88,
+        fy2021_22: 90,
+        fy2022_23: 92,
+        fy2023_24: 90,
     },
 ]
 module.exports.getHeatmap = async (req, res) => {

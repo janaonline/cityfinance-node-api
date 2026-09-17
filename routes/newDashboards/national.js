@@ -15,7 +15,7 @@ const { relativeTimeRounding } = require("moment");
 const fs = require("fs");
 const Redis = require("../../service/redis");
 const { query } = require("express");
-const { ULB_TYPE_IDS } = require("../../util/ulbTypeConstants");
+const { ULB_TYPE_IDS, ULB_TYPE_NAMES } = require("../../util/ulbTypeConstants");
 
 exports.dataAvailabilityState = async (req, res) => {
   try {
@@ -570,6 +570,7 @@ exports.nationalDashRevenue = async (req, res) => {
           "Municipal Corporation": {},
           Municipality: {},
           "Town Panchayat": {},
+          [ULB_TYPE_NAMES.CANTONMENT_BOARD]: {},
         };
         nationalArr.map((each) => {
           let lineName = lineItemMap.get(each._id.lineItem.toString());
@@ -927,6 +928,7 @@ exports.nationalDashExpenditure = async (req, res) => {
             "Municipal Corporation": {},
             "Municipality": {},
             "Town Panchayat": {},
+            [ULB_TYPE_NAMES.CANTONMENT_BOARD]: {},
           };
         nationalArr.map((each) => {
           let lineName = lineItemMap.get(each._id.lineItem.toString());
@@ -1485,6 +1487,7 @@ exports.nationalDashOwnRevenue = async (req, res) => {
             "Municipal Corporation": {},
             Municipality: {},
             "Town Panchayat": {},
+            [ULB_TYPE_NAMES.CANTONMENT_BOARD]: {},
           };
         nationalArr.map((each) => {
           national_Format[lineItemMap.get(each._id.lineItem.toString())] =
