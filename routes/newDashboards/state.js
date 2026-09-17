@@ -9,7 +9,7 @@ const util = require("util");
 const axios = require("axios").default;
 const ExcelJS = require("exceljs");
 const fs = require("fs");
-const { ULB_TYPE_IDS } = require("../../util/ulbTypeConstants");
+const { ULB_TYPE_IDS, ULB_TYPE_NAMES } = require("../../util/ulbTypeConstants");
 // own revenue
 //  ObjectId("5dd10c2485c951b54ec1d74b"),
 // ObjectId("5dd10c2685c951b54ec1d762"),
@@ -1851,11 +1851,15 @@ const groupDataTypeWise = (data) => {
   let mc_data = data.filter((el) => {
     return el.ulbType == "Municipal Corporation";
   });
+  let cb_data = data.filter((el) => {
+    return el.ulbType == ULB_TYPE_NAMES.CANTONMENT_BOARD;
+  });
 
   let obj = {
     townPanchayat: tp_data,
     municipality: m_data,
     mCorporation: mc_data,
+    cantonmentBoard: cb_data,
   };
   return obj;
 };
